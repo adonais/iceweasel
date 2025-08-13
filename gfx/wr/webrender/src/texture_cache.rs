@@ -918,6 +918,7 @@ impl TextureCache {
         uv_rect_kind: UvRectKind,
         eviction: Eviction,
         shader: TargetShader,
+        force_standalone_texture: bool,
     ) {
         debug_assert!(self.now.is_valid());
         // Determine if we need to allocate texture cache memory
@@ -939,7 +940,7 @@ impl TextureCache {
 
         if realloc {
             let params = CacheAllocParams { descriptor, filter, user_data, uv_rect_kind, shader };
-            self.allocate(&params, handle, eviction);
+            self.allocate(&params, handle, eviction, force_standalone_texture);
 
             // If we reallocated, we need to upload the whole item again.
             dirty_rect = DirtyRect::All;
@@ -1487,13 +1488,14 @@ impl TextureCache {
         params: &CacheAllocParams,
         handle: &mut TextureCacheHandle,
         eviction: Eviction,
+        force_standalone_texture: bool,
     ) {
         debug_assert!(self.now.is_valid());
         assert!(!params.descriptor.size.is_empty());
 
         // If this image doesn't qualify to go in the shared (batching) cache,
         // allocate a standalone entry.
-        let use_shared_cache = self.is_allowed_in_shared_cache(params.filter, &params.descriptor);
+        let use_shared_cache = !force_standalone_texture && self.is_allowed_in_shared_cache(params.filter, &params.descriptor);
         let (new_cache_entry, budget_type) = if use_shared_cache {
             self.allocate_from_shared_cache(params)
         } else {
@@ -1710,6 +1712,7 @@ mod test_texture_cache {
                 UvRectKind::Rect,
                 Eviction::Manual,
                 TargetShader::Text,
+                false,
             );
             texture_cache_handle
         }).collect();

@@ -375,18 +375,24 @@ Adapter::Adapter(Instance* const aParent, WebGPUChild* const aBridge,
 Adapter::~Adapter() { Cleanup(); }
 
 void Adapter::Cleanup() {
-  if (mValid && mBridge && mBridge->CanSend()) {
-    mValid = false;
-    mBridge->SendAdapterDrop(mId);
+  if (!mValid) {
+    return;
   }
+  mValid = false;
+
+  if (!mBridge) {
+    return;
+  }
+
+  ffi::wgpu_client_drop_adapter(mBridge->GetClient(), mId);
 }
 
 const RefPtr<SupportedFeatures>& Adapter::Features() const { return mFeatures; }
 const RefPtr<SupportedLimits>& Adapter::Limits() const { return mLimits; }
 const RefPtr<AdapterInfo>& Adapter::Info() const { return mInfo; }
 
-bool Adapter::SupportExternalTextureInSwapChain() const {
-  return mInfoInner->support_use_external_texture_in_swap_chain;
+bool Adapter::SupportSharedTextureInSwapChain() const {
+  return mInfoInner->support_use_shared_texture_in_swap_chain;
 }
 
 static std::string_view ToJsKey(const Limit limit) {
@@ -511,12 +517,6 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
   // -
 
   [&]() {  // So that we can `return;` instead of `return promise.forget();`.
-    if (!mBridge->CanSend()) {
-      promise->MaybeRejectWithInvalidStateError(
-          "WebGPUChild cannot send, must recreate Adapter");
-      return;
-    }
-
     // -
     // Validate Features
 
@@ -629,21 +629,9 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
 
     // -
 
-    ffi::WGPUFfiDeviceDescriptor ffiDesc = {};
-    ffiDesc.required_features = featureBits;
-    ffiDesc.required_limits = deviceLimits;
-    auto request = mBridge->AdapterRequestDevice(mId, ffiDesc);
-    if (!request) {
-      promise->MaybeRejectWithNotSupportedError(
-          "Unable to instantiate a Device");
-      return;
-    }
-    RefPtr<Device> device = new Device(
-        this, request->mDeviceId, request->mQueueId, ffiDesc.required_limits);
-    device->SetLabel(aDesc.mLabel);
-
+    RefPtr<SupportedFeatures> features = new SupportedFeatures(this);
     for (const auto& feature : aDesc.mRequiredFeatures) {
-      device->mFeatures->Add(feature, aRv);
+      features->Add(feature, aRv);
     }
     // TODO: Once we implement compat mode (see
     // <https://bugzilla.mozilla.org/show_bug.cgi?id=1905951>), do not report
@@ -656,27 +644,26 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
     // > Core-defaulting adapters *always* support the
     // > `"core-features-and-limits"` feature. It is *automatically enabled* on
     // > devices created from such adapters.
-    device->mFeatures->Add(dom::GPUFeatureName::Core_features_and_limits, aRv);
+    features->Add(dom::GPUFeatureName::Core_features_and_limits, aRv);
 
-    request->mPromise->Then(
-        GetCurrentSerialEventTarget(), __func__,
-        [promise, device](bool aSuccess) {
-          if (aSuccess) {
-            promise->MaybeResolve(device);
-          } else {
-            device->CleanupUnregisteredInParent();
-            promise->MaybeRejectWithInvalidStateError(
-                "Unable to fulfill requested features and limits");
-          }
-        },
-        [promise, device](const ipc::ResponseRejectReason& aReason) {
-          // We can't be sure how far along the WebGPUParent got in handling
-          // our AdapterRequestDevice message, but we can't communicate with it,
-          // so clear up our client state for this Device without trying to
-          // communicate with the parent about it.
-          device->CleanupUnregisteredInParent();
-          promise->MaybeRejectWithNotSupportedError("IPC error");
-        });
+    RefPtr<SupportedLimits> limits = new SupportedLimits(this, deviceLimits);
+
+    ffi::WGPUDeviceQueueId ids =
+        ffi::wgpu_client_make_device_queue_id(mBridge->GetClient());
+
+    ffi::WGPUFfiDeviceDescriptor ffiDesc = {};
+    ffiDesc.required_features = featureBits;
+    ffiDesc.required_limits = deviceLimits;
+
+    ffi::wgpu_client_request_device(mBridge->GetClient(), mId, ids.device,
+                                    ids.queue, &ffiDesc);
+
+    auto pending_promise = WebGPUChild::PendingRequestDevicePromise{
+        RefPtr(promise), ids.device, ids.queue, aDesc.mLabel,
+        RefPtr(this),    features,   limits,    mInfo};
+    mBridge->mPendingRequestDevicePromises.push_back(
+        std::move(pending_promise));
+
   }();
 
   return promise.forget();

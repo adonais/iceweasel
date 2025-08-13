@@ -81,7 +81,6 @@ import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.GleanMetrics.PerfStartup
 import org.mozilla.fenix.GleanMetrics.Preferences
 import org.mozilla.fenix.GleanMetrics.SearchDefaultEngine
-import org.mozilla.fenix.GleanMetrics.TopSites
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.Core
 import org.mozilla.fenix.components.appstate.AppAction
@@ -113,7 +112,6 @@ import org.mozilla.fenix.session.VisibilityLifecycleCallback
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.isLargeScreenSize
 import org.mozilla.fenix.wallpapers.Wallpaper
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 
@@ -405,15 +403,6 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         }
 
         @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
-        fun queueReviewPrompt() {
-            queue.runIfReadyOrQueue {
-                GlobalScope.launch(IO) {
-                    components.reviewPromptController.trackApplicationLaunch()
-                }
-            }
-        }
-
-        @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
         fun queueRestoreLocale() {
             queue.runIfReadyOrQueue {
                 GlobalScope.launch(IO) {
@@ -465,7 +454,6 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         queueInitStorageAndServices()
         queueMetrics()
         queueIncrementNumberOfAppLaunches()
-        queueReviewPrompt()
         queueRestoreLocale()
         queueStorageMaintenance()
         queueNimbusFetchInForeground()
@@ -750,12 +738,6 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
             defaultBrowser.set(browsersCache.all(applicationContext).isDefaultBrowser)
             mozillaProductDetector.getMozillaBrowserDefault(applicationContext)?.also {
                 defaultMozBrowser.set(it)
-            }
-
-            if (settings.contileContextId.isEmpty()) {
-                settings.contileContextId = TopSites.contextId.generateAndSet().toString()
-            } else {
-                TopSites.contextId.set(UUID.fromString(settings.contileContextId))
             }
 
             mozillaProducts.set(

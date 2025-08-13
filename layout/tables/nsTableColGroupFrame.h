@@ -6,10 +6,10 @@
 #define nsTableColGroupFrame_h__
 
 #include "mozilla/Attributes.h"
-#include "nscore.h"
+#include "mozilla/WritingModes.h"
 #include "nsContainerFrame.h"
 #include "nsTableFrame.h"
-#include "mozilla/WritingModes.h"
+#include "nscore.h"
 
 class nsTableColFrame;
 

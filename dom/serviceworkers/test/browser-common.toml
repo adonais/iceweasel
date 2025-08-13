@@ -40,12 +40,10 @@ skip-if = ["true"]
 ["browser_download.js"]
 
 ["browser_download_canceled.js"]
-skip-if = ["verify"]
 
 ["browser_etp_permission.js"]
 
 ["browser_force_refresh.js"]
-skip-if = ["verify"] # Bug 1603340
 
 ["browser_intercepted_channel_process_swap.js"]
 

@@ -5,8 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/CSSStartingStyleRule.h"
-#include "mozilla/dom/CSSStartingStyleRuleBinding.h"
+
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSStartingStyleRuleBinding.h"
 
 namespace mozilla::dom {
 

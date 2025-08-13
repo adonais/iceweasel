@@ -32,6 +32,13 @@ void NonMemMovableTemplateArgChecker::check(
       Specialization->getTemplateInstantiationArgs();
   for (unsigned i = 0; i < Args.size(); ++i) {
     QualType ArgType = Args[i].getAsType();
+
+    // It's impossible to correctly diagnose incomplete type, so let's be
+    // conservative.
+    if (auto *TD = ArgType->getAsTagDecl(); !TD->isCompleteDefinition()) {
+      continue;
+    }
+
     if (NonMemMovable.hasEffectiveAnnotation(ArgType)) {
       diag(Specialization->getLocation(), Error, DiagnosticIDs::Error)
           << Specialization << ArgType;

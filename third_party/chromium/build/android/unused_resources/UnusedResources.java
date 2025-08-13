@@ -15,7 +15,7 @@
  */
 
 // Modifications are owned by the Chromium Authors.
-// Copyright 2021 The Chromium Authors. All rights reserved.
+// Copyright 2021 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -23,6 +23,7 @@ package build.android.unused_resources;
 
 import static com.android.ide.common.symbols.SymbolIo.readFromAapt;
 import static com.android.utils.SdkUtils.endsWithIgnoreCase;
+
 import static com.google.common.base.Charsets.UTF_8;
 
 import com.android.ide.common.resources.usage.ResourceUsageModel;
@@ -39,8 +40,8 @@ import com.android.tools.r8.ResourceShrinker.Command;
 import com.android.tools.r8.ResourceShrinker.ReferenceChecker;
 import com.android.tools.r8.origin.PathOrigin;
 import com.android.utils.XmlUtils;
+
 import com.google.common.base.Charsets;
-import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
@@ -70,7 +71,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 /**
   Copied with modifications from gradle core source
-  https://android.googlesource.com/platform/tools/base/+/master/build-system/gradle-core/src/main/groovy/com/android/build/gradle/tasks/ResourceUsageAnalyzer.java
+  https://cs.android.com/search?q=f:build-system.*ResourceUsageAnalyzer.java
 
   Modifications are mostly to:
     - Remove unused code paths to reduce complexity.
@@ -195,6 +196,11 @@ public class UnusedResources {
         StringBuilder sb = new StringBuilder();
         Collections.sort(mUnused);
         for (Resource resource : mUnused) {
+            if (resource.type.isSynthetic()) {
+                // Ignore synthetic resources like overlayable or macro that are
+                // not actually listed in the ResourceTable.
+                continue;
+            }
             sb.append(resource.type + "/" + resource.name + "#remove\n");
         }
         Files.asCharSink(destinationFile, UTF_8).write(sb.toString());
@@ -203,6 +209,12 @@ public class UnusedResources {
     private void dumpReferences() {
         if (mDebugPrinter != null) {
             mDebugPrinter.print(mModel.dumpReferences());
+        }
+    }
+
+    private void dumpModel() {
+        if (mDebugPrinter != null) {
+            mDebugPrinter.print(mModel.dumpResourceModel());
         }
     }
 
@@ -251,6 +263,10 @@ public class UnusedResources {
         final String resourceString = ".R$";
         Map<String, String> nameMap = null;
         for (String line : Files.readLines(mapping, UTF_8)) {
+            // Ignore R8's mapping comments.
+            if (line.startsWith("#")) {
+                continue;
+            }
             if (line.startsWith(" ") || line.startsWith("\t")) {
                 if (nameMap != null) {
                     // We're processing the members of a resource class: record names into the map
@@ -297,7 +313,8 @@ public class UnusedResources {
                         || line.startsWith("android.support.v7.widget.ResourcesWrapper ")
                         || (mResourcesWrapper == null // Recently wrapper moved
                                 && line.startsWith(
-                                        "android.support.v7.widget.TintContextWrapper$TintResources "))) {
+                                        "android.support.v7.widget.TintContextWrapper$TintResources"
+                                                + " "))) {
                     mResourcesWrapper =
                             line.substring(line.indexOf(arrowString) + arrowString.length(),
                                         line.indexOf(':') != -1 ? line.indexOf(':') : line.length())
@@ -377,12 +394,19 @@ public class UnusedResources {
         }
     }
 
+    private String stringifyResource(Resource resource) {
+        return String.format("%s:%s:0x%08x", resource.type, resource.name, resource.value);
+    }
+
     private void recordClassUsages(File file, String name, byte[] bytes) {
         assert name.endsWith(DOT_DEX);
         ReferenceChecker callback = new ReferenceChecker() {
             @Override
             public boolean shouldProcess(String internalName) {
-                return !isResourceClass(internalName + DOT_CLASS);
+                // We do not need to ignore R subclasses since R8 now removes
+                // unused resource id fields in R subclasses thus their
+                // remaining presence means real usage.
+                return true;
             }
 
             @Override
@@ -400,6 +424,12 @@ public class UnusedResources {
                 Resource resource = getResourceFromCode(internalName, fieldName);
                 if (resource != null) {
                     ResourceUsageModel.markReachable(resource);
+                    if (mDebugPrinter != null) {
+                        mDebugPrinter.println("Marking " + stringifyResource(resource)
+                                + " reachable: referenced from dex"
+                                + " in " + file + ":" + name + " (static field access "
+                                + internalName + "." + fieldName + ")");
+                    }
                 }
             }
 
@@ -483,6 +513,12 @@ public class UnusedResources {
                         mModel.addResource(symbol.getResourceType(), symbol.getName(), null);
                     }
                 } else {
+                    if (mDebugPrinter != null) {
+                        mDebugPrinter.println("Extracted R.txt resource: "
+                                + symbol.getResourceType() + ":" + symbol.getName() + ":"
+                                + String.format(
+                                        "0x%08x", Integer.parseInt(symbolValue.substring(2), 16)));
+                    }
                     mModel.addResource(symbol.getResourceType(), symbol.getName(), symbolValue);
                 }
             }
@@ -498,8 +534,9 @@ public class UnusedResources {
     private void referencedInt(String context, int value, File file, String currentClass) {
         Resource resource = mModel.getResource(value);
         if (ResourceUsageModel.markReachable(resource) && mDebugPrinter != null) {
-            mDebugPrinter.println("Marking " + resource + " reachable: referenced from " + context
-                    + " in " + file + ":" + currentClass);
+            mDebugPrinter.println("Marking " + stringifyResource(resource)
+                    + " reachable: referenced from " + context + " in " + file + ":"
+                    + currentClass);
         }
     }
 
@@ -524,8 +561,10 @@ public class UnusedResources {
         @Override
         protected void onRootResourcesFound(List<Resource> roots) {
             if (mDebugPrinter != null) {
-                mDebugPrinter.println(
-                        "\nThe root reachable resources are:\n" + Joiner.on(",\n   ").join(roots));
+                mDebugPrinter.println("\nThe root reachable resources are:");
+                for (Resource root : roots) {
+                    mDebugPrinter.println("   " + stringifyResource(root) + ",");
+                }
             }
         }
 
@@ -540,6 +579,12 @@ public class UnusedResources {
         protected void referencedString(String string) {
             // Do nothing
         }
+    }
+
+    private static List<File> parsePathsFromFile(String path) throws IOException {
+        return java.nio.file.Files.readAllLines(new File(path).toPath()).stream()
+                .map(File::new)
+                .collect(Collectors.toList());
     }
 
     public static void main(String[] args) throws Exception {
@@ -558,22 +603,16 @@ public class UnusedResources {
                                         .collect(Collectors.toList());
                     break;
                 case "--dexes":
-                    classes = Arrays.stream(args[i + 1].split(":"))
-                                      .map(s -> new File(s))
-                                      .collect(Collectors.toList());
+                    classes = parsePathsFromFile(args[i + 1]);
                     break;
                 case "--manifests":
-                    manifests = Arrays.stream(args[i + 1].split(":"))
-                                        .map(s -> new File(s))
-                                        .collect(Collectors.toList());
+                    manifests = parsePathsFromFile(args[i + 1]);
                     break;
                 case "--mapping":
                     mapping = new File(args[i + 1]);
                     break;
                 case "--resourceDirs":
-                    resources = Arrays.stream(args[i + 1].split(":"))
-                                        .map(s -> new File(s))
-                                        .collect(Collectors.toList());
+                    resources = parsePathsFromFile(args[i + 1]);
                     break;
                 case "--log":
                     log = new File(args[i + 1]);

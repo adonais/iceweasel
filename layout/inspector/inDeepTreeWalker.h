@@ -8,7 +8,6 @@
 #define __inDeepTreeWalker_h___
 
 #include "inIDeepTreeWalker.h"
-
 #include "nsCOMPtr.h"
 #include "nsINode.h"
 #include "nsTArray.h"

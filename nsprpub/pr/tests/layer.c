@@ -11,7 +11,6 @@
 
 #include "plerror.h"
 #include "plgetopt.h"
-#include "prwin.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -305,7 +304,6 @@ int main(int argc, char** argv) {
     }
   }
   PL_DestroyOptState(opt);
-  PR_STDIO_INIT();
 
   logFile = PR_GetSpecialFD(PR_StandardError);
 

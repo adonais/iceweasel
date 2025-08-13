@@ -8,6 +8,9 @@
 newtab-page-title = New Tab
 newtab-settings-button =
     .title = Customise your New Tab page
+newtab-customize-panel-icon-button =
+    .title = Customise this page
+newtab-customize-panel-icon-button-label = Customise
 newtab-personalize-settings-icon-label =
     .title = Personalise New Tab
     .aria-label = Settings
@@ -501,6 +504,9 @@ newtab-topic-selection-button-pick-interests = Pick your interests
 newtab-section-follow-button = Follow
 newtab-section-following-button = Following
 newtab-section-unfollow-button = Unfollow
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Fine-tune your feed
+newtab-section-follow-highlight-subtitle = Follow your interests to see more of what you like.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -543,6 +549,11 @@ newtab-download-mobile-highlight-body-variant-c = Did you know you can take { -b
 newtab-download-mobile-highlight-image =
     .aria-label = QR code to download { -brand-product-name } for mobile
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Your favourites at your fingertips
+newtab-shortcuts-highlight-subtitle = Add a shortcut to keep your favourite sites one click away.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -576,3 +587,5 @@ newtab-trending-searches-hide-trending =
     .title = Hide trending searches
 newtab-trending-searches-learn-more = Learn more
 newtab-trending-searches-dismiss = Hide trending searches
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Trending searches

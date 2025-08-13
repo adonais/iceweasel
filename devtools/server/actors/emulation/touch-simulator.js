@@ -32,8 +32,6 @@ const EVENTS_TO_HANDLE = [
   "mousedown",
   "mousemove",
   "mouseup",
-  "touchstart",
-  "touchend",
   "mouseenter",
   "mouseover",
   "mouseout",
@@ -121,55 +119,6 @@ class TouchSimulator {
 
     const content = this.getContent(evt.target);
     if (!content) {
-      return;
-    }
-
-    // App touchstart & touchend should also be dispatched on the system app
-    // to match on-device behavior.
-    if (evt.type.startsWith("touch")) {
-      const sysFrame = content.realFrameElement;
-      if (!sysFrame) {
-        return;
-      }
-      const sysDocument = sysFrame.ownerDocument;
-      const sysWindow = sysDocument.defaultView;
-
-      const touchEvent = sysDocument.createEvent("touchevent");
-      const touch = evt.touches[0] || evt.changedTouches[0];
-      const point = sysDocument.createTouch(
-        sysWindow,
-        sysFrame,
-        0,
-        touch.pageX,
-        touch.pageY,
-        touch.screenX,
-        touch.screenY,
-        touch.clientX,
-        touch.clientY,
-        1,
-        1,
-        0,
-        0
-      );
-
-      const touches = sysDocument.createTouchList(point);
-      const targetTouches = touches;
-      const changedTouches = touches;
-      touchEvent.initTouchEvent(
-        evt.type,
-        true,
-        true,
-        sysWindow,
-        0,
-        false,
-        false,
-        false,
-        false,
-        touches,
-        targetTouches,
-        changedTouches
-      );
-      sysFrame.dispatchEvent(touchEvent);
       return;
     }
 

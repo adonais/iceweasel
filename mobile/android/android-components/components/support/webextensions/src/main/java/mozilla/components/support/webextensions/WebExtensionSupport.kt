@@ -46,9 +46,10 @@ import java.util.concurrent.ConcurrentHashMap
  * Function to relay the permission request to the app / user.
  */
 typealias onUpdatePermissionRequest = (
-    current: WebExtension,
-    updated: WebExtension,
+    extension: WebExtension,
     newPermissions: List<String>,
+    newOrigins: List<String>,
+    newDataCollectionPermissions: List<String>,
     onPermissionsGranted: ((Boolean) -> Unit),
 ) -> Unit
 
@@ -175,7 +176,7 @@ object WebExtensionSupport {
         onNewTabOverride: ((WebExtension?, EngineSession, String) -> String)? = null,
         onCloseTabOverride: ((WebExtension?, String) -> Unit)? = null,
         onSelectTabOverride: ((WebExtension?, String) -> Unit)? = null,
-        onUpdatePermissionRequest: onUpdatePermissionRequest? = { _, _, _, _ -> },
+        onUpdatePermissionRequest: onUpdatePermissionRequest? = { _, _, _, _, _ -> },
         onExtensionsLoaded: ((List<WebExtension>) -> Unit)? = null,
     ) {
         this.onUpdatePermissionRequest = onUpdatePermissionRequest
@@ -326,15 +327,17 @@ object WebExtensionSupport {
                 }
 
                 override fun onUpdatePermissionRequest(
-                    current: WebExtension,
-                    updated: WebExtension,
+                    extension: WebExtension,
                     newPermissions: List<String>,
+                    newOrigins: List<String>,
+                    newDataCollectionPermissions: List<String>,
                     onPermissionsGranted: ((Boolean) -> Unit),
                 ) {
                     this@WebExtensionSupport.onUpdatePermissionRequest?.invoke(
-                        current,
-                        updated,
+                        extension,
                         newPermissions,
+                        newOrigins,
+                        newDataCollectionPermissions,
                         onPermissionsGranted,
                     )
                 }
@@ -343,6 +346,7 @@ object WebExtensionSupport {
                     extension: WebExtension,
                     permissions: List<String>,
                     origins: List<String>,
+                    dataCollectionPermissions: List<String>,
                     onPermissionsGranted: ((Boolean) -> Unit),
                 ) {
                     store.dispatch(
@@ -351,6 +355,7 @@ object WebExtensionSupport {
                                 extension,
                                 permissions,
                                 origins,
+                                dataCollectionPermissions,
                                 onPermissionsGranted,
                             ),
                         ),

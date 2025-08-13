@@ -408,6 +408,9 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
       const panelview = win.PanelView.forNode(state.mainPanelview);
       panelview.selectedElement = state.urlInput;
       panelview.focusSelectedElement();
+      Services.focus
+        .getFocusedElementForWindow(win, true, {})
+        ?.setSelectionRange(0, 0);
     });
 
     // Make sure the Okay button is focused when the report sent view pops up.
@@ -443,7 +446,7 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
 
   enableOrDisableMenuitems(selectedbrowser) {
     // Ensures that the various Report Broken Site menu items and
-    // toolbar buttons are disabled when appropriate.
+    // toolbar buttons are enabled/hidden when appropriate.
 
     const canReportUrl = this.canReportURI(selectedbrowser.currentURI);
 
@@ -452,6 +455,14 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
     // Altering the disabled attribute on the command does not propagate
     // the change to the related menuitems (see bug 805653), so we change them all.
     const cmd = document.getElementById("cmd_reportBrokenSite");
+    const allowedByPolicy = Services.policies.isAllowed(
+      "DisableFeedbackCommands"
+    );
+    if (allowedByPolicy) {
+      cmd.setAttribute("hidden", "false"); // see bug 805653
+    } else {
+      cmd.setAttribute("hidden", "true");
+    }
     const app = document.ownerGlobal.PanelMultiView.getViewNode(
       document,
       "appMenu-report-broken-site-button"
@@ -470,11 +481,12 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
       prot?.setAttribute("disabled", "true");
     }
 
-    // Changes to the "disabled" state of the command aren't reliably
+    // Changes to the "hidden" and "disabled" state of the command aren't reliably
     // reflected on the main menu unless we open it twice, or do it manually.
     // (See bug 1864953).
     const mainmenuItem = document.getElementById("help_reportBrokenSite");
     if (mainmenuItem) {
+      mainmenuItem.hidden = !allowedByPolicy;
       mainmenuItem.disabled = !canReportUrl;
     }
   }
@@ -721,9 +733,6 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
     );
     gPrefs.globalPrivacyControlEnabled.set(
       prefs["privacy.globalprivacycontrol.enabled"]
-    );
-    gPrefs.h1InSectionUseragentStylesEnabled.set(
-      prefs["layout.css.h1-in-section-ua-styles.enabled"]
     );
     gPrefs.installtriggerEnabled.set(
       prefs["extensions.InstallTrigger.enabled"]

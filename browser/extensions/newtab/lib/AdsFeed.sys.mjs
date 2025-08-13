@@ -104,12 +104,16 @@ export class AdsFeed {
     });
   }
 
+  isAdsFeedEnabled() {
+    // Check if AdsFeed is enabled
+    return this.store.getState().Prefs.values[PREF_UNIFIED_ADS_ADSFEED_ENABLED];
+  }
+
   isEnabled() {
     this.loaded = true;
 
     // Check if AdsFeed is enabled
-    const adsFeedEnabled =
-      this.store.getState().Prefs.values[PREF_UNIFIED_ADS_ADSFEED_ENABLED];
+    const adsFeedEnabled = this.isAdsFeedEnabled();
 
     if (!adsFeedEnabled) {
       // Exit early as AdsFeed is turned off and shouldn't do anything
@@ -468,11 +472,21 @@ export class AdsFeed {
 
   async onPrefChangedAction(action) {
     switch (action.data.name) {
+      // AdsFeed Feature Prefs
+      // Shortcuts or Stories Enabled/Disabled
       case PREF_UNIFIED_ADS_TILES_ENABLED:
       case PREF_UNIFIED_ADS_SPOCS_ENABLED:
       case PREF_UNIFIED_ADS_ADSFEED_ENABLED:
+      case PREF_FEED_TOPSITES:
+      case PREF_SYSTEM_TOPSITES:
+      case PREF_SYSTEM_TOPSTORIES:
+      case PREF_FEED_SECTION_TOPSTORIES:
+        if (!this.isAdsFeedEnabled()) {
+          // Only act on these prefs if AdsFeed is enabled
+          break;
+        }
+
         // TODO: Should we use the value of these prefs to determine what to do?
-        // AdsFeed Feature Prefs
         if (this.isEnabled()) {
           await this.getAdsData(false);
         } else {
@@ -495,19 +509,6 @@ export class AdsFeed {
           await this.resetAdsFeed();
         }
 
-        break;
-      // Shortcuts or Stories Enabled/Disabled
-      case PREF_FEED_TOPSITES:
-      case PREF_SYSTEM_TOPSITES:
-      case PREF_SYSTEM_TOPSTORIES:
-      case PREF_FEED_SECTION_TOPSTORIES:
-        // TODO: Should we use the value of these prefs to determine what to do?
-        if (this.isEnabled()) {
-          await this.getAdsData(false);
-        } else {
-          await this.deleteUserAdsData();
-          await this.resetAdsFeed();
-        }
         break;
     }
   }

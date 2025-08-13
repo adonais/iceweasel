@@ -6,9 +6,9 @@
 
 #include "nsPagePrintTimer.h"
 
-#include "mozilla/dom/Document.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/Document.h"
 #include "nsPrintJob.h"
 #include "nsPrintObject.h"
 

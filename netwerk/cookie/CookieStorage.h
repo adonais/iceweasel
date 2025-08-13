@@ -136,23 +136,28 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
                  bool aIsThirdParty, dom::BrowsingContext* aBrowsingContext,
                  const nsID* aOperationID = nullptr);
 
-  // return true if we finish within the byte limit
-  bool RemoveCookiesFromBackUntilUnderLimit(
-      nsTArray<CookieListIter>& aCookieListIter, Cookie* aCookie,
-      const nsACString& aBaseDomain, nsCOMPtr<nsIArray>& aPurgedList);
+  uint32_t RemoveOldestCookies(CookieEntry* aEntry, bool aSecure,
+                               uint32_t aBytesToRemove,
+                               nsCOMPtr<nsIArray>& aPurgedList);
+  void RemoveCookiesFromBack(nsTArray<CookieListIter>& aCookieIters,
+                             nsCOMPtr<nsIArray>& aPurgedList);
 
-  void RemoveOlderCookiesUntilUnderLimit(CookieEntry* aEntry, Cookie* aCookie,
-                                         const nsACString& aBaseDomain,
-                                         nsCOMPtr<nsIArray>& aPurgedList);
+  void RemoveOlderCookiesByBytes(CookieEntry* aEntry, uint32_t removeBytes,
+                                 nsCOMPtr<nsIArray>& aPurgedList);
 
-  // prevent excessive purging by using a soft and hard limit
+  // tracks how far over the hard and soft CHIPS limits
+  // we use the hard and soft limit to prevent excessive purging.
   // the soft limit (aka quota) is derived directly from partitionLimitCapacity
-  // pref while the hard limit is 1.2 times the partitionLimitCapacity pref we
-  // use the hard limit to trigger purging and telemetry and when we do purge,
-  // we purge down to the soft limit (quota)
-  int32_t PartitionLimitExceededBytes(Cookie* aCookie,
-                                      const nsACString& aBaseDomain,
-                                      bool aHardMax);
+  // pref while the hard limit is the softLimit * a factor
+  // (kChipsHardLimitFactor). the hard limit is used to trigger purging and when
+  // we do purge, we purge down to the soft limit (quota)
+  struct ChipsLimitExcess {
+    uint32_t hard;
+    uint32_t soft;  // aka quota
+  };
+
+  ChipsLimitExcess PartitionLimitExceededBytes(Cookie* aCookie,
+                                               const nsACString& aBaseDomain);
 
   static void CreateOrUpdatePurgeList(nsCOMPtr<nsIArray>& aPurgedList,
                                       nsICookie* aCookie);

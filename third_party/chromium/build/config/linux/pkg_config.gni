@@ -1,8 +1,9 @@
-# Copyright (c) 2013 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 import("//chromium/build/config/sysroot.gni")
+import("//chromium/build/toolchain/rbe.gni")
 
 # Defines a config specifying the result of running pkg-config for the given
 # packages. Put the package names you want to query in the "packages" variable
@@ -53,9 +54,10 @@ pkg_config_script = "//chromium/build/config/linux/pkg-config.py"
 # need to invoke it manually.
 pkg_config_args = []
 
+common_pkg_config_args = []
 if (sysroot != "") {
   # Pass the sysroot if we're using one (it requires the CPU arch also).
-  pkg_config_args += [
+  common_pkg_config_args += [
     "-s",
     rebase_path(sysroot),
     "-a",
@@ -92,25 +94,28 @@ template("pkg_config") {
          "Variable |packages| must be defined to be a list in pkg_config.")
   config(target_name) {
     if (host_toolchain == current_toolchain) {
-      args = host_pkg_config_args + invoker.packages
+      args = common_pkg_config_args + host_pkg_config_args + invoker.packages
     } else {
-      args = pkg_config_args + invoker.packages
+      args = common_pkg_config_args + pkg_config_args + invoker.packages
     }
     if (defined(invoker.extra_args)) {
       args += invoker.extra_args
     }
 
-    pkgresult = exec_script(pkg_config_script, args, "value")
+    pkgresult = exec_script(pkg_config_script, args, "json")
     cflags = pkgresult[1]
 
     foreach(include, pkgresult[0]) {
-      if (use_sysroot) {
-        # We want the system include paths to use -isystem instead of -I to
-        # suppress warnings in those headers.
+      # We want the system include paths to use -isystem instead of -I to
+      # suppress warnings in those headers.
+      # When building remotely, we make the path relative just as for use_sysroot.
+      # This ensures we are using the header files that match the platform we are
+      # building for.
+      if (use_sysroot || use_remoteexec) {
         include_relativized = rebase_path(include, root_build_dir)
         cflags += [ "-isystem$include_relativized" ]
       } else {
-        cflags += [ "-I$include" ]
+        cflags += [ "-isystem$include" ]
       }
     }
 

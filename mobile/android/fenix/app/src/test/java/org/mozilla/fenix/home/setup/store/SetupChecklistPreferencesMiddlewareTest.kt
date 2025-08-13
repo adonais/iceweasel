@@ -59,11 +59,11 @@ class SetupChecklistPreferencesMiddlewareTest {
                 ChecklistItem.Task.Type.SELECT_THEME,
                 ChecklistItem.Task.Type.CHANGE_TOOLBAR_PLACEMENT,
                 ChecklistItem.Task.Type.EXPLORE_EXTENSION,
+                ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
                 -> assertTrue(repository.setPreferenceInvoked)
 
                 ChecklistItem.Task.Type.SET_AS_DEFAULT,
                 ChecklistItem.Task.Type.SIGN_IN,
-                ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
                 -> assertFalse(repository.setPreferenceInvoked)
             }
         }

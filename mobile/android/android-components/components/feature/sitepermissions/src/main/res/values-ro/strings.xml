@@ -57,4 +57,6 @@
   <string name="mozac_feature_sitepermissions_storage_access_message">Poate doriți să blocați accesul dacă nu este clar de ce %s are nevoie de aceste date.</string>
   <!-- Text for a negative button in the storage access permission request dialog. This button will not give access to this permission. -->
   <string name="mozac_feature_sitepermissions_storage_access_not_allow">Blochează</string>
+  <!-- Clickable text that will open a new tab navigating the user to online documentation about specific features. -->
+  <string name="mozac_feature_sitepermissions_learn_more_title">Află mai multe</string>
 </resources>

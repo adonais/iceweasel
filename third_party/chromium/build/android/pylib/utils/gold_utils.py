@@ -1,4 +1,4 @@
-# Copyright 2020 The Chromium Authors. All rights reserved.
+# Copyright 2020 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 """//build/android implementations of //testing/skia_gold_common.
@@ -8,6 +8,7 @@ Used for interacting with the Skia Gold image diffing service.
 
 import os
 import shutil
+import time
 
 from devil.utils import cmd_helper
 from pylib.base.output_manager import Datatype
@@ -39,6 +40,10 @@ class AndroidSkiaGoldSession(skia_gold_session.SkiaGoldSession):
         diff_path = filepath
     results = self._comparison_results.setdefault(image_name,
                                                   self.ComparisonResults())
+    # We include the timestamp in the PNG filename so that multiple tries from
+    # the same run do not clobber each other.
+    timestamp = _GetTimestamp()
+    image_name = f'{image_name}_{timestamp}'
     if given_path:
       with output_manager.ArchivedTempfile('given_%s.png' % image_name,
                                            'gold_local_diffs',
@@ -65,6 +70,10 @@ class AndroidSkiaGoldSession(skia_gold_session.SkiaGoldSession):
     return rc, stdout
 
 
+def _GetTimestamp():
+  return time.strftime('%Y%m%dT%H%M%S-UTC', time.gmtime())
+
+
 class AndroidSkiaGoldSessionManager(
     skia_gold_session_manager.SkiaGoldSessionManager):
   @staticmethod
@@ -74,5 +83,5 @@ class AndroidSkiaGoldSessionManager(
 
 class AndroidSkiaGoldProperties(skia_gold_properties.SkiaGoldProperties):
   @staticmethod
-  def _GetGitOriginMasterHeadSha1():
-    return repo_utils.GetGitOriginMasterHeadSHA1(host_paths.DIR_SOURCE_ROOT)
+  def _GetGitOriginMainHeadSha1():
+    return repo_utils.GetGitOriginMainHeadSHA1(host_paths.DIR_SOURCE_ROOT)

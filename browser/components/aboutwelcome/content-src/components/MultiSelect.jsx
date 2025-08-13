@@ -99,13 +99,8 @@ export const MultiSelect = ({
   );
 
   const containerStyle = useMemo(
-    () =>
-      AboutWelcomeUtils.getValidStyle(
-        content.tiles.style,
-        MULTI_SELECT_STYLES,
-        true
-      ),
-    [content.tiles.style]
+    () => AboutWelcomeUtils.getTileStyle(content.tiles, MULTI_SELECT_STYLES),
+    [content.tiles]
   );
 
   const PickerIcon = ({ emoji, bgColor, isChecked }) => {

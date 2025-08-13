@@ -218,7 +218,9 @@ class TabsListBase {
           fragment.appendChild(this._createGroupRow(tab.group));
           currentGroupId = tab.group.id;
         }
-        if (!tab.group?.collapsed || this.onlyHiddenTabs) {
+
+        let tabHiddenByGroup = tab.group?.collapsed && !tab.selected;
+        if (!tabHiddenByGroup || this.onlyHiddenTabs) {
           // Don't show tabs in collapsed tab groups in the main tabs list.
           // However, in the hidden tabs lists, do show hidden tabs even if
           // they belong to collapsed tab groups.

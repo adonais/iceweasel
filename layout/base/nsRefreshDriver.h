@@ -12,24 +12,23 @@
 #ifndef nsRefreshDriver_h_
 #define nsRefreshDriver_h_
 
+#include "GeckoProfiler.h"  // for ProfileChunkedBuffer
+#include "LayersTypes.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/FlushType.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RenderingPhase.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
-#include "nsTObserverArray.h"
-#include "nsTArray.h"
-#include "nsTHashSet.h"
+#include "mozilla/layers/TransactionIdAllocator.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
 #include "nsRefreshObservers.h"
+#include "nsTArray.h"
+#include "nsTHashSet.h"
+#include "nsTObserverArray.h"
 #include "nsThreadUtils.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/layers/TransactionIdAllocator.h"
-#include "LayersTypes.h"
-
-#include "GeckoProfiler.h"  // for ProfileChunkedBuffer
 
 class nsPresContext;
 
@@ -131,6 +130,8 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
    */
   void AddImageRequest(imgIRequest* aRequest);
   void RemoveImageRequest(imgIRequest* aRequest);
+  void StartTimerForAnimatedImagesIfNeeded();
+  void StopTimerForAnimatedImagesIfNeeded();
 
   /**
    * Marks that we're currently in the middle of processing user input.
@@ -347,7 +348,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   enum class TickReasons : uint32_t {
     None = 0,
     HasObservers = 1 << 0,
-    HasImageRequests = 1 << 1,
+    HasImageAnimations = 1 << 1,
     HasPendingRenderingSteps = 1 << 2,
     RootNeedsMoreTicksForUserInput = 1 << 3,
   };
@@ -433,7 +434,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   void AppendObserverDescriptionsToString(nsACString& aStr) const;
   // Note: This should only be called in the dtor of nsRefreshDriver.
   uint32_t ObserverCount() const;
-  bool HasImageRequests() const;
+  bool ComputeHasImageAnimations() const;
   bool ShouldKeepTimerRunningWhileWaitingForFirstContentfulPaint();
   bool ShouldKeepTimerRunningAfterPageLoad();
   ObserverArray& ArrayFor(mozilla::FlushType aFlushType);
@@ -536,6 +537,8 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   bool mAttemptedExtraTickSinceLastVsync : 1;
 
   bool mHasExceededAfterLoadTickPeriod : 1;
+
+  bool mHasImageAnimations : 1;
 
   bool mHasStartedTimerAtLeastOnce : 1;
 

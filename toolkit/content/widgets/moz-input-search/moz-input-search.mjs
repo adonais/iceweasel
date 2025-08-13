@@ -63,7 +63,7 @@ export default class MozInputSearch extends MozInputText {
   clear() {
     this.#clearSearchTimer();
     if (this.value) {
-      this.value = "";
+      this.value = this.inputEl.value = "";
       this.#dispatchSearch();
     }
   }

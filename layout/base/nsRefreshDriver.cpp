@@ -18,6 +18,7 @@
  */
 
 #include "nsRefreshDriver.h"
+
 #include "mozilla/DataMutex.h"
 #include "nsThreadUtils.h"
 
@@ -26,84 +27,84 @@
 // mmsystem isn't part of WIN32_LEAN_AND_MEAN, so we have
 // to manually include it
 #  include <mmsystem.h>
+
 #  include "WinUtils.h"
 #endif
 
+#include "GeckoProfiler.h"
+#include "VsyncSource.h"
+#include "imgIContainer.h"
+#include "imgRequest.h"
+#include "jsapi.h"
 #include "mozilla/AnimationEventDispatcher.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/BasePrincipal.h"
-#include "mozilla/dom/MediaQueryList.h"
 #include "mozilla/CycleCollectedJSContext.h"
-#include "mozilla/SMILAnimationController.h"
 #include "mozilla/DisplayPortUtils.h"
 #include "mozilla/Hal.h"
 #include "mozilla/InputTaskManager.h"
 #include "mozilla/IntegerRange.h"
-#include "mozilla/PresShell.h"
-#include "mozilla/VsyncTaskManager.h"
-#include "nsITimer.h"
-#include "nsLayoutUtils.h"
-#include "nsPresContext.h"
-#include "imgRequest.h"
-#include "nsComponentManagerUtils.h"
 #include "mozilla/Logging.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/DocumentTimeline.h"
-#include "mozilla/dom/DocumentInlines.h"
-#include "mozilla/dom/HTMLVideoElement.h"
-#include "nsIXULRuntime.h"
-#include "jsapi.h"
-#include "nsContentUtils.h"
-#include "nsTextFrame.h"
 #include "mozilla/PendingFullscreenEvent.h"
-#include "mozilla/dom/PerformanceMainThread.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/RestyleManager.h"
+#include "mozilla/SMILAnimationController.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_idle_period.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_page_load.h"
-#include "nsViewManager.h"
-#include "GeckoProfiler.h"
+#include "mozilla/TaskController.h"
+#include "mozilla/Unused.h"
+#include "mozilla/VsyncDispatcher.h"
+#include "mozilla/VsyncTaskManager.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/CallbackDebuggerNotification.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/Event.h"
+#include "mozilla/dom/HTMLVideoElement.h"
+#include "mozilla/dom/LargestContentfulPaint.h"
+#include "mozilla/dom/MediaQueryList.h"
 #include "mozilla/dom/Performance.h"
+#include "mozilla/dom/PerformanceMainThread.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/VsyncMainChild.h"
 #include "mozilla/dom/WindowBinding.h"
-#include "mozilla/dom/LargestContentfulPaint.h"
-#include "mozilla/layers/WebRenderLayerManager.h"
-#include "mozilla/RestyleManager.h"
-#include "mozilla/TaskController.h"
-#include "imgIContainer.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "nsDocShell.h"
-#include "nsISimpleEnumerator.h"
-#include "nsJSEnvironment.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/glean/LayoutMetrics.h"
-
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
-#include "VsyncSource.h"
-#include "mozilla/VsyncDispatcher.h"
-#include "mozilla/Unused.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
 #include "nsAnimationManager.h"
-#include "nsDisplayList.h"
+#include "nsComponentManagerUtils.h"
+#include "nsContentUtils.h"
 #include "nsDOMNavigationTiming.h"
+#include "nsDisplayList.h"
+#include "nsDocShell.h"
+#include "nsISimpleEnumerator.h"
+#include "nsITimer.h"
+#include "nsIXULRuntime.h"
+#include "nsJSEnvironment.h"
+#include "nsLayoutUtils.h"
+#include "nsPresContext.h"
+#include "nsTextFrame.h"
 #include "nsTransitionManager.h"
+#include "nsViewManager.h"
 
 #if defined(MOZ_WIDGET_ANDROID)
 #  include "VRManagerChild.h"
 #endif  // defined(MOZ_WIDGET_ANDROID)
 
-#include "nsXULPopupManager.h"
-
 #include <numeric>
+
+#include "nsXULPopupManager.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;
@@ -1435,6 +1436,7 @@ nsRefreshDriver::nsRefreshDriver(nsPresContext* aPresContext)
       mInNormalTick(false),
       mAttemptedExtraTickSinceLastVsync(false),
       mHasExceededAfterLoadTickPeriod(false),
+      mHasImageAnimations(false),
       mHasStartedTimerAtLeastOnce(false) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mPresContext,
@@ -1558,6 +1560,24 @@ void nsRefreshDriver::RemovePostRefreshObserver(
   Unused << removed;
 }
 
+void nsRefreshDriver::StartTimerForAnimatedImagesIfNeeded() {
+  if (mHasImageAnimations) {
+    return;
+  }
+  mHasImageAnimations = ComputeHasImageAnimations();
+  if (!mHasImageAnimations || mThrottled) {
+    return;
+  }
+  EnsureTimerStarted();
+}
+
+void nsRefreshDriver::StopTimerForAnimatedImagesIfNeeded() {
+  if (!mHasImageAnimations) {
+    return;
+  }
+  mHasImageAnimations = ComputeHasImageAnimations();
+}
+
 void nsRefreshDriver::AddImageRequest(imgIRequest* aRequest) {
   uint32_t delay = GetFirstFrameDelay(aRequest);
   if (delay == 0) {
@@ -1567,8 +1587,7 @@ void nsRefreshDriver::AddImageRequest(imgIRequest* aRequest) {
     start->mEntries.Insert(aRequest);
   }
 
-  EnsureTimerStarted();
-
+  StartTimerForAnimatedImagesIfNeeded();
   if (profiler_thread_is_being_profiled_for_markers()) {
     nsCOMPtr<nsIURI> uri = aRequest->GetURI();
 
@@ -1587,13 +1606,17 @@ void nsRefreshDriver::RemoveImageRequest(imgIRequest* aRequest) {
   if (delay != 0) {
     ImageStartData* start = mStartTable.Get(delay);
     if (start) {
-      removed = removed | start->mEntries.EnsureRemoved(aRequest);
+      removed |= start->mEntries.EnsureRemoved(aRequest);
     }
   }
 
-  if (removed && profiler_thread_is_being_profiled_for_markers()) {
-    nsCOMPtr<nsIURI> uri = aRequest->GetURI();
+  if (!removed) {
+    return;
+  }
 
+  StopTimerForAnimatedImagesIfNeeded();
+  if (profiler_thread_is_being_profiled_for_markers()) {
+    nsCOMPtr<nsIURI> uri = aRequest->GetURI();
     PROFILER_MARKER_TEXT("Image Animation", GRAPHICS,
                          MarkerOptions(MarkerTiming::IntervalEnd(),
                                        MarkerInnerWindowIdFromDocShell(
@@ -1850,14 +1873,20 @@ void nsRefreshDriver::AppendObserverDescriptionsToString(
   aStr.Truncate(aStr.Length() - 2);
 }
 
-bool nsRefreshDriver::HasImageRequests() const {
+bool nsRefreshDriver::ComputeHasImageAnimations() const {
   for (const auto& data : mStartTable.Values()) {
     if (!data->mEntries.IsEmpty()) {
       return true;
     }
   }
 
-  return !mRequests.IsEmpty();
+  for (const auto& entry : mRequests) {
+    if (entry->GetHasAnimationConsumers()) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 auto nsRefreshDriver::GetReasonsToTick() const -> TickReasons {
@@ -1865,8 +1894,8 @@ auto nsRefreshDriver::GetReasonsToTick() const -> TickReasons {
   if (HasObservers()) {
     reasons |= TickReasons::HasObservers;
   }
-  if (HasImageRequests() && !mThrottled) {
-    reasons |= TickReasons::HasImageRequests;
+  if (mHasImageAnimations && !mThrottled) {
+    reasons |= TickReasons::HasImageAnimations;
   }
   if (!mRenderingPhasesNeeded.isEmpty()) {
     reasons |= TickReasons::HasPendingRenderingSteps;
@@ -1890,7 +1919,7 @@ void nsRefreshDriver::AppendTickReasonsToString(TickReasons aReasons,
     AppendObserverDescriptionsToString(aStr);
     aStr.AppendLiteral(")");
   }
-  if (aReasons & TickReasons::HasImageRequests) {
+  if (aReasons & TickReasons::HasImageAnimations) {
     aStr.AppendLiteral(" HasImageAnimations");
   }
   if (aReasons & TickReasons::HasPendingRenderingSteps) {
@@ -2611,7 +2640,7 @@ bool nsRefreshDriver::PaintIfNeeded() {
 
 void nsRefreshDriver::UpdateAnimatedImages(TimeStamp aPreviousRefresh,
                                            TimeStamp aNowTime) {
-  if (mThrottled) {
+  if (!mHasImageAnimations || mThrottled) {
     // Don't do this when throttled, as the compositor might be paused and we
     // don't want to queue a lot of paints, see bug 1828587.
     return;

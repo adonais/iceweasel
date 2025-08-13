@@ -27,7 +27,6 @@ tags = "fullscreen"
 ["browser_1096763_seen_widgets_post_reset.js"]
 
 ["browser_1161838_inserted_new_default_buttons.js"]
-skip-if = ["verify"]
 
 ["browser_1484275_PanelMultiView_toggle_with_other_popup.js"]
 
@@ -60,15 +59,16 @@ skip-if = [
 ["browser_877447_skip_missing_ids.js"]
 
 ["browser_878452_drag_to_panel.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1961559
-]
+skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64'"] # Bug 1961559
 
 ["browser_884402_customize_from_overflow.js"]
 tags = "overflowable-toolbar"
 
 ["browser_885052_customize_mode_observers_disabed.js"]
 tags = "fullscreen"
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64'", # Bug 1781368
+]
 
 ["browser_885530_showInPrivateBrowsing.js"]
 
@@ -93,7 +93,8 @@ tags = "overflowable-toolbar"
 tags = "overflowable-toolbar"
 skip-if = [
   "os == 'linux'",
-  "devedition"]
+  "devedition",
+]
 
 ["browser_918049_skipintoolbarset_dnd.js"]
 
@@ -114,12 +115,10 @@ run-if = ["os != 'mac'"] # Because this test is about the menubar, it can't be r
 ["browser_940013_registerToolbarNode_calls_registerArea.js"]
 
 ["browser_940307_panel_click_closure_handling.js"]
-skip-if = ["verify && debug && os == 'linux'"]
 
 ["browser_940946_removable_from_navbar_customizemode.js"]
 
 ["browser_941083_invalidate_wrapper_cache_createWidget.js"]
-skip-if = ["verify"]
 
 ["browser_942581_unregisterArea_keeps_placements.js"]
 
@@ -151,8 +150,10 @@ support-files = ["dummy_history_item.html"]
 
 ["browser_947914_button_zoomReset.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && socketprocess_networking",
+  "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1775671
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && debug && socketprocess_networking", # Bug 1775671
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt",
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && debug", # Bug 1775671
 ]
 
 ["browser_947987_removable_default.js"]
@@ -160,7 +161,6 @@ skip-if = [
 ["browser_948985_non_removable_defaultArea.js"]
 
 ["browser_952963_areaType_getter_no_area.js"]
-skip-if = ["verify"]
 
 ["browser_956602_remove_special_widget.js"]
 
@@ -177,7 +177,6 @@ skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt"] #
 ["browser_969661_character_encoding_navbar_disabled.js"]
 
 ["browser_970511_undo_restore_default.js"]
-skip-if = ["verify"]
 
 ["browser_972267_customizationchange_events.js"]
 
@@ -186,16 +185,13 @@ tags = "overflowable-toolbar"
 skip-if = ["os == 'linux'"]
 
 ["browser_978084_dragEnd_after_move.js"]
-skip-if = ["verify"]
 
 ["browser_980155_add_overflow_toolbar.js"]
 tags = "overflowable-toolbar"
-skip-if = ["verify"]
 
 ["browser_981305_separator_insertion.js"]
 
 ["browser_981418-widget-onbeforecreated-handler.js"]
-skip-if = ["verify"]
 
 ["browser_982656_restore_defaults_builtin_widgets.js"]
 
@@ -204,7 +200,6 @@ skip-if = ["verify"]
 ["browser_985815_propagate_setToolbarVisibility.js"]
 
 ["browser_987177_destroyWidget_xul.js"]
-skip-if = ["verify"]
 
 ["browser_987177_xul_wrapper_updating.js"]
 
@@ -219,7 +214,6 @@ skip-if = ["verify"]
 ["browser_992747_toggle_noncustomizable_toolbar.js"]
 
 ["browser_993322_widget_notoolbar.js"]
-skip-if = ["verify"]
 
 ["browser_995164_registerArea_during_customize_mode.js"]
 
@@ -303,7 +297,6 @@ run-if = ["os != 'mac'"] # no toggle-able menubar on macOS.
 
 ["browser_overflow_use_subviews.js"]
 tags = "overflowable-toolbar"
-skip-if = ["verify"]
 
 ["browser_palette_labels.js"]
 
@@ -316,7 +309,6 @@ tags = "fullscreen"
 run-if = ["os != 'mac'"]
 
 ["browser_panelUINotifications_fullscreen_noAutoHideToolbar.js"]
-skip-if = ["verify && (os == 'linux' || os == 'mac')"]
 tags = "fullscreen"
 
 ["browser_panelUINotifications_modals.js"]
@@ -343,7 +335,6 @@ tags = "fullscreen"
 skip-if = ["true"] # Bug 1968817, test depends on the Pocket toolbar icon which no longer exists.
 
 ["browser_remote_tabs_button.js"]
-skip-if = ["(verify && debug && (os == 'linux' || os == 'mac'))"]
 
 ["browser_remove_customized_specials.js"]
 
@@ -362,7 +353,6 @@ skip-if = ["(verify && debug && (os == 'linux' || os == 'mac'))"]
 ["browser_sidebar_position_start.js"]
 
 ["browser_sidebar_toggle.js"]
-skip-if = ["verify"]
 
 ["browser_switch_to_customize_mode.js"]
 
@@ -387,6 +377,4 @@ skip-if = [
 skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt"] # Bug 1961548
 
 ["browser_widget_recreate_events.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1961546
-]
+skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt"] # Bug 1961546

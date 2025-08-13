@@ -49,6 +49,7 @@ pub struct LinearGradientKey {
     pub cached: bool,
     pub nine_patch: Option<Box<NinePatchDescriptor>>,
     pub edge_aa_mask: EdgeAaSegmentMask,
+    pub enable_dithering: bool,
 }
 
 impl LinearGradientKey {
@@ -68,6 +69,7 @@ impl LinearGradientKey {
             cached: linear_grad.cached,
             nine_patch: linear_grad.nine_patch,
             edge_aa_mask: linear_grad.edge_aa_mask,
+            enable_dithering: linear_grad.enable_dithering,
         }
     }
 }
@@ -361,8 +363,10 @@ impl From<LinearGradientKey> for LinearGradientTemplate {
         let stretch_size: LayoutSize = item.stretch_size.into();
         let mut task_size: DeviceSize = stretch_size.cast_unit();
 
-        let horizontal = start_point.y.approx_eq(&end_point.y);
-        let vertical = start_point.x.approx_eq(&end_point.x);
+        let horizontal = !item.enable_dithering &&
+            start_point.y.approx_eq(&end_point.y);
+        let vertical = !item.enable_dithering &&
+            start_point.x.approx_eq(&end_point.x);
 
         if horizontal {
             // Completely horizontal, we can stretch the gradient vertically.
@@ -595,6 +599,7 @@ pub struct LinearGradient {
     pub nine_patch: Option<Box<NinePatchDescriptor>>,
     pub cached: bool,
     pub edge_aa_mask: EdgeAaSegmentMask,
+    pub enable_dithering: bool,
 }
 
 impl Internable for LinearGradient {

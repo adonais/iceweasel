@@ -35,21 +35,13 @@ add_task(async function test_skip_terms_of_use_timestamp_set() {
   const endTime = Date.now();
 
   Assert.greater(
-    parseInt(
-      Services.prefs.getStringPref(
-        "datareporting.policy.dataSubmissionPolicyNotifiedTime"
-      )
-    ),
+    parseInt(Services.prefs.getStringPref("termsofuse.acceptedDate")),
     startTime,
-    "Policy notified time is greater than start time."
+    "Terms of use accepted date is greater than start time."
   );
   Assert.greaterOrEqual(
     endTime,
-    parseInt(
-      Services.prefs.getStringPref(
-        "datareporting.policy.dataSubmissionPolicyNotifiedTime"
-      )
-    ),
-    "Policy notified time is less than or equal to end time."
+    parseInt(Services.prefs.getStringPref("termsofuse.acceptedDate")),
+    "Terms of use accepted date is less than or equal to end time."
   );
 });

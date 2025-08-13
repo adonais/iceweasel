@@ -107,16 +107,19 @@ export class ProxyPerUserContextManager {
 
       if (proxyInfo.proxyType === lazy.ProxyTypes.Manual) {
         const channelURI = channel.originalURI;
-        if (
-          proxyInfo.noProxy?.length &&
-          proxyInfo.noProxy.includes(channelURI.host)
-        ) {
-          proxyFilter.onProxyFilterResult(defaultProxyInfo);
+        for (const url of proxyInfo.noProxy ?? []) {
+          if (
+            (url.startsWith(".") && channelURI.host.endsWith(url)) ||
+            (!url.startsWith(".") && channelURI.host === url)
+          ) {
+            proxyFilter.onProxyFilterResult(defaultProxyInfo);
 
-          return;
+            // If at least one element from noProxy matches the channel URL no need to check further.
+            return;
+          }
         }
 
-        if (channelURI.schemeIs("http") && proxyInfo.httpProxy) {
+        if (proxyInfo.httpProxy) {
           this.#addProxyFilter(proxyFilter, {
             host: proxyInfo.httpProxy,
             port: proxyInfo.httpProxyPort,
@@ -124,7 +127,7 @@ export class ProxyPerUserContextManager {
           });
         }
 
-        if (channelURI.schemeIs("https") && proxyInfo.sslProxy) {
+        if (proxyInfo.sslProxy) {
           this.#addProxyFilter(proxyFilter, {
             host: proxyInfo.sslProxy,
             port: proxyInfo.sslProxyPort,
@@ -132,7 +135,7 @@ export class ProxyPerUserContextManager {
           });
         }
 
-        if (channelURI.schemeIs(undefined) && proxyInfo.socksProxy) {
+        if (proxyInfo.socksProxy) {
           this.#addProxyFilter(proxyFilter, {
             host: proxyInfo.socksProxy,
             port: proxyInfo.socksProxyPort,

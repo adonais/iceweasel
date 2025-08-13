@@ -16,16 +16,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Card
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Text
-import androidx.compose.material.ripple
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -46,12 +48,9 @@ import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.support.base.utils.MAX_URI_LENGTH
 import mozilla.components.ui.colors.PhotonColors
-import org.mozilla.fenix.FeatureFlags
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.DismissibleItemBackground
-import org.mozilla.fenix.compose.SwipeToDismissBox
 import org.mozilla.fenix.compose.SwipeToDismissBox2
-import org.mozilla.fenix.compose.SwipeToDismissState
 import org.mozilla.fenix.compose.SwipeToDismissState2
 import org.mozilla.fenix.compose.TabThumbnail
 import org.mozilla.fenix.ext.toShortUrl
@@ -96,75 +95,39 @@ fun TabListItem(
     val density = LocalDensity.current
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
-    if (FeatureFlags.SWIPE_TO_DISMISS_2) {
-        val swipeState = remember(multiSelectionEnabled, swipingEnabled) {
-            SwipeToDismissState2(
-                density = density,
-                enabled = !multiSelectionEnabled && swipingEnabled,
-                decayAnimationSpec = decayAnimationSpec,
-                isRtl = isRtl,
-            )
-        }
+    val swipeState = remember(multiSelectionEnabled, swipingEnabled) {
+        SwipeToDismissState2(
+            density = density,
+            enabled = !multiSelectionEnabled && swipingEnabled,
+            decayAnimationSpec = decayAnimationSpec,
+            isRtl = isRtl,
+        )
+    }
 
-        SwipeToDismissBox2(
-            state = swipeState,
-            onItemDismiss = {
-                onCloseClick(tab)
-            },
-            backgroundContent = {
-                DismissibleItemBackground(
-                    isSwipeActive = swipeState.swipingActive,
-                    isSwipingToStart = swipeState.isSwipingToStart,
-                )
-            },
-        ) {
-            TabContent(
-                tab = tab,
-                thumbnailSize = thumbnailSize,
-                isSelected = isSelected,
-                multiSelectionEnabled = multiSelectionEnabled,
-                multiSelectionSelected = multiSelectionSelected,
-                shouldClickListen = shouldClickListen,
-                onCloseClick = onCloseClick,
-                onMediaClick = onMediaClick,
-                onClick = onClick,
-                onLongClick = onLongClick,
+    SwipeToDismissBox2(
+        state = swipeState,
+        onItemDismiss = {
+            onCloseClick(tab)
+        },
+        backgroundContent = {
+            DismissibleItemBackground(
+                isSwipeActive = swipeState.swipingActive,
+                isSwipingToStart = swipeState.swipingActive && swipeState.isSwipingToStart,
             )
-        }
-    } else {
-        val swipeState = remember(multiSelectionEnabled, swipingEnabled) {
-            SwipeToDismissState(
-                density = density,
-                enabled = !multiSelectionEnabled && swipingEnabled,
-                decayAnimationSpec = decayAnimationSpec,
-            )
-        }
-
-        SwipeToDismissBox(
-            state = swipeState,
-            onItemDismiss = {
-                onCloseClick(tab)
-            },
-            backgroundContent = {
-                DismissibleItemBackground(
-                    isSwipeActive = swipeState.swipingActive,
-                    isSwipingToStart = swipeState.isSwipingToStart,
-                )
-            },
-        ) {
-            TabContent(
-                tab = tab,
-                thumbnailSize = thumbnailSize,
-                isSelected = isSelected,
-                multiSelectionEnabled = multiSelectionEnabled,
-                multiSelectionSelected = multiSelectionSelected,
-                shouldClickListen = shouldClickListen,
-                onCloseClick = onCloseClick,
-                onMediaClick = onMediaClick,
-                onClick = onClick,
-                onLongClick = onLongClick,
-            )
-        }
+        },
+    ) {
+        TabContent(
+            tab = tab,
+            thumbnailSize = thumbnailSize,
+            isSelected = isSelected,
+            multiSelectionEnabled = multiSelectionEnabled,
+            multiSelectionSelected = multiSelectionSelected,
+            shouldClickListen = shouldClickListen,
+            onCloseClick = onCloseClick,
+            onMediaClick = onMediaClick,
+            onClick = onClick,
+            onLongClick = onLongClick,
+        )
     }
 }
 
@@ -317,12 +280,12 @@ private fun Thumbnail(
                     .size(size = 40.dp)
                     .align(alignment = Alignment.Center),
                 shape = CircleShape,
-                backgroundColor = FirefoxTheme.colors.layerAccent,
+                colors = CardDefaults.cardColors(containerColor = FirefoxTheme.colors.layerAccent),
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.mozac_ic_checkmark_24),
                     modifier = Modifier
-                        .matchParentSize()
+                        .fillMaxSize()
                         .padding(all = 8.dp),
                     contentDescription = null,
                     tint = FirefoxTheme.colors.iconActionPrimary,

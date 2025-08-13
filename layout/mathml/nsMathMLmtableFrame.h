@@ -9,11 +9,11 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
-#include "nsMathMLContainerFrame.h"
 #include "nsBlockFrame.h"
-#include "nsTableWrapperFrame.h"
-#include "nsTableRowFrame.h"
+#include "nsMathMLContainerFrame.h"
 #include "nsTableCellFrame.h"
+#include "nsTableRowFrame.h"
+#include "nsTableWrapperFrame.h"
 
 namespace mozilla {
 class nsDisplayListBuilder;

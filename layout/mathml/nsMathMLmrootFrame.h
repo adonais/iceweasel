@@ -8,8 +8,8 @@
 #define nsMathMLmrootFrame_h___
 
 #include "mozilla/Attributes.h"
-#include "nsMathMLContainerFrame.h"
 #include "nsMathMLChar.h"
+#include "nsMathMLContainerFrame.h"
 
 namespace mozilla {
 class PresShell;

@@ -6,10 +6,12 @@
 
 // Main header first:
 #include "SVGGradientFrame.h"
+
 #include <algorithm>
 
 // Keep others in (case-insensitive) order:
 #include "AutoReferenceChainGuard.h"
+#include "SVGAnimatedTransformList.h"
 #include "gfxPattern.h"
 #include "gfxUtils.h"
 #include "mozilla/PresShell.h"
@@ -20,7 +22,6 @@
 #include "mozilla/dom/SVGStopElement.h"
 #include "mozilla/dom/SVGUnitTypesBinding.h"
 #include "nsContentUtils.h"
-#include "SVGAnimatedTransformList.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::dom::SVGGradientElement_Binding;

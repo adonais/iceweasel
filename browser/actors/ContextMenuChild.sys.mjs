@@ -309,22 +309,9 @@ export class ContextMenuChild extends JSWindowActorChild {
       }
 
       case "ContextMenu:GetTextDirective": {
-        if (this.contentWindow?.getSelection().rangeCount) {
-          const textDirectives = [];
-          for (
-            let rangeIndex = 0;
-            rangeIndex < this.contentWindow.getSelection().rangeCount;
-            rangeIndex++
-          ) {
-            textDirectives.push(
-              this.contentWindow.document?.fragmentDirective.createTextDirective(
-                this.contentWindow.getSelection().getRangeAt(rangeIndex)
-              )
-            );
-          }
-          return Promise.all(textDirectives).then(directives => {
-            const validDirectives = directives.filter(d => d);
-            const textFragment = validDirectives.join("&");
+        return this.contentWindow.document?.fragmentDirective
+          .createTextDirectiveForSelection()
+          .then(textFragment => {
             if (textFragment) {
               let url = URL.parse(this.contentWindow.location);
               url.hash += `:~:${textFragment}`;
@@ -332,8 +319,6 @@ export class ContextMenuChild extends JSWindowActorChild {
             }
             return null;
           });
-        }
-        return null;
       }
       case "ContextMenu:RemoveAllTextFragments": {
         this.contentWindow?.document?.fragmentDirective.removeAllTextDirectives();
@@ -933,7 +918,9 @@ export class ContextMenuChild extends JSWindowActorChild {
     context.target = node;
     context.targetIdentifier = lazy.ContentDOMReference.get(node);
 
-    context.csp = lazy.E10SUtils.serializeCSP(context.target.ownerDocument.csp);
+    context.policyContainer = lazy.E10SUtils.serializePolicyContainer(
+      context.target.ownerDocument.policyContainer
+    );
 
     // Check if we are in the PDF Viewer.
     context.inPDFViewer =

@@ -813,7 +813,7 @@ static bool TryToAlignChunk(void** aRegion, void** aRetainedRegion,
       auto* lowerStart =
           reinterpret_cast<void*>(uintptr_t(regionStart) - offsetLower);
       auto* lowerEnd = reinterpret_cast<void*>(uintptr_t(lowerStart) + length);
-      if (MapMemoryAt(lowerStart, offsetLower)) {
+      if (lowerStart && MapMemoryAt(lowerStart, offsetLower)) {
         UnmapInternal(lowerEnd, offsetLower);
         if (directionUncertain) {
           --growthDirection;

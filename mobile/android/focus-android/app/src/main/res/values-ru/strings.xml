@@ -150,6 +150,8 @@
     %2$s is the url for the learn-more link.
   -->
   <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s даёт вам контроль.</p> <p>Используйте его как приватный браузер: <ul> <li>Ищите и просматривайте сеть</li> <li>Блокируйте трекеры (или измените настройки, чтобы разрешить их)</li> <li>Стирайте и удаляйте куки, историю поиска и просмотра</li> </ul> </p> <p>%1$s создан Mozilla. Наша миссия способствовать здоровому, открытому Интернету.<br/> <a href=\"%2$s\">Узнать больше</a></p>]]></string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">Подробнее</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">Приватность и защита</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -486,8 +488,6 @@
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
   <string name="onboarding_first_screen_privacy_notice_link_2">Политика приватности</string>
   <!-- New Onboarding flow first screen button label -->
-  <string name="onboarding_first_screen_button_agree_and_continue" moz:removedIn="140" tools:ignore="UnusedResources">Согласиться и продолжить</string>
-  <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue_2">Продолжить</string>
   <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
   <string name="a11y_link_available">Ссылка доступна</string>
@@ -707,19 +707,7 @@
   <!-- Preference summary for block autoplay audio only -->
   <string name="preference_block_autoplay_audio_only_summary">Желательно</string>
   <!-- Preference for block autoplay audio and video -->
-  <string name="preference_block_autoplay_audio_video">Блокировать звуки и видео</string>
-  <!-- Preference for studies -->
-  <string name="preference_studies" moz:removedIn="140">Исследования</string>
-  <!-- Preference for studies summary -->
-  <string name="preference_studies_summary" tools:ignore="BrandUsage" moz:removedIn="140">Firefox может время от времени устанавливать и проводить исследования.</string>
-  <!-- Learn more link for studies, links to an article for more information about studies. -->
-  <string name="studies_learn_more" moz:removedIn="140">Подробнее</string>
-  <!-- Title of the remove studies button -->
-  <string name="studies_remove" moz:removedIn="140">Удалить</string>
-  <!-- Title of the active section on the studies list -->
-  <string name="studies_active" moz:removedIn="140">Активно</string>
-  <!-- Title of the completed section on the studies list -->
-  <string name="studies_completed" moz:removedIn="140">Завершено</string>
+  <string name="preference_block_autoplay_audio_video">Блокировать звук и видео</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">Удалённая отладка через USB/Wi-Fi</string>
   <!-- Text Button for show biometric prompt -->

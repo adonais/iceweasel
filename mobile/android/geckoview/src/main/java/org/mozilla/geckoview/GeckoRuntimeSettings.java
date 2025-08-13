@@ -369,6 +369,18 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     }
 
     /**
+     * Set whether the user wants to disable the CrashPullController.Delegate from showing the
+     * notification requesting crash pull.
+     *
+     * @param enabled A flag determining whether the notification should be shown.
+     * @return The Builder instance.
+     */
+    public @NonNull Builder crashPullNeverShowAgain(final boolean enabled) {
+      getSettings().mRemoteSettingCrashPullNeverShowAgain.set(enabled);
+      return this;
+    }
+
+    /**
      * Sets whether Session History in Parent (SHIP) should be disabled or not.
      *
      * @param value A flag determining whether SHIP should be disabled or not.
@@ -702,7 +714,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new PrefWithoutDefault<>("network.trr.excluded-domains");
   /* package */ final PrefWithoutDefault<Integer> mLargeKeepalivefactor =
       new PrefWithoutDefault<>("network.http.largeKeepaliveFactor");
-  /* package */ final Pref<Integer> mProcessCount = new Pref<>("dom.ipc.processCount", 4);
+  /* package */ final Pref<Integer> mProcessCount = new Pref<>("dom.ipc.processCount", 2);
   /* package */ final Pref<Boolean> mExtensionsWebAPIEnabled =
       new Pref<>("extensions.webapi.enabled", false);
   /* package */ final PrefWithoutDefault<Boolean> mExtensionsProcess =
@@ -756,6 +768,9 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
           "docshell.shistory.sameDocumentNavigationOverridesLoadType.forceDisable", "");
   /* package */ final Pref<String> mBannedPorts =
       new Pref<String>("network.security.ports.banned", "");
+  /* package */ final PrefWithoutDefault<Boolean> mRemoteSettingCrashPullNeverShowAgain =
+      new PrefWithoutDefault<Boolean>("browser.crashReports.requestedNeverShowAgain");
+
   /* package */ int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
   /* package */ boolean mForceEnableAccessibility;
@@ -1046,6 +1061,19 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   public @NonNull GeckoRuntimeSettings setCookieBehaviorOptInPartitioningPBM(
       final boolean enabled) {
     mCookieBehaviorOptInPartitioningPBM.commit(enabled);
+    return this;
+  }
+
+  /**
+   * Set the pref to control whether the CrashPullController.Delegate may show the crash pull
+   * notification.
+   *
+   * @param enabled Whether we set the pref to true or false
+   * @return This GeckoRuntimeSettings instance
+   */
+  public @NonNull GeckoRuntimeSettings setRemoteSettingCrashPullNeverShowAgain(
+      final boolean enabled) {
+    mRemoteSettingCrashPullNeverShowAgain.commit(enabled);
     return this;
   }
 

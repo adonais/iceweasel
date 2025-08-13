@@ -248,6 +248,7 @@ impl Wrench {
 
         let mut debug_flags = DebugFlags::ECHO_DRIVER_MESSAGES;
         debug_flags.set(DebugFlags::DISABLE_BATCHING, no_batch);
+        debug_flags.set(DebugFlags::MISSING_SNAPSHOT_PINK, true);
         let callbacks = Arc::new(Mutex::new(blob::BlobCallbacks::new()));
 
         let precache_flags = if precache_shaders {
@@ -587,7 +588,8 @@ impl Wrench {
                     txn.set_scroll_offsets(*id, offsets.clone());
                 }
 
-                txn.generate_frame(0, present, RenderReasons::TESTING);
+                let tracked = false;
+                txn.generate_frame(0, present, tracked, RenderReasons::TESTING);
                 self.api.send_transaction(self.document_id, txn);
                 txn = Transaction::new();
 
@@ -617,7 +619,9 @@ impl Wrench {
     pub fn refresh(&mut self) {
         self.begin_frame();
         let mut txn = Transaction::new();
-        txn.generate_frame(0, true, RenderReasons::TESTING);
+        let present = true;
+        let tracked = false;
+        txn.generate_frame(0, present, tracked, RenderReasons::TESTING);
         self.api.send_transaction(self.document_id, txn);
     }
 

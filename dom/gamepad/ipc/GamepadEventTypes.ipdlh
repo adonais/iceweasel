@@ -18,7 +18,6 @@ struct GamepadAdded {
   nsString id;
   GamepadMappingType mapping;
   GamepadHand hand;
-  uint32_t display_id;
   uint32_t num_buttons;
   uint32_t num_axes;
   uint32_t num_haptics;

@@ -35,9 +35,7 @@ void ShaderModule::Cleanup() {
     return;
   }
 
-  if (bridge->CanSend()) {
-    bridge->SendShaderModuleDrop(mId);
-  }
+  ffi::wgpu_client_drop_shader_module(bridge->GetClient(), mId);
 
   wgpu_client_free_shader_module_id(bridge->GetClient(), mId);
 }

@@ -486,8 +486,6 @@
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
   <string name="onboarding_first_screen_privacy_notice_link_2">Hysbysiad Preifatrwydd</string>
   <!-- New Onboarding flow first screen button label -->
-  <string name="onboarding_first_screen_button_agree_and_continue" moz:removedIn="140" tools:ignore="UnusedResources">Cytuno a pharhau</string>
-  <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue_2">Parhau</string>
   <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
   <string name="a11y_link_available">Dolen ar gael</string>
@@ -708,18 +706,6 @@
   <string name="preference_block_autoplay_audio_only_summary">Cymeradwy</string>
   <!-- Preference for block autoplay audio and video -->
   <string name="preference_block_autoplay_audio_video">Rhwystro sain a fideo</string>
-  <!-- Preference for studies -->
-  <string name="preference_studies" moz:removedIn="140">Astudiaethau</string>
-  <!-- Preference for studies summary -->
-  <string name="preference_studies_summary" tools:ignore="BrandUsage" moz:removedIn="140">Efallai y bydd Firefox yn gosod a rhedeg astudiaethau o bryd i’w gilydd.</string>
-  <!-- Learn more link for studies, links to an article for more information about studies. -->
-  <string name="studies_learn_more" moz:removedIn="140">Darllen rhagor</string>
-  <!-- Title of the remove studies button -->
-  <string name="studies_remove" moz:removedIn="140">Tynnu</string>
-  <!-- Title of the active section on the studies list -->
-  <string name="studies_active" moz:removedIn="140">Gweithredol</string>
-  <!-- Title of the completed section on the studies list -->
-  <string name="studies_completed" moz:removedIn="140">Cwblhawyd</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">Dadfygio pell drwy\'r USB/Diwifr</string>
   <!-- Text Button for show biometric prompt -->

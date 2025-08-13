@@ -103,6 +103,14 @@ using MFMediaEngineError = MF_MEDIA_ENGINE_ERR;
 // graphics adapters.
 inline constexpr HRESULT DRM_E_TEE_INVALID_HWDRM_STATE =
     static_cast<HRESULT>(0x8004CD12);
+
+// PlayReady CDM failed to create a decryptor for the stream. This typically
+// occurs when the system lacks hardware DRM support, such as a Trusted
+// Execution Environment (TEE) or secure video path. Most common when the
+// license requires a hardware decryptor, but the platform lacks secure decode
+// or necessary hardware capability (e.g., most VMs).
+inline constexpr HRESULT MSPR_E_NO_DECRYPTOR_AVAILABLE =
+    static_cast<HRESULT>(0x8004B895);
 #endif
 
 const char* MediaEventTypeToStr(MediaEventType aType);

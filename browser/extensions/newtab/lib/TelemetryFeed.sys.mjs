@@ -34,6 +34,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionSettingsStore:
     "resource://gre/modules/ExtensionSettingsStore.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
+  ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
   UTEventReporting: "resource://newtab/lib/UTEventReporting.sys.mjs",
@@ -102,6 +103,8 @@ const ONBOARDING_ALLOWED_PAGE_VALUES = [
 ];
 
 const PREF_SURFACE_ID = "telemetry.surfaceId";
+
+const CONTENT_PING_VERSION = 1;
 
 const ACTIVITY_STREAM_PREF_BRANCH = "browser.newtabpage.activity-stream.";
 const NEWTAB_PING_PREFS = {
@@ -357,6 +360,7 @@ export class TelemetryFeed {
         topic,
         ...result
       } = pingDict;
+      result.content_redacted = true;
       return result;
     }
     return pingDict; // No modification
@@ -854,6 +858,7 @@ export class TelemetryFeed {
           newtab_visit_id: session.session_id,
         });
         if (this.privatePingEnabled) {
+          // eslint-disable-next-line no-unused-vars
           this.newtabContentPing.recordEvent(
             "thumbVotingInteraction",
             gleanData
@@ -884,6 +889,12 @@ export class TelemetryFeed {
       case "FEATURE_HIGHLIGHT_OPEN": {
         // Note that Feature Highlight CLICK events are covered via newtab.tooltipClick Glean event
         const { feature } = action.data.value ?? {};
+
+        if (!feature) {
+          throw new Error(
+            `Feature ID parameter is missing from ${action.data?.event}`
+          );
+        }
 
         if (action.data.event === "FEATURE_HIGHLIGHT_DISMISS") {
           Glean.newtab.featureHighlightDismiss.record({
@@ -941,8 +952,69 @@ export class TelemetryFeed {
     const url = new URL(data.url);
     url.searchParams.append("position", data.position);
 
+    const marsOhttpEnabled = Services.prefs.getBoolPref(
+      "browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled",
+      false
+    );
+    const ohttpRelayURL = Services.prefs.getStringPref(
+      "browser.newtabpage.activity-stream.discoverystream.ohttp.relayURL",
+      ""
+    );
+    const ohttpConfigURL = Services.prefs.getStringPref(
+      "browser.newtabpage.activity-stream.discoverystream.ohttp.configURL",
+      ""
+    );
+
+    let fetchPromise;
+    const fetchUrl = url.toString();
+
+    if (marsOhttpEnabled) {
+      if (!ohttpRelayURL) {
+        console.error(
+          new Error(
+            `OHTTP was configured for ${fetchUrl} but we didn't have a valid ohttpRelayURL`
+          )
+        );
+      }
+      if (!ohttpConfigURL) {
+        console.error(
+          new Error(
+            `OHTTP was configured for ${fetchUrl} but we didn't have a valid ohttpConfigURL`
+          )
+        );
+      }
+
+      const headers = new Headers();
+      const controller = new AbortController();
+      const { signal } = controller;
+
+      const options = {
+        method: "GET",
+        headers,
+        signal,
+      };
+
+      let config = await lazy.ObliviousHTTP.getOHTTPConfig(ohttpConfigURL);
+      if (!config) {
+        console.error(
+          new Error(
+            `OHTTP was configured for ${fetchUrl} but we couldn't fetch a valid config`
+          )
+        );
+      }
+
+      fetchPromise = lazy.ObliviousHTTP.ohttpRequest(
+        ohttpRelayURL,
+        config,
+        fetchUrl,
+        options
+      );
+    } else {
+      fetchPromise = fetch(fetchUrl);
+    }
+
     try {
-      await fetch(url.toString());
+      await fetchPromise;
     } catch (error) {
       console.error("Error:", error);
     }
@@ -1058,7 +1130,7 @@ export class TelemetryFeed {
     privateMetrics.experimentName = experimentMetadata?.slug ?? "";
 
     privateMetrics.experimentBranch = experimentMetadata?.branch ?? "";
-
+    privateMetrics.pingVersion = CONTENT_PING_VERSION;
     this.newtabContentPing.scheduleSubmission(privateMetrics);
   }
 
@@ -1245,9 +1317,6 @@ export class TelemetryFeed {
     const {
       card_type,
       corpus_item_id,
-      is_section_followed,
-      received_rank,
-      recommended_at,
       report_reason,
       scheduled_corpus_item_id,
       section_position,
@@ -1259,19 +1328,24 @@ export class TelemetryFeed {
 
     if (session) {
       switch (action.type) {
-        case "REPORT_CONTENT_OPEN":
-          Glean.newtab.reportContentOpen.record({
-            newtab_visit_id: session.session_id,
-          });
+        case "REPORT_CONTENT_OPEN": {
+          if (!this.privatePingEnabled) {
+            return;
+          }
+
+          const gleanData = {
+            corpus_item_id,
+            scheduled_corpus_item_id,
+          };
+
+          Glean.newtabContent.reportContentOpen.record(gleanData);
+
           break;
-        case "REPORT_CONTENT_SUBMIT":
-          Glean.newtab.reportContentSubmit.record({
+        }
+        case "REPORT_CONTENT_SUBMIT": {
+          const gleanData = {
             card_type,
             corpus_item_id,
-            is_section_followed,
-            newtab_visit_id: session.session_id,
-            received_rank,
-            recommended_at,
             report_reason,
             scheduled_corpus_item_id,
             section_position,
@@ -1279,8 +1353,13 @@ export class TelemetryFeed {
             title,
             topic,
             url,
-          });
+          };
+
+          if (this.privatePingEnabled) {
+            Glean.newtabContent.reportContentSubmit.record(gleanData);
+          }
           break;
+        }
       }
     }
   }
@@ -1571,7 +1650,7 @@ export class TelemetryFeed {
               }),
         };
         Glean.pocket.dismiss.record({
-          ...gleanData,
+          ...this.redactNewTabPing(gleanData, gleanData.is_sponsored),
           newtab_visit_id: session.session_id,
         });
         if (this.privatePingEnabled) {

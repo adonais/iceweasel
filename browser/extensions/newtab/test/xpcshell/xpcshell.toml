@@ -2,6 +2,7 @@
 firefox-appdir = "browser"
 head = "head.js"
 prefs = [
+  "browser.newtabpage.resource-mapping.log=true",
   "browser.startup.homepage.abouthome_cache.enabled=true",
   "browser.startup.homepage.abouthome_cache.testing=true",
 ]
@@ -17,6 +18,8 @@ support-files = ["topstories.json"]
 
 ["test_InferredFeatureModel.js"]
 
+["test_ListsFeed.js"]
+
 ["test_NewTabContentPing.js"]
 
 ["test_NewTabGleanUtils.js"]
@@ -24,6 +27,8 @@ support-files = ["topstories.json"]
 ["test_NewTabMessaging.js"]
 
 ["test_PlacesFeed.js"]
+
+["test_ShortcutRanker.js"]
 
 ["test_SmartShortcutsFeed.js"]
 
@@ -34,6 +39,8 @@ support-files = ["topstories.json"]
 ["test_TelemetryFeed.js"]
 support-files = ["../schemas/*.schema.json"]
 
+["test_TimerFeed.js"]
+
 ["test_TopSitesFeed.js"]
 
 ["test_TopSitesFeed_glean.js"]
@@ -42,5 +49,3 @@ support-files = ["../schemas/*.schema.json"]
 tags = "remote-settings"
 
 ["test_WeatherFeed.js"]
-
-["test_ShortcutRanker.js"]

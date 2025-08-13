@@ -132,6 +132,7 @@ class InfallibleAllocPolicy;
 class JSObject;
 class JSTracer;
 class PLDHashTable;
+class PolicyContainer;
 class gfxUserFontSet;
 class mozIDOMWindowProxy;
 class nsCachableElementsByNameNodeList;
@@ -167,6 +168,7 @@ class nsIInputStream;
 class nsILayoutHistoryState;
 class nsIObjectLoadingContent;
 class nsIPermissionDelegateHandler;
+class nsIPolicyContainer;
 class nsIRadioVisitor;
 class nsIRequest;
 class nsIRunnable;
@@ -258,7 +260,6 @@ class HTMLDialogElement;
 class HTMLSharedElement;
 class HTMLVideoElement;
 class HTMLImageElement;
-class ImageTracker;
 class IntegrityPolicy;
 enum class InteractiveWidget : uint8_t;
 struct LifecycleCallbackArgs;
@@ -779,9 +780,6 @@ class Document : public nsINode,
    * available yet, hence we sync CSP of document and Client when the
    * Client becomes available within nsGlobalWindowInner::EnsureClientSource().
    */
-  nsIContentSecurityPolicy* GetCsp() const;
-  void SetCsp(nsIContentSecurityPolicy* aCSP);
-
   nsIContentSecurityPolicy* GetPreloadCsp() const;
   void SetPreloadCsp(nsIContentSecurityPolicy* aPreloadCSP);
 
@@ -792,7 +790,8 @@ class Document : public nsINode,
    */
   void ApplySettingsFromCSP(bool aSpeculative);
 
-  IntegrityPolicy* GetIntegrityPolicy() const { return mIntegrityPolicy; }
+  nsIPolicyContainer* GetPolicyContainer() const;
+  void SetPolicyContainer(nsIPolicyContainer* aPolicyContainer);
 
   already_AddRefed<nsIParser> CreatorParserOrNull() {
     nsCOMPtr<nsIParser> parser = mParser;
@@ -1530,6 +1529,7 @@ class Document : public nsINode,
  protected:
   friend class nsUnblockOnloadEvent;
 
+  nsresult InitPolicyContainer(nsIChannel* aChannel);
   nsresult InitCSP(nsIChannel* aChannel);
   nsresult InitIntegrityPolicy(nsIChannel* aChannel);
   nsresult InitCOEP(nsIChannel* aChannel);
@@ -3169,7 +3169,20 @@ class Document : public nsINode,
   // This returns true when the document tree is being teared down.
   bool InUnlinkOrDeletion() { return mInUnlinkOrDeletion; }
 
-  dom::ImageTracker* ImageTracker();
+  void TrackImage(imgIRequest*);
+  enum class RequestDiscard : bool { No = false, Yes };
+  void UntrackImage(imgIRequest*, RequestDiscard = RequestDiscard::No);
+
+  // Makes the images on this document locked/unlocked. By default, the locking
+  // state is unlocked/false.
+  bool GetLockingImages() const { return mLockingImages; }
+  void SetLockingImages(bool);
+
+  // Makes the images on this document capable of having their animation
+  // active or suspended. An Image will animate as long as at least one of its
+  // owning Documents needs it to animate; otherwise it can suspend.
+  void SetImageAnimationState(bool);
+  void PropagateMediaFeatureChangeToTrackedImages(const MediaFeatureChange&);
 
   // Adds an element to mResponsiveContent when the element is
   // added to the tree.
@@ -4086,6 +4099,10 @@ class Document : public nsINode,
  private:
   bool IsErrorPage() const;
 
+  // Notifies the pres context that an image we track may have started or
+  // stopped animating.
+  void AnimatedImageStateMaybeChanged(bool aAnimating);
+
   // Takes the bits from mStyleUseCounters if appropriate, and sets them in
   // mUseCounters.
   void SetCssUseCounterBits();
@@ -4697,7 +4714,7 @@ class Document : public nsINode,
   RefPtr<AttributeStyles> mAttributeStyles;
 
   // Tracking for images in the document.
-  RefPtr<dom::ImageTracker> mImageTracker;
+  nsTHashMap<nsPtrHashKey<imgIRequest>, uint32_t> mTrackedImages;
 
   // A hashtable of ShadowRoots belonging to the composed doc.
   //
@@ -4974,6 +4991,9 @@ class Document : public nsINode,
   bool mValidMaxScale : 1;
   bool mWidthStrEmpty : 1;
 
+  bool mLockingImages : 1;
+  bool mAnimatingImages : 1;
+
   // Parser aborted. True if the parser of this document was forcibly
   // terminated instead of letting it finish at its own pace.
   bool mParserAborted : 1;
@@ -5170,12 +5190,8 @@ class Document : public nsINode,
   // The channel that got passed to Document::StartDocumentLoad(), if any.
   nsCOMPtr<nsIChannel> mChannel;
 
-  // The CSP for every load lives in the Client within the LoadInfo. For all
-  // document-initiated subresource loads we can use that cached version of the
-  // CSP so we do not have to deserialize the CSP from the Client all the time.
-  nsCOMPtr<nsIContentSecurityPolicy> mCSP;
   nsCOMPtr<nsIContentSecurityPolicy> mPreloadCSP;
-  RefPtr<IntegrityPolicy> mIntegrityPolicy;
+  RefPtr<PolicyContainer> mPolicyContainer;
 
  private:
   nsCString mContentType;

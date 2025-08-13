@@ -8,6 +8,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AppInfo: "chrome://remote/content/shared/AppInfo.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
+  RemoteAgent: "chrome://remote/content/components/RemoteAgent.sys.mjs",
 });
 
 /**
@@ -112,6 +113,27 @@ assert.content = function (context, msg = "") {
     msg,
     lazy.error.UnsupportedOperationError
   )(context);
+};
+
+/**
+ * Asserts that system access is available.
+ *
+ * @param {string=} msg
+ *     Custom error message.
+ *
+ * @throws {UnsupportedOperationError}
+ *     If system access is not available.
+ */
+assert.hasSystemAccess = function (msg = "") {
+  msg =
+    msg ||
+    `System access is required. Start ${lazy.AppInfo.name} with "-remote-allow-system-access" to enable it.`;
+
+  assert.that(
+    hasSystemAccess => hasSystemAccess,
+    msg,
+    lazy.error.UnsupportedOperationError
+  )(lazy.RemoteAgent.allowSystemAccess);
 };
 
 /**

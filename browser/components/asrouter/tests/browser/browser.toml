@@ -57,9 +57,7 @@ skip-if = ["a11y_checks"] # Bug 1854515 and 1858041 to investigate intermittent 
 ["browser_bookmarks_bar_button.js"]
 
 ["browser_feature_callout.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1796720
-]
+skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64'"] # Bug 1796720
 
 ["browser_feature_callout_in_chrome.js"]
 skip-if = [
@@ -73,7 +71,6 @@ skip-if = [
 ["browser_multistage_spotlight.js"]
 
 ["browser_multistage_spotlight_telemetry.js"]
-skip-if = ["verify"] # bug 1834620 - order of events not stable
 
 ["browser_remote_l10n.js"]
 

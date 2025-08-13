@@ -60,6 +60,7 @@ namespace ffi {
 struct WGPULimits;
 }
 class Adapter;
+class AdapterInfo;
 class BindGroup;
 class BindGroupLayout;
 class Buffer;
@@ -79,9 +80,6 @@ class SupportedLimits;
 class Texture;
 class WebGPUChild;
 
-using MappingPromise =
-    MozPromise<BufferMapResult, ipc::ResponseRejectReason, true>;
-
 class Device final : public DOMEventTargetHelper, public SupportsWeakPtr {
  public:
   NS_DECL_ISUPPORTS_INHERITED
@@ -91,21 +89,23 @@ class Device final : public DOMEventTargetHelper, public SupportsWeakPtr {
   const RawId mId;
   RefPtr<SupportedFeatures> mFeatures;
   RefPtr<SupportedLimits> mLimits;
-  const bool mSupportExternalTextureInSwapChain;
+  RefPtr<AdapterInfo> mAdapterInfo;
+  const bool mSupportSharedTextureInSwapChain;
 
   static CheckedInt<uint32_t> BufferStrideWithMask(
       const gfx::IntSize& aSize, const gfx::SurfaceFormat& aFormat);
 
   explicit Device(Adapter* const aParent, RawId aDeviceId, RawId aQueueId,
-                  const ffi::WGPULimits&);
+                  RefPtr<SupportedFeatures> aFeatures,
+                  RefPtr<SupportedLimits> aLimits,
+                  RefPtr<AdapterInfo> aAdapterInfo);
 
   RefPtr<WebGPUChild> GetBridge();
   already_AddRefed<Texture> InitSwapChain(
       const dom::GPUCanvasConfiguration* const aConfig,
       const layers::RemoteTextureOwnerId aOwnerId,
-      mozilla::Span<RawId const> aBufferIds,
-      bool aUseExternalTextureInSwapChain, gfx::SurfaceFormat aFormat,
-      gfx::IntSize aCanvasSize);
+      mozilla::Span<RawId const> aBufferIds, bool aUseSharedTextureInSwapChain,
+      gfx::SurfaceFormat aFormat, gfx::IntSize aCanvasSize);
   bool CheckNewWarning(const nsACString& aMessage);
 
   void CleanupUnregisteredInParent();
@@ -114,7 +114,6 @@ class Device final : public DOMEventTargetHelper, public SupportsWeakPtr {
   void UntrackBuffer(Buffer* aBuffer);
 
   bool IsLost() const;
-  bool IsBridgeAlive() const;
 
   RawId GetId() const { return mId; }
 
@@ -134,11 +133,13 @@ class Device final : public DOMEventTargetHelper, public SupportsWeakPtr {
   void GetLabel(nsAString& aValue) const;
   void SetLabel(const nsAString& aLabel);
   dom::Promise* GetLost(ErrorResult& aRv);
-  void ResolveLost(Maybe<dom::GPUDeviceLostReason> aReason,
-                   const nsAString& aMessage);
+  void ResolveLost(dom::GPUDeviceLostReason aReason, const nsAString& aMessage);
 
   const RefPtr<SupportedFeatures>& Features() const { return mFeatures; }
   const RefPtr<SupportedLimits>& Limits() const { return mLimits; }
+  const RefPtr<webgpu::AdapterInfo>& GetAdapterInfo() const {
+    return mAdapterInfo;
+  }
   const RefPtr<Queue>& GetQueue() const { return mQueue; }
 
   already_AddRefed<Buffer> CreateBuffer(const dom::GPUBufferDescriptor& aDesc,
@@ -171,7 +172,7 @@ class Device final : public DOMEventTargetHelper, public SupportsWeakPtr {
   already_AddRefed<BindGroup> CreateBindGroup(
       const dom::GPUBindGroupDescriptor& aDesc);
 
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<ShaderModule> CreateShaderModule(
+  already_AddRefed<ShaderModule> CreateShaderModule(
       const dom::GPUShaderModuleDescriptor& aDesc, ErrorResult& aRv);
   already_AddRefed<ComputePipeline> CreateComputePipeline(
       const dom::GPUComputePipelineDescriptor& aDesc);
@@ -189,6 +190,10 @@ class Device final : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   IMPL_EVENT_HANDLER(uncapturederror)
 };
+
+MOZ_CAN_RUN_SCRIPT void reportCompilationMessagesToConsole(
+    const RefPtr<ShaderModule>& aShaderModule,
+    const nsTArray<WebGPUCompilationMessage>& aMessages);
 
 }  // namespace webgpu
 }  // namespace mozilla

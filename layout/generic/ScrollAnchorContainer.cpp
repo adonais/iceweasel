@@ -5,15 +5,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ScrollAnchorContainer.h"
+
 #include <cstddef>
 
-#include "mozilla/dom/Text.h"
-#include "mozilla/ScopeExit.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerLabels.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/ToString.h"
+#include "mozilla/dom/Text.h"
 #include "nsBlockFrame.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"

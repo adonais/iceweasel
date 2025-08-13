@@ -20,6 +20,7 @@
     border-end-start-radius: var(--box-border-radius-end, var(--box-border-radius));
     border-end-end-radius: var(--box-border-radius-end, var(--box-border-radius));
     display: block;
+    position: relative;
   }
 
   .text-content {

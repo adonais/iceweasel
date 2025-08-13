@@ -21,7 +21,7 @@ pub unsafe extern "C" fn sdp_get_media_section(
     session: *const SdpSession,
     index: size_t,
 ) -> *const SdpMedia {
-    return match (*session).media.get(index) {
+    return match (&(*session).media).get(index) {
         Some(m) => m,
         None => ptr::null(),
     };

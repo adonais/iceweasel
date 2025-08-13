@@ -15,7 +15,6 @@ support-files = [
 skip-if = ["win11_2009 && bits == 32"] # Bug 1607975
 
 ["browser_forgetThisSite.js"]
-skip-if = ["verify"]
 
 ["browser_private_idb.js"]
 skip-if = [

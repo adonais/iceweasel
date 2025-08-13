@@ -142,6 +142,12 @@
         }
       }
     },
+    "isNewUntil": {
+      "title": "Is New Until",
+      "type": "string",
+      "description": "Indicates the date until which the engine variant or subvariant is considered new (format: YYYY-MM-DD).",
+      "format": "date"
+    },
     "partnerCode": {
       "title": "Partner Code",
       "description": "The partner code for the engine or variant. This will be inserted into parameters which include '{partnerCode}'",
@@ -172,6 +178,11 @@
           "title": "SearchForm URL",
           "description": "The URL of the search engine homepage",
           "$ref": "#/definitions/url"
+        },
+        "visualSearch": {
+          "title": "Visual search URL",
+          "description": "The URL to use for visual searches",
+          "$ref": "#/definitions/url"
         }
       }
     },
@@ -181,6 +192,11 @@
         "base": {
           "title": "Base",
           "description": "The PrePath and FilePath of the URL. May include variables for engines which have a variable FilePath, e.g. {searchTerm} for when a search term is within the path of the url.",
+          "type": "string"
+        },
+        "displayName": {
+          "title": "Name",
+          "description": "The display name of the URL, if any. This is useful if the URL corresponds to a brand name distinct from the engine's brand name.",
           "type": "string"
         },
         "method": {
@@ -319,6 +335,9 @@
                 "environment": {
                   "$ref": "#/definitions/environment"
                 },
+                "isNewUntil": {
+                  "$ref": "#/definitions/isNewUntil"
+                },
                 "partnerCode": {
                   "$ref": "#/definitions/partnerCode"
                 },
@@ -345,6 +364,9 @@
                     "properties": {
                       "environment": {
                         "$ref": "#/definitions/environment"
+                      },
+                      "isNewUntil": {
+                        "$ref": "#/definitions/isNewUntil"
                       },
                       "partnerCode": {
                         "$ref": "#/definitions/partnerCode"

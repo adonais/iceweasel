@@ -25,7 +25,6 @@ support-files = [
 ["browser_privatebrowsing_DownloadLastDirWithCPS.js"]
 
 ["browser_privatebrowsing_about.js"]
-skip-if = ["verify"]
 tags = "trackingprotection"
 
 ["browser_privatebrowsing_aboutSessionRestore.js"]
@@ -71,7 +70,6 @@ run-if = ["!release_or_beta"]
 ["browser_privatebrowsing_crh.js"]
 
 ["browser_privatebrowsing_downloadLastDir.js"]
-skip-if = ["verify"]
 
 ["browser_privatebrowsing_downloadLastDir_c.js"]
 

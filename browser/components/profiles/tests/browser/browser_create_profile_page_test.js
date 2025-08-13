@@ -194,7 +194,27 @@ add_task(async function test_new_profile_avatar() {
         // Fill in the input so we don't hit the beforeunload warning
         newProfileCard.nameInput.value = "test";
 
-        let avatars = newProfileCard.avatars;
+        EventUtils.synthesizeMouseAtCenter(
+          newProfileCard.avatarSelectorLink,
+          {},
+          content
+        );
+
+        const avatarSelector = newProfileCard.avatarSelector;
+
+        await ContentTaskUtils.waitForCondition(
+          () => ContentTaskUtils.isVisible(avatarSelector),
+          "Waiting for avatar selector to become visible"
+        );
+
+        EventUtils.synthesizeMouseAtCenter(
+          avatarSelector.iconTabButton,
+          {},
+          content
+        );
+        await avatarSelector.updateComplete;
+
+        let avatars = avatarSelector.avatars;
         let newAvatar = Array.from(avatars).find(
           avatar => avatar.value === expected
         );
@@ -210,7 +230,7 @@ add_task(async function test_new_profile_avatar() {
         );
 
         // Sometimes the async message takes a bit longer to arrive.
-        await new Promise(resolve => content.setTimeout(resolve, 100));
+        await new Promise(resolve => content.setTimeout(resolve, 200));
       });
 
       let curProfile = await SelectableProfileService.getProfile(profile.id);
@@ -448,6 +468,85 @@ add_task(async function test_new_profile_displayed_closed_telemetry() {
       });
 
       await assertGlean("profiles", "new", "closed");
+    }
+  );
+});
+
+add_task(async function test_new_profile_delete_telemetry() {
+  if (!AppConstants.MOZ_SELECTABLE_PROFILES) {
+    // `mochitest-browser` suite `add_task` does not yet support
+    // `properties.skip_if`.
+    ok(true, "Skipping because !AppConstants.MOZ_SELECTABLE_PROFILES");
+    return;
+  }
+  await setup();
+  is(
+    null,
+    Glean.profilesNew.closed.testGetValue(),
+    "We have not recorded any Glean data yet"
+  );
+
+  let pingSubmitted = false;
+  GleanPings.profiles.testBeforeNextSubmit(() => {
+    pingSubmitted = true;
+    assertGlean("profiles", "new", "closed", "delete");
+  });
+
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "about:newprofile",
+    },
+    async browser => {
+      Services.fog.testResetFOG();
+      Services.telemetry.clearEvents();
+
+      // To test Glean is recorded without actually deleting the test profile,
+      // cancel the "quit-application-requested" nsIObserver event.
+      let quitCanceled = false;
+      Services.obs.addObserver(subject => {
+        let cancelQuit = subject.QueryInterface(Ci.nsISupportsPRBool);
+        cancelQuit.data = true;
+        quitCanceled = true;
+      }, "quit-application-requested");
+
+      await SpecialPowers.spawn(browser, [], async () => {
+        let newProfileCard =
+          content.document.querySelector("new-profile-card").wrappedJSObject;
+
+        await ContentTaskUtils.waitForCondition(
+          () => newProfileCard.initialized,
+          "Waiting for new-profile-card to be initialized"
+        );
+
+        await newProfileCard.updateComplete;
+
+        let nameInput = newProfileCard.nameInput;
+        nameInput.value = "test profile name";
+        nameInput.dispatchEvent(new content.Event("input"));
+
+        await ContentTaskUtils.waitForCondition(() => {
+          let savedMessage =
+            newProfileCard.shadowRoot.querySelector("#saved-message");
+          return ContentTaskUtils.isVisible(savedMessage);
+        });
+
+        EventUtils.synthesizeMouseAtCenter(
+          newProfileCard.deleteButton,
+          {},
+          content
+        );
+      });
+
+      await BrowserTestUtils.waitForCondition(
+        () => quitCanceled,
+        "We expect the quit to have been canceled"
+      );
+
+      await BrowserTestUtils.waitForCondition(
+        () => pingSubmitted,
+        "We expect the ping to have been submitted"
+      );
     }
   );
 });

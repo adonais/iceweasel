@@ -6,9 +6,9 @@
 
 #include "PaintWorkletGlobalScope.h"
 
-#include "mozilla/dom/PaintWorkletGlobalScopeBinding.h"
-#include "mozilla/dom/FunctionBinding.h"
 #include "PaintWorkletImpl.h"
+#include "mozilla/dom/FunctionBinding.h"
+#include "mozilla/dom/PaintWorkletGlobalScopeBinding.h"
 
 namespace mozilla::dom {
 

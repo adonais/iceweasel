@@ -723,8 +723,6 @@ scheme = "https"
 tags = "mtg"
 
 ["test_streams_srcObject.html"]
-skip-if = [
-  "os == 'mac' && debug", # Bug 1756880 - temp due to high frequency shutdown hang
-]
+skip-if = ["os == 'mac' && debug"] # Bug 1756880 - temp due to high frequency shutdown hang
 
 ["test_streams_tracks.html"]

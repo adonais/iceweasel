@@ -10,6 +10,7 @@ prefs = [
   "browser.startup.homepage.abouthome_cache.loglevel=All",
   "browser.startup.homepage.abouthome_cache.testing=true",
   "browser.startup.page=1",
+  "browser.newtabpage.resource-mapping.log=true",
   "browser.newtabpage.activity-stream.discoverystream.endpoints=data:",
   "browser.newtabpage.activity-stream.feeds.system.topstories=true",
   "browser.newtabpage.activity-stream.feeds.section.topstories=true",
@@ -35,6 +36,9 @@ tags = "newtab"
 ["browser_locale_change.js"]
 
 ["browser_no_cache.js"]
+skip-if = [
+  "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1952938
+]
 
 ["browser_no_cache_on_SessionStartup_restore.js"]
 

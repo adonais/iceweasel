@@ -77,6 +77,7 @@
 #include "mozilla/dom/JSProcessActorChild.h"
 #include "mozilla/dom/LSObject.h"
 #include "mozilla/dom/MemoryReportRequest.h"
+#include "mozilla/dom/Navigation.h"
 #include "mozilla/dom/PSessionStorageObserverChild.h"
 #include "mozilla/dom/PostMessageEvent.h"
 #include "mozilla/dom/PushNotifier.h"
@@ -890,9 +891,9 @@ static nsresult GetCreateWindowParams(nsIOpenWindowInfo* aOpenWindowInfo,
                                       bool aForceNoReferrer,
                                       nsIReferrerInfo** aReferrerInfo,
                                       nsIPrincipal** aTriggeringPrincipal,
-                                      nsIContentSecurityPolicy** aCsp) {
-  if (!aTriggeringPrincipal || !aCsp) {
-    NS_ERROR("aTriggeringPrincipal || aCsp is null");
+                                      nsIPolicyContainer** aPolicyContainer) {
+  if (!aTriggeringPrincipal || !aPolicyContainer) {
+    NS_ERROR("aTriggeringPrincipal || aPolicyContainer is null");
     return NS_ERROR_FAILURE;
   }
 
@@ -927,9 +928,9 @@ static nsresult GetCreateWindowParams(nsIOpenWindowInfo* aOpenWindowInfo,
   nsCOMPtr<Document> doc = opener->GetDoc();
   NS_ADDREF(*aTriggeringPrincipal = doc->NodePrincipal());
 
-  nsCOMPtr<nsIContentSecurityPolicy> csp = doc->GetCsp();
-  if (csp) {
-    csp.forget(aCsp);
+  nsCOMPtr<nsIPolicyContainer> policyContainer = doc->GetPolicyContainer();
+  if (policyContainer) {
+    policyContainer.forget(aPolicyContainer);
   }
 
   nsCOMPtr<nsIURI> baseURI = doc->GetDocBaseURI();
@@ -1003,12 +1004,12 @@ nsresult ContentChild::ProvideWindowCommon(
         aForceNoOpener && StaticPrefs::dom_noopener_newprocess_enabled();
     if (loadInDifferentProcess) {
       nsCOMPtr<nsIPrincipal> triggeringPrincipal;
-      nsCOMPtr<nsIContentSecurityPolicy> csp;
+      nsCOMPtr<nsIPolicyContainer> policyContainer;
       nsCOMPtr<nsIReferrerInfo> referrerInfo;
       rv = GetCreateWindowParams(aOpenWindowInfo, aLoadState, aForceNoReferrer,
                                  getter_AddRefs(referrerInfo),
                                  getter_AddRefs(triggeringPrincipal),
-                                 getter_AddRefs(csp));
+                                 getter_AddRefs(policyContainer));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1042,7 +1043,7 @@ nsresult ContentChild::ProvideWindowCommon(
       Unused << SendCreateWindowInDifferentProcess(
           aTabOpener, parent, aChromeFlags, aCalledFromJS,
           aOpenWindowInfo->GetIsTopLevelCreatedByWebContent(), aURI, features,
-          aModifiers, name, triggeringPrincipal, csp, referrerInfo,
+          aModifiers, name, triggeringPrincipal, policyContainer, referrerInfo,
           aOpenWindowInfo->GetOriginAttributes(), hasValidUserGestureActivation,
           textDirectiveUserActivation);
 
@@ -1238,12 +1239,12 @@ nsresult ContentChild::ProvideWindowCommon(
 
   // Send down the request to open the window.
   nsCOMPtr<nsIPrincipal> triggeringPrincipal;
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  nsCOMPtr<nsIPolicyContainer> policyContainer;
   nsCOMPtr<nsIReferrerInfo> referrerInfo;
   rv = GetCreateWindowParams(aOpenWindowInfo, aLoadState, aForceNoReferrer,
                              getter_AddRefs(referrerInfo),
                              getter_AddRefs(triggeringPrincipal),
-                             getter_AddRefs(csp));
+                             getter_AddRefs(policyContainer));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1253,7 +1254,7 @@ nsresult ContentChild::ProvideWindowCommon(
       aOpenWindowInfo->GetIsForPrinting(),
       aOpenWindowInfo->GetIsForWindowDotPrint(),
       aOpenWindowInfo->GetIsTopLevelCreatedByWebContent(), aURI, features,
-      aModifiers, triggeringPrincipal, csp, referrerInfo,
+      aModifiers, triggeringPrincipal, policyContainer, referrerInfo,
       aOpenWindowInfo->GetOriginAttributes(),
       aLoadState ? aLoadState->HasValidUserGestureActivation() : false,
       aLoadState ? aLoadState->GetTextDirectiveUserActivation() : false,
@@ -2946,17 +2947,6 @@ void ContentChild::ForceKillTimerCallback(nsITimer* aTimer, void* aClosure) {
   ProcessChild::QuickExit();
 }
 
-mozilla::ipc::IPCResult ContentChild::RecvShutdownConfirmedHP() {
-  ProcessChild::AppendToIPCShutdownStateAnnotation(
-      "RecvShutdownConfirmedHP entry"_ns);
-
-  // Bug 1755376: If we see "RecvShutdownConfirmedHP entry" often in
-  // bug IPCError_ShutDownKill we might want to anticipate
-  // ShutdownPhase::AppShutdownConfirmed to start here.
-
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult ContentChild::RecvShutdown() {
   ProcessChild::AppendToIPCShutdownStateAnnotation("RecvShutdown entry"_ns);
 
@@ -4360,11 +4350,12 @@ mozilla::ipc::IPCResult ContentChild::RecvDispatchLocationChangeEvent(
 
 mozilla::ipc::IPCResult ContentChild::RecvDispatchBeforeUnloadToSubtree(
     const MaybeDiscarded<BrowsingContext>& aStartingAt,
+    const mozilla::Maybe<SessionHistoryInfo>& aInfo,
     DispatchBeforeUnloadToSubtreeResolver&& aResolver) {
   if (aStartingAt.IsNullOrDiscarded()) {
     aResolver(nsIDocumentViewer::eAllowNavigation);
   } else {
-    DispatchBeforeUnloadToSubtree(aStartingAt.get(), std::move(aResolver));
+    DispatchBeforeUnloadToSubtree(aStartingAt.get(), aInfo, aResolver);
   }
   return IPC_OK();
 }
@@ -4378,19 +4369,41 @@ mozilla::ipc::IPCResult ContentChild::RecvInitNextGenLocalStorageEnabled(
 
 /* static */ void ContentChild::DispatchBeforeUnloadToSubtree(
     BrowsingContext* aStartingAt,
+    const mozilla::Maybe<SessionHistoryInfo>& aInfo,
     const DispatchBeforeUnloadToSubtreeResolver& aResolver) {
+  bool block = false;
   bool resolved = false;
 
-  aStartingAt->PreOrderWalk([&](dom::BrowsingContext* aBC) {
+  aStartingAt->PreOrderWalk([&](const RefPtr<dom::BrowsingContext>&
+                                    aBC) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
     if (aBC->GetDocShell()) {
       nsCOMPtr<nsIDocumentViewer> viewer;
       aBC->GetDocShell()->GetDocViewer(getter_AddRefs(viewer));
-      if (viewer &&
-          viewer->DispatchBeforeUnload() ==
-              nsIDocumentViewer::eRequestBlockNavigation &&
-          !resolved) {
-        // Send our response as soon as we find any blocker, so that we can show
-        // the permit unload prompt as soon as possible, without giving
+      if (viewer && viewer->DispatchBeforeUnload() ==
+                        nsIDocumentViewer::eRequestBlockNavigation) {
+        block = true;
+      } else if (aBC->IsTop() && aInfo) {
+        // https://html.spec.whatwg.org/#preventing-navigation:fire-a-traverse-navigate-event.
+        // If this is the top-level navigable and we've passed `aInfo`, we
+        // should perform #fire-a-traverse-navigate-event.
+        // #checking-if-unloading-is-canceled will block the navigation if the
+        // "navigate" event handler for the top level window's navigation object
+        // returns false.
+        if (RefPtr<nsPIDOMWindowInner> activeWindow =
+                nsDocShell::Cast(aBC->GetDocShell())->GetActiveWindow()) {
+          if (RefPtr navigation = activeWindow->Navigation()) {
+            if (AutoJSAPI jsapi; jsapi.Init(activeWindow)) {
+              // This should send the correct user involvment. See bug 1903552.
+              block = !navigation->FireTraverseNavigateEvent(jsapi.cx(), *aInfo,
+                                                             Nothing());
+            }
+          }
+        }
+      }
+
+      if (!resolved && block) {
+        // Send our response as soon as we find any blocker, so that we can
+        // show the permit unload prompt as soon as possible, without giving
         // subsequent handlers a chance to delay it.
         aResolver(nsIDocumentViewer::eRequestBlockNavigation);
         resolved = true;

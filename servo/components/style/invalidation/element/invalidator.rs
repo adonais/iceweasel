@@ -749,20 +749,7 @@ where
             any_descendant |= self.invalidate_dom_descendants_of(root.as_node(), invalidations);
         }
 
-        if let Some(marker) = self.element.marker_pseudo_element() {
-            any_descendant |= self.invalidate_pseudo_element_or_nac(marker, invalidations);
-        }
-
-        if let Some(before) = self.element.before_pseudo_element() {
-            any_descendant |= self.invalidate_pseudo_element_or_nac(before, invalidations);
-        }
-
-        let node = self.element.as_node();
-        any_descendant |= self.invalidate_dom_descendants_of(node, invalidations);
-
-        if let Some(after) = self.element.after_pseudo_element() {
-            any_descendant |= self.invalidate_pseudo_element_or_nac(after, invalidations);
-        }
+        any_descendant |= self.invalidate_dom_descendants_of(self.element.as_node(), invalidations);
 
         any_descendant |= self.invalidate_nac(invalidations);
 
@@ -933,15 +920,16 @@ where
                                 matched: true,
                             }
                         },
-                        Some(ref p) => {
-                            let invalidation_kind = p.invalidation_kind();
+                        Some(ref deps) => {
+                            let n = &deps.as_ref().slice()[0];
+                            let invalidation_kind = n.invalidation_kind();
                             match invalidation_kind {
-                                DependencyInvalidationKind::Normal(_) => &**p,
+                                DependencyInvalidationKind::Normal(_) => n,
                                 DependencyInvalidationKind::Relative(kind) => {
                                     self.processor.found_relative_selector_invalidation(
                                         self.element,
                                         kind,
-                                        &**p,
+                                        n,
                                     );
                                     return SingleInvalidationResult {
                                         invalidated_self: false,

@@ -11,6 +11,7 @@
 #include "mozilla/TimeStamp.h"
 
 #include <algorithm>
+#include <cmath>
 #include <stdarg.h>
 #include <stdio.h>
 #include <type_traits>
@@ -1831,8 +1832,12 @@ const char* Statistics::formatBudget(const SliceData& slice) {
 void Statistics::printProfileTimes(const ProfileDurations& times,
                                    Sprinter& sprinter) {
   for (auto time : times) {
-    int64_t millis = int64_t(time.ToMilliseconds());
-    sprinter.printf(" %6" PRIi64, millis);
+    double millis = time.ToMilliseconds();
+    if (millis < 0.001 || millis >= 1.0) {
+      sprinter.printf(" %6ld", std::lround(millis));
+    } else {
+      sprinter.printf(" %6.3f", millis);
+    }
   }
 
   sprinter.put("\n");

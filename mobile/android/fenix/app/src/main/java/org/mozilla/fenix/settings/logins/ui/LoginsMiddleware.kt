@@ -4,11 +4,18 @@
 
 package org.mozilla.fenix.settings.logins.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.os.Build
+import android.os.PersistableBundle
 import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import mozilla.appservices.logins.LoginsApiException
+import mozilla.components.concept.storage.LoginEntry
 import mozilla.components.concept.storage.LoginsStorage
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.MiddlewareContext
@@ -24,6 +31,8 @@ import org.mozilla.fenix.settings.SupportUtils
  * @param persistLoginsSortOrder Invoked to persist the new sorting order for logins.
  * @param openTab Invoked when opening a tab when a login url is clicked.
  * @param ioDispatcher Coroutine dispatcher for IO operations.
+ * @param clipboardManager For copying logins URLs.
+ * @param refreshLoginsList Invoked to refresh the logins list.
  */
 @Suppress("LongParameterList")
 internal class LoginsMiddleware(
@@ -33,6 +42,8 @@ internal class LoginsMiddleware(
     private val persistLoginsSortOrder: suspend (LoginsSortOrder) -> Unit,
     private val openTab: (url: String, openInNewTab: Boolean) -> Unit,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val clipboardManager: ClipboardManager?,
+    private val refreshLoginsList: Store<LoginsState, LoginsAction>.() -> Unit = { dispatch(Init) },
 ) : Middleware<LoginsState, LoginsAction> {
 
     private val scope = CoroutineScope(ioDispatcher)
@@ -49,38 +60,27 @@ internal class LoginsMiddleware(
             Init -> {
                 context.store.loadLoginsList()
             }
-            is InitEdit -> scope.launch {
-                Result.runCatching {
-                    val login = loginsStorage.get(action.guid)
-                    val loginItem = login?.let {
-                        LoginItem(
-                            guid = it.guid,
-                            url = it.formActionOrigin ?: "",
-                            username = it.username,
-                            password = it.password,
-                        )
-                    }
-                    InitEditLoaded(login = loginItem!!)
-                }.getOrNull()?.also {
-                    context.store.dispatch(it)
-                }
+            is SearchLogins -> {
+                context.store.loadLoginsList()
             }
-            is InitAdd -> {
-                getNavController().navigate(LoginsDestinations.ADD_LOGIN)
+            is LoginsListBackClicked -> {
+                exitLogins()
             }
             is LoginClicked -> {
                 getNavController().navigate(LoginsDestinations.LOGIN_DETAILS)
             }
-            is SearchLogins -> {
-                context.store.loadLoginsList()
+            is DetailLoginMenuAction.EditLoginMenuItemClicked -> {
+                getNavController().navigate(LoginsDestinations.EDIT_LOGIN)
             }
-            is LoginsListBackClicked -> exitLogins()
-            is DetailLoginMenuAction.EditLoginMenuItemClicked -> getNavController().navigate(
-                LoginsDestinations.EDIT_LOGIN,
-            )
             is DetailLoginMenuAction.DeleteLoginMenuItemClicked -> {
                 scope.launch {
                     loginsStorage.delete(action.item.guid)
+
+                    context.store.refreshLoginsList()
+
+                    withContext(Dispatchers.Main) {
+                        getNavController().navigate(LoginsDestinations.LIST)
+                    }
                 }
             }
             is LoginsListSortMenuAction -> scope.launch {
@@ -95,30 +95,37 @@ internal class LoginsMiddleware(
             is DetailLoginAction.GoToSiteClicked -> {
                 openTab(action.url, true)
             }
-            is InitEditLoaded,
-            is EditLoginAction.UsernameChanged,
-            is AddLoginAction.BackAddClicked,
-            is DetailLoginAction.BackDetailClicked,
-            is EditLoginAction.BackEditClicked,
-            is DetailLoginAction.CopyPasswordClicked,
-            is DetailLoginAction.CopyUsernameClicked,
-            is InitAddLoaded,
-            is InitDetails,
+            is LoginsDetailBackClicked -> {
+                context.store.handleLoginsDetailsBackPressed()
+            }
+            is DetailLoginAction.CopyUsernameClicked -> {
+                handleUsernameClicked(action.username)
+            }
+            is DetailLoginAction.CopyPasswordClicked -> {
+                handlePasswordClicked(action.password)
+            }
+            is AddLoginAction.InitAdd -> {
+                getNavController().navigate(LoginsDestinations.ADD_LOGIN)
+            }
+            is AddLoginBackClicked -> {
+                getNavController().navigate(LoginsDestinations.LIST)
+            }
+            is AddLoginAction.AddLoginSaveClicked -> {
+                context.store.handleAddLogin()
+            }
+            is EditLoginBackClicked -> {
+                getNavController().navigate(LoginsDestinations.LOGIN_DETAILS)
+            }
+            is EditLoginAction.SaveEditClicked -> {
+                context.store.handleEditLogin(loginItem = action.login)
+            }
             is LoginsLoaded,
-            is DetailLoginAction.OptionsMenuClicked,
+            is EditLoginAction.UsernameChanged,
             is EditLoginAction.PasswordChanged,
-            is AddLoginAction.PasswordChanged,
-            is EditLoginAction.PasswordClearClicked,
-            is AddLoginAction.PasswordClearClicked,
-            is EditLoginAction.PasswordVisible,
-            is DetailLoginAction.PasswordVisibleClicked,
-            is AddLoginAction.SaveAddClicked,
-            is EditLoginAction.SaveEditClicked,
-            is AddLoginAction.UrlChanged,
-            is AddLoginAction.UrlClearClicked,
+            is EditLoginAction.PasswordVisibilityChanged,
+            is AddLoginAction.HostChanged,
             is AddLoginAction.UsernameChanged,
-            is EditLoginAction.UsernameClearClicked,
-            is AddLoginAction.UsernameClearClicked,
+            is AddLoginAction.PasswordChanged,
             is ViewDisposed,
             -> Unit
         }
@@ -126,8 +133,8 @@ internal class LoginsMiddleware(
 
     private fun Store<LoginsState, LoginsAction>.loadLoginsList() = scope.launch {
         val loginItems = arrayListOf<LoginItem>()
-        val items = loginsStorage.list()
-        items.forEach { login ->
+
+        loginsStorage.list().forEach { login ->
             loginItems.add(
                 LoginItem(
                     guid = login.guid,
@@ -141,4 +148,93 @@ internal class LoginsMiddleware(
 
         dispatch(LoginsLoaded(loginItems))
     }
+
+    private fun handleUsernameClicked(username: String) {
+        val usernameClipData = ClipData.newPlainText(username, username)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            usernameClipData.apply {
+                description.extras = PersistableBundle().apply {
+                    putBoolean("android.content.extra.IS_SENSITIVE", false)
+                }
+            }
+        }
+        clipboardManager?.setPrimaryClip(usernameClipData)
+    }
+
+    private fun handlePasswordClicked(password: String) {
+        val passwordClipData = ClipData.newPlainText(password, password)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            passwordClipData.apply {
+                description.extras = PersistableBundle().apply {
+                    putBoolean("android.content.extra.IS_SENSITIVE", true)
+                }
+            }
+        }
+        clipboardManager?.setPrimaryClip(passwordClipData)
+    }
+
+    private fun Store<LoginsState, LoginsAction>.handleAddLogin() =
+        scope.launch {
+            val host = state.loginsAddLoginState?.host ?: ""
+            val newLoginToAdd = LoginEntry(
+                origin = host,
+                formActionOrigin = host,
+                httpRealm = host,
+                username = state.loginsAddLoginState?.username ?: "",
+                password = state.loginsAddLoginState?.password ?: "",
+            )
+
+            try {
+                val loginAdded = loginsStorage.add(newLoginToAdd)
+                dispatch(
+                    LoginClicked(
+                        LoginItem(
+                            guid = loginAdded.guid,
+                            url = loginAdded.origin,
+                            username = loginAdded.username,
+                            password = loginAdded.password,
+                        ),
+                    ),
+                )
+            } catch (exception: LoginsApiException) {
+                exception.printStackTrace()
+            }
+        }
+
+    private fun Store<LoginsState, LoginsAction>.handleLoginsDetailsBackPressed() = scope.launch {
+        refreshLoginsList()
+
+        withContext(Dispatchers.Main) {
+            getNavController().navigate(LoginsDestinations.LIST)
+        }
+    }
+
+    private fun Store<LoginsState, LoginsAction>.handleEditLogin(loginItem: LoginItem) =
+        scope.launch {
+            val updatedLogin = LoginEntry(
+                origin = loginItem.url,
+                formActionOrigin = loginItem.url,
+                httpRealm = loginItem.url,
+                username = state.loginsEditLoginState?.newUsername ?: loginItem.username,
+                password = state.loginsEditLoginState?.newPassword ?: loginItem.password,
+            )
+
+            try {
+                val loginEdited = loginsStorage.update(loginItem.guid, updatedLogin)
+                dispatch(
+                    LoginClicked(
+                        LoginItem(
+                            guid = loginEdited.guid,
+                            url = loginEdited.origin,
+                            username = loginEdited.username,
+                            password = loginEdited.password,
+                        ),
+                    ),
+                )
+            } catch (exception: LoginsApiException) {
+                exception.printStackTrace()
+            }
+        }
 }

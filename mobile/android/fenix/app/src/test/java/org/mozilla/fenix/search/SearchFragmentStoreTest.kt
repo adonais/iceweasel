@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.search
 
+import android.content.Intent
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -17,8 +18,10 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.state.TabSessionState
+import mozilla.components.concept.awesomebar.AwesomeBar.SuggestionProvider
 import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.libstate.ext.waitUntilIdle
+import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -26,15 +29,25 @@ import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.search.SearchFragmentAction.SearchProvidersUpdated
+import org.mozilla.fenix.search.SearchFragmentAction.SearchStarted
+import org.mozilla.fenix.search.SearchFragmentAction.SearchSuggestionsVisibilityUpdated
+import org.mozilla.fenix.search.fixtures.EMPTY_SEARCH_FRAGMENT_STATE
 import org.mozilla.fenix.utils.Settings
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class SearchFragmentStoreTest {
+    @get:Rule
+    val mainCoroutineRule = MainCoroutineRule()
 
     @MockK private lateinit var searchEngine: SearchEngine
 
@@ -51,6 +64,7 @@ class SearchFragmentStoreTest {
         MockKAnnotations.init(this)
         every { activity.browsingModeManager } returns object : BrowsingModeManager {
             override var mode: BrowsingMode = BrowsingMode.Normal
+            override fun updateMode(intent: Intent?) = Unit
         }
         every { components.settings } returns settings
         every { searchEngine.trendingUrl } returns null
@@ -70,34 +84,15 @@ class SearchFragmentStoreTest {
         every { settings.showNonSponsoredSuggestions } returns true
 
         mockkStatic("org.mozilla.fenix.search.SearchFragmentStoreKt") {
-            val expected = SearchFragmentState(
-                query = "",
-                url = "",
-                searchTerms = "",
-                searchEngineSource = SearchEngineSource.None,
-                defaultEngine = null,
+            val expected = EMPTY_SEARCH_FRAGMENT_STATE.copy(
                 showSearchShortcutsSetting = true,
                 showSearchSuggestions = true,
-                showSearchSuggestionsHint = false,
-                showSearchShortcuts = false,
-                areShortcutsAvailable = false,
-                showClipboardSuggestions = false,
                 showSearchTermHistory = true,
-                showHistorySuggestionsForCurrentEngine = false,
                 showAllHistorySuggestions = true,
-                showBookmarksSuggestionsForCurrentEngine = false,
-                showAllBookmarkSuggestions = false,
-                showSyncedTabsSuggestionsForCurrentEngine = false,
-                showAllSyncedTabsSuggestions = false,
-                showSessionSuggestionsForCurrentEngine = false,
                 showAllSessionSuggestions = true,
                 showSponsoredSuggestions = true,
                 showNonSponsoredSuggestions = true,
-                showTrendingSearches = false,
-                showRecentSearches = false,
-                showShortcutsSuggestions = false,
                 showQrButton = true,
-                tabId = null,
                 pastedText = "pastedText",
                 searchAccessPoint = MetricsUtils.Source.ACTION,
             )
@@ -153,34 +148,12 @@ class SearchFragmentStoreTest {
         every { settings.showSponsoredSuggestions } returns true
         every { settings.showNonSponsoredSuggestions } returns true
 
-        val expected = SearchFragmentState(
-            query = "",
-            url = "",
-            searchTerms = "",
-            searchEngineSource = SearchEngineSource.None,
-            defaultEngine = null,
+        val expected = EMPTY_SEARCH_FRAGMENT_STATE.copy(
             showSearchShortcutsSetting = true,
-            showSearchSuggestions = false,
-            showSearchSuggestionsHint = false,
-            showSearchShortcuts = false,
-            areShortcutsAvailable = false,
-            showClipboardSuggestions = false,
             showSearchTermHistory = true,
-            showHistorySuggestionsForCurrentEngine = false,
             showAllHistorySuggestions = true,
-            showBookmarksSuggestionsForCurrentEngine = false,
-            showAllBookmarkSuggestions = false,
-            showSyncedTabsSuggestionsForCurrentEngine = false,
-            showAllSyncedTabsSuggestions = false,
-            showSessionSuggestionsForCurrentEngine = false,
             showAllSessionSuggestions = true,
-            showSponsoredSuggestions = false,
-            showNonSponsoredSuggestions = false,
-            showTrendingSearches = false,
-            showRecentSearches = false,
-            showShortcutsSuggestions = false,
             showQrButton = true,
-            tabId = null,
             pastedText = "pastedText",
             searchAccessPoint = MetricsUtils.Source.ACTION,
         )
@@ -214,32 +187,11 @@ class SearchFragmentStoreTest {
         )
 
         assertEquals(
-            SearchFragmentState(
+            EMPTY_SEARCH_FRAGMENT_STATE.copy(
                 query = "https://example.com",
                 url = "https://example.com",
                 searchTerms = "search terms",
-                searchEngineSource = SearchEngineSource.None,
-                defaultEngine = null,
-                showSearchSuggestions = false,
-                showSearchShortcutsSetting = false,
-                showSearchSuggestionsHint = false,
-                showSearchShortcuts = false,
-                areShortcutsAvailable = false,
-                showClipboardSuggestions = false,
-                showSearchTermHistory = false,
-                showHistorySuggestionsForCurrentEngine = false,
-                showAllHistorySuggestions = false,
-                showBookmarksSuggestionsForCurrentEngine = false,
-                showAllBookmarkSuggestions = false,
-                showSyncedTabsSuggestionsForCurrentEngine = false,
-                showAllSyncedTabsSuggestions = false,
-                showSessionSuggestionsForCurrentEngine = false,
                 showAllSessionSuggestions = true,
-                showSponsoredSuggestions = false,
-                showNonSponsoredSuggestions = false,
-                showTrendingSearches = false,
-                showRecentSearches = false,
-                showShortcutsSuggestions = false,
                 showQrButton = true,
                 tabId = "tabId",
                 pastedText = "",
@@ -1373,6 +1325,38 @@ class SearchFragmentStoreTest {
         assertTrue(shouldShowTrendingSearchSuggestions(BrowsingMode.Normal, settings, true))
     }
 
+    @Test
+    fun `WHEN search providers are updated THEN persist this in state`() {
+        val newSearchProviders = listOf(mockk<SuggestionProvider>())
+        val store = SearchFragmentStore(emptyDefaultState())
+
+        store.dispatch(SearchProvidersUpdated(newSearchProviders)).joinBlocking()
+
+        assertEquals(newSearchProviders, store.state.searchSuggestionsProviders)
+    }
+
+    @Test
+    fun `WHEN search is started THEN don't update any state`() {
+        val selectedSearchEngine = mockk<SearchEngine>()
+        val initialState = emptyDefaultState()
+        val store = SearchFragmentStore(initialState)
+
+        store.dispatch(SearchStarted(selectedSearchEngine, false, true)).joinBlocking()
+
+        assertEquals(initialState, store.state)
+    }
+
+    @Test
+    fun `WHEN the search UX changes visibility THEN persist this in state`() {
+        val store = SearchFragmentStore(emptyDefaultState())
+
+        store.dispatch(SearchSuggestionsVisibilityUpdated(true))
+        assertTrue(store.state.shouldShowSearchSuggestions)
+
+        store.dispatch(SearchSuggestionsVisibilityUpdated(false))
+        assertFalse(store.state.shouldShowSearchSuggestions)
+    }
+
     private fun emptyDefaultState(
         searchEngineSource: SearchEngineSource = mockk(),
         defaultEngine: SearchEngine? = mockk(),
@@ -1381,34 +1365,15 @@ class SearchFragmentStoreTest {
         showHistorySuggestionsForCurrentEngine: Boolean = true,
         showSponsoredSuggestions: Boolean = true,
         showNonSponsoredSuggestions: Boolean = true,
-    ): SearchFragmentState = SearchFragmentState(
-        tabId = null,
-        url = "",
-        searchTerms = "",
-        query = "",
+    ): SearchFragmentState = EMPTY_SEARCH_FRAGMENT_STATE.copy(
         searchEngineSource = searchEngineSource,
         defaultEngine = defaultEngine,
-        showSearchSuggestionsHint = false,
         showSearchShortcutsSetting = showSearchShortcutsSetting,
-        showSearchSuggestions = false,
-        showSearchShortcuts = false,
         areShortcutsAvailable = areShortcutsAvailable,
-        showClipboardSuggestions = false,
         showSearchTermHistory = true,
         showHistorySuggestionsForCurrentEngine = showHistorySuggestionsForCurrentEngine,
-        showAllHistorySuggestions = false,
-        showBookmarksSuggestionsForCurrentEngine = false,
-        showAllBookmarkSuggestions = false,
-        showSyncedTabsSuggestionsForCurrentEngine = false,
-        showAllSyncedTabsSuggestions = false,
-        showSessionSuggestionsForCurrentEngine = false,
-        showAllSessionSuggestions = false,
         showSponsoredSuggestions = showSponsoredSuggestions,
         showNonSponsoredSuggestions = showNonSponsoredSuggestions,
-        showTrendingSearches = false,
-        showRecentSearches = false,
-        showShortcutsSuggestions = false,
         showQrButton = true,
-        searchAccessPoint = MetricsUtils.Source.NONE,
     )
 }

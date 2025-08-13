@@ -6,17 +6,16 @@ package org.mozilla.fenix.ui.robots
 
 import android.util.Log
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertAny
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.swipeLeft
-import androidx.compose.ui.test.swipeRight
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.pressImeActionButton
 import androidx.test.espresso.matcher.RootMatchers
@@ -28,12 +27,14 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.MatcherHelper.assertItemTextEquals
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
+import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectIsGone
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
+import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.helpers.ext.waitNotNull
 
@@ -87,20 +88,43 @@ class CollectionRobot {
         Log.i(TAG, "saveTabsSelectedForCollection: Clicked \"Save\" button")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun verifyTabSavedInCollection(composeTestRule: ComposeTestRule, title: String, visible: Boolean = true) {
         if (visible) {
+            Log.i(TAG, "verifyTabSavedInCollection: Waiting for $waitingTime until tab with title: $title exists")
+            composeTestRule.waitUntilAtLeastOneExists(hasText(title), waitingTime)
+            Log.i(TAG, "verifyTabSavedInCollection: Waited for $waitingTime until tab with title: $title exists")
             Log.i(TAG, "verifyTabSavedInCollection: Trying to verify that tab with title: $title is displayed")
             composeTestRule.onNodeWithText(title).assertIsDisplayed()
             Log.i(TAG, "verifyTabSavedInCollection: Verified that tab with title: $title is displayed")
         } else {
+            Log.i(TAG, "verifyTabSavedInCollection: Waiting for $waitingTime until tab with title: $title does not exists")
+            composeTestRule.waitUntilDoesNotExist(hasText(title), waitingTime)
+            Log.i(TAG, "verifyTabSavedInCollection: Waited for $waitingTime until tab with title: $title does not exists")
             Log.i(TAG, "verifyTabSavedInCollection: Trying to verify that tab with title: $title is not displayed")
             composeTestRule.onNodeWithText(title).assertIsNotDisplayed()
             Log.i(TAG, "verifyTabSavedInCollection: Verified that tab with title: $title is not displayed")
         }
     }
 
-    fun verifyCollectionTabUrl(visible: Boolean, url: String) =
-        assertUIObjectExists(itemContainingText(url), exists = visible)
+    @OptIn(ExperimentalTestApi::class)
+    fun verifyCollectionTabUrl(composeTestRule: ComposeTestRule, isDisplayed: Boolean, url: String) {
+        if (isDisplayed) {
+            Log.i(TAG, "verifyCollectionTabUrl: Waiting for $waitingTime until tab with url: $url exists")
+            composeTestRule.waitUntilAtLeastOneExists(hasText(url))
+            Log.i(TAG, "verifyCollectionTabUrl: Waited for $waitingTime until tab with url: $url exists")
+            Log.i(TAG, "verifyCollectionTabUrl: Trying to verify that the node with text: $url has text: $url")
+            composeTestRule.onAllNodesWithText(url).assertAny(hasText(url))
+            Log.i(TAG, "verifyCollectionTabUrl: Verified that the node with text: $url has text: $url")
+        } else {
+            Log.i(TAG, "verifyCollectionTabUrl: Waiting for $waitingTime until tab with url: $url does not exist")
+            composeTestRule.waitUntilDoesNotExist(hasText(url))
+            Log.i(TAG, "verifyCollectionTabUrl: Waited for $waitingTime until tab with url: $url does not exist")
+            Log.i(TAG, "verifyCollectionTabUrl: Trying to verify that the tab with url: $url is not displayed")
+            composeTestRule.onNodeWithText(url).assertIsNotDisplayed()
+            Log.i(TAG, "verifyCollectionTabUrl: Verified that the tab with url: $url is not displayed")
+        }
+    }
 
     fun verifyShareCollectionButtonIsVisible(composeTestRule: ComposeTestRule, visible: Boolean) {
         if (visible) {
@@ -186,8 +210,13 @@ class CollectionRobot {
         Log.i(TAG, "selectDeleteCollection: Waited for the \"Delete collection\" menu option to not exist")
     }
 
-    fun verifyCollectionItemRemoveButtonIsVisible(title: String, visible: Boolean) =
-        assertUIObjectExists(removeTabFromCollectionButton(title), exists = visible)
+    fun verifyCollectionItemRemoveButtonIsVisible(title: String, visible: Boolean) {
+        if (visible) {
+            assertUIObjectExists(removeTabFromCollectionButton(title), exists = true)
+        } else {
+            assertUIObjectIsGone(removeTabFromCollectionButton(title))
+        }
+    }
 
     fun removeTabFromCollection(title: String) {
         Log.i(TAG, "removeTabFromCollection: Trying to click remove button for tab: $title")
@@ -195,24 +224,14 @@ class CollectionRobot {
         Log.i(TAG, "removeTabFromCollection: Clicked remove button for tab: $title")
     }
 
-    fun swipeTabLeft(title: String, rule: ComposeTestRule) {
-        Log.i(TAG, "swipeTabLeft: Trying to remove tab: $title using swipe left action")
-        rule.onNode(hasText(title), useUnmergedTree = true)
-            .performTouchInput { swipeLeft() }
-        Log.i(TAG, "swipeTabLeft: Removed tab: $title using swipe left action")
-        Log.i(TAG, "swipeTabLeft: Waiting for rule to be idle")
-        rule.waitForIdle()
-        Log.i(TAG, "swipeTabLeft: Waited for rule to be idle")
+    fun swipeTabLeft(title: String) {
+        itemContainingText(title).swipeLeft(6)
+        waitForAppWindowToBeUpdated()
     }
 
-    fun swipeTabRight(title: String, rule: ComposeTestRule) {
-        Log.i(TAG, "swipeTabRight: Trying to remove tab: $title using swipe right action")
-        rule.onNode(hasText(title), useUnmergedTree = true)
-            .performTouchInput { swipeRight() }
-        Log.i(TAG, "swipeTabRight: Removed tab: $title using swipe right action")
-        Log.i(TAG, "swipeTabRight: Waiting for rule to be idle")
-        rule.waitForIdle()
-        Log.i(TAG, "swipeTabRight: Waited for rule to be idle")
+    fun swipeTabRight(title: String) {
+        itemContainingText(title).swipeRight(6)
+        waitForAppWindowToBeUpdated()
     }
 
     fun goBackInCollectionFlow() {
@@ -230,6 +249,9 @@ class CollectionRobot {
             Log.i(TAG, "collapseCollection: Trying to click the collection with title: $title")
             composeTestRule.onNodeWithText(title).performClick()
             Log.i(TAG, "collapseCollection: Clicked the collection with title: $title")
+            Log.i(TAG, "collapseCollection: Waiting for compose test rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "collapseCollection: Waiting for compose test rule to be idle")
 
             HomeScreenRobot().interact()
             return HomeScreenRobot.Transition()

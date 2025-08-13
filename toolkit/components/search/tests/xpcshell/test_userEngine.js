@@ -52,7 +52,10 @@ add_task(async function test_user_engine() {
     "Should have the correct suggest url"
   );
 
-  Services.search.defaultEngine = engine;
+  await Services.search.setDefault(
+    engine,
+    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+  );
 
   await assertGleanDefaultEngine({
     normal: {
@@ -173,7 +176,7 @@ add_task(async function test_changeUrl() {
   engine.wrappedJSObject.changeUrl(
     SearchUtils.URL_TYPE.SUGGEST_JSON,
     "https://example.com/suggest?query={searchTerms}",
-    "GET"
+    null
   );
   submission = engine.getSubmission("foo", SearchUtils.URL_TYPE.SUGGEST_JSON);
   Assert.equal(
@@ -181,6 +184,11 @@ add_task(async function test_changeUrl() {
     "https://example.com/suggest?query=foo",
     "Suggest URL was changed."
   );
+  Assert.equal(submission.postData, null, "Suggest URL uses GET");
+
+  engine.wrappedJSObject.changeUrl(SearchUtils.URL_TYPE.SUGGEST_JSON, null);
+  submission = engine.getSubmission("foo", SearchUtils.URL_TYPE.SUGGEST_JSON);
+  Assert.ok(!submission, "Suggest URL was removed");
 
   await Services.search.removeEngine(engine);
 });
@@ -206,9 +214,9 @@ add_task(async function test_changeIcon() {
     ["16"],
     "One icon with the correct resolution was added."
   );
-  Assert.ok(
-    (await engine.getIconURL()) ==
-      (await SearchTestUtils.fetchAsDataUrl(svgIconUrl)),
+  Assert.equal(
+    await engine.getIconURL(),
+    await SearchTestUtils.fetchAsDataUrl(svgIconUrl),
     "Correct icon was added."
   );
 
@@ -226,9 +234,9 @@ add_task(async function test_changeIcon() {
     ["32"],
     "Icon with the correct resolution was added and old icon removed."
   );
-  Assert.ok(
-    (await engine.getIconURL()) !=
-      (await SearchTestUtils.fetchAsDataUrl(bigIconUrl)),
+  Assert.notEqual(
+    await engine.getIconURL(),
+    await SearchTestUtils.fetchAsDataUrl(bigIconUrl),
     "The icon was re-scaled."
   );
 });

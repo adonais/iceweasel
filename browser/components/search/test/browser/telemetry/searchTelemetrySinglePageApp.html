@@ -19,6 +19,7 @@
   <nav style="display: flex; gap: 10px;">
     <a id="all" data-menu="all">All</a>
     <a id="images" data-menu="images">Images</a>
+    <a id="shopping" data-menu="shopping">Shopping</a>
   </nav>
   <div id="searchbox-container">
     <input id="searchbox" type="text" placeholder="search" />
@@ -29,6 +30,7 @@
   <script>
     const allTab = document.querySelector("[data-menu='all']");
     const imagesTab = document.querySelector("[data-menu='images']");
+    const shoppingTab = document.querySelector("[data-menu='shopping']");
     const results = document.getElementById("results");
     const related = document.getElementById("related-searches");
     const searchBox = document.getElementById("searchbox");
@@ -114,6 +116,9 @@
 
       baseUrl.searchParams.set("page", "images");
       imagesTab.href = baseUrl.href;
+
+      baseUrl.searchParams.set("page", "shopping");
+      shoppingTab.href = baseUrl.href;
     }
 
     function updatePageState({ page = "", query = "" }) {
@@ -163,6 +168,15 @@
       event.preventDefault();
       updatePageState({ page: "images" });
       replaceWithOtherResults();
+      updateRelatedSearches();
+      updateSearchbox();
+      updateSuggestions();
+    });
+
+    shoppingTab.addEventListener("click", (event) => {
+      event.preventDefault();
+      updatePageState({ page: "shopping" });
+      replaceWithBasicResults();
       updateRelatedSearches();
       updateSearchbox();
       updateSuggestions();
@@ -234,6 +248,13 @@
           replaceWithOtherResults();
           updateRelatedSearches();
           updateSearchbox();
+          break;
+        case "shopping":
+          replaceWithBasicResults();
+          updateNav();
+          updateRelatedSearches();
+          updateSearchbox();
+          updateSuggestions();
           break;
       }
     });

@@ -32,14 +32,31 @@
   <p id="prevMatchAtEndOfBlock">EndOfBlock</p>
   <div id="emptyBlockAtBeginning"><div></div>AfterEmptyBlock</div>
   <div id="emptyBlockAtEnd">BeforeEmptyBlock<div></div></div>
+  <div id="rangeBasedWithMultipleEndMatchesBegin">Begin and begin or begin with begin</div>
+  <div id="rangeBasedWithMultipleEndMatchesEnd">end or end and end at end</div>
+  <div>HereStartsATableAndThisIsHereToMakeSureTheTestResultsAreIndependentOfSurroundingContent</div>
   <table>
     <tr>
       <td id="firstRow">first row</td></tr> <tr><td id="secondRow">second row</td>
     </tr>
   </table>
-  <span id="longWord">1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111</span>
+  <div>HereEndsATableAndThisIsHereToMakeSureTheTestResultsAreIndependentOfSurroundingContent</div>
 
+  <span id="longWord">1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111</span>
+  <p id="loremIpsum">Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source.</p>
+  <p>
+    <span id="beforeEmptyTextNode">before empty text node</span>
+    <!-- empty text node will be inserted right here -->
+    <span id="afterEmptyTextNode">after empty text node</span>
+  </p>
+  <div id="nbsp">&nbsp;</div>
   <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const empty = document.createTextNode("");
+      const afterEmptyTextNode = document.getElementById("afterEmptyTextNode");
+      afterEmptyTextNode.parentNode.insertBefore(empty, afterEmptyTextNode);
+    });
+
     SimpleTest.waitForExplicitFinish();
     function rAF() {
       return new Promise(resolve => {
@@ -264,7 +281,79 @@
           endOffset: secondRow.firstChild.length,
           content: "first row second row",
           textDirective: "text=first%20row,second%20row",
-        }
+        },
+        {
+          name: "Finding prefix in the correct order",
+          startContainer: loremIpsum.firstChild,
+          startOffset: 308,
+          endContainer: loremIpsum.firstChild,
+          endOffset: 313,
+          content: "Lorem",
+          textDirective: "text=a-,Lorem"
+        },
+        {
+          name: "Range-based text directive with multiple end matches 1 (first match)",
+          startContainer: rangeBasedWithMultipleEndMatchesBegin.firstChild,
+          startOffset: 0,
+          endContainer: rangeBasedWithMultipleEndMatchesEnd.firstChild,
+          endOffset: 3,
+          content: "Begin and begin or begin with begin\n  end",
+          textDirective: "text=Begin,end"
+        },
+        {
+          name: "Range-based text directive with multiple end matches 2 (use end because it's shorter)",
+          startContainer: rangeBasedWithMultipleEndMatchesBegin.firstChild,
+          startOffset: 0,
+          endContainer: rangeBasedWithMultipleEndMatchesEnd.firstChild,
+          endOffset: 10,
+          content: "Begin and begin or begin with begin\n  end or end",
+          textDirective: "text=Begin,or%20end"
+        },
+        {
+          name: "Range-based text directive with multiple end matches 3 (use suffix because it's shorter)",
+          startContainer: rangeBasedWithMultipleEndMatchesBegin.firstChild,
+          startOffset: 0,
+          endContainer: rangeBasedWithMultipleEndMatchesEnd.firstChild,
+          endOffset: 18,
+          content: "Begin and begin or begin with begin\n  end or end and end",
+          textDirective: "text=Begin,end,-at"
+        },
+        {
+          name: "Range-based text directive with multiple start matches 1 (use start because it's shorter)",
+          startContainer: rangeBasedWithMultipleEndMatchesBegin.firstChild,
+          startOffset: 10,
+          endContainer: rangeBasedWithMultipleEndMatchesEnd.firstChild,
+          endOffset: 18,
+          content: "begin or begin with begin\n  end or end and end",
+          textDirective: "text=begin%20or,end,-at"
+        },
+        {
+          name: "Range-based text directive with multiple start matches 2 (use prefix because it's shorter)",
+          startContainer: rangeBasedWithMultipleEndMatchesBegin.firstChild,
+          startOffset: 19,
+          endContainer: rangeBasedWithMultipleEndMatchesEnd.firstChild,
+          endOffset: 18,
+          content: "begin with begin\n  end or end and end",
+          textDirective: "text=or-,begin,end,-at"
+        },
+        {
+          name: "Empty text nodes need to be handled correctly when finding word boundary looking left",
+          startContainer: afterEmptyTextNode.firstChild,
+          startOffset: 0,
+          endContainer: afterEmptyTextNode.firstChild,
+          endOffset: 5,
+          content: "after",
+          textDirective: "text=after"
+        },
+        {
+          name: "Empty text nodes need to be handled correctly when finding word boundary looking right",
+          startContainer: beforeEmptyTextNode.firstChild,
+          startOffset: 18,
+          endContainer: beforeEmptyTextNode.firstChild,
+          endOffset: 22,
+          content: "node",
+          textDirective: "text=node"
+        },
       ]) {
         const range = document.createRange();
         range.setStart(testCase.startContainer, testCase.startOffset);
@@ -273,8 +362,11 @@
           range.toString(), testCase.content,
           `${testCase.name}: Precondition - Range has expected value`
         );
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
 
-        const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirective(range);
+        const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
         is(
           textDirective, testCase.textDirective,
           `${testCase.name}: text directive has expected value '${testCase.textDirective}'`
@@ -313,30 +405,36 @@
      * return an empty string, not an error.
      */
     async function testEmptyRange() {
-      const createDirectiveTimeStart = await GleanTest.domTextfragment.createDirective.testGetValue() ?? {count: 0};
 
-      const range = document.createRange();
-      let textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirective(range);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      let textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
       is(
         textDirective, null,
         "Empty input range: Produces empty text directive"
       );
+      const range = document.createRange();
       range.selectNode(abc);
       range.collapse(true);
-      textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirective(range);
+      selection.addRange(range);
+      textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
       is(
         textDirective, null,
         "Collapsed input range: Produces empty text directive"
       );
       range.selectNode(image);
-      textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirective(range);
+      textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
       is(
         textDirective, null,
         "Input range contains image only: Produces empty text directive"
       );
 
-      const createDirectiveTime = await GleanTest.domTextfragment.createDirective.testGetValue() ?? {count: 0};
-      is(createDirectiveTime.count, createDirectiveTimeStart.count + 1, "testEmptyRange: Glean should have recorded the time it took to create the text directive");
+      range.selectNode(nbsp);
+      textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
+      is(
+        textDirective, null,
+        "Input range contains nbsp only: Produces empty text directive"
+      );
     }
 
     async function testExpandRangeToWordBoundaries() {
@@ -423,8 +521,10 @@
           range.toString().trim(), testCase.content,
           `${testCase.name}: Precondition - Range has expected value`
         );
-
-        const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirective(range);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
         is(
           textDirective, testCase.textDirective,
           `${testCase.name}: text directive has expected value '${textDirective}'`
@@ -466,7 +566,10 @@
       range.setStart(surroundedByBlockBoundaries.firstChild, 4);
       range.setEnd(surroundedByBlockBoundaries.firstChild, 7);
       is(range.toString(), "def", `${testCase}: Range has expected value`);
-      const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirective(range);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
       is(textDirective, null, `${testCase}: It's not possible to create a unique text directive`);
 
       const createDirectiveTime = await GleanTest.domTextfragment.createDirective.testGetValue() ?? {count: 0};
@@ -481,7 +584,10 @@
       const content = "AfterEmptyBlock\n  BeforeEmptyBlock";
       const textDirectiveString = "text=AfterEmptyBlock,BeforeEmptyBlock";
       is(range.toString(), content, `${testCase}: Range has expected value`);
-      const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirective(range);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
       is(textDirective, textDirectiveString, `${testCase}: text directive has expected value '${textDirectiveString}'`);
       location.hash = `:~:${textDirective}`;
       await rAF();
@@ -494,8 +600,27 @@
       const range = document.createRange();
       range.setStart(longWord.firstChild, 0);
       range.setEnd(longWord.firstChild, longWord.firstChild.length);
-      const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirective(range);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
       is(textDirective, null, `${testCase}: This test case should not produce a text directive`);
+    }
+
+    async function testMultipleRanges() {
+      let testCase = "Two single-word text directives";
+      const range1 = document.createRange();
+      range1.setStart(abc.firstChild, 0);
+      range1.setEnd(abc.firstChild, 3);
+      const range2 = document.createRange();
+      range2.setStart(foo.firstChild, 0);
+      range2.setEnd(foo.firstChild, 3);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range1);
+      selection.addRange(range2);
+      const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
+      is(textDirective, "text=abc&text=foo", `${testCase}: The text fragment has the expected value`);
     }
 
     async function runTests() {
@@ -511,6 +636,7 @@
         await testNonUniqueTestSurroundedByBlockBoundaries();
         await testRangeBasedWithEmptySurroundingBlocks();
         await testRangeBasedWithNonBreakableWord();
+        await testMultipleRanges();
 
     }
     finally {

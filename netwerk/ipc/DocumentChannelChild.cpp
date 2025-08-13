@@ -8,6 +8,7 @@
 #include "DocumentChannelChild.h"
 
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/RemoteType.h"
 #include "mozilla/extensions/StreamFilterParent.h"
 #include "mozilla/ipc/Endpoint.h"
@@ -239,10 +240,10 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
   // as will the loadingContext computed in LoadInfoArgsToLoadInfo.
   // Figure out if we need these for cross-origin subdocs.
   RefPtr<dom::Document> cspToInheritLoadingDocument;
-  nsCOMPtr<nsIContentSecurityPolicy> policy = mLoadState->Csp();
-  if (policy) {
-    nsWeakPtr ctx =
-        static_cast<nsCSPContext*>(policy.get())->GetLoadingContext();
+  nsCOMPtr<nsIContentSecurityPolicy> csp =
+      PolicyContainer::GetCSP(mLoadState->PolicyContainer());
+  if (csp) {
+    nsWeakPtr ctx = nsCSPContext::Cast(csp.get())->GetLoadingContext();
     cspToInheritLoadingDocument = do_QueryReferent(ctx);
   }
   nsCOMPtr<nsILoadInfo> loadInfo;

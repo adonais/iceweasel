@@ -6,7 +6,7 @@ scheme = "https"
 
 ["test_credman_iframes.html"]
 skip-if = [
-  "xorigin",  # Application time out
+  "xorigin", # Application time out
   "win10_2009", # Bug 1718296
   "win11_2009", # Bug 1718296
   "http3",

@@ -90,9 +90,8 @@ private fun SearchSuggestions(
     val components = components
 
     val icon = AppCompatResources.getDrawable(context, R.drawable.mozac_ic_search_24)?.toBitmap()
-    val provider = remember(context) {
+    val provider = remember {
         SearchSuggestionProvider(
-            context,
             components.store,
             components.searchUseCases.newPrivateTabSearch,
             components.client,

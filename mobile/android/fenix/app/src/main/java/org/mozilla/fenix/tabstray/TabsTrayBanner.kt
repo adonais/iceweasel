@@ -14,13 +14,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.LocalContentAlpha
-import androidx.compose.material.LocalContentColor
-import androidx.compose.material.Tab
-import androidx.compose.material.TabRow
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -255,9 +254,11 @@ private fun TabPageBanner(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             TabRow(
-                selectedTabIndex = selectedPage.ordinal,
-                modifier = Modifier.fillMaxWidth(MAX_WIDTH_TAB_ROW_PERCENT),
-                backgroundColor = Color.Transparent,
+                selectedTabIndex = Page.pageToPosition(selectedPage),
+                modifier = Modifier
+                    .fillMaxWidth(MAX_WIDTH_TAB_ROW_PERCENT)
+                    .fillMaxHeight(),
+                containerColor = Color.Transparent,
                 contentColor = selectedColor,
                 divider = {},
             ) {
@@ -270,12 +271,10 @@ private fun TabPageBanner(
                     selectedContentColor = selectedColor,
                     unselectedContentColor = inactiveColor,
                 ) {
-                    val tabCounterAlpha =
-                        LocalContentColor.current.copy(alpha = LocalContentAlpha.current)
                     TabCounter(
                         tabCount = normalTabCount,
-                        textColor = tabCounterAlpha,
-                        iconColor = tabCounterAlpha,
+                        textColor = LocalContentColor.current,
+                        iconColor = LocalContentColor.current,
                     )
                 }
 

@@ -9,8 +9,8 @@
 #ifndef mozilla_ServoUtils_h
 #define mozilla_ServoUtils_h
 
-#include "mozilla/Assertions.h"
 #include "MainThreadUtils.h"
+#include "mozilla/Assertions.h"
 
 namespace mozilla {
 

@@ -23,7 +23,7 @@ skip-if = [
 ["test_clipboard.html"]
 skip-if = [
   "headless", # bug 1852983
-  "display == 'wayland' && os_version == '22.04'",  # Bug 1857075
+  "display == 'wayland' && os_version == '22.04'", # Bug 1857075
 ]
 support-files = ["file_test_clipboard.js"]
 
@@ -40,8 +40,8 @@ support-files = "file_test_clipboard_getDataSnapshotSync.js"
 
 ["test_clipboard_pngPreservesTransparency.html"]
 skip-if = [
-  "headless",   # Clipboard call to get PNG data fails (bug 1878643)
-  "os == 'android'",   # Android cannot copy image contents (bug 1299578)
+  "headless", # Clipboard call to get PNG data fails (bug 1878643)
+  "os == 'android'", # Android cannot copy image contents (bug 1299578)
 ]
 support-files = "file_test_clipboard_pngPreservesTransparency.js"
 scheme = "https" # ImageDecoder requires secure context
@@ -54,9 +54,7 @@ run-if = [
 skip-if = ["headless"] # headless widget doesn't dispatch contextmenu event by mouse event.
 
 ["test_contextmenu_chorded_buttons.html"]
-run-if = [
-  "os == 'win'", # only Windows updates the mouse button state when enqueuing native mouse down event.
-]
+run-if = ["os == 'win'"] # only Windows updates the mouse button state when enqueuing native mouse down event.
 skip-if = [
   "headless", # headless widget doesn't dispatch contextmenu event by mouse event.
   "xorigin", # high-frequently intermittent fail
@@ -66,9 +64,7 @@ skip-if = [
 run-if = ["os == 'mac'"]
 
 ["test_mouse_double_click_on_android.html"]
-run-if = [
-  "os == 'android'",
-]
+run-if = ["os == 'android'"]
 
 ["test_mouse_event_with_control_on_mac.html"]
 run-if = ["os == 'mac'"]
@@ -82,4 +78,4 @@ skip-if = [
 support-files = ["window_picker_no_crash_child.html"]
 
 ["test_textScaleFactor_system_font.html"]
-skip-if = ["display == 'wayland' && os_version == '22.04'"]  # Bug 1857075
+skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857075

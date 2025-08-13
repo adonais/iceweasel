@@ -7,6 +7,7 @@
 /* implementation of interface for managing user and user-agent style sheets */
 
 #include "nsStyleSheetService.h"
+
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PreloadedStyleSheet.h"
 #include "mozilla/PresShell.h"
@@ -18,14 +19,14 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/ipc/URIUtils.h"
-#include "nsIURI.h"
 #include "nsCOMPtr.h"
-#include "nsISupportsPrimitives.h"
-#include "nsISimpleEnumerator.h"
-#include "nsNetUtil.h"
 #include "nsIConsoleService.h"
+#include "nsISimpleEnumerator.h"
+#include "nsISupportsPrimitives.h"
+#include "nsIURI.h"
 #include "nsLayoutStatics.h"
 #include "nsLayoutUtils.h"
+#include "nsNetUtil.h"
 
 using namespace mozilla;
 

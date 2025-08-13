@@ -542,9 +542,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">မှတ်တမ်းကို ဖျက်ပါ</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">မှတ်တမ်း ကို ဖျက်ပြီး</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">မှတ်တမ်း ကို ဖျက်ပြီး</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">%1$s ခု ဖျက်ပြီး</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s ခု ဖျက်ပြီး</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">ဖျက်ပါ</string>
   <!--
@@ -586,9 +586,9 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">ဤ ဖိုဒါ ကို ဖျက်ရန် သေချာပါသလား။</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">ဤ ဖိုဒါ ကို ဖျက်ရန် သေချာပါသလား။</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog">%sသည် ရွေးခဲ့သော အရာ ကို ဖျက်လိမ့်မည်။</string>
+  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%sသည် ရွေးခဲ့သော အရာ ကို ဖျက်လိမ့်မည်။</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">ပယ်​ဖျက်မည်</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -608,7 +608,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">ဖျက်ပါ</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">သိမ်းဆည်းပါ</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">သိမ်းဆည်းပါ</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -619,7 +619,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">ဖိုင်ပြင်ဆင်ပါ</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">ထပ်တူပြုထားသည့်စာမှတ်များကိုကြည့်ရန်ဆိုင်းအင်လုပ်ပါ</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">ထပ်တူပြုထားသည့်စာမှတ်များကိုကြည့်ရန်ဆိုင်းအင်လုပ်ပါ</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -627,24 +627,24 @@
   <!-- Bookmark NAME editing field label -->
   <string name="bookmark_name_label">နာမည်</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">ဖိုင်ပေါင်းထည့်ပါ</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">ဖိုင်ပေါင်းထည့်ပါ</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">ဖိုင်တွဲကိုရွေးပါ</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">ခေါင်းစဉ်ရှိရမည်</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">ခေါင်းစဉ်ရှိရမည်</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">မမှန်ကန်သောURL</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">ဒီမှာ စာမှတ်များမရှိပါ</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">ဒီမှာ စာမှတ်များမရှိပါ</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s ဖျက်ပြီး</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">စာမှတ်များ ဖျက်ပြီး</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">စာမှတ်များ ဖျက်ပြီး</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3">‌ရွေးခဲ့သော ဖိုဒါများ ဖျက်နေသည်</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">‌ရွေးခဲ့သော ဖိုဒါများ ဖျက်နေသည်</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">မလုပ်တော့ပါ</string>
   <!--
@@ -752,7 +752,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d tabs ကိုရွေးချယ်ထားပါသည်</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">တဗ်များကိုသိမ်းထားပြီး</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">တဗ်များကိုသိမ်းထားပြီး</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection">စုစည်းမှု သိမ်းပြီး။</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -819,9 +819,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">စုဆောင်းမှုကိုဖျက်လိုက်သည်</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">စုဆောင်းမှုကိုဖျက်လိုက်သည်</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">စုဆောင်းမှုအမည်ပြောင်းခဲ့သည်</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">စုဆောင်းမှုအမည်ပြောင်းခဲ့သည်</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Tab ပိတ်လိုက်တယ်</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -846,9 +846,9 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">%1$s ကိုသင်ဖျက်လိုသလား။</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">ဖျက်ပါ</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">ဖျက်ပါ</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">URL ကူးပြီး</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL ကူးပြီး</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">စာသားချဲ့ခြင်းချုံခြင်းများကို ထိန်းညှိရန် ဤနေရာတွင် နမူနာစာသားဖြင့်ပြထားပါသည်။</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -1178,14 +1178,12 @@
   <string name="search_add_custom_engine_error_empty_search_string">ရှာဖွေစာကြောင်းကိုရိုက်ပါ</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">ရှာဖွေစာကြောင်းကိုဥပမာပုံစံနှင့်ကိုက်ညီသလားစစ်ပါ။</string>
-  <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">“%s” ချိတ်ဆက်မှုအမှားအယွင်း</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">%s ဖန်တီးထားသည်</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ဖန်တီးထားသည်</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">%s သိမ်းဆည်းခဲ့သည်</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s သိမ်းဆည်းခဲ့သည်</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">%s ဖျက်ပြီးပါပြီ</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ဖျက်ပြီးပါပြီ</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">ခွင့်ပြုရန် -</string>
   <!-- First step for the allowing a permission -->
@@ -1203,7 +1201,7 @@
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">site ချွင်းချက်မရှိပါ</string>
   <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation">ဒီစာမှတ်ကိုဖျက်ရန်သေချာပါသလား။</string>
+  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">ဒီစာမှတ်ကိုဖျက်ရန်သေချာပါသလား။</string>
   <!--
     text shown before the issuer name to indicate who its verified by, %1$s is the name of
     the certificate authority that verified the ticket
@@ -1260,7 +1258,7 @@
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">အပေါ် တက်ပါ</string>
   <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description">ပိတ်ပါ</string>
+  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">ပိတ်ပါ</string>
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->

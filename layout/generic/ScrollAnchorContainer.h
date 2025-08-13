@@ -7,9 +7,9 @@
 #ifndef mozilla_layout_ScrollAnchorContainer_h_
 #define mozilla_layout_ScrollAnchorContainer_h_
 
-#include "nsPoint.h"
 #include "mozilla/Saturate.h"
 #include "mozilla/TimeStamp.h"
+#include "nsPoint.h"
 
 class nsFrameList;
 class nsIFrame;

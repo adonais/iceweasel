@@ -36,3 +36,8 @@ dictionary SelectorWarning {
   required unsigned long index;
   required SelectorWarningKind kind;
 };
+
+// https://drafts.css-houdini.org/css-typed-om-1/#declared-stylepropertymap-objects
+partial interface CSSStyleRule {
+  [SameObject, Pref="layout.css.typed-om.enabled"] readonly attribute StylePropertyMap styleMap;
+};

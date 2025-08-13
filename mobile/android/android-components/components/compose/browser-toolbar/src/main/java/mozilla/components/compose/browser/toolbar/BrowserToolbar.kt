@@ -6,12 +6,15 @@ package mozilla.components.compose.browser.toolbar
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin
-import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction
-import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction
-import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction
+import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.SearchAborted
+import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.SearchQueryUpdated
+import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.UrlSuggestionAutocompleted
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.CommitUrl
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.DisplayState
@@ -36,11 +39,16 @@ fun BrowserToolbar(
 
     if (uiState.isEditMode()) {
         BrowserEditToolbar(
-            url = uiState.editState.editText ?: uiState.displayState.pageOrigin.url.orEmpty(),
+            query = uiState.editState.query,
+            showQueryAsPreselected = uiState.editState.showQueryAsPreselected,
+            autocompleteProviders = uiState.editState.autocompleteProviders,
             editActionsStart = uiState.editState.editActionsStart,
             editActionsEnd = uiState.editState.editActionsEnd,
-            onUrlCommitted = { text -> store.dispatch(BrowserToolbarAction.CommitUrl(text)) },
-            onUrlEdit = { text -> store.dispatch(BrowserEditToolbarAction.UpdateEditText(text)) },
+            hint = stringResource(uiState.editState.hint),
+            onUrlCommitted = { text -> store.dispatch(CommitUrl(text)) },
+            onUrlEdit = { text -> store.dispatch(SearchQueryUpdated(text)) },
+            onUrlEditAborted = { store.dispatch(SearchAborted) },
+            onUrlSuggestionAutocompleted = { store.dispatch(UrlSuggestionAutocompleted(it)) },
             onInteraction = { store.dispatch(it) },
         )
     } else {
@@ -61,7 +69,8 @@ fun BrowserToolbar(
 private fun BrowserToolbarPreview_EditMode() {
     // Mock edit state
     val editState = EditState(
-        editText = "https://www.mozilla.org",
+        query = "https://www.mozilla.org",
+        autocompleteProviders = emptyList(),
         editActionsStart = emptyList(),
         editActionsEnd = emptyList(),
     )
@@ -69,7 +78,7 @@ private fun BrowserToolbarPreview_EditMode() {
         mode = Mode.EDIT,
         editState = editState,
     )
-    val store = BrowserToolbarStore(initialState = toolbarState)
+    val store = BrowserToolbarStore(toolbarState)
 
     AcornTheme {
         BrowserToolbar(
@@ -85,7 +94,7 @@ private fun BrowserToolbarPreview_DisplayMode() {
         hint = 0,
         title = "Preview Title",
         url = "https://www.mozilla.org",
-        onClick = object : BrowserToolbarInteraction.BrowserToolbarEvent {},
+        onClick = object : BrowserToolbarEvent {},
         onLongClick = null,
         textGravity = PageOrigin.Companion.TextGravity.TEXT_GRAVITY_START,
     )
@@ -100,7 +109,7 @@ private fun BrowserToolbarPreview_DisplayMode() {
         mode = Mode.DISPLAY,
         displayState = displayState,
     )
-    val store = BrowserToolbarStore(initialState = toolbarState)
+    val store = BrowserToolbarStore(toolbarState)
 
     AcornTheme {
         BrowserToolbar(

@@ -162,6 +162,10 @@ tasks:
         fetches:
             build:
                 - target.zip
+                - artifact: target.crashreporter-symbols.zip
+                  dest: firefox/symbols
+            toolchain:
+                - win32-minidump-stackwalk
 
     grizzly-windows64-opt:
         platform: windows2012-64/asan
@@ -192,6 +196,10 @@ tasks:
         fetches:
             build:
                 - target.zip
+                - artifact: target.crashreporter-symbols.zip
+                  dest: firefox/symbols
+            toolchain:
+                - win64-minidump-stackwalk
 
     grizzly-windows64-ccov:
         platform: windows2012-64/ccov

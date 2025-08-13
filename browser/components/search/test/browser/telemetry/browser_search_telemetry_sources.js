@@ -445,7 +445,7 @@ add_task(async function test_source_system() {
         "searchSuggestion",
         false,
         Services.scriptSecurityManager.getSystemPrincipal(),
-        gBrowser.selectedBrowser.csp
+        gBrowser.selectedBrowser.policyContainer
       );
 
       await loadPromise;

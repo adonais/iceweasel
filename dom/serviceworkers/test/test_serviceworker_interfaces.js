@@ -414,7 +414,7 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   "Response",
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "Scheduler", nightly: true },
+  "Scheduler",
   // IMPORTANT: Do not change this list without review from a DOM peer!
   "ServiceWorker",
   // IMPORTANT: Do not change this list without review from a DOM peer!
@@ -428,11 +428,11 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   "SubtleCrypto",
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "TaskController", nightly: true },
+  "TaskController",
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "TaskPriorityChangeEvent", nightly: true },
+  "TaskPriorityChangeEvent",
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "TaskSignal", nightly: true },
+  "TaskSignal",
   // IMPORTANT: Do not change this list without review from a DOM peer!
   "TextDecoder",
   // IMPORTANT: Do not change this list without review from a DOM peer!
@@ -449,6 +449,8 @@ let interfaceNamesInGlobalScope = [
   "TransformStreamDefaultController",
   // IMPORTANT: Do not change this list without review from a DOM peer!
   "URL",
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  "URLPattern",
   // IMPORTANT: Do not change this list without review from a DOM peer!
   "URLSearchParams",
   // IMPORTANT: Do not change this list without review from a DOM peer!

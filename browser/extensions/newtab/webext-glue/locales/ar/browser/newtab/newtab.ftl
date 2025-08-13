@@ -8,6 +8,9 @@
 newtab-page-title = لسان جديد
 newtab-settings-button =
     .title = خصص صفحة اللسان الجديد
+newtab-customize-panel-icon-button =
+    .title = خصّص هذه الصفحة
+newtab-customize-panel-icon-button-label = خصّص
 newtab-personalize-settings-icon-label =
     .title = خصّص صفحة اللسان الجديد
     .aria-label = إعدادات
@@ -117,6 +120,8 @@ newtab-menu-delete-pocket = احذف من { -pocket-brand-name }
 newtab-menu-archive-pocket = أرشِف في { -pocket-brand-name }
 newtab-menu-show-privacy-info = رُعاتنا الرسميّون وخصوصيّتك
 newtab-menu-about-fakespot = عن { -fakespot-brand-name }
+# Report is a verb (i.e. report issue with the content).
+newtab-menu-report = أبلِغ
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = احجب
@@ -126,6 +131,8 @@ newtab-menu-section-unfollow = ألغِ متابعة الموضوع
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
 
+newtab-menu-manage-sponsored-content = أدر المحتوى المموّل
+newtab-menu-our-sponsors-and-your-privacy = ممولّينا وخصوصيتك
 newtab-menu-report-this-ad = أبلغ عن هذا الإعلان
 
 ## Message displayed in a modal window to explain privacy and provide context for sponsored content.
@@ -184,6 +191,8 @@ newtab-label-sponsored-by = برعاية { $sponsor }
 #   $source (string) - The name of a company or their domain
 #   $timeToRead (number) - The estimated number of minutes to read this story
 newtab-label-source-read-time = { $source } · { $timeToRead } دقيقة
+# This string is used under fixed size ads to indicate sponsored content
+newtab-label-sponsored-fixed = مموّل
 
 ## Section Menu: These strings are displayed in the section context menu and are
 ## meant as a call to action for the given section.
@@ -378,6 +387,8 @@ newtab-weather-menu-weather-display = عرض الطقس
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
 newtab-weather-menu-weather-display-option-simple = بسيط
 newtab-weather-menu-weather-display-option-detailed = مفصل
+newtab-weather-menu-change-weather-display-detailed = بدّل إلى العرض التفصيلي
+newtab-weather-menu-temperature-option-celsius = درجة مئوية
 newtab-weather-menu-learn-more = اطّلع على المزيد
 
 ## Topic Labels
@@ -416,6 +427,9 @@ newtab-custom-wallpaper-cta = جربه
 
 # "Scan the code" refers to scanning the QR code that appears above the body text that leads to Firefox for mobile download.
 newtab-download-mobile-highlight-body-variant-a = افحص الرمز للتصفح بشكل آمن أثناء التنقل.
+
+## Strings for shortcuts highlight
+
 
 ## Strings for reporting ads and content
 

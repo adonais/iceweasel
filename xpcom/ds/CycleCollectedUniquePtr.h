@@ -17,7 +17,7 @@ inline void ImplCycleCollectionUnlink(mozilla::UniquePtr<T>& aField) {
 }
 
 template <typename Container, typename Callback,
-          EnableCycleCollectionIf<Container, mozilla::UniquePtr> = nullptr>
+          EnableCycleCollectionIf<Container, std::unique_ptr> = nullptr>
 inline void ImplCycleCollectionContainer(Container&& aField,
                                          Callback&& aCallback) {
   if (aField) {

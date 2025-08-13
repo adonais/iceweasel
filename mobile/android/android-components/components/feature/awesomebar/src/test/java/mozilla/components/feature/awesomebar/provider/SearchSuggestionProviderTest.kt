@@ -327,7 +327,7 @@ class SearchSuggestionProviderTest {
 
     @Test
     fun `Provider returns empty list if text is empty`() = runTest {
-        val provider = SearchSuggestionProvider(mock(), mock(), mock())
+        val provider = SearchSuggestionProvider(searchEngine = mock(), mock(), mock())
 
         val suggestions = provider.onInputChanged("")
         assertTrue(suggestions.isEmpty())
@@ -414,7 +414,7 @@ class SearchSuggestionProviderTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun `Constructor throws if limit is less than 1`() {
-        SearchSuggestionProvider(mock(), mock(), mock(), limit = 0)
+        SearchSuggestionProvider(searchEngine = mock(), mock(), mock(), limit = 0)
     }
 
     @Test

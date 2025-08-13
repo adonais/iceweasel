@@ -150,6 +150,8 @@
     %2$s is the url for the learn-more link.
   -->
   <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s puts you in control.</p> <p>Use it as a private browser: <ul> <li>Search and browse right in the app</li> <li>Block trackers (or update settings to allow trackers)</li> <li>Erase to delete cookies as well as search and browsing history</li> </ul> </p> <p>%1$s is produced by Mozilla. Our mission is to foster a healthy, open Internet.<br/> <a href=\"%2$s\">Learn more</a></p>]]></string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">Learn more</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">Privacy &amp; Security</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -486,8 +488,6 @@
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
   <string name="onboarding_first_screen_privacy_notice_link_2">Privacy Notice</string>
   <!-- New Onboarding flow first screen button label -->
-  <string name="onboarding_first_screen_button_agree_and_continue" moz:removedIn="140" tools:ignore="UnusedResources">Agree and continue</string>
-  <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue_2">Continue</string>
   <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
   <string name="a11y_link_available">Link available</string>
@@ -649,7 +649,7 @@
   <!-- Title text for a detail explanation indicating cookie banner handling is off this site, this is shown as part of the cookie banner panel in the toolbar. %1$s is a shortened URL of the current site. -->
   <string name="cookie_banner_exception_panel_title_state_off_for_site">Turn off Cookie Banner Reduction for %1$s?</string>
   <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is on for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
-  <string name="cookie_banner_exception_panel_description_state_on_for_site">%1$s will clear this site’s cookies and refresh the page. Clearing all cookies may sign you out or empty shopping carts.</string>
+  <string name="cookie_banner_exception_panel_description_state_on_for_site">%1$s will clear this site’s cookies and refresh the page. Clearing all cookies may sign you out or empty shopping baskets.</string>
   <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is off for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
   <string name="cookie_banner_exception_panel_description_state_off_for_site2">%1$s can try to automatically reject cookie requests.</string>
   <!-- Long text for a detail explanation indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner panel in the toolbar. -->
@@ -708,18 +708,6 @@
   <string name="preference_block_autoplay_audio_only_summary">Recommended</string>
   <!-- Preference for block autoplay audio and video -->
   <string name="preference_block_autoplay_audio_video">Block audio and video</string>
-  <!-- Preference for studies -->
-  <string name="preference_studies" moz:removedIn="140">Studies</string>
-  <!-- Preference for studies summary -->
-  <string name="preference_studies_summary" tools:ignore="BrandUsage" moz:removedIn="140">Firefox may install and run studies from time to time.</string>
-  <!-- Learn more link for studies, links to an article for more information about studies. -->
-  <string name="studies_learn_more" moz:removedIn="140">Learn more</string>
-  <!-- Title of the remove studies button -->
-  <string name="studies_remove" moz:removedIn="140">Remove</string>
-  <!-- Title of the active section on the studies list -->
-  <string name="studies_active" moz:removedIn="140">Active</string>
-  <!-- Title of the completed section on the studies list -->
-  <string name="studies_completed" moz:removedIn="140">Completed</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">Remote debugging via USB/Wi-Fi</string>
   <!-- Text Button for show biometric prompt -->

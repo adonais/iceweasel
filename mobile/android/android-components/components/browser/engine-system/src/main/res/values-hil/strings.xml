@@ -2,4 +2,11 @@
 <resources>
   <!-- Text for the title of an alert dialog displayed by a web page. %1$s will be replaced with the URL of the current page (displaying the dialog). -->
   <string name="mozac_browser_engine_system_alert_title">Ang pahina sa %1$s nagasiling:</string>
+  <!--
+    Text for the message of an auth dialog displayed by a web page.
+    %1$s will be replaced by the hostname or a description of the protected area/site, %2$s will be replaced with the URL of the current page (displaying the dialog).
+  -->
+  <string name="mozac_browser_engine_system_auth_message">Ang %2$s nagapangayo sang imo nga username kag password. Ang ini nga site gapahibalo: “%1$s”</string>
+  <!-- Text for the message of an auth dialog displayed by a web page. %1$s will be replaced with the URL of the current page (displaying the dialog). -->
+  <string name="mozac_browser_engine_system_auth_no_realm_message">%1$s nagapangayo sang imo nga username kag password.</string>
 </resources>

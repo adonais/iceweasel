@@ -471,7 +471,7 @@ HttpTransactionChild::OnStartRequest(nsIRequest* aRequest) {
       dataForSniffer, optionalAltSvcUsed, !!mDataBridgeParent,
       mTransaction->TakeRestartedState(), mTransaction->HTTPSSVCReceivedStage(),
       mTransaction->GetSupportsHTTP3(), mode, reason, mTransaction->Caps(),
-      TimeStamp::Now(), infoArgs);
+      TimeStamp::Now(), infoArgs, mTransaction->GetTargetIPAddressSpace());
   return NS_OK;
 }
 

@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ---
 task-defaults:
-    worker-type: b-linux-gcp
+    worker-type: b-linux-amd
 
 linux64/opt:
     description: "Linux64 Opt"
@@ -488,7 +488,7 @@ linux64-devedition/opt:
     treeherder:
         platform: linux64-devedition/opt
         symbol: B
-    worker-type: b-linux-xlarge-gcp
+    worker-type: b-linux-xlarge-amd
     worker:
         max-run-time: 7200
         env:
@@ -757,7 +757,7 @@ linux-devedition/opt:
     treeherder:
         platform: linux32-devedition/opt
         symbol: B
-    worker-type: b-linux-gcp
+    worker-type: b-linux-xlarge-amd
     worker:
         max-run-time: 7200
         env:
@@ -805,7 +805,6 @@ linux-shippable/opt:
     treeherder:
         platform: linux32-shippable/opt
         symbol: Bpgo(B)
-    worker-type: b-linux-gcp
     worker:
         max-run-time: 9000
         env:
@@ -846,7 +845,6 @@ linux-reproduced/opt:
     treeherder:
         platform: linux32-shippable/opt
         symbol: Bpgo(repr)
-    worker-type: b-linux-gcp
     worker:
         max-run-time: 9000
         env:
@@ -935,7 +933,7 @@ linux64-reproduced/opt:
     treeherder:
         platform: linux64-shippable/opt
         symbol: Bpgo(repr)
-    worker-type: b-linux-xlarge-gcp
+    worker-type: b-linux-xlarge-amd
     worker:
         max-run-time: 9000
         env:
@@ -1529,7 +1527,7 @@ linux64-asan-reporter-shippable/opt:
         platform: linux64-asan-reporter/opt
         symbol: BoR
     run-on-projects: ['mozilla-central']
-    worker-type: b-linux-xlarge-gcp
+    worker-type: b-linux-xlarge-amd
     worker:
         env:
             PERFHERDER_EXTRA_OPTIONS: asan-reporter
@@ -1626,7 +1624,7 @@ linux64-shippable/opt:
         platform: linux64-shippable/opt
         symbol: Bpgo(B)
     run-on-projects: ['release']
-    worker-type: b-linux-xlarge-gcp
+    worker-type: b-linux-xlarge-amd
     worker:
         max-run-time: 9000
         env:
@@ -1673,7 +1671,7 @@ linux64-nightlyasrelease/opt:
         platform: linux64-nightlyasrelease/opt
         symbol: Bpgo(Bnar)
     run-on-projects: [trunk-only]
-    worker-type: b-linux-xlarge-gcp
+    worker-type: b-linux-xlarge-amd
     worker:
         max-run-time: 9000
         env:
@@ -1982,7 +1980,6 @@ linux64-aarch64/opt:
         extra-config:
             extra_mozconfig_content:
                 - ac_add_options --target=aarch64
-                - unset MOZ_STDCXX_COMPAT
         script: "mozharness/scripts/fx_desktop_build.py"
         secrets: true
         tooltool-downloads: public
@@ -2026,13 +2023,12 @@ linux64-aarch64/debug:
         extra-config:
             extra_mozconfig_content:
                 - ac_add_options --target=aarch64
-                - unset MOZ_STDCXX_COMPAT
         script: "mozharness/scripts/fx_desktop_build.py"
         custom-build-variant-cfg: debug
         mozconfig-variant: debug
         secrets: true
         tooltool-downloads: public
-    run-on-projects: ['integration']
+    run-on-projects: ['trunk']
     use-sccache: true
     fetches:
         toolchain:
@@ -2064,7 +2060,7 @@ linux64-aarch64-shippable/opt:
     treeherder:
         platform: linux64-aarch64-shippable/opt
         symbol: Bpgo(B)
-    worker-type: b-linux-xlarge-gcp
+    worker-type: b-linux-xlarge-amd
     worker:
         max-run-time: 9000
         env:
@@ -2083,7 +2079,6 @@ linux64-aarch64-shippable/opt:
         extra-config:
             extra_mozconfig_content:
                 - ac_add_options --target=aarch64
-                - unset MOZ_STDCXX_COMPAT
         script: "mozharness/scripts/fx_desktop_build.py"
         secrets: true
         tooltool-downloads: public
@@ -2117,7 +2112,7 @@ linux64-aarch64-devedition/opt:
     treeherder:
         platform: linux64-aarch64-devedition/opt
         symbol: Bpgo(B)
-    worker-type: b-linux-xlarge-gcp
+    worker-type: b-linux-xlarge-amd
     worker:
         max-run-time: 9000
         env:
@@ -2138,7 +2133,6 @@ linux64-aarch64-devedition/opt:
             max_build_output_timeout: 3600
             extra_mozconfig_content:
                 - ac_add_options --target=aarch64
-                - unset MOZ_STDCXX_COMPAT
         script: "mozharness/scripts/fx_desktop_build.py"
         secrets: true
         tooltool-downloads: public

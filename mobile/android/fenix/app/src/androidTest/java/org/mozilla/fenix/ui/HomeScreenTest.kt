@@ -51,7 +51,6 @@ class HomeScreenTest : TestSetup() {
             verifyExistingTopSitesTabs(activityTestRule, "Google")
             verifyCollectionsHeader(activityTestRule)
             verifyNoCollectionsText(activityTestRule)
-            scrollToPocketProvokingStories()
             verifyThoughtProvokingStories(true)
             verifyNavigationToolbar()
             verifyHomeMenuButton()

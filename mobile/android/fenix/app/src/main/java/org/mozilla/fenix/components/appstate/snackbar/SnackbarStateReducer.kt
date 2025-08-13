@@ -13,13 +13,13 @@ import org.mozilla.fenix.components.appstate.AppState
 internal object SnackbarStateReducer {
     fun reduce(state: AppState, action: SnackbarAction): AppState = when (action) {
         is SnackbarAction.SnackbarDismissed -> state.copy(
-            snackbarState = SnackbarState.Dismiss,
+            snackbarState = SnackbarState.Dismiss(state.snackbarState),
         )
 
         is SnackbarAction.SnackbarShown,
         is SnackbarAction.Reset,
         -> state.copy(
-            snackbarState = SnackbarState.None,
+            snackbarState = SnackbarState.None(state.snackbarState),
         )
     }
 }

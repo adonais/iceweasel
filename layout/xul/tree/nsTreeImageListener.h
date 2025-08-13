@@ -7,10 +7,10 @@
 #ifndef nsTreeImageListener_h__
 #define nsTreeImageListener_h__
 
-#include "nsString.h"
-#include "nsCOMPtr.h"
-#include "nsTreeBodyFrame.h"
 #include "mozilla/Attributes.h"
+#include "nsCOMPtr.h"
+#include "nsString.h"
+#include "nsTreeBodyFrame.h"
 
 class nsTreeColumn;
 

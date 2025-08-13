@@ -1,4 +1,4 @@
-# Copyright 2014 The Chromium Authors. All rights reserved.
+# Copyright 2014 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -17,7 +17,7 @@
 # There is more advice on where to put build flags in the "Build flag" section
 # of //build/config/BUILDCONFIG.gn.
 
-import("//chromium/build/config/chromecast_build.gni")
+import("//chromium/build/config/cast.gni")
 import("//chromium/build/config/chromeos/args.gni")
 import("//chromium/build/config/chromeos/ui_mode.gni")
 import("//chromium/build/config/ozone.gni")
@@ -32,18 +32,20 @@ declare_args() {
   # True means the UI is built using the "views" framework.
   toolkit_views = is_mac || is_win || is_linux || is_chromeos || is_fuchsia
 
-  use_glib = (is_linux || is_bsd) && !is_chromecast
+  use_glib =
+      (is_linux || is_bsd) && !is_castos &&
+      # Avoid the need for glib when Android is building things via secondary
+      # toolchains.
+      target_os != "android"
 }
 
-assert(!use_glib || ((is_linux || is_bsd) && !is_chromecast))
+assert(!use_glib || ((is_linux || is_bsd) && !is_castos))
 
-use_atk = (is_linux || is_bsd) && !is_chromecast && use_glib &&
-          current_toolchain == default_toolchain
+use_atk = use_glib && current_toolchain == default_toolchain
 
 # Whether using Xvfb to provide a display server for a test might be
 # necessary.
-use_xvfb_in_this_config =
-    is_linux || (is_chromeos_lacros && !is_chromeos_device)
+use_xvfb_in_this_config = is_linux
 #
 # =============================================
 #   PLEASE DO NOT ADD MORE FLAGS TO THIS FILE

@@ -6,9 +6,9 @@
 
 #include "mozilla/dom/CSSFontFaceRule.h"
 
+#include "mozilla/ServoBindings.h"
 #include "mozilla/dom/CSSFontFaceRuleBinding.h"
 #include "mozilla/dom/CSSStyleDeclarationBinding.h"
-#include "mozilla/ServoBindings.h"
 #include "nsCSSProps.h"
 
 using namespace mozilla;

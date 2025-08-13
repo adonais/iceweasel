@@ -9,8 +9,8 @@
 
 #include <type_traits>
 
-#include "nscore.h"
 #include "mozilla/Assertions.h"
+#include "nscore.h"
 
 namespace mozilla {
 class ScrollContainerFrame;

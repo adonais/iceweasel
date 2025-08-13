@@ -16,9 +16,6 @@ ChromeUtils.defineESModuleGetters(this, {
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
 });
 
-const OPEN_HISTOGRAM = "SQLITE_STORE_OPEN";
-const QUERY_HISTOGRAM = "SQLITE_STORE_QUERY";
-
 const TELEMETRY_VALUES = {
   success: 0,
   failure: 1,
@@ -116,10 +113,6 @@ function asyncCleanup() {
 function getOpenedDatabase(connectionFlags = 0) {
   if (!gDBConn) {
     gDBConn = Services.storage.openDatabase(getTestDB(), connectionFlags);
-
-    // Clear out counts for any queries that occured while opening the database.
-    TelemetryTestUtils.getAndClearKeyedHistogram(OPEN_HISTOGRAM);
-    TelemetryTestUtils.getAndClearKeyedHistogram(QUERY_HISTOGRAM);
   }
   return gDBConn;
 }

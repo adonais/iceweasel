@@ -34,6 +34,7 @@
 #include "mozilla/dom/Directory.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FormData.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/RandomNum.h"
 
@@ -811,7 +812,8 @@ nsresult HTMLFormSubmission::GetFromForm(HTMLFormElement* aForm,
   NS_ENSURE_SUCCESS(rv, rv);
 
   // Check if CSP allows this form-action
-  nsCOMPtr<nsIContentSecurityPolicy> csp = aForm->GetCsp();
+  nsCOMPtr<nsIContentSecurityPolicy> csp =
+      PolicyContainer::GetCSP(aForm->GetPolicyContainer());
   if (csp) {
     bool permitsFormAction = true;
 

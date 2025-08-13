@@ -32,27 +32,6 @@ export class NotificationDB {
 
   #storagePath = null;
 
-  storageQualifier() {
-    return "Notification";
-  }
-
-  prefixStorageQualifier(message) {
-    return `${this.storageQualifier()}:${message}`;
-  }
-
-  formatMessageType(message) {
-    return this.prefixStorageQualifier(message);
-  }
-
-  supportedMessageTypes() {
-    return [
-      this.formatMessageType("Save"),
-      this.formatMessageType("Delete"),
-      this.formatMessageType("GetAll"),
-      this.formatMessageType("DeleteAllExcept"),
-    ];
-  }
-
   constructor() {
     if (this.#shutdownInProgress) {
       return;
@@ -65,36 +44,12 @@ export class NotificationDB {
     this.#tasks = []; // read/write operation queue
     this.#runningTask = null;
 
-    Services.obs.addObserver(this, "xpcom-shutdown");
-    this.registerListeners();
-
     // This assumes that nothing will queue a new task at profile-change-teardown phase,
     // potentially replacing the #queueDrainedPromise if there was no existing task run.
     lazy.AsyncShutdown.profileChangeTeardown.addBlocker(
       "NotificationDB: Need to make sure that all notification messages are processed",
       () => this.#queueDrainedPromise
     );
-  }
-
-  registerListeners() {
-    for (let message of this.supportedMessageTypes()) {
-      Services.ppmm.addMessageListener(message, this);
-    }
-  }
-
-  unregisterListeners() {
-    for (let message of this.supportedMessageTypes()) {
-      Services.ppmm.removeMessageListener(message, this);
-    }
-  }
-
-  observe(aSubject, aTopic) {
-    lazy.console.debug(`Topic: ${aTopic}`);
-    if (aTopic == "xpcom-shutdown") {
-      this.#shutdownInProgress = true;
-      Services.obs.removeObserver(this, "xpcom-shutdown");
-      this.unregisterListeners();
-    }
   }
 
   filterNonAppNotifications(notifications) {
@@ -184,87 +139,19 @@ export class NotificationDB {
     });
   }
 
+  testGetRawMap() {
+    return {
+      notifications: this.#notifications,
+      byTag: this.#byTag,
+    };
+  }
+
   // Helper function: promise will be resolved once file exists and/or is loaded.
   #ensureLoaded() {
     if (!this.#loaded) {
       return this.load();
     }
     return Promise.resolve();
-  }
-
-  receiveMessage(message) {
-    lazy.console.debug(`Received message: ${message.name}`);
-
-    // sendAsyncMessage can fail if the child process exits during a
-    // notification storage operation, so always wrap it in a try/catch.
-    function returnMessage(name, data) {
-      try {
-        message.target.sendAsyncMessage(name, data);
-      } catch (e) {
-        lazy.console.debug(`Return message failed, ${name}`);
-      }
-    }
-
-    switch (message.name) {
-      case this.formatMessageType("GetAll"):
-        this.queueTask("getall", message.data)
-          .then(notifications => {
-            returnMessage(this.formatMessageType("GetAll:Return:OK"), {
-              requestID: message.data.requestID,
-              origin: message.data.origin,
-              notifications,
-            });
-          })
-          .catch(error => {
-            returnMessage(this.formatMessageType("GetAll:Return:KO"), {
-              requestID: message.data.requestID,
-              origin: message.data.origin,
-              errorMsg: error,
-            });
-          });
-        break;
-
-      case this.formatMessageType("Save"):
-        this.queueTask("save", message.data)
-          .then(() => {
-            returnMessage(this.formatMessageType("Save:Return:OK"), {
-              requestID: message.data.requestID,
-            });
-          })
-          .catch(error => {
-            returnMessage(this.formatMessageType("Save:Return:KO"), {
-              requestID: message.data.requestID,
-              errorMsg: error,
-            });
-          });
-        break;
-
-      case this.formatMessageType("Delete"):
-        this.queueTask("delete", message.data)
-          .then(() => {
-            returnMessage(this.formatMessageType("Delete:Return:OK"), {
-              requestID: message.data.requestID,
-            });
-          })
-          .catch(error => {
-            returnMessage(this.formatMessageType("Delete:Return:KO"), {
-              requestID: message.data.requestID,
-              errorMsg: error,
-            });
-          });
-        break;
-
-      case this.formatMessageType("DeleteAllExcept"):
-        this.queueTask("deleteAllExcept", message.data).catch(error => {
-          lazy.console.debug(
-            `Error received when treating: '${message.data.requestID}': ${error}`
-          );
-        });
-        break;
-
-      default:
-        lazy.console.debug(`Invalid message name ${message.name}`);
-    }
   }
 
   // We need to make sure any read/write operations are atomic,
@@ -321,6 +208,9 @@ export class NotificationDB {
           case "getall":
             return this.taskGetAll(task.data);
 
+          case "get":
+            return this.taskGet(task.data);
+
           case "save":
             return this.taskSave(task.data);
 
@@ -351,6 +241,13 @@ export class NotificationDB {
       });
   }
 
+  removeOriginIfEmpty(origin) {
+    if (!Object.keys(this.#notifications[origin]).length) {
+      delete this.#notifications[origin];
+      delete this.#byTag[origin];
+    }
+  }
+
   taskGetAll(data) {
     let { origin, scope } = data;
     lazy.console.debug(
@@ -376,6 +273,12 @@ export class NotificationDB {
       n => n.serviceWorkerRegistrationScope === data.scope
     );
     return notifications;
+  }
+
+  taskGet(data) {
+    let { origin, id } = data;
+    lazy.console.debug(`Task, getting for the origin ${origin} and ID ${id}`);
+    return this.#notifications[origin]?.[id];
   }
 
   taskSave(data) {
@@ -421,6 +324,7 @@ export class NotificationDB {
       delete this.#byTag[origin][oldNotification.tag];
     }
     delete this.#notifications[origin][id];
+    this.removeOriginIfEmpty(origin);
     return this.save();
   }
 
@@ -438,10 +342,7 @@ export class NotificationDB {
           delete this.#byTag[origin][oldNotification.tag];
         }
       }
-      if (!Object.keys(data).length) {
-        delete this.#notifications[origin];
-        delete this.#byTag[origin];
-      }
+      this.removeOriginIfEmpty(origin);
     }
 
     return this.save();

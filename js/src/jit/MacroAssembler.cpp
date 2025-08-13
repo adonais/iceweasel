@@ -1084,22 +1084,22 @@ void MacroAssembler::initGCThing(Register obj, Register temp,
 #endif
 }
 
-static size_t StringCharsByteLength(const JSLinearString* linear) {
+static size_t StringCharsByteLength(const JSOffThreadAtom* str) {
   CharEncoding encoding =
-      linear->hasLatin1Chars() ? CharEncoding::Latin1 : CharEncoding::TwoByte;
+      str->hasLatin1Chars() ? CharEncoding::Latin1 : CharEncoding::TwoByte;
   size_t encodingSize = encoding == CharEncoding::Latin1
                             ? sizeof(JS::Latin1Char)
                             : sizeof(char16_t);
-  return linear->length() * encodingSize;
+  return str->length() * encodingSize;
 }
 
-bool MacroAssembler::canCompareStringCharsInline(const JSLinearString* linear) {
+bool MacroAssembler::canCompareStringCharsInline(const JSOffThreadAtom* str) {
   // Limit the number of inline instructions used for character comparisons. Use
   // the same instruction limit for both encodings, i.e. two-byte uses half the
   // limit of Latin-1 strings.
   constexpr size_t ByteLengthCompareCutoff = 32;
 
-  size_t byteLength = StringCharsByteLength(linear);
+  size_t byteLength = StringCharsByteLength(str);
   return 0 < byteLength && byteLength <= ByteLengthCompareCutoff;
 }
 
@@ -1111,28 +1111,28 @@ static inline T CopyCharacters(const CharT* chars) {
 }
 
 template <typename T>
-static inline T CopyCharacters(const JSLinearString* linear, size_t index) {
+static inline T CopyCharacters(const JSOffThreadAtom* str, size_t index) {
   JS::AutoCheckCannotGC nogc;
 
-  if (linear->hasLatin1Chars()) {
-    MOZ_ASSERT(index + sizeof(T) / sizeof(JS::Latin1Char) <= linear->length());
-    return CopyCharacters<T>(linear->latin1Chars(nogc) + index);
+  if (str->hasLatin1Chars()) {
+    MOZ_ASSERT(index + sizeof(T) / sizeof(JS::Latin1Char) <= str->length());
+    return CopyCharacters<T>(str->latin1Chars(nogc) + index);
   }
 
   MOZ_ASSERT(sizeof(T) >= sizeof(char16_t));
-  MOZ_ASSERT(index + sizeof(T) / sizeof(char16_t) <= linear->length());
-  return CopyCharacters<T>(linear->twoByteChars(nogc) + index);
+  MOZ_ASSERT(index + sizeof(T) / sizeof(char16_t) <= str->length());
+  return CopyCharacters<T>(str->twoByteChars(nogc) + index);
 }
 
 void MacroAssembler::branchIfNotStringCharsEquals(Register stringChars,
-                                                  const JSLinearString* linear,
+                                                  const JSOffThreadAtom* str,
                                                   Label* label) {
   CharEncoding encoding =
-      linear->hasLatin1Chars() ? CharEncoding::Latin1 : CharEncoding::TwoByte;
+      str->hasLatin1Chars() ? CharEncoding::Latin1 : CharEncoding::TwoByte;
   size_t encodingSize = encoding == CharEncoding::Latin1
                             ? sizeof(JS::Latin1Char)
                             : sizeof(char16_t);
-  size_t byteLength = StringCharsByteLength(linear);
+  size_t byteLength = StringCharsByteLength(str);
 
   size_t pos = 0;
   for (size_t stride : {8, 4, 2, 1}) {
@@ -1140,22 +1140,22 @@ void MacroAssembler::branchIfNotStringCharsEquals(Register stringChars,
       Address addr(stringChars, pos * encodingSize);
       switch (stride) {
         case 8: {
-          auto x = CopyCharacters<uint64_t>(linear, pos);
+          auto x = CopyCharacters<uint64_t>(str, pos);
           branch64(Assembler::NotEqual, addr, Imm64(x), label);
           break;
         }
         case 4: {
-          auto x = CopyCharacters<uint32_t>(linear, pos);
+          auto x = CopyCharacters<uint32_t>(str, pos);
           branch32(Assembler::NotEqual, addr, Imm32(x), label);
           break;
         }
         case 2: {
-          auto x = CopyCharacters<uint16_t>(linear, pos);
+          auto x = CopyCharacters<uint16_t>(str, pos);
           branch16(Assembler::NotEqual, addr, Imm32(x), label);
           break;
         }
         case 1: {
-          auto x = CopyCharacters<uint8_t>(linear, pos);
+          auto x = CopyCharacters<uint8_t>(str, pos);
           branch8(Assembler::NotEqual, addr, Imm32(x), label);
           break;
         }
@@ -1178,12 +1178,12 @@ void MacroAssembler::branchIfNotStringCharsEquals(Register stringChars,
       Address addr(stringChars, prev * encodingSize);
       switch (stride) {
         case 8: {
-          auto x = CopyCharacters<uint64_t>(linear, prev);
+          auto x = CopyCharacters<uint64_t>(str, prev);
           branch64(Assembler::NotEqual, addr, Imm64(x), label);
           break;
         }
         case 4: {
-          auto x = CopyCharacters<uint32_t>(linear, prev);
+          auto x = CopyCharacters<uint32_t>(str, prev);
           branch32(Assembler::NotEqual, addr, Imm32(x), label);
           break;
         }
@@ -1196,11 +1196,11 @@ void MacroAssembler::branchIfNotStringCharsEquals(Register stringChars,
 }
 
 void MacroAssembler::loadStringCharsForCompare(Register input,
-                                               const JSLinearString* linear,
+                                               const JSOffThreadAtom* str,
                                                Register stringChars,
                                                Label* fail) {
   CharEncoding encoding =
-      linear->hasLatin1Chars() ? CharEncoding::Latin1 : CharEncoding::TwoByte;
+      str->hasLatin1Chars() ? CharEncoding::Latin1 : CharEncoding::TwoByte;
 
   // Take the slow path when the string is a rope or has a different character
   // representation.
@@ -1209,7 +1209,7 @@ void MacroAssembler::loadStringCharsForCompare(Register input,
     branchTwoByteString(input, fail);
   } else {
     JS::AutoCheckCannotGC nogc;
-    if (mozilla::IsUtf16Latin1(linear->twoByteRange(nogc))) {
+    if (mozilla::IsUtf16Latin1(str->twoByteRange(nogc))) {
       branchLatin1String(input, fail);
     } else {
       // This case was already handled in the caller.
@@ -1224,7 +1224,7 @@ void MacroAssembler::loadStringCharsForCompare(Register input,
 
 #ifdef DEBUG
   {
-    size_t length = linear->length();
+    size_t length = str->length();
     MOZ_ASSERT(length > 0);
 
     Label ok;
@@ -1240,11 +1240,11 @@ void MacroAssembler::loadStringCharsForCompare(Register input,
 }
 
 void MacroAssembler::compareStringChars(JSOp op, Register stringChars,
-                                        const JSLinearString* linear,
+                                        const JSOffThreadAtom* str,
                                         Register output) {
   MOZ_ASSERT(IsEqualityOp(op));
 
-  size_t byteLength = StringCharsByteLength(linear);
+  size_t byteLength = StringCharsByteLength(str);
 
   // Prefer a single compare-and-set instruction if possible.
   if (byteLength == 1 || byteLength == 2 || byteLength == 4 ||
@@ -1254,29 +1254,29 @@ void MacroAssembler::compareStringChars(JSOp op, Register stringChars,
     Address addr(stringChars, 0);
     switch (byteLength) {
       case 8: {
-        auto x = CopyCharacters<uint64_t>(linear, 0);
+        auto x = CopyCharacters<uint64_t>(str, 0);
         cmp64Set(cond, addr, Imm64(x), output);
         break;
       }
       case 4: {
-        auto x = CopyCharacters<uint32_t>(linear, 0);
+        auto x = CopyCharacters<uint32_t>(str, 0);
         cmp32Set(cond, addr, Imm32(x), output);
         break;
       }
       case 2: {
-        auto x = CopyCharacters<uint16_t>(linear, 0);
+        auto x = CopyCharacters<uint16_t>(str, 0);
         cmp16Set(cond, addr, Imm32(x), output);
         break;
       }
       case 1: {
-        auto x = CopyCharacters<uint8_t>(linear, 0);
+        auto x = CopyCharacters<uint8_t>(str, 0);
         cmp8Set(cond, addr, Imm32(x), output);
         break;
       }
     }
   } else {
     Label setNotEqualResult;
-    branchIfNotStringCharsEquals(stringChars, linear, &setNotEqualResult);
+    branchIfNotStringCharsEquals(stringChars, str, &setNotEqualResult);
 
     // Falls through if both strings are equal.
 
@@ -3033,7 +3033,7 @@ void MacroAssembler::emitMegamorphicCacheLookup(
   rshiftPtr(Imm32(MegamorphicCache::ShapeHashShift1), outEntryPtr);
   rshiftPtr(Imm32(MegamorphicCache::ShapeHashShift2), scratch2);
   xorPtr(scratch2, outEntryPtr);
-  addPtr(Imm32(HashAtomOrSymbolPropertyKey(id)), outEntryPtr);
+  addPtr(Imm32(HashPropertyKeyThreadSafe(id)), outEntryPtr);
 
   // outEntryPtr %= MegamorphicCache::NumEntries
   constexpr size_t cacheSize = MegamorphicCache::NumEntries;
@@ -3214,7 +3214,7 @@ void MacroAssembler::emitMegamorphicCachedSetSlot(
     addPtr(scratch2, scratch3);
   } else {
     static_assert(std::is_same<IdType, PropertyKey>::value);
-    addPtr(Imm32(HashAtomOrSymbolPropertyKey(id)), scratch3);
+    addPtr(Imm32(HashPropertyKeyThreadSafe(id)), scratch3);
     movePropertyKey(id, scratch1);
   }
 
@@ -3701,7 +3701,7 @@ void MacroAssembler::loadBaselineCompileQueue(Register dest) {
                           dest);
 }
 
-void MacroAssembler::guardSpecificAtom(Register str, JSAtom* atom,
+void MacroAssembler::guardSpecificAtom(Register str, JSOffThreadAtom* atom,
                                        Register scratch,
                                        const LiveRegisterSet& volatileRegs,
                                        Label* fail) {
@@ -5814,6 +5814,13 @@ static ReturnCallTrampolineData MakeReturnCallTrampoline(MacroAssembler& masm) {
   masm.append(wasm::CodeRangeUnwindInfo::UseFpLr, masm.currentOffset());
   masm.Mov(PseudoStackPointer64, vixl::sp);
   masm.abiret();
+#elif defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
+  masm.loadPtr(Address(FramePointer, wasm::Frame::returnAddressOffset()), ra);
+  masm.loadPtr(Address(FramePointer, wasm::Frame::callerFPOffset()),
+               FramePointer);
+  masm.append(wasm::CodeRangeUnwindInfo::UseFpLr, masm.currentOffset());
+  masm.addToStackPtr(Imm32(sizeof(wasm::Frame)));
+  masm.abiret();
 #else
   masm.pop(FramePointer);
   masm.append(wasm::CodeRangeUnwindInfo::UseFp, masm.currentOffset());
@@ -6045,7 +6052,15 @@ static void CollapseWasmFrameSlow(MacroAssembler& masm,
       tempForRA);
   masm.append(desc, CodeOffset(data.trampolineOffset));
 #else
+
+#  if defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
+  // intermediate values in ra can break the unwinder.
+  masm.mov(&data.trampoline, ScratchRegister);
+  // thus, modify ra in only one instruction.
+  masm.mov(ScratchRegister, tempForRA);
+#  else
   masm.mov(&data.trampoline, tempForRA);
+#  endif
 
   masm.addCodeLabel(data.trampoline);
   // Add slow trampoline callsite description, to be annotated in
@@ -7873,12 +7888,12 @@ void MacroAssembler::emitPreBarrierFastPath(JSRuntime* rt, MIRType type,
   andPtr(Imm32(gc::ChunkMask), temp1);
   rshiftPtr(Imm32(3), temp1);
 
-  static_assert(gc::MarkBitmapWordBits == JS_BITS_PER_WORD,
+  static_assert(gc::ChunkMarkBitmap::BitsPerWord == JS_BITS_PER_WORD,
                 "Calculation below relies on this");
 
   // Load the bitmap word in temp2.
   //
-  // word = chunk.bitmap[bit / MarkBitmapWordBits];
+  // word = chunk.bitmap[bit / WordBits];
 
   // Fold the adjustment for the fact that arenas don't start at the beginning
   // of the chunk into the offset to the chunk bitmap.
@@ -7898,8 +7913,8 @@ void MacroAssembler::emitPreBarrierFastPath(JSRuntime* rt, MIRType type,
 
   // Load the mask in temp1.
   //
-  // mask = uintptr_t(1) << (bit % MarkBitmapWordBits);
-  andPtr(Imm32(gc::MarkBitmapWordBits - 1), temp3);
+  // mask = uintptr_t(1) << (bit % WordBits);
+  andPtr(Imm32(gc::ChunkMarkBitmap::BitsPerWord - 1), temp3);
   move32(Imm32(1), temp1);
 #ifdef JS_CODEGEN_X64
   MOZ_ASSERT(temp3 == rcx);
@@ -8033,7 +8048,8 @@ void MacroAssembler::debugAssertCanonicalInt32(Register r) {
     branchPtr(Assembler::BelowOrEqual, r, ImmWord(UINT32_MAX), &ok);
     breakpoint();
     bind(&ok);
-#    elif defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
+#    elif defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64) || \
+        defined(JS_CODEGEN_RISCV64)
     Label ok;
     ScratchRegisterScope scratch(asMasm());
     move32SignExtendToPtr(r, scratch);

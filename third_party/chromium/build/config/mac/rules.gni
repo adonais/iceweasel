@@ -1,10 +1,18 @@
-# Copyright 2015 The Chromium Authors. All rights reserved.
+# Copyright 2015 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 import("//chromium/build/apple/apple_info_plist.gni")
 import("//chromium/build/config/apple/symbols.gni")
 import("//chromium/build/config/mac/mac_sdk.gni")
+
+_sanitizer_runtime_names = []
+if (is_asan) {
+  _sanitizer_runtime_names += [ "libclang_rt.asan_osx_dynamic.dylib" ]
+}
+if (is_ubsan_any) {
+  _sanitizer_runtime_names += [ "libclang_rt.ubsan_osx_dynamic.dylib" ]
+}
 
 # Generates Info.plist files for Mac apps and frameworks.
 #
@@ -40,18 +48,17 @@ template("mac_info_plist") {
 
   apple_info_plist(target_name) {
     format = "xml1"
-    extra_substitutions = []
-    if (defined(invoker.extra_substitutions)) {
-      extra_substitutions = invoker.extra_substitutions
-    }
-    extra_substitutions += [
-      "MAC_SDK_BUILD=$mac_sdk_version",
+    extra_substitutions = [
+      "MAC_SDK_BUILD=$mac_sdk_build_version",
       "MAC_SDK_NAME=$mac_sdk_name$mac_sdk_version",
       "MACOSX_DEPLOYMENT_TARGET=$mac_deployment_target",
       "CHROMIUM_MIN_SYSTEM_VERSION=$mac_min_system_version",
       "XCODE_BUILD=$xcode_build",
       "XCODE_VERSION=$xcode_version",
     ]
+    if (defined(invoker.extra_substitutions)) {
+      extra_substitutions += invoker.extra_substitutions
+    }
     plist_templates = [
       "//chromium/build/config/mac/BuildInfo.plist",
       _info_plist,
@@ -217,7 +224,8 @@ template("mac_framework_bundle") {
                      "Version=" + invoker.framework_version,
                      _output_name,
                    ] + invoker.framework_contents
-  _framework_contents = [ _output_name ] + invoker.framework_contents
+  _framework_contents = [ _output_name ] + invoker.sanitizer_runtime_names +
+                        invoker.framework_contents
   _framework_toc_file = "$target_out_dir/${target_name}.toc"
   write_file(_framework_toc_file, _framework_toc)
 
@@ -384,6 +392,7 @@ template("mac_framework_bundle") {
 
 set_defaults("mac_framework_bundle") {
   configs = default_shared_library_configs
+  sanitizer_runtime_names = _sanitizer_runtime_names
 }
 
 # Template to create a Mac executable application bundle.
@@ -407,13 +416,6 @@ set_defaults("mac_framework_bundle") {
 #     output_name:
 #         (optional) string, name of the generated app without the
 #         .app suffix. If omitted, defaults to target_name.
-#
-#     extra_configs:
-#         (optional) list of label, additional configs to apply to the
-#         executable target.
-#
-#     remove_configs:
-#         (optional) list of label, default configs to remove from the target.
 #
 #     extra_substitutions:
 #         (optional) string array, 'key=value' pairs for extra fields which are
@@ -488,12 +490,6 @@ template("mac_app_bundle") {
                              "output_name",
                              "visibility",
                            ])
-    if (defined(extra_configs)) {
-      configs += extra_configs
-    }
-    if (defined(remove_configs)) {
-      configs -= remove_configs
-    }
     output_name = _output_name
     output_dir = "$target_out_dir/$_executable_target"
   }
@@ -560,6 +556,10 @@ template("mac_app_bundle") {
     bundle_resources_dir = "$bundle_contents_dir/Resources"
     bundle_executable_dir = "$bundle_contents_dir/MacOS"
   }
+}
+
+set_defaults("mac_app_bundle") {
+  configs = default_executable_configs
 }
 
 # Template to package a loadable_module into a .plugin bundle.

@@ -1553,6 +1553,35 @@ class Marionette:
         """
         return self._send_message("WebDriver:CloseChromeWindow")
 
+    def register_chrome_handler(self, manifestPath, entries):
+        """Register a chrome protocol handler.
+
+        :param manifestPath: Path to the chrome manifest file
+        :param entries:  Chrome entries to register.
+
+        `entries` is an array of arrays, each containing a registry entry
+        (type, namespace, path, options) as it would appar in a chrome.manifest
+        file. Only the following entry types are currently accepted:
+
+            - "content" A URL entry. Must be a 3-element array.
+            - "override" A URL override entry. Must be a 3-element array.
+            - "locale" A locale package entry. Must be a 4-element array.
+
+        :returns: id of the registered chrome handler
+        """
+        return self._send_message(
+            "Marionette:RegisterChromeHandler",
+            {
+                "manifestPath": manifestPath,
+                "entries": entries,
+            },
+            key="value",
+        )
+
+    def unregister_chrome_handler(self, id):
+        """Unregister a previous registered chrome protocol handler."""
+        self._send_message("Marionette:UnregisterChromeHandler", {"id": id})
+
     def set_context(self, context):
         """Sets the context that Marionette commands are running in.
 

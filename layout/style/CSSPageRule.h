@@ -7,9 +7,8 @@
 #ifndef mozilla_dom_CSSPageRule_h
 #define mozilla_dom_CSSPageRule_h
 
-#include "mozilla/css/GroupRule.h"
 #include "mozilla/ServoBindingTypes.h"
-
+#include "mozilla/css/GroupRule.h"
 #include "nsDOMCSSDeclaration.h"
 #include "nsICSSDeclaration.h"
 // TODO alaskanemily: This is only needed by the generated bindings.

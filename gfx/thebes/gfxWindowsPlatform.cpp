@@ -69,6 +69,9 @@
 
 #include "base/thread.h"
 #include "mozilla/StaticPrefs_gfx.h"
+#ifdef MOZ_WMF_CDM
+#  include "mozilla/StaticPrefs_media.h"
+#endif
 #include "mozilla/StaticPrefs_layers.h"
 #include "gfxConfig.h"
 #include "VsyncSource.h"
@@ -391,10 +394,6 @@ void gfxWindowsPlatform::InitAcceleration() {
   gfxVars::SetSystemTextQualityListener(
       gfxDWriteFont::SystemTextQualityChanged);
 
-  // CanUseHardwareVideoDecoding depends on DeviceManagerDx state,
-  // so update the cached value now.
-  UpdateCanUseHardwareVideoDecoding();
-
   // Our ScreenHelperWin also depends on DeviceManagerDx state.
   if (XRE_IsParentProcess() && !gfxPlatform::IsHeadless()) {
     ScreenHelperWin::RefreshScreens();
@@ -408,16 +407,63 @@ void gfxWindowsPlatform::InitWebRenderConfig() {
   UpdateBackendPrefs();
 }
 
-bool gfxWindowsPlatform::CanUseHardwareVideoDecoding() {
+void gfxWindowsPlatform::InitPlatformHardwareVideoConfig() {
+  FeatureState& featureDec =
+      gfxConfig::GetFeature(Feature::HARDWARE_VIDEO_DECODING);
+  FeatureState& featureEnc =
+      gfxConfig::GetFeature(Feature::HARDWARE_VIDEO_ENCODING);
+
   DeviceManagerDx* dm = DeviceManagerDx::Get();
   if (!dm) {
-    return false;
+    featureDec.ForceDisable(FeatureStatus::Unavailable,
+                            "Requires DeviceManagerDx",
+                            "FEATURE_FAILURE_NO_DEVICE_MANAGER_DX"_ns);
+    featureEnc.ForceDisable(FeatureStatus::Unavailable,
+                            "Requires DeviceManagerDx",
+                            "FEATURE_FAILURE_NO_DEVICE_MANAGER_DX"_ns);
+  } else if (!dm->TextureSharingWorks()) {
+    featureDec.ForceDisable(FeatureStatus::Unavailable,
+                            "Requires texture sharing",
+                            "FEATURE_FAILURE_BROKEN_TEXTURE_SHARING"_ns);
+    featureEnc.ForceDisable(FeatureStatus::Unavailable,
+                            "Requires texture sharing",
+                            "FEATURE_FAILURE_BROKEN_TEXTURE_SHARING"_ns);
+  } else if (dm->IsWARP()) {
+    featureDec.ForceDisable(FeatureStatus::Unavailable, "Cannot use with WARP",
+                            "FEATURE_FAILURE_D3D11_WARP_DEVICE"_ns);
+    featureEnc.ForceDisable(FeatureStatus::Unavailable, "Cannot use with WARP",
+                            "FEATURE_FAILURE_D3D11_WARP_DEVICE"_ns);
   }
-  if (!dm->TextureSharingWorks()) {
-    return false;
-  }
-  return !dm->IsWARP() && gfxPlatform::CanUseHardwareVideoDecoding();
 }
+
+#ifdef MOZ_WMF_CDM
+void gfxWindowsPlatform::InitPlatformHardwarDRMConfig() {
+  nsCString message, failureId;
+  FeatureState& featureHWDRM = gfxConfig::GetFeature(Feature::WMF_HW_DRM);
+  featureHWDRM.Reset();
+  featureHWDRM.EnableByDefault();
+  if (StaticPrefs::media_wmf_media_engine_enabled() != 1 &&
+      StaticPrefs::media_wmf_media_engine_enabled() != 2) {
+    featureHWDRM.UserDisable(
+        "Force disabled by 'media.wmf.media-engine.enabled'",
+        "FEATURE_FAILURE_USER_FORCE_DISABLED"_ns);
+  } else if (StaticPrefs::media_wmf_media_engine_bypass_gfx_blocklist()) {
+    featureHWDRM.UserForceEnable(
+        "Force enabled by "
+        "'media.wmf.media-engine.bypass-gfx-blocklist'");
+  }
+  if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_WMF_HW_DRM, &message,
+                           failureId)) {
+    featureHWDRM.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
+  }
+  if (Preferences::GetBool("media.eme.hwdrm.failed", false)) {
+    featureHWDRM.ForceDisable(FeatureStatus::Unavailable,
+                              "Force disabled by failed to find a descryptor",
+                              "FEATURE_FAILURE_NO_DESCRYPTOR_FAILED"_ns);
+  }
+  gfxVars::SetUseWMFHWDWM(featureHWDRM.IsEnabled());
+}
+#endif
 
 bool gfxWindowsPlatform::InitDWriteSupport() {
   mozilla::ScopedGfxFeatureReporter reporter("DWrite");
@@ -1939,9 +1985,8 @@ void gfxWindowsPlatform::ImportGPUDeviceData(
     }
   }
 
-  // CanUseHardwareVideoDecoding depends on d3d11 state, so update
-  // the cached value now.
-  UpdateCanUseHardwareVideoDecoding();
+  // Hardware video decoding depends on d3d11 state, so update the cache.
+  InitHardwareVideoConfig();
 
   // For completeness (and messaging in about:support). Content recomputes this
   // on its own, and we won't use ANGLE in the UI process if we're using a GPU

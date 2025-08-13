@@ -181,6 +181,31 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment() {
             },
         )
 
+        if (requireComponents.settings.isAddressSyncEnabled) {
+            SyncPreferenceView(
+                syncPreference = requirePreference(R.string.pref_key_addresses_sync_cards_across_devices),
+                lifecycleOwner = viewLifecycleOwner,
+                accountManager = requireComponents.backgroundServices.accountManager,
+                syncEngine = SyncEngine.Addresses,
+                loggedOffTitle = requireContext()
+                    .getString(R.string.preferences_addresses_sync_addresses_across_devices),
+                loggedInTitle = requireContext()
+                    .getString(R.string.preferences_addresses_sync_addresses),
+                onSyncSignInClicked = {
+                    findNavController().navigate(
+                        NavGraphDirections.actionGlobalTurnOnSync(entrypoint = FenixFxAEntryPoint.AutofillSetting),
+                    )
+                },
+                onReconnectClicked = {
+                    findNavController().navigate(
+                        AutofillSettingFragmentDirections.actionGlobalAccountProblemFragment(
+                            entrypoint = FenixFxAEntryPoint.AutofillSetting,
+                        ),
+                    )
+                },
+            )
+        }
+
         togglePrefsEnabled(creditCardPreferences, true)
     }
 
@@ -194,6 +219,11 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment() {
     ) {
         val manageAddressesPreference =
             requirePreference<Preference>(R.string.pref_key_addresses_manage_addresses)
+
+        // show address sync preference if address sync is enabled
+        val addressSyncPreference =
+            requirePreference<Preference>(R.string.pref_key_addresses_sync_cards_across_devices)
+        addressSyncPreference.isVisible = requireComponents.settings.isAddressSyncEnabled
 
         if (hasAddresses) {
             manageAddressesPreference.icon = null

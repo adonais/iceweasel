@@ -8,13 +8,13 @@
 
 #include <cstdlib>
 
+#include "mozilla/SVGContentUtils.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/PathHelpers.h"
 #include "nsCSSRendering.h"
 #include "nsLayoutUtils.h"
 #include "nsMargin.h"
 #include "nsStyleStruct.h"
-#include "mozilla/SVGContentUtils.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/PathHelpers.h"
 
 namespace mozilla {
 

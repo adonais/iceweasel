@@ -11,9 +11,7 @@ support-files = [
 
 
 ["test_data.html"]
-skip-if = [
-  "os == 'android'",
-]
+skip-if = ["os == 'android'"]
 scheme = "https"
 
 ["test_error_reporting.html"]
@@ -38,9 +36,7 @@ scheme = "https"
 skip-if = ["os == 'android'"]
 
 ["test_register.html"]
-skip-if = [
-  "os == 'android'",
-]
+skip-if = ["os == 'android'"]
 
 ["test_register_key.html"]
 skip-if = ["os == 'android'"]
@@ -50,14 +46,10 @@ scheme = "https"
 skip-if = ["true"]
 
 ["test_subscription_change.html"]
-skip-if = [
-  "os == 'android'",
-]
+skip-if = ["os == 'android'"]
 
 ["test_try_registering_offline_disabled.html"]
-skip-if = [
-  "os == 'android'",
-]
+skip-if = ["os == 'android'"]
 
 ["test_unregister.html"]
 skip-if = ["os == 'android'"]

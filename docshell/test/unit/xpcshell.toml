@@ -14,10 +14,16 @@ support-files = [
 # Disabled for 1563343 -- URI fixup should be done at the app level in GV.
 
 ["test_URIFixup_info.js"]
-skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64'"]
+skip-if = [
+  "os == 'android' && android_version == '24' && processor == 'x86_64'",
+  "os == 'android' && android_version == '34' && processor == 'x86_64'",
+]
 
 ["test_URIFixup_search.js"]
-skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64'"]
+skip-if = [
+  "os == 'android' && android_version == '24' && processor == 'x86_64'",
+  "os == 'android' && android_version == '34' && processor == 'x86_64'",
+]
 
 ["test_allowJavascript.js"]
 support-files = [

@@ -116,6 +116,10 @@ void File::GetRelativePath(nsAString& aPath) const {
   }
 }
 
+void File::SetMozRelativePath(const nsAString& aPath) {
+  mImpl->SetDOMPath(aPath);
+}
+
 int64_t File::GetLastModified(ErrorResult& aRv) {
   return mImpl->GetLastModified(aRv);
 }

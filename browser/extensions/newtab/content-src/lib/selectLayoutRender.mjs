@@ -55,6 +55,7 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
     "SectionTitle",
     "Signup",
     "Navigation",
+    "Widgets",
     "CardGrid",
     "CollectionCardGrid",
     "HorizontalRule",

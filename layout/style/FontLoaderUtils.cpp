@@ -6,10 +6,10 @@
 
 #include "mozilla/FontLoaderUtils.h"
 
+#include "gfxUserFontSet.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/WorkerPrivate.h"
-#include "gfxUserFontSet.h"
 #include "nsCOMPtr.h"
 #include "nsIChannel.h"
 #include "nsIClassOfService.h"

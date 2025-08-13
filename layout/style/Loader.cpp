@@ -9,74 +9,70 @@
 #include "mozilla/css/Loader.h"
 
 #include "MainThreadUtils.h"
+#include "ReferrerInfo.h"
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/css/ErrorReporter.h"
-#include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/FetchPriority.h"
-#include "mozilla/dom/SRILogHelper.h"
-#include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/AutoRestore.h"
+#include "mozilla/ConsoleReportCollector.h"
+#include "mozilla/Encoding.h"
+#include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/Logging.h"
-#include "mozilla/glean/LayoutMetrics.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PreloadHashKey.h"
-#include "mozilla/ResultExtensions.h"
-#include "mozilla/URLPreloader.h"
-#include "nsIPrincipal.h"
-#include "nsISupportsPriority.h"
-#include "nsITimedChannel.h"
-#include "nsICachingChannel.h"
-#include "nsSyncLoadService.h"
-#include "nsContentSecurityManager.h"
-#include "nsCOMPtr.h"
-#include "nsString.h"
-#include "nsIContent.h"
-#include "nsIContentInlines.h"
-#include "nsICookieJarSettings.h"
-#include "mozilla/dom/Document.h"
-#include "nsIURI.h"
-#include "nsContentUtils.h"
-#include "nsHttpChannel.h"
-#include "nsIScriptSecurityManager.h"
-#include "nsContentPolicyUtils.h"
-#include "nsIHttpChannel.h"
-#include "nsIHttpChannelInternal.h"
-#include "nsIClassifiedChannel.h"
-#include "nsIClassOfService.h"
-#include "nsIScriptError.h"
-#include "nsMimeTypes.h"
-#include "nsICSSLoaderObserver.h"
-#include "nsThreadUtils.h"
-#include "nsINetworkPredictor.h"
-#include "nsQueryActor.h"
-#include "nsQueryObject.h"
-#include "nsStringStream.h"
-#include "mozilla/dom/MediaList.h"
-#include "mozilla/dom/ShadowRoot.h"
-#include "mozilla/dom/URL.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
-#include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/ProfilerLabels.h"
+#include "mozilla/ResultExtensions.h"
 #include "mozilla/ServoBindings.h"
-#include "mozilla/StyleSheet.h"
-#include "mozilla/StyleSheetInlines.h"
-#include "mozilla/ConsoleReportCollector.h"
-#include "mozilla/css/StreamLoader.h"
 #include "mozilla/SharedStyleSheetCache.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/StyleSheet.h"
+#include "mozilla/StyleSheetInlines.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Try.h"
-#include "ReferrerInfo.h"
-
-#include "nsXULPrototypeCache.h"
-
-#include "nsError.h"
-
+#include "mozilla/URLPreloader.h"
+#include "mozilla/css/ErrorReporter.h"
+#include "mozilla/css/StreamLoader.h"
+#include "mozilla/dom/DocGroup.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/FetchPriority.h"
+#include "mozilla/dom/MediaList.h"
 #include "mozilla/dom/SRICheck.h"
-
-#include "mozilla/Encoding.h"
+#include "mozilla/dom/SRILogHelper.h"
+#include "mozilla/dom/ShadowRoot.h"
+#include "mozilla/dom/URL.h"
+#include "mozilla/glean/LayoutMetrics.h"
+#include "mozilla/net/UrlClassifierFeatureFactory.h"
+#include "nsCOMPtr.h"
+#include "nsContentPolicyUtils.h"
+#include "nsContentSecurityManager.h"
+#include "nsContentUtils.h"
+#include "nsError.h"
+#include "nsHttpChannel.h"
+#include "nsICSSLoaderObserver.h"
+#include "nsICachingChannel.h"
+#include "nsIClassOfService.h"
+#include "nsIClassifiedChannel.h"
+#include "nsIContent.h"
+#include "nsIContentInlines.h"
+#include "nsICookieJarSettings.h"
+#include "nsIHttpChannel.h"
+#include "nsIHttpChannelInternal.h"
+#include "nsINetworkPredictor.h"
+#include "nsIPrincipal.h"
+#include "nsIScriptError.h"
+#include "nsIScriptSecurityManager.h"
+#include "nsISupportsPriority.h"
+#include "nsITimedChannel.h"
+#include "nsIURI.h"
+#include "nsMimeTypes.h"
+#include "nsQueryActor.h"
+#include "nsQueryObject.h"
+#include "nsString.h"
+#include "nsStringStream.h"
+#include "nsSyncLoadService.h"
+#include "nsThreadUtils.h"
+#include "nsXULPrototypeCache.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::net;
@@ -808,6 +804,15 @@ Loader::IsAlternate Loader::IsAlternateSheet(const nsAString& aTitle,
   return IsAlternate::Yes;
 }
 
+static nsSecurityFlags ComputeSecurityFlags(CORSMode aCORSMode) {
+  nsSecurityFlags securityFlags =
+      nsContentSecurityManager::ComputeSecurityFlags(
+          aCORSMode, nsContentSecurityManager::CORSSecurityMapping::
+                         CORS_NONE_MAPS_TO_INHERITED_CONTEXT);
+  securityFlags |= nsILoadInfo::SEC_ALLOW_CHROME;
+  return securityFlags;
+}
+
 static nsContentPolicyType ComputeContentPolicyType(
     StylePreloadKind aPreloadKind) {
   return aPreloadKind == StylePreloadKind::None
@@ -815,12 +820,11 @@ static nsContentPolicyType ComputeContentPolicyType(
              : nsIContentPolicy::TYPE_INTERNAL_STYLESHEET_PRELOAD;
 }
 
-nsresult Loader::CheckContentPolicy(nsIPrincipal* aLoadingPrincipal,
-                                    nsIPrincipal* aTriggeringPrincipal,
-                                    nsIURI* aTargetURI,
-                                    nsINode* aRequestingNode,
-                                    const nsAString& aNonce,
-                                    StylePreloadKind aPreloadKind) {
+nsresult Loader::CheckContentPolicy(
+    nsIPrincipal* aLoadingPrincipal, nsIPrincipal* aTriggeringPrincipal,
+    nsIURI* aTargetURI, nsINode* aRequestingNode, const nsAString& aNonce,
+    StylePreloadKind aPreloadKind, CORSMode aCORSMode,
+    const nsAString& aIntegrity) {
   // When performing a system load don't consult content policies.
   if (!mDocument) {
     return NS_OK;
@@ -833,6 +837,15 @@ nsresult Loader::CheckContentPolicy(nsIPrincipal* aLoadingPrincipal,
       aLoadingPrincipal, aTriggeringPrincipal, aRequestingNode,
       nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK, contentPolicyType));
   secCheckLoadInfo->SetCspNonce(aNonce);
+
+  // Required for IntegrityPolicy checks.
+  RequestMode requestMode = nsContentSecurityManager::SecurityModeToRequestMode(
+      nsContentSecurityManager::ComputeSecurityMode(
+          ComputeSecurityFlags(aCORSMode)));
+  secCheckLoadInfo->SetRequestMode(Some(requestMode));
+
+  // Required for IntegrityPolicy checks.
+  secCheckLoadInfo->SetIntegrityMetadata(aIntegrity);
 
   int16_t shouldLoad = nsIContentPolicy::ACCEPT;
   nsresult rv =
@@ -862,25 +875,6 @@ nsresult Loader::CheckContentPolicy(nsIPrincipal* aLoadingPrincipal,
     return NS_ERROR_CONTENT_BLOCKED;
   }
   return NS_OK;
-}
-
-static void RecordUseCountersIfNeeded(Document* aDoc,
-                                      const StyleSheet& aSheet) {
-  if (!aDoc) {
-    return;
-  }
-  const StyleUseCounters* docCounters = aDoc->GetStyleUseCounters();
-  if (!docCounters) {
-    return;
-  }
-  if (aSheet.URLData()->ChromeRulesEnabled()) {
-    return;
-  }
-  const auto* sheetCounters = aSheet.GetStyleUseCounters();
-  if (!sheetCounters) {
-    return;
-  }
-  Servo_UseCounters_Merge(docCounters, sheetCounters);
 }
 
 bool Loader::MaybePutIntoLoadsPerformed(SheetLoadData& aLoadData) {
@@ -1088,11 +1082,7 @@ nsresult Loader::NewStyleSheetChannel(SheetLoadData& aLoadData,
     triggeringClassificationFlags = mDocument->GetScriptTrackingFlags();
   }
 
-  nsSecurityFlags securityFlags =
-      nsContentSecurityManager::ComputeSecurityFlags(
-          aCorsMode, nsContentSecurityManager::CORSSecurityMapping::
-                         CORS_NONE_MAPS_TO_INHERITED_CONTEXT);
-  securityFlags |= nsILoadInfo::SEC_ALLOW_CHROME;
+  nsSecurityFlags securityFlags = ComputeSecurityFlags(aCorsMode);
 
   nsContentPolicyType contentPolicyType =
       ComputeContentPolicyType(aLoadData.mPreloadKind);
@@ -1390,6 +1380,7 @@ nsresult Loader::LoadSheetAsyncInternal(SheetLoadData& aLoadData,
 
   nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
   loadInfo->SetCspNonce(aLoadData.Nonce());
+  loadInfo->SetIntegrityMetadata(sriMetadata.GetIntegrityString());
 
   if (!aLoadData.ShouldDefer()) {
     if (nsCOMPtr<nsIClassOfService> cos = do_QueryInterface(channel)) {
@@ -1407,14 +1398,6 @@ nsresult Loader::LoadSheetAsyncInternal(SheetLoadData& aLoadData,
     if (nsCOMPtr<nsIReferrerInfo> referrerInfo = aLoadData.ReferrerInfo()) {
       rv = httpChannel->SetReferrerInfo(referrerInfo);
       Unused << NS_WARN_IF(NS_FAILED(rv));
-    }
-
-    nsCOMPtr<nsIHttpChannelInternal> internalChannel =
-        do_QueryInterface(httpChannel);
-    if (internalChannel) {
-      rv = internalChannel->SetIntegrityMetadata(
-          sriMetadata.GetIntegrityString());
-      NS_ENSURE_SUCCESS(rv, rv);
     }
 
     // Set the initiator type
@@ -1589,7 +1572,7 @@ void Loader::AddPerformanceEntryForCachedSheet(SheetLoadData& aLoadData) {
 }
 
 void Loader::NotifyObservers(SheetLoadData& aData, nsresult aStatus) {
-  RecordUseCountersIfNeeded(mDocument, *aData.mSheet);
+  aData.mSheet->PropagateUseCountersTo(mDocument);
   if (MaybePutIntoLoadsPerformed(aData) &&
       aData.mShouldEmulateNotificationsForCachedLoad) {
     NotifyObserversForCachedSheet(aData);
@@ -1682,21 +1665,70 @@ void Loader::MarkLoadTreeFailed(SheetLoadData& aLoadData,
   } while (data);
 }
 
+static bool URIsEqual(nsIURI* aA, nsIURI* aB) {
+  if (aA == aB) {
+    return true;
+  }
+  if (!aA || !aB) {
+    return false;
+  }
+  bool equal = false;
+  return NS_SUCCEEDED(aA->Equals(aB, &equal)) && equal;
+}
+
+// The intention is that this would return true for inputs like
+//   (https://example.com/a, https://example.com/b)
+// but not for:
+//   (https://example.com/a, https://example.com/b/c)
+// where "regular" relative URIs would resolve differently.
+static bool BaseURIsArePathCompatible(nsIURI* aA, nsIURI* aB) {
+  if (!aA || !aB) {
+    return false;
+  }
+  constexpr auto kDummyPath = "foo.css"_ns;
+  nsAutoCString resultA;
+  nsAutoCString resultB;
+  aA->Resolve(kDummyPath, resultA);
+  aB->Resolve(kDummyPath, resultB);
+  return resultA == resultB;
+}
+
+static bool CanReuseInlineSheet(StyleSheet* aSheet, nsIURI* aNewBaseURI) {
+  nsIURI* oldBase = aSheet->GetBaseURI();
+  if (URIsEqual(oldBase, aNewBaseURI)) {
+    return true;
+  }
+  switch (aSheet->OriginalContentsBaseUriDependency()) {
+    case StyleLikelyBaseUriDependency::No:
+      break;
+    case StyleLikelyBaseUriDependency::Path:
+      if (BaseURIsArePathCompatible(oldBase, aNewBaseURI)) {
+        break;
+      }
+      [[fallthrough]];
+    case StyleLikelyBaseUriDependency::Full:
+      LOG(("  Can't reuse due to base URI dependency"));
+      return false;
+  }
+  return true;
+}
+
 RefPtr<StyleSheet> Loader::LookupInlineSheetInCache(
-    const nsAString& aBuffer, nsIPrincipal* aSheetPrincipal) {
+    const nsAString& aBuffer, nsIPrincipal* aSheetPrincipal, nsIURI* aBaseURI) {
   MOZ_ASSERT(mSheets, "Document associated loader should have sheet cache");
   auto result = mSheets->LookupInline(LoaderPrincipal(), aBuffer);
   if (!result) {
     return nullptr;
   }
-
   StyleSheet* sheet = result.Data();
   MOZ_ASSERT(!sheet->HasModifiedRules(),
              "How did we end up with a dirty sheet?");
-
   if (NS_WARN_IF(!sheet->Principal()->Equals(aSheetPrincipal))) {
     // If the sheet is going to have different access rights, don't return it
     // from the cache. XXX can this happen now that we eagerly clone?
+    return nullptr;
+  }
+  if (!CanReuseInlineSheet(sheet, aBaseURI)) {
     return nullptr;
   }
   return sheet->Clone(nullptr, nullptr);
@@ -1766,7 +1798,8 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
     return LoaderPrincipal();
   }();
 
-  RefPtr<StyleSheet> sheet = LookupInlineSheetInCache(aBuffer, sheetPrincipal);
+  RefPtr<StyleSheet> sheet =
+      LookupInlineSheetInCache(aBuffer, sheetPrincipal, baseURI);
   const bool isSheetFromCache = !!sheet;
   if (!isSheetFromCache) {
     sheet = MakeRefPtr<StyleSheet>(eAuthorSheetFeatures, aInfo.mCORSMode,
@@ -1884,9 +1917,9 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadStyleLink(
   LOG(("  Link sync load: '%s'", syncLoad ? "true" : "false"));
   MOZ_ASSERT_IF(syncLoad, !aObserver);
 
-  nsresult rv =
-      CheckContentPolicy(loadingPrincipal, principal, aInfo.mURI,
-                         requestingNode, aInfo.mNonce, StylePreloadKind::None);
+  nsresult rv = CheckContentPolicy(
+      loadingPrincipal, principal, aInfo.mURI, requestingNode, aInfo.mNonce,
+      StylePreloadKind::None, aInfo.mCORSMode, aInfo.mIntegrity);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     // Don't fire the error event if our document is loaded as data.  We're
     // supposed to not even try to do loads in that case... Unfortunately, we
@@ -2011,9 +2044,9 @@ nsresult Loader::LoadChildSheet(StyleSheet& aParentSheet,
   }
 
   nsIPrincipal* principal = aParentSheet.Principal();
-  nsresult rv =
-      CheckContentPolicy(LoaderPrincipal(), principal, aURL, requestingNode,
-                         /* aNonce = */ u""_ns, StylePreloadKind::None);
+  nsresult rv = CheckContentPolicy(
+      LoaderPrincipal(), principal, aURL, requestingNode,
+      /* aNonce = */ u""_ns, StylePreloadKind::None, CORS_NONE, u""_ns);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     if (aParentData) {
       MarkLoadTreeFailed(*aParentData);
@@ -2080,7 +2113,7 @@ nsresult Loader::LoadChildSheet(StyleSheet& aParentSheet,
     if (!isReusableSheet) {
       // Child sheets are not handled by NotifyObservers, and these need to be
       // performed here if the sheet comes from the SharedStyleSheetCache.
-      RecordUseCountersIfNeeded(mDocument, *data->mSheet);
+      data->mSheet->PropagateUseCountersTo(mDocument);
       if (MaybePutIntoLoadsPerformed(*data)) {
         NotifyObserversForCachedSheet(*data);
         AddPerformanceEntryForCachedSheet(*data);
@@ -2155,8 +2188,9 @@ Result<RefPtr<StyleSheet>, nsresult> Loader::InternalLoadNonDocumentSheet(
 
   nsIPrincipal* loadingPrincipal = LoaderPrincipal();
   nsIPrincipal* triggeringPrincipal = loadingPrincipal;
-  nsresult rv = CheckContentPolicy(loadingPrincipal, triggeringPrincipal, aURL,
-                                   mDocument, aNonce, aPreloadKind);
+  nsresult rv =
+      CheckContentPolicy(loadingPrincipal, triggeringPrincipal, aURL, mDocument,
+                         aNonce, aPreloadKind, aCORSMode, aIntegrity);
   if (NS_FAILED(rv)) {
     return Err(rv);
   }

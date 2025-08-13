@@ -33,13 +33,10 @@ import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
-import org.robolectric.Robolectric.buildAttributeSet
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
 class InlineAutocompleteEditTextTest {
-
-    private val attributes = buildAttributeSet().build()
 
     @Test
     fun autoCompleteResult() {
@@ -64,7 +61,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun getOriginalText() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         et.setText("Test")
         assertEquals("Test", et.originalText)
 
@@ -77,7 +74,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun onFocusChange() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         val searchStates = mutableListOf<Boolean>()
 
         et.setOnSearchStateChangeListener { b: Boolean -> searchStates.add(searchStates.size, b) }
@@ -97,7 +94,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun sendAccessibilityEventUnchecked() {
-        val et = spy(InlineAutocompleteEditText(testContext, attributes))
+        val et = spy(InlineAutocompleteEditText(testContext, null))
         doReturn(false).`when`(et).isShown
         doReturn(mock(ViewParent::class.java)).`when`(et).parent
 
@@ -112,7 +109,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun onAutocompleteSetsEmptyResult() {
-        val et = spy(InlineAutocompleteEditText(testContext, attributes))
+        val et = spy(InlineAutocompleteEditText(testContext, null))
 
         doReturn(false).`when`(et).isEnabled
         et.applyAutocompleteResult(AutocompleteResult("text", "source", 1))
@@ -121,7 +118,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun onAutocompleteDiscardsStaleResult() {
-        val et = spy(InlineAutocompleteEditText(testContext, attributes))
+        val et = spy(InlineAutocompleteEditText(testContext, null))
         doReturn(true).`when`(et).isEnabled
         et.setText("text")
 
@@ -135,7 +132,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun onAutocompleteReplacesExistingAutocompleteText() {
-        val et = spy(InlineAutocompleteEditText(testContext, attributes))
+        val et = spy(InlineAutocompleteEditText(testContext, null))
         doReturn(true).`when`(et).isEnabled
 
         et.setText("text")
@@ -146,7 +143,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun onAutocompleteAppendsExistingText() {
-        val et = spy(InlineAutocompleteEditText(testContext, attributes))
+        val et = spy(InlineAutocompleteEditText(testContext, null))
         doReturn(true).`when`(et).isEnabled
 
         et.setText("text")
@@ -156,7 +153,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun onAutocompleteSetsSpan() {
-        val et = spy(InlineAutocompleteEditText(testContext, attributes))
+        val et = spy(InlineAutocompleteEditText(testContext, null))
         doReturn(true).`when`(et).isEnabled
 
         et.setText("text")
@@ -169,7 +166,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun onKeyPreImeListenerInvocation() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         var invokedWithParams: List<Any>? = null
         et.setOnKeyPreImeListener { p1, p2, p3 ->
             invokedWithParams = listOf(p1, p2, p3)
@@ -182,7 +179,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun onSelectionChangedListenerInvocation() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         var invokedWithParams: List<Any>? = null
         et.setOnSelectionChangedListener { p1, p2 ->
             invokedWithParams = listOf(p1, p2)
@@ -193,7 +190,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun onSelectionChangedCommitsResult() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         et.onAttachedToWindow()
 
         et.setText("text")
@@ -206,7 +203,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun onWindowFocusChangedListenerInvocation() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         var invokedWithParams: List<Any>? = null
         et.setOnWindowsFocusChangeListener { p1 ->
             invokedWithParams = listOf(p1)
@@ -217,7 +214,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun onCommitListenerInvocation() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         var invoked = false
         et.setOnCommitListener { invoked = true }
         et.onAttachedToWindow()
@@ -228,7 +225,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun `onCommitListenerInvocation with Numpad ENTER`() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         var invoked = false
         et.setOnCommitListener { invoked = true }
         et.onAttachedToWindow()
@@ -239,7 +236,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun onTextChangeListenerInvocation() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         var invokedWithParams: List<Any>? = null
         et.setOnTextChangeListener { p1, p2 ->
             invokedWithParams = listOf(p1, p2)
@@ -252,7 +249,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun onSearchStateChangeListenerInvocation() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         et.onAttachedToWindow()
 
         var invokedWithParams: List<Any>? = null
@@ -269,7 +266,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun onFilterListenerInvocation() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         et.onAttachedToWindow()
 
         var lastInvokedWithText: String? = null
@@ -313,7 +310,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun `GIVEN an autocomplete listener WHEN asked to refresh autocomplete suggestions THEN restart the autocomplete functionality with the curret text`() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         et.onAttachedToWindow()
         et.setText("Test")
         var lastInvokedWithText: String? = null
@@ -331,7 +328,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun onCreateInputConnection() {
-        val et = spy(InlineAutocompleteEditText(testContext, attributes))
+        val et = spy(InlineAutocompleteEditText(testContext, null))
         val icw = et.onCreateInputConnection(mock(EditorInfo::class.java))
         doReturn(true).`when`(et).isEnabled
 
@@ -362,7 +359,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun removeAutocompleteOnComposing() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         val ic = et.onCreateInputConnection(mock(EditorInfo::class.java))
 
         ic?.setComposingText("text", 1)
@@ -382,7 +379,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun `GIVEN the current text contains an autocompletion WHEN a new character does not match the autocompletion THEN remove the autocompletion`() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         val ic = et.onCreateInputConnection(mock(EditorInfo::class.java))
 
         ic?.setComposingText("mo", 1)
@@ -402,7 +399,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun `GIVEN empty edit field WHEN text 'g' added THEN autocomplete to google`() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         et.setText("")
         et.onAttachedToWindow()
 
@@ -418,7 +415,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun `GIVEN empty edit field WHEN text 'g ' added THEN don't autocomplete to google`() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         et.setText("")
         et.onAttachedToWindow()
 
@@ -434,7 +431,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun `GIVEN field with 'google' WHEN backspacing THEN doesn't autocomplete`() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         et.setText("google")
         et.onAttachedToWindow()
 
@@ -450,7 +447,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun `GIVEN field with selected text WHEN text 'g' added THEN autocomplete to google`() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         et.setText("testestest")
         et.selectAll()
         et.onAttachedToWindow()
@@ -466,7 +463,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun `GIVEN field with selected text 'google ' WHEN text 'g' added THEN autocomplete to google`() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         et.setText("https://www.google.com/")
         et.selectAll()
         et.onAttachedToWindow()
@@ -482,7 +479,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun `WHEN setting text THEN isEnabled is never modified`() {
-        val et = spy(InlineAutocompleteEditText(testContext, attributes))
+        val et = spy(InlineAutocompleteEditText(testContext, null))
         et.setText("", shouldAutoComplete = false)
         // assigning here so it verifies the setter, not the getter
         verify(et, never()).isEnabled = true
@@ -490,7 +487,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun `WHEN onTextContextMenuItem is called for options other than paste THEN we should not paste() and just call super`() {
-        val editText = spy(InlineAutocompleteEditText(testContext, attributes))
+        val editText = spy(InlineAutocompleteEditText(testContext, null))
 
         editText.onTextContextMenuItem(android.R.id.copy)
         editText.onTextContextMenuItem(android.R.id.shareText)
@@ -503,7 +500,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun `WHEN onTextContextMenuItem is called for paste THEN we should paste() and not call super`() {
-        val editText = spy(InlineAutocompleteEditText(testContext, attributes))
+        val editText = spy(InlineAutocompleteEditText(testContext, null))
 
         editText.onTextContextMenuItem(android.R.id.paste)
 
@@ -513,7 +510,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun `WHEN onTextContextMenuItem is called for pasteAsPlainText THEN we should paste() and not call super`() {
-        val editText = spy(InlineAutocompleteEditText(testContext, attributes))
+        val editText = spy(InlineAutocompleteEditText(testContext, null))
 
         editText.onTextContextMenuItem(android.R.id.pasteAsPlainText)
 
@@ -524,7 +521,7 @@ class InlineAutocompleteEditTextTest {
     @Test
     @Config(sdk = [Build.VERSION_CODES.LOLLIPOP, Build.VERSION_CODES.LOLLIPOP_MR1])
     fun `GIVEN an Android L device, WHEN onTextContextMenuItem is called for paste THEN we should paste() with formatting`() {
-        val editText = spy(InlineAutocompleteEditText(testContext, attributes))
+        val editText = spy(InlineAutocompleteEditText(testContext, null))
 
         editText.onTextContextMenuItem(android.R.id.paste)
 
@@ -534,7 +531,7 @@ class InlineAutocompleteEditTextTest {
     @Test
     @Config(sdk = [Build.VERSION_CODES.M, Build.VERSION_CODES.N, Build.VERSION_CODES.O, Build.VERSION_CODES.P])
     fun `GIVEN an Android M device, WHEN onTextContextMenuItem is called for paste THEN we should paste() without formatting`() {
-        val editText = spy(InlineAutocompleteEditText(testContext, attributes))
+        val editText = spy(InlineAutocompleteEditText(testContext, null))
 
         editText.onTextContextMenuItem(android.R.id.paste)
 
@@ -543,7 +540,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun `GIVEN no previous text WHEN paste is selected THEN paste() should be called with 0,0`() {
-        val editText = spy(InlineAutocompleteEditText(testContext, attributes))
+        val editText = spy(InlineAutocompleteEditText(testContext, null))
 
         editText.onTextContextMenuItem(android.R.id.paste)
 
@@ -552,7 +549,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun `GIVEN 5 chars previous text WHEN paste is selected THEN paste() should be called with 0,5`() {
-        val editText = spy(InlineAutocompleteEditText(testContext, attributes))
+        val editText = spy(InlineAutocompleteEditText(testContext, null))
         editText.setText("chars")
         editText.selectAll()
 
@@ -563,7 +560,7 @@ class InlineAutocompleteEditTextTest {
 
     @Test
     fun `WHEN paste() is called with new text THEN we will display the new text`() {
-        val editText = spy(InlineAutocompleteEditText(testContext, attributes))
+        val editText = spy(InlineAutocompleteEditText(testContext, null))
         (testContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).apply {
             setPrimaryClip(ClipData.newPlainText("Test", "test"))
         }
@@ -576,7 +573,7 @@ class InlineAutocompleteEditTextTest {
     }
 
     fun `WHEN committing autocomplete THEN textChangedListener is invoked`() {
-        val et = InlineAutocompleteEditText(testContext, attributes)
+        val et = InlineAutocompleteEditText(testContext, null)
         et.setText("")
 
         et.onAttachedToWindow()

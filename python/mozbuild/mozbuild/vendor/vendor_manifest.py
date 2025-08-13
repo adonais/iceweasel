@@ -896,21 +896,45 @@ class VendorManifest(MozbuildObject):
         self.logInfo({}, "Importing local patches...")
         try:
             for patch in self.convert_patterns_to_paths(yaml_dir, patches):
-                script = [
-                    "patch",
-                    "-p1",
-                    "-r",
-                    "/dev/stdout",
-                    "--directory",
-                    vendor_dir,
-                    "--input",
-                    os.path.abspath(patch),
-                    "--no-backup-if-mismatch",
-                ]
-                self.run_process(
-                    args=script,
-                    log_name=script,
-                )
+                # Create temporary reject file
+                with tempfile.NamedTemporaryFile(
+                    mode="w+", suffix=".rej", delete=False
+                ) as reject_file:
+                    reject_path = reject_file.name
+
+                try:
+                    script = [
+                        "patch",
+                        "-r",
+                        reject_path,
+                        "-p1",
+                        "--directory",
+                        vendor_dir,
+                        "--input",
+                        os.path.abspath(patch),
+                        "--no-backup-if-mismatch",
+                    ]
+                    self.run_process(
+                        args=script,
+                        log_name=script,
+                    )
+                except Exception as e:
+                    # Check if reject file has content (patch failed)
+                    if os.path.exists(reject_path) and os.path.getsize(reject_path) > 0:
+                        with open(reject_path) as f:
+                            reject_content = f.read()
+                        self.log(
+                            logging.ERROR,
+                            "vendor",
+                            {},
+                            f"Patch rejection details:\n{reject_content}",
+                        )
+                    raise e
+                finally:
+                    # Clean up temporary reject file
+                    if os.path.exists(reject_path):
+                        os.unlink(reject_path)
+
         except Exception as e:
             msgs = [f"Could not apply {patch}, possible reasons:"]
             msgs.append(" - You ran --patch-mode=only before running --patch-mode=none")

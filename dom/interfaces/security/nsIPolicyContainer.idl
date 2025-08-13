@@ -1,0 +1,18 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#include "nsISerializable.idl"
+
+interface nsIContentSecurityPolicy;
+
+[scriptable, builtinclass, uuid(c9da865e-c3d7-4aa1-a271-0f571f013c30)]
+interface nsIPolicyContainer : nsISerializable {
+  // Unfortunately, we have to expose CSP for now. For now, we only expose it as readonly.
+  [infallible] readonly attribute nsIContentSecurityPolicy csp;
+
+  // Please avoid using this method. We only expose it to allow devtools to create a
+  // policy container from a CSP.
+  // (It is used by SessionHistory too but it is only while we migrate fully)
+  void initFromCSP(in nsIContentSecurityPolicy aCSP);
+};

@@ -10,6 +10,7 @@ ChromeUtils.defineESModuleGetters(this, {
   MerinoClient: "resource:///modules/MerinoClient.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusTestUtils: "resource://testing-common/NimbusTestUtils.sys.mjs",
+  ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
 });
 
 // Set the `merino.timeoutMs` pref to a large value so that the client will not
@@ -26,6 +27,10 @@ const { SEARCH_PARAMS } = MerinoClient;
 let gClient;
 
 add_setup(async function init() {
+  // Set up FOG (Glean).
+  do_get_profile();
+  Services.fog.initializeFOG();
+
   UrlbarPrefs.set("merino.timeoutMs", TEST_TIMEOUT_MS);
   registerCleanupFunction(() => {
     UrlbarPrefs.clear("merino.timeoutMs");
@@ -66,6 +71,13 @@ add_task(async function success() {
     "success",
     "The request successfully finished"
   );
+  assertTelemetry({
+    latency: {
+      200: {
+        count: 1,
+      },
+    },
+  });
 });
 
 // Does a successful fetch that doesn't return any suggestions.
@@ -82,6 +94,13 @@ add_task(async function noSuggestions() {
     "no_suggestion",
     "The request successfully finished without suggestions"
   );
+  assertTelemetry({
+    latency: {
+      200: {
+        count: 1,
+      },
+    },
+  });
 
   MerinoTestUtils.server.response.body.suggestions = suggestions;
 });
@@ -253,6 +272,8 @@ async function doFetchAndGetCalls(client, fetchArgs) {
 
 // Checks a 204 "No content" response.
 add_task(async function noContent() {
+  Services.fog.testResetFOG();
+
   MerinoTestUtils.server.response = { status: 204 };
   await fetchAndCheckSuggestions({ expected: [] });
 
@@ -261,6 +282,13 @@ add_task(async function noContent() {
     "no_suggestion",
     "The request should have been recorded as no_suggestion"
   );
+  assertTelemetry({
+    latency: {
+      204: {
+        count: 1,
+      },
+    },
+  });
 
   MerinoTestUtils.server.reset();
 });
@@ -280,6 +308,13 @@ add_task(async function unexpectedResponseProperties() {
     "success",
     "The request successfully finished"
   );
+  assertTelemetry({
+    latency: {
+      200: {
+        count: 1,
+      },
+    },
+  });
 });
 
 // Checks some responses with unexpected response bodies.
@@ -304,6 +339,13 @@ add_task(async function unexpectedResponseBody() {
       "no_suggestion",
       "The request successfully finished without suggestions"
     );
+    assertTelemetry({
+      latency: {
+        200: {
+          count: 1,
+        },
+      },
+    });
   }
 
   MerinoTestUtils.server.reset();
@@ -346,6 +388,13 @@ add_task(async function httpError() {
     "http_error",
     "The request failed with an HTTP error"
   );
+  assertTelemetry({
+    latency: {
+      500: {
+        count: 1,
+      },
+    },
+  });
 
   MerinoTestUtils.server.reset();
 });
@@ -433,6 +482,15 @@ async function doClientTimeoutTest({
 
   // The client should have nulled out the fetch controller.
   Assert.ok(!gClient._test_fetchController, "fetchController no longer exists");
+
+  assertTelemetry({
+    latency: {
+      [expectedResponseStatus.toString()]: {
+        count: 1,
+        minDurationMs: responseDelayMs,
+      },
+    },
+  });
 
   MerinoTestUtils.server.reset();
   UrlbarPrefs.set("merino.timeoutMs", originalPrefTimeoutMs);
@@ -700,6 +758,99 @@ add_task(async function nimbus() {
   UrlbarPrefs.set("merino.endpointURL", originalEndpointURL);
 });
 
+// OHTTP should be used when `client.allowOhttp` is true and the Merino OHTTP
+// prefs are defined.
+add_task(async function ohttp() {
+  Services.fog.testResetFOG();
+
+  // Stub the `ObliviousHTTP` functions.
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(ObliviousHTTP, "getOHTTPConfig").resolves({});
+  sandbox.stub(ObliviousHTTP, "ohttpRequest").resolves({
+    status: 200,
+    json: async () => [],
+  });
+
+  // Try all combinations of URLs and `allowOhttp`. OHTTP should be used only
+  // when both URLs are defined and `allowOhttp` is true.
+  for (let configUrl of ["", "https://example.com/config"]) {
+    for (let relayUrl of ["", "https://example.com/relay"]) {
+      for (let allowOhttp of [false, true]) {
+        UrlbarPrefs.set("merino.ohttpConfigURL", configUrl);
+        UrlbarPrefs.set("merino.ohttpRelayURL", relayUrl);
+
+        let client = new MerinoClient("ohttp client", { allowOhttp });
+        await client.fetch({ query: "test" });
+
+        let shouldUseOhttp = configUrl && relayUrl && allowOhttp;
+        let expectedCallCount = shouldUseOhttp ? 1 : 0;
+
+        Assert.equal(
+          ObliviousHTTP.getOHTTPConfig.callCount,
+          expectedCallCount,
+          "getOHTTPConfig should have been called the expected number of times"
+        );
+        Assert.equal(
+          ObliviousHTTP.ohttpRequest.callCount,
+          expectedCallCount,
+          "ohttpRequest should have been called the expected number of times"
+        );
+
+        let expectedLatencyLabel = "200";
+        if (shouldUseOhttp) {
+          expectedLatencyLabel += "_ohttp";
+        }
+        assertTelemetry({
+          latency: {
+            [expectedLatencyLabel]: {
+              count: 1,
+            },
+          },
+        });
+      }
+    }
+  }
+
+  sandbox.restore();
+});
+
+// If the client uses OHTTP but can't get an OHTTP config, it should return an
+// empty suggestions array.
+add_task(async function ohttp_noConfig() {
+  // Stub the `ObliviousHTTP` functions so that `getOHTTPConfig` returns null.
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(ObliviousHTTP, "getOHTTPConfig").resolves(null);
+  sandbox.stub(ObliviousHTTP, "ohttpRequest").resolves({
+    status: 200,
+    json: async () => [],
+  });
+
+  UrlbarPrefs.set("merino.ohttpConfigURL", "https://example.com/config");
+  UrlbarPrefs.set("merino.ohttpRelayURL", "https://example.com/relay");
+
+  let client = new MerinoClient("ohttp client", { allowOhttp: true });
+  let suggestions = await client.fetch({ query: "test" });
+
+  Assert.equal(
+    ObliviousHTTP.getOHTTPConfig.callCount,
+    1,
+    "getOHTTPConfig should have been called once"
+  );
+  Assert.equal(
+    ObliviousHTTP.ohttpRequest.callCount,
+    0,
+    "ohttpRequest should not have been called"
+  );
+
+  Assert.deepEqual(
+    suggestions,
+    [],
+    "The client should have returned an empty suggestions array"
+  );
+
+  sandbox.restore();
+});
+
 async function fetchAndCheckSuggestions({
   expected,
   args = {
@@ -727,4 +878,51 @@ async function withExperiment(values, callback) {
   );
   await callback();
   await doExperimentCleanup();
+}
+
+function assertTelemetry({ latency, reset = true }) {
+  for (let [label, expected] of Object.entries(latency)) {
+    let metric = Glean.urlbarMerino.latencyByResponseStatus[label];
+    Assert.ok(metric, "A metric should exist for the expected label: " + label);
+    if (!metric) {
+      continue;
+    }
+
+    let actual = metric.testGetValue();
+    Assert.ok(actual, "The metric should have a value for label: " + label);
+    if (!actual) {
+      continue;
+    }
+
+    info(
+      `Actual value for latency metric label '${label}': ` +
+        JSON.stringify(actual)
+    );
+
+    let { count, minDurationMs = 0 } = expected;
+
+    Assert.strictEqual(actual.count, count, "count should be correct");
+
+    Assert.greater(actual.sum, 0, "sum should be > 0");
+    for (let bucket of Object.keys(actual.values)) {
+      Assert.greater(parseInt(bucket), 0, "bucket should be > 0");
+    }
+
+    Assert.greaterOrEqual(
+      actual.sum,
+      minDurationMs,
+      "sum should be >= expected min duration"
+    );
+    for (let bucket of Object.keys(actual.values)) {
+      Assert.greaterOrEqual(
+        parseInt(bucket),
+        minDurationMs,
+        "bucket should be >= expected min duration"
+      );
+    }
+  }
+
+  if (reset) {
+    Services.fog.testResetFOG();
+  }
 }

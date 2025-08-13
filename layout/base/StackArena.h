@@ -7,9 +7,9 @@
 #ifndef StackArena_h
 #define StackArena_h
 
-#include "nsError.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/MemoryReporting.h"
+#include "nsError.h"
 
 namespace mozilla {
 

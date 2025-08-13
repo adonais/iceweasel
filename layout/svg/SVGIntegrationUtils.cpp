@@ -8,24 +8,23 @@
 #include "SVGIntegrationUtils.h"
 
 // Keep others in (case-insensitive) order:
+#include "SVGPaintServerFrame.h"
+#include "gfxContext.h"
 #include "gfxDrawable.h"
-
+#include "mozilla/CSSClipPathInstance.h"
+#include "mozilla/FilterInstance.h"
+#include "mozilla/SVGClipPathFrame.h"
+#include "mozilla/SVGMaskFrame.h"
+#include "mozilla/SVGObserverUtils.h"
+#include "mozilla/SVGUtils.h"
+#include "mozilla/StaticPrefs_layers.h"
+#include "mozilla/Unused.h"
+#include "mozilla/dom/SVGElement.h"
+#include "mozilla/gfx/Point.h"
 #include "nsCSSAnonBoxes.h"
 #include "nsCSSRendering.h"
 #include "nsDisplayList.h"
 #include "nsLayoutUtils.h"
-#include "gfxContext.h"
-#include "SVGPaintServerFrame.h"
-#include "mozilla/gfx/Point.h"
-#include "mozilla/CSSClipPathInstance.h"
-#include "mozilla/FilterInstance.h"
-#include "mozilla/StaticPrefs_layers.h"
-#include "mozilla/SVGClipPathFrame.h"
-#include "mozilla/SVGObserverUtils.h"
-#include "mozilla/SVGMaskFrame.h"
-#include "mozilla/SVGUtils.h"
-#include "mozilla/Unused.h"
-#include "mozilla/dom/SVGElement.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::layers;

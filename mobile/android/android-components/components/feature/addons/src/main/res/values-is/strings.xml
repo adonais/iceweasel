@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://schemas.android.com/apk/res-auto">
-  <!-- Description for privacy add-on permission. -->
-  <string name="mozac_feature_addons_permissions_privacy_description">Lesa og breyta friðhelgisstillingum</string>
-  <!-- Description for all_urls add-on permission. -->
-  <string name="mozac_feature_addons_permissions_all_urls_description">Skoða gögnin þín fyrir öll vefsvæði</string>
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
   <string name="mozac_feature_addons_permissions_one_site_description">Skoða gögnin þín fyrir %1$s</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
@@ -12,76 +8,180 @@
     When an add-on requires access to more than 4 sites, for example the add-on requires access for 5 sites. We will show the first 4 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description,
     then we will show another collapsed entry saying "Access your data on 1 other site". This entry it's for the singular case, when the add-on is only accessing one extra site.
   -->
-  <string name="mozac_feature_addons_permissions_one_extra_site_description" tools:ignore="PluralsCandidate">Skoða gögnin þín fyrir 1 annað vefsvæði</string>
+  <string name="mozac_feature_addons_permissions_one_extra_site_description" tools:ignore="PluralsCandidate,UnusedResources" moz:removedIn="142">Skoða gögnin þín fyrir 1 annað vefsvæði</string>
+  <!--
+    When an add-on requires access to more than 4 sites, for example the add-on requires access for 5 sites. We will show the first 4 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description,
+    then we will show another collapsed entry saying "Access your data on another site".
+  -->
+  <string name="mozac_feature_addons_permissions_one_extra_site_description_2">Skoða gögnin þín á öðru vefsvæði</string>
   <!--
     When an add-on requires access to more than 4 sites, for example the add-on requires access for 6 sites. We will show the first 4 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description,
     then we will show another collapsed entry saying "Access your data on 2 other sites". This entry it's for the plural case, when the add-on is accessing more than one extra site.
     %1$d will be replaced by an integer indicating the number of additional hosts for which this web extension is requesting permission.
   -->
-  <string name="mozac_feature_addons_permissions_extra_sites_description" tools:ignore="PluralsCandidate">Skoða gögnin þín fyrir %1$d önnur vefsvæði</string>
+  <string name="mozac_feature_addons_permissions_extra_sites_description" tools:ignore="PluralsCandidate,UnusedResources" moz:removedIn="142">Skoða gögnin þín fyrir %1$d önnur vefsvæði</string>
+  <!--
+    When an add-on requires access to more than 4 sites, for example the add-on requires access for 6 sites. We will show the first 4 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description,
+    then we will show another collapsed entry saying "Access your data on other sites".
+  -->
+  <string name="mozac_feature_addons_permissions_extra_sites_description_2">Skoða gögnin þín á öðrum vefsvæðum</string>
   <!--
     When an add-on requires access to more than 4 domains, for example the add-on requires access for 5 domains. We will show the first 4 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description,
     then we will show another collapsed entry saying "Access your data on 1 other domain". This entry it's for the singular case, when the add-on is only accessing one extra domain.
   -->
-  <string name="mozac_feature_addons_permissions_one_extra_domain_description" tools:ignore="PluralsCandidate">Skoða gögnin þín fyrir 1 annað lén</string>
+  <string name="mozac_feature_addons_permissions_one_extra_domain_description" tools:ignore="PluralsCandidate,UnusedResources" moz:removedIn="142">Skoða gögnin þín fyrir 1 annað lén</string>
+  <!--
+    When an add-on requires access to more than 4 domains, for example the add-on requires access for 5 domains. We will show the first 4 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description,
+    then we will show another collapsed entry saying "Access your data on another domain.
+  -->
+  <string name="mozac_feature_addons_permissions_one_extra_domain_description_2">Skoða gögnin þín á öðru léni</string>
   <!--
     When an add-on requires access to more than 4 domains, for example the add-on requires access for 6 domains. We will show the first 4 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description,
     then we will show another collapsed entry saying "Access your data on 2 other domains". This entry it's for the plural case, when the add-on is accessing more than one extra domain.
     %1$d will be replaced by an integer indicating the number of additional domains for which this web extension is requesting permission.
   -->
-  <string name="mozac_feature_addons_permissions_extra_domains_description_plural" tools:ignore="PluralsCandidate">Skoða gögnin þín fyrir %1$d önnur lén</string>
+  <string name="mozac_feature_addons_permissions_extra_domains_description_plural" tools:ignore="PluralsCandidate,UnusedResources" moz:removedIn="142">Skoða gögnin þín fyrir %1$d önnur lén</string>
+  <!--
+    When an add-on requires access to more than 4 domains, for example the add-on requires access for 6 domains. We will show the first 4 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description,
+    then we will show another collapsed entry saying "Access your data on other domains".
+  -->
+  <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">Skoða gögnin þín á öðrum lénum</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
   <string name="mozac_feature_addons_permissions_all_domain_count_description" tools:ignore="PluralsCandidate">Skoða gögnin þín fyrir vefsvæði á %1$d lénum</string>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s, %2$d af %3$d</string>
-  <!-- Description for tabs add-on permission. -->
+  <!-- Description for the "privacy" WebExtensions API permission. -->
+  <string name="mozac_feature_addons_permissions_privacy_description">Lesa og breyta friðhelgisstillingum</string>
+  <!-- Description for the "<all_urls>" WebExtensions API permission. -->
+  <string name="mozac_feature_addons_permissions_all_urls_description">Skoða gögnin þín fyrir öll vefsvæði</string>
+  <!-- Description for the "tabs" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_tabs_description">Skoða vafraflipa</string>
-  <!-- Description for navigation permission. -->
+  <!-- Description for the "webNavigation" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_web_navigation_description">Skoða vafranotkun á meðan vafrað er</string>
-  <!-- Description for bookmarks permission. -->
+  <!-- Description for the "bookmarks" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_bookmarks_description">Skoða og breyta bókamerkjum</string>
-  <!-- Description for browser_setting permission. -->
+  <!-- Description for the "browserSettings" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_browser_setting_description">Skoða og breyta vafrastillingum</string>
-  <!-- Description for browser_data permission. -->
+  <!-- Description for the "browsingData" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_browser_data_description">Hreinsa feril, vefkökur og tengd gögn</string>
-  <!-- Description for clipboard_read permission. -->
+  <!-- Description for the "clipboardRead" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_clipboard_read_description">Ná í gögn af klippispjaldi</string>
-  <!-- Description for clipboard_write permission. -->
+  <!-- Description for the "clipboardWrite" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_clipboard_write_description">Setja inn gögn á klippispjald</string>
-  <!-- Description for declarativeNetRequest permission. -->
+  <!-- Description for the "declarativeNetRequest" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_declarative_net_request_description">Lokaðu fyrir efni á hvaða síðu sem er</string>
-  <!-- Description for declarativeNetRequestFeedback permission. -->
+  <!-- Description for the "declarativeNetRequestFeedback" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_declarative_net_request_feedback_description">Lesa vafurferilinn þinn</string>
-  <!-- Description for downloads permission. -->
+  <!-- Description for the "downloads" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_downloads_description">Sækja skrár og lesta og breyta niðurhalsferli vafrans</string>
-  <!-- Description for downloads_open permission. -->
+  <!-- Description for the "downloads.open" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_downloads_open_description">Opna skrár sem hafa verið sóttar á tækið þitt</string>
-  <!-- Description for find permission. -->
+  <!-- Description for the "find" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_find_description">Lesa texta á öllum flipum</string>
-  <!-- Description for geolocation permission. -->
+  <!-- Description for the "geolocation" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_geolocation_description">Leyfa aðgang að staðsetningu þinni</string>
-  <!-- Description for history permission. -->
+  <!-- Description for the "history" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_history_description">Skoða ferilsögu vafra</string>
-  <!-- Description for management permission. -->
+  <!-- Description for the "management" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_management_description">Fylgjast með notkun á viðbótum og sýsla með þemu</string>
-  <!-- Description for native_messaging permission. -->
+  <!-- Description for the "nativeMessaging" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_native_messaging_description">Deila skilaboðum með öðrum forritum en þessu</string>
-  <!-- Description for notifications permission. -->
+  <!-- Description for the "notifications" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_notifications_description">Birta þér tilkynningar</string>
-  <!-- Description for pkcs11 permission. -->
+  <!-- Description for the "pkcs11" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_pkcs11_description">Veita dulkóðunar auðkennisþjónustur</string>
-  <!-- Description for proxy permission. -->
+  <!-- Description for the "proxy" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_proxy_description">Stjórna stillingum fyrir milliþjóna</string>
-  <!-- Description for sessions permission. -->
+  <!-- Description for the "sessions" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_sessions_description">Aðgangur að nýlokuðum flipum</string>
-  <!-- Description for tab_hide permission. -->
+  <!-- Description for the "tabHide" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_tab_hide_description">Fela og sýna flipa</string>
-  <!-- Description for top_sites permission. -->
+  <!-- Description for the "topSites" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_top_sites_description">Skoða ferilsögu vafra</string>
-  <!-- Description for trialML permission. -->
+  <!-- Description for the "trialML" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_trial_ml_description">Sæktu og keyrðu gervigreindarlíkön á tækinu þínu</string>
-  <!-- Description for userScripts permission. -->
+  <!-- Description for the "userScripts" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_user_scripts_description">Leyfa óstaðfestum skriftum frá utanaðkomandi aðilum að fá aðgang að gögnunum þínum</string>
+  <!-- Description for the "devtools" WebExtensions API permission. -->
+  <string name="mozac_feature_addons_permissions_devtools_description">Veita þróunartólum aðgang að gögnum þínum í opnum flipum</string>
+  <!-- Description for the "privacy" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_privacy_description_for_update">Lesa og breyta stillingum á friðhelgi.</string>
+  <!-- Description for the "<all_urls>" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_all_urls_description_for_update">Skoða gögnin þín fyrir öll vefsvæði.</string>
+  <!-- Description for the "tabs" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_tabs_description_for_update">Skoða vafraflipa.</string>
+  <!-- Description for the "webNavigation" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_web_navigation_description_for_update">Skoða vafravirkni á meðan vafrað er.</string>
+  <!-- Description for the "bookmarks" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_bookmarks_description_for_update">Skoða og breyta bókamerkjum.</string>
+  <!-- Description for the "browserSettings" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_browser_settings_description_for_update">Lesa og breyta vafrastillingum.</string>
+  <!-- Description for the "browsingData" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_browsing_data_description_for_update">Hreinsa nýlegan vafurferil, vefkökur og tengd gögn.</string>
+  <!-- Description for the "clipboardRead" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_clipboard_read_description_for_update">Ná gögn af klippispjaldinu.</string>
+  <!-- Description for the "clipboardWrite" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_clipboard_write_description_for_update">Setja gögn inn á klippispjaldið.</string>
+  <!-- Description for the "declarativeNetRequest" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_declarative_net_request_description_for_update">Loka fyrir efni á hvaða síðu sem er.</string>
+  <!-- Description for the "declarativeNetRequestFeedback" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_declarative_net_request_feedback_description_for_update">Lesa vafurferilinn þinn.</string>
+  <!-- Description for the "downloads" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_downloads_description_for_update">Sækja skrár og lesta og breyta niðurhalsferli vafrans.</string>
+  <!-- Description for the "downloads.open" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_downloads_open_description_for_update">Opna skrár sem hafa verið sóttar á tækið þitt.</string>
+  <!-- Description for the "find" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_find_description_for_update">Lesa texta í öllum opnum flipum.</string>
+  <!-- Description for the "geolocation" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_geolocation_description_for_update">Hafa aðgang að staðsetningu þinni.</string>
+  <!-- Description for the "history" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_history_description_for_update">Hafa aðgang að vafraferli.</string>
+  <!-- Description for the "management" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_management_description_for_update">Fylgjast með notkun á viðbótum og sýsla með þemu.</string>
+  <!-- Description for the "nativeMessaging" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_native_messaging_description_for_update">Deila skilaboðum með öðrum forritum en þessu.</string>
+  <!-- Description for the "notifications" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_notifications_description_for_update">Birta þér tilkynningar.</string>
+  <!-- Description for the "pkcs11" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_pkcs11_description_for_update">Veita dulritaðar auðkenningarþjónustur.</string>
+  <!-- Description for the "proxy" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_proxy_description_for_update">Stjórna stillingum fyrir milliþjóna.</string>
+  <!-- Description for the "sessions" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_sessions_description_for_update">Skoða nýlega lokaða flipa.</string>
+  <!-- Description for the "tabHide" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_tab_hide_description_for_update">Birta og fela vafraflipa.</string>
+  <!-- Description for the "topSites" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_top_sites_description_for_update">Hafa aðgang að vafraferli.</string>
+  <!-- Description for the "trialML" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_trial_ml_description_for_update">Sæktu og keyrðu gervigreindarlíkön á tækinu þínu.</string>
+  <!-- Description for the "userScripts" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_user_scripts_description_for_update">Leyfa óstaðfestum skriftum frá utanaðkomandi aðilum að fá aðgang að gögnunum þínum.</string>
+  <!-- Description for the "devtools" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_devtools_description_for_update">Veita þróunarverkfærum aðgang að gögnum þínum í opnum flipum.</string>
+  <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
+  <string name="mozac_feature_addons_permissions_one_site_description_for_update">Skoða gögnin þín fyrir %1$s.</string>
+  <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
+  <string name="mozac_feature_addons_permissions_sites_in_domain_description_for_update">Skoða gögnin þín fyrir vefsvæði á %1$s léninu.</string>
+  <!--
+    When an add-on requires access to more than 2 domains, for example the add-on requires access for 3 domains. We will show the first 2 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description_for_update,
+    then we will show another collapsed entry saying "Access your data on another domain.".
+  -->
+  <string name="mozac_feature_addons_permissions_one_extra_domain_description_for_update">Skoða gögnin þín á öðru léni.</string>
+  <!--
+    When an add-on requires access to more than 2 domains, for example the add-on requires access for 4 domains. We will show the first 2 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description_for_update,
+    then we will show another collapsed entry saying "Access your data on other domains.".
+  -->
+  <string name="mozac_feature_addons_permissions_extra_domains_description_plural_for_update">Skoða gögnin þín á öðrum lénum.</string>
+  <!--
+    When an add-on requires access to more than 2 sites, for example the add-on requires access for 3 sites. We will show the first 2 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description_for_update,
+    then we will show another collapsed entry saying "Access your data on another site.".
+  -->
+  <string name="mozac_feature_addons_permissions_one_extra_site_description_for_update">Skoða gögnin þín á öðru vefsvæði.</string>
+  <!--
+    When an add-on requires access to more than 2 sites, for example the add-on requires access for 4 sites. We will show the first 2 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description_for_update,
+    then we will show another collapsed entry saying "Access your data on other sites.".
+  -->
+  <string name="mozac_feature_addons_permissions_extra_sites_description_for_update">Skoða gögnin þín á öðrum vefsvæðum.</string>
   <!-- The text shown when an extension requests the userScripts permission, near the usual description of the userScripts permission -->
   <string name="mozac_feature_addons_permissions_user_scripts_extra_warning">Óstaðfestar skriftur geta valdið öryggis- og persónuverndaráhættu. Keyrðu aðeins skriftur frá viðbótum eða uppruna sem þú treystir.</string>
   <!-- The sentence used when the extension has data collection permissions. %1$s is a formatted list of permissions. -->
@@ -92,8 +192,6 @@
   <string name="mozac_feature_addons_permissions_none_required_data_collection_description">Forritarinn segir að þessi forritsauki krefjist ekki gagnasöfnunar.</string>
   <!-- The sentence used when the extension requests new data collection permissions. %1$s is a formatted list of permissions. -->
   <string name="mozac_feature_addons_permissions_data_collection_optional_description">Forritarinn segir að þessi forritsauki vilji safna: %1$s</string>
-  <!-- Description for devtools permission. -->
-  <string name="mozac_feature_addons_permissions_devtools_description">Veita þróunartólum aðgang að gögnum þínum í opnum flipum</string>
   <!-- Description for text button that expands the list of domain permissions -->
   <string name="mozac_feature_addons_permissions_show_all_sites">Sýna öll vefsvæði</string>
   <!-- Description for text button that hides the majority of the list of domain permissions -->
@@ -123,11 +221,29 @@
   <!-- Short description for the websiteContent data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_websiteContent_short_description">efni vefsvæða</string>
   <!-- Long description for the authenticationInfo data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_authenticationInfo_long_description">Deildu auðkenningarupplýsingum með höfundi forritsaukans</string>
+  <string name="mozac_feature_addons_permissions_data_collection_authenticationInfo_long_description">Deila auðkenningarupplýsingum með höfundi forritsaukans</string>
   <!-- Long description for the bookmarksInfo data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_bookmarksInfo_long_description">Deildu bókamerkjaupplýsingum með höfundi forritsaukans</string>
+  <string name="mozac_feature_addons_permissions_data_collection_bookmarksInfo_long_description">Deila bókamerkjaupplýsingum með höfundi forritsaukans</string>
   <!-- Long description for the browsingActivity data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_browsingActivity_long_description">Deildu vafurvirkni með höfundi forritsaukans</string>
+  <string name="mozac_feature_addons_permissions_data_collection_browsingActivity_long_description">Deila vafurvirkni með höfundi forritsaukans</string>
+  <!-- Long description for the financialAndPaymentInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_financialAndPaymentInfo_long_description">Deila fjárhags- og greiðsluupplýsingum með höfundi forritsaukans</string>
+  <!-- Long description for the healthInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_healthInfo_long_description">Deila heilsufarsupplýsingum með höfundi forritsaukans</string>
+  <!-- Long description for the locationInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_locationInfo_long_description">Deila staðsetningarupplýsingum með höfundi forritsaukans</string>
+  <!-- Long description for the personalCommunications data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_personalCommunications_long_description">Deila persónulegum samskiptum með höfundi forritsaukans</string>
+  <!-- Long description for the personallyIdentifyingInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_personallyIdentifyingInfo_long_description">Deila persónugreinanlegum upplýsingum með höfundi forritsaukans</string>
+  <!-- Long description for the searchTerms data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_searchTerms_long_description">Deila leitarorðum með höfundi forritsaukans</string>
+  <!-- Long description for the technicalAndInteraction data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_technicalAndInteraction_long_description">Deila tæknilegum gögnum og gagnvirknigögnum með höfundi forritsaukans</string>
+  <!-- Long description for the websiteActivity data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_websiteActivity_long_description">Deila virkni vefsvæða með höfundi forritsaukans</string>
+  <!-- Long description for the websiteContent data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_websiteContent_long_description">Deila efni vefsvæða með höfundi forritsaukans</string>
   <!-- The version on of add-on. -->
   <string name="mozac_feature_addons_version">Útgáfa</string>
   <!-- The author of an add-on. -->
@@ -206,6 +322,8 @@
   <string name="mozac_feature_addons_permissions_dialog_deny">Hafna</string>
   <!-- Text link to learn more about permission requests on the add-on permissions dialog . -->
   <string name="mozac_feature_addons_permissions_dialog_learn_more">Kanna nánar</string>
+  <!-- This is the text for the "technical and interaction" checkbox shown in the add-on permissions dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_technical_and_interaction_data">Deila tæknilegum gögnum og gagnvirknigögnum með höfundi forritsaukans</string>
   <!-- This is a button to cancel the add-on installation . -->
   <string name="mozac_feature_addons_permissions_dialog_cancel">Hætta við</string>
   <!-- Accessibility content description to install add-on button. %1$s is the add-on name. -->
@@ -229,15 +347,27 @@
   <!-- Button in the extensions manager that opens AMO in a tab -->
   <string name="mozac_feature_addons_find_more_extensions_button_text">Finna fleiri forritsauka</string>
   <!-- The label of the allow button, this will be shown to the user when an add-on needs new permissions, with the button the user will indicate that they want to accept the new permissions and update the add-on -->
-  <string name="mozac_feature_addons_updater_notification_allow_button">Leyfa</string>
+  <string name="mozac_feature_addons_updater_notification_allow_button" moz:removedIn="142" tools:ignore="UnusedResources">Leyfa</string>
+  <!-- The label of the update button on the system notification shown to the user when an add-on has an update that requires the user to accept new permissions. -->
+  <string name="mozac_feature_addons_updater_notification_update_button">Uppfæra</string>
   <!-- The label of the deny button on a notification, this will be shown to the user when an add-on needs new permissions. Indicates the user denies the new permissions and prevents the add-on from be updated -->
-  <string name="mozac_feature_addons_updater_notification_deny_button">Hafna</string>
+  <string name="mozac_feature_addons_updater_notification_deny_button" moz:removedIn="142" tools:ignore="UnusedResources">Hafna</string>
+  <!-- The label of the cancel button on a notification, this will be shown to the user when an add-on needs new permissions. Indicates the user denies the new permissions and prevents the add-on from be updated -->
+  <string name="mozac_feature_addons_updater_notification_cancel_button">Hætta við</string>
   <!-- The tile of the notification, this will be shown to the user when an add-on needs new permissions, to be updated. %1$s is the name of the add-ons -->
-  <string name="mozac_feature_addons_updater_notification_title">%1$s er með nýja uppfærslu</string>
+  <string name="mozac_feature_addons_updater_notification_title" moz:removedIn="142" tools:ignore="UnusedResources">%1$s er með nýja uppfærslu</string>
+  <!-- The title of the system notification shown to the user when an add-on has a new update that requires new permissions. %1$s is the name of the add-on. -->
+  <string name="mozac_feature_addons_updater_notification_title_2">%1$s er með uppfærslu</string>
   <!-- The content of the notification, this will be shown when an add-on needs new permissions, to be updated. %1$d is the amount of new permissions -->
-  <string name="mozac_feature_addons_updater_notification_content" tools:ignore="PluralsCandidate">Nýjar heimildir fyrir %1$d eru nauðsynlegar</string>
+  <string name="mozac_feature_addons_updater_notification_content" tools:ignore="PluralsCandidate,UnusedResources" moz:removedIn="142">Nýjar heimildir fyrir %1$d eru nauðsynlegar</string>
   <!-- The content of the notification displayed when an add-on needs a new permission -->
-  <string name="mozac_feature_addons_updater_notification_content_singular">Ný heimild er nauðsynleg</string>
+  <string name="mozac_feature_addons_updater_notification_content_singular" moz:removedIn="142" tools:ignore="UnusedResources">Ný heimild er nauðsynleg</string>
+  <!-- A short explanation shown in the notification displayed when an add-on has a new update that requires new permissions. -->
+  <string name="mozac_feature_addons_updater_notification_short_intro">Hætta við til að halda fyrirliggjandi útgáfu og stillingum.</string>
+  <!-- The heading for the permissions section in the system notification shown when an add-on has an update that requires user confirmation. %1$s is a list of sentences. -->
+  <string name="mozac_feature_addons_updater_notification_heading_permissions">Nýjar nauðsynlegar heimildir: %1$s</string>
+  <!-- The heading for the data collection permission section in the system notification shown when an add-on has an update that requires user confirmation. %1$s is a list of permissions. -->
+  <string name="mozac_feature_addons_updater_notification_heading_data_collection_permissions">Ný nauðsynleg gagnasöfnun: Forritarinn segir að forritsaukinn muni safna %1$s.</string>
   <!-- Name of the "notification channel" used for displaying a notification for updating an extension. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_feature_addons_updater_notification_channel_2">Uppfærslur forritsauka</string>
   <!-- Name of the "notification channel" used for displaying a notification for new supported add-ons. See https://developer.android.com/training/notify-user/channels -->
@@ -283,15 +413,15 @@
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_1">%1$s brýtur gegn reglum Mozilla og er því ekki hægt að setja það upp á %2$s.</string>
   <!-- Text shown after successfully enabled an add-on. %1$s is the add-on name. -->
-  <string name="mozac_feature_addons_successfully_enabled">%1$s var virkjað á árangursríkan hátt</string>
+  <string name="mozac_feature_addons_successfully_enabled" tools:ignore="UnusedResources" moz:removedIn="142">%1$s var virkjað á árangursríkan hátt</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Ekki tókst að virkja %1$s</string>
   <!-- Text shown after successfully disabled an add-on. %1$s is the add-on name. -->
-  <string name="mozac_feature_addons_successfully_disabled">%1$s var óvirkjað á árangursríkan máta</string>
+  <string name="mozac_feature_addons_successfully_disabled" tools:ignore="UnusedResources" moz:removedIn="142">%1$s var óvirkjað á árangursríkan máta</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_disable">Ekki tókst að óvirkja %1$s</string>
   <!-- Text shown after successfully uninstalled an add-on. %1$s is the add-on name. -->
-  <string name="mozac_feature_addons_successfully_uninstalled">Það tókst að fjarlægja %1$s</string>
+  <string name="mozac_feature_addons_successfully_uninstalled" tools:ignore="UnusedResources" moz:removedIn="142">Það tókst að fjarlægja %1$s</string>
   <!-- Text shown after failed to uninstall an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_uninstall">Ekki tókst að fjarlægja %1$s</string>
   <!-- Text shown after successfully removed an add-on. %1$s is the add-on name. -->
@@ -319,9 +449,15 @@
   <!-- Displayed in the "Status" field for the updater when an add-on has been correctly updated -->
   <string name="mozac_feature_addons_updater_dialog_status">Staða:</string>
   <!-- Text shown in the dialog when add-on installation is completed. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_installed_dialog_title">%1$s hefur verið bætt við %2$s</string>
+  <string name="mozac_feature_addons_installed_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%1$s hefur verið bætt við %2$s</string>
+  <!-- Text shown in the dialog when add-on installation is completed. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_installed_dialog_title_2">%1$s var bætt við</string>
   <!-- Text shown in the dialog when add-on installation is completed. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_installed_dialog_description_2">Finndu %1$s í %2$s valmyndinni.</string>
+  <string name="mozac_feature_addons_installed_dialog_description_2" moz:removedIn="142" tools:ignore="UnusedResources">Finndu %1$s í %2$s valmyndinni.</string>
+  <!-- Used as text for the link in the description of the post-installation dialog. -->
+  <string name="mozac_feature_addons_installed_dialog_description_link_text">stillingar forritsauka</string>
+  <!-- Text shown in the dialog when add-on installation is completed. %1$s is replaced by an active link, using mozac_feature_addons_installed_dialog_description_link_text as text ("extension settings"). -->
+  <string name="mozac_feature_addons_installed_dialog_description_3">Uppfærðu heimildir og gagnastillingar hvenær sem er í %1$s.</string>
   <!-- Confirmation button text for the dialog when add-on installation is completed. -->
   <string name="mozac_feature_addons_installed_dialog_okay_button_2">Í lagi</string>
   <!-- "Learn more" link displayed below an add-on status message. -->

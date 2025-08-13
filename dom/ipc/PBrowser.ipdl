@@ -32,6 +32,7 @@ include PBackgroundSharedTypes;
 include "mozilla/AntiTrackingIPCUtils.h";
 include "mozilla/dom/BindingIPCUtils.h";
 include "mozilla/dom/CSPMessageUtils.h";
+include "mozilla/dom/PolicyContainerMessageUtils.h";
 include "mozilla/dom/DocShellMessageUtils.h";
 include "mozilla/dom/FilePickerMessageUtils.h";
 include "mozilla/dom/PermissionMessageUtils.h";
@@ -152,7 +153,7 @@ struct WebProgressLocationChangeData
   nullable nsIURI documentURI;
   nullable nsIPrincipal contentPrincipal;
   nullable nsIPrincipal contentPartitionedPrincipal;
-  nullable nsIContentSecurityPolicy csp;
+  nullable nsIPolicyContainer policyContainer;
   nullable nsIReferrerInfo referrerInfo;
   uint64_t? requestContextID;
 };
@@ -620,7 +621,7 @@ parent:
                             uint32_t stride, SurfaceFormat format,
                             LayoutDeviceIntRect dragRect,
                             nullable nsIPrincipal principal,
-                            nullable nsIContentSecurityPolicy csp,
+                            nullable nsIPolicyContainer policyContainer,
                             CookieJarSettingsArgs cookieJarSettings,
                             MaybeDiscardedWindowContext sourceWindowContext,
                             MaybeDiscardedWindowContext sourceTopWindowContext);
@@ -843,7 +844,7 @@ child:
      */
     async RealDragEvent(WidgetDragEvent aEvent, uint32_t aDragAction,
                         uint32_t aDropEffect, nullable nsIPrincipal aPrincipal,
-                        nullable nsIContentSecurityPolicy csp);
+                        nullable nsIPolicyContainer policyContainer);
 
 both:
     async SynthesizedEventResponse(uint64_t aCallbackId);
@@ -1052,7 +1053,7 @@ child:
     async StoreDropTargetAndDelayEndDragSession(
         LayoutDeviceIntPoint aPt, uint32_t aDropEffect, uint32_t aDragAction,
         nullable nsIPrincipal aPrincipal,
-        nullable nsIContentSecurityPolicy aCsp);
+        nullable nsIPolicyContainer aPolicyContainer);
 
     /**
      * Send a drop (if aShouldDrop) or dragexit (otherwise) event to the

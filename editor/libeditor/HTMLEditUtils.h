@@ -36,6 +36,7 @@
 #include "nsGkAtoms.h"
 #include "nsHTMLTags.h"
 #include "nsTArray.h"
+#include "nsTextFragment.h"
 
 class nsAtom;
 class nsPresContext;
@@ -58,6 +59,8 @@ class HTMLEditUtils final {
   using Element = dom::Element;
   using Selection = dom::Selection;
   using Text = dom::Text;
+  using WhitespaceOption = nsTextFragment::WhitespaceOption;
+  using WhitespaceOptions = nsTextFragment::WhitespaceOptions;
 
  public:
   static constexpr char16_t kNewLine = '\n';
@@ -598,7 +601,7 @@ class HTMLEditUtils final {
    *                                creating the block boundary.
    */
   template <typename EditorDOMPointType>
-  static bool IsVisiblePreformattedNewLine(
+  [[nodiscard]] static bool IsVisiblePreformattedNewLine(
       const EditorDOMPointType& aPoint,
       Element** aFollowingBlockElement = nullptr) {
     if (aFollowingBlockElement) {
@@ -617,13 +620,15 @@ class HTMLEditUtils final {
       }
       const nsTextFragment& textFragment =
           aPoint.template ContainerAs<Text>()->TextFragment();
-      for (uint32_t offset = aPoint.Offset() + 1;
-           offset < textFragment.GetLength(); ++offset) {
-        char16_t ch = textFragment.CharAt(AssertedCast<int32_t>(offset));
-        if (nsCRT::IsAsciiSpace(ch) && ch != HTMLEditUtils::kNewLine) {
-          continue;  // ASCII white-space which is collapsed into the linefeed.
-        }
-        return true;  // There is a visible character after it.
+      const uint32_t nextVisibleCharOffset = textFragment.FindNonWhitespaceChar(
+          EditorUtils::IsNewLinePreformatted(
+              *aPoint.template ContainerAs<Text>())
+              ? WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant,
+                                  WhitespaceOption::NewLineIsSignificant}
+              : WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant},
+          aPoint.Offset() + 1);
+      if (nextVisibleCharOffset != nsTextFragment::kNotFound) {
+        return true;  // There is a visible character after the point.
       }
     }
     // If followed by a block boundary without visible content, it's invisible
@@ -652,8 +657,8 @@ class HTMLEditUtils final {
 
   /**
    * Return a point to insert a padding line break if aPoint is following a
-   * collapsible ASCII white-space or a block boundary and the line containing
-   * aPoint requires a following padding line break which there is not.
+   * block boundary and the line containing aPoint requires a following padding
+   * line break to make the line visible.
    */
   template <typename PT, typename CT>
   static EditorDOMPoint LineRequiresPaddingLineBreakToBeVisible(
@@ -2219,43 +2224,27 @@ class HTMLEditUtils final {
   static Maybe<uint32_t> GetPreviousNonCollapsibleCharOffset(
       const Text& aTextNode, uint32_t aOffset,
       const WalkTextOptions& aWalkTextOptions = {}) {
-    const bool isWhiteSpaceCollapsible =
-        !EditorUtils::IsWhiteSpacePreformatted(aTextNode);
-    const bool isNewLineCollapsible =
-        !EditorUtils::IsNewLinePreformatted(aTextNode);
-    const bool isNBSPCollapsible =
-        isWhiteSpaceCollapsible &&
-        aWalkTextOptions.contains(WalkTextOption::TreatNBSPsCollapsible);
-    const nsTextFragment& textFragment = aTextNode.TextFragment();
-    MOZ_ASSERT(aOffset <= textFragment.GetLength());
-    for (uint32_t i = aOffset; i; i--) {
-      // TODO: Perhaps, nsTextFragment should have scanner methods because
-      //       the text may be in per-one-byte storage or per-two-byte storage,
-      //       and `CharAt` needs to check it everytime.
-      switch (textFragment.CharAt(i - 1)) {
-        case HTMLEditUtils::kSpace:
-        case HTMLEditUtils::kCarriageReturn:
-        case HTMLEditUtils::kTab:
-          if (!isWhiteSpaceCollapsible) {
-            return Some(i - 1);
-          }
-          break;
-        case HTMLEditUtils::kNewLine:
-          if (!isNewLineCollapsible) {
-            return Some(i - 1);
-          }
-          break;
-        case HTMLEditUtils::kNBSP:
-          if (!isNBSPCollapsible) {
-            return Some(i - 1);
-          }
-          break;
-        default:
-          MOZ_ASSERT(!nsCRT::IsAsciiSpace(textFragment.CharAt(i - 1)));
-          return Some(i - 1);
-      }
+    if (MOZ_UNLIKELY(!aOffset)) {
+      return Nothing{};
     }
-    return Nothing();
+    MOZ_ASSERT(aOffset <= aTextNode.TextDataLength());
+    if (EditorUtils::IsWhiteSpacePreformatted(aTextNode)) {
+      return Some(aOffset - 1);
+    }
+    WhitespaceOptions whitespaceOptions{
+        WhitespaceOption::FormFeedIsSignificant};
+    if (EditorUtils::IsNewLinePreformatted(aTextNode)) {
+      whitespaceOptions += WhitespaceOption::NewLineIsSignificant;
+    }
+    if (aWalkTextOptions.contains(WalkTextOption::TreatNBSPsCollapsible)) {
+      whitespaceOptions += WhitespaceOption::TreatNBSPAsCollapsible;
+    }
+    const uint32_t prevVisibleCharOffset =
+        aTextNode.TextFragment().RFindNonWhitespaceChar(whitespaceOptions,
+                                                        aOffset - 1);
+    return prevVisibleCharOffset != nsTextFragment::kNotFound
+               ? Some(prevVisibleCharOffset)
+               : Nothing();
   }
 
   /**
@@ -2294,41 +2283,26 @@ class HTMLEditUtils final {
   static Maybe<uint32_t> GetInclusiveNextNonCollapsibleCharOffset(
       const Text& aTextNode, uint32_t aOffset,
       const WalkTextOptions& aWalkTextOptions = {}) {
-    const bool isWhiteSpaceCollapsible =
-        !EditorUtils::IsWhiteSpacePreformatted(aTextNode);
-    const bool isNewLineCollapsible =
-        !EditorUtils::IsNewLinePreformatted(aTextNode);
-    const bool isNBSPCollapsible =
-        isWhiteSpaceCollapsible &&
-        aWalkTextOptions.contains(WalkTextOption::TreatNBSPsCollapsible);
-    const nsTextFragment& textFragment = aTextNode.TextFragment();
-    MOZ_ASSERT(aOffset <= textFragment.GetLength());
-    for (uint32_t i = aOffset; i < textFragment.GetLength(); i++) {
-      // TODO: Perhaps, nsTextFragment should have scanner methods because
-      //       the text may be in per-one-byte storage or per-two-byte storage,
-      //       and `CharAt` needs to check it everytime.
-      switch (textFragment.CharAt(i)) {
-        case HTMLEditUtils::kSpace:
-        case HTMLEditUtils::kCarriageReturn:
-        case HTMLEditUtils::kTab:
-          if (!isWhiteSpaceCollapsible) {
-            return Some(i);
-          }
-          break;
-        case HTMLEditUtils::kNewLine:
-          if (!isNewLineCollapsible) {
-            return Some(i);
-          }
-          break;
-        case HTMLEditUtils::kNBSP:
-          if (!isNBSPCollapsible) {
-            return Some(i);
-          }
-          break;
-        default:
-          MOZ_ASSERT(!nsCRT::IsAsciiSpace(textFragment.CharAt(i)));
-          return Some(i);
-      }
+    if (MOZ_UNLIKELY(aOffset >= aTextNode.TextDataLength())) {
+      return Nothing();
+    }
+    MOZ_ASSERT(aOffset <= aTextNode.TextDataLength());
+    if (EditorUtils::IsWhiteSpacePreformatted(aTextNode)) {
+      return Some(aOffset);
+    }
+    WhitespaceOptions whitespaceOptions{
+        WhitespaceOption::FormFeedIsSignificant};
+    if (EditorUtils::IsNewLinePreformatted(aTextNode)) {
+      whitespaceOptions += WhitespaceOption::NewLineIsSignificant;
+    }
+    if (aWalkTextOptions.contains(WalkTextOption::TreatNBSPsCollapsible)) {
+      whitespaceOptions += WhitespaceOption::TreatNBSPAsCollapsible;
+    }
+    const uint32_t inclusiveNextVisibleCharOffset =
+        aTextNode.TextFragment().FindNonWhitespaceChar(whitespaceOptions,
+                                                       aOffset);
+    if (inclusiveNextVisibleCharOffset != nsTextFragment::kNotFound) {
+      return Some(inclusiveNextVisibleCharOffset);
     }
     return Nothing();
   }
@@ -2393,15 +2367,13 @@ class HTMLEditUtils final {
             *aPoint.template ContainerAs<Text>())) {
       return EditorDOMPointType();
     }
-    Text* textNode = aPoint.template ContainerAs<Text>();
-    const nsTextFragment& textFragment = textNode->TextFragment();
-    MOZ_ASSERT(aPoint.Offset() <= textFragment.GetLength());
-    for (uint32_t offset = aPoint.Offset(); offset; --offset) {
-      if (textFragment.CharAt(offset - 1) == HTMLEditUtils::kNewLine) {
-        return EditorDOMPointType(textNode, offset - 1);
-      }
-    }
-    return EditorDOMPointType();
+    const Text& textNode = *aPoint.template ContainerAs<Text>();
+    MOZ_ASSERT(aPoint.Offset() <= textNode.TextFragment().GetLength());
+    const uint32_t previousLineBreakOffset =
+        textNode.TextFragment().RFindChar('\n', aPoint.Offset() - 1u);
+    return previousLineBreakOffset != nsTextFragment::kNotFound
+               ? EditorDOMPointType(&textNode, previousLineBreakOffset)
+               : EditorDOMPointType();
   }
 
   /**
@@ -2418,15 +2390,13 @@ class HTMLEditUtils final {
             *aPoint.template ContainerAs<Text>())) {
       return EditorDOMPointType();
     }
-    Text* textNode = aPoint.template ContainerAs<Text>();
-    const nsTextFragment& textFragment = textNode->TextFragment();
-    for (uint32_t offset = aPoint.Offset(); offset < textFragment.GetLength();
-         ++offset) {
-      if (textFragment.CharAt(offset) == HTMLEditUtils::kNewLine) {
-        return EditorDOMPointType(textNode, offset);
-      }
-    }
-    return EditorDOMPointType();
+    const Text& textNode = *aPoint.template ContainerAs<Text>();
+    MOZ_ASSERT(aPoint.Offset() <= textNode.TextFragment().GetLength());
+    const uint32_t inclusiveNextVisibleCharOffset =
+        textNode.TextFragment().FindChar('\n', aPoint.Offset());
+    return inclusiveNextVisibleCharOffset != nsTextFragment::kNotFound
+               ? EditorDOMPointType(&textNode, inclusiveNextVisibleCharOffset)
+               : EditorDOMPointType();
   }
 
   /**

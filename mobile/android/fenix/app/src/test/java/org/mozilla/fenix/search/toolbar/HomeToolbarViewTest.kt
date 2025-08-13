@@ -39,7 +39,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.Components
-import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.search.BOOKMARKS_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.HISTORY_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.TABS_SEARCH_ENGINE_ID
@@ -48,6 +47,7 @@ import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.search.SearchDialogFragment
 import org.mozilla.fenix.search.SearchEngineSource
 import org.mozilla.fenix.search.SearchFragmentState
+import org.mozilla.fenix.search.fixtures.EMPTY_SEARCH_FRAGMENT_STATE
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 import java.util.UUID
@@ -59,11 +59,7 @@ class HomeToolbarViewTest {
 
     private lateinit var context: Context
     private lateinit var toolbar: BrowserToolbar
-    private val defaultState: SearchFragmentState = SearchFragmentState(
-        tabId = null,
-        url = "",
-        searchTerms = "",
-        query = "",
+    private val defaultState: SearchFragmentState = EMPTY_SEARCH_FRAGMENT_STATE.copy(
         searchEngineSource = SearchEngineSource.Default(
             mockk {
                 every { name } returns "Search Engine"
@@ -72,29 +68,10 @@ class HomeToolbarViewTest {
                 every { isGeneral } returns true
             },
         ),
-        defaultEngine = null,
         showSearchTermHistory = true,
-        showSearchShortcutsSetting = false,
-        showSearchSuggestionsHint = false,
-        showSearchSuggestions = false,
-        showSearchShortcuts = false,
         areShortcutsAvailable = true,
-        showClipboardSuggestions = false,
         showHistorySuggestionsForCurrentEngine = true,
-        showAllHistorySuggestions = false,
-        showBookmarksSuggestionsForCurrentEngine = false,
-        showAllBookmarkSuggestions = false,
-        showSyncedTabsSuggestionsForCurrentEngine = false,
-        showAllSyncedTabsSuggestions = false,
-        showSessionSuggestionsForCurrentEngine = false,
-        showAllSessionSuggestions = false,
-        showSponsoredSuggestions = false,
-        showNonSponsoredSuggestions = false,
-        showTrendingSearches = false,
-        showRecentSearches = false,
-        showShortcutsSuggestions = false,
         showQrButton = true,
-        searchAccessPoint = MetricsUtils.Source.NONE,
     )
 
     @Before
@@ -152,6 +129,7 @@ class HomeToolbarViewTest {
         every { context.settings().shouldShowHistorySuggestions } returns true
         every { context.settings().shouldShowBookmarkSuggestions } returns true
         every { context.settings().shouldAutocompleteInAwesomebar } returns false
+        every { context.settings().isTabStripEnabled } returns false
         val view = buildToolbarView(false)
 
         view.update(defaultState.copy(searchTerms = "search terms"))
@@ -166,6 +144,7 @@ class HomeToolbarViewTest {
         every { context.settings().showUnifiedSearchFeature } returns true
         every { context.settings().shouldShowHistorySuggestions } returns true
         every { context.settings().shouldShowBookmarkSuggestions } returns true
+        every { context.settings().isTabStripEnabled } returns false
         val view = buildToolbarView(false)
 
         view.update(defaultState)
@@ -450,6 +429,7 @@ class HomeToolbarViewTest {
     fun `GIVEN autocomplete disabled WHEN the toolbar view is initialized THEN create an autocomplete with disabled functionality`() {
         val settings: Settings = mockk {
             every { shouldAutocompleteInAwesomebar } returns false
+            every { isTabStripEnabled } returns false
         }
         val toolbarView = buildToolbarView(true, settings)
 
@@ -462,6 +442,7 @@ class HomeToolbarViewTest {
     fun `GIVEN autocomplete enabled WHEN the toolbar view is initialized THEN create an autocomplete with enabled functionality`() {
         val settings: Settings = mockk {
             every { shouldAutocompleteInAwesomebar } returns true
+            every { isTabStripEnabled } returns false
         }
         val toolbarView = buildToolbarView(true, settings)
 

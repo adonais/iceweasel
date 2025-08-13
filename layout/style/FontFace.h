@@ -7,10 +7,10 @@
 #ifndef mozilla_dom_FontFace_h
 #define mozilla_dom_FontFace_h
 
-#include "mozilla/dom/FontFaceBinding.h"
+#include "gfxUserFontSet.h"
 #include "mozilla/GlobalTeardownObserver.h"
 #include "mozilla/ServoStyleConsts.h"
-#include "gfxUserFontSet.h"
+#include "mozilla/dom/FontFaceBinding.h"
 #include "nsWrapperCache.h"
 
 class gfxFontFaceBufferSource;

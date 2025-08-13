@@ -104,16 +104,6 @@
   -->
   <string name="erase_action_cfr_message" moz:removedIn="141" tools:ignore="UnusedResources">ਤਾਜ਼ਾ ਪ੍ਰਾਈਵੇਟ ਸ਼ੈਸ਼ਨ ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਇੱਥੇ ਕਲਿੱਕ ਕਰੋ। ਆਪਣੇ ਅਤੀਤ, ਕੂਕੀਜ਼ — ਹਰ ਚੀਜ਼ ਹਟਾ ਦਿਓ।</string>
   <!--
-    Toolbar "contextual feature recommendation" (CFR)
-
-    Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
-  -->
-  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">ਨਵੀਂ ਨੈਵੀਗੇਸ਼ਨ ਨਾਲ ਵੱਧ ਤੇਜ਼ੀ ਨਾਲ ਬਰਾਊਜ਼ ਕਰੋ</string>
-  <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">ਵੈੱਬਸਾਈਟ ਉੱਤੇ ਵਾਧੂ ਬਰਾਊਜ਼ ਕਰਨ ਲਈ ਥਾਂ ਬਣਾਉਣ ਵਾਸਤੇ ਸਕਰੋਲ ਕਰਨ ਦੇ ਦੌਰਾਨ ਇਸ ਪੱਟੀ ਨੂੰ ਪਾਸੇ ਕਰ ਦਿੱਤਾ ਜਾਂਦਾ ਹੈ।</string>
-  <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">ਇਸ ਟੈਬ ਦੇ ਅਤੀਤ ਵਿਚਲੇ ਸਫ਼ਿਆਂ ਵਿੱਚ ਜਾਣ ਲਈ ਤੀਰ ਦੇ ਨਿਸ਼ਾਨਾਂ ਨੂੰ ਛੂਹ ਕੇ ਰੱਖੋ।</string>
-  <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
     Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar.
@@ -328,6 +318,8 @@
   <string name="browser_menu_sign_back_in_to_sync">ਸਿੰਕ ਕਰਨ ਲਈ ਵਾਪਸ ਸਾਈਨ ਇਨ ਕਰੋ</string>
   <!-- Browser menu caption label for the "Sign back in to sync" browser menu item described in `browser_menu_sign_back_in_to_sync` when there is an error in syncing -->
   <string name="browser_menu_syncing_paused_caption">ਸਿੰਕ ਨੂੰ ਰੋਕਿਆ ਗਿਆ ਹੈ</string>
+  <!-- Browser menu caption label for an authenticated user -->
+  <string name="browser_menu_signed_in_caption">ਜੋ ਤੁਸੀਂ ਬੈਕਅੱਪ ਅਤੇ ਸਿੰਕ ਕਰਨਾ ਚਾਹੁੰਦੇ, ਉਹਨਾਂ ਦਾ ਇੰਤਜ਼ਾਮ ਕਰੋ</string>
   <!-- Browser menu label that creates a private tab -->
   <string name="browser_menu_new_private_tab">ਨਵੀਂ ਪ੍ਰਾਈਵੇਟ ਟੈਬ</string>
   <!-- Browser menu label that navigates to the Password screen -->
@@ -340,7 +332,7 @@
   <!-- Browser menu label that toggles the request for the desktop site of the currently visited page -->
   <string name="browser_menu_switch_to_desktop_site" moz:removedIn="141" tools:ignore="UnusedResources">ਡੈਸਕਟਾਪ ਸਾਈਟ ਲਈ ਬਦਲੋ</string>
   <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site">ਮੋਬਾਈਲ ਸਾਈਟ ਲਈ ਸਵਿੱਚ ਕਰੋ</string>
+  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">ਮੋਬਾਈਲ ਸਾਈਟ ਲਈ ਸਵਿੱਚ ਕਰੋ</string>
   <!-- Browser menu label that navigates to the page tools sub-menu -->
   <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">ਟੂਲ</string>
   <!-- Content description (not visible, for screen readers etc.): Back button for all menu redesign sub-menu -->
@@ -424,7 +416,9 @@
   -->
   <string name="browser_menu_default_banner_title">%1$s ਨੂੰ ਆਪਣਾ ਮੂਲ ਬਣਾਓ</string>
   <!-- Label text within the set as default banner -->
-  <string name="browser_menu_default_banner_subtitle">ਸਕਿੰਟ ਕੁ ਹੀ ਲੱਗਦੇ ਹਨ। ਕਦੇ ਵੀ ਬਦਲ ਲਿਓ।</string>
+  <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">ਸਕਿੰਟ ਕੁ ਹੀ ਲੱਗਦੇ ਹਨ। ਕਦੇ ਵੀ ਬਦਲ ਲਿਓ।</string>
+  <!-- Label text within the set as default banner -->
+  <string name="browser_menu_default_banner_subtitle_2">ਤੇਜ਼, ਨਿੱਜੀ ਅਤੇ ਤੁਹਾਡੇ ਲਈ ਬਣਾਇਆ।</string>
   <!-- Content description for the button that dismisses the set as default banner in the menu -->
   <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">ਖ਼ਾਰਜ ਕਰੋ</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
@@ -600,45 +594,6 @@
   <string name="juno_onboarding_add_search_widget_positive_button" tools:ignore="BrandUsage,UnusedResources">Firefox ਵਿਜੈਟ ਜੋੜੋ</string>
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">ਹੁਣੇ ਨਹੀਂ</string>
-  <!--
-    Onboarding header for the add-ons card used by Nimbus experiments. Nimbus experiments do not support string placeholders.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="onboarding_add_on_header" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">ਆਪਣੇ Firefox ਨੂੰ ਇਕਸਟੈਨਸ਼ਨਾਂ ਨਾਲ ਪਸੰਦੀਦਾ ਬਣਾਓ</string>
-  <!-- Onboarding sub header for the add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_sub_header" moz:removedIn="140" tools:ignore="UnusedResources">ਆਪਣੀ ਸੁਰੱਖਿਆ, ਕਾਰਗੁਜ਼ਾਰੀ ਅਤੇ ਹੋਰ ਕਈ ਕੁਝ ਸੁਧਾਰਨ ਲਈ ਤੀਜੀ ਧਿਰ ਇਕਸਟੈਨਸ਼ਨਾਂ ਨੂੰ ਇੰਸਟਾਲ ਕਰੋ।</string>
-  <!-- Onboarding add-ons card, for checking more add-ons on, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_explore_more_extensions_2" moz:removedIn="140" tools:ignore="UnusedResources">ਹੋਰ ਇਕਸਟੈਨਸ਼ਨਾਂ ਦੀ ਪੜਤਾਲ ਕਰੋ</string>
-  <!-- Onboarding add-ons card, button for start browsing, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_start_browsing_button_2" moz:removedIn="140" tools:ignore="UnusedResources">ਬਰਾਊਜ਼ ਕਰਨਾ ਸ਼ੁਰੂ ਕਰੋ</string>
-  <!-- Ublock name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Ublock Origin" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_ublock_name" moz:removedIn="140" tools:ignore="UnusedResources">uBlock Origin</string>
-  <!-- Ublock description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_ublock_description" moz:removedIn="140" tools:ignore="UnusedResources">ਇਸ਼ਤਿਹਾਰਾਂ ਉੱਤੇ ਪ੍ਰਭਾਵੀ ਅਤੇ ਅਸਰਦਾਰ ਰੂਪ ਵਿੱਚ ਪਾਬੰਦੀ ਲਾਓ।</string>
-  <!-- Privacy Badger name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Privacy Badger" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_privacy_badger_name" moz:removedIn="140" tools:ignore="UnusedResources">Privacy Badger</string>
-  <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_privacy_badger_description" moz:removedIn="140" tools:ignore="UnusedResources">ਟੋਹ ਰੋਧੀ ਦੀ ਸ਼ਾਨ। ਅਦਿੱਖ ਟਰੈਕਰਾਂ ਅਤੇ ਸੂਹ ਲੈਣ ਵਾਲੇ ਇਸ਼ਤਿਹਾਰਾਂ ਨੂੰ ਠੱਲ੍ਹ ਪਾਓ।</string>
-  <!-- Search by Image name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Search by Image" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_search_by_image_name" moz:removedIn="140" tools:ignore="UnusedResources">ਚਿੱਤਰ ਮੁਤਾਬਕ ਖੋਜੋ</string>
-  <!-- Search by Image description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_search_by_image_description" moz:removedIn="140" tools:ignore="UnusedResources">ਦਿਲਚਸਪ ਤਸਵੀਰ ਨੂੰ ਵੇਖੋ ਅਤੇ ਇਸ ਬਾਰੇ ਹੋਰ ਜਾਣੋ।</string>
-  <!-- Dark Reader name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Dark Reader" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_dark_reader_name" moz:removedIn="140" tools:ignore="UnusedResources">ਡਾਰਕ ਲੀਡਰ</string>
-  <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_dark_reader_description" moz:removedIn="140" tools:ignore="UnusedResources">ਮੋਬਾਈਲ ਵੈੱਬ ਲਈ ਪਸੰਦੀਦਾ ਗੂੜ੍ਹਾ ਮੋਡ ਹੈ।</string>
-  <!-- Label for the number of reviews for an add-on. %1$s is the formatted number of reviews e.g. "1,234", "12,345", "123,456". -->
-  <string name="onboarding_add_on_reviews_label" moz:removedIn="140" tools:ignore="UnusedResources">ਰੀਵਿਊ: %1$s</string>
-  <!-- Content description for the add-on icon. -->
-  <string name="onboarding_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">ਐਡ-ਆਨ ਆਈਕਾਨ</string>
-  <!-- Content description for the an installed add-on icon. -->
-  <string name="onboarding_installed_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">ਇੰਸਟਾਲ ਹੋਈਆਂ ਐਡ-ਆਨ</string>
-  <!-- Content description for the an installing add-on icon. -->
-  <string name="onboarding_installing_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">ਐਡ-ਆਨ ਆਈਕਾਨ ਇੰਸਟਾਲ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ</string>
-  <!-- Content description for the add add-on button. -->
-  <string name="onboarding_add_on_add_button_content_description" moz:removedIn="140" tools:ignore="UnusedResources">ਐਡ-ਆਨ ਬਟਨ ਨੂੰ ਜੋੜੋ</string>
-  <!-- Content description for the star rating group. %1$s is the rating. -->
-  <string name="onboarding_add_on_star_rating_content_description" moz:removedIn="140" tools:ignore="UnusedResources">5 ਵਿੱਚੋਂ %1$s ਰੇਟ ਕੀਤਾ</string>
   <!-- Title for the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_title" tools:ignore="BrandUsage">Firefox ਨੂੰ ਬੇਹਤਰ ਬਣਾਉਣ ਲਈ ਸਾਡੀ ਮਦਦ ਕਰੋ</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
@@ -658,8 +613,6 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">ਤੇਜ਼ ਅਤੇ ਸੁਰੱਖਿਅਤ ਵੈੱਬ ਬਰਾਊਜ਼ਿੰਗ</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">ਸਹਿਮਤ ਅਤੇ ਜਾਰੀ ਰੱਖੋ</string>
-  <!-- Terms of service onboarding page continue button label. -->
   <string name="onboarding_term_of_service_agree_and_continue_button_label_2">ਜਾਰੀ ਰੱਖੋ</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">ਜਾਰੀ ਰੱਖ ਕੇ ਤੁਸੀਂ %1$s ਨਾਲ ਸਹਿਮਤ ਹੁੰਦੇ ਹੋ।</string>
@@ -678,7 +631,9 @@
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">ਜਦੋਂ ਤੁਸੀਂ Firefox ਨੂੰ ਲੱਭਣ ਅਤੇ ਇਸ ਨੂੰ ਵਰਤਣ ਬਾਰੇ ਜਾਣਕਾਰੀ ਨੂੰ ਸਾਂਝਾ ਕਰਦੇ ਹੋ ਤਾਂ ਤੁਸੀਂ ਸਾਡੇ ਬਰਾਊਜ਼ਰ ਨੂੰ ਹੋਰ ਲੋਕਾਂ ਤੱਕ ਪਹੁੰਚਾਉਣ ਲਈ ਸਾਡੀ ਮਦਦ ਕਰਦੇ ਹੋ।</string>
   <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Mozilla ਦੇ ਮਾਰਕੀਟਿੰਗ ਤਕਨਾਲੋਜੀ ਹਿੱਸੇਦਾਰਾਂ ਨਾਲ ਘੱਟ ਤੋਂ ਘੱਟ ਡਾਟਾ ਸਾਂਝਾ ਕਰੋ। ਇਹ ਡਾਟਾ ਕਦੇ ਵੀ ਵੇਚਿਆ ਨਹੀਂ ਜਾਂਦਾ ਹੈ ਜਾਂ ਤੁਹਾਨੂੰ ਇਸ਼ਤਿਹਾਰ ਦਿਖਾਉਣ ਲਈ ਨਹੀਂ ਵਰਤਿਆ ਜਾਂਦਾ ਹੈ।</string>
+  <string name="onboarding_marketing_opt_in_checkbox" moz:removedIn="143" tools:ignore="UnusedResources">Mozilla ਦੇ ਮਾਰਕੀਟਿੰਗ ਤਕਨਾਲੋਜੀ ਹਿੱਸੇਦਾਰਾਂ ਨਾਲ ਘੱਟ ਤੋਂ ਘੱਟ ਡਾਟਾ ਸਾਂਝਾ ਕਰੋ। ਇਹ ਡਾਟਾ ਕਦੇ ਵੀ ਵੇਚਿਆ ਨਹੀਂ ਜਾਂਦਾ ਹੈ ਜਾਂ ਤੁਹਾਨੂੰ ਇਸ਼ਤਿਹਾਰ ਦਿਖਾਉਣ ਲਈ ਨਹੀਂ ਵਰਤਿਆ ਜਾਂਦਾ ਹੈ।</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_opt_out_checkbox">Mozilla ਦੇ ਮਾਰਕੀਟਿੰਗ ਤਕਨਾਲੋਜੀ ਹਿੱਸੇਦਾਰਾਂ ਨਾਲ ਡਾਟਾ ਸਾਂਝਾ ਕਰੋ। ਇਹ ਡਾਟਾ ਕਦੇ ਵੀ ਵੇਚਿਆ ਨਹੀਂ ਜਾਂਦਾ ਹੈ ਜਾਂ ਤੁਹਾਨੂੰ ਇਸ਼ਤਿਹਾਰ ਦਿਖਾਉਣ ਲਈ ਨਹੀਂ ਵਰਤਿਆ ਜਾਂਦਾ ਹੈ।</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
   <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">ਅਸੀਂ ਤੁਹਾਡੇ ਡਾਟੇ ਨੂੰ ਕਿਵੇਂ ਵਰਤਦੇ ਹਾਂ</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
@@ -804,8 +759,6 @@
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">ਪ੍ਰਾਈਵੇਟ ਬਰਾਊਜ਼ਿੰਗ ਵਿੱਚ ਟੈਬਾਂ ਨੂੰ ਓਹਲੇ ਕਰਨ ਲਈ ਸਕਰੀਨ ਲਾਕ ਦੀ ਵਰਤੋਂ ਕਰੋ</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary" moz:removedIn="140" tools:ignore="UnusedResources">ਫਿੰਗਰਪਰਿੰਟ, ਫੇਸ ਅਣ-ਲਾ ਜਾਂ ਪਿੰਨ ਨਾਲ ਟੈਬਾਂ ਨੂੰ ਵੇਖੋ।</string>
-  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_2">ਟੈਬਾਂ ਨੂੰ ਆਪਣੇ ਫਿੰਗਰਪਰਿੰਟ, ਪਿੰਨ ਜਾਂ ਫੇਸ ਅਣ-ਲਾਕ ਨਾਲ ਵੇਖੋ।</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">ਕੂਕੀ ਬੈਨਰ ਰੋਕੂ</string>
@@ -879,6 +832,8 @@
   <string name="preferences_home_2">ਮੁੱਖ ਸਫ਼ਾ</string>
   <!-- Preference for customizing the app icon -->
   <string name="preferences_app_icon">ਐਪ ਆਈਕਾਨ</string>
+  <!-- Preference for showing the tab strip -->
+  <string name="preferences_tab_strip">ਟੈਬ ਪੱਟੀ ਦੀ ਦਿੱਖ</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_gestures">ਇਸ਼ਾਰੇ</string>
   <!-- Preference for settings related to visual options -->
@@ -1037,11 +992,7 @@
   -->
   <string name="customize_toggle_recently_visited">ਤਾਜ਼ਾ ਖੋਲ੍ਹੇ ਗਏ</string>
   <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">ਸੋਚਣ ਲਈ ਮਜ਼ਬੂਰ ਕਰਨ ਵਾਲੇ ਲੇਖ</string>
-  <!-- Title for the customize home screen section with Pocket. -->
   <string name="customize_toggle_pocket_3">ਲੇਖ</string>
-  <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-  <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">%s ਵਲੋਂ ਤਿਆਰ ਕੀਤੇ ਲੇਖ</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">ਸਪਾਂਸਰ ਕੀਤੀਆਂ ਕਹਾਣੀਆਂ</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -1135,7 +1086,15 @@
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">ਗਰੇਡੀਐਂਟ</string>
   <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other">ਹੋਰ</string>
+  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources">ਹੋਰ</string>
+  <!-- Title to show in alert when user selects an alternative app icon -->
+  <string name="restart_warning_dialog_title">ਐਪ ਦੇ ਆਈਕਾਨ ਨੂੰ ਬਦਲਣਾ ਹੈ?</string>
+  <!-- Message to warn users that applying an alternative app icon requires an app restart -->
+  <string name="restart_warning_dialog_body">ਆਈਕਾਨ ਨੂੰ ਬਦਲਣ ਲਈ ਐਪ ਨੂੰ ਮੁੜ-ਚਾਲੂ ਕਰਨ ਦੀ ਲੋੜ ਹੈ।</string>
+  <!-- Dialog button text for confirming the app restart to apply the selected icon -->
+  <string name="restart_warning_dialog_button_positive">ਹੁਣੇ ਮੁੜ-ਚਾਲੂ ਕਰੋ</string>
+  <!-- Dialog button text for cancelling app icon change -->
+  <string name="restart_warning_dialog_button_negative">ਰੱਦ ਕਰੋ</string>
   <!--
     Add-ons general availability nimbus message
 
@@ -1256,6 +1215,8 @@
   <string name="preferences_daily_usage_ping_learn_more">ਰੋਜ਼ਾਨਾ ਵਰਤੋਂ ਪਿੰਗ ਬਾਰੇ ਹੋਰ ਜਾਣੋ</string>
   <!-- Preference switch title for automatically submitting crash reports -->
   <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">ਕਰੈਸ਼ ਰਿਪੋਰਟਾਂ ਨੂੰ ਆਪਣੇ-ਆਪ ਭੇਜੋ</string>
+  <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
+  <string name="crash_reporting_snack_bar_message">ਰਿਪੋਰਟ ਭੇਜੀ</string>
   <!-- Preference switch description for automatically submitting crash reports -->
   <string name="preferences_automatically_send_crashes_description" tools:ignore="UnusedResources" moz:removedIn="142">ਇਹ ਸਾਨੂੰ ਬਰਾਊਜ਼ਰ ਦੀ ਜਾਂਚ ਪੜਤਾਲ ਕਰਨ ਅਤੇ ਮਸਲਿਆਂ ਨੂੰ ਠੀਕ ਕਰਨ ਮਦਦ ਕਰਦੀਆਂ ਹਨ। ਰਿਪੋਰਟਾਂ ਵਿੱਚ ਨਿੱਜੀ ਜਾਂ ਸੰਵੇਦਨਸ਼ੀਲ ਡਾਟਾ ਸ਼ਾਮਲ ਹੋ ਸਕਦਾ ਹੈ।</string>
   <!-- Text for sumo link to learn more about crash reports in data collection screen -->
@@ -1311,6 +1272,8 @@
   <string name="preference_simple_toolbar">ਸਧਾਰਨ</string>
   <!-- Preference for using expanded toolbar -->
   <string name="preference_expanded_toolbar">Expanded</string>
+  <!-- Preference description indicating the toolbar location preference is disabled when the tab strip is enabled -->
+  <string name="preference_toolbar_pref_disabled_explanation">ਜਦੋਂ ਟੈਬ ਪੱਟੀ ਨੂੰ ਦਿਖਾਇਆ ਜਾਵੇ ਤਾਂ ਸਿਰਨਾਵਾਂ ਪੱਟੀ ਹਮੇਸ਼ਾਂ ਉੱਤੇ ਹੋਣੀ ਚਾਹੀਦੀ ਹੈ।</string>
   <!--
     App icon Preferences
 
@@ -1330,6 +1293,12 @@
   <!-- Preference for using following device theme -->
   <string name="preference_follow_device_theme">ਡਿਵਾਈਸ ਥੀਮ ਦੇ ਮੁਤਾਬਕ</string>
   <!--
+    Tab Strip Preferences
+
+    Preferences for showing tab strip
+  -->
+  <string name="preference_tab_strip_show">ਟੈਬ ਪੱਟੀ ਨੂੰ ਦਿਖਾਓ</string>
+  <!--
     Gestures Preferences
 
     Preferences for using pull to refresh in a webpage
@@ -1339,8 +1308,6 @@
   <string name="preference_gestures_dynamic_toolbar">ਟੂਲਬਾਰ ਲੁਕਾਉਣ ਲਈ ਸਕਰੋਲ ਕਰੋ</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">ਟੈਬਾਂ ਖੋਲ੍ਹਣ ਲਈ ਟੂਲਬਾਰ ਉੱਤੇ ਵੱਲ ਸਰਕਾਓ</string>
-  <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">ਸਿਰਨਾਵਾਂ ਪੱਟੀ ਅਤੇ ਟੂਲ-ਬਾਰ ਨੂੰ ਲੁਕਾਉਣ ਲਈ ਸਕਰੋਲ ਕਰੋ</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">ਟੈਬਾਂ ਵਿੱਚ ਬਦਲਣ ਲਈ ਸਿਰਨਾਵਾਂ ਪੱਟੀ ਨੂੰ ਪਾਸੇ ਵੱਲ ਸਰਕਾਓ</string>
   <!--
@@ -1567,9 +1534,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">ਅਤੀਤ ਹਟਾਓ</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">ਅਤੀਤ ਹਟਾਇਆ ਗਿਆ</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">ਅਤੀਤ ਹਟਾਇਆ ਗਿਆ</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">%1$s ਨੂੰ ਹਟਾਇਆ</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s ਨੂੰ ਹਟਾਇਆ</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">ਹਟਾਓ</string>
   <!--
@@ -1753,6 +1720,10 @@
   <string name="webcompat_reporter_screen_title">ਖ਼ਰਾਬ ਸਾਈਟ ਬਾਰੇ ਰਿਪੋਰਟ ਕਰੋ</string>
   <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
   <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">%1$s ਨੂੰ ਹਰੇਕ ਲਈ ਬੇਹਤਰ ਬਣਾਉਣ ਵਾਸਤੇ ਮਦਦ ਕਰੋ। Mozilla ਦੇ ਮੁਲਾਜ਼ਮ ਤੁਹਾਡੇ ਵਲੋਂ ਭੇਜੀ ਜਾਣਕਾਰੀ ਨੂੰ ਵੈੱਬਸਾਈਟ ਸਮੱਸਿਆਵਾਂ ਨੂੰ ਠੀਕ ਕਰਨ ਲਈ ਵਰਤਦੇ ਹਨ।</string>
+  <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">ਤੁਹਾਡੀ ਰਿਪੋਰਟ %1$s ਵਿੱਚ ਮਸਲਿਆਂ ਨੂੰ ਸਮਝਣ ਅਤੇ ਹੋਰ ਜਾਣਿਆਂ ਲਈ ਠੀਕ ਕਰਨ ਲਈ ਸਾਡੀ ਮਦਦ ਕਰਦੀ ਹੈ। ਹੋਰ ਜਾਣੋ</string>
+  <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox") and %2$s is the learn more button. -->
+  <string name="webcompat_reporter_description_3">ਤੁਹਾਡੀ ਰਿਪੋਰਟ %1$s ਵਿੱਚ ਮਸਲਿਆਂ ਨੂੰ ਸਮਝਣ ਅਤੇ ਹੋਰ ਜਾਣਿਆਂ ਲਈ ਠੀਕ ਕਰਨ ਲਈ ਸਾਡੀ ਮਦਦ ਕਰਦੀ ਹੈ। %2$s</string>
   <!-- The button text for navigating to the SUMO link to learn more about reporting a broken site. -->
   <string name="webcompat_reporter_learn_more">ਹੋਰ ਜਾਣੋ</string>
   <!-- The text field label of the URL text field. This is displayed above the user-inputted URL. -->
@@ -1784,19 +1755,11 @@
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
-    Broken site reason text for site slow or not working
+    Broken site reason text for site doesn’t load
   -->
-  <string name="webcompat_reporter_reason_slow" moz:removedIn="140" tools:ignore="UnusedResources">ਸਾਈਟ ਹੌਲੀ ਹੈ ਜਾਂ ਕੰਮ ਨਹੀਂ ਕਰਦੀ ਹੈ</string>
-  <!-- Broken site reason text for site doesn’t load -->
   <string name="webcompat_reporter_reason_load">ਸਾਈਟ ਲੋਡ ਨਹੀਂ ਹੋਈ ਹੈ</string>
   <!-- Broken site reason text for can’t pay, check out or shop -->
   <string name="webcompat_reporter_reason_checkout">ਭੁਗਤਾਨ, ਚੈਕ ਆਉਟ ਜਾਂ ਖਰੀਦਦਾਰੀ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕਦੀ ਹੈ</string>
-  <!-- Broken site reason text for images or videos -->
-  <string name="webcompat_reporter_reason_media" moz:removedIn="140" tools:ignore="UnusedResources">ਚਿੱਤਰ ਜਾਂ ਵੀਡੀਓ</string>
-  <!-- Broken site reason text for buttons, links, and other content -->
-  <string name="webcompat_reporter_reason_content" moz:removedIn="140" tools:ignore="UnusedResources">ਬਟਨ, ਲਿੰਕ ਜਾਂ ਹੋਰ ਸਮੱਗਰੀ</string>
-  <!-- Broken site reason text for sign in or sign out -->
-  <string name="webcompat_reporter_reason_account" moz:removedIn="140" tools:ignore="UnusedResources">ਸਾਈਨ-ਇਨ ਜਾਂ ਸਾਈਨ-ਆਉਟ</string>
   <!-- Broken site reason text for site is slow -->
   <string name="webcompat_reporter_reason_slow2">ਸਾਈਟ ਹੌਲੀ ਹੈ</string>
   <!-- Broken site reason text for video isn’t playing or loading -->
@@ -1805,8 +1768,6 @@
   <string name="webcompat_reporter_reason_content2">ਸਮੱਗਰੀ ਮੌਜੂਦ ਨਹੀਂ ਹੈ</string>
   <!-- Broken site reason text for can’t sign in or register -->
   <string name="webcompat_reporter_reason_account2">ਸਾਈਨ ਇਨ ਜਾਂ ਰਜਿਸਟਰ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਦਾ</string>
-  <!-- Broken site reason text for ad blocker -->
-  <string name="webcompat_reporter_reason_ad_blocker" moz:removedIn="140" tools:ignore="UnusedResources">ਇਸ਼ਤਿਹਾਰ ਰੋਕੂ</string>
   <!-- Broken site reason text for site asked to turn off ad blocker -->
   <string name="webcompat_reporter_reason_turn_off_adblocker">ਸਾਈਟ ਨੇ ਇਸ਼ਤਿਹਾਰ ਰੋਕੂ ਬੰਦ ਕਰਨ ਲਈ ਕਿਹਾ ਹੈ</string>
   <!-- Broken site reason text for browser isn’t supported or blocked -->
@@ -1826,15 +1787,28 @@
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">ਟੈਬ ਬਹਾਲ ਕਰੋ</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title">%s ਨੂੰ ਮੁੜ ਚਾਲੂ ਕਰਨਾ ਪਿਆ</string>
+  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s ਨੂੰ ਮੁੜ ਚਾਲੂ ਕਰਨਾ ਪਿਆ</string>
+  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
+  <string name="unsubmitted_crash_dialog_title_2">%s ਕਰੈਸ਼ ਹੋਇਆ। ਰਿਪੋਰਟ ਭੇਜਣੀ ਹੈ?</string>
+  <!-- Single unsubmitted crash matching remote settings. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="unsubmitted_crash_requested_by_devs_dialog_title">ਤੁਹਾਡੇ ਕੋਲ ਜਾਂਚ ਅਧੀਨ ਕਰੈਸ਼ ਦੇ ਨਾਲ ਸੰਬੰਧਿਤ ਕਰੈਸ਼ ਰਿਪੋਰਟ ਬਿਨਾਂ ਭੇਜੇ ਪਈ ਹੈ। %1$s ਨੂੰ ਬੇਹਤਰ ਬਣਾਉਣ ਲਈ ਸਾਡੀ ਮਦਦ ਕਰਨ ਲਈ ਇਸ ਨੂੰ ਭੇਜ ਦਿਓ। ਇਸ ਰਿਪੋਰਟ ਨੂੰ ਅਣਡਿੱਠਾ ਕਰਨ ਵਾਸਤੇ ਇਸ ਨੋਟੀਫਿਕੇਸ਼ਨ ਨੂੰ ਬੰਦ ਕਰੋ।</string>
+  <!-- Multiple unsubmitted crashes matching remote settings. %1$d is the number of unsent crash reports, %2$s is the name of the app (for example "Firefox"). -->
+  <string name="unsubmitted_crashes_requested_by_devs_dialog_title">ਤੁਹਾਡੇ ਕੋਲ ਜਾਂਚ ਅਧੀਨ ਕਰੈਸ਼ ਦੇ ਨਾਲ ਸੰਬੰਧਿਤ ਕਰੈਸ਼ ਰਿਪੋਰਟਾਂ (%1$d) ਬਿਨਾਂ ਭੇਜੇ ਪਈਆਂ ਹਨ। %2$s ਨੂੰ ਬੇਹਤਰ ਬਣਾਉਣ ਲਈ ਸਾਡੀ ਮਦਦ ਕਰਨ ਲਈ ਇਹਨਾਂ ਨੂੰ ਭੇਜ ਦਿਓ। ਇਹਨਾਂ ਰਿਪੋਰਟਾਂ ਨੂੰ ਅਣਡਿੱਠਾ ਕਰਨ ਵਾਸਤੇ ਇਸ ਨੋਟੀਫਿਕੇਸ਼ਨ ਨੂੰ ਬੰਦ ਕਰੋ।</string>
   <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
   <string name="unsubmitted_crash_dialog_checkbox_label">ਕਰੈਸ਼ ਰਿਪੋਰਟਾਂ ਨੂੰ ਆਪਣੇ-ਆਪ ਭੇਜੋ</string>
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
   <string name="unsubmitted_crash_dialog_negative_button">ਬੰਦ ਕਰੋ</string>
+  <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
+  <string name="unsubmitted_crash_dialog_negative_button_2">ਬੰਦ ਕਰੋ</string>
   <!-- Unsubmitted crash dialog negative button to never be asked for the submission -->
   <string name="unsubmitted_crash_requested_by_devs_dialog_never_button">ਫੇਰ ਕਦੇ ਨਾ ਵੇਖਾਓ</string>
   <!-- Unsubmitted crash dialog positive button to submit crash report -->
+  <string name="unsubmitted_crash_dialog_positive_button_2">ਭੇਜੋ</string>
+  <!-- Unsubmitted crash dialog positive button to submit crash report -->
   <string name="unsubmitted_crash_dialog_positive_button">ਕਰੈਸ਼ ਰਿਪੋਰਟ ਭੇਜੋ</string>
+  <!-- Body text for crash report dialog. %s is the link text in the annotated string (ie. "Learn More") -->
+  <string name="unsubmitted_crash_dialog_body">ਕਰੈਸ਼ ਰਿਪੋਰਟਾਂ ਸਾਨੂੰ ਬਰਾਊਜ਼ਰ ਦੀ ਜਾਂਚ ਪੜਤਾਲ ਕਰਨ ਅਤੇ ਮਸਲਿਆਂ ਨੂੰ ਠੀਕ ਕਰਨ ਮਦਦ ਕਰਦੀਆਂ ਹਨ। ਰਿਪੋਰਟਾਂ ਵਿੱਚ ਨਿੱਜੀ ਜਾਂ ਸੰਵੇਦਨਸ਼ੀਲ ਡਾਟਾ ਸ਼ਾਮਲ ਹੋ ਸਕਦਾ ਹੈ। %s</string>
+  <string name="unsubmitted_crash_dialog_learn_more">ਹੋਰ ਜਾਣੋ</string>
   <!-- Unsubmitted crash dialog button to open a web page with more details on the feature and privacy policy -->
   <string name="unsubmitted_crash_requested_by_devs_learn_more">ਹੋਰ ਜਾਣੋ</string>
   <!--
@@ -1842,11 +1816,11 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">ਕੀ ਤੁਸੀਂ ਇਹ ਫੋਲਡਰ ਨੂੰ ਹਟਾਉਣਾ ਚਾਹੁੰਦੇ ਹੋ?</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">ਕੀ ਤੁਸੀਂ ਇਹ ਫੋਲਡਰ ਨੂੰ ਹਟਾਉਣਾ ਚਾਹੁੰਦੇ ਹੋ?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items. -->
   <string name="bookmark_delete_folders_confirmation_dialog">ਕੀ ਤੁਸੀਂ ਚੁਣੀਆਂ ਚੀਜ਼ਾਂ ਨੂੰ ਹਟਾਉਣਾ ਚਾਹੁੰਦੇ ਹੋ?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog">%s ਚੁਣੀਆਂ ਚੀਜ਼ਾਂ ਨੂੰ ਹਟਾਏਗਾ।</string>
+  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s ਚੁਣੀਆਂ ਚੀਜ਼ਾਂ ਨੂੰ ਹਟਾਏਗਾ।</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">ਰੱਦ ਕਰੋ</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -1876,7 +1850,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">ਹਟਾਓ</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">ਸੰਭਾਲੋ</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">ਸੰਭਾਲੋ</string>
   <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_custom">ਪਸੰਦੀਦਾ ਲੜੀਬੱਧ ਢੰਗ</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
@@ -1897,7 +1871,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">ਫੋਲਡਰ ਸੋਧੋ</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">ਸਿੰਕ ਕੀਤੇ ਬੁੱਕਮਾਰਕ ਵੇਖਣ ਲਈ ਸਾਇਨ ਇਨ ਕਰੋ</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">ਸਿੰਕ ਕੀਤੇ ਬੁੱਕਮਾਰਕ ਵੇਖਣ ਲਈ ਸਾਇਨ ਇਨ ਕਰੋ</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -1909,24 +1883,24 @@
   <!-- Label for a text input field for a bookmark or folder name -->
   <string name="bookmark_name_label_normal_case">ਨਾਂ</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">ਫੋਲਡਰ ਜੋੜੋ</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">ਫੋਲਡਰ ਜੋੜੋ</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">ਫੋਲਡਰ ਚੁਣੋ</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">ਨਾਂ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">ਨਾਂ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">ਗ਼ਲਤ URL</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">ਇੱਥੇ ਕੋਈ ਬੁੱਕਮਾਰਕ ਨਹੀਂ ਹੈ</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">ਇੱਥੇ ਕੋਈ ਬੁੱਕਮਾਰਕ ਨਹੀਂ ਹੈ</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s ਹਟਾਇਆ</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">ਬੁੱਕਮਾਰਕ ਹਟਾਇਆ</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">ਬੁੱਕਮਾਰਕ ਹਟਾਇਆ</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3">ਚੁਣੇ ਫੋਲਡਰਾਂ ਨੂੰ ਹਟਾਇਆ ਜਾ ਰਿਹਾ ਹੈ</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">ਚੁਣੇ ਫੋਲਡਰਾਂ ਨੂੰ ਹਟਾਇਆ ਜਾ ਰਿਹਾ ਹੈ</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">ਵਾਪਸ</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
@@ -1934,7 +1908,7 @@
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
   <string name="bookmark_delete_multiple_items">ਹਟਾਈਆਂ ਆਈਟਮਾਂ: %s</string>
   <!-- Text for the button to search all bookmarks -->
-  <string name="bookmark_search">ਖੋਜ ਸ਼ਬਦ ਦਿਓ</string>
+  <string name="bookmark_search" tools:ignore="UnusedResources" moz:removedIn="143">ਖੋਜ ਸ਼ਬਦ ਦਿਓ</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">ਪਿੱਛੇ ਵੱਲ ਨੈਵੀਗੇਟ ਕਰੋ</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2090,7 +2064,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ਟੈਬ ਚੁਣੀ</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">ਟੈਬਾਂ ਸੰਭਾਲੀਆਂ!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">ਟੈਬਾਂ ਸੰਭਾਲੀਆਂ!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection">ਭੰਡਾਰ ਸੰਭਾਲਿਆ!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -2223,9 +2197,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">ਭੰਡਾਰ ਹਟਾਇਆ</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">ਭੰਡਾਰ ਹਟਾਇਆ</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">ਭੰਡਾਰ ਦਾ ਨਾਂ ਬਦਲਿਆ</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">ਭੰਡਾਰ ਦਾ ਨਾਂ ਬਦਲਿਆ</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">ਟੈਬ ਬੰਦ ਕੀਤੀ</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -2262,9 +2236,9 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">ਕੀ ਤੁਸੀਂ %1$s ਨੂੰ ਹਟਾਉਣਾ ਚਾਹੁੰਦੇ ਹੋ?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">ਹਟਾਓ</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">ਹਟਾਓ</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">URL ਕਾਪੀ ਕੀਤਾ</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL ਕਾਪੀ ਕੀਤਾ</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">ਇਹ ਤਾਂ ਲਿਖਤ ਨਮੂਨਾ ਹੈ। ਅੱਖਰ ਆਕਾਰ ਘਟਾਉਣ ਵਧਾਉਣ ਸਮੇਂ ਵੱਡੇ ਛੋਟੇ ਅੱਖਰਾਂ ਦੀ ਜਾਂਚ ਇੱਥੇ ਕੀਤੀ ਜਾ ਸਕਦੀ ਹੈ। ਉੱਤਮ, ਪ੍ਰੀਤ, ਵਰ੍ਹੇ, ਸਿੰਘ</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2404,6 +2378,10 @@
   <string name="preference_enhanced_tracking_protection_strict">ਸਖ਼ਤ</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">ਮਜ਼ਬੂਤ ਟਰੈਕਿੰਗ ਸੁਰੱਖਿਆ ਅਤੇ ਵੱਧ ਤੇਜ਼ ਕਾਰਗੁਜ਼ਜਾਰੀ, ਪਰ ਕੁਝ ਸਾਈਟਾਂ ਠੀਕ ਤਰ੍ਹਾਂ ਕੰਮ ਨਹੀਂ ਕਰਨਗੀਆਂ।</string>
+  <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
+  <string name="preference_enhanced_tracking_protection_allow_list_baseline">ਵੈੱਬਸਾਈਟ ਨੂੰ ਵੱਡੇ ਪੱਧਰ ਉੱਤੇ ਗੜਬੜ ਹੋਣ ਤੋਂ ਬਚਣ ਲਈ %1$s ਨੂੰ ਆਪਣੇ-ਆਪ ਚਾਹੀਦੇ ਅਪਵਾਦ ਲਾਗੂ ਕਰਨ ਵਾਸਤੇ ਮਨਜ਼ੂਰੀ ਦਿਓ।</string>
+  <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience">ਛੋਟੇ ਮਸਲਿਆਂ ਨੂੰ ਠੀਕ ਕਰਨ ਅਤੇ ਸਹੂਲਤ ਦੇਣ ਵਾਲੇ ਫ਼ੀਚਰਾਂ ਨੂੰ ਦੇਣ ਵਾਸਤੇ ਵੀ ਛੋਟਾਂ ਨੂੰ ਆਪਣੇ-ਆਪ ਲਾਗੂ ਕਰੋ।</string>
   <!-- Accessibility text for the Strict protection information icon -->
   <string name="preference_enhanced_tracking_protection_strict_info_button">ਸਖ਼ਤ ਟਰੈਕਿੰਗ ਸੁਰੱਖਿਆ ਰਾਹੀਂ ਕਿਸ ਉੱਤੇ ਪਾਬੰਦੀ ਲਾਈ ਜਾਂਦੀ ਹੈ</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
@@ -2772,6 +2750,10 @@
   <string name="preferences_addresses_save_and_autofill_addresses_2">ਸਿਰਨਾਵਿਆਂ ਨੂੰ ਸੰਭਾਲੋ ਅਤੇ ਭਰੋ</string>
   <!-- Preference summary for saving and filling address data -->
   <string name="preferences_addresses_save_and_autofill_addresses_summary_2">ਫ਼ੋਨ ਨੰਬਰਾਂ ਅਤੇ ਈਮੇਲ ਸਿਰਨਾਵਿਆਂ ਸਮੇਤ</string>
+  <!-- Preference option for syncing addresses across devices. This is displayed when the user is not signed into sync -->
+  <string name="preferences_addresses_sync_addresses_across_devices">ਡਿਵਾਈਸਾਂ ਵਿਚਾਲੇ ਸਿਰਨਾਵਿਆਂ ਨੂੰ ਸਿੰਕ ਕਰੋ</string>
+  <!-- Preference option for syncing addresses across devices. This is displayed when the user is signed into sync -->
+  <string name="preferences_addresses_sync_addresses">ਸਿਰਨਾਵਿਆਂ ਨੂੰ ਸਿੰਕ ਕਰੋ</string>
   <!-- Title of the "Add card" screen -->
   <string name="credit_cards_add_card">ਕਾਰਡ ਜੋੜੋ</string>
   <!-- Title of the "Edit card" screen -->
@@ -2896,14 +2878,12 @@
   <string name="search_add_custom_engine_error_empty_search_string">ਖੋਜ ਸਤਰ ਦਿਓ</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">ਉਹ ਮਿਲਦੀ ਸਤਰ ਦੀ ਜਾਂਚ ਕਰੋ, ਜਿਵੇਂ ਮਿਸਾਲ ਰੂਪ ਵਿੱਚ</string>
-  <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">“%s” ਨਾਲ ਕਨੈਕਟ ਕਰਨ ਦੌਰਾਨ ਗ਼ਲਤੀ</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">%s ਬਣਾਇਆ</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ਬਣਾਇਆ</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">%s ਸੰਭਾਲਿਆ</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ਸੰਭਾਲਿਆ</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">%s ਹਟਾਓ</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ਹਟਾਓ</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">ਇਸਨੂੰ ਸਹਿਮਤੀ ਦੇਣ ਲਈ:</string>
   <!-- First step for the allowing a permission -->
@@ -2931,7 +2911,7 @@
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">ਕੋਈ ਸਾਈਟ ਛੋਟ ਨਹੀਂ</string>
   <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation">ਕੀ ਤੁਸੀਂ ਇਹ ਬੁੱਕਮਾਰਕ ਹਟਾਉਣਾ ਚਾਹੁੰਦੇ ਹੋ?</string>
+  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">ਕੀ ਤੁਸੀਂ ਇਹ ਬੁੱਕਮਾਰਕ ਹਟਾਉਣਾ ਚਾਹੁੰਦੇ ਹੋ?</string>
   <!-- Browser menu button that adds a shortcut to the home fragment -->
   <string name="browser_menu_add_to_shortcuts">ਸ਼ਾਰਟਕੱਟਾਂ ਵਿੱਚ ਜੋੜੋ</string>
   <!-- Browser menu button that removes a shortcut from the home fragment -->
@@ -3101,25 +3081,17 @@
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">ਉੱਤੇ ਜਾਓ</string>
   <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description">ਬੰਦ ਕਰੋ</string>
+  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">ਬੰਦ ਕਰੋ</string>
   <!--
     Pocket recommended stories
 
     Header text for a section on the home screen.
   -->
-  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">ਸੋਚਣ ਲਈ ਮਜ਼ਬੂਰ ਕਰਨ ਵਾਲੇ ਲੇਖ</string>
-  <!-- Header text for a section on the home screen. -->
   <string name="pocket_stories_header_2">ਲੇਖ</string>
   <!-- Header text for a section on the home screen. -->
   <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">ਵਿਸ਼ੇ ਮੁਤਾਬਕ ਲੇਖ</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
   <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">ਹੋਰ ਲੱਭੋ</string>
-  <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-  <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">%s ਦੀ ਸਹਾਇਤਾ ਨਾਲ</string>
-  <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Firefox ਪਰਿਵਾਰ ਦਾ ਹਿੱਸਾ। %s</string>
-  <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">ਹੋਰ ਜਾਣੋ</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">ਸਪੌਂਸਰ ਕੀਤੇ</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -3152,8 +3124,6 @@
   <string name="a11y_action_label_wallpaper_collection_learn_more">ਇਹ ਭੰਡਾਰ ਬਾਰੇ ਹੋਰ ਸਿੱਖਣ ਲਈ ਲਿੰਕ ਖੋਲ੍ਹੋ</string>
   <!-- Action label for links that point to an article. Talkback will append this to say "Double tap to read the article". -->
   <string name="a11y_action_label_read_article" moz:removedIn="141" tools:ignore="UnusedResources">ਲੇਖ ਨੂੰ ਪੜ੍ਹੋ</string>
-  <!-- Action label for links to the Firefox Pocket website. Talkback will append this to say "Double tap to open link to learn more". -->
-  <string name="a11y_action_label_pocket_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">ਹੋਰ ਜਾਣਨ ਲਈ ਲਿੰਕ ਨੂੰ ਖੋਲ੍ਹੋ</string>
   <!-- Content description for headings announced by accessibility service. %s is the text of the heading. Talkback will announce the text and then speak the word "Heading" indicating to the user that this text is a heading for a section. -->
   <string name="a11y_heading">%s, ਹੈਡਿੰਗ</string>
   <!-- Title for dialog displayed when trying to access links present in a text. -->
@@ -3795,7 +3765,9 @@
   <!-- The title of the explore extensions task for the setup checklist -->
   <string name="setup_checklist_task_explore_extensions">ਇਕਸਟੈਨਸ਼ਨਾਂ ਦੀ ਛਾਣਬੀਣ ਕਰੋ</string>
   <!-- The title of the search widget task for the setup checklist -->
-  <string name="setup_checklist_task_search_widget">ਖੋਜ ਵਿਜੈਟ ਨੂੰ ਇੰਸਟਾਲ ਕਰੋ</string>
+  <string name="setup_checklist_task_search_widget" moz:removedIn="143" tools:ignore="UnusedResources">ਖੋਜ ਵਿਜੈਟ ਨੂੰ ਇੰਸਟਾਲ ਕਰੋ</string>
+  <!-- The title of the search widget task for the setup checklist -->
+  <string name="setup_checklist_task_search_widget_2">ਖੋਜ ਵਿਜੈਦ ਬਾਰੇ ਪੜਤਾਲ ਕਰੋ</string>
   <!--
     ===== Setup checklist feature: Group titles =====
 
@@ -3860,4 +3832,32 @@
   <string name="review_prompt_feedback_header">ਸਾਨੂੰ ਅਫ਼ਸੋਸ ਹੈ ਕਿ ਤੁਹਾਨੂੰ ਮਸਲੇ ਆ ਰਹੇ ਹਨ। ਸਾਨੂੰ ਦੱਸੋ ਕਿ ਅਸੀਂ %1$s ਨੂੰ ਕਿਵੇਂ ਸੁਧਾਰ ਸਕਦੇ ਹਾਂ।</string>
   <!-- Label for a button opening a feedback forum -->
   <string name="review_prompt_feedback_button">ਸੁਝਾਅ ਦਿਓ</string>
+  <!--
+    Terms of use pop up prompt
+
+    Title for the pop up prompt
+  -->
+  <string name="terms_of_use_prompt_title">ਸਾਨੂੰ ਅੱਪਡੇਟ ਮਿਲਿਆ ਹੈ</string>
+  <!--
+    Message for the terms of use pop up prompt
+    %1$s is the product name "Firefox"
+    %2$s is the string terms_of_use_prompt_link_terms_of_use (Terms of Use) that is a link to the terms of use
+    %3$s is the string terms_of_use_prompt_link_privacy_notice (Privacy Notice) that is a link to the privacy notice
+  -->
+  <string name="terms_of_use_prompt_message_1">ਅਸੀਂ %1$s %2$s ਲਿਆਂਦਾ ਹੈ ਅਤੇ ਸਾਡੀਆਂ %3$s ਅੱਪਡੇਟ ਹੋ ਗਈਆਂ ਹਨ।</string>
+  <!--
+    Second part of the terms of use pop up prompt
+    %1$s is the string terms_of_use_prompt_link_learn_more (Learn more) that is a link to a website with more information about the terms of use
+  -->
+  <string name="terms_of_use_prompt_message_2">ਪੜਤਾਲ ਕਰਕੇ ਮਨਜ਼ੂਰ ਕਰਨ ਲਈ ਸਮਾਂ ਦਿਓ। %1$s।</string>
+  <!-- Terms of use link in the pop up prompt message that links to the terms of use -->
+  <string name="terms_of_use_prompt_link_terms_of_use">ਵਰਤੋਂ ਦੀਆਂ ਸ਼ਰਤਾਂ</string>
+  <!-- Privacy notice link in the pop up prompt message that links to the privacy notice -->
+  <string name="terms_of_use_prompt_link_privacy_notice">ਪਰਦੇਦਾਰੀ ਸੂਚਨਾ</string>
+  <!-- Learn more link in the pop up prompt message that links to a site with more information about the terms of use -->
+  <string name="terms_of_use_prompt_link_learn_more">ਹੋਰ ਜਾਣੋ</string>
+  <!-- Label for a button to accept the terms of use -->
+  <string name="terms_of_use_prompt_accept">ਮਨਜ਼ੂਰ</string>
+  <!-- Label for a button to postpone accepting the terms of use -->
+  <string name="terms_of_use_prompt_postpone">ਮੈਨੂੰ ਬਾਅਦ ਵਿੱਚ ਚੇਤੇ ਕਰਵਾਓ</string>
 </resources>

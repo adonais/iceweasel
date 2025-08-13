@@ -124,6 +124,8 @@
   <string name="mozac_feature_prompt_repost_negative_button_text">Annulla</string>
   <!-- Strings show in a dialog that appear when user confirm folder upload -->
   <string name="mozac_feature_prompt_folder_upload_confirm_title">Boles carrigare is archìvios?</string>
+  <!-- Prompt message displayed when user selects a specific folder. %1$s is a folder / directory name. -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_message">Assegura·ti chi custu situ siat fidadu in antis de carrigare cuntenutos dae “%1$s”.</string>
   <!-- Pressing this will dismiss the dialog and allow to upload folder -->
   <string name="mozac_feature_prompt_folder_upload_confirm_positive_button_text">Càrriga</string>
   <!-- Pressing this will dismiss the dialog and disallow to upload folder -->
@@ -170,6 +172,8 @@
   <string name="mozac_feature_prompts_identity_credentials_choose_account_for_provider">Identìfica·ti cun unu contu de %1$s</string>
   <!-- Title of the Identity Credential privacy policy dialog title. The %1$s will be replaced with the name of the provider. -->
   <string name="mozac_feature_prompts_identity_credentials_privacy_policy_title">Imprea %1$s comente frunidore de atzessu</string>
+  <!-- Title of the Identity Credential privacy policy dialog description. The %1$s will be replaced with the name of the provider, %2$s will be replaced with the account, %3$s will be replaced with the privacy policy url and  %4$s will be replaced with the terms of service. -->
+  <string name="mozac_feature_prompts_identity_credentials_privacy_policy_description" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[S’identificatzione a %1$s cun unu contu de %2$s est sugeta a sa <a href=\"%3$s\">Polìtica de riservadesa</a> e a is <a href=\"%4$s\">Cunditziones de su servìtziu</a> issoro]]></string>
   <!-- Text for the positive button of the Identity Credential dialogs. -->
   <string name="mozac_feature_prompts_identity_credentials_continue">Sighi</string>
   <!-- Text for the cancel button of the Identity Credential dialogs. -->

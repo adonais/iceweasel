@@ -145,6 +145,8 @@
     Do not translate or transliterate Focus Nightly.
   -->
   <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage">חיפוש ב־Focus Nightly</string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">מידע נוסף</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">פרטיות ואבטחה</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -481,8 +483,6 @@
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
   <string name="onboarding_first_screen_privacy_notice_link_2">הצהרת הפרטיות</string>
   <!-- New Onboarding flow first screen button label -->
-  <string name="onboarding_first_screen_button_agree_and_continue" moz:removedIn="140" tools:ignore="UnusedResources">הסכמה והמשך</string>
-  <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue_2">המשך</string>
   <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
   <string name="a11y_link_available">קישור זמין</string>
@@ -693,18 +693,6 @@
   <string name="preference_block_autoplay_audio_only_summary">מומלץ</string>
   <!-- Preference for block autoplay audio and video -->
   <string name="preference_block_autoplay_audio_video">חסימת שמע ווידאו</string>
-  <!-- Preference for studies -->
-  <string name="preference_studies" moz:removedIn="140">מחקרים</string>
-  <!-- Preference for studies summary -->
-  <string name="preference_studies_summary" tools:ignore="BrandUsage" moz:removedIn="140">‏Firefox עשוי להתקין ולהריץ מחקרים מדי פעם בפעם.</string>
-  <!-- Learn more link for studies, links to an article for more information about studies. -->
-  <string name="studies_learn_more" moz:removedIn="140">מידע נוסף</string>
-  <!-- Title of the remove studies button -->
-  <string name="studies_remove" moz:removedIn="140">הסרה</string>
-  <!-- Title of the active section on the studies list -->
-  <string name="studies_active" moz:removedIn="140">פעיל</string>
-  <!-- Title of the completed section on the studies list -->
-  <string name="studies_completed" moz:removedIn="140">הושלמו</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">ניפוי שגיאות מרחוק דרך USB/Wi-Fi</string>
   <!-- Text Button for show biometric prompt -->

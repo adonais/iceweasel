@@ -390,6 +390,9 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
                                       uint32_t aCoordinateType, int32_t aX,
                                       int32_t aY) override;
 
+  virtual std::pair<mozilla::LayoutDeviceIntRect, nsIWidget*> GetCaretRect()
+      override;
+
   /**
    * Invalidate cached HyperText offsets. This should be called whenever a
    * child is added or removed or the text of a text leaf child is changed.

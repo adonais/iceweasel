@@ -249,8 +249,8 @@ enum class DelazifyFailureReason {
 extern const CompilationStencil* DelazifyCanonicalScriptedFunction(
     FrontendContext* fc, js::LifoAlloc& tempLifoAlloc,
     const JS::PrefableCompileOptions& prefableOptions,
-    ScopeBindingCache* scopeCache, CompilationStencil& context,
-    ScriptIndex scriptIndex, InitialStencilAndDelazifications* stencils,
+    ScopeBindingCache* scopeCache, ScriptIndex scriptIndex,
+    InitialStencilAndDelazifications* stencils,
     DelazifyFailureReason* failureReason);
 
 // Certain compile options will disable the syntax parser entirely.

@@ -28,6 +28,7 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
      * These will be restored when the tests end.
      */
     private val initialFeatureFlags = FeatureFlags(
+        isHomepageHeaderEnabled = settings.showHomepageHeader,
         isPocketEnabled = settings.showPocketRecommendationsFeature,
         isRecentTabsFeatureEnabled = settings.showRecentTabsFeature,
         isRecentlyVisitedFeatureEnabled = settings.historyMetadataUIFeature,
@@ -43,7 +44,7 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
         isMicrosurveyEnabled = settings.microsurveyFeatureEnabled,
         shouldUseBottomToolbar = settings.shouldUseBottomToolbar,
         onboardingFeatureEnabled = settings.onboardingFeatureEnabled,
-        isComposeHomepageEnabled = settings.enableComposeHomepage,
+        isUseNewCrashReporterDialog = settings.useNewCrashReporterDialog,
     )
 
     /**
@@ -51,6 +52,7 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
      */
     private var updatedFeatureFlags = initialFeatureFlags.copy()
 
+    override var isHomepageHeaderEnabled: Boolean by updatedFeatureFlags::isHomepageHeaderEnabled
     override var isPocketEnabled: Boolean by updatedFeatureFlags::isPocketEnabled
     override var isWallpaperOnboardingEnabled: Boolean by updatedFeatureFlags::isWallpaperOnboardingEnabled
     override var isRecentTabsFeatureEnabled: Boolean by updatedFeatureFlags::isRecentTabsFeatureEnabled
@@ -64,7 +66,7 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
     override var isMicrosurveyEnabled: Boolean by updatedFeatureFlags::isMicrosurveyEnabled
     override var shouldUseBottomToolbar: Boolean by updatedFeatureFlags::shouldUseBottomToolbar
     override var onboardingFeatureEnabled: Boolean by updatedFeatureFlags::onboardingFeatureEnabled
-    override var isComposeHomepageEnabled: Boolean by updatedFeatureFlags::isComposeHomepageEnabled
+    override var isUseNewCrashReporterDialog: Boolean by updatedFeatureFlags::isUseNewCrashReporterDialog
 
     override fun applyFlagUpdates() {
         Log.i(TAG, "applyFlagUpdates: Trying to apply the updated feature flags: $updatedFeatureFlags")
@@ -81,6 +83,7 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
     override var isDeleteSitePermissionsEnabled: Boolean by updatedFeatureFlags::isDeleteSitePermissionsEnabled
 
     private fun applyFeatureFlags(featureFlags: FeatureFlags) {
+        settings.showHomepageHeader = featureFlags.isHomepageHeaderEnabled
         settings.showPocketRecommendationsFeature = featureFlags.isPocketEnabled
         settings.showRecentTabsFeature = featureFlags.isRecentTabsFeatureEnabled
         settings.historyMetadataUIFeature = featureFlags.isRecentlyVisitedFeatureEnabled
@@ -96,11 +99,12 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
         setETPPolicy(featureFlags.etpPolicy)
         setPermissions(PhoneFeature.LOCATION, featureFlags.isLocationPermissionEnabled)
         settings.onboardingFeatureEnabled = featureFlags.onboardingFeatureEnabled
-        settings.enableComposeHomepage = featureFlags.isComposeHomepageEnabled
+        settings.useNewCrashReporterDialog = featureFlags.isUseNewCrashReporterDialog
     }
 }
 
 private data class FeatureFlags(
+    var isHomepageHeaderEnabled: Boolean,
     var isPocketEnabled: Boolean,
     var isRecentTabsFeatureEnabled: Boolean,
     var isRecentlyVisitedFeatureEnabled: Boolean,
@@ -116,7 +120,7 @@ private data class FeatureFlags(
     var isMicrosurveyEnabled: Boolean,
     var shouldUseBottomToolbar: Boolean,
     var onboardingFeatureEnabled: Boolean,
-    var isComposeHomepageEnabled: Boolean,
+    var isUseNewCrashReporterDialog: Boolean,
 )
 
 internal fun getETPPolicy(settings: Settings): ETPPolicy {

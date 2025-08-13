@@ -8,14 +8,14 @@
 
 #include "gfxContext.h"
 #include "gfxUtils.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/layers/StackingContextHelper.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/webrender/WebRenderTypes.h"
-#include "nsPresContext.h"
 #include "nsCSSRendering.h"
 #include "nsLayoutUtils.h"
+#include "nsPresContext.h"
 #include "nsRegion.h"
 
 using namespace mozilla::gfx;

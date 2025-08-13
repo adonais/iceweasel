@@ -40,6 +40,12 @@ void MsaaIdGenerator::ReleasePendingIDs() {
   mReleaseIDTimer = nullptr;
 }
 
+void MsaaIdGenerator::ReleasePendingIdsCallback(nsITimer* aTimer,
+                                                void* aClosure) {
+  MsaaIdGenerator* gen = (MsaaIdGenerator*)aClosure;
+  gen->ReleasePendingIDs();
+}
+
 bool MsaaIdGenerator::ReleaseID(uint32_t aID) {
   MOZ_ASSERT(aID != MsaaAccessible::kNoID);
   // Releasing an id means it can be reused. Reusing ids too quickly can
@@ -57,16 +63,15 @@ bool MsaaIdGenerator::ReleaseID(uint32_t aID) {
   }
   const uint32_t kReleaseDelay = 1000;
   mIDsToRelease.AppendElement(aID);
-  if (mReleaseIDTimer) {
-    mReleaseIDTimer->SetDelay(kReleaseDelay);
-  } else {
-    NS_NewTimerWithCallback(
-        getter_AddRefs(mReleaseIDTimer),
-        // mReleaseIDTimer is cancelled on shutdown and this is a static
-        // instance, so capturing this here is safe.
-        [this](nsITimer* aTimer) { ReleasePendingIDs(); }, kReleaseDelay,
-        nsITimer::TYPE_ONE_SHOT, "a11y::MsaaIdGenerator::ReleaseIDDelayed");
+  if (!mReleaseIDTimer) {
+    mReleaseIDTimer = NS_NewTimer();
   }
+  // mReleaseIDTimer is cancelled on shutdown and this is a static instance,
+  // so capturing this here is safe.
+  mReleaseIDTimer->InitWithNamedFuncCallback(
+      ReleasePendingIdsCallback, this, kReleaseDelay, nsITimer::TYPE_ONE_SHOT,
+      "a11y::MsaaIdGenerator::ReleaseIDDelayed");
+
   return true;
 }
 

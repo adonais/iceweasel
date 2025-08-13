@@ -1,4 +1,4 @@
-# Copyright (c) 2013 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -6,11 +6,12 @@ import("//chromium/build/config/c++/c++.gni")
 import("//chromium/build/config/chrome_build.gni")
 import("//chromium/build/config/clang/clang.gni")
 import("//chromium/build/config/compiler/compiler.gni")
+import("//chromium/build/config/rust.gni")
 import("//chromium/build/config/sanitizers/sanitizers.gni")
 import("//chromium/build/config/win/control_flow_guard.gni")
 import("//chromium/build/config/win/visual_studio_version.gni")
 import("//chromium/build/timestamp.gni")
-import("//chromium/build/toolchain/goma.gni")
+import("//chromium/build/toolchain/rbe.gni")
 import("//chromium/build/toolchain/toolchain.gni")
 
 assert(is_win)
@@ -66,7 +67,14 @@ config("compiler") {
   ]
 
   if (is_clang) {
-    cflags += [ "/Zc:twoPhase" ]
+    cflags += [
+      "/Zc:twoPhase",
+
+      # Consistently use backslash as the path separator when expanding the
+      # __FILE__ macro when targeting Windows regardless of the build
+      # environment.
+      "-ffile-reproducible",
+    ]
   }
 
   # Force C/C++ mode for the given GN detected file type. This is necessary
@@ -75,18 +83,13 @@ config("compiler") {
   cflags_c = [ "/TC" ]
   cflags_cc = [ "/TP" ]
 
-  cflags += [
-    # Work around crbug.com/526851, bug in VS 2015 RTM compiler.
-    "/Zc:sizedDealloc-",
-  ]
-
   if (is_clang) {
     # Required to make the 19041 SDK compatible with clang-cl.
     # See https://crbug.com/1089996 issue #2 for details.
     cflags += [ "/D__WRL_ENABLE_FUNCTION_STATICS__" ]
 
     # Tell clang which version of MSVC to emulate.
-    cflags += [ "-fmsc-version=1916" ]
+    cflags += [ "-fmsc-version=1934" ]
 
     if (is_component_build) {
       cflags += [
@@ -97,11 +100,19 @@ config("compiler") {
     }
 
     if (target_cpu == "x86") {
-      cflags += [ "-m32" ]
+      if (host_cpu == "x86" || host_cpu == "x64") {
+        cflags += [ "-m32" ]
+      } else {
+        cflags += [ "--target=i386-windows" ]
+      }
     } else if (target_cpu == "x64") {
-      cflags += [ "-m64" ]
+      if (host_cpu == "x86" || host_cpu == "x64") {
+        cflags += [ "-m64" ]
+      } else {
+        cflags += [ "--target=x86_64-windows" ]
+      }
     } else if (target_cpu == "arm64") {
-      cflags += [ "--target=arm64-windows" ]
+      cflags += [ "--target=aarch64-pc-windows" ]
     } else {
       assert(false, "unknown target_cpu " + target_cpu)
     }
@@ -113,13 +124,13 @@ config("compiler") {
       cflags += [ "-msse3" ]
     }
 
-    if (exec_script("//chromium/build/win/use_ansi_codes.py", [], "trim string") ==
+    # Enable ANSI escape codes if something emulating them is around (cmd.exe
+    # doesn't understand ANSI escape codes by default). Make sure to not enable
+    # this if remoteexec is in use, because this will lower cache hits.
+    if (!use_remoteexec &&
+        exec_script("//chromium/build/win/use_ansi_codes.py", [], "trim string") ==
         "True") {
-      cflags += [
-        # cmd.exe doesn't understand ANSI escape codes by default,
-        # so only enable them if something emulating them is around.
-        "-fansi-escape-codes",
-      ]
+      cflags += [ "-fansi-escape-codes" ]
     }
 
     if (use_clang_diagnostics_format) {
@@ -127,8 +138,7 @@ config("compiler") {
     }
   }
 
-  # Disabled with cc_wrapper because of https://github.com/mozilla/sccache/issues/264
-  if (use_lld && !use_thin_lto && (is_clang || !use_goma) && cc_wrapper == "") {
+  if (use_lld && !use_thin_lto) {
     # /Brepro lets the compiler not write the mtime field in the .obj output.
     # link.exe /incremental relies on this field to work correctly, but lld
     # never looks at this timestamp, so it's safe to pass this flag with
@@ -150,6 +160,21 @@ config("compiler") {
 
     # Don't look for libpaths in %LIB%, similar to /X in cflags above.
     ldflags += [ "/lldignoreenv" ]
+  }
+
+  # Some binaries create PDBs larger than 4 GiB. Increasing the PDB page size
+  # to 8 KiB allows 8 GiB PDBs. The larger page size also allows larger block maps
+  # which is a PDB limit that was hit in https://crbug.com/1406510. The page size
+  # can easily be increased in the future to allow even larger PDBs or larger
+  # block maps.
+  # This flag requires lld-link.exe or link.exe from VS 2022 or later to create
+  # the PDBs, and tools from circa 22H2 or later to consume the PDBs.
+  # Debug component builds can generate PDBs that exceed 8 GiB, so use an
+  # even larger page size, allowing up to 16 GiB PDBs.
+  if (is_debug && !is_component_build) {
+    ldflags += [ "/pdbpagesize:16384" ]
+  } else {
+    ldflags += [ "/pdbpagesize:8192" ]
   }
 
   if (!is_debug && !is_component_build) {
@@ -258,10 +283,7 @@ config("runtime_library") {
   }
 }
 
-# Chromium supports running on Windows 7, but if these constants are set to
-# Windows 7, then newer APIs aren't made available by the Windows SDK.
-# So we set this to Windows 10 and then are careful to check at runtime
-# to only call newer APIs when they're available.
+# Chromium only supports Windowes 10+.
 # Some third-party libraries assume that these defines set what version of
 # Windows is available at runtime. Targets using these libraries need to
 # manually override this config for their compiles.
@@ -279,46 +301,11 @@ config("winver") {
 
 # Linker flags for Windows SDK setup, this is applied only to EXEs and DLLs.
 config("sdk_link") {
-  assert(target_cpu == "x64" || target_cpu == "x86" || target_cpu == "arm" ||
-             target_cpu == "arm64",
-         "Only supports x64, x86, arm and arm64 CPUs")
-  if (target_cpu == "x64") {
-    ldflags = [ "/MACHINE:X64" ]
-  } else if (target_cpu == "x86") {
+  if (target_cpu == "x86") {
     ldflags = [
-      "/MACHINE:X86",
       "/SAFESEH",  # Not compatible with x64 so use only for x86.
       "/largeaddressaware",
     ]
-  } else if (target_cpu == "arm") {
-    ldflags = [ "/MACHINE:ARM" ]
-  } else if (target_cpu == "arm64") {
-    ldflags = [ "/MACHINE:ARM64" ]
-  }
-
-  vcvars_toolchain_data = exec_script("../../toolchain/win/setup_toolchain.py",
-                                      [
-                                        visual_studio_path,
-                                        windows_sdk_path,
-                                        visual_studio_runtime_dirs,
-                                        current_os,
-                                        target_cpu,
-                                        "none",
-                                      ],
-                                      "scope")
-
-  vc_lib_path = vcvars_toolchain_data.vc_lib_path
-  if (defined(vcvars_toolchain_data.vc_lib_atlmfc_path)) {
-    vc_lib_atlmfc_path = vcvars_toolchain_data.vc_lib_atlmfc_path
-  }
-  vc_lib_um_path = vcvars_toolchain_data.vc_lib_um_path
-
-  lib_dirs = [
-    "$vc_lib_um_path",
-    "$vc_lib_path",
-  ]
-  if (defined(vc_lib_atlmfc_path)) {
-    lib_dirs += [ "$vc_lib_atlmfc_path" ]
   }
 }
 
@@ -347,12 +334,16 @@ config("default_cfg_compiler") {
   # This is needed to allow functions to be called by code that is built
   # with CFG enabled, such as system libraries.
   # The CFG guards are only emitted if |win_enable_cfg_guards| is enabled.
-  if (is_clang) {
-    if (win_enable_cfg_guards) {
+  if (win_enable_cfg_guards) {
+    if (is_clang) {
       cflags = [ "/guard:cf" ]
-    } else {
+    }
+    rustflags = [ "-Ccontrol-flow-guard" ]
+  } else {
+    if (is_clang) {
       cflags = [ "/guard:cf,nochecks" ]
     }
+    rustflags = [ "-Ccontrol-flow-guard=nochecks" ]
   }
 }
 
@@ -365,6 +356,7 @@ config("disable_guards_cfg_compiler") {
   if (is_clang) {
     cflags = [ "/guard:cf,nochecks" ]
   }
+  rustflags = [ "-Ccontrol-flow-guard=nochecks" ]
 }
 
 config("cfi_linker") {
@@ -382,35 +374,55 @@ config("cfi_linker") {
 }
 
 # This is a superset of all the delayloads needed for chrome.exe, chrome.dll,
-# chrome_child.dll, and chrome_elf.dll. The linker will automatically ignore
-# anything which is not linked to the binary at all.
-# Most of the dlls are simply not required at startup (or at all, depending
-# on how the browser is used). The following dlls are interconnected and need to
-# be delayloaded together to ensure user32 does not load too early or at all,
-# depending on the process type: user32, gdi32, comctl32, comdlg32, cryptui,
-# d3d9, dwmapi, imm32, msi, ole32, oleacc, rstrtmgr, shell32, shlwapi, and
-# uxtheme.
-# There are some exceptions to this list which need to be declared separately.
-# Some dlls cannot be delayloaded by chrome_child.dll due to the sandbox
-# restrictions that prevent them from being loaded properly. Those dlls are
-# specified in the separate config below.
+# and chrome_elf.dll. The linker will automatically ignore anything which is not
+# linked to the binary at all (it is harmless to have an unmatched /delayload).
+#
+# We delayload most libraries as the dlls are simply not required at startup (or
+# at all, depending on the process type). In unsandboxed process they will load
+# when first needed.
+#
+# Some dlls open handles when they are loaded, and we may not want them to be
+# loaded in renderers or other sandboxed processes. Conversely, some dlls must
+# be loaded before sandbox lockdown.
+#
+# Some dlls themselves load others - in particular, to avoid unconditionally
+# loading user32.dll - we require that the following dlls are all delayloaded:
+# user32, gdi32, comctl32, comdlg32, cryptui, d3d9, dwmapi, imm32, msi, ole32,
+# oleacc, rstrtmgr, shell32, shlwapi, and uxtheme.
+#
+# Advapi32.dll is unconditionally loaded at process startup on Windows 10, but
+# on Windows 11 it is not, which makes it worthwhile to delay load it.
+# Additionally, advapi32.dll exports several functions that are forwarded to
+# other DLLs such as cryptbase.dll. If calls to those functions are present but
+# there are some processes where the functions are never called then delay
+# loading of advapi32.dll avoids pulling in those DLLs (such as cryptbase.dll)
+# unnecessarily, even if advapi32.dll itself is loaded.
+#
+# This config applies to chrome.exe, chrome.dll, chrome_elf.dll (& others).
+#
 # This config should also be used for any test binary whose goal is to run
 # tests with the full browser.
 config("delayloads") {
   ldflags = [
+    "/DELAYLOAD:api-ms-win-core-synch-l1-2-0.dll",
     "/DELAYLOAD:api-ms-win-core-winrt-error-l1-1-0.dll",
     "/DELAYLOAD:api-ms-win-core-winrt-l1-1-0.dll",
     "/DELAYLOAD:api-ms-win-core-winrt-string-l1-1-0.dll",
+    "/DELAYLOAD:advapi32.dll",
+    "/DELAYLOAD:bcryptprimitives.dll",
     "/DELAYLOAD:comctl32.dll",
     "/DELAYLOAD:comdlg32.dll",
     "/DELAYLOAD:credui.dll",
     "/DELAYLOAD:cryptui.dll",
     "/DELAYLOAD:d3d11.dll",
+    "/DELAYLOAD:d3d12.dll",
     "/DELAYLOAD:d3d9.dll",
+    "/DELAYLOAD:dcomp.dll",
     "/DELAYLOAD:dwmapi.dll",
     "/DELAYLOAD:dxgi.dll",
     "/DELAYLOAD:dxva2.dll",
     "/DELAYLOAD:esent.dll",
+    "/DELAYLOAD:fontsub.dll",
     "/DELAYLOAD:gdi32.dll",
     "/DELAYLOAD:hid.dll",
     "/DELAYLOAD:imagehlp.dll",
@@ -420,6 +432,7 @@ config("delayloads") {
     "/DELAYLOAD:ncrypt.dll",
     "/DELAYLOAD:ole32.dll",
     "/DELAYLOAD:oleacc.dll",
+    "/DELAYLOAD:pdh.dll",
     "/DELAYLOAD:propsys.dll",
     "/DELAYLOAD:psapi.dll",
     "/DELAYLOAD:rpcrt4.dll",
@@ -427,6 +440,7 @@ config("delayloads") {
     "/DELAYLOAD:setupapi.dll",
     "/DELAYLOAD:shell32.dll",
     "/DELAYLOAD:shlwapi.dll",
+    "/DELAYLOAD:uiautomationcore.dll",
     "/DELAYLOAD:urlmon.dll",
     "/DELAYLOAD:user32.dll",
     "/DELAYLOAD:usp10.dll",
@@ -440,9 +454,10 @@ config("delayloads") {
   ]
 }
 
+# This config (along with `:delayloads`) applies to chrome.exe & chrome_elf.dll.
+# Entries should not appear in both configs.
 config("delayloads_not_for_child_dll") {
   ldflags = [
-    "/DELAYLOAD:advapi32.dll",
     "/DELAYLOAD:crypt32.dll",
     "/DELAYLOAD:dbghelp.dll",
     "/DELAYLOAD:dhcpcsvc.dll",
@@ -450,7 +465,6 @@ config("delayloads_not_for_child_dll") {
     "/DELAYLOAD:iphlpapi.dll",
     "/DELAYLOAD:oleaut32.dll",
     "/DELAYLOAD:secur32.dll",
-    "/DELAYLOAD:uiautomationcore.dll",
     "/DELAYLOAD:userenv.dll",
     "/DELAYLOAD:winhttp.dll",
     "/DELAYLOAD:winmm.dll",
@@ -458,6 +472,29 @@ config("delayloads_not_for_child_dll") {
     "/DELAYLOAD:wintrust.dll",
     "/DELAYLOAD:ws2_32.dll",
   ]
+}
+
+# ACLs are placed on the filesystem in order to allow chrome to launch
+# sandboxed processes in an app container when run from the out directory.
+group("maybe_set_appcontainer_acls") {
+  # Exclude setting ACLs when build is not happening on chromium, or with a different toolchain.
+  if (build_with_chromium && target_cpu == target_cpu && host_os == "win") {
+    deps = [ ":set_appcontainer_acls" ]
+  }
+}
+
+if (build_with_chromium && target_cpu == target_cpu && host_os == "win") {
+  action("set_appcontainer_acls") {
+    script = "//chromium/build/win/set_appcontainer_acls.py"
+    stamp_file = "$target_out_dir/acls.stamp"
+    inputs = [ script ]
+    outputs = [ stamp_file ]
+
+    args = [
+      "--stamp=" + rebase_path(stamp_file, root_out_dir),
+      "--dir=" + rebase_path(root_out_dir, root_out_dir),
+    ]
+  }
 }
 
 # CRT --------------------------------------------------------------------------
@@ -492,6 +529,10 @@ config("release_crt") {
   if (is_component_build) {
     cflags = [ "/MD" ]
 
+    # /MD specifies msvcrt.lib as the CRT library, which is the dynamic+release
+    # version. Rust needs to agree, and its default mode is dynamic+release, so
+    # we do nothing here. See https://github.com/rust-lang/rust/issues/39016.
+
     if (use_custom_libcxx) {
       # On Windows, including libcpmt[d]/msvcprt[d] explicitly links the C++
       # standard library, which libc++ needs for exception_ptr internals.
@@ -499,6 +540,12 @@ config("release_crt") {
     }
   } else {
     cflags = [ "/MT" ]
+
+    # /MT specifies libcmt.lib as the CRT library, which is the static+release
+    # version. Rust needs to agree, so we tell it to use the static+release CRT
+    # as well. See https://github.com/rust-lang/rust/issues/39016.
+    rustflags = [ "-Ctarget-feature=+crt-static" ]
+
     if (use_custom_libcxx) {
       ldflags = [ "/DEFAULTLIB:libcpmt.lib" ]
     }
@@ -509,11 +556,26 @@ config("dynamic_crt") {
   if (is_debug) {
     # This pulls in the DLL debug CRT and defines _DEBUG
     cflags = [ "/MDd" ]
+
+    # /MDd specifies msvcrtd.lib as the CRT library. Rust needs to agree, so we
+    # specify it explicitly. Rust defaults to the dynamic+release library, which
+    # we remove here, and then replace. See
+    # https://github.com/rust-lang/rust/issues/39016.
+    rustflags = [
+      "-Clink-arg=/nodefaultlib:msvcrt.lib",
+      "-Clink-arg=msvcrtd.lib",
+    ]
+
     if (use_custom_libcxx) {
       ldflags = [ "/DEFAULTLIB:msvcprtd.lib" ]
     }
   } else {
     cflags = [ "/MD" ]
+
+    # /MD specifies msvcrt.lib as the CRT library, which is the dynamic+release
+    # version. Rust needs to agree, and its default mode is dynamic+release, so
+    # we do nothing here. See https://github.com/rust-lang/rust/issues/39016.
+
     if (use_custom_libcxx) {
       ldflags = [ "/DEFAULTLIB:msvcprt.lib" ]
     }
@@ -524,11 +586,28 @@ config("static_crt") {
   if (is_debug) {
     # This pulls in the static debug CRT and defines _DEBUG
     cflags = [ "/MTd" ]
+
+    # /MTd specifies libcmtd.lib as the CRT library. Rust needs to agree, so we
+    # specify it explicitly. We tell Rust that we're using the static CRT but
+    # remove the release library that it chooses, and replace with the debug
+    # library. See https://github.com/rust-lang/rust/issues/39016.
+    rustflags = [
+      "-Ctarget-feature=+crt-static",
+      "-Clink-arg=/nodefaultlib:libcmt.lib",
+      "-Clink-arg=libcmtd.lib",
+    ]
+
     if (use_custom_libcxx) {
       ldflags = [ "/DEFAULTLIB:libcpmtd.lib" ]
     }
   } else {
     cflags = [ "/MT" ]
+
+    # /MT specifies libcmt.lib as the CRT library, which is the static+release
+    # version. Rust needs to agree, so we tell it to use the static+release CRT
+    # as well. See https://github.com/rust-lang/rust/issues/39016.
+    rustflags = [ "-Ctarget-feature=+crt-static" ]
+
     if (use_custom_libcxx) {
       ldflags = [ "/DEFAULTLIB:libcpmt.lib" ]
     }
@@ -538,17 +617,9 @@ config("static_crt") {
 # Subsystem --------------------------------------------------------------------
 
 # This is appended to the subsystem to specify a minimum version.
-if (target_cpu == "x64") {
-  # The number after the comma is the minimum required OS version.
-  # 5.02 = Windows Server 2003.
-  subsystem_version_suffix = ",5.02"
-} else if (target_cpu == "arm64") {
-  # Windows ARM64 requires Windows 10.
-  subsystem_version_suffix = ",10.0"
-} else {
-  # 5.01 = Windows XP.
-  subsystem_version_suffix = ",5.01"
-}
+# The number after the comma is the minimum required OS version.
+# Set to 10.0 since we only support >= Win10 since M110.
+subsystem_version_suffix = ",10.0"
 
 config("console") {
   ldflags = [ "/SUBSYSTEM:CONSOLE$subsystem_version_suffix" ]
@@ -574,6 +645,10 @@ config("default_incremental_linking") {
       # TODO(thakis): /INCREMENTAL is on by default in link.exe, but not in
       # lld.
       ldflags += [ "/OPT:NOREF" ]
+
+      # TODO(crbug.com/40267564): Mixing incrememntal and icf produces an error
+      # in lld-link.
+      ldflags += [ "/OPT:NOICF" ]
     }
   } else {
     ldflags = [ "/INCREMENTAL:NO" ]

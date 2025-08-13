@@ -23,12 +23,12 @@ using Microsoft::WRL::MakeAndInitialize;
 
 /* static */
 MFMediaEngineAudioStream* MFMediaEngineAudioStream::Create(
-    uint64_t aStreamId, const TrackInfo& aInfo, bool aIsEncrytpedCustomInit,
+    uint64_t aStreamId, const TrackInfo& aInfo, bool aIsEncryptedCustomInit,
     MFMediaSource* aParentSource) {
   MOZ_ASSERT(aInfo.IsAudio());
   MFMediaEngineAudioStream* stream;
   if (FAILED(MakeAndInitialize<MFMediaEngineAudioStream>(
-          &stream, aStreamId, aInfo, aIsEncrytpedCustomInit, aParentSource))) {
+          &stream, aStreamId, aInfo, aIsEncryptedCustomInit, aParentSource))) {
     return nullptr;
   }
   return stream;
@@ -130,7 +130,7 @@ nsCString MFMediaEngineAudioStream::GetCodecName() const {
 }
 
 bool MFMediaEngineAudioStream::IsEncrypted() const {
-  return mAudioInfo.mCrypto.IsEncrypted() || mIsEncrytpedCustomInit;
+  return mAudioInfo.mCrypto.IsEncrypted() || mIsEncryptedCustomInit;
 }
 
 #undef LOG

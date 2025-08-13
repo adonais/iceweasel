@@ -900,7 +900,7 @@ function isFrameBlockedByCSP(node) {
     return false;
   }
 
-  const res = node.ownerDocument.csp.shouldLoad(
+  const res = node.ownerDocument.policyContainer.csp.shouldLoad(
     Ci.nsIContentPolicy.TYPE_SUBDOCUMENT,
     null, // nsICSPEventListener
     null, // nsILoadInfo

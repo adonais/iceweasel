@@ -449,10 +449,6 @@
     a section where users see a list of tabs that they have visited in the past few days
   -->
   <string name="customize_toggle_recently_visited">Hìaj nākà gini’hiājt</string>
-  <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">Nuguan ‘hiaj nadigi’ñûn’ ‘ngō sa huāa</string>
-  <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-  <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">Nej sa giri sa gū’nàj %s</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">Nuguan’ ru’hue nej si du’hue</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -800,9 +796,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Nādūre\' sa gini\'iājt</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">Ngà nare\' nej sa gini\'iājt</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Ngà nare\' nej sa gini\'iājt</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">Ngà nare\' %1$s</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Ngà nare\' %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Nādūre\'</string>
   <!--
@@ -844,9 +840,9 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">Huā yītïnj ruhuât nādure\'t kārpetâ nan anj</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">Huā yītïnj ruhuât nādure\'t kārpetâ nan anj</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog">%s nādure’ej nej sa naguit dan.</string>
+  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s nādure’ej nej sa naguit dan.</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">Dūyichin\'</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -870,7 +866,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">Nādūre\'</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">Nā\'nïnj sà\'</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">Nā\'nïnj sà\'</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -881,7 +877,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">Nādūnā sa huā riña kārpeta</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">Gāyi\'ì sēsiûn da\' ga\'ue gini\'iāt riña màn nej sa arâ sun nīchrò\' doj huā nūguan\'àan</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">Gāyi\'ì sēsiûn da\' ga\'ue gini\'iāt riña màn nej sa arâ sun nīchrò\' doj huā nūguan\'àan</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -889,28 +885,28 @@
   <!-- Bookmark NAME editing field label -->
   <string name="bookmark_name_label">SI YŪGUI</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">Nūtà\' kārpêta</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">Nūtà\' kārpêta</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">Nāguī karpêta</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">Da\'ui gā \'ngō si yūgui</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">Da\'ui gā \'ngō si yūgui</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">Sê URL huin</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">Nitāj sa arâj sun nīchrà\'t hua hiūj nan</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">Nitāj sa arâj sun nīchrà\'t hua hiūj nan</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">Ngà nare\' %1$s</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">Ngà nare\' nej sa arâj sun nīchrò\' doj</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">Ngà nare\' nej sa arâj sun nīchrò\' doj</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3">Nādure’ nej karpetâ naguit</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">Nādure’ nej karpetâ naguit</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">NĀNIKÀJ RŪKÙ</string>
   <!-- Text for the button to search all bookmarks -->
-  <string name="bookmark_search">Dūguatûj nuguan\'an</string>
+  <string name="bookmark_search" tools:ignore="UnusedResources" moz:removedIn="143">Dūguatûj nuguan\'an</string>
   <!--
     Site Permissions
 
@@ -1032,7 +1028,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d rakïj ñanj naguit</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">Nej rakïj ñanj na\'nín sà\'t</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Nej rakïj ñanj na\'nín sà\'t</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection">Ngà nanun sà\' nej sa nachra chrē\'t</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -1158,9 +1154,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">Ganare\' sa ganachra chrē\'t</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Ganare\' sa ganachra chrē\'t</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">Nadunâ si yūgui sa ganachra chrē\'t</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Nadunâ si yūgui sa ganachra chrē\'t</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Ganarán riña rakïj ñanj</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -1191,9 +1187,9 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">Huā yītïnj ruhuât nādure\'t %1$s anj</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">Nādūre\'</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Nādūre\'</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">Ngà naka URL</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">Ngà naka URL</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Ni\'iāj sò\' hua lechrâ nan. Dānaj gūruguì\'ij ni\'iājt sisī nāgi\'iaj yāchìjt asi nāgi\'iaj lít man.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -1645,14 +1641,12 @@
   <string name="search_add_custom_engine_error_empty_search_string">Gāchrūn \'ngō kādenâ nanà\'uì\'t</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Gīni\'iāj sisī dàj rû\' hua kādenâ \'na\' diganj hua si kādenât</string>
-  <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">Na\'ue gi\'iaj kōnektandoj ngà “%s”</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">%s ngà nahuij gahui</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ngà nahuij gahui</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">Ngà nanun sà\' %s</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Ngà nanun sà\' %s</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">Ngà nare\' %s</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Ngà nare\' %s</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Da\' ga\'ue gā\'nïn:</string>
   <!-- First step for the allowing a permission -->
@@ -1678,7 +1672,7 @@
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">Nitāj à\'ngō nej sîtio gūnàj</string>
   <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation">Huā yītïnj ruhuât nādure\'t markadô nan anj.</string>
+  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">Huā yītïnj ruhuât nādure\'t markadô nan anj.</string>
   <!-- Browser menu button that adds a shortcut to the home fragment -->
   <string name="browser_menu_add_to_shortcuts">Nā’nïnj man riña āksêso dīrêkto</string>
   <!-- Browser menu button that removes a shortcut from the home fragment -->
@@ -1795,23 +1789,11 @@
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">Gāchē nun gan’ānj nāhuīt</string>
   <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description">Nārán</string>
-  <!--
-    Pocket recommended stories
-
-    Header text for a section on the home screen.
-  -->
-  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">Nuguan ‘hiaj nadigi’ñûn’ ‘ngō sa huāa</string>
+  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">Nārán</string>
   <!-- Header text for a section on the home screen. -->
   <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">Nej nuguan’ nīkāj da’ têma</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
   <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">Gīni’in doj sa huāa</string>
-  <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-  <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">Rugûñu\'ūnj sa gu\'nàj %s.</string>
-  <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Dugui’ yi’nïn’ Firefox huin. %s</string>
-  <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">Gāhuin chrūn doj</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Sa rugûñu’ūnj rukû nan</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -1830,8 +1812,6 @@
   <string name="a11y_action_label_wallpaper_collection_learn_more">nā’nïn riña enlâse da’ gīni’înt doj dàj hua rayi’î yi’nïn’ nan</string>
   <!-- Action label for links that point to an article. Talkback will append this to say "Double tap to read the article". -->
   <string name="a11y_action_label_read_article" moz:removedIn="141" tools:ignore="UnusedResources">gāhiā riña ñanj dan</string>
-  <!-- Action label for links to the Firefox Pocket website. Talkback will append this to say "Double tap to open link to learn more". -->
-  <string name="a11y_action_label_pocket_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">nā’nïn riña enlâse da’ gīni’înt doj</string>
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->

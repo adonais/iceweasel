@@ -69,8 +69,6 @@
     <string name="preferences_sync_debug_temporary_auth_error_button_title">Simulate temporary account auth error</string>
     <!-- Button title for simulating an FxA permanent auth error inside the Sync Debug menu -->
     <string name="preferences_sync_debug_permanent_auth_error_button_title">Simulate permanent account auth error</string>
-    <!-- Label for enabling the Compose Homepage -->
-    <string name="preferences_debug_settings_compose_homepage" translatable="false">Enable Compose Homepage</string>
     <!-- Label for enabling the Compose Bookmarks -->
     <string name="preferences_debug_settings_compose_bookmarks" translatable="false">Enable Compose Bookmarks</string>
     <!-- Label for enabling the Homepage Search Bar -->
@@ -81,8 +79,6 @@
     <string name="preferences_debug_settings_compose_logins" translatable="false">Enable Compose Logins</string>
     <!-- Label for enabling Homepage as a New Tab -->
     <string name="preferences_debug_settings_homepage_as_new_tab" translatable="false">Enable Homepage as a New Tab</string>
-    <!-- Label for enabling MARS API integration -->
-    <string name="preferences_debug_settings_mars_api" translatable="false">Enable MARS API integration</string>
     <!-- Label for enabling the menu redesign -->
     <string name="preferences_debug_settings_menu_redesign" translatable="false">Enable Menu Redesign</string>
     <!-- Label for enabling Firefox Suggest -->
@@ -91,6 +87,8 @@
     <string name="preferences_debug_settings_composable_toolbar" translatable="false">Enable Composable Toolbar</string>
     <!-- Label for enabling the redesigned toolbar options -->
     <string name="preferences_debug_settings_toolbar_redesign" translatable="false">Enable Redesigned Toolbar Options</string>
+    <!-- Label for toggling Remote Crash Pull -->
+    <string name="preferences_crash_pull_never_show_again" translatable="false">Never show Crash Pull</string>
     <!-- Label for enabling the Debug Drawer -->
     <string name="preferences_debug_settings_debug_drawer" translatable="false">Enable Debug Drawer</string>
     <!-- Label for enabling the microsurvey feature -->
@@ -105,9 +103,8 @@
     <string name="preferences_debug_settings_recent_searches" translatable="false">Enable Recent Searches</string>
     <!-- Label for enabling Shortcut Suggestions -->
     <string name="preferences_debug_settings_shortcuts_suggestions" translatable="false">Enable Shortcut Suggestions</string>
-    <!-- Label for enabling the Tab Strip -->
-    <string name="preferences_tab_strip_title" translatable="false" moz:removedIn="139" tools:ignore="UnusedResources">Enable Tab Strip</string>
-    <string name="preferences_tab_strip_details" translatable="false" moz:removedIn="139" tools:ignore="UnusedResources">Highly experimental, early access preview.</string>
+    <!-- Label for enabling Address Sync -->
+    <string name="preferences_debug_settings_address_sync" translatable="false">Enable Address Sync for supported regions</string>
 
     <!-- Label for enabling the DNS over HTTPS settings -->
     <string name="preferences_debug_settings_enable_doh_settings" translatable="false">Enable DNS over HTTPS settings</string>
@@ -177,10 +174,6 @@
     <string name="debug_drawer_cfr_tools_homepage_searchbar_title">Homepage Searchbar</string>
     <!-- The homepage searchbar CFR description in CFR Tools -->
     <string name="debug_drawer_cfr_tools_homepage_searchbar_description">Displayed when a new user sees the homepage for the first time.</string>
-    <!-- The homepage sync CFR title in CFR Tools -->
-    <string name="debug_drawer_cfr_tools_homepage_sync_title">Homepage Sync</string>
-    <!-- The homepage sync CFR description in CFR Tools -->
-    <string name="debug_drawer_cfr_tools_homepage_sync_description">Displayed the first time visiting the homepage after signing-in and the Homepage Navigation Toolbar CFR has been shown.</string>
     <!-- The inactive tabs CFR title in CFR Tools -->
     <string name="debug_drawer_cfr_tools_inactive_tabs_title">Inactive Tabs</string>
     <!-- The inactive tabs CFR description in CFR Tools -->

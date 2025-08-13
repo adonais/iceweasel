@@ -5,9 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsTreeImageListener.h"
+
 #include "XULTreeElement.h"
-#include "imgIRequest.h"
 #include "imgIContainer.h"
+#include "imgIRequest.h"
 #include "nsIContent.h"
 #include "nsTreeColumns.h"
 

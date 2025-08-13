@@ -704,8 +704,9 @@ void FilterNodeSoftware::RequestInputRect(uint32_t aInputEnumIndex,
   }
   RefPtr<FilterNodeSoftware> filter = mInputFilters[inputIndex];
   MOZ_ASSERT(filter, "missing input");
-
-  filter->RequestRect(filter->GetOutputRectInRect(aRect));
+  if (filter) {
+    filter->RequestRect(filter->GetOutputRectInRect(aRect));
+  }
 }
 
 SurfaceFormat FilterNodeSoftware::DesiredFormat(SurfaceFormat aCurrentFormat,
@@ -754,19 +755,20 @@ FilterNodeSoftware::GetInputDataSourceSurface(
     surfaceRect = surface->GetRect();
   } else {
     // Input from input filter
-#ifdef DEBUG_DUMP_SURFACES
-    printf("getting input from input filter %s...\n",
-           mInputFilters[inputIndex]->GetName());
-#endif
     RefPtr<FilterNodeSoftware> filter = mInputFilters[inputIndex];
     MOZ_ASSERT(filter, "missing input");
+    if (!filter) {
+      return nullptr;
+    }
+#ifdef DEBUG_DUMP_SURFACES
+    printf("getting input from input filter %s...\n", filter->GetName());
+#endif
     IntRect inputFilterOutput = filter->GetOutputRectInRect(aRect);
     if (!inputFilterOutput.IsEmpty()) {
       surface = filter->GetOutput(inputFilterOutput);
     }
 #ifdef DEBUG_DUMP_SURFACES
-    printf("input from input filter %s:\n",
-           mInputFilters[inputIndex]->GetName());
+    printf("input from input filter %s:\n", filter->GetName());
 #endif
     surfaceRect = inputFilterOutput;
     MOZ_ASSERT(!surface || surfaceRect.Size() == surface->GetSize());
@@ -2261,9 +2263,9 @@ void FilterNodeConvolveMatrixSoftware::SetAttribute(uint32_t aIndex,
 }
 
 void FilterNodeConvolveMatrixSoftware::SetAttribute(
-    uint32_t aIndex, const IntRect& aSourceRect) {
-  MOZ_ASSERT(aIndex == ATT_CONVOLVE_MATRIX_SOURCE_RECT);
-  mSourceRect = aSourceRect;
+    uint32_t aIndex, const IntRect& aRenderRect) {
+  MOZ_ASSERT(aIndex == ATT_CONVOLVE_MATRIX_RENDER_RECT);
+  mRenderRect = aRenderRect;
   Invalidate();
 }
 
@@ -2463,7 +2465,7 @@ already_AddRefed<DataSourceSurface> FilterNodeConvolveMatrixSoftware::DoRender(
 
   RefPtr<DataSourceSurface> input =
       GetInputDataSourceSurface(IN_CONVOLVE_MATRIX_IN, srcRect,
-                                NEED_COLOR_CHANNELS, mEdgeMode, &mSourceRect);
+                                NEED_COLOR_CHANNELS, mEdgeMode, &mRenderRect);
 
   if (!input) {
     return nullptr;
@@ -2580,6 +2582,10 @@ IntRect FilterNodeConvolveMatrixSoftware::InflatedDestRect(
 
 IntRect FilterNodeConvolveMatrixSoftware::GetOutputRectInRect(
     const IntRect& aRect) {
+  if (!mPreserveAlpha && mBias > 0) {
+    // we transform transparent colors into non-transparent colors in this case
+    return aRect;
+  }
   IntRect srcRequest = InflatedSourceRect(aRect);
   IntRect srcOutput = GetInputRectInRect(IN_CONVOLVE_MATRIX_IN, srcRequest);
   return InflatedDestRect(srcOutput).Intersect(aRect);
@@ -3415,6 +3421,14 @@ void FilterNodeLightingSoftware<LightType, LightingType>::SetAttribute(
 }
 
 template <typename LightType, typename LightingType>
+void FilterNodeLightingSoftware<LightType, LightingType>::SetAttribute(
+    uint32_t aIndex, const IntRect& aRenderRect) {
+  MOZ_ASSERT(aIndex == ATT_LIGHTING_RENDER_RECT);
+  mRenderRect = aRenderRect;
+  Invalidate();
+}
+
+template <typename LightType, typename LightingType>
 IntRect
 FilterNodeLightingSoftware<LightType, LightingType>::GetOutputRectInRect(
     const IntRect& aRect) {
@@ -3585,8 +3599,11 @@ FilterNodeLightingSoftware<LightType, LightingType>::DoRender(
   // ColorComponentAtPoint may want to access the margins.
   srcRect.Inflate(1);
 
-  RefPtr<DataSourceSurface> input = GetInputDataSourceSurface(
-      IN_LIGHTING_IN, srcRect, CAN_HANDLE_A8, EDGE_MODE_NONE);
+  IntRect srcRectInRenderRect = srcRect.Intersect(mRenderRect);
+
+  RefPtr<DataSourceSurface> input =
+      GetInputDataSourceSurface(IN_LIGHTING_IN, srcRect, CAN_HANDLE_A8,
+                                EDGE_MODE_DUPLICATE, &srcRectInRenderRect);
 
   if (!input) {
     return nullptr;

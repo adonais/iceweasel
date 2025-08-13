@@ -200,6 +200,7 @@ export const SpecialMessageActions = {
     // Array of prefs that are allowed to be edited by SET_PREF
     const allowedPrefs = [
       "browser.aboutwelcome.didSeeFinalScreen",
+      "browser.crashReports.unsubmittedCheck.autoSubmit2",
       "browser.dataFeatureRecommendations.enabled",
       "browser.migrate.content-modal.about-welcome-behavior",
       "browser.migrate.content-modal.import-all.enabled",
@@ -215,17 +216,20 @@ export const SpecialMessageActions = {
       "cookiebanners.service.mode",
       "cookiebanners.service.mode.privateBrowsing",
       "cookiebanners.service.detectOnly",
-      "messaging-system.askForFeedback",
-      "browser.toolbars.bookmarks.visibility",
-      "sidebar.verticalTabs",
-      "sidebar.revamp",
-      "sidebar.visibility",
-      "browser.crashReports.unsubmittedCheck.autoSubmit2",
       "datareporting.healthreport.uploadEnabled",
       "datareporting.policy.currentPolicyVersion",
       "datareporting.policy.dataSubmissionPolicyAcceptedVersion",
       "datareporting.policy.dataSubmissionPolicyNotifiedTime",
       "datareporting.policy.minimumPolicyVersion",
+      "messaging-system.askForFeedback",
+      "browser.toolbars.bookmarks.visibility",
+      "sidebar.verticalTabs",
+      "sidebar.revamp",
+      "sidebar.visibility",
+      "termsofuse.acceptedVersion",
+      "termsofuse.acceptedDate",
+      "termsofuse.currentVersion",
+      "termsofuse.minimumVersion",
     ];
 
     if (
@@ -287,7 +291,6 @@ export const SpecialMessageActions = {
         triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
           {}
         ),
-        csp: null,
         resolveOnContentBrowserCreated: resolve,
         forceForeground: true,
       });
@@ -558,7 +561,6 @@ export const SpecialMessageActions = {
             private: false,
             triggeringPrincipal:
               Services.scriptSecurityManager.createNullPrincipal({}),
-            csp: null,
           }
         );
         break;
@@ -658,7 +660,6 @@ export const SpecialMessageActions = {
           private: false,
           triggeringPrincipal:
             Services.scriptSecurityManager.createNullPrincipal({}),
-          csp: null,
         });
         break;
       case "FXA_SIGNIN_FLOW":
@@ -741,11 +742,8 @@ export const SpecialMessageActions = {
       case "SET_BOOKMARKS_TOOLBAR_VISIBILITY":
         this.setBookmarksToolbarVisibility(window, action.data?.visibility);
         break;
-      case "DATAREPORTING_NOTIFY_DATA_POLICY_INTERACTED":
-        Services.obs.notifyObservers(
-          null,
-          "datareporting:notify-data-policy:interacted"
-        );
+      case "SET_TERMS_OF_USE_INTERACTED":
+        Services.obs.notifyObservers(null, "termsofuse:interacted");
         break;
       case "CREATE_NEW_SELECTABLE_PROFILE":
         this.createAndOpenProfile();

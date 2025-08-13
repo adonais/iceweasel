@@ -174,7 +174,11 @@ open class DefaultComponents(private val applicationContext: Context) {
     val store by lazy {
         BrowserStore(
             middleware = listOf(
-                DownloadMiddleware(applicationContext, DownloadService::class.java),
+                DownloadMiddleware(
+                    applicationContext = applicationContext,
+                    downloadServiceClass = DownloadService::class.java,
+                    deleteFileFromStorage = { false },
+                ),
                 ReaderViewMiddleware(),
                 ThumbnailsMiddleware(thumbnailStorage),
                 UndoMiddleware(),
@@ -244,8 +248,7 @@ open class DefaultComponents(private val applicationContext: Context) {
 
     val appLinksInterceptor by lazy {
         AppLinksInterceptor(
-            applicationContext,
-            interceptLinkClicks = true,
+            context = applicationContext,
             launchInApp = {
                 applicationContext.components.preferences.getBoolean(PREF_LAUNCH_EXTERNAL_APP, false)
             },

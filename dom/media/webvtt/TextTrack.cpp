@@ -7,6 +7,7 @@
 #include "mozilla/dom/TextTrack.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
+#include "mozilla/BinarySearch.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/HTMLTrackElement.h"
 #include "mozilla/dom/TextTrackBinding.h"
@@ -20,6 +21,9 @@ extern mozilla::LazyLogModule gTextTrackLog;
 
 #define WEBVTT_LOG(msg, ...)              \
   MOZ_LOG(gTextTrackLog, LogLevel::Debug, \
+          ("TextTrack=%p, " msg, this, ##__VA_ARGS__))
+#define WEBVTT_LOGV(msg, ...)               \
+  MOZ_LOG(gTextTrackLog, LogLevel::Verbose, \
           ("TextTrack=%p, " msg, this, ##__VA_ARGS__))
 
 namespace mozilla::dom {
@@ -170,7 +174,7 @@ TextTrackCueList* TextTrack::GetActiveCues() {
   return nullptr;
 }
 
-void TextTrack::GetActiveCueArray(nsTArray<RefPtr<TextTrackCue> >& aCues) {
+void TextTrack::GetActiveCueArray(nsTArray<RefPtr<TextTrackCue>>& aCues) {
   if (mMode != TextTrackMode::Disabled) {
     mActiveCueList->GetArray(aCues);
   }
@@ -273,16 +277,13 @@ void TextTrack::NotifyCueActiveStateChanged(TextTrackCue* aCue) {
   }
 }
 
-void TextTrack::GetCurrentCuesAndOtherCues(
-    RefPtr<TextTrackCueList>& aCurrentCues,
-    RefPtr<TextTrackCueList>& aOtherCues,
-    const media::TimeInterval& aInterval) const {
+void TextTrack::GetOverlappingCurrentOtherAndMissCues(
+    CueBuckets* aCurrentCues, CueBuckets* aOtherCues, CueBuckets* aMissCues,
+    const media::TimeInterval& aInterval,
+    const Maybe<double>& aLastTime) const {
   const HTMLMediaElement* mediaElement = GetMediaElement();
-  if (!mediaElement) {
-    return;
-  }
-
-  if (Mode() == TextTrackMode::Disabled) {
+  if (!mediaElement || Mode() == TextTrackMode::Disabled ||
+      mCueList->IsEmpty()) {
     return;
   }
 
@@ -292,46 +293,92 @@ void TextTrack::GetCurrentCuesAndOtherCues(
   // https://html.spec.whatwg.org/multipage/media.html#time-marches-on
   MOZ_ASSERT(aCurrentCues && aOtherCues);
   const double playbackTime = mediaElement->CurrentTime();
-  for (uint32_t idx = 0; idx < mCueList->Length(); idx++) {
+  const double intervalStart = aInterval.mStart.ToSeconds();
+  const double intervalEnd = aInterval.mEnd.ToSeconds();
+
+  if (intervalEnd < (*mCueList)[0]->StartTime()) {
+    WEBVTT_LOGV("Abort : interval ends before the first cue starts");
+    return;
+  }
+  // Optimize the loop range by identifying the first cue that starts after the
+  // interval.
+  size_t lastIdx = 0;
+  struct LastIdxComparator {
+    const double mIntervalEnd;
+    explicit LastIdxComparator(double aIntervalEnd)
+        : mIntervalEnd(aIntervalEnd) {}
+    int operator()(const TextTrackCue* aCue) const {
+      return aCue->StartTime() > mIntervalEnd ? 0 : -1;
+    }
+  } compLast(intervalEnd);
+  if (!BinarySearchIf(mCueList->GetCuesArray(), 0, mCueList->Length(), compLast,
+                      &lastIdx)) {
+    // Failed to find the match, set it to the last idx.
+    lastIdx = mCueList->Length() - 1;
+  }
+
+  // Search cues in the partial range.
+  for (size_t idx = 0; idx <= lastIdx; ++idx) {
     TextTrackCue* cue = (*mCueList)[idx];
-    WEBVTT_LOG("cue %p [%f:%f], playbackTime=%f", cue, cue->StartTime(),
-               cue->EndTime(), playbackTime);
-    if (cue->StartTime() <= playbackTime && cue->EndTime() > playbackTime) {
-      WEBVTT_LOG("Add cue %p [%f:%f] to current cue list", cue,
-                 cue->StartTime(), cue->EndTime());
-      aCurrentCues->AddCue(*cue);
+    double cueStart = cue->StartTime();
+    double cueEnd = cue->EndTime();
+    if (cueStart <= playbackTime && cueEnd > playbackTime) {
+      WEBVTT_LOG("Add cue %p [%f:%f] to current cue list", cue, cueStart,
+                 cueEnd);
+      aCurrentCues->AddCue(cue);
     } else {
-      // As the spec didn't have a restriction for the negative duration, it
-      // does happen sometime if user sets it explicitly. It would be treated as
-      // a `missing cue` later in the `TimeMarchesOn` but it won't be displayed.
-      if (cue->EndTime() < cue->StartTime()) {
+      // As the spec doesn't have a restriction for the negative duration, it
+      // does happen sometime if user sets it explicitly. It will be treated as
+      // a `missing cue` (a subset of the `other cues`) and it won't be
+      // displayed.
+      if (cueEnd < cueStart) {
         // Add cue into `otherCue` only when its start time is contained by the
         // current time interval.
-        if (aInterval.Contains(
-                media::TimeUnit::FromSeconds(cue->StartTime()))) {
-          WEBVTT_LOG("[Negative duration] Add cue %p [%f:%f] to other cue list",
-                     cue, cue->StartTime(), cue->EndTime());
-          aOtherCues->AddCue(*cue);
+        if (intervalStart <= cueStart && cueStart < intervalEnd) {
+          WEBVTT_LOG(
+              "[Negative duration] Add cue %p [%f:%f] to other cues and "
+              "missing cues list",
+              cue, cueStart, cueEnd);
+          aOtherCues->AddCue(cue);
+          aMissCues->AddCue(cue);
         }
         continue;
       }
-      media::TimeInterval cueInterval(
-          media::TimeUnit::FromSeconds(cue->StartTime()),
-          media::TimeUnit::FromSeconds(cue->EndTime()));
-      // cues are completely outside the time interval.
-      if (!aInterval.Touches(cueInterval)) {
+      // Cues are completely outside the time interval.
+      if (cueEnd < intervalStart || cueStart > intervalEnd) {
         continue;
       }
-      // contains any cues which are overlapping within the time interval.
-      WEBVTT_LOG("Add cue %p [%f:%f] to other cue list", cue, cue->StartTime(),
-                 cue->EndTime());
-      aOtherCues->AddCue(*cue);
+      WEBVTT_LOG("Add cue %p [%f:%f] to other cue list", cue, cueStart, cueEnd);
+      aOtherCues->AddCue(cue);
+      if (aLastTime && cueStart >= *aLastTime && cueEnd <= playbackTime) {
+        WEBVTT_LOG("Add cue %p [%f:%f] to missing cues list", cue, cueStart,
+                   cueEnd);
+        aMissCues->AddCue(cue);
+      }
     }
   }
 }
 
 HTMLMediaElement* TextTrack::GetMediaElement() const {
   return mTextTrackList ? mTextTrackList->GetMediaElement() : nullptr;
+}
+
+void TextTrack::CueBuckets::AddCue(TextTrackCue* aCue) {
+  if (aCue->GetActive()) {
+    ActiveCues().AppendElement(aCue);
+    if (aCue->PauseOnExit()) {
+      mHasPauseOnExist[static_cast<uint8_t>(CueActivityState::Active)] = true;
+    }
+  } else {
+    InactiveCues().AppendElement(aCue);
+    if (aCue->PauseOnExit()) {
+      mHasPauseOnExist[static_cast<uint8_t>(CueActivityState::Inactive)] = true;
+    }
+  }
+  AllCues().AppendElement(aCue);
+  if (aCue->PauseOnExit()) {
+    mHasPauseOnExist[static_cast<uint8_t>(CueActivityState::All)] = true;
+  }
 }
 
 }  // namespace mozilla::dom

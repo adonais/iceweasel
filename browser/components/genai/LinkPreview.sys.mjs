@@ -174,7 +174,12 @@ export const LinkPreview = {
   },
 
   get canShowPreferences() {
-    return lazy.enabled;
+    // Show preferences if the user has ever enabled link previews.
+    // This is true if the feature is currently enabled, or if the onboarding UI
+    // was shown previously (which populates `onboardingTimes`).
+    // Note: showing onboarding requires link previews to be enabled at the time.
+    // This ensures users who later disable the feature can still access the settings.
+    return lazy.enabled || !!lazy.onboardingTimes.length;
   },
 
   get showOnboarding() {

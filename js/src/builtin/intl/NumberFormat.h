@@ -8,10 +8,14 @@
 #define builtin_intl_NumberFormat_h
 
 #include <stdint.h>
+#include <string_view>
 
 #include "builtin/SelfHostingDefines.h"
 #include "js/Class.h"
 #include "vm/NativeObject.h"
+
+class JSString;
+class JSLinearString;
 
 namespace mozilla::intl {
 class NumberFormat;
@@ -19,6 +23,8 @@ class NumberRangeFormat;
 }  // namespace mozilla::intl
 
 namespace js {
+
+class ArrayObject;
 
 class NumberFormatObject : public NativeObject {
  public:
@@ -152,6 +158,23 @@ namespace intl {
  */
 [[nodiscard]] extern JSString* FormatBigInt(
     JSContext* cx, Handle<NumberFormatObject*> numberFormat, Handle<BigInt*> x);
+
+using NumberFormatUnit = js::ImmutableTenuredPtr<PropertyName*> JSAtomState::*;
+
+[[nodiscard]] extern JSLinearString* FormatNumber(
+    JSContext* cx, mozilla::intl::NumberFormat* numberFormat, double x);
+
+[[nodiscard]] extern JSLinearString* FormatNumber(
+    JSContext* cx, mozilla::intl::NumberFormat* numberFormat,
+    std::string_view x);
+
+[[nodiscard]] extern ArrayObject* FormatNumberToParts(
+    JSContext* cx, mozilla::intl::NumberFormat* numberFormat, double x,
+    NumberFormatUnit unit = nullptr);
+
+[[nodiscard]] extern ArrayObject* FormatNumberToParts(
+    JSContext* cx, mozilla::intl::NumberFormat* numberFormat,
+    std::string_view x, NumberFormatUnit unit = nullptr);
 
 }  // namespace intl
 

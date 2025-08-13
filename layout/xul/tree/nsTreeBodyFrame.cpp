@@ -4,13 +4,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nsTreeBodyFrame.h"
+
+#include <algorithm>
+
+#include "ScrollbarActivity.h"
 #include "SimpleXULLeafFrame.h"
+#include "gfxContext.h"
+#include "gfxUtils.h"
+#include "imgIContainer.h"
+#include "imgIRequest.h"
 #include "mozilla/AsyncEventDispatcher.h"
+#include "mozilla/ComputedStyle.h"
 #include "mozilla/ContentEvents.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EventDispatcher.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/Likely.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MathAlgorithms.h"
@@ -19,52 +27,41 @@
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/Try.h"
-#include "mozilla/intl/Segmenter.h"
-
-#include "gfxUtils.h"
-#include "nsCOMPtr.h"
-#include "nsComponentManagerUtils.h"
-#include "nsFontMetrics.h"
-#include "nsITreeView.h"
-#include "nsPresContext.h"
-#include "nsNameSpaceManager.h"
-
-#include "nsTreeBodyFrame.h"
-#include "nsTreeSelection.h"
-#include "nsTreeImageListener.h"
-
-#include "nsGkAtoms.h"
-#include "nsCSSAnonBoxes.h"
-
-#include "gfxContext.h"
-#include "nsIContent.h"
-#include "mozilla/ComputedStyle.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/ReferrerInfo.h"
-#include "mozilla/intl/Segmenter.h"
-#include "nsCSSRendering.h"
-#include "nsString.h"
-#include "nsContainerFrame.h"
-#include "nsView.h"
-#include "nsViewManager.h"
-#include "nsWidgetsCID.h"
-#include "nsIFrameInlines.h"
-#include "nsTreeContentView.h"
-#include "nsTreeUtils.h"
-#include "nsStyleConsts.h"
-#include "imgIRequest.h"
-#include "imgIContainer.h"
-#include "mozilla/dom/NodeInfo.h"
-#include "nsContentUtils.h"
-#include "nsLayoutUtils.h"
-#include "nsDisplayList.h"
 #include "mozilla/dom/CustomEvent.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Event.h"
+#include "mozilla/dom/NodeInfo.h"
+#include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/TreeColumnBinding.h"
-#include <algorithm>
-#include "ScrollbarActivity.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/PathHelpers.h"
+#include "mozilla/intl/Segmenter.h"
+#include "nsCOMPtr.h"
+#include "nsCSSAnonBoxes.h"
+#include "nsCSSRendering.h"
+#include "nsComponentManagerUtils.h"
+#include "nsContainerFrame.h"
+#include "nsContentUtils.h"
+#include "nsDisplayList.h"
+#include "nsFontMetrics.h"
+#include "nsGkAtoms.h"
+#include "nsIContent.h"
+#include "nsIFrameInlines.h"
+#include "nsITreeView.h"
+#include "nsLayoutUtils.h"
+#include "nsNameSpaceManager.h"
+#include "nsPresContext.h"
+#include "nsString.h"
+#include "nsStyleConsts.h"
+#include "nsTreeContentView.h"
+#include "nsTreeImageListener.h"
+#include "nsTreeSelection.h"
+#include "nsTreeUtils.h"
+#include "nsView.h"
+#include "nsViewManager.h"
+#include "nsWidgetsCID.h"
 
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
@@ -1910,7 +1907,7 @@ already_AddRefed<imgIContainer> nsTreeBodyFrame::GetImage(
 
   // NOTE(heycam): If it's an SVG image, and we need to want the image to
   // able to respond to media query changes, it needs to be added to the
-  // document's ImageTracker.  For now, assume we don't need this.
+  // document's tracked image set.  For now, assume we don't need this.
   // We don't want discarding/decode-on-draw for xul images
   imageRequest->StartDecoding(imgIContainer::FLAG_ASYNC_NOTIFY);
   imageRequest->LockImage();
@@ -1950,7 +1947,7 @@ nsRect nsTreeBodyFrame::GetImageSize(int32_t aRowIndex, nsTreeColumn* aCol,
   const nsStylePosition* myPosition = aComputedStyle->StylePosition();
   const AnchorPosResolutionParams anchorResolutionParams{
       this, aComputedStyle->StyleDisplay()->mPosition};
-  const auto width = myPosition->GetWidth(anchorResolutionParams.mPosition);
+  const auto width = myPosition->GetWidth(anchorResolutionParams);
   if (width->ConvertsToLength()) {
     int32_t val = width->ToLength();
     r.width += val;
@@ -1958,7 +1955,7 @@ nsRect nsTreeBodyFrame::GetImageSize(int32_t aRowIndex, nsTreeColumn* aCol,
     needWidth = true;
   }
 
-  const auto height = myPosition->GetHeight(anchorResolutionParams.mPosition);
+  const auto height = myPosition->GetHeight(anchorResolutionParams);
   if (height->ConvertsToLength()) {
     int32_t val = height->ToLength();
     r.height += val;
@@ -2012,7 +2009,7 @@ nsSize nsTreeBodyFrame::GetImageDestSize(ComputedStyle* aComputedStyle,
   const nsStylePosition* myPosition = aComputedStyle->StylePosition();
   const AnchorPosResolutionParams anchorResolutionParams{
       this, aComputedStyle->StyleDisplay()->mPosition};
-  const auto width = myPosition->GetWidth(anchorResolutionParams.mPosition);
+  const auto width = myPosition->GetWidth(anchorResolutionParams);
   if (width->ConvertsToLength()) {
     // CSS has specified the destination width.
     size.width = width->ToLength();
@@ -2021,7 +2018,7 @@ nsSize nsTreeBodyFrame::GetImageDestSize(ComputedStyle* aComputedStyle,
     needWidth = true;
   }
 
-  const auto height = myPosition->GetHeight(anchorResolutionParams.mPosition);
+  const auto height = myPosition->GetHeight(anchorResolutionParams);
   if (height->ConvertsToLength()) {
     // CSS has specified the destination height.
     size.height = height->ToLength();
@@ -2106,14 +2103,13 @@ int32_t nsTreeBodyFrame::GetRowHeight() {
 
     nscoord minHeight = 0;
     const auto styleMinHeight =
-        myPosition->GetMinHeight(anchorResolutionParams.mPosition);
+        myPosition->GetMinHeight(anchorResolutionParams);
     if (styleMinHeight->ConvertsToLength()) {
       minHeight = styleMinHeight->ToLength();
     }
 
     nscoord height = 0;
-    const auto styleHeight =
-        myPosition->GetHeight(anchorResolutionParams.mPosition);
+    const auto styleHeight = myPosition->GetHeight(anchorResolutionParams);
     if (styleHeight->ConvertsToLength()) {
       height = styleHeight->ToLength();
     }
@@ -2151,7 +2147,7 @@ int32_t nsTreeBodyFrame::GetIndentation() {
     const nsStylePosition* myPosition = indentContext->StylePosition();
     const AnchorPosResolutionParams anchorResolutionParams{
         this, indentContext->StyleDisplay()->mPosition};
-    const auto width = myPosition->GetWidth(anchorResolutionParams.mPosition);
+    const auto width = myPosition->GetWidth(anchorResolutionParams);
     if (width->ConvertsToLength()) {
       return width->ToLength();
     }
@@ -2783,8 +2779,7 @@ ImgDrawResult nsTreeBodyFrame::PaintSeparator(int32_t aRowIndex,
 
   // Obtain the height for the separator or use the default value.
   nscoord height;
-  const auto styleHeight =
-      stylePosition->GetHeight(anchorResolutionParams.mPosition);
+  const auto styleHeight = stylePosition->GetHeight(anchorResolutionParams);
   if (styleHeight->ConvertsToLength()) {
     height = styleHeight->ToLength();
   } else {
@@ -3522,8 +3517,7 @@ ImgDrawResult nsTreeBodyFrame::PaintDropFeedback(
     nscoord width;
     const AnchorPosResolutionParams anchorResolutionParams{
         this, feedbackContext->StyleDisplay()->mPosition};
-    const auto styleWidth =
-        stylePosition->GetWidth(anchorResolutionParams.mPosition);
+    const auto styleWidth = stylePosition->GetWidth(anchorResolutionParams);
     if (styleWidth->ConvertsToLength()) {
       width = styleWidth->ToLength();
     } else {
@@ -3533,8 +3527,7 @@ ImgDrawResult nsTreeBodyFrame::PaintDropFeedback(
 
     // Obtain the height for the drop feedback or use default value.
     nscoord height;
-    const auto styleHeight =
-        stylePosition->GetHeight(anchorResolutionParams.mPosition);
+    const auto styleHeight = stylePosition->GetHeight(anchorResolutionParams);
     if (styleHeight->ConvertsToLength()) {
       height = styleHeight->ToLength();
     } else {

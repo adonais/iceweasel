@@ -8,10 +8,10 @@
 #define nsNumberControlFrame_h__
 
 #include "mozilla/Attributes.h"
-#include "nsContainerFrame.h"
-#include "nsTextControlFrame.h"
-#include "nsIAnonymousContentCreator.h"
 #include "nsCOMPtr.h"
+#include "nsContainerFrame.h"
+#include "nsIAnonymousContentCreator.h"
+#include "nsTextControlFrame.h"
 
 class nsPresContext;
 

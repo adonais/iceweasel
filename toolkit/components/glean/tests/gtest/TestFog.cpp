@@ -12,6 +12,7 @@
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
 #include "mozilla/TimeStamp.h"
+#include "../../bindings/private/Common.h"
 
 #include "nsTArray.h"
 
@@ -704,8 +705,28 @@ TEST_F(FOGFixture, TestComplexObjectWorks) {
   ASSERT_THAT(json.get(), testing::HasSubstr("failure"));
 }
 
+TEST_F(FOGFixture, TestDualLabeledCounterWorks) {
+  ASSERT_EQ(mozilla::Nothing(),
+            test_only_ipc::a_dual_labeled_counter.Get("key"_ns, "category"_ns)
+                .TestGetValue()
+                .unwrap());
+}
+
 extern "C" void Rust_TestRustInGTest();
 TEST_F(FOGFixture, TestRustInGTest) { Rust_TestRustInGTest(); }
 
 extern "C" void Rust_TestJogfile();
 TEST_F(FOGFixture, TestJogfile) { Rust_TestJogfile(); }
+
+TEST_F(FOGFixture, IsCamelCaseWorks) {
+  ASSERT_TRUE(IsCamelCase(u"someName"_ns));
+  ASSERT_TRUE(IsCamelCase(u"s1234"_ns));
+  ASSERT_TRUE(IsCamelCase(u"some"_ns));
+
+  ASSERT_FALSE(IsCamelCase(u""_ns));
+  ASSERT_FALSE(IsCamelCase(u"SomeName"_ns));
+  ASSERT_FALSE(IsCamelCase(u"some_name"_ns));
+  ASSERT_FALSE(IsCamelCase(u"SOMENAME"_ns));
+  ASSERT_FALSE(IsCamelCase(u"1234"_ns));
+  ASSERT_FALSE(IsCamelCase(u"some#Name"_ns));
+}

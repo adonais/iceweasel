@@ -5,7 +5,6 @@
 package mozilla.components.feature.downloads.temporary
 
 import android.content.Context
-import android.webkit.MimeTypeMap
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.CopyInternetResourceAction
@@ -38,7 +37,6 @@ import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import org.robolectric.Shadows.shadowOf
 import java.io.File
 import java.nio.charset.StandardCharsets
 
@@ -158,7 +156,7 @@ class CopyDownloadFeatureTest {
     }
 
     @Test
-    fun `download() will persist in cache the response#body() if available`() {
+    fun `download() will persist in cache the response#body() if available`() = runTest {
         val copyFeature =
             CopyDownloadFeature(context, mock(), null, mock(), mock(), dispatcher)
         val inputStream = "test".byteInputStream(StandardCharsets.UTF_8)
@@ -178,7 +176,7 @@ class CopyDownloadFeatureTest {
     }
 
     @Test(expected = RuntimeException::class)
-    fun `download() will throw an error if the request is not successful`() {
+    fun `download() will throw an error if the request is not successful`() = runTest {
         val copyFeature =
             CopyDownloadFeature(context, mock(), null, mock(), mock(), dispatcher)
         val inputStream = "test".byteInputStream(StandardCharsets.UTF_8)
@@ -192,7 +190,7 @@ class CopyDownloadFeatureTest {
     }
 
     @Test
-    fun `download() will download from the provided url the response#body() if is unavailable`() {
+    fun `download() will download from the provided url the response#body() if is unavailable`() = runTest {
         val client: Client = mock()
         val inputStream = "clientTest".byteInputStream(StandardCharsets.UTF_8)
         doAnswer { Response("randomUrl", 200, MutableHeaders(), Response.Body(inputStream)) }
@@ -210,7 +208,7 @@ class CopyDownloadFeatureTest {
     }
 
     @Test
-    fun `download() will create a not private Request if not in private mode`() {
+    fun `download() will create a not private Request if not in private mode`() = runTest {
         val client: Client = mock()
         val requestCaptor = argumentCaptor<Request>()
         val inputStream = "clientTest".byteInputStream(StandardCharsets.UTF_8)
@@ -233,7 +231,7 @@ class CopyDownloadFeatureTest {
     }
 
     @Test
-    fun `download() will create a private Request if in private mode`() {
+    fun `download() will create a private Request if in private mode`() = runTest {
         val client: Client = mock()
         val requestCaptor = argumentCaptor<Request>()
         val inputStream = "clientTest".byteInputStream(StandardCharsets.UTF_8)
@@ -318,7 +316,6 @@ class CopyDownloadFeatureTest {
             CopyDownloadFeature(context, mock(), null, mock(), mock(), dispatcher)
         val gifStream = (GIF_HEADER + "testImage").byteInputStream(StandardCharsets.UTF_8)
         // Add the gif mapping to a by default empty shadow of MimeTypeMap.
-        shadowOf(MimeTypeMap.getSingleton()).addExtensionMimeTypeMapping("gif", "image/gif")
 
         val result = copyFeature.getFileExtension(mock(), gifStream)
 
@@ -331,7 +328,6 @@ class CopyDownloadFeatureTest {
             CopyDownloadFeature(context, mock(), null, mock(), mock(), dispatcher)
         val gifHeaders = MutableHeaders().apply { set(CONTENT_TYPE, "image/gif") }
         // Add the gif mapping to a by default empty shadow of MimeTypeMap.
-        shadowOf(MimeTypeMap.getSingleton()).addExtensionMimeTypeMapping("gif", "image/gif")
 
         val result = copyFeature.getFileExtension(gifHeaders, mock())
 

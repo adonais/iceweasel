@@ -71,6 +71,8 @@ js_source_path = [
     "../browser/components/extensions",
     "../browser/components/migration",
     "../browser/components/migration/content",
+    "../browser/components/mozcachedohttp",
+    "../browser/components/mozcachedohttp/actors",
     "../browser/components/uitour",
     "../browser/components/urlbar",
     "../js/xpconnect/loader",

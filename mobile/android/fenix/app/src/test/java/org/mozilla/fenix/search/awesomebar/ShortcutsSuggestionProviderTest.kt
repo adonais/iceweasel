@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.search.awesomebar
 
-import android.content.Context
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
@@ -16,20 +15,9 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Test
-import org.mozilla.fenix.R
 
 class ShortcutsSuggestionProviderTest {
-
-    private lateinit var context: Context
-
-    @Before
-    fun setup() {
-        context = mockk {
-            every { getString(R.string.search_shortcuts_engine_settings) } returns "Search engine settings"
-        }
-    }
 
     @Test
     fun `returns suggestions from search engine provider`() = runTest {
@@ -50,8 +38,7 @@ class ShortcutsSuggestionProviderTest {
                 ),
             ),
         )
-        val provider = spyk(ShortcutsSuggestionProvider(store, context, {}, {}))
-        every { provider.settingsIcon() } returns mock()
+        val provider = ShortcutsSuggestionProvider(store, mock(), "Search engine settings", {}, {})
 
         val suggestions = provider.onInputChanged("")
 
@@ -88,12 +75,12 @@ class ShortcutsSuggestionProviderTest {
         val provider = spyk(
             ShortcutsSuggestionProvider(
                 store,
-                context,
+                mock(),
+                "Search engine settings",
                 { selectEngine = it },
                 { selectShortcutEngineSettingsChanged = true },
             ),
         )
-        every { provider.settingsIcon() } returns mock()
 
         val suggestions = provider.onInputChanged("")
         assertEquals(2, suggestions.size)

@@ -9,6 +9,7 @@
 
 // Keep others in (case-insensitive) order:
 #include "ImgDrawResult.h"
+#include "SVGGeometryProperty.h"
 #include "gfxContext.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/PresShell.h"
@@ -18,10 +19,9 @@
 #include "mozilla/dom/SVGForeignObjectElement.h"
 #include "nsDisplayList.h"
 #include "nsGkAtoms.h"
-#include "nsNameSpaceManager.h"
 #include "nsLayoutUtils.h"
+#include "nsNameSpaceManager.h"
 #include "nsRegion.h"
-#include "SVGGeometryProperty.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::image;
@@ -299,12 +299,8 @@ void SVGForeignObjectFrame::NotifySVGChanged(uint32_t aFlags) {
     const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
     // Our coordinate context's width/height has changed. If we have a
     // percentage width/height our dimensions will change so we must reflow.
-    if (StylePosition()
-            ->GetWidth(anchorResolutionParams.mPosition)
-            ->HasPercent() ||
-        StylePosition()
-            ->GetHeight(anchorResolutionParams.mPosition)
-            ->HasPercent()) {
+    if (StylePosition()->GetWidth(anchorResolutionParams)->HasPercent() ||
+        StylePosition()->GetHeight(anchorResolutionParams)->HasPercent()) {
       needNewBounds = true;
       needReflow = true;
     }

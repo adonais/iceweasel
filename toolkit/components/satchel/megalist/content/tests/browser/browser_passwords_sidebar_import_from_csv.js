@@ -55,10 +55,12 @@ const clickImportFromCsv = async (
   MockFilePicker.init(window.browsingContext);
   MockFilePicker.returnValue = MockFilePicker.returnOK;
   const csvFile = await LoginTestUtils.file.setupCsvFileWithLines(linesInFile);
-  await BrowserTestUtils.waitForCondition(
-    () => passwordsSidebar.querySelector(".second-row"),
-    "Second row failed to render"
-  );
+  if (isFromMenuDropdown) {
+    await BrowserTestUtils.waitForCondition(
+      () => passwordsSidebar.querySelector(".second-row"),
+      "Second row failed to render"
+    );
+  }
 
   if (isFromMenuDropdown) {
     clickImportFileMenuItem(passwordsSidebar);
@@ -83,6 +85,7 @@ add_task(async function test_import_from_file_summary() {
   Services.fog.testResetFOG();
   await Services.fog.testFlushAllChildren();
 
+  await addMockPasswords();
   const passwordsSidebar = await openPasswordsSidebar();
   await clickImportFromCsv(passwordsSidebar, VALID_CSV_LINES);
 
@@ -113,6 +116,7 @@ add_task(async function test_import_from_invalid_file() {
   Services.fog.testResetFOG();
   await Services.fog.testFlushAllChildren();
 
+  await addMockPasswords();
   const passwordsSidebar = await openPasswordsSidebar();
   await clickImportFromCsv(passwordsSidebar, ["invalid csv"]);
   const notifMsgBar = await checkNotificationAndTelemetry(

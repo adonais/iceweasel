@@ -510,7 +510,7 @@ URIFixup.prototype = {
     if (engine.supportsResponseType("application/x-moz-keywordsearch")) {
       responseType = "application/x-moz-keywordsearch";
     }
-    let submission = engine.getSubmission(keyword, responseType, "keyword");
+    let submission = engine.getSubmission(keyword, responseType);
     if (
       !submission ||
       // For security reasons (avoid redirecting to file, data, or other unsafe

@@ -470,7 +470,7 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "Response", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "Scheduler", insecureContext: true, nightly: true },
+  { name: "Scheduler", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   "ServiceWorker",
   // IMPORTANT: Do not change this list without review from a DOM peer!
@@ -482,11 +482,11 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "SubtleCrypto" },
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "TaskController", insecureContext: true, nightly: true },
+  { name: "TaskController", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "TaskPriorityChangeEvent", insecureContext: true, nightly: true },
+  { name: "TaskPriorityChangeEvent", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
-  { name: "TaskSignal", insecureContext: true, nightly: true },
+  { name: "TaskSignal", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "TextDecoder", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
@@ -503,6 +503,8 @@ let interfaceNamesInGlobalScope = [
   { name: "TransformStreamDefaultController", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "URL", insecureContext: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "URLPattern", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "URLSearchParams", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!

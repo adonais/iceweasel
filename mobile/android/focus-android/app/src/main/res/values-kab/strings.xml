@@ -150,6 +150,8 @@
     %2$s is the url for the learn-more link.
   -->
   <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s ad k-d-yefk afus ad teqqimeḍ d aqeṛṛu.</p> <p>Seqdec-it d iminig uslig: <ul> <li>Nadi sakin snirem akken iwata deg usnas</li> <li>Sewḥel ineḍfaren (neɣ leqqem iɣewwaren akken ad tsirgeḍ ineḍfaren)</li> <li>Sfeḍ inagan n tuqqna akked uzray n tunigin d unadi</li> </ul> </p> <p>%1$s yesnulfa-t-id Mozilla. Tuɣdaṭ-nneɣ ad nḥareb γef internet yeldin d tezmert-is.<br/> <a href=\"%2$s\">Issin ugar</a></p>]]></string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">Issin ugar</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">\"Tabaḍnit &amp; Taɣellist\"</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -486,8 +488,6 @@
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
   <string name="onboarding_first_screen_privacy_notice_link_2">Tasertit n tbaḍnit</string>
   <!-- New Onboarding flow first screen button label -->
-  <string name="onboarding_first_screen_button_agree_and_continue" moz:removedIn="140" tools:ignore="UnusedResources">Qbel syen kemmel</string>
-  <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue_2">Kemmel</string>
   <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
   <string name="a11y_link_available">Aseɣwen yellan</string>
@@ -708,18 +708,6 @@
   <string name="preference_block_autoplay_audio_only_summary">Yelha</string>
   <!-- Preference for block autoplay audio and video -->
   <string name="preference_block_autoplay_audio_video">Sewḥel imeslawen d tvidyutin</string>
-  <!-- Preference for studies -->
-  <string name="preference_studies" moz:removedIn="140">Leqraya</string>
-  <!-- Preference for studies summary -->
-  <string name="preference_studies_summary" tools:ignore="BrandUsage" moz:removedIn="140">Firefox yezmer ad isebded yerna ad iseddu leqraya seg wakud ɣer wayeḍ.</string>
-  <!-- Learn more link for studies, links to an article for more information about studies. -->
-  <string name="studies_learn_more" moz:removedIn="140">Issin ugar</string>
-  <!-- Title of the remove studies button -->
-  <string name="studies_remove" moz:removedIn="140">Kkes</string>
-  <!-- Title of the active section on the studies list -->
-  <string name="studies_active" moz:removedIn="140">Urmid</string>
-  <!-- Title of the completed section on the studies list -->
-  <string name="studies_completed" moz:removedIn="140">Yemmed</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">Taseɣtit tanmeggagt s USB/Wi-Fii</string>
   <!-- Text Button for show biometric prompt -->

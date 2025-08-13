@@ -5,13 +5,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // Keep in (case-insensitive) order:
-#include "nsContainerFrame.h"
-#include "nsIFrame.h"
-#include "nsGkAtoms.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SVGGradientFrame.h"
 #include "mozilla/SVGObserverUtils.h"
+#include "nsContainerFrame.h"
+#include "nsGkAtoms.h"
+#include "nsIFrame.h"
 
 // This is a very simple frame whose only purpose is to capture style change
 // events and propagate them to the parent.  Most of the heavy lifting is done

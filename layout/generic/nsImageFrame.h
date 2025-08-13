@@ -9,16 +9,14 @@
 #ifndef nsImageFrame_h___
 #define nsImageFrame_h___
 
-#include "nsAtomicContainerFrame.h"
-#include "nsIObserver.h"
-
-#include "imgINotificationObserver.h"
-
-#include "nsDisplayList.h"
 #include "imgIContainer.h"
+#include "imgINotificationObserver.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/StaticPtr.h"
+#include "nsAtomicContainerFrame.h"
+#include "nsDisplayList.h"
+#include "nsIObserver.h"
 #include "nsIReflowCallback.h"
 #include "nsTObserverArray.h"
 

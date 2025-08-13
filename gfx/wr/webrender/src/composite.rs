@@ -160,6 +160,7 @@ pub struct CompositeTile {
     pub kind: TileKind,
     pub transform_index: CompositorTransformIndex,
     pub clip_index: Option<CompositorClipIndex>,
+    pub tile_id: Option<TileId>,
 }
 
 pub fn tile_kind(surface: &CompositeTileSurface, is_opaque: bool) -> TileKind {
@@ -919,6 +920,7 @@ impl CompositeState {
             z_id: external_surface.z_id,
             transform_index: external_surface.transform_index,
             clip_index,
+            tile_id: None,
         };
 
         let (rounded_clip_rect, rounded_clip_radii) = self.compositor_clip_params(

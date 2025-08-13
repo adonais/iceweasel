@@ -1395,6 +1395,125 @@ const MESSAGES = () => [
     },
   },
   {
+    weight: 100,
+    id: "TEST_MULTI_TILES_SURVEY",
+    template: "feature_callout",
+    groups: [],
+    content: {
+      id: "TEST_MULTI_TILES_SURVEY",
+      template: "multistage",
+      backdrop: "transparent",
+      transitions: false,
+      disableHistoryUpdates: true,
+      screens: [
+        {
+          id: "SCREEN_1",
+          force_hide_steps_indicator: true,
+          anchors: [
+            {
+              selector: "hbox#browser",
+              hide_arrow: true,
+              absolute_position: {
+                bottom: "20px",
+                right: "20px",
+              },
+            },
+          ],
+          content: {
+            position: "callout",
+            title: {
+              raw: "Test title",
+            },
+            width: "297px",
+            title_logo: {
+              imageURL:
+                "chrome://browser/content/asrouter/assets/smiling-fox-icon.svg",
+            },
+            subtitle: {
+              raw: "Answer two questions!",
+            },
+            primary_button: {
+              label: "Submit",
+              action: {
+                dismiss: true,
+              },
+            },
+            dismiss_button: {
+              action: {
+                dismiss: true,
+              },
+            },
+            contentTilesContainer: {
+              style: {
+                marginBlock: "6px",
+              },
+            },
+            tiles: [
+              {
+                type: "multiselect",
+                title: {
+                  raw: "Question 1",
+                },
+                data: [
+                  {
+                    id: "checkbox-1",
+                    defaultValue: false,
+                    label: {
+                      raw: "Checkbox 1",
+                    },
+                  },
+                  {
+                    id: "checkbox-2",
+                    defaultValue: false,
+                    label: {
+                      raw: "Checkbox 2",
+                    },
+                  },
+                  {
+                    id: "checkbox-3",
+                    defaultValue: false,
+                    label: {
+                      raw: "Checkbox 3",
+                    },
+                  },
+                  {
+                    id: "checkbox-4",
+                    defaultValue: false,
+                    label: {
+                      raw: "Checkbox 4",
+                    },
+                  },
+                ],
+              },
+              {
+                type: "multiselect",
+                title: {
+                  raw: "Question 2",
+                },
+                data: [
+                  {
+                    id: "checkbox-1",
+                    defaultValue: false,
+                    label: {
+                      raw: "Checkbox 1",
+                    },
+                  },
+                  {
+                    id: "checkbox-2",
+                    defaultValue: false,
+                    label: {
+                      raw: "Checkbox 2",
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        },
+      ],
+    },
+  },
+  {
     id: "EXPERIMENT_L10N_TEST",
     template: "feature_callout",
     description:
@@ -1559,7 +1678,7 @@ const MESSAGES = () => [
     content: {
       messageType: "PersonalizedCard",
       position: 1,
-      cardTitle: "Personalized Just for You!",
+      cardTitle: "Personalized Just for You",
       cardMessage:
         "We’re customizing your feed to show content that matters to you, while ensuring your privacy is always respected.",
       ctaText: "Manage your settings",
@@ -1614,6 +1733,53 @@ const MESSAGES = () => [
     template: "infobar",
     frequency: {
       lifetime: 100,
+    },
+  },
+  {
+    id: "TEST_PROFILE_SPOTLIGHT",
+    groups: [],
+    targeting: "canCreateSelectableProfiles",
+    trigger: {
+      id: "defaultBrowserCheck",
+    },
+    template: "spotlight",
+    profileScope: "single",
+    priority: 2,
+    frequency: {
+      lifetime: 100,
+    },
+    content: {
+      template: "multistage",
+      modal: "tab",
+      screens: [
+        {
+          id: "SCREEN_1",
+          content: {
+            logo: {
+              imageURL:
+                "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/a3c640c8-7594-4bb2-bc18-8b4744f3aaf2.gif",
+            },
+            title: {
+              raw: "Firefox profiles Test Message",
+            },
+            subtitle: {
+              raw: "Profiles keep you organized.",
+            },
+            dismiss_button: {
+              action: {
+                dismiss: true,
+              },
+            },
+            secondary_button: {
+              label: "Close",
+              action: {
+                dismiss: true,
+              },
+            },
+          },
+        },
+      ],
+      transitions: true,
     },
   },
 ];

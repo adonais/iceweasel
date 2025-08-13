@@ -7,8 +7,8 @@
 #ifndef mozilla_ServoStyleSetInlines_h
 #define mozilla_ServoStyleSetInlines_h
 
-#include "mozilla/ServoStyleSet.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/ServoStyleSet.h"
 
 namespace mozilla {
 

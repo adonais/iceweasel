@@ -40,7 +40,7 @@ MFMediaSource::~MFMediaSource() {
 
 HRESULT MFMediaSource::RuntimeClassInitialize(
     const Maybe<AudioInfo>& aAudio, const Maybe<VideoInfo>& aVideo,
-    nsISerialEventTarget* aManagerThread, bool aIsEncrytpedCustomInit) {
+    nsISerialEventTarget* aManagerThread, bool aIsEncryptedCustomInit) {
   // On manager thread.
   MutexAutoLock lock(mMutex);
 
@@ -53,7 +53,7 @@ HRESULT MFMediaSource::RuntimeClassInitialize(
 
   if (aAudio) {
     mAudioStream.Attach(MFMediaEngineAudioStream::Create(
-        streamId++, *aAudio, aIsEncrytpedCustomInit, this));
+        streamId++, *aAudio, aIsEncryptedCustomInit, this));
     if (!mAudioStream) {
       NS_WARNING("Failed to create audio stream");
       return E_FAIL;
@@ -66,7 +66,7 @@ HRESULT MFMediaSource::RuntimeClassInitialize(
 
   if (aVideo) {
     mVideoStream.Attach(MFMediaEngineVideoStream::Create(
-        streamId++, *aVideo, aIsEncrytpedCustomInit, this));
+        streamId++, *aVideo, aIsEncryptedCustomInit, this));
     if (!mVideoStream) {
       NS_WARNING("Failed to create video stream");
       return E_FAIL;

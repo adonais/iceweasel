@@ -85,6 +85,15 @@ class HyperTextAccessibleBase {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void SetCaretOffset(int32_t aOffset);
 
   /**
+   * Return the caret rect and the widget containing the caret within this
+   * text accessible.
+   *
+   * @return the caret rect and containing widget
+   */
+  virtual std::pair<mozilla::LayoutDeviceIntRect, nsIWidget*>
+  GetCaretRect() = 0;
+
+  /**
    * Provide the line number for the caret.
    * @return 1-based index for the line number with the caret
    */

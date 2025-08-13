@@ -30,7 +30,7 @@ support-files = [
 # Bug 1617611: Fix all the tests broken by "cookies SameSite=lax by default"
 skip-if = [
   "xorigin",
-  "os == 'linux' && bits == 64", #Bug 1642198
+  "os == 'linux' && bits == 64", # Bug 1642198
 ]
 
 ["test_hover_near_text.html"]

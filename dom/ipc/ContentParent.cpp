@@ -1658,10 +1658,7 @@ bool ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
           SetMainThreadQoSPriority(nsIThread::QOS_PRIORITY_NORMAL);
         }
 
-        // Send a high priority announcement first. If this fails, SendShutdown
-        // will also fail.
-        Unused << SendShutdownConfirmedHP();
-        // Send the definite message with normal priority.
+        // Send the shutdown message with normal priority.
         if (SendShutdown()) {
           MaybeLogBlockShutdownDiagnostics(
               this, "ShutDownProcess: Sent shutdown message.", __FILE__,
@@ -5146,7 +5143,7 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
     nsresult& aResult, nsCOMPtr<nsIRemoteTab>& aNewRemoteTab,
     bool* aWindowIsNew, int32_t& aOpenLocation,
     nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo* aReferrerInfo,
-    bool aLoadURI, nsIContentSecurityPolicy* aCsp,
+    bool aLoadURI, nsIPolicyContainer* aPolicyContainer,
     const OriginAttributes& aOriginAttributes, bool aUserActivation,
     bool aTextDirectiveUserActivation) {
   // The content process should never be in charge of computing whether or
@@ -5271,7 +5268,7 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
     params->SetReferrerInfo(aReferrerInfo);
     MOZ_ASSERT(aTriggeringPrincipal, "need a valid triggeringPrincipal");
     params->SetTriggeringPrincipal(aTriggeringPrincipal);
-    params->SetCsp(aCsp);
+    params->SetPolicyContainer(aPolicyContainer);
 
     RefPtr<Element> el;
 
@@ -5375,7 +5372,7 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
     RefPtr<BrowsingContext> bc;
     aResult = newBrowserDOMWin->OpenURI(
         aURIToLoad, openInfo, nsIBrowserDOMWindow::OPEN_CURRENTWINDOW,
-        nsIBrowserDOMWindow::OPEN_NEW, aTriggeringPrincipal, aCsp,
+        nsIBrowserDOMWindow::OPEN_NEW, aTriggeringPrincipal, aPolicyContainer,
         getter_AddRefs(bc));
   }
 
@@ -5389,7 +5386,7 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
     const bool& aForWindowDotPrint, const bool& aIsTopLevelCreatedByWebContent,
     nsIURI* aURIToLoad, const nsACString& aFeatures,
     const UserActivation::Modifiers& aModifiers,
-    nsIPrincipal* aTriggeringPrincipal, nsIContentSecurityPolicy* aCsp,
+    nsIPrincipal* aTriggeringPrincipal, nsIPolicyContainer* aPolicyContainer,
     nsIReferrerInfo* aReferrerInfo, const OriginAttributes& aOriginAttributes,
     bool aUserActivation, bool aTextDirectiveUserActivation,
     CreateWindowResolver&& aResolve) {
@@ -5477,8 +5474,8 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
       aForPrinting, aForWindowDotPrint, aIsTopLevelCreatedByWebContent,
       aURIToLoad, aFeatures, aModifiers, newTab, VoidString(), rv, newRemoteTab,
       &cwi.windowOpened(), openLocation, aTriggeringPrincipal, aReferrerInfo,
-      /* aLoadUri = */ false, aCsp, aOriginAttributes, aUserActivation,
-      aTextDirectiveUserActivation);
+      /* aLoadUri = */ false, aPolicyContainer, aOriginAttributes,
+      aUserActivation, aTextDirectiveUserActivation);
   if (!ipcResult) {
     return ipcResult;
   }
@@ -5516,7 +5513,7 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindowInDifferentProcess(
     const bool& aIsTopLevelCreatedByWebContent, nsIURI* aURIToLoad,
     const nsACString& aFeatures, const UserActivation::Modifiers& aModifiers,
     const nsAString& aName, nsIPrincipal* aTriggeringPrincipal,
-    nsIContentSecurityPolicy* aCsp, nsIReferrerInfo* aReferrerInfo,
+    nsIPolicyContainer* aPolicyContainer, nsIReferrerInfo* aReferrerInfo,
     const OriginAttributes& aOriginAttributes, bool aUserActivation,
     bool aTextDirectiveUserActivation) {
   MOZ_DIAGNOSTIC_ASSERT(!nsContentUtils::IsSpecialName(aName));
@@ -5564,8 +5561,8 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindowInDifferentProcess(
       aURIToLoad, aFeatures, aModifiers,
       /* aNextRemoteBrowser = */ nullptr, aName, rv, newRemoteTab, &windowIsNew,
       openLocation, aTriggeringPrincipal, aReferrerInfo,
-      /* aLoadUri = */ true, aCsp, aOriginAttributes, aUserActivation,
-      aTextDirectiveUserActivation);
+      /* aLoadUri = */ true, aPolicyContainer, aOriginAttributes,
+      aUserActivation, aTextDirectiveUserActivation);
   if (!ipcResult) {
     return ipcResult;
   }
@@ -7515,13 +7512,7 @@ mozilla::ipc::IPCResult ContentParent::RecvHistoryCommit(
     const MaybeDiscarded<BrowsingContext>& aContext, const uint64_t& aLoadID,
     const nsID& aChangeID, const uint32_t& aLoadType,
     const bool& aCloneEntryChildren, const bool& aChannelExpired,
-    const uint32_t& aCacheKey, nsIPrincipal* aPartitionedPrincipal) {
-  if (!ValidatePrincipal(aPartitionedPrincipal,
-                         {ValidatePrincipalOptions::AllowNullPtr,
-                          ValidatePrincipalOptions::AllowSystem})) {
-    LogAndAssertFailedPrincipalValidationInfo(aPartitionedPrincipal, __func__);
-  }
-
+    const uint32_t& aCacheKey) {
   if (!aContext.IsDiscarded()) {
     CanonicalBrowsingContext* canonical = aContext.get_canonical();
     if (!canonical) {
@@ -7530,7 +7521,7 @@ mozilla::ipc::IPCResult ContentParent::RecvHistoryCommit(
     }
     canonical->SessionHistoryCommit(aLoadID, aChangeID, aLoadType,
                                     aCloneEntryChildren, aChannelExpired,
-                                    aCacheKey, aPartitionedPrincipal);
+                                    aCacheKey);
   }
   return IPC_OK();
 }
@@ -7683,13 +7674,13 @@ ContentParent::RecvGetLoadingSessionHistoryInfoFromParent(
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvGetContiguousSessionHistoryInfos(
-    const MaybeDiscarded<BrowsingContext>& aContext, SessionHistoryInfo&& aInfo,
+    const MaybeDiscarded<BrowsingContext>& aContext,
     GetContiguousSessionHistoryInfosResolver&& aResolver) {
   if (aContext.IsNullOrDiscarded()) {
     return IPC_OK();
   }
 
-  aResolver(aContext.get_canonical()->GetContiguousSessionHistoryInfos(aInfo));
+  aResolver(aContext.get_canonical()->GetContiguousSessionHistoryInfos());
 
   return IPC_OK();
 }

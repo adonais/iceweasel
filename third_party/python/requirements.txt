@@ -434,9 +434,9 @@ giturlparse==0.12.0 \
     --hash=sha256:412b74f2855f1da2fefa89fd8dde62df48476077a72fc19b62039554d27360eb \
     --hash=sha256:c0fff7c21acc435491b1779566e038757a205c1ffdcb47e4f81ea52ad8c3859a
     # via mozilla-repo-urls
-glean-parser==17.1.0 \
-    --hash=sha256:a59ab66dd734a8bea7d7a2cb632276602dd899411ee1c1cb89f439a833ba1598 \
-    --hash=sha256:d353c7eae4f369f6ec198cb61432e7c24d1d06b14aecc05b367f6c498053defc
+glean-parser==17.2.0 \
+    --hash=sha256:6a4da6cd3869a0b19e2edbc96e7d81cec5f6d7587cb628881725f44212f46273 \
+    --hash=sha256:75ace75de6fd7a77d291c67557ae581e00f843c56777caffd0dd0770ef7939e2
     # via mozilla-third-party-python-vendor-dir
 idna==3.10 \
     --hash=sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9 \
@@ -891,8 +891,8 @@ python-dateutil==2.9.0.post0 \
     # via
     #   arrow
     #   taskcluster
-python-hglib==2.4 \
-    --hash=sha256:693d6ed92a6566e78802c7a03c256cda33d08c63ad3f00fcfa11379b184b9462
+python-hglib==2.6.2 \
+    --hash=sha256:b18bd1ed53c90ee57d5714d66ad6bb72b64e930d4aeca9830892c08bb28da608
     # via mozilla-third-party-python-vendor-dir
 python-slugify==8.0.4 \
     --hash=sha256:276540b79961052b66b7d116620b36518847f52d5fd9e3a70164fc8c50faa6b8 \

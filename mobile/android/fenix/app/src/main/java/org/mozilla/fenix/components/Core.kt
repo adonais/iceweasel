@@ -91,7 +91,6 @@ import mozilla.components.service.mars.MarsTopSitesRequestConfig
 import mozilla.components.service.mars.NEW_TAB_TILE_1_PLACEMENT_KEY
 import mozilla.components.service.mars.NEW_TAB_TILE_2_PLACEMENT_KEY
 import mozilla.components.service.mars.Placement
-import mozilla.components.service.mars.contile.ContileTopSitesProvider
 import mozilla.components.service.mars.contile.ContileTopSitesUpdater
 import mozilla.components.service.pocket.ContentRecommendationsRequestConfig
 import mozilla.components.service.pocket.PocketStoriesConfig
@@ -311,7 +310,13 @@ class Core(
             listOf(
                 LastAccessMiddleware(),
                 RecentlyClosedMiddleware(recentlyClosedTabsStorage, RECENTLY_CLOSED_MAX),
-                DownloadMiddleware(context, DownloadService::class.java),
+                DownloadMiddleware(
+                    applicationContext = context,
+                    downloadServiceClass = DownloadService::class.java,
+                    deleteFileFromStorage = {
+                       context.settings().shouldCleanUpDownloadsAutomatically()
+                    },
+                ),
                 ReaderViewMiddleware(),
                 TelemetryMiddleware(context, context.settings(), metrics, crashReporter),
                 ThumbnailsMiddleware(thumbnailStorage),
@@ -346,6 +351,9 @@ class Core(
                 StartupMiddleware(
                     applicationContext = context,
                     repository = DefaultHomepageAsANewTabPreferenceRepository(context.settings()),
+                ),
+                AboutHomeMiddleware(
+                    homepageTitle = context.getString(R.string.tab_tray_homepage_tab),
                 ),
             )
 
@@ -569,14 +577,6 @@ class Core(
     }
     val pocketStoriesService by lazyMonitored { PocketStoriesService(context, pocketStoriesConfig) }
 
-    val contileTopSitesProvider by lazyMonitored {
-        ContileTopSitesProvider(
-            context = context,
-            client = client,
-            maxCacheAgeInSeconds = CONTILE_MAX_CACHE_AGE,
-        )
-    }
-
     val marsTopSitesProvider by lazyMonitored {
         MarsTopSitesProvider(
             context = context,
@@ -603,11 +603,7 @@ class Core(
     val contileTopSitesUpdater by lazyMonitored {
         ContileTopSitesUpdater(
             context = context,
-            provider = if (context.settings().marsAPIEnabled) {
-                marsTopSitesProvider
-            } else {
-                contileTopSitesProvider
-            },
+            provider = marsTopSitesProvider,
             frequency = Frequency(3, TimeUnit.HOURS),
         )
     }
@@ -638,11 +634,7 @@ class Core(
         DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSiteStorage,
             historyStorage = historyStorage,
-            topSitesProvider = if (context.settings().marsAPIEnabled) {
-                marsTopSitesProvider
-            } else {
-                contileTopSitesProvider
-            },
+            topSitesProvider = marsTopSitesProvider,
             defaultTopSites = defaultTopSites,
         )
     }
@@ -721,7 +713,6 @@ class Core(
         private const val KEY_STORAGE_NAME = "core_prefs"
         private const val RECENTLY_CLOSED_MAX = 10
         const val HISTORY_METADATA_MAX_AGE_IN_MS = 14 * 24 * 60 * 60 * 1000 // 14 days
-        private const val CONTILE_MAX_CACHE_AGE = 3600L // 60 minutes
         private const val MARS_TOP_SITES_MAX_CACHE_AGE = 1800L // 30 minutes
 
         // Maximum number of suggestions returned from the history search engine source.

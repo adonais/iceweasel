@@ -7,8 +7,8 @@
 #ifndef CSSScopeRule_h___
 #define CSSScopeRule_h___
 
-#include "mozilla/css/GroupRule.h"
 #include "mozilla/ServoBindingTypes.h"
+#include "mozilla/css/GroupRule.h"
 
 namespace mozilla::dom {
 

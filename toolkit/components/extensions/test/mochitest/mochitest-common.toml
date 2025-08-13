@@ -119,6 +119,8 @@ skip-if = ["os == 'android'"] # test case covering desktop-only expected behavio
 
 ["test_ext_browserAction_onClicked.html"]
 
+["test_ext_browserAction_onUserSettingsChanged.html"]
+
 ["test_ext_browserAction_openPopup.html"]
 skip-if = [
   "http3",

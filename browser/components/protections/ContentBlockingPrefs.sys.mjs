@@ -25,6 +25,11 @@ const PREFS_CHANGING_CATEGORY = new Set([
 export let ContentBlockingPrefs = {
   PREF_CB_CATEGORY: "browser.contentblocking.category",
   PREF_STRICT_DEF: "browser.contentblocking.features.strict",
+  PREF_ALLOW_LIST_BASELINE:
+    "privacy.trackingprotection.allow_list.baseline.enabled",
+  PREF_ALLOW_LIST_CONVENIENCE:
+    "privacy.trackingprotection.allow_list.convenience.enabled",
+
   switchingCategory: false,
 
   setPrefExpectations() {
@@ -57,6 +62,8 @@ export let ContentBlockingPrefs = {
         "privacy.fingerprintingProtection.pbmode": null,
         "network.cookie.cookieBehavior.optInPartitioning": null,
         "privacy.bounceTrackingProtection.mode": null,
+        [this.PREF_ALLOW_LIST_BASELINE]: true,
+        [this.PREF_ALLOW_LIST_CONVENIENCE]: false,
       },
       standard: {
         "network.cookie.cookieBehavior": null,
@@ -81,6 +88,8 @@ export let ContentBlockingPrefs = {
         "privacy.fingerprintingProtection.pbmode": null,
         "network.cookie.cookieBehavior.optInPartitioning": null,
         "privacy.bounceTrackingProtection.mode": null,
+        [this.PREF_ALLOW_LIST_BASELINE]: null,
+        [this.PREF_ALLOW_LIST_CONVENIENCE]: null,
       },
     };
     let type = "strict";
@@ -334,6 +343,13 @@ export let ContentBlockingPrefs = {
     }
     for (let pref in this.CATEGORY_PREFS[category]) {
       let value = this.CATEGORY_PREFS[category][pref];
+      // Ignore allow list prefs, since user is allowed to change them in strict mode.
+      if (
+        pref == this.PREF_ALLOW_LIST_BASELINE ||
+        pref == this.PREF_ALLOW_LIST_CONVENIENCE
+      ) {
+        continue;
+      }
       if (value == null) {
         if (Services.prefs.prefHasUserValue(pref)) {
           return false;
@@ -384,7 +400,7 @@ export let ContentBlockingPrefs = {
     }
   },
 
-  updateCBCategory() {
+  updateCBCategory(preserveAllowListSettings = false) {
     if (
       this.switchingCategory ||
       !Services.prefs.prefHasUserValue(this.PREF_CB_CATEGORY)
@@ -395,7 +411,7 @@ export let ContentBlockingPrefs = {
     // of the category change do not trigger yet another category change.
     this.switchingCategory = true;
     let value = Services.prefs.getStringPref(this.PREF_CB_CATEGORY);
-    this.setPrefsToCategory(value);
+    this.setPrefsToCategory(value, null, preserveAllowListSettings);
     this.switchingCategory = false;
   },
 
@@ -403,12 +419,19 @@ export let ContentBlockingPrefs = {
    * Sets all user-exposed content blocking preferences to values that match the selected category.
    *
    * @param {CBCategory} category
+   * @param {boolean} lockPrefs - Whether to lock prefs after setting them
+   * @param {boolean} preserveAllowListSettings - Whether to preserve existing allow list baseline and
+   * convenience settings
    */
-  setPrefsToCategory(category, lockPrefs) {
+  setPrefsToCategory(category, lockPrefs, preserveAllowListSettings) {
     // Leave prefs as they were if we are switching to "custom" category.
     if (category == "custom") {
       return;
     }
+
+    let prefBranch = lockPrefs
+      ? Services.prefs.getDefaultBranch(null)
+      : Services.prefs.getBranch(null);
 
     for (let pref in this.CATEGORY_PREFS[category]) {
       let value = this.CATEGORY_PREFS[category][pref];
@@ -416,15 +439,24 @@ export let ContentBlockingPrefs = {
         if (value == null) {
           Services.prefs.clearUserPref(pref);
         } else {
+          // On initialization, do not update "PREF_ALLOW_LIST_BASELINE" and "PREF_ALLOW_LIST_CONVENIENCE"
+          // to make sure user's settings are preserved
+          if (
+            preserveAllowListSettings &&
+            (pref == this.PREF_ALLOW_LIST_BASELINE ||
+              pref == this.PREF_ALLOW_LIST_CONVENIENCE)
+          ) {
+            continue;
+          }
           switch (Services.prefs.getPrefType(pref)) {
             case Services.prefs.PREF_BOOL:
-              Services.prefs.setBoolPref(pref, value);
+              prefBranch.setBoolPref(pref, value);
               break;
             case Services.prefs.PREF_INT:
-              Services.prefs.setIntPref(pref, value);
+              prefBranch.setIntPref(pref, value);
               break;
             case Services.prefs.PREF_STRING:
-              Services.prefs.setStringPref(pref, value);
+              prefBranch.setStringPref(pref, value);
               break;
           }
           if (lockPrefs) {
@@ -435,9 +467,9 @@ export let ContentBlockingPrefs = {
     }
   },
 
-  setPrefExpectationsAndUpdate() {
+  setPrefExpectationsAndUpdate(preserveAllowListSettings = false) {
     this.setPrefExpectations();
-    this.updateCBCategory();
+    this.updateCBCategory(preserveAllowListSettings);
   },
 
   observe(subject, topic, data) {
@@ -462,7 +494,7 @@ export let ContentBlockingPrefs = {
   },
 
   init() {
-    this.setPrefExpectationsAndUpdate();
+    this.setPrefExpectationsAndUpdate(true);
     this.matchCBCategory();
 
     for (let prefix of PREF_PREFIXES_TO_OBSERVE) {

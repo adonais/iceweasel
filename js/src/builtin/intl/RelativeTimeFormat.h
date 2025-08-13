@@ -74,12 +74,13 @@ class RelativeTimeFormatObject : public NativeObject {
 
 namespace intl {
 
-using FieldType = js::ImmutableTenuredPtr<PropertyName*> JSAtomState::*;
+using RelativeTimeFormatUnit =
+    js::ImmutableTenuredPtr<PropertyName*> JSAtomState::*;
 
 [[nodiscard]] bool FormattedRelativeTimeToParts(
     JSContext* cx, HandleString str,
-    const mozilla::intl::NumberPartVector& parts, FieldType relativeTimeUnit,
-    MutableHandleValue result);
+    const mozilla::intl::NumberPartVector& parts,
+    RelativeTimeFormatUnit relativeTimeUnit, MutableHandleValue result);
 
 }  // namespace intl
 }  // namespace js

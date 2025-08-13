@@ -8,6 +8,7 @@
 #define AccessibleCaret_h__
 
 #include "mozilla/Attributes.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/AnonymousContent.h"
 #include "nsCOMPtr.h"
 #include "nsIDOMEventListener.h"
@@ -16,7 +17,6 @@
 #include "nsISupportsImpl.h"
 #include "nsLiteralString.h"
 #include "nsRect.h"
-#include "mozilla/RefPtr.h"
 #include "nsString.h"
 
 class nsIFrame;

@@ -7,10 +7,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   thompsonSampleSort: "chrome://global/content/ml/ThomSample.sys.mjs",
   sortKeysValues: "chrome://global/content/ml/ThomSample.sys.mjs",
+  PersistentCache: "resource://newtab/lib/PersistentCache.sys.mjs",
 });
 
 const SHORTCUT_TABLE = "moz_newtab_shortcuts_interaction";
 const PLACES_TABLE = "moz_places";
+const SHORTCUT_THOM_WEIGHT = 0.3;
+const SHORTCUT_FREC_WEIGHT = 0.7;
+const SHORTCUT_BIAS_WEIGHT = 0.01;
+const SHORTCUT_POSITIVE_PRIOR = 1;
+const SHORTCUT_NEGATIVE_PRIOR = 100;
 
 /**
  * Get clicks and impressions for sites in topsites array
@@ -75,51 +81,142 @@ async function fetchShortcutInteractions(topsites, table, placeTable) {
 }
 
 /**
- * Scale an array to have min value 0 and max value 1
+ * Compute average clicks and imps over items
+ * Smoooth those averages towards priors
  *
- * @param {number[]} arr Array to scale
- * @returns {scaled: number[]}  Scaled array
+ * @param {number[]} clicks Array of clicks
+ * @param {number[]} imps Array of impressions
+ * @param {number} pos_rate prior for clicks
+ * @param {number} neg_rate prior for impressions
+ * @returns {number[]} smoothed click count and impression count
  */
-function zeroOneScaler(arr) {
-  const min = Math.min(...arr);
-  const max = Math.max(...arr);
-  const range = max - min;
-  const scaled = arr.map(x => (x - min) / range);
-  return scaled;
+
+/**
+ * Normalize values in an array by the sum of the array
+ *
+ * @param {number[]} vec Array of values to normalize
+ * @returns {number[]} Normalized array
+ */
+export function sumNorm(vec) {
+  if (!vec.length) {
+    return vec;
+  }
+  const vsum = vec.reduce((a, b) => a + b, 0);
+
+  let normed = [];
+  if (vsum !== 0) {
+    normed = vec.map(v => v / vsum);
+  } else {
+    normed = vec;
+  }
+  return normed;
 }
 
-function multi_ranker(key_arr, arrs, weights) {
-  // zero-one scale array, then weight
-  const scaled_arrs = arrs.map((arr, i) =>
-    zeroOneScaler(arr).map(num => num * weights[i])
-  );
-  // sum over scaled-weighted arrays
-  const resolved_scores = scaled_arrs.reduce((sum, arr) =>
-    arr.map((value, i) => sum[i] + value)
-  );
-  // sort keys by scores
-  const [final_keys, final_scores] = lazy.sortKeysValues(
-    resolved_scores,
-    key_arr
-  );
-  return [final_keys, final_scores];
+function initShortcutWeights(prefValues) {
+  const cfg = prefValues.smartShortcutsConfig ?? {};
+  return {
+    thom: (cfg.thom_weight ?? SHORTCUT_THOM_WEIGHT * 100) / 100,
+    frec: (cfg.frec_weight ?? SHORTCUT_FREC_WEIGHT * 100) / 100,
+    bias: (cfg.bias_weight ?? SHORTCUT_BIAS_WEIGHT * 100) / 100,
+  };
+}
+
+/**
+ * this function normalizes all values in vals and updates
+ * the running mean and variance in normobj
+ * normobj stores info to calculate a running mean and variance
+ * over a feature, this is stored in the shortcut cache
+ *
+ * @param {number[]} vals scores to normalize
+ * @param {object} normobj Dictionary of storing info for running mean var
+ * @returns {[number, obj]} normalized features and the updated object
+ */
+function normUpdate(vals, input_normobj) {
+  if (!vals.length) {
+    return vals;
+  }
+  let normobj = {};
+  if (!input_normobj) {
+    normobj = { beta: 1e-3, mean: vals[0], var: 1.0 };
+  } else {
+    normobj = { ...input_normobj };
+  }
+  let delta = 0;
+  for (const v of vals) {
+    delta = v - normobj.mean;
+    normobj.mean += normobj.beta * delta;
+    normobj.var =
+      (1 - normobj.beta) * normobj.var + normobj.beta * delta * delta;
+  }
+  const std = Math.sqrt(normobj.var);
+  const new_vals = vals.map(v => (v - normobj.mean) / std);
+  return [new_vals, normobj];
+}
+
+/**
+ * Compute linear combination of scores, weighted
+ *
+ * @param {object[]} scores Dictionary of scores
+ * @param {object[]} weights Dictionary of weights
+ * @returns {number} Linear combination of scores*weights
+ */
+export function computeLinearScore(scores, weights) {
+  let final = 0;
+  let score = 0;
+  for (const [feature, weight] of Object.entries(weights)) {
+    score = scores[feature] ?? 0;
+    final += score * weight;
+  }
+  return final;
+}
+
+/**
+ * Check for bad numerical weights or changes in init config
+ *
+ * @param {object} weights Dictionary of weights from cache
+ * @param {object} fresh Dictionary of weights based on config
+ * @param {object} used Weights used to initialize the model
+ * @returns {number} Linear combination of scores*weights
+ */
+function checkWeights(weights, fresh, used) {
+  if (!weights || !used) {
+    return [fresh, fresh];
+  }
+  for (const fkey of ["frec", "thom"]) {
+    if (!Number.isFinite(weights[fkey]) || fresh[fkey] !== used[fkey]) {
+      return [fresh, fresh];
+    }
+  }
+  return [weights, used];
 }
 
 /**
  * Apply thompson sampling to topsites array, considers frecency weights
  *
  * @param {object[]} topsites Array of topsites objects
- * @param {number} alpha Positive prior applied to all topsites
- * @param {number} beta Negative prior applied to all topsites
- * @param {number} thom_weight Number between 0 and 1, weight for thompson sampled scores. Frecency weight will be the compliment
+ * @param {object} prefValues Store user prefs, controls how this ranking behaves
  * @returns {combined: object[]} Array of topsites in reranked order
  */
-export async function tsampleTopSites(
-  topsites,
-  alpha = 1,
-  beta = 1,
-  thom_weight = 1.0
-) {
+export async function tsampleTopSites(topsites, prefValues) {
+  const alpha =
+    prefValues.smartShortcutsConfig?.positive_prior ?? SHORTCUT_POSITIVE_PRIOR;
+  const beta =
+    prefValues.smartShortcutsConfig?.negative_prior ?? SHORTCUT_NEGATIVE_PRIOR;
+  // cache stores weights and the last feature values used to produce ranking
+  const sc_obj = new lazy.PersistentCache("shortcut_cache", true);
+  const sc_cache = await sc_obj.get();
+
+  // check for bad weights (numerical) or change in init configs
+  const [weights, init_weights] = checkWeights(
+    sc_cache.weights,
+    initShortcutWeights(prefValues),
+    sc_cache.init_weights
+  );
+
+  // write the weights and init... might be redundance sometimes
+  await sc_obj.set("weights", weights);
+  await sc_obj.set("init_weights", init_weights);
+
   // split topsites into two arrays
   const [withGuid, withoutGuid] = topsites.reduce(
     ([withG, withoutG], site) => {
@@ -139,27 +236,51 @@ export async function tsampleTopSites(
     PLACES_TABLE
   );
 
-  // sample a sorted version of topsites
+  // sample scores for the topsites
   const ranked_thetas = await lazy.thompsonSampleSort({
     key_array: withGuid,
     obs_positive: clicks,
-    obs_negative: impressions,
+    obs_negative: impressions.map((imp, i) => Math.max(0, imp - clicks[i])),
     prior_positive: clicks.map(() => alpha),
     prior_negative: impressions.map(() => beta),
     do_sort: false,
   });
+  const [theta_scores, thom_norm] = normUpdate(
+    ranked_thetas[1],
+    sc_cache.thom_norm
+  );
+  await sc_obj.set("thom_norm", thom_norm);
 
   // get frecency from withGUID
-  const frec_scores = withGuid.map(site => site.frecency);
+  const [frec_scores, frec_norm] = normUpdate(
+    withGuid.map(site => site.frecency),
+    sc_cache.frec_norm
+  );
+  await sc_obj.set("frec_norm", frec_norm);
 
-  // rank by frecency and thompson theta
-  const ranked_scores = multi_ranker(
-    withGuid,
-    [frec_scores, ranked_thetas[1]],
-    [1 - thom_weight, thom_weight]
+  // update cache of scores, compute final score
+  const score_map = Object.fromEntries(
+    withGuid.map((site, i) => {
+      const entry = {
+        frec: frec_scores[i],
+        thom: theta_scores[i],
+        bias: 1.0,
+      };
+
+      const final = computeLinearScore(entry, weights);
+
+      return [site.guid, { ...entry, final }];
+    })
   );
 
+  const sortedSitesVals = lazy.sortKeysValues(
+    withGuid.map(g => score_map[g.guid].final),
+    withGuid
+  );
+
+  await sc_obj.set("score_map", score_map);
+
   // drop theta from ranked to keep just the keys, combine back
-  const combined = ranked_scores[0].concat(withoutGuid);
+  const combined = sortedSitesVals[0].concat(withoutGuid);
   return combined; // returns keys ordered by sampled score
 }

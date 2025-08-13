@@ -19,6 +19,15 @@ add_task(async function () {
     !findElement(dbg, "mappedSourceLink"),
     "When we are on the pretty printed source, we don't show the link to the minified source"
   );
+  const footerButton = findElement(dbg, "sourceMapFooterButton");
+  ok(
+    !footerButton.classList.contains("original"),
+    "The pretty printed source isn't described as an original to the user"
+  );
+  ok(
+    footerButton.classList.contains("not-mapped"),
+    "Neither is it described as being mapped"
+  );
   const ppSrc = findSource(dbg, "math.min.js:formatted");
 
   ok(ppSrc, "Pretty-printed source exists");

@@ -180,6 +180,9 @@
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: pre-wrap;
+  word-break: break-word;
+  text-indent: 4ch hanging each-line;
   color: var(--theme-text-color-strong);
   grid-column: span 2;
 }

@@ -9,9 +9,9 @@
 #ifndef nsCSSAnonBoxes_h___
 #define nsCSSAnonBoxes_h___
 
+#include "mozilla/PseudoStyleType.h"
 #include "nsAtom.h"
 #include "nsGkAtoms.h"
-#include "mozilla/PseudoStyleType.h"
 
 class nsCSSAnonBoxes {
   using PseudoStyleType = mozilla::PseudoStyleType;

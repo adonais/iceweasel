@@ -41,6 +41,9 @@ partial interface File {
 partial interface File {
   [GetterThrows, ChromeOnly, NeedsCallerType]
   readonly attribute DOMString mozFullPath;
+
+  [ChromeOnly]
+  undefined setMozRelativePath(DOMString name);
 };
 
 // Mozilla extensions

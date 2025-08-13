@@ -97,16 +97,6 @@
     Text for the message displayed in the contextual feature recommendation popup promoting the erase private browsing feature.
   -->
   <string name="erase_action_cfr_message" moz:removedIn="141" tools:ignore="UnusedResources">Ахатә сеанс ҿыц алагаразы абра шәақәыӷәӷәа. Уҭоурых, акукиқәа, зегьы ԥыхтәуп.</string>
-  <!--
-    Toolbar "contextual feature recommendation" (CFR)
-
-    Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
-  -->
-  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Анавигациа ҿыц ала еиҳа ирласны аӡсара</string>
-  <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Асаит аҿы, ари апанель аҵәахуеит ҵаҟа уаннеиуа аԥшааразы аҭыԥ ҟаҵаразы.</string>
-  <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Уи аҭаӡҩыра аҭоурых аҟны адаҟьақәа рыбжьара аиҭасразы ашәақь агәыҵәҟьақәа шәақәыӷәӷәаны иаанкылатәуп.</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Акамера анеира аҭахуп. Апрограмма асистематә еиқәыршәарақәа рахь шәца, иалышәх Азинқәа, нас иақәыӷәӷәа Акамера, насгьы иалышәх Азин.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -312,7 +302,7 @@
   <!-- Browser menu label that toggles the request for the desktop site of the currently visited page -->
   <string name="browser_menu_switch_to_desktop_site" moz:removedIn="141" tools:ignore="UnusedResources">Акомпьютер аверсиахь ацара</string>
   <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site">Мобилтә саит ахь ацара</string>
+  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Мобилтә саит ахь ацара</string>
   <!-- Browser menu label that navigates to the page tools sub-menu -->
   <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">Аинструментқәа</string>
   <!-- Content description (not visible, for screen readers etc.): Back button for all menu redesign sub-menu -->
@@ -521,41 +511,6 @@
   <string name="juno_onboarding_add_search_widget_positive_button" tools:ignore="BrandUsage,UnusedResources">Firefox авиджет ацҵатәуп</string>
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">Уажәазы акәым</string>
-  <!--
-    Onboarding header for the add-ons card used by Nimbus experiments. Nimbus experiments do not support string placeholders.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="onboarding_add_on_header" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Анарҭбаарақәа рыла Firefox рхиатәуп</string>
-  <!-- Onboarding sub header for the add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_sub_header" moz:removedIn="140" tools:ignore="UnusedResources">Ушәарҭадара, уусура, уҳәа убас иҵегьы реиӷьтәразы ахԥатәи аган анарҭбаарақәа ацҵа.</string>
-  <!-- Onboarding add-ons card, for checking more add-ons on, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_explore_more_extensions_2" moz:removedIn="140" tools:ignore="UnusedResources">Еиҳаны анарҭбаарақәа ҭышәҵаа</string>
-  <!-- Onboarding add-ons card, button for start browsing, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_start_browsing_button_2" moz:removedIn="140" tools:ignore="UnusedResources">Аинтернет аԥшаара алагара</string>
-  <!-- Ublock name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Ublock Origin" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_ublock_name" moz:removedIn="140" tools:ignore="UnusedResources">uBlock Ахыҵхырҭа</string>
-  <!-- Ublock description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_ublock_description" moz:removedIn="140" tools:ignore="UnusedResources">Аӡыргақәа ҟазарыла, еффективла раанкылара.</string>
-  <!-- Privacy Badger name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Privacy Badger" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_privacy_badger_name" moz:removedIn="140" tools:ignore="UnusedResources">Амаӡара Баџьер</string>
-  <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_privacy_badger_description" moz:removedIn="140" tools:ignore="UnusedResources">Анти-трекинг ахьчара ахаҳә ԥшӡа. Иумбо ашьҭаҵаҩцәеи ашпионтә рҵабыргқәеи раанкылара.</string>
-  <!-- Search by Image name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Search by Image" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_search_by_image_name" moz:removedIn="140" tools:ignore="UnusedResources">Асахьала аԥшаара</string>
-  <!-- Search by Image description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_search_by_image_description" moz:removedIn="140" tools:ignore="UnusedResources">Аинтерес зҵоу картинку и узнайте о ней больше.</string>
-  <!-- Dark Reader name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Dark Reader" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_dark_reader_name" moz:removedIn="140" tools:ignore="UnusedResources">Аԥхьаҩ Еиқәаҵәа</string>
-  <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_dark_reader_description" moz:removedIn="140" tools:ignore="UnusedResources">Мобилтә интернет азы еиқәыршәатәу атема лашьца.</string>
-  <!-- Label for the number of reviews for an add-on. %1$s is the formatted number of reviews e.g. "1,234", "12,345", "123,456". -->
-  <string name="onboarding_add_on_reviews_label" moz:removedIn="140" tools:ignore="UnusedResources">Ахҳәаа: %1$s</string>
-  <!-- Content description for the add-on icon. -->
-  <string name="onboarding_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Ацҵа адыргаҷа</string>
-  <!-- Content description for the add add-on button. -->
-  <string name="onboarding_add_on_add_button_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Ацҵа апытҟәыр ацҵатәуп</string>
-  <!-- Content description for the star rating group. %1$s is the rating. -->
-  <string name="onboarding_add_on_star_rating_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Ахәшьара %1$s 5 рҟынтә</string>
   <!--
     Search Widget
 
@@ -814,10 +769,6 @@
     a section where users see a list of tabs that they have visited in the past few days
   -->
   <string name="customize_toggle_recently_visited">Ааигәа дахьнеиз</string>
-  <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">Узырхәыцша ажәабжьқәа</string>
-  <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-  <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">Астатиақәа %s аҟынтә</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">Испонсортәу астатиақәа</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -1012,8 +963,6 @@
   <string name="preference_gestures_dynamic_toolbar">Аиҭагара амыругақәа рпанель аҵәахразы</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Аҵаҩыра аартразы амыругақәа рпанель аҟны аҩада инаскьатәуп</string>
-  <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Адресқәа рпанельи амыругақәа рпанельи рҵәахразы еиҭагатәуп</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Аҭаӡҩырақәа реиҭныԥсахларазы адресқәа рпанель аганахьала инаскьатәуп</string>
   <!--
@@ -1211,9 +1160,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Ианыхтәуп аҭоурых</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">Аҭоурых аныхуп</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Аҭоурых аныхуп</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">%1$s аныхуп</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s аныхуп</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Аныхра</string>
   <!--
@@ -1251,7 +1200,7 @@
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">Агәылаҵа аиҭашьақәыргылара</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title">%s ҿыц аус арура аҭахын</string>
+  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s ҿыц аус арура аҭахын</string>
   <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
   <string name="unsubmitted_crash_dialog_checkbox_label">Аиԥҟьара аҳасабырбақәа автоматикала идәықәҵатәуп</string>
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
@@ -1263,9 +1212,9 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">Ари аҭаӡ аныхра уҭахума?</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">Ари аҭаӡ аныхра уҭахума?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog">%s иаԥнахуеит иалху ахәҭақәа.</string>
+  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s иаԥнахуеит иалху ахәҭақәа.</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">Аԥыхра</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -1293,7 +1242,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">Аныхра</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">Ахьчара</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">Ахьчара</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -1304,7 +1253,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">Аҭаӡ ԥсахтәуп</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">Асинхронизациа зызу шәыбӷьыцқәа рбаразы шәҭал</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">Асинхронизациа зызу шәыбӷьыцқәа рбаразы шәҭал</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">Адаҟьа адрес</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -1316,24 +1265,24 @@
   <!-- Label for a text input field for a bookmark or folder name -->
   <string name="bookmark_name_label_normal_case">Ахьӡ</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">Аҭаӡ аԥҵара</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">Аҭаӡ аԥҵара</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">Аҭаӡ алхтәуп</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">Ахьӡ амазароуп</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">Ахьӡ амазароуп</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">Ииашам аҳа адрес</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">Ара анҵамҭақәа ыҟаӡам</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">Ара анҵамҭақәа ыҟаӡам</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s аныхуп</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">Адыргақәа аныхуп</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">Адыргақәа аныхуп</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3">Иалкаау аҭаӡқәа раныхра</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">Иалкаау аҭаӡқәа раныхра</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">АԤЫХРА</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
@@ -1341,7 +1290,7 @@
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
   <string name="bookmark_delete_multiple_items">Ианыху ахәҭақәа: %s</string>
   <!-- Text for the button to search all bookmarks -->
-  <string name="bookmark_search">Иҭажәгал шәыԥшааратә термин</string>
+  <string name="bookmark_search" tools:ignore="UnusedResources" moz:removedIn="143">Иҭажәгал шәыԥшааратә термин</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Ухынҳәы</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -1493,7 +1442,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d абларҭа алхуп</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">Аҭаӡқәа еиқәырхоуп!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Аҭаӡқәа еиқәырхоуп!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection">Аизга еиқәырхоуп!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -1622,9 +1571,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">Аизга аныхуп</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Аизга аныхуп</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">Аизга ахьӡ ԥсахуп</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Аизга ахьӡ ԥсахуп</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Абларҭа аркуп</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -1661,9 +1610,9 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">Агәра ганы уҟоума %1$s аԥыхра уҭахума?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">Аныхра</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Аныхра</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">Азхьарԥш ақәҭыхуп</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">Азхьарԥш ақәҭыхуп</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Ари текст ҿырԥштәуп. Абраҟа атекст ашәагаа анузырҳалак ма ианурмаҷуа ишааԥшуа аарԥшразы ауп.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2187,14 +2136,12 @@
   <string name="search_add_custom_engine_error_empty_search_string">Иҭажәгал аԥшааратә цәаҳәа</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Аԥшааратә цәаҳәа аҿырԥштәы аформат иақәшәоит ҳәа агәра ганы шәыҟаз</string>
-  <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">“%s” аимадараан агха ҟалеит</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">%s ацҵоуп</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ацҵоуп</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">%s еиқәырхоуп</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s еиқәырхоуп</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">%s аныхуп</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s аныхуп</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Абри аӡбаразы:</string>
   <!-- First step for the allowing a permission -->
@@ -2220,7 +2167,7 @@
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">Ари асаит азы ҷыдалатәи аҭагылазаашьа ыҟам</string>
   <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation">Агәра ганы уҟоума ари анҵамҭа аԥыхра?</string>
+  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">Агәра ганы уҟоума ари анҵамҭа аԥыхра?</string>
   <!-- Browser menu button that adds a shortcut to the home fragment -->
   <string name="browser_menu_add_to_shortcuts">Аҿацәқәа рахь иацҵатәуп</string>
   <!-- Browser menu button that removes a shortcut from the home fragment -->
@@ -2377,23 +2324,11 @@
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">Ииастәуп хыхь</string>
   <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description">Аркра</string>
-  <!--
-    Pocket recommended stories
-
-    Header text for a section on the home screen.
-  -->
-  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">Узырхәыцша ажәабжьқәа</string>
+  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">Аркра</string>
   <!-- Header text for a section on the home screen. -->
   <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">Ажәабжьқәа темала</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
   <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">Еиҳаны аилкаара</string>
-  <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-  <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">%s адгылара аманы.</string>
-  <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Ари Firefox аҭаацәара иахәҭакуп. %s</string>
-  <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">Еиҳаны аилкаара</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Аспонсортә</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -2426,8 +2361,6 @@
   <string name="a11y_action_label_wallpaper_collection_learn_more">ари аизга иазкны еиҳаны адырразы аҵаҩра аарттәуп</string>
   <!-- Action label for links that point to an article. Talkback will append this to say "Double tap to read the article". -->
   <string name="a11y_action_label_read_article" moz:removedIn="141" tools:ignore="UnusedResources">Астатиа уаԥхьа</string>
-  <!-- Action label for links to the Firefox Pocket website. Talkback will append this to say "Double tap to open link to learn more". -->
-  <string name="a11y_action_label_pocket_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">Еиҳаны адырразы аҵаҩра шәацныҟәа</string>
   <!-- Content description for headings announced by accessibility service. %s is the text of the heading. Talkback will announce the text and then speak the word "Heading" indicating to the user that this text is a heading for a section. -->
   <string name="a11y_heading">%s, Ахы</string>
   <!-- Title for dialog displayed when trying to access links present in a text. -->

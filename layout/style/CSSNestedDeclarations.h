@@ -7,8 +7,8 @@
 #ifndef mozilla_CSSNestedDeclarations_h
 #define mozilla_CSSNestedDeclarations_h
 
-#include "mozilla/css/Rule.h"
 #include "mozilla/ServoBindingTypes.h"
+#include "mozilla/css/Rule.h"
 #include "nsDOMCSSDeclaration.h"
 
 namespace mozilla {

@@ -6,16 +6,17 @@
 
 #include "nsMathMLmoFrame.h"
 
+#include <algorithm>
+
 #include "gfxContext.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_mathml.h"
+#include "mozilla/dom/MathMLElement.h"
 #include "nsCSSValue.h"
-#include "nsLayoutUtils.h"
-#include "nsPresContext.h"
 #include "nsContentUtils.h"
 #include "nsFrameSelection.h"
-#include "mozilla/dom/MathMLElement.h"
-#include <algorithm>
+#include "nsLayoutUtils.h"
+#include "nsPresContext.h"
 
 using namespace mozilla;
 

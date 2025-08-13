@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright 2021 The Chromium Authors. All rights reserved.
+# Copyright 2021 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -10,6 +10,7 @@ import os
 import sys
 
 from util import build_utils
+import action_helpers  # build_utils adds //build to sys.path.
 
 
 def _ParseArgs(args):
@@ -31,9 +32,9 @@ def _ParseArgs(args):
       action='store_true',
       help='Whether to strip resource names from the resource table of the apk '
       'or module.')
-  parser.add_argument('--proto-path',
+  parser.add_argument('--input-path',
                       required=True,
-                      help='Input proto format resources APK.')
+                      help='Input resources APK.')
   parser.add_argument('--resources-config-paths',
                       default='[]',
                       help='GN list of paths to aapt2 resources config files.')
@@ -44,12 +45,12 @@ def _ParseArgs(args):
       '--resources-path-map-out-path',
       help='Path to file produced by aapt2 that maps original resource paths '
       'to shortened resource paths inside the apk or module.')
-  parser.add_argument('--optimized-proto-path',
+  parser.add_argument('--optimized-output-path',
                       required=True,
                       help='Output for `aapt2 optimize`.')
   options = parser.parse_args(args)
 
-  options.resources_config_paths = build_utils.ParseGnList(
+  options.resources_config_paths = action_helpers.parse_gn_list(
       options.resources_config_paths)
 
   if options.resources_path_map_out_path and not options.short_resource_paths:
@@ -143,8 +144,8 @@ def _OptimizeApk(output, options, temp_dir, unoptimized_path, r_txt_path):
 def main(args):
   options = _ParseArgs(args)
   with build_utils.TempDir() as temp_dir:
-    _OptimizeApk(options.optimized_proto_path, options, temp_dir,
-                 options.proto_path, options.r_text_in)
+    _OptimizeApk(options.optimized_output_path, options, temp_dir,
+                 options.input_path, options.r_text_in)
 
 
 if __name__ == '__main__':

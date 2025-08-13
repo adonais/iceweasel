@@ -283,6 +283,185 @@ class EmulationModule extends RootBiDiModule {
     await Promise.all(commands);
   }
 
+  /**
+   * Set the locale override to the list of top-level navigables
+   * or user contexts.
+   *
+   * @param {object=} options
+   * @param {Array<string>=} options.contexts
+   *     Optional list of browsing context ids.
+   * @param {(string|null)} options.locale
+   *     Locale string which have to override
+   *     the return result of JavaScript Intl APIs.
+   *     Null value resets the override.
+   * @param {Array<string>=} options.userContexts
+   *     Optional list of user context ids.
+   *
+   * @throws {InvalidArgumentError}
+   *     Raised if an argument is of an invalid type or value.
+   * @throws {NoSuchFrameError}
+   *     If the browsing context cannot be found.
+   * @throws {NoSuchUserContextError}
+   *     Raised if the user context id could not be found.
+   */
+  async setLocaleOverride(options = {}) {
+    const {
+      contexts: contextIds = null,
+      locale: localeArg,
+      userContexts: userContextIds = null,
+    } = options;
+
+    let locale;
+    if (localeArg !== undefined) {
+      if (localeArg === null) {
+        // The API requires an empty string to reset the override.
+        locale = "";
+      } else {
+        locale = lazy.assert.string(
+          localeArg,
+          lazy.pprint`Expected "locale" to be a string, got ${localeArg}`
+        );
+
+        // Validate if locale is a structurally valid language tag.
+        try {
+          Intl.getCanonicalLocales(localeArg);
+        } catch (err) {
+          if (err instanceof RangeError) {
+            throw new lazy.error.InvalidArgumentError(
+              `Expected "locale" to be a structurally valid language tag (e.g., "en-GB"), got ${localeArg}`
+            );
+          }
+
+          throw err;
+        }
+      }
+    }
+
+    if (contextIds !== null && userContextIds !== null) {
+      throw new lazy.error.InvalidArgumentError(
+        `Providing both "contexts" and "userContexts" arguments is not supported`
+      );
+    }
+
+    const navigables = new Set();
+    const userContexts = new Set();
+    if (contextIds !== null) {
+      lazy.assert.isNonEmptyArray(
+        contextIds,
+        lazy.pprint`Expected "contexts" to be a non-empty array, got ${contextIds}`
+      );
+
+      for (const contextId of contextIds) {
+        lazy.assert.string(
+          contextId,
+          lazy.pprint`Expected elements of "contexts" to be a string, got ${contextId}`
+        );
+
+        const context = this.#getBrowsingContext(contextId);
+
+        lazy.assert.topLevel(
+          context,
+          `Browsing context with id ${contextId} is not top-level`
+        );
+
+        navigables.add(context);
+      }
+    } else if (userContextIds !== null) {
+      lazy.assert.isNonEmptyArray(
+        userContextIds,
+        lazy.pprint`Expected "userContexts" to be a non-empty array, got ${userContextIds}`
+      );
+
+      for (const userContextId of userContextIds) {
+        lazy.assert.string(
+          userContextId,
+          lazy.pprint`Expected elements of "userContexts" to be a string, got ${userContextId}`
+        );
+
+        const internalId =
+          lazy.UserContextManager.getInternalIdById(userContextId);
+
+        if (internalId === null) {
+          throw new lazy.error.NoSuchUserContextError(
+            `User context with id: ${userContextId} doesn't exist`
+          );
+        }
+
+        userContexts.add(internalId);
+
+        // Prepare the list of navigables to update.
+        lazy.UserContextManager.getTabsForUserContext(internalId).forEach(
+          tab => {
+            const contentBrowser = lazy.TabManager.getBrowserForTab(tab);
+            navigables.add(contentBrowser.browsingContext);
+          }
+        );
+      }
+    } else {
+      throw new lazy.error.InvalidArgumentError(
+        `At least one of "contexts" or "userContexts" arguments should be provided`
+      );
+    }
+
+    const sessionDataItems = [];
+    if (userContextIds !== null) {
+      for (const userContext of userContexts) {
+        sessionDataItems.push({
+          category: "locale-override",
+          moduleName: "_configuration",
+          values: [locale],
+          contextDescriptor: {
+            type: lazy.ContextDescriptorType.UserContext,
+            id: userContext,
+          },
+          method: lazy.SessionDataMethod.Add,
+        });
+      }
+    } else {
+      for (const navigable of navigables) {
+        sessionDataItems.push({
+          category: "locale-override",
+          moduleName: "_configuration",
+          values: [locale],
+          contextDescriptor: {
+            type: lazy.ContextDescriptorType.TopBrowsingContext,
+            id: navigable.browserId,
+          },
+          method: lazy.SessionDataMethod.Add,
+        });
+      }
+    }
+
+    if (sessionDataItems.length) {
+      // TODO: Bug 1953079. Saving the locale override in the session data works fine
+      // with one session, but when we start supporting multiple BiDi session, we will
+      // have to rethink this approach.
+      await this.messageHandler.updateSessionData(sessionDataItems);
+    }
+
+    for (const navigable of navigables) {
+      this._setLocaleForBrowsingContext({ locale, context: navigable });
+    }
+  }
+
+  /**
+   * Set the locale override to the top-level browsing context.
+   *
+   * @param {object=} options
+   * @param {BrowsingContext} options.context
+   *     Top-level browsing context object which is a target
+   *     for the locale override.
+   * @param {(string|null)} options.locale
+   *     Locale string which have to override
+   *     the return result of JavaScript Intl APIs.
+   *     Null value resets the override.
+   */
+  _setLocaleForBrowsingContext(options) {
+    const { context, locale } = options;
+
+    context.languageOverride = locale;
+  }
+
   #getBrowsingContext(contextId) {
     const context = lazy.TabManager.getBrowsingContextById(contextId);
     if (context === null) {

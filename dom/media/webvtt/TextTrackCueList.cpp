@@ -68,31 +68,25 @@ TextTrackCue* TextTrackCueList::GetCueById(const nsAString& aId) {
 }
 
 void TextTrackCueList::AddCue(TextTrackCue& aCue) {
-  if (mList.Contains(&aCue)) {
+  if (mCueSet.Contains(&aCue)) {
     return;
   }
   mList.InsertElementSorted(&aCue, CompareCuesByTime());
+  mCueSet.Insert(&aCue);
 }
 
 void TextTrackCueList::RemoveCue(TextTrackCue& aCue, ErrorResult& aRv) {
-  if (!mList.Contains(&aCue)) {
+  if (!mCueSet.Contains(&aCue)) {
     aRv.Throw(NS_ERROR_DOM_NOT_FOUND_ERR);
     return;
   }
-  mList.RemoveElement(&aCue);
+  RemoveCue(aCue);
 }
 
 void TextTrackCueList::RemoveCue(TextTrackCue& aCue) {
   mList.RemoveElement(&aCue);
+  mCueSet.Remove(&aCue);
 }
-
-void TextTrackCueList::RemoveCueAt(uint32_t aIndex) {
-  if (aIndex < mList.Length()) {
-    mList.RemoveElementAt(aIndex);
-  }
-}
-
-void TextTrackCueList::RemoveAll() { mList.Clear(); }
 
 void TextTrackCueList::GetArray(nsTArray<RefPtr<TextTrackCue>>& aCues) {
   aCues = mList.Clone();
@@ -111,11 +105,8 @@ void TextTrackCueList::NotifyCueUpdated(TextTrackCue* aCue) {
   }
 }
 
-bool TextTrackCueList::IsCueExist(TextTrackCue* aCue) {
-  if (aCue && mList.Contains(aCue)) {
-    return true;
-  }
-  return false;
+bool TextTrackCueList::IsCueExist(TextTrackCue* aCue) const {
+  return aCue && mCueSet.Contains(aCue);
 }
 
 nsTArray<RefPtr<TextTrackCue>>& TextTrackCueList::GetCuesArray() {

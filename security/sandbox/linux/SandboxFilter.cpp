@@ -539,23 +539,65 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
     return ConvertError(socketpair(AF_UNIX, SOCK_SEQPACKET, 0, fds));
   }
 
-  static intptr_t SocketpairUnpackTrap(ArgsRef aArgs, void* aux) {
-#ifdef __NR_socketpair
-    auto argsPtr = reinterpret_cast<unsigned long*>(aArgs.args[1]);
-    return DoSyscall(__NR_socketpair, argsPtr[0], argsPtr[1], argsPtr[2],
-                     argsPtr[3]);
-#else
-    MOZ_CRASH("unreachable?");
-    return -ENOSYS;
-#endif
-  }
+  static intptr_t SocketcallUnpackTrap(ArgsRef aArgs, void* aux) {
+#ifdef __NR_socketcall
+    auto argsPtr = reinterpret_cast<const unsigned long*>(aArgs.args[1]);
+    int sysno = -1;
 
-  static intptr_t GetSockOptUnpackTrap(ArgsRef aArgs, void* aux) {
-#ifdef __NR_getsockopt
-    auto argsPtr = reinterpret_cast<unsigned long*>(aArgs.args[1]);
-    return DoSyscall(__NR_getsockopt, argsPtr[0], argsPtr[1], argsPtr[2],
-                     argsPtr[3], argsPtr[4]);
-#else
+    // When Linux added separate syscalls for socket operations on the
+    // old socketcall platforms, they had long since stopped adding
+    // send and recv syscalls, because they can be trivially mapped
+    // onto sendto and recvfrom (see also open vs. openat).
+    //
+    // But, socketcall itself *does* have separate calls for those.
+    // So, we need to remap them; since send(to) and recv(from)
+    // have basically the same types except for const, the code is
+    // factored out here.
+    unsigned long altArgs[6];
+    auto legacySendRecvWorkaround = [&] {
+      MOZ_ASSERT(argsPtr != altArgs);
+      memcpy(altArgs, argsPtr, sizeof(unsigned long[4]));
+      altArgs[4] = altArgs[5] = 0;
+      argsPtr = altArgs;
+    };
+
+    switch (aArgs.args[0]) {
+      // See also the other socketcall table in SandboxFilterUtil.cpp
+#  define DISPATCH_SOCKETCALL(this_sysno, this_call) \
+    case this_call:                                  \
+      sysno = this_sysno;                            \
+      break
+
+      DISPATCH_SOCKETCALL(__NR_socketpair, SYS_SOCKETPAIR);
+      DISPATCH_SOCKETCALL(__NR_getsockopt, SYS_GETSOCKOPT);
+      DISPATCH_SOCKETCALL(__NR_sendmsg, SYS_SENDMSG);
+      DISPATCH_SOCKETCALL(__NR_recvmsg, SYS_RECVMSG);
+      DISPATCH_SOCKETCALL(__NR_sendto, SYS_SENDTO);
+      DISPATCH_SOCKETCALL(__NR_recvfrom, SYS_RECVFROM);
+      DISPATCH_SOCKETCALL(__NR_sendmmsg, SYS_SENDMMSG);
+      DISPATCH_SOCKETCALL(__NR_recvmmsg, SYS_RECVMMSG);
+      // __NR_recvmmsg_time64 is not available as a socketcall; a
+      // Y2K38-ready userland would call it directly.
+#  undef DISPATCH_SOCKETCALL
+
+      case SYS_SEND:
+        sysno = __NR_sendto;
+        legacySendRecvWorkaround();
+        break;
+      case SYS_RECV:
+        sysno = __NR_recvfrom;
+        legacySendRecvWorkaround();
+        break;
+    }
+
+    // This assert will fail if someone tries to map a socketcall to
+    // this trap without adding it to the switch statement above.
+    MOZ_RELEASE_ASSERT(sysno >= 0);
+
+    return DoSyscall(sysno, argsPtr[0], argsPtr[1], argsPtr[2], argsPtr[3],
+                     argsPtr[4], argsPtr[5]);
+
+#else  // no socketcall
     MOZ_CRASH("unreachable?");
     return -ENOSYS;
 #endif
@@ -758,20 +800,63 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         .Default(InvalidSyscall());
   }
 
+  virtual BoolExpr MsgFlagsAllowed(const Arg<int>& aFlags) const {
+    // MSG_DONTWAIT: used by IPC
+    // MSG_NOSIGNAL: used by the sandbox (broker, reporter)
+    // MSG_CMSG_CLOEXEC: should be used by anything that's passed fds
+    static constexpr int kNeeded =
+        MSG_DONTWAIT | MSG_NOSIGNAL | MSG_CMSG_CLOEXEC;
+
+    // These don't appear to be used in our code at the moment, but
+    // they seem low-risk enough to allow to avoid the possibility of
+    // breakage.  (Necko might use MSG_PEEK, but the socket process
+    // overrides this method.)
+    static constexpr int kHarmless = MSG_PEEK | MSG_WAITALL | MSG_TRUNC;
+
+    static constexpr int kAllowed = kNeeded | kHarmless;
+    return (aFlags & ~kAllowed) == 0;
+  }
+
+  static ResultExpr UnpackSocketcallOrAllow() {
+    // See bug 1066750.
+    if (HasSeparateSocketCalls()) {
+      // If this is a socketcall(2) platform, but the kernel also
+      // supports separate syscalls (>= 4.3.0), we can unpack the
+      // arguments and filter them.
+      return Trap(SocketcallUnpackTrap, nullptr);
+    }
+    // Otherwise, we can't filter the args if the platform passes
+    // them by pointer.
+    return Allow();
+  }
+
   Maybe<ResultExpr> EvaluateSocketCall(int aCall,
                                        bool aHasArgs) const override {
     switch (aCall) {
       case SYS_RECVMSG:
       case SYS_SENDMSG:
-        // These next four aren't needed for IPC or other core
-        // functionality at the time of this writing, but they're
-        // subsets of recvmsg/sendmsg so there's nothing gained by not
-        // allowing them here (and simplifying subclasses).
+        if (aHasArgs) {
+          Arg<int> flags(2);
+          return Some(
+              If(MsgFlagsAllowed(flags), Allow()).Else(InvalidSyscall()));
+        }
+        return Some(UnpackSocketcallOrAllow());
+
+        // These next four weren't needed for IPC or other core
+        // functionality when they were added, but they're subsets of
+        // recvmsg/sendmsg so there's nothing gained by not allowing
+        // them here (and simplifying subclasses).  Also, there may be
+        // unknown dependencies on them now.
       case SYS_RECVFROM:
       case SYS_SENDTO:
       case SYS_RECV:
       case SYS_SEND:
-        return Some(Allow());
+        if (aHasArgs) {
+          Arg<int> flags(3);
+          return Some(
+              If(MsgFlagsAllowed(flags), Allow()).Else(InvalidSyscall()));
+        }
+        return Some(UnpackSocketcallOrAllow());
 
       case SYS_SOCKETPAIR: {
         // We try to allow "safe" (always connected) socketpairs when using the
@@ -780,17 +865,8 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         if (!mBroker && !mAllowUnsafeSocketPair) {
           return Nothing();
         }
-        // See bug 1066750.
         if (!aHasArgs) {
-          // If this is a socketcall(2) platform, but the kernel also
-          // supports separate syscalls (>= 4.2.0), we can unpack the
-          // arguments and filter them.
-          if (HasSeparateSocketCalls()) {
-            return Some(Trap(SocketpairUnpackTrap, nullptr));
-          }
-          // Otherwise, we can't filter the args if the platform passes
-          // them by pointer.
-          return Some(Allow());
+          return Some(UnpackSocketcallOrAllow());
         }
         Arg<int> domain(0), type(1);
         return Some(
@@ -810,7 +886,7 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         // Best-effort argument filtering as for socketpair(2), above.
         if (!aHasArgs) {
           if (HasSeparateSocketCalls()) {
-            return Some(Trap(GetSockOptUnpackTrap, nullptr));
+            return Some(Trap(SocketcallUnpackTrap, nullptr));
           }
           return Some(Allow());
         }
@@ -2084,6 +2160,17 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
     }
   }
 
+  BoolExpr MsgFlagsAllowed(const Arg<int>& aFlags) const override {
+    // Necko might use advanced networking features, and the sandbox
+    // is relatively permissive compared to content, so this is a
+    // default-allow policy.
+    //
+    // However, `MSG_OOB` has historically been buggy, and the way it
+    // maps to TCP is notoriously broken (see RFC 6093), so it should
+    // be safe to block.
+    return (aFlags & MSG_OOB) == 0;
+  }
+
   Maybe<ResultExpr> EvaluateSocketCall(int aCall,
                                        bool aHasArgs) const override {
     switch (aCall) {
@@ -2095,11 +2182,14 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
       // sendmsg and recvmmsg needed for HTTP3/QUIC UDP IO. Note sendmsg is
       // allowed in SandboxPolicyCommon.
       case SYS_RECVMMSG:
-        return Some(Allow());
-
       // Required for the DNS Resolver thread.
       case SYS_SENDMMSG:
-        return Some(Allow());
+        if (aHasArgs) {
+          Arg<int> flags(3);
+          return Some(
+              If(MsgFlagsAllowed(flags), Allow()).Else(InvalidSyscall()));
+        }
+        return Some(UnpackSocketcallOrAllow());
 
       case SYS_GETSOCKOPT:
       case SYS_SETSOCKOPT:

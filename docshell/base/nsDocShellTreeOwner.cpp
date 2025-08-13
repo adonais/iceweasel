@@ -932,9 +932,10 @@ nsDocShellTreeOwner::HandleEvent(Event* aEvent) {
 #endif
               LoadURIOptions loadURIOptions;
               loadURIOptions.mTriggeringPrincipal = triggeringPrincipal;
-              nsCOMPtr<nsIContentSecurityPolicy> csp;
-              handler->GetCsp(dragEvent, getter_AddRefs(csp));
-              loadURIOptions.mCsp = csp;
+              nsCOMPtr<nsIPolicyContainer> policyContainer;
+              handler->GetPolicyContainer(dragEvent,
+                                          getter_AddRefs(policyContainer));
+              loadURIOptions.mPolicyContainer = policyContainer;
               webnav->FixupAndLoadURIString(url, loadURIOptions);
             }
           }

@@ -176,7 +176,10 @@ Maybe<WSRunScanner::TextFragmentData::BoundaryData> WSRunScanner::
   const bool isWhiteSpaceCollapsible = !EditorUtils::IsWhiteSpacePreformatted(
       *aPoint.template ContainerAs<Text>());
   const bool isNewLineCollapsible =
+      isWhiteSpaceCollapsible &&
       !EditorUtils::IsNewLinePreformatted(*aPoint.template ContainerAs<Text>());
+  const bool isNewLineLineBreak =
+      EditorUtils::IsNewLinePreformatted(*aPoint.template ContainerAs<Text>());
   const nsTextFragment& textFragment =
       aPoint.template ContainerAs<Text>()->TextFragment();
   for (uint32_t i = std::min(aPoint.Offset(), textFragment.GetLength()); i;
@@ -196,8 +199,10 @@ Maybe<WSRunScanner::TextFragmentData::BoundaryData> WSRunScanner::
         if (isNewLineCollapsible) {
           continue;  // collapsible linefeed.
         }
-        // preformatted linefeed.
-        wsTypeOfNonCollapsibleChar = WSType::PreformattedLineBreak;
+        // preformatted linefeed or replaced with a non-collapsible white-space.
+        wsTypeOfNonCollapsibleChar = isNewLineLineBreak
+                                         ? WSType::PreformattedLineBreak
+                                         : WSType::NonCollapsibleCharacters;
         break;
       case HTMLEditUtils::kNBSP:
         if (isWhiteSpaceCollapsible) {
@@ -327,7 +332,10 @@ Maybe<WSRunScanner::TextFragmentData::BoundaryData> WSRunScanner::
   const bool isWhiteSpaceCollapsible = !EditorUtils::IsWhiteSpacePreformatted(
       *aPoint.template ContainerAs<Text>());
   const bool isNewLineCollapsible =
+      isWhiteSpaceCollapsible &&
       !EditorUtils::IsNewLinePreformatted(*aPoint.template ContainerAs<Text>());
+  const bool isNewLineLineBreak =
+      EditorUtils::IsNewLinePreformatted(*aPoint.template ContainerAs<Text>());
   const nsTextFragment& textFragment =
       aPoint.template ContainerAs<Text>()->TextFragment();
   for (uint32_t i = aPoint.Offset(); i < textFragment.GetLength(); i++) {
@@ -346,8 +354,10 @@ Maybe<WSRunScanner::TextFragmentData::BoundaryData> WSRunScanner::
         if (isNewLineCollapsible) {
           continue;  // collapsible linefeed.
         }
-        // preformatted linefeed.
-        wsTypeOfNonCollapsibleChar = WSType::PreformattedLineBreak;
+        // preformatted linefeed or replaced with a non-collapsible white-space.
+        wsTypeOfNonCollapsibleChar = isNewLineLineBreak
+                                         ? WSType::PreformattedLineBreak
+                                         : WSType::NonCollapsibleCharacters;
         break;
       case HTMLEditUtils::kNBSP:
         if (isWhiteSpaceCollapsible) {

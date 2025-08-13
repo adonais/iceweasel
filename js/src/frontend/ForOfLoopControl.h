@@ -89,11 +89,10 @@ class ForOfLoopControl : public LoopControl {
   [[nodiscard]] bool emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce);
 
   [[nodiscard]] bool emitIteratorCloseInInnermostScopeWithTryNote(
-      BytecodeEmitter* bce,
-      CompletionKind completionKind = CompletionKind::Normal);
-  [[nodiscard]] bool emitIteratorCloseInScope(
-      BytecodeEmitter* bce, EmitterScope& currentScope,
-      CompletionKind completionKind = CompletionKind::Normal);
+      BytecodeEmitter* bce, CompletionKind completionKind);
+  [[nodiscard]] bool emitIteratorCloseInScope(BytecodeEmitter* bce,
+                                              EmitterScope& currentScope,
+                                              CompletionKind completionKind);
 
   [[nodiscard]] bool emitPrepareForNonLocalJumpFromScope(
       BytecodeEmitter* bce, EmitterScope& currentScope, bool isTarget,

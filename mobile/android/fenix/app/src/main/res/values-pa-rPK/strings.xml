@@ -97,16 +97,6 @@
     Text for the message displayed in the contextual feature recommendation popup promoting the erase private browsing feature.
   -->
   <string name="erase_action_cfr_message" moz:removedIn="141" tools:ignore="UnusedResources">تازہ نجی سیشن شروع کرن لئی اتھے چھوہو۔ آپݨے تاریخ، کوکیاں — ہر چیز ہٹا دیو۔</string>
-  <!--
-    Toolbar "contextual feature recommendation" (CFR)
-
-    Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
-  -->
-  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">نویں نیویگیشن نال ودھ تیزی نال براؤز کرو</string>
-  <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">ویب‌سائیٹ تے وادھو براؤز کرن لئی تھاں بݨاوݨ واسطے سکرول کرن دے دوران ایس پٹی نوں پاسے کر دتا جاندا اے۔</string>
-  <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">ایس ٹیب دے واسطے وچلے صفحیاں چ جاݨ لئی تیر دے نشاناں نوں چھوہ کے رکھو۔</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">کیمرے لئی پہنچ چاہیدی اے۔ فون دیاں سیٹنگاں تے جاؤ، اجازتاں نوں چھوہو تے اجازت دیݨ دی چوݨ نوں چھوہو۔</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -294,7 +284,7 @@
   <!-- Browser menu label that toggles the request for the desktop site of the currently visited page -->
   <string name="browser_menu_switch_to_desktop_site" moz:removedIn="141" tools:ignore="UnusedResources">ڈیسک‌ٹاپ سائیٹ لئی بدلو</string>
   <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site">موبائیل سائیٹ لئی سوئچ کرو</string>
+  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">موبائیل سائیٹ لئی سوئچ کرو</string>
   <!-- Browser menu label that navigates to the page tools sub-menu -->
   <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">سند</string>
   <!--
@@ -728,10 +718,6 @@
     a section where users see a list of tabs that they have visited in the past few days
   -->
   <string name="customize_toggle_recently_visited">حال دے کھولھیاں گئیاں</string>
-  <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">سوچݨ لئی مجبور کرن والے لیکھ</string>
-  <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-  <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">%s ولوں تیار کیتے لیکھ</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">حمایت کیتیاں کہاݨیاں</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -926,8 +912,6 @@
   <string name="preference_gestures_dynamic_toolbar">ٹول‌بار لکاوݨ لئی سکرول کرو</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">ٹیباں کھولھݨ لئی ٹول‌بار تے ول سرکاؤ</string>
-  <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">سرناواں پٹی تے ٹول‌بار نوں لکاوݨ لیج سکرول کرو</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">ٹیباں چ بدلݨ لئی سرناواں پٹی نوں پاسے ول سرکاؤ</string>
   <!--
@@ -1125,9 +1109,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">تاریخ ہٹاؤ</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">تاریخ ہٹایا گیا</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">تاریخ ہٹایا گیا</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">%1$s مٹا گیا</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s مٹا گیا</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">مٹاؤ</string>
   <!--
@@ -1169,9 +1153,9 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">کیہہ تسیں ایہہ فولڈر نوں ہٹاؤݨا چاہندے او؟</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">کیہہ تسیں ایہہ فولڈر نوں ہٹاؤݨا چاہندے او؟</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog">%s چݨیاں چیزاں نوں ہٹائےگا۔</string>
+  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s چݨیاں چیزاں نوں ہٹائےگا۔</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">رد کرو</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -1195,7 +1179,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">مٹاؤ</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">سامبھو</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">سامبھو</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -1206,7 +1190,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">فولڈر نوں سودھو</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">ہم وقت کیتے بک‌مارک ویکھݨ لئی سائین ان کرو</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">ہم وقت کیتے بک‌مارک ویکھݨ لئی سائین ان کرو</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">پتہ</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -1214,28 +1198,28 @@
   <!-- Bookmark NAME editing field label -->
   <string name="bookmark_name_label">ناں</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">فولڈر پایو</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">فولڈر پایو</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">فولڈر چݨو</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">ناں ہوݨا چاہیدا اے</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">ناں ہوݨا چاہیدا اے</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">غلط URL</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">اتھے کوئی بک‌مارک نہیں اے</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">اتھے کوئی بک‌مارک نہیں اے</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s مٹا گیا</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">بک‌مارک ہٹایا</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">بک‌مارک ہٹایا</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3">چݨو فولڈراں نوں ہٹایا جا رہا اے</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">چݨو فولڈراں نوں ہٹایا جا رہا اے</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">موڑو</string>
   <!-- Text for the button to search all bookmarks -->
-  <string name="bookmark_search">کھوج دی لکھت پایو</string>
+  <string name="bookmark_search" tools:ignore="UnusedResources" moz:removedIn="143">کھوج دی لکھت پایو</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">واپس کرو</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -1365,7 +1349,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ٹیب چݨی</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">ٹیباں سانبھالیاں!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">ٹیباں سانبھالیاں!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection">بھنڈار سنبھالیاں!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -1494,7 +1478,7 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">بھنڈار ہٹیایا گیا</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">بھنڈار ہٹیایا گیا</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">موڑو</string>
   <!-- QR code scanner prompt dialog positive option to allow navigation to scanned link -->
@@ -1506,7 +1490,7 @@
   <!-- QR code scanner prompt dialog positive option when there is an error -->
   <string name="qr_scanner_dialog_invalid_ok">ٹھیک اے</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">مٹاؤ</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">مٹاؤ</string>
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">فونٹ دا آکار</string>
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
@@ -1715,7 +1699,7 @@
   <!-- Text for the menu button to delete a search engine -->
   <string name="search_engine_delete">مٹاؤ</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">%1$s مٹا گیا</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%1$s مٹا گیا</string>
   <!-- Login overflow menu delete button -->
   <string name="login_menu_delete_button">مٹاؤ</string>
   <!-- Login overflow menu edit button -->
@@ -1733,9 +1717,7 @@
   <!-- Content description for close button in collection placeholder. -->
   <string name="remove_home_collection_placeholder_content_description">ہٹاؤ</string>
   <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description">بند کرو</string>
-  <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">ہور جاݨو</string>
+  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">بند کرو</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">سیٹنگاں نوں جاؤ</string>
   <!-- Translations feature -->

@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.browser.tabstrip
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -28,9 +29,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.systemGestureExclusion
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -64,7 +65,6 @@ import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.compose.Favicon
@@ -96,7 +96,6 @@ private val tabStripHorizontalPadding = 16.dp
  * @param onCloseTabClick Invoked when a tab is closed.
  * @param onLastTabClose Invoked when the last remaining open tab is closed.
  * @param onSelectedTabClick Invoked when a tab is selected.
- * @param onPrivateModeToggleClick Invoked when the private mode toggle button is clicked.
  * @param onTabCounterClick Invoked when tab counter is clicked.
  */
 @Composable
@@ -109,7 +108,6 @@ fun TabStrip(
     onCloseTabClick: (isPrivate: Boolean) -> Unit,
     onLastTabClose: (isPrivate: Boolean) -> Unit,
     onSelectedTabClick: () -> Unit,
-    onPrivateModeToggleClick: (mode: BrowsingMode) -> Unit,
     onTabCounterClick: () -> Unit,
 ) {
     val isPossiblyPrivateMode by appStore.observeAsState(false) { it.mode.isPrivate }
@@ -118,9 +116,6 @@ fun TabStrip(
             isSelectDisabled = onHome,
             isPossiblyPrivateMode = isPossiblyPrivateMode,
             addTab = onAddTabClick,
-            toggleBrowsingMode = { isPrivate ->
-                onPrivateModeToggleClick(BrowsingMode.fromBoolean(!isPrivate))
-            },
             closeTab = { isPrivate, numberOfTabs ->
                 it.selectedTabId?.let { selectedTabId ->
                     closeTab(
@@ -139,9 +134,6 @@ fun TabStrip(
     TabStripContent(
         state = state,
         onAddTabClick = onAddTabClick,
-        onPrivateModeToggleClick = {
-            onPrivateModeToggleClick(BrowsingMode.fromBoolean(!state.isPrivateMode))
-        },
         onCloseTabClick = { tabId, isPrivate ->
             closeTab(
                 numberOfTabs = state.tabs.size,
@@ -169,7 +161,6 @@ fun TabStrip(
 private fun TabStripContent(
     state: TabStripState,
     onAddTabClick: () -> Unit,
-    onPrivateModeToggleClick: () -> Unit,
     onCloseTabClick: (id: String, isPrivate: Boolean) -> Unit,
     onSelectedTabClick: (id: String) -> Unit,
     onMove: (tabId: String, targetId: String, placeAfter: Boolean) -> Unit,
@@ -189,20 +180,6 @@ private fun TabStripContent(
             modifier = Modifier.weight(1f, fill = false),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(
-                onClick = onPrivateModeToggleClick,
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.mozac_ic_private_mode_24),
-                    tint = FirefoxTheme.colors.iconPrimary,
-                    contentDescription = if (state.isPrivateMode) {
-                        stringResource(R.string.content_description_disable_private_browsing_button)
-                    } else {
-                        stringResource(R.string.content_description_private_browsing_button)
-                    },
-                )
-            }
-
             TabsList(
                 state = state,
                 modifier = Modifier.weight(1f, fill = false),
@@ -230,8 +207,11 @@ private fun TabStripContent(
     }
 }
 
-@Composable
+// There is a bug with `BoxWithConstraints` where it flags the `BoxWithConstraintsScope` being unused
+// even though it's being used implicitly below via the `maxWidth` property of `BoxWithConstraintsScope`.
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @OptIn(ExperimentalFoundationApi::class)
+@Composable
 private fun TabsList(
     state: TabStripState,
     modifier: Modifier = Modifier,
@@ -570,7 +550,6 @@ private fun TabStripContentPreview(tabs: List<TabStripItem>) {
                 tabCounterMenuItems = emptyList(),
             ),
             onAddTabClick = {},
-            onPrivateModeToggleClick = {},
             onCloseTabClick = { _, _ -> },
             onSelectedTabClick = {},
             onMove = { _, _, _ -> },
@@ -604,7 +583,6 @@ private fun TabStripPreview() {
                 onLastTabClose = {},
                 onCloseTabClick = {},
                 onSelectedTabClick = {},
-                onPrivateModeToggleClick = {},
                 onTabCounterClick = {},
             )
         }

@@ -134,9 +134,8 @@ GamepadHandle GamepadPlatformService::AddGamepad(
   GamepadHandle gamepadHandle{mNextGamepadHandleValue++,
                               GamepadHandleKind::GamepadPlatformManager};
 
-  // Only VR controllers has displayID, we give 0 to the general gamepads.
   GamepadAdded a(NS_ConvertUTF8toUTF16(nsDependentCString(aID)), aMapping,
-                 aHand, 0, aNumButtons, aNumAxes, aHaptics, aNumLightIndicator,
+                 aHand, aNumButtons, aNumAxes, aHaptics, aNumLightIndicator,
                  aNumTouchEvents);
 
   mGamepadAdded.emplace(gamepadHandle, a);

@@ -809,9 +809,11 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   // pushed on the stack and emits code to destructure each part of a [] or
   // {} lhs expression.
   [[nodiscard]] bool emitDestructuringOps(ListNode* pattern,
-                                          DestructuringFlavor flav);
+                                          DestructuringFlavor flav,
+                                          SelfHostedIter selfHostedIter);
   [[nodiscard]] bool emitDestructuringOpsArray(ListNode* pattern,
-                                               DestructuringFlavor flav);
+                                               DestructuringFlavor flav,
+                                               SelfHostedIter selfHostedIter);
   [[nodiscard]] bool emitDestructuringOpsObject(ListNode* pattern,
                                                 DestructuringFlavor flav);
 
@@ -838,17 +840,15 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   // Pops iterator from the top of the stack. Pushes the result of |.next()|
   // onto the stack.
   [[nodiscard]] bool emitIteratorNext(
-      const mozilla::Maybe<uint32_t>& callSourceCoordOffset,
-      IteratorKind kind = IteratorKind::Sync,
-      SelfHostedIter selfHostedIter = SelfHostedIter::Deny);
-  [[nodiscard]] bool emitIteratorCloseInScope(
-      EmitterScope& currentScope, IteratorKind iterKind = IteratorKind::Sync,
-      CompletionKind completionKind = CompletionKind::Normal,
-      SelfHostedIter selfHostedIter = SelfHostedIter::Deny);
+      const mozilla::Maybe<uint32_t>& callSourceCoordOffset, IteratorKind kind,
+      SelfHostedIter selfHostedIter);
+  [[nodiscard]] bool emitIteratorCloseInScope(EmitterScope& currentScope,
+                                              IteratorKind iterKind,
+                                              CompletionKind completionKind,
+                                              SelfHostedIter selfHostedIter);
   [[nodiscard]] bool emitIteratorCloseInInnermostScope(
-      IteratorKind iterKind = IteratorKind::Sync,
-      CompletionKind completionKind = CompletionKind::Normal,
-      SelfHostedIter selfHostedIter = SelfHostedIter::Deny) {
+      IteratorKind iterKind, CompletionKind completionKind,
+      SelfHostedIter selfHostedIter) {
     return emitIteratorCloseInScope(*innermostEmitterScope(), iterKind,
                                     completionKind, selfHostedIter);
   }

@@ -16,18 +16,24 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.CustomTabMenuItem
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_OFF
+import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_ON
 import org.mozilla.fenix.components.menu.compose.header.MenuNavHeader
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
@@ -35,6 +41,8 @@ import org.mozilla.fenix.theme.Theme
 /**
  * Wrapper column containing the main menu items.
  *
+ * @param canGoBack Whether or not the back button is enabled.
+ * @param canGoForward Whether or not the forward button is enabled.
  * @param isSiteLoading Whether or not the custom tab is currently loading.
  * @param isPdf Whether or not the current custom tab is a PDF.
  * @param isDesktopMode Whether or not the current site is in desktop mode.
@@ -52,9 +60,12 @@ import org.mozilla.fenix.theme.Theme
  * @param onStopButtonClick Invoked when the user clicks on the stop button.
  * @param onShareButtonClick Invoked when the user clicks on the share button.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Suppress("LongParameterList", "LongMethod")
 @Composable
 internal fun CustomTabMenu(
+    canGoBack: Boolean,
+    canGoForward: Boolean,
     isSiteLoading: Boolean,
     isPdf: Boolean,
     isDesktopMode: Boolean,
@@ -75,6 +86,16 @@ internal fun CustomTabMenu(
         header = {
             MenuNavHeader(
                 isSiteLoading = isSiteLoading,
+                goBackState = if (canGoBack) {
+                    MenuItemState.ENABLED
+                } else {
+                    MenuItemState.DISABLED
+                },
+                goForwardState = if (canGoForward) {
+                    MenuItemState.ENABLED
+                } else {
+                    MenuItemState.DISABLED
+                },
                 onBackButtonClick = onBackButtonClick,
                 onForwardButtonClick = onForwardButtonClick,
                 onRefreshButtonClick = onRefreshButtonClick,
@@ -94,7 +115,7 @@ internal fun CustomTabMenu(
             if (isDesktopMode) {
                 badgeText = stringResource(id = R.string.browser_feature_desktop_site_on)
                 badgeBackgroundColor = FirefoxTheme.colors.badgeActive
-                menuItemState = MenuItemState.ACTIVE
+                menuItemState = if (isPdf) MenuItemState.DISABLED else MenuItemState.ACTIVE
             } else {
                 badgeText = stringResource(id = R.string.browser_feature_desktop_site_off)
                 badgeBackgroundColor = FirefoxTheme.colors.layerSearch
@@ -122,6 +143,13 @@ internal fun CustomTabMenu(
             )
 
             MenuItem(
+                modifier = Modifier.semantics {
+                    testTagsAsResourceId = true
+                    testTag = when (menuItemState) {
+                        MenuItemState.ACTIVE -> DESKTOP_SITE_ON
+                        else -> DESKTOP_SITE_OFF
+                    }
+                },
                 label = stringResource(id = R.string.browser_menu_desktop_site),
                 beforeIconPainter = painterResource(id = R.drawable.mozac_ic_device_mobile_24),
                 state = menuItemState,
@@ -195,6 +223,8 @@ private fun CustomTabMenuPreview() {
                 .background(color = FirefoxTheme.colors.layer3),
         ) {
             CustomTabMenu(
+                canGoBack = true,
+                canGoForward = true,
                 isSiteLoading = true,
                 isPdf = false,
                 isDesktopMode = false,
@@ -224,6 +254,8 @@ private fun CustomTabMenuPrivatePreview() {
                 .background(color = FirefoxTheme.colors.layer3),
         ) {
             CustomTabMenu(
+                canGoBack = false,
+                canGoForward = false,
                 isSiteLoading = false,
                 isPdf = true,
                 isDesktopMode = false,

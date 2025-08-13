@@ -278,7 +278,7 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
 
   void GetMozTriggeringPrincipalURISpec(nsAString& aPrincipalURISpec);
 
-  nsIContentSecurityPolicy* GetMozCSP();
+  nsIPolicyContainer* GetPolicyContainer();
 
   mozilla::dom::Element* GetDragTarget() const { return mDragTarget; }
 

@@ -77,6 +77,12 @@ async function testStaticTheme(options) {
   } else {
     expectedDefaultIcon = withDefaultIcon ? "default.png" : "dark.png";
   }
+  if (Services.appinfo.nativeMenubar) {
+    ok(
+      !document.getElementById("toolbar-menubar").hasAttribute("brighttext"),
+      "Shouldn't change menubar icon colors for native menubar"
+    );
+  }
   await testBrowserAction(extension, expectedDefaultIcon);
 
   let theme = ExtensionTestUtils.loadExtension({

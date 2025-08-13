@@ -11,6 +11,7 @@ UNIFIED_SOURCES += [
     "TestParser.cpp",
     "TestPlainTextSerializer.cpp",
     "TestScheduler.cpp",
+    "TestTextDirective.cpp",
     "TestXMLSerializerNoBreakLink.cpp",
     "TestXPathGenerator.cpp",
 ]

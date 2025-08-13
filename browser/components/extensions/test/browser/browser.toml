@@ -55,6 +55,8 @@ skip-if = [
 
 ["browser_ExtensionControlledPopup.js"]
 
+["browser_browserSetting_vertical_tabs.js"]
+
 ["browser_ext_action_popup_allowed_urls.js"]
 
 ["browser_ext_activeScript.js"]
@@ -84,6 +86,8 @@ https_first_disabled = true
 ["browser_ext_browserAction_incognito.js"]
 
 ["browser_ext_browserAction_keyclick.js"]
+
+["browser_ext_browserAction_onUserSettingsChanged.js"]
 
 ["browser_ext_browserAction_pageAction_icon.js"]
 
@@ -124,11 +128,6 @@ skip-if = [
 ["browser_ext_commands_execute_browser_action.js"]
 
 ["browser_ext_commands_execute_page_action.js"]
-skip-if = [
-  "os == 'linux' && os_version == '18.04' && verify",
-  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && verify",
-  "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && verify",
-]
 
 ["browser_ext_commands_execute_sidebar_action.js"]
 
@@ -172,9 +171,7 @@ tags = "bleedover"
 
 ["browser_ext_contextMenus.js"]
 support-files = [ "!/browser/components/places/tests/browser/head.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1971622
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'"] # Bug 1971622
 
 ["browser_ext_contextMenus_bookmarks.js"]
 support-files = [ "!/browser/components/places/tests/browser/head.js"]
@@ -238,11 +235,6 @@ support-files = ["../../../../../devtools/client/inspector/extensions/test/head_
 
 ["browser_ext_find.js"]
 https_first_disabled = true
-skip-if = [
-  "os == 'linux' && os_version == '18.04' && verify",
-  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && verify",
-  "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && verify",
-]
 
 ["browser_ext_getViews.js"]
 
@@ -253,9 +245,7 @@ skip-if = [
 ["browser_ext_incognito_popup.js"]
 
 ["browser_ext_incognito_views.js"]
-skip-if = [
-  "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && !fission", # Disabled due to bleedover with other tests when run in regular suites; passes in "failures" jobs
-]
+skip-if = ["os == 'mac' && os_version == '11.20' && arch == 'aarch64' && !fission"] # Disabled due to bleedover with other tests when run in regular suites; passes in "failures" jobs
 tags = "bleedover"
 
 ["browser_ext_lastError.js"]
@@ -323,12 +313,7 @@ https_first_disabled = true
 ["browser_ext_omnibox.js"]
 
 ["browser_ext_openPanel.js"]
-skip-if = [
-  "os == 'linux' && os_version == '18.04' && !debug && verify",
-  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && !debug && verify",
-  "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && !debug && verify",
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1775565
-]
+skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt"] # Bug 1775565
 
 ["browser_ext_optionsPage_activity.js"]
 
@@ -355,17 +340,12 @@ https_first_disabled = true
 
 ["browser_ext_pageAction_context.js"]
 https_first_disabled = true
-skip-if = ["os == 'linux' && os_version == '18.04' && !debug && verify"]
 
 ["browser_ext_pageAction_contextMenu.js"]
 
 ["browser_ext_pageAction_popup.js"]
 
 ["browser_ext_pageAction_popup_resize.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && debug && verify",
-  "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && debug && verify",
-]
 
 ["browser_ext_pageAction_show_matches.js"]
 https_first_disabled = true
@@ -590,9 +570,7 @@ https_first_disabled = true
 https_first_disabled = true
 
 ["browser_ext_tabs_move_array_multiple_windows.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && ccov", # Bug 1786601
-]
+skip-if = ["os == 'win' && os_version == '11.26100' && processor == 'x86_64' && ccov"] # Bug 1786601
 
 ["browser_ext_tabs_move_discarded.js"]
 
@@ -656,9 +634,7 @@ https_first_disabled = true
 ["browser_ext_themes_validation.js"]
 
 ["browser_ext_topSites.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks && swgl", # Bug 1775583
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks && swgl"] # Bug 1775583
 
 ["browser_ext_url_overrides_newtab.js"]
 skip-if = [
@@ -714,10 +690,6 @@ https_first_disabled = true
 https_first_disabled = true
 
 ["browser_ext_windows_create.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && verify",
-  "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && verify",
-]
 tags = "fullscreen"
 
 ["browser_ext_windows_create_cookieStoreId.js"]
@@ -749,8 +721,6 @@ skip-if = [
   "os == 'linux' && os_version == '18.04'", # Bug 1533982 for linux1804
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1533982
   "os == 'mac' && os_version == '10.15' && debug", # Bug 1780998
-  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && verify",
-  "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && verify",
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1869793
 ]
 

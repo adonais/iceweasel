@@ -7,9 +7,9 @@
 #ifndef MOZILLA_PAINTING_TRANSFORMCLIPNODE_H
 #define MOZILLA_PAINTING_TRANSFORMCLIPNODE_H
 
+#include "mozilla/Maybe.h"
 #include "mozilla/gfx/MatrixFwd.h"
 #include "mozilla/gfx/Rect.h"
-#include "mozilla/Maybe.h"
 #include "nsISupports.h"
 #include "nsRegionFwd.h"
 

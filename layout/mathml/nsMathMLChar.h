@@ -7,13 +7,13 @@
 #ifndef nsMathMLChar_h___
 #define nsMathMLChar_h___
 
+#include "gfxTextRun.h"
+#include "nsBoundingMetrics.h"
 #include "nsColor.h"
 #include "nsMathMLOperators.h"
 #include "nsPoint.h"
 #include "nsRect.h"
 #include "nsString.h"
-#include "nsBoundingMetrics.h"
-#include "gfxTextRun.h"
 
 class gfxContext;
 class nsGlyphTable;

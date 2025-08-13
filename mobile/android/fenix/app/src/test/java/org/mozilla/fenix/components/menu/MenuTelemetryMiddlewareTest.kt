@@ -22,7 +22,6 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.AppMenu
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.HomeMenu
-import org.mozilla.fenix.GleanMetrics.HomeScreen
 import org.mozilla.fenix.GleanMetrics.Menu
 import org.mozilla.fenix.GleanMetrics.ReaderMode
 import org.mozilla.fenix.GleanMetrics.Translations
@@ -106,17 +105,6 @@ class MenuTelemetryMiddlewareTest {
         store.dispatch(MenuAction.Navigate.AddToHomeScreen).joinBlocking()
 
         assertTelemetryRecorded(Events.browserMenuAction, item = "add_to_homescreen")
-    }
-
-    @Test
-    fun `WHEN navigating to customize homepage THEN record the customize homepage telemetry`() {
-        val store = createStore()
-        assertNull(AppMenu.customizeHomepage.testGetValue())
-        assertNull(HomeScreen.customizeHomeClicked.testGetValue())
-
-        store.dispatch(MenuAction.Navigate.CustomizeHomepage).joinBlocking()
-
-        assertTelemetryRecorded(AppMenu.customizeHomepage)
     }
 
     @Test

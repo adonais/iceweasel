@@ -197,6 +197,7 @@ export class ProfilesParent extends JSWindowActorParent {
       case "Profiles:DeleteProfile": {
         if (source === "about:newprofile") {
           Glean.profilesNew.closed.record({ value: "delete" });
+          GleanPings.profiles.submit();
         } else if (source === "about:deleteprofile") {
           Glean.profilesDelete.confirm.record();
         }

@@ -17,10 +17,8 @@
   <body>
     <p id="display"></p>
     <div id="content">
-      <moz-reorderable-list
-        itemselector="ul > li"
-        focusableselector="ul > li > button"
-      >
+      <!-- Basic example -->
+      <moz-reorderable-list itemselector="ul > li">
         <ul>
           <li><button>1 Apple</button></li>
           <li><button>2 Banana</button></li>
@@ -28,147 +26,366 @@
           <li><button>4 Grape</button></li>
         </ul>
       </moz-reorderable-list>
+
+      <!-- Shadow DOM example -->
+      <moz-reorderable-list itemselector="#grabme" class="shadow-selector">
+        <ul>
+          <li><shadow-dom-test index="1"></shadow-dom-test></li>
+          <li><shadow-dom-test index="2"></shadow-dom-test></li>
+          <li><shadow-dom-test index="3"></shadow-dom-test></li>
+          <li><shadow-dom-test index="4"></shadow-dom-test></li>
+        </ul>
+      </moz-reorderable-list>
+
+      <!-- Drag selector example -->
+      <moz-reorderable-list
+        itemselector=".item"
+        dragselector=".handle"
+        class="drag-selector"
+      >
+        <style>
+          .item {
+            border: 1px solid black;
+            display: flex;
+            align-items: center;
+          }
+
+          .handle {
+            height: 32px;
+            width: fit-content;
+            background: red;
+          }
+        </style>
+        <ul>
+          <li class="item">
+            <button class="handle">Drag me</button>
+            1 Apple
+          </li>
+          <li class="item">
+            <button class="handle">Drag me</button>
+            2 Banana
+          </li>
+          <li class="item">
+            <button class="handle">Drag me</button>
+            3 Pear
+          </li>
+          <li class="item">
+            <button class="handle">Drag me</button>
+            4 Grape
+          </li>
+        </ul>
+      </moz-reorderable-list>
     </div>
-    <pre id="test">
-<script class="testbody" type="application/javascript">
-  // Returns a promise that resolves when the reorder event is fired.
-  function reorderEvent(listElement) {
-    return new Promise(
-      (resolve) => {
-        listElement.addEventListener('reorder', (event) => {
-          resolve(event.detail)
-        })
-      },
-      { once: true },
-    )
-  }
+    <script>
+      customElements.define(
+        "shadow-dom-test",
+        class extends HTMLElement {
+          static get observedAttributes() {
+            return ["index"];
+          }
 
-  /**
-  * Synthesize a drag and drop event.
-  *
-  * @param {Element} dragItem The element to drag.
-  * @param {Element} targetItem The element to drag over.
-  * @param {function} [dragCallback] A callback to be called after the drag but
-  *   before the drop.
-  */
-  function performDragAndDrop(dragItem, targetItem, dragCallback) {
-    var ds = _EU_Cc['@mozilla.org/widget/dragservice;1'].getService(
-      _EU_Ci.nsIDragService,
-    )
-    const aDragEvent = {}
-    const dropAction = _EU_Ci.nsIDragService.DRAGDROP_ACTION_MOVE
-    ds.startDragSessionForTests(window, dropAction)
-    try {
-      var [result, dataTransfer] = synthesizeDragOver(dragItem, targetItem)
-      dragCallback && dragCallback()
-      synthesizeDropAfterDragOver(result, dataTransfer, targetItem)
-    } finally {
-      ds.getCurrentSession().endDragSession(true, _parseModifiers(aDragEvent))
-    }
-  }
+          constructor() {
+            super();
+            this.attachShadow({ mode: "open" });
+            this.shadowRoot.innerHTML = `
+            <div style="background-color: gray;" id="grabme" tabindex="0">
+              <p>this example uses shadow DOM</p>
+            </div>
+          `;
+          }
 
-  // Test if moz-reorderable-list and its slot content is rendered
-  add_task(async function testMozMozReorderableListSlot() {
-    const mozReorderableList = document.querySelector('moz-reorderable-list')
-    ok(mozReorderableList, 'moz-reorderable-list is rendered')
-    // test if slot content is rendered
-    const list = mozReorderableList.querySelector('ul')
-    ok(list, 'moz-reorderable-list contains a list')
-  })
+          attributeChangedCallback(_, __, index) {
+            this.textContent = `${this.textContent} ${index}`;
+          }
+        }
+      );
+    </script>
+    <script class="testbody" type="application/javascript">
+      // Returns a promise that resolves when the reorder event is fired.
+      function reorderEvent(listElement) {
+        return new Promise(
+          resolve => {
+            listElement.addEventListener("reorder", event => {
+              resolve(event.detail);
+            });
+          },
+          { once: true }
+        );
+      }
 
-  // Test if moz-reorderable-list is draggable by mouse
-  add_task(async function testMozMozReorderableListDrag() {
-    const mozReorderableList = document.querySelector('moz-reorderable-list')
-    const indicator = mozReorderableList.shadowRoot.querySelector('.indicator')
-    const listItems = mozReorderableList.querySelectorAll('ul > li')
+      /**
+       * Synthesize a drag and drop event.
+       *
+       * @param {Element} dragItem The element to drag.
+       * @param {Element} targetItem The element to drag over.
+       * @param {function} [dragCallback] A callback to be called after the drag but
+       *   before the drop.
+       */
+      function performDragAndDrop({
+        dragItem,
+        targetItem,
+        dragCallback,
+        position,
+      }) {
+        var ds = _EU_Cc["@mozilla.org/widget/dragservice;1"].getService(
+          _EU_Ci.nsIDragService
+        );
+        const aDragEvent = {};
+        const dropAction = _EU_Ci.nsIDragService.DRAGDROP_ACTION_MOVE;
+        ds.startDragSessionForTests(window, dropAction);
+        try {
+          var [result, dataTransfer] = synthesizeDragOver(dragItem, targetItem);
+          dragCallback && dragCallback();
 
-    is(indicator.hidden, true, 'indicator should initially be hidden')
+          if (position) {
+            let rect = targetItem.getBoundingClientRect();
+            let threshold = rect.top + rect.height * 0.5;
+            aDragEvent.clientY =
+              position == "before" ? threshold - 10 : threshold + 10;
+          }
 
-    const reorderEventPromise = reorderEvent(mozReorderableList)
+          synthesizeDropAfterDragOver(
+            result,
+            dataTransfer,
+            targetItem,
+            window,
+            aDragEvent
+          );
+        } finally {
+          ds.getCurrentSession().endDragSession(
+            true,
+            _parseModifiers(aDragEvent)
+          );
+        }
+      }
 
-    performDragAndDrop(listItems[0], listItems[2], () => {
-      is(indicator.hidden, false, 'indicator should be visible during drag')
-    })
-    is(indicator.hidden, true, 'indicator should be hidden when drag is done')
+      // Wait for the custom element used in tests to be added to
+      // CustomElementRegistry before proceeding.
+      add_setup(async function setup() {
+        await customElements.whenDefined("shadow-dom-test");
+      });
 
-    const eventDetail = await reorderEventPromise
+      // Test if moz-reorderable-list and its slot content is rendered
+      add_task(async function testMozMozReorderableListSlot() {
+        const mozReorderableList = document.querySelector(
+          "moz-reorderable-list"
+        );
+        ok(mozReorderableList, "moz-reorderable-list is rendered");
+        // test if slot content is rendered
+        const list = mozReorderableList.querySelector("ul");
+        ok(list, "moz-reorderable-list contains a list");
+      });
 
-    const { draggedElement, position, targetElement } = eventDetail
-    is(
-      draggedElement,
-      listItems[0],
-      'draggedElement should be the first list item',
-    )
-    is(targetElement, listItems[2], 'targetElement should be the third list item')
-    // Note: SynthesizeDrop mouse coordinates are exactly at the center, so will
-    // be always dropped after the targetElement
-    is(position, 0, 'position should be before the targetElement')
-  })
+      // Test if moz-reorderable-list is draggable by mouse
+      add_task(async function testMozMozReorderableListDrag() {
+        const mozReorderableList = document.querySelector(
+          "moz-reorderable-list"
+        );
+        const indicator =
+          mozReorderableList.shadowRoot.querySelector(".indicator");
+        const listItems = mozReorderableList.querySelectorAll("ul > li");
 
-  // Test if a new element can be added to the list and is draggable
-  add_task(async function testMozMozReorderableListAddItem() {
-    const mozReorderableList = document.querySelector('moz-reorderable-list')
-    const listElement = mozReorderableList.querySelector('ul')
+        is(indicator.hidden, true, "indicator should initially be hidden");
 
-    // Create new list item and add it to the list
-    const newItem = document.createElement('li')
-    const newButton = document.createElement('button')
-    newButton.textContent = '3.5 Pineapple'
-    newItem.appendChild(newButton)
-    listElement.insertBefore(newItem, listElement.children[3])
+        const reorderEventPromise = reorderEvent(mozReorderableList);
 
-    // wait for the mutation observer to be called
-    await new Promise((resolve) => resolve())
-    const listItems = mozReorderableList.querySelectorAll('ul > li')
+        performDragAndDrop({
+          dragItem: listItems[0],
+          targetItem: listItems[2],
+          dragCallback: () => {
+            is(
+              indicator.hidden,
+              false,
+              "indicator should be visible during drag"
+            );
+          },
+          position: "before",
+        });
+        is(
+          indicator.hidden,
+          true,
+          "indicator should be hidden when drag is done"
+        );
 
-    is(
-      listItems[3].getAttribute('draggable'),
-      'true',
-      'new item should be draggable',
-    )
+        const eventDetail = await reorderEventPromise;
 
-    const reorderEventPromise = reorderEvent(mozReorderableList)
-    performDragAndDrop(listItems[3], listItems[1])
-    const eventDetail = await reorderEventPromise
+        const { draggedElement, position, targetElement } = eventDetail;
+        is(
+          draggedElement,
+          listItems[0],
+          "draggedElement should be the first list item"
+        );
+        is(
+          targetElement,
+          listItems[2],
+          "targetElement should be the third list item"
+        );
+        is(position, -1, "position should be before the targetElement");
+      });
 
-    const { draggedElement } = eventDetail
-    is(draggedElement, listItems[3], 'draggedElement should be the new list item')
+      // Test if a new element can be added to the list and is draggable
+      add_task(async function testMozMozReorderableListAddItem() {
+        const mozReorderableList = document.querySelector(
+          "moz-reorderable-list"
+        );
+        const listElement = mozReorderableList.querySelector("ul");
 
-    // remove the new item
-    listElement.removeChild(newItem)
-  })
+        // Create new list item and add it to the list
+        const newItem = document.createElement("li");
+        const newButton = document.createElement("button");
+        newButton.textContent = "3.5 Pineapple";
+        newItem.appendChild(newButton);
+        listElement.insertBefore(newItem, listElement.children[3]);
 
-  // Test if moz-reorderable-list responds to keyboard events
-  add_task(async function testMozMozReorderableListKeyboard() {
-    const mozReorderableList = document.querySelector('moz-reorderable-list')
-    const listItems = mozReorderableList.querySelectorAll('ul > li')
+        // wait for the mutation observer to be called
+        await new Promise(resolve => resolve());
+        const listItems = mozReorderableList.querySelectorAll("ul > li");
 
-    const keydownPromise = new Promise((resolve) => {
-      listItems[1].addEventListener('keydown', resolve, { once: true })
-    })
+        // moz-reorderable-list waits for next frame to handle async element rendering.
+        await new Promise(resolve => requestAnimationFrame(resolve));
+        is(
+          listItems[3].getAttribute("draggable"),
+          "true",
+          "new item should be draggable"
+        );
 
-    listItems[1].firstChild.focus()
-    synthesizeKey('KEY_ArrowDown', { shiftKey: true, ctrlKey: true })
+        const reorderEventPromise = reorderEvent(mozReorderableList);
+        performDragAndDrop({
+          dragItem: listItems[3],
+          targetItem: listItems[1],
+        });
+        const eventDetail = await reorderEventPromise;
 
-    const event = await keydownPromise
-    const result = mozReorderableList.evaluateKeyDownEvent(event)
+        const { draggedElement } = eventDetail;
+        is(
+          draggedElement,
+          listItems[3],
+          "draggedElement should be the new list item"
+        );
 
-    ok(result, 'keydown event should have been a reorder event')
-    const { draggedElement, targetElement, position } = result
+        // remove the new item
+        listElement.removeChild(newItem);
+      });
 
-    is(
-      draggedElement,
-      listItems[1],
-      'draggedElement should be the item that is focused',
-    )
-    is(
-      targetElement,
-      listItems[2],
-      'targetElement should be the item after the focused item',
-    )
-    is(position, 0, 'position should be after the targetElement')
-  })
-</script>
-</pre>
+      // Test if moz-reorderable-list responds to keyboard events
+      add_task(async function testMozMozReorderableListKeyboard() {
+        const mozReorderableList = document.querySelector(
+          "moz-reorderable-list"
+        );
+        const listItems = mozReorderableList.querySelectorAll("ul > li");
+
+        const keydownPromise = new Promise(resolve => {
+          listItems[1].addEventListener("keydown", resolve, { once: true });
+        });
+
+        listItems[1].firstChild.focus();
+        synthesizeKey("KEY_ArrowDown", { shiftKey: true, ctrlKey: true });
+
+        const event = await keydownPromise;
+        const result = mozReorderableList.evaluateKeyDownEvent(event);
+
+        ok(result, "keydown event should have been a reorder event");
+        const { draggedElement, targetElement, position } = result;
+
+        is(
+          draggedElement,
+          listItems[1],
+          "draggedElement should be the item that is focused"
+        );
+        is(
+          targetElement,
+          listItems[2],
+          "targetElement should be the item after the focused item"
+        );
+        is(position, 0, "position should be after the targetElement");
+      });
+
+      add_task(async function testSelectorInShadowDOM() {
+        let shadowDomList = document.querySelector(".shadow-selector");
+        let shadowHosts = shadowDomList.querySelectorAll("shadow-dom-test");
+        let shadowItems = [...shadowHosts].map(host =>
+          host.shadowRoot.querySelector("#grabme")
+        );
+
+        shadowItems.forEach(item =>
+          ok(
+            item.draggable,
+            "items nested in shadow DOM are marked as draggable."
+          )
+        );
+
+        // Verify reordering via keyboard events as using the EventUtils helpers
+        // throws when dragging elements in the shadow DOM.
+        let firstItem = shadowItems[0];
+        let keydownPromise = new Promise(resolve => {
+          firstItem.addEventListener("keydown", resolve, { once: true });
+        });
+
+        firstItem.focus();
+        synthesizeKey("KEY_ArrowDown", { shiftKey: true, ctrlKey: true });
+        let event = await keydownPromise;
+        let result = shadowDomList.evaluateKeyDownEvent(event);
+        ok(result, "keydown event should have been a reorder event");
+
+        let { draggedElement, targetElement, position } = result;
+        is(
+          draggedElement,
+          firstItem,
+          "draggedElement should be the item that is focused"
+        );
+        is(
+          targetElement,
+          shadowItems[1],
+          "targetElement should be the item after the focused item"
+        );
+        is(position, 0, "position should be after the targetElement");
+      });
+
+      add_task(async function testDragselector() {
+        let dragSelectorList = document.querySelector(".drag-selector");
+        let reorderableItems = dragSelectorList.querySelectorAll(".item");
+        let handles = dragSelectorList.querySelectorAll(".handle");
+
+        reorderableItems.forEach(item =>
+          ok(
+            !item.draggable,
+            "reorderable items are not draggable when dragselector is specified."
+          )
+        );
+
+        handles.forEach(handle =>
+          ok(
+            handle.draggable,
+            "handles are draggable when dragselector is specified."
+          )
+        );
+
+        let dragItem = handles[3];
+        dragItem.scrollIntoView();
+
+        const reorderEventPromise = reorderEvent(dragSelectorList);
+
+        performDragAndDrop({
+          dragItem,
+          targetItem: reorderableItems[0],
+          position: "after",
+        });
+
+        const { draggedElement, position, targetElement } =
+          await reorderEventPromise;
+
+        is(
+          draggedElement,
+          reorderableItems[3],
+          "draggedElement is an item, even though only the child handle elements are draggable."
+        );
+        is(
+          targetElement,
+          reorderableItems[0],
+          "targetElement should be the first item."
+        );
+        is(position, 0, "draggedElement is moved after the targetElement.");
+      });
+    </script>
   </body>
 </html>

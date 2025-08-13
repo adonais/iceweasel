@@ -20,7 +20,7 @@
 #  include "mozilla/TaskQueue.h"
 #  include "mozilla/layers/KnowsCompositor.h"
 #  include "mozilla/layers/LayersTypes.h"
-#  include "mozilla/ipc/UtilityAudioDecoder.h"
+#  include "mozilla/ipc/UtilityMediaService.h"
 #  include "nsTArray.h"
 #  include "PerformanceRecorder.h"
 

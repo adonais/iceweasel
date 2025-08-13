@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import React from "react";
+import React, { useState } from "react";
 import { SafeAnchor } from "../SafeAnchor/SafeAnchor";
 import { ImpressionStats } from "../../DiscoveryStreamImpressionStats/ImpressionStats";
 import { actionCreators as ac } from "common/Actions.mjs";
@@ -50,6 +50,8 @@ export const AdBanner = ({
 
   const sectionsEnabled = prefs["discoverystream.sections.enabled"];
   const showAdReporting = prefs["discoverystream.reportAds.enabled"];
+  const [menuActive, setMenuActive] = useState(false);
+  const adBannerWrapperClassName = `ad-banner-wrapper ${menuActive ? "active" : ""}`;
 
   const { width: imgWidth, height: imgHeight } = getDimensions(spoc.format);
 
@@ -78,20 +80,17 @@ export const AdBanner = ({
     );
   };
 
+  const toggleActive = active => {
+    setMenuActive(active);
+  };
+
   // in the default card grid 1 would come before the 1st row of cards and 9 comes after the last row
   // using clamp to make sure its between valid values (1-9)
   const clampedRow = Math.max(1, Math.min(9, row));
 
   return (
-    <aside className="ad-banner-wrapper" style={{ gridRow: clampedRow }}>
+    <aside className={adBannerWrapperClassName} style={{ gridRow: clampedRow }}>
       <div className={`ad-banner-inner ${spoc.format}`}>
-        <AdBannerContextMenu
-          dispatch={dispatch}
-          spoc={spoc}
-          position={row}
-          type={type}
-          showAdReporting={showAdReporting}
-        />
         <SafeAnchor
           className="ad-banner-link"
           url={spoc.url}
@@ -126,11 +125,21 @@ export const AdBanner = ({
               height={imgHeight}
             />
           </div>
+          <div className="ad-banner-sponsored">
+            <span
+              className="ad-banner-sponsored-label"
+              data-l10n-id="newtab-label-sponsored-fixed"
+            />
+          </div>
         </SafeAnchor>
-        <div className="ad-banner-sponsored">
-          <span
-            className="ad-banner-sponsored-label"
-            data-l10n-id="newtab-label-sponsored-fixed"
+        <div className="ad-banner-hover-background">
+          <AdBannerContextMenu
+            dispatch={dispatch}
+            spoc={spoc}
+            position={row}
+            type={type}
+            showAdReporting={showAdReporting}
+            toggleActive={toggleActive}
           />
         </div>
       </div>

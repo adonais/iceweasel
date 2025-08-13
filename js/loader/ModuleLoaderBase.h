@@ -290,6 +290,8 @@ class ModuleLoaderBase : public nsISupports {
   explicit ModuleLoaderBase(ScriptLoaderInterface* aLoader,
                             nsIGlobalObject* aGlobalObject);
 
+  void CancelFetchingModules();
+
   // Called to break cycles during shutdown to prevent memory leaks.
   void Shutdown();
 
@@ -493,8 +495,6 @@ class ModuleLoaderBase : public nsISupports {
   ModuleScript* GetFetchedModule(const ModuleMapKey& moduleMapKey) const;
 
   JS::Value FindFirstParseError(JSContext* aCx, ModuleLoadRequest* aRequest);
-  static nsresult InitDebuggerDataForModuleGraph(JSContext* aCx,
-                                                 ModuleLoadRequest* aRequest);
   nsresult ResolveRequestedModules(
       ModuleLoadRequest* aRequest,
       nsTArray<ModuleMapKey>* aRequestedModulesOut);

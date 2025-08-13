@@ -8,6 +8,9 @@
 newtab-page-title = Fitxa berria
 newtab-settings-button =
     .title = Pertsonalizatu fitxa berriaren orria
+newtab-customize-panel-icon-button =
+    .title = Pertsonalizatu orri hau
+newtab-customize-panel-icon-button-label = Pertsonalizatu
 newtab-personalize-settings-icon-label =
     .title = Pertsonalizatu fitxa berria
     .aria-label = Ezarpenak
@@ -117,6 +120,8 @@ newtab-menu-delete-pocket = Ezabatu { -pocket-brand-name }-etik
 newtab-menu-archive-pocket = Artxibatu { -pocket-brand-name }-en
 newtab-menu-show-privacy-info = Gure babesleak eta zure pribatutasuna
 newtab-menu-about-fakespot = { -fakespot-brand-name }(r)i buruz
+# Report is a verb (i.e. report issue with the content).
+newtab-menu-report = Jakinarazi
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Blokeatu
@@ -465,12 +470,20 @@ newtab-section-mangage-topics-followed-topics = Jarraituta
 newtab-section-mangage-topics-followed-topics-empty-state = Ez duzu inongo gairik jarraitu oraindik.
 newtab-section-mangage-topics-blocked-topics = Blokeatuta
 newtab-section-mangage-topics-blocked-topics-empty-state = Ez duzu inongo gairik blokeatu oraindik.
+newtab-custom-wallpaper-cta = Probatu
 
 ## Strings for download mobile highlight
 
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
+newtab-report-cancel = Utzi
+newtab-report-submit = Bidali
+newtab-toast-thanks-for-reporting =
+    .message = Eskerrik asko hau jakinarazteagatik.
 
 ## Strings for trending searches
 

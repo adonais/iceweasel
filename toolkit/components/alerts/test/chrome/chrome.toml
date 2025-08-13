@@ -17,7 +17,6 @@ tags = "os_integration"
 ["test_alerts_requireinteraction.html"]
 
 ["test_image.html"]
-skip-if = ["verify"]
 
 ["test_invalid_utf16.html"]
 run-if = ["os == 'win'"] # Bug 1836526
@@ -25,4 +24,3 @@ run-if = ["os == 'win'"] # Bug 1836526
 ["test_multiple_alerts.html"]
 
 ["test_principal.html"]
-skip-if = ["verify"] # Bug 1810860

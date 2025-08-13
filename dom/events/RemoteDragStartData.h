@@ -29,7 +29,8 @@ class RemoteDragStartData {
   RemoteDragStartData(BrowserParent* aBrowserParent,
                       nsTArray<IPCTransferableData>&& aTransferableData,
                       const LayoutDeviceIntRect& aRect,
-                      nsIPrincipal* aPrincipal, nsIContentSecurityPolicy* aCsp,
+                      nsIPrincipal* aPrincipal,
+                      nsIPolicyContainer* aPolicyContainer,
                       nsICookieJarSettings* aCookieJarSettings,
                       WindowContext* aSourceWindowContext,
                       WindowContext* aSourceTopWindowContext);
@@ -49,7 +50,7 @@ class RemoteDragStartData {
 
   void AddInitialDnDDataTo(DataTransfer* aDataTransfer,
                            nsIPrincipal** aPrincipal,
-                           nsIContentSecurityPolicy** aCsp,
+                           nsIPolicyContainer** aPolicyContainer,
                            nsICookieJarSettings** aCookieJarSettings);
 
   WindowContext* GetSourceWindowContext() { return mSourceWindowContext; }
@@ -62,7 +63,7 @@ class RemoteDragStartData {
   nsTArray<IPCTransferableData> mTransferableData;
   const LayoutDeviceIntRect mRect;
   nsCOMPtr<nsIPrincipal> mPrincipal;
-  nsCOMPtr<nsIContentSecurityPolicy> mCsp;
+  nsCOMPtr<nsIPolicyContainer> mPolicyContainer;
   nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
   RefPtr<WindowContext> mSourceWindowContext;
   RefPtr<WindowContext> mSourceTopWindowContext;

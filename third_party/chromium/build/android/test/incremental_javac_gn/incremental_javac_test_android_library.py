@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright 2021 The Chromium Authors. All rights reserved.
+# Copyright 2021 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 """Compiles twice: With incremental_javac_test_toggle_gn=[false, true]
@@ -14,12 +14,16 @@ import os
 import pathlib
 import subprocess
 import shutil
+import platform
 
 _CHROMIUM_SRC = pathlib.Path(__file__).resolve().parents[4].resolve()
-_NINJA_PATH = _CHROMIUM_SRC / 'third_party' / 'depot_tools' / 'ninja'
+_NINJA_PATH = _CHROMIUM_SRC / 'third_party' / 'ninja' / 'ninja'
 
 # Relative to _CHROMIUM_SRC
-_GN_SRC_REL_PATH = 'third_party/depot_tools/gn'
+if platform.system() == "Darwin":
+  _GN_SRC_REL_PATH = 'buildtools/mac/gn'
+else:
+  _GN_SRC_REL_PATH = 'buildtools/linux64/gn'
 
 _USING_PARTIAL_JAVAC_MSG = 'Using partial javac optimization'
 
@@ -113,11 +117,15 @@ def main():
   out_gn_args_path = options.out_dir / 'args.gn'
   extra_gn_args = [
       'treat_warnings_as_errors = true',
-      # GOMA does not work with non-standard output directories.
-      'use_goma = false',
+      # reclient does not work with non-standard output directories.
+      'use_remoteexec = false',
+      'use_reclient = false',
+      # Do not use fast_local_dev_server.py.
+      'android_static_analysis = "on"',
   ]
-  _copy_and_append_gn_args(options.gn_args_path, out_gn_args_path,
-                           extra_gn_args)
+  _copy_and_append_gn_args(
+      options.gn_args_path, out_gn_args_path,
+      extra_gn_args + ['incremental_javac_test_toggle_gn = false'])
 
   _run_gn([
       '--root-target=' + options.target_name, 'gen',
@@ -132,19 +140,19 @@ def main():
   ninja_args = [_NINJA_PATH, '-C', options.out_dir, gn_path]
   ninja_output = _run_command(ninja_args, env=ninja_env)
   if _USING_PARTIAL_JAVAC_MSG in ninja_output:
-    raise Exception("Incorrectly using partial javac for clean compile.")
+    raise Exception('Incorrectly using partial javac for clean compile.')
 
   _copy_and_append_gn_args(
       options.gn_args_path, out_gn_args_path,
       extra_gn_args + ['incremental_javac_test_toggle_gn = true'])
   ninja_output = _run_command(ninja_args, env=ninja_env)
   if _USING_PARTIAL_JAVAC_MSG not in ninja_output:
-    raise Exception("Not using partial javac for incremental compile.")
+    raise Exception('Not using partial javac for incremental compile.')
 
-  expected_output_path = "{}/lib.java/{}.jar".format(options.out_dir,
-                                                     gn_path.replace(':', '/'))
+  expected_output_path = '{}/obj/{}.javac.jar'.format(options.out_dir,
+                                                      gn_path.replace(':', '/'))
   if not os.path.exists(expected_output_path):
-    raise Exception("{} not created.".format(expected_output_path))
+    raise Exception('{} not created.'.format(expected_output_path))
 
   shutil.copyfile(expected_output_path, options.out_jar)
 

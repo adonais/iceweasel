@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-interface ContentSecurityPolicy;
+interface PolicyContainer;
 interface Principal;
 interface URI;
 interface InputStream;
@@ -19,13 +19,13 @@ dictionary LoadURIOptions {
   Principal? triggeringPrincipal = null;
 
   /**
-   * The CSP to be used for the load. That is *not* the CSP that will
-   * be applied to subresource loads within that document but the CSP
-   * for the document load itself. E.g. if that CSP includes
-   * upgrade-insecure-requests, then the new top-level load will
+   * The policyContainer to be used for the load. That is *not* the policyContainer
+   * that will be applied to subresource loads within that document but the
+   * policyContainer for the document load itself. E.g. if that policyContainer's
+   * CSP includes upgrade-insecure-requests, then the new top-level load will
    * be upgraded to HTTPS.
    */
-  ContentSecurityPolicy? csp = null;
+  PolicyContainer? policyContainer = null;
 
   /**
    * Flags modifying load behaviour.  This parameter is a bitwise

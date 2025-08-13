@@ -51,12 +51,12 @@ struct B : public A {
 };
 
 typedef UniquePtr<A> UniqueA;
-typedef UniquePtr<B, UniqueA::DeleterType> UniqueB;  // permit interconversion
+typedef UniquePtr<B, UniqueA::deleter_type> UniqueB;  // permit interconversion
 
 static_assert(sizeof(UniqueA) == sizeof(A*), "stored most efficiently");
 static_assert(sizeof(UniqueB) == sizeof(B*), "stored most efficiently");
 
-struct DeleterSubclass : UniqueA::DeleterType {};
+struct DeleterSubclass : UniqueA::deleter_type {};
 
 typedef UniquePtr<B, DeleterSubclass> UniqueC;
 static_assert(sizeof(UniqueC) == sizeof(B*), "stored most efficiently");
@@ -80,7 +80,7 @@ static void TestDeleterType() {
 }
 
 static bool TestDefaultFreeGuts() {
-  static_assert(std::is_same_v<NewInt::DeleterType, DefaultDelete<int> >,
+  static_assert(std::is_same_v<NewInt::deleter_type, DefaultDelete<int> >,
                 "weird deleter?");
 
   NewInt n1(new int);
@@ -415,7 +415,7 @@ typedef UniquePtr<int[]> IntArray;
 static_assert(sizeof(IntArray) == sizeof(int*), "stored most efficiently");
 
 static bool TestArray() {
-  static_assert(std::is_same_v<IntArray::DeleterType, DefaultDelete<int[]> >,
+  static_assert(std::is_same_v<IntArray::deleter_type, DefaultDelete<int[]> >,
                 "weird deleter?");
 
   IntArray n1(new int[5]);

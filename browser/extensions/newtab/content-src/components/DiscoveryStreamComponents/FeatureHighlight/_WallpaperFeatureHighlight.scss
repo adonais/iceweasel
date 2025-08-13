@@ -1,30 +1,5 @@
 // Default overrides from Feature Highlight
 .wallpaper-feature-highlight {
-  .icon.icon-dismiss {
-    // change background property to use transparent background
-    background: transparent url('chrome://global/skin/icons/close.svg');
-    background-size: var(--size-item-small);
-    height: var(--size-item-small);
-    width: var(--size-item-small);
-    position: absolute;
-    margin: 0;
-    inset-block-start: calc(var(--space-large) + var(--space-xxsmall));
-    inset-inline-end: calc(var(--space-large) + var(--space-xxsmall));
-
-    @media (prefers-color-scheme: dark) {
-      // override color so that it is visible on white image background
-      --dark-icon-color: var(--color-gray-70);
-
-      color: var(--dark-icon-color);
-    }
-
-    &:hover {
-      --dark-icon-hover: var(--color-gray-60);
-
-      color: var(--dark-icon-hover);
-    }
-  }
-
   .feature-highlight .feature-highlight-modal {
     --arrow-size: 24px;
 
@@ -48,8 +23,8 @@
     }
 
     &.inset-inline-start {
-      // Bug 1967304 - Large number (48px)
-      inset-inline-end: calc(var(--space-xlarge) * 2);
+      // Bug 1967304 - Large number (64px)
+      inset-inline-end: calc(var(--space-xxlarge) * 2);
 
       &::after {
         inset-inline-end: calc(calc(var(--arrow-size) / 2) * -1);
@@ -66,20 +41,21 @@
 
     &.inset-block-start {
       inset-block-end: 0;
-      margin-block-end: 0;
+      margin-block-end: calc(-4 * var(--space-xsmall)); // -20px; sit lower on the page
 
       &::after {
-        inset-block-end: var(--arrow-size);
+        // just a nudge (2px) lower than the arrow size to point directly at the Customize icon
+        inset-block-end: calc(var(--arrow-size) - var(--space-xxsmall));
       }
     }
 
     .title {
       font-weight: var(--font-weight-bold);
-      margin-block: var(--space-xsmall);
+      margin-block: var(--space-medium);
     }
 
     .subtitle {
-      margin-block: 0 var(--space-xsmall);
+      margin-block: 0 var(--space-medium);
     }
 
     .button-wrapper {
@@ -93,6 +69,21 @@
       width: var(--arrow-size);
       box-shadow: 4px -4px 6px -2px rgba(0, 0, 0, 15%);
       pointer-events: none;
+    }
+
+    // The "Dismiss" button in the top right corner of the highlight needs to be
+    // in the corner of the wallpaper image
+    > moz-button {
+      margin-inline-start: calc(-1 * var(--space-xlarge));
+    }
+
+    @media (prefers-color-scheme: dark) {
+      // override colour so that it is visible on the image
+      > moz-button {
+        --dark-icon-color: var(--color-gray-70);
+
+        background-color: var(--dark-icon-color);
+      }
     }
   }
 }

@@ -8,9 +8,10 @@
 #define mozilla_layout_ScrollSnap_h_
 
 #include <memory>
-#include "mozilla/ScrollTypes.h"
-#include "mozilla/ScrollSnapTargetId.h"
+
 #include "mozilla/Maybe.h"
+#include "mozilla/ScrollSnapTargetId.h"
+#include "mozilla/ScrollTypes.h"
 
 class nsIContent;
 class nsIFrame;

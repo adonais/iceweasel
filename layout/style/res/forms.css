@@ -22,7 +22,7 @@
   box-decoration-break: inherit;
   block-size: 100%; /* Need this so percentage block-sizes of kids work right */
   /* Please keep the declarations below in sync with ::-moz-scrolled-content in
-     ua.css and ::-moz-button-content below. */
+     ua.css. */
   content: inherit;
   /* Multicol container */
   column-count: inherit;
@@ -228,7 +228,7 @@ select {
   overflow: clip;
   /* No text-decoration reaching inside, by default */
   display: inline-block;
-  page-break-inside: avoid;
+  break-inside: avoid;
   overflow-clip-box: padding-box !important; /* bug 992447 */
   padding-block: 1px;
 
@@ -501,6 +501,7 @@ input:is([type="color"], [type="reset"], [type="button"], [type="submit"]) {
   box-sizing: border-box;
   user-select: none;
   overflow-clip-box: padding-box;
+  break-inside: avoid;
 }
 
 /* Text-related properties for buttons: these ones are not shared with
@@ -533,41 +534,6 @@ button,
   white-space: unset;
   /* But no text-decoration reaching inside, by default */
   display: inline-block;
-}
-
-*|*::-moz-button-content {
-  display: block;
-  /* Please keep the declarations below in sync with ::-moz-scrolled-content in
-     ua.css and ::-moz-fieldset-content above. */
-  content: inherit;
-  /* Multicol container */
-  column-count: inherit;
-  column-width: inherit;
-  column-gap: inherit;
-  column-rule: inherit;
-  column-fill: inherit;
-  /* Flex container */
-  flex-direction: inherit;
-  flex-wrap: inherit;
-  /* -webkit-box container (aliased from -webkit versions to -moz versions) */
-  -moz-box-orient: inherit;
-  -moz-box-direction: inherit;
-  -moz-box-pack: inherit;
-  -moz-box-align: inherit;
-  /* Grid container */
-  grid-auto-columns: inherit;
-  grid-auto-rows: inherit;
-  grid-auto-flow: inherit;
-  grid-column-gap: inherit;
-  grid-row-gap: inherit;
-  grid-template-areas: inherit;
-  grid-template-columns: inherit;
-  grid-template-rows: inherit;
-  /* CSS Align */
-  align-content: inherit;
-  align-items: inherit;
-  justify-content: inherit;
-  justify-items: inherit;
 }
 
 ::file-selector-button:hover,
@@ -645,10 +611,6 @@ input[type="file"] > label {
  *  inherit into the scroll frame with pseudo ::-moz-text-control-editing-root
  *  which is a (direct or indirect) child of the text control.
  *
- * Buttons (either <button>, <input type=submit>, <input type=button>
- *          or <input type=reset>)
- *  inherit into the ':-moz-button-content' pseudo-element.
- *
  * <select>:
  *  inherit into the label and the <optgroup>'s ':before' pseudo-element,
  *  which is where the label of the <optgroup> gets displayed. The <option>s
@@ -656,7 +618,6 @@ input[type="file"] > label {
  */
 ::placeholder,
 ::-moz-text-control-editing-root,
-*|*::-moz-button-content,
 select > label,
 optgroup::before {
   unicode-bidi: inherit;

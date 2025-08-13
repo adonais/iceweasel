@@ -100,16 +100,6 @@
   -->
   <string name="erase_action_cfr_message" moz:removedIn="141" tools:ignore="UnusedResources">ແຕະບ່ອນນີ້ເພື່ອເລີ່ມເຊດຊັນສ່ວນຕົວໃໝ່. ລຶບປະຫວັດການນຳໃຊ້ຂອງທ່ານ, ຄຸກກີ້ — ທຸກຢ່າງ.</string>
   <!--
-    Toolbar "contextual feature recommendation" (CFR)
-
-    Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
-  -->
-  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">ຊອກຫາໄດ້ໄວຂຶ້ນດ້ວຍການນຳທາງໃໝ່</string>
-  <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">ໃນເວັບໄຊທ໌ໃດຫນຶ່ງ, ແຖບນີ້ tucks ທັນທີທີ່ທ່ານເລື່ອນລົງສໍາລັບພື້ນທີ່ຄົ້ນຫາເພີ່ມເຕີມ.</string>
-  <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">ແຕະລູກສອນຄ້າງໄວ້ເພື່ອໂດດໄປມາລະຫວ່າງໜ້າຕ່າງໆໃນປະຫວັດຂອງແຖບນີ້.</string>
-  <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
     Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar.
@@ -326,7 +316,7 @@
   <!-- Browser menu label that toggles the request for the desktop site of the currently visited page -->
   <string name="browser_menu_switch_to_desktop_site" moz:removedIn="141" tools:ignore="UnusedResources">ສະຫຼັບໄປຫາເວັບໄຊເດັສທັອບ</string>
   <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site">ປ່ຽນໄປຫາເວັບໄຊທ໌ມືຖື</string>
+  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">ປ່ຽນໄປຫາເວັບໄຊທ໌ມືຖື</string>
   <!-- Browser menu label that navigates to the page tools sub-menu -->
   <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">ເຄື່ອງມື</string>
   <!-- Content description (not visible, for screen readers etc.): Back button for all menu redesign sub-menu -->
@@ -388,6 +378,10 @@
     %1$s is the name of the app (for example "Firefox").
   -->
   <string name="browser_menu_delete_browsing_data_on_quit">ອອກຈາກ %1$s</string>
+  <!-- Content description for the button that dismisses the set as default banner in the menu -->
+  <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">ຍົກເລີກ</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
+  <string name="browser_menu_default_banner_dismiss_promotion">ປິດໂປໂມຊັ່ນ</string>
   <!--
     Menu "contextual feature recommendation" (CFR)
 
@@ -557,45 +551,6 @@
   <string name="juno_onboarding_add_search_widget_positive_button" tools:ignore="BrandUsage,UnusedResources">ເພີ່ມ widget Firefox</string>
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">ບໍ່ແມ່ນຕອນນີ້</string>
-  <!--
-    Onboarding header for the add-ons card used by Nimbus experiments. Nimbus experiments do not support string placeholders.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="onboarding_add_on_header" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">ປັບແຕ່ງ Firefox ຂອງທ່ານດ້ວຍສ່ວນຂະຫຍາຍ</string>
-  <!-- Onboarding sub header for the add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_sub_header" moz:removedIn="140" tools:ignore="UnusedResources">ເພີ່ມສ່ວນຂະຫຍາຍຂອງພາກສ່ວນທີສາມເພື່ອເພີ່ມຄວາມປອດໄພ, ການຜະລິດ, ແລະ ອື່ນໆອີກ.</string>
-  <!-- Onboarding add-ons card, for checking more add-ons on, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_explore_more_extensions_2" moz:removedIn="140" tools:ignore="UnusedResources">ສຳຫຼວດສ່ວນຂະຫຍາຍເພີ່ມເຕີມ.</string>
-  <!-- Onboarding add-ons card, button for start browsing, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_start_browsing_button_2" moz:removedIn="140" tools:ignore="UnusedResources">ເລີ່ມການທ່ອງເວັບ</string>
-  <!-- Ublock name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Ublock Origin" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_ublock_name" moz:removedIn="140" tools:ignore="UnusedResources">uBlock Origin</string>
-  <!-- Ublock description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_ublock_description" moz:removedIn="140" tools:ignore="UnusedResources">ຂັດຂວາງການໂຄສະນາຢ່າງມີປະສິດທິພາບ ແລະ ໄດ້ຜົນ.</string>
-  <!-- Privacy Badger name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Privacy Badger" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_privacy_badger_name" moz:removedIn="140" tools:ignore="UnusedResources">ຄວາມເປັນສ່ວນຕົວ Badger</string>
-  <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_privacy_badger_description" moz:removedIn="140" tools:ignore="UnusedResources">gem ຕ້ານການຕິດຕາມ. ຢຸດເຊົາການຕິດຕາມທີ່ເບິ່ງບໍ່ເຫັນ ແລະ ການໂຄສະນາ spying.</string>
-  <!-- Search by Image name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Search by Image" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_search_by_image_name" moz:removedIn="140" tools:ignore="UnusedResources">ຄົ້ນຫາໂດຍຮູບພາບ</string>
-  <!-- Search by Image description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_search_by_image_description" moz:removedIn="140" tools:ignore="UnusedResources">ເບິ່ງຮູບທີ່ຫນ້າສົນໃຈ ແລະ ຮຽນຮູ້ເພີ່ມເຕີມກ່ຽວກັບມັນ.</string>
-  <!-- Dark Reader name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Dark Reader" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_dark_reader_name" moz:removedIn="140" tools:ignore="UnusedResources">Dark Reader</string>
-  <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_dark_reader_description" moz:removedIn="140" tools:ignore="UnusedResources">ໂໝດມືດແບບກຳນົດເອງສຳລັບເວັບມືຖື.</string>
-  <!-- Label for the number of reviews for an add-on. %1$s is the formatted number of reviews e.g. "1,234", "12,345", "123,456". -->
-  <string name="onboarding_add_on_reviews_label" moz:removedIn="140" tools:ignore="UnusedResources">ກວດຄືນ: %1$s</string>
-  <!-- Content description for the add-on icon. -->
-  <string name="onboarding_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">ໄອຄອນສ່ວນເສີມ</string>
-  <!-- Content description for the an installed add-on icon. -->
-  <string name="onboarding_installed_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">ໄອຄອນແອດອອນທີ່ຕິດຕັ້ງແລ້ວ</string>
-  <!-- Content description for the an installing add-on icon. -->
-  <string name="onboarding_installing_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">ກຳລັງຕິດຕັ້ງໄອຄອນ add-on</string>
-  <!-- Content description for the add add-on button. -->
-  <string name="onboarding_add_on_add_button_content_description" moz:removedIn="140" tools:ignore="UnusedResources">ເພີ່ມປຸ່ມ Add-on</string>
-  <!-- Content description for the star rating group. %1$s is the rating. -->
-  <string name="onboarding_add_on_star_rating_content_description" moz:removedIn="140" tools:ignore="UnusedResources">ໃຫ້ຄະແນນ %1$s ຈາກທັງໝົດ 5</string>
   <!-- Title for the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_title" tools:ignore="BrandUsage">ຊ່ວຍພວກເຮົາເຮັດໃຫ້ Firefox ດີຂຶ້ນ</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
@@ -615,8 +570,6 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">ການທ່ອງເວັບທີ່ວ່ອງໄວ ແລະ ປອດໄພ</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">ເຫັນດີ ແລະ ສືບຕໍ່</string>
-  <!-- Terms of service onboarding page continue button label. -->
   <string name="onboarding_term_of_service_agree_and_continue_button_label_2">ສືບຕໍ່</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">ໂດຍການດຳເນີນການຕໍ່, ທ່ານເຫັນດີນຳ %1$s.</string>
@@ -635,7 +588,7 @@
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">ເມື່ອທ່ານແບ່ງປັນວິທີທີ່ທ່ານຄົ້ນພົບ Firefox ແລະ ທີ່ທ່ານໃຊ້ມັນ, ທ່ານຊ່ວຍພວກເຮົາແນະນໍາຕົວທ່ອງເວັບຂອງພວກເຮົາໃຫ້ກັບຄົນຫຼາຍຂຶ້ນ.</string>
   <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">ແບ່ງປັນຂໍ້ມູນໜ້ອຍທີ່ສຸດກັບຄູ່ຮ່ວມງານດ້ານເທັກໂນໂລຍີການຕະຫຼາດຂອງ Mozilla. ຂໍ້ມູນນີ້ບໍ່ເຄີຍຖືກຂາຍ ຫຼື ໃຊ້ເພື່ອສະແດງໂຄສະນາໃຫ້ທ່ານເຫັນ.</string>
+  <string name="onboarding_marketing_opt_in_checkbox" moz:removedIn="143" tools:ignore="UnusedResources">ແບ່ງປັນຂໍ້ມູນໜ້ອຍທີ່ສຸດກັບຄູ່ຮ່ວມງານດ້ານເທັກໂນໂລຍີການຕະຫຼາດຂອງ Mozilla. ຂໍ້ມູນນີ້ບໍ່ເຄີຍຖືກຂາຍ ຫຼື ໃຊ້ເພື່ອສະແດງໂຄສະນາໃຫ້ທ່ານເຫັນ.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
   <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">ພວກເຮົາໃຊ້ຂໍ້ມູນແນວໃດ</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
@@ -760,8 +713,6 @@
   <string name="preferences_https_only_title">ໂໝດ HTTPS ເທົ່ານັ້ນ</string>
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">ໃຊ້ການລັອກໜ້າຈໍເພື່ອເຊື່ອງແຖບໃນຜົນການຄົ້ນຫາສ່ວນຕົວ</string>
-  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary" moz:removedIn="140" tools:ignore="UnusedResources">ເບິ່ງແຖບທີ່ມີລາຍນິ້ວມື, ການປົດລັອກດ້ວຍໜ້າ ຫຼື PIN.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">ໂຕປິດກັ້ນ Cookie banner</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -965,10 +916,6 @@
     a section where users see a list of tabs that they have visited in the past few days
   -->
   <string name="customize_toggle_recently_visited">ຫາກໍ່ເຂົ້າໄປເບິງມື້ກີ້ນີ້</string>
-  <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">ເລື່ອງທີ່ກະຕຸ້ນຄວາມຄິດ</string>
-  <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-  <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">ບົດຄວາມທີ່ຂັບເຄື່ອນໂດຍ %s</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">ເລື່ອງລາວທີ່ໄດ້ຮັບການສະຫນັບສະຫນູນ</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -1188,8 +1135,6 @@
   <string name="preference_gestures_dynamic_toolbar">ເລື່ອນເພື່ອເຊື່ອງແທັບເຄືອງມື</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">ປັດແຖບເຄື່ອງມືຂຶ້ນເພື່ອເປີດແທັບ</string>
-  <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">ເລື່ອນເພື່ອເຊື່ອງແຖບທີ່ຢູ່ ແລະ ແຖບເຄື່ອງມື</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">ປັດແຖບທີ່ຢູ່ທາງຂ້າງເພື່ອສະຫຼັບແຖບ</string>
   <!--
@@ -1403,9 +1348,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">ລຶບປະຫວັດການໃຊ້ງານ</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">ລຶບປະຫວັດການໃຊ້ງານແລ້ວ</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">ລຶບປະຫວັດການໃຊ້ງານແລ້ວ</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">ລຶບ %1$s ແລ້ວ</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">ລຶບ %1$s ແລ້ວ</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">ລຶບ</string>
   <!--
@@ -1566,20 +1511,6 @@
   <string name="webcompat_reporter_success_snackbar_text">ລາຍງານຂອງທ່ານຖືກສົ່ງໄປແລ້ວ</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
   <string name="webcompat_reporter_dismiss_success_snackbar_text">ປິດ</string>
-  <!--
-    These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
-
-    Broken site reason text for site slow or not working
-  -->
-  <string name="webcompat_reporter_reason_slow" moz:removedIn="140" tools:ignore="UnusedResources">ເວັບໄຊທ໌ຊ້າ ຫຼື ບໍ່ເຮັດວຽກ</string>
-  <!-- Broken site reason text for images or videos -->
-  <string name="webcompat_reporter_reason_media" moz:removedIn="140" tools:ignore="UnusedResources">ຮູບພາບ ຫຼື ວິດີໂອ</string>
-  <!-- Broken site reason text for buttons, links, and other content -->
-  <string name="webcompat_reporter_reason_content" moz:removedIn="140" tools:ignore="UnusedResources">ປຸ່ມ, ການເຊື່ອມຕໍ່, ແລະ ເນື້ອຫາອື່ນໆ</string>
-  <!-- Broken site reason text for sign in or sign out -->
-  <string name="webcompat_reporter_reason_account" moz:removedIn="140" tools:ignore="UnusedResources">ເຂົ້າສູ່ລະບົບ ຫຼື ອອກຈາກລະບົບ</string>
-  <!-- Broken site reason text for ad blocker -->
-  <string name="webcompat_reporter_reason_ad_blocker" moz:removedIn="140" tools:ignore="UnusedResources">ຕົວບລັອກໂຄສະນາ</string>
   <!-- Broken site reason text for something else -->
   <string name="webcompat_reporter_reason_other">ບາງສິ່ງບາງຢ່າງອື່ນ</string>
   <!--
@@ -1595,7 +1526,7 @@
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">ກູ້ຄືນແທັບ</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title">%s ຈຳເປັນຕ້ອງປິດ ແລະ ເປີດໃໝ່</string>
+  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s ຈຳເປັນຕ້ອງປິດ ແລະ ເປີດໃໝ່</string>
   <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
   <string name="unsubmitted_crash_dialog_checkbox_label">ສົ່ງລາຍງານການຂັດຂ້ອງໂດຍອັດຕະໂນມັດ</string>
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
@@ -1607,11 +1538,11 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">ທ່ານແນ່ໃຈບໍ່ວ່າທ່ານຕ້ອງການລຶບໂຟລເດີນີ້?</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">ທ່ານແນ່ໃຈບໍ່ວ່າທ່ານຕ້ອງການລຶບໂຟລເດີນີ້?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items. -->
   <string name="bookmark_delete_folders_confirmation_dialog">ທ່ານແນ່ໃຈແລ້ວບໍ່ວ່າຕ້ອງການລຶບລາຍການທີ່ເລືອກ?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog">%s ຈະລຶບລາຍການທີ່ໄດ້ເລືອກໄວ້</string>
+  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s ຈະລຶບລາຍການທີ່ໄດ້ເລືອກໄວ້</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">ຍົກເລີກ</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -1639,7 +1570,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">ລຶບ</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">ບັນທຶກ</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">ບັນທຶກ</string>
   <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_custom">ຈັດຮຽງຕາມລຳດັບທີ່ກຳນົດເອງ</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
@@ -1660,7 +1591,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">ແກ້ໄຂໂຟລເດີ</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">ເຂົ້າສູ່ລະບົບເພື່ອເບິ່ງບຸກມາກທີ່ຖືກ sync ແລ້ວ</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">ເຂົ້າສູ່ລະບົບເພື່ອເບິ່ງບຸກມາກທີ່ຖືກ sync ແລ້ວ</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -1672,24 +1603,24 @@
   <!-- Label for a text input field for a bookmark or folder name -->
   <string name="bookmark_name_label_normal_case">ຊື່</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">ເພີ່ມໂຟລເດີ</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">ເພີ່ມໂຟລເດີ</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">ເລືອກໂຟລເດີ</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">ຕ້ອງມີຊື່</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">ຕ້ອງມີຊື່</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">URL ບໍ່ຖືກຕ້ອງ</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">ບໍ່ມີບຸກມາກຢູ່ນີ້</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">ບໍ່ມີບຸກມາກຢູ່ນີ້</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">ລຶບ %1$s ແລ້ວ</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">ລຶບບຸກມາກແລ້ວ</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">ລຶບບຸກມາກແລ້ວ</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3">ກຳລັງລຶບໂຟລເດີທິ່ໄດ້ເລືອກໄວ້</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">ກຳລັງລຶບໂຟລເດີທິ່ໄດ້ເລືອກໄວ້</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">ເອົາກັບຄືນ</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
@@ -1697,7 +1628,7 @@
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
   <string name="bookmark_delete_multiple_items">ລາຍການທີ່ລຶບແລ້ວ: %s</string>
   <!-- Text for the button to search all bookmarks -->
-  <string name="bookmark_search">ປ້ອນຄຳທີ່ຕ້ອງການຄົ້ນຫາ</string>
+  <string name="bookmark_search" tools:ignore="UnusedResources" moz:removedIn="143">ປ້ອນຄຳທີ່ຕ້ອງການຄົ້ນຫາ</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">ນຳທາງຍ້ອນກັບ</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -1849,7 +1780,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ແທັບທີ່ເລືອກແລ້ວ</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">ບັນທຶກແທັບແລ້ວ!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">ບັນທຶກແທັບແລ້ວ!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection">ບັນທຶກຄໍເລັກຊັນແລ້ວ!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -1980,9 +1911,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">ລົບການສະສົມແລ້ວ</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">ລົບການສະສົມແລ້ວ</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">ປ່ຽນຊື່ການສະສົມແລ້ວ</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">ປ່ຽນຊື່ການສະສົມແລ້ວ</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">ປິດແທັບແລ້ວ</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -2019,9 +1950,9 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">ທ່ານແນ່ໃຈແລ້ວບໍ່ວ່າທ່ານຕ້ອງການລຶບ %1$s?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">ລຶບ</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">ລຶບ</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">ສຳເນົາ URL ແລ້ວ</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">ສຳເນົາ URL ແລ້ວ</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">ນີ້ແມ່ນຂໍ້ຄວາມຕົວຢ່າງ. ມັນຢູ່ທີ່ນີ້ເພື່ອສະແດງໃຫ້ເຫັນວ່າຂໍ້ຄວາມຈະປາກົດແນວໃດເມື່ອທ່ານເພີ່ມຫຼືຫຼຸດລົງຂະຫນາດດ້ວຍການຕັ້ງຄ່ານີ້.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2545,6 +2476,10 @@
   <string name="search_add_custom_engine_search_string_example" formatted="false">ແທນທີ່ຄິວລີດ້ວຍ “%s”. ຕົວຢ່າ: \nhttps://www.google.com/search?q=%s</string>
   <!-- Accessibility description for the form in which details about the custom search engine are entered -->
   <string name="search_add_custom_engine_form_description">ດັດແກ້ລາຍລະອຽດເຄື່ອງມືການຄົ້ນຫາ</string>
+  <!-- Label for the TextField in which user enters custom search engine suggestion URL -->
+  <string name="search_add_custom_engine_suggest_url_label">API ແນະນຳການຄົ້ນຫາ (ທາງເລືອກ)</string>
+  <!-- Placeholder text shown in the Search Suggestion String TextField before a user enters text -->
+  <string name="search_add_custom_engine_suggest_string_hint">ຄົ້ນຫາຄໍາແນະນໍາ API URL</string>
   <!-- Description text for the Search Suggestion String TextField. The %s is part of the string -->
   <string name="search_add_custom_engine_suggest_string_example_2" formatted="false">ແທນທີ່ການສອບຖາມດ້ວຍ “%s”. ຕົວຢ່າງ:\nhttps://suggestqueries.google.com/complete/search?client=firefox&amp;q=%s</string>
   <!-- The text for the "Save" button for saving a custom search engine -->
@@ -2555,14 +2490,12 @@
   <string name="search_add_custom_engine_error_empty_search_string">ໃສ່ຂໍ້ຄວາມການຄົ້ນຫາ</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">ກວດເບິງວ່າຂໍ້ຄວາມການຄົ້ນຫາກົງກັບຮູບແບບຕົວຢ່າງ</string>
-  <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">ມີຂໍ້ຜິດພາດໃນການເຊື່ອມຕໍ່ໄປຫາ “%s”</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">%s ສ້າງແລ້ວ</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ສ້າງແລ້ວ</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">%s ບັນທຶກໄວ້ແລ້ວ</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ບັນທຶກໄວ້ແລ້ວ</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">%s ລຶບແລ້ວ</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ລຶບແລ້ວ</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">ເພື່ອຕ້ອງການອະນຸຍາດ:</string>
   <!-- First step for the allowing a permission -->
@@ -2588,7 +2521,7 @@
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">ບໍ່ມີຂໍ້ຍົກເວັ້ນໃນເວັບໄຊທ໌</string>
   <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation">ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບບຸກມາກນີ້ອອກ?</string>
+  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">ທ່ານແນ່ໃຈບໍ່ວ່າຕ້ອງການລຶບບຸກມາກນີ້ອອກ?</string>
   <!-- Browser menu button that adds a shortcut to the home fragment -->
   <string name="browser_menu_add_to_shortcuts">ເພີ່ມທາງລັດ</string>
   <!-- Browser menu button that removes a shortcut from the home fragment -->
@@ -2706,6 +2639,8 @@
   <string name="google_search_engine_suggestion_header">ຄົ້ນ​ຫາ Google</string>
   <!-- Title for search suggestions when the default search suggestion engine is anything other than Google. %s is default search engine name. -->
   <string name="other_default_search_engine_suggestion_header">%s ຄົ້ນຫາ</string>
+  <!-- Title for recent search suggestions. -->
+  <string name="recent_searches_header">ການຄົ້ນຫາຫຼ້າສຸດ</string>
   <!-- Default browser card text -->
   <string name="default_browser_experiment_card_text" tools:ignore="BrandUsage">ຕັ້ງລິ້ງຈາກເວັບໄຊທ໌, ອີເມວ ແລະຂໍ້ຄວາມໃຫ້ເປີດໂດຍອັດຕະໂນມັດໃນ Firefox.</string>
   <!-- Content description for close button in collection placeholder. -->
@@ -2715,23 +2650,11 @@
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">ນຳທາງຂຶ້ນໄປທາງເທືງ</string>
   <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description">ປິດ</string>
-  <!--
-    Pocket recommended stories
-
-    Header text for a section on the home screen.
-  -->
-  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">ເລື່ອງທີ່ກະຕຸ້ນຄວາມຄິດ</string>
+  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">ປິດ</string>
   <!-- Header text for a section on the home screen. -->
   <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">ເລື່ອງຕາມຫົວຂໍ້</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
   <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">ຄົ້ນຫາເພີ່ມເຕີມ</string>
-  <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-  <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">ຂັບເຄື່ອນໂດຍ %s.</string>
-  <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">ສ່ວນຫນຶ່ງຂອງຄອບຄົວ Firefox. %s</string>
-  <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">ຮຽນຮູ້ເພີ່ມເຕີມ</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">ໄດ້ຮັບການສະຫນັບສະຫນູນ</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -2750,8 +2673,6 @@
   <string name="a11y_action_label_wallpaper_collection_learn_more">ເປີດລິ້ງເພື່ອສຶກສາເພີ່ມເຕີມກ່ຽວກັບຄໍເລັກຊັນນີ້</string>
   <!-- Action label for links that point to an article. Talkback will append this to say "Double tap to read the article". -->
   <string name="a11y_action_label_read_article" moz:removedIn="141" tools:ignore="UnusedResources">ອ່ານບົດຄວາມ</string>
-  <!-- Action label for links to the Firefox Pocket website. Talkback will append this to say "Double tap to open link to learn more". -->
-  <string name="a11y_action_label_pocket_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">ເປີດລິ້ງເພື່ອສຶກສາເພີ່ມເຕີມ</string>
   <!-- Translations feature -->
 
   <!-- Text that links to additional information about the Firefox translations feature. -->
@@ -2782,7 +2703,18 @@
   <string name="delete_language_all_languages_file_dialog_message">ຖ້າທ່ານລຶບທຸກພາສາ, %1$s ຈະດາວໂຫຼດບາງພາສາໃສ່ແຄດຂອງທ່ານເມື່ອທ່ານແປ.</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings" moz:removedIn="142" tools:ignore="UnusedResources">ການຕັ້ງຄ່າຄວາມເປັນສ່ວນຕົວ ແລະ ຄວາມປອດໄພ</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">ຂ້ອຍບໍ່ໃຊ້ການຄົ້ນຫາໃນ Firefox</string>
+  <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_prompt_search_title" tools:ignore="BrandUsage,UnusedResources">ຊ່ວຍເຮັດໃຫ້ການຄົ້ນຫາໃນ Firefox ດີຂຶ້ນ. ມັນໃຊ້ເວລາພຽງແຕ່ນາທີດຽວ</string>
+  <!-- Text shown in the survey title for search experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">ທ່ານພໍໃຈກັບປະສົບການການຄົ້ນຫາໃນ Firefox ຫຼາຍປານໃດ?</string>
   <!-- The title of the button for deleting in the debug drawer all addresses. -->
   <string name="debug_drawer_delete_all_addresses">ລຶບທີ່ຢູ່ທັງໝົດ</string>
   <!-- TextField Design System Component -->
+
+  <!-- The title of the search widget task for the setup checklist -->
+  <string name="setup_checklist_task_search_widget" moz:removedIn="143" tools:ignore="UnusedResources">ຕິດຕັ້ງ widget ຄົ້ນຫາ</string>
+  <!-- The title of the search widget task for the setup checklist -->
+  <string name="setup_checklist_task_search_widget_2">ສຳຫຼວດ widget ຄົ້ນຫາ</string>
 </resources>

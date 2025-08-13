@@ -9,16 +9,16 @@
 #ifndef nsFontFaceLoader_h_
 #define nsFontFaceLoader_h_
 
+#include "gfxUserFontSet.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/FontFaceSetImpl.h"
 #include "nsCOMPtr.h"
-#include "nsIFontLoadCompleteCallback.h"
-#include "nsIStreamLoader.h"
-#include "nsIChannel.h"
-#include "nsIRequestObserver.h"
-#include "gfxUserFontSet.h"
 #include "nsHashKeys.h"
+#include "nsIChannel.h"
+#include "nsIFontLoadCompleteCallback.h"
+#include "nsIRequestObserver.h"
+#include "nsIStreamLoader.h"
 #include "nsTHashtable.h"
 
 class nsIPrincipal;

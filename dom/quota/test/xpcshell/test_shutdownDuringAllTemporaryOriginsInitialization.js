@@ -176,8 +176,9 @@ async function testShutdownDuringAllTemporaryOriginsInitialization() {
   // fail. However, we can determine if the initialization of all origins was
   // aborted due to shutdown by checking for the existence of origin metadata
   // files, which were artificially removed earlier.
-  Assert.ok(
-    metadata1.exists() != metadata2.exists(),
+  Assert.notEqual(
+    metadata1.exists(),
+    metadata2.exists(),
     "Metadata for the second origin is not restored"
   );
 }
@@ -189,6 +190,7 @@ async function testSteps() {
       pref_set: [
         ["dom.quotaManager.temporaryStorage.lazyOriginInitialization", true],
         ["dom.quotaManager.loadQuotaFromCache", false],
+        ["dom.quotaManager.loadQuotaFromSecondaryCache", false],
         ["dom.quotaManager.originInitialization.pauseOnIOThreadMs", 2000],
       ],
     },

@@ -419,7 +419,7 @@ impl ClientCertsBackend for Backend {
     type Cert = Cert;
     type Key = Key;
 
-    fn find_objects(&self) -> Result<(Vec<Cert>, Vec<Key>), Error> {
+    fn find_objects(&mut self) -> Result<(Vec<Cert>, Vec<Key>), Error> {
         let mut find_objects_context = FindObjectsContext::new();
         AndroidDoFindObjectsWrapper(Some(find_objects_callback), &mut find_objects_context);
         Ok((find_objects_context.certs, find_objects_context.keys))

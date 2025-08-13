@@ -43,8 +43,8 @@ struct ClientSourceConstructorArgs
   TimeStamp creationTime;
   nsCString url;
   FrameType frameType;
-  CSPInfo? cspInfo;
   CSPInfo? preloadCspInfo;
+  PolicyContainerArgs? policyContainerArgs;
 };
 
 struct IPCClientWindowState

@@ -168,15 +168,31 @@ UrlClassifierExceptionListService.prototype = {
   classID: Components.ID("{b9f4fd03-9d87-4bfd-9958-85a821750ddc}"),
   QueryInterface: ChromeUtils.generateQI([
     "nsIUrlClassifierExceptionListService",
+    "nsIObserver",
   ]),
 
   features: {},
   _initialized: false,
 
+  observe(subject, topic) {
+    if (topic === "idle-daily") {
+      const baseline = Services.prefs.getBoolPref(
+        "privacy.trackingprotection.allow_list.baseline.enabled"
+      );
+      const convenience = Services.prefs.getBoolPref(
+        "privacy.trackingprotection.allow_list.convenience.enabled"
+      );
+      Glean.contentblocking.tpAllowlistBaselineEnabled.set(baseline);
+      Glean.contentblocking.tpAllowlistConvenienceEnabled.set(convenience);
+    }
+  },
+
   async lazyInit() {
     if (this._initialized) {
       return;
     }
+
+    this.maybeMigrateCategoryPrefs();
 
     let rs = lazy.RemoteSettings(COLLECTION_NAME);
     rs.on("sync", event => {
@@ -207,6 +223,47 @@ UrlClassifierExceptionListService.prototype = {
     }
 
     this.onUpdateEntries(this.entries);
+  },
+
+  /**
+   * Runs migration code for the allow-list category prefs.
+   * Users who have ETP "strict" or "custom" enabled should not automatically
+   * get enrolled into the new allow-list categories. Instead they should have
+   * the opportunity to opt in/out via the preferences UI.
+   */
+  maybeMigrateCategoryPrefs() {
+    const ALLOW_LIST_CATEGORY_MIGRATION_PREF =
+      "privacy.trackingprotection.allow_list.hasMigratedCategoryPrefs";
+
+    if (Services.prefs.getBoolPref(ALLOW_LIST_CATEGORY_MIGRATION_PREF, false)) {
+      // Already migrated.
+      return;
+    }
+
+    // Set the migration pref to true so we only run the migration once.
+    Services.prefs.setBoolPref(ALLOW_LIST_CATEGORY_MIGRATION_PREF, true);
+
+    // This pref is set on both Desktop and Fenix (Bug 1956620).
+    let cbCategory = Services.prefs.getStringPref(
+      "browser.contentblocking.category",
+      "standard"
+    );
+    // Don't migrate if the user is using the default category. The default
+    // category pref states are already correct.
+    if (cbCategory == "standard") {
+      return;
+    }
+
+    // cbCategory is either "strict" or "custom". Disable both allow list
+    // categories.
+    Services.prefs.setBoolPref(
+      "privacy.trackingprotection.allow_list.baseline.enabled",
+      false
+    );
+    Services.prefs.setBoolPref(
+      "privacy.trackingprotection.allow_list.convenience.enabled",
+      false
+    );
   },
 
   onUpdateEntries(entries) {

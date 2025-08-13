@@ -16,67 +16,18 @@ ChromeUtils.defineESModuleGetters(lazy, {
   HistoryController: "resource:///modules/HistoryController.sys.mjs",
 });
 
-const URLs = [
-  "http://mochi.test:8888/browser/",
-  "https://www.example.com/",
-  "https://example.net/",
-  "https://example.org/",
-];
-
-const today = new Date();
-const yesterday = new Date(
-  today.getFullYear(),
-  today.getMonth(),
-  today.getDate() - 1
-);
-
-// Get date for the second-last day of the previous month.
-// (Do not use the last day, since that could be the same as yesterday's date.)
-const lastMonth = new Date(today.getFullYear(), today.getMonth(), -2);
-
-const dates = [today, yesterday, lastMonth];
+let URLs, dates, today;
 
 add_setup(async () => {
-  await PlacesUtils.history.clear();
-  const pageInfos = URLs.flatMap((url, i) =>
-    dates.map(date => ({
-      url,
-      title: `Example Domain ${i}`,
-      visits: [{ date }],
-    }))
-  );
-  await PlacesUtils.history.insertMany(pageInfos);
+  const historyInfo = await populateHistory();
+  URLs = historyInfo.URLs;
+  dates = historyInfo.dates;
+  today = dates[0];
 });
 
 registerCleanupFunction(async () => {
   await PlacesUtils.history.clear();
 });
-
-async function showHistorySidebar({ waitForPendingHistory = true } = {}) {
-  if (SidebarController.currentID !== "viewHistorySidebar") {
-    await SidebarController.show("viewHistorySidebar");
-  }
-  const { contentDocument, contentWindow } = SidebarController.browser;
-  const component = contentDocument.querySelector("sidebar-history");
-  if (waitForPendingHistory) {
-    await BrowserTestUtils.waitForCondition(
-      () => !component.controller.isHistoryPending
-    );
-  }
-  await component.updateComplete;
-  return { component, contentWindow };
-}
-
-async function waitForPageLoadTask(pageLoadTask, expectedUrl) {
-  const promiseTabOpen = BrowserTestUtils.waitForEvent(
-    window.gBrowser.tabContainer,
-    "TabOpen"
-  );
-  await pageLoadTask();
-  await promiseTabOpen;
-  await BrowserTestUtils.browserLoaded(window.gBrowser, false, expectedUrl);
-  info(`Navigated to ${expectedUrl}.`);
-}
 
 // TO DO - move below helper into universal helper with Places Bug 1954843
 /**
@@ -391,199 +342,6 @@ add_task(async function test_history_sort() {
   SidebarController.hide();
 });
 
-add_task(async function test_history_keyboard_navigation() {
-  const { component, contentWindow } = await showHistorySidebar();
-  const { lists, cards } = component;
-  await BrowserTestUtils.waitForMutationCondition(
-    component.shadowRoot,
-    { childList: true, subtree: true },
-    () => !!lists.length
-  );
-  await BrowserTestUtils.waitForMutationCondition(
-    lists[0].shadowRoot,
-    { subtree: true, childList: true },
-    () => lists[0].rowEls.length === URLs.length
-  );
-  ok(true, "History rows are shown.");
-  const rows = lists[0].rowEls;
-
-  cards[0].summaryEl.focus();
-
-  info("Focus the next row.");
-  let focused = BrowserTestUtils.waitForEvent(rows[0], "focus", contentWindow);
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, contentWindow);
-  await focused;
-
-  info("Focus the previous card.");
-  focused = BrowserTestUtils.waitForEvent(
-    cards[0].summaryEl,
-    "focus",
-    contentWindow
-  );
-  EventUtils.synthesizeKey("KEY_ArrowUp", {}, contentWindow);
-  await focused;
-
-  info("Focus the next row.");
-  focused = BrowserTestUtils.waitForEvent(rows[0], "focus", contentWindow);
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, contentWindow);
-  await focused;
-
-  info("Focus the next row.");
-  focused = BrowserTestUtils.waitForEvent(rows[1], "focus", contentWindow);
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, contentWindow);
-  await focused;
-
-  info("Focus the next row.");
-  focused = BrowserTestUtils.waitForEvent(rows[2], "focus", contentWindow);
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, contentWindow);
-  await focused;
-
-  info("Focus the next row.");
-  focused = BrowserTestUtils.waitForEvent(rows[3], "focus", contentWindow);
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, contentWindow);
-  await focused;
-
-  info("Focus the next card.");
-  focused = BrowserTestUtils.waitForEvent(
-    cards[1].summaryEl,
-    "focus",
-    contentWindow
-  );
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, contentWindow);
-  await focused;
-
-  info("Focus the previous row.");
-  focused = BrowserTestUtils.waitForEvent(rows[3], "focus", contentWindow);
-  EventUtils.synthesizeKey("KEY_ArrowUp", {}, contentWindow);
-  await focused;
-
-  info("Open the focused link.");
-  await waitForPageLoadTask(
-    () => EventUtils.synthesizeKey("KEY_Enter", {}, contentWindow),
-    URLs[1]
-  );
-
-  info("Sort history by date and site.");
-  const {
-    menuButton,
-    _menu: menu,
-    _menuSortByDate: sortByDateButton,
-    _menuSortByDateSite: sortByDateSiteButton,
-    _menuSortByLastVisited: sortByLastVisitedButton,
-  } = component;
-  let promiseMenuShown = BrowserTestUtils.waitForEvent(menu, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(menuButton, {}, contentWindow);
-  await promiseMenuShown;
-  menu.activateItem(sortByDateSiteButton);
-
-  // Wait for nested cards to appear.
-  await BrowserTestUtils.waitForMutationCondition(
-    component.shadowRoot,
-    { childList: true, subtree: true },
-    () => component.shadowRoot.querySelector(".nested-card")
-  );
-
-  info("Focus the first date.");
-  const firstDateCard = cards[0];
-  firstDateCard.summaryEl.focus();
-
-  info("Collapse and expand the card using arrow keys.");
-  EventUtils.synthesizeKey("KEY_ArrowLeft", {}, contentWindow);
-  await BrowserTestUtils.waitForMutationCondition(
-    firstDateCard,
-    { attributeFilter: ["expanded"] },
-    () => !firstDateCard.expanded
-  );
-  EventUtils.synthesizeKey("KEY_ArrowRight", {}, contentWindow);
-  await BrowserTestUtils.waitForMutationCondition(
-    firstDateCard,
-    { attributeFilter: ["expanded"] },
-    () => firstDateCard.expanded
-  );
-
-  info("Move down to the first site.");
-  const firstSiteCard = firstDateCard.querySelector(".nested-card");
-  focused = BrowserTestUtils.waitForEvent(
-    firstSiteCard.summaryEl,
-    "focus",
-    contentWindow
-  );
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, contentWindow);
-  await focused;
-
-  info("Move back up to the date header.");
-  focused = BrowserTestUtils.waitForEvent(
-    firstDateCard.summaryEl,
-    "focus",
-    contentWindow
-  );
-  EventUtils.synthesizeKey("KEY_ArrowUp", {}, contentWindow);
-  await focused;
-
-  info("Focus the last site, then move down to the second date.");
-  const lastSiteCard = firstDateCard.querySelector(".last-card");
-  lastSiteCard.summaryEl.focus();
-  const secondDateCard = component.shadowRoot.querySelectorAll(".date-card")[1];
-  focused = BrowserTestUtils.waitForEvent(
-    secondDateCard.summaryEl,
-    "focus",
-    contentWindow
-  );
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, contentWindow);
-  await focused;
-
-  info("Move back up to the site header.");
-  focused = BrowserTestUtils.waitForEvent(
-    lastSiteCard.summaryEl,
-    "focus",
-    contentWindow
-  );
-  EventUtils.synthesizeKey("KEY_ArrowUp", {}, contentWindow);
-  await focused;
-
-  info("Sort history by last visited.");
-  promiseMenuShown = BrowserTestUtils.waitForEvent(menu, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(menuButton, {}, contentWindow);
-  await promiseMenuShown;
-  menu.activateItem(sortByLastVisitedButton);
-
-  // No containers when sorting by last visited.
-  // Wait until we have a single card and a single list.
-  await BrowserTestUtils.waitForMutationCondition(
-    component.shadowRoot,
-    { childList: true, subtree: true },
-    () => component.cards.length === 1 && component.lists.length === 1
-  );
-
-  info("Focus the first row and open the focused link.");
-  const tabList = component.lists[0];
-  await BrowserTestUtils.waitForMutationCondition(
-    tabList.shadowRoot,
-    { childList: true, subtree: true },
-    () => tabList.rowEls.length === URLs.length
-  );
-  tabList.rowEls[0].focus();
-  await waitForPageLoadTask(
-    () => EventUtils.synthesizeKey("KEY_Enter", {}, contentWindow),
-    URLs[1]
-  );
-
-  info("Revert back to sort by date.");
-  promiseMenuShown = BrowserTestUtils.waitForEvent(menu, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(menuButton, {}, contentWindow);
-  await promiseMenuShown;
-  menu.activateItem(sortByDateButton);
-
-  // Wait for date cards to appear.
-  await BrowserTestUtils.waitForMutationCondition(
-    component.shadowRoot,
-    { childList: true, subtree: true },
-    () => component.shadowRoot.querySelector(".date-card")
-  );
-
-  SidebarController.hide();
-});
-
 add_task(async function test_history_hover_buttons() {
   const { component, contentWindow } = await showHistorySidebar();
   const { lists } = component;
@@ -609,7 +367,7 @@ add_task(async function test_history_hover_buttons() {
   AccessibilityUtils.setEnv({ focusableRule: false });
   await waitForPageLoadTask(
     () => EventUtils.synthesizeMouseAtCenter(rows[0].mainEl, {}, contentWindow),
-    URLs[1]
+    URLs[0]
   );
   AccessibilityUtils.resetEnv();
 

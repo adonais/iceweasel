@@ -64,10 +64,12 @@ import org.mozilla.fenix.home.mars.MARSUseCases
 import org.mozilla.fenix.messaging.MessageController
 import org.mozilla.fenix.onboarding.WallpaperOnboardingDialogFragment.Companion.THUMBNAILS_SELECTION_COUNT
 import org.mozilla.fenix.settings.SupportUtils
+import org.mozilla.fenix.tabstray.DefaultTabManagementFeatureHelper
+import org.mozilla.fenix.tabstray.TabManagementFeatureHelper
 import org.mozilla.fenix.utils.Settings
-import org.mozilla.fenix.utils.maybeShowAddSearchWidgetPrompt
 import org.mozilla.fenix.wallpapers.Wallpaper
 import org.mozilla.fenix.wallpapers.WallpaperState
+import java.lang.ref.WeakReference
 import mozilla.components.feature.tab.collections.Tab as ComponentTab
 
 /**
@@ -195,11 +197,47 @@ interface SessionControlController {
      * @see [SetupChecklistInteractor.onRemoveChecklistButtonClicked]
      */
     fun onRemoveChecklistButtonClicked()
+
+    /**
+     * Registers a [SessionControlControllerCallback] to handle callbacks that are implemented in the UI layer.
+     */
+    fun registerCallback(callback: SessionControlControllerCallback)
+
+    /**
+     * Unregisters the callback is typically called as part of cleaning up.
+     */
+    fun unregisterCallback()
+}
+
+/**
+ * Interface for [SessionControlController] callbacks that are implemented in the UI.
+ */
+interface SessionControlControllerCallback {
+
+    /**
+     * Callback to register the [TabCollectionStorage.Observer].
+     */
+    fun registerCollectionStorageObserver()
+
+    /**
+     * Callback to remove collection with undo snack bar.
+     */
+    fun removeCollectionWithUndo(tabCollection: TabCollection)
+
+    /**
+     * Callback to show undo snack bar for top site.
+     */
+    fun showUndoSnackbarForTopSite(topSite: TopSite)
+
+    /**
+     * Callback to show tab tray.
+     */
+    fun showTabTray()
 }
 
 @Suppress("TooManyFunctions", "LargeClass", "LongParameterList")
 class DefaultSessionControlController(
-    private val activity: HomeActivity,
+    private val activityRef: WeakReference<HomeActivity>,
     private val settings: Settings,
     private val engine: Engine,
     private val messageController: MessageController,
@@ -212,13 +250,26 @@ class DefaultSessionControlController(
     private val topSitesUseCases: TopSitesUseCases,
     private val marsUseCases: MARSUseCases,
     private val appStore: AppStore,
-    private val navController: NavController,
+    private val navControllerRef: WeakReference<NavController>,
     private val viewLifecycleScope: CoroutineScope,
-    private val registerCollectionStorageObserver: () -> Unit,
-    private val removeCollectionWithUndo: (tabCollection: TabCollection) -> Unit,
-    private val showUndoSnackbarForTopSite: (topSite: TopSite) -> Unit,
-    private val showTabTray: () -> Unit,
+    private val tabManagementFeatureHelper: TabManagementFeatureHelper = DefaultTabManagementFeatureHelper,
+    private val showAddSearchWidgetPrompt: () -> Unit,
 ) : SessionControlController {
+
+    private var callback: SessionControlControllerCallback? = null
+    private val activity: HomeActivity
+        get() = requireNotNull(activityRef.get())
+
+    private val navController: NavController
+        get() = requireNotNull(navControllerRef.get())
+
+    override fun registerCallback(callback: SessionControlControllerCallback) {
+        this.callback = callback
+    }
+
+    override fun unregisterCallback() {
+        this.callback = null
+    }
 
     override fun handleCollectionAddTabTapped(collection: TabCollection) {
         Collections.addTabButton.record(NoExtras())
@@ -260,7 +311,7 @@ class DefaultSessionControlController(
             },
         )
 
-        showTabTray()
+        callback?.showTabTray()
         Collections.allTabsRestored.record(NoExtras())
     }
 
@@ -277,7 +328,7 @@ class DefaultSessionControlController(
             }
 
         if (updatedCollection?.tabs?.size == 1) {
-            removeCollectionWithUndo(collection)
+            callback?.removeCollectionWithUndo(collection)
         } else {
             viewLifecycleScope.launch {
                 tabCollectionStorage.removeTabFromCollection(collection, tab)
@@ -294,7 +345,7 @@ class DefaultSessionControlController(
     }
 
     override fun handleDeleteCollectionTapped(collection: TabCollection) {
-        removeCollectionWithUndo(collection)
+        callback?.removeCollectionWithUndo(collection)
         Collections.removed.record(NoExtras())
     }
 
@@ -402,7 +453,7 @@ class DefaultSessionControlController(
             }
         }
 
-        showUndoSnackbarForTopSite(topSite)
+        callback?.showUndoSnackbarForTopSite(topSite)
     }
 
     override fun handleRenameCollectionTapped(collection: TabCollection) {
@@ -419,9 +470,7 @@ class DefaultSessionControlController(
             is TopSite.Frecent -> TopSites.openFrecency.record(NoExtras())
             is TopSite.Pinned -> TopSites.openPinned.record(NoExtras())
             is TopSite.Provided -> {
-                if (settings.marsAPIEnabled) {
-                    sendMarsTopSiteCallback(topSite.clickUrl)
-                }
+                sendMarsTopSiteCallback(topSite.clickUrl)
 
                 TopSites.openContileTopSite.record(NoExtras()).also {
                     recordTopSitesClickTelemetry(topSite, position)
@@ -490,17 +539,11 @@ class DefaultSessionControlController(
         topSite.id?.let { TopSites.contileTileId.set(it) }
         topSite.title?.let { TopSites.contileAdvertiser.set(it.lowercase()) }
 
-        if (!settings.marsAPIEnabled) {
-            TopSites.contileReportingUrl.set(topSite.clickUrl)
-        }
-
         Pings.topsitesImpression.submit()
     }
 
     override fun handleTopSiteImpression(topSite: TopSite.Provided, position: Int) {
-        if (settings.marsAPIEnabled) {
-            sendMarsTopSiteCallback(topSite.impressionUrl)
-        }
+        sendMarsTopSiteCallback(topSite.impressionUrl)
 
         TopSites.contileImpression.record(
             TopSites.ContileImpressionExtra(
@@ -511,10 +554,6 @@ class DefaultSessionControlController(
 
         topSite.id?.let { TopSites.contileTileId.set(it) }
         topSite.title?.let { TopSites.contileAdvertiser.set(it.lowercase()) }
-
-        if (!settings.marsAPIEnabled) {
-            TopSites.contileReportingUrl.set(topSite.impressionUrl)
-        }
 
         Pings.topsitesImpression.submit()
     }
@@ -592,9 +631,15 @@ class DefaultSessionControlController(
     }
 
     private fun showTabTrayCollectionCreation() {
-        val directions = HomeFragmentDirections.actionGlobalTabsTrayFragment(
-            enterMultiselect = true,
-        )
+        val directions = if (tabManagementFeatureHelper.enhancementsEnabled) {
+            HomeFragmentDirections.actionGlobalTabManagementFragment(
+                enterMultiselect = true,
+            )
+        } else {
+            HomeFragmentDirections.actionGlobalTabsTrayFragment(
+                enterMultiselect = true,
+            )
+        }
         navController.nav(R.id.homeFragment, directions)
     }
 
@@ -606,7 +651,7 @@ class DefaultSessionControlController(
         if (navController.currentDestination?.id == R.id.collectionCreationFragment) return
 
         // Only register the observer right before moving to collection creation
-        registerCollectionStorageObserver()
+        callback?.registerCollectionStorageObserver()
 
         val tabIds = store.state
             .getNormalOrPrivateTabs(private = activity.browsingModeManager.mode.isPrivate)
@@ -681,7 +726,7 @@ class DefaultSessionControlController(
         ChecklistItem.Task.Type.CHANGE_TOOLBAR_PLACEMENT ->
             navigateTo(HomeFragmentDirections.actionGlobalCustomizationFragment())
 
-        ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET -> maybeShowAddSearchWidgetPrompt(activity)
+        ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET -> showAddSearchWidgetPrompt()
 
         ChecklistItem.Task.Type.EXPLORE_EXTENSION ->
             navigateTo(HomeFragmentDirections.actionGlobalAddonsManagementFragment())

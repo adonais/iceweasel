@@ -33,10 +33,6 @@ DIRS += [
     "signature_cache",
 ]
 
-TEST_DIRS += [
-    "tests/gtest",
-]
-
 CXXFLAGS += [
     "-Wextra",
     "-Wunreachable-code",

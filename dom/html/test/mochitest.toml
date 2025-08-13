@@ -192,9 +192,7 @@ support-files = [
 skip-if = [
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && opt",
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && opt",
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && verify",
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug", #Bug 1434744
-  "win11_2009 && verify",
+  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug", # Bug 1434744
   "win10_2009 && debug",
   "win11_2009 && debug",
 ]
@@ -680,10 +678,8 @@ skip-if = ["os == 'android'"] # Bug 1525959
 ["test_bug717819.html"]
 
 ["test_bug741266.html"]
-skip-if = [
-  "os == 'android'",  # Android: needs control of popup window size
-  "os == 'linux' && os_version == '22.04' && debug && display == 'wayland'",  # Bug 1856975
-]
+run-if = ["os != 'android'"] # Android: needs control of popup window size
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland' && debug"] # Bug 1856975
 
 ["test_bug742030.html"]
 
@@ -986,7 +982,9 @@ skip-if = [
 ]
 
 ["test_window_open_from_closing.html"]
-skip-if = ["os == 'android'"]  # test does not function on android due to aggressive background tab freezing
+skip-if = [
+  "os == 'android'", # test does not function on android due to aggressive background tab freezing
+]
 support-files = [
   "file_window_close_and_open.html",
   "file_broadcast_load.html",

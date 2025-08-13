@@ -32,6 +32,7 @@ interface Animation : EventTarget {
   [SetterThrows, BinaryName="currentTimeAsDouble"]
   attribute double? currentTime;
 
+  readonly attribute double?            overallProgress;
            attribute double             playbackRate;
   [BinaryName="playStateFromJS"]
   readonly attribute AnimationPlayState playState;
@@ -56,7 +57,7 @@ interface Animation : EventTarget {
   [Throws]
   undefined reverse();
   undefined persist();
-  [CEReactions, Throws, UseCounter]
+  [CEReactions, Throws]
   undefined commitStyles();
 };
 

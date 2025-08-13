@@ -208,9 +208,13 @@ interface nsITimer : nsISupports
   /**
    * The millisecond delay of the timeout.
    *
-   * NOTE: Re-setting the delay on a one-shot timer that has already fired
-   * doesn't restart the timer. Call one of the init() methods to restart
-   * a one-shot timer.
+   * Setting the delay on a canceled or never initialized timer will not
+   * (re-)schedule the timer.
+   *
+   * Setting the delay on a one-shot timer that has been canceled or already
+   * fired doesn't restart the timer and returns an error. It is recommended
+   * to use one of the initWithX() methods with one-shot timers instead of
+   * setting the delay.
    */
   attribute unsigned long delay;
 

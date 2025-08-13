@@ -7,8 +7,8 @@
 #include "mozilla/dom/CSSCounterStyleRule.h"
 
 #include "mozAutoDocUpdate.h"
-#include "mozilla/dom/CSSCounterStyleRuleBinding.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSCounterStyleRuleBinding.h"
 #include "nsStyleUtil.h"
 
 namespace mozilla {

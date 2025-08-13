@@ -28,6 +28,7 @@ async function testClientSideRedirect({
   permissions,
   telemetryExpected = false,
   redirectingAppProvidedEngine = false,
+  sameSiteParamChanged = null,
 }) {
   Services.fog.testResetFOG();
   Services.telemetry.clearEvents();
@@ -56,7 +57,7 @@ async function testClientSideRedirect({
     {
       gBrowser,
       url: redirectingAppProvidedEngine
-        ? "https://example.org/default?q=babar"
+        ? "https://example.org/default?pc=MOZ&q=babar"
         : "https://example.com/search?q=babar",
     },
     () => {}
@@ -99,6 +100,16 @@ async function testClientSideRedirect({
     );
     Assert.equal("mochi.test", events[0].extra.to);
   }
+
+  let ssr = Glean.addonsSearchDetection.sameSiteRedirect.testGetValue();
+  if (sameSiteParamChanged == null) {
+    Assert.equal(null, ssr);
+  } else {
+    Assert.equal(1, ssr.length);
+    Assert.equal(addonId, ssr[0].extra.addonId);
+    Assert.equal(addonVersion, ssr[0].extra.addonVersion);
+    Assert.equal(String(sameSiteParamChanged), ssr[0].extra.paramChanged);
+  }
 }
 
 add_setup(async function () {
@@ -108,10 +119,12 @@ add_setup(async function () {
     {
       identifier: "default",
       base: {
+        partnerCode: "MOZ",
         urls: {
           search: {
             base: "https://example.org/default",
             searchTermParamName: "q",
+            params: [{ name: "pc", value: "{partnerCode}" }],
           },
         },
       },
@@ -255,5 +268,56 @@ add_task(function test_onHeadersReceived_url_not_monitored() {
     },
     permissions: ["webRequest", "webRequestBlocking", "*://google.com/*"],
     telemetryExpected: false,
+  });
+});
+
+add_task(function test_sameSiteRedirect_paramUnchanged() {
+  // This test extension redirects searches within the same domain
+  // without touching the `paramName`.  We don't expect normal
+  // telemetry but expect the sameSiteRedirect Glean event.
+  return testClientSideRedirect({
+    background() {
+      browser.webRequest.onBeforeRequest.addListener(
+        () => {
+          return {
+            redirectUrl: "https://example.org/default?noise=13&pc=MOZ&q=blah",
+          };
+        },
+        { urls: ["*://example.org/default?pc=MOZ*"] },
+        ["blocking"]
+      );
+
+      browser.test.sendMessage("ready");
+    },
+    permissions: ["webRequest", "webRequestBlocking", "*://example.org/*"],
+    redirectingAppProvidedEngine: true,
+    telemetryExpected: false,
+    sameSiteParamChanged: false,
+  });
+});
+
+add_task(function test_sameSiteRedirect_paramChanged() {
+  // This test extension redirects searches within the same domain
+  // while also changing the `paramName`. We don't expect normal
+  // telemetry but expect the sameSiteRedirect Glean event,
+  // with paramChange value set to true.
+  return testClientSideRedirect({
+    background() {
+      browser.webRequest.onBeforeRequest.addListener(
+        () => {
+          return {
+            redirectUrl: "https://example.org/default?pc=BNG&q=blah",
+          };
+        },
+        { urls: ["*://example.org/default?pc=MOZ*"] },
+        ["blocking"]
+      );
+
+      browser.test.sendMessage("ready");
+    },
+    permissions: ["webRequest", "webRequestBlocking", "*://example.org/*"],
+    redirectingAppProvidedEngine: true,
+    telemetryExpected: false,
+    sameSiteParamChanged: true,
   });
 });

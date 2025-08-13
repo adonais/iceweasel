@@ -9,10 +9,10 @@
 
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
-#include "nsCoord.h"
-#include "nsCOMPtr.h"
-#include "nsFont.h"
 #include "nsAtom.h"
+#include "nsCOMPtr.h"
+#include "nsCoord.h"
+#include "nsFont.h"
 #include "nsLanguageAtomService.h"
 
 namespace mozilla {

@@ -386,7 +386,6 @@ mozilla::ipc::IPCResult DocAccessibleChild::RecvScrollToPoint(
 }
 
 LayoutDeviceIntRect DocAccessibleChild::GetCaretRectFor(const uint64_t& aID) {
-#if defined(XP_WIN)
   LocalAccessible* target;
 
   if (aID) {
@@ -402,13 +401,13 @@ LayoutDeviceIntRect DocAccessibleChild::GetCaretRectFor(const uint64_t& aID) {
     return LayoutDeviceIntRect();
   }
 
-  nsIWidget* widget = nullptr;
-  return text->GetCaretRect(&widget);
-#else
-  // The caret rect is only used on Windows, so just return an empty rect
-  // on other platforms.
-  return LayoutDeviceIntRect();
-#endif  // defined(XP_WIN)
+  LayoutDeviceIntRect rect = text->GetCaretRect().first;
+
+  // Remove doc offset and reapply in parent.
+  LayoutDeviceIntRect docBounds = mDoc->Bounds();
+  rect.MoveBy(-docBounds.X(), -docBounds.Y());
+
+  return rect;
 }
 
 bool DocAccessibleChild::SendFocusEvent(const uint64_t& aID) {

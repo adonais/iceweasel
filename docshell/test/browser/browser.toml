@@ -155,10 +155,7 @@ https_first_disabled = true
 ["browser_bug388121-2.js"]
 
 ["browser_bug420605.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1775923
-  "verify",
-]
+skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt"] # Bug 1775923
 
 ["browser_bug422543.js"]
 https_first_disabled = true
@@ -174,7 +171,6 @@ skip-if = [
 ["browser_bug441169.js"]
 
 ["browser_bug503832.js"]
-skip-if = ["verify"]
 
 ["browser_bug554155.js"]
 
@@ -192,7 +188,6 @@ skip-if = ["os == 'linux' && (debug || asan || tsan)"]  # Bug 1717403
 ["browser_bug673467.js"]
 
 ["browser_bug852909.js"]
-skip-if = ["verify && debug && os == 'win'"]
 
 ["browser_bug1206879.js"]
 https_first_disabled = true
@@ -264,6 +259,9 @@ https_first_disabled = true
 ["browser_bug1798780.js"]
 
 ["browser_click_link_within_view_source.js"]
+
+["browser_closewatcher_integration.js"]
+support-files = ["page_with_closewatcher.html"]
 
 ["browser_crossGroupOpener.js"]
 

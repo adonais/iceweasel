@@ -12,26 +12,27 @@
 #ifndef nsStyleStruct_h___
 #define nsStyleStruct_h___
 
+#include <cstddef>  // offsetof()
+
+#include "CounterStyleManager.h"
+#include "UniqueOrNonOwningPtr.h"
+#include "X11UndefineNone.h"
+#include "imgIContainer.h"
+#include "imgRequestProxy.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WindowButtonType.h"
-#include "UniqueOrNonOwningPtr.h"
+#include "nsChangeHint.h"
 #include "nsColor.h"
 #include "nsCoord.h"
-#include "nsMargin.h"
 #include "nsFont.h"
+#include "nsMargin.h"
 #include "nsStyleAutoArray.h"
 #include "nsStyleConsts.h"
-#include "nsChangeHint.h"
 #include "nsTArray.h"
-#include "imgIContainer.h"
-#include "imgRequestProxy.h"
-#include "CounterStyleManager.h"
-#include <cstddef>  // offsetof()
-#include "X11UndefineNone.h"
 
 class nsIFrame;
 class nsIURI;
@@ -378,6 +379,22 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBackground {
 using AnchorResolvedMargin =
     mozilla::UniqueOrNonOwningPtr<const mozilla::StyleMargin>;
 
+// Base set of parameters required to resolve a reference to an anchor.
+struct AnchorPosResolutionParams {
+  // Frame of the anchor positioned element.
+  // If nullptr, skips anchor lookup and returns invalid, resolving fallbacks.
+  const nsIFrame* mFrame;
+  // Position property of the element in question.
+  mozilla::StylePositionProperty mPosition;
+
+  // Helper functions for creating anchor resolution parameters.
+  // Defined in corresponding header files.
+  static inline AnchorPosResolutionParams From(const nsIFrame* aFrame);
+  static inline AnchorPosResolutionParams From(const mozilla::ReflowInput* aRI);
+  static inline AnchorPosResolutionParams From(
+      const nsComputedDOMStyle* aComputedDOMStyle);
+};
+
 struct AnchorResolvedMarginHelper {
   static const mozilla::StyleMargin& ZeroValue() {
     static const auto value = mozilla::StyleMargin::LengthPercentage(
@@ -385,15 +402,13 @@ struct AnchorResolvedMarginHelper {
     return value;
   }
 
-  // XXXjwatt: We need to store/pass the nsIFrame so that we can call
-  // nsIFrame::FindAnchorPosAnchor().
   static AnchorResolvedMargin FromUnresolved(
-      const mozilla::StyleMargin& aValue,
-      mozilla::StylePositionProperty aPosition) {
+      const mozilla::StyleMargin& aValue, mozilla::StylePhysicalAxis aAxis,
+      const AnchorPosResolutionParams& aParams) {
     if (!aValue.HasAnchorPositioningFunction()) {
       return AnchorResolvedMargin::NonOwning(&aValue);
     }
-    return ResolveAnchor(aValue, aPosition);
+    return ResolveAnchor(aValue, aAxis, aParams);
   }
 
  private:
@@ -402,8 +417,8 @@ struct AnchorResolvedMarginHelper {
   }
 
   static AnchorResolvedMargin ResolveAnchor(
-      const mozilla::StyleMargin& aValue,
-      mozilla::StylePositionProperty aPosition);
+      const mozilla::StyleMargin& aValue, mozilla::StylePhysicalAxis aAxis,
+      const AnchorPosResolutionParams& aParams);
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin {
@@ -436,20 +451,20 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin {
   // Return true if either the start or end side in the axis is 'auto'.
   // (defined in WritingModes.h since we need the full WritingMode type)
   inline bool HasBlockAxisAuto(mozilla::WritingMode aWM,
-                               mozilla::StylePositionProperty aPosition) const;
+                               const AnchorPosResolutionParams& aParams) const;
   inline bool HasInlineAxisAuto(mozilla::WritingMode aWM,
-                                mozilla::StylePositionProperty aPosition) const;
+                                const AnchorPosResolutionParams& aParams) const;
   inline bool HasAuto(mozilla::LogicalAxis, mozilla::WritingMode,
-                      mozilla::StylePositionProperty) const;
+                      const AnchorPosResolutionParams& aParams) const;
 
   // Attempt to return the resolved margin, resolving anchor functions, and
   // using a dummy percentage basis. If the resulting value returns true for
   // `HasPercent`, percentage value needs to be resolved with a proper basis at
   // a later point.
   AnchorResolvedMargin GetMargin(
-      mozilla::Side aSide, mozilla::StylePositionProperty aPosition) const {
-    return AnchorResolvedMarginHelper::FromUnresolved(mMargin.Get(aSide),
-                                                      aPosition);
+      mozilla::Side aSide, const AnchorPosResolutionParams& aParams) const {
+    return AnchorResolvedMarginHelper::FromUnresolved(
+        mMargin.Get(aSide), mozilla::ToStylePhysicalAxis(aSide), aParams);
   }
 
   bool MarginEquals(const nsStyleMargin& aOther) const {
@@ -465,7 +480,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin {
   // are found in WritingModes.h.
   inline AnchorResolvedMargin GetMargin(
       mozilla::LogicalSide aSide, mozilla::WritingMode aWM,
-      mozilla::StylePositionProperty aPosition) const;
+      const AnchorPosResolutionParams& aParams) const;
 
   mozilla::StyleRect<mozilla::StyleMargin> mMargin;
   mozilla::StyleRect<mozilla::StyleLength> mScrollMargin;
@@ -744,22 +759,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePage {
 using AnchorResolvedInset =
     mozilla::UniqueOrNonOwningPtr<const mozilla::StyleInset>;
 
-// Base set of parameters required to resolve a reference to an anchor.
-struct AnchorPosResolutionParams {
-  // Frame of the anchor positioned element.
-  // If nullptr, skips anchor lookup and returns invalid, resolving fallbacks.
-  const nsIFrame* mFrame;
-  // Position property of the element in question.
-  mozilla::StylePositionProperty mPosition;
-
-  // Helper functions for creating anchor resolution parameters.
-  // Defined in corresponding header files.
-  static inline AnchorPosResolutionParams From(const nsIFrame* aFrame);
-  static inline AnchorPosResolutionParams From(const mozilla::ReflowInput* aRI);
-  static inline AnchorPosResolutionParams From(
-      const nsComputedDOMStyle* aComputedDOMStyle);
-};
-
 // Set of parameters required to resolve the anchor's position offset in a
 // containing block.
 struct AnchorPosOffsetResolutionParams {
@@ -836,12 +835,12 @@ struct AnchorResolvedSizeHelper {
   }
 
   static AnchorResolvedSize FromUnresolved(
-      const mozilla::StyleSize& aValue,
-      mozilla::StylePositionProperty aPosition) {
+      const mozilla::StyleSize& aValue, mozilla::StylePhysicalAxis aAxis,
+      const AnchorPosResolutionParams& aParams) {
     if (!aValue.HasAnchorPositioningFunction()) {
       return AnchorResolvedSize::NonOwning(&aValue);
     }
-    return ResolveAnchor(aValue, aPosition);
+    return ResolveAnchor(aValue, aAxis, aParams);
   }
 
   static AnchorResolvedSize Overridden(const mozilla::StyleSize& aSize) {
@@ -868,8 +867,8 @@ struct AnchorResolvedSizeHelper {
 
  private:
   static AnchorResolvedSize ResolveAnchor(
-      const mozilla::StyleSize& aValue,
-      mozilla::StylePositionProperty aPosition);
+      const mozilla::StyleSize& aValue, mozilla::StylePhysicalAxis aAxis,
+      const AnchorPosResolutionParams& aParams);
 };
 
 using AnchorResolvedMaxSize =
@@ -886,12 +885,12 @@ struct AnchorResolvedMaxSizeHelper {
   }
 
   static AnchorResolvedMaxSize FromUnresolved(
-      const mozilla::StyleMaxSize& aValue,
-      mozilla::StylePositionProperty aPosition) {
+      const mozilla::StyleMaxSize& aValue, mozilla::StylePhysicalAxis aAxis,
+      const AnchorPosResolutionParams& aParams) {
     if (!aValue.HasAnchorPositioningFunction()) {
       return AnchorResolvedMaxSize::NonOwning(&aValue);
     }
-    return ResolveAnchor(aValue, aPosition);
+    return ResolveAnchor(aValue, aAxis, aParams);
   }
   static AnchorResolvedMaxSize MaxContent() {
     return AnchorResolvedMaxSize::NonOwning(&MaxContentValue());
@@ -903,8 +902,8 @@ struct AnchorResolvedMaxSizeHelper {
 
  private:
   static AnchorResolvedMaxSize ResolveAnchor(
-      const mozilla::StyleMaxSize& aValue,
-      mozilla::StylePositionProperty aPosition);
+      const mozilla::StyleMaxSize& aValue, mozilla::StylePhysicalAxis aAxis,
+      const AnchorPosResolutionParams& aParams);
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
@@ -1041,23 +1040,23 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   // found in WritingModes.h (after the WritingMode class is fully
   // declared).
   inline AnchorResolvedSize ISize(WritingMode,
-                                  mozilla::StylePositionProperty) const;
+                                  const AnchorPosResolutionParams&) const;
   inline AnchorResolvedSize MinISize(WritingMode,
-                                     mozilla::StylePositionProperty) const;
+                                     const AnchorPosResolutionParams&) const;
   inline AnchorResolvedMaxSize MaxISize(WritingMode,
-                                        mozilla::StylePositionProperty) const;
+                                        const AnchorPosResolutionParams&) const;
   inline AnchorResolvedSize BSize(WritingMode,
-                                  mozilla::StylePositionProperty) const;
+                                  const AnchorPosResolutionParams&) const;
   inline AnchorResolvedSize MinBSize(WritingMode,
-                                     mozilla::StylePositionProperty) const;
+                                     const AnchorPosResolutionParams&) const;
   inline AnchorResolvedMaxSize MaxBSize(WritingMode,
-                                        mozilla::StylePositionProperty) const;
+                                        const AnchorPosResolutionParams&) const;
   inline AnchorResolvedSize Size(LogicalAxis, WritingMode,
-                                 mozilla::StylePositionProperty) const;
+                                 const AnchorPosResolutionParams&) const;
   inline AnchorResolvedSize MinSize(LogicalAxis, WritingMode,
-                                    mozilla::StylePositionProperty) const;
+                                    const AnchorPosResolutionParams&) const;
   inline AnchorResolvedMaxSize MaxSize(LogicalAxis, WritingMode,
-                                       mozilla::StylePositionProperty) const;
+                                       const AnchorPosResolutionParams&) const;
   static inline bool ISizeDependsOnContainer(const AnchorResolvedSize&);
   static inline bool MinISizeDependsOnContainer(const AnchorResolvedSize&);
   static inline bool MaxISizeDependsOnContainer(const AnchorResolvedMaxSize&);
@@ -1078,30 +1077,38 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
       mozilla::LogicalSide aSide, WritingMode aWM,
       const AnchorPosOffsetResolutionParams& aParams) const;
 
-  AnchorResolvedSize GetWidth(mozilla::StylePositionProperty aProp) const {
-    return AnchorResolvedSizeHelper::FromUnresolved(mWidth, aProp);
+  AnchorResolvedSize GetWidth(const AnchorPosResolutionParams& aParams) const {
+    return AnchorResolvedSizeHelper::FromUnresolved(
+        mWidth, mozilla::StylePhysicalAxis::Horizontal, aParams);
   }
 
-  AnchorResolvedSize GetHeight(mozilla::StylePositionProperty aProp) const {
-    return AnchorResolvedSizeHelper::FromUnresolved(mHeight, aProp);
+  AnchorResolvedSize GetHeight(const AnchorPosResolutionParams& aParams) const {
+    return AnchorResolvedSizeHelper::FromUnresolved(
+        mHeight, mozilla::StylePhysicalAxis::Vertical, aParams);
   }
 
-  AnchorResolvedSize GetMinWidth(mozilla::StylePositionProperty aProp) const {
-    return AnchorResolvedSizeHelper::FromUnresolved(mMinWidth, aProp);
+  AnchorResolvedSize GetMinWidth(
+      const AnchorPosResolutionParams& aParams) const {
+    return AnchorResolvedSizeHelper::FromUnresolved(
+        mMinWidth, mozilla::StylePhysicalAxis::Horizontal, aParams);
   }
 
-  AnchorResolvedSize GetMinHeight(mozilla::StylePositionProperty aProp) const {
-    return AnchorResolvedSizeHelper::FromUnresolved(mMinHeight, aProp);
+  AnchorResolvedSize GetMinHeight(
+      const AnchorPosResolutionParams& aParams) const {
+    return AnchorResolvedSizeHelper::FromUnresolved(
+        mMinHeight, mozilla::StylePhysicalAxis::Vertical, aParams);
   }
 
   AnchorResolvedMaxSize GetMaxWidth(
-      mozilla::StylePositionProperty aProp) const {
-    return AnchorResolvedMaxSizeHelper::FromUnresolved(mMaxWidth, aProp);
+      const AnchorPosResolutionParams& aParams) const {
+    return AnchorResolvedMaxSizeHelper::FromUnresolved(
+        mMaxWidth, mozilla::StylePhysicalAxis::Horizontal, aParams);
   }
 
   AnchorResolvedMaxSize GetMaxHeight(
-      mozilla::StylePositionProperty aProp) const {
-    return AnchorResolvedMaxSizeHelper::FromUnresolved(mMaxHeight, aProp);
+      const AnchorPosResolutionParams& aParams) const {
+    return AnchorResolvedMaxSizeHelper::FromUnresolved(
+        mMaxHeight, mozilla::StylePhysicalAxis::Vertical, aParams);
   }
 
  private:
@@ -2060,9 +2067,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
 
   mozilla::StyleFieldSizing mFieldSizing;
 
-  bool HasViewTransitionName() const {
-    return !mViewTransitionName._0.AsAtom()->IsEmpty();
-  }
+  bool HasViewTransitionName() const { return !mViewTransitionName.IsNone(); }
 
   mozilla::StyleViewTransitionName mViewTransitionName;
   mozilla::StyleViewTransitionClass mViewTransitionClass;
@@ -2358,19 +2363,5 @@ struct nsSize_Simple {
 STATIC_ASSERT_TYPE_LAYOUTS_MATCH(nsSize, nsSize_Simple);
 STATIC_ASSERT_FIELD_OFFSET_MATCHES(nsSize, nsSize_Simple, width);
 STATIC_ASSERT_FIELD_OFFSET_MATCHES(nsSize, nsSize_Simple, height);
-
-/**
- * <div rustbindgen="true" replaces="mozilla::UniquePtr">
- *
- * TODO(Emilio): This is a workaround and we should be able to get rid of this
- * one.
- */
-template <typename T>
-struct UniquePtr_Simple {
-  T* mPtr;
-};
-
-STATIC_ASSERT_TYPE_LAYOUTS_MATCH(mozilla::UniquePtr<int>,
-                                 UniquePtr_Simple<int>);
 
 #endif /* nsStyleStruct_h___ */

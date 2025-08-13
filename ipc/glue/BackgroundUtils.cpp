@@ -32,6 +32,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/LoadInfo.h"
 
@@ -503,16 +504,6 @@ nsresult LoadInfoToLoadInfoArgs(nsILoadInfo* aLoadInfo,
   static_cast<CookieJarSettings*>(cookieJarSettings.get())
       ->Serialize(cookieJarSettingsArgs);
 
-  Maybe<CSPInfo> maybeCspToInheritInfo;
-  nsCOMPtr<nsIContentSecurityPolicy> cspToInherit =
-      aLoadInfo->GetCspToInherit();
-  if (cspToInherit) {
-    CSPInfo cspToInheritInfo;
-    Unused << NS_WARN_IF(
-        NS_FAILED(CSPToCSPInfo(cspToInherit, &cspToInheritInfo)));
-    maybeCspToInheritInfo.emplace(cspToInheritInfo);
-  }
-
   nsCOMPtr<nsIURI> unstrippedURI;
   Unused << aLoadInfo->GetUnstrippedURI(getter_AddRefs(unstrippedURI));
 
@@ -557,6 +548,16 @@ nsresult LoadInfoToLoadInfoArgs(nsILoadInfo* aLoadInfo,
 
   Maybe<RequestMode> requestMode;
   aLoadInfo->GetRequestMode(&requestMode);
+
+  Maybe<PolicyContainerArgs> maybePolicyContainerToInherit;
+  nsCOMPtr<nsIPolicyContainer> policyContainerToInherit =
+      aLoadInfo->GetPolicyContainerToInherit();
+  if (policyContainerToInherit) {
+    PolicyContainerArgs args;
+    PolicyContainer::ToArgs(PolicyContainer::Cast(policyContainerToInherit),
+                            args);
+    maybePolicyContainerToInherit.emplace(args);
+  }
 
   *outLoadInfoArgs = LoadInfoArgs(
       loadingPrincipalInfo, triggeringPrincipalInfo, principalToInheritInfo,
@@ -604,7 +605,7 @@ nsresult LoadInfoToLoadInfoArgs(nsILoadInfo* aLoadInfo,
       requestMode, aLoadInfo->GetIsFromProcessingFrameAttributes(),
       aLoadInfo->GetIsMediaRequest(), aLoadInfo->GetIsMediaInitialRequest(),
       aLoadInfo->GetIsFromObjectOrEmbed(), cookieJarSettingsArgs,
-      aLoadInfo->GetRequestBlockingReason(), maybeCspToInheritInfo,
+      aLoadInfo->GetRequestBlockingReason(), maybePolicyContainerToInherit,
       aLoadInfo->GetStoragePermission(), aLoadInfo->GetParentIpAddressSpace(),
       aLoadInfo->GetIpAddressSpace(), overriddenFingerprintingSettingsArg,
       aLoadInfo->GetIsMetaRefresh(), aLoadInfo->GetLoadingEmbedderPolicy(),
@@ -803,14 +804,6 @@ nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& loadInfoArgs,
         loadInfoArgs.overriddenFingerprintingSettings().ref());
   }
 
-  nsCOMPtr<nsIContentSecurityPolicy> cspToInherit;
-  Maybe<mozilla::ipc::CSPInfo> cspToInheritInfo =
-      loadInfoArgs.cspToInheritInfo();
-  if (cspToInheritInfo.isSome()) {
-    nsCOMPtr<Document> doc = do_QueryInterface(aCspToInheritLoadingContext);
-    cspToInherit = CSPInfoToCSP(cspToInheritInfo.ref(), doc);
-  }
-
   // Restore the loadingContext for frames using the BrowsingContext's
   // embedder element. Note that this only works if the embedder is
   // same-process, so won't be fission compatible.
@@ -855,14 +848,23 @@ nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& loadInfoArgs,
         redirectChain, interceptionInfoArg.fromThirdParty());
   }
 
+  RefPtr<PolicyContainer> policyContainerToInherit;
+  const auto& policyContainerToInheritArgs =
+      loadInfoArgs.policyContainerToInherit();
+  if (policyContainerToInheritArgs.isSome()) {
+    nsCOMPtr<Document> doc = do_QueryInterface(aCspToInheritLoadingContext);
+    PolicyContainer::FromArgs(policyContainerToInheritArgs.ref(), doc,
+                              getter_AddRefs(policyContainerToInherit));
+  }
+
   RefPtr<mozilla::net::LoadInfo> loadInfo = new mozilla::net::LoadInfo(
       loadingPrincipal, triggeringPrincipal, principalToInherit,
-      topLevelPrincipal, resultPrincipalURI, cookieJarSettings, cspToInherit,
-      triggeringRemoteType, loadInfoArgs.sandboxedNullPrincipalID(), clientInfo,
-      reservedClientInfo, initialClientInfo, controller,
-      loadInfoArgs.securityFlags(), loadInfoArgs.sandboxFlags(),
-      loadInfoArgs.triggeringSandboxFlags(), loadInfoArgs.triggeringWindowId(),
-      loadInfoArgs.triggeringStorageAccess(),
+      topLevelPrincipal, resultPrincipalURI, cookieJarSettings,
+      policyContainerToInherit, triggeringRemoteType,
+      loadInfoArgs.sandboxedNullPrincipalID(), clientInfo, reservedClientInfo,
+      initialClientInfo, controller, loadInfoArgs.securityFlags(),
+      loadInfoArgs.sandboxFlags(), loadInfoArgs.triggeringSandboxFlags(),
+      loadInfoArgs.triggeringWindowId(), loadInfoArgs.triggeringStorageAccess(),
       loadInfoArgs.triggeringFirstPartyClassificationFlags(),
       loadInfoArgs.triggeringThirdPartyClassificationFlags(),
       loadInfoArgs.contentPolicyType(),

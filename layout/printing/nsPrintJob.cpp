@@ -6,48 +6,47 @@
 
 #include "nsPrintJob.h"
 
-#include "nsDebug.h"
-#include "nsDocShell.h"
-#include "nsReadableUtils.h"
-#include "nsQueryObject.h"
+#include <algorithm>
 
 #include "mozilla/AsyncEventDispatcher.h"
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/ComputedStyleInlines.h"
-#include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/dom/PBrowser.h"
-#include "mozilla/dom/Selection.h"
-#include "mozilla/dom/ShadowRoot.h"
-#include "mozilla/dom/CustomEvent.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/DocumentTimeline.h"
-#include "mozilla/dom/HTMLCanvasElement.h"
-#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
+#include "mozilla/ResultExtensions.h"
 #include "mozilla/StaticPrefs_print.h"
-#include "mozilla/glean/PrintingMetrics.h"
 #include "mozilla/Try.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/CustomEvent.h"
+#include "mozilla/dom/DocumentTimeline.h"
+#include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/dom/PBrowser.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/Selection.h"
+#include "mozilla/dom/ShadowRoot.h"
+#include "mozilla/glean/PrintingMetrics.h"
+#include "nsDebug.h"
+#include "nsDocShell.h"
+#include "nsError.h"
 #include "nsIBrowserChild.h"
+#include "nsIDocShell.h"
 #include "nsIOService.h"
 #include "nsIScriptGlobalObject.h"
 #include "nsIStringBundle.h"
+#include "nsITextToSubURI.h"
+#include "nsIURI.h"
 #include "nsPIDOMWindow.h"
 #include "nsPrintData.h"
 #include "nsPrintObject.h"
-#include "nsIDocShell.h"
-#include "nsIURI.h"
-#include "nsITextToSubURI.h"
-#include "nsError.h"
-
+#include "nsQueryObject.h"
+#include "nsReadableUtils.h"
 #include "nsView.h"
-#include <algorithm>
 
 // Print Options
+#include "nsGkAtoms.h"
 #include "nsIPrintSettings.h"
 #include "nsIPrintSettingsService.h"
-#include "nsGkAtoms.h"
 #include "nsXPCOM.h"
 
 static const char sPrintSettingsServiceContractID[] =
@@ -61,34 +60,31 @@ static const char sPrintSettingsServiceContractID[] =
 #include "mozilla/dom/DocumentInlines.h"
 
 // Misc
+#include "Text.h"
 #include "gfxContext.h"
-#include "mozilla/gfx/DrawEventRecorder.h"
-#include "mozilla/layout/RemotePrintJobChild.h"
-#include "nsISupportsUtils.h"
-#include "nsIScriptContext.h"
-#include "nsComponentManagerUtils.h"
+#include "mozilla/Components.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
-#include "Text.h"
-
-#include "nsIDeviceContextSpec.h"
-#include "nsDeviceContextSpecProxy.h"
-#include "nsViewManager.h"
-
-#include "nsPageSequenceFrame.h"
-#include "nsIInterfaceRequestor.h"
-#include "nsIInterfaceRequestorUtils.h"
-#include "nsIWebBrowserChrome.h"
 #include "mozilla/ReflowInput.h"
-#include "nsIDocumentViewer.h"
-#include "nsIDocumentViewerPrint.h"
-
-#include "nsFocusManager.h"
-#include "nsRange.h"
-#include "mozilla/Components.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLFrameElement.h"
-#include "mozilla/ServoStyleSet.h"
+#include "mozilla/gfx/DrawEventRecorder.h"
+#include "mozilla/layout/RemotePrintJobChild.h"
+#include "nsComponentManagerUtils.h"
+#include "nsDeviceContextSpecProxy.h"
+#include "nsFocusManager.h"
+#include "nsIDeviceContextSpec.h"
+#include "nsIDocumentViewer.h"
+#include "nsIDocumentViewerPrint.h"
+#include "nsIInterfaceRequestor.h"
+#include "nsIInterfaceRequestorUtils.h"
+#include "nsIScriptContext.h"
+#include "nsISupportsUtils.h"
+#include "nsIWebBrowserChrome.h"
+#include "nsPageSequenceFrame.h"
+#include "nsRange.h"
+#include "nsViewManager.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -1611,7 +1607,10 @@ void SelectionRangeState::SelectNodesExceptInSubtree(const Position& aStart,
   }
 
   RefPtr<nsRange> range = nsRange::Create(
-      start.mNode, start.mOffset, aStart.mNode, aStart.mOffset, IgnoreErrors());
+      start.mNode, start.mOffset, aStart.mNode, aStart.mOffset, IgnoreErrors(),
+      StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()
+          ? AllowRangeCrossShadowBoundary::Yes
+          : AllowRangeCrossShadowBoundary::No);
   SelectRange(range);
 
   start = aEnd;
@@ -1636,10 +1635,16 @@ void SelectionRangeState::RemoveSelectionFromDocument() {
     const Position& pos = entry.GetData();
     nsINode* root = entry.GetKey();
     RefPtr<nsRange> range = nsRange::Create(
-        pos.mNode, pos.mOffset, root, root->GetChildCount(), IgnoreErrors());
+        pos.mNode, pos.mOffset, root, root->GetChildCount(), IgnoreErrors(),
+        StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()
+            ? AllowRangeCrossShadowBoundary::Yes
+            : AllowRangeCrossShadowBoundary::No);
     SelectRange(range);
   }
-  mSelection->DeleteFromDocument(IgnoreErrors());
+  for (uint32_t i = 0; i < mSelection->RangeCount(); i++) {
+    auto* range = mSelection->GetRangeAt(i);
+    range->SuppressContentsForPrintSelection(IgnoreErrors());
+  }
 }
 
 /**
@@ -2099,9 +2104,9 @@ void nsPrintJob::DisconnectPagePrintTimer() {
 //---------------------------------------------------------------
 //---------------------------------------------------------------
 #if defined(XP_WIN) && defined(EXTENDED_DEBUG_PRINTING)
-#  include <windows.h>
-#  include <process.h>
 #  include <direct.h>
+#  include <process.h>
+#  include <windows.h>
 
 #  define MY_FINDFIRST(a, b) FindFirstFile(a, b)
 #  define MY_FINDNEXT(a, b) FindNextFile(a, b)

@@ -6,8 +6,8 @@
 #ifndef nsIMathMLFrame_h___
 #define nsIMathMLFrame_h___
 
-#include "nsQueryFrame.h"
 #include "nsMathMLOperators.h"
+#include "nsQueryFrame.h"
 
 struct nsPresentationData;
 struct nsEmbellishData;

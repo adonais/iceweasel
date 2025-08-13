@@ -198,9 +198,8 @@ class SVGFELightingElement : public SVGFELightingElementBase {
   mozilla::gfx::LightType ComputeLightAttributes(
       SVGFilterInstance* aInstance, nsTArray<float>& aFloatAttributes);
 
-  bool AddLightingAttributes(
-      mozilla::gfx::DiffuseLightingAttributes* aAttributes,
-      SVGFilterInstance* aInstance);
+  bool AddLightingAttributes(mozilla::gfx::LightingAttributes* aAttributes,
+                             SVGFilterInstance* aInstance);
 
   enum {
     SURFACE_SCALE,

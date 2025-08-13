@@ -10,6 +10,7 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.MessagingAction.MessageClicked
 import org.mozilla.fenix.components.appstate.AppAction.MessagingAction.MessageDismissed
+import java.lang.ref.WeakReference
 
 /**
  * Handles default interactions with the ui of Nimbus Messaging messages.
@@ -17,8 +18,11 @@ import org.mozilla.fenix.components.appstate.AppAction.MessagingAction.MessageDi
 class DefaultMessageController(
     private val appStore: AppStore,
     private val messagingController: NimbusMessagingControllerInterface,
-    private val homeActivity: HomeActivity,
+    private val homeActivityRef: WeakReference<HomeActivity>,
 ) : MessageController {
+
+    private val homeActivity: HomeActivity
+        get() = requireNotNull(homeActivityRef.get())
 
     override fun onMessagePressed(message: Message) {
         val intent = messagingController.getIntentForMessage(message)

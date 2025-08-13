@@ -14,10 +14,9 @@
 #ifndef ComputedStyleInlines_h
 #define ComputedStyleInlines_h
 
-#include "mozilla/ComputedStyle.h"
-
 #include "MainThreadUtils.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/ComputedStyle.h"
 #include "mozilla/Unused.h"
 #include "nsStyleStructInlines.h"
 

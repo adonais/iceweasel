@@ -7,26 +7,6 @@
 /* PublicKeyPinningService.cpp, you shouldn't be #including it.              */
 /*****************************************************************************/
 #include <stdint.h>
-/* AffirmTrust Commercial */
-static const char kAffirmTrust_CommercialFingerprint[] =
-  "bEZLmlsjOl6HTadlwm8EUBDS3c/0V5TwtMfkqvpQFJU=";
-
-/* AffirmTrust Networking */
-static const char kAffirmTrust_NetworkingFingerprint[] =
-  "lAcq0/WPcPkwmOWl9sBMlscQvYSdgxhJGa6Q64kK5AA=";
-
-/* AffirmTrust Premium */
-static const char kAffirmTrust_PremiumFingerprint[] =
-  "x/Q7TPW3FWgpT4IrU3YmBfbd0Vyt7Oc56eLDy6YenWc=";
-
-/* AffirmTrust Premium ECC */
-static const char kAffirmTrust_Premium_ECCFingerprint[] =
-  "MhmwkRT/SVo+tusAwu/qs0ACrl8KVsdnnqCHo/oDfk8=";
-
-/* Baltimore CyberTrust Root */
-static const char kBaltimore_CyberTrust_RootFingerprint[] =
-  "Y9mvm0exBk1JoQ57f9Vm28jKo5lFm/woKcVxrYxu80o=";
-
 /* COMODO Certification Authority */
 static const char kCOMODO_Certification_AuthorityFingerprint[] =
   "AG1751Vd2CAmRCxPGieoDomhmJy4ezREjtIZTBgZbV4=";
@@ -87,25 +67,13 @@ static const char kDigiCert_Trusted_Root_G4Fingerprint[] =
 static const char kEnd_Entity_Test_CertFingerprint[] =
   "VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8=";
 
-/* Entrust Root Certification Authority */
-static const char kEntrust_Root_Certification_AuthorityFingerprint[] =
-  "bb+uANN7nNc/j7R95lkXrwDg3d9C286sIMF8AnXuIJU=";
-
-/* Entrust Root Certification Authority - EC1 */
-static const char kEntrust_Root_Certification_Authority___EC1Fingerprint[] =
-  "/qK31kX7pz11PB7Jp4cMQOH3sMVh6Se5hb9xGGbjbyI=";
-
-/* Entrust Root Certification Authority - G2 */
-static const char kEntrust_Root_Certification_Authority___G2Fingerprint[] =
-  "du6FkDdMcVQ3u8prumAo6t3i3G27uMP2EOhR8R0at/U=";
-
-/* Entrust.net Premium 2048 Secure Server CA */
-static const char kEntrust_net_Premium_2048_Secure_Server_CAFingerprint[] =
-  "HqPF5D7WbC2imDpCpKebHpBnhs6fG1hiFBmgBGOofTg=";
-
 /* FacebookBackup */
 static const char kFacebookBackupFingerprint[] =
   "q4PO2G2cbkZhZ82+JgmRUyGMoAeozA+BSXVXQWB8XWQ=";
+
+/* GOOGLE_PIN_AE1_GoogleTrustServices */
+static const char kGOOGLE_PIN_AE1_GoogleTrustServicesFingerprint[] =
+  "IGnQeIPjbxiR+JteR7AkUXl7pV+19BT4x3o15saZBNE=";
 
 /* GOOGLE_PIN_DigiCertECCSecureServerCA */
 static const char kGOOGLE_PIN_DigiCertECCSecureServerCAFingerprint[] =
@@ -114,6 +82,46 @@ static const char kGOOGLE_PIN_DigiCertECCSecureServerCAFingerprint[] =
 /* GOOGLE_PIN_SymantecClass3EVG3 */
 static const char kGOOGLE_PIN_SymantecClass3EVG3Fingerprint[] =
   "gMxWOrX4PMQesK9qFNbYBxjBfjUvlkn/vN1n+L9lE5E=";
+
+/* GOOGLE_PIN_WE1_GoogleTrustServices */
+static const char kGOOGLE_PIN_WE1_GoogleTrustServicesFingerprint[] =
+  "kIdp6NNEd8wsugYyyIYFsi1ylMCED3hZbSR8ZFsa/A4=";
+
+/* GOOGLE_PIN_WE2_GoogleTrustServices */
+static const char kGOOGLE_PIN_WE2_GoogleTrustServicesFingerprint[] =
+  "vh78KSg1Ry4NaqGDV10w/cTb9VH3BQUZoCWNa93W/EY=";
+
+/* GOOGLE_PIN_WE3_GoogleTrustServices */
+static const char kGOOGLE_PIN_WE3_GoogleTrustServicesFingerprint[] =
+  "daBIAnKdRIX3bqM85I6We7wBUh0DPycNFBMvYkXGX2Q=";
+
+/* GOOGLE_PIN_WE4_GoogleTrustServices */
+static const char kGOOGLE_PIN_WE4_GoogleTrustServicesFingerprint[] =
+  "O5TQDB/wa4SkRjBrQL2Aq9CG317H9MDDgpTVcrpJDa4=";
+
+/* GOOGLE_PIN_WE5_GoogleTrustServices */
+static const char kGOOGLE_PIN_WE5_GoogleTrustServicesFingerprint[] =
+  "8yZxLgpR8EbO8ANRrWKAzIzz9XdlSUgtYPkXKYUlGSY=";
+
+/* GOOGLE_PIN_WR1_GoogleTrustServices */
+static const char kGOOGLE_PIN_WR1_GoogleTrustServicesFingerprint[] =
+  "yDu9og255NN5GEf+Bwa9rTrqFQ0EydZ0r1FCh9TdAW4=";
+
+/* GOOGLE_PIN_WR2_GoogleTrustServices */
+static const char kGOOGLE_PIN_WR2_GoogleTrustServicesFingerprint[] =
+  "YPtHaftLw6/0vnc2BnNKGF54xiCA28WFcccjkA4ypCM=";
+
+/* GOOGLE_PIN_WR3_GoogleTrustServices */
+static const char kGOOGLE_PIN_WR3_GoogleTrustServicesFingerprint[] =
+  "OdSlmQD9NWJh4EbcOHBxkhygPwNSwA9Q91eounfbcoE=";
+
+/* GOOGLE_PIN_WR4_GoogleTrustServices */
+static const char kGOOGLE_PIN_WR4_GoogleTrustServicesFingerprint[] =
+  "hZe1OerqJ1Pnq6F4N0gVjjpHqm037Ndf4aLLVpZZdAE=";
+
+/* GOOGLE_PIN_WR5_GoogleTrustServices */
+static const char kGOOGLE_PIN_WR5_GoogleTrustServicesFingerprint[] =
+  "/RoweMyX8j8/fAaaeAIwzhWXigZDrh/J2BBJaHrjX90=";
 
 /* GTS Root R1 */
 static const char kGTS_Root_R1Fingerprint[] =
@@ -204,41 +212,32 @@ struct StaticFingerprints {
 
 /* PreloadedHPKPins.json pinsets */
 static const char* const kPinset_google_root_pems_Data[] = {
-  kEntrust_Root_Certification_Authority___EC1Fingerprint,
   kCOMODO_ECC_Certification_AuthorityFingerprint,
   kDigiCert_Assured_ID_Root_G2Fingerprint,
   kCOMODO_Certification_AuthorityFingerprint,
   kGlobalSign_ECC_Root_CA___R4Fingerprint,
   kDigiCert_Assured_ID_Root_G3Fingerprint,
   kStarfield_Class_2_CAFingerprint,
-  kEntrust_net_Premium_2048_Secure_Server_CAFingerprint,
   kDigiCert_Assured_ID_Root_CAFingerprint,
   kUSERTrust_ECC_Certification_AuthorityFingerprint,
   kGlobalSign_Root_CAFingerprint,
   kGo_Daddy_Root_Certificate_Authority___G2Fingerprint,
-  kAffirmTrust_Premium_ECCFingerprint,
   kGTS_Root_R3Fingerprint,
   kGTS_Root_R2Fingerprint,
   kGo_Daddy_Class_2_CAFingerprint,
   kDigiCert_Trusted_Root_G4Fingerprint,
   kDigiCert_High_Assurance_EV_Root_CAFingerprint,
-  kBaltimore_CyberTrust_RootFingerprint,
   kGlobalSign_Root_CA___R6Fingerprint,
-  kAffirmTrust_CommercialFingerprint,
-  kEntrust_Root_Certification_AuthorityFingerprint,
   kGlobalSign_Root_CA___R3Fingerprint,
-  kEntrust_Root_Certification_Authority___G2Fingerprint,
   kGlobalSign_ECC_Root_CA___R5Fingerprint,
   kStarfield_Root_Certificate_Authority___G2Fingerprint,
   kCOMODO_RSA_Certification_AuthorityFingerprint,
   kGTS_Root_R1Fingerprint,
   kDigiCert_Global_Root_G2Fingerprint,
-  kAffirmTrust_NetworkingFingerprint,
   kGTS_Root_R4Fingerprint,
   kDigiCert_Global_Root_CAFingerprint,
   kDigiCert_Global_Root_G3Fingerprint,
   kComodo_AAA_Services_rootFingerprint,
-  kAffirmTrust_PremiumFingerprint,
   kUSERTrust_RSA_Certification_AuthorityFingerprint,
 };
 static const StaticFingerprints kPinset_google_root_pems = {
@@ -277,12 +276,23 @@ static const StaticFingerprints kPinset_test = {
 };
 
 static const char* const kPinset_google_Data[] = {
+  kGOOGLE_PIN_WR5_GoogleTrustServicesFingerprint,
+  kGOOGLE_PIN_WE5_GoogleTrustServicesFingerprint,
   kGlobalSign_ECC_Root_CA___R4Fingerprint,
+  kGOOGLE_PIN_AE1_GoogleTrustServicesFingerprint,
   kGoogleBackup2048Fingerprint,
+  kGOOGLE_PIN_WE4_GoogleTrustServicesFingerprint,
+  kGOOGLE_PIN_WR3_GoogleTrustServicesFingerprint,
   kGTS_Root_R3Fingerprint,
   kGTS_Root_R2Fingerprint,
+  kGOOGLE_PIN_WR2_GoogleTrustServicesFingerprint,
+  kGOOGLE_PIN_WE3_GoogleTrustServicesFingerprint,
+  kGOOGLE_PIN_WR4_GoogleTrustServicesFingerprint,
   kGTS_Root_R1Fingerprint,
+  kGOOGLE_PIN_WE1_GoogleTrustServicesFingerprint,
   kGTS_Root_R4Fingerprint,
+  kGOOGLE_PIN_WE2_GoogleTrustServicesFingerprint,
+  kGOOGLE_PIN_WR1_GoogleTrustServicesFingerprint,
 };
 static const StaticFingerprints kPinset_google = {
   sizeof(kPinset_google_Data) / sizeof(const char*),
@@ -736,4 +746,4 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
 
 static const int32_t kUnknownId = -1;
 
-static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1760959722855000);
+static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1763379173141000);

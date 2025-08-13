@@ -606,7 +606,7 @@ nsThreadManager::NewNamedThread(
     nsIThread** aResult) {
   // Note: can be called from arbitrary threads
 
-  [[maybe_unused]] TimeStamp startTime = TimeStamp::Now();
+  TimeStamp startTime = TimeStamp::Now();
 
   RefPtr<ThreadEventQueue> queue =
       new ThreadEventQueue(MakeUnique<EventQueue>());

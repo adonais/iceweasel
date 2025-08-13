@@ -217,6 +217,15 @@ ScreenOrientation::LockOrientationTask::Run() {
               return;
             }
 
+            if (aValue.IsReject()) {
+              // Since current device doesn't support lock orientation or
+              // causes something device error, we should throw it, instead of
+              // abort.
+              self->mPromise->MaybeReject(aValue.RejectValue());
+              self->mDocument->ClearOrientationPendingPromise();
+              return;
+            }
+
             if (!self->mDocument || !self->mDocument->IsFullyActive()) {
               // Pending promise in document will be clear during destroying
               // document.
@@ -243,27 +252,22 @@ ScreenOrientation::LockOrientationTask::Run() {
               // by AbortInProcessOrientationPromises()
               return;
             }
-            if (aValue.IsResolve()) {
-              // LockDeviceOrientation won't change orientation, so change
-              // event isn't fired.
-              if (BrowsingContext* bc = self->mDocument->GetBrowsingContext()) {
-                OrientationType currentOrientationType =
-                    bc->GetCurrentOrientationType();
-                if ((previousOrientationType == currentOrientationType &&
-                     self->OrientationLockContains(currentOrientationType)) ||
-                    (self->mOrientationLock ==
-                         hal::ScreenOrientation::Default &&
-                     bc->GetCurrentOrientationAngle() == 0)) {
-                  // Orientation lock will not cause an orientation change, so
-                  // we need to manually resolve the promise here.
-                  self->mPromise->MaybeResolveWithUndefined();
-                  self->mDocument->ClearOrientationPendingPromise();
-                }
+
+            // LockDeviceOrientation won't change orientation, so change
+            // event isn't fired.
+            if (BrowsingContext* bc = self->mDocument->GetBrowsingContext()) {
+              OrientationType currentOrientationType =
+                  bc->GetCurrentOrientationType();
+              if ((previousOrientationType == currentOrientationType &&
+                   self->OrientationLockContains(currentOrientationType)) ||
+                  (self->mOrientationLock == hal::ScreenOrientation::Default &&
+                   bc->GetCurrentOrientationAngle() == 0)) {
+                // Orientation lock will not cause an orientation change, so
+                // we need to manually resolve the promise here.
+                self->mPromise->MaybeResolveWithUndefined();
+                self->mDocument->ClearOrientationPendingPromise();
               }
-              return;
             }
-            self->mPromise->MaybeReject(aValue.RejectValue());
-            self->mDocument->ClearOrientationPendingPromise();
           });
 
   return NS_OK;

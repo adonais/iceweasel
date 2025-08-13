@@ -8,6 +8,9 @@
 newtab-page-title = 新規タブ
 newtab-settings-button =
     .title = 新規タブページをカスタマイズ
+newtab-customize-panel-icon-button =
+    .title = このページをカスタマイズ
+newtab-customize-panel-icon-button-label = カスタマイズ
 newtab-personalize-settings-icon-label =
     .title = 新規タブをパーソナライズ
     .aria-label = 設定
@@ -119,7 +122,6 @@ newtab-menu-show-privacy-info = 私たちのスポンサーとあなたのプラ
 newtab-menu-about-fakespot = { -fakespot-brand-name } について
 # Report is a verb (i.e. report issue with the content).
 newtab-menu-report = 報告
-newtab-menu-report-content = このコンテンツを報告
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = ブロック
@@ -310,6 +312,9 @@ newtab-custom-recent-toggle =
 newtab-custom-weather-toggle =
     .label = 天気予報
     .description = 一目でわかる今日の天気
+newtab-custom-trending-search-toggle =
+    .label = トレンド検索
+    .description = 人気があり頻繁に検索されているトピックです
 newtab-custom-close-button = 閉じる
 newtab-custom-settings = 他の設定を管理
 
@@ -498,6 +503,9 @@ newtab-topic-selection-button-pick-interests = 関心事を選ぶ
 newtab-section-follow-button = フォローする
 newtab-section-following-button = フォロー中
 newtab-section-unfollow-button = フォロー解除
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = フィードを微調整
+newtab-section-follow-highlight-subtitle = 興味のあることをフォローして、お好みのコンテンツを多く表示します
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -562,3 +570,16 @@ newtab-report-cancel = キャンセル
 newtab-report-submit = 送信
 newtab-toast-thanks-for-reporting =
     .message = ご報告ありがとうございます。
+
+## Strings for trending searches
+
+# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
+newtab-trending-searches-trending-on-google = Google のトレンド
+newtab-trending-searches-show-trending =
+    .title = トレンド検索を表示します
+newtab-trending-searches-hide-trending =
+    .title = トレンド検索を隠します
+newtab-trending-searches-learn-more = 詳細情報
+newtab-trending-searches-dismiss = トレンド検索を隠す
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = トレンド検索

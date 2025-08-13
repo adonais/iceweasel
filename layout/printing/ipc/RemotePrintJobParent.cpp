@@ -8,20 +8,20 @@
 
 #include <fstream>
 
+#include "PrintTranslator.h"
 #include "gfxContext.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/Unused.h"
+#include "nsAnonymousTemporaryFile.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsComponentManagerUtils.h"
-#include "nsDirectoryServiceUtils.h"
 #include "nsDeviceContext.h"
+#include "nsDirectoryServiceUtils.h"
 #include "nsIDeviceContextSpec.h"
 #include "nsIPrintSettings.h"
 #include "nsIWebProgressListener.h"
-#include "PrintTranslator.h"
 #include "private/pprio.h"
-#include "nsAnonymousTemporaryFile.h"
 
 namespace mozilla::layout {
 

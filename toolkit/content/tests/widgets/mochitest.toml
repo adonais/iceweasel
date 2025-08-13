@@ -50,9 +50,7 @@ skip-if = [
 ["test_image_recognition_zh.html"]
 run-if = ["os == 'mac' && os_version != '10.15'"] # Mac only feature, requires > 10.15 to support multilingual results.
 tags = "os_integration"
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && processor == 'x86_64' && xorigin", # Bug 1929419
-]
+skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64' && xorigin"] # Bug 1929419
 
 ["test_mousecapture_area.html"]
 tags = "os_integration"
@@ -84,7 +82,9 @@ skip-if = [
 tags = "os_integration"
 
 ["test_videocontrols_audio_direction.html"]
-skip-if = ["xorigin"] # Rendering of reftest videocontrols_direction-2a.html should not be different to the reference, fails/passes inconsistently
+skip-if = [
+  "xorigin", # Rendering of reftest videocontrols_direction-2a.html should not be different to the reference, fails/passes inconsistently
+]
 
 ["test_videocontrols_clickToPlay_ariaLabel.html"]
 
@@ -99,7 +99,7 @@ skip-if = ["os == 'android'"] # bug 1272646
 
 ["test_videocontrols_keyhandler.html"]
 skip-if = [
-  "os == 'android'", #Bug 1366957
+  "os == 'android'", # Bug 1366957
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug", # Bug 1948193
 ]
 

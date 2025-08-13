@@ -37,6 +37,8 @@ with Files("nsTransitionManager.*"):
 with Files("StyleAnimationValue.*"):
     BUG_COMPONENT = ("Core", "CSS Transitions and Animations")
 
+DIRS += ["typedom"]
+
 TEST_DIRS += ["test"]
 
 EXPORTS += [
@@ -75,6 +77,7 @@ EXPORTS.mozilla += [
     "AnimatedPropertyIDSet.h",
     "AnimationCollection.h",
     "AttributeStyles.h",
+    "BindgenUniquePtr.h",
     "BuiltInStyleSheetList.h",
     "BuiltInStyleSheets.h",
     "CachedInheritingStyles.h",

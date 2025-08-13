@@ -9,9 +9,10 @@
 #ifndef mozilla_AnonymousContentKey_h
 #define mozilla_AnonymousContentKey_h
 
-#include "mozilla/TypedEnumBits.h"
 #include <stdint.h>
+
 #include "X11UndefineNone.h"
+#include "mozilla/TypedEnumBits.h"
 
 namespace mozilla {
 

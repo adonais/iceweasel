@@ -125,6 +125,8 @@
   <string name="mozac_feature_prompt_repost_negative_button_text">Бас тарту</string>
   <!-- Strings show in a dialog that appear when user confirm folder upload -->
   <string name="mozac_feature_prompt_folder_upload_confirm_title">Файлдарды жүктеп салу керек пе?</string>
+  <!-- Prompt message displayed when user selects a specific folder. %1$s is a folder / directory name. -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_message">\"%1$s\" ішінен жүктеп жіберуден бұрын осы сайтқа сенетініңізге көз жеткізіңіз.</string>
   <!-- Pressing this will dismiss the dialog and allow to upload folder -->
   <string name="mozac_feature_prompt_folder_upload_confirm_positive_button_text">Жүктеп салу</string>
   <!-- Pressing this will dismiss the dialog and disallow to upload folder -->

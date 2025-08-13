@@ -43,6 +43,7 @@ features:
         type: Map<HomeScreenSection, Boolean>
         default:
           {
+            "header": true,
             "top-sites": true,
             "jump-back-in": true,
             "bookmarks": true,
@@ -56,6 +57,7 @@ features:
       - channel: nightly
         value: {
           "sections-enabled": {
+            "header": true,
             "top-sites": true,
             "jump-back-in": true,
             "bookmarks": true,
@@ -103,7 +105,6 @@ features:
         type: Map<MR2022Section, Boolean>
         default:
           {
-            "sync-cfr": true,
             "wallpapers-selection-tool": true,
             "tcp-cfr": true,
             "tcp-feature": true,
@@ -112,7 +113,6 @@ features:
       - channel: developer
         value: {
           "sections-enabled": {
-            "sync-cfr": true,
             "wallpapers-selection-tool": true,
           }
         }
@@ -243,9 +243,9 @@ features:
     description: "A feature that provides server-side configurations for Glean metrics (aka Server Knobs)."
     allow-coenrollment: true
     variables:
-      metrics-enabled:
-        description: "A map of metric base-identifiers to booleans representing the state of the 'enabled' flag for that metric."
-        type: Map<String, Boolean>
+      gleanMetricConfiguration:
+        description: Configuration for Glean Server Knobs
+        type: GleanServerKnobsConfiguration
         default: {}
       enable-event-timestamps:
         description: "Enables precise event timestamps for Glean events"
@@ -623,31 +623,6 @@ features:
         value:
           report-site-issue: false
 
-  mars:
-    description: Mozilla Ad Routing Service (MARS) unified ads service.
-    variables:
-      enabled:
-        description: >
-          Whether or not to enable MARS endpoint to serve sponsored top sites and stories.
-        type: Boolean
-        default: false
-
-  compose-homepage:
-    description: Turns on compose homepage.
-    variables:
-      enabled:
-        description: >
-          Whether or not to turn on the compose homepage.
-        type: Boolean
-        default: false
-    defaults:
-      - channel: nightly
-        value:
-          enabled: true
-      - channel: developer
-        value:
-          enabled: true
-
   override-user-specified-homepage-sections:
     description: Whether to ignore the user-specified homepage section visibility settings and hide the options in the settings.
     variables:
@@ -656,6 +631,7 @@ features:
           When true, ignore the user-specified homepage section visibility settings, and hide the toggle options in the settings.
         type: Boolean
         default: false
+
   microsurveys:
     description: Feature for microsurveys.
     variables:
@@ -918,13 +894,55 @@ features:
         type: Boolean
         default: false
 
+  tab-management-enhancements:
+    description: Control the visibility of the tab management enhancements.
+    variables:
+      enabled:
+        description: >
+          Whether or not to enable the tab management enhancements.
+        type: Boolean
+        default: false
+
+  address-sync:
+    description: Turns on address sync.
+    variables:
+      enabled:
+        description: >
+          Whether or not to turn on address sync.
+        type: Boolean
+        default: false
+    defaults:
+      - channel: nightly
+        value:
+          enabled: false
+      - channel: developer
+        value:
+          enabled: true
+
 types:
-  objects: {}
+  objects:
+    GleanServerKnobsConfiguration:
+      description: A configuration object for Glean server knobs.
+      fields:
+        metrics_enabled:
+          description: A map of metric base-identifiers to booleans representing the state of the 'enabled' flag for that metric.
+          type: Map<String, Boolean>
+          default: {}
+        pings_enabled:
+          description: A map of ping names to booleans representing the state of the 'enabled' flag for that ping.
+          type: Map<String, Boolean>
+          default: {}
+        event_threshold:
+          description: The threshold of events that will be buffered before an events ping is collected and submitted.
+          type: Option<Int>
+          default: null
 
   enums:
     HomeScreenSection:
       description: The identifiers for the sections of the homescreen.
       variants:
+        header:
+          description: The header of the homescreen.
         top-sites:
           description: The frecency and pinned sites.
         bookmarks:
@@ -945,8 +963,6 @@ types:
     MR2022Section:
       description: The identifiers for the sections of the MR 2022.
       variants:
-        sync-cfr:
-          description: CFR for the first time you see a synced tab on the home screen.
         wallpapers-selection-tool:
           description: Wallpapers selection dialog tool for the home screen.
         tcp-cfr:

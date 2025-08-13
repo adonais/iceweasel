@@ -86,7 +86,7 @@ static bool IsRemoteAcceleratedCompositor(
 }
 
 /* static */
-void WMFDecoderModule::Init(Config aConfig) {
+void WMFDecoderModule::Init() {
   // TODO : add an assertion to prevent this from running on main thread.
   if (XRE_IsContentProcess()) {
     // If we're in the content process and the UseGPUDecoder pref is set, it
@@ -96,14 +96,6 @@ void WMFDecoderModule::Init(Config aConfig) {
   } else if (XRE_IsGPUProcess()) {
     // Always allow DXVA in the GPU process.
     sDXVAEnabled = true;
-    if (aConfig == Config::ForceEnableHEVC) {
-      WmfDecoderModuleMarkerAndLog(
-          "ReportHardwareSupport",
-          "Enable HEVC for reporting hardware support telemetry");
-      sForceEnableHEVC = true;
-    } else {
-      sForceEnableHEVC = false;
-    }
   } else if (XRE_IsRDDProcess()) {
     // Hardware accelerated decoding is explicitly only done in the GPU process
     // to avoid copying textures whenever possible. Previously, detecting
@@ -201,8 +193,15 @@ HRESULT WMFDecoderModule::CreateMFTDecoder(const WMFStreamType& aType,
   }
 
   switch (aType) {
-    case WMFStreamType::H264:
+    case WMFStreamType::H264: {
+      if (XRE_IsGPUProcess() && !sDXVAEnabled) {
+        WmfDecoderModuleMarkerAndLog("CreateMFTDecoder, H264 Failure",
+                                     "SW decoder is not allowed in the GPU "
+                                     "process and the HW H264 requires DXVA");
+        return E_FAIL;
+      }
       return aDecoder->Create(CLSID_CMSH264DecoderMFT);
+    }
     case WMFStreamType::VP8:
       static const uint32_t VP8_USABLE_BUILD = 16287;
       if (!IsWindows10BuildOrLater(VP8_USABLE_BUILD)) {
@@ -253,7 +252,7 @@ HRESULT WMFDecoderModule::CreateMFTDecoder(const WMFStreamType& aType,
                               MFVideoFormat_NV12);
 #endif
     case WMFStreamType::HEVC:
-      if (!WMFDecoderModule::IsHEVCSupported() || !sDXVAEnabled) {
+      if (!StaticPrefs::media_hevc_enabled() || !sDXVAEnabled) {
         return E_FAIL;
       }
       return aDecoder->Create(MFT_CATEGORY_VIDEO_DECODER, MFVideoFormat_HEVC,
@@ -297,7 +296,7 @@ bool WMFDecoderModule::CanCreateMFTDecoder(const WMFStreamType& aType) {
       break;
 #endif
     case WMFStreamType::HEVC:
-      if (!WMFDecoderModule::IsHEVCSupported()) {
+      if (!StaticPrefs::media_hevc_enabled()) {
         return false;
       }
       break;
@@ -417,7 +416,8 @@ already_AddRefed<MediaDataDecoder> WMFDecoderModule::CreateVideoDecoder(
   }
 
   nsAutoCString hwFailure;
-  if (!manager->IsHardwareAccelerated(hwFailure)) {
+  bool isHardwareAccelerated = manager->IsHardwareAccelerated(hwFailure);
+  if (!isHardwareAccelerated) {
     // The decoder description includes whether it is using software or
     // hardware, but no information about how the hardware acceleration failed.
     WmfDecoderModuleMarkerAndLog(
@@ -431,6 +431,16 @@ already_AddRefed<MediaDataDecoder> WMFDecoderModule::CreateVideoDecoder(
         "WMFDecoderModule::CreateVideoDecoder success for manager with "
         "description %s",
         manager->GetDescriptionName().get());
+  }
+
+  // Ensure that if the GPU process claims to support hardware acceleration but
+  // fails to create a hardware decoder, we do not fall back to a software
+  // decoder. Software decoders are intended to run only in the RDD process.
+  if (XRE_IsGPUProcess() && !isHardwareAccelerated) {
+    WmfDecoderModuleMarkerAndLog("WMFVDecoderCreation Blocked",
+                                 "SW decoder is not allowed in the GPU "
+                                 "process");
+    return nullptr;
   }
 
   RefPtr<MediaDataDecoder> decoder = new WMFMediaDataDecoder(manager.release());
@@ -479,14 +489,6 @@ media::DecodeSupportSet WMFDecoderModule::SupportsMimeType(
        !supports.isEmpty() ? "supports" : "rejects", aMimeType.BeginReading()));
   return supports;
 }
-
-/* static */
-bool WMFDecoderModule::IsHEVCSupported() {
-  return sForceEnableHEVC || StaticPrefs::media_hevc_enabled();
-}
-
-/* static */
-void WMFDecoderModule::DisableForceEnableHEVC() { sForceEnableHEVC = false; }
 
 }  // namespace mozilla
 

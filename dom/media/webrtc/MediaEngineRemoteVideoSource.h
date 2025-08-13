@@ -45,8 +45,12 @@ namespace mozilla {
 // Fitness distance is defined in
 // https://w3c.github.io/mediacapture-main/getusermedia.html#dfn-selectsettings
 
-// The main difference of feasibility and fitness distance is that if the
-// constraint is required ('max', or 'exact'), and the settings dictionary's
+// In contrast, feasibility distance — used in the implementatioon of
+// crop_and_scale — effectively rounds width and height up to the nearest
+// native width and height before calculating distance (sorta).
+//
+// Another difference is that if the constraint is required
+// (min, 'max', or 'exact'), and the settings dictionary's
 // value for the constraint does not satisfy the constraint, the fitness
 // distance is positive infinity. Given a continuous space of settings
 // dictionaries comprising all discrete combinations of dimension and frame-rate
@@ -123,8 +127,8 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   nsresult Stop() override;
 
   uint32_t GetBestFitnessDistance(
-      const nsTArray<const NormalizedConstraintSet*>& aConstraintSets)
-      const override;
+      const nsTArray<const NormalizedConstraintSet*>& aConstraintSets,
+      const MediaEnginePrefs& aPrefs) const override;
   void GetSettings(dom::MediaTrackSettings& aOutSettings) const override;
 
   RefPtr<GenericNonExclusivePromise> GetFirstFramePromise() const override {
@@ -218,9 +222,14 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   MozPromiseHolder<GenericNonExclusivePromise> mFirstFramePromiseHolder;
   RefPtr<GenericNonExclusivePromise> mFirstFramePromise;
 
-  // The capability currently chosen by constraints of the user of this source.
+  // The capability currently chosen by constraints of the user of this source,
+  // and the distance calculation used when applying them.
   // Set under mMutex on the owning thread. Accessed under one of the two.
   webrtc::CaptureCapability mCapability;
+  DistanceCalculation mCalculation;
+
+  // Owning thread only.
+  UniquePtr<MediaEnginePrefs> mPrefs;
 
   /**
    * Capabilities that we choose between when applying constraints.

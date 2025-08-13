@@ -14,6 +14,7 @@ import mozilla.components.lib.crash.sentry.SentryService
 import mozilla.components.lib.crash.service.CrashReporterService
 import mozilla.components.lib.crash.service.GleanCrashReporterService
 import mozilla.components.lib.crash.service.MozillaSocorroService
+import mozilla.components.lib.crash.store.CrashReportOption
 import mozilla.components.support.ktx.android.content.isMainProcess
 import mozilla.components.support.utils.BrowsersCache
 import mozilla.components.support.utils.RunWhenReadyQueue
@@ -32,7 +33,7 @@ import org.mozilla.fenix.components.metrics.MetricController
 import org.mozilla.fenix.components.metrics.MetricsStorage
 import org.mozilla.fenix.crashes.CrashFactCollector
 import org.mozilla.fenix.crashes.ReleaseRuntimeTagProvider
-import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.crashes.crashReportOption
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.perf.lazyMonitored
 import org.mozilla.geckoview.BuildConfig.MOZ_APP_BUILDID
@@ -128,7 +129,8 @@ class Analytics(
             ),
             enabled = true,
             nonFatalCrashIntent = pendingIntent,
-            useLegacyReporting = !context.settings().crashReportAlwaysSend &&
+            useLegacyReporting =
+                context.settings().crashReportOption() != CrashReportOption.Auto &&
                 !context.settings().useNewCrashReporterDialog,
             runtimeTagProviders = listOf(ReleaseRuntimeTagProvider()),
         )

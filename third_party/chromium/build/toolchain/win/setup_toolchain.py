@@ -1,4 +1,4 @@
-# Copyright (c) 2013 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 #
@@ -10,7 +10,6 @@
 # win tool. The script assumes that the root build directory is the current dir
 # and the files will be written to the current directory.
 
-from __future__ import print_function
 
 import errno
 import json
@@ -23,27 +22,28 @@ sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
 import gn_helpers
 
 SCRIPT_DIR = os.path.dirname(__file__)
+SDK_VERSION = '10.0.26100.0'
+
 
 def _ExtractImportantEnvironment(output_of_set):
   """Extracts environment variables required for the toolchain to run from
   a textual dump output by the cmd.exe 'set' command."""
   envvars_to_save = (
-      'cipd_cache_dir', # needed by vpython
-      'homedrive', # needed by vpython
-      'homepath', # needed by vpython
-      'goma_.*', # TODO(scottmg): This is ugly, but needed for goma.
+      'cipd_cache_dir',  # needed by vpython
+      'homedrive',  # needed by vpython
+      'homepath',  # needed by vpython
       'include',
       'lib',
       'libpath',
-      'luci_context', # needed by vpython
+      'luci_context',  # needed by vpython
       'path',
       'pathext',
       'systemroot',
       'temp',
       'tmp',
-      'userprofile', # needed by vpython
-      'vpython_virtualenv_root' # needed by vpython
-      )
+      'userprofile',  # needed by vpython
+      'vpython_virtualenv_root'  # needed by vpython
+  )
   env = {}
   # This occasionally happens and leads to misleading SYSTEMROOT error messages
   # if not caught here.
@@ -58,6 +58,15 @@ def _ExtractImportantEnvironment(output_of_set):
           # path. Add the path to this python here so that if it's not in the
           # path when ninja is run later, python will still be found.
           setting = os.path.dirname(sys.executable) + os.pathsep + setting
+        if envvar in ['include', 'lib']:
+          # Make sure that the include and lib paths point to directories that
+          # exist. This ensures a (relatively) clear error message if the
+          # required SDK is not installed.
+          for part in setting.split(';'):
+            if not os.path.exists(part) and len(part) != 0:
+              raise Exception(
+                  'Path "%s" from environment variable "%s" does not exist. '
+                  'Make sure the necessary SDK is installed.' % (part, envvar))
         env[var.upper()] = setting
         break
   if sys.platform in ('win32', 'cygwin'):
@@ -151,9 +160,12 @@ def _LoadToolchainEnv(cpu, toolchain_root, sdk_dir, target_store):
       # doesn't seem to cause problems.
       if 'VSINSTALLDIR' in os.environ:
         del os.environ['VSINSTALLDIR']
-        del os.environ['INCLUDE']
-        del os.environ['LIB']
-        del os.environ['LIBPATH']
+        if 'INCLUDE' in os.environ:
+          del os.environ['INCLUDE']
+        if 'LIB' in os.environ:
+          del os.environ['LIB']
+        if 'LIBPATH' in os.environ:
+          del os.environ['LIBPATH']
       other_path = os.path.normpath(os.path.join(
                                         os.environ['GYP_MSVS_OVERRIDE_PATH'],
                                         'VC/Auxiliary/Build/vcvarsall.bat'))
@@ -172,7 +184,7 @@ def _LoadToolchainEnv(cpu, toolchain_root, sdk_dir, target_store):
     # Explicitly specifying the SDK version to build with to avoid accidentally
     # building with a new and untested SDK. This should stay in sync with the
     # packaged toolchain in build/vs_toolchain.py.
-    args.append('10.0.19041.0')
+    args.append(SDK_VERSION)
     variables = _LoadEnvFromBat(args)
   return _ExtractImportantEnvironment(variables)
 
@@ -240,14 +252,8 @@ def main():
   cpus = ('x86', 'x64', 'arm', 'arm64')
   assert target_cpu in cpus
   vc_bin_dir = 'fake_path/cl.exe'
-  vc_lib_path = 'fake_path/lib'
-  vc_lib_atlmfc_path = 'fake_path/atlmfc'
-  vc_lib_um_path = 'fake_path/lib_um'
   include = ''
   lib = ''
-
-  # TODO(scottmg|goma): Do we need an equivalent of
-  # ninja_use_custom_environment_files?
 
   def relflag(s):  # Make s relative to builddir when cwd and sdk on same drive.
     try:
@@ -265,10 +271,6 @@ def main():
 #       env['PATH'] = runtime_dirs + os.pathsep + env['PATH']
 # 
 #       vc_bin_dir = FindFileInEnvList(env, 'PATH', os.pathsep, 'cl.exe')
-#       vc_lib_path = FindFileInEnvList(env, 'LIB', ';', 'msvcrt.lib')
-#       vc_lib_atlmfc_path = FindFileInEnvList(
-#           env, 'LIB', ';', 'atls.lib', optional=True)
-#       vc_lib_um_path = FindFileInEnvList(env, 'LIB', ';', 'user32.lib')
 # 
 #       # The separator for INCLUDE here must match the one used in
 #       # _LoadToolchainEnv() above.
@@ -278,36 +280,46 @@ def main():
 #       lib = [p.replace('"', r'\"') for p in env['LIB'].split(';') if p]
 #       lib = list(map(relflag, lib))
 # 
-#       include_I = ' '.join([q('/I' + i) for i in include])
-#       include_imsvc = ' '.join([q('-imsvc' + i) for i in include])
-#       libpath_flags = ' '.join([q('-libpath:' + i) for i in lib])
+#       include_I = ['/I' + i for i in include]
+#       include_imsvc = ['-imsvc' + i for i in include]
+#       libpath_flags = ['-libpath:' + i for i in lib]
 # 
 #       if (environment_block_name != ''):
 #         env_block = _FormatAsEnvironmentBlock(env)
-#         with open(environment_block_name, 'w') as f:
+#         with open(environment_block_name, 'w', encoding='utf8') as f:
 #           f.write(env_block)
 
-# We don't really use any of this information so it can be skipped altogether
+  def ListToArgString(x):
+    return gn_helpers.ToGNString(' '.join(q(i) for i in x))
+
+  def ListToArgList(x):
+    return f'[{", ".join(gn_helpers.ToGNString(i) for i in x)}]'
+
   env = {}
   env['PATH'] = ''
   include_I = include
   include_imsvc = include
   libpath_flags = ''
   print('vc_bin_dir = ' + gn_helpers.ToGNString(vc_bin_dir))
-  print('include_flags_I = ' + gn_helpers.ToGNString(include_I))
+  print(f'include_flags_I = {ListToArgString(include_I)}')
+  print(f'include_flags_I_list = {ListToArgList(include_I)}')
   if bool(int(os.environ.get('DEPOT_TOOLS_WIN_TOOLCHAIN', 1))) and win_sdk_path:
-    print('include_flags_imsvc = ' +
-          gn_helpers.ToGNString(q('/winsysroot' + relflag(toolchain_root))))
+    flags = ['/winsysroot' + relflag(toolchain_root)]
+    print(f'include_flags_imsvc = {ListToArgString(flags)}')
+    print(f'include_flags_imsvc_list = {ListToArgList(flags)}')
   else:
-    print('include_flags_imsvc = ' + gn_helpers.ToGNString(include_imsvc))
-  print('vc_lib_path = ' + gn_helpers.ToGNString(vc_lib_path))
-  # Possible atlmfc library path gets introduced in the future for store thus
-  # output result if a result exists.
-  if (vc_lib_atlmfc_path != ''):
-    print('vc_lib_atlmfc_path = ' + gn_helpers.ToGNString(vc_lib_atlmfc_path))
-  print('vc_lib_um_path = ' + gn_helpers.ToGNString(vc_lib_um_path))
+    print(f'include_flags_imsvc = {ListToArgString(include_imsvc)}')
+    print(f'include_flags_imsvc_list = {ListToArgList(include_imsvc)}')
   print('paths = ' + gn_helpers.ToGNString(env['PATH']))
-  print('libpath_flags = ' + gn_helpers.ToGNString(libpath_flags))
+  print(f'libpath_flags = {ListToArgString(libpath_flags)}')
+  print(f'libpath_flags_list = {ListToArgList(libpath_flags)}')
+  if bool(int(os.environ.get('DEPOT_TOOLS_WIN_TOOLCHAIN', 1))) and win_sdk_path:
+    flags = ['/winsysroot:' + relflag(toolchain_root)]
+    print(f'libpath_lldlink_flags = {ListToArgString(flags)}')
+    print(f'libpath_lldlink_flags_list = {ListToArgList(flags)}')
+  else:
+    print(f'libpath_lldlink_flags = {ListToArgString(libpath_flags)}')
+    print(f'libpath_lldlink_flags_list = {ListToArgList(libpath_flags)}')
 
 
 if __name__ == '__main__':

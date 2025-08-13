@@ -14,13 +14,21 @@ import mozilla.components.concept.sync.TabData
 sealed class SnackbarState {
     /**
      * There is no snackbar to display.
+     *
+     * @property previous The previous displayed snackbar, if any.
      */
-    data object None : SnackbarState()
+    data class None(
+        val previous: SnackbarState? = null,
+    ) : SnackbarState()
 
     /**
      * Dismiss an existing snackbar that is displayed with an indefinite duration.
+     *
+     * @property previous The previous displayed snackbar, if any.
      */
-    data object Dismiss : SnackbarState()
+    data class Dismiss(
+        val previous: SnackbarState? = null,
+    ) : SnackbarState()
 
     /**
      * Display a snackbar of the newly added shortcut.

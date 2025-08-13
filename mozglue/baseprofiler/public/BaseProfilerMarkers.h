@@ -288,7 +288,8 @@ class MOZ_RAII AutoProfilerTextMarker {
       mOptions.TimingRef().SetIntervalEnd();
       AUTO_PROFILER_STATS(AUTO_BASE_PROFILER_MARKER_TEXT);
       AddMarker(ProfilerString8View::WrapNullTerminatedString(mMarkerName),
-                mCategory, std::move(mOptions), markers::TextMarker{}, mText);
+                mCategory, std::move(mOptions), markers::TextStackMarker{},
+                mText);
     }
   }
 

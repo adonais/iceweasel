@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.3.42
- * pdfjsBuild = 250cc7d29
+ * pdfjsVersion = 5.4.19
+ * pdfjsBuild = e0783cd07
  */
 
 ;// ./src/shared/util.js
@@ -781,6 +781,9 @@ function isArrayEqual(arr1, arr2) {
   return true;
 }
 function getModificationDate(date = new Date()) {
+  if (!(date instanceof Date)) {
+    date = new Date(date);
+  }
   const buffer = [date.getUTCFullYear().toString(), (date.getUTCMonth() + 1).toString().padStart(2, "0"), date.getUTCDate().toString().padStart(2, "0"), date.getUTCHours().toString().padStart(2, "0"), date.getUTCMinutes().toString().padStart(2, "0"), date.getUTCSeconds().toString().padStart(2, "0")];
   return buffer.join("");
 }
@@ -981,6 +984,33 @@ class Dict {
   }
   set(key, value) {
     this._map.set(key, value);
+  }
+  setIfNotExists(key, value) {
+    if (!this.has(key)) {
+      this.set(key, value);
+    }
+  }
+  setIfNumber(key, value) {
+    if (typeof value === "number") {
+      this.set(key, value);
+    }
+  }
+  setIfArray(key, value) {
+    if (Array.isArray(value) || ArrayBuffer.isView(value)) {
+      this.set(key, value);
+    }
+  }
+  setIfDefined(key, value) {
+    if (value !== undefined && value !== null) {
+      this.set(key, value);
+    }
+  }
+  setIfName(key, value) {
+    if (typeof value === "string") {
+      this.set(key, Name.get(value));
+    } else if (value instanceof Name) {
+      this.set(key, value);
+    }
   }
   has(key) {
     return this._map.has(key);
@@ -1646,10 +1676,16 @@ function getNewAnnotationsMap(annotationStorage) {
   return newAnnotationsByPage.size > 0 ? newAnnotationsByPage : null;
 }
 function stringToAsciiOrUTF16BE(str) {
+  if (str === null || str === undefined) {
+    return str;
+  }
   return isAscii(str) ? str : stringToUTF16String(str, true);
 }
 function isAscii(str) {
-  return /^[\x00-\x7F]*$/.test(str);
+  if (typeof str !== "string") {
+    return false;
+  }
+  return !str || /^[\x00-\x7F]*$/.test(str);
 }
 function stringToUTF16HexString(str) {
   const buf = [];
@@ -18192,7 +18228,7 @@ class CFFCompiler {
     const numGlyphsLessNotDef = numGlyphs - 1;
     if (isCIDFont) {
       const nLeft = numGlyphsLessNotDef - 1;
-      out = new Uint8Array([2, 0, 0, nLeft >> 8 & 0xff, nLeft & 0xff]);
+      out = new Uint8Array([2, 0, 1, nLeft >> 8 & 0xff, nLeft & 0xff]);
     } else {
       const length = 1 + numGlyphsLessNotDef * 2;
       out = new Uint8Array(length);
@@ -32698,7 +32734,8 @@ class PartialEvaluator {
     markedContentData = null,
     disableNormalization = false,
     keepWhiteSpace = false,
-    prevRefs = null
+    prevRefs = null,
+    intersector = null
   }) {
     const objId = stream.dict?.objId;
     const seenRefs = new RefSet(prevRefs);
@@ -32775,6 +32812,7 @@ class PartialEvaluator {
       transform = textContentItem.prevTransform,
       fontName = textContentItem.fontName
     }) {
+      intersector?.addExtraChar(" ");
       textContent.items.push({
         str: " ",
         dir: "ltr",
@@ -33081,9 +33119,11 @@ class PartialEvaluator {
         }
         if (!font.vertical) {
           scaledDim *= textState.textHScale;
+          intersector?.addGlyph(getCurrentTextTransform(), scaledDim, 0, glyph.unicode);
           textState.translateTextMatrix(scaledDim, 0);
           textChunk.width += scaledDim;
         } else {
+          intersector?.addGlyph(getCurrentTextTransform(), 0, scaledDim, glyph.unicode);
           textState.translateTextMatrix(0, scaledDim);
           scaledDim = Math.abs(scaledDim);
           textChunk.height += scaledDim;
@@ -33094,8 +33134,11 @@ class PartialEvaluator {
         const glyphUnicode = glyph.unicode;
         if (saveLastChar(glyphUnicode)) {
           textChunk.str.push(" ");
+          intersector?.addExtraChar(" ");
         }
-        textChunk.str.push(glyphUnicode);
+        if (!intersector) {
+          textChunk.str.push(glyphUnicode);
+        }
         if (charSpacing) {
           if (!font.vertical) {
             textState.translateTextMatrix(charSpacing * textState.textHScale, 0);
@@ -33106,6 +33149,7 @@ class PartialEvaluator {
       }
     }
     function appendEOL() {
+      intersector?.addExtraChar("\n");
       resetLastChars();
       if (textContentItem.initialized) {
         textContentItem.hasEOL = true;
@@ -33127,6 +33171,7 @@ class PartialEvaluator {
         if (textContentItem.initialized) {
           resetLastChars();
           textContentItem.str.push(" ");
+          intersector?.addExtraChar(" ");
         }
         return false;
       }
@@ -33167,7 +33212,7 @@ class PartialEvaluator {
       if (batch && length < TEXT_CHUNK_BATCH_SIZE) {
         return;
       }
-      sink.enqueue(textContent, length);
+      sink?.enqueue(textContent, length);
       textContent.items = [];
       textContent.styles = Object.create(null);
     }
@@ -33175,7 +33220,7 @@ class PartialEvaluator {
     return new Promise(function promiseBody(resolve, reject) {
       const next = function (promise) {
         enqueueChunk(true);
-        Promise.all([promise, sink.ready]).then(function () {
+        Promise.all([promise, sink?.ready]).then(function () {
           try {
             promiseBody(resolve, reject);
           } catch (ex) {
@@ -33366,7 +33411,7 @@ class PartialEvaluator {
                   sink.enqueue(chunk, size);
                 },
                 get desiredSize() {
-                  return sink.desiredSize;
+                  return sink.desiredSize ?? 0;
                 },
                 get ready() {
                   return sink.ready;
@@ -33378,7 +33423,7 @@ class PartialEvaluator {
                 resources: localResources instanceof Dict ? localResources : resources,
                 stateManager: xObjStateManager,
                 includeMarkedContent,
-                sink: sinkWrapper,
+                sink: sink && sinkWrapper,
                 seenStyles,
                 viewBox,
                 lang,
@@ -33485,7 +33530,7 @@ class PartialEvaluator {
             }
             break;
         }
-        if (textContent.items.length >= sink.desiredSize) {
+        if (textContent.items.length >= (sink?.desiredSize ?? 1)) {
           stop = true;
           break;
         }
@@ -35299,11 +35344,11 @@ class FakeUnicodeFont {
   get fontDescriptorRef() {
     if (!FakeUnicodeFont._fontDescriptorRef) {
       const fontDescriptor = new Dict(this.xref);
-      fontDescriptor.set("Type", Name.get("FontDescriptor"));
+      fontDescriptor.setIfName("Type", "FontDescriptor");
       fontDescriptor.set("FontName", this.fontName);
       fontDescriptor.set("FontFamily", "MyriadPro Regular");
       fontDescriptor.set("FontBBox", [0, 0, 0, 0]);
-      fontDescriptor.set("FontStretch", Name.get("Normal"));
+      fontDescriptor.setIfName("FontStretch", "Normal");
       fontDescriptor.set("FontWeight", 400);
       fontDescriptor.set("ItalicAngle", 0);
       FakeUnicodeFont._fontDescriptorRef = this.xref.getNewPersistentRef(fontDescriptor);
@@ -35313,9 +35358,9 @@ class FakeUnicodeFont {
   get descendantFontRef() {
     const descendantFont = new Dict(this.xref);
     descendantFont.set("BaseFont", this.fontName);
-    descendantFont.set("Type", Name.get("Font"));
-    descendantFont.set("Subtype", Name.get("CIDFontType0"));
-    descendantFont.set("CIDToGIDMap", Name.get("Identity"));
+    descendantFont.setIfName("Type", "Font");
+    descendantFont.setIfName("Subtype", "CIDFontType0");
+    descendantFont.setIfName("CIDToGIDMap", "Identity");
     descendantFont.set("FirstChar", this.firstChar);
     descendantFont.set("LastChar", this.lastChar);
     descendantFont.set("FontDescriptor", this.fontDescriptorRef);
@@ -35352,11 +35397,11 @@ class FakeUnicodeFont {
   get baseFontRef() {
     const baseFont = new Dict(this.xref);
     baseFont.set("BaseFont", this.fontName);
-    baseFont.set("Type", Name.get("Font"));
-    baseFont.set("Subtype", Name.get("Type0"));
-    baseFont.set("Encoding", Name.get("Identity-H"));
+    baseFont.setIfName("Type", "Font");
+    baseFont.setIfName("Subtype", "Type0");
+    baseFont.setIfName("Encoding", "Identity-H");
     baseFont.set("DescendantFonts", [this.descendantFontRef]);
-    baseFont.set("ToUnicode", Name.get("Identity-H"));
+    baseFont.setIfName("ToUnicode", "Identity-H");
     return this.xref.getNewPersistentRef(baseFont);
   }
   get resources() {
@@ -35454,7 +35499,7 @@ class FakeUnicodeFont {
       const r0 = new Dict(this.xref);
       r0.set("ca", strokeAlpha);
       r0.set("CA", strokeAlpha);
-      r0.set("Type", Name.get("ExtGState"));
+      r0.setIfName("Type", "ExtGState");
       extGState.set("R0", r0);
       resources.set("ExtGState", extGState);
     }
@@ -35465,8 +35510,8 @@ class FakeUnicodeFont {
     buffer.push("ET", "Q");
     const appearance = buffer.join("\n");
     const appearanceStreamDict = new Dict(this.xref);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
-    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
+    appearanceStreamDict.setIfName("Type", "XObject");
     appearanceStreamDict.set("BBox", [0, 0, w, h]);
     appearanceStreamDict.set("Length", appearance.length);
     appearanceStreamDict.set("Resources", resources);
@@ -35479,6 +35524,67 @@ class FakeUnicodeFont {
     return ap;
   }
 }
+
+;// ./src/shared/scripting_utils.js
+function makeColorComp(n) {
+  return Math.floor(Math.max(0, Math.min(1, n)) * 255).toString(16).padStart(2, "0");
+}
+function scaleAndClamp(x) {
+  return Math.max(0, Math.min(255, 255 * x));
+}
+class ColorConverters {
+  static CMYK_G([c, y, m, k]) {
+    return ["G", 1 - Math.min(1, 0.3 * c + 0.59 * m + 0.11 * y + k)];
+  }
+  static G_CMYK([g]) {
+    return ["CMYK", 0, 0, 0, 1 - g];
+  }
+  static G_RGB([g]) {
+    return ["RGB", g, g, g];
+  }
+  static G_rgb([g]) {
+    g = scaleAndClamp(g);
+    return [g, g, g];
+  }
+  static G_HTML([g]) {
+    const G = makeColorComp(g);
+    return `#${G}${G}${G}`;
+  }
+  static RGB_G([r, g, b]) {
+    return ["G", 0.3 * r + 0.59 * g + 0.11 * b];
+  }
+  static RGB_rgb(color) {
+    return color.map(scaleAndClamp);
+  }
+  static RGB_HTML(color) {
+    return `#${color.map(makeColorComp).join("")}`;
+  }
+  static T_HTML() {
+    return "#00000000";
+  }
+  static T_rgb() {
+    return [null];
+  }
+  static CMYK_RGB([c, y, m, k]) {
+    return ["RGB", 1 - Math.min(1, c + k), 1 - Math.min(1, m + k), 1 - Math.min(1, y + k)];
+  }
+  static CMYK_rgb([c, y, m, k]) {
+    return [scaleAndClamp(1 - Math.min(1, c + k)), scaleAndClamp(1 - Math.min(1, m + k)), scaleAndClamp(1 - Math.min(1, y + k))];
+  }
+  static CMYK_HTML(components) {
+    const rgb = this.CMYK_RGB(components).slice(1);
+    return this.RGB_HTML(rgb);
+  }
+  static RGB_CMYK([r, g, b]) {
+    const c = 1 - r;
+    const m = 1 - g;
+    const y = 1 - b;
+    const k = Math.min(c, m, y);
+    return ["CMYK", c, m, y, k];
+  }
+}
+const DateFormats = ["m/d", "m/d/yy", "mm/dd/yy", "mm/yy", "d-mmm", "d-mmm-yy", "dd-mmm-yy", "yy-mm-dd", "mmm-yy", "mmmm-yy", "mmm d, yyyy", "mmmm d, yyyy", "m/d/yy h:MM tt", "m/d/yy HH:MM"];
+const TimeFormats = ["HH:MM", "h:MM tt", "HH:MM:ss", "h:MM:ss tt"];
 
 ;// ./src/core/name_number_tree.js
 
@@ -49156,6 +49262,7 @@ class XFAFactory {
 
 
 
+
 class AnnotationFactory {
   static createGlobals(pdfManager) {
     return Promise.all([pdfManager.ensureCatalog("acroForm"), pdfManager.ensureDoc("xfaDatasets"), pdfManager.ensureCatalog("structTreeRoot"), pdfManager.ensureCatalog("baseUrl"), pdfManager.ensureCatalog("attachments"), pdfManager.ensureCatalog("globalColorSpaceCache")]).then(([acroForm, xfaDatasets, structTreeRoot, baseUrl, attachments, globalColorSpaceCache]) => ({
@@ -49331,10 +49438,10 @@ class AnnotationFactory {
         case AnnotationEditorType.FREETEXT:
           if (!baseFontRef) {
             const baseFont = new Dict(xref);
-            baseFont.set("BaseFont", Name.get("Helvetica"));
-            baseFont.set("Type", Name.get("Font"));
-            baseFont.set("Subtype", Name.get("Type1"));
-            baseFont.set("Encoding", Name.get("WinAnsiEncoding"));
+            baseFont.setIfName("BaseFont", "Helvetica");
+            baseFont.setIfName("Type", "Font");
+            baseFont.setIfName("Subtype", "Type1");
+            baseFont.setIfName("Encoding", "WinAnsiEncoding");
             baseFontRef = xref.getNewTemporaryRef();
             changes.put(baseFontRef, {
               data: baseFont
@@ -49386,7 +49493,7 @@ class AnnotationFactory {
       }
     }
     return {
-      annotations: await Promise.all(promises)
+      annotations: (await Promise.all(promises)).flat()
     };
   }
   static async printNewAnnotations(annotationGlobals, evaluator, task, annotations, imagePromises) {
@@ -49475,8 +49582,8 @@ function getRgbColor(color, defaultColor = new Uint8ClampedArray(3)) {
       return defaultColor;
   }
 }
-function getPdfColorArray(color) {
-  return Array.from(color, c => c / 255);
+function getPdfColorArray(color, defaultValue = null) {
+  return color && Array.from(color, c => c / 255) || defaultValue;
 }
 function getQuadPoints(dict, rect) {
   const quadPoints = dict.getArray("QuadPoints");
@@ -49857,6 +49964,9 @@ class Annotation {
   async save(evaluator, task, annotationStorage, changes) {
     return null;
   }
+  get overlaysTextContent() {
+    return false;
+  }
   get hasTextContent() {
     return false;
   }
@@ -50150,20 +50260,16 @@ class MarkupAnnotation extends Annotation {
     buffer.push("Q");
     const formDict = new Dict(xref);
     const appearanceStreamDict = new Dict(xref);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
     const appearanceStream = new StringStream(buffer.join(" "));
     appearanceStream.dict = appearanceStreamDict;
     formDict.set("Fm0", appearanceStream);
     const gsDict = new Dict(xref);
     if (blendMode) {
-      gsDict.set("BM", Name.get(blendMode));
+      gsDict.setIfName("BM", blendMode);
     }
-    if (typeof strokeAlpha === "number") {
-      gsDict.set("CA", strokeAlpha);
-    }
-    if (typeof fillAlpha === "number") {
-      gsDict.set("ca", fillAlpha);
-    }
+    gsDict.setIfNumber("CA", strokeAlpha);
+    gsDict.setIfNumber("ca", fillAlpha);
     const stateDict = new Dict(xref);
     stateDict.set("GS0", gsDict);
     const resources = new Dict(xref);
@@ -50197,9 +50303,30 @@ class MarkupAnnotation extends Annotation {
     changes.put(annotationRef, {
       data: annotationDict
     });
-    return {
+    const retRef = {
       ref: annotationRef
     };
+    if (annotation.popup) {
+      const popup = annotation.popup;
+      if (popup.deleted) {
+        annotationDict.delete("Popup");
+        annotationDict.delete("Contents");
+        annotationDict.delete("RC");
+        return retRef;
+      }
+      const popupRef = popup.ref ||= xref.getNewTemporaryRef();
+      popup.parent = annotationRef;
+      const popupDict = PopupAnnotation.createNewDict(popup, xref);
+      changes.put(popupRef, {
+        data: popupDict
+      });
+      annotationDict.setIfDefined("Contents", stringToAsciiOrUTF16BE(popup.contents));
+      annotationDict.set("Popup", popupRef);
+      return [retRef, {
+        ref: popupRef
+      }];
+    }
+    return retRef;
   }
   static async createNewPrintAnnotation(annotationGlobals, xref, annotation, params) {
     const ap = await this.createNewAppearanceStream(annotation, xref, params);
@@ -50398,12 +50525,8 @@ class WidgetAnnotation extends Annotation {
     if (rotation) {
       mk.set("R", rotation);
     }
-    if (this.borderColor) {
-      mk.set("BC", getPdfColorArray(this.borderColor));
-    }
-    if (this.backgroundColor) {
-      mk.set("BG", getPdfColorArray(this.backgroundColor));
-    }
+    mk.setIfArray("BC", getPdfColorArray(this.borderColor));
+    mk.setIfArray("BG", getPdfColorArray(this.backgroundColor));
     return mk.size > 0 ? mk : null;
   }
   amendSavedDict(annotationStorage, dict) {}
@@ -50498,7 +50621,7 @@ class WidgetAnnotation extends Annotation {
       const resources = this._getSaveFieldResources(xref);
       const appearanceStream = new StringStream(appearance);
       const appearanceDict = appearanceStream.dict = new Dict(xref);
-      appearanceDict.set("Subtype", Name.get("Form"));
+      appearanceDict.setIfName("Subtype", "Form");
       appearanceDict.set("Resources", resources);
       const bbox = rotation % 180 === 0 ? [0, 0, this.width, this.height] : [0, 0, this.height, this.width];
       appearanceDict.set("BBox", bbox);
@@ -50811,6 +50934,23 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     this.data.multiLine = this.hasFieldFlag(AnnotationFieldFlag.MULTILINE);
     this.data.comb = this.hasFieldFlag(AnnotationFieldFlag.COMB) && !this.data.multiLine && !this.data.password && !this.hasFieldFlag(AnnotationFieldFlag.FILESELECT) && this.data.maxLen !== 0;
     this.data.doNotScroll = this.hasFieldFlag(AnnotationFieldFlag.DONOTSCROLL);
+    const {
+      data: {
+        actions
+      }
+    } = this;
+    for (const keystrokeAction of actions?.Keystroke || []) {
+      const m = keystrokeAction.trim().match(/^AF(Date|Time)_Keystroke(?:Ex)?\(['"]?([^'"]+)['"]?\);$/);
+      if (m) {
+        let format = m[2];
+        const num = parseInt(format, 10);
+        if (!isNaN(num) && Math.floor(Math.log10(num)) + 1 === m[2].length) {
+          format = (m[1] === "Date" ? DateFormats : TimeFormats)[num] ?? format;
+        }
+        this.data[m[1] === "Date" ? "dateFormat" : "timeFormat"] = format;
+        break;
+      }
+    }
   }
   get hasTextContent() {
     return !!this.appearance && !this._needAppearances;
@@ -51131,8 +51271,8 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     const appearance = `q BT /PdfJsZaDb ${fontSize} Tf 0 g ${xShift} ${yShift} Td (${char}) Tj ET Q`;
     const appearanceStreamDict = new Dict(params.xref);
     appearanceStreamDict.set("FormType", 1);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
-    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
+    appearanceStreamDict.setIfName("Type", "XObject");
     appearanceStreamDict.set("BBox", bbox);
     appearanceStreamDict.set("Matrix", [1, 0, 0, 1, 0, 0]);
     appearanceStreamDict.set("Length", appearance.length);
@@ -51284,10 +51424,10 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
   }
   get fallbackFontDict() {
     const dict = new Dict();
-    dict.set("BaseFont", Name.get("ZapfDingbats"));
-    dict.set("Type", Name.get("FallbackType"));
-    dict.set("Subtype", Name.get("FallbackType"));
-    dict.set("Encoding", Name.get("ZapfDingbatsEncoding"));
+    dict.setIfName("BaseFont", "ZapfDingbats");
+    dict.setIfName("Type", "FallbackType");
+    dict.setIfName("Subtype", "FallbackType");
+    dict.setIfName("Encoding", "ZapfDingbatsEncoding");
     return shadow(this, "fallbackFontDict", dict);
   }
 }
@@ -51563,6 +51703,7 @@ class PopupAnnotation extends Annotation {
       return;
     }
     this.data.parentRect = lookupNormalRect(parentItem.getArray("Rect"), null);
+    this.data.creationDate = parentItem.get("CreationDate") || "";
     const rt = parentItem.get("RT");
     if (isName(rt, AnnotationReplyType.GROUP)) {
       parentItem = parentItem.get("IRT");
@@ -51593,6 +51734,23 @@ class PopupAnnotation extends Annotation {
       this.data.richText = XFAFactory.getRichTextAsHtml(parentItem.get("RC"));
     }
     this.data.open = !!dict.get("Open");
+  }
+  static createNewDict(annotation, xref, _params) {
+    const {
+      oldAnnotation,
+      rect,
+      parent
+    } = annotation;
+    const popup = oldAnnotation || new Dict(xref);
+    popup.setIfNotExists("Type", Name.get("Annot"));
+    popup.setIfNotExists("Subtype", Name.get("Popup"));
+    popup.setIfNotExists("Open", false);
+    popup.setIfArray("Rect", rect);
+    popup.set("Parent", parent);
+    return popup;
+  }
+  static async createNewAppearanceStream(annotation, xref, params) {
+    return null;
   }
 }
 class FreeTextAnnotation extends MarkupAnnotation {
@@ -51650,6 +51808,7 @@ class FreeTextAnnotation extends MarkupAnnotation {
   }) {
     const {
       color,
+      date,
       fontSize,
       oldAnnotation,
       rect,
@@ -51658,32 +51817,24 @@ class FreeTextAnnotation extends MarkupAnnotation {
       value
     } = annotation;
     const freetext = oldAnnotation || new Dict(xref);
-    freetext.set("Type", Name.get("Annot"));
-    freetext.set("Subtype", Name.get("FreeText"));
+    freetext.setIfNotExists("Type", Name.get("Annot"));
+    freetext.setIfNotExists("Subtype", Name.get("FreeText"));
+    freetext.set(oldAnnotation ? "M" : "CreationDate", `D:${getModificationDate(date)}`);
     if (oldAnnotation) {
-      freetext.set("M", `D:${getModificationDate()}`);
       freetext.delete("RC");
-    } else {
-      freetext.set("CreationDate", `D:${getModificationDate()}`);
     }
-    freetext.set("Rect", rect);
+    freetext.setIfArray("Rect", rect);
     const da = `/Helv ${fontSize} Tf ${getPdfColor(color, true)}`;
     freetext.set("DA", da);
-    freetext.set("Contents", stringToAsciiOrUTF16BE(value));
-    freetext.set("F", 4);
-    freetext.set("Border", [0, 0, 0]);
-    freetext.set("Rotate", rotation);
-    if (user) {
-      freetext.set("T", stringToAsciiOrUTF16BE(user));
-    }
+    freetext.setIfDefined("Contents", stringToAsciiOrUTF16BE(value));
+    freetext.setIfNotExists("F", 4);
+    freetext.setIfNotExists("Border", [0, 0, 0]);
+    freetext.setIfNumber("Rotate", rotation);
+    freetext.setIfDefined("T", stringToAsciiOrUTF16BE(user));
     if (apRef || ap) {
       const n = new Dict(xref);
       freetext.set("AP", n);
-      if (apRef) {
-        n.set("N", apRef);
-      } else {
-        n.set("N", ap);
-      }
+      n.set("N", apRef || ap);
     }
     return freetext;
   }
@@ -51700,16 +51851,19 @@ class FreeTextAnnotation extends MarkupAnnotation {
       rotation,
       value
     } = annotation;
+    if (!color) {
+      return null;
+    }
     const resources = new Dict(xref);
     const font = new Dict(xref);
     if (baseFontRef) {
       font.set("Helv", baseFontRef);
     } else {
       const baseFont = new Dict(xref);
-      baseFont.set("BaseFont", Name.get("Helvetica"));
-      baseFont.set("Type", Name.get("Font"));
-      baseFont.set("Subtype", Name.get("Type1"));
-      baseFont.set("Encoding", Name.get("WinAnsiEncoding"));
+      baseFont.setIfName("BaseFont", "Helvetica");
+      baseFont.setIfName("Type", "Font");
+      baseFont.setIfName("Subtype", "Type1");
+      baseFont.setIfName("Encoding", "WinAnsiEncoding");
       font.set("Helv", baseFont);
     }
     resources.set("Font", font);
@@ -51788,8 +51942,8 @@ class FreeTextAnnotation extends MarkupAnnotation {
     const appearance = buffer.join("\n");
     const appearanceStreamDict = new Dict(xref);
     appearanceStreamDict.set("FormType", 1);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
-    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
+    appearanceStreamDict.setIfName("Type", "XObject");
     appearanceStreamDict.set("BBox", rect);
     appearanceStreamDict.set("Resources", resources);
     appearanceStreamDict.set("Matrix", [1, 0, 0, 1, -rect[0], -rect[1]]);
@@ -51811,10 +51965,10 @@ class LineAnnotation extends MarkupAnnotation {
     const lineCoordinates = lookupRect(dict.getArray("L"), [0, 0, 0, 0]);
     this.data.lineCoordinates = Util.normalizeRect(lineCoordinates);
     if (!this.appearance) {
-      const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
+      const strokeColor = getPdfColorArray(this.color, [0, 0, 0]);
       const strokeAlpha = dict.get("CA");
       const interiorColor = getRgbColor(dict.getArray("IC"), null);
-      const fillColor = interiorColor ? getPdfColorArray(interiorColor) : null;
+      const fillColor = getPdfColorArray(interiorColor);
       const fillAlpha = fillColor ? strokeAlpha : null;
       const borderWidth = this.borderStyle.width || 1,
         borderAdjust = 2 * borderWidth;
@@ -51848,10 +52002,10 @@ class SquareAnnotation extends MarkupAnnotation {
     this.data.hasOwnCanvas = this.data.noRotate;
     this.data.noHTML = false;
     if (!this.appearance) {
-      const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
+      const strokeColor = getPdfColorArray(this.color, [0, 0, 0]);
       const strokeAlpha = dict.get("CA");
       const interiorColor = getRgbColor(dict.getArray("IC"), null);
-      const fillColor = interiorColor ? getPdfColorArray(interiorColor) : null;
+      const fillColor = getPdfColorArray(interiorColor);
       const fillAlpha = fillColor ? strokeAlpha : null;
       if (this.borderStyle.width === 0 && !fillColor) {
         return;
@@ -51889,10 +52043,10 @@ class CircleAnnotation extends MarkupAnnotation {
     } = params;
     this.data.annotationType = AnnotationType.CIRCLE;
     if (!this.appearance) {
-      const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
+      const strokeColor = getPdfColorArray(this.color, [0, 0, 0]);
       const strokeAlpha = dict.get("CA");
       const interiorColor = getRgbColor(dict.getArray("IC"), null);
-      const fillColor = interiorColor ? getPdfColorArray(interiorColor) : null;
+      const fillColor = getPdfColorArray(interiorColor);
       const fillAlpha = fillColor ? strokeAlpha : null;
       if (this.borderStyle.width === 0 && !fillColor) {
         return;
@@ -51943,8 +52097,22 @@ class PolylineAnnotation extends MarkupAnnotation {
     }
     const vertices = this.data.vertices = Float32Array.from(rawVertices);
     if (!this.appearance) {
-      const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
+      const strokeColor = getPdfColorArray(this.color, [0, 0, 0]);
       const strokeAlpha = dict.get("CA");
+      let fillColor = getRgbColor(dict.getArray("IC"), null);
+      if (fillColor) {
+        fillColor = getPdfColorArray(fillColor);
+      }
+      let operator;
+      if (fillColor) {
+        if (this.color) {
+          operator = fillColor.every((c, i) => c === strokeColor[i]) ? "f" : "B";
+        } else {
+          operator = "f";
+        }
+      } else {
+        operator = "S";
+      }
       const borderWidth = this.borderStyle.width || 1,
         borderAdjust = 2 * borderWidth;
       const bbox = [Infinity, Infinity, -Infinity, -Infinity];
@@ -51959,11 +52127,13 @@ class PolylineAnnotation extends MarkupAnnotation {
         extra: `${borderWidth} w`,
         strokeColor,
         strokeAlpha,
+        fillColor,
+        fillAlpha: fillColor ? strokeAlpha : null,
         pointsCallback: (buffer, points) => {
           for (let i = 0, ii = vertices.length; i < ii; i += 2) {
             buffer.push(`${vertices[i]} ${vertices[i + 1]} ${i === 0 ? "m" : "l"}`);
           }
-          buffer.push("S");
+          buffer.push(operator);
           return [points[0], points[7], points[2], points[3]];
         }
       });
@@ -52016,7 +52186,7 @@ class InkAnnotation extends MarkupAnnotation {
       }
     }
     if (!this.appearance) {
-      const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
+      const strokeColor = getPdfColorArray(this.color, [0, 0, 0]);
       const strokeAlpha = dict.get("CA");
       const borderWidth = this.borderStyle.width || 1,
         borderAdjust = 2 * borderWidth;
@@ -52053,6 +52223,7 @@ class InkAnnotation extends MarkupAnnotation {
     const {
       oldAnnotation,
       color,
+      date,
       opacity,
       paths,
       outlines,
@@ -52062,30 +52233,28 @@ class InkAnnotation extends MarkupAnnotation {
       user
     } = annotation;
     const ink = oldAnnotation || new Dict(xref);
-    ink.set("Type", Name.get("Annot"));
-    ink.set("Subtype", Name.get("Ink"));
-    ink.set(oldAnnotation ? "M" : "CreationDate", `D:${getModificationDate()}`);
-    ink.set("Rect", rect);
-    ink.set("InkList", outlines?.points || paths.points);
-    ink.set("F", 4);
-    ink.set("Rotate", rotation);
-    if (user) {
-      ink.set("T", stringToAsciiOrUTF16BE(user));
-    }
+    ink.setIfNotExists("Type", Name.get("Annot"));
+    ink.setIfNotExists("Subtype", Name.get("Ink"));
+    ink.set(oldAnnotation ? "M" : "CreationDate", `D:${getModificationDate(date)}`);
+    ink.setIfArray("Rect", rect);
+    ink.setIfArray("InkList", outlines?.points || paths?.points);
+    ink.setIfNotExists("F", 4);
+    ink.setIfNumber("Rotate", rotation);
+    ink.setIfDefined("T", stringToAsciiOrUTF16BE(user));
     if (outlines) {
-      ink.set("IT", Name.get("InkHighlight"));
+      ink.setIfName("IT", "InkHighlight");
     }
-    const bs = new Dict(xref);
-    ink.set("BS", bs);
-    bs.set("W", thickness);
-    ink.set("C", getPdfColorArray(color));
-    ink.set("CA", opacity);
-    const n = new Dict(xref);
-    ink.set("AP", n);
-    if (apRef) {
-      n.set("N", apRef);
-    } else {
-      n.set("N", ap);
+    if (thickness > 0) {
+      const bs = new Dict(xref);
+      ink.set("BS", bs);
+      bs.set("W", thickness);
+    }
+    ink.setIfArray("C", getPdfColorArray(color));
+    ink.setIfNumber("CA", opacity);
+    if (ap || apRef) {
+      const n = new Dict(xref);
+      ink.set("AP", n);
+      n.set("N", apRef || ap);
     }
     return ink;
   }
@@ -52100,6 +52269,9 @@ class InkAnnotation extends MarkupAnnotation {
       thickness,
       opacity
     } = annotation;
+    if (!color) {
+      return null;
+    }
     const appearanceBuffer = [`${thickness} w 1 J 1 j`, `${getPdfColor(color, false)}`];
     if (opacity !== 1) {
       appearanceBuffer.push("/R0 gs");
@@ -52122,8 +52294,8 @@ class InkAnnotation extends MarkupAnnotation {
     const appearance = appearanceBuffer.join("\n");
     const appearanceStreamDict = new Dict(xref);
     appearanceStreamDict.set("FormType", 1);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
-    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
+    appearanceStreamDict.setIfName("Type", "XObject");
     appearanceStreamDict.set("BBox", rect);
     appearanceStreamDict.set("Length", appearance.length);
     if (opacity !== 1) {
@@ -52131,7 +52303,7 @@ class InkAnnotation extends MarkupAnnotation {
       const extGState = new Dict(xref);
       const r0 = new Dict(xref);
       r0.set("CA", opacity);
-      r0.set("Type", Name.get("ExtGState"));
+      r0.setIfName("Type", "ExtGState");
       extGState.set("R0", r0);
       resources.set("ExtGState", extGState);
       appearanceStreamDict.set("Resources", resources);
@@ -52149,6 +52321,9 @@ class InkAnnotation extends MarkupAnnotation {
       },
       opacity
     } = annotation;
+    if (!color) {
+      return null;
+    }
     const appearanceBuffer = [`${getPdfColor(color, true)}`, "/R0 gs"];
     appearanceBuffer.push(`${numberToString(outline[4])} ${numberToString(outline[5])} m`);
     for (let i = 6, ii = outline.length; i < ii; i += 6) {
@@ -52163,8 +52338,8 @@ class InkAnnotation extends MarkupAnnotation {
     const appearance = appearanceBuffer.join("\n");
     const appearanceStreamDict = new Dict(xref);
     appearanceStreamDict.set("FormType", 1);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
-    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
+    appearanceStreamDict.setIfName("Type", "XObject");
     appearanceStreamDict.set("BBox", rect);
     appearanceStreamDict.set("Length", appearance.length);
     const resources = new Dict(xref);
@@ -52173,10 +52348,10 @@ class InkAnnotation extends MarkupAnnotation {
     appearanceStreamDict.set("Resources", resources);
     const r0 = new Dict(xref);
     extGState.set("R0", r0);
-    r0.set("BM", Name.get("Multiply"));
+    r0.setIfName("BM", "Multiply");
     if (opacity !== 1) {
       r0.set("ca", opacity);
-      r0.set("Type", Name.get("ExtGState"));
+      r0.setIfName("Type", "ExtGState");
     }
     const ap = new StringStream(appearance);
     ap.dict = appearanceStreamDict;
@@ -52201,7 +52376,7 @@ class HighlightAnnotation extends MarkupAnnotation {
         if (this.appearance) {
           warn("HighlightAnnotation - ignoring built-in appearance stream.");
         }
-        const fillColor = this.color ? getPdfColorArray(this.color) : [1, 1, 0];
+        const fillColor = getPdfColorArray(this.color, [1, 1, 0]);
         const fillAlpha = dict.get("CA");
         this._setDefaultAppearance({
           xref,
@@ -52218,12 +52393,16 @@ class HighlightAnnotation extends MarkupAnnotation {
       this.data.popupRef = null;
     }
   }
+  get overlaysTextContent() {
+    return true;
+  }
   static createNewDict(annotation, xref, {
     apRef,
     ap
   }) {
     const {
       color,
+      date,
       oldAnnotation,
       opacity,
       rect,
@@ -52232,20 +52411,17 @@ class HighlightAnnotation extends MarkupAnnotation {
       quadPoints
     } = annotation;
     const highlight = oldAnnotation || new Dict(xref);
-    highlight.set("Type", Name.get("Annot"));
-    highlight.set("Subtype", Name.get("Highlight"));
-    highlight.set(oldAnnotation ? "M" : "CreationDate", `D:${getModificationDate()}`);
-    highlight.set("CreationDate", `D:${getModificationDate()}`);
-    highlight.set("Rect", rect);
-    highlight.set("F", 4);
-    highlight.set("Border", [0, 0, 0]);
-    highlight.set("Rotate", rotation);
-    highlight.set("QuadPoints", quadPoints);
-    highlight.set("C", getPdfColorArray(color));
-    highlight.set("CA", opacity);
-    if (user) {
-      highlight.set("T", stringToAsciiOrUTF16BE(user));
-    }
+    highlight.setIfNotExists("Type", Name.get("Annot"));
+    highlight.setIfNotExists("Subtype", Name.get("Highlight"));
+    highlight.set(oldAnnotation ? "M" : "CreationDate", `D:${getModificationDate(date)}`);
+    highlight.setIfArray("Rect", rect);
+    highlight.setIfNotExists("F", 4);
+    highlight.setIfNotExists("Border", [0, 0, 0]);
+    highlight.setIfNumber("Rotate", rotation);
+    highlight.setIfArray("QuadPoints", quadPoints);
+    highlight.setIfArray("C", getPdfColorArray(color));
+    highlight.setIfNumber("CA", opacity);
+    highlight.setIfDefined("T", stringToAsciiOrUTF16BE(user));
     if (apRef || ap) {
       const n = new Dict(xref);
       highlight.set("AP", n);
@@ -52260,6 +52436,9 @@ class HighlightAnnotation extends MarkupAnnotation {
       outlines,
       opacity
     } = annotation;
+    if (!color) {
+      return null;
+    }
     const appearanceBuffer = [`${getPdfColor(color, true)}`, "/R0 gs"];
     const buffer = [];
     for (const outline of outlines) {
@@ -52275,8 +52454,8 @@ class HighlightAnnotation extends MarkupAnnotation {
     const appearance = appearanceBuffer.join("\n");
     const appearanceStreamDict = new Dict(xref);
     appearanceStreamDict.set("FormType", 1);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
-    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
+    appearanceStreamDict.setIfName("Type", "XObject");
     appearanceStreamDict.set("BBox", rect);
     appearanceStreamDict.set("Length", appearance.length);
     const resources = new Dict(xref);
@@ -52285,10 +52464,10 @@ class HighlightAnnotation extends MarkupAnnotation {
     appearanceStreamDict.set("Resources", resources);
     const r0 = new Dict(xref);
     extGState.set("R0", r0);
-    r0.set("BM", Name.get("Multiply"));
+    r0.setIfName("BM", "Multiply");
     if (opacity !== 1) {
       r0.set("ca", opacity);
-      r0.set("Type", Name.get("ExtGState"));
+      r0.setIfName("Type", "ExtGState");
     }
     const ap = new StringStream(appearance);
     ap.dict = appearanceStreamDict;
@@ -52306,7 +52485,7 @@ class UnderlineAnnotation extends MarkupAnnotation {
     const quadPoints = this.data.quadPoints = getQuadPoints(dict, null);
     if (quadPoints) {
       if (!this.appearance) {
-        const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
+        const strokeColor = getPdfColorArray(this.color, [0, 0, 0]);
         const strokeAlpha = dict.get("CA");
         this._setDefaultAppearance({
           xref,
@@ -52323,6 +52502,9 @@ class UnderlineAnnotation extends MarkupAnnotation {
       this.data.popupRef = null;
     }
   }
+  get overlaysTextContent() {
+    return true;
+  }
 }
 class SquigglyAnnotation extends MarkupAnnotation {
   constructor(params) {
@@ -52335,7 +52517,7 @@ class SquigglyAnnotation extends MarkupAnnotation {
     const quadPoints = this.data.quadPoints = getQuadPoints(dict, null);
     if (quadPoints) {
       if (!this.appearance) {
-        const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
+        const strokeColor = getPdfColorArray(this.color, [0, 0, 0]);
         const strokeAlpha = dict.get("CA");
         this._setDefaultAppearance({
           xref,
@@ -52363,6 +52545,9 @@ class SquigglyAnnotation extends MarkupAnnotation {
       this.data.popupRef = null;
     }
   }
+  get overlaysTextContent() {
+    return true;
+  }
 }
 class StrikeOutAnnotation extends MarkupAnnotation {
   constructor(params) {
@@ -52375,7 +52560,7 @@ class StrikeOutAnnotation extends MarkupAnnotation {
     const quadPoints = this.data.quadPoints = getQuadPoints(dict, null);
     if (quadPoints) {
       if (!this.appearance) {
-        const strokeColor = this.color ? getPdfColorArray(this.color) : [0, 0, 0];
+        const strokeColor = getPdfColorArray(this.color, [0, 0, 0]);
         const strokeAlpha = dict.get("CA");
         this._setDefaultAppearance({
           xref,
@@ -52391,6 +52576,9 @@ class StrikeOutAnnotation extends MarkupAnnotation {
     } else {
       this.data.popupRef = null;
     }
+  }
+  get overlaysTextContent() {
+    return true;
   }
 }
 class StampAnnotation extends MarkupAnnotation {
@@ -52445,8 +52633,8 @@ class StampAnnotation extends MarkupAnnotation {
     image.set("Type", xobjectName);
     image.set("Subtype", imageName);
     image.set("BitsPerComponent", 8);
-    image.set("ColorSpace", Name.get("DeviceRGB"));
-    image.set("Filter", Name.get("DCTDecode"));
+    image.setIfName("ColorSpace", "DeviceRGB");
+    image.setIfName("Filter", "DCTDecode");
     image.set("BBox", [0, 0, width, height]);
     image.set("Width", width);
     image.set("Height", height);
@@ -52466,7 +52654,7 @@ class StampAnnotation extends MarkupAnnotation {
       smask.set("Type", xobjectName);
       smask.set("Subtype", imageName);
       smask.set("BitsPerComponent", 8);
-      smask.set("ColorSpace", Name.get("DeviceGray"));
+      smask.setIfName("ColorSpace", "DeviceGray");
       smask.set("Width", width);
       smask.set("Height", height);
       smaskStream = new Stream(alphaBuffer, 0, 0, smask);
@@ -52484,30 +52672,25 @@ class StampAnnotation extends MarkupAnnotation {
     ap
   }) {
     const {
+      date,
       oldAnnotation,
       rect,
       rotation,
       user
     } = annotation;
     const stamp = oldAnnotation || new Dict(xref);
-    stamp.set("Type", Name.get("Annot"));
-    stamp.set("Subtype", Name.get("Stamp"));
-    stamp.set(oldAnnotation ? "M" : "CreationDate", `D:${getModificationDate()}`);
-    stamp.set("Rect", rect);
-    stamp.set("F", 4);
-    stamp.set("Border", [0, 0, 0]);
-    stamp.set("Rotate", rotation);
-    if (user) {
-      stamp.set("T", stringToAsciiOrUTF16BE(user));
-    }
+    stamp.setIfNotExists("Type", Name.get("Annot"));
+    stamp.setIfNotExists("Subtype", Name.get("Stamp"));
+    stamp.set(oldAnnotation ? "M" : "CreationDate", `D:${getModificationDate(date)}`);
+    stamp.setIfArray("Rect", rect);
+    stamp.setIfNotExists("F", 4);
+    stamp.setIfNotExists("Border", [0, 0, 0]);
+    stamp.setIfNumber("Rotate", rotation);
+    stamp.setIfDefined("T", stringToAsciiOrUTF16BE(user));
     if (apRef || ap) {
       const n = new Dict(xref);
       stamp.set("AP", n);
-      if (apRef) {
-        n.set("N", apRef);
-      } else {
-        n.set("N", ap);
-      }
+      n.set("N", apRef || ap);
     }
     return stamp;
   }
@@ -52519,6 +52702,9 @@ class StampAnnotation extends MarkupAnnotation {
       lines,
       thickness
     } = annotation;
+    if (!color) {
+      return null;
+    }
     const appearanceBuffer = [`${thickness} w 1 J 1 j`, `${getPdfColor(color, areContours)}`];
     for (const line of lines) {
       appearanceBuffer.push(`${numberToString(line[4])} ${numberToString(line[5])} m`);
@@ -52538,8 +52724,8 @@ class StampAnnotation extends MarkupAnnotation {
     const appearance = appearanceBuffer.join("\n");
     const appearanceStreamDict = new Dict(xref);
     appearanceStreamDict.set("FormType", 1);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
-    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
+    appearanceStreamDict.setIfName("Type", "XObject");
     appearanceStreamDict.set("BBox", rect);
     appearanceStreamDict.set("Length", appearance.length);
     const ap = new StringStream(appearance);
@@ -52568,8 +52754,8 @@ class StampAnnotation extends MarkupAnnotation {
     const appearance = `q ${width} 0 0 ${height} 0 0 cm /Im0 Do Q`;
     const appearanceStreamDict = new Dict(xref);
     appearanceStreamDict.set("FormType", 1);
-    appearanceStreamDict.set("Subtype", Name.get("Form"));
-    appearanceStreamDict.set("Type", Name.get("XObject"));
+    appearanceStreamDict.setIfName("Subtype", "Form");
+    appearanceStreamDict.setIfName("Type", "XObject");
     appearanceStreamDict.set("BBox", [0, 0, width, height]);
     appearanceStreamDict.set("Resources", resources);
     if (rotation) {
@@ -52731,6 +52917,134 @@ class DatasetReader {
       return node.children.map(child => decodeString(child.textContent));
     }
     return decodeString(node.textContent);
+  }
+}
+
+;// ./src/core/intersector.js
+class SingleIntersector {
+  #annotation;
+  #minX = Infinity;
+  #minY = Infinity;
+  #maxX = -Infinity;
+  #maxY = -Infinity;
+  #quadPoints;
+  #text = [];
+  #extraChars = [];
+  #lastIntersectingQuadIndex = -1;
+  #canTakeExtraChars = false;
+  constructor(annotation) {
+    this.#annotation = annotation;
+    const quadPoints = this.#quadPoints = annotation.data.quadPoints;
+    for (let i = 0, ii = quadPoints.length; i < ii; i += 8) {
+      this.#minX = Math.min(this.#minX, quadPoints[i]);
+      this.#maxX = Math.max(this.#maxX, quadPoints[i + 2]);
+      this.#minY = Math.min(this.#minY, quadPoints[i + 5]);
+      this.#maxY = Math.max(this.#maxY, quadPoints[i + 1]);
+    }
+  }
+  overlaps(other) {
+    return !(this.#minX >= other.#maxX || this.#maxX <= other.#minX || this.#minY >= other.#maxY || this.#maxY <= other.#minY);
+  }
+  #intersects(x, y) {
+    if (this.#minX >= x || this.#maxX <= x || this.#minY >= y || this.#maxY <= y) {
+      return false;
+    }
+    const quadPoints = this.#quadPoints;
+    if (quadPoints.length === 8) {
+      return true;
+    }
+    if (this.#lastIntersectingQuadIndex >= 0) {
+      const i = this.#lastIntersectingQuadIndex;
+      if (!(quadPoints[i] >= x || quadPoints[i + 2] <= x || quadPoints[i + 5] >= y || quadPoints[i + 1] <= y)) {
+        return true;
+      }
+      this.#lastIntersectingQuadIndex = -1;
+    }
+    for (let i = 0, ii = quadPoints.length; i < ii; i += 8) {
+      if (!(quadPoints[i] >= x || quadPoints[i + 2] <= x || quadPoints[i + 5] >= y || quadPoints[i + 1] <= y)) {
+        this.#lastIntersectingQuadIndex = i;
+        return true;
+      }
+    }
+    return false;
+  }
+  addGlyph(x, y, glyph) {
+    if (!this.#intersects(x, y)) {
+      this.disableExtraChars();
+      return false;
+    }
+    if (this.#extraChars.length > 0) {
+      this.#text.push(this.#extraChars.join(""));
+      this.#extraChars.length = 0;
+    }
+    this.#text.push(glyph);
+    this.#canTakeExtraChars = true;
+    return true;
+  }
+  addExtraChar(char) {
+    if (this.#canTakeExtraChars) {
+      this.#extraChars.push(char);
+    }
+  }
+  disableExtraChars() {
+    if (!this.#canTakeExtraChars) {
+      return;
+    }
+    this.#canTakeExtraChars = false;
+    this.#extraChars.length = 0;
+  }
+  setText() {
+    this.#annotation.data.overlaidText = this.#text.join("");
+  }
+}
+class Intersector {
+  #intersectors = new Map();
+  constructor(annotations) {
+    for (const annotation of annotations) {
+      if (!annotation.data.quadPoints) {
+        continue;
+      }
+      const intersector = new SingleIntersector(annotation);
+      for (const [otherIntersector, overlapping] of this.#intersectors) {
+        if (otherIntersector.overlaps(intersector)) {
+          if (!overlapping) {
+            this.#intersectors.set(otherIntersector, new Set([intersector]));
+          } else {
+            overlapping.add(intersector);
+          }
+        }
+      }
+      this.#intersectors.set(intersector, null);
+    }
+  }
+  addGlyph(transform, width, height, glyph) {
+    const x = transform[4] + width / 2;
+    const y = transform[5] + height / 2;
+    let overlappingIntersectors;
+    for (const [intersector, overlapping] of this.#intersectors) {
+      if (overlappingIntersectors) {
+        if (overlappingIntersectors.has(intersector)) {
+          intersector.addGlyph(x, y, glyph);
+        } else {
+          intersector.disableExtraChars();
+        }
+        continue;
+      }
+      if (!intersector.addGlyph(x, y, glyph)) {
+        continue;
+      }
+      overlappingIntersectors = overlapping;
+    }
+  }
+  addExtraChar(char) {
+    for (const intersector of this.#intersectors.keys()) {
+      intersector.addExtraChar(char);
+    }
+  }
+  setText() {
+    for (const intersector of this.#intersectors.keys()) {
+      intersector.setText();
+    }
   }
 }
 
@@ -54681,6 +54995,7 @@ class XRef {
 
 
 
+
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 class Page {
   #resourcesPromise = null;
@@ -54854,6 +55169,12 @@ class Page {
             }
           }
           continue;
+        }
+        if (annotation.popup?.deleted) {
+          const popupRef = Ref.fromString(annotation.popupRef);
+          if (popupRef) {
+            deletedAnnotations.put(popupRef, popupRef);
+          }
         }
         existingAnnotations?.put(ref);
         annotation.ref = ref;
@@ -55060,7 +55381,8 @@ class Page {
     task,
     includeMarkedContent,
     disableNormalization,
-    sink
+    sink,
+    intersector = null
   }) {
     const contentStreamPromise = this.getContentStream();
     const resourcesPromise = this.loadResources(RESOURCES_KEYS_TEXT_CONTENT);
@@ -55076,7 +55398,8 @@ class Page {
       disableNormalization,
       sink,
       viewBox: this.view,
-      lang
+      lang,
+      intersector
     });
   }
   async getStructTree() {
@@ -55110,6 +55433,7 @@ class Page {
     const intentAny = !!(intent & RenderingIntentFlag.ANY),
       intentDisplay = !!(intent & RenderingIntentFlag.DISPLAY),
       intentPrint = !!(intent & RenderingIntentFlag.PRINT);
+    const highlightedAnnotations = [];
     for (const annotation of annotations) {
       const isVisible = intentAny || intentDisplay && annotation.viewable;
       if (isVisible || intentPrint && annotation.printable) {
@@ -55120,7 +55444,24 @@ class Page {
         textContentPromises.push(annotation.extractTextContent(partialEvaluator, task, [-Infinity, -Infinity, Infinity, Infinity]).catch(function (reason) {
           warn(`getAnnotationsData - ignoring textContent during "${task.name}" task: "${reason}".`);
         }));
+      } else if (annotation.overlaysTextContent && isVisible) {
+        highlightedAnnotations.push(annotation);
       }
+    }
+    if (highlightedAnnotations.length > 0) {
+      const intersector = new Intersector(highlightedAnnotations);
+      textContentPromises.push(this.extractTextContent({
+        handler,
+        task,
+        includeMarkedContent: false,
+        disableNormalization: false,
+        sink: null,
+        viewBox: this.view,
+        lang: null,
+        intersector
+      }).then(() => {
+        intersector.setText();
+      }));
     }
     await Promise.all(textContentPromises);
     return annotationsData;
@@ -55364,6 +55705,40 @@ class PDFDocument {
       const isInvisible = Array.isArray(rectangle) && rectangle.every(value => value === 0);
       return isSignature && isInvisible;
     });
+  }
+  #collectSignatureCertificates(fields, collectedSignatureCertificates, visited = new RefSet()) {
+    if (!Array.isArray(fields)) {
+      return;
+    }
+    for (let field of fields) {
+      if (field instanceof Ref) {
+        if (visited.has(field)) {
+          continue;
+        }
+        visited.put(field);
+      }
+      field = this.xref.fetchIfRef(field);
+      if (!(field instanceof Dict)) {
+        continue;
+      }
+      if (field.has("Kids")) {
+        this.#collectSignatureCertificates(field.get("Kids"), collectedSignatureCertificates, visited);
+        continue;
+      }
+      const isSignature = isName(field.get("FT"), "Sig");
+      if (!isSignature) {
+        continue;
+      }
+      const value = field.get("V");
+      if (!(value instanceof Dict)) {
+        continue;
+      }
+      const subFilter = value.get("SubFilter");
+      if (!(subFilter instanceof Name)) {
+        continue;
+      }
+      collectedSignatureCertificates.add(subFilter.name);
+    }
   }
   get _xfaStreams() {
     const {
@@ -55611,6 +55986,13 @@ class PDFDocument {
       formInfo.hasXfa = Array.isArray(xfa) && xfa.length > 0 || xfa instanceof BaseStream && !xfa.isEmpty;
       const sigFlags = acroForm.get("SigFlags");
       const hasSignatures = !!(sigFlags & 0x1);
+      if (hasSignatures) {
+        const collectedSignatureCertificates = new Set();
+        this.#collectSignatureCertificates(fields, collectedSignatureCertificates);
+        if (collectedSignatureCertificates.size > 0) {
+          formInfo.collectedSignatureCertificates = Array.from(collectedSignatureCertificates);
+        }
+      }
       const hasOnlyDocumentSignatures = hasSignatures && this.#hasOnlyDocumentSignatures(fields);
       formInfo.hasAcroForm = hasFields && !hasOnlyDocumentSignatures;
       formInfo.hasSignatures = hasSignatures;
@@ -55638,6 +56020,7 @@ class PDFDocument {
       IsCollectionPresent: !!catalog.collection,
       IsSignaturesPresent: formInfo.hasSignatures
     };
+    docInfo.collectedSignatureCertificates = formInfo.collectedSignatureCertificates ?? null;
     let infoDict;
     try {
       infoDict = xref.trailer.get("Info");
@@ -56786,7 +57169,7 @@ function updateXFA({
   }
   const xfaDataStream = new StringStream(xfaData);
   xfaDataStream.dict = new Dict(xref);
-  xfaDataStream.dict.set("Type", Name.get("EmbeddedFile"));
+  xfaDataStream.dict.setIfName("Type", "EmbeddedFile");
   changes.put(xfaDatasetsRef, {
     data: xfaDataStream
   });
@@ -56882,7 +57265,7 @@ function getTrailerDict(xrefInfo, changes, useXrefStream) {
       data: ""
     });
     newXref.set("Size", refForXrefTable.num + 1);
-    newXref.set("Type", Name.get("XRef"));
+    newXref.setIfName("Type", "XRef");
   } else {
     newXref.set("Size", refForXrefTable.num);
   }
@@ -57146,7 +57529,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "5.3.42";
+    const workerVersion = "5.4.19";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }

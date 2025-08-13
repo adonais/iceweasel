@@ -7,8 +7,8 @@
 #ifndef nsMathMLParts_h___
 #define nsMathMLParts_h___
 
-#include "nscore.h"
 #include "nsISupports.h"
+#include "nscore.h"
 
 class nsTableFrame;
 

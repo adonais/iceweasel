@@ -7,6 +7,7 @@
 
 #include "TouchManager.h"
 
+#include "PositionedEventTargeting.h"
 #include "Units.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/PresShell.h"
@@ -21,7 +22,6 @@
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsView.h"
-#include "PositionedEventTargeting.h"
 
 using namespace mozilla::dom;
 

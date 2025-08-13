@@ -6,18 +6,16 @@ package org.mozilla.fenix.home.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Icon
-import androidx.compose.material.IconToggleButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -46,7 +44,6 @@ import org.mozilla.fenix.theme.Theme
  */
 @Composable
 fun HomepageHeader(
-    showPrivateBrowsingButton: Boolean,
     browsingMode: BrowsingMode,
     browsingModeChanged: (BrowsingMode) -> Unit,
 ) {
@@ -61,14 +58,12 @@ fun HomepageHeader(
 
         WordmarkText()
 
-        if (showPrivateBrowsingButton) {
-            Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.weight(1f))
 
-            PrivateBrowsingButton(
-                browsingMode = browsingMode,
-                browsingModeChanged = browsingModeChanged,
-            )
-        }
+        PrivateBrowsingButton(
+            browsingMode = browsingMode,
+            browsingModeChanged = browsingModeChanged,
+        )
     }
 }
 
@@ -146,19 +141,8 @@ private fun getAttr(resId: Int): Int {
 @PreviewLightDark
 private fun HomepageHeaderPreview() {
     FirefoxTheme {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(color = FirefoxTheme.colors.layer1),
-        ) {
+        Row(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {
             HomepageHeader(
-                showPrivateBrowsingButton = true,
-                browsingMode = BrowsingMode.Normal,
-                browsingModeChanged = {},
-            )
-
-            HomepageHeader(
-                showPrivateBrowsingButton = false,
                 browsingMode = BrowsingMode.Normal,
                 browsingModeChanged = {},
             )
@@ -170,19 +154,8 @@ private fun HomepageHeaderPreview() {
 @Preview
 private fun PrivateHomepageHeaderPreview() {
     FirefoxTheme(theme = Theme.Private) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(color = FirefoxTheme.colors.layer1),
-        ) {
+        Row(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {
             HomepageHeader(
-                showPrivateBrowsingButton = true,
-                browsingMode = BrowsingMode.Private,
-                browsingModeChanged = {},
-            )
-
-            HomepageHeader(
-                showPrivateBrowsingButton = false,
                 browsingMode = BrowsingMode.Private,
                 browsingModeChanged = {},
             )

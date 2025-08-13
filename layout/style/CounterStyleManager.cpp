@@ -13,6 +13,8 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ServoBindings.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/Types.h"
 #include "mozilla/WritingModes.h"
 #include "nsPresContext.h"
@@ -21,8 +23,6 @@
 #include "nsTArray.h"
 #include "nsTHashtable.h"
 #include "nsUnicodeProperties.h"
-#include "mozilla/ServoBindings.h"
-#include "mozilla/ServoStyleSet.h"
 
 namespace mozilla {
 

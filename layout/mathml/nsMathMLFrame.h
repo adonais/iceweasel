@@ -8,11 +8,11 @@
 #define nsMathMLFrame_h___
 
 #include "mozilla/Attributes.h"
-#include "nsFontMetrics.h"
-#include "nsMathMLOperators.h"
-#include "nsIMathMLFrame.h"
 #include "nsBoundingMetrics.h"
+#include "nsFontMetrics.h"
 #include "nsIFrame.h"
+#include "nsIMathMLFrame.h"
+#include "nsMathMLOperators.h"
 
 class nsMathMLChar;
 class nsCSSValue;

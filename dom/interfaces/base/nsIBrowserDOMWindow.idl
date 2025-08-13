@@ -9,7 +9,7 @@ interface mozIDOMWindowProxy;
 interface nsIDOMWindow;
 interface nsIURI;
 interface nsIPrincipal;
-interface nsIContentSecurityPolicy;
+interface nsIPolicyContainer;
 interface nsIReferrerInfo;
 interface nsIOpenWindowInfo;
 webidl BrowsingContext;
@@ -23,7 +23,7 @@ interface nsIOpenURIInFrameParams : nsISupports
   attribute nsIReferrerInfo referrerInfo;
   readonly attribute boolean isPrivate;
   attribute nsIPrincipal triggeringPrincipal;
-  attribute nsIContentSecurityPolicy csp;
+  attribute nsIPolicyContainer policyContainer;
 
   // The browser or frame element in the parent process which holds the
   // opener window in the content process. May be null.
@@ -127,14 +127,14 @@ interface nsIBrowserDOMWindow : nsISupports
    *               aWhere == OPEN_DEFAULTWINDOW.
    * @param aTriggeringPrincipal the principal that would trigger the potential
    *        load of aURI.
-   * @param aCsp the CSP to use (if any) for the new window.
+   * @param aPolicyContainer the policyContainer to use (if any) for the new window.
    * @return the window into which the URI would have been opened.
   */
   BrowsingContext
   createContentWindow(in nsIURI aURI, in nsIOpenWindowInfo aOpenWindowInfo,
                       in short aWhere, in long aFlags,
                       in nsIPrincipal aTriggeringPrincipal,
-                      [optional] in nsIContentSecurityPolicy aCsp);
+                      [optional] in nsIPolicyContainer aPolicyContainer);
 
   /**
    * As above, but return the nsFrameLoaderOwner for the new window. Value is
@@ -159,13 +159,13 @@ interface nsIBrowserDOMWindow : nsISupports
    *               OPEN_EXTERNAL/OPEN_NEW flag is only used when
    *               aWhere == OPEN_DEFAULTWINDOW.
    * @param aTriggeringPrincipal the principal that triggered the load of aURI.
-   * @param aCsp the CSP to be applied to the new load.
+   * @param aPolicyContainer the policyContainer to be applied to the new load.
    * @return the window into which the URI was opened.
   */
   BrowsingContext
   openURI(in nsIURI aURI, in nsIOpenWindowInfo aOpenWindowInfo,
           in short aWhere, in long aFlags, in nsIPrincipal aTriggeringPrincipal,
-          [optional] in nsIContentSecurityPolicy aCsp);
+          [optional] in nsIPolicyContainer aPolicyContainer);
 
   /**
    * As above, but return the nsFrameLoaderOwner for the new window. Value is

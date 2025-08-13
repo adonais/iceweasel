@@ -8,6 +8,9 @@
 newtab-page-title = Nov tab
 newtab-settings-button =
     .title = Persunalisar tia pagina per novs tabs
+newtab-customize-panel-icon-button =
+    .title = Persunalisescha questa pagina
+newtab-customize-panel-icon-button-label = Persunalisar
 newtab-personalize-settings-icon-label =
     .title = Persunalisar novs tabs
     .aria-label = Parameters
@@ -117,6 +120,8 @@ newtab-menu-delete-pocket = Stizzar da { -pocket-brand-name }
 newtab-menu-archive-pocket = Archivar en { -pocket-brand-name }
 newtab-menu-show-privacy-info = Noss sponsurs & tia sfera privata
 newtab-menu-about-fakespot = Davart { -fakespot-brand-name }
+# Report is a verb (i.e. report issue with the content).
+newtab-menu-report = Rapportar
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Bloccar
@@ -190,6 +195,8 @@ newtab-label-sponsored-by = Sponsurisà da { $sponsor }
 #   $source (string) - The name of a company or their domain
 #   $timeToRead (number) - The estimated number of minutes to read this story
 newtab-label-source-read-time = { $source } · { $timeToRead } min
+# This string is used under fixed size ads to indicate sponsored content
+newtab-label-sponsored-fixed = Sponsurisà
 
 ## Section Menu: These strings are displayed in the section context menu and are
 ## meant as a call to action for the given section.
@@ -311,6 +318,9 @@ newtab-custom-recent-toggle =
 newtab-custom-weather-toggle =
     .label = Aura
     .description = La previsiun da l’aura actuala en in’egliada
+newtab-custom-trending-search-toggle =
+    .label = Tschertgas frequentas
+    .description = Temas populars tschertgads frequentamain
 newtab-custom-close-button = Serrar
 newtab-custom-settings = Administrar ulteriurs parameters
 
@@ -494,6 +504,9 @@ newtab-topic-selection-button-pick-interests = Tscherna tes interess
 newtab-section-follow-button = Suandar
 newtab-section-following-button = Ti suondas
 newtab-section-unfollow-button = Chalar da suandar
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Optimescha tes feed
+newtab-section-follow-highlight-subtitle = Suonda tes interess per vesair dapli da quai che ta plascha.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -528,6 +541,17 @@ newtab-custom-wallpaper-cta = Empruvar
 
 ## Strings for download mobile highlight
 
+newtab-download-mobile-highlight-title = Telechargia { -brand-product-name } per apparats mobils
+# "Scan the code" refers to scanning the QR code that appears above the body text that leads to Firefox for mobile download.
+newtab-download-mobile-highlight-body-variant-a = Scannescha il code per navigar a moda segira durant che ti es en gir.
+newtab-download-mobile-highlight-body-variant-b = Cuntinuescha là nua che ti has chalà sche ti sincroniseschas tes tabs, pleds-clav e dapli.
+newtab-download-mobile-highlight-body-variant-c = Has ti savì che ti pos prender { -brand-product-name } cun tai? Il medem navigatur. En tia giaglioffa.
+newtab-download-mobile-highlight-image =
+    .aria-label = Code QR per telechargiar { -brand-product-name } per apparats mobils
+
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Tes favurits adina per mauns
 
 ## Strings for reporting ads and content
 

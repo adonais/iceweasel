@@ -9,8 +9,8 @@
 #ifndef nsChangeHint_h___
 #define nsChangeHint_h___
 
-#include "mozilla/Types.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Types.h"
 
 // Defines for various style related constants
 

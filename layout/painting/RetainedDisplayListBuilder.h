@@ -7,9 +7,9 @@
 #ifndef RETAINEDDISPLAYLISTBUILDER_H_
 #define RETAINEDDISPLAYLISTBUILDER_H_
 
-#include "nsDisplayList.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/EnumSet.h"
+#include "mozilla/Maybe.h"
+#include "nsDisplayList.h"
 
 class nsWindowSizes;
 

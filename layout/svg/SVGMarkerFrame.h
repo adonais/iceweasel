@@ -7,10 +7,10 @@
 #ifndef LAYOUT_SVG_SVGMARKERFRAME_H_
 #define LAYOUT_SVG_SVGMARKERFRAME_H_
 
-#include "mozilla/Attributes.h"
-#include "mozilla/SVGContainerFrame.h"
 #include "gfxMatrix.h"
 #include "gfxRect.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/SVGContainerFrame.h"
 #include "nsIFrame.h"
 #include "nsLiteralString.h"
 #include "nsQueryFrame.h"

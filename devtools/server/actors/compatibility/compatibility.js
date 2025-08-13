@@ -127,35 +127,28 @@ class CompatibilityActor extends Actor {
       skipPseudo: false,
     });
 
-    const declarationBlocks = styles.entries
-      .map(({ rule }) => {
-        // Replace form() with a function to get minimal subset
-        // of declarations from StyleRuleActor when such a
-        // function lands in the StyleRuleActor
-        const declarations = rule.form().declarations;
-        if (!declarations) {
-          return null;
-        }
-        return declarations.filter(d => !d.commentOffsets);
-      })
-      .filter(declarations => declarations && declarations.length);
+    const declarations = [];
+    const propertyNames = new Set();
 
-    return declarationBlocks
-      .map(declarationBlock =>
-        mdnCompatibility.getCSSDeclarationBlockIssues(
-          declarationBlock,
-          targetBrowsers
-        )
-      )
-      .flat()
-      .reduce((issues, issue) => {
-        // Get rid of duplicate issue
-        return issues.find(
-          i => i.type === issue.type && i.property === issue.property
-        )
-          ? issues
-          : [...issues, issue];
-      }, []);
+    for (const { rule } of styles.entries) {
+      for (const declaration of rule.parseRuleDeclarations({
+        parseComments: false,
+      })) {
+        // For now (see Bug 1636301), we only check compat issues based on the declaration
+        // name, so we can only pass a single declaration for a given property and save
+        // some time in getCSSDeclarationBlockIssues.
+        if (propertyNames.has(declaration.name)) {
+          continue;
+        }
+        propertyNames.add(declaration.name);
+        declarations.push(declaration);
+      }
+    }
+
+    return mdnCompatibility.getCSSDeclarationBlockIssues(
+      declarations,
+      targetBrowsers
+    );
   }
 }
 

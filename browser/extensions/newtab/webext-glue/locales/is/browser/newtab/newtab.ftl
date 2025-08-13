@@ -536,6 +536,9 @@ newtab-download-mobile-highlight-body-variant-c = Vissir þú að þú getur tek
 newtab-download-mobile-highlight-image =
     .aria-label = QR-kóði til að sækja { -brand-product-name } fyrir farsíma
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =

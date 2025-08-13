@@ -188,6 +188,25 @@ add_task(async function test_extension_context_menu() {
   );
   contextMenu.hidePopup();
 
+  await openAndWaitForContextMenu(
+    contextMenu,
+    sidebar.extensionButtons[0],
+    () => {
+      // Click "Remove from Sidebar"
+      const unpinButtonEl = document.getElementById(
+        "sidebar-context-menu-unpin-extension"
+      );
+      unpinButtonEl.click();
+    }
+  );
+
+  await sidebar.updateComplete;
+  is(
+    sidebar.extensionButtons.length,
+    0,
+    "Extension is removed from the sidebar."
+  );
+
   sinon.restore();
   await extension.unload();
   ok(
@@ -269,6 +288,93 @@ add_task(async function test_sidebar_context_menu() {
   await waitForTabstripOrientation(initialTabDirection);
 
   is(contextMenu.state, "closed", "Context menu closed for vertical tabs");
+});
+
+add_task(async function test_tool_context_menu() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.chat.page", true]],
+  });
+  const contextMenu = document.getElementById("sidebar-context-menu");
+  const { sidebarMain } = SidebarController;
+  const aichatTool = sidebarMain.shadowRoot.querySelector(
+    'moz-button[view="viewGenaiChatSidebar"]'
+  );
+
+  await openAndWaitForContextMenu(contextMenu, aichatTool, () => {
+    Assert.ok(
+      document.getElementById("sidebar-context-menu-report-extension").hidden,
+      "Report extension button is hidden"
+    );
+    Assert.ok(
+      document.getElementById("sidebar-context-menu-remove-extension").hidden,
+      "Remove extension tabs button is hidden"
+    );
+    Assert.ok(
+      document.getElementById("sidebar-context-menu-manage-extension").hidden,
+      "Manage extension button is hidden"
+    );
+    Assert.ok(
+      document.getElementById("sidebar-context-menu-hide-sidebar").hidden,
+      "Hide sidebar button is hidden"
+    );
+    Assert.ok(
+      document.getElementById("sidebar-context-menu-enable-vertical-tabs")
+        .hidden,
+      "Enable vertical tab button is hidden"
+    );
+    Assert.ok(
+      document.getElementById("sidebar-context-menu-customize-sidebar").hidden,
+      "Customize sidebar button is hidden"
+    );
+    Assert.ok(
+      contextMenu.querySelector("menuseparator").hidden,
+      "menuseparator is hidden"
+    );
+
+    const toolMenuItems = [
+      ...contextMenu.querySelectorAll("[customized-tool='true']"),
+    ];
+    Assert.equal(
+      !!toolMenuItems.length && toolMenuItems.every(item => !item.hidden),
+      true,
+      "Tool menuitems are visible"
+    );
+  });
+
+  contextMenu.hidePopup();
+
+  await openAndWaitForContextMenu(contextMenu, sidebarMain, () => {
+    // Check tool menuitems are hidden and sidebar-main context menus are visible
+    () => {
+      Assert.ok(
+        !document.getElementById("sidebar-context-menu-hide-sidebar").hidden,
+        "Hide sidebar button is visible"
+      );
+      Assert.ok(
+        !document.getElementById("sidebar-context-menu-enable-vertical-tabs")
+          .hidden,
+        "Remove extension tabs button is visible"
+      );
+      Assert.ok(
+        !document.getElementById("sidebar-context-menu-customize-sidebar")
+          .hidden,
+        "Enable vertical tab button is visible"
+      );
+
+      Assert.ok(
+        !contextMenu.querySelector("menuseparator").hidden,
+        "menuseparator is visible"
+      );
+
+      const toolMenuItems = [
+        ...contextMenu.querySelectorAll("[customized-tool='true']"),
+      ];
+      Assert.ok(toolMenuItems[0].hidden, "One of tool menuitems is hidden");
+    };
+  });
+
+  contextMenu.hidePopup();
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_toggle_vertical_tabs_from_sidebar_button() {

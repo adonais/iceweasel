@@ -4723,7 +4723,7 @@ void AutoFilename::setUnowned(const char* filename) {
 
 void AutoFilename::setOwned(UniqueChars&& filename) {
   MOZ_ASSERT(!get());
-  filename_ = AsVariant(std::move(filename));
+  filename_ = mozilla::AsVariant(std::move(filename));
 }
 
 const char* AutoFilename::get() const {

@@ -5,9 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MiddleCroppingLabelFrame.h"
+
 #include "MiddleCroppingBlockFrame.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/dom/Element.h"
 
 nsIFrame* NS_NewMiddleCroppingLabelFrame(mozilla::PresShell* aPresShell,
                                          mozilla::ComputedStyle* aStyle) {

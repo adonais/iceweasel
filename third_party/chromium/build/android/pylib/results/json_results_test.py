@@ -1,12 +1,11 @@
 #!/usr/bin/env vpython3
-# Copyright 2014 The Chromium Authors. All rights reserved.
+# Copyright 2014 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 
 import unittest
 
-import six
 from pylib.base import base_test_result
 from pylib.results import json_results
 
@@ -112,7 +111,7 @@ class JsonResultsTest(unittest.TestCase):
         'test.package.TestName2',
     ])
 
-    for test_name, iteration_result in six.iteritems(iterations[0]):
+    for test_name, iteration_result in iterations[0].items():
       self.assertTrue(test_name in expected_tests)
       expected_tests.remove(test_name)
       self.assertEqual(1, len(iteration_result))

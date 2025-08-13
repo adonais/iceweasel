@@ -7,8 +7,8 @@
 #ifndef mozilla_CSSCounterStyleRule_h
 #define mozilla_CSSCounterStyleRule_h
 
-#include "mozilla/css/Rule.h"
 #include "mozilla/ServoBindingTypes.h"
+#include "mozilla/css/Rule.h"
 
 struct StyleLockedCounterStyleRule;
 

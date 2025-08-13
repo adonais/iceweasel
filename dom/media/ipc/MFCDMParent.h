@@ -8,6 +8,7 @@
 #include <wrl.h>
 
 #include "mozilla/Assertions.h"
+#include "mozilla/EventTargetAndLockCapability.h"
 #include "mozilla/PMFCDMParent.h"
 #include "mozilla/RefPtr.h"
 #include "MFCDMExtra.h"
@@ -85,11 +86,8 @@ class MFCDMParent final : public PMFCDMParent {
       const dom::HDCPVersion& aMinHdcpVersion,
       GetStatusForPolicyResolver&& aResolver);
 
-  nsISerialEventTarget* ManagerThread() { return mManagerThread; }
-  void AssertOnManagerThread() const {
-    MOZ_ASSERT(mManagerThread->IsOnCurrentThread());
-  }
-
+  // A thread-safe method to access the CDM proxy. Returns nullptr if the CDM
+  // has been shut down.
   MFCDMProxy* GetMFCDMProxy();
 
   void ShutdownCDM();
@@ -129,6 +127,10 @@ class MFCDMParent final : public PMFCDMParent {
 
   MFCDMSession* GetSession(const nsString& aSessionId);
 
+  mozilla::Mutex& Mutex() MOZ_RETURN_CAPABILITY(mCDMAccessLock.Lock()) {
+    return mCDMAccessLock.Lock();
+  }
+
   nsString mKeySystem;
 
   const RefPtr<RemoteMediaManagerParent> mManager;
@@ -145,7 +147,6 @@ class MFCDMParent final : public PMFCDMParent {
 
   RefPtr<MFCDMParent> mIPDLSelfRef;
   Microsoft::WRL::ComPtr<IMFContentDecryptionModuleFactory> mFactory;
-  Microsoft::WRL::ComPtr<IMFContentDecryptionModule> mCDM;
   Microsoft::WRL::ComPtr<MFPMPHostWrapper> mPMPHostWrapper;
 
   std::map<nsString, UniquePtr<MFCDMSession>> mSessions;
@@ -158,7 +159,14 @@ class MFCDMParent final : public PMFCDMParent {
   MediaEventListener mKeyChangeListener;
   MediaEventListener mExpirationListener;
 
-  RefPtr<MFCDMProxy> mCDMProxy;
+  // The mCDM and mCDMProxy members are exclusively modified on the manager
+  // thread, while being read-only on other threads. To ensure thread-safe
+  // access, we employ the EventTargetAndLockCapability mechanism.
+  mozilla::EventTargetAndLockCapability<nsISerialEventTarget, mozilla::Mutex>
+      mCDMAccessLock;
+  Microsoft::WRL::ComPtr<IMFContentDecryptionModule> mCDM
+      MOZ_GUARDED_BY(mCDMAccessLock);
+  RefPtr<MFCDMProxy> mCDMProxy MOZ_GUARDED_BY(mCDMAccessLock);
 };
 
 // A helper class only used in the chrome process to handle CDM related tasks.

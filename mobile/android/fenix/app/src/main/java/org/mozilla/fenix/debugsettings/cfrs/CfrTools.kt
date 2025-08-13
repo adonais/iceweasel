@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -108,15 +108,6 @@ private fun ResetCfrTool(
                 enabled = FxNimbus.features.encourageSearchCfr.value().enabled,
                 onCfrToggle = {
                     cfrToolsStore.dispatch(CfrToolsAction.HomepageSearchBarShownToggled)
-                },
-            )
-
-            CfrToggle(
-                title = stringResource(R.string.debug_drawer_cfr_tools_homepage_sync_title),
-                description = stringResource(R.string.debug_drawer_cfr_tools_homepage_sync_description),
-                checked = cfrPreferences.homepageSyncShown,
-                onCfrToggle = {
-                    cfrToolsStore.dispatch(CfrToolsAction.HomepageSyncShownToggled)
                 },
             )
         }

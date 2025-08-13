@@ -18,6 +18,7 @@
 #endif
 
 class nsIContentSecurityPolicy;
+class nsIPolicyContainer;
 class nsIDocShell;
 class nsIGlobalObject;
 class nsISerialEventTarget;
@@ -156,10 +157,12 @@ class ClientSource final : public ClientThing<ClientSourceChild> {
 
   nsISerialEventTarget* EventTarget() const;
 
-  void SetCsp(nsIContentSecurityPolicy* aCsp);
   void SetPreloadCsp(nsIContentSecurityPolicy* aPreloadCSP);
-  void SetCspInfo(const mozilla::ipc::CSPInfo& aCSPInfo);
-  const Maybe<mozilla::ipc::CSPInfo>& GetCspInfo();
+
+  void SetPolicyContainer(nsIPolicyContainer* aPolicyContainer);
+  void SetPolicyContainerArgs(
+      const mozilla::ipc::PolicyContainerArgs& aPolicyContainer);
+  const Maybe<mozilla::ipc::PolicyContainerArgs>& GetPolicyContainerArgs();
 
   void SetAgentClusterId(const nsID& aId) {
     mClientInfo.SetAgentClusterId(aId);

@@ -1666,7 +1666,7 @@ void BrowserParent::SendRealDragEvent(WidgetDragEvent& aEvent,
                                       uint32_t aDragAction,
                                       uint32_t aDropEffect,
                                       nsIPrincipal* aPrincipal,
-                                      nsIContentSecurityPolicy* aCsp) {
+                                      nsIPolicyContainer* aPolicyContainer) {
   if (mIsDestroyed || !mIsReadyToHandleInputEvents) {
     return;
   }
@@ -1678,7 +1678,7 @@ void BrowserParent::SendRealDragEvent(WidgetDragEvent& aEvent,
     }
   }
   DebugOnly<bool> ret = PBrowserParent::SendRealDragEvent(
-      aEvent, aDragAction, aDropEffect, aPrincipal, aCsp);
+      aEvent, aDragAction, aDropEffect, aPrincipal, aPolicyContainer);
   NS_WARNING_ASSERTION(ret, "PBrowserParent::SendRealDragEvent() failed");
   MOZ_ASSERT(!ret || aEvent.HasBeenPostedToRemoteProcess());
 }
@@ -3000,7 +3000,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvOnLocationChange(
           aLocationChangeData->documentURI(), aLocationChangeData->title(),
           aLocationChangeData->contentPrincipal(),
           aLocationChangeData->contentPartitionedPrincipal(),
-          aLocationChangeData->csp(), aLocationChangeData->referrerInfo(),
+          aLocationChangeData->policyContainer(),
+          aLocationChangeData->referrerInfo(),
           aLocationChangeData->isSyntheticDocument(),
           aLocationChangeData->requestContextID().isSome(),
           aLocationChangeData->requestContextID().valueOr(0),
@@ -3881,7 +3882,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvInvokeDragSession(
     nsTArray<IPCTransferableData>&& aTransferables, const uint32_t& aAction,
     Maybe<BigBuffer>&& aVisualDnDData, const uint32_t& aStride,
     const gfx::SurfaceFormat& aFormat, const LayoutDeviceIntRect& aDragRect,
-    nsIPrincipal* aPrincipal, nsIContentSecurityPolicy* aCsp,
+    nsIPrincipal* aPrincipal, nsIPolicyContainer* aPolicyContainer,
     const CookieJarSettingsArgs& aCookieJarSettingsArgs,
     const MaybeDiscarded<WindowContext>& aSourceWindowContext,
     const MaybeDiscarded<WindowContext>& aSourceTopWindowContext) {
@@ -3900,7 +3901,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvInvokeDragSession(
                                       getter_AddRefs(cookieJarSettings));
 
   RefPtr<RemoteDragStartData> dragStartData = new RemoteDragStartData(
-      this, std::move(aTransferables), aDragRect, aPrincipal, aCsp,
+      this, std::move(aTransferables), aDragRect, aPrincipal, aPolicyContainer,
       cookieJarSettings, aSourceWindowContext.GetMaybeDiscarded(),
       aSourceTopWindowContext.GetMaybeDiscarded());
 

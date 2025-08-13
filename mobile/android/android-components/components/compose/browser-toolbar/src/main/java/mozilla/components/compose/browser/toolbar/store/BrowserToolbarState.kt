@@ -5,11 +5,13 @@
 package mozilla.components.compose.browser.toolbar.store
 
 import androidx.annotation.IntRange
+import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.Color
 import mozilla.components.compose.browser.toolbar.R
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
+import mozilla.components.concept.toolbar.AutocompleteProvider
 import mozilla.components.lib.state.State
 
 /**
@@ -62,10 +64,11 @@ enum class Mode {
  * inside of the URL bounding box.
  * These should be actions relevant to specific webpages as opposed to [browserActionsStart].
  * See [MDN docs](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/pageAction).
- * @param browserActionsEnd List of browser [Action]s to be displayed at the end of the toolbar,
+ * @property browserActionsEnd List of browser [Action]s to be displayed at the end of the toolbar,
  * outside of the URL bounding box.
  * These should be actions relevant to the browser as a whole.
  * See [MDN docs](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/browserAction).
+ * @property navigationActions List of [Action]s to be displayed in the navigation toolbar.
  * @property progressBarConfig [ProgressBarConfig] configuration for the progress bar.
  * If `null` a progress bar will not be displayed.
  */
@@ -80,6 +83,7 @@ data class DisplayState(
     ),
     val pageActionsEnd: List<Action> = emptyList(),
     val browserActionsEnd: List<Action> = emptyList(),
+    val navigationActions: List<Action> = emptyList(),
     val progressBarConfig: ProgressBarConfig? = null,
 ) : State
 
@@ -91,7 +95,7 @@ data class DisplayState(
  * If `null` is provided the default colors will be used.
  */
 data class ProgressBarConfig(
-    @IntRange(from = 0, to = 100) val progress: Int,
+    @param:IntRange(from = 0, to = 100) val progress: Int,
     val gravity: ProgressBarGravity,
     val color: List<Color>? = null,
 )
@@ -114,14 +118,18 @@ sealed class ProgressBarGravity {
 /**
  * Wrapper containing the toolbar edit state.
  *
- * @property editText The text the user is editing in "edit" mode.
+ * @property query The text the user is editing in "edit" mode.
+ * @property showQueryAsPreselected Whether or not [query] should be shown as selected.
  * @property editActionsStart List of [Action]s to be displayed at the start of the URL of
  * the edit toolbar.
  * @property editActionsEnd List of [Action]s to be displayed at the end of the URL of
  * the edit toolbar.
  */
 data class EditState(
-    val editText: String? = null,
+    val query: String = "",
+    @param:StringRes val hint: Int = R.string.mozac_browser_toolbar_search_hint,
+    val showQueryAsPreselected: Boolean = false,
+    val autocompleteProviders: List<AutocompleteProvider> = emptyList(),
     val editActionsStart: List<Action> = emptyList(),
     val editActionsEnd: List<Action> = emptyList(),
 ) : State

@@ -6,7 +6,6 @@
 
 package org.mozilla.fenix.onboarding.view
 
-import android.content.SharedPreferences
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -17,7 +16,6 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
@@ -36,8 +34,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.ext.observeAsComposableState
 import org.mozilla.fenix.R
@@ -47,7 +45,6 @@ import org.mozilla.fenix.components.components
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.compose.PagerIndicator
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.onboarding.WidgetPinnedReceiver.WidgetPinnedState
 import org.mozilla.fenix.onboarding.store.OnboardingAction.OnboardingThemeAction
 import org.mozilla.fenix.onboarding.store.OnboardingAction.OnboardingToolbarAction
@@ -78,6 +75,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * on the marketing data opt out screen.
  * @param onFinish Invoked when the onboarding is completed.
  * @param onImpression Invoked when a page in the pager is displayed.
+ * @param currentIndex callback for when the current horizontal pager page changes
  */
 @Composable
 @Suppress("LongParameterList", "LongMethod")
@@ -100,6 +98,7 @@ fun OnboardingScreen(
     onMarketingDataContinueClick: (allowMarketingDataCollection: Boolean) -> Unit,
     onFinish: (pageType: OnboardingPageUiData) -> Unit,
     onImpression: (pageType: OnboardingPageUiData) -> Unit,
+    currentIndex: (index: Int) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val pagerState = rememberPagerState(pageCount = { pagesToDisplay.size })
@@ -107,39 +106,13 @@ fun OnboardingScreen(
         .observeAsComposableState { it.account != null }
     val widgetPinnedFlow: StateFlow<Boolean> = WidgetPinnedState.isPinned
     val isWidgetPinnedState by widgetPinnedFlow.collectAsState()
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
 
-    DisposableEffect(lifecycleOwner) {
-        val settings = context.settings()
-        val isNotPartnershipDistribution = !context.components.distributionIdManager.isPartnershipDistribution()
-
-        // Observe the shouldShowMarketingOnboarding preference and disable the marketing page
-        // if the preference switches to false
-        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            val marketingPageIndex = pagesToDisplay.indexOfFirst { it.type == OnboardingPageUiData.Type.MARKETING_DATA }
-            val shouldShowMarketingPreferenceKey = context.getString(R.string.pref_key_should_show_marketing_onboarding)
-            val removeMarketingPage = key == shouldShowMarketingPreferenceKey &&
-                !settings.shouldShowMarketingOnboarding &&
-                pagerState.currentPage < marketingPageIndex &&
-                isNotPartnershipDistribution
-
-            if (removeMarketingPage) {
-                pagesToDisplay.removeAt(marketingPageIndex)
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.currentPage }
+            .distinctUntilChanged()
+            .collect { page ->
+                currentIndex(page)
             }
-        }
-
-        settings.preferences.registerOnSharedPreferenceChangeListener(listener)
-
-        // If the preference is already false, disable the marketing page
-        if (!settings.shouldShowMarketingOnboarding && isNotPartnershipDistribution) {
-            val marketingPage = pagesToDisplay.find { it.type == OnboardingPageUiData.Type.MARKETING_DATA }
-            marketingPage?.let { pagesToDisplay.remove(it) }
-        }
-
-        onDispose {
-            settings.preferences.unregisterOnSharedPreferenceChangeListener(listener)
-        }
     }
 
     BackHandler(enabled = pagerState.currentPage > 0) {
@@ -308,7 +281,9 @@ private fun OnboardingContent(
                 .weight(1f)
                 .nestedScroll(nestedScrollConnection),
         ) { pageIndex ->
-            val pageUiState = pagesToDisplay[pageIndex]
+            // protect against a rare case where the user goes to the marketing screen at the same
+            // moment it gets removed by [MarketingPageRemovalSupport]
+            val pageUiState = pagesToDisplay.getOrElse(pageIndex) { pagesToDisplay[it.dec()] }
             val onboardingPageState = mapToOnboardingPageState(
                 onboardingPageUiData = pageUiState,
                 onMakeFirefoxDefaultClick = onMakeFirefoxDefaultClick,

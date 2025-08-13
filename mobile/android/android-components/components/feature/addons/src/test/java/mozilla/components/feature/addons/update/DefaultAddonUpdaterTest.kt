@@ -20,9 +20,11 @@ import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import mozilla.components.browser.engine.gecko.webextension.GeckoWebExtension
 import mozilla.components.concept.engine.webextension.DisabledFlags
 import mozilla.components.concept.engine.webextension.Metadata
 import mozilla.components.concept.engine.webextension.WebExtension
+import mozilla.components.feature.addons.R
 import mozilla.components.feature.addons.update.AddonUpdaterWorker.Companion.KEY_DATA_EXTENSIONS_ID
 import mozilla.components.feature.addons.update.DefaultAddonUpdater.Companion.WORK_TAG_IMMEDIATE
 import mozilla.components.feature.addons.update.DefaultAddonUpdater.Companion.WORK_TAG_PERIODIC
@@ -132,20 +134,24 @@ class DefaultAddonUpdaterTest {
             ),
         )
 
-        val currentExt: WebExtension = mock()
-        val updatedExt: WebExtension = mock()
-        whenever(currentExt.id).thenReturn("addonId")
-        whenever(updatedExt.id).thenReturn("addonId")
-        val notificationId = NotificationHandlerService.getNotificationId(context, updatedExt.id)
+        val ext: WebExtension = mock()
+        whenever(ext.id).thenReturn("addonId")
+        val notificationId = NotificationHandlerService.getNotificationId(context, ext.id)
 
         val notification: Notification = mock()
         val newPermissions = listOf("privacy")
+        val newDataCollectionPermissions = listOf("healthInfo")
 
-        doReturn(notification).`when`(updater).createNotification(updatedExt, newPermissions, notificationId)
+        doReturn(notification).`when`(updater).createNotification(
+            ext,
+            newPermissions,
+            newDataCollectionPermissions,
+            notificationId,
+        )
 
         updater.updateStatusStorage.clear(context)
 
-        updater.onUpdatePermissionRequest(currentExt, updatedExt, newPermissions) {
+        updater.onUpdatePermissionRequest(ext, newPermissions, emptyList(), newDataCollectionPermissions) {
             allowedPreviously = it
         }
 
@@ -175,23 +181,21 @@ class DefaultAddonUpdaterTest {
             context,
             notificationsDelegate = mock(),
         )
-        val currentExt: WebExtension = mock()
-        val updatedExt: WebExtension = mock()
-        whenever(currentExt.id).thenReturn("addonId")
-        whenever(updatedExt.id).thenReturn("addonId")
+        val ext: WebExtension = mock()
+        whenever(ext.id).thenReturn("addonId")
 
         updater.updateStatusStorage.clear(context)
 
-        updater.onUpdatePermissionRequest(currentExt, updatedExt, listOf("normandyAddonStudy")) {
+        updater.onUpdatePermissionRequest(ext, listOf("normandyAddonStudy"), emptyList(), emptyList()) {
             allowedPreviously = it
         }
 
         assertTrue(allowedPreviously)
 
-        val notificationId = NotificationHandlerService.getNotificationId(context, currentExt.id)
+        val notificationId = NotificationHandlerService.getNotificationId(context, ext.id)
 
         assertFalse(isNotificationVisible(notificationId))
-        assertFalse(updater.updateStatusStorage.isPreviouslyAllowed(testContext, currentExt.id))
+        assertFalse(updater.updateStatusStorage.isPreviouslyAllowed(testContext, ext.id))
 
         updater.updateStatusStorage.clear(context)
     }
@@ -202,18 +206,121 @@ class DefaultAddonUpdaterTest {
             testContext,
             notificationsDelegate = mock(),
         )
-        val validPermissions = listOf("privacy", "management")
+        val newPermissions = listOf("privacy", "management")
+        val newDataCollectionPermissions = emptyList<String>()
 
-        var content = updater.createContentText(validPermissions).split("\n")
-        assertEquals("2 new permissions are required:", content[0].trim())
-        assertEquals("1-Read and modify privacy settings", content[1].trim())
-        assertEquals("2-Monitor extension usage and manage themes", content[2].trim())
+        var content = updater.createContentText(newPermissions, newDataCollectionPermissions).split("\n")
+        assertEquals(
+            testContext.getString(R.string.mozac_feature_addons_updater_notification_short_intro),
+            content[0],
+        )
+        assertEquals(
+            "New required permissions: Read and modify privacy settings. Monitor extension usage and manage themes.",
+            content[1],
+        )
 
-        val validAndInvalidPermissions = listOf("privacy", "invalid")
-        content = updater.createContentText(validAndInvalidPermissions).split("\n")
+        val newPermissionsWithInvalidPerm = listOf("privacy", "invalid")
+        content = updater.createContentText(newPermissionsWithInvalidPerm, newDataCollectionPermissions).split("\n")
+        assertEquals(
+            testContext.getString(R.string.mozac_feature_addons_updater_notification_short_intro),
+            content[0],
+        )
+        assertEquals("New required permissions: Read and modify privacy settings.", content[1])
+    }
 
-        assertEquals("A new permission is required:", content[0].trim())
-        assertEquals("1-Read and modify privacy settings", content[1].trim())
+    @Test
+    fun `createContentText - notification content supports data collection permissions`() {
+        val updater = DefaultAddonUpdater(
+            testContext,
+            notificationsDelegate = mock(),
+        )
+        val newPermissions = emptyList<String>()
+        val newDataCollectionPermissions = listOf("healthInfo", "technicalAndInteraction")
+
+        val content = updater.createContentText(newPermissions, newDataCollectionPermissions).split("\n")
+        assertEquals(
+            testContext.getString(R.string.mozac_feature_addons_updater_notification_short_intro),
+            content[0],
+        )
+        assertEquals(
+            "New required data collection: The developer says the extension will collect " +
+            "health information, technical and interaction data.",
+            content[1],
+        )
+    }
+
+    @Test
+    fun `createContentText - abbreviates long permission paragraphs in the notification content`() {
+        val updater = DefaultAddonUpdater(
+            testContext,
+            notificationsDelegate = mock(),
+        )
+        val newPermissions = listOf(
+            "bookmarks",
+            "browsingData",
+            "tabs",
+            "userScripts",
+        )
+        val newDataCollectionPermissions = GeckoWebExtension.DATA_COLLECTION_PERMISSIONS.filter { it != "none" }
+
+        val content = updater.createContentText(newPermissions, newDataCollectionPermissions).split("\n")
+        assertEquals(
+            testContext.getString(R.string.mozac_feature_addons_updater_notification_short_intro),
+            content[0],
+        )
+
+        assertEquals(DefaultAddonUpdater.NARROW_MAX_LENGTH, content[1].length)
+        assertTrue(content[1].startsWith("New required permissions:"))
+
+        assertEquals(DefaultAddonUpdater.NARROW_MAX_LENGTH, content[2].length)
+        assertTrue(content[2].startsWith("New required data collection:"))
+    }
+
+    @Test
+    fun `createContentText - abbreviates the new permissions paragraph in the notification content`() {
+        val updater = DefaultAddonUpdater(
+            testContext,
+            notificationsDelegate = mock(),
+        )
+        val newPermissions = listOf(
+            "bookmarks",
+            "browsingData",
+            "devtools",
+            "downloads",
+            "history",
+            "privacy",
+            "tabs",
+            "userScripts",
+        )
+        val newDataCollectionPermissions = emptyList<String>()
+
+        val content = updater.createContentText(newPermissions, newDataCollectionPermissions).split("\n")
+        assertEquals(
+            testContext.getString(R.string.mozac_feature_addons_updater_notification_short_intro),
+            content[0],
+        )
+
+        assertEquals(DefaultAddonUpdater.WIDE_MAX_LENGTH, content[1].length)
+        assertTrue(content[1].startsWith("New required permissions:"))
+    }
+
+    @Test
+    fun `createContentText - abbreviates the new data collection permissions paragraph in the notification content`() {
+        val updater = DefaultAddonUpdater(
+            testContext,
+            notificationsDelegate = mock(),
+        )
+        val newPermissions = emptyList<String>()
+        val newDataCollectionPermissions = GeckoWebExtension.DATA_COLLECTION_PERMISSIONS.filter { it != "none" }
+
+        val content = updater.createContentText(newPermissions, newDataCollectionPermissions).split("\n")
+        assertEquals(
+            testContext.getString(R.string.mozac_feature_addons_updater_notification_short_intro),
+            content[0],
+        )
+
+        assertEquals(DefaultAddonUpdater.WIDE_MAX_LENGTH, content[1].length)
+        assertTrue(content[1].startsWith("New required data collection:"))
     }
 
     @Test
@@ -230,26 +337,24 @@ class DefaultAddonUpdaterTest {
             context,
             notificationsDelegate = mock(),
         )
-        val currentExt: WebExtension = mock()
-        val updatedExt: WebExtension = mock()
-        whenever(currentExt.id).thenReturn("addonId")
-        whenever(updatedExt.id).thenReturn("addonId")
+        val ext: WebExtension = mock()
+        whenever(ext.id).thenReturn("addonId")
 
         updater.updateStatusStorage.clear(context)
 
         var allowedPreviously = false
 
-        updater.updateStatusStorage.markAsAllowed(context, currentExt.id)
-        updater.onUpdatePermissionRequest(currentExt, updatedExt, emptyList()) {
+        updater.updateStatusStorage.markAsAllowed(context, ext.id)
+        updater.onUpdatePermissionRequest(ext, emptyList(), emptyList(), emptyList()) {
             allowedPreviously = it
         }
 
         assertTrue(allowedPreviously)
 
-        val notificationId = NotificationHandlerService.getNotificationId(context, currentExt.id)
+        val notificationId = NotificationHandlerService.getNotificationId(context, ext.id)
 
         assertFalse(isNotificationVisible(notificationId))
-        assertFalse(updater.updateStatusStorage.isPreviouslyAllowed(testContext, currentExt.id))
+        assertFalse(updater.updateStatusStorage.isPreviouslyAllowed(testContext, ext.id))
         updater.updateStatusStorage.clear(context)
     }
 
@@ -308,7 +413,7 @@ class DefaultAddonUpdaterTest {
 
         val addonId = "addonId"
 
-        updater.updateAttempStorage = mock()
+        updater.updateAttemptStorage = mock()
 
         val workId = updater.getUniquePeriodicWorkName(addonId)
 
@@ -328,7 +433,7 @@ class DefaultAddonUpdaterTest {
 
         workData = workManager.getWorkInfosForUniqueWork(workId).await()
         assertEquals(WorkInfo.State.CANCELLED, workData.first().state)
-        verify(updater.updateAttempStorage).remove(addonId)
+        verify(updater.updateAttemptStorage).remove(addonId)
     }
 
     @Test
@@ -344,7 +449,7 @@ class DefaultAddonUpdaterTest {
         assertTrue(workRequest.tags.contains(workId))
         assertTrue(workRequest.tags.contains(WORK_TAG_PERIODIC))
 
-        assertEquals(updater.getWorkerConstrains(), workRequest.workSpec.constraints)
+        assertEquals(updater.getWorkerConstraints(), workRequest.workSpec.constraints)
 
         assertEquals(addonId, workRequest.workSpec.input.getString(KEY_DATA_EXTENSIONS_ID))
     }

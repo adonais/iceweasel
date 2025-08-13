@@ -13,11 +13,12 @@ namespace ct {
 
 VerifiedSCT::VerifiedSCT(SignedCertificateTimestamp&& sct, SCTOrigin origin,
                          CTLogOperatorId logOperatorId, CTLogState logState,
-                         uint64_t logTimestamp)
+                         CTLogFormat logFormat, uint64_t logTimestamp)
     : sct(std::move(sct)),
       origin(origin),
       logOperatorId(logOperatorId),
       logState(logState),
+      logFormat(logFormat),
       logTimestamp(logTimestamp) {}
 
 void CTVerifyResult::Reset() {
@@ -26,6 +27,7 @@ void CTVerifyResult::Reset() {
   sctsFromUnknownLogs = 0;
   sctsWithInvalidSignatures = 0;
   sctsWithInvalidTimestamps = 0;
+  sctsWithDistrustedTimestamps = 0;
   embeddedSCTs = 0;
   sctsFromTLSHandshake = 0;
   sctsFromOCSP = 0;

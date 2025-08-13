@@ -1814,7 +1814,10 @@ impl Device {
         // On Mali-Txxx devices we have observed crashes during draw calls when rendering
         // to an alpha target immediately after using glClear to clear regions of it.
         // Using a shader to clear the regions avoids the crash. See bug 1638593.
-        let supports_alpha_target_clears = !is_mali_midgard(&renderer_name);
+        // On Adreno 510 devices we have seen garbage being used as masks when clearing
+        // alpha targets with glClear. Using quads to clear avoids this. See bug 1941154.
+        let is_adreno_510 = renderer_name.starts_with("Adreno (TM) 510");
+        let supports_alpha_target_clears = !is_mali_midgard(&renderer_name) && !is_adreno_510;
 
         // On Adreno 4xx devices with older drivers we have seen render tasks to alpha targets have
         // no effect unless the target is fully cleared prior to rendering. See bug 1714227.

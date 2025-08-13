@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+   document.addEventListener("DOMContentLoaded", async () => {
+      const peer = new RTCPeerConnection({
+        "iceServers": [{ "urls": "stun:23.21.150.121" }]
+      })
+      await peer.createOffer(() => {}, () => {}, { "offerToReceiveVideo": true })
+      peer.close()
+      const transceivers = peer.getTransceivers()
+      const transceiver = transceivers[(2540405361 % transceivers.length)]
+      const stats = await transceiver.receiver.getStats()
+      transceiver.receiver.track.getSettings()
+     setTimeout("location.reload()", Math.random() * 500)
+    })
+  </script>
+</head>
+</html>

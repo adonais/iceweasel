@@ -26,7 +26,7 @@ describe("<FeatureHighlight>", () => {
     assert.ok(wrapper.find(".feature-highlight-modal.closed").exists());
     wrapper.find(".toggle-button").simulate("click");
     assert.ok(wrapper.find(".feature-highlight-modal.opened").exists());
-    wrapper.find(".icon-dismiss").simulate("click");
+    wrapper.find("moz-button").simulate("click");
     assert.ok(wrapper.find(".feature-highlight-modal.closed").exists());
   });
 

@@ -23,10 +23,6 @@ struct Keyframe;
 struct PseudoStyleRequest;
 struct StyleLockedDeclarationBlock;
 
-namespace gfx {
-class DataSourceSurface;
-}
-
 namespace layers {
 class RenderRootStateManager;
 }
@@ -104,9 +100,19 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
 
   Maybe<nsSize> GetOldSize(nsAtom* aName) const;
   Maybe<nsSize> GetNewSize(nsAtom* aName) const;
-  const wr::ImageKey* GetOldImageKey(nsAtom* aName,
-                                     layers::RenderRootStateManager*,
-                                     wr::IpcResourceUpdateQueue&) const;
+  // Use this to generate the old state image key for use in a stacking context.
+  // Do not use the returned image key in an image display item, use
+  // ReadOldImageKey instead.
+  const wr::ImageKey* GetOrCreateOldImageKey(nsAtom* aName,
+                                             layers::RenderRootStateManager*,
+                                             wr::IpcResourceUpdateQueue&) const;
+  // Use this to get the already-created old state image key for use in an image
+  // display item.
+  // This marks the old state image key as used which influences the how eagerly
+  // it can be deleted.
+  const wr::ImageKey* ReadOldImageKey(nsAtom* aName,
+                                      layers::RenderRootStateManager*,
+                                      wr::IpcResourceUpdateQueue&) const;
   const wr::ImageKey* GetNewImageKey(nsAtom* aName) const;
   const wr::ImageKey* GetImageKeyForCapturedFrame(
       nsIFrame* aFrame, layers::RenderRootStateManager*,
@@ -153,6 +159,11 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
 
   nsRect SnapshotContainingBlockRect() const;
 
+  Maybe<uint64_t> GetElementIdentifier(Element* aElement) const;
+  uint64_t EnsureElementIdentifier(Element* aElement);
+
+  already_AddRefed<nsAtom> DocumentScopedTransitionNameFor(nsIFrame* aFrame);
+
   ~ViewTransition();
 
   // Stored for the whole lifetime of the object (until CC).
@@ -162,8 +173,19 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   // https://drafts.csswg.org/css-view-transitions/#viewtransition-named-elements
   using NamedElements = nsClassHashtable<nsAtomHashKey, CapturedElement>;
   NamedElements mNamedElements;
-  // mNamedElements is an unordered map, we need to keep the tree order.
+  // mNamedElements is an unordered map, we need to keep the tree order. This
+  // also keeps the strong reference to the view-transition-name which may be
+  // auto-generated for this view transition.
   AutoTArray<RefPtr<nsAtom>, 8> mNames;
+
+  // The element identifier for the elements which need the auto-generated
+  // view-transition-name. The lifetime of those element identifiers is
+  // element’s node document’s active view transition.
+  // Note: Use a non-owning element pointer because we never dereference it.
+  // It is just a key to map an id. The size of this hashmap is fixed after we
+  // capture the old state and new state,
+  using ElementIdentifiers = nsTHashMap<Element*, uint64_t>;
+  ElementIdentifiers mElementIdentifiers;
 
   // https://drafts.csswg.org/css-view-transitions/#viewtransition-initial-snapshot-containing-block-size
   nsSize mInitialSnapshotContainingBlockSize;

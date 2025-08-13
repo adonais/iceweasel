@@ -46,6 +46,49 @@ export class LoginForm extends MozLitElement {
     this._showDeleteCard = false;
   }
 
+  async firstUpdated() {
+    const mozButtonGroup = this.shadowRoot.querySelector("moz-button-group");
+    // Wait for the button group to complete its update cycle since it might reorder its slots.
+    await mozButtonGroup.updateComplete;
+    this.#handleKeyPressOnLastButton(mozButtonGroup);
+  }
+
+  #handleKeyPressOnLastButton(mozButtonGroup) {
+    const handleKeyPress = e => {
+      if (e.key !== "Tab") {
+        return;
+      }
+
+      const notifMsgBar = this.parentElement.querySelector(
+        "notification-message-bar"
+      );
+
+      if (!notifMsgBar) {
+        return;
+      }
+
+      e.preventDefault();
+
+      const mozMsgBar = notifMsgBar.shadowRoot.querySelector("moz-message-bar");
+      const mozButtonGroup = mozMsgBar.querySelector("moz-button-group");
+
+      if (mozButtonGroup) {
+        const firstSlot = mozButtonGroup.shadowRoot.querySelector("slot");
+        const firstButton = firstSlot.assignedElements()[0];
+        firstButton.focus();
+        return;
+      }
+
+      const primaryActionButton = mozMsgBar.querySelector("#primary-action");
+      primaryActionButton.focus();
+    };
+
+    const slots = mozButtonGroup.shadowRoot.querySelectorAll("slot");
+    const lastSlot = slots[slots.length - 1];
+    const lastButton = lastSlot.assignedElements()[0];
+    lastButton.addEventListener("keydown", e => handleKeyPress(e));
+  }
+
   #removeWarning(warning) {
     if (warning.classList.contains("invalid-input")) {
       warning.classList.remove("invalid-input");
@@ -85,12 +128,12 @@ export class LoginForm extends MozLitElement {
   onCancel(e) {
     e.preventDefault();
 
-    const loginForm = {
+    const loginFromForm = {
       origin: this.originValue || this.originField.input.value,
       username: this.usernameField.input.value.trim(),
       password: this.passwordField.value,
     };
-    this.onClose(loginForm);
+    this.onClose(loginFromForm);
   }
 
   onSubmit(e) {
@@ -100,12 +143,12 @@ export class LoginForm extends MozLitElement {
       return;
     }
 
-    const loginForm = {
+    const loginFromForm = {
       origin: this.originValue || this.originField.input.value,
       username: this.usernameField.input.value.trim(),
       password: this.passwordField.value,
     };
-    this.onSaveClick(loginForm);
+    this.onSaveClick(loginFromForm);
   }
 
   #isFormValid() {
@@ -138,6 +181,14 @@ export class LoginForm extends MozLitElement {
   }
 
   #renderDeleteCard() {
+    const getIconSrc = () => {
+      return document.dir === "rtl"
+        ? // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+          "chrome://browser/skin/forward.svg"
+        : // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+          "chrome://browser/skin/back.svg";
+    };
+
     return html` <link
         rel="stylesheet"
         href="chrome://global/content/megalist/components/login-form/login-form.css"
@@ -146,7 +197,7 @@ export class LoginForm extends MozLitElement {
         <div class="remove-card-back">
           <moz-button
             type="icon ghost"
-            iconSrc="chrome://browser/skin/back.svg"
+            iconSrc=${getIconSrc()}
             data-l10n-id="contextual-manager-passwords-remove-login-card-back-message"
             @click=${this.#toggleDeleteCard}
           >

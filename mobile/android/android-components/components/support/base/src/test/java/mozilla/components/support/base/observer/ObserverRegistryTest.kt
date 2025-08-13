@@ -191,6 +191,30 @@ class ObserverRegistryTest {
     }
 
     @Test
+    fun `observer registered as autopause will get removed if lifecycle gets destroyed`() {
+        val owner = MockedLifecycleOwner(Lifecycle.State.RESUMED)
+
+        val registry = ObserverRegistry<TestObserver>()
+        val observer = TestObserver()
+
+        registry.register(observer = observer, owner = owner, autoPause = true)
+
+        // Observer gets notified
+        assertFalse(observer.notified)
+        registry.notifyObservers { somethingChanged() }
+        assertTrue(observer.notified)
+
+        // Pretend lifecycle gets destroyed
+        owner.lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
+
+        observer.notified = false
+        registry.notifyObservers { somethingChanged() }
+        assertFalse(observer.notified)
+
+        assertTrue(registry.checkInternalCollectionsAreEmpty())
+    }
+
+    @Test
     fun `non-destroy lifecycle changes do not affect observer`() {
         val owner = MockedLifecycleOwner(Lifecycle.State.STARTED)
 

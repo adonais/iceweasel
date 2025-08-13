@@ -8,13 +8,13 @@
 #include <cstdint>
 #include <iosfwd>
 
-#include "nsPoint.h"
+#include "Units.h"
 #include "mozilla/DefineEnum.h"
 #include "mozilla/ScrollGeneration.h"
 #include "mozilla/ScrollOrigin.h"
 #include "mozilla/ScrollSnapTargetId.h"
 #include "mozilla/ScrollTypes.h"
-#include "Units.h"
+#include "nsPoint.h"
 
 namespace IPC {
 template <typename T>

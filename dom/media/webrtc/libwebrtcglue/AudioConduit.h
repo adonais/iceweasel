@@ -118,6 +118,9 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   RefPtr<GenericPromise> Shutdown() override;
 
+  // Call thread only.
+  bool IsShutdown() const override;
+
   WebrtcAudioConduit(RefPtr<WebrtcCallWrapper> aCall,
                      nsCOMPtr<nsISerialEventTarget> aStsThread);
 
@@ -125,6 +128,9 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   // Call thread.
   void InitControl(AudioConduitControlInterface* aControl) override;
+
+  // Necessary Init steps on main thread.
+  MediaConduitErrorCode Init();
 
   // Handle a DTMF event from mControl.mOnDtmfEventListener.
   void OnDtmfEvent(const DtmfEvent& aEvent);
@@ -167,7 +173,7 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   }
   MediaEventSource<void>& RtpPacketEvent() override { return mRtpPacketEvent; }
 
-  std::vector<webrtc::RtpSource> GetUpstreamRtpSources() const override;
+  const std::vector<webrtc::RtpSource>& GetUpstreamRtpSources() const override;
 
  private:
   WebrtcAudioConduit(const WebrtcAudioConduit& other) = delete;
@@ -188,10 +194,17 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   static webrtc::SdpAudioFormat CodecConfigToLibwebrtcFormat(
       const AudioCodecConfig& aConfig);
 
+  // Call thread only, called before DeleteSendStream if streams need recreation
+  void MemoSendStreamStats();
+
   void CreateSendStream();
   void DeleteSendStream();
   void CreateRecvStream();
   void DeleteRecvStream();
+
+  // Call thread only.
+  // Should only be called from Shutdown()
+  void SetIsShutdown();
 
   // Are SSRC changes without signaling allowed or not.
   // Call thread only.
@@ -288,9 +301,19 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   // To track changes needed to mRtpSendBaseSeqs.
   std::map<uint32_t, uint16_t> mRtpSendBaseSeqs_n;
 
-  // Written only on the main thread.  Guarded by mLock, except for
-  // reads on the main thread.
-  std::vector<webrtc::RtpSource> mRtpSources;
+  // Call thread only.
+  Canonical<std::vector<webrtc::RtpSource>> mCanonicalRtpSources;
+
+  // Main thread only mirror of mCanonicalRtpSources.
+  Mirror<std::vector<webrtc::RtpSource>> mRtpSources;
+
+  // Stores stats between a call to DeleteSendStream and CreateSendStream so
+  // that we can continue to report outbound-rtp stats while waiting for codec
+  // initialization.
+  // It is mutable because we want to be able to invalidate the cache when a
+  // GetStats call is made.
+  // Call thread only.
+  mutable Maybe<webrtc::AudioSendStream::Stats> mTransitionalSendStreamStats;
 
   // Thread safe
   Atomic<bool> mTransportActive = Atomic<bool>(false);
@@ -305,6 +328,10 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   MediaEventListener mReceiverRtpEventListener;   // Rtp-receiving pipeline
   MediaEventListener mReceiverRtcpEventListener;  // Rctp-receiving pipeline
   MediaEventListener mSenderRtcpEventListener;    // Rctp-sending pipeline
+
+  // Whether the conduit is shutdown or not.
+  // Call thread only.
+  bool mIsShutdown = false;
 };
 
 }  // namespace mozilla

@@ -13,6 +13,7 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/dom/DataTransfer.h"
+#include "mozilla/dom/Event.h"
 #include "mozilla/ipc/IPCForwards.h"
 #include "nsCOMPtr.h"
 
@@ -394,6 +395,10 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
   // eMouseMove or ePointerMove.
   bool mSynthesizeMoveAfterDispatch = false;
 
+  // The event that triggered this event.
+  // This will be available for popupshowing event only.
+  RefPtr<dom::Event> mTriggerEvent;
+
   void AssignMouseEventData(const WidgetMouseEvent& aEvent, bool aCopyTargets) {
     AssignMouseEventBaseData(aEvent, aCopyTargets);
     AssignPointerHelperData(aEvent, /* aCopyCoalescedEvents */ true);
@@ -405,6 +410,7 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
     mIgnoreRootScrollFrame = aEvent.mIgnoreRootScrollFrame;
     mIgnoreCapturingContent = aEvent.mIgnoreCapturingContent;
     mClickEventPrevented = aEvent.mClickEventPrevented;
+    mTriggerEvent = aEvent.mTriggerEvent;
   }
 
   /**
@@ -860,6 +866,12 @@ class WidgetPointerEvent : public WidgetMouseEvent {
   explicit WidgetPointerEvent(const WidgetMouseEvent& aEvent)
       : WidgetMouseEvent(aEvent) {
     mClass = ePointerEventClass;
+  }
+
+  explicit WidgetPointerEvent(EventMessage aMsg,
+                              const WidgetPointerEvent& aOther)
+      : WidgetPointerEvent(aOther.IsTrusted(), aMsg, aOther.mWidget, &aOther) {
+    AssignPointerEventData(aOther, false);
   }
 
   virtual WidgetEvent* Duplicate() const override {

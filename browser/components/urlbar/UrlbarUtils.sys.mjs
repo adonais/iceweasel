@@ -317,9 +317,10 @@ export var UrlbarUtils = {
       return { url, postData, mayInheritPrincipal };
     }
 
+    /** @type {nsISearchEngine} */
     let engine = await Services.search.getEngineByAlias(keyword);
     if (engine) {
-      let submission = engine.getSubmission(param, null, "keyword");
+      let submission = engine.getSubmission(param, null);
       return {
         url: submission.uri.spec,
         postData: submission.postData,
@@ -2186,6 +2187,21 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
             l10n: L10N_SCHEMA,
             url: {
               type: "string",
+            },
+            command: {
+              type: "string",
+            },
+            menu: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  l10n: L10N_SCHEMA,
+                  name: {
+                    type: "string",
+                  },
+                },
+              },
             },
           },
         },

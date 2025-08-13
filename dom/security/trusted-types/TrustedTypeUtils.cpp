@@ -34,6 +34,7 @@
 #include "mozilla/dom/UnionTypes.h"
 #include "mozilla/dom/WindowOrWorkerGlobalScopeBinding.h"
 #include "mozilla/dom/nsCSPUtils.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
 
 #include "nsContentUtils.h"
@@ -72,11 +73,13 @@ static constexpr nsLiteralString kAsyncFunctionStarAnonymousPrefix =
 
 // Implement reporting of sink type mismatch violations.
 // https://w3c.github.io/trusted-types/dist/spec/#abstract-opdef-should-sink-type-mismatch-violation-be-blocked-by-content-security-policy
-static void ReportSinkTypeMismatchViolations(
-    nsIContentSecurityPolicy* aCSP, nsICSPEventListener* aCSPEventListener,
-    const nsCString& aFileName, uint32_t aLine, uint32_t aColumn,
-    const nsAString& aSink, const nsAString& aSinkGroup,
-    const nsAString& aSource) {
+void ReportSinkTypeMismatchViolations(nsIContentSecurityPolicy* aCSP,
+                                      nsICSPEventListener* aCSPEventListener,
+                                      const nsCString& aFileName,
+                                      uint32_t aLine, uint32_t aColumn,
+                                      const nsAString& aSink,
+                                      const nsAString& aSinkGroup,
+                                      const nsAString& aSource) {
   MOZ_ASSERT(aSinkGroup == kTrustedTypesOnlySinkGroup);
   MOZ_ASSERT(aCSP);
   MOZ_ASSERT(aCSP->GetRequireTrustedTypesForDirectiveState() !=
@@ -491,7 +494,7 @@ MOZ_CAN_RUN_SCRIPT inline const nsAString* GetTrustedTypesCompliantString(
   RequireTrustedTypesForDirectiveState requireTrustedTypesForDirectiveState =
       RequireTrustedTypesForDirectiveState::NONE;
   if (piDOMWindowInner) {
-    csp = piDOMWindowInner->GetCsp();
+    csp = PolicyContainer::GetCSP(piDOMWindowInner->GetPolicyContainer());
     if (!csp) {
       return GetAsString(aInput);
     }
@@ -922,6 +925,31 @@ bool AreArgumentsTrustedForEnsureCSPDoesNotBlockStringCompilation(
     return false;
   }
   return compliantString->Equals(codeString);
+}
+
+MOZ_CAN_RUN_SCRIPT const nsAString*
+GetConvertedScriptSourceForPreNavigationCheck(
+    nsIGlobalObject& aGlobalObject, const nsAString& aEncodedScriptSource,
+    const nsAString& aSink, Maybe<nsAutoString>& aResultHolder,
+    ErrorResult& aError) {
+  RefPtr<TrustedScript> convertedScriptSource;
+  nsCOMPtr<nsIGlobalObject> pinnedGlobalObject = &aGlobalObject;
+  ProcessValueWithADefaultPolicy<TrustedScript>(
+      *pinnedGlobalObject, aEncodedScriptSource, aSink,
+      getter_AddRefs(convertedScriptSource), aError);
+
+  // If that algorithm threw an error or convertedScriptSource is not a
+  // TrustedScript object, return "Blocked" and abort further steps.
+  if (aError.Failed()) {
+    return nullptr;
+  }
+  if (!convertedScriptSource) {
+    aError.ThrowTypeError("Pre-Navigation check Blocked"_ns);
+    return nullptr;
+  }
+
+  aResultHolder = Some(convertedScriptSource->mData);
+  return aResultHolder.ptr();
 }
 
 }  // namespace mozilla::dom::TrustedTypeUtils

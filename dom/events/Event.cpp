@@ -170,6 +170,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Event)
 
     if (WidgetMouseEvent* mouseEvent = tmp->mEvent->AsMouseEvent()) {
       mouseEvent->mClickTarget = nullptr;
+      mouseEvent->mTriggerEvent = nullptr;
     }
   }
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mExplicitOriginalTarget);
@@ -212,6 +213,8 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Event)
     if (WidgetMouseEvent* mouseEvent = tmp->mEvent->AsMouseEvent()) {
       NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mEvent->mClickTarget");
       cb.NoteXPCOMChild(mouseEvent->mClickTarget);
+      NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mEvent->mTriggerEvent");
+      cb.NoteXPCOMChild(mouseEvent->mTriggerEvent);
     }
   }
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mExplicitOriginalTarget)

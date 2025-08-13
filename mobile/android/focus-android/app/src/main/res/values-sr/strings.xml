@@ -55,6 +55,7 @@
   <string name="menu_settings">Поставке</string>
   <string name="menu_about">О Focus-у за Android</string>
   <string name="menu_help">Помоћ</string>
+  <string name="menu_terms_of_use">Услови коришћења</string>
   <!--
     Menu item: This is the label for a menu entry that shows how many trackers have been blocked
     for the currently loaded website. The number of blocked trackers is shown below this label.
@@ -319,12 +320,18 @@
   <string name="preference_mozilla_telemetry_summary">Сазнајте више</string>
   <!-- %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
   <string name="preference_mozilla_telemetry_summary2">Mozilla тежи ка прикупљању само оних података који су потребни да бисмо пружали и побољшали %1$s за све.</string>
+  <!-- Preference switch for daily usage ping data collection -->
+  <string name="preference_daily_usage_ping_title">Пинг дневног коришћења</string>
+  <string name="preference_daily_usage_ping_description">Овако Mozilla боље процењује број активних корисника.</string>
+  <string name="preference_daily_usage_ping_learn_more">Сазнајте више</string>
   <!-- In-app link (in settings) to Focus privacy notice. -->
   <string name="preference_privacy_notice">Обавештење о приватности</string>
   <!-- In-app link (in settings) to Focus licensing information. -->
   <string name="preference_licensing_info">Подаци о лиценцирању</string>
   <!-- Link to Focus licensing information from other libraries that we use. -->
   <string name="preference_libraries_we_use">Библиотеке које користимо</string>
+  <!-- Link to Focus Crash reports list. -->
+  <string name="preference_crashes">Падови</string>
   <!-- Open Source Licenses page title. %s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
   <string name="open_source_licenses_title">%s | библиотеке отвореног кода</string>
   <!-- Item in Preferences that shows the about page. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
@@ -450,6 +457,38 @@
   <string name="onboarding_first_screen_title">Добродошли у %1$s</string>
   <!-- New Onboarding flow first screen subtitle the one that appears under title -->
   <string name="onboarding_first_screen_subtitle">Брзо. Приватно. Без ометања.</string>
+  <!--
+    New Onboarding flow first screen 'terms of use' text
+
+    %1$s will be replaced by a link using onboarding_first_screen_terms_of_use_link as text
+  -->
+  <string name="onboarding_first_screen_terms_of_use_text" moz:removedIn="141" tools:ignore="UnusedResources">Наставком прихватате %1$s</string>
+  <!-- %1$s will be replaced by a link using onboarding_first_screen_terms_of_use_link as text -->
+  <string name="onboarding_first_screen_terms_of_use_text_2" tools:ignore="UnusedResources">Наставком прихватате %1$s.</string>
+  <!--
+    New Onboarding flow first screen 'terms of use link'
+
+    Text for the link used in onboarding_first_screen_terms_of_use_text
+  -->
+  <string name="onboarding_first_screen_terms_of_use_link" moz:removedIn="141" tools:ignore="BrandUsage">Firefox услове коришћења.</string>
+  <!-- Text for the link used in onboarding_first_screen_terms_of_use_text -->
+  <string name="onboarding_first_screen_terms_of_use_link_2" tools:ignore="BrandUsage">Firefox услови коришћења</string>
+  <!--
+    New Onboarding flow first screen 'privacy notice' text
+
+    %1$s will be replaced by a link using onboarding_first_screen_privacy_notice_link as text
+  -->
+  <string name="onboarding_first_screen_privacy_notice_text" moz:removedIn="141" tools:ignore="BrandUsage">Firefox брине о вашој приватности. Сазнајте више у %1$s</string>
+  <!-- %1$s will be replaced by a link using onboarding_first_screen_privacy_notice_link as text -->
+  <string name="onboarding_first_screen_privacy_notice_text_2" tools:ignore="BrandUsage">Firefox брине о вашој приватности. Сазнајте више у %1$s.</string>
+  <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
+  <string name="onboarding_first_screen_privacy_notice_link" moz:removedIn="141" tools:ignore="UnusedResources">Обавештењу о приватности.</string>
+  <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
+  <string name="onboarding_first_screen_privacy_notice_link_2">Обавештењу о приватности</string>
+  <!-- New Onboarding flow first screen button label -->
+  <string name="onboarding_first_screen_button_agree_and_continue_2">Настави</string>
+  <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
+  <string name="a11y_link_available">Веза је доступна</string>
   <!--
     Onboarding second screen: Title
 
@@ -667,18 +706,6 @@
   <string name="preference_block_autoplay_audio_only_summary">Препоручено</string>
   <!-- Preference for block autoplay audio and video -->
   <string name="preference_block_autoplay_audio_video">Блокирај звук и видео</string>
-  <!-- Preference for studies -->
-  <string name="preference_studies" moz:removedIn="140">Студије</string>
-  <!-- Preference for studies summary -->
-  <string name="preference_studies_summary" tools:ignore="BrandUsage" moz:removedIn="140">Firefox може с времена на време инсталирати и спровести студије.</string>
-  <!-- Learn more link for studies, links to an article for more information about studies. -->
-  <string name="studies_learn_more" moz:removedIn="140">Сазнајте више</string>
-  <!-- Title of the remove studies button -->
-  <string name="studies_remove" moz:removedIn="140">Уклони</string>
-  <!-- Title of the active section on the studies list -->
-  <string name="studies_active" moz:removedIn="140">Активно</string>
-  <!-- Title of the completed section on the studies list -->
-  <string name="studies_completed" moz:removedIn="140">Завршено</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">Удаљено отклањање грешака уз USB/Wi-Fi</string>
   <!-- Text Button for show biometric prompt -->

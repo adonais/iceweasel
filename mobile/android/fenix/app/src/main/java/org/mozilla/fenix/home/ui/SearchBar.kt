@@ -5,14 +5,31 @@
 package org.mozilla.fenix.home.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import mozilla.components.compose.browser.toolbar.HomepageDisplayToolbar
+import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+
+private val searchBarShape = RoundedCornerShape(28.dp)
+private val IconBoxSize = 48.dp
 
 /**
  * Search bar.
@@ -25,23 +42,53 @@ internal fun SearchBar(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    HomepageDisplayToolbar(
-        modifier = modifier,
-        url = stringResource(R.string.search_hint),
-        onUrlClicked = onClick,
-    )
+    Row(
+        modifier = modifier
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                shape = searchBarShape,
+            )
+            .clip(shape = searchBarShape)
+            .background(color = MaterialTheme.colorScheme.surfaceContainerLowest)
+            .clickable { onClick() }
+            .fillMaxWidth()
+            .padding(all = FirefoxTheme.layout.space.static50),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier.size(size = IconBoxSize),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.mozac_ic_search_24),
+                tint = MaterialTheme.colorScheme.onSurface,
+                contentDescription = null,
+            )
+        }
+
+        Text(
+            text = stringResource(R.string.search_hint),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .padding(horizontal = FirefoxTheme.layout.space.static50)
+                .weight(1f),
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 1,
+            style = FirefoxTheme.typography.body1,
+        )
+    }
 }
 
 @Composable
 @PreviewLightDark
 private fun SearchBarPreview() {
     FirefoxTheme {
-        Column(
-            modifier = Modifier.background(color = FirefoxTheme.colors.layer1),
-        ) {
-            SearchBar(
-                onClick = {},
-            )
-        }
+        SearchBar(
+            modifier = Modifier
+                .background(color = MaterialTheme.colorScheme.surface)
+                .padding(all = FirefoxTheme.layout.space.static200),
+            onClick = {},
+        )
     }
 }

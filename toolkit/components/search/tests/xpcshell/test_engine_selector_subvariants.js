@@ -11,6 +11,7 @@ const STATIC_ENGINE_INFO = {
     search: {
       base: "https://www.example.com/search",
       searchTermParamName: "q",
+      displayName: null,
     },
   },
 };

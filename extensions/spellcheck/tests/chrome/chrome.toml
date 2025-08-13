@@ -1,7 +1,6 @@
 [DEFAULT]
 
 ["test_add_remove_dictionaries.xhtml"]
-skip-if = ["verify"]
 support-files = [
   "base/base_utf.dic",
   "base/base_utf.aff",

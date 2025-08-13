@@ -7,7 +7,6 @@
 #include "nsIArray.idl"
 #include "nsISupports.idl"
 #include "nsIDragSession.idl"
-#include "nsIContentPolicy.idl"
 
 webidl DragEvent;
 webidl Node;
@@ -75,7 +74,7 @@ interface nsIDragService : nsISupports
   [noscript, can_run_script]
   void invokeDragSessionWithImage(in Node aDOMNode,
                                   in nsIPrincipal aPrincipal,
-                                  in nsIContentSecurityPolicy aCsp,
+                                  in nsIPolicyContainer aPolicyContainer,
                                   in nsICookieJarSettings aCookieJarSettings,
                                   in nsIArray aTransferableArray,
                                   in unsigned long aActionType,
@@ -91,7 +90,7 @@ interface nsIDragService : nsISupports
   [noscript, can_run_script]
   void invokeDragSessionWithRemoteImage(in Node aDOMNode,
                                         in nsIPrincipal aPrincipal,
-                                        in nsIContentSecurityPolicy aCsp,
+                                        in nsIPolicyContainer aPolicyContainer,
                                         in nsICookieJarSettings aCookieJarSettings,
                                         in nsIArray aTransferableArray,
                                         in unsigned long aActionType,
@@ -109,7 +108,7 @@ interface nsIDragService : nsISupports
   [noscript, can_run_script]
   void invokeDragSessionWithSelection(in Selection aSelection,
                                       in nsIPrincipal aPrincipal,
-                                      in nsIContentSecurityPolicy aCsp,
+                                      in nsIPolicyContainer aPolicyContainer,
                                       in nsICookieJarSettings aCookieJarSettings,
                                       in nsIArray aTransferableArray,
                                       in unsigned long aActionType,

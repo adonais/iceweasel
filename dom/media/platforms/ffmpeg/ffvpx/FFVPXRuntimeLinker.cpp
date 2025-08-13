@@ -68,11 +68,19 @@ static PRLibrary* MozAVLink(nsIFile* aFile) {
 }
 
 /* static */
+void FFVPXRuntimeLinker::PrefCallbackLogLevel(const char* aPref, void* aData) {
+  sFFVPXLib.UpdateLogLevel();
+}
+
+/* static */
 bool FFVPXRuntimeLinker::Init() {
   // Enter critical section to set up ffvpx.
   StaticMutexAutoLock lock(sMutex);
 
   if (sLinkStatus) {
+    if (sLinkStatus == LinkStatus_SUCCEEDED) {
+      FFmpegDecoderModule<FFVPX_VERSION>::Init(&sFFVPXLib);
+    }
     return sLinkStatus == LinkStatus_SUCCEEDED;
   }
 

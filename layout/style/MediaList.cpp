@@ -9,12 +9,12 @@
 #include "mozilla/dom/MediaList.h"
 
 #include "mozAutoDocUpdate.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/DocumentInlines.h"
-#include "mozilla/dom/MediaListBinding.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/StyleSheetInlines.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/MediaListBinding.h"
 
 namespace mozilla::dom {
 

@@ -22,11 +22,10 @@ struct FilterDescription;
 }  // namespace gfx
 }  // namespace mozilla
 
-extern const float gsRGBToLinearRGBMap[256];
-
 namespace mozilla {
 namespace gfx {
 namespace FilterWrappers {
+extern sRGBColor SRGBToLinearRGB(const sRGBColor& color);
 extern already_AddRefed<FilterNode> Clear(DrawTarget* aDT);
 extern already_AddRefed<FilterNode> ForSurface(
     DrawTarget* aDT, SourceSurface* aSurface, const IntPoint& aSurfacePosition);
@@ -333,7 +332,7 @@ const uint32_t kSpotLightFocusIndex = 6;
 const uint32_t kSpotLightLimitingConeAngleIndex = 7;
 const uint32_t kSpotLightNumAttributes = 8;
 
-struct DiffuseLightingAttributes {
+struct LightingAttributes {
   LightType mLightType;
   ImplicitlyCopyableFloatArray mLightValues;
   float mSurfaceScale;
@@ -342,7 +341,7 @@ struct DiffuseLightingAttributes {
   float mLightingConstant;
   float mSpecularExponent;
 
-  bool operator==(const DiffuseLightingAttributes& aOther) const {
+  bool operator==(const LightingAttributes& aOther) const {
     return mLightType == aOther.mLightType &&
            mLightValues == aOther.mLightValues &&
            mSurfaceScale == aOther.mSurfaceScale &&
@@ -351,7 +350,9 @@ struct DiffuseLightingAttributes {
   }
 };
 
-struct SpecularLightingAttributes : public DiffuseLightingAttributes {};
+struct DiffuseLightingAttributes : public LightingAttributes {};
+
+struct SpecularLightingAttributes : public LightingAttributes {};
 
 enum class ColorSpace { SRGB, LinearRGB, Max };
 
@@ -401,15 +402,15 @@ class FilterSupport {
    * space coordinates. aRenderRect specifies the part of the filter output
    * that will be drawn at (0, 0) into the draw target aDT, subject to the
    * current transform on aDT but with no additional scaling.
-   * The source surfaces must match their corresponding rect in size.
+   * The source filter nodes must match their corresponding rect in size.
    * aAdditionalImages carries the images that are referenced by the
    * eImageInputIndex attribute on any image primitives in the filter.
    */
   static void RenderFilterDescription(
       DrawTarget* aDT, const FilterDescription& aFilter,
-      const Rect& aRenderRect, SourceSurface* aSourceGraphic,
-      const IntRect& aSourceGraphicRect, SourceSurface* aFillPaint,
-      const IntRect& aFillPaintRect, SourceSurface* aStrokePaint,
+      const Rect& aRenderRect, RefPtr<FilterNode> aSourceGraphic,
+      const IntRect& aSourceGraphicRect, RefPtr<FilterNode> aFillPaint,
+      const IntRect& aFillPaintRect, RefPtr<FilterNode> aStrokePaint,
       const IntRect& aStrokePaintRect,
       nsTArray<RefPtr<SourceSurface>>& aAdditionalImages,
       const Point& aDestPoint, const DrawOptions& aOptions = DrawOptions());

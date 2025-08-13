@@ -5,8 +5,9 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "StackArena.h"
-#include "nsDebug.h"
+
 #include "mozilla/gfx/NumericTools.h"
+#include "nsDebug.h"
 
 namespace mozilla {
 

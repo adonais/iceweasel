@@ -694,6 +694,11 @@ impl ResourceCache {
             flags,
         );
 
+        // TODO: This is a workaround for bug 1975123 which affects (some flavors of)
+        // Windows with ANGLE. It would be much better to let small snapshots be
+        // stored in texture atlases.
+        let force_standalone_texture = true;
+
         // Allocate space in the texture cache, but don't supply
         // and CPU-side data to be uploaded.
         let user_data = [0.0; 4];
@@ -709,6 +714,7 @@ impl ResourceCache {
             render_task.uv_rect_kind(),
             Eviction::Manual,
             TargetShader::Default,
+            force_standalone_texture,
         );
 
         // Get the allocation details in the texture cache, and store
@@ -1504,6 +1510,7 @@ impl ResourceCache {
                             UvRectKind::Rect,
                             Eviction::Auto,
                             TargetShader::Text,
+                            false,
                         );
                         GlyphCacheEntry::Cached(CachedGlyphInfo {
                             texture_cache_handle,
@@ -1547,6 +1554,7 @@ impl ResourceCache {
                 UvRectKind::Rect,
                 Eviction::Manual,
                 TargetShader::Default,
+                false,
             );
         }
 
@@ -1664,6 +1672,7 @@ impl ResourceCache {
                     UvRectKind::Rect,
                     eviction,
                     TargetShader::Default,
+                    false,
                 );
             }
         }
@@ -2268,7 +2277,8 @@ impl ResourceCache {
                     other_paths.insert(key, short_path);
                 }
                 CachedImageData::Snapshot => {
-                    unimplemented!();
+                    let short_path = format!("snapshots/{}", external_images.len() + 1);
+                    other_paths.insert(key, short_path.clone());
                 }
                 CachedImageData::External(ref ext) => {
                     let short_path = format!("externals/{}", external_images.len() + 1);
@@ -2473,25 +2483,34 @@ impl ResourceCache {
         info!("\timage templates...");
         let mut external_images = Vec::new();
         for (key, template) in resources.image_templates {
-            let data = match config.deserialize_for_resource::<PlainExternalImage, _>(&template.data) {
-                Some(plain) => {
-                    let ext_data = plain.external;
-                    external_images.push(plain);
-                    CachedImageData::External(ext_data)
-                }
-                None => {
-                    let arc = match raw_map.entry(template.data) {
-                        Entry::Occupied(e) => {
-                            e.get().clone()
-                        }
-                        Entry::Vacant(e) => {
-                            let buffer = fs::read(root.join(e.key()))
-                                .expect(&format!("Unable to open {}", e.key()));
-                            e.insert(Arc::new(buffer))
-                                .clone()
-                        }
-                    };
-                    CachedImageData::Raw(arc)
+            let data = if template.data.starts_with("snapshots/") {
+                // TODO(nical): If a snapshot was captured in a previous frame,
+                // we have to serialize/deserialize the image itself.
+                CachedImageData::Snapshot
+            } else {
+                match config.deserialize_for_resource::<PlainExternalImage, _>(&template.data) {
+                    Some(plain) => {
+                        let ext_data = plain.external;
+                        external_images.push(plain);
+                        CachedImageData::External(ext_data)
+                    }
+                    None => {
+                        let arc = match raw_map.entry(template.data) {
+                            Entry::Occupied(e) => e.get().clone(),
+                            Entry::Vacant(e) => {
+                                match fs::read(root.join(e.key())) {
+                                    Ok(buffer) => {
+                                        e.insert(Arc::new(buffer)).clone()
+                                    }
+                                    Err(err) => {
+                                        log::warn!("Unable to open {}: {err:?}", e.key());
+                                        continue;
+                                    }
+                                }
+                            }
+                        };
+                        CachedImageData::Raw(arc)
+                    }
                 }
             };
 

@@ -34,9 +34,16 @@
 using mozilla::Atomic;
 using mozilla::LogLevel;
 using mozilla::MakeRefPtr;
+using mozilla::MemoryOrdering;
 using mozilla::MutexAutoLock;
 using mozilla::TimeDuration;
 using mozilla::TimeStamp;
+
+// The last used sequence number for an added timer.
+// This is used:
+// - to determine the order if the timeout values are equal.
+// - to distinguish generations of the same timer
+static Atomic<uint64_t, MemoryOrdering::Relaxed> sLastTimerSeq{0};
 
 // Holds the timer thread and manages all interactions with it
 // under a locked mutex. This wrapper is not destroyed until after
@@ -376,7 +383,7 @@ nsTimerImpl::nsTimerImpl(nsITimer* aTimer, nsIEventTarget* aTarget)
     : mEventTarget(aTarget),
       mIsInTimerThread(false),
       mType(0),
-      mGeneration(0),
+      mTimerSeq(0),
       mITimer(aTimer),
       mMutex("nsTimerImpl::mMutex"),
       mCallback(UnknownCallback{}),
@@ -417,8 +424,7 @@ nsresult nsTimerImpl::InitCommon(const TimeDuration& aDelay, uint32_t aType,
   // If we have an existing callback, using `swap` ensures it's destroyed after
   // the mutex is unlocked in our caller.
   std::swap(mCallback, newCallback);
-  ++mGeneration;
-
+  mTimerSeq = ++sLastTimerSeq;
   mType = (uint8_t)aType;
   mDelay = aDelay;
   mTimeout = TimeStamp::Now() + mDelay;
@@ -508,7 +514,7 @@ void nsTimerImpl::CancelImpl(bool aClearITimer) {
     // The swap ensures our callback isn't dropped until after the mutex is
     // unlocked.
     std::swap(cbTrash, mCallback);
-    ++mGeneration;
+    mTimerSeq = 0;
 
     // Don't clear this if we're firing; once Fire returns, we'll get this call
     // again.
@@ -524,13 +530,39 @@ void nsTimerImpl::CancelImpl(bool aClearITimer) {
 
 nsresult nsTimerImpl::SetDelay(uint32_t aDelay) {
   MutexAutoLock lock(mMutex);
-  if (GetCallback().is<UnknownCallback>() && !IsRepeating()) {
-    // This may happen if someone tries to re-use a one-shot timer
-    // by re-setting delay instead of reinitializing the timer.
-    NS_ERROR(
-        "nsITimer->SetDelay() called when the "
-        "one-shot timer is not set up.");
-    return NS_ERROR_NOT_INITIALIZED;
+
+  // Discourage inappropriate use of SetDelay on ONE_SHOT timers.
+  if (!IsRepeating()) {
+    if (GetCallback().is<UnknownCallback>()) {
+      // This may happen if someone tries to re-use a ONE_SHOT timer
+      // by re-setting delay instead of reinitializing the timer.
+      NS_ERROR(
+          "nsITimer->SetDelay() called when the "
+          "one-shot timer is not set up.");
+      return NS_ERROR_NOT_INITIALIZED;
+    }
+#ifdef DEBUG
+    bool onTargetThread = mEventTarget && mEventTarget->IsOnCurrentThread();
+    if (!onTargetThread) {
+      NS_WARNING(
+          "nsITimer->SetDelay() on a ONE_SHOT timer should only be called from "
+          "the target thread!");
+    }
+#endif
+    if (mFiring) {
+      // In case of a timer event being executed on a different thread, we
+      // just lost the race and we treat it like UnknownCallback. For same-
+      // thread timers this cannot happen unless we do SetDelay on our self
+      // in our payload, which is forbidden.
+#ifdef DEBUG
+      if (onTargetThread) {
+        NS_ERROR(
+            "nsITimer->SetDelay() while firing will not re-schedule a ONE_SHOT "
+            "timer. Please re-initialize.");
+      }
+#endif
+      return NS_ERROR_NOT_INITIALIZED;
+    }
   }
 
   bool reAdd = false;
@@ -538,6 +570,22 @@ nsresult nsTimerImpl::SetDelay(uint32_t aDelay) {
 
   mDelay = TimeDuration::FromMilliseconds(aDelay);
   mTimeout = TimeStamp::Now() + mDelay;
+
+  // For REPEATING timers SetDelay needs to maintain the same mTimerSeq #.
+  // Otherwise we might end up to not reschedule a REPEATING timer if we
+  // happen to get here while the firing event is in flight or even in
+  // execution on a different thread.
+
+  if (!IsRepeating()) {
+    // We were either still in the TimerThread or our ONE_SHOT event is in
+    // flight, given the above checks. In both cases our payload did not yet
+    // run and we need to increase the sequence in order to prevent Fire from
+    // running our payload now on the old mTimerSeq # and we need to reschedule
+    // the timer for later.
+    MOZ_ASSERT(!mFiring && !GetCallback().is<UnknownCallback>());
+    mTimerSeq = ++sLastTimerSeq;
+    reAdd = true;
+  }
 
   if (reAdd) {
     gThreadWrapper.AddTimer(this, lock);
@@ -612,7 +660,7 @@ nsresult nsTimerImpl::GetAllowedEarlyFiringMicroseconds(uint32_t* aValueOut) {
   return NS_OK;
 }
 
-void nsTimerImpl::Fire(int32_t aGeneration) {
+void nsTimerImpl::Fire(uint64_t aTimerSeq) {
   uint8_t oldType;
   uint32_t oldDelay;
   TimeStamp oldTimeout;
@@ -623,7 +671,7 @@ void nsTimerImpl::Fire(int32_t aGeneration) {
     // Don't fire callbacks or fiddle with refcounts when the mutex is locked.
     // If some other thread Cancels/Inits after this, they're just too late.
     MutexAutoLock lock(mMutex);
-    if (aGeneration != mGeneration) {
+    if (aTimerSeq != mTimerSeq) {
       // This timer got rescheduled or cancelled before we fired, so ignore this
       // firing
       return;
@@ -684,7 +732,8 @@ void nsTimerImpl::Fire(int32_t aGeneration) {
   TimeStamp now = TimeStamp::Now();
 
   MutexAutoLock lock(mMutex);
-  if (aGeneration == mGeneration) {
+  // Someone else could have re-initialized us while the callback ran.
+  if (aTimerSeq == mTimerSeq) {
     if (IsRepeating()) {
       // Repeating timer has not been re-init or canceled; reschedule
       if (IsSlack()) {
@@ -702,6 +751,7 @@ void nsTimerImpl::Fire(int32_t aGeneration) {
           mTimeout = now;
         }
       }
+      MOZ_ASSERT(!mCallback.is<UnknownCallback>());
       gThreadWrapper.AddTimer(this, lock);
     } else {
       // Non-repeating timer that has not been re-scheduled. Clear.

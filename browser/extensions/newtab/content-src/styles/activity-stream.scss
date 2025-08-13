@@ -167,6 +167,11 @@ input {
 @import '../components/ModalOverlay/ModalOverlay';
 @import '../components/Notifications/Notifications';
 
+// Widget Components
+@import '../components/Widgets/Widgets';
+@import '../components/Widgets/Lists/Lists';
+@import '../components/Widgets/FocusTimer/FocusTimer';
+
 // Discovery Stream Components
 @import '../components/DiscoveryStreamComponents/CardGrid/CardGrid';
 @import '../components/DiscoveryStreamComponents/CardSections/CardSections';
@@ -195,6 +200,7 @@ input {
 @import '../components/DiscoveryStreamComponents/FeatureHighlight/FollowSectionButtonHighlight';
 @import '../components/DiscoveryStreamComponents/FeatureHighlight/SponsoredContentHighlight';
 @import '../components/DiscoveryStreamComponents/FeatureHighlight/WallpaperFeatureHighlight';
+@import '../components/DiscoveryStreamComponents/FeatureHighlight/ShortcutFeatureHighlight';
 @import '../components/DiscoveryStreamComponents/TopicSelection/TopicSelection';
 @import '../components/DiscoveryStreamComponents/ListFeed/ListFeed';
 @import '../components/DiscoveryStreamComponents/AdBanner/AdBanner';

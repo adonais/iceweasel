@@ -6,6 +6,7 @@
 
 #include "mozilla/glean/bindings/Glean.h"
 
+#include "bindings/private/Common.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/DOMJSClass.h"
 #include "mozilla/dom/GleanBinding.h"
@@ -84,10 +85,12 @@ bool Glean::DefineGlean(JSContext* aCx, JS::Handle<JSObject*> aGlobal) {
 already_AddRefed<Category> Glean::NamedGetter(const nsAString& aName,
                                               bool& aFound) {
   MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(IsCamelCase(aName), "NamedGetter expects CamelCase");
 
   JOG::EnsureRuntimeMetricsRegistered();
 
   NS_ConvertUTF16toUTF8 categoryName(aName);
+
   if (JOG::HasCategory(categoryName)) {
     aFound = true;
     return MakeAndAddRef<Category>(std::move(categoryName), mParent);

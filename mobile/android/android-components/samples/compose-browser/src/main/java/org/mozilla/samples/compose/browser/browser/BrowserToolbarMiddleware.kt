@@ -6,7 +6,7 @@ package org.mozilla.samples.compose.browser.browser
 
 import android.content.Context
 import androidx.navigation.NavController
-import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
+import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
 import mozilla.components.compose.browser.toolbar.concept.Action.TabCounterAction
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction
@@ -14,6 +14,9 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.Tog
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarMenu
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.ContentDescription
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Icon
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Text
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.DisplayState
 import mozilla.components.compose.browser.toolbar.store.EditState
@@ -100,8 +103,8 @@ internal class BrowserToolbarMiddleware(
     )
 
     private fun buildDisplayPageActions() = listOf(
-        ActionButton(
-            icon = iconsR.drawable.mozac_ic_arrow_clockwise_24,
+        ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_arrow_clockwise_24,
             contentDescription = R.string.page_action_refresh_description,
             onClick = RefreshClicked,
         ),
@@ -115,15 +118,17 @@ internal class BrowserToolbarMiddleware(
             onClick = TabCounterClicked,
         ),
 
-        ActionButton(
-            icon = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+        ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
             contentDescription = R.string.menu_button_description,
             onClick = BrowserToolbarMenu {
                 listOf(
                     BrowserToolbarMenuButton(
-                        iconResource = iconsR.drawable.mozac_ic_settings_24,
-                        text = R.string.menu_item_settings,
-                        contentDescription = R.string.menu_item_settings_description,
+                        icon = Icon.DrawableResIcon(iconsR.drawable.mozac_ic_settings_24),
+                        text = Text.StringResText(R.string.menu_item_settings),
+                        contentDescription = ContentDescription.StringResContentDescription(
+                            R.string.menu_item_settings_description,
+                        ),
                         onClick = MenuInteractions.SettingsClicked,
                     ),
                 )
@@ -132,8 +137,8 @@ internal class BrowserToolbarMiddleware(
     )
 
     private fun buildEditPageActionsEnd() = listOf(
-        ActionButton(
-            icon = iconsR.drawable.mozac_ic_stop,
+        ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_stop,
             contentDescription = R.string.clear_input_description,
             onClick = ClearClicked,
         ),

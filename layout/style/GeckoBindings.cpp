@@ -14,6 +14,46 @@
 #include "gfxMathTable.h"
 #include "gfxTextRun.h"
 #include "imgLoader.h"
+#include "mozilla/AttributeStyles.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/DeclarationBlock.h"
+#include "mozilla/EffectCompositor.h"
+#include "mozilla/EffectSet.h"
+#include "mozilla/FontPropertyTypes.h"
+#include "mozilla/Hal.h"
+#include "mozilla/Keyframe.h"
+#include "mozilla/LookAndFeel.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/RWLock.h"
+#include "mozilla/RestyleManager.h"
+#include "mozilla/ServoBindings.h"
+#include "mozilla/ServoElementSnapshot.h"
+#include "mozilla/ServoTraversalStatistics.h"
+#include "mozilla/ShadowParts.h"
+#include "mozilla/SizeOfState.h"
+#include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/StaticPresData.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/StyleAnimationValue.h"
+#include "mozilla/TimelineManager.h"
+#include "mozilla/URLExtraData.h"
+#include "mozilla/css/ImageLoader.h"
+#include "mozilla/dom/CSSMozDocumentRule.h"
+#include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/ElementInlines.h"
+#include "mozilla/dom/HTMLBodyElement.h"
+#include "mozilla/dom/HTMLImageElement.h"
+#include "mozilla/dom/HTMLSelectElement.h"
+#include "mozilla/dom/HTMLSlotElement.h"
+#include "mozilla/dom/HTMLTableCellElement.h"
+#include "mozilla/dom/MediaList.h"
+#include "mozilla/dom/ReferrerInfo.h"
+#include "mozilla/dom/SVGElement.h"
+#include "mozilla/dom/ViewTransition.h"
+#include "mozilla/dom/WorkerCommon.h"
 #include "nsAnimationManager.h"
 #include "nsAttrValueInlines.h"
 #include "nsCSSFrameConstructor.h"
@@ -22,16 +62,14 @@
 #include "nsContentUtils.h"
 #include "nsDOMTokenList.h"
 #include "nsDeviceContext.h"
-#include "nsLayoutUtils.h"
+#include "nsFontMetrics.h"
 #include "nsIContentInlines.h"
-#include "mozilla/dom/DocumentInlines.h"
-#include "mozilla/dom/ViewTransition.h"
-#include "nsILoadContext.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
+#include "nsILoadContext.h"
 #include "nsINode.h"
 #include "nsIURI.h"
-#include "nsFontMetrics.h"
+#include "nsLayoutUtils.h"
 #include "nsNameSpaceManager.h"
 #include "nsNetUtil.h"
 #include "nsProxyRelease.h"
@@ -41,45 +79,6 @@
 #include "nsTArray.h"
 #include "nsTransitionManager.h"
 #include "nsWindowSizes.h"
-
-#include "mozilla/css/ImageLoader.h"
-#include "mozilla/DeclarationBlock.h"
-#include "mozilla/AttributeStyles.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/EffectCompositor.h"
-#include "mozilla/EffectSet.h"
-#include "mozilla/FontPropertyTypes.h"
-#include "mozilla/Hal.h"
-#include "mozilla/Keyframe.h"
-#include "mozilla/Mutex.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/ServoElementSnapshot.h"
-#include "mozilla/ShadowParts.h"
-#include "mozilla/StaticPresData.h"
-#include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/RestyleManager.h"
-#include "mozilla/SizeOfState.h"
-#include "mozilla/StyleAnimationValue.h"
-#include "mozilla/ServoBindings.h"
-#include "mozilla/ServoTraversalStatistics.h"
-#include "mozilla/TimelineManager.h"
-#include "mozilla/RWLock.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/ElementInlines.h"
-#include "mozilla/dom/HTMLImageElement.h"
-#include "mozilla/dom/HTMLTableCellElement.h"
-#include "mozilla/dom/HTMLBodyElement.h"
-#include "mozilla/dom/HTMLSelectElement.h"
-#include "mozilla/dom/HTMLSlotElement.h"
-#include "mozilla/dom/MediaList.h"
-#include "mozilla/dom/ReferrerInfo.h"
-#include "mozilla/dom/SVGElement.h"
-#include "mozilla/dom/WorkerCommon.h"
-#include "mozilla/LookAndFeel.h"
-#include "mozilla/URLExtraData.h"
-#include "mozilla/dom/CSSMozDocumentRule.h"
 
 #if defined(MOZ_MEMORY)
 #  include "mozmemory.h"
@@ -134,32 +133,41 @@ const nsINode* Gecko_GetFlattenedTreeParentNode(const nsINode* aNode) {
   return aNode->GetFlattenedTreeParentNodeForStyle();
 }
 
-const Element* Gecko_GetBeforeOrAfterPseudo(const Element* aElement,
-                                            bool aIsBefore) {
-  MOZ_ASSERT(aElement);
-  MOZ_ASSERT(aElement->HasProperties());
-
-  return aIsBefore ? nsLayoutUtils::GetBeforePseudo(aElement)
-                   : nsLayoutUtils::GetAfterPseudo(aElement);
-}
-
-const Element* Gecko_GetMarkerPseudo(const Element* aElement) {
-  MOZ_ASSERT(aElement);
-  MOZ_ASSERT(aElement->HasProperties());
-
-  return nsLayoutUtils::GetMarkerPseudo(aElement);
-}
-
-nsTArray<nsIContent*>* Gecko_GetAnonymousContentForElement(
-    const Element* aElement) {
-  nsIAnonymousContentCreator* ac = do_QueryFrame(aElement->GetPrimaryFrame());
-  if (!ac) {
-    return nullptr;
+void Gecko_GetAnonymousContentForElement(const Element* aElement,
+                                         nsIContent** aStackBuffer,
+                                         size_t aStackBufferCap,
+                                         size_t* aStackBufferLen,
+                                         nsTArray<nsIContent*>* aExcessArray) {
+  MOZ_ASSERT(aElement->MayHaveAnonymousChildren());
+  MOZ_ASSERT(*aStackBufferLen == 0);
+  MOZ_ASSERT(aStackBufferCap > 2, "We do unchecked appends for common pseudos");
+  if (aElement->HasProperties()) {
+    if (auto* marker = nsLayoutUtils::GetMarkerPseudo(aElement)) {
+      aStackBuffer[(*aStackBufferLen)++] = marker;
+    }
+    if (auto* before = nsLayoutUtils::GetBeforePseudo(aElement)) {
+      aStackBuffer[(*aStackBufferLen)++] = before;
+    }
+    if (auto* after = nsLayoutUtils::GetAfterPseudo(aElement)) {
+      aStackBuffer[(*aStackBufferLen)++] = after;
+    }
+  }
+  AutoTArray<nsIContent*, 5> elements;
+  nsContentUtils::AppendNativeAnonymousChildren(
+      aElement, elements, nsIContent::eSkipDocumentLevelNativeAnonymousContent);
+  size_t nacChildren = elements.Length();
+  if (!nacChildren) {
+    return;  // Nothing else to do.
   }
 
-  auto* array = new nsTArray<nsIContent*>();
-  nsContentUtils::AppendNativeAnonymousChildren(aElement, *array, 0);
-  return array;
+  // If we fit in the stack buffer, copy there, otherwise use aExcessArray.
+  if (nacChildren <= aStackBufferCap - *aStackBufferLen) {
+    PodCopy(aStackBuffer + *aStackBufferLen, elements.Elements(), nacChildren);
+    *aStackBufferLen += nacChildren;
+  } else {
+    aExcessArray->SwapElements(elements);
+  }
+  MOZ_DIAGNOSTIC_ASSERT(*aStackBufferLen <= aStackBufferCap);
 }
 
 void Gecko_DestroyAnonymousContentList(nsTArray<nsIContent*>* aAnonContent) {
@@ -1355,21 +1363,18 @@ NS_IMPL_THREADSAFE_FFI_REFCOUNTING(SheetLoadDataHolder, SheetLoadDataHolder);
 
 void Gecko_StyleSheet_FinishAsyncParse(
     SheetLoadDataHolder* aData,
-    StyleStrong<StyleStylesheetContents> aSheetContents,
-    StyleUseCounters* aUseCounters) {
-  UniquePtr<StyleUseCounters> useCounters(aUseCounters);
+    StyleStrong<StyleStylesheetContents> aSheetContents) {
   RefPtr<SheetLoadDataHolder> loadData = aData;
   RefPtr<StyleStylesheetContents> sheetContents = aSheetContents.Consume();
   NS_DispatchToMainThreadQueue(
-      NS_NewRunnableFunction(
-          __func__,
-          [d = std::move(loadData), contents = std::move(sheetContents),
-           counters = std::move(useCounters)]() mutable {
-            MOZ_ASSERT(NS_IsMainThread());
-            SheetLoadData* data = d->get();
-            data->mSheet->FinishAsyncParse(contents.forget(),
-                                           std::move(counters));
-          }),
+      NS_NewRunnableFunction(__func__,
+                             [d = std::move(loadData),
+                              contents = std::move(sheetContents)]() mutable {
+                               MOZ_ASSERT(NS_IsMainThread());
+                               SheetLoadData* data = d->get();
+                               data->mSheet->FinishAsyncParse(
+                                   contents.forget());
+                             }),
       EventQueuePriority::RenderBlocking);
 }
 
@@ -1881,12 +1886,8 @@ struct AnchorPosInfo {
   const nsIFrame* mContainingBlock;
 };
 
-static Maybe<AnchorPosInfo> GetAnchorPosRect(const nsIFrame* aPositioned,
-                                             const nsAtom* aAnchorName,
-                                             bool aCBRectIsvalid) {
-  if (!aPositioned) {
-    return Nothing{};
-  }
+static nsIFrame* GetAnchorOf(const nsIFrame* aPositioned,
+                             const nsAtom* aAnchorName) {
   const auto* presShell = aPositioned->PresShell();
   MOZ_ASSERT(presShell, "No PresShell for frame?");
 
@@ -1896,11 +1897,21 @@ static Maybe<AnchorPosInfo> GetAnchorPosRect(const nsIFrame* aPositioned,
     if (!stylePos->mPositionAnchor.IsIdent()) {
       // No valid anchor specified, bail.
       // TODO(dshin): Implicit anchor should be looked at here.
-      return Nothing{};
+      return nullptr;
     }
     anchorName = stylePos->mPositionAnchor.AsIdent().AsAtom();
   }
-  const auto* anchor = presShell->GetAnchorPosAnchor(anchorName, aPositioned);
+  return presShell->GetAnchorPosAnchor(anchorName, aPositioned);
+}
+
+static Maybe<AnchorPosInfo> GetAnchorPosRect(const nsIFrame* aPositioned,
+                                             const nsAtom* aAnchorName,
+                                             bool aCBRectIsvalid) {
+  if (!aPositioned) {
+    return Nothing{};
+  }
+
+  const auto* anchor = GetAnchorOf(aPositioned, aAnchorName);
   if (!anchor) {
     return Nothing{};
   }
@@ -1911,10 +1922,10 @@ static Maybe<AnchorPosInfo> GetAnchorPosRect(const nsIFrame* aPositioned,
   const auto* containingBlock = aPositioned->GetParent();
   auto rect = [&]() -> Maybe<nsRect> {
     if (aCBRectIsvalid) {
-      nsRect result = anchor->GetRectRelativeToSelf();
-      nsLayoutUtils::TransformRect(anchor, containingBlock, result);
+      const nsRect result = anchor->GetRectRelativeToSelf();
+      const auto offset = anchor->GetOffsetTo(containingBlock);
       // Easy, just use the existing function.
-      return Some(result);
+      return Some(result + offset);
     }
 
     // Ok, containing block doesn't have its rect fully resolved. Figure out
@@ -1934,10 +1945,9 @@ static Maybe<AnchorPosInfo> GetAnchorPosRect(const nsIFrame* aPositioned,
 
     // TODO(dshin): Already traversed up to find `containerChild`, and we're
     // going to do it again here, which feels a little wasteful.
-    nsRect rectToContainerChild = anchor->GetRectRelativeToSelf();
-    nsLayoutUtils::TransformRect(anchor, containerChild, rectToContainerChild);
-
-    return Some(rectToContainerChild + containerChild->GetPosition());
+    const nsRect rectToContainerChild = anchor->GetRectRelativeToSelf();
+    const auto offset = anchor->GetOffsetTo(containerChild);
+    return Some(rectToContainerChild + offset + containerChild->GetPosition());
   }();
   return rect.map([&](const nsRect& aRect) {
     // We need to position the border box of the anchor within the abspos
@@ -2016,15 +2026,62 @@ bool Gecko_GetAnchorPosOffset(
                           : logicalAnchorRect.End(propAxis, wm);
   const auto side = opposite ? size - offset : offset;
   nscoord result = side;
-  if (aPercentage != 1.0f) {
-    // Apply the percentage value, with the percentage basis as the anchor
-    // element's size in the relevant axis.
-    const LogicalSize anchorSize{wm, rect.Size()};
+
+  // Apply the percentage value, with the percentage basis as the anchor
+  // element's size in the relevant axis.
+  if (aPercentage != 0.f) {
+    const nscoord anchorSize = LogicalSize{wm, rect.Size()}.Size(propAxis, wm);
     result = side + (opposite ? -1 : 1) *
-                        NSToCoordRoundWithClamp(
-                            aPercentage *
-                            static_cast<float>(anchorSize.Size(propAxis, wm)));
+                        ((aPercentage != 1.f)
+                             ? NSToCoordRoundWithClamp(
+                                   aPercentage * static_cast<float>(anchorSize))
+                             : anchorSize);
   }
   *aOut = Length::FromPixels(CSSPixel::FromAppUnits(result));
+  return true;
+}
+
+bool Gecko_GetAnchorPosSize(const AnchorPosResolutionParams* aParams,
+                            const nsAtom* aAnchorName,
+                            mozilla::StylePhysicalAxis aPropAxis,
+                            mozilla::StyleAnchorSizeKeyword aAnchorSizeKeyword,
+                            mozilla::Length* aOut) {
+  if (!aParams || !aParams->mFrame) {
+    return false;
+  }
+  const auto* positioned = aParams->mFrame;
+  const auto* anchor = GetAnchorOf(positioned, aAnchorName);
+  if (!anchor) {
+    return false;
+  }
+  const auto* containingBlock = positioned->GetParent();
+  const auto l = [&]() {
+    switch (aAnchorSizeKeyword) {
+      case mozilla::StyleAnchorSizeKeyword::None:
+        switch (aPropAxis) {
+          case mozilla::StylePhysicalAxis::Horizontal:
+            return anchor->GetSize().Width();
+          case mozilla::StylePhysicalAxis::Vertical:
+            return anchor->GetSize().Height();
+        }
+        MOZ_ASSERT_UNREACHABLE("Unexpected physical axis.");
+        return anchor->GetSize().Width();
+      case mozilla::StyleAnchorSizeKeyword::Width:
+        return anchor->GetSize().Width();
+      case mozilla::StyleAnchorSizeKeyword::Height:
+        return anchor->GetSize().Height();
+      case mozilla::StyleAnchorSizeKeyword::Inline:
+        return anchor->ISize(containingBlock->GetWritingMode());
+      case mozilla::StyleAnchorSizeKeyword::Block:
+        return anchor->BSize(containingBlock->GetWritingMode());
+      case mozilla::StyleAnchorSizeKeyword::SelfInline:
+        return anchor->ISize(positioned->GetWritingMode());
+      case mozilla::StyleAnchorSizeKeyword::SelfBlock:
+        return anchor->BSize(positioned->GetWritingMode());
+    }
+    MOZ_ASSERT_UNREACHABLE("Unhandled anchor size keyword.");
+    return anchor->GetSize().Width();
+  }();
+  *aOut = Length::FromPixels(CSSPixel::FromAppUnits(l));
   return true;
 }

@@ -1,5 +1,4 @@
-
-// Copyright 2019 The Chromium Authors. All rights reserved.
+// Copyright 2019 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -14,7 +13,7 @@ message CIPDPackage {
   // Ignored when creating AVD packages.
   string version = 2;
   // Path into which the package should be installed.
-  // src-relative.
+  // relative to pylib.local.emulator.avd.COMMON_CIPD_ROOT.
   string dest_path = 3;
 }
 
@@ -38,6 +37,7 @@ message SdcardSettings {
   string size = 1;
 }
 
+// settings only used during AVD creation.
 message AvdSettings {
   // Settings pertaining to the AVD's screen.
   ScreenSettings screen = 1;
@@ -53,9 +53,26 @@ message AvdSettings {
 
   // The physical RAM size on the device, in megabytes.
   uint32 ram_size = 4;
+
+  // The properties for AVD. The <key,value> pairs here will override the
+  // default ones in the given system image.
+  // See https://bit.ly/3052c1V for all the available keys and values.
+  //
+  // Note the screen, sdcard, ram_size above are ultimately translated to
+  // AVD properties and they won't be overwritten by values here.
+  map<string, string> avd_properties = 5;
+}
+
+// settings used during AVD launch. Needed in both creation and deploy textpb.
+message AvdLaunchSettings {
+  // The mode of hardware OpenGL ES emulation.
+  // See "emulator -help-gpu" for a full list of modes.
+  string gpu_mode = 1;
 }
 
 message Avd {
+  // Next ID: 13
+
   // The emulator to use in running the AVD.
   CIPDPackage emulator_package = 1;
 
@@ -72,4 +89,23 @@ message Avd {
 
   // How to configure the AVD at creation.
   AvdSettings avd_settings = 6;
+
+  // This includes additional AvdSettings so that we can create AVDs with
+  // slightly different configs
+  map<string, AvdSettings> avd_variants = 12;
+
+  // min sdk level for emulator.
+  uint32 min_sdk = 7;
+
+  // The partition to install the privileged apk.
+  // version 27 and below is /system. After that it can be
+  // /system, /product, or /vendor
+  string install_privileged_apk_partition = 8;
+
+  // Needed for gmscore/phonesky support.
+  repeated CIPDPackage privileged_apk = 9;
+  repeated CIPDPackage additional_apk = 10;
+
+  // AVD settings used during AVD launch.
+  AvdLaunchSettings avd_launch_settings = 11;
 }

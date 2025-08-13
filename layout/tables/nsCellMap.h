@@ -5,13 +5,14 @@
 #ifndef nsCellMap_h__
 #define nsCellMap_h__
 
-#include "nscore.h"
+#include <algorithm>
+
+#include "TableArea.h"
 #include "celldata.h"
-#include "nsTArray.h"
 #include "nsCOMPtr.h"
 #include "nsRect.h"
-#include <algorithm>
-#include "TableArea.h"
+#include "nsTArray.h"
+#include "nscore.h"
 
 #undef DEBUG_TABLE_CELLMAP
 

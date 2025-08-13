@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.dimensionResource
@@ -36,7 +35,6 @@ import org.mozilla.fenix.wallpapers.WallpaperState
  * @param interactor [PocketStoriesInteractor] for interactions with the UI.
  * @param horizontalPadding Horizontal padding to apply to outermost column.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PocketSection(
     state: PocketState,
@@ -62,7 +60,7 @@ fun PocketSection(
 
         Spacer(Modifier.height(16.dp))
 
-        PocketStories(
+        Stories(
             stories = state.stories,
             contentPadding = horizontalPadding,
             backgroundColor = cardBackgroundColor,

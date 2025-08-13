@@ -21,6 +21,7 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/SVGObserverUtils.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "ipc/WebGPUChild.h"
 #include "Utility.h"
 
@@ -134,39 +135,39 @@ void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aConfig,
 
   mConfiguration.reset(new dom::GPUCanvasConfiguration(aConfig));
   mRemoteTextureOwnerId = Some(layers::RemoteTextureOwnerId::GetNext());
-  mUseExternalTextureInSwapChain =
-      aConfig.mDevice->mSupportExternalTextureInSwapChain;
-  if (mUseExternalTextureInSwapChain) {
-    bool client_can_use = wgpu_client_use_external_texture_in_swapChain(
+  mUseSharedTextureInSwapChain =
+      aConfig.mDevice->mSupportSharedTextureInSwapChain;
+  if (mUseSharedTextureInSwapChain) {
+    bool client_can_use = wgpu_client_use_shared_texture_in_swapChain(
         ConvertTextureFormat(aConfig.mFormat));
     if (!client_can_use) {
-      gfxCriticalNote << "WebGPU: disabling ExternalTexture swapchain: \n"
+      gfxCriticalNote << "WebGPU: disabling SharedTexture swapchain: \n"
                          "canvas configuration format not supported";
-      mUseExternalTextureInSwapChain = false;
+      mUseSharedTextureInSwapChain = false;
     }
   }
   if (!gfx::gfxVars::AllowWebGPUPresentWithoutReadback()) {
     gfxCriticalNote
-        << "WebGPU: disabling ExternalTexture swapchain: \n"
+        << "WebGPU: disabling SharedTexture swapchain: \n"
            "`dom.webgpu.allow-present-without-readback` pref is false";
-    mUseExternalTextureInSwapChain = false;
+    mUseSharedTextureInSwapChain = false;
   }
 #ifdef XP_WIN
-  // When WebRender does not use hardware acceleration, disable external texture
+  // When WebRender does not use hardware acceleration, disable shared texture
   // in swap chain. Since compositor device might not exist.
   if (gfx::gfxVars::UseSoftwareWebRender() &&
       !gfx::gfxVars::AllowSoftwareWebRenderD3D11()) {
-    gfxCriticalNote << "WebGPU: disabling ExternalTexture swapchain: \n"
+    gfxCriticalNote << "WebGPU: disabling SharedTexture swapchain: \n"
                        "WebRender is not using hardware acceleration";
-    mUseExternalTextureInSwapChain = false;
+    mUseSharedTextureInSwapChain = false;
   }
 #elif defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
-  // When DMABufDevice is not enabled, disable external texture in swap chain.
+  // When DMABufDevice is not enabled, disable shared texture in swap chain.
   const auto& modifiers = gfx::gfxVars::DMABufModifiersARGB();
   if (modifiers.IsEmpty()) {
-    gfxCriticalNote << "WebGPU: disabling ExternalTexture swapchain: \n"
+    gfxCriticalNote << "WebGPU: disabling SharedTexture swapchain: \n"
                        "missing GBM_FORMAT_ARGB8888 dmabuf format";
-    mUseExternalTextureInSwapChain = false;
+    mUseSharedTextureInSwapChain = false;
   }
 #endif
 
@@ -179,7 +180,7 @@ void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aConfig,
 
   mCurrentTexture = aConfig.mDevice->InitSwapChain(
       mConfiguration.get(), mRemoteTextureOwnerId.ref(), mBufferIds,
-      mUseExternalTextureInSwapChain, mGfxFormat, mCanvasSize);
+      mUseSharedTextureInSwapChain, mGfxFormat, mCanvasSize);
   if (!mCurrentTexture) {
     Unconfigure();
     return;
@@ -196,10 +197,11 @@ void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aConfig,
 
 void CanvasContext::Unconfigure() {
   if (mBridge && mBridge->CanSend() && mRemoteTextureOwnerId) {
-    mBridge->SendSwapChainDrop(
-        *mRemoteTextureOwnerId,
-        layers::ToRemoteTextureTxnType(mFwdTransactionTracker),
-        layers::ToRemoteTextureTxnId(mFwdTransactionTracker));
+    auto txn_type = layers::ToRemoteTextureTxnType(mFwdTransactionTracker);
+    auto txn_id = layers::ToRemoteTextureTxnId(mFwdTransactionTracker);
+    ffi::wgpu_client_swap_chain_drop(
+        mBridge->GetClient(), mRemoteTextureOwnerId->mId, txn_type, txn_id);
+
     for (auto& id : mBufferIds) {
       ffi::wgpu_client_free_buffer_id(mBridge->GetClient(), id);
     }
@@ -289,10 +291,14 @@ Maybe<layers::SurfaceDescriptor> CanvasContext::SwapChainPresent() {
   mLastRemoteTextureId = Some(layers::RemoteTextureId::GetNext());
   mBridge->SwapChainPresent(mCurrentTexture->mId, *mLastRemoteTextureId,
                             *mRemoteTextureOwnerId);
-  if (mUseExternalTextureInSwapChain) {
+  if (mUseSharedTextureInSwapChain) {
     mCurrentTexture->Destroy();
     mNewTextureRequested = true;
   }
+
+  PROFILER_MARKER_UNTYPED("WebGPU: SwapChainPresent", GRAPHICS_WebGPU);
+  mBridge->FlushQueuedMessages();
+
   return Some(layers::SurfaceDescriptorRemoteTexture(*mLastRemoteTextureId,
                                                      *mRemoteTextureOwnerId));
 }

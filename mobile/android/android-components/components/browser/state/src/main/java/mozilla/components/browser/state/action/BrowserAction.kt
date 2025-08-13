@@ -849,14 +849,6 @@ sealed class ContentAction : BrowserAction() {
     data class CheckForFormDataExceptionAction(val tabId: String, val throwable: Throwable) : ContentAction()
 
     /**
-     * Updates the [ContentState.isProductUrl] state for the non private tab with the given [tabId].
-     */
-    data class UpdateProductUrlStateAction(
-        val tabId: String,
-        val isProductUrl: Boolean,
-    ) : ContentAction()
-
-    /**
      * Inform that the tab with [tabId] started rendering a pdf.
      */
     data class EnteredPdfViewer(
@@ -1711,7 +1703,8 @@ sealed class DownloadAction : BrowserAction() {
     data class RestoreDownloadStateAction(val download: DownloadState) : DownloadAction()
 
     /**
-     * [BrowserAction] to remove downloads from the storage that no longer exist on disk.
+     * [BrowserAction] to remove completed and cancelled downloads from the storage that no longer
+     * exist on disk.
      *
      * This action is used to clean up the download storage by removing entries for files
      * that have been deleted or moved from their original download location.

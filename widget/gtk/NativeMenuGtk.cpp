@@ -237,20 +237,20 @@ class MenuModelGMenu final : public MenuModel {
 NS_IMPL_ISUPPORTS(MenuModel, nsIMutationObserver)
 
 void MenuModel::ContentWillBeRemoved(nsIContent* aChild,
-                                     const BatchRemovalState* aState) {
+                                     const ContentRemoveInfo&) {
   if (NodeIsRelevant(*aChild)) {
     nsContentUtils::AddScriptRunner(NewRunnableMethod(
         "MenuModel::ContentWillBeRemoved", this, &MenuModel::DirtyModel));
   }
 }
 
-void MenuModel::ContentInserted(nsIContent* aChild) {
+void MenuModel::ContentInserted(nsIContent* aChild, const ContentInsertInfo&) {
   if (NodeIsRelevant(*aChild)) {
     DirtyModel();
   }
 }
 
-void MenuModel::ContentAppended(nsIContent* aChild) {
+void MenuModel::ContentAppended(nsIContent* aChild, const ContentAppendInfo&) {
   if (NodeIsRelevant(*aChild)) {
     DirtyModel();
   }
@@ -412,7 +412,7 @@ void NativeMenuGtk::ShowAsContextMenu(nsIFrame* aClickedFrame,
   const GdkRectangle rect = {gdkPos.x, gdkPos.y, 1, 1};
   auto openFn = GetPopupAtRectFn();
   openFn(GTK_MENU(mNativeMenu.get()), win, &rect, GDK_GRAVITY_NORTH_WEST,
-         GDK_GRAVITY_NORTH_WEST, GetLastMousePressEvent());
+         GDK_GRAVITY_NORTH_WEST, GetLastPointerDownEvent());
 
   RefPtr pin{this};
   FireEvent(eXULPopupShown);
@@ -738,6 +738,8 @@ void DBusMenuBar::OnNameOwnerChanged() {
   if (NS_WARN_IF(!gdkWin)) {
     return;
   }
+
+  gdkWin = gdk_window_get_toplevel(gdkWin);
 
 #  ifdef MOZ_WAYLAND
   if (auto* display = widget::WaylandDisplayGet()) {

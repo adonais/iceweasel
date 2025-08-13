@@ -219,6 +219,9 @@ newtab-error-fallback-refresh-link = ផ្ទុកទំព័រឡើងវ�
 ## Strings for download mobile highlight
 
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
 

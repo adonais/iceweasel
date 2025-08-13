@@ -1,0 +1,140 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin" type="text/css"?>
+<?xml-stylesheet href="chrome://mochikit/content/tests/SimpleTest/test.css" type="text/css"?>
+
+<window xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+<script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+<script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
+
+<body xmlns="http://www.w3.org/1999/xhtml">
+<p id="display">
+</p>
+<div id="content" style="display: none">
+</div>
+<pre id="test">
+</pre>
+
+<button>test button</button>
+</body>
+
+<menupopup>
+  <menuitem label="test"/>
+</menupopup>
+
+<script>
+SimpleTest.waitForExplicitFinish();
+SimpleTest.waitForFocus(async () => {
+  const targetElement = document.querySelector("button");
+
+  const clickEvent = await new Promise(resolve => {
+    targetElement.addEventListener("click", e => { resolve(e); }, { once: true});
+    synthesizeMouseAtCenter(targetElement, {});
+  });
+  is(clickEvent.type, "click");
+  is(clickEvent.target, targetElement);
+  await doTest(clickEvent);
+
+  const mousedownEvent = await new Promise(resolve => {
+    targetElement.addEventListener("mousedown", e => { resolve(e); }, { once: true});
+    synthesizeMouseAtCenter(targetElement, { type: "mousedown" });
+  });
+  is(mousedownEvent.type, "mousedown");
+  is(mousedownEvent.target, targetElement);
+  await doTest(mousedownEvent);
+
+  const keydownEvent = await new Promise(resolve => {
+    targetElement.focus();
+    targetElement.addEventListener("keydown", e => { resolve(e); }, { once: true});
+    synthesizeKey("KEY_Enter");
+  });
+  is(keydownEvent.type, "keydown");
+  is(keydownEvent.key, "Enter");
+  is(keydownEvent.target, targetElement);
+  await doTest(keydownEvent);
+
+  const keyupEvent = await new Promise(resolve => {
+    targetElement.focus();
+    targetElement.addEventListener("keyup", e => { resolve(e); }, { once: true});
+    synthesizeKey("a");
+  });
+  is(keyupEvent.type, "keyup");
+  is(keyupEvent.key, "a");
+  is(keyupEvent.target, targetElement);
+  await doTest(keyupEvent);
+
+  const customEvent = new CustomEvent("TestEvent", {
+    detail: { target: targetElement },
+  });
+  is(customEvent.type, "TestEvent");
+  is(customEvent.detail.target, targetElement);
+  await doTest(customEvent);
+
+  const noTriggerEvent = null;
+  await doTest(noTriggerEvent);
+
+  SimpleTest.finish();
+});
+
+async function doTest(triggerEvent) {
+  for (const method of ["openPopup", "openPopupAtScreen", "openPopupAtScreenRect"]) {
+    const popup = document.querySelector("menupopup");
+
+    const onPopupShowing = new Promise(resolve => {
+      popup.addEventListener("popupshowing", e => {
+         resolve(e);
+      }, { once: true });
+    });
+    const onPopupShown = new Promise(resolve => {
+      popup.addEventListener("popupshown", e => {
+         resolve(e);
+      }, { once: true });
+    });
+    const onPopupHidden = new Promise(resolve => {
+      popup.addEventListener("popuphidden", e => {
+         resolve(e);
+      }, { once: true });
+    });
+
+    switch (method) {
+      case "openPopup": {
+        popup.openPopup(null, { triggerEvent });
+        break;
+      }
+      case "openPopupAtScreen": {
+        popup.openPopupAtScreen(0, 0, false, triggerEvent);
+        break;
+      }
+      case "openPopupAtScreenRect": {
+        popup.openPopupAtScreenRect("", 0, 0, 100, 100, false, false, triggerEvent);
+        break;
+      }
+    }
+
+    const popupshowing = await onPopupShowing;
+    is(
+      popupshowing.triggerEvent,
+      triggerEvent,
+      `triggerEvent on popupshowing is correct for ${method}`
+    );
+
+    const popupshown = await onPopupShown;
+    is(
+      popupshown.triggerEvent,
+      null,
+      `triggerEvent on popupshown is null for ${method}`
+    );
+
+    popup.hidePopup();
+
+    const popuphidden = await onPopupHidden;
+    is(
+      popuphidden.triggerEvent,
+      null,
+      `triggerEvent on popuphidden is null for ${method}`
+    );
+  }
+}
+</script>
+
+</window>

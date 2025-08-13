@@ -9,16 +9,17 @@
 #include "BlockReflowState.h"
 
 #include <algorithm>
+
 #include "LayoutLogging.h"
-#include "nsBlockFrame.h"
-#include "nsLineLayout.h"
-#include "nsPresContext.h"
-#include "nsIFrameInlines.h"
+#include "TextOverflow.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "TextOverflow.h"
+#include "nsBlockFrame.h"
+#include "nsIFrameInlines.h"
+#include "nsLineLayout.h"
+#include "nsPresContext.h"
 
 #ifdef DEBUG
 #  include "nsBlockDebugFlags.h"

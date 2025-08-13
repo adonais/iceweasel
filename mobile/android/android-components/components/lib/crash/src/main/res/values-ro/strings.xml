@@ -10,14 +10,26 @@
   <string name="mozac_lib_crash_dialog_button_restart">Repornește %1$s</string>
   <!-- Name of the "notification channel" used for displaying a notification when the app crashed and we can't show a prompt. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_lib_crash_channel">Defecțiuni</string>
+  <!-- Title of the crash reporter notification for background process crashes. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="mozac_lib_crash_background_process_notification_title">Îmi pare rău. A apărut o problemă în %1$s.</string>
   <!-- Label of a notification action/button that will send the crash report to Mozilla. -->
   <string name="mozac_lib_crash_notification_action_report">Raportează</string>
   <!-- Label of notification showing that the crash report service is running. %1$s is the name of the organization (for example "Mozilla"). -->
   <string name="mozac_lib_send_crash_report_in_progress">Se trimite raportul de defecțiune la %1$s</string>
+  <!-- Label of notification showing that the crash handling service is gathering the crash data. -->
+  <string name="mozac_lib_gathering_crash_data_in_progress">Colectarea datelor despre accidente este în desfășurare</string>
+  <!-- Label of notification showing that the telemetry service is gathering the crash data. -->
+  <string name="mozac_lib_gathering_crash_telemetry_in_progress">Colectarea datelor de telemetrie de blocare este în desfășurare</string>
   <!-- Title of the activity that shows the list of past crashes (similar to about:crashes) -->
   <string name="mozac_lib_crash_activity_title">Rapoarte de defecțiuni</string>
   <!-- Text shown instead of crash list if no crashes have been submitted yet -->
   <string name="mozac_lib_crash_no_crashes">Nu au fost trimise rapoarte de defecțiuni.</string>
   <!-- Text link that will show an app chooser to share a crash report with a third-party app (e.g. gmail) -->
   <string name="mozac_lib_crash_share">Partajează</string>
+  <!-- String for Ask before sending crash reports radio button in Data Collection Screen -->
+  <string name="crash_reporting_ask">Întreabă înainte de a trimite</string>
+  <!-- String for Send crash reports automatically radio button in Data Collection Screen -->
+  <string name="crash_reporting_auto">Trimite automat</string>
+  <!-- String for Never sending crash reports radio button in Data Collection Screen -->
+  <string name="crash_reporting_never">Nu trimite niciodată</string>
 </resources>

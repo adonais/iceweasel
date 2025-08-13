@@ -3,8 +3,6 @@
 
 "use strict";
 
-// todo: add tests
-
 add_task(async function testEnrollments() {
   const { sandbox, manager, cleanup } = await NimbusTestUtils.setupTest();
   const db = manager.store._db;

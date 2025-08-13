@@ -847,12 +847,6 @@ child:
     async DomainSetChanged(uint32_t aSetType, uint32_t aChangeType, nullable nsIURI aDomain);
 
     /**
-     * Notify the child that it will soon be asked to shutdown.
-     * This is sent with high priority right before the normal shutdown.
-     */
-    [Priority=control] async ShutdownConfirmedHP();
-
-    /**
      * Notify the child to shutdown. The child will in turn call FinishShutdown
      * and let the parent close the channel.
      */
@@ -1055,8 +1049,10 @@ child:
 
     // Dispatches a "beforeunload" event to each in-process content window in the
     // subtree beginning at `aStartingAt`, and returns the result as documented in
-    // the `PermitUnloadResult` enum.
-    async DispatchBeforeUnloadToSubtree(MaybeDiscardedBrowsingContext aStartingAt)
+    // the `PermitUnloadResult` enum. If `aStartingAt` is an in-process, top-level
+    // browsing context, then a "navigate" event will also be dispatched.
+    // See https://html.spec.whatwg.org/#preventing-navigation:fire-a-traverse-navigate-event
+    async DispatchBeforeUnloadToSubtree(MaybeDiscardedBrowsingContext aStartingAt, SessionHistoryInfo? info)
         returns (PermitUnloadResult result);
 
     // Update the cached list of codec supported in the given process.
@@ -1102,8 +1098,7 @@ parent:
     async GetLoadingSessionHistoryInfoFromParent(MaybeDiscardedBrowsingContext aContext)
         returns (LoadingSessionHistoryInfo? aLoadingInfo);
 
-    async GetContiguousSessionHistoryInfos(MaybeDiscardedBrowsingContext aContext,
-                                           SessionHistoryInfo aInfo)
+    async GetContiguousSessionHistoryInfos(MaybeDiscardedBrowsingContext aContext)
         returns (SessionHistoryInfo[] infos);
 
     async RemoveFromBFCache(MaybeDiscardedBrowsingContext aContext);
@@ -1542,7 +1537,7 @@ parent:
                        nsCString aFeatures,
                        Modifiers aModifiers,
                        nullable nsIPrincipal aTriggeringPrincipal,
-                       nullable nsIContentSecurityPolicy aCsp,
+                       nullable nsIPolicyContainer aPolicyContainer,
                        nullable nsIReferrerInfo aReferrerInfo,
                        OriginAttributes aOriginAttributes,
                        bool aUserActivation,
@@ -1560,7 +1555,7 @@ parent:
       Modifiers aModifiers,
       nsString aName,
       nullable nsIPrincipal aTriggeringPrincipal,
-      nullable nsIContentSecurityPolicy aCsp,
+      nullable nsIPolicyContainer aPolicyContainer,
       nullable nsIReferrerInfo aReferrerInfo,
       OriginAttributes aOriginAttributes,
       bool aUserActivation,
@@ -1784,8 +1779,7 @@ parent:
     async HistoryCommit(MaybeDiscardedBrowsingContext aContext,
                         uint64_t aLoadID, nsID aChangeID, uint32_t aLoadType,
                         bool aCloneEntryChildren,
-                        bool aChannelExpired, uint32_t aCacheKey,
-                        nullable nsIPrincipal aPartitionedPrincipal);
+                        bool aChannelExpired, uint32_t aCacheKey);
 
     async HistoryGo(MaybeDiscardedBrowsingContext aContext, int32_t aOffset,
                     uint64_t aHistoryEpoch, bool aRequireUserInteraction,

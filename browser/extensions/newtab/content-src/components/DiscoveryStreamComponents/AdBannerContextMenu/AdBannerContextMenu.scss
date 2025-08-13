@@ -1,11 +1,12 @@
 .ads-context-menu-wrapper {
-  margin-block-start: var(--space-xsmall);
   text-align: end;
 }
 
 .ads-context-menu {
-  float: right;
-  position: relative;
+  z-index: 10;
+  position: absolute;
+  inset-inline-end: var(--space-large);
+  inset-block-end: 0;
 
   .context-menu {
     /* Position the menu just under and to the right of the context menu button */
@@ -13,13 +14,6 @@
     inset-inline-start: auto;
     margin-inline-end: calc(-0.98 * var(--size-item-large));
     inset-block-start: calc(2.25 * var(--size-item-small));
-  }
-
-  > moz-button {
-    // Contrast fix for users who have wallpapers set
-    @include wallpaper-contrast-fix;
-
-    padding-block-end: var(--space-small);
   }
 
   // The context menu button background should be transparent by default

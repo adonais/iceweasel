@@ -204,10 +204,10 @@ ContentAreaDropListener.prototype = {
     return this._getTriggeringPrincipalFromDataTransfer(dataTransfer, true);
   },
 
-  getCsp(aEvent) {
+  getPolicyContainer(aEvent) {
     let sourceNode = aEvent.dataTransfer.mozSourceNode;
-    if (aEvent.dataTransfer.mozCSP !== null) {
-      return aEvent.dataTransfer.mozCSP;
+    if (aEvent.dataTransfer.policyContainer !== null) {
+      return aEvent.dataTransfer.policyContainer;
     }
 
     if (
@@ -216,12 +216,12 @@ ContentAreaDropListener.prototype = {
         sourceNode.namespaceURI !==
           "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul")
     ) {
-      // Use sourceNode's csp only if the sourceNode is not browser.
+      // Use sourceNode's policyContainer only if the sourceNode is not browser.
       //
-      // If sourceNode is browser, the actual triggering csp may be differ than sourceNode's csp,
-      // since sourceNode's csp is top level document's one and the drag may be triggered from a
-      // frame with different csp.
-      return sourceNode.csp;
+      // If sourceNode is browser, the actual triggering policyContainer may be differ than sourceNode's policyContainer,
+      // since sourceNode's policyContainer is top level document's one and the drag may be triggered from a
+      // frame with different policyContainer.
+      return sourceNode.policyContainer;
     }
     return null;
   },

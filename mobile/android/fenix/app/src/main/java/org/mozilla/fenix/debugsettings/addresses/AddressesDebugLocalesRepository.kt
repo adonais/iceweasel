@@ -18,6 +18,9 @@ private const val SHARED_PREFS_FILENAME = "ADDRESSES_DEBUG_LOCALES"
 enum class DebugLocale(val langTag: String) {
     DE("de-DE"),
     FR("fr-FR"),
+    AU("en-AU"),
+    GB("en-GB"),
+    JP("ja"),
 }
 
 /**

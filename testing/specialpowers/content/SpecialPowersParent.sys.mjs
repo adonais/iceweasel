@@ -689,6 +689,11 @@ export class SpecialPowersParent extends JSWindowActorParent {
       }
     });
 
+    if (failures.length) {
+      // Because we can't reset prefs on the default branch, reset our baseline.
+      this.getBaselinePrefs();
+    }
+
     if (ignorePrefs.length > 1) {
       return failures;
     }

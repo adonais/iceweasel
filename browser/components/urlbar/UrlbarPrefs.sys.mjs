@@ -107,6 +107,10 @@ const PREF_URLBAR_DEFAULTS = new Map([
   // disable event.
   ["events.disableSuggest.maxSecondsFromLastSearch", 300],
 
+  // If a page is interacted with for less than these seconds, before navigating
+  // away via browser chrome, then send a bounce event.
+  ["events.bounce.maxSecondsFromLastSearch", 10],
+
   // Whether we expand the font size when when the urlbar is
   // focused.
   ["experimental.expandTextOnFocus", false],
@@ -188,6 +192,12 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   // The Merino endpoint URL, not including parameters.
   ["merino.endpointURL", "https://merino.services.mozilla.com/api/v1/suggest"],
+
+  // OHTTP config URL for Merino requests.
+  ["merino.ohttpConfigURL", ""],
+
+  // OHTTP relay URL for Merino requests.
+  ["merino.ohttpRelayURL", ""],
 
   // Comma-separated list of providers to request from Merino
   ["merino.providers", ""],
@@ -490,7 +500,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   // Whether history results with the same title and URL excluding the ref
   // will be deduplicated.
-  ["deduplication.enabled", false],
+  ["deduplication.enabled", true],
 
   // How old history results have to be to be deduplicated.
   ["deduplication.thresholdDays", 0],
@@ -538,6 +548,10 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   // Remove redundant portions from URLs.
   ["trimURLs", true],
+
+  // Enable the updated design combining the privacy and shield icon
+  // and panels in the Urlbar.
+  ["trustPanel.featureGate", false],
 
   // Whether unit conversion is enabled.
   ["unitConversion.enabled", false],

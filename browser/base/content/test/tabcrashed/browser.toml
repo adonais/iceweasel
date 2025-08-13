@@ -23,7 +23,6 @@ https_first_disabled = true
 ["browser_showForm.js"]
 
 ["browser_shown.js"]
-skip-if = ["verify && !debug && os == 'win'"]
 
 ["browser_shownRestartRequired.js"]
 

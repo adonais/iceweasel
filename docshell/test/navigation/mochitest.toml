@@ -105,9 +105,7 @@ support-files = [
   "iframe_slow_onload.html",
   "iframe_slow_onload_inner.html",
 ]
-skip-if = [
-  "http3",
-]
+skip-if = ["http3"]
 
 ["test_bug13871.html"]
 skip-if = [
@@ -124,22 +122,16 @@ skip-if = [
 ["test_bug278916.html"]
 
 ["test_bug279495.html"]
-skip-if = [
-  "os == 'android' && debug && processor == 'x86_64'", # Bug 1781600
-]
+skip-if = ["os == 'android' && debug && processor == 'x86_64'"] # Bug 1781600
 
 ["test_bug344861.html"]
 skip-if = ["os == 'android'"]
 
 ["test_bug386782.html"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1912735
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'"] # Bug 1912735
 
 ["test_bug430624.html"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3",
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3"]
 
 ["test_bug430723.html"]
 skip-if = [
@@ -298,7 +290,6 @@ support-files = ["file_same_url.html"]
 ["test_session_history_on_redirect.html"]
 
 ["test_sessionhistory.html"]
-skip-if = ["os == 'mac' && debug && verify"] # Hit MOZ_CRASH(Shutdown too long, probably frozen, causing a crash.) bug 1677545
 
 ["test_sessionhistory_document_write.html"]
 

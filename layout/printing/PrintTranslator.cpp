@@ -6,13 +6,13 @@
 
 #include "PrintTranslator.h"
 
+#include "InlineTranslator.h"
 #include "gfxContext.h"
-#include "nsDeviceContext.h"
-#include "mozilla/gfx/RecordedEvent.h"
-#include "mozilla/gfx/RecordingTypes.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/UniquePtr.h"
-#include "InlineTranslator.h"
+#include "mozilla/gfx/RecordedEvent.h"
+#include "mozilla/gfx/RecordingTypes.h"
+#include "nsDeviceContext.h"
 
 using namespace mozilla::gfx;
 

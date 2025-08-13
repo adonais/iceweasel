@@ -14,6 +14,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   JsonSchema: "resource://gre/modules/JsonSchema.sys.mjs",
+  NimbusEnrollments: "resource://nimbus/lib/Enrollments.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusTelemetry: "resource://nimbus/lib/Telemetry.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
@@ -57,13 +58,18 @@ const SECURE_EXPERIMENTS_COLLECTION = "secureExperiments";
 const IS_MAIN_PROCESS =
   Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT;
 
+const SECURE_FEATURE_IDS = new Set(["prefFlips", "newtabTrainhopAddon"]);
 const RS_COLLECTION_OPTIONS = {
   [EXPERIMENTS_COLLECTION]: {
-    disallowedFeatureIds: ["prefFlips"],
+    // None of these features can be present to accept an experiment from the
+    // experiments collection.
+    disallowedFeatureIds: SECURE_FEATURE_IDS,
   },
 
   [SECURE_EXPERIMENTS_COLLECTION]: {
-    allowedFeatureIds: ["prefFlips"],
+    // One of these features *must* be present to accept an experiment from the
+    // secure experiments collection.
+    requiredFeatureIds: SECURE_FEATURE_IDS,
   },
 };
 
@@ -105,6 +111,7 @@ export const MatchStatus = Object.freeze({
   NO_MATCH: "NO_MATCH",
   TARGETING_ONLY: "TARGETING_ONLY",
   TARGETING_AND_BUCKETING: "TARGETING_AND_BUCKETING",
+  UNENROLLED_IN_ANOTHER_PROFILE: "UNENROLLED_IN_ANOTHER_PROFILE",
 });
 
 export const CheckRecipeResult = {
@@ -396,10 +403,19 @@ export class RemoteSettingsExperimentLoader {
       await this.getRecipesFromAllCollections({ forceSync, trigger });
 
     if (!loadingError) {
+      const unenrolledExperimentSlugs = lazy.NimbusEnrollments
+        .syncEnrollmentsEnabled
+        ? await lazy.NimbusEnrollments.loadUnenrolledExperimentSlugsFromOtherProfiles()
+        : undefined;
+
       const enrollmentsCtx = new EnrollmentsContext(
         this.manager,
         recipeValidator,
-        { validationEnabled, shouldCheckTargeting: true }
+        {
+          validationEnabled,
+          shouldCheckTargeting: true,
+          unenrolledExperimentSlugs,
+        }
       );
 
       const { existingEnrollments, recipes } =
@@ -497,10 +513,10 @@ export class RemoteSettingsExperimentLoader {
    *        The RemoteSettings client that will be used to fetch recipes.
    * @param {boolean} options.forceSync
    *        Force the RemoteSettings client to sync the collection before retrieving recipes.
-   * @param {string[] | null} options.allowedFeatureIds
-   *        If non-null, any recipe that uses a feature ID not in this list will
-   *        be rejected.
-   * @param {string[]} options.disallowedFeatureIds
+   * @param {Set<string> | undefined} options.requiredFeatureIds
+   *        If non-null, a recipe must include at least one feature in this set
+   *        or it will be rejected.
+   * @param {Set<string> | undefined} options.disallowedFeatureIds
    *        If a recipe uses any features in this list, it will be rejected.
    *
    * @returns {object[] | null}
@@ -511,8 +527,8 @@ export class RemoteSettingsExperimentLoader {
   async getRecipesFromCollection({
     client,
     forceSync = false,
-    allowedFeatureIds = null,
-    disallowedFeatureIds = [],
+    requiredFeatureIds = undefined,
+    disallowedFeatureIds = undefined,
   } = {}) {
     let recipes;
     try {
@@ -543,21 +559,24 @@ export class RemoteSettingsExperimentLoader {
     }
 
     return recipes.filter(recipe => {
-      for (const featureId of recipe.featureIds) {
-        if (allowedFeatureIds !== null) {
-          if (!allowedFeatureIds.includes(featureId)) {
+      if (
+        requiredFeatureIds &&
+        !recipe.featureIds.some(featureId => requiredFeatureIds.has(featureId))
+      ) {
+        lazy.log.warn(
+          `Recipe ${recipe.slug} not returned from collection ${client.collectionName} because it does not contain at least one required feature ID.`
+        );
+        return false;
+      }
+
+      if (disallowedFeatureIds) {
+        for (const featureId of recipe.featureIds) {
+          if (disallowedFeatureIds.has(featureId)) {
             lazy.log.warn(
               `Recipe ${recipe.slug} not returned from collection ${client.collectionName} because it contains feature ${featureId}, which is disallowed for that collection.`
             );
             return false;
           }
-        }
-
-        if (disallowedFeatureIds.includes(featureId)) {
-          lazy.log.warn(
-            `Recipe ${recipe.slug} not returned from collection ${client.collectionName} because it contains feature ${featureId}, which is disallowed for that collection.`
-          );
-          return false;
         }
       }
 
@@ -811,7 +830,11 @@ export class EnrollmentsContext {
   constructor(
     manager,
     recipeValidator,
-    { validationEnabled = true, shouldCheckTargeting = true } = {}
+    {
+      validationEnabled = true,
+      shouldCheckTargeting = true,
+      unenrolledExperimentSlugs,
+    } = {}
   ) {
     this.manager = manager;
     this.recipeValidator = recipeValidator;
@@ -819,6 +842,7 @@ export class EnrollmentsContext {
     this.validationEnabled = validationEnabled;
     this.validatorCache = {};
     this.shouldCheckTargeting = shouldCheckTargeting;
+    this.unenrolledExperimentSlugs = unenrolledExperimentSlugs;
     this.matches = 0;
 
     this.locale = Services.locale.appLocaleAsBCP47;
@@ -912,6 +936,10 @@ export class EnrollmentsContext {
     if (!(await this.manager.isInBucketAllocation(recipe.bucketConfig))) {
       lazy.log.debug(`${recipe.slug} did not match bucket sampling`);
       return CheckRecipeResult.Ok(MatchStatus.TARGETING_ONLY);
+    }
+
+    if (!recipe.isRollout && this.unenrolledExperimentSlugs?.has(recipe.slug)) {
+      return CheckRecipeResult.Ok(MatchStatus.UNENROLLED_IN_ANOTHER_PROFILE);
     }
 
     return CheckRecipeResult.Ok(MatchStatus.TARGETING_AND_BUCKETING);

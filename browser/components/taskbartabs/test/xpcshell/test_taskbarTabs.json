@@ -11,7 +11,8 @@
       "id": "c7bd413d-da04-4aae-b98e-9e588a51a45e",
       "scopes": [{ "hostname": "www.another-test.com" }],
       "userContextId": 1,
-      "startUrl": "https://www.another-test.com/home"
+      "startUrl": "https://www.another-test.com/home",
+      "shortcutRelativePath": "Cool Apps\\Taskbar Tabs.lnk"
     }
   ]
 }

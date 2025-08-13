@@ -6197,19 +6197,16 @@ bool BaselineCodeGen<Handler>::emit_Await() {
 }
 
 template <>
-template <typename F>
-bool BaselineCompilerCodeGen::emitAfterYieldDebugInstrumentation(
-    const F& ifDebuggee, Register) {
+bool BaselineCompilerCodeGen::emitAfterYieldDebugInstrumentation(Register) {
   if (handler.compileDebugInstrumentation()) {
-    return ifDebuggee();
+    return emitDebugAfterYield();
   }
   return true;
 }
 
 template <>
-template <typename F>
 bool BaselineInterpreterCodeGen::emitAfterYieldDebugInstrumentation(
-    const F& ifDebuggee, Register scratch) {
+    Register scratch) {
   // Note that we can't use emitDebugInstrumentation here because the frame's
   // DEBUGGEE flag hasn't been initialized yet.
 
@@ -6224,7 +6221,7 @@ bool BaselineInterpreterCodeGen::emitAfterYieldDebugInstrumentation(
                     Address(scratch, Realm::offsetOfDebugModeBits()),
                     Imm32(Realm::debugModeIsDebuggeeBit()), &done);
 
-  if (!ifDebuggee()) {
+  if (!emitDebugAfterYield()) {
     return false;
   }
 
@@ -6233,28 +6230,17 @@ bool BaselineInterpreterCodeGen::emitAfterYieldDebugInstrumentation(
 }
 
 template <typename Handler>
-bool BaselineCodeGen<Handler>::emit_AfterYield() {
-  if (!emit_JumpTarget()) {
-    return false;
-  }
+bool BaselineCodeGen<Handler>::emitDebugAfterYield() {
+  frame.assertSyncedStack();
+  masm.loadBaselineFramePtr(FramePointer, R0.scratchReg());
+  prepareVMCall();
+  pushArg(R0.scratchReg());
 
-  auto ifDebuggee = [this]() {
-    frame.assertSyncedStack();
-    masm.loadBaselineFramePtr(FramePointer, R0.scratchReg());
-    prepareVMCall();
-    pushArg(R0.scratchReg());
+  const RetAddrEntry::Kind kind = RetAddrEntry::Kind::DebugAfterYield;
 
-    const RetAddrEntry::Kind kind = RetAddrEntry::Kind::DebugAfterYield;
-
-    using Fn = bool (*)(JSContext*, BaselineFrame*);
-    if (!callVM<Fn, jit::DebugAfterYield>(kind)) {
-      return false;
-    }
-
-    return true;
-  };
-  return emitAfterYieldDebugInstrumentation(ifDebuggee, R0.scratchReg());
-}
+  using Fn = bool (*)(JSContext*, BaselineFrame*);
+  return callVM<Fn, jit::DebugAfterYield>(kind);
+};
 
 template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_FinalYieldRval() {
@@ -6304,10 +6290,10 @@ bool BaselineCodeGen<Handler>::emitEnterGeneratorCode(Register script,
   masm.storePtr(scratch, icScriptAddr);
 
   Label noBaselineScript;
-  // Frames with shared bytecode need the interpreterScript pointer
-  if (handler.realmIndependentJitcode()) {
-    masm.storePtr(script, frame.addressOfInterpreterScript());
-  }
+  // Needed if running in interpreter or if generator is realm-independent,
+  // but it's faster to set it than to check every time
+  masm.storePtr(script, frame.addressOfInterpreterScript());
+
   masm.loadJitScript(script, scratch);
   masm.loadPtr(Address(scratch, JitScript::offsetOfBaselineScript()), scratch);
   masm.branchPtr(Assembler::BelowOrEqual, scratch,
@@ -6324,11 +6310,9 @@ bool BaselineCodeGen<Handler>::emitEnterGeneratorCode(Register script,
   masm.bind(&noBaselineScript);
 
   // Initialize interpreter frame fields.
-  Address flagsAddr(FramePointer, BaselineFrame::reverseOffsetOfFlags());
-  Address scriptAddr(FramePointer,
-                     BaselineFrame::reverseOffsetOfInterpreterScript());
-  masm.or32(Imm32(BaselineFrame::RUNNING_IN_INTERPRETER), flagsAddr);
-  masm.storePtr(script, scriptAddr);
+  masm.or32(Imm32(BaselineFrame::RUNNING_IN_INTERPRETER),
+            frame.addressOfFlags());
+  // interpreterScript_ is set above
 
   // Initialize pc and jump to it.
   emitInterpJumpToResumeEntry(script, resumeIndex, scratch);
@@ -6694,6 +6678,29 @@ bool BaselineInterpreterCodeGen::emit_JumpTarget() {
                                scratch2);
   masm.storePtr(scratch2, frame.addressOfInterpreterICEntry());
   return true;
+}
+
+template <>
+bool BaselineCompilerCodeGen::emit_AfterYield() {
+  if (!emit_JumpTarget()) {
+    return false;
+  }
+
+  if (handler.realmIndependentJitcode()) {
+    masm.or32(Imm32(BaselineFrame::Flags::REALM_INDEPENDENT),
+              frame.addressOfFlags());
+  }
+
+  return emitAfterYieldDebugInstrumentation(R0.scratchReg());
+}
+
+template <>
+bool BaselineInterpreterCodeGen::emit_AfterYield() {
+  if (!emit_JumpTarget()) {
+    return false;
+  }
+
+  return emitAfterYieldDebugInstrumentation(R0.scratchReg());
 }
 
 template <typename Handler>

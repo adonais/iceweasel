@@ -10,7 +10,6 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/ServoBindings.h"
-
 #include "nsCSSAnonBoxes.h"
 #include "nsDOMString.h"
 #include "nsGkAtomConsts.h"

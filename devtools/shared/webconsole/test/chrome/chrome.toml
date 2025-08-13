@@ -12,6 +12,7 @@ support-files = [
 ]
 prefs = [
   "devtools.console.stdout.chrome=false",
+  "javascript.options.experimental.explicit_resource_management=true",
 ]
 
 ["test_basics.html"]
@@ -43,7 +44,6 @@ skip-if = ["release_or_beta"] # requires dom.postMessage.sharedArrayBuffer.bypas
 ["test_jsterm_autocomplete.html"]
 
 ["test_network_get.html"]
-skip-if = ["verify"]
 
 ["test_network_post.html"]
 

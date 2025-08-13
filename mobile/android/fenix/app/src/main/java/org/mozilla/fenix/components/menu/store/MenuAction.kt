@@ -262,11 +262,6 @@ sealed class MenuAction : Action {
         data object Passwords : Navigate()
 
         /**
-         * [Navigate] action dispatched when navigating to customize homepage.
-         */
-        data object CustomizeHomepage : Navigate()
-
-        /**
          * [Navigate] action dispatched when navigating to release notes.
          */
         data object ReleaseNotes : Navigate()

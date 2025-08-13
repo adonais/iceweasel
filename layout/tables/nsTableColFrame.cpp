@@ -2,18 +2,19 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-#include "nsCOMPtr.h"
 #include "nsTableColFrame.h"
-#include "nsTableFrame.h"
-#include "nsContainerFrame.h"
-#include "nsStyleConsts.h"
-#include "nsPresContext.h"
-#include "nsGkAtoms.h"
-#include "nsCSSRendering.h"
-#include "nsIContent.h"
+
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "nsCOMPtr.h"
+#include "nsCSSRendering.h"
+#include "nsContainerFrame.h"
+#include "nsGkAtoms.h"
+#include "nsIContent.h"
+#include "nsPresContext.h"
+#include "nsStyleConsts.h"
+#include "nsTableFrame.h"
 
 using namespace mozilla;
 

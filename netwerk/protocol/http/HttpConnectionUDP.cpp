@@ -212,6 +212,9 @@ nsresult HttpConnectionUDP::Activate(nsAHttpTransaction* trans, uint32_t caps,
   NetAddr peerAddr;
   if (!transCI->UsingProxy() && hTrans &&
       NS_SUCCEEDED(GetPeerAddr(&peerAddr))) {
+    // set the targetIpAddressSpace in the transaction object, this might be
+    // needed by the channel for determining the kind of LNA permissions and/or
+    // LNA telemetry
     if (!hTrans->AllowedToConnectToIpAddressSpace(
             peerAddr.GetIpAddressSpace())) {
       // we could probably fail early and avoid recreating the H3 session
@@ -668,14 +671,10 @@ void HttpConnectionUDP::SetEvent(nsresult aStatus) {
       break;
     case NS_NET_STATUS_CONNECTING_TO:
       mBootstrappedTimings.connectStart = TimeStamp::Now();
+      mBootstrappedTimings.secureConnectionStart =
+          mBootstrappedTimings.connectStart;
       break;
     case NS_NET_STATUS_CONNECTED_TO:
-      mBootstrappedTimings.connectEnd = TimeStamp::Now();
-      break;
-    case NS_NET_STATUS_TLS_HANDSHAKE_STARTING:
-      mBootstrappedTimings.secureConnectionStart = TimeStamp::Now();
-      break;
-    case NS_NET_STATUS_TLS_HANDSHAKE_ENDED:
       mBootstrappedTimings.connectEnd = TimeStamp::Now();
       break;
     default:

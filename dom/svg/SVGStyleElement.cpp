@@ -57,7 +57,7 @@ SVGStyleElement::SVGStyleElement(
 //----------------------------------------------------------------------
 // nsINode methods
 
-NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGStyleElement)
+NS_IMPL_ELEMENT_CLONE(SVGStyleElement)
 
 //----------------------------------------------------------------------
 // nsIContent methods
@@ -114,20 +114,22 @@ void SVGStyleElement::CharacterDataChanged(nsIContent* aContent,
   ContentChanged(aContent);
 }
 
-void SVGStyleElement::ContentAppended(nsIContent* aFirstNewContent) {
+void SVGStyleElement::ContentAppended(nsIContent* aFirstNewContent,
+                                      const ContentAppendInfo&) {
   ContentChanged(aFirstNewContent->GetParent());
 }
 
-void SVGStyleElement::ContentInserted(nsIContent* aChild) {
+void SVGStyleElement::ContentInserted(nsIContent* aChild,
+                                      const ContentInsertInfo&) {
   ContentChanged(aChild);
 }
 
 void SVGStyleElement::ContentWillBeRemoved(nsIContent* aChild,
-                                           const BatchRemovalState* aState) {
+                                           const ContentRemoveInfo& aInfo) {
   if (!nsContentUtils::IsInSameAnonymousTree(this, aChild)) {
     return;
   }
-  if (aState && !aState->mIsFirst) {
+  if (aInfo.mBatchRemovalState && !aInfo.mBatchRemovalState->mIsFirst) {
     return;
   }
   // Make sure to run this once the removal has taken place.
@@ -213,6 +215,13 @@ Maybe<LinkStyle::SheetInfo> SVGStyleElement::GetStyleSheetInfo() {
       IsExplicitlyEnabled::No,
       FetchPriority::Auto,
   });
+}
+
+nsresult SVGStyleElement::CopyInnerTo(SVGStyleElement* aDest) {
+  nsresult rv = Element::CopyInnerTo(aDest);
+  NS_ENSURE_SUCCESS(rv, rv);
+  MaybeStartCopyStyleSheetTo(aDest, aDest->OwnerDoc());
+  return NS_OK;
 }
 
 }  // namespace mozilla::dom

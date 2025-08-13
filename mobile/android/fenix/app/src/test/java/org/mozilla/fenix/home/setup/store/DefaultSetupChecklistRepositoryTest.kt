@@ -39,7 +39,10 @@ class DefaultSetupChecklistRepositoryTest {
         assertEquals(R.string.pref_key_setup_step_theme, preferenceKeys[2].preferenceKey)
         assertEquals(R.string.pref_key_setup_step_toolbar, preferenceKeys[3].preferenceKey)
         assertEquals(R.string.pref_key_setup_step_extensions, preferenceKeys[4].preferenceKey)
-        assertEquals(R.string.pref_key_search_widget_installed_2, preferenceKeys[5].preferenceKey)
+        assertEquals(
+            R.string.pref_key_setup_step_install_search_widget,
+            preferenceKeys[5].preferenceKey,
+        )
         assertEquals(R.string.pref_key_setup_checklist_complete, preferenceKeys[6].preferenceKey)
     }
 
@@ -94,13 +97,13 @@ class DefaultSetupChecklistRepositoryTest {
     }
 
     @Test
-    fun `WHEN install search widget preference THEN setPreference does not update the preference value`() {
-        assertFalse(settings.searchWidgetInstalled)
+    fun `WHEN install search widget preference THEN setPreference updates the preference value`() {
+        assertFalse(settings.hasCompletedSetupStepInstallSearchWidget)
 
         val repository = DefaultSetupChecklistRepository(context = testContext)
-        repository.setPreference(SetupChecklistPreference.SetToDefault, true)
+        repository.setPreference(SetupChecklistPreference.InstallSearchWidget, true)
 
-        assertFalse(settings.searchWidgetInstalled)
+        assertTrue(settings.hasCompletedSetupStepInstallSearchWidget)
     }
 
     @Test
@@ -198,24 +201,6 @@ class DefaultSetupChecklistRepositoryTest {
             val result = repository.setupChecklistPreferenceUpdates.take(1).first()
             val expected = SetupChecklistRepository.SetupChecklistPreferenceUpdate(
                 SetupChecklistPreference.ExtensionsComplete,
-                true,
-            )
-            assertEquals(expected, result)
-        }
-
-    @Test
-    fun `GIVEN search widget added preference WHEN a change is made to the preference value THEN the repository emits the change`() =
-        runTest {
-            assertFalse(settings.searchWidgetInstalled)
-            val repository =
-                DefaultSetupChecklistRepository(context = testContext, coroutineScope = this)
-            settings.preferences.registerOnSharedPreferenceChangeListener(repository.onPreferenceChange)
-
-            settings.setSearchWidgetInstalled(true)
-
-            val result = repository.setupChecklistPreferenceUpdates.take(1).first()
-            val expected = SetupChecklistRepository.SetupChecklistPreferenceUpdate(
-                SetupChecklistPreference.InstallSearchWidget,
                 true,
             )
             assertEquals(expected, result)

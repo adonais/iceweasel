@@ -57,7 +57,12 @@ already_AddRefed<dom::Promise> Queue::OnSubmittedWorkDone(ErrorResult& aRv) {
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
-  mBridge->QueueOnSubmittedWorkDone(mId, promise);
+
+  ffi::wgpu_client_on_submitted_work_done(mBridge->GetClient(), mId);
+
+  auto pending_promise = RefPtr(promise);
+  mBridge->mPendingOnSubmittedWorkDonePromises.push_back(
+      std::move(pending_promise));
 
   return promise.forget();
 }
@@ -122,6 +127,17 @@ void Queue::WriteBuffer(
           return;
         }
 
+        if (size < 1024) {
+          ipc::ByteBuf bb{};
+          bb.Allocate(size);
+          memcpy(bb.mData, aData.Elements() + offset, size);
+          auto data_buffer_index = mBridge->QueueDataBuffer(std::move(bb));
+          ffi::wgpu_queue_write_buffer_inline(mBridge->GetClient(),
+                                              mParent->mId, mId, aBuffer.mId,
+                                              aBufferOffset, data_buffer_index);
+          return;
+        }
+
         mozilla::ipc::MutableSharedMemoryHandle handle;
         if (size != 0) {
           handle = mozilla::ipc::shared_memory::Create(size);
@@ -133,10 +149,10 @@ void Queue::WriteBuffer(
 
           memcpy(mapping.DataAs<uint8_t>(), aData.Elements() + offset, size);
         }
-        ipc::ByteBuf bb;
-        ffi::wgpu_queue_write_buffer(aBuffer.mId, aBufferOffset, ToFFI(&bb));
-        mBridge->SendQueueWriteAction(mId, mParent->mId, std::move(bb),
-                                      std::move(handle));
+        auto shmem_handle_index = mBridge->QueueShmemHandle(std::move(handle));
+        ffi::wgpu_queue_write_buffer_via_shmem(
+            mBridge->GetClient(), mParent->mId, mId, aBuffer.mId, aBufferOffset,
+            shmem_handle_index);
       });
 }
 
@@ -237,10 +253,10 @@ void Queue::WriteTexture(
       handle = mozilla::ipc::MutableSharedMemoryHandle();
     }
 
-    ipc::ByteBuf bb;
-    ffi::wgpu_queue_write_texture(copyView, dataLayout, extent, ToFFI(&bb));
-    mBridge->SendQueueWriteAction(mId, mParent->mId, std::move(bb),
-                                  std::move(handle));
+    auto shmem_handle_index = mBridge->QueueShmemHandle(std::move(handle));
+    ffi::wgpu_queue_write_texture_via_shmem(mBridge->GetClient(), mParent->mId,
+                                            mId, copyView, dataLayout, extent,
+                                            shmem_handle_index);
   });
 }
 
@@ -507,10 +523,11 @@ void Queue::CopyExternalImageToTexture(
   ffi::WGPUTexelCopyBufferLayout dataLayout = {0, &dstStrideVal, &dstHeight};
   ffi::WGPUTexelCopyTextureInfo copyView = {};
   CommandEncoder::ConvertTextureCopyViewToFFI(aDestination, &copyView);
-  ipc::ByteBuf bb;
-  ffi::wgpu_queue_write_texture(copyView, dataLayout, extent, ToFFI(&bb));
-  mBridge->SendQueueWriteAction(mId, mParent->mId, std::move(bb),
-                                std::move(handle));
+
+  auto shmem_handle_index = mBridge->QueueShmemHandle(std::move(handle));
+  ffi::wgpu_queue_write_texture_via_shmem(mBridge->GetClient(), mParent->mId,
+                                          mId, copyView, dataLayout, extent,
+                                          shmem_handle_index);
 }
 
 }  // namespace mozilla::webgpu

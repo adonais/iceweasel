@@ -6,16 +6,16 @@
 
 #include "SVGContextPaint.h"
 
+#include "SVGPaintServerFrame.h"
 #include "gfxContext.h"
 #include "gfxUtils.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/BasePrincipal.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/extensions/WebExtensionPolicy.h"
-#include "mozilla/StaticPrefs_svg.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGUtils.h"
-#include "SVGPaintServerFrame.h"
+#include "mozilla/StaticPrefs_svg.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/extensions/WebExtensionPolicy.h"
+#include "mozilla/gfx/2D.h"
 
 using namespace mozilla::gfx;
 using namespace mozilla::image;

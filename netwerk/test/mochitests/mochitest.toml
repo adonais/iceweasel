@@ -68,10 +68,7 @@ skip-if = ["xorigin"]
 skip-if = ["xorigin"]
 
 ["test_1331680_xhr.html"]
-skip-if = [
-  "verify",
-  "xorigin",
-]
+skip-if = ["xorigin"]
 
 ["test_1396395.html"]
 skip-if = [
@@ -219,7 +216,6 @@ skip-if = [
 ]
 
 ["test_uri_scheme.html"]
-skip-if = ["verify && debug && os == 'mac'"]
 
 ["test_url_perf.html"]
 # test to check the performance of URL parsing.

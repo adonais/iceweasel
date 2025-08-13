@@ -9,12 +9,12 @@ import io.mockk.mockk
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.LastMediaAccessState
 import mozilla.components.browser.state.state.createTab
+import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.concept.storage.HistoryMetadataKey
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.mozilla.fenix.components.usecases.FenixBrowserUseCases.Companion.ABOUT_HOME
 import org.mozilla.fenix.home.recenttabs.RecentTab
 import org.mozilla.fenix.utils.Settings
 
@@ -59,7 +59,7 @@ class BrowserStateTest {
 
     @Test
     fun `GIVEN the selected tab is a homepage tab WHEN asRecentTabs is called THEN return an empty list`() {
-        val selectedTab = createTab(url = ABOUT_HOME, id = "3")
+        val selectedTab = createTab(url = ABOUT_HOME_URL, id = "3")
         val browserState = BrowserState(
             tabs = listOf(createTab("tab1"), selectedTab, createTab("tab3")),
             selectedTabId = selectedTab.id,

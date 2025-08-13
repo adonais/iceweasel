@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Check that mlabeledtr layouts like mtr</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link rel="match" href="mtable-mlabeledtr-ref.html"/>
+  </head>
+  <style>
+    /* Match https://searchfox.org/mozilla-central/source/layout/mathml/mathml.css#146-151 */
+    mlabeledtr:first-child > mtd {
+      padding-top: 0;
+    }
+    mlabeledtr:last-child > mtd {
+      padding-bottom: 0;
+    }
+  </style>
+  <body>
+    <math>
+      <mtable>
+        <mlabeledtr>
+          <mtd>
+            <mspace width="10px" height="10px" style="background: black"></mspace>
+          </mtd>
+          <mtd>
+            <mspace width="10px" height="10px" style="background: black"></mspace>
+          </mtd>
+          <mtd>
+            <mspace width="10px" height="10px" style="background: black"></mspace>
+          </mtd>
+        </mlabeledtr>
+      </mtable>
+    </math>
+  </body>
+</html>

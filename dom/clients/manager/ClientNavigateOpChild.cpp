@@ -10,6 +10,7 @@
 #include "ClientSource.h"
 #include "ClientSourceChild.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/Unused.h"
 #include "nsIDocShell.h"
 #include "nsDocShellLoadState.h"
@@ -251,7 +252,7 @@ RefPtr<ClientOpPromise> ClientNavigateOpChild::DoNavigate(
   RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(url);
   loadState->SetTriggeringPrincipal(principal);
   loadState->SetTriggeringSandboxFlags(doc->GetSandboxFlags());
-  loadState->SetCsp(doc->GetCsp());
+  loadState->SetPolicyContainer(doc->GetPolicyContainer());
 
   auto referrerInfo = MakeRefPtr<ReferrerInfo>(*doc);
   loadState->SetReferrerInfo(referrerInfo);

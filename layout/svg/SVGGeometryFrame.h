@@ -7,11 +7,11 @@
 #ifndef LAYOUT_SVG_SVGGEOMETRYFRAME_H_
 #define LAYOUT_SVG_SVGGEOMETRYFRAME_H_
 
+#include "gfxMatrix.h"
+#include "gfxRect.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DisplaySVGItem.h"
 #include "mozilla/ISVGDisplayableFrame.h"
-#include "gfxMatrix.h"
-#include "gfxRect.h"
 #include "nsIFrame.h"
 
 namespace mozilla {

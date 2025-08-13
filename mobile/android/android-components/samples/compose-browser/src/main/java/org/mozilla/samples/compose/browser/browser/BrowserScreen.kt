@@ -89,8 +89,8 @@ fun BrowserScreen(navController: NavController) {
                         Target.SelectedTab,
                     )
 
-                    val url = toolbarState.editState.editText
-                    if (toolbarState.isEditMode() && url != null) {
+                    val url = toolbarState.editState.query
+                    if (toolbarState.isEditMode() && url.isNotEmpty()) {
                         Suggestions(
                             url,
                             onSuggestionClicked = { suggestion ->
@@ -99,7 +99,7 @@ fun BrowserScreen(navController: NavController) {
                             },
                             onAutoComplete = { suggestion ->
                                 toolbarStore.dispatch(
-                                    BrowserEditToolbarAction.UpdateEditText(
+                                    BrowserEditToolbarAction.SearchQueryUpdated(
                                         suggestion.editSuggestion!!,
                                     ),
                                 )
@@ -183,9 +183,11 @@ private fun Suggestions(
 
     val sessionSuggestionProvider = remember(context) {
         SessionSuggestionProvider(
-            context.resources,
             components.store,
             components.tabsUseCases.selectTab,
+            switchToTabDescription = context.getString(
+                mozilla.components.feature.awesomebar.R.string.switch_to_tab_description,
+            ),
         )
     }
 
@@ -195,16 +197,17 @@ private fun Suggestions(
 
     val fxSuggestSuggestionProvider = remember(context) {
         FxSuggestSuggestionProvider(
-            context.resources,
             loadUrlUseCase = components.sessionUseCases.loadUrl,
             includeSponsoredSuggestions = false,
             includeNonSponsoredSuggestions = true,
+            sponsoredSuggestionDescription = context.getString(
+                mozilla.components.feature.fxsuggest.R.string.sponsored_suggestion_description,
+            ),
         )
     }
 
     val searchSuggestionProvider = remember(context) {
         SearchSuggestionProvider(
-            context,
             components.store,
             components.searchUseCases.defaultSearch,
             components.client,

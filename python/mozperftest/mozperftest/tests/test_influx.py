@@ -23,7 +23,6 @@ def mocks():
     responses.add(
         responses.GET,
         "http://influxdb/ping",
-        body=json.dumps({"version": "1"}),
         headers={"x-influxdb-version": "1"},
         status=204,
     )
@@ -31,7 +30,6 @@ def mocks():
     responses.add(
         responses.POST,
         "http://influxdb/write",
-        body=json.dumps({"version": "1"}),
         headers={"x-influxdb-version": "1"},
         status=204,
     )

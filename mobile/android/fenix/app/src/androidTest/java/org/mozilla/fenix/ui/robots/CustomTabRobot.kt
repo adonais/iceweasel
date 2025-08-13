@@ -6,10 +6,9 @@ package org.mozilla.fenix.ui.robots
 import android.net.Uri
 import android.util.Log
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
@@ -21,6 +20,8 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiSelector
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_OFF
+import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_ON
 import org.mozilla.fenix.helpers.Constants.LONG_CLICK_DURATION
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
@@ -38,7 +39,6 @@ import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.TestHelper.waitForObjects
 import org.mozilla.fenix.helpers.click
-import org.mozilla.fenix.helpers.isChecked
 
 /**
  *  Implementation of the robot pattern for Custom tabs
@@ -63,12 +63,6 @@ class CustomTabRobot {
         Log.i(TAG, "verifyDesktopSiteButtonExists: Trying to verify that the request desktop site button is displayed")
         desktopSiteButton().check(matches(isDisplayed()))
         Log.i(TAG, "verifyDesktopSiteButtonExists: Verified that the request desktop site button is displayed")
-    }
-
-    fun verifyRequestDesktopSiteToggleState(isEnabled: Boolean) {
-        Log.i(TAG, "verifyRequestDesktopSiteToggleState: Trying to verify that the request desktop site toggle is enabled : $isEnabled")
-        desktopSiteButton().check(matches(isChecked(isEnabled)))
-        Log.i(TAG, "verifyRequestDesktopSiteToggleState: Verified that the request desktop site toggle is enabled : $isEnabled")
     }
 
     fun verifyFindInPageButtonExists() {
@@ -183,28 +177,18 @@ class CustomTabRobot {
 
     fun verifyRedesignedCustomTabsMainMenuItemsExist(customMenuItem: String, exist: Boolean, waitingTime: Long = TestAssetHelper.waitingTime) =
         assertUIObjectExists(
+            itemContainingText(getStringResource(R.string.browser_menu_back)),
+            itemContainingText(getStringResource(R.string.browser_menu_forward)),
+            itemContainingText(getStringResource(R.string.browser_menu_refresh)),
+            itemContainingText(getStringResource(R.string.browser_menu_share)),
             itemWithDescription("Open in $appName"),
-            itemWithDescription(getStringResource(R.string.browser_menu_desktop_site)),
             itemWithDescription(getStringResource(R.string.browser_menu_find_in_page)),
+            itemWithDescription(getStringResource(R.string.browser_menu_desktop_site)),
             itemContainingText(customMenuItem),
+            itemContainingText("Powered by $appName"),
             exists = exist,
             waitingTime = waitingTime,
         )
-
-    fun verifySwitchToDesktopSiteButtonIsEnabled(
-        composeTestRule: ComposeTestRule,
-        isEnabled: Boolean,
-    ) {
-        Log.i(TAG, "verifySwitchToDesktopSiteButtonIsEnabled: Trying to verify that the \"Switch to Desktop Site\" button from the new main menu design is enabled.")
-        if (isEnabled) {
-            composeTestRule.desktopSiteButton().assertIsEnabled()
-            Log.i(TAG, "verifySwitchToDesktopSiteButtonIsEnabled: Verified that the \"Switch to Desktop Site\" button from the new main menu design is enabled.")
-        } else {
-            Log.i(TAG, "verifySwitchToDesktopSiteButtonIsEnabled: Trying to verify that the \"Switch to Desktop Site\" button from the new main menu design is disabled.")
-            composeTestRule.desktopSiteButton().assertIsNotEnabled()
-            Log.i(TAG, "verifySwitchToDesktopSiteButtonIsEnabled: Verified the \"Switch to Desktop Site\" button from the new main menu design is disabled.")
-        }
-    }
 
     fun verifySwitchToDesktopSiteButton(composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifySwitchToDesktopSiteButton: Trying to verify that the \"Desktop site\" button is displayed.")
@@ -212,22 +196,22 @@ class CustomTabRobot {
         Log.i(TAG, "verifySwitchToDesktopSiteButton: Verified that the \"Switch to desktop site\" button is displayed.")
     }
 
-    fun verifySwitchToMobileSiteButton(composeTestRule: ComposeTestRule) {
-        Log.i(TAG, "verifySwitchToMobileSiteButton: Trying to verify that the \"Desktop site\" button is displayed.")
-        composeTestRule.mobileSiteButton().assertIsDisplayed()
-        Log.i(TAG, "verifySwitchToMobileSiteButton: Verified that the \"Switch to mobile site\" button is displayed.")
+    fun verifyDesktopSiteButtonState(composeTestRule: ComposeTestRule, isEnabled: Boolean) {
+        if (isEnabled) {
+            Log.i(TAG, "verifyDesktopSiteButtonState: Trying to verify that the \"Desktop site\" button is set to \"On\".")
+            composeTestRule.enabledDesktopSiteButton().assertIsDisplayed()
+            Log.i(TAG, "verifyDesktopSiteButtonState: Verified that the \"Desktop site\" button is set to \"On\".")
+        } else {
+            Log.i(TAG, "verifyDesktopSiteButtonState: Trying to verify that the \"Desktop site\" button is set to \"Off\".")
+            composeTestRule.disabledDesktopSiteButton().assertIsDisplayed()
+            Log.i(TAG, "verifyDesktopSiteButtonState: Verified that the \"Desktop site\" button is set to \"Off\".")
+        }
     }
 
     fun clickSwitchToDesktopSiteButton(composeTestRule: ComposeTestRule) {
         Log.i(TAG, "clickSwitchToDesktopSiteButton: Trying to click the \"Desktop site\" button.")
         composeTestRule.desktopSiteButton().performClick()
         Log.i(TAG, "clickSwitchToDesktopSiteButton: Clicked the \"Desktop site\" button.")
-    }
-
-    fun clickSwitchToMobileSiteButton(composeTestRule: ComposeTestRule) {
-        Log.i(TAG, "clickSwitchToMobileSiteButton: Trying to click the \"Desktop site\" button.")
-        composeTestRule.mobileSiteButton().performClick()
-        Log.i(TAG, "clickSwitchToMobileSiteButton: Clicked the \"Desktop site\" button.")
     }
 
     class Transition {
@@ -345,8 +329,10 @@ private fun progressBar() =
     mDevice.findObject(
         UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_progress"),
     )
-private fun ComposeTestRule.desktopSiteButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_desktop_site))
+private fun ComposeTestRule.desktopSiteButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_desktop_site), substring = true)
 
-private fun ComposeTestRule.mobileSiteButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_desktop_site))
+private fun ComposeTestRule.enabledDesktopSiteButton() = onNodeWithTag(DESKTOP_SITE_ON)
+
+private fun ComposeTestRule.disabledDesktopSiteButton() = onNodeWithTag(DESKTOP_SITE_OFF)
 
 private fun ComposeTestRule.findInPageButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_find_in_page))

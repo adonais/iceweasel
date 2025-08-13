@@ -9,8 +9,8 @@
 #ifndef mozilla_dom_CSSValue_h_
 #define mozilla_dom_CSSValue_h_
 
-#include "nsStringFwd.h"
 #include "mozilla/RefCounted.h"
+#include "nsStringFwd.h"
 
 class nsROCSSPrimitiveValue;
 namespace mozilla {

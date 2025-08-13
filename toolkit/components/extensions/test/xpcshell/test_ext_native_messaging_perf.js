@@ -2,10 +2,7 @@
 /* vim: set sts=2 sw=2 et tw=80: */
 "use strict";
 
-let max_round_trip_time_ms = AppConstants.DEBUG || AppConstants.ASAN ? 60 : 30;
-if (Services.prefs.getBoolPref("dom.workers.timeoutmanager") === true) {
-  max_round_trip_time_ms = 90;
-}
+let max_round_trip_time_ms = 90;
 
 const MAX_ROUND_TRIP_TIME_MS = max_round_trip_time_ms;
 

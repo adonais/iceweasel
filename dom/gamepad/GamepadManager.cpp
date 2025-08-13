@@ -192,16 +192,16 @@ already_AddRefed<Gamepad> GamepadManager::GetGamepad(
 
 void GamepadManager::AddGamepad(GamepadHandle aHandle, const nsAString& aId,
                                 GamepadMappingType aMapping, GamepadHand aHand,
-                                uint32_t aDisplayID, uint32_t aNumButtons,
-                                uint32_t aNumAxes, uint32_t aNumHaptics,
+                                uint32_t aNumButtons, uint32_t aNumAxes,
+                                uint32_t aNumHaptics,
                                 uint32_t aNumLightIndicator,
                                 uint32_t aNumTouchEvents) {
   // TODO: bug 852258: get initial button/axis state
   RefPtr<Gamepad> newGamepad =
       new Gamepad(nullptr, aId,
                   0,  // index is set by global window
-                  aHandle, aMapping, aHand, aDisplayID, aNumButtons, aNumAxes,
-                  aNumHaptics, aNumLightIndicator, aNumTouchEvents);
+                  aHandle, aMapping, aHand, aNumButtons, aNumAxes, aNumHaptics,
+                  aNumLightIndicator, aNumTouchEvents);
 
   // We store the gamepad related to its index given by the parent process,
   // and no duplicate index is allowed.
@@ -453,9 +453,8 @@ void GamepadManager::Update(const GamepadChangeEvent& aEvent) {
   if (body.type() == GamepadChangeEventBody::TGamepadAdded) {
     const GamepadAdded& a = body.get_GamepadAdded();
     AddGamepad(handle, a.id(), static_cast<GamepadMappingType>(a.mapping()),
-               static_cast<GamepadHand>(a.hand()), a.display_id(),
-               a.num_buttons(), a.num_axes(), a.num_haptics(), a.num_lights(),
-               a.num_touches());
+               static_cast<GamepadHand>(a.hand()), a.num_buttons(),
+               a.num_axes(), a.num_haptics(), a.num_lights(), a.num_touches());
     return;
   }
   if (body.type() == GamepadChangeEventBody::TGamepadRemoved) {
@@ -677,12 +676,12 @@ already_AddRefed<Promise> GamepadManager::RequestAllGamepads(
         nsTArray<RefPtr<Gamepad>> gamepads;
 
         for (const auto& addedGamepad : aAddedGamepads) {
-          RefPtr<Gamepad> gamepad = new Gamepad(
-              nullptr, addedGamepad.id(), 0, GamepadHandle(),
-              addedGamepad.mapping(), addedGamepad.hand(),
-              addedGamepad.display_id(), addedGamepad.num_buttons(),
-              addedGamepad.num_axes(), addedGamepad.num_haptics(),
-              addedGamepad.num_lights(), addedGamepad.num_touches());
+          RefPtr<Gamepad> gamepad =
+              new Gamepad(nullptr, addedGamepad.id(), 0, GamepadHandle(),
+                          addedGamepad.mapping(), addedGamepad.hand(),
+                          addedGamepad.num_buttons(), addedGamepad.num_axes(),
+                          addedGamepad.num_haptics(), addedGamepad.num_lights(),
+                          addedGamepad.num_touches());
           gamepads.AppendElement(gamepad);
         }
         promise->MaybeResolve(gamepads);

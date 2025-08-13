@@ -45,11 +45,12 @@
 #include "mozilla/LoadInfo.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/Services.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/net/DNS.h"
 #include "mozilla/ipc/URIUtils.h"
+#include "mozilla/net/CacheControlParser.h"
 #include "mozilla/net/NeckoChild.h"
 #include "mozilla/net/NeckoParent.h"
+#include "mozilla/dom/ChromeUtilsBinding.h"
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/nsHTTPSOnlyUtils.h"
@@ -99,6 +100,12 @@ using mozilla::dom::ServiceWorkerDescriptor;
 #define WEBRTC_PREF_PREFIX "media.peerconnection."
 #define NETWORK_DNS_PREF "network.dns."
 #define FORCE_EXTERNAL_PREF_PREFIX "network.protocol-handler.external."
+// prefs for overriding IPAddress->IpAddressSpace mapping
+#define PREF_LNA_IP_ADDR_SPACE_PUBLIC \
+  "network.lna.address_space.public.override"
+#define PREF_LNA_IP_ADDR_SPACE_PRIVATE \
+  "network.lna.address_space.private.override"
+#define PREF_LNA_IP_ADDR_SPACE_LOCAL "network.lna.address_space.local.override"
 
 nsIOService* gIOService;
 static bool gHasWarnedUploadChannel2;
@@ -226,6 +233,9 @@ static const char* gCallbackPrefs[] = {
     NETWORK_CAPTIVE_PORTAL_PREF,
     FORCE_EXTERNAL_PREF_PREFIX,
     SIMPLE_URI_SCHEMES_PREF,
+    PREF_LNA_IP_ADDR_SPACE_PUBLIC,
+    PREF_LNA_IP_ADDR_SPACE_PRIVATE,
+    PREF_LNA_IP_ADDR_SPACE_LOCAL,
     nullptr,
 };
 
@@ -884,21 +894,12 @@ nsresult nsIOService::AsyncOnChannelRedirect(
     MOZ_ASSERT(!scheme.IsEmpty());
 
     if (oldChan->IsDocument()) {
-      Telemetry::AccumulateCategoricalKeyed(
-          scheme, Telemetry::LABELS_NETWORK_HTTP_REDIRECT_TO_SCHEME::topLevel);
-#ifndef ANDROID
       mozilla::glean::networking::http_redirect_to_scheme_top_level.Get(scheme)
           .Add(1);
-#endif
     } else {
-      Telemetry::AccumulateCategoricalKeyed(
-          scheme,
-          Telemetry::LABELS_NETWORK_HTTP_REDIRECT_TO_SCHEME::subresource);
-#ifndef ANDROID
       mozilla::glean::networking::http_redirect_to_scheme_subresource
           .Get(scheme)
           .Add(1);
-#endif
     }
   }
   return NS_OK;
@@ -1663,6 +1664,42 @@ void nsIOService::PrefsChanged(const char* pref) {
     mSimpleURIUnknownSchemes.ParseAndMergePrefSchemes();
     // runs on parent and child, no need to broadcast
   }
+
+  if (!pref || strncmp(pref, PREF_LNA_IP_ADDR_SPACE_PUBLIC,
+                       strlen(PREF_LNA_IP_ADDR_SPACE_PUBLIC)) == 0) {
+    AutoWriteLock lock(mLock);
+    UpdateAddressSpaceOverrideList(PREF_LNA_IP_ADDR_SPACE_PUBLIC,
+                                   mPublicAddressSpaceOverridesList);
+  }
+
+  if (!pref || strncmp(pref, PREF_LNA_IP_ADDR_SPACE_PRIVATE,
+                       strlen(PREF_LNA_IP_ADDR_SPACE_PRIVATE)) == 0) {
+    AutoWriteLock lock(mLock);
+    UpdateAddressSpaceOverrideList(PREF_LNA_IP_ADDR_SPACE_PRIVATE,
+                                   mPrivateAddressSpaceOverridesList);
+  }
+  if (!pref || strncmp(pref, PREF_LNA_IP_ADDR_SPACE_LOCAL,
+                       strlen(PREF_LNA_IP_ADDR_SPACE_LOCAL)) == 0) {
+    AutoWriteLock lock(mLock);
+    UpdateAddressSpaceOverrideList(PREF_LNA_IP_ADDR_SPACE_LOCAL,
+                                   mLocalAddressSpaceOverrideList);
+  }
+}
+
+void nsIOService::UpdateAddressSpaceOverrideList(
+    const char* aPrefName, nsTArray<nsCString>& aTargetList) {
+  nsAutoCString aAddressSpaceOverrides;
+  Preferences::GetCString(aPrefName, aAddressSpaceOverrides);
+
+  nsTArray<nsCString> addressSpaceOverridesArray;
+  nsCCharSeparatedTokenizer tokenizer(aAddressSpaceOverrides, ',');
+  while (tokenizer.hasMoreTokens()) {
+    nsAutoCString token(tokenizer.nextToken());
+    token.StripWhitespace();
+    addressSpaceOverridesArray.AppendElement(token);
+  }
+
+  aTargetList = std::move(addressSpaceOverridesArray);
 }
 
 void nsIOService::ParsePortList(const char* pref, bool remove) {
@@ -2364,6 +2401,56 @@ nsIOService::SetSimpleURIUnknownRemoteSchemes(
   return NS_OK;
 }
 
+// Check for any address space overrides for Local Network Access Checks
+// The override prefs should be set only for tests (controlled by
+// network_lna_blocking pref).
+NS_IMETHODIMP
+nsIOService::GetOverridenIpAddressSpace(
+    nsILoadInfo::IPAddressSpace* aIpAddressSpace, const NetAddr& aAddr) {
+  nsAutoCString addrPortString;
+
+  if (!StaticPrefs::network_lna_enabled()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  {
+    AutoReadLock lock(mLock);
+    if (mPublicAddressSpaceOverridesList.IsEmpty() &&
+        mPrivateAddressSpaceOverridesList.IsEmpty() &&
+        mLocalAddressSpaceOverrideList.IsEmpty()) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
+  aAddr.ToAddrPortString(addrPortString);
+  addrPortString.StripWhitespace();
+  AutoReadLock lock(mLock);
+
+  for (const auto& ipAddr : mPublicAddressSpaceOverridesList) {
+    if (addrPortString.Equals(ipAddr)) {
+      *aIpAddressSpace = nsILoadInfo::IPAddressSpace::Public;
+      return NS_OK;
+    }
+  }
+
+  for (const auto& ipAddr : mPrivateAddressSpaceOverridesList) {
+    if (addrPortString.Equals(ipAddr)) {
+      *aIpAddressSpace = nsILoadInfo::IPAddressSpace::Private;
+      return NS_OK;
+    }
+  }
+
+  for (const auto& ipAddr : mLocalAddressSpaceOverrideList) {
+    if (addrPortString.Equals(ipAddr)) {
+      *aIpAddressSpace = nsILoadInfo::IPAddressSpace::Local;
+      return NS_OK;
+    }
+  }
+
+  *aIpAddressSpace = nsILoadInfo::IPAddressSpace::Unknown;
+  return NS_ERROR_FAILURE;
+}
+
 NS_IMETHODIMP
 nsIOService::IsSimpleURIUnknownScheme(const nsACString& aScheme,
                                       bool* _retval) {
@@ -2400,6 +2487,53 @@ bool nsIOService::GetFallbackDomain(const nsACString& aDomain,
     return true;
   }
   return false;
+}
+
+NS_IMETHODIMP
+nsIOService::ParseCacheControlHeader(const nsACString& aCacheControlHeader,
+                                     JSContext* cx,
+                                     JS::MutableHandle<JS::Value> _retval) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  mozilla::dom::HTTPCacheControlParseResult result;
+  CacheControlParser parser(aCacheControlHeader);
+
+  bool didParseValue = false;
+
+  uint32_t maxAge = 0;
+  didParseValue = parser.MaxAge(&maxAge);
+  if (didParseValue) {
+    result.mMaxAge = maxAge;
+  }
+
+  uint32_t maxStale = 0;
+  didParseValue = parser.MaxStale(&maxStale);
+  if (didParseValue) {
+    result.mMaxStale = maxStale;
+  }
+
+  uint32_t minFresh = 0;
+  didParseValue = parser.MaxStale(&minFresh);
+  if (didParseValue) {
+    result.mMinFresh = minFresh;
+  }
+
+  uint32_t staleWhileRevalidate = 0;
+  didParseValue = parser.StaleWhileRevalidate(&staleWhileRevalidate);
+  if (didParseValue) {
+    result.mStaleWhileRevalidate = staleWhileRevalidate;
+  }
+
+  result.mNoCache = parser.NoCache();
+  result.mNoStore = parser.NoStore();
+  result.mPublic = parser.Public();
+  result.mPrivate = parser.Private();
+  result.mImmutable = parser.Immutable();
+
+  if (!ToJSValue(cx, result, _retval)) {
+    return NS_ERROR_FAILURE;
+  }
+  return NS_OK;
 }
 
 }  // namespace net

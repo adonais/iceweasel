@@ -171,6 +171,8 @@ class GeckoInstance:
         # influenced by the presence of the persistent doorhanger notification
         "signon.rememberSignons": False,
         # Prevent starting into safe mode after application crashes
+        # Do not show TOU new user modal which can interfere with tests
+        "termsofuse.bypassNotification": True,
         "toolkit.startup.max_resumed_crashes": -1,
         # Disable most telemetry pings
         "toolkit.telemetry.server": "https://%(server)s/telemetry-dummy/",

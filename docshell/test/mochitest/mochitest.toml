@@ -103,10 +103,8 @@ skip-if = ["os == 'android' && debug"]
 ["test_bug551225.html"]
 
 ["test_bug570341.html"]
-skip-if = ["(verify && !debug && (os == 'win'))"]
 
 ["test_bug580069.html"]
-skip-if = ["(verify && !debug && (os == 'win'))"]
 
 ["test_bug590573.html"]
 
@@ -196,7 +194,6 @@ support-files = [
   "file_bug1742865_outer.sjs",
 ]
 skip-if = [
-  "os == 'android' && debug && fission && verify", # Bug 1745937
   "http3",
   "http2",
 ]
@@ -288,11 +285,7 @@ skip-if = [
 ]
 
 ["test_popup_unknown_protocol.html"]
-skip-if = [
-  # Android handles external protocols and error pages differently, so this test
-  # doesn't make sense to run on that platform.
-  "os == 'android'",
-]
+skip-if = ["os == 'android'"] # Android handles external protocols and error pages differently, so this test doesn't make sense to run on that platform.
 
 ["test_pushState_after_document_open.html"]
 

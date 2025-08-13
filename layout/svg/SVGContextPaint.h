@@ -8,6 +8,7 @@
 #define LAYOUT_SVG_SVGCONTEXTPAINT_H_
 
 #include "DrawMode.h"
+#include "ImgDrawResult.h"
 #include "gfxMatrix.h"
 #include "gfxPattern.h"
 #include "gfxTypes.h"
@@ -16,10 +17,9 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/gfx/2D.h"
 #include "nsColor.h"
+#include "nsRefPtrHashtable.h"
 #include "nsStyleStruct.h"
 #include "nsTArray.h"
-#include "ImgDrawResult.h"
-#include "nsRefPtrHashtable.h"
 
 class gfxContext;
 

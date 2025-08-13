@@ -55,12 +55,12 @@ class SetupChecklistPreferencesMiddleware(
                         ChecklistItem.Task.Type.SELECT_THEME -> SetupChecklistPreference.ThemeComplete
                         ChecklistItem.Task.Type.CHANGE_TOOLBAR_PLACEMENT -> SetupChecklistPreference.ToolbarComplete
                         ChecklistItem.Task.Type.EXPLORE_EXTENSION -> SetupChecklistPreference.ExtensionsComplete
+                        ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET -> SetupChecklistPreference.InstallSearchWidget
 
                         // no-ops
                         // these preferences are handled elsewhere outside of the setup checklist feature.
                         ChecklistItem.Task.Type.SET_AS_DEFAULT,
                         ChecklistItem.Task.Type.SIGN_IN,
-                        ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
                         -> null
                     }
 

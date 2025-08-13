@@ -7,9 +7,9 @@
 #ifndef mozilla_OverflowChangedTracker_h
 #define mozilla_OverflowChangedTracker_h
 
-#include "nsIFrame.h"
-#include "nsContainerFrame.h"
 #include "mozilla/SplayTree.h"
+#include "nsContainerFrame.h"
+#include "nsIFrame.h"
 
 namespace mozilla {
 

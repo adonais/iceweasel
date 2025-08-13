@@ -6,21 +6,21 @@
 
 #include "mozilla/MotionPathUtils.h"
 
+#include <math.h>
+
 #include "gfxPlatform.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/SVGObserverUtils.h"
+#include "mozilla/ShapeUtils.h"
 #include "mozilla/dom/SVGGeometryElement.h"
 #include "mozilla/dom/SVGPathData.h"
 #include "mozilla/dom/SVGViewportElement.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/layers/LayersMessages.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/SVGObserverUtils.h"
-#include "mozilla/ShapeUtils.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsStyleTransformMatrix.h"
-
-#include <math.h>
 
 namespace mozilla {
 

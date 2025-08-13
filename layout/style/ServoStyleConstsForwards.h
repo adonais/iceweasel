@@ -15,23 +15,24 @@
 #ifndef mozilla_ServoStyleConstsForwards_h
 #  define mozilla_ServoStyleConstsForwards_h
 
-#  include "nsColor.h"
-#  include "nsCoord.h"
-#  include "mozilla/AtomArray.h"
-#  include "mozilla/IntegerRange.h"
-#  include "mozilla/Span.h"
-#  include "Units.h"
-#  include "mozilla/gfx/Types.h"
-#  include "mozilla/CORSMode.h"
-#  include "mozilla/MemoryReporting.h"
-#  include "mozilla/ServoTypes.h"
-#  include "mozilla/ServoBindingTypes.h"
-#  include "mozilla/Vector.h"
-#  include "nsCSSPropertyID.h"
-#  include "nsCompatibility.h"
-#  include "nsIURI.h"
-#  include "mozilla/image/Resolution.h"
 #  include <atomic>
+
+#  include "Units.h"
+#  include "mozilla/AtomArray.h"
+#  include "mozilla/CORSMode.h"
+#  include "mozilla/IntegerRange.h"
+#  include "mozilla/MemoryReporting.h"
+#  include "mozilla/ServoBindingTypes.h"
+#  include "mozilla/ServoTypes.h"
+#  include "mozilla/Span.h"
+#  include "mozilla/Vector.h"
+#  include "mozilla/gfx/Types.h"
+#  include "mozilla/image/Resolution.h"
+#  include "nsCSSPropertyID.h"
+#  include "nsColor.h"
+#  include "nsCompatibility.h"
+#  include "nsCoord.h"
+#  include "nsIURI.h"
 
 struct RawServoAnimationValueTable;
 
@@ -44,6 +45,7 @@ class nsPresContext;
 class nsSimpleContentList;
 class imgRequestProxy;
 struct nsCSSValueSharedList;
+struct AnchorPosResolutionParams;
 struct AnchorPosOffsetResolutionParams;
 class gfxFontFeatureValueSet;
 struct GeckoFontMetrics;
@@ -130,7 +132,6 @@ enum class CallerType : uint32_t;
 
 class Element;
 class Document;
-class ImageTracker;
 
 }  // namespace dom
 
@@ -188,7 +189,6 @@ struct StyleBox {
 // Work-around weird cbindgen renaming / avoiding moving stuff outside its
 // namespace.
 
-using StyleImageTracker = dom::ImageTracker;
 using StyleLoader = css::Loader;
 using StyleLoaderReusableStyleSheets = css::LoaderReusableStyleSheets;
 using StyleCallerType = dom::CallerType;

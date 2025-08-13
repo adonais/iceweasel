@@ -6,29 +6,28 @@
 
 #include "nsPageFrame.h"
 
+#include "PrintedSheetFrame.h"
+#include "gfxContext.h"
 #include "mozilla/AppUnits.h"
+#include "mozilla/Logging.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_print.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/intl/Segmenter.h"
-#include "gfxContext.h"
-#include "nsDeviceContext.h"
-#include "nsFontMetrics.h"
-#include "nsIFrame.h"
-#include "nsLayoutUtils.h"
-#include "nsPresContext.h"
-#include "nsGkAtoms.h"
-#include "nsFieldSetFrame.h"
-#include "nsPageContentFrame.h"
-#include "nsDisplayList.h"
-#include "nsPageSequenceFrame.h"  // for nsSharedPageData
-#include "nsTextFormatter.h"      // for page number localization formatting
 #include "nsBidiUtils.h"
+#include "nsDeviceContext.h"
+#include "nsDisplayList.h"
+#include "nsFieldSetFrame.h"
+#include "nsFontMetrics.h"
+#include "nsGkAtoms.h"
+#include "nsIFrame.h"
 #include "nsIPrintSettings.h"
-#include "PrintedSheetFrame.h"
-
-#include "mozilla/Logging.h"
+#include "nsLayoutUtils.h"
+#include "nsPageContentFrame.h"
+#include "nsPageSequenceFrame.h"  // for nsSharedPageData
+#include "nsPresContext.h"
+#include "nsTextFormatter.h"  // for page number localization formatting
 extern mozilla::LazyLogModule gLayoutPrintingLog;
 #define PR_PL(_p1) MOZ_LOG(gLayoutPrintingLog, mozilla::LogLevel::Debug, _p1)
 
@@ -128,8 +127,7 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
       AnchorPosResolutionParams::From(&kidReflowInput);
   if (mPD->mPrintSettings->GetHonorPageRuleMargins()) {
     for (const auto side : mozilla::AllPhysicalSides()) {
-      if (!kidReflowInput.mStyleMargin
-               ->GetMargin(side, anchorResolutionParams.mPosition)
+      if (!kidReflowInput.mStyleMargin->GetMargin(side, anchorResolutionParams)
                ->IsAuto()) {
         // Computed margins are already in the coordinate space of the content,
         // do not scale.

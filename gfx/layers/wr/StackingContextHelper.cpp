@@ -24,9 +24,7 @@ StackingContextHelper::StackingContextHelper()
       mScale(1.0f, 1.0f),
       mAffectsClipPositioning(false),
       mDeferredTransformItem(nullptr),
-      mRasterizeLocally(false) {
-  // mOrigin remains at 0,0
-}
+      mRasterizeLocally(false) {}
 
 static nsSize ComputeDesiredDisplaySizeForAnimation(nsIFrame* aContainerFrame) {
   // Use the size of the nearest widget as the maximum size.  This
@@ -137,7 +135,6 @@ StackingContextHelper::StackingContextHelper(
                         aParentSC.mRasterizeLocally) {
   MOZ_ASSERT(!aContainerItem || aContainerItem->CreatesStackingContextHelper());
 
-  mOrigin = aParentSC.mOrigin + aBounds.TopLeft();
   // Compute scale for fallback rendering. We don't try to guess a scale for 3d
   // transformed items
 

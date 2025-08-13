@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_CSSLayerStatementRule_h
 #define mozilla_dom_CSSLayerStatementRule_h
 
-#include "mozilla/css/Rule.h"
 #include "mozilla/ServoBindingTypes.h"
+#include "mozilla/css/Rule.h"
 
 namespace mozilla::dom {
 

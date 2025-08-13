@@ -47,9 +47,10 @@ cert_verifier:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1846898
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1876443
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1908549
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1974141
     notification_emails:
       - jschanck@mozilla.com
-    expires: 143
+    expires: 149
     labels:
       - CRLiteRevOCSPFail
       - CRLiteRevOCSPOk

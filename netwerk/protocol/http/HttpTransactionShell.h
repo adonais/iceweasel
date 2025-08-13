@@ -123,6 +123,8 @@ class HttpTransactionShell : public nsISupports {
                                    TRRSkippedReason& aSkipReason,
                                    bool& aEchConfigUsed) = 0;
 
+  virtual nsILoadInfo::IPAddressSpace GetTargetIPAddressSpace() = 0;
+
   // Functions for Timing interface
   virtual mozilla::TimeStamp GetDomainLookupStart() = 0;
   virtual mozilla::TimeStamp GetDomainLookupEnd() = 0;
@@ -240,7 +242,8 @@ class HttpTransactionShell : public nsISupports {
   virtual bool Http3Disabled() const override;                                 \
   virtual already_AddRefed<nsHttpConnectionInfo> GetConnInfo() const override; \
   virtual bool GetSupportsHTTP3() override;                                    \
-  virtual void SetIsForWebTransport(bool aIsForWebTransport) override;
+  virtual void SetIsForWebTransport(bool aIsForWebTransport) override;         \
+  virtual nsILoadInfo::IPAddressSpace GetTargetIPAddressSpace() override;
 
 }  // namespace mozilla::net
 

@@ -505,8 +505,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   static bool OffMainThreadCompositingEnabled();
 
-  void UpdateCanUseHardwareVideoDecoding();
-
   inline static void EnsureCMSInitialized() {
     if (MOZ_UNLIKELY(!gCMSInitialized)) {
       MaybeInitializeCMS();
@@ -923,8 +921,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
    */
   static mozilla::gfx::BackendType BackendTypeForName(const nsCString& aName);
 
-  virtual bool CanUseHardwareVideoDecoding();
-
   int8_t mAllowDownloadableFonts;
 
   // Whether the platform supports rendering OpenType font variations
@@ -955,6 +951,10 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   static void InitOpenGLConfig();
 
+  static void VideoDecodingFailedChangedCallback(const char* aPref, void*);
+
+  static void HWDRMFailedChangedCallback(const char* aPref, void*);
+
   static gfxPlatform* gPlatform;
 
   void InitializeCMS();
@@ -968,6 +968,8 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   void InitCompositorAccelerationPrefs();
   void InitGPUProcessPrefs();
   virtual void InitPlatformGPUProcessPrefs() {}
+  virtual void InitPlatformHardwareVideoConfig() {}
+  virtual void InitPlatformHardwarDRMConfig() {}
 
   // Gather telemetry data about the Gfx Platform and send it
   static void ReportTelemetry();

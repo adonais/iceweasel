@@ -24,7 +24,8 @@ namespace js {
 class InvalidatingFuse : public GuardFuse {
  public:
   // Register a script's IonScript as having a dependency on this fuse.
-  virtual bool addFuseDependency(JSContext* cx, Handle<JSScript*> script) = 0;
+  virtual bool addFuseDependency(JSContext* cx,
+                                 const jit::IonScriptKey& ionScript) = 0;
 };
 
 // [SMDOC] Invalidating Runtime Fuses
@@ -36,7 +37,7 @@ class InvalidatingFuse : public GuardFuse {
 class InvalidatingRuntimeFuse : public InvalidatingFuse {
  public:
   virtual bool addFuseDependency(JSContext* cx,
-                                 Handle<JSScript*> script) override;
+                                 const jit::IonScriptKey& ionScript) override;
   virtual void popFuse(JSContext* cx) override;
 };
 
@@ -44,23 +45,20 @@ class InvalidatingRuntimeFuse : public InvalidatingFuse {
 //
 // Because it uses JS::WeakCache, GC tracing is taken care of without any need
 // for tracing in this class.
-class DependentScriptSet {
+class FuseDependentIonScriptSet {
  public:
-  DependentScriptSet(JSContext* cx, InvalidatingFuse* fuse);
+  FuseDependentIonScriptSet(JSContext* cx, InvalidatingFuse* fuse);
 
   InvalidatingFuse* associatedFuse;
-  bool addScriptForFuse(InvalidatingFuse* fuse, Handle<JSScript*> script);
+  bool addScriptForFuse(InvalidatingFuse* fuse,
+                        const jit::IonScriptKey& ionScript);
   void invalidateForFuse(JSContext* cx, InvalidatingFuse* fuse);
 
-  void removeScript(JSScript* script) {
-    jit::RemoveFromScriptSet(weakScripts, script);
-  }
-
  private:
-  js::jit::WeakScriptCache weakScripts;
+  JS::WeakCache<js::jit::DependentIonScriptSet> ionScripts;
 };
 
-class DependentScriptGroup {
+class DependentIonScriptGroup {
   // A dependent script set pairs a fuse with a set of scripts which depend
   // on said fuse; this is a vector of script sets because the expectation for
   // now is that the number of runtime wide invalidating fuses will be small.
@@ -69,19 +67,13 @@ class DependentScriptGroup {
   //
   // Note: This isn't  traced through the zone, but rather through the use
   // of JS::WeakCache.
-  Vector<DependentScriptSet, 1, SystemAllocPolicy> dependencies;
+  Vector<FuseDependentIonScriptSet, 1, SystemAllocPolicy> dependencies;
 
  public:
-  DependentScriptSet* getOrCreateDependentScriptSet(JSContext* cx,
-                                                    InvalidatingFuse* fuse);
-  DependentScriptSet* begin() { return dependencies.begin(); }
-  DependentScriptSet* end() { return dependencies.end(); }
-
-  void removeScript(JSScript* script) {
-    for (auto& set : dependencies) {
-      set.removeScript(script);
-    }
-  }
+  FuseDependentIonScriptSet* getOrCreateDependentScriptSet(
+      JSContext* cx, InvalidatingFuse* fuse);
+  FuseDependentIonScriptSet* begin() { return dependencies.begin(); }
+  FuseDependentIonScriptSet* end() { return dependencies.end(); }
 };
 
 }  // namespace js

@@ -7,8 +7,8 @@
 #ifndef nsPresContextInlines_h
 #define nsPresContextInlines_h
 
-#include "mozilla/dom/Document.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/dom/Document.h"
 #include "nsCSSFrameConstructor.h"
 
 inline mozilla::ServoStyleSet* nsPresContext::StyleSet() const {

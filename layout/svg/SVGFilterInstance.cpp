@@ -8,6 +8,9 @@
 #include "SVGFilterInstance.h"
 
 // Keep others in (case-insensitive) order:
+#include "FilterSupport.h"
+#include "SVGFilterFrame.h"
+#include "gfx2DGlue.h"
 #include "gfxPlatform.h"
 #include "gfxUtils.h"
 #include "mozilla/ISVGDisplayableFrame.h"
@@ -15,18 +18,17 @@
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGUtils.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/dom/SVGFilterElement.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGUnitTypesBinding.h"
-#include "mozilla/dom/SVGFilterElement.h"
-#include "SVGFilterFrame.h"
-#include "FilterSupport.h"
-#include "gfx2DGlue.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::dom::SVGUnitTypes_Binding;
 using namespace mozilla::gfx;
 
 namespace mozilla {
+
+static const uint32_t MAX_PRIMITIVES_PER_FILTER = 256;
 
 SVGFilterInstance::SVGFilterInstance(
     const StyleFilter& aFilter, SVGFilterFrame* aFilterFrame,
@@ -107,6 +109,14 @@ bool SVGFilterInstance::ComputeBounds() {
   return true;
 }
 
+float SVGFilterInstance::GetPrimitiveUserSpaceUnitValue(
+    uint8_t aCtxType) const {
+  SVGAnimatedLength val;
+  val.Init(aCtxType, 0xff, 1.0f, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER);
+
+  return UserSpaceToFilterSpace(aCtxType, SVGUtils::UserSpace(mMetrics, &val));
+}
+
 float SVGFilterInstance::GetPrimitiveNumber(uint8_t aCtxType,
                                             float aValue) const {
   SVGAnimatedLength val;
@@ -119,17 +129,7 @@ float SVGFilterInstance::GetPrimitiveNumber(uint8_t aCtxType,
     value = SVGUtils::UserSpace(mMetrics, &val);
   }
 
-  switch (aCtxType) {
-    case SVGContentUtils::X:
-      return value * static_cast<float>(mUserSpaceToFilterSpaceScale.xScale);
-    case SVGContentUtils::Y:
-      return value * static_cast<float>(mUserSpaceToFilterSpaceScale.yScale);
-    case SVGContentUtils::XY:
-    default:
-      return value * SVGContentUtils::ComputeNormalizedHypotenuse(
-                         mUserSpaceToFilterSpaceScale.xScale,
-                         mUserSpaceToFilterSpaceScale.yScale);
-  }
+  return UserSpaceToFilterSpace(aCtxType, value);
 }
 
 Point3D SVGFilterInstance::ConvertLocation(const Point3D& aPoint) const {
@@ -148,6 +148,21 @@ Point3D SVGFilterInstance::ConvertLocation(const Point3D& aPoint) const {
       SVGUtils::GetRelativeRect(mPrimitiveUnits, val, mTargetBBox, mMetrics);
   gfxRect r = UserSpaceToFilterSpace(feArea);
   return Point3D(r.x, r.y, GetPrimitiveNumber(SVGContentUtils::XY, aPoint.z));
+}
+
+float SVGFilterInstance::UserSpaceToFilterSpace(uint8_t aCtxType,
+                                                float aValue) const {
+  switch (aCtxType) {
+    case SVGContentUtils::X:
+      return aValue * static_cast<float>(mUserSpaceToFilterSpaceScale.xScale);
+    case SVGContentUtils::Y:
+      return aValue * static_cast<float>(mUserSpaceToFilterSpaceScale.yScale);
+    case SVGContentUtils::XY:
+    default:
+      return aValue * SVGContentUtils::ComputeNormalizedHypotenuse(
+                          mUserSpaceToFilterSpaceScale.xScale,
+                          mUserSpaceToFilterSpaceScale.yScale);
+  }
 }
 
 gfxRect SVGFilterInstance::UserSpaceToFilterSpace(
@@ -325,6 +340,10 @@ nsresult SVGFilterInstance::BuildPrimitives(
     if (auto* primitive = SVGFilterPrimitiveElement::FromNode(child)) {
       primitives.AppendElement(primitive);
     }
+  }
+
+  if (primitives.Length() > MAX_PRIMITIVES_PER_FILTER) {
+    return NS_ERROR_FAILURE;
   }
 
   // Maps source image name to source index.

@@ -88,9 +88,7 @@ skip-if = [
 ["test_manyWindows.html"]
 
 ["test_native_provider.html"]
-skip-if = [
-  "os != 'android'",
-]
+skip-if = ["os != 'android'"]
 
 ["test_not_fully_active.html"]
 support-files = ["popup.html"]

@@ -416,18 +416,6 @@
     "minbytes": 0,
     "maxbytes": 512
   },
-  "{profile}\\extensions\\pageloader@mozilla.org\\bootstrap.js": {
-    "mincount": 0,
-    "maxcount": 6,
-    "minbytes": 0,
-    "maxbytes": 30000
-  },
-  "{profile}\\extensions\\pageloader@mozilla.org\\chrome.manifest": {
-    "mincount": 2,
-    "maxcount": 2,
-    "minbytes": 600,
-    "maxbytes": 600
-  },
   "{profile}\\extensions\\pageloader@mozilla.org\\chrome\\memory.js": {
     "mincount": 0,
     "maxcount": 4,
@@ -469,24 +457,6 @@
     "maxcount": 4,
     "minbytes": 0,
     "maxbytes": 127000
-  },
-  "{profile}\\extensions\\pageloader@mozilla.org\\install.rdf": {
-    "mincount": 0,
-    "maxcount": 2,
-    "minbytes": 0,
-    "maxbytes": 8192
-  },
-  "{profile}\\extensions\\talos-powers@mozilla.org\\bootstrap.js": {
-    "mincount": 0,
-    "maxcount": 6,
-    "minbytes": 0,
-    "maxbytes": 30000
-  },
-  "{profile}\\extensions\\talos-powers@mozilla.org\\chrome.manifest": {
-    "mincount": 2,
-    "maxcount": 2,
-    "minbytes": 600,
-    "maxbytes": 600
   },
   "{profile}\\extensions\\talos-powers@mozilla.org\\chrome\\talos-powers-content.js": {
     "mincount": 2,

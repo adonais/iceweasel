@@ -194,23 +194,31 @@ add_task(async function test_addCSPHeaders() {
 
   let url = `${BASE_URL}/data/file_sample.html?r=${Math.random()}`;
   let contentPage = await ExtensionTestUtils.loadContentPage(url);
-  equal(contentPage.browser.csp.policyCount, 1, "expected 1 policy");
   equal(
-    contentPage.browser.csp.getPolicy(0),
+    contentPage.browser.policyContainer.csp.policyCount,
+    1,
+    "expected 1 policy"
+  );
+  equal(
+    contentPage.browser.policyContainer.csp.getPolicy(0),
     "object-src 'none'; script-src 'none'",
     "expected policy"
   );
   await contentPage.close();
 
   contentPage = await ExtensionTestUtils.loadContentPage(url);
-  equal(contentPage.browser.csp.policyCount, 2, "expected 2 policies");
   equal(
-    contentPage.browser.csp.getPolicy(0),
+    contentPage.browser.policyContainer.csp.policyCount,
+    2,
+    "expected 2 policies"
+  );
+  equal(
+    contentPage.browser.policyContainer.csp.getPolicy(0),
     "object-src 'none'; script-src 'none'",
     "expected first policy"
   );
   equal(
-    contentPage.browser.csp.getPolicy(1),
+    contentPage.browser.policyContainer.csp.getPolicy(1),
     "object-src 'none'; script-src https:",
     "expected second policy"
   );

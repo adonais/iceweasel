@@ -18,6 +18,7 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.doOnNextLayout
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
+import kotlinx.coroutines.launch
 import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.TabSessionState
@@ -25,7 +26,7 @@ import mozilla.components.browser.thumbnails.loader.ThumbnailLoader
 import mozilla.components.compose.base.Divider
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.toolbar.BrowserToolbar
-import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
+import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
 import mozilla.components.compose.browser.toolbar.concept.Action.TabCounterAction
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction
@@ -35,6 +36,8 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.DisplayState
 import mozilla.components.concept.base.images.ImageLoadRequest
+import mozilla.components.support.ktx.android.view.toScope
+import mozilla.components.support.ktx.kotlin.applyRegistrableDomainSpan
 import mozilla.components.support.ktx.kotlin.isContentUrl
 import mozilla.components.support.ktx.util.URLStringUtils
 import org.mozilla.fenix.R
@@ -109,16 +112,18 @@ class TabPreview @JvmOverloads constructor(
 
             updateToolbar(
                 new = {
-                    browserToolbarStore.dispatch(
-                        PageOriginUpdated(
-                            buildComposableToolbarPageOrigin(destination),
-                        ),
-                    )
-                    browserToolbarStore.dispatch(
-                        BrowserDisplayToolbarAction.PageActionsStartUpdated(
-                            buildComposableToolbarPageStartActions(destination),
-                        ),
-                    )
+                    toScope().launch {
+                        browserToolbarStore.dispatch(
+                            PageOriginUpdated(
+                                buildComposableToolbarPageOrigin(destination),
+                            ),
+                        )
+                        browserToolbarStore.dispatch(
+                            BrowserDisplayToolbarAction.PageActionsStartUpdated(
+                                buildComposableToolbarPageStartActions(destination),
+                            ),
+                        )
+                    }
                 },
                 old = {},
             )
@@ -182,13 +187,20 @@ class TabPreview @JvmOverloads constructor(
 
     private fun buildComposableToolbarStore(): BrowserToolbarStore {
         val tabsCount = currentOpenedTabsCount
+        val isPrivateMode = context.components.appStore.state.mode.isPrivate
+
+        val tabsCounterDescription = if (isPrivateMode) {
+            context.getString(R.string.mozac_tab_counter_private)
+        } else {
+            context.getString(R.string.mozac_tab_counter_open_tab_tray)
+        }
 
         return BrowserToolbarStore(
             BrowserToolbarState(
                 displayState = DisplayState(
                     browserActionsStart = listOf(
-                        ActionButton(
-                            icon = R.drawable.mozac_ic_home_24,
+                        ActionButtonRes(
+                            drawableResId = R.drawable.mozac_ic_home_24,
                             contentDescription = R.string.browser_toolbar_home,
                             onClick = object : BrowserToolbarEvent {},
                         ),
@@ -196,14 +208,12 @@ class TabPreview @JvmOverloads constructor(
                     browserActionsEnd = listOf(
                         TabCounterAction(
                             count = tabsCount,
-                            contentDescription = context.getString(
-                                R.string.mozac_tab_counter_open_tab_tray, tabsCount.toString(),
-                            ),
-                            showPrivacyMask = context.components.core.store.state.selectedTab?.content?.private == true,
+                            contentDescription = tabsCounterDescription,
+                            showPrivacyMask = isPrivateMode,
                             onClick = object : BrowserToolbarEvent {},
                         ),
-                        ActionButton(
-                            icon = R.drawable.mozac_ic_ellipsis_vertical_24,
+                        ActionButtonRes(
+                            drawableResId = R.drawable.mozac_ic_ellipsis_vertical_24,
                             contentDescription = R.string.content_description_menu,
                             onClick = object : BrowserToolbarEvent {},
                         ),
@@ -216,24 +226,24 @@ class TabPreview @JvmOverloads constructor(
     private fun buildComposableToolbarPageStartActions(tab: TabSessionState) = buildList {
         if (tab.content.url.isContentUrl() == true) {
             add(
-                ActionButton(
-                    icon = R.drawable.mozac_ic_page_portrait_24,
+                ActionButtonRes(
+                    drawableResId = R.drawable.mozac_ic_page_portrait_24,
                     contentDescription = R.string.mozac_browser_toolbar_content_description_site_info,
                     onClick = object : BrowserToolbarEvent {},
                 ),
             )
         } else if (tab.content.securityInfo.secure == true) {
             add(
-                ActionButton(
-                    icon = R.drawable.mozac_ic_lock_24,
+                ActionButtonRes(
+                    drawableResId = R.drawable.mozac_ic_shield_checkmark_24,
                     contentDescription = R.string.mozac_browser_toolbar_content_description_site_info,
                     onClick = object : BrowserToolbarEvent {},
                 ),
             )
         } else {
             add(
-                ActionButton(
-                    icon = R.drawable.mozac_ic_broken_lock,
+                ActionButtonRes(
+                    drawableResId = R.drawable.mozac_ic_shield_slash_24,
                     contentDescription = R.string.mozac_browser_toolbar_content_description_site_info,
                     onClick = object : BrowserToolbarEvent {},
                 ),
@@ -241,13 +251,14 @@ class TabPreview @JvmOverloads constructor(
         }
     }
 
-    private fun buildComposableToolbarPageOrigin(tab: TabSessionState): PageOrigin {
-        val urlString = URLStringUtils.toDisplayUrl(tab.content.url).toString()
+    private suspend fun buildComposableToolbarPageOrigin(tab: TabSessionState): PageOrigin {
+        val url = tab.content.url.applyRegistrableDomainSpan(context.components.publicSuffixList)
+        val displayUrl = URLStringUtils.toDisplayUrl(url)
 
         return PageOrigin(
             hint = R.string.search_hint,
             title = null,
-            url = urlString,
+            url = displayUrl,
             onClick = object : BrowserToolbarEvent {},
         )
     }

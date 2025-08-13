@@ -44,6 +44,8 @@ class WaylandShmPool {
   ipc::SharedMemoryMapping mShm;
 };
 
+class BufferTransaction;
+
 class WaylandBuffer {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WaylandBuffer);
@@ -60,34 +62,17 @@ class WaylandBuffer {
     return aSize == mSize;
   }
 
-  bool IsAttached() const { return mIsAttachedToCompositor; }
-  void SetAttachedLocked(const WaylandSurfaceLock& aSurfaceLock) {
-    mIsAttachedToCompositor = true;
-  }
+  bool IsAttached() const;
 
-  bool IsAttachedToSurface(WaylandSurface* aWaylandSurface);
-
-  bool Matches(uintptr_t aWlBufferID) { return aWlBufferID == mWLBufferID; }
-  uintptr_t GetWlBufferID() { return mWLBufferID; }
-
-  // Lend wl_buffer to WaylandSurface to attach.
-  wl_buffer* BorrowBuffer(const WaylandSurfaceLock& aSurfaceLock);
-
-  // Return lended buffer.
-  void ReturnBufferDetached(const WaylandSurfaceLock& aSurfaceLock);
-
-  // Return lended buffer which is still used by Wayland compostor.
-  void ReturnBufferAttached(WaylandSurfaceLock& aSurfaceLock);
-
-  void ClearSyncHandler();
+  BufferTransaction* GetTransaction();
+  void RemoveTransaction(RefPtr<BufferTransaction> aTransaction);
 
 #ifdef MOZ_LOGGING
   virtual void DumpToFile(const char* aHint) = 0;
 #endif
 
-  // Create and move away wl_buffer and mark is as not managed.
-  // From this point wl_buffer is not owned by WaylandBuffer.
-  wl_buffer* CreateAndTakeWLBuffer();
+  // Create and return wl_buffer for underlying memory buffer if it's missing.
+  virtual wl_buffer* CreateWlBuffer() = 0;
 
   // Set wl_buffer from external source (WaylandBufferDMABUFHolder).
   void SetExternalWLBuffer(wl_buffer* aWLBuffer);
@@ -96,35 +81,12 @@ class WaylandBuffer {
   explicit WaylandBuffer(const LayoutDeviceIntSize& aSize);
   virtual ~WaylandBuffer() = default;
 
-  // Create and return wl_buffer for underlying memory buffer if it's missing.
-  virtual bool CreateWlBuffer() = 0;
-
-  // Delete wl_buffer. It only releases Wayland interface over underlying
-  // memory, doesn't affect actual buffer content but only connection
-  // to Wayland compositor.
-  void DeleteWlBuffer();
-
-  // wl_buffer delete is not atomic, we need to wait until it's finished.
-  wl_callback* mBufferDeleteSyncCallback = nullptr;
-
-  // wl_buffer is a wayland object that encapsulates the shared/dmabuf memory
-  // and passes it to wayland compositor by wl_surface object.
-  wl_buffer* mWLBuffer = nullptr;
-  uintptr_t mWLBufferID = 0;
-
-  // Owns and manages WL buffer. If set to false, wl_buffer is managed by
-  // someone else (for instance WaylandBufferDMABUFHolder)
+  // if set the wl_buffer is managed by someone else
+  // (for instance WaylandBufferDMABUFHolder)
   // and WaylandBuffer can't destroy it.
-  bool mManagingWLBuffer = true;
+  wl_buffer* mExternalWlBuffer = nullptr;
 
-  // Wayland buffer is tied to WaylandSurface.
-  // We keep reference to WaylandSurface until WaylandSurface returns the
-  // buffer.
-  RefPtr<WaylandSurface> mAttachedToSurface;
-
-  // Indicates that wl_buffer is actively used by Wayland compositor.
-  // We can't delete such wl_buffer.
-  mozilla::Atomic<bool, mozilla::Relaxed> mIsAttachedToCompositor{false};
+  AutoTArray<RefPtr<BufferTransaction>, 3> mBufferTransactions;
 
   LayoutDeviceIntSize mSize;
 
@@ -160,8 +122,7 @@ class WaylandBufferSHM final : public WaylandBuffer {
   void DumpToFile(const char* aHint) override;
 #endif
 
- protected:
-  bool CreateWlBuffer() override;
+  wl_buffer* CreateWlBuffer() override;
 
  private:
   explicit WaylandBufferSHM(const LayoutDeviceIntSize& aSize);
@@ -194,8 +155,7 @@ class WaylandBufferDMABUF final : public WaylandBuffer {
   void DumpToFile(const char* aHint) override;
 #endif
 
- protected:
-  bool CreateWlBuffer() override;
+  wl_buffer* CreateWlBuffer() override;
 
  private:
   explicit WaylandBufferDMABUF(const LayoutDeviceIntSize& aSize);
@@ -217,6 +177,57 @@ class WaylandBufferDMABUFHolder final {
   wl_buffer* mWLBuffer = nullptr;
   uint32_t mUID = 0;
   uint32_t mPID = 0;
+};
+
+// BufferTransaction class holds wl_buffer callbacks after
+// wl_surface_commit and manages wl_buffer. One WaylandBuffer and WaylandSurface
+// can have active transactions over the same underlying memory buffer which
+// allows to map/unmap wl_surfaces for instance during layered page scrolling.
+// This helps slower Wayland compositors (like KDE) which doesn't release
+// wl_buffers quickly and holds them for longer time.
+class BufferTransaction {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BufferTransaction);
+
+  BufferTransaction(WaylandBuffer* aBuffer, wl_buffer* aWLBuffer,
+                    bool aIsExternalBuffer);
+
+  wl_buffer* BufferBorrowLocked(const WaylandSurfaceLock& aSurfaceLock);
+
+  void BufferDetachCallback();
+  void BufferDeleteCallback();
+
+  bool IsAttached() {
+    return mBufferState == BufferState::WaitingForDetach ||
+           mBufferState == BufferState::WaitingForDelete;
+  }
+  bool IsDetached() { return mBufferState == BufferState::Detached; }
+  bool IsDeleted() { return mBufferState == BufferState::Deleted; }
+
+  void DeleteTransactionLocked(const WaylandSurfaceLock& aSurfaceLock);
+
+  bool MatchesBuffer(uintptr_t aBuffer) {
+    return aBuffer == reinterpret_cast<uintptr_t>(mBuffer.get());
+  }
+
+ private:
+  ~BufferTransaction();
+
+  void WlBufferDeleteLocked(const WaylandSurfaceLock& aSurfaceLock);
+  void DeleteLocked(const WaylandSurfaceLock& aSurfaceLock);
+
+  RefPtr<WaylandSurface> mSurface;
+  RefPtr<WaylandBuffer> mBuffer;
+
+  enum class BufferState {
+    Detached,
+    Deleted,
+    WaitingForDetach,
+    WaitingForDelete
+  };
+
+  BufferState mBufferState{BufferState::Detached};
+  wl_buffer* mWLBuffer = nullptr;
+  bool mIsExternalBuffer = false;
 };
 
 }  // namespace mozilla::widget

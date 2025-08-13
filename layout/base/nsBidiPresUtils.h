@@ -11,10 +11,10 @@
 #include "mozilla/intl/BidiClass.h"
 #include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "nsBidiUtils.h"
-#include "nsHashKeys.h"
 #include "nsCoord.h"
-#include "nsTArray.h"
+#include "nsHashKeys.h"
 #include "nsLineBox.h"
+#include "nsTArray.h"
 
 #ifdef DrawText
 #  undef DrawText

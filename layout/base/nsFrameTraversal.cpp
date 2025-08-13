@@ -7,15 +7,14 @@
 #include "nsFrameTraversal.h"
 
 #include "mozilla/Assertions.h"
-#include "nsCOMPtr.h"
-#include "nsGkAtoms.h"
-
-#include "nsFrameList.h"
-#include "nsPlaceholderFrame.h"
-#include "nsPresContext.h"
-#include "nsContainerFrame.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/PopoverData.h"
+#include "nsCOMPtr.h"
+#include "nsContainerFrame.h"
+#include "nsFrameList.h"
+#include "nsGkAtoms.h"
+#include "nsPlaceholderFrame.h"
+#include "nsPresContext.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

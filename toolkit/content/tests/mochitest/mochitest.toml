@@ -7,9 +7,7 @@ skip-if = [
 ]
 
 ["test_bug1407085.html"]
-skip-if = [
-    "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && ccov && xorigin",
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && ccov && xorigin"]
 
 ["test_mousecapture.xhtml"]
 allow_xul_xbl = true
@@ -22,7 +20,7 @@ support-files = [
 ]
 skip-if = [
   "os == 'android'",
-  "xorigin",  # SecurityError: Permission denied to access property "scrollX" on cross-origin object at runTests@http://mochi.test:8888/tests/toolkit/content/tests/mochitest/test_mousecapture.xhtml:170:17, inconsistent fail/pass
+  "xorigin", # SecurityError: Permission denied to access property "scrollX" on cross-origin object at runTests@http://mochi.test:8888/tests/toolkit/content/tests/mochitest/test_mousecapture.xhtml:170:17, inconsistent fail/pass
   "http3",
   "http2",
 ]

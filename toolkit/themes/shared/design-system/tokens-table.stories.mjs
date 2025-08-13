@@ -36,13 +36,12 @@ const HCM_MAP = {
   MarkText: "#000000",
   SelectedItem: "#D6B4FD",
   SelectedItemText: "#2B2B2B",
-  AccentColor: "8080FF",
+  AccentColor: "AccentColor",
   AccentColorText: "#2B2B2B",
   VisitedText: "#8080FF",
 };
 
 const THEMED_TABLES = [
-  "attention-dot",
   "background-color",
   "border",
   "box-shadow",
@@ -67,6 +66,7 @@ class TablesPage extends LitElement {
     surface: { type: String, state: true },
     tokensData: { type: Object, state: true },
     filteredTokens: { type: Object, state: true },
+    tableFilter: { type: String, state: true },
   };
 
   constructor() {
@@ -140,6 +140,13 @@ class TablesPage extends LitElement {
     this.handleSearch();
   }
 
+  handleTableFilterClick(e) {
+    if (!e.target.dataset.filter) {
+      this.tableFilter = "";
+    }
+    this.tableFilter = e.target.dataset.filter;
+  }
+
   render() {
     if (!this.tokensData) {
       return "";
@@ -149,46 +156,67 @@ class TablesPage extends LitElement {
       <link rel="stylesheet" href=${styles} />
       <div class="page-wrapper">
         <div class="filters-wrapper">
-          <div class="search-wrapper">
-            <div class="search-icon"></div>
-            <input
-              type="search"
-              placeholder="Filter tokens"
-              @input=${this.debounce(this.handleInput)}
-              .value=${this.#query}
-            />
-            <div
-              class="clear-icon"
-              role="button"
-              title="Clear"
-              ?hidden=${!this.#query}
-              @click=${this.handleClearSearch}
-            ></div>
+          <div class="top-filters">
+            <div class="search-wrapper">
+              <div class="search-icon"></div>
+              <input
+                type="search"
+                placeholder="Filter tokens"
+                @input=${this.debounce(this.handleInput)}
+                .value=${this.#query}
+              />
+              <div
+                class="clear-icon"
+                role="button"
+                title="Clear"
+                ?hidden=${!this.#query}
+                @click=${this.handleClearSearch}
+              ></div>
+            </div>
+            <fieldset id="surface" @change=${this.handleSurfaceChange}>
+              <label>
+                <input
+                  type="radio"
+                  name="surface"
+                  value="brand"
+                  ?checked=${this.surface == "brand"}
+                />
+                In-content
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="surface"
+                  value="platform"
+                  ?checked=${this.surface == "platform"}
+                />
+                Chrome
+              </label>
+            </fieldset>
           </div>
-          <fieldset id="surface" @change=${this.handleSurfaceChange}>
-            <label>
-              <input
-                type="radio"
-                name="surface"
-                value="brand"
-                ?checked=${this.surface == "brand"}
-              />
-              In-content
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="surface"
-                value="platform"
-                ?checked=${this.surface == "platform"}
-              />
-              Chrome
-            </label>
-          </fieldset>
+          <div class="table-filter" @click=${this.handleTableFilterClick}>
+            <moz-button type=${!this.tableFilter ? "primary" : "default"}>
+              All tokens
+            </moz-button>
+            ${Object.keys(storybookTables).map(table => {
+              return html`<moz-button
+                type=${this.tableFilter == table ? "primary" : "default"}
+                data-filter=${table}
+              >
+                ${table
+                  .split("-")
+                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(" ")}
+              </moz-button>`;
+            })}
+          </div>
         </div>
         <div class="tables-wrapper">
           ${Object.entries(this.filteredTokens ?? this.tokensData).map(
             ([tableName, tableEntries]) => {
+              if (this.tableFilter && tableName !== this.tableFilter) {
+                return "";
+              }
               return html`
                 <tokens-table
                   name=${tableName}
@@ -369,6 +397,10 @@ class TokensTable extends LitElement {
   }
 
   spaceAndSizeTemplate(_, value, tokenName) {
+    if (tokenName.includes("page-main")) {
+      return "";
+    }
+
     let isSize = tokenName.includes("size") || tokenName.includes("height");
     let items = isSize
       ? html`

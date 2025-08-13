@@ -1,85 +1,133 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://schemas.android.com/apk/res-auto">
-  <!-- Description for privacy add-on permission. -->
-  <string name="mozac_feature_addons_permissions_privacy_description">Прочитајте и измените поставке приватности</string>
-  <!-- Description for all_urls add-on permission. -->
-  <string name="mozac_feature_addons_permissions_all_urls_description">Приступите својим подацима за све веб странице</string>
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
-  <string name="mozac_feature_addons_permissions_one_site_description">Приступ подацима за %1$s</string>
+  <string name="mozac_feature_addons_permissions_one_site_description">Приступите подацима за %1$s</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
-  <string name="mozac_feature_addons_permissions_sites_in_domain_description">Приступ подацима за сајтове на %1$s домену</string>
+  <string name="mozac_feature_addons_permissions_sites_in_domain_description">Приступите подацима за сајтове на %1$s домену</string>
   <!--
     When an add-on requires access to more than 4 sites, for example the add-on requires access for 5 sites. We will show the first 4 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description,
     then we will show another collapsed entry saying "Access your data on 1 other site". This entry it's for the singular case, when the add-on is only accessing one extra site.
   -->
-  <string name="mozac_feature_addons_permissions_one_extra_site_description" tools:ignore="PluralsCandidate">Приступ подацима на 1 другом сајту</string>
+  <string name="mozac_feature_addons_permissions_one_extra_site_description" tools:ignore="PluralsCandidate,UnusedResources" moz:removedIn="142">Приступите подацима на 1 другом сајту</string>
+  <!--
+    When an add-on requires access to more than 4 sites, for example the add-on requires access for 5 sites. We will show the first 4 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description,
+    then we will show another collapsed entry saying "Access your data on another site".
+  -->
+  <string name="mozac_feature_addons_permissions_one_extra_site_description_2">Приступите подацима на другом сајту</string>
   <!--
     When an add-on requires access to more than 4 sites, for example the add-on requires access for 6 sites. We will show the first 4 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description,
     then we will show another collapsed entry saying "Access your data on 2 other sites". This entry it's for the plural case, when the add-on is accessing more than one extra site.
     %1$d will be replaced by an integer indicating the number of additional hosts for which this web extension is requesting permission.
   -->
-  <string name="mozac_feature_addons_permissions_extra_sites_description" tools:ignore="PluralsCandidate">Приступ подацима на %1$d других сајтова</string>
+  <string name="mozac_feature_addons_permissions_extra_sites_description" tools:ignore="PluralsCandidate,UnusedResources" moz:removedIn="142">Приступите подацима на %1$d других сајтова</string>
+  <!--
+    When an add-on requires access to more than 4 sites, for example the add-on requires access for 6 sites. We will show the first 4 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description,
+    then we will show another collapsed entry saying "Access your data on other sites".
+  -->
+  <string name="mozac_feature_addons_permissions_extra_sites_description_2">Приступите подацима на другим сајтовима</string>
   <!--
     When an add-on requires access to more than 4 domains, for example the add-on requires access for 5 domains. We will show the first 4 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description,
     then we will show another collapsed entry saying "Access your data on 1 other domain". This entry it's for the singular case, when the add-on is only accessing one extra domain.
   -->
-  <string name="mozac_feature_addons_permissions_one_extra_domain_description" tools:ignore="PluralsCandidate">Приступ подацима на 1 другом домену</string>
+  <string name="mozac_feature_addons_permissions_one_extra_domain_description" tools:ignore="PluralsCandidate,UnusedResources" moz:removedIn="142">Приступите подацима на 1 другом домену</string>
+  <!--
+    When an add-on requires access to more than 4 domains, for example the add-on requires access for 5 domains. We will show the first 4 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description,
+    then we will show another collapsed entry saying "Access your data on another domain.
+  -->
+  <string name="mozac_feature_addons_permissions_one_extra_domain_description_2">Приступите подацима на другом домену</string>
   <!--
     When an add-on requires access to more than 4 domains, for example the add-on requires access for 6 domains. We will show the first 4 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description,
     then we will show another collapsed entry saying "Access your data on 2 other domains". This entry it's for the plural case, when the add-on is accessing more than one extra domain.
     %1$d will be replaced by an integer indicating the number of additional domains for which this web extension is requesting permission.
   -->
-  <string name="mozac_feature_addons_permissions_extra_domains_description_plural" tools:ignore="PluralsCandidate">Приступ подацима на %1$d других домена</string>
+  <string name="mozac_feature_addons_permissions_extra_domains_description_plural" tools:ignore="PluralsCandidate,UnusedResources" moz:removedIn="142">Приступите подацима на %1$d других домена</string>
+  <!--
+    When an add-on requires access to more than 4 domains, for example the add-on requires access for 6 domains. We will show the first 4 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description,
+    then we will show another collapsed entry saying "Access your data on other domains".
+  -->
+  <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">Приступите подацима на другим доменима</string>
+  <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
+  <string name="mozac_feature_addons_permissions_all_domain_count_description" tools:ignore="PluralsCandidate">Приступите подацима за сајтове на %1$d домена</string>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s, %2$d од %3$d</string>
-  <!-- Description for tabs add-on permission. -->
+  <!-- Description for the "privacy" WebExtensions API permission. -->
+  <string name="mozac_feature_addons_permissions_privacy_description">Читајте и мењајте подешавања приватности</string>
+  <!-- Description for the "<all_urls>" WebExtensions API permission. -->
+  <string name="mozac_feature_addons_permissions_all_urls_description">Приступите подацима за све сајтове</string>
+  <!-- Description for the "tabs" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_tabs_description">Приступите језичцима прегледача</string>
-  <!-- Description for navigation permission. -->
+  <!-- Description for the "webNavigation" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_web_navigation_description">Приступите радњама прегледача приликом навигације</string>
-  <!-- Description for bookmarks permission. -->
+  <!-- Description for the "bookmarks" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_bookmarks_description">Прочитајте и измените ознаке</string>
-  <!-- Description for browser_setting permission. -->
+  <!-- Description for the "browserSettings" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_browser_setting_description">Прочитајте и измените подешавања прегледача</string>
-  <!-- Description for browser_data permission. -->
+  <!-- Description for the "browsingData" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_browser_data_description">Обришите недавну историју прегледања, колачиће и сродне податке</string>
-  <!-- Description for clipboard_read permission. -->
+  <!-- Description for the "clipboardRead" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_clipboard_read_description">Узмите податке из привремене меморије</string>
-  <!-- Description for clipboard_write permission. -->
+  <!-- Description for the "clipboardWrite" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_clipboard_write_description">Унесите податке у привремену меморију</string>
-  <!-- Description for declarativeNetRequest permission. -->
+  <!-- Description for the "declarativeNetRequest" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_declarative_net_request_description">Блокирајте садржај на било којој страници</string>
-  <!-- Description for declarativeNetRequestFeedback permission. -->
+  <!-- Description for the "declarativeNetRequestFeedback" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_declarative_net_request_feedback_description">Прочитајте вашу историју прегледања</string>
-  <!-- Description for downloads permission. -->
+  <!-- Description for the "downloads" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_downloads_description">Преузмите датотеке и прочитајте и измените историју преузимања</string>
-  <!-- Description for downloads_open permission. -->
+  <!-- Description for the "downloads.open" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_downloads_open_description">Отворите датотеке преузете на ваш уређај</string>
-  <!-- Description for find permission. -->
+  <!-- Description for the "find" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_find_description">Прочитајте текст из свих отворених језичака</string>
-  <!-- Description for geolocation permission. -->
+  <!-- Description for the "geolocation" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_geolocation_description">Приступите вашој локацији</string>
-  <!-- Description for history permission. -->
+  <!-- Description for the "history" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_history_description">Приступите историји прегледања</string>
-  <!-- Description for management permission. -->
+  <!-- Description for the "management" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_management_description">Надгледајте употребу проширења и управљајте темама</string>
-  <!-- Description for native_messaging permission. -->
+  <!-- Description for the "nativeMessaging" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_native_messaging_description">Размењујте поруке са другим апликацијама осим ове</string>
-  <!-- Description for notifications permission. -->
+  <!-- Description for the "notifications" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_notifications_description">Покажите обавештења</string>
-  <!-- Description for pkcs11 permission. -->
+  <!-- Description for the "pkcs11" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_pkcs11_description">Пружите криптографске услуге провере аутентичности</string>
-  <!-- Description for proxy permission. -->
+  <!-- Description for the "proxy" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_proxy_description">Управљајте прокси поставкама прегледача</string>
-  <!-- Description for sessions permission. -->
+  <!-- Description for the "sessions" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_sessions_description">Приступите недавно затвореним језичцима</string>
-  <!-- Description for tab_hide permission. -->
+  <!-- Description for the "tabHide" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_tab_hide_description">Сакријте и прикажите језичке прегледача</string>
-  <!-- Description for top_sites permission. -->
+  <!-- Description for the "topSites" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_top_sites_description">Приступите историји прегледања</string>
-  <!-- Description for userScripts permission. -->
+  <!-- Description for the "trialML" WebExtensions API permission. -->
+  <string name="mozac_feature_addons_permissions_trial_ml_description">Преузмите и покрените AI моделе на вашем уређају</string>
+  <!-- Description for the "userScripts" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_user_scripts_description">Дозволите непровереним скриптама трећих страна да приступе вашим подацима</string>
-  <!-- Description for devtools permission. -->
+  <!-- Description for the "devtools" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_devtools_description">Омогући програмерским алаткама приступ вашим подацима у отвореним језичцима</string>
+  <!-- Description for the "<all_urls>" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_all_urls_description_for_update">Приступите подацима за све сајтове.</string>
+  <!-- The text shown when an extension requests the userScripts permission, near the usual description of the userScripts permission -->
+  <string name="mozac_feature_addons_permissions_user_scripts_extra_warning">Непроверене скрипте могу бити ризик по сигурност и приватност. Покрените скрипте само из додатака или извора којима верујете.</string>
+  <!-- The sentence used when the extension has data collection permissions. %1$s is a formatted list of permissions. -->
+  <string name="mozac_feature_addons_permissions_required_data_collection_description" moz:removedIn="141" tools:ignore="UnusedResources">Програмер каже да овај додатак сакупља: %1$s.</string>
+  <!-- The sentence used when the extension has data collection permissions. %1$s is a formatted list of permissions. -->
+  <string name="mozac_feature_addons_permissions_required_data_collection_description_2">Програмер каже да овај додатак сакупља: %1$s</string>
+  <!-- The sentence used when the developer of an extension has explicitly stated that they do not collect any data collection. -->
+  <string name="mozac_feature_addons_permissions_none_required_data_collection_description">Програмер каже да овај додатак не захтева сакупљање података.</string>
+  <!-- The sentence used when the extension requests new data collection permissions. %1$s is a formatted list of permissions. -->
+  <string name="mozac_feature_addons_permissions_data_collection_optional_description">Програмер каже да додатак жели да сакупља: %1$s</string>
+  <!-- Description for text button that expands the list of domain permissions -->
+  <string name="mozac_feature_addons_permissions_show_all_sites">Прикажи све сајтове</string>
+  <!-- Description for text button that hides the majority of the list of domain permissions -->
+  <string name="mozac_feature_addons_permissions_show_fewer_sites">Прикажи мање сајтова</string>
+  <!-- Short description for the bookmarksInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_bookmarksInfo_short_description">обележивачи</string>
+  <!-- Short description for the financialAndPaymentInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_financialAndPaymentInfo_short_description">финансијски и платни подаци</string>
+  <!-- Short description for the healthInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_healthInfo_short_description">здравствени подаци</string>
+  <!-- Short description for the locationInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_locationInfo_short_description">локација</string>
   <!-- The version on of add-on. -->
   <string name="mozac_feature_addons_version">Верзија</string>
   <!-- The author of an add-on. -->
@@ -163,15 +211,21 @@
   <!-- Button in the extensions manager that opens AMO in a tab -->
   <string name="mozac_feature_addons_find_more_extensions_button_text">Пронађите још додатака</string>
   <!-- The label of the allow button, this will be shown to the user when an add-on needs new permissions, with the button the user will indicate that they want to accept the new permissions and update the add-on -->
-  <string name="mozac_feature_addons_updater_notification_allow_button">Дозволи</string>
+  <string name="mozac_feature_addons_updater_notification_allow_button" moz:removedIn="142" tools:ignore="UnusedResources">Дозволи</string>
+  <!-- The label of the update button on the system notification shown to the user when an add-on has an update that requires the user to accept new permissions. -->
+  <string name="mozac_feature_addons_updater_notification_update_button">Ажурирај</string>
   <!-- The label of the deny button on a notification, this will be shown to the user when an add-on needs new permissions. Indicates the user denies the new permissions and prevents the add-on from be updated -->
-  <string name="mozac_feature_addons_updater_notification_deny_button">Одбиј</string>
+  <string name="mozac_feature_addons_updater_notification_deny_button" moz:removedIn="142" tools:ignore="UnusedResources">Одбиј</string>
+  <!-- The label of the cancel button on a notification, this will be shown to the user when an add-on needs new permissions. Indicates the user denies the new permissions and prevents the add-on from be updated -->
+  <string name="mozac_feature_addons_updater_notification_cancel_button">Откажи</string>
   <!-- The tile of the notification, this will be shown to the user when an add-on needs new permissions, to be updated. %1$s is the name of the add-ons -->
-  <string name="mozac_feature_addons_updater_notification_title">%1$s има ново ажурирање</string>
+  <string name="mozac_feature_addons_updater_notification_title" moz:removedIn="142" tools:ignore="UnusedResources">%1$s има ново ажурирање</string>
+  <!-- The title of the system notification shown to the user when an add-on has a new update that requires new permissions. %1$s is the name of the add-on. -->
+  <string name="mozac_feature_addons_updater_notification_title_2">%1$s има ажурирање</string>
   <!-- The content of the notification, this will be shown when an add-on needs new permissions, to be updated. %1$d is the amount of new permissions -->
-  <string name="mozac_feature_addons_updater_notification_content" tools:ignore="PluralsCandidate">Потребне су %1$d нове дозволе</string>
+  <string name="mozac_feature_addons_updater_notification_content" tools:ignore="PluralsCandidate,UnusedResources" moz:removedIn="142">Потребне су %1$d нове дозволе</string>
   <!-- The content of the notification displayed when an add-on needs a new permission -->
-  <string name="mozac_feature_addons_updater_notification_content_singular">Потребна је нова дозвола</string>
+  <string name="mozac_feature_addons_updater_notification_content_singular" moz:removedIn="142" tools:ignore="UnusedResources">Потребна је нова дозвола</string>
   <!-- Name of the "notification channel" used for displaying a notification for updating an extension. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_feature_addons_updater_notification_channel_2">Ажурирања додатака</string>
   <!-- Name of the "notification channel" used for displaying a notification for new supported add-ons. See https://developer.android.com/training/notify-user/channels -->
@@ -217,15 +271,15 @@
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_1">%1$s крши Mozilla-ине смернице и не може се инсталирати на %2$s.</string>
   <!-- Text shown after successfully enabled an add-on. %1$s is the add-on name. -->
-  <string name="mozac_feature_addons_successfully_enabled">Успешно омогућен додатак %1$s</string>
+  <string name="mozac_feature_addons_successfully_enabled" tools:ignore="UnusedResources" moz:removedIn="142">Успешно омогућен додатак %1$s</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Омогућавање додатка %1$s није успело</string>
   <!-- Text shown after successfully disabled an add-on. %1$s is the add-on name. -->
-  <string name="mozac_feature_addons_successfully_disabled">Успешно онемогућен додатак %1$s</string>
+  <string name="mozac_feature_addons_successfully_disabled" tools:ignore="UnusedResources" moz:removedIn="142">Успешно онемогућен додатак %1$s</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_disable">Дективирање %1$s није успело</string>
   <!-- Text shown after successfully uninstalled an add-on. %1$s is the add-on name. -->
-  <string name="mozac_feature_addons_successfully_uninstalled">Деинсталација %1$s је успела</string>
+  <string name="mozac_feature_addons_successfully_uninstalled" tools:ignore="UnusedResources" moz:removedIn="142">Деинсталација %1$s је успела</string>
   <!-- Text shown after failed to uninstall an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_uninstall">Деинсталација %1$s није успела</string>
   <!-- Text shown after successfully removed an add-on. %1$s is the add-on name. -->
@@ -253,9 +307,11 @@
   <!-- Displayed in the "Status" field for the updater when an add-on has been correctly updated -->
   <string name="mozac_feature_addons_updater_dialog_status">Стање:</string>
   <!-- Text shown in the dialog when add-on installation is completed. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_installed_dialog_title">%1$s је додан у %2$s</string>
+  <string name="mozac_feature_addons_installed_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%1$s је додан у %2$s</string>
   <!-- Text shown in the dialog when add-on installation is completed. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_installed_dialog_description_2">Приступите %1$s из %2$s менија.</string>
+  <string name="mozac_feature_addons_installed_dialog_description_2" moz:removedIn="142" tools:ignore="UnusedResources">Приступите %1$s из %2$s менија.</string>
+  <!-- Used as text for the link in the description of the post-installation dialog. -->
+  <string name="mozac_feature_addons_installed_dialog_description_link_text">подешавања додатка</string>
   <!-- Confirmation button text for the dialog when add-on installation is completed. -->
   <string name="mozac_feature_addons_installed_dialog_okay_button_2">У реду</string>
   <!-- "Learn more" link displayed below an add-on status message. -->

@@ -9,6 +9,7 @@
 
 #include <type_traits>
 
+#include "mozilla/AppUnits.h"
 #include "mozilla/gfx/Coord.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Rect.h"
@@ -18,7 +19,6 @@
 #include "nsMargin.h"
 #include "nsRect.h"
 #include "nsRegion.h"
-#include "mozilla/AppUnits.h"
 
 namespace mozilla {
 

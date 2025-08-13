@@ -7,9 +7,8 @@
 #ifndef mozilla_CSSStyleRule_h
 #define mozilla_CSSStyleRule_h
 
-#include "mozilla/css/GroupRule.h"
 #include "mozilla/ServoBindingTypes.h"
-
+#include "mozilla/css/GroupRule.h"
 #include "nsDOMCSSDeclaration.h"
 
 namespace mozilla {
@@ -20,6 +19,7 @@ namespace dom {
 class DocGroup;
 class CSSStyleRule;
 struct SelectorWarning;
+class StylePropertyMap;
 
 class CSSStyleRuleDeclaration final : public nsDOMCSSDeclaration {
  public:
@@ -82,6 +82,12 @@ class CSSStyleRule final : public css::GroupRule {
   void SetSelectorText(const nsACString& aSelectorText);
   nsICSSDeclaration* Style() { return &mDecls; }
 
+  // If we wanted to follow the declaration order in CSSStyleRule.webidl,
+  // chromeonly Web IDL stuff would be declared here, but it's currently
+  // declared above.
+
+  StylePropertyMap* StyleMap();
+
   StyleLockedStyleRule* Raw() const { return mRawRule; }
   const StyleLockedDeclarationBlock* RawStyle() const;
   void SetRawAfterClone(RefPtr<StyleLockedStyleRule>);
@@ -105,6 +111,7 @@ class CSSStyleRule final : public css::GroupRule {
   friend class CSSStyleRuleDeclaration;
 
   RefPtr<StyleLockedStyleRule> mRawRule;
+  RefPtr<StylePropertyMap> mStyleMap;
   CSSStyleRuleDeclaration mDecls;
 };
 

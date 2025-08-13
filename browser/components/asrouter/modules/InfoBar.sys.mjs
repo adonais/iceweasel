@@ -175,7 +175,10 @@ class InfoBarNotification {
 
     // Only add if the universal infobar is still active. Prevents race condition
     // where a notification could add itself after removeUniversalInfobars().
-    if (content.type === TYPES.UNIVERSAL) {
+    if (
+      content.type === TYPES.UNIVERSAL &&
+      InfoBar._activeInfobar?.message.content.type === TYPES.UNIVERSAL
+    ) {
       InfoBar._universalInfobars.push({
         box: notificationContainer,
         notification: this.notification,
@@ -404,7 +407,7 @@ export const InfoBar = {
    * @param {InfoBarNotification} notification - The notification instance to display.
    */
   async showNotificationAllWindows(notification) {
-    for (let win of Services.wm.getEnumerator(null)) {
+    for (let win of Services.wm.getEnumerator("navigator:browser")) {
       if (
         !win.gBrowser ||
         win.document?.readyState !== "complete" ||
@@ -443,9 +446,8 @@ export const InfoBar = {
     if (this._activeInfobar && !universalInNewWin) {
       return null;
     }
-
-    if (!win || lazy.PrivateBrowsingUtils.isWindowPrivate(win)) {
-      return null;
+    if (!universalInNewWin) {
+      this._activeInfobar = { message, dispatch };
     }
 
     this.maybeLoadCustomElement(win);
@@ -515,6 +517,12 @@ export const InfoBar = {
 
     const onWindowReady = () => {
       if (!win.gBrowser || win.closed) {
+        return;
+      }
+      if (
+        !InfoBar._activeInfobar ||
+        InfoBar._activeInfobar.message !== message
+      ) {
         return;
       }
       this.showInfoBarMessage(

@@ -9,11 +9,11 @@
 #ifndef nsCounterManager_h_
 #define nsCounterManager_h_
 
-#include "mozilla/Attributes.h"
-#include "nsGenConList.h"
-#include "nsClassHashtable.h"
-#include "mozilla/Likely.h"
 #include "CounterStyleManager.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/Likely.h"
+#include "nsClassHashtable.h"
+#include "nsGenConList.h"
 
 class nsCounterList;
 struct nsCounterUseNode;

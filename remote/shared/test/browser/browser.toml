@@ -21,6 +21,4 @@ support-files = [
 ["browser_UserContextManager.js"]
 
 ["browser_WindowManager.js"]
-skip-if = [
-  "display == 'wayland'", # Bug 1923833: Window restoring doesn't work after the window was minimized on Wayland
-]
+skip-if = ["display == 'wayland'"] # Bug 1923833: Window restoring doesn't work after the window was minimized on Wayland

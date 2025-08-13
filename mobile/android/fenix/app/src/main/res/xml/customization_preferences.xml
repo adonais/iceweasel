@@ -43,6 +43,46 @@
         <org.mozilla.fenix.settings.RadioButtonPreference
             android:key="@string/pref_key_toolbar_bottom"
             android:title="@string/preference_bottom_toolbar" />
+        <androidx.preference.Preference
+            android:key="@string/pref_key_tab_strip_message"
+            android:title=""
+            android:summary="@string/preference_toolbar_pref_disabled_explanation"
+            android:enabled="false"
+            android:selectable="false" />
+    </androidx.preference.PreferenceCategory>
+
+    <androidx.preference.PreferenceCategory
+        android:layout="@layout/preference_cat_style"
+        android:title="@string/preferences_tab_strip"
+        app:iconSpaceReserved="false">
+        <androidx.preference.SwitchPreference
+            android:key="@string/pref_key_tab_strip_show"
+            android:title="@string/preference_tab_strip_show" />
+    </androidx.preference.PreferenceCategory>
+
+    <androidx.preference.PreferenceCategory
+        android:layout="@layout/preference_cat_style"
+        android:title="@string/preferences_toolbar_layout"
+        android:key="@string/pref_key_customization_category_toolbar_layout"
+        android:visible="false"
+        app:iconSpaceReserved="false">
+        <org.mozilla.fenix.settings.ToggleRadioButtonPreference
+            android:key="@string/pref_key_toolbar_expanded"
+            app:sharedPreferenceKey="pref_key_toolbar_expanded"
+            app:falseOptionTitle="@string/preference_simple_toolbar"
+            app:trueOptionTitle="@string/preference_expanded_toolbar"
+            app:falseOptionIconRes="@drawable/ic_toolbar_simple"
+            app:trueOptionIconRes="@drawable/ic_toolbar_expanded" />
+    </androidx.preference.PreferenceCategory>
+
+    <androidx.preference.PreferenceCategory
+        android:layout="@layout/preference_cat_style"
+        android:title="@string/preferences_app_icon"
+        android:key="@string/pref_key_customization_category_app_icon"
+        app:iconSpaceReserved="false">
+
+        <org.mozilla.fenix.iconpicker.ui.AppIconPreference
+            android:key="@string/pref_key_app_icon" />
     </androidx.preference.PreferenceCategory>
 
     <androidx.preference.PreferenceCategory

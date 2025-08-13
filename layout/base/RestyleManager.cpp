@@ -10,6 +10,9 @@
 
 #include "mozilla/RestyleManager.h"
 
+#include "ActiveLayerTracker.h"
+#include "ScrollSnap.h"
+#include "StickyScrollContainer.h"
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ComputedStyle.h"
@@ -17,35 +20,33 @@
 #include "mozilla/DocumentStyleRootIterator.h"
 #include "mozilla/EffectSet.h"
 #include "mozilla/GeckoBindings.h"
+#include "mozilla/IntegerRange.h"
 #include "mozilla/LayerAnimationInfo.h"
-#include "mozilla/layers/AnimationInfo.h"
-#include "mozilla/layout/ScrollAnchorContainer.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/ProfilerLabels.h"
-#include "mozilla/ScrollContainerFrame.h"
-#include "mozilla/ServoBindings.h"
-#include "mozilla/ServoStyleSetInlines.h"
-#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/SVGIntegrationUtils.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGTextFrame.h"
 #include "mozilla/SVGUtils.h"
+#include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/ServoBindings.h"
+#include "mozilla/ServoStyleSetInlines.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/Unused.h"
 #include "mozilla/ViewportFrame.h"
-#include "mozilla/IntegerRange.h"
 #include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
-
-#include "ScrollSnap.h"
+#include "mozilla/layers/AnimationInfo.h"
+#include "mozilla/layout/ScrollAnchorContainer.h"
 #include "nsAnimationManager.h"
 #include "nsBlockFrame.h"
-#include "nsContentUtils.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsCSSRendering.h"
+#include "nsContentUtils.h"
 #include "nsDocShell.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
@@ -57,8 +58,6 @@
 #include "nsStyleUtil.h"
 #include "nsTableWrapperFrame.h"
 #include "nsTransitionManager.h"
-#include "StickyScrollContainer.h"
-#include "ActiveLayerTracker.h"
 
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
@@ -847,7 +846,7 @@ static bool RecomputePosition(nsIFrame* aFrame) {
       const auto* styleMargin = aFrame->StyleMargin();
       const auto anchorResolutionParams =
           AnchorPosResolutionParams::From(aFrame);
-      if (styleMargin->HasBlockAxisAuto(wm, anchorResolutionParams.mPosition)) {
+      if (styleMargin->HasBlockAxisAuto(wm, anchorResolutionParams)) {
         return false;
       }
     }
@@ -1150,12 +1149,9 @@ static nsIFrame* ContainingBlockForFrame(nsIFrame* aFrame) {
   if (aFrame->IsScrollContainerFrame()) {
     return insertionFrame;
   }
-  // Combobox frames are easy as well because they can't have positioned
-  // children anyways.
-  // Button and table cell frames are also easy because the containing block is
+  // Table cell frames are also easy because the containing block is
   // the frame itself.
-  if (aFrame->IsComboboxControlFrame() || aFrame->IsHTMLButtonControlFrame() ||
-      aFrame->IsTableCellFrame()) {
+  if (aFrame->IsTableCellFrame()) {
     return aFrame;
   }
   return nullptr;

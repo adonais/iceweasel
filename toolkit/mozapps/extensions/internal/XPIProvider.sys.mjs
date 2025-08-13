@@ -2747,8 +2747,11 @@ export var XPIProvider = {
       ) {
         // The user is using a theme that was once bundled with Firefox, but no longer
         // is. Clear their theme so that they will be forced to reset to the default.
-        this.startupPromises.push(
-          AddonManagerPrivate.notifyAddonChanged(null, "theme")
+        let promise = AddonManagerPrivate.notifyAddonChanged(null, "theme");
+        this.startupPromises.push(promise);
+        lazy.AsyncShutdown.appShutdownConfirmed.addBlocker(
+          `Clearing obsolete theme ${lastTheme}`,
+          promise
         );
       }
 
@@ -2809,8 +2812,13 @@ export var XPIProvider = {
             ) {
               reason = BOOTSTRAP_REASONS.ADDON_ENABLE;
             }
-            this.enabledAddonsStartupPromises.push(
-              BootstrapScope.get(addon).startup(reason)
+            let scope = BootstrapScope.get(addon);
+            let promise = scope.startup(reason);
+            this.enabledAddonsStartupPromises.push(promise);
+            lazy.AsyncShutdown.appShutdownConfirmed.addBlocker(
+              `Extension startup: ${addon.id}`,
+              promise,
+              { fetchState: scope.fetchState.bind(scope) }
             );
           } catch (e) {
             logger.error(
@@ -2832,11 +2840,13 @@ export var XPIProvider = {
         );
       }
 
+      let xpiProviderShutdownState = "(shutdown not started)";
       // Let these shutdown a little earlier when they still have access to most
       // of XPCOM
       lazy.AsyncShutdown.appShutdownConfirmed.addBlocker(
         "XPIProvider shutdown",
         async () => {
+          xpiProviderShutdownState = "Awaiting startup promises";
           // Do not enter shutdown before we actually finished starting as this
           // can lead to hangs as seen in bug 1814104.
           await Promise.allSettled([
@@ -2846,7 +2856,9 @@ export var XPIProvider = {
 
           XPIProvider._closing = true;
 
+          xpiProviderShutdownState = "cleanupTemporaryAddons";
           await XPIProvider.cleanupTemporaryAddons();
+          xpiProviderShutdownState = "Shutting down addons";
           for (let addon of XPIProvider.sortBootstrappedAddons().reverse()) {
             // If no scope has been loaded for this add-on then there is no need
             // to shut it down (should only happen when a bootstrapped add-on is
@@ -2885,7 +2897,8 @@ export var XPIProvider = {
               }
             );
           }
-        }
+        },
+        { fetchState: () => xpiProviderShutdownState }
       );
 
       // Detect final-ui-startup for telemetry reporting
@@ -3082,17 +3095,25 @@ export var XPIProvider = {
         continue;
       }
 
+      logger.debug(`Processing staged addons in ${loc.name}`);
       // Collect any install errors for specific removal from the staged directory
       // during cleanStagingDir.  Successful installs remove the files.
+      let locationChanged = false;
       let stagedFailureNames = [];
       let promises = [];
       for (let [id, metadata] of loc.getStagedAddons()) {
+        logger.debug(
+          `Installing staged addon ${id} version ${metadata.version} in ${loc.name}`
+        );
         loc.unstageAddon(id);
 
         aManifests[loc.name][id] = null;
         promises.push(
           XPIExports.XPIInstall.installStagedAddon(id, metadata, loc).then(
             addon => {
+              logger.debug(
+                `Successfully installed staged addon ${id} version ${metadata.version} in ${loc.name}`
+              );
               aManifests[loc.name][id] = addon;
             },
             error => {
@@ -3110,11 +3131,15 @@ export var XPIProvider = {
 
       if (promises.length) {
         changed = true;
+        locationChanged = true;
         awaitPromise(Promise.all(promises));
       }
 
       try {
-        if (changed || stagedFailureNames.length) {
+        if (locationChanged || stagedFailureNames.length) {
+          logger.debug(
+            `Cleaning staged addon directory for location ${loc.name}`
+          );
           loc.installer.cleanStagingDir(stagedFailureNames);
         }
       } catch (e) {
@@ -3253,6 +3278,10 @@ export var XPIProvider = {
       if (!existing || existing.version != aVersion) {
         installed = this.installBuiltinAddon(aBase);
         this.startupPromises.push(installed);
+        lazy.AsyncShutdown.appShutdownConfirmed.addBlocker(
+          `maybeInstallBuiltinAddon: ${aID}`,
+          installed
+        );
       }
     }
     return installed;
@@ -3519,6 +3548,14 @@ export var XPIProvider = {
     }
 
     return { addons: result, fullData: false };
+  },
+
+  getBuiltinAddonVersion(addonId) {
+    if (!this.builtInAddons) {
+      throw new Error("XPIProvider has not been started yet");
+    }
+    const found = SystemBuiltInLocation.readAddons().get(addonId);
+    return found?.builtin.addon_version;
   },
 
   shouldShowBlocklistAttention() {

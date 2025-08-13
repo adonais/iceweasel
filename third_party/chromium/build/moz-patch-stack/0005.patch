@@ -1,36 +1,107 @@
 From: Michael Froman <mfroman@mozilla.com>
 Date: Mon, 20 Jun 2022 22:34:00 +0000
-Subject: Bug 1775143 - pt6 - (mirror) 85b5cef7ef21 r=ng
+Subject: Bug 1775143 - pt7 - (mirror) a62f6186e9d6 r=ng
 
 (skip-generation)
 
-Depends on D149819
+Depends on D149820
 
-Differential Revision: https://phabricator.services.mozilla.com/D149820
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/c86e44f4c5b143b421ea6b3267f545958ceeec4c
+Differential Revision: https://phabricator.services.mozilla.com/D149821
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/243ea5e6411dc1b769419c07045e78d61f406541
 ---
- win/BUILD.gn | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ toolchain/win/setup_toolchain.py | 58 +++++++++++++++++---------------
+ 1 file changed, 30 insertions(+), 28 deletions(-)
 
-diff --git a/win/BUILD.gn b/win/BUILD.gn
-index d449f5925..47773498e 100644
---- a/win/BUILD.gn
-+++ b/win/BUILD.gn
-@@ -2,6 +2,7 @@
- # Use of this source code is governed by a BSD-style license that can be
- # found in the LICENSE file.
+diff --git a/toolchain/win/setup_toolchain.py b/toolchain/win/setup_toolchain.py
+index d6598893c..db0b07eb2 100644
+--- a/toolchain/win/setup_toolchain.py
++++ b/toolchain/win/setup_toolchain.py
+@@ -251,7 +251,7 @@ def main():
  
-+import("//webrtc.gni")
- import("//build/config/clang/clang.gni")
- import("//build/config/sanitizers/sanitizers.gni")
- import("//build/config/win/manifest.gni")
-@@ -16,7 +17,8 @@ windows_manifest("default_exe_manifest") {
-   ]
- }
+   cpus = ('x86', 'x64', 'arm', 'arm64')
+   assert target_cpu in cpus
+-  vc_bin_dir = ''
++  vc_bin_dir = 'fake_path/cl.exe'
+   include = ''
+   lib = ''
  
--if (is_win) {
-+build_with_mozilla = false
-+if (is_win && !build_with_mozilla) {
-   assert(host_os != "mac" || target_cpu != "x86",
-          "Windows cross-builds from Mac must be 64-bit.")
+@@ -264,30 +264,30 @@ def main():
+   def q(s):  # Quote s if it contains spaces or other weird characters.
+     return s if re.match(r'^[a-zA-Z0-9._/\\:-]*$', s) else '"' + s + '"'
  
+-  for cpu in cpus:
+-    if cpu == target_cpu:
+-      # Extract environment variables for subprocesses.
+-      env = _LoadToolchainEnv(cpu, toolchain_root, win_sdk_path, target_store)
+-      env['PATH'] = runtime_dirs + os.pathsep + env['PATH']
+-
+-      vc_bin_dir = FindFileInEnvList(env, 'PATH', os.pathsep, 'cl.exe')
+-
+-      # The separator for INCLUDE here must match the one used in
+-      # _LoadToolchainEnv() above.
+-      include = [p.replace('"', r'\"') for p in env['INCLUDE'].split(';') if p]
+-      include = list(map(relflag, include))
+-
+-      lib = [p.replace('"', r'\"') for p in env['LIB'].split(';') if p]
+-      lib = list(map(relflag, lib))
+-
+-      include_I = ['/I' + i for i in include]
+-      include_imsvc = ['-imsvc' + i for i in include]
+-      libpath_flags = ['-libpath:' + i for i in lib]
+-
+-      if (environment_block_name != ''):
+-        env_block = _FormatAsEnvironmentBlock(env)
+-        with open(environment_block_name, 'w', encoding='utf8') as f:
+-          f.write(env_block)
++#   for cpu in cpus:
++#     if cpu == target_cpu:
++#       # Extract environment variables for subprocesses.
++#       env = _LoadToolchainEnv(cpu, toolchain_root, win_sdk_path, target_store)
++#       env['PATH'] = runtime_dirs + os.pathsep + env['PATH']
++# 
++#       vc_bin_dir = FindFileInEnvList(env, 'PATH', os.pathsep, 'cl.exe')
++# 
++#       # The separator for INCLUDE here must match the one used in
++#       # _LoadToolchainEnv() above.
++#       include = [p.replace('"', r'\"') for p in env['INCLUDE'].split(';') if p]
++#       include = list(map(relflag, include))
++# 
++#       lib = [p.replace('"', r'\"') for p in env['LIB'].split(';') if p]
++#       lib = list(map(relflag, lib))
++# 
++#       include_I = ['/I' + i for i in include]
++#       include_imsvc = ['-imsvc' + i for i in include]
++#       libpath_flags = ['-libpath:' + i for i in lib]
++# 
++#       if (environment_block_name != ''):
++#         env_block = _FormatAsEnvironmentBlock(env)
++#         with open(environment_block_name, 'w', encoding='utf8') as f:
++#           f.write(env_block)
+ 
+   def ListToArgString(x):
+     return gn_helpers.ToGNString(' '.join(q(i) for i in x))
+@@ -295,11 +295,14 @@ def main():
+   def ListToArgList(x):
+     return f'[{", ".join(gn_helpers.ToGNString(i) for i in x)}]'
+ 
++  env = {}
++  env['PATH'] = ''
++  include_I = include
++  include_imsvc = include
++  libpath_flags = ''
+   print('vc_bin_dir = ' + gn_helpers.ToGNString(vc_bin_dir))
+-  assert include_I
+   print(f'include_flags_I = {ListToArgString(include_I)}')
+   print(f'include_flags_I_list = {ListToArgList(include_I)}')
+-  assert include_imsvc
+   if bool(int(os.environ.get('DEPOT_TOOLS_WIN_TOOLCHAIN', 1))) and win_sdk_path:
+     flags = ['/winsysroot' + relflag(toolchain_root)]
+     print(f'include_flags_imsvc = {ListToArgString(flags)}')
+@@ -308,7 +311,6 @@ def main():
+     print(f'include_flags_imsvc = {ListToArgString(include_imsvc)}')
+     print(f'include_flags_imsvc_list = {ListToArgList(include_imsvc)}')
+   print('paths = ' + gn_helpers.ToGNString(env['PATH']))
+-  assert libpath_flags
+   print(f'libpath_flags = {ListToArgString(libpath_flags)}')
+   print(f'libpath_flags_list = {ListToArgList(libpath_flags)}')
+   if bool(int(os.environ.get('DEPOT_TOOLS_WIN_TOOLCHAIN', 1))) and win_sdk_path:

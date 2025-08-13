@@ -126,13 +126,18 @@ function getWindowUtils(aWindow) {
   return aWindow.windowUtils;
 }
 
-function getPointInScreen(aElement, aWindow) {
+function getPointInScreen(aPoint, aElement, aWindow) {
   if (!aWindow) {
     aWindow = window;
   }
-  var bounds = aElement.getBoundingClientRect();
-  return { x: bounds.left + aWindow.mozInnerScreenX,
-           y: bounds.top + aWindow.mozInnerScreenY };
+  // FIXME: Add synthesizeNativeMouseScroll() into EventUtils.js and replace
+  // this code with its internal functions.
+  const scaleValue = aWindow.devicePixelRatio;
+  const bounds = aElement.getBoundingClientRect();
+  return {
+    x: ((bounds.left + aPoint.x) + aWindow.mozInnerScreenX) * scaleValue,
+    y: ((bounds.top + aPoint.y) + aWindow.mozInnerScreenY) * scaleValue,
+  };
 }
 
 function cut(aNum) {
@@ -1470,13 +1475,13 @@ function runNextTest(aTests, aIndex) {
       }
 
       var utils = getWindowUtils(test.window);
-      var ptInScreen = getPointInScreen(test.target, test.window);
+      var ptInScreen = getPointInScreen(test, test.target, test.window);
       var isVertical =
         ((test.message == WM_MOUSEWHEEL) || (test.message == WM_VSCROLL));
       var deltaX = !isVertical ? test.delta : 0;
       var deltaY = isVertical ? test.delta : 0;
-      utils.sendNativeMouseScrollEvent(ptInScreen.x + test.x,
-                                       ptInScreen.y + test.y,
+      utils.sendNativeMouseScrollEvent(ptInScreen.x,
+                                       ptInScreen.y,
                                        test.message, deltaX, deltaY, 0,
                                        test.modifiers,
                                        test.additionalFlags,

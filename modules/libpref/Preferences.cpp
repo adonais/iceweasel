@@ -841,12 +841,12 @@ class Pref {
       if (aIsLocked) {
         SetIsLocked(true);
       }
+      if (aIsSticky) {
+        mIsSticky = true;
+      }
       if (!ValueMatches(PrefValueKind::Default, aType, aValue)) {
         mDefaultValue.Replace(mHasDefaultValue, Type(), aType, aValue);
         mHasDefaultValue = true;
-        if (aIsSticky) {
-          mIsSticky = true;
-        }
         if (!mHasUserValue) {
           *aValueChanged = true;
         }
@@ -6116,6 +6116,7 @@ static const PrefListEntry sRestrictFromWebContentProcesses[] = {
     PREF_LIST_ENTRY("identity.fxaccounts.lastSignedInUserHash"),
     PREF_LIST_ENTRY("print_printer"),
     PREF_LIST_ENTRY("services."),
+    PREF_LIST_ENTRY("termsofuse."),
 
     // Remove UUIDs
     PREF_LIST_ENTRY("app.normandy.user_id"),

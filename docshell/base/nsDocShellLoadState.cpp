@@ -97,7 +97,7 @@ nsDocShellLoadState::nsDocShellLoadState(
   mTriggeringRemoteType = aLoadState.TriggeringRemoteType();
   mSchemelessInput = aLoadState.SchemelessInput();
   mHttpsUpgradeTelemetry = aLoadState.HttpsUpgradeTelemetry();
-  mCsp = aLoadState.Csp();
+  mPolicyContainer = aLoadState.PolicyContainer();
   mOriginalURIString = aLoadState.OriginalURIString();
   mCancelContentJSEpoch = aLoadState.CancelContentJSEpoch();
   mPostDataStream = aLoadState.PostDataStream();
@@ -163,7 +163,7 @@ nsDocShellLoadState::nsDocShellLoadState(const nsDocShellLoadState& aOther)
       mTriggeringWindowId(aOther.mTriggeringWindowId),
       mTriggeringStorageAccess(aOther.mTriggeringStorageAccess),
       mTriggeringClassificationFlags(aOther.mTriggeringClassificationFlags),
-      mCsp(aOther.mCsp),
+      mPolicyContainer(aOther.mPolicyContainer),
       mKeepResultPrincipalURIIfSet(aOther.mKeepResultPrincipalURIIfSet),
       mLoadReplace(aOther.mLoadReplace),
       mInheritPrincipal(aOther.mInheritPrincipal),
@@ -490,7 +490,7 @@ nsresult nsDocShellLoadState::CreateFromLoadURIOptions(
   loadState->SetHeadersStream(aLoadURIOptions.mHeaders);
   loadState->SetBaseURI(aLoadURIOptions.mBaseURI);
   loadState->SetTriggeringPrincipal(aLoadURIOptions.mTriggeringPrincipal);
-  loadState->SetCsp(aLoadURIOptions.mCsp);
+  loadState->SetPolicyContainer(aLoadURIOptions.mPolicyContainer);
   loadState->SetForceAllowDataURI(forceAllowDataURI);
   if (aLoadURIOptions.mCancelContentJSEpoch) {
     loadState->SetCancelContentJSEpoch(aLoadURIOptions.mCancelContentJSEpoch);
@@ -594,11 +594,14 @@ void nsDocShellLoadState::SetPartitionedPrincipalToInherit(
   mPartitionedPrincipalToInherit = aPartitionedPrincipalToInherit;
 }
 
-void nsDocShellLoadState::SetCsp(nsIContentSecurityPolicy* aCsp) {
-  mCsp = aCsp;
+void nsDocShellLoadState::SetPolicyContainer(
+    nsIPolicyContainer* aPolicyContainer) {
+  mPolicyContainer = aPolicyContainer;
 }
 
-nsIContentSecurityPolicy* nsDocShellLoadState::Csp() const { return mCsp; }
+nsIPolicyContainer* nsDocShellLoadState::PolicyContainer() const {
+  return mPolicyContainer;
+}
 
 void nsDocShellLoadState::SetTriggeringSandboxFlags(uint32_t flags) {
   mTriggeringSandboxFlags = flags;
@@ -1384,7 +1387,7 @@ DocShellLoadStateInit nsDocShellLoadState::Serialize(
   loadState.TriggeringRemoteType() = mTriggeringRemoteType;
   loadState.SchemelessInput() = mSchemelessInput;
   loadState.HttpsUpgradeTelemetry() = mHttpsUpgradeTelemetry;
-  loadState.Csp() = mCsp;
+  loadState.PolicyContainer() = mPolicyContainer;
   loadState.OriginalURIString() = mOriginalURIString;
   loadState.CancelContentJSEpoch() = mCancelContentJSEpoch;
   loadState.ReferrerInfo() = mReferrerInfo;

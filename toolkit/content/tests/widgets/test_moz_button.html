@@ -32,6 +32,9 @@
       const { AddonManager } = ChromeUtils.importESModule(
         "resource://gre/modules/AddonManager.sys.mjs"
       );
+      const { BrowserTestUtils } = ChromeUtils.importESModule(
+        "resource://testing-common/BrowserTestUtils.sys.mjs"
+      );
       // Always run tests with the light theme for consistency and to avoid from false
       // test passes arising from the fact that --icon-color and --button-text-color
       // have the same value in the dark theme.
@@ -214,6 +217,8 @@
 
         await testProperty("title");
         await testProperty("aria-label", "ariaLabel");
+        await testProperty("aria-haspopup", "ariaHasPopup");
+        await testProperty("aria-expanded", "ariaExpanded");
       });
 
       add_task(async function testIconButtons() {
@@ -313,7 +318,7 @@
         is(
           document.activeElement,
           firstButton,
-          "First button recieves focus after accesskey is pressed."
+          "First button receives focus after accesskey is pressed."
         );
         is(
           firstButton.shadowRoot.activeElement,
@@ -371,6 +376,135 @@
           "Clicking on button's padding must send a click event"
         );
       });
+      add_task(async function testButtonDisable() {
+        const mozButton = document.querySelector("moz-button");
+        const nestedButton = mozButton.shadowRoot.querySelector("button");
+        is(
+          nestedButton.disabled,
+          false,
+          "Nested button is NOT disabled by default"
+        );
+        mozButton.disabled = true;
+        await mozButton.updateComplete;
+        is(
+          nestedButton.disabled,
+          true,
+          "Nested button is disabled after moz-button disabled is set"
+        );
+        mozButton.parentDisabled = false;
+        await mozButton.updateComplete;
+        is(
+          nestedButton.disabled,
+          true,
+          "Nested button is still disabled even if moz-button parentDisabled is set to false"
+        );
+        mozButton.disabled = false;
+        mozButton.parentDisabled = true;
+        await mozButton.updateComplete;
+        is(
+          nestedButton.disabled,
+          true,
+          "Nested button is still disabled when moz-button parentDisabled is set to true but disabled is set to false"
+        );
+        mozButton.disabled = false;
+        mozButton.parentDisabled = false;
+        await mozButton.updateComplete;
+        is(
+          nestedButton.disabled,
+          false,
+          "Button is NOT disabled when parentDisabled and disabled are both false"
+        );
+      });
+      add_task(async function testMenuButton() {
+        const PANEL_LIST_ID = "panel-list";
+        let menuButton = document.querySelector(".four");
+        let panelList = document.querySelector(`#${PANEL_LIST_ID}`);
+
+        menuButton.menuId = PANEL_LIST_ID;
+        await menuButton.updateComplete;
+
+        let buttonElUpdated = BrowserTestUtils.waitForMutationCondition(
+          menuButton.buttonEl,
+          {
+            attributes: true,
+            attributeFilter: ["aria-haspopup", "aria-expanded"],
+          },
+          () => {
+            return (
+              menuButton.buttonEl.hasAttribute("aria-haspopup") &&
+              menuButton.buttonEl.hasAttribute("aria-expanded")
+            );
+          }
+        );
+        await buttonElUpdated;
+
+        is(
+          menuButton.buttonEl.getAttribute("aria-haspopup"),
+          "menu",
+          "Button element has aria-haspopup attribute set to menu"
+        );
+
+        ok(!panelList.open, "panel-list is hidden");
+
+        is(
+          menuButton.buttonEl.getAttribute("aria-expanded"),
+          "false",
+          "aria-expanded on button is set to false when the panel-list is hidden"
+        );
+
+        let openPromise = BrowserTestUtils.waitForEvent(panelList, "shown");
+        synthesizeMouseAtCenter(menuButton, {});
+        await openPromise;
+
+        ok(panelList.open, "panel-list is open");
+
+        await menuButton.updateComplete;
+        is(
+          menuButton.buttonEl.getAttribute("aria-expanded"),
+          "true",
+          "aria-expanded on button is set to true when the panel-list is open"
+        );
+
+        let hidePromise = BrowserTestUtils.waitForEvent(panelList, "hidden");
+        synthesizeKey("Escape", {});
+        await hidePromise;
+
+        ok(!panelList.open, "panel-list is hidden");
+
+        is(
+          menuButton.buttonEl.getAttribute("aria-expanded"),
+          "false",
+          "aria-expanded on button is set to false when the panel-list is hidden"
+        );
+
+        menuButton.menuId = "";
+        await menuButton.updateComplete;
+
+        buttonElUpdated = BrowserTestUtils.waitForMutationCondition(
+          menuButton.buttonEl,
+          {
+            attributes: true,
+            attributeFilter: ["aria-haspopup", "aria-expanded"],
+          },
+          () => {
+            return (
+              !menuButton.buttonEl.hasAttribute("aria-haspopup") &&
+              !menuButton.buttonEl.hasAttribute("aria-expanded")
+            );
+          }
+        );
+        await buttonElUpdated;
+
+        ok(
+          !menuButton.buttonEl.getAttribute("aria-haspopup"),
+          "Button element doesn't have aria-haspopup attribute"
+        );
+
+        ok(
+          !menuButton.buttonEl.getAttribute("aria-expanded"),
+          "Button element doesn't have aria-expanded attribute"
+        );
+      });
     </script>
   </head>
   <body>
@@ -425,6 +559,11 @@
         <moz-button class="eleven" label="toolbar"> </moz-button>
       </div>
       <button id="mouse-trap">Mouse goes here</button>
+      <panel-list id="panel-list">
+        <panel-item>Item One</panel-item>
+        <panel-item>Item Two</panel-item>
+        <panel-item>Item Three</panel-item>
+      </panel-list>
     </div>
   </body>
 </html>

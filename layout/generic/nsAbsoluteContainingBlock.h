@@ -12,9 +12,9 @@
 #ifndef nsAbsoluteContainingBlock_h___
 #define nsAbsoluteContainingBlock_h___
 
+#include "mozilla/TypedEnumBits.h"
 #include "nsFrameList.h"
 #include "nsIFrame.h"
-#include "mozilla/TypedEnumBits.h"
 
 class nsContainerFrame;
 class nsPresContext;

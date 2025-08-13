@@ -7,7 +7,6 @@
 #include "mozilla/DeclarationBlock.h"
 
 #include "mozilla/css/Rule.h"
-
 #include "nsCSSProps.h"
 #include "nsIMemoryReporter.h"
 

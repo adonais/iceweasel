@@ -112,7 +112,7 @@ class NotificationMessageBar extends MozLitElement {
       onDismiss: this.#handleDismiss,
       messageHandler: this.messageHandler,
       dataL10nId: "contextual-manager-passwords-import-success-heading",
-      messageL10nId: "contextual-manager-passwords-import-success-message",
+      messageL10nId: "contextual-manager-passwords-import-success-message-2",
       messageL10nArgs: this.notification.l10nArgs,
       type: "success",
       link: {
@@ -289,11 +289,7 @@ class NotificationMessageBar extends MozLitElement {
         dataL10nId: "contextual-manager-passwords-discard-changes-close-button",
         onClick: () => {
           this.messageHandler("Cancel", {}, this.notification.passwordIndex);
-          this.messageHandler("ConfirmDiscardChanges", {
-            value: {
-              fromSidebar: this.notification.fromSidebar,
-            },
-          });
+          this.messageHandler("ConfirmDiscardChanges");
         },
       },
       secondaryAction: {
@@ -389,6 +385,7 @@ class NotificationMessageBar extends MozLitElement {
       case "login-already-exists-warning":
         return this.#renderAddLoginAlreadyExistsWarning();
       case "update-login-success":
+      case "update-username-success":
         return this.#renderUpdateLoginSuccess(this.notification?.id);
       case "delete-login-success":
         return this.#renderDeleteLoginSuccess();

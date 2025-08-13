@@ -12,7 +12,6 @@
 # See https://firefox-source-docs.mozilla.org/build/buildsystem/jar-manifests.html#asterisk-marker-preprocessing
 
 browser.jar:
-%   resource builtin-addons %builtin-addons/  contentaccessible=yes
     builtin-addons/webcompat/about-compat/ (about-compat/**)
     builtin-addons/webcompat/data/ (data/**)
     builtin-addons/webcompat/experiment-apis/ (experiment-apis/**)

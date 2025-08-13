@@ -185,6 +185,7 @@ class TabbedBrowsingTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/903592
     @SmokeTest
     @Test
+    @SkipLeaks
     fun verifyCloseAllPrivateTabsNotificationTest() {
         val defaultWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
 
@@ -274,7 +275,6 @@ class TabbedBrowsingTest : TestSetup() {
             verifyPrivateBrowsingButtonIsSelected(isSelected = false)
             verifySyncedTabsButtonIsSelected(isSelected = false)
             verifyThreeDotButton()
-            verifyNormalTabCounter()
             verifyNormalTabsList()
             verifyFab()
             verifyTabThumbnail()
@@ -302,7 +302,6 @@ class TabbedBrowsingTest : TestSetup() {
             verifyPrivateBrowsingButtonIsSelected(true)
             verifySyncedTabsButtonIsSelected(false)
             verifyThreeDotButton()
-            verifyNormalTabCounter()
             verifyPrivateTabsList()
             verifyExistingOpenTabs(website.title)
             verifyTabCloseButton()

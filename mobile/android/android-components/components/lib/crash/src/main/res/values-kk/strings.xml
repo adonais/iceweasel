@@ -26,4 +26,10 @@
   <string name="mozac_lib_crash_no_crashes">Құлау туралы ешбір хабар жіберілмеген.</string>
   <!-- Text link that will show an app chooser to share a crash report with a third-party app (e.g. gmail) -->
   <string name="mozac_lib_crash_share">Бөлісу</string>
+  <!-- String for Ask before sending crash reports radio button in Data Collection Screen -->
+  <string name="crash_reporting_ask">Жіберу алдында сұрау</string>
+  <!-- String for Send crash reports automatically radio button in Data Collection Screen -->
+  <string name="crash_reporting_auto">Автоматты түрде жіберу</string>
+  <!-- String for Never sending crash reports radio button in Data Collection Screen -->
+  <string name="crash_reporting_never">Ешқашан жібермеу</string>
 </resources>

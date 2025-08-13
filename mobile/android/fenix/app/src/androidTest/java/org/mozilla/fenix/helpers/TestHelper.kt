@@ -26,6 +26,7 @@ import androidx.test.uiautomator.By.res
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject
 import androidx.test.uiautomator.UiObject2
+import androidx.test.uiautomator.UiObjectNotFoundException
 import androidx.test.uiautomator.UiScrollable
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
@@ -53,15 +54,31 @@ object TestHelper {
     var mDevice: UiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
     val packageName: String = appContext.packageName
 
-    fun scrollToElementByText(text: String): UiScrollable {
+    fun scrollToElementByText(text: String): UiScrollable? {
         val appView = UiScrollable(UiSelector().scrollable(true))
-        Log.i(TAG, "scrollToElementByText: Waiting for $waitingTime ms for app view to exist")
-        appView.waitForExists(waitingTime)
-        Log.i(TAG, "scrollToElementByText: Waited for $waitingTime ms for app view to exist")
-        Log.i(TAG, "scrollToElementByText: Trying to scroll text: $text into the view")
-        appView.scrollTextIntoView(text)
-        Log.i(TAG, "scrollToElementByText: Scrolled text: $text into the view")
-        return appView
+        Log.i(TAG, "scrollToElementByText: Waiting for $waitingTimeShort ms for scrollable app view to exist")
+        appView.waitForExists(waitingTimeShort)
+        Log.i(TAG, "scrollToElementByText: Waited for $waitingTimeShort ms")
+
+        if (appView.exists()) {
+            Log.i(TAG, "scrollToElementByText: Scrollable view found, attempting to scroll '$text' into view")
+            try {
+                appView.scrollTextIntoView(text)
+                Log.i(TAG, "scrollToElementByText: Successfully scrolled '$text' into view")
+            } catch (e: UiObjectNotFoundException) {
+                Log.w(TAG, "scrollToElementByText: Failed to scroll to '$text': ${e.message}")
+            }
+            return appView
+        } else {
+            Log.i(TAG, "scrollToElementByText: No scrollable view found — likely all content is visible")
+            val target = mDevice.findObject(UiSelector().textContains(text))
+            if (!target.exists()) {
+                Log.w(TAG, "scrollToElementByText: '$text' not found on screen and scrolling is not possible")
+            } else {
+                Log.i(TAG, "scrollToElementByText: '$text' is already visible without scrolling")
+            }
+            return null
+        }
     }
 
     fun longTapSelectItem(url: Uri) {

@@ -20,8 +20,6 @@ import org.mozilla.fenix.ui.robots.homeScreen
  */
 
 class PocketTest : TestSetup() {
-    private lateinit var firstPocketStoryPublisher: String
-
     @get:Rule(order = 0)
     val activityTestRule =
         AndroidComposeTestRule(
@@ -87,8 +85,7 @@ class PocketTest : TestSetup() {
         runWithCondition(isNetworkConnected()) {
             homeScreen {
                 verifyThoughtProvokingStories(true)
-                firstPocketStoryPublisher = getProvokingStoryPublisher(1)
-            }.clickPocketStoryItem(firstPocketStoryPublisher, 1) {
+            }.clickPocketStoryItem(1) {
                 verifyUrl(Constants.STORIES_UTM_PARAM)
             }
         }

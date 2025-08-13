@@ -24,6 +24,10 @@ const { sinon } = ChromeUtils.importESModule(
 );
 const TEST_LINK_URL = "https://example.com";
 
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("browser.ml.linkPreview.onboardingTimes");
+});
+
 /**
  * Test that link preview doesn't generate key points for non-English content.
  *
@@ -768,6 +772,67 @@ add_task(async function test_link_preview_error_rendered() {
   // Cleanup
   panel.remove();
   generateStub.restore();
+  LinkPreview.keyboardComboActive = false;
+});
+
+/**
+ * Test that settings icon is correctly rendered in the link preview card.
+//  */
+add_task(async function test_link_preview_settings_icon_rendered() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.linkPreview.enabled", true]],
+  });
+
+  const generateStub = sinon.stub(LinkPreviewModel, "generateTextAI");
+  const openPreferencesStub = sinon.stub(window, "openPreferences");
+
+  const READABLE_PAGE_URL =
+    "https://example.com/browser/browser/components/genai/tests/browser/data/readableEn.html";
+
+  LinkPreview.keyboardComboActive = true;
+  XULBrowserWindow.setOverLink(READABLE_PAGE_URL, {});
+
+  // Wait for panel to appear
+  const panel = await TestUtils.waitForCondition(
+    () => document.getElementById("link-preview-panel"),
+    "Timed out waiting for link-preview-panel"
+  );
+  await BrowserTestUtils.waitForEvent(panel, "popupshown");
+
+  const card = panel.querySelector("link-preview-card");
+  ok(card, "Card created for link preview");
+
+  await TestUtils.waitForCondition(
+    () =>
+      card.shadowRoot.querySelector(
+        "moz-button[data-l10n-id='link-preview-settings-button']"
+      ),
+    "Timed out waiting for settings button"
+  );
+
+  const settingsButton = card.shadowRoot.querySelector(
+    "moz-button[data-l10n-id='link-preview-settings-button']"
+  );
+
+  ok(settingsButton, "Settings button is rendered");
+
+  is(
+    settingsButton.getAttribute("type"),
+    "icon ghost",
+    "Settings button has correct type"
+  );
+
+  settingsButton.click();
+
+  ok(
+    openPreferencesStub.calledWith("general-link-preview"),
+    "openPreferences called with correct argument when settings button clicked"
+  );
+
+  // Clean up
+  panel.remove();
+  generateStub.restore();
+  openPreferencesStub.restore();
   LinkPreview.keyboardComboActive = false;
 });
 

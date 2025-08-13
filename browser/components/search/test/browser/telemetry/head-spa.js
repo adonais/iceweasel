@@ -124,6 +124,16 @@ class SinglePageAppUtils {
     await waitForIdle();
   }
 
+  static async clickShoppingTab(tab) {
+    info("Clicking shopping tab.");
+    await BrowserTestUtils.synthesizeMouseAtCenter(
+      "#shopping",
+      {},
+      tab.linkedBrowser
+    );
+    await waitForPageWithAdImpressions();
+  }
+
   static async clickSuggestion(tab) {
     info("Clicking the first suggestion.");
     let adsPromise = TestUtils.topicObserved(

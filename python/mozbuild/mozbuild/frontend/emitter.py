@@ -1245,6 +1245,7 @@ class TreeMetadataEmitter(LoggingMixin):
             "WIN32_EXE_LDFLAGS",
             "USE_EXTENSION_MANIFEST",
             "WASM_LIBS",
+            "XPI_PKGNAME",
         ]
         for v in varlist:
             if v in context and context[v]:
@@ -1285,6 +1286,17 @@ class TreeMetadataEmitter(LoggingMixin):
 
         if "LDFLAGS" in context and context["LDFLAGS"]:
             computed_link_flags.resolve_flags("MOZBUILD", context["LDFLAGS"])
+
+        # Set link flags according to whether we want a console.
+        if context.config.substs.get("TARGET_OS") == "WINNT":
+            if context.get("WINCONSOLE", True):
+                context["WIN32_EXE_LDFLAGS"] += context.config.substs.get(
+                    "WIN32_CONSOLE_EXE_LDFLAGS", []
+                )
+            else:
+                context["WIN32_EXE_LDFLAGS"] += context.config.substs.get(
+                    "WIN32_GUI_EXE_LDFLAGS", []
+                )
 
         deffile = context.get("DEFFILE")
         if deffile and context.config.substs.get("OS_TARGET") == "WINNT":

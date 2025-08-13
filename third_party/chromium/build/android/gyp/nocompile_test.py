@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2020 The Chromium Authors. All rights reserved.
+# Copyright 2020 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 """Checks that compiling targets in BUILD.gn file fails."""
@@ -13,10 +13,10 @@ import sys
 from util import build_utils
 
 _CHROMIUM_SRC = os.path.normpath(os.path.join(__file__, '..', '..', '..', '..'))
-_NINJA_PATH = os.path.join(_CHROMIUM_SRC, 'third_party', 'depot_tools', 'ninja')
+_NINJA_PATH = os.path.join(_CHROMIUM_SRC, 'third_party', 'ninja', 'ninja')
 
 # Relative to _CHROMIUM_SRC
-_GN_SRC_REL_PATH = os.path.join('third_party', 'depot_tools', 'gn')
+_GN_SRC_REL_PATH = os.path.join('buildtools', 'linux64', 'gn')
 
 # Regex for determining whether compile failed because 'gn gen' needs to be run.
 _GN_GEN_REGEX = re.compile(r'ninja: (error|fatal):')
@@ -91,12 +91,6 @@ def _find_regex_in_test_failure_output(test_output, regex):
     Returns:
       Whether the regular expression was found in the part of the test output
       after the 'FAILED' message.
-
-      If the regex does not contain '\n':
-        the first 5 lines after the 'FAILED' message (including the text on the
-        line after the 'FAILED' message) is searched.
-      Otherwise:
-        the entire test output after the 'FAILED' message is searched.
   """
   if test_output is None:
     return False
@@ -108,8 +102,7 @@ def _find_regex_in_test_failure_output(test_output, regex):
   failure_message = test_output[failed_index:]
   if regex.find('\n') >= 0:
     return re.search(regex, failure_message)
-
-  return _search_regex_in_list(failure_message.split('\n')[:5], regex)
+  return _search_regex_in_list(failure_message.split('\n'), regex)
 
 
 def _search_regex_in_list(value, regex):
@@ -162,8 +155,11 @@ def main():
   extra_gn_args = [
       'enable_android_nocompile_tests = true',
       'treat_warnings_as_errors = true',
-      # GOMA does not work with non-standard output directories.
-      'use_goma = false',
+      # RBE does not work with non-standard output directories.
+      'use_remoteexec = false',
+      'use_reclient = false',
+      # Do not use fast_local_dev_server.py.
+      'android_static_analysis = "on"',
   ]
   _copy_and_append_gn_args(options.gn_args_path, out_gn_args_path,
                            extra_gn_args)

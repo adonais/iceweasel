@@ -74,9 +74,7 @@ prefs = [
 ["browser_contextMenu.js"]
 
 ["browser_controlsHover.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && socketprocess_networking", # bug 1784652
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && socketprocess_networking"] # bug 1784652
 
 ["browser_cornerSnapping.js"]
 run-if = ["os == 'mac'"]
@@ -94,9 +92,7 @@ skip-if = [
 ["browser_durationChange.js"]
 
 ["browser_flipIconWithRTL.js"]
-skip-if = [
-  "os == 'linux' && ccov", # Bug 1678091
-]
+skip-if = ["os == 'linux' && ccov"] # Bug 1678091
 
 ["browser_fontSize_change.js"]
 skip-if = [
@@ -185,9 +181,7 @@ skip-if = [
 ["browser_text_tracks_webvtt_2.js"]
 
 ["browser_text_tracks_webvtt_3.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && ccov",
-]
+skip-if = ["os == 'win' && os_version == '11.26100' && processor == 'x86_64' && ccov"]
 
 ["browser_thirdPartyIframe.js"]
 
@@ -210,9 +204,7 @@ skip-if = ["true"] # Bug 1546455
 skip-if = ["true"] # Bug 1664920, Bug 1628777
 
 ["browser_togglePolicies.js"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1869710
-]
+skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64'"] # Bug 1869710
 
 ["browser_togglePositionChange.js"]
 

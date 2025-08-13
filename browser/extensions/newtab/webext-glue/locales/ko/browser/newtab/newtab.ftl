@@ -503,6 +503,9 @@ newtab-topic-selection-button-pick-interests = 관심 분야를 선택하세요
 newtab-section-follow-button = 팔로우
 newtab-section-following-button = 팔로잉
 newtab-section-unfollow-button = 팔로우 취소
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = 피드를 미세 조정하세요
+newtab-section-follow-highlight-subtitle = 관심 분야를 팔로우하면 좋아하는 것을 더 많이 볼 수 있습니다.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -545,6 +548,11 @@ newtab-download-mobile-highlight-body-variant-c = 이동 중에도 { -brand-prod
 newtab-download-mobile-highlight-image =
     .aria-label = 모바일용 { -brand-product-name } 다운로드를 위한 QR 코드
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = 즐겨찾기를 간편하게
+newtab-shortcuts-highlight-subtitle = 바로 가기를 추가하여 한 번의 클릭으로 즐겨찾는 사이트를 이용하세요.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -578,3 +586,5 @@ newtab-trending-searches-hide-trending =
     .title = 인기 검색어 숨기기
 newtab-trending-searches-learn-more = 더 알아보기
 newtab-trending-searches-dismiss = 인기 검색어 숨기기
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = 인기 검색어

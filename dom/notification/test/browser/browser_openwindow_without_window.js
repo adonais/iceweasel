@@ -1,3 +1,8 @@
+/* Any copyright is dedicated to the Public Domain.
+   https://creativecommons.org/publicdomain/zero/1.0/ */
+
+"use strict";
+
 const PAGE_URI =
   "https://example.com/browser/dom/notification/test/browser/empty.html";
 const OPEN_URI =
@@ -29,26 +34,6 @@ let mockAlertsService = {
   },
 };
 
-// Stolen from https://searchfox.org/mozilla-central/source/browser/base/content/test/popups/browser_popup_close_main_window.js
-// When calling this function, the main window where the test runs will be
-// hidden from various APIs, so that they won't be able to find it. This makes
-// it possible to test some behaviors when no browser window is present.
-// See bug 1972344 to move this function to BrowserTestUtils.
-function concealMainWindow() {
-  info("Concealing main window.");
-  let oldWinType = document.documentElement.getAttribute("windowtype");
-  // Check if we've already done this to allow calling multiple times:
-  if (oldWinType != "navigator:testrunner") {
-    // Make the main test window not count as a browser window any longer
-    document.documentElement.setAttribute("windowtype", "navigator:testrunner");
-
-    registerCleanupFunction(() => {
-      info("Unconcealing the main window in the cleanup phase.");
-      document.documentElement.setAttribute("windowtype", oldWinType);
-    });
-  }
-}
-
 add_setup(() => {
   let mockCid = MockRegistrar.register(
     "@mozilla.org/alerts-service;1",
@@ -59,15 +44,34 @@ add_setup(() => {
     MockRegistrar.unregister(mockCid);
   });
 
-  concealMainWindow();
+  BrowserTestUtils.concealWindow(window, { signal: testSignal });
 });
 
-for (let permanentPbm of [false, true]) {
+let configs = [
+  {
+    permanentPbm: false,
+    browserStartup: 1,
+  },
+  {
+    permanentPbm: true,
+    browserStartup: 1,
+  },
+  {
+    permanentPbm: false,
+    browserStartup: 3,
+  },
+];
+
+for (let { permanentPbm, browserStartup } of configs) {
   add_task(async function () {
     info(`Test with PBM: ${permanentPbm}`);
+    info(`Test with startup behavior: ${browserStartup}`);
 
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.privatebrowsing.autostart", permanentPbm]],
+      set: [
+        ["browser.privatebrowsing.autostart", permanentPbm],
+        ["browser.startup.page", browserStartup],
+      ],
     });
 
     let win = await BrowserTestUtils.openNewBrowserWindow();
@@ -101,8 +105,15 @@ for (let permanentPbm of [false, true]) {
 
     registerCleanupFunction(() => SpecialPowers.removeAllServiceWorkerData());
 
-    // Now close the current window
-    await BrowserTestUtils.closeWindow(win);
+    // Now close the current window via BrowserCommands
+    // (simple .close() will not trigger session store as it does not notify
+    // browser-lastwindow-close-granted)
+    let closedPromise = BrowserTestUtils.windowClosed(win);
+    win.BrowserCommands.tryToCloseWindow();
+    await closedPromise;
+
+    // Let session startup read the changed pref again
+    SessionStartup.resetForTest();
 
     let newWinPromise = BrowserTestUtils.waitForNewWindow({
       url: OPEN_URI,

@@ -16,7 +16,7 @@ if (!win) {
   win = wm.getMostRecentWindow("mail:3pane");
 }
 
-// mochikit's bootstrap.js has set up a listener for this event. It's
-// used so bootstrap.js knows which flavor and url to load.
+// testing/mochitest/api.js has set up a listener for this event, to discover
+// the flavor and url to load.
 let ev = new CustomEvent("mochitest-load", { detail: [flavor, url] });
 win.dispatchEvent(ev);

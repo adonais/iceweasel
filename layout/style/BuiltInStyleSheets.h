@@ -10,6 +10,7 @@
 #define mozilla_BuiltInStyleSheets_h
 
 #include <stdint.h>
+
 #include "mozilla/TypedEnumBits.h"
 
 namespace mozilla {

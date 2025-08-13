@@ -33,6 +33,14 @@ let JSPROCESSACTORS = {
     },
   },
 
+  MozCachedOHTTP: {
+    parent: {
+      esModuleURI:
+        "moz-src:///browser/components/mozcachedohttp/actors/MozCachedOHTTPParent.sys.mjs",
+    },
+    includeParent: true,
+  },
+
   RefreshBlockerObserver: {
     child: {
       esModuleURI: "resource:///actors/RefreshBlockerChild.sys.mjs",

@@ -12,18 +12,28 @@ body,html { color:black; background:white; font:16px/1 monospace; padding:0; mar
 
 .block {
   float: left;
-  border:1px solid;
-  line-height:0;
+  border: 1px solid;
+  line-height: 0;
 }
 canvas:nth-child(1n) { background: blue; }
 canvas:nth-child(2n) { background: grey; }
 canvas:nth-child(3n) { background: tan; }
 canvas:nth-child(4n) { background: black; }
 .sz > canvas {
-  width:20px; height:10px;
+  width: 20px; height: 10px;
 }
 .sz.t2 > canvas {
-  width:10px; height:20px;
+  width: 10px; height: 20px;
+}
+.last {
+  display: inline-block;
+  line-height: 0;
+  height: 60px;
+  margin-top: -1px;
+}
+.last > canvas {
+  width: 300px; height: 90px;
+  vertical-align: bottom;
 }
 canvas {
   vertical-align:top;
@@ -52,6 +62,8 @@ canvas {
 
 <div class="block" style="height:60px; width:600px; white-space:pre">
 <span style="display:inline-block; height:60px; margin-top:-90px"><canvas style="background:tan; vertical-align:bottom"></canvas><canvas style="background:black; vertical-align:bottom"></canvas></span></div>
+<div style="line-height:0; margin:1px;" style="height:0px; width:600px; white-space:pre">
+<span class="last"><canvas></canvas><canvas></canvas></span></div>
 
 </body>
 </html>

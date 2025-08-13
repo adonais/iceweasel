@@ -277,6 +277,8 @@ export class UrlbarInput {
     this.window.addEventListener("unload", this);
 
     this.window.gBrowser.tabContainer.addEventListener("TabSelect", this);
+    this.window.gBrowser.tabContainer.addEventListener("TabClose", this);
+
     this.window.gBrowser.addTabsProgressListener(this);
 
     this.window.addEventListener("customizationstarting", this);
@@ -663,14 +665,23 @@ export class UrlbarInput {
    *   The URI of the location that is being loaded.
    */
   onLocationChange(browser, webProgress, request, location) {
+    if (!webProgress.isTopLevel) {
+      return;
+    }
+
     if (
-      webProgress.isTopLevel &&
       browser != this.window.gBrowser.selectedBrowser &&
       !this.window.isBlankPageURL(location.spec)
     ) {
       // If the page is loaded on background tab, make Unified Search Button
       // unavailable when back to the tab.
       this.getBrowserState(browser).isUnifiedSearchButtonAvailable = false;
+    }
+
+    // Using browser navigation buttons should potentially trigger a bounce
+    // telemetry event.
+    if (webProgress.loadType & Ci.nsIDocShell.LOAD_CMD_HISTORY) {
+      this.controller.engagementEvent.handleBounceEventTrigger(browser);
     }
   }
 
@@ -915,6 +926,10 @@ export class UrlbarInput {
     // the appropriate engine submission url.
     let browser = this.window.gBrowser.selectedBrowser;
     let lastLocationChange = browser.lastLocationChange;
+
+    // Increment rate denominator measuring how often Address Bar handleCommand fallback path is hit.
+    Glean.urlbar.heuristicResultMissing.addToDenominator(1);
+
     lazy.UrlbarUtils.getHeuristicResultFor(url, this.window)
       .then(newResult => {
         // Because this happens asynchronously, we must verify that the browser
@@ -933,6 +948,10 @@ export class UrlbarInput {
           // some parts of the profile are corrupt.
           // The urlbar should still allow to search or visit the typed string,
           // so that the user can look for help to resolve the problem.
+
+          // Increment rate numerator measuring how often Address Bar handleCommand fallback path is hit.
+          Glean.urlbar.heuristicResultMissing.addToNumerator(1);
+
           let flags =
             Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
             Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
@@ -1441,6 +1460,14 @@ export class UrlbarInput {
       }
     }
 
+    this.controller.engagementEvent.startTrackingBounceEvent(browser, event, {
+      result,
+      element,
+      searchString: this._lastSearchString,
+      selType: this.controller.engagementEvent.typeFromElement(result, element),
+      searchSource: this.getSearchSource(event),
+    });
+
     this.controller.engagementEvent.record(event, {
       result,
       element,
@@ -1865,6 +1892,14 @@ export class UrlbarInput {
     }
   }
 
+  /**
+   * Opens a search page if the value is non-empty, otherwise opens the
+   * search engine homepage (searchform).
+   *
+   * @param {string} value
+   * @param {object} options
+   * @param {nsISearchEngine} options.searchEngine
+   */
   openEngineHomePage(value, { searchEngine }) {
     if (!searchEngine) {
       console.warn("No searchEngine parameter");
@@ -1874,11 +1909,7 @@ export class UrlbarInput {
     let trimmedValue = value.trim();
     let url;
     if (trimmedValue) {
-      url = searchEngine.getSubmission(
-        trimmedValue,
-        null,
-        "search-mode-switcher"
-      ).uri.spec;
+      url = searchEngine.getSubmission(trimmedValue, null).uri.spec;
       // TODO: record SAP telemetry, see Bug 1961789.
     } else {
       url = searchEngine.searchForm;
@@ -3378,6 +3409,9 @@ export class UrlbarInput {
     // Notify about the start of navigation.
     this._notifyStartNavigation(resultDetails);
 
+    // Specifies that the URL load was initiated by the URL bar.
+    params.initiatedByURLBar = true;
+
     try {
       this.window.openTrustedLinkIn(url, openUILinkWhere, params);
     } catch (ex) {
@@ -3902,11 +3936,17 @@ export class UrlbarInput {
     // do the work for the first time.
     let firstView = (!isSameDocument && !dueToTabSwitch) || !state.persist;
 
+    let cachedUriDidChange =
+      state.persist?.originalURI &&
+      !state.persist.originalURI.equals(
+        this.window.gBrowser.selectedBrowser.originalURI
+      );
+
     // Capture the shouldPersist property if it exists before
     // setPersistenceState potentially modifies it.
     let wasPersisting = state.persist?.shouldPersist ?? false;
 
-    if (firstView) {
+    if (firstView || cachedUriDidChange) {
       lazy.UrlbarSearchTermsPersistence.setPersistenceState(
         state,
         this.window.gBrowser.selectedBrowser.originalURI
@@ -4732,6 +4772,12 @@ export class UrlbarInput {
     this._untrimOnFocusAfterKeydown = false;
     this._gotTabSelect = true;
     this._afterTabSelectAndFocusChange();
+  }
+
+  _on_TabClose(event) {
+    this.controller.engagementEvent.handleBounceEventTrigger(
+      event.target.linkedBrowser
+    );
   }
 
   _on_beforeinput(event) {

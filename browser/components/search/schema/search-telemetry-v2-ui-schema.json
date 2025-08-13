@@ -23,6 +23,7 @@
     "signedInCookies",
     "isSPA",
     "defaultPageQueryParam",
+    "pageTypeParam",
     "subframes"
   ]
 }

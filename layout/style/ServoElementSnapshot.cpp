@@ -5,10 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/ServoElementSnapshot.h"
+
 #include "mozilla/GeckoBindings.h"
 #include "mozilla/dom/Element.h"
-#include "nsIContentInlines.h"
 #include "nsContentUtils.h"
+#include "nsIContentInlines.h"
 
 namespace mozilla {
 

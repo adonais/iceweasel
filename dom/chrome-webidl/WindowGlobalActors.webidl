@@ -27,11 +27,18 @@ interface WindowContext {
   // True if this WindowContext is currently frozen in the BFCache.
   readonly attribute boolean isInBFCache;
 
-  // True if this window has registered a "beforeunload" event handler.
+  // True if this window has registered a "beforeunload" event handler, and/or
+  // if this context is top level and has registered a "navigate" event handler.
   readonly attribute boolean hasBeforeUnload;
 
   // True if the principal of this window is for a local ip address.
   readonly attribute boolean isLocalIP;
+
+  // True if the principal of this window has an active CloseWatcher
+  readonly attribute boolean hasActiveCloseWatcher;
+
+  // Request the windows CloseWatcher manager to close the top-most CloseWatcher
+  undefined processCloseRequest();
 
   readonly attribute boolean shouldResistFingerprinting;
 

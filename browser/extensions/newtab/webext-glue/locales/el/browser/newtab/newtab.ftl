@@ -336,7 +336,7 @@ newtab-wallpaper-error-max-file-size = Η εικόνα υπερέβη το όρ�
 newtab-wallpaper-error-file-type = Δεν ήταν δυνατή η μεταφόρτωση του αρχείου σας. Δοκιμάστε ξανά με έναν άλλο τύπο αρχείου.
 newtab-wallpaper-light-red-panda = Κόκκινο πάντα
 newtab-wallpaper-light-mountain = Λευκό βουνό
-newtab-wallpaper-light-sky = Ουρανός με μωβ και ροζ σύννεφα
+newtab-wallpaper-light-sky = Ουρανός με μοβ και ροζ σύννεφα
 newtab-wallpaper-light-color = Μπλε, ροζ και κίτρινα σχήματα
 newtab-wallpaper-light-landscape = Μπλε ορεινό τοπίο ομίχλης
 newtab-wallpaper-light-beach = Παραλία με φοίνικα
@@ -345,13 +345,13 @@ newtab-wallpaper-dark-color = Κόκκινα και μπλε σχήματα
 newtab-wallpaper-dark-panda = Κόκκινο πάντα στο δάσος
 newtab-wallpaper-dark-sky = Αστικό τοπίο με νυχτερινό ουρανό
 newtab-wallpaper-dark-mountain = Ορεινό τοπίο
-newtab-wallpaper-dark-city = Μωβ αστικό τοπίο
+newtab-wallpaper-dark-city = Μοβ αστικό τοπίο
 newtab-wallpaper-dark-fox-anniversary = Μια αλεπού στο πεζοδρόμιο κοντά σε ένα δάσος
 newtab-wallpaper-light-fox-anniversary = Μια αλεπού μέσα σε γρασίδι, με ένα ομιχλώδες ορεινό τοπίο
 
 ## Solid Colors
 
-newtab-wallpaper-category-title-colors = Συμπαγή χρώματα
+newtab-wallpaper-category-title-colors = Αμιγή χρώματα
 newtab-wallpaper-blue = Μπλε
 newtab-wallpaper-light-blue = Ανοιχτό μπλε
 newtab-wallpaper-light-purple = Ανοιχτό μωβ
@@ -373,13 +373,13 @@ newtab-wallpaper-brown = Καφέ
 newtab-wallpaper-category-title-abstract = Αφηρημένο
 newtab-wallpaper-abstract-green = Πράσινα σχήματα
 newtab-wallpaper-abstract-blue = Μπλε σχήματα
-newtab-wallpaper-abstract-purple = Μωβ σχήματα
+newtab-wallpaper-abstract-purple = Μοβ σχήματα
 newtab-wallpaper-abstract-orange = Πορτοκαλί σχήματα
 newtab-wallpaper-gradient-orange = Διαβάθμιση πορτοκαλί και ροζ
-newtab-wallpaper-abstract-blue-purple = Μπλε και μωβ σχήματα
+newtab-wallpaper-abstract-blue-purple = Μπλε και μοβ σχήματα
 newtab-wallpaper-abstract-white-curves = Λευκό με σκιασμένες καμπύλες
-newtab-wallpaper-abstract-purple-green = Διαβάθμιση μωβ και πράσινου φωτός
-newtab-wallpaper-abstract-blue-purple-waves = Μπλε και μωβ κυματιστές μορφές
+newtab-wallpaper-abstract-purple-green = Διαβάθμιση μοβ και πράσινου φωτός
+newtab-wallpaper-abstract-blue-purple-waves = Μπλε και μοβ κυματιστές μορφές
 newtab-wallpaper-abstract-black-waves = Μαύρες κυματιστές μορφές
 
 ## Celestial
@@ -504,6 +504,9 @@ newtab-topic-selection-button-pick-interests = Επιλέξτε τα ενδια�
 newtab-section-follow-button = Ακολουθήστε
 newtab-section-following-button = Ακολουθείται
 newtab-section-unfollow-button = Άρση παρακολούθησης
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Βελτιστοποιήστε τη ροή σας
+newtab-section-follow-highlight-subtitle = Ακολουθήστε τα ενδιαφέροντά σας για να δείτε περισσότερα από αυτά που σας αρέσουν.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -546,6 +549,11 @@ newtab-download-mobile-highlight-body-variant-c = Γνωρίζατε ότι μπ
 newtab-download-mobile-highlight-image =
     .aria-label = Κωδικός QR για τη λήψη του { -brand-product-name } για κινητές συσκευές
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Τα αγαπημένα σας, στα χέρια σας
+newtab-shortcuts-highlight-subtitle = Προσθέστε μια συντόμευση για να έχετε κοντά σας τους αγαπημένους ιστοτόπους σας.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -579,3 +587,5 @@ newtab-trending-searches-hide-trending =
     .title = Απόκρυψη δημοφιλών αναζητήσεων
 newtab-trending-searches-learn-more = Μάθετε περισσότερα
 newtab-trending-searches-dismiss = Απόκρυψη δημοφιλών αναζητήσεων
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Δημοφιλείς αναζητήσεις

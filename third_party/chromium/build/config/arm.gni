@@ -1,7 +1,8 @@
-# Copyright 2014 The Chromium Authors. All rights reserved.
+# Copyright 2014 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//chromium/build/config/chromeos/ui_mode.gni")
 import("//chromium/build/config/v8_target_cpu.gni")
 
 # These are primarily relevant in target_cpu == "arm" contexts, where
@@ -62,7 +63,8 @@ if (target_cpu == "arm" || v8_target_cpu == "arm") {
 
   if (arm_version == 6) {
     if (arm_arch == "") {
-      arm_arch = "armv6"
+      # v8 can still with version 6 but only with the armv6k extension.
+      arm_arch = "armv6k"
     }
     if (arm_tune != "") {
       arm_tune = ""
@@ -78,9 +80,6 @@ if (target_cpu == "arm" || v8_target_cpu == "arm") {
   } else if (arm_version == 7) {
     if (arm_arch == "") {
       arm_arch = "armv7-a"
-    }
-    if (arm_tune == "") {
-      arm_tune = "generic-armv7-a"
     }
 
     if (arm_float_abi == "") {
@@ -125,12 +124,28 @@ if (target_cpu == "arm" || v8_target_cpu == "arm") {
   arm_use_neon = true
   declare_args() {
     # Enables the new Armv8 branch protection features. Valid strings are:
-    # - "standard": Enables both Pointer Authentication Code (featured in
-    #               Armv8.3) and Branch Target Identification (Armv8.5).
+    # - "pac": Enables Pointer Authentication Code (PAC, featured in Armv8.3)
+    # - "standard": Enables both PAC and Branch Target Identification (Armv8.5).
     # - "none": No branch protection.
     arm_control_flow_integrity = "none"
+
+    if ((is_android || is_linux) && target_cpu == "arm64") {
+      # Enable PAC and BTI on AArch64 Linux/Android systems.
+      # target_cpu == "arm64" filters out some cases (e.g. the ChromeOS x64
+      # MSAN build) where the target platform is x64, but V8 is configured to
+      # use the arm64 simulator.
+      arm_control_flow_integrity = "standard"
+    }
+
+    if (host_os == "mac" && host_cpu == "arm64") {
+      # Disable ARM integrity flow or build
+      # will fail because of this issue
+      # https://groups.google.com/g/v8-users/c/rykJ2F9RIcc/m/QKpWNoeJDgAJ
+      arm_control_flow_integrity = "none"
+    }
   }
   assert(arm_control_flow_integrity == "none" ||
-             arm_control_flow_integrity == "standard",
+             arm_control_flow_integrity == "standard" ||
+             arm_control_flow_integrity == "pac",
          "Invalid branch protection option")
 }

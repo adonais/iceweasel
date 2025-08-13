@@ -62,8 +62,8 @@ https_first_disabled = true
 
 ["browser_identityPopup_focus.js"]
 skip-if = [
-  "verify",
-  "os == 'linux' && (asan || tsan)", # Bug 1723899
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && asan", # Bug 1723899
+  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1723899
 ]
 
 ["browser_identity_UI.js"]
@@ -111,7 +111,6 @@ support-files = [
 ]
 
 ["browser_mixed_content_cert_override.js"]
-skip-if = ["verify"]
 tags = "mcb"
 support-files = ["test-mixedcontent-securityerrors.html"]
 

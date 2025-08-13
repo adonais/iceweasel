@@ -19,6 +19,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/dom/CacheBinding.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/cache/CacheTypes.h"
 #include "mozilla/dom/Response.h"
 #include "mozilla/dom/ServiceWorkerBinding.h"  // ServiceWorkerState
@@ -579,7 +580,7 @@ nsresult CacheLoadHandler::DataReceivedFromCache(
 
     nsCOMPtr<nsIContentSecurityPolicy> csp;
     if (parentDoc) {
-      csp = parentDoc->GetCsp();
+      csp = PolicyContainer::GetCSP(parentDoc->GetPolicyContainer());
     }
     MOZ_DIAGNOSTIC_ASSERT(!csp);
 #endif

@@ -94,6 +94,13 @@ sandbox::bpf_dsl::ResultExpr SandboxPolicyBase::EvaluateSyscall(
       DISPATCH_SOCKETCALL(__NR_accept4,     SYS_ACCEPT4);
       DISPATCH_SOCKETCALL(__NR_recvmmsg,    SYS_RECVMMSG);
       DISPATCH_SOCKETCALL(__NR_sendmmsg,    SYS_SENDMMSG);
+#  ifdef __NR_recvmmsg_time64
+      // recvmmsg_time64 is available only as a syscall, not a legacy
+      // socketcall.  The types are the same as the non-Y2K38-ready
+      // recvmmsg except for the struct timespec, which the filter
+      // shouldn't need to inspect, so they're treated the same here.
+      DISPATCH_SOCKETCALL(__NR_recvmmsg_time64, SYS_RECVMMSG);
+#  endif
 #undef DISPATCH_SOCKETCALL
 #ifndef __NR_socketcall
 #ifndef ANDROID

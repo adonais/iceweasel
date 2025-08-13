@@ -36,7 +36,10 @@ class TrackingProtectionPolicyFactory(
     ): TrackingProtectionPolicy {
         val trackingProtectionPolicy =
             when {
-                settings.useStrictTrackingProtection -> TrackingProtectionPolicy.strict()
+                settings.useStrictTrackingProtection -> TrackingProtectionPolicy.strict(
+                    getAllowBaselineTrackingProtection(),
+                    getAllowConvenienceTrackingProtection(),
+                )
                 settings.useCustomTrackingProtection -> return createCustomTrackingProtectionPolicy()
                 else -> TrackingProtectionPolicy.recommended()
             }
@@ -55,6 +58,8 @@ class TrackingProtectionPolicyFactory(
             trackingCategories = getCustomTrackingCategories(),
             cookiePurging = getCustomCookiePurgingPolicy(),
             strictSocialTrackingProtection = settings.blockTrackingContentInCustomTrackingProtection,
+            allowListBaselineTrackingProtection = getAllowBaselineTrackingProtection(),
+            allowListConvenienceTrackingProtection = getAllowConvenienceTrackingProtection(),
         ).let {
             if (settings.blockTrackingContentSelectionInCustomTrackingProtection == "private") {
                 it.forPrivateSessionsOnly()
@@ -105,6 +110,27 @@ class TrackingProtectionPolicyFactory(
     private fun getCustomCookiePurgingPolicy(): Boolean {
         return settings.blockRedirectTrackersInCustomTrackingProtection
     }
+
+    private fun getAllowBaselineTrackingProtection(): Boolean {
+        return when {
+            settings.useStandardTrackingProtection -> true
+            settings.useStrictTrackingProtection -> settings.strictAllowListBaselineTrackingProtection
+            else -> settings.customAllowListBaselineTrackingProtection
+        }
+    }
+
+    private fun getAllowConvenienceTrackingProtection(): Boolean {
+        return when {
+            settings.useStandardTrackingProtection -> true
+            settings.useStrictTrackingProtection ->
+                settings.strictAllowListBaselineTrackingProtection &&
+                    settings.strictAllowListConvenienceTrackingProtection
+            settings.useCustomTrackingProtection ->
+                settings.customAllowListBaselineTrackingProtection &&
+                    settings.customAllowListConvenienceTrackingProtection
+            else -> false
+        }
+    }
 }
 
 @VisibleForTesting
@@ -122,5 +148,8 @@ internal fun TrackingProtectionPolicyForSessionTypes.applyTCPIfNeeded(
         cookiePolicy = updatedCookiePolicy,
         strictSocialTrackingProtection = strictSocialTrackingProtection,
         cookiePurging = cookiePurging,
+        bounceTrackingProtectionMode = bounceTrackingProtectionMode,
+        allowListBaselineTrackingProtection = allowListBaselineTrackingProtection,
+        allowListConvenienceTrackingProtection = allowListConvenienceTrackingProtection,
     )
 }

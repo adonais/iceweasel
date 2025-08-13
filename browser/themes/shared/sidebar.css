@@ -42,15 +42,14 @@
 #sidebar-box {
   text-shadow: none;
   max-width: 75vw;
-}
 
-/* stylelint-disable-next-line media-query-no-invalid */
-@media not -moz-pref("sidebar.revamp") {
-  #sidebar-main,
-  #sidebar-header,
-  #sidebar {
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media not -moz-pref("sidebar.revamp") {
     background-color: var(--sidebar-background-color);
     color: var(--sidebar-text-color);
+    /* Note that with sidebar.revamp we apply the --sidebar-background-color to the
+     * #sidebar browser. We still need the #sidebar-box background to match the
+     * toolbar tho - this background is set on the #browser ancestor rather than here */
   }
 }
 
@@ -234,7 +233,9 @@ sidebar-main,
 #sidebar-splitter,
 #tabbrowser-tabbox {
   transform-origin: 0 0;
-  will-change: translate;
+  /* will-change would cause us to be considered animated unconditionally, see
+   * bug 1930674 */
+  translate: 0;
 }
 
 #sidebar-main {
@@ -265,7 +266,12 @@ sidebar-main,
       z-index: var(--browser-area-z-index-sidebar-expand-on-hover);
       position: absolute;
       color: var(--toolbox-textcolor);
-      background-color: var(--toolbox-bgcolor);
+      /* With Windows Mica, the toolbox background is not guaranteed to be
+       * opaque. Make sure there's some opaque backdrop that matches our color
+       * scheme. These colors match the "transparency effects disabled" mica
+       * backdrop on Windows 11, which is as good as we can make it. */
+      background-image: linear-gradient(var(--toolbox-bgcolor));
+      background-color: light-dark(#e8e8e8, #202020);
 
       &:not([sidebar-positionend]) {
         border-inline-end: 0.01px solid var(--sidebar-border-color);

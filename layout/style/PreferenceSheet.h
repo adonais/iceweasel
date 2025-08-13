@@ -9,8 +9,8 @@
 #ifndef mozilla_ColorPreferences_h
 #define mozilla_ColorPreferences_h
 
-#include "nsColor.h"
 #include "mozilla/ColorScheme.h"
+#include "nsColor.h"
 
 namespace mozilla {
 

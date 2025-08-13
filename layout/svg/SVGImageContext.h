@@ -7,10 +7,10 @@
 #ifndef LAYOUT_SVG_SVGIMAGECONTEXT_H_
 #define LAYOUT_SVG_SVGIMAGECONTEXT_H_
 
+#include "Units.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/SVGContextPaint.h"
 #include "mozilla/SVGPreserveAspectRatio.h"
-#include "Units.h"
 
 class nsIFrame;
 class nsISVGPaintContext;

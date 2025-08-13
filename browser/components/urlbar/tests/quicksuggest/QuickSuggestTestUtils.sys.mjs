@@ -1251,7 +1251,7 @@ class _QuickSuggestTestUtils {
     }
 
     this.Assert.ok(
-      row._buttons.get("menu"),
+      row._buttons.get("result-menu"),
       "The menu button should be present"
     );
 

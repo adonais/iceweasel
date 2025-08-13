@@ -6,13 +6,13 @@
 
 #include "inLayoutUtils.h"
 
+#include "mozilla/EventStateManager.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/Element.h"
 #include "nsIContent.h"
 #include "nsPIDOMWindow.h"
 #include "nsPresContext.h"
-#include "mozilla/EventStateManager.h"
-#include "mozilla/dom/DocumentInlines.h"
-#include "mozilla/dom/Element.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

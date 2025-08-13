@@ -723,6 +723,8 @@ class MDefinition : public MNode {
   MIR_FLAG_LIST(FLAG_ACCESSOR)
 #undef FLAG_ACCESSOR
 
+  bool hasAnyFlags() const { return flags_ != 0; }
+
   // Return the type of this value. This may be speculative, and enforced
   // dynamically with the use of bailout checks. If all the bailout checks
   // pass, the value will have this type.
@@ -1424,7 +1426,7 @@ class MConstant : public MNullaryInstruction {
       intptr_t iptr;
       float f;
       double d;
-      JSString* str;
+      JSOffThreadAtom* str;
       JS::Symbol* sym;
       BigInt* bi;
       JSObject* obj;
@@ -1521,7 +1523,7 @@ class MConstant : public MNullaryInstruction {
     MOZ_ASSERT(type() == MIRType::Float32);
     return payload_.f;
   }
-  JSString* toString() const {
+  JSOffThreadAtom* toString() const {
     MOZ_ASSERT(type() == MIRType::String);
     return payload_.str;
   }
@@ -6922,12 +6924,17 @@ class MSpectreMaskIndex
 // Load a value from a dense array's element vector. Bails out if the element is
 // a hole.
 class MLoadElement : public MBinaryInstruction, public NoTypePolicy::Data {
-  MLoadElement(MDefinition* elements, MDefinition* index)
-      : MBinaryInstruction(classOpcode, elements, index) {
-    // Uses may be optimized away based on this instruction's result
-    // type. This means it's invalid to DCE this instruction, as we
-    // have to invalidate when we read a hole.
-    setGuard();
+  bool needsHoleCheck_;
+
+  MLoadElement(MDefinition* elements, MDefinition* index, bool needsHoleCheck)
+      : MBinaryInstruction(classOpcode, elements, index),
+        needsHoleCheck_(needsHoleCheck) {
+    if (needsHoleCheck) {
+      // Uses may be optimized away based on this instruction's result
+      // type. This means it's invalid to DCE this instruction, as we
+      // have to invalidate when we read a hole.
+      setGuard();
+    }
     setResultType(MIRType::Value);
     setMovable();
     MOZ_ASSERT(elements->type() == MIRType::Elements);
@@ -6938,6 +6945,8 @@ class MLoadElement : public MBinaryInstruction, public NoTypePolicy::Data {
   INSTRUCTION_HEADER(LoadElement)
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, elements), (1, index))
+
+  bool needsHoleCheck() const { return needsHoleCheck_; }
 
   bool congruentTo(const MDefinition* ins) const override {
     return congruentIfOperandsEqual(ins);

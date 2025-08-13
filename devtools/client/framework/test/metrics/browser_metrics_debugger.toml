@@ -12,4 +12,4 @@ support-files = [
 
 ["browser_metrics_debugger.js"]
 run-if = ["os == 'linux' && opt"] # Results should be platform agnostic - only run on linux64-opt
-skip-if = ["verify"]
+skip-if = ["verify"] # metrics tests should only run once, they are designed to record module usage and will fail in verify because the number of modules will be different after the first load.

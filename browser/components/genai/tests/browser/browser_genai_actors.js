@@ -23,7 +23,7 @@ add_task(async function test_actor_extract_text() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      url: "data:text/html, <body>Hello world!</body>",
+      url: "data:text/html,<body><br/>Hello <br/> <br/> world!<br/></body>",
     },
     async browser => {
       const actor =
@@ -32,8 +32,9 @@ add_task(async function test_actor_extract_text() {
 
       const result = await actor.sendQuery("GetReadableText");
       Assert.equal(result.readerMode, false, "Not reader mode content");
-      Assert.ok(
-        result.selection.includes("Hello world!"),
+      Assert.equal(
+        result.selection,
+        "Hello\nworld!",
         "Page text was extracted"
       );
     }

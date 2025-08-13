@@ -26,11 +26,13 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/CSPMessageUtils.h"
+#include "mozilla/dom/PolicyContainerMessageUtils.h"
 #include "mozilla/dom/DocumentBinding.h"
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/dom/PermissionMessageUtils.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/ReferrerInfoUtils.h"
 #include "mozilla/ipc/IPDLParamTraits.h"
 #include "mozilla/ipc/ProtocolUtils.h"
@@ -56,7 +58,8 @@ SessionHistoryInfo::SessionHistoryInfo(nsDocShellLoadState* aLoadState,
       mHasUserActivation(aLoadState->HasValidUserGestureActivation()),
       mSharedState(SharedState::Create(
           aLoadState->TriggeringPrincipal(), aLoadState->PrincipalToInherit(),
-          aLoadState->PartitionedPrincipalToInherit(), aLoadState->Csp(),
+          aLoadState->PartitionedPrincipalToInherit(),
+          aLoadState->PolicyContainer(),
           /* FIXME Is this correct? */
           aLoadState->TypeHint())) {
   // Pull the upload stream off of the channel instead of the load state, as
@@ -86,18 +89,18 @@ SessionHistoryInfo::SessionHistoryInfo(
     nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal,
     nsIPrincipal* aPrincipalToInherit,
     nsIPrincipal* aPartitionedPrincipalToInherit,
-    nsIContentSecurityPolicy* aCsp, const nsACString& aContentType)
+    nsIPolicyContainer* aPolicyContainer, const nsACString& aContentType)
     : mURI(aURI),
       mSharedState(SharedState::Create(
           aTriggeringPrincipal, aPrincipalToInherit,
-          aPartitionedPrincipalToInherit, aCsp, aContentType)) {
+          aPartitionedPrincipalToInherit, aPolicyContainer, aContentType)) {
   MaybeUpdateTitleFromURI();
 }
 
 SessionHistoryInfo::SessionHistoryInfo(
     nsIChannel* aChannel, uint32_t aLoadType,
     nsIPrincipal* aPartitionedPrincipalToInherit,
-    nsIContentSecurityPolicy* aCsp) {
+    nsIPolicyContainer* aPolicyContainer) {
   if (NS_FAILED(NS_GetFinalChannelURI(aChannel, getter_AddRefs(mURI)))) {
     NS_WARNING("NS_GetFinalChannelURI somehow failed in SessionHistoryInfo?");
     aChannel->GetURI(getter_AddRefs(mURI));
@@ -116,7 +119,7 @@ SessionHistoryInfo::SessionHistoryInfo(
 
   mSharedState.Get()->mPartitionedPrincipalToInherit =
       aPartitionedPrincipalToInherit;
-  mSharedState.Get()->mCsp = aCsp;
+  mSharedState.Get()->mPolicyContainer = aPolicyContainer;
   aChannel->GetContentType(mSharedState.Get()->mContentType);
   aChannel->GetOriginalURI(getter_AddRefs(mOriginalURI));
 
@@ -136,7 +139,7 @@ void SessionHistoryInfo::Reset(nsIURI* aURI, const nsID& aDocShellID,
                                nsIPrincipal* aTriggeringPrincipal,
                                nsIPrincipal* aPrincipalToInherit,
                                nsIPrincipal* aPartitionedPrincipalToInherit,
-                               nsIContentSecurityPolicy* aCsp,
+                               nsIPolicyContainer* aPolicyContainer,
                                const nsACString& aContentType) {
   mURI = aURI;
   mOriginalURI = nullptr;
@@ -166,7 +169,7 @@ void SessionHistoryInfo::Reset(nsIURI* aURI, const nsID& aDocShellID,
   mSharedState.Get()->mPrincipalToInherit = aPrincipalToInherit;
   mSharedState.Get()->mPartitionedPrincipalToInherit =
       aPartitionedPrincipalToInherit;
-  mSharedState.Get()->mCsp = aCsp;
+  mSharedState.Get()->mPolicyContainer = aPolicyContainer;
   mSharedState.Get()->mContentType = aContentType;
   mSharedState.Get()->mLayoutHistoryState = nullptr;
 }
@@ -232,8 +235,8 @@ void SessionHistoryInfo::SetPartitionedPrincipalToInherit(
   mSharedState.Get()->mPartitionedPrincipalToInherit = aPartitionedPrincipal;
 }
 
-nsIContentSecurityPolicy* SessionHistoryInfo::GetCsp() const {
-  return mSharedState.Get()->mCsp;
+nsIPolicyContainer* SessionHistoryInfo::GetPolicyContainer() const {
+  return mSharedState.Get()->mPolicyContainer;
 }
 
 uint32_t SessionHistoryInfo::GetCacheKey() const {
@@ -272,7 +275,7 @@ void SessionHistoryInfo::FillLoadInfo(nsDocShellLoadState& aLoadState) const {
   aLoadState.SetPrincipalToInherit(mSharedState.Get()->mPrincipalToInherit);
   aLoadState.SetPartitionedPrincipalToInherit(
       mSharedState.Get()->mPartitionedPrincipalToInherit);
-  aLoadState.SetCsp(mSharedState.Get()->mCsp);
+  aLoadState.SetPolicyContainer(mSharedState.Get()->mPolicyContainer);
 
   // Do not inherit principal from document (security-critical!);
   uint32_t flags = nsDocShell::InternalLoad::INTERNAL_LOAD_FLAGS_NONE;
@@ -308,16 +311,16 @@ void SessionHistoryInfo::FillLoadInfo(nsDocShellLoadState& aLoadState) const {
 SessionHistoryInfo::SharedState SessionHistoryInfo::SharedState::Create(
     nsIPrincipal* aTriggeringPrincipal, nsIPrincipal* aPrincipalToInherit,
     nsIPrincipal* aPartitionedPrincipalToInherit,
-    nsIContentSecurityPolicy* aCsp, const nsACString& aContentType) {
+    nsIPolicyContainer* aPolicyContainer, const nsACString& aContentType) {
   if (XRE_IsParentProcess()) {
     return SharedState(new SHEntrySharedParentState(
         aTriggeringPrincipal, aPrincipalToInherit,
-        aPartitionedPrincipalToInherit, aCsp, aContentType));
+        aPartitionedPrincipalToInherit, aPolicyContainer, aContentType));
   }
 
   return SharedState(MakeUnique<SHEntrySharedState>(
       aTriggeringPrincipal, aPrincipalToInherit, aPartitionedPrincipalToInherit,
-      aCsp, aContentType));
+      aPolicyContainer, aContentType));
 }
 
 SessionHistoryInfo::SharedState::SharedState() { Init(); }
@@ -341,7 +344,8 @@ SessionHistoryInfo::SharedState::~SharedState() {
     mParent
         .RefPtr<SHEntrySharedParentState>::~RefPtr<SHEntrySharedParentState>();
   } else {
-    mChild.UniquePtr<SHEntrySharedState>::~UniquePtr<SHEntrySharedState>();
+    mChild.UniquePtr<SHEntrySharedState>::~unique_ptr<
+        SHEntrySharedState, DefaultDelete<SHEntrySharedState>>();
   }
 }
 
@@ -889,17 +893,17 @@ SessionHistoryEntry::SetPartitionedPrincipalToInherit(
 }
 
 NS_IMETHODIMP
-SessionHistoryEntry::GetCsp(nsIContentSecurityPolicy** aCsp) {
-  nsCOMPtr<nsIContentSecurityPolicy> csp = SharedInfo()->mCsp;
-  csp.forget(aCsp);
+SessionHistoryEntry::GetPolicyContainer(nsIPolicyContainer** aPolicyContainer) {
+  nsCOMPtr<nsIPolicyContainer> policyContainer = SharedInfo()->mPolicyContainer;
+  policyContainer.forget(aPolicyContainer);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-SessionHistoryEntry::SetCsp(nsIContentSecurityPolicy* aCsp) {
+SessionHistoryEntry::SetPolicyContainer(nsIPolicyContainer* aPolicyContainer) {
   nsCOMPtr<nsIURI> uri = mInfo->mURI;
   if (CSP_ShouldURIInheritCSP(uri)) {
-    SharedInfo()->mCsp = aCsp;
+    SharedInfo()->mPolicyContainer = aPolicyContainer;
   }
   return NS_OK;
 }
@@ -1095,7 +1099,7 @@ SessionHistoryEntry::Create(
     uint32_t aCacheKey, const nsACString& aContentType,
     nsIPrincipal* aTriggeringPrincipal, nsIPrincipal* aPrincipalToInherit,
     nsIPrincipal* aPartitionedPrincipalToInherit,
-    nsIContentSecurityPolicy* aCsp, const nsID& aDocshellID,
+    nsIPolicyContainer* aPolicyContainer, const nsID& aDocshellID,
     bool aDynamicCreation, nsIURI* aOriginalURI, nsIURI* aResultPrincipalURI,
     nsIURI* aUnstrippedURI, bool aLoadReplace, nsIReferrerInfo* aReferrerInfo,
     const nsAString& aSrcdoc, bool aSrcdocEntry, nsIURI* aBaseURI,
@@ -1585,7 +1589,7 @@ void IPDLParamTraits<dom::SessionHistoryInfo>::Write(
                  aParam.mSharedState.Get()->mPrincipalToInherit);
   WriteIPDLParam(aWriter, aActor,
                  aParam.mSharedState.Get()->mPartitionedPrincipalToInherit);
-  WriteIPDLParam(aWriter, aActor, aParam.mSharedState.Get()->mCsp);
+  WriteIPDLParam(aWriter, aActor, aParam.mSharedState.Get()->mPolicyContainer);
   WriteIPDLParam(aWriter, aActor, aParam.mSharedState.Get()->mContentType);
   WriteIPDLParam(aWriter, aActor,
                  aParam.mSharedState.Get()->mLayoutHistoryState);
@@ -1630,12 +1634,12 @@ bool IPDLParamTraits<dom::SessionHistoryInfo>::Read(
   nsCOMPtr<nsIPrincipal> triggeringPrincipal;
   nsCOMPtr<nsIPrincipal> principalToInherit;
   nsCOMPtr<nsIPrincipal> partitionedPrincipalToInherit;
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  nsCOMPtr<nsIPolicyContainer> policyContainer;
   nsCString contentType;
   if (!ReadIPDLParam(aReader, aActor, &triggeringPrincipal) ||
       !ReadIPDLParam(aReader, aActor, &principalToInherit) ||
       !ReadIPDLParam(aReader, aActor, &partitionedPrincipalToInherit) ||
-      !ReadIPDLParam(aReader, aActor, &csp) ||
+      !ReadIPDLParam(aReader, aActor, &policyContainer) ||
       !ReadIPDLParam(aReader, aActor, &contentType)) {
     aActor->FatalError("Error reading fields for SessionHistoryInfo");
     return false;
@@ -1670,14 +1674,20 @@ bool IPDLParamTraits<dom::SessionHistoryInfo>::Read(
                          aResult->mSharedState.Get()->mPrincipalToInherit)
                    : !aResult->mSharedState.Get()->mPrincipalToInherit,
                "We don't expect this to change!");
-    MOZ_ASSERT_IF(
-        aResult->mSharedState.Get()->mPartitionedPrincipalToInherit,
-        aResult->mSharedState.Get()->mPartitionedPrincipalToInherit->Equals(
-            partitionedPrincipalToInherit));
     MOZ_ASSERT(
-        csp ? nsCSPContext::Equals(csp, aResult->mSharedState.Get()->mCsp)
-            : !aResult->mSharedState.Get()->mCsp,
+        partitionedPrincipalToInherit
+            ? partitionedPrincipalToInherit->Equals(
+                  aResult->mSharedState.Get()->mPartitionedPrincipalToInherit)
+            : !aResult->mSharedState.Get()->mPartitionedPrincipalToInherit,
         "We don't expect this to change!");
+
+    MOZ_ASSERT(policyContainer
+                   ? PolicyContainer::Equals(
+                         PolicyContainer::Cast(policyContainer),
+                         PolicyContainer::Cast(
+                             aResult->mSharedState.Get()->mPolicyContainer))
+                   : !aResult->mSharedState.Get()->mPolicyContainer,
+               "We don't expect this to change!");
     MOZ_ASSERT(contentType.Equals(aResult->mSharedState.Get()->mContentType),
                "We don't expect this to change!");
   } else {
@@ -1688,7 +1698,7 @@ bool IPDLParamTraits<dom::SessionHistoryInfo>::Read(
         principalToInherit.forget();
     aResult->mSharedState.Get()->mPartitionedPrincipalToInherit =
         partitionedPrincipalToInherit.forget();
-    aResult->mSharedState.Get()->mCsp = csp.forget();
+    aResult->mSharedState.Get()->mPolicyContainer = policyContainer.forget();
     aResult->mSharedState.Get()->mContentType = contentType;
   }
 

@@ -8,6 +8,9 @@
 newtab-page-title = Nov zavihek
 newtab-settings-button =
     .title = Prilagodite stran novega zavihka
+newtab-customize-panel-icon-button =
+    .title = Prilagodi to stran
+newtab-customize-panel-icon-button-label = Prilagodi
 newtab-personalize-settings-icon-label =
     .title = Prilagodite stran novega zavihka
     .aria-label = Nastavitve
@@ -108,7 +111,7 @@ newtab-menu-topsites-placeholder-tooltip =
 newtab-menu-edit-topsites = Uredi
 newtab-menu-open-new-window = Odpri v novem oknu
 newtab-menu-open-new-private-window = Odpri v novem zasebnem oknu
-newtab-menu-dismiss = Opusti
+newtab-menu-dismiss = Skrij
 newtab-menu-pin = Pripni
 newtab-menu-unpin = Odpni
 newtab-menu-delete-history = Izbriši iz zgodovine
@@ -502,6 +505,9 @@ newtab-topic-selection-button-pick-interests = Izberite svoja zanimanja
 newtab-section-follow-button = Sledi
 newtab-section-following-button = Sledite
 newtab-section-unfollow-button = Nehaj slediti
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Prilagodite si vir
+newtab-section-follow-highlight-subtitle = Sledite svojim zanimanjem in dobivajte več vsebine, ki vam je všeč.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -544,6 +550,11 @@ newtab-download-mobile-highlight-body-variant-c = Ali ste vedeli, da lahko { -br
 newtab-download-mobile-highlight-image =
     .aria-label = Koda QR za prenos { -brand-product-name(sklon: "rodilnik") } za mobilne naprave
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Vaša priljubljena mesta na dosegu roke
+newtab-shortcuts-highlight-subtitle = Dodajte bližnjico in obdržite priljubljena spletna mesta le klik stran.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -577,3 +588,5 @@ newtab-trending-searches-hide-trending =
     .title = Skrij trenutno priljubljena iskanja
 newtab-trending-searches-learn-more = Več o tem
 newtab-trending-searches-dismiss = Skrij trenutno priljubljena iskanja
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Trenutno iskano

@@ -43,14 +43,6 @@ def pytest_generate_tests(metafunc):
             if mark.name == "skip_channels":
                 otherargs["skip_channels"] = mark.args
 
-    if "with_interventions" in marks:
-        argvalues.append([dict({"interventions": True}, **otherargs)])
-        ids.append("with_interventions")
-
-    if "without_interventions" in marks:
-        argvalues.append([dict({"interventions": False}, **otherargs)])
-        ids.append("without_interventions")
-
     if "need_visible_scrollbars" in marks:
         for mark in metafunc.function.pytestmark:
             if mark.name == "need_visible_scrollbars":
@@ -64,6 +56,14 @@ def pytest_generate_tests(metafunc):
 
     if "disable_moztransform" in marks:
         otherargs["disable_moztransform"] = True
+
+    if "with_interventions" in marks:
+        argvalues.append([dict({"interventions": True}, **otherargs)])
+        ids.append("with_interventions")
+
+    if "without_interventions" in marks:
+        argvalues.append([dict({"interventions": False}, **otherargs)])
+        ids.append("without_interventions")
 
     metafunc.parametrize(["session"], argvalues, ids=ids, indirect=True)
 

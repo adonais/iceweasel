@@ -7,12 +7,12 @@
 #ifndef LAYOUT_SVG_SVGPATTERNFRAME_H_
 #define LAYOUT_SVG_SVGPATTERNFRAME_H_
 
-#include "mozilla/Attributes.h"
 #include "gfxMatrix.h"
-#include "mozilla/gfx/2D.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SVGPaintServerFrame.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/gfx/2D.h"
 
 class nsIFrame;
 

@@ -33,6 +33,8 @@
       is(cred.type,
         "identity",
         "Correct type on the credential");
+      is(cred.isAutoSelected, false, "Correct isAutoSelected credential");
+      is(cred.configURL, "https://example.net/tests/dom/credentialmanagement/identity/tests/mochitest/server_manifest.sjs", "Correct configURL on the credential");
     }).catch(() => {
       ok(false, "must not have an error");
     }).finally(() => {

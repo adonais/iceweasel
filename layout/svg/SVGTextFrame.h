@@ -7,14 +7,14 @@
 #ifndef LAYOUT_SVG_SVGTEXTFRAME_H_
 #define LAYOUT_SVG_SVGTEXTFRAME_H_
 
+#include "gfxMatrix.h"
+#include "gfxRect.h"
+#include "gfxTextRun.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/PresShellForwards.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SVGContainerFrame.h"
 #include "mozilla/gfx/2D.h"
-#include "gfxMatrix.h"
-#include "gfxRect.h"
-#include "gfxTextRun.h"
 #include "nsIContent.h"  // for GetContent
 #include "nsStubMutationObserver.h"
 #include "nsTextFrame.h"

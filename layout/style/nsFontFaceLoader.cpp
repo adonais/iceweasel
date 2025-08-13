@@ -6,26 +6,24 @@
 
 /* code for loading in @font-face defined font data */
 
-#include "mozilla/IntegerPrintfMacros.h"
-#include "mozilla/Logging.h"
-
 #include "nsFontFaceLoader.h"
 
-#include "nsError.h"
+#include "FontFaceSet.h"
 #include "mozilla/AutoRestore.h"
+#include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/TaskQueue.h"
-#include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/Unused.h"
-#include "FontFaceSet.h"
-#include "nsPresContext.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/glean/GfxMetrics.h"
+#include "nsContentPolicyUtils.h"
+#include "nsError.h"
 #include "nsIHttpChannel.h"
 #include "nsIThreadRetargetableRequest.h"
-#include "nsContentPolicyUtils.h"
 #include "nsNetCID.h"
-
-#include "mozilla/gfx/2D.h"
+#include "nsPresContext.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

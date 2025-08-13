@@ -233,6 +233,9 @@ newtab-error-fallback-refresh-link = पुन्हा प्रयत्न �
 ## Strings for download mobile highlight
 
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
 

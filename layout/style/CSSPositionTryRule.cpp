@@ -4,11 +4,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/CSSPositionTryRule.h"
-#include "mozilla/dom/CSSPositionTryRuleBinding.h"
-#include "mozilla/dom/CSSPositionTryDescriptorsBinding.h"
 
-#include "mozilla/ServoBindings.h"
 #include "mozilla/DeclarationBlock.h"
+#include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSPositionTryDescriptorsBinding.h"
+#include "mozilla/dom/CSSPositionTryRuleBinding.h"
 
 namespace mozilla::dom {
 

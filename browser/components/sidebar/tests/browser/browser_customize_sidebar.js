@@ -68,7 +68,7 @@ add_task(async function test_customize_sidebar_actions() {
     await BrowserTestUtils.waitForCondition(
       () => {
         let toggledTool = SidebarController.toolsAndExtensions.get(
-          toolInput.name
+          toolInput.id
         );
         return toggledTool.disabled === !toolDisabledInitialState;
       },
@@ -89,7 +89,7 @@ add_task(async function test_customize_sidebar_actions() {
     await BrowserTestUtils.waitForCondition(
       () => {
         let toggledTool = SidebarController.toolsAndExtensions.get(
-          toolInput.name
+          toolInput.id
         );
         return toggledTool.disabled === toolDisabledInitialState;
       },
@@ -112,8 +112,8 @@ add_task(async function test_customize_sidebar_actions() {
         sidebar.toolButtons[sidebar.toolButtons.length - 1].getAttribute(
           "view"
         ),
-        toolInput.name,
-        `The button for the ${toolInput.name} entrypoint has been added back to the end of the list of tools/extensions entrypoints`
+        toolInput.id,
+        `The button for the ${toolInput.id} entrypoint has been added back to the end of the list of tools/extensions entrypoints`
       );
     }
   }

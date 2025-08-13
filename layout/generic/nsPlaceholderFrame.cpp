@@ -13,18 +13,18 @@
 
 #include "gfxContext.h"
 #include "gfxUtils.h"
-#include "mozilla/dom/ElementInlines.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/ServoStyleSetInlines.h"
+#include "mozilla/dom/ElementInlines.h"
+#include "mozilla/gfx/2D.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsDisplayList.h"
+#include "nsIContentInlines.h"
+#include "nsIFrameInlines.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsPresContextInlines.h"
-#include "nsIFrameInlines.h"
-#include "nsIContentInlines.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

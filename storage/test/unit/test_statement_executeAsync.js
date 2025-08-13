@@ -182,33 +182,25 @@ function execAsync(aStmt, aOptions, aResults) {
  * error synchronously (and is tested elsewhere).
  */
 function test_illegal_sql_async_deferred() {
-  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(QUERY_HISTOGRAM);
-
   // gibberish
   let stmt = makeTestStatement("I AM A ROBOT. DO AS I SAY.");
   execAsync(stmt, { error: Ci.mozIStorageError.ERROR });
   stmt.finalize();
 
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    TEST_DB_NAME,
-    TELEMETRY_VALUES.failure,
+  Assert.equal(
+    Glean.sqliteStore.query.get(TEST_DB_NAME, "failure").testGetValue(),
     1
   );
-  histogram.clear();
 
   // legal SQL syntax, but with semantics issues.
   stmt = makeTestStatement("SELECT destination FROM funkytown");
   execAsync(stmt, { error: Ci.mozIStorageError.ERROR });
   stmt.finalize();
 
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    TEST_DB_NAME,
-    TELEMETRY_VALUES.failure,
-    1
+  Assert.equal(
+    Glean.sqliteStore.query.get(TEST_DB_NAME, "failure").testGetValue(),
+    2
   );
-  histogram.clear();
 
   run_next_test();
 }
@@ -217,8 +209,6 @@ test_illegal_sql_async_deferred.asyncOnly = true;
 function test_create_table() {
   // Ensure our table doesn't exist
   Assert.ok(!getOpenedDatabase().tableExists("test"));
-
-  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(QUERY_HISTOGRAM);
 
   var stmt = makeTestStatement(
     "CREATE TABLE test (" +
@@ -232,18 +222,8 @@ function test_create_table() {
   execAsync(stmt);
   stmt.finalize();
 
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    TEST_DB_NAME,
-    TELEMETRY_VALUES.success,
-    1
-  );
-  histogram.clear();
-
   // Check that the table has been created
   Assert.ok(getOpenedDatabase().tableExists("test"));
-
-  histogram.clear();
 
   // Verify that it's created correctly (this will throw if it wasn't)
   let checkStmt = getOpenedDatabase().createStatement(
@@ -251,15 +231,10 @@ function test_create_table() {
   );
   checkStmt.finalize();
 
-  // Nothing has executed so the histogram should be empty.
-  Assert.ok(!histogram.snapshot().values);
-
   run_next_test();
 }
 
 function test_add_data() {
-  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(QUERY_HISTOGRAM);
-
   var stmt = makeTestStatement(
     "INSERT INTO test (id, string, number, nuller, blober) " +
       "VALUES (?, ?, ?, ?, ?)"
@@ -273,14 +248,6 @@ function test_add_data() {
   execAsync(stmt);
   stmt.finalize();
 
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    TEST_DB_NAME,
-    TELEMETRY_VALUES.success,
-    1
-  );
-  histogram.clear();
-
   // Check that the result is in the table
   verifyQuery(
     "SELECT string, number, nuller, blober FROM test WHERE id = ?",
@@ -288,20 +255,10 @@ function test_add_data() {
     [TEXT, REAL, null, BLOB]
   );
 
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    TEST_DB_NAME,
-    TELEMETRY_VALUES.success,
-    1
-  );
-  histogram.clear();
-
   run_next_test();
 }
 
 function test_get_data() {
-  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(QUERY_HISTOGRAM);
-
   var stmt = makeTestStatement(
     "SELECT string, number, nuller, blober, id FROM test WHERE id = ?"
   );
@@ -367,20 +324,10 @@ function test_get_data() {
   ]);
   stmt.finalize();
 
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    TEST_DB_NAME,
-    TELEMETRY_VALUES.success,
-    1
-  );
-  histogram.clear();
-
   run_next_test();
 }
 
 function test_tuple_out_of_bounds() {
-  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(QUERY_HISTOGRAM);
-
   var stmt = makeTestStatement("SELECT string FROM test");
   execAsync(stmt, {}, [
     function (tuple) {
@@ -417,14 +364,6 @@ function test_tuple_out_of_bounds() {
     },
   ]);
   stmt.finalize();
-
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    TEST_DB_NAME,
-    TELEMETRY_VALUES.success,
-    1
-  );
-  histogram.clear();
 
   run_next_test();
 }
@@ -518,31 +457,6 @@ function test_cancellation_after_execution() {
   pendingStatement.cancel();
 
   stmt.finalize();
-  run_next_test();
-}
-
-/**
- * Verifies that a single statement can be executed more than once.  Might once
- * have been intended to also ensure that callback notifications were not
- * incorrectly interleaved, but that part was brittle (it's totally fine for
- * handleResult to get called multiple times) and not comprehensive.
- */
-function test_double_execute() {
-  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(QUERY_HISTOGRAM);
-
-  var stmt = makeTestStatement("SELECT 1");
-  execAsync(stmt, null, 1);
-  execAsync(stmt, null, 1);
-  stmt.finalize();
-
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    TEST_DB_NAME,
-    TELEMETRY_VALUES.success,
-    2
-  );
-  histogram.clear();
-
   run_next_test();
 }
 
@@ -916,7 +830,7 @@ function test_bind_empty_array() {
 function test_multiple_results() {
   let expectedResults = getTableRowCount("test");
   // Sanity check - we should have more than one result, but let's be sure.
-  Assert.ok(expectedResults > 1);
+  Assert.greater(expectedResults, 1);
 
   // Now check that we get back two rows of data from our async query.
   let stmt = makeTestStatement("SELECT * FROM test");
@@ -968,7 +882,6 @@ var tests = [
   test_immediate_cancellation,
   test_double_cancellation,
   test_cancellation_after_execution,
-  test_double_execute,
   test_finalized_statement_does_not_crash,
   test_bind_direct_binding_params_by_index,
   test_bind_direct_binding_params_by_name,
@@ -997,6 +910,7 @@ var nextUniqueId = STARTING_UNIQUE_ID;
 
 function run_next_test() {
   function _run_next_test() {
+    Services.fog.testResetFOG();
     // use a loop so we can skip tests...
     while (index < tests.length) {
       let test = tests[index++];

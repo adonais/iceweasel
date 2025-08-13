@@ -7,12 +7,12 @@
 #include "SharedStyleSheetCache.h"
 
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/ServoBindings.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/css/SheetLoadData.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/ServoBindings.h"
 #include "nsContentUtils.h"
 #include "nsXULPrototypeCache.h"
 

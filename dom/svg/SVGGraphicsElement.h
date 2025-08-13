@@ -27,8 +27,6 @@ class SVGGraphicsElement : public SVGGraphicsElementBase, public SVGTests {
   NS_IMPL_FROMNODE_HELPER(SVGGraphicsElement, IsSVGGraphicsElement())
 
   // WebIDL
-  SVGElement* GetNearestViewportElement();
-  SVGElement* GetFarthestViewportElement();
   MOZ_CAN_RUN_SCRIPT
   already_AddRefed<SVGRect> GetBBox(const SVGBoundingBoxOptions&);
   already_AddRefed<SVGMatrix> GetCTM();

@@ -6,12 +6,13 @@
 
 #include "nsMathMLmrootFrame.h"
 
+#include <algorithm>
+
+#include "gfxContext.h"
+#include "gfxMathTable.h"
 #include "mozilla/PresShell.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
-#include <algorithm>
-#include "gfxContext.h"
-#include "gfxMathTable.h"
 
 using namespace mozilla;
 

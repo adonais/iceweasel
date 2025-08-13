@@ -10,7 +10,7 @@ NEED_VPN_TEXT = "access from within Japan"
 async def is_unsupported(client):
     vpn = False
     try:
-        await client.navigate(URL, no_skip=True)
+        await client.navigate(URL, wait="none", no_skip=True)
         _, vpn = client.await_first_element_of(
             [client.css(HERO_CSS), client.text(NEED_VPN_TEXT)], is_displayed=True
         )

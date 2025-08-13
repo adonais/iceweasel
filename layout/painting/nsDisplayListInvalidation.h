@@ -7,13 +7,13 @@
 #ifndef NSDISPLAYLISTINVALIDATION_H_
 #define NSDISPLAYLISTINVALIDATION_H_
 
-#include "mozilla/Attributes.h"
-#include "mozilla/layers/WebRenderUserData.h"
 #include "ImgDrawResult.h"
-#include "nsRect.h"
-#include "nsColor.h"
 #include "gfxRect.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/gfx/MatrixFwd.h"
+#include "mozilla/layers/WebRenderUserData.h"
+#include "nsColor.h"
+#include "nsRect.h"
 
 namespace mozilla {
 class nsDisplayBackgroundImage;

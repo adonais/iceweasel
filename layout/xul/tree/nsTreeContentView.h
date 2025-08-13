@@ -7,14 +7,15 @@
 #ifndef nsTreeContentView_h__
 #define nsTreeContentView_h__
 
-#include "nsCycleCollectionParticipant.h"
-#include "nsTArray.h"
-#include "nsStubDocumentObserver.h"
-#include "nsITreeView.h"
-#include "nsITreeSelection.h"
-#include "nsWrapperCache.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
+#include "nsCOMPtr.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsITreeSelection.h"
+#include "nsITreeView.h"
+#include "nsStubDocumentObserver.h"
+#include "nsTArray.h"
+#include "nsWrapperCache.h"
 
 class nsSelection;
 class nsTreeColumn;

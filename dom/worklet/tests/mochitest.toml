@@ -47,7 +47,6 @@ support-files = [
 support-files = ["specifier_with_user.mjs"]
 
 ["test_import_with_cache.html"]
-skip-if = ["verify"]
 support-files = ["server_import_with_cache.sjs"]
 
 ["test_paintWorklet.html"]

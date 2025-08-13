@@ -226,6 +226,7 @@ public class IntentUtils {
     /** Constructor of content information from document URI. */
     /* packages */ ContentMetaData(
         @Nullable final String filePath,
+        @NonNull final String relativePath,
         @NonNull final Uri uri,
         @NonNull final String displayName,
         @NonNull final String mimeType,
@@ -236,6 +237,7 @@ public class IntentUtils {
         this.filePath = filePath;
       }
       this.uri = uri;
+      this.relativePath = relativePath + displayName;
       this.displayName = displayName;
       this.mimeType = mimeType;
       this.lastModified = lastModified;
@@ -245,8 +247,12 @@ public class IntentUtils {
     public @NonNull GeckoBundle toGeckoBundle() {
       final GeckoBundle bundle = new GeckoBundle();
 
-      bundle.putString("filePath", this.filePath);
+      // Local file path access won't be available on Android 11 or later.
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+        bundle.putString("filePath", this.filePath);
+      }
       bundle.putString("uri", this.uri.toString());
+      bundle.putString("relativePath", this.relativePath);
       bundle.putString("name", this.displayName);
       bundle.putString("type", this.mimeType);
       bundle.putLong("lastModified", this.lastModified);
@@ -262,6 +268,8 @@ public class IntentUtils {
       }
       sb.append("uri=")
           .append(this.uri)
+          .append(", relativePath=")
+          .append(this.relativePath)
           .append(", displayName=")
           .append(this.displayName)
           .append(", mimeType=")
@@ -277,6 +285,9 @@ public class IntentUtils {
     /** document URI. */
     public @NonNull final Uri uri;
 
+    /** Relative path from the chooser root. */
+    public @NonNull final String relativePath;
+
     /** Display name in document tree. */
     public @NonNull final String displayName;
 
@@ -289,6 +300,7 @@ public class IntentUtils {
 
   private static void queryTreeDocumentUri(
       final Context context,
+      final String relativePath,
       final Uri uri,
       final int currentDepth,
       final ArrayList<ContentMetaData> children) {
@@ -315,19 +327,23 @@ public class IntentUtils {
 
         final String docId = cursor.getString(0);
         final String mimeType = cursor.isNull(2) ? "" : cursor.getString(2);
+        final String displayName = cursor.isNull(1) ? "" : cursor.getString(1);
         final boolean isDirectory = DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType);
         if (isDirectory) {
           final Uri childUri = DocumentsContract.buildChildDocumentsUriUsingTree(uri, docId);
-          queryTreeDocumentUri(context, childUri, currentDepth + 1, children);
+          final String childRelativePath =
+              relativePath + displayName + (displayName.isEmpty() ? "" : "/");
+          queryTreeDocumentUri(context, childRelativePath, childUri, currentDepth + 1, children);
           continue;
         }
 
         final Uri docUri = DocumentsContract.buildDocumentUriUsingTree(uri, docId);
-        final String displayName = cursor.isNull(1) ? "" : cursor.getString(1);
         final long lastModified = cursor.isNull(3) ? 0 : cursor.getLong(3);
 
         final String filePath = resolveDocumentUri(context, docUri);
-        children.add(new ContentMetaData(filePath, docUri, displayName, mimeType, lastModified));
+        children.add(
+            new ContentMetaData(
+                filePath, relativePath, docUri, displayName, mimeType, lastModified));
       }
     } catch (final UnsupportedOperationException e) {
       Log.e(LOGTAG, "Failed to query child documents", e);
@@ -343,16 +359,46 @@ public class IntentUtils {
    */
   public static @NonNull ArrayList<ContentMetaData> traverseTreeUri(
       final Context context, final Uri uri) {
+    final String rootName = getRootDisplayName(context, uri);
     final Uri queryUri =
         DocumentsContract.buildChildDocumentsUriUsingTree(
             uri, DocumentsContract.getTreeDocumentId(uri));
     final ArrayList<ContentMetaData> children = new ArrayList<ContentMetaData>();
-    queryTreeDocumentUri(context, queryUri, 0, children);
+    queryTreeDocumentUri(context, rootName, queryUri, 0, children);
     if (DEBUG) {
       for (final ContentMetaData data : children) {
         Log.d(LOGTAG, data.toString());
       }
     }
     return children;
+  }
+
+  /** Returns the root directory's display name for the given tree URI. */
+  private static String getRootDisplayName(final Context context, final Uri rootUri) {
+    final Uri rootDocUri =
+        DocumentsContract.buildDocumentUriUsingTree(
+            rootUri, DocumentsContract.getTreeDocumentId(rootUri));
+    final ContentResolver cr = context.getContentResolver();
+    final String[] columns =
+        new String[] {
+          DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+          DocumentsContract.Document.COLUMN_MIME_TYPE,
+        };
+    try (Cursor cursor =
+        cr.query(rootDocUri, columns, /* selection */ null, /* args */ null, /* sort */ null)) {
+      if (cursor != null && cursor.moveToFirst()) {
+        final String mimeType = cursor.isNull(1) ? "" : cursor.getString(1);
+        if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType) && !cursor.isNull(0)) {
+          final String displayName = cursor.getString(0);
+          if (!displayName.isEmpty()) {
+            return "/" + displayName + "/";
+          }
+        }
+      }
+    } catch (final UnsupportedOperationException e) {
+      Log.e(LOGTAG, "Failed to query root documents", e);
+    }
+
+    return "/";
   }
 }

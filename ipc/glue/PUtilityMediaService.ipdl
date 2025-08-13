@@ -1,0 +1,59 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+include GraphicsMessages;
+include protocol PRemoteMediaManager;
+include protocol PVideoBridge;
+
+using mozilla::dom::ContentParentId from "mozilla/dom/ipc/IdType.h";
+using mozilla::media::MediaCodecsSupported from "MediaCodecsSupport.h";
+using mozilla::RemoteMediaIn from "mozilla/RemoteMediaManagerChild.h";
+
+#ifdef MOZ_WMF_CDM
+using mozilla::MFCDMCapabilitiesIPDL from "mozilla/PMFCDM.h";
+#endif
+
+namespace mozilla {
+
+namespace ipc {
+
+// This protocol allows to run media related services on top of the Utility
+// process.
+[ParentProc=Utility, ChildProc=Parent]
+protocol PUtilityMediaService
+{
+parent:
+  async NewContentRemoteMediaManager(
+            Endpoint<PRemoteMediaManagerParent> endpoint, ContentParentId parentId);
+
+#ifdef MOZ_WMF_MEDIA_ENGINE
+  async InitVideoBridge(Endpoint<PVideoBridgeChild> endpoint,
+                        ContentDeviceData contentDeviceData);
+
+  async UpdateVar(GfxVarUpdate var);
+#endif
+
+#ifdef MOZ_WMF_CDM
+  async GetKeySystemCapabilities() returns (MFCDMCapabilitiesIPDL[] result);
+
+  async UpdateWidevineL1Path(nsString path);
+#endif
+
+child:
+  async UpdateMediaCodecsSupported(RemoteMediaIn aLocation,
+                                   MediaCodecsSupported aSupported);
+
+#ifdef MOZ_WMF_MEDIA_ENGINE
+  async CompleteCreatedVideoBridge();
+#endif
+
+#ifdef MOZ_WMF_CDM
+  async DisableHardwareDRM();
+#endif
+};
+
+} // namespace ipc
+
+} // namespace mozilla

@@ -15,8 +15,14 @@
 
 #include "nsBlockFrame.h"
 
-#include "gfxContext.h"
+#include <inttypes.h>
 
+#include <algorithm>
+
+#include "BlockReflowState.h"
+#include "CounterStyleManager.h"
+#include "TextOverflow.h"
+#include "gfxContext.h"
 #include "mozilla/AppUnits.h"
 #include "mozilla/Baseline.h"
 #include "mozilla/ComputedStyle.h"
@@ -24,51 +30,42 @@
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/RestyleManager.h"
+#include "mozilla/SVGUtils.h"
 #include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/ServoStyleSet.h"
+#include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/SVGUtils.h"
 #include "mozilla/ToString.h"
 #include "mozilla/UniquePtr.h"
-
-#include "nsCRT.h"
-#include "nsCOMPtr.h"
-#include "nsCSSRendering.h"
+#include "mozilla/dom/Selection.h"
 #include "nsAbsoluteContainingBlock.h"
+#include "nsBidiPresUtils.h"
 #include "nsBlockReflowContext.h"
-#include "BlockReflowState.h"
+#include "nsCOMPtr.h"
+#include "nsCRT.h"
+#include "nsCSSFrameConstructor.h"
+#include "nsCSSRendering.h"
+#include "nsDisplayList.h"
+#include "nsError.h"
+#include "nsFlexContainerFrame.h"
+#include "nsFloatManager.h"
 #include "nsFontMetrics.h"
+#include "nsFrameManager.h"
 #include "nsGenericHTMLElement.h"
+#include "nsGkAtoms.h"
+#include "nsHTMLParts.h"
+#include "nsIFrameInlines.h"
+#include "nsLayoutUtils.h"
 #include "nsLineBox.h"
 #include "nsLineLayout.h"
 #include "nsPlaceholderFrame.h"
-#include "nsStyleConsts.h"
-#include "nsFrameManager.h"
 #include "nsPresContext.h"
 #include "nsPresContextInlines.h"
-#include "nsHTMLParts.h"
-#include "nsGkAtoms.h"
-#include "mozilla/Sprintf.h"
-#include "nsFloatManager.h"
-#include "prenv.h"
-#include "nsError.h"
-#include <algorithm>
-#include "nsLayoutUtils.h"
-#include "nsDisplayList.h"
-#include "nsCSSFrameConstructor.h"
-#include "TextOverflow.h"
-#include "nsIFrameInlines.h"
-#include "CounterStyleManager.h"
-#include "mozilla/dom/Selection.h"
-#include "mozilla/PresShell.h"
-#include "mozilla/RestyleManager.h"
-#include "mozilla/ServoStyleSet.h"
-#include "nsFlexContainerFrame.h"
+#include "nsStyleConsts.h"
 #include "nsTextControlFrame.h"
-
-#include "nsBidiPresUtils.h"
-
-#include <inttypes.h>
+#include "prenv.h"
 
 static const int MIN_LINES_NEEDING_CURSOR = 20;
 
@@ -603,6 +600,9 @@ void nsBlockFrame::InvalidateFrameWithRect(const nsRect& aRect,
 
 nscoord nsBlockFrame::SynthesizeFallbackBaseline(
     WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
+  if (IsButtonLike() && StyleDisplay()->IsInlineOutsideStyle()) {
+    return Baseline::SynthesizeBOffsetFromContentBox(this, aWM, aBaselineGroup);
+  }
   return Baseline::SynthesizeBOffsetFromMarginBox(this, aWM, aBaselineGroup);
 }
 
@@ -669,13 +669,27 @@ Maybe<nscoord> nsBlockFrame::GetNaturalBaselineBOffset(
     return Nothing{};
   }
 
-  if (aBaselineGroup == BaselineSharingGroup::First) {
-    return GetBaselineBOffset(LinesBegin(), LinesEnd(), aWM, aBaselineGroup,
-                              aExportContext);
+  Maybe<nscoord> offset =
+      aBaselineGroup == BaselineSharingGroup::First
+          ? GetBaselineBOffset(LinesBegin(), LinesEnd(), aWM, aBaselineGroup,
+                               aExportContext)
+          : GetBaselineBOffset(LinesRBegin(), LinesREnd(), aWM, aBaselineGroup,
+                               aExportContext);
+  if (!offset && IsButtonLike()) {
+    for (const auto& line : Reversed(Lines())) {
+      if (line.IsEmpty()) {
+        continue;
+      }
+      // Buttons use the end of the content as a baseline if we haven't found one
+      // yet.
+      nscoord bEnd = line.BEnd();
+      offset.emplace(aBaselineGroup == BaselineSharingGroup::Last
+                         ? BSize(aWM) - bEnd
+                         : bEnd);
+      break;
+    }
   }
-
-  return GetBaselineBOffset(LinesRBegin(), LinesREnd(), aWM, aBaselineGroup,
-                            aExportContext);
+  return offset;
 }
 
 nscoord nsBlockFrame::GetCaretBaseline() const {
@@ -2270,7 +2284,8 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     // calculated from aspect-ratio. i.e. Don't carry out block margin-end if it
     // is replaced by the block size from aspect-ratio and inline size.
     aMetrics.mCarriedOutBEndMargin.Zero();
-  } else if (Maybe<nscoord> containBSize = ContainIntrinsicBSize()) {
+  } else if (Maybe<nscoord> containBSize = ContainIntrinsicBSize(
+                 IsComboboxControlFrame() ? aReflowInput.GetLineHeight() : 0)) {
     // If we're size-containing in block axis and we don't have a specified
     // block size, then our final size should actually be computed from only
     // our border, padding and contain-intrinsic-block-size, ignoring the
@@ -2404,11 +2419,7 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
 void nsBlockFrame::AlignContent(BlockReflowState& aState,
                                 ReflowOutput& aMetrics,
                                 nscoord aBEndEdgeOfChildren) {
-  if (!StaticPrefs::layout_css_align_content_blocks_enabled()) {
-    return;
-  }
-
-  StyleAlignFlags alignment = StylePosition()->mAlignContent.primary;
+  StyleAlignFlags alignment = EffectiveAlignContent();
   alignment &= ~StyleAlignFlags::FLAG_BITS;
 
   // Short circuit
@@ -2434,7 +2445,8 @@ void nsBlockFrame::AlignContent(BlockReflowState& aState,
   if ((isCentered || isEndAlign) && !mLines.empty() &&
       aState.mReflowStatus.IsFullyComplete() && !GetPrevInFlow()) {
     nscoord availB = aState.mReflowInput.AvailableBSize();
-    nscoord endB = aMetrics.BSize(wm) - aState.BorderPadding().BEnd(wm);
+    nscoord endB =
+        aMetrics.Size(wm).BSize(wm) - aState.BorderPadding().BEnd(wm);
     shift = std::min(availB, endB) - aBEndEdgeOfChildren;
 
     // note: these measures all include start BP, so it subtracts out
@@ -2657,6 +2669,13 @@ void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
   // frame children, so calling UnionChildOverflow alone will end up
   // using the old cached values.
   const auto wm = GetWritingMode();
+
+  // ButtonControlFrame elements don't support scrolling, and some like
+  // comboboxes intentionally ignore padding to place their inner elements like
+  // the button, so to preserve behavior of stuff like the scroll{Width,Height}
+  // APIs, forcefully ignore aAsIfScrolled there.
+  aAsIfScrolled = aAsIfScrolled && !IsButtonControlFrame();
+
   // Overflow area computed here should agree with one computed in
   // `ComputeOverflowAreas` (see bug 1800939 and bug 1800719). So the
   // documentation in that function applies here as well.
@@ -4094,10 +4113,9 @@ bool nsBlockFrame::IsSelfEmpty() {
   WritingMode wm = GetWritingMode();
   const nsStylePosition* position = StylePosition();
   const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
-  const auto bSize = position->BSize(wm, anchorResolutionParams.mPosition);
+  const auto bSize = position->BSize(wm, anchorResolutionParams);
 
-  if (IsNonAutoNonZeroBSize(
-          *position->MinBSize(wm, anchorResolutionParams.mPosition)) ||
+  if (IsNonAutoNonZeroBSize(*position->MinBSize(wm, anchorResolutionParams)) ||
       IsNonAutoNonZeroBSize(*bSize)) {
     return false;
   }
@@ -4146,7 +4164,6 @@ bool nsBlockFrame::IsEmpty() {
   if (!IsSelfEmpty()) {
     return false;
   }
-
   return LinesAreEmpty();
 }
 
@@ -6783,7 +6800,6 @@ static bool AnonymousBoxIsBFC(const ComputedStyle* aStyle) {
   switch (aStyle->GetPseudoType()) {
     case PseudoStyleType::fieldsetContent:
     case PseudoStyleType::columnContent:
-    case PseudoStyleType::buttonContent:
     case PseudoStyleType::cellContent:
     case PseudoStyleType::scrolledContent:
     case PseudoStyleType::anonymousItem:
@@ -6806,8 +6822,6 @@ static bool StyleEstablishesBFC(const ComputedStyle* aStyle) {
          disp->mContainerType != StyleContainerType::Normal ||
          disp->DisplayInside() == StyleDisplayInside::FlowRoot ||
          disp->IsAbsolutelyPositionedStyle() || disp->IsFloatingStyle() ||
-         aStyle->StylePosition()->mAlignContent.primary !=
-             StyleAlignFlags::NORMAL ||
          aStyle->IsRootElementStyle() || AnonymousBoxIsBFC(aStyle);
 }
 
@@ -6837,6 +6851,10 @@ static bool EstablishesBFC(const nsBlockFrame* aFrame) {
   }
 
   if (aFrame->IsColumnSpan()) {
+    return true;
+  }
+
+  if (aFrame->IsContentAligned()) {
     return true;
   }
 
@@ -8149,27 +8167,31 @@ a11y::AccType nsBlockFrame::AccessibleType() {
     return a11y::eHTMLHRType;
   }
 
-  if (!HasMarker() || !PresContext()) {
-    // XXXsmaug What if we're in the shadow dom?
-    if (!mContent->GetParent()) {
-      // Don't create accessible objects for the root content node, they are
-      // redundant with the nsDocAccessible object created with the document
-      // node
-      return a11y::eNoType;
-    }
-
-    if (mContent == mContent->OwnerDoc()->GetBody()) {
-      // Don't create accessible objects for the body, they are redundant with
-      // the nsDocAccessible object created with the document node
-      return a11y::eNoType;
-    }
-
-    // Not a list item with a ::marker, treat as normal HTML container.
-    return a11y::eHyperTextType;
+  if (IsButtonLike()) {
+    return a11y::eHTMLButtonType;
   }
 
-  // Create special list item accessible since we have a ::marker.
-  return a11y::eHTMLLiType;
+  if (HasMarker()) {
+    // Create special list item accessible since we have a ::marker.
+    return a11y::eHTMLLiType;
+  }
+
+  // XXXsmaug What if we're in the shadow dom?
+  if (!mContent->GetParent()) {
+    // Don't create accessible objects for the root content node, they are
+    // redundant with the nsDocAccessible object created with the document
+    // node
+    return a11y::eNoType;
+  }
+
+  if (mContent == mContent->OwnerDoc()->GetBody()) {
+    // Don't create accessible objects for the body, they are redundant with
+    // the nsDocAccessible object created with the document node
+    return a11y::eNoType;
+  }
+
+  // Not a list item with a ::marker, treat as normal HTML container.
+  return a11y::eHyperTextType;
 }
 #endif
 
@@ -8339,13 +8361,12 @@ void nsBlockFrame::SetInitialChildList(ChildListID aListID,
          (pseudo == PseudoStyleType::cellContent &&
           !GetParent()->Style()->IsPseudoOrAnonBox()) ||
          pseudo == PseudoStyleType::fieldsetContent ||
-         (pseudo == PseudoStyleType::buttonContent &&
-          !GetParent()->IsComboboxControlFrame()) ||
          pseudo == PseudoStyleType::columnContent ||
          (pseudo == PseudoStyleType::scrolledContent &&
           !GetParent()->IsListControlFrame()) ||
          pseudo == PseudoStyleType::mozSVGText) &&
         !IsMathMLFrame() && !IsColumnSetWrapperFrame() &&
+        !IsComboboxControlFrame() &&
         RefPtr<ComputedStyle>(GetFirstLetterStyle(PresContext())) != nullptr;
     NS_ASSERTION(haveFirstLetterStyle ==
                      HasAnyStateBits(NS_BLOCK_HAS_FIRST_LETTER_STYLE),
@@ -8639,7 +8660,7 @@ nsBlockFrame::FloatAvoidingISizeToClear nsBlockFrame::ISizeToClearPastFloats(
 
   nscoord marginISize = computedMargin.IStartEnd(wm);
   const auto iSize = reflowInput.mStylePosition->ISize(
-      wm, reflowInput.mStyleDisplay->mPosition);
+      wm, AnchorPosResolutionParams::From(&reflowInput));
   if (marginISize < 0 &&
       (iSize->IsAuto() || iSize->BehavesLikeStretchOnInlineAxis())) {
     // If we get here, floatAvoidingBlock has a negative amount of inline-axis

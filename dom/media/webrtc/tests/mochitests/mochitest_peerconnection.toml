@@ -83,8 +83,8 @@ skip-if = ["os == 'android'"] # websockets don't work on android (bug 1266217)
 scheme = "http"
 
 ["test_peerConnection_basicAudioNATRelayTCPWithStun300.html"]
-skip-if = ["os == 'android'"] # websockets don't work on android (bug 1266217)
 scheme = "http"
+skip-if = ["os == 'android'"] # websockets don't work on android (bug 1266217)
 
 ["test_peerConnection_basicAudioNATRelayTLS.html"]
 skip-if = ["os == 'android'"] # websockets don't work on android (bug 1266217)
@@ -407,9 +407,7 @@ skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && d
 skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && socketprocess_e10s"] # Bug 1798188
 
 ["test_peerConnection_stats_relayProtocol.html"]
-skip-if = [
-  "os == 'android'",
-]
+skip-if = ["os == 'android'"]
 scheme = "http"
 
 ["test_peerConnection_stereoFmtpPref.html"]
@@ -457,6 +455,12 @@ skip-if = ["os == 'android'"]
 ["test_peerConnection_verifyVideoAfterRenegotiation.html"]
 
 ["test_peerConnection_videoCodecs.html"]
+skip-if = [
+  "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1974205
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && opt", # 1974205
+  "os == 'win' && os_version == '11.26100' && processor == 'x86' && debug", # Bug 1974205
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # 1974205
+]
 
 ["test_peerConnection_videoRenegotiationInactiveAnswer.html"]
 

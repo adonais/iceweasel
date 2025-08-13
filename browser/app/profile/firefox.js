@@ -439,7 +439,7 @@ pref("browser.urlbar.suggest.calculator",           true);
 pref("browser.urlbar.suggest.recentsearches",       true);
 pref("browser.urlbar.suggest.quickactions",         true);
 
-pref("browser.urlbar.deduplication.enabled", false);
+pref("browser.urlbar.deduplication.enabled", true);
 pref("browser.urlbar.deduplication.thresholdDays", 0);
 
 pref("browser.urlbar.scotchBonnet.enableOverride", true);
@@ -665,6 +665,12 @@ pref("browser.urlbar.merino.providers", "");
 
 // Comma-separated list of client variants to send to Merino
 pref("browser.urlbar.merino.clientVariants", "");
+
+// OHTTP config URL for Merino requests
+pref("browser.urlbar.merino.ohttpConfigURL", "");
+
+// OHTTP relay URL for Merino requests
+pref("browser.urlbar.merino.ohttpRelayURL", "");
 
 // Enable site specific search result.
 pref("browser.urlbar.contextualSearch.enabled", true);
@@ -922,6 +928,9 @@ pref("browser.link.open_newwindow.restriction", 2);
   pref("browser.link.open_newwindow.disabled_in_fullscreen", false);
 #endif
 
+// If true, opening javscript: URLs using middle-click, CTRL+click etc. are blocked.
+pref("browser.link.alternative_click.block_javascript", true);
+
 // Tabbed browser
 pref("browser.tabs.closeTabByDblclick", false);
 pref("browser.tabs.closeWindowWithLastTab", true);
@@ -1013,12 +1022,10 @@ pref("browser.tabs.dragDrop.moveOverThresholdPercent", 80);
 
 pref("browser.tabs.firefox-view.logLevel", "Warn");
 
-pref("browser.tabs.groups.smart.userEnabled", true);
+// Special case to use search term when making a group from a single page search
+pref("browser.tabs.groups.smart.searchTopicEnabled", true);
 
-// allow_eval_* is enabled on Firefox Desktop only at this
-// point in time
-pref("security.allow_eval_with_system_principal", false);
-pref("security.allow_eval_in_parent_process", false);
+pref("browser.tabs.groups.smart.userEnabled", true);
 
 pref("security.allow_parent_unrestricted_js_loads", false);
 
@@ -1755,6 +1762,27 @@ pref("browser.newtab.preload", true);
   pref("browser.preonboarding.enabled", false);
 #endif
 
+// For further detail on the TOU prefs below, see the `preonboarding` feature in
+// FeatureManifest.yaml
+// Version of the TOU that the user last accepted
+pref("termsofuse.acceptedVersion", 0);
+// Stringified timestamp of when the user last accepted the TOU
+pref("termsofuse.acceptedDate", "0");
+// The most up-to-date version of the TOU, we set the minimum and current
+// version as 4 to distinguish it from version numbers used in previous TOU
+// experiments and rollouts
+pref("termsofuse.currentVersion", 4);
+// The minimum version fo the TOU that a user must have accepted to not be
+// presented with the TOU modal
+pref("termsofuse.minimumVersion", 4);
+// Should we bypass the TOU modal notification completely, currently only true
+// for local/non-official builds
+#ifdef MOZILLA_OFFICIAL
+  pref("termsofuse.bypassNotification", false);
+#else
+  pref("termsofuse.bypassNotification", true);
+#endif
+
 // Show "Download Firefox for mobile" QR code modal on newtab
 pref("browser.newtabpage.activity-stream.mobileDownloadModal.enabled", false);
 pref("browser.newtabpage.activity-stream.mobileDownloadModal.variant-a", false);
@@ -1859,22 +1887,23 @@ pref("browser.newtabpage.activity-stream.discoverystream.newSponsoredLabel.enabl
 pref("browser.newtabpage.activity-stream.discoverystream.essentialReadsHeader.enabled", false);
 pref("browser.newtabpage.activity-stream.discoverystream.recentSaves.enabled", false);
 pref("browser.newtabpage.activity-stream.discoverystream.editorsPicksHeader.enabled", false);
-pref("browser.newtabpage.activity-stream.discoverystream.spoc-positions", "1,5,7,11,18,20");
+pref("browser.newtabpage.activity-stream.discoverystream.spoc-positions", "2,4,8,13,17,20");
 
 // For both spoc and tiles, count corresponds to the matching placement. So the first placement in an array corresponds to the first count.
-pref("browser.newtabpage.activity-stream.discoverystream.placements.spocs", "newtab_spocs");
-pref("browser.newtabpage.activity-stream.discoverystream.placements.spocs.counts", "6");
+pref("browser.newtabpage.activity-stream.discoverystream.placements.spocs", "newtab_stories_1, newtab_stories_2, newtab_stories_3, newtab_stories_4, newtab_stories_5, newtab_stories_6");
+pref("browser.newtabpage.activity-stream.discoverystream.placements.spocs.counts", "1,1,1,1,1,1");
 pref("browser.newtabpage.activity-stream.discoverystream.placements.contextualSpocs", "newtab_stories_1, newtab_stories_2, newtab_stories_3, newtab_stories_4, newtab_stories_5, newtab_stories_6");
 pref("browser.newtabpage.activity-stream.discoverystream.placements.contextualSpocs.counts", "1, 1, 1, 1, 1, 1");
 pref("browser.newtabpage.activity-stream.discoverystream.placements.tiles", "newtab_tile_1, newtab_tile_2, newtab_tile_3");
 pref("browser.newtabpage.activity-stream.discoverystream.placements.tiles.counts", "1, 1, 1");
+pref("browser.newtabpage.activity-stream.discoverystream.placements.contextualBanners", "");
+pref("browser.newtabpage.activity-stream.discoverystream.placements.contextualBanners.counts", "");
 
 pref("browser.newtabpage.activity-stream.discoverystream.spoc-topsites-positions", "2");
 // This is a 0-based index, for consistency with the other position CSVs,
 // but Contile positions are a 1-based index, so we end up adding 1 to these before using them.
 pref("browser.newtabpage.activity-stream.discoverystream.contile-topsites-positions", "0,1,2");
 pref("browser.newtabpage.activity-stream.discoverystream.widget-positions", "");
-
 pref("browser.newtabpage.activity-stream.discoverystream.spocs-endpoint", "");
 pref("browser.newtabpage.activity-stream.discoverystream.spocs-endpoint-query", "");
 pref("browser.newtabpage.activity-stream.discoverystream.sponsored-collections.enabled", false);
@@ -1983,11 +2012,8 @@ pref("browser.newtabpage.activity-stream.discoverystream.onboardingExperience.en
 // List of locales that get thumbs up/down on recommended stories by default.
 pref("browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.locale-thumbs-config", "en-US, en-GB, en-CA");
 
-#ifdef NIGHTLY_BUILD
-  pref("browser.newtabpage.activity-stream.telemetry.privatePing.enabled", true);
-#else
-  pref("browser.newtabpage.activity-stream.telemetry.privatePing.enabled", false);
-#endif
+pref("browser.newtabpage.activity-stream.telemetry.privatePing.enabled", false);
+
 // Redacts content interaction ids from original New Tab ping once data processing migrated to the Newtab_content private ping
 pref("browser.newtabpage.activity-stream.telemetry.privatePing.redactNewtabPing.enabled", false);
 pref("browser.newtabpage.activity-stream.telemetry.privatePing.maxSubmissionDelayMs", 5000);
@@ -2027,6 +2053,12 @@ pref("browser.newtabpage.activity-stream.logowordmark.alwaysVisible", true);
 // - "key=value" - Search param named "key" with value "value"
 pref("browser.newtabpage.activity-stream.hideTopSitesWithSearchParam", "mfadid=adm");
 
+// Set to true to enable debug logging for AboutNewTabResourceMapping.
+pref("browser.newtabpage.resource-mapping.log", false);
+
+// Base URL for the newtab trainhop add-on version xpi downloads.
+pref("browser.newtabpage.trainhopAddon.xpiBaseURL", "https://archive.mozilla.org/pub/system-addons/newtab/");
+
 // Separate about welcome
 pref("browser.aboutwelcome.enabled", true);
 // Used to set multistage welcome UX
@@ -2050,6 +2082,14 @@ pref("nimbus.profilesdatastoreservice.enabled", true);
 pref("nimbus.profilesdatastoreservice.read.enabled", true);
 #else
 pref("nimbus.profilesdatastoreservice.read.enabled", false);
+#endif
+
+// Should Nimbus sync experiment unenrollments from other profiles?
+// TODO(bug 1956087): Enable this behaviour by default and remove this pref.
+#if defined(NIGHTLY_BUILD)
+pref("nimbus.profilesdatastoreservice.sync.enabled", true);
+#else
+pref("nimbus.profilesdatastoreservice.sync.enabled", false);
 #endif
 
 // Enable the targeting context telemetry by default, but allow it to be
@@ -2099,10 +2139,12 @@ pref("sidebar.revamp.round-content-area", false);
 pref("sidebar.animation.enabled", true);
 pref("sidebar.animation.duration-ms", 200);
 pref("sidebar.animation.expand-on-hover.duration-ms", 400);
+
 // This pref is used to store user customized tools in the sidebar launcher and shouldn't be changed.
 // See https://firefox-source-docs.mozilla.org/browser/components/sidebar/docs/index.html for ways
 // you can introduce a new tool to the sidebar launcher.
 pref("sidebar.main.tools", "");
+pref("sidebar.installed.extensions", "");
 pref("sidebar.verticalTabs", false);
 pref("sidebar.visibility", "always-show");
 // Sidebar UI state is stored per-window via session restore. Use this pref
@@ -2117,6 +2159,7 @@ pref("sidebar.notification.badge.aichat", false);
 
 pref("browser.ml.chat.enabled", true);
 pref("browser.ml.chat.hideLocalhost", true);
+pref("browser.ml.chat.maxLength", 7000);
 pref("browser.ml.chat.menu", true);
 pref("browser.ml.chat.page", false);
 pref("browser.ml.chat.page.footerBadge", true);
@@ -2669,6 +2712,10 @@ pref("signon.firefoxRelay.firstOfferVersionFallback", "control");
 pref("signon.management.page.breach-alerts.enabled", true);
 pref("signon.management.page.vulnerable-passwords.enabled", true);
 pref("signon.management.page.sort", "name");
+
+pref("signon.management.page.os-auth.locked.enabled", false);
+pref("extensions.formautofill.creditCards.os-auth.locked.enabled", false);
+
 // The utm_creative value is appended within the code (specific to the location on
 // where it is clicked). Be sure that if these two prefs are updated, that
 // the utm_creative param be last.
@@ -3003,7 +3050,6 @@ pref("devtools.netmonitor.msg.visibleColumns",
 );
 pref("devtools.netmonitor.msg.displayed-messages.limit", 500);
 
-pref("devtools.netmonitor.response.ui.limit", 10240);
 pref("devtools.netmonitor.ui.default-raw-response", false);
 
 // Save request/response bodies yes/no.

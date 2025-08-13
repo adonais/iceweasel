@@ -154,7 +154,6 @@ skip-if = [
 
 ["test_blob_worker_xhr_post.html"]
 skip-if = [
-  "os == 'win' && verify",
   "http3",
   "http2",
   "socketprocess_networking", # Bug 1827221: test is toggled off here rather than in private.ini
@@ -206,13 +205,11 @@ skip-if = [
 ["test_deleteDatabase_onblocked_duringVersionChange.html"]
 
 ["test_error_events_abort_transactions.html"]
-skip-if = ["verify"]
 
 ["test_event_listener_leaks.html"]
 skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64' && opt"] # Bug 1930730
 
 ["test_event_propagation.html"]
-skip-if = ["verify"]
 
 ["test_event_source.html"]
 
@@ -223,7 +220,9 @@ skip-if = ["verify"]
 ["test_file_cross_database_copying.html"]
 
 ["test_file_delete.html"]
-skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64' && opt"] # Bug 1930730 (secondary)
+skip-if = [
+  "os == 'mac' && os_version == '14.70' && processor == 'x86_64' && opt", # Bug 1930730 (secondary)
+]
 
 ["test_file_filelist.html"]
 
@@ -234,7 +233,9 @@ skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64' && opt
 ["test_file_repeated_add_delete.html"]
 
 ["test_file_replace.html"]
-skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64' && opt"] # Bug 1930730 (secondary)
+skip-if = [
+  "os == 'mac' && os_version == '14.70' && processor == 'x86_64' && opt", # Bug 1930730 (secondary)
+]
 
 ["test_file_resurrection_delete.html"]
 skip-if = [
@@ -251,7 +252,9 @@ skip-if = [
 ["test_file_sharing.html"]
 
 ["test_file_transaction_abort.html"]
-skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64' && opt"] # Bug 1930730 (secondary)
+skip-if = [
+  "os == 'mac' && os_version == '14.70' && processor == 'x86_64' && opt", # Bug 1930730 (secondary)
+]
 
 ["test_getAll.html"]
 
@@ -355,7 +358,6 @@ skip-if = ["os == 'linux' && os_version == '18.04' && processor == 'x86_64'"] #B
 
 ["test_sandbox.html"]
 skip-if = [
-  "verify",
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64' && opt", # Bug 1930730 (secondary)
 ]
 

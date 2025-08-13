@@ -39,7 +39,6 @@ class nsDocShellLoadState;
 class nsFrameLoader;
 class nsIBrowser;
 class nsIContent;
-class nsIContentSecurityPolicy;
 class nsIDocShell;
 class nsILoadContext;
 class nsIPrincipal;
@@ -565,7 +564,7 @@ class BrowserParent final : public PBrowserParent,
 
   void SendRealDragEvent(WidgetDragEvent& aEvent, uint32_t aDragAction,
                          uint32_t aDropEffect, nsIPrincipal* aPrincipal,
-                         nsIContentSecurityPolicy* aCsp);
+                         nsIPolicyContainer* aPolicyContainer);
 
   void SendMouseWheelEvent(WidgetWheelEvent& aEvent);
 
@@ -676,7 +675,7 @@ class BrowserParent final : public PBrowserParent,
       nsTArray<IPCTransferableData>&& aTransferables, const uint32_t& aAction,
       Maybe<BigBuffer>&& aVisualDnDData, const uint32_t& aStride,
       const gfx::SurfaceFormat& aFormat, const LayoutDeviceIntRect& aDragRect,
-      nsIPrincipal* aPrincipal, nsIContentSecurityPolicy* aCsp,
+      nsIPrincipal* aPrincipal, nsIPolicyContainer* aPolicyContainer,
       const CookieJarSettingsArgs& aCookieJarSettingsArgs,
       const MaybeDiscarded<WindowContext>& aSourceWindowContext,
       const MaybeDiscarded<WindowContext>& aSourceTopWindowContext);

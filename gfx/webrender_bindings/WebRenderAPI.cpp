@@ -22,6 +22,14 @@
 #include "malloc_decls.h"
 #include "GLContext.h"
 
+#include "source-repo.h"
+
+#ifdef MOZ_SOURCE_STAMP
+#  define MOZ_SOURCE_STAMP_VALUE MOZ_STRINGIFY(MOZ_SOURCE_STAMP)
+#else
+#  define MOZ_SOURCE_STAMP_VALUE nullptr
+#endif
+
 static mozilla::LazyLogModule sWrDLLog("wr.dl");
 #define WRDL_LOG(...) \
   MOZ_LOG(sWrDLLog, LogLevel::Debug, ("WRDL(%p): " __VA_ARGS__))
@@ -285,8 +293,10 @@ void TransactionBuilder::ClearDisplayList(Epoch aEpoch,
 }
 
 void TransactionBuilder::GenerateFrame(const VsyncId& aVsyncId, bool aPresent,
+                                       bool aTracked,
                                        wr::RenderReasons aReasons) {
-  wr_transaction_generate_frame(mTxn, aVsyncId.mId, aPresent, aReasons);
+  wr_transaction_generate_frame(mTxn, aVsyncId.mId, aPresent, aTracked,
+                                aReasons);
 }
 
 void TransactionBuilder::InvalidateRenderedFrame(wr::RenderReasons aReasons) {
@@ -716,6 +726,7 @@ void WebRenderAPI::Readback(const TimeStamp& aStartTime, gfx::IntSize size,
           .present = true,
           .render = true,
           .scrolled = false,
+          .tracked = false,
       };
       aRenderThread.UpdateAndRender(aWindowId, VsyncId(), mStartTime, params,
                                     Some(mSize),
@@ -889,7 +900,8 @@ void WebRenderAPI::Capture() {
   // SCENE | FRAME | TILE_CACHE
   uint8_t bits = 15;                // TODO: get from JavaScript
   const char* path = "wr-capture";  // TODO: get from JavaScript
-  wr_api_capture(mDocHandle, path, bits);
+  const char* revision = MOZ_SOURCE_STAMP_VALUE;
+  wr_api_capture(mDocHandle, path, revision, bits);
 }
 
 void WebRenderAPI::StartCaptureSequence(const nsACString& aPath,
@@ -899,7 +911,7 @@ void WebRenderAPI::StartCaptureSequence(const nsACString& aPath,
   }
 
   wr_api_start_capture_sequence(mDocHandle, PromiseFlatCString(aPath).get(),
-                                aFlags);
+                                MOZ_SOURCE_STAMP_VALUE, aFlags);
 
   mCaptureSequence = true;
 }

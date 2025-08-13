@@ -7,6 +7,7 @@ VPN_TEXT = "not available in your region"
 
 
 async def check_can_login(client):
+    await client.make_preload_script("delete navigator.__proto__.webdriver")
     await client.navigate(URL)
     login, unsupported, need_vpn = client.await_first_element_of(
         [client.css(LOGIN_CSS), client.text(UNSUPPORTED_TEXT), client.text(VPN_TEXT)],

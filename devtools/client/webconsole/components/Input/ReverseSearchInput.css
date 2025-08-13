@@ -46,7 +46,7 @@
   background-repeat: no-repeat;
   background-size: 12px;
   --background-position-inline: 10px;
-  background-position: var(--background-position-inline) 2px;
+  background-position: var(--background-position-inline) 50%;
   -moz-context-properties: fill;
   fill: var(--theme-icon-dimmed-color);
   text-align: match-parent;

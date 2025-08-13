@@ -39,7 +39,6 @@ tags = "webextensions in-process-webextensions"
 ["test_chrome_ext_webrequest_background_events.html"]
 
 ["test_chrome_ext_webrequest_host_permissions.html"]
-skip-if = ["verify"]
 
 ["test_chrome_ext_webrequest_mozextension.html"]
 run-if = ["false"] # Bug 1404172

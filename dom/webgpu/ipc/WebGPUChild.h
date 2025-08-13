@@ -7,6 +7,11 @@
 #define WEBGPU_CHILD_H_
 
 #include "mozilla/webgpu/PWebGPUChild.h"
+#include "mozilla/webgpu/Instance.h"
+#include "mozilla/webgpu/Adapter.h"
+#include "mozilla/webgpu/SupportedFeatures.h"
+#include "mozilla/webgpu/SupportedLimits.h"
+#include "mozilla/webgpu/Device.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
@@ -36,14 +41,6 @@ struct PipelineCreationContext {
   nsTArray<RawId> mImplicitBindGroupLayoutIds;
 };
 
-struct DeviceRequest {
-  RawId mDeviceId = 0;
-  RawId mQueueId = 0;
-  RefPtr<DevicePromise> mPromise;
-  // Note: we could put `ffi::WGPULimits` in here as well,
-  //  but we don't want to #include ffi stuff in this header
-};
-
 ffi::WGPUByteBuf* ToFFI(ipc::ByteBuf* x);
 
 class WebGPUChild final : public PWebGPUChild, public SupportsWeakPtr {
@@ -56,10 +53,6 @@ class WebGPUChild final : public PWebGPUChild, public SupportsWeakPtr {
  public:
   explicit WebGPUChild();
 
-  RefPtr<AdapterPromise> InstanceRequestAdapter(
-      const dom::GPURequestAdapterOptions& aOptions);
-  Maybe<DeviceRequest> AdapterRequestDevice(
-      RawId aSelfId, const ffi::WGPUFfiDeviceDescriptor&);
   RawId RenderBundleEncoderFinish(ffi::WGPURenderBundleEncoder& aEncoder,
                                   RawId aDeviceId,
                                   const dom::GPURenderBundleDescriptor& aDesc);
@@ -67,16 +60,12 @@ class WebGPUChild final : public PWebGPUChild, public SupportsWeakPtr {
 
   ffi::WGPUClient* GetClient() const { return mClient.get(); }
 
-  void QueueOnSubmittedWorkDone(const RawId aSelfId,
-                                const RefPtr<dom::Promise>& aPromise);
-
   void SwapChainPresent(RawId aTextureId,
                         const RemoteTextureId& aRemoteTextureId,
                         const RemoteTextureOwnerId& aOwnerId);
 
   void RegisterDevice(Device* const aDevice);
-  void UnregisterDevice(RawId aId);
-  void FreeUnregisteredInParentDevice(RawId aId);
+  void UnregisterDevice(RawId aDeviceId);
 
   void QueueSubmit(RawId aSelfId, RawId aDeviceId,
                    nsTArray<RawId>& aCommandBuffers);
@@ -91,15 +80,86 @@ class WebGPUChild final : public PWebGPUChild, public SupportsWeakPtr {
   std::unordered_map<RawId, WeakPtr<Device>> mDeviceMap;
   nsTArray<RawId> mSwapChainTexturesWaitingForSubmit;
 
-  bool ResolveLostForDeviceId(RawId aDeviceId, Maybe<uint8_t> aReason,
+  bool ResolveLostForDeviceId(RawId aDeviceId, uint8_t aReason,
                               const nsAString& aMessage);
 
+  bool mScheduledFlushQueuedMessages = false;
+  void ScheduledFlushQueuedMessages();
+  nsTArray<ipc::ByteBuf> mQueuedDataBuffers;
+  nsTArray<ipc::MutableSharedMemoryHandle> mQueuedHandles;
+  void ClearAllPendingPromises();
+
  public:
-  ipc::IPCResult RecvUncapturedError(Maybe<RawId> aDeviceId,
+  ipc::IPCResult RecvServerMessage(const ipc::ByteBuf& aByteBuf);
+  ipc::IPCResult RecvUncapturedError(RawId aDeviceId,
                                      const nsACString& aMessage);
-  ipc::IPCResult RecvDeviceLost(RawId aDeviceId, Maybe<uint8_t> aReason,
+  ipc::IPCResult RecvDeviceLost(RawId aDeviceId, uint8_t aReason,
                                 const nsACString& aMessage);
+
+  size_t QueueDataBuffer(ipc::ByteBuf&& bb);
+  size_t QueueShmemHandle(ipc::MutableSharedMemoryHandle&& handle);
+  void ScheduleFlushQueuedMessages();
+  void FlushQueuedMessages();
+
   void ActorDestroy(ActorDestroyReason) override;
+
+  struct PendingRequestAdapterPromise {
+    RefPtr<dom::Promise> promise;
+    RefPtr<Instance> instance;
+  };
+
+  std::deque<PendingRequestAdapterPromise> mPendingRequestAdapterPromises;
+
+  struct PendingRequestDevicePromise {
+    RefPtr<dom::Promise> promise;
+    RawId device_id;
+    RawId queue_id;
+    nsString label;
+    RefPtr<Adapter> adapter;
+    RefPtr<SupportedFeatures> features;
+    RefPtr<SupportedLimits> limits;
+    RefPtr<AdapterInfo> adapter_info;
+  };
+
+  std::deque<PendingRequestDevicePromise> mPendingRequestDevicePromises;
+
+  struct PendingPopErrorScopePromise {
+    RefPtr<dom::Promise> promise;
+    RefPtr<Device> device;
+  };
+
+  std::deque<PendingPopErrorScopePromise> mPendingPopErrorScopePromises;
+
+  struct PendingCreatePipelinePromise {
+    RefPtr<dom::Promise> promise;
+    RefPtr<Device> device;
+    bool is_render_pipeline;
+    RawId pipeline_id;
+    RawId implicit_pipeline_layout_id;
+    nsTArray<RawId> implicit_bind_group_layout_ids;
+    nsString label;
+  };
+
+  std::deque<PendingCreatePipelinePromise> mPendingCreatePipelinePromises;
+
+  struct PendingCreateShaderModulePromise {
+    RefPtr<dom::Promise> promise;
+    RefPtr<Device> device;
+    RefPtr<ShaderModule> shader_module;
+  };
+
+  std::deque<PendingCreateShaderModulePromise>
+      mPendingCreateShaderModulePromises;
+
+  struct PendingBufferMapPromise {
+    RefPtr<dom::Promise> promise;
+    RefPtr<Buffer> buffer;
+  };
+
+  std::unordered_map<RawId, std::deque<PendingBufferMapPromise>>
+      mPendingBufferMapPromises;
+
+  std::deque<RefPtr<dom::Promise>> mPendingOnSubmittedWorkDonePromises;
 };
 
 }  // namespace webgpu

@@ -5,24 +5,25 @@
 
 #include "nsTableWrapperFrame.h"
 
+#include <algorithm>
+
 #include "LayoutConstants.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PresShell.h"
-#include "nsFrameManager.h"
-#include "nsGridContainerFrame.h"
-#include "nsTableFrame.h"
-#include "nsTableCellFrame.h"
-#include "nsStyleConsts.h"
-#include "nsPresContext.h"
 #include "nsCSSRendering.h"
-#include "nsIContent.h"
-#include "prinrval.h"
-#include "nsGkAtoms.h"
-#include "nsHTMLParts.h"
 #include "nsDisplayList.h"
-#include "nsLayoutUtils.h"
+#include "nsFrameManager.h"
+#include "nsGkAtoms.h"
+#include "nsGridContainerFrame.h"
+#include "nsHTMLParts.h"
+#include "nsIContent.h"
 #include "nsIFrameInlines.h"
-#include <algorithm>
+#include "nsLayoutUtils.h"
+#include "nsPresContext.h"
+#include "nsStyleConsts.h"
+#include "nsTableCellFrame.h"
+#include "nsTableFrame.h"
+#include "prinrval.h"
 
 using namespace mozilla;
 using namespace mozilla::layout;

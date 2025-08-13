@@ -150,6 +150,8 @@
     %2$s is the url for the learn-more link.
   -->
   <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s 让您掌控线上生活。</p> <p>可以用作隐私浏览器： <ul> <li>直接在应用中搜索和浏览</li> <li>拦截跟踪器（也可调整为允许跟踪器）</li> <li>自动清除 Cookie、搜索记录和浏览历史</li> </ul> </p> <p>%1$s 由 Mozilla 出品。我们的使命是促成健康、开放的互联网。<br/> <a href=\"%2$s\">详细了解</a></p>]]></string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">详细了解</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">隐私与安全</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -486,8 +488,6 @@
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
   <string name="onboarding_first_screen_privacy_notice_link_2">隐私政策</string>
   <!-- New Onboarding flow first screen button label -->
-  <string name="onboarding_first_screen_button_agree_and_continue" moz:removedIn="140" tools:ignore="UnusedResources">同意并继续</string>
-  <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue_2">继续</string>
   <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
   <string name="a11y_link_available">包含链接</string>
@@ -708,18 +708,6 @@
   <string name="preference_block_autoplay_audio_only_summary">推荐</string>
   <!-- Preference for block autoplay audio and video -->
   <string name="preference_block_autoplay_audio_video">阻止音频和视频</string>
-  <!-- Preference for studies -->
-  <string name="preference_studies" moz:removedIn="140">研究</string>
-  <!-- Preference for studies summary -->
-  <string name="preference_studies_summary" tools:ignore="BrandUsage" moz:removedIn="140">Firefox 可能会不时地安装并运行一些研究项目。</string>
-  <!-- Learn more link for studies, links to an article for more information about studies. -->
-  <string name="studies_learn_more" moz:removedIn="140">详细了解</string>
-  <!-- Title of the remove studies button -->
-  <string name="studies_remove" moz:removedIn="140">移除</string>
-  <!-- Title of the active section on the studies list -->
-  <string name="studies_active" moz:removedIn="140">进行中</string>
-  <!-- Title of the completed section on the studies list -->
-  <string name="studies_completed" moz:removedIn="140">已完成</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">通过 USB/Wi-Fi 远程调试</string>
   <!-- Text Button for show biometric prompt -->

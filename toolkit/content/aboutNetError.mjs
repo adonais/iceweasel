@@ -1028,29 +1028,6 @@ function setCertErrorDetails() {
       ];
       break;
 
-    // This error code currently only exists for the Symantec distrust
-    // in Firefox 63, so we add copy explaining that to the user.
-    // In case of future distrusts of that scale we might need to add
-    // additional parameters that allow us to identify the affected party
-    // without replicating the complex logic from certverifier code.
-    case "MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED": {
-      document.l10n.setAttributes(
-        shortDesc2,
-        "cert-error-symantec-distrust-description",
-        { hostname: HOST_NAME }
-      );
-
-      // FIXME - this does nothing
-      const adminDesc = document.createElement("p");
-      document.l10n.setAttributes(
-        adminDesc,
-        "cert-error-symantec-distrust-admin"
-      );
-
-      learnMoreLink.href = baseURL + "symantec-warning";
-      break;
-    }
-
     case "MOZILLA_PKIX_ERROR_MITM_DETECTED": {
       const autoEnabledEnterpriseRoots = RPMGetBoolPref(
         "security.enterprise_roots.auto-enabled",
@@ -1331,10 +1308,6 @@ function setTechnicalDetailsOnCertError(
         case "MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT":
           addLabel("cert-error-intro", { hostname });
           addLabel("cert-error-trust-self-signed");
-          break;
-        case "MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED":
-          addLabel("cert-error-intro", { hostname });
-          addLabel("cert-error-trust-symantec");
           break;
         case "MOZILLA_PKIX_ERROR_INSUFFICIENT_CERTIFICATE_TRANSPARENCY":
           addLabel("cert-error-trust-certificate-transparency", { hostname });

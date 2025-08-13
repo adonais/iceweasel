@@ -533,11 +533,13 @@ NS_IMETHODIMP
 nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
   nsCOMArray<nsIThread> threads;
   nsCOMPtr<nsIThreadPoolListener> listener;
+  nsCString name;
   {
     MutexAutoLock lock(mMutex);
     if (mShutdown) {
       return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
     }
+    name = mName;
     mShutdown = true;
     NotifyChangeToAllIdleThreads();
 
@@ -583,7 +585,7 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
     context->OnCompletion(onCompletion);
   }
 
-  mozilla::SpinEventLoopUntil("nsThreadPool::ShutdownWithTimeout"_ns,
+  mozilla::SpinEventLoopUntil("nsThreadPool::ShutdownWithTimeout "_ns + name,
                               [&] { return outstandingThreads == 0; });
 
   if (timer) {

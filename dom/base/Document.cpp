@@ -200,7 +200,6 @@
 #include "mozilla/dom/HTMLObjectElement.h"
 #include "mozilla/dom/HTMLSharedElement.h"
 #include "mozilla/dom/HTMLTextAreaElement.h"
-#include "mozilla/dom/ImageTracker.h"
 #include "mozilla/dom/InspectorUtils.h"
 #include "mozilla/dom/InteractiveWidget.h"
 #include "mozilla/dom/Link.h"
@@ -220,6 +219,7 @@
 #include "mozilla/dom/PageTransitionEventBinding.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PermissionMessageUtils.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/PostMessageEvent.h"
 #include "mozilla/dom/ProcessingInstruction.h"
 #include "mozilla/dom/Promise.h"
@@ -259,6 +259,7 @@
 #include "mozilla/dom/ViewTransition.h"
 #include "mozilla/dom/WakeLockJS.h"
 #include "mozilla/dom/WakeLockSentinel.h"
+#include "mozilla/dom/WebIdentityHandler.h"
 #include "mozilla/dom/WindowBinding.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalChild.h"
@@ -1441,6 +1442,8 @@ Document::Document(const char* aContentType)
       mValidMinScale(false),
       mValidMaxScale(false),
       mWidthStrEmpty(false),
+      mLockingImages(false),
+      mAnimatingImages(true),
       mParserAborted(false),
       mReportedDocumentUseCounters(false),
       mHasReportedShadowDOMUsage(false),
@@ -2510,6 +2513,9 @@ Document::~Document() {
     mPermissionDelegateHandler->DropDocumentReference();
   }
 
+  SetLockingImages(false);
+  SetImageAnimationState(false);
+
   mHeaderData = nullptr;
 
   mPendingTitleChangeEvent.Revoke();
@@ -3008,7 +3014,7 @@ void Document::DisconnectNodeTree() {
 
     while (nsCOMPtr<nsIContent> content = GetLastChild()) {
       nsMutationGuard::DidMutate();
-      MutationObservers::NotifyContentWillBeRemoved(this, content, nullptr);
+      MutationObservers::NotifyContentWillBeRemoved(this, content, {});
       DisconnectChild(content);
       if (content == mCachedRootElement) {
         // Immediately clear mCachedRootElement, now that it's been removed
@@ -3683,10 +3689,16 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
   // Not calling it here results in the mSelfURI being the current mSelfURI and
   // not the previous which breaks said inheritance.
   // https://bugzilla.mozilla.org/show_bug.cgi?id=1793560#ch-8
-  nsCOMPtr<nsIContentSecurityPolicy> cspToInherit = loadInfo->GetCspToInherit();
+  nsCOMPtr<nsIPolicyContainer> policyContainer =
+      loadInfo->GetPolicyContainerToInherit();
+  nsCOMPtr<nsIContentSecurityPolicy> cspToInherit =
+      PolicyContainer::GetCSP(policyContainer);
   if (cspToInherit) {
     cspToInherit->EnsureIPCPoliciesRead();
   }
+
+  rv = InitPolicyContainer(aChannel);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   rv = InitCSP(aChannel);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -3751,15 +3763,6 @@ void Document::SetLoadedAsData(bool aLoadedAsData,
   }
 }
 
-nsIContentSecurityPolicy* Document::GetCsp() const { return mCSP; }
-
-void Document::SetCsp(nsIContentSecurityPolicy* aCSP) {
-  mCSP = aCSP;
-  mHasPolicyWithRequireTrustedTypesForDirective =
-      aCSP && aCSP->GetRequireTrustedTypesForDirectiveState() !=
-                  RequireTrustedTypesForDirectiveState::NONE;
-}
-
 nsIContentSecurityPolicy* Document::GetPreloadCsp() const {
   return mPreloadCSP;
 }
@@ -3771,12 +3774,13 @@ void Document::SetPreloadCsp(nsIContentSecurityPolicy* aPreloadCSP) {
 void Document::GetCspJSON(nsString& aJSON) {
   aJSON.Truncate();
 
-  if (!mCSP) {
+  nsIContentSecurityPolicy* csp = PolicyContainer::GetCSP(mPolicyContainer);
+  if (!csp) {
     dom::CSPPolicies jsonPolicies;
     jsonPolicies.ToJSON(aJSON);
     return;
   }
-  mCSP->ToJSON(aJSON);
+  csp->ToJSON(aJSON);
 }
 
 void Document::SendToConsole(nsCOMArray<nsISecurityConsoleMessage>& aMessages) {
@@ -3797,13 +3801,14 @@ void Document::SendToConsole(nsCOMArray<nsISecurityConsoleMessage>& aMessages) {
 void Document::ApplySettingsFromCSP(bool aSpeculative) {
   nsresult rv = NS_OK;
   if (!aSpeculative) {
+    nsIContentSecurityPolicy* csp = PolicyContainer::GetCSP(mPolicyContainer);
     // 1) apply settings from regular CSP
-    if (mCSP) {
+    if (csp) {
       // Set up 'block-all-mixed-content' if not already inherited
       // from the parent context or set by any other CSP.
       if (!mBlockAllMixedContent) {
         bool block = false;
-        rv = mCSP->GetBlockAllMixedContent(&block);
+        rv = csp->GetBlockAllMixedContent(&block);
         NS_ENSURE_SUCCESS_VOID(rv);
         mBlockAllMixedContent = block;
       }
@@ -3815,7 +3820,7 @@ void Document::ApplySettingsFromCSP(bool aSpeculative) {
       // from the parent context or set by any other CSP.
       if (!mUpgradeInsecureRequests) {
         bool upgrade = false;
-        rv = mCSP->GetUpgradeInsecureRequests(&upgrade);
+        rv = csp->GetUpgradeInsecureRequests(&upgrade);
         NS_ENSURE_SUCCESS_VOID(rv);
         mUpgradeInsecureRequests = upgrade;
       }
@@ -3848,9 +3853,39 @@ void Document::ApplySettingsFromCSP(bool aSpeculative) {
   }
 }
 
+nsresult Document::InitPolicyContainer(nsIChannel* aChannel) {
+  bool shouldInherit = CSP_ShouldResponseInheritCSP(aChannel);
+  if (shouldInherit) {
+    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+    nsCOMPtr<nsIPolicyContainer> policyContainer =
+        loadInfo->GetPolicyContainerToInherit();
+    mPolicyContainer = PolicyContainer::Cast(policyContainer);
+  }
+
+  if (!mPolicyContainer) {
+    mPolicyContainer = new PolicyContainer();
+  }
+
+  return NS_OK;
+}
+
+void Document::SetPolicyContainer(nsIPolicyContainer* aPolicyContainer) {
+  mPolicyContainer = PolicyContainer::Cast(aPolicyContainer);
+  nsIContentSecurityPolicy* csp = PolicyContainer::GetCSP(mPolicyContainer);
+  mHasPolicyWithRequireTrustedTypesForDirective =
+      csp && csp->GetRequireTrustedTypesForDirectiveState() !=
+                 RequireTrustedTypesForDirectiveState::NONE;
+}
+
+nsIPolicyContainer* Document::GetPolicyContainer() const {
+  return mPolicyContainer;
+}
+
 nsresult Document::InitCSP(nsIChannel* aChannel) {
   MOZ_ASSERT(!mScriptGlobalObject,
              "CSP must be initialized before mScriptGlobalObject is set!");
+  MOZ_ASSERT(mPolicyContainer,
+             "Policy container must be initialized before CSP!");
 
   // If this is a data document - no need to set CSP.
   if (mLoadedAsData) {
@@ -3867,34 +3902,26 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
     return NS_OK;
   }
 
-  MOZ_ASSERT(!mCSP, "where did mCSP get set if not here?");
-
-  // If there is a CSP that needs to be inherited from whatever
-  // global is considered the client of the document fetch then
-  // we query it here from the loadinfo in case the newly created
-  // document needs to inherit the CSP. See:
-  // https://w3c.github.io/webappsec-csp/#initialize-document-csp
-  bool inheritedCSP = CSP_ShouldResponseInheritCSP(aChannel);
-  if (inheritedCSP) {
-    mCSP = loadInfo->GetCspToInherit();
-  }
+  nsIContentSecurityPolicy* csp = PolicyContainer::GetCSP(mPolicyContainer);
+  bool inheritedCSP = !!csp;
 
   // If there is no CSP to inherit, then we create a new CSP here so
   // that history entries always have the right reference in case a
   // Meta CSP gets dynamically added after the history entry has
   // already been created.
-  if (!mCSP) {
-    mCSP = new nsCSPContext();
+  if (!csp) {
+    csp = new nsCSPContext();
+    mPolicyContainer->SetCSP(csp);
     mHasPolicyWithRequireTrustedTypesForDirective = false;
   } else {
     mHasPolicyWithRequireTrustedTypesForDirective =
-        mCSP->GetRequireTrustedTypesForDirectiveState() !=
+        csp->GetRequireTrustedTypesForDirectiveState() !=
         RequireTrustedTypesForDirectiveState::NONE;
   }
 
   // Always overwrite the requesting context of the CSP so that any new
   // 'self' keyword added to an inherited CSP translates correctly.
-  nsresult rv = mCSP->SetRequestContextWithDocument(this);
+  nsresult rv = csp->SetRequestContextWithDocument(this);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -3942,21 +3969,21 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
 
   // ----- if the doc is an addon, apply its CSP.
   if (addonPolicy) {
-    mCSP->AppendPolicy(addonPolicy->BaseCSP(), false, false);
+    csp->AppendPolicy(addonPolicy->BaseCSP(), false, false);
 
-    mCSP->AppendPolicy(addonPolicy->ExtensionPageCSP(), false, false);
+    csp->AppendPolicy(addonPolicy->ExtensionPageCSP(), false, false);
   }
 
   // ----- if there's a full-strength CSP header, apply it.
   if (!cspHeaderValue.IsEmpty()) {
     mHasCSPDeliveredThroughHeader = true;
-    rv = CSP_AppendCSPFromHeader(mCSP, cspHeaderValue, false);
+    rv = CSP_AppendCSPFromHeader(csp, cspHeaderValue, false);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
   // ----- if there's a report-only CSP header, apply it.
   if (!cspROHeaderValue.IsEmpty()) {
-    rv = CSP_AppendCSPFromHeader(mCSP, cspROHeaderValue, true);
+    rv = CSP_AppendCSPFromHeader(csp, cspROHeaderValue, true);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -3966,7 +3993,7 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
   // directive, intersect the CSP sandbox flags with the existing flags. This
   // corresponds to the _least_ permissive policy.
   uint32_t cspSandboxFlags = SANDBOXED_NONE;
-  rv = mCSP->GetCSPSandboxFlags(&cspSandboxFlags);
+  rv = csp->GetCSPSandboxFlags(&cspSandboxFlags);
   NS_ENSURE_SUCCESS(rv, rv);
 
   // Probably the iframe sandbox attribute already caused the creation of a
@@ -3994,9 +4021,13 @@ nsresult Document::InitIntegrityPolicy(nsIChannel* aChannel) {
   MOZ_ASSERT(!mScriptGlobalObject,
              "Integrity Policy must be initialized before mScriptGlobalObject "
              "is set!");
+  MOZ_ASSERT(mPolicyContainer,
+             "Policy container must be initialized before IntegrityPolicy!");
 
-  MOZ_ASSERT(!mIntegrityPolicy,
-             "where did mIntegrityPolicy get set if not here?");
+  if (mPolicyContainer->IntegrityPolicy()) {
+    // We inherited the integrity policy.
+    return NS_OK;
+  }
 
   nsAutoCString headerValue, headerROValue;
   nsCOMPtr<nsIHttpChannel> httpChannel;
@@ -4013,8 +4044,13 @@ nsresult Document::InitIntegrityPolicy(nsIChannel* aChannel) {
                                              headerROValue);
   }
 
-  return IntegrityPolicy::ParseHeaders(headerValue, headerROValue,
-                                       getter_AddRefs(mIntegrityPolicy));
+  RefPtr<IntegrityPolicy> integrityPolicy;
+  rv = IntegrityPolicy::ParseHeaders(headerValue, headerROValue,
+                                     getter_AddRefs(integrityPolicy));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  mPolicyContainer->SetIntegrityPolicy(integrityPolicy);
+  return NS_OK;
 }
 
 static FeaturePolicy* GetFeaturePolicyFromElement(Element* aElement) {
@@ -6731,7 +6767,7 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& aRv) {
   nsTArray<RefPtr<Cookie>> cookieList;
   bool stale = false;
   int64_t currentTimeInUsec = PR_Now();
-  int64_t currentTime = currentTimeInUsec / PR_USEC_PER_SEC;
+  int64_t currentTime = currentTimeInUsec / PR_USEC_PER_MSEC;
 
   // not having a cookie service isn't an error
   nsCOMPtr<nsICookieService> service =
@@ -7531,7 +7567,9 @@ void Document::DeletePresShell() {
   // When our shell goes away, request that all our images be immediately
   // discarded, so we don't carry around decoded image data for a document we
   // no longer intend to paint.
-  ImageTracker()->RequestDiscardAll();
+  for (imgIRequest* image : mTrackedImages.Keys()) {
+    image->RequestDiscard();
+  }
 
   // Now that we no longer have a shell, we need to forget about any FontFace
   // objects for @font-face rules that came from the style set. There's no need
@@ -7749,7 +7787,7 @@ void Document::RemoveChildNode(nsIContent* aKid, bool aNotify,
     // Notify early so that we can clear the cached element after notifying,
     // without having to slow down nsINode::RemoveChildNode.
     if (aNotify) {
-      MutationObservers::NotifyContentWillBeRemoved(this, aKid, aState);
+      MutationObservers::NotifyContentWillBeRemoved(this, aKid, {aState});
       aNotify = false;
     }
 
@@ -8255,8 +8293,9 @@ void Document::SetScriptGlobalObject(
   // Now that we know what our window is, we can flush the CSP errors to the
   // Web Console. We are flushing all messages that occurred and were stored in
   // the queue prior to this point.
-  if (mCSP) {
-    static_cast<nsCSPContext*>(mCSP.get())->flushConsoleMessages();
+  if (nsIContentSecurityPolicy* csp =
+          PolicyContainer::GetCSP(mPolicyContainer)) {
+    nsCSPContext::Cast(csp)->flushConsoleMessages();
   }
 
   nsCOMPtr<nsIHttpChannelInternal> internalChannel =
@@ -8740,7 +8779,7 @@ void Document::RemoveCustomContentContainer() {
     container->QueueDevtoolsAnonymousEvent(/* aIsRemove = */ true);
   }
   if (PresShell* ps = GetPresShell()) {
-    ps->ContentWillBeRemoved(container, nullptr);
+    ps->ContentWillBeRemoved(container, {});
   }
   container->UnbindFromTree();
 }
@@ -8754,7 +8793,7 @@ void Document::CreateCustomContentContainerIfNeeded() {
     return;
   }
   RefPtr root = GetRootElement();
-  if (NS_WARN_IF(!root)) {
+  if (!root) {
     // We'll deal with it when we get a root element, if needed.
     return;
   }
@@ -8787,7 +8826,7 @@ void Document::CreateCustomContentContainerIfNeeded() {
     container->QueueDevtoolsAnonymousEvent(/* aIsRemove = */ false);
   }
   if (PresShell* ps = GetPresShell()) {
-    ps->ContentAppended(container);
+    ps->ContentAppended(container, {});
   }
   for (auto& anonContent : mAnonymousContents) {
     BindAnonymousContent(*anonContent, *container);
@@ -12374,7 +12413,7 @@ void Document::OnPageShow(bool aPersisted, EventTarget* aDispatchStartTarget,
   // See Document
   if (!inFrameLoaderSwap) {
     if (aPersisted) {
-      ImageTracker()->SetAnimatingState(true);
+      SetImageAnimationState(true);
     }
 
     // Set mIsShowing before firing events, in case those event handlers
@@ -12453,7 +12492,7 @@ void Document::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget,
     if (aPersisted) {
       // We do not stop the animations (bug 1024343) when the page is refreshing
       // while being dragged out.
-      ImageTracker()->SetAnimatingState(false);
+      SetImageAnimationState(false);
     }
 
     // Set mIsShowing before firing events, in case those event handlers
@@ -12676,7 +12715,7 @@ nsresult Document::CloneDocHelper(Document* clone) const {
           mTiming->CloneNavigationTime(nsDocShell::Cast(clone->GetDocShell()));
       clone->SetNavigationTiming(timing);
     }
-    clone->SetCsp(mCSP);
+    clone->SetPolicyContainer(mPolicyContainer);
   }
 
   // Now ensure that our clone has the same URI, base URI, and principal as us.
@@ -12734,6 +12773,7 @@ nsresult Document::CloneDocHelper(Document* clone) const {
   clone->mType = mType;
   clone->mXMLDeclarationBits = mXMLDeclarationBits;
   clone->mBaseTarget = mBaseTarget;
+  clone->mAllowDeclarativeShadowRoots = mAllowDeclarativeShadowRoots;
 
   return NS_OK;
 }
@@ -14022,7 +14062,10 @@ static void CachePrintSelectionRanges(const Document& aSourceDoc,
 
     RefPtr<nsRange> clonedRange = nsRange::Create(
         startNode, range->MayCrossShadowBoundaryStartOffset(), endNode,
-        range->MayCrossShadowBoundaryEndOffset(), IgnoreErrors());
+        range->MayCrossShadowBoundaryEndOffset(), IgnoreErrors(),
+        StaticPrefs::dom_shadowdom_selection_across_boundary_enabled()
+            ? AllowRangeCrossShadowBoundary::Yes
+            : AllowRangeCrossShadowBoundary::No);
     if (clonedRange &&
         !clonedRange->AreNormalRangeAndCrossShadowBoundaryRangeCollapsed()) {
       printRanges->AppendElement(std::move(clonedRange));
@@ -14071,19 +14114,9 @@ already_AddRefed<Document> Document::CreateStaticClone(
     return nullptr;
   }
 
-  size_t sheetsCount = SheetCount();
-  for (size_t i = 0; i < sheetsCount; ++i) {
-    RefPtr<StyleSheet> sheet = SheetAt(i);
-    if (sheet) {
-      if (sheet->IsApplicable()) {
-        RefPtr<StyleSheet> clonedSheet = sheet->Clone(nullptr, clonedDoc);
-        NS_WARNING_ASSERTION(clonedSheet, "Cloning a stylesheet didn't work!");
-        if (clonedSheet) {
-          clonedDoc->AddStyleSheet(clonedSheet);
-        }
-      }
-    }
-  }
+  // Copy any stylesheet not referenced somewhere in the DOM tree (e.g. by
+  // `<style>`).
+
   clonedDoc->CloneAdoptedSheetsFrom(*this);
 
   for (int t = 0; t < AdditionalSheetTypeCount; ++t) {
@@ -14299,11 +14332,148 @@ void Document::WarnOnceAbout(
                                   kDocumentWarnings[aWarning], aParams);
 }
 
-mozilla::dom::ImageTracker* Document::ImageTracker() {
-  if (!mImageTracker) {
-    mImageTracker = new mozilla::dom::ImageTracker;
+void Document::TrackImage(imgIRequest* aImage) {
+  MOZ_ASSERT(aImage);
+  bool newAnimation = false;
+  mTrackedImages.WithEntryHandle(aImage, [&](auto&& entry) {
+    if (entry) {
+      // The image is already in the hashtable.  Increment its count.
+      uint32_t oldCount = entry.Data();
+      MOZ_ASSERT(oldCount > 0, "Entry in the image tracker with count 0!");
+      entry.Data() = oldCount + 1;
+    } else {
+      // A new entry was inserted - set the count to 1.
+      entry.Insert(1);
+
+      // If we're locking images, lock this image too.
+      if (mLockingImages) {
+        aImage->LockImage();
+      }
+
+      // If we're animating images, request that this image be animated too.
+      if (mAnimatingImages) {
+        aImage->IncrementAnimationConsumers();
+        newAnimation = true;
+      }
+    }
+  });
+  if (newAnimation) {
+    AnimatedImageStateMaybeChanged(true);
   }
-  return mImageTracker;
+}
+
+void Document::UntrackImage(imgIRequest* aImage,
+                            RequestDiscard aRequestDiscard) {
+  MOZ_ASSERT(aImage);
+
+  // Get the old count. It should exist and be > 0.
+  auto entry = mTrackedImages.Lookup(aImage);
+  if (!entry) {
+    MOZ_ASSERT_UNREACHABLE("Removing image that wasn't in the tracker!");
+    return;
+  }
+  MOZ_ASSERT(entry.Data() > 0, "Entry in the image tracker with count 0!");
+  // If the count becomes zero, remove it from the tracker.
+  if (--entry.Data() == 0) {
+    entry.Remove();
+  } else {
+    return;
+  }
+
+  // Now that we're no longer tracking this image, unlock it if we'd
+  // previously locked it.
+  if (mLockingImages) {
+    aImage->UnlockImage();
+  }
+
+  // If we're animating images, remove our request to animate this one.
+  if (mAnimatingImages) {
+    aImage->DecrementAnimationConsumers();
+    AnimatedImageStateMaybeChanged(false);
+  }
+
+  if (aRequestDiscard == RequestDiscard::Yes) {
+    // Do this even if !mLocking, because even if we didn't just unlock
+    // this image, it might still be a candidate for discarding.
+    aImage->RequestDiscard();
+  }
+}
+
+void Document::PropagateMediaFeatureChangeToTrackedImages(
+    const MediaFeatureChange& aChange) {
+  // Inform every content image used in the document that media feature values
+  // have changed. Pull the images out into a set and iterate over them, in case
+  // the image notifications do something that ends up modifying the table.
+  nsTHashSet<nsRefPtrHashKey<imgIContainer>> images;
+  for (imgIRequest* req : mTrackedImages.Keys()) {
+    nsCOMPtr<imgIContainer> image;
+    req->GetImage(getter_AddRefs(image));
+    if (!image) {
+      continue;
+    }
+    image = image->Unwrap();
+    images.Insert(image);
+  }
+  for (imgIContainer* image : images) {
+    image->MediaFeatureValuesChangedAllDocuments(aChange);
+  }
+}
+
+void Document::SetLockingImages(bool aLocking) {
+  // If there's no change, there's nothing to do.
+  if (mLockingImages == aLocking) {
+    return;
+  }
+
+  // Otherwise, iterate over our images and perform the appropriate action.
+  for (imgIRequest* image : mTrackedImages.Keys()) {
+    if (aLocking) {
+      image->LockImage();
+    } else {
+      image->UnlockImage();
+    }
+  }
+
+  // Update state.
+  mLockingImages = aLocking;
+}
+
+void Document::SetImageAnimationState(bool aAnimating) {
+  // If there's no change, there's nothing to do.
+  if (mAnimatingImages == aAnimating) {
+    return;
+  }
+
+  // Otherwise, iterate over our images and perform the appropriate action.
+  for (imgIRequest* image : mTrackedImages.Keys()) {
+    if (aAnimating) {
+      image->IncrementAnimationConsumers();
+    } else {
+      image->DecrementAnimationConsumers();
+    }
+  }
+
+  AnimatedImageStateMaybeChanged(aAnimating);
+
+  // Update state.
+  mAnimatingImages = aAnimating;
+}
+
+void Document::AnimatedImageStateMaybeChanged(bool aAnimating) {
+  auto* ps = GetPresShell();
+  if (!ps) {
+    return;
+  }
+  auto* pc = ps->GetPresContext();
+  if (!pc) {
+    return;
+  }
+  auto* rd = pc->RefreshDriver();
+  if (aAnimating) {
+    rd->StartTimerForAnimatedImagesIfNeeded();
+  } else {
+    rd->StopTimerForAnimatedImagesIfNeeded();
+  }
 }
 
 void Document::ScheduleSVGUseElementShadowTreeUpdate(
@@ -14764,13 +14934,15 @@ void DevToolsMutationObserver::AttributeChanged(Element* aElement,
   FireEvent(aElement, u"devtoolsattrmodified"_ns);
 }
 
-void DevToolsMutationObserver::ContentAppended(nsIContent* aFirstNewContent) {
+void DevToolsMutationObserver::ContentAppended(nsIContent* aFirstNewContent,
+                                               const ContentAppendInfo& aInfo) {
   for (nsIContent* c = aFirstNewContent; c; c = c->GetNextSibling()) {
-    ContentInserted(c);
+    ContentInserted(c, aInfo);
   }
 }
 
-void DevToolsMutationObserver::ContentInserted(nsIContent* aChild) {
+void DevToolsMutationObserver::ContentInserted(nsIContent* aChild,
+                                               const ContentInsertInfo&) {
   FireEvent(aChild, u"devtoolschildinserted"_ns);
 }
 
@@ -17798,6 +17970,8 @@ void Document::SetUserHasInteracted() {
           ("Document %p has been interacted by user.", this));
 
   // We maybe need to update the user-interaction permission.
+  bool alreadyHadUserInteractionPermission =
+      ContentBlockingUserInteraction::Exists(NodePrincipal());
   MaybeStoreUserInteractionAsPermission();
 
   // For purposes of reducing irrelevant session history entries on
@@ -17836,7 +18010,9 @@ void Document::SetUserHasInteracted() {
     wgc->SendUpdateDocumentHasUserInteracted(true);
   }
 
-  MaybeAllowStorageForOpenerAfterUserInteraction();
+  if (alreadyHadUserInteractionPermission) {
+    MaybeAllowStorageForOpenerAfterUserInteraction();
+  }
 }
 
 BrowsingContext* Document::GetBrowsingContext() const {
@@ -18034,17 +18210,25 @@ void Document::MaybeAllowStorageForOpenerAfterUserInteraction() {
     }
   }
 
-  // We don't care when the asynchronous work finishes here.
-  // Without e10s or fission enabled this is run in the parent process.
-  if (XRE_IsParentProcess()) {
-    Unused << StorageAccessAPIHelper::AllowAccessForOnParentProcess(
-        NodePrincipal(), openerBC,
-        ContentBlockingNotifier::eOpenerAfterUserInteraction);
-  } else {
-    Unused << StorageAccessAPIHelper::AllowAccessForOnChildProcess(
-        NodePrincipal(), openerBC,
-        ContentBlockingNotifier::eOpenerAfterUserInteraction);
-  }
+  RefPtr<Document> self(this);
+  WebIdentityHandler* identityHandler = inner->GetOrCreateWebIdentityHandler();
+  MOZ_ASSERT(identityHandler);
+  identityHandler->IsContinuationWindow()->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [self, openerBC](const MozPromise<bool, nsresult,
+                                        true>::ResolveOrRejectValue& result) {
+        if (!result.IsResolve() || !result.ResolveValue()) {
+          if (XRE_IsParentProcess()) {
+            Unused << StorageAccessAPIHelper::AllowAccessForOnParentProcess(
+                self->NodePrincipal(), openerBC,
+                ContentBlockingNotifier::eOpenerAfterUserInteraction);
+          } else {
+            Unused << StorageAccessAPIHelper::AllowAccessForOnChildProcess(
+                self->NodePrincipal(), openerBC,
+                ContentBlockingNotifier::eOpenerAfterUserInteraction);
+          }
+        }
+      });
 }
 
 namespace {

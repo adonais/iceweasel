@@ -129,6 +129,15 @@ this.browserAction = class extends ExtensionAPIPersistent {
         },
       };
     },
+    onUserSettingsChanged() {
+      // isOnToolBar is not supported, so this event will never fire.
+      // We stub out an implementation to avoid breaking extensions
+      // that are compatible with desktop and mobile browsers
+      return {
+        unregister: () => {},
+        convert() {},
+      };
+    },
   };
 
   getAPI(context) {
@@ -148,6 +157,15 @@ this.browserAction = class extends ExtensionAPIPersistent {
           module: "browserAction",
           event: "onClicked",
           inputHandling: true,
+          extensionApi: this,
+        }).api(),
+
+        onUserSettingsChanged: new EventManager({
+          context,
+          // module name is "browserAction" because it the name used in the
+          // ext-android.json, independently from the manifest version.
+          module: "browserAction",
+          event: "onUserSettingsChanged",
           extensionApi: this,
         }).api(),
 

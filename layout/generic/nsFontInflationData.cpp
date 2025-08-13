@@ -8,13 +8,14 @@
  * UI. */
 
 #include "nsFontInflationData.h"
+
 #include "FrameProperties.h"
-#include "nsTextControlFrame.h"
-#include "nsListControlFrame.h"
-#include "nsComboboxControlFrame.h"
-#include "mozilla/dom/Text.h"  // for inline nsINode::AsText() definition
 #include "mozilla/PresShell.h"
 #include "mozilla/ReflowInput.h"
+#include "mozilla/dom/Text.h"  // for inline nsINode::AsText() definition
+#include "nsComboboxControlFrame.h"
+#include "nsListControlFrame.h"
+#include "nsTextControlFrame.h"
 #include "nsTextFrameUtils.h"
 
 using namespace mozilla;

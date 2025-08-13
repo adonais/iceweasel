@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ---
 task-defaults:
-    worker-type: b-linux-gcp
+    worker-type: b-linux-amd
     worker:
         max-run-time: 1800
     run:
@@ -14,7 +14,7 @@ wasm32-wasi-compiler-rt-8.0:
     description: "wasm32-wasi Compiler-rt for Clang 8 toolchain build"
     treeherder:
         symbol: TL(wasi-crt-8)
-    worker-type: b-linux-xlarge-gcp
+    worker-type: b-linux-xlarge-amd
     run:
         script: build-compiler-rt-wasi.sh
         arguments:
@@ -251,7 +251,7 @@ wasm32-wasi-compiler-rt-19:
     description: "wasm32-wasi Compiler-rt for Clang 19 toolchain build"
     treeherder:
         symbol: TL(wasi-crt-19)
-    worker-type: b-linux-xlarge-gcp
+    worker-type: b-linux-xlarge-amd
     run:
         script: build-compiler-rt-wasi.sh
         arguments:
@@ -486,7 +486,7 @@ wasm32-wasi-compiler-rt-20:
     description: "wasm32-wasi Compiler-rt for Clang 20 toolchain build"
     treeherder:
         symbol: TL(wasi-crt-20)
-    worker-type: b-linux-xlarge-gcp
+    worker-type: b-linux-xlarge-amd
     run:
         script: build-compiler-rt-wasi.sh
         arguments:
@@ -747,7 +747,7 @@ wasm32-wasi-compiler-rt-trunk:
         cached_task: false
     treeherder:
         symbol: TL(wasi-crt-trunk)
-    worker-type: b-linux-xlarge-gcp
+    worker-type: b-linux-xlarge-amd
     run:
         script: build-compiler-rt-wasi.sh
         arguments:

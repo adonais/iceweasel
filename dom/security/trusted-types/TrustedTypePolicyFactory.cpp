@@ -19,6 +19,7 @@
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkerScope.h"
 #include "mozilla/dom/nsCSPUtils.h"
+#include "mozilla/dom/PolicyContainer.h"
 
 using namespace mozilla::dom::TrustedTypeUtils;
 
@@ -128,7 +129,8 @@ auto TrustedTypePolicyFactory::ShouldTrustedTypePolicyCreationBeBlockedByCSP(
   auto result = PolicyCreation::Allowed;
   auto location = JSCallingLocation::Get(aJSContext);
   if (auto* piDOMWindowInner = mGlobalObject->GetAsInnerWindow()) {
-    if (auto* csp = piDOMWindowInner->GetCsp()) {
+    if (auto* csp =
+            PolicyContainer::GetCSP(piDOMWindowInner->GetPolicyContainer())) {
       ReportPolicyCreationViolations(
           csp, nullptr /* aCSPEventListener */, location.FileName(),
           location.mLine, location.mColumn, mCreatedPolicyNames, aPolicyName);

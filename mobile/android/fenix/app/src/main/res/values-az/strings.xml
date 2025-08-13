@@ -309,7 +309,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">Sil</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">Saxla</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">Saxla</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -320,7 +320,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">Qovluğu düzəlt</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">Sinxronlaşdırılmış əlfəcinlərinizi görmək üçün daxil olun</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">Sinxronlaşdırılmış əlfəcinlərinizi görmək üçün daxil olun</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -328,15 +328,15 @@
   <!-- Bookmark NAME editing field label -->
   <string name="bookmark_name_label">AD</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">Qovluq əlavə et</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">Qovluq əlavə et</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">Qovluq seç</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">Başlığı olmalıdır</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">Başlığı olmalıdır</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">Səhv URL</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">Əlfəcinlər yoxdur</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">Əlfəcinlər yoxdur</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
@@ -419,7 +419,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d vərəq seçildi</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">Vərəqlər saxlandı!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Vərəqlər saxlandı!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
   <string name="create_collection_tab_saved">Vərəq saxlandı!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
@@ -476,9 +476,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">Kolleksiya silindi</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Kolleksiya silindi</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">Kolleksiyanın adı dəyişdirildi</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Kolleksiyanın adı dəyişdirildi</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Vərəq qapatıldı</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -492,9 +492,9 @@
   <!-- QR code scanner prompt dialog positive option to deny navigation to scanned link -->
   <string name="qr_scanner_dialog_negative">RƏDD ET</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">Sil</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Sil</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">URL köçürüldü</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL köçürüldü</string>
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">Şrift ölçüsü</string>
   <!-- Subtitle for the tabs item in Delete browsing data, %d is the number of open tabs -->
@@ -679,11 +679,11 @@
   <!-- Text shown when a user leaves the search string field empty -->
   <string name="search_add_custom_engine_error_empty_search_string">Axtarış mətnini daxil edin</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">%s yaradıldı</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s yaradıldı</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">%s saxlandı</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s saxlandı</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">%s silindi</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s silindi</string>
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">İstisna sayt yoxdur</string>
   <!--

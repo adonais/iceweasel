@@ -18,6 +18,11 @@
   display: inline-grid;
 }
 
+.pseudo-grid::after {
+  content: "after";
+  display: grid;
+}
+
 #a_display_contents_element {
   display: contents;
 }
@@ -36,7 +41,7 @@ function testTargetsAreInElements(targets, elements) {
       break;
     }
     let element = elements[c];
-    let isMatching = (target.id == element.id);
+    let isMatching = target.assert ? target.assert(element) : (target.id == element.id);
     let test_function = (target.todo ? todo : ok);
 
     test_function(isMatching, "Should find " + target.message + ".");
@@ -75,8 +80,13 @@ function runTests() {
     {id: "k1", message: "grid container containing a grid container"},
     {id: "k2", message: "grid container inside a grid container"},
     {id: "l", message: "grid container inside a display: contents element"},
+    {id: "m-in-shadow", message: "grid container inside shadow DOM"},
+    {
+      assert: element => element.tagName === "_moz_generated_content_after" && element.parentElement.id === "n",
+      message: "grid container inside pseudo element"
+    },
   ];
-  is(elementsFromRoot.length, 11, "Found expected number of elements within document root.");
+  is(elementsFromRoot.length, 13, "Found expected number of elements within document root.");
   testTargetsAreInElements(targetsFromRoot, elementsFromRoot);
 
 
@@ -99,6 +109,24 @@ function runTests() {
 
   SimpleTest.finish();
 }
+</script>
+<script>
+  // Define custom element
+  class Custom extends HTMLElement {
+    constructor() {
+      super();
+      const shadow = this.attachShadow({ mode: "open" });
+      const wrapper = document.createElement("div");
+      wrapper.setAttribute("id", "m-in-shadow");
+      wrapper.classList.add("in-shadow");
+      const style = document.createElement("style");
+      style.textContent = `.in-shadow { display: grid; }`;
+      shadow.append(style, wrapper);
+    }
+  }
+
+  // Define the new element
+  customElements.define("custom-el", Custom);
 </script>
 </head>
 <body onLoad="runTests();">
@@ -133,6 +161,10 @@ function runTests() {
 <div id="a_display_contents_element">
   <div id="l" class="g"></div>
 </div>
+
+<custom-el id="m"></custom-el>
+
+<div id="n" class="pseudo-grid"></div>
 
 </body>
 </html>

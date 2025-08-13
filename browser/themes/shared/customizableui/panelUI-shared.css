@@ -1947,14 +1947,6 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   &[viewId="PanelUI-profiler"] {
     --panel-width: 319px;
   }
-
-  /* Override themes for the Pocket panel, because the Pocket
-   panel currently only supports dark and light themes. */
-  @media not (prefers-color-scheme: dark) {
-    &[viewId="PanelUI-savetopocket"] {
-      --arrowpanel-background: #fbfbfb;
-    }
-  }
 }
 
 :where(#PanelUI-profiler) :is(description, label) {
@@ -2323,4 +2315,13 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 
 #content-analysis-panel-container {
   padding: 8px;
+}
+
+/* ----- IP Protection panel ----- */
+#PanelUI-ipprotection {
+  width: 400px;
+}
+
+#PanelUI-ipprotection-header {
+  width: 100%;
 }

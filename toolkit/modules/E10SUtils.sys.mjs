@@ -331,6 +331,53 @@ export var E10SUtils = {
     return null;
   },
 
+  /**
+   * Serialize policyContainer data.
+   *
+   * @param {nsIPolicyContainer} policyContainer. The policyContainer to serialize.
+   * @return {String} The base64 encoded policyContainer data.
+   */
+  serializePolicyContainer(policyContainer) {
+    let serializedPolicyContainer = null;
+
+    try {
+      if (policyContainer) {
+        serializedPolicyContainer =
+          lazy.serializationHelper.serializeToString(policyContainer);
+      }
+    } catch (e) {
+      this.log().error(
+        `Failed to serialize policyContainer '${policyContainer}' ${e}`
+      );
+    }
+    return serializedPolicyContainer;
+  },
+
+  /**
+   * Deserialize a base64 encoded policyContainer (serialized with
+   * Utils::serializePolicyContainer).
+   *
+   * @param {String} policyContainerB64 A base64 encoded serialized policyContainer.
+   * @return {nsIPolicyContainer} A deserialized policyContainer.
+   */
+  deserializePolicyContainer(policyContainerB64) {
+    if (!policyContainerB64) {
+      return null;
+    }
+
+    try {
+      let policyContainer =
+        lazy.serializationHelper.deserializeObject(policyContainerB64);
+      policyContainer.QueryInterface(Ci.nsIPolicyContainer);
+      return policyContainer;
+    } catch (e) {
+      this.log().error(
+        `Failed to deserialize policyContainerB64 '${policyContainerB64}' ${e}`
+      );
+    }
+    return null;
+  },
+
   canLoadURIInRemoteType(
     aURL,
     aRemoteSubframes,

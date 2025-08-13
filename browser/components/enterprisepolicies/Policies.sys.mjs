@@ -1256,6 +1256,18 @@ export var Policies = {
           param.Locked
         );
       }
+      if ("SuspectedFingerprinting" in param) {
+        PoliciesUtils.setDefaultPref(
+          "privacy.fingerprintingProtection",
+          param.SuspectedFingerprinting,
+          param.Locked
+        );
+        PoliciesUtils.setDefaultPref(
+          "privacy.fingerprintingProtection.pbmode",
+          param.SuspectedFingerprinting,
+          param.Locked
+        );
+      }
     },
   },
 
@@ -1942,6 +1954,15 @@ export var Policies = {
           param.VirtualReality.Block
         );
         setDefaultPermission("xr", param.VirtualReality);
+      }
+
+      if ("ScreenShare" in param) {
+        addAllowDenyPermissions(
+          "screen",
+          param.ScreenShare.Allow,
+          param.ScreenShare.Block
+        );
+        setDefaultPermission("screen", param.ScreenShare);
       }
     },
   },
@@ -2631,14 +2652,8 @@ export var Policies = {
   SkipTermsOfUse: {
     onBeforeAddons(manager, param) {
       if (param) {
-        setAndLockPref(
-          "datareporting.policy.dataSubmissionPolicyAcceptedVersion",
-          999
-        );
-        setAndLockPref(
-          "datareporting.policy.dataSubmissionPolicyNotifiedTime",
-          Date.now().toString()
-        );
+        setAndLockPref("termsofuse.acceptedVersion", 999);
+        setAndLockPref("termsofuse.acceptedDate", Date.now().toString());
       }
     },
   },

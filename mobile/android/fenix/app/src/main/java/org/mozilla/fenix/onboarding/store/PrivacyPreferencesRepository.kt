@@ -4,6 +4,8 @@
 
 package org.mozilla.fenix.onboarding.store
 
+import mozilla.components.lib.crash.store.CrashReportOption
+import org.mozilla.fenix.crashes.crashReportOption
 import org.mozilla.fenix.utils.Settings
 
 /**
@@ -46,7 +48,13 @@ class DefaultPrivacyPreferencesRepository(
 
     override fun getPreference(type: PreferenceType): Boolean {
         return when (type) {
-            PreferenceType.CrashReporting -> settings.crashReportAlwaysSend
+            PreferenceType.CrashReporting -> {
+                when (settings.crashReportOption()) {
+                    CrashReportOption.Auto -> true
+                    CrashReportOption.Ask -> false
+                    CrashReportOption.Never -> false
+                }
+            }
             PreferenceType.UsageData -> settings.isTelemetryEnabled
         }
     }
@@ -56,8 +64,11 @@ class DefaultPrivacyPreferencesRepository(
         enabled: Boolean,
     ) {
         when (type) {
-            PreferenceType.CrashReporting -> settings.crashReportAlwaysSend = enabled
-            PreferenceType.UsageData -> settings.isTelemetryEnabled = enabled
+            PreferenceType.CrashReporting -> settings.crashReportChoice = CrashReportOption.Ask.label
+            PreferenceType.UsageData -> {
+                settings.isExperimentationEnabled = enabled
+                settings.isTelemetryEnabled = enabled
+            }
         }
     }
 }

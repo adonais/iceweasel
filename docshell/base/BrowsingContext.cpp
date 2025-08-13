@@ -18,6 +18,7 @@
 #    include "mozilla/a11y/nsWinUtils.h"
 #  endif
 #endif
+#include "js/LocaleSensitive.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/BindingIPCUtils.h"
@@ -476,7 +477,7 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
 
   fields.Get<IDX_IPAddressSpace>() = inherit
                                          ? inherit->GetIPAddressSpace()
-                                         : nsILoadInfo::IPAddressSpace::Public;
+                                         : nsILoadInfo::IPAddressSpace::Unknown;
 
   fields.Get<IDX_IsPopupRequested>() = aOptions.isPopupRequested;
 
@@ -2915,6 +2916,40 @@ void BrowsingContext::DidSet(FieldIndex<IDX_ForcedColorsOverride>,
   PresContextAffectingFieldChanged();
 }
 
+void BrowsingContext::DidSet(FieldIndex<IDX_LanguageOverride>,
+                             nsString&& aOldValue) {
+  MOZ_ASSERT(IsTop());
+  if (GetLanguageOverride() == aOldValue) {
+    return;
+  }
+
+  PreOrderWalk([&](BrowsingContext* aBrowsingContext) {
+    RefPtr<WindowContext> windowContext =
+        aBrowsingContext->GetCurrentWindowContext();
+
+    if (nsCOMPtr<nsPIDOMWindowInner> window = windowContext->GetInnerWindow()) {
+      AutoJSAPI jsapi;
+      if (jsapi.Init(window)) {
+        JSContext* context = jsapi.cx();
+
+        if (mDefaultLocale == nullptr) {
+          mDefaultLocale = JS_GetDefaultLocale(context);
+        }
+
+        JSRuntime* runtime = JS_GetRuntime(context);
+        if (GetLanguageOverride().IsEmpty()) {
+          JS_SetDefaultLocale(runtime, mDefaultLocale.get());
+
+          mDefaultLocale = nullptr;
+        } else {
+          JS_SetDefaultLocale(
+              runtime, NS_ConvertUTF16toUTF8(GetLanguageOverride()).get());
+        }
+      }
+    }
+  });
+}
+
 void BrowsingContext::DidSet(FieldIndex<IDX_MediumOverride>,
                              nsString&& aOldValue) {
   MOZ_ASSERT(IsTop());
@@ -3808,8 +3843,7 @@ bool BrowsingContext::AddSHEntryWouldIncreaseLength(
 void BrowsingContext::SessionHistoryCommit(
     const LoadingSessionHistoryInfo& aInfo, uint32_t aLoadType,
     nsIURI* aPreviousURI, SessionHistoryInfo* aPreviousActiveEntry,
-    bool aCloneEntryChildren, bool aChannelExpired, uint32_t aCacheKey,
-    nsIPrincipal* aPartitionedPrincipal) {
+    bool aCloneEntryChildren, bool aChannelExpired, uint32_t aCacheKey) {
   nsID changeID = {};
   if (XRE_IsContentProcess()) {
     RefPtr<ChildSHistory> rootSH = Top()->GetChildSessionHistory();
@@ -3841,13 +3875,13 @@ void BrowsingContext::SessionHistoryCommit(
       }
     }
     ContentChild* cc = ContentChild::GetSingleton();
-    mozilla::Unused << cc->SendHistoryCommit(
-        this, aInfo.mLoadId, changeID, aLoadType, aCloneEntryChildren,
-        aChannelExpired, aCacheKey, aPartitionedPrincipal);
+    mozilla::Unused << cc->SendHistoryCommit(this, aInfo.mLoadId, changeID,
+                                             aLoadType, aCloneEntryChildren,
+                                             aChannelExpired, aCacheKey);
   } else {
     Canonical()->SessionHistoryCommit(aInfo.mLoadId, changeID, aLoadType,
                                       aCloneEntryChildren, aChannelExpired,
-                                      aCacheKey, aPartitionedPrincipal);
+                                      aCacheKey);
   }
 }
 
@@ -4006,19 +4040,21 @@ void BrowsingContext::ClearCachedValuesOfLocations() {
 
 void BrowsingContext::GetContiguousHistoryEntries(
     SessionHistoryInfo& aActiveEntry, Navigation* aNavigation) {
+  MOZ_LOG(GetLog(), LogLevel::Verbose,
+          ("GetContiguousHistoryEntries for aNavigation=%p", aNavigation));
   if (!aNavigation) {
     return;
   }
   if (XRE_IsContentProcess()) {
     MOZ_ASSERT(ContentChild::GetSingleton());
     ContentChild::GetSingleton()->SendGetContiguousSessionHistoryInfos(
-        this, aActiveEntry,
+        this,
         [aActiveEntry, navigation = RefPtr(aNavigation)](auto aInfos) mutable {
           navigation->InitializeHistoryEntries(aInfos, &aActiveEntry);
         },
         [](auto aReason) { MOZ_ASSERT(false, "How did this happen?"); });
   } else {
-    auto infos = Canonical()->GetContiguousSessionHistoryInfos(aActiveEntry);
+    auto infos = Canonical()->GetContiguousSessionHistoryInfos();
     aNavigation->InitializeHistoryEntries(infos, &aActiveEntry);
   }
 }

@@ -8,6 +8,8 @@
 
 #include "nsFrameState.h"
 
+#include "mozilla/ISVGDisplayableFrame.h"
+#include "mozilla/SVGContainerFrame.h"
 #include "nsBlockFrame.h"
 #include "nsFlexContainerFrame.h"
 #include "nsGridContainerFrame.h"
@@ -16,14 +18,12 @@
 #include "nsInlineFrame.h"
 #include "nsPageFrame.h"
 #include "nsPlaceholderFrame.h"
-#include "nsRubyTextFrame.h"
 #include "nsRubyTextContainerFrame.h"
+#include "nsRubyTextFrame.h"
 #include "nsTableCellFrame.h"
 #include "nsTableRowFrame.h"
 #include "nsTableRowGroupFrame.h"
 #include "nsTextFrame.h"
-#include "mozilla/ISVGDisplayableFrame.h"
-#include "mozilla/SVGContainerFrame.h"
 
 namespace mozilla {
 

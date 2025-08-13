@@ -2,13 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* Module is used set the "brighttext" attribute to `true` or remove it
- * based on calculating a luminance value from the current toolbar color.
+/* Module is used to set or remove the "brighttext" attribute based on
+ * calculating a luminance value from the current toolbar color.
  * This causes items like icons on the toolbar to contrast in brightness
  * enough to be visible, depending on the current theme/coloring of the browser
  * window. Calculated luminance values are cached in `state.toolbarLuminanceCache`. */
-
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 // Track individual windowstates using WeakMap
 const _windowStateMap = new WeakMap();
@@ -101,7 +99,7 @@ export const ToolbarIconColor = {
     }
 
     let toolbarSelector = ".browser-toolbar:not([collapsed=true])";
-    if (AppConstants.platform == "macosx") {
+    if (Services.appinfo.nativeMenubar) {
       toolbarSelector += ":not([type=menubar])";
     }
 
@@ -128,11 +126,7 @@ export const ToolbarIconColor = {
 
     const luminanceThreshold = 127; // In between 0 and 255
     for (let [toolbar, luminance] of luminances) {
-      if (luminance <= luminanceThreshold) {
-        toolbar.removeAttribute("brighttext");
-      } else {
-        toolbar.setAttribute("brighttext", "true");
-      }
+      toolbar.toggleAttribute("brighttext", luminance > luminanceThreshold);
     }
   },
 };

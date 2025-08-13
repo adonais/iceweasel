@@ -17,7 +17,7 @@ support-files = [
 scheme = "https"
 skip-if = [
   "os == 'win'", # Bug 1841281
-  "os == 'linux' && debug",  # Bug 1841281
+  "os == 'linux' && debug", # Bug 1841281
   "os == 'mac' && debug", # Bug 1841281
 ]
 

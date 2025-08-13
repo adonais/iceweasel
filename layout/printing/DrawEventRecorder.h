@@ -11,8 +11,8 @@
 
 #include "mozilla/gfx/DrawEventRecorder.h"
 #include "mozilla/gfx/RecordingTypes.h"
-#include "prio.h"
 #include "nsTArray.h"
+#include "prio.h"
 
 namespace mozilla {
 namespace layout {

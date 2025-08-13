@@ -24,6 +24,7 @@ import org.mozilla.fenix.browser.store.BrowserScreenAction.PageTranslationStatus
 import org.mozilla.fenix.browser.store.BrowserScreenStore
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SnackbarAction
+import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
 import org.mozilla.fenix.ext.navigateSafe
 import org.mozilla.fenix.translations.TranslationDialogBottomSheet
 import org.mozilla.fenix.translations.TranslationsFlowState
@@ -151,11 +152,16 @@ class TranslationsBinding(
     }
 
     private fun onTranslationStateUpdated(state: PageTranslationStatus) {
-        onTranslationStatusUpdate(state)
-        browserScreenStore?.dispatch(PageTranslationStatusUpdated(state))
-        if (!state.isTranslateProcessing) {
+        val snackbarState = appStore?.state?.snackbarState
+        val previousSnackbar = (snackbarState as? SnackbarState.None)?.previous
+            ?: (snackbarState as? SnackbarState.Dismiss)?.previous
+
+        if (previousSnackbar is SnackbarState.TranslationInProgress) {
             appStore?.dispatch(SnackbarAction.SnackbarDismissed)
         }
+
+        onTranslationStatusUpdate(state)
+        browserScreenStore?.dispatch(PageTranslationStatusUpdated(state))
     }
 
     private fun offerToTranslateCurrentPage() = when (appStore != null && navController != null) {

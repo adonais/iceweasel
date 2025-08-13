@@ -35,7 +35,7 @@
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d избрани</string>
   <!-- Tab tray multi select title in app bar when no tabs are selected -->
-  <string name="tab_tray_multi_select_title_empty">Избиране на раздели</string>
+  <string name="tab_tray_multi_select_title_empty">Избор на раздели</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
   <string name="tab_tray_add_new_collection">Създаване на списък</string>
   <!-- Label of editable text in create collection dialog for naming a new collection -->
@@ -103,16 +103,6 @@
     Text for the message displayed in the contextual feature recommendation popup promoting the erase private browsing feature.
   -->
   <string name="erase_action_cfr_message" moz:removedIn="141" tools:ignore="UnusedResources">Докоснете, за да отворите нова поверителна сесия. Изтрийте историята, бисквитките — всичко.</string>
-  <!--
-    Toolbar "contextual feature recommendation" (CFR)
-
-    Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
-  -->
-  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Разглеждайте по-бързо с новите действия</string>
-  <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">В сайт лента се прибира, при плъзване надолу за повече място.</string>
-  <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Задръжте върху стрелките, за да прескачате между страниците от историята на раздела.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -328,6 +318,8 @@
   <string name="browser_menu_sign_back_in_to_sync">Влезте отново за синхронизиране</string>
   <!-- Browser menu caption label for the "Sign back in to sync" browser menu item described in `browser_menu_sign_back_in_to_sync` when there is an error in syncing -->
   <string name="browser_menu_syncing_paused_caption">Синхронизирането е на пауза</string>
+  <!-- Browser menu caption label for an authenticated user -->
+  <string name="browser_menu_signed_in_caption">Управлявайте какво архивирате и синхронизирате</string>
   <!-- Browser menu label that creates a private tab -->
   <string name="browser_menu_new_private_tab">Нов поверителен раздел</string>
   <!-- Browser menu label that navigates to the Password screen -->
@@ -340,7 +332,7 @@
   <!-- Browser menu label that toggles the request for the desktop site of the currently visited page -->
   <string name="browser_menu_switch_to_desktop_site" moz:removedIn="141" tools:ignore="UnusedResources">Към настолна версия</string>
   <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site">Към мобилна версия</string>
+  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Към мобилна версия</string>
   <!-- Browser menu label that navigates to the page tools sub-menu -->
   <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">Инструменти</string>
   <!-- Content description (not visible, for screen readers etc.): Back button for all menu redesign sub-menu -->
@@ -379,7 +371,7 @@
   <!-- Browser menu description that describes the various save related menu items inside of the save sub-menu -->
   <string name="browser_menu_save_description" moz:removedIn="141" tools:ignore="UnusedResources">Добавяне на отметка, пряк път, начална страница, списък, PDF</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
-  <string name="browser_menu_bookmark_this_page" moz:removedIn="141" tools:ignore="UnusedResources">Отбележете тази страница</string>
+  <string name="browser_menu_bookmark_this_page" moz:removedIn="141" tools:ignore="UnusedResources">Oтметнете тази страница</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
   <string name="browser_menu_bookmark_this_page_2">Отмятане на страницата</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
@@ -391,7 +383,7 @@
   <!-- Browser menu label for turning ON reader view of the current visited page -->
   <string name="browser_menu_turn_on_reader_view" moz:removedIn="141" tools:ignore="UnusedResources">Включване на изгледа за четене</string>
   <!-- Browser menu label for turning OFF reader view of the current visited page -->
-  <string name="browser_menu_turn_off_reader_view" moz:removedIn="141" tools:ignore="UnusedResources">Изключете изгледа за четене</string>
+  <string name="browser_menu_turn_off_reader_view" moz:removedIn="141" tools:ignore="UnusedResources">Изключване на изгледа за четене</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
   <string name="browser_menu_open_in_normal_tab" moz:removedIn="141" tools:ignore="UnusedResources">Преместване в не-поверителен раздел</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
@@ -406,7 +398,7 @@
     Browser menu label that is displayed when the current page has been translated by the translation feature.
     %1$s is the name of the language that page was translated to (e.g. English).
   -->
-  <string name="browser_menu_translated_to" moz:removedIn="141" tools:ignore="UnusedResources">Преведено на %1$s</string>
+  <string name="browser_menu_translated_to" moz:removedIn="141" tools:ignore="UnusedResources">Преведено към %1$s</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">Преведено</string>
   <!-- Browser menu label for the print feature -->
@@ -424,11 +416,13 @@
   -->
   <string name="browser_menu_default_banner_title">Изберете %1$s по подразбиране</string>
   <!-- Label text within the set as default banner -->
-  <string name="browser_menu_default_banner_subtitle">Отнема секунди. Променяйте по всяко време.</string>
+  <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">Отнема секунди. Променяйте по всяко време.</string>
+  <!-- Label text within the set as default banner -->
+  <string name="browser_menu_default_banner_subtitle_2">Бърз, поверителен и направен за вас.</string>
   <!-- Content description for the button that dismisses the set as default banner in the menu -->
   <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">Прекратяване</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
-  <string name="browser_menu_default_banner_dismiss_promotion">Отхвърляне на повишението</string>
+  <string name="browser_menu_default_banner_dismiss_promotion">Отхвърляне на промоцията</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
   <string name="browser_menu_recommended_extensions_content_description">Повече информация</string>
   <!--
@@ -549,9 +543,9 @@
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources">Безопасно сърфиране с повече възможности за избор</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_3">Нашият браузър с нестопанска цел помага да спрете компаниите да ви следват тайно в мрежата.</string>
+  <string name="juno_onboarding_default_browser_description_nimbus_3">Нашият четец с нестопанска цел помага да спрете компаниите да ви следят тайно в мрежата.</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources">Повече от 100 милиона души защитават поверителността си, като избират браузър, поддържан от организация с нестопанска цел.</string>
+  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources">Повече от 100 милиона души защитават поверителността си, като избират четец, поддържан от организация с нестопанска цел.</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources">Известни проследяващи скриптове? Автоматично забранени. Разширения? Изпробвайте всичките 700. Четене на PDF? С вградения четец ги управлявате лесно.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
@@ -600,55 +594,16 @@
   <string name="juno_onboarding_add_search_widget_positive_button" tools:ignore="BrandUsage,UnusedResources">Добавяне на джаджа за Firefox</string>
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">Не сега</string>
-  <!--
-    Onboarding header for the add-ons card used by Nimbus experiments. Nimbus experiments do not support string placeholders.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="onboarding_add_on_header" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Персонализирайте вашия Firefox с разширения</string>
-  <!-- Onboarding sub header for the add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_sub_header" moz:removedIn="140" tools:ignore="UnusedResources">Добавете разширения от трети страни, за да подобрите сигурността, производителността и др.</string>
-  <!-- Onboarding add-ons card, for checking more add-ons on, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_explore_more_extensions_2" moz:removedIn="140" tools:ignore="UnusedResources">Разгледайте още разширения</string>
-  <!-- Onboarding add-ons card, button for start browsing, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_start_browsing_button_2" moz:removedIn="140" tools:ignore="UnusedResources">Започнете да разглеждате</string>
-  <!-- Ublock name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Ublock Origin" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_ublock_name" moz:removedIn="140" tools:ignore="UnusedResources">uBlock Origin</string>
-  <!-- Ublock description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_ublock_description" moz:removedIn="140" tools:ignore="UnusedResources">Ефективно и ефикасно блокиране на реклами.</string>
-  <!-- Privacy Badger name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Privacy Badger" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_privacy_badger_name" moz:removedIn="140" tools:ignore="UnusedResources">Privacy Badger</string>
-  <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_privacy_badger_description" moz:removedIn="140" tools:ignore="UnusedResources">Анти- проследяване съкровище. Спрете невидимите тракери и шпионските реклами.</string>
-  <!-- Search by Image name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Search by Image" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_search_by_image_name" moz:removedIn="140" tools:ignore="UnusedResources">Търсене по изображение</string>
-  <!-- Search by Image description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_search_by_image_description" moz:removedIn="140" tools:ignore="UnusedResources">Вижте интересна снимка и научете повече за нея.</string>
-  <!-- Dark Reader name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Dark Reader" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_dark_reader_name" moz:removedIn="140" tools:ignore="UnusedResources">Dark Reader</string>
-  <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_dark_reader_description" moz:removedIn="140" tools:ignore="UnusedResources">Персонализиран тъмен режим за мобилната мрежа.</string>
-  <!-- Label for the number of reviews for an add-on. %1$s is the formatted number of reviews e.g. "1,234", "12,345", "123,456". -->
-  <string name="onboarding_add_on_reviews_label" moz:removedIn="140" tools:ignore="UnusedResources">Отзиви: %1$s</string>
-  <!-- Content description for the add-on icon. -->
-  <string name="onboarding_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Пиктограма</string>
-  <!-- Content description for the an installed add-on icon. -->
-  <string name="onboarding_installed_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Икона за инсталирана добавка</string>
-  <!-- Content description for the an installing add-on icon. -->
-  <string name="onboarding_installing_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Икона за инсталиране на добавка</string>
-  <!-- Content description for the add add-on button. -->
-  <string name="onboarding_add_on_add_button_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Бутон за добавяне на добавка</string>
-  <!-- Content description for the star rating group. %1$s is the rating. -->
-  <string name="onboarding_add_on_star_rating_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Оценена с %1$s от 5</string>
   <!-- Title for the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_title" tools:ignore="BrandUsage">Помогнете ни да направим Firefox по-добър</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_crash_reporting_title">Автоматично изпращане на доклади за срив</string>
   <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
-  <string name="onboarding_preferences_dialog_crash_reporting_description">Докладите за сривове ни позволяват да откриваме и отстраняваме проблеми с браузъра. Докладите може да включват лични или чувствителни данни.</string>
+  <string name="onboarding_preferences_dialog_crash_reporting_description">Докладите за сривове ни позволяват да откриваме и отстраняваме проблеми с четеца. Докладите може да включват лични или чувствителни данни.</string>
   <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Научете повече</string>
   <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
-  <string name="onboarding_preferences_dialog_usage_data_title">Изпраща технически данни и данни за взаимодействие към Mozilla</string>
+  <string name="onboarding_preferences_dialog_usage_data_title">Изпращане на технически данни и данни за взаимодействие към Mozilla</string>
   <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">Данните за вашето устройство, хардуерна конфигурация и използване на Firefox помагат за подобряване на функциите, производителността и стабилността за всички.</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Научете повече</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
@@ -657,8 +612,6 @@
   <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Добре дошли при Firefox</string>
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Бързо и сигурно сърфиране в мрежата</string>
-  <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Приемане и продължаване</string>
   <!-- Terms of service onboarding page continue button label. -->
   <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Продължаване</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
@@ -678,17 +631,19 @@
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Когато споделяте как сте открили Firefox и как го използвате, вие ни помагате да представим браузъра ни на повече хора.</string>
   <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Споделяйте минимални данни с партньорите на Mozilla в областта на маркетинговите технологии. Тези данни никога не се продават или използват за показване на реклами.</string>
+  <string name="onboarding_marketing_opt_in_checkbox" moz:removedIn="143" tools:ignore="UnusedResources">Споделяйте минимални данни с партньорите на Mozilla в областта на маркетинговите технологии. Тези данни никога не се продават или използват за показване на реклами.</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_opt_out_checkbox">Споделяйте данни с партньорите на Mozilla в областта на маркетинговите технологии. Тези данни никога не се продават или използват за показване на реклами.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
   <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Как използваме данните</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
-  <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">Потвърдете и започнете да сърфирате</string>
+  <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">Потвърждаване и начало на разглеждането</string>
   <!-- Marketing onboarding page title variant. “One last thing” refers to the final step or action in the onboarding process that we’re asking users to take before they can start using the browser. -->
   <string name="onboarding_marketing_title_1" tools:ignore="UnusedResources">И последно</string>
   <!-- Marketing onboarding page body variant. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Споделете как сте открили Firefox и че го използвате с маркетинговите партньори на Mozilla. Тези данни никога не се продават.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
-  <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Съгласете се и започнете да сърфирате</string>
+  <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Съгласяване и начало на \u0020разглеждане</string>
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Изберете място на лентата с инструменти</string>
   <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -705,9 +660,9 @@
   <string name="onboarding_customize_toolbar_placement_bottom_content_description">Изображение на долната лента с инструменти</string>
   <string name="onboarding_customize_toolbar_placement_top_content_description">Изображение на горната лента с инструменти</string>
   <!-- Action label for toolbar options that can be selected. Talkback will append this to say "Double tap to select". -->
-  <string name="onboarding_customize_toolbar_a11y_action_label_select">изберете</string>
+  <string name="onboarding_customize_toolbar_a11y_action_label_select">избиране</string>
   <!-- Onboarding header for the theme selection card, used by Nimbus experiments. -->
-  <string name="onboarding_customize_theme_title" tools:ignore="UnusedResources">Изберете тема</string>
+  <string name="onboarding_customize_theme_title" tools:ignore="UnusedResources">Избор на тема</string>
   <!-- Onboarding sub header for theme selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_theme_description" tools:ignore="UnusedResources">Вижте Мрежата в най-добра светлина.</string>
   <!-- Onboarding label for 'Save and start browsing' button, used by Nimbus experiments. -->
@@ -719,11 +674,11 @@
   <!-- Onboarding theme selection card label for 'System auto' option, used by Nimbus experiments. -->
   <string name="onboarding_customize_theme_system_option">Според системата</string>
   <!-- Onboarding theme selection card content description for the main image. -->
-  <string name="onboarding_customize_theme_main_image_content_description">Голямо заглавно изображение на изгледа за избор на теми, показващо илюстрирани инструменти за художник и разработчик.</string>
+  <string name="onboarding_customize_theme_main_image_content_description">Голяма заглавна картинка на екрана за избор на тема, показваща илюстрирани инструменти за артисти и създатели.</string>
   <!-- Onboarding theme selection card content description for the theme selection image. %1$s is placeholder for either 'system', 'light' or 'dark'. -->
   <string name="onboarding_customize_theme_content_description">Изображение на темата на %1$s</string>
   <!-- Action label for options that can be selected. Talkback will append this to say "Double tap to select". -->
-  <string name="onboarding_customize_theme_a11y_action_label_select">изберете</string>
+  <string name="onboarding_customize_theme_a11y_action_label_select">избиране</string>
   <!--
     Widget Picker
 
@@ -804,8 +759,6 @@
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">Използвайте заключване на екрана, за да скриете разделите в поверително сърфиране</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary" moz:removedIn="140" tools:ignore="UnusedResources">Преглеждайте раздели с пръстов отпечатък, отключване с лице или ПИН.</string>
-  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_2">Преглеждайте раздели с вашия пръстов отпечатък, PIN или отключване с лице.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Блокиране на банери за бисквитки</string>
@@ -879,6 +832,8 @@
   <string name="preferences_home_2">Начална страница</string>
   <!-- Preference for customizing the app icon -->
   <string name="preferences_app_icon">Икона на приложението</string>
+  <!-- Preference for showing the tab strip -->
+  <string name="preferences_tab_strip">Показване на лентата с раздели</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_gestures">Жестове</string>
   <!-- Preference for settings related to visual options -->
@@ -958,7 +913,7 @@
   <!-- Preference for open download with an external download manager app -->
   <string name="preferences_external_download_manager" tools:ignore="UnusedResources" moz:removedIn="141">Външно приложение за изтегляния</string>
   <!-- Preference title for choosing an app to handle downloads -->
-  <string name="preferences_choose_app_for_downloads">Управлявайте изтеглянията с друго приложение</string>
+  <string name="preferences_choose_app_for_downloads">Управляване на изтеглянията с друго приложение</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
   <string name="preferences_downloads_settings_clean_up_files_title">Изтриване от %s и устройството</string>
   <!-- Summary for the setting to automatically clean up downloaded files -->
@@ -1037,11 +992,7 @@
   -->
   <string name="customize_toggle_recently_visited">Наскоро посетени</string>
   <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">Истории, навеждащи на размисъл</string>
-  <!-- Title for the customize home screen section with Pocket. -->
   <string name="customize_toggle_pocket_3">Истории</string>
-  <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-  <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">Статии, предоставени от %s</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">Платени публикации</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -1091,15 +1042,15 @@
   <!-- Title for the "Dark" alternative app icon variant in the icon picker screen. -->
   <string name="alternative_app_icon_option_dark">Тъмна</string>
   <!-- Title for the "Red" alternative app icon variant in the icon picker screen. -->
-  <string name="alternative_app_icon_option_red">Червено</string>
+  <string name="alternative_app_icon_option_red">Червена</string>
   <!-- Title for the "Green" alternative app icon variant in the icon picker screen. -->
-  <string name="alternative_app_icon_option_green">Зелено</string>
+  <string name="alternative_app_icon_option_green">Зелена</string>
   <!-- Title for the "Blue" alternative app icon variant in the icon picker screen. -->
-  <string name="alternative_app_icon_option_blue">Синьо</string>
+  <string name="alternative_app_icon_option_blue">Синя</string>
   <!-- Title for the "Purple" alternative app icon variant in the icon picker screen. -->
-  <string name="alternative_app_icon_option_purple">Лилаво</string>
+  <string name="alternative_app_icon_option_purple">Лилава</string>
   <!-- Title for the "Purple Dark" alternative app icon variant in the icon picker screen. -->
-  <string name="alternative_app_icon_option_purple_dark">Тъмно лилав</string>
+  <string name="alternative_app_icon_option_purple_dark">Тъмно лилава</string>
   <!-- Title for the "Sunrise" gradient alternative app icon variant in the icon picker screen. The app icon features a soft yellow-to-blue gradient background, resembling the colors of early morning light. -->
   <string name="alternative_app_icon_option_gradient_sunrise">Изгрев</string>
   <!-- Title for the "Golden Hour" gradient alternative app icon variant in the icon picker screen. The app icon features a warm golden-to-pink gradient background, resembling the colors of the sunlight shortly before sunset. -->
@@ -1121,11 +1072,11 @@
   <!-- Title for the "Pixelated" themed alternative app icon variant in the icon picker screen. This app icon features a pixel-art style, resembling retro 8-bit graphics. -->
   <string name="alternative_app_icon_option_pixelated">Пикселирано</string>
   <!-- Title for the "Minimal" themed alternative app icon variant in the icon picker screen. The app icon presents a simplified, flat and monochrome version of the Firefox logo. -->
-  <string name="alternative_app_icon_option_minimal">Минимално</string>
+  <string name="alternative_app_icon_option_minimal">Минимална</string>
   <!-- Title for the "Pride" themed alternative app icon variant in the icon picker screen. The app icon incorporates a rainbow color scheme in support of the LGBTQ+ community. -->
-  <string name="alternative_app_icon_option_pride">Гордостта</string>
+  <string name="alternative_app_icon_option_pride">Прайд</string>
   <!-- Title for the "Cute" themed alternative app icon variant in the icon picker screen. The app icon features a playful design with an adorable aesthetic. -->
-  <string name="alternative_app_icon_option_cute">Сладко</string>
+  <string name="alternative_app_icon_option_cute">Симпатична</string>
   <!-- Title for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
   <string name="alternative_app_icon_option_momo">Момо</string>
   <!-- Subtitle for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
@@ -1133,9 +1084,17 @@
   <!-- Title for the "Solid colors" group of alternative app icon variants in the icon picker screen. This group contains icons with flat, uniform color backgrounds. -->
   <string name="alternative_app_icon_group_solid_colors">Едноцветни</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
-  <string name="alternative_app_icon_group_gradients">Градиенти</string>
+  <string name="alternative_app_icon_group_gradients">Приливащи</string>
   <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other">Друго</string>
+  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources">Други</string>
+  <!-- Title to show in alert when user selects an alternative app icon -->
+  <string name="restart_warning_dialog_title">Промяна на иконата на приложението?</string>
+  <!-- Message to warn users that applying an alternative app icon requires an app restart -->
+  <string name="restart_warning_dialog_body">Смяната на иконата изисква приложението да се рестартира.</string>
+  <!-- Dialog button text for confirming the app restart to apply the selected icon -->
+  <string name="restart_warning_dialog_button_positive">Рестартиране</string>
+  <!-- Dialog button text for cancelling app icon change -->
+  <string name="restart_warning_dialog_button_negative">Отказ</string>
   <!--
     Add-ons general availability nimbus message
 
@@ -1145,7 +1104,7 @@
   <!-- Body of the Nimbus message for add-ons general availability. 'Firefox' intentionally hardcoded here -->
   <string name="addon_ga_message_body" tools:ignore="BrandUsage,UnusedResources">Вижте 100+ нови разширения, които ви позволяват да направите Firefox ваш.</string>
   <!-- Button text of the Nimbus message for extensions general availability. -->
-  <string name="addon_ga_message_button_2" tools:ignore="UnusedResources">Разглеждане на разширения</string>
+  <string name="addon_ga_message_button_2" tools:ignore="UnusedResources">Разглеждане на разширенията</string>
   <!--
     Extension process crash dialog to user
 
@@ -1256,8 +1215,10 @@
   <string name="preferences_daily_usage_ping_learn_more">Научете повече за ежедневната употреба</string>
   <!-- Preference switch title for automatically submitting crash reports -->
   <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">Автоматично изпращане на доклади за срив</string>
+  <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
+  <string name="crash_reporting_snack_bar_message">Докладът е изпратен</string>
   <!-- Preference switch description for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_description" tools:ignore="UnusedResources" moz:removedIn="142">Това ни помага да откриваме и отстраняваме проблеми с браузъра. Докладите може да включват лични или чувствителни данни.</string>
+  <string name="preferences_automatically_send_crashes_description" tools:ignore="UnusedResources" moz:removedIn="142">Това ни помага да откриваме и отстраняваме проблеми с четеца. Докладите може да включват лични или чувствителни данни.</string>
   <!-- Text for sumo link to learn more about crash reports in data collection screen -->
   <string name="preferences_crashes_learn_more">Научете повече за докладите за сривове</string>
   <!-- Title Headers for data collection settings screen -->
@@ -1310,13 +1271,15 @@
   <!-- Preference for using simple toolbar -->
   <string name="preference_simple_toolbar">Обикновена</string>
   <!-- Preference for using expanded toolbar -->
-  <string name="preference_expanded_toolbar">Разгънати</string>
+  <string name="preference_expanded_toolbar">Разгъната</string>
+  <!-- Preference description indicating the toolbar location preference is disabled when the tab strip is enabled -->
+  <string name="preference_toolbar_pref_disabled_explanation">Адресната лента трябва да е отгоре, когато се показва лента с раздели.</string>
   <!--
     App icon Preferences
 
     Title for the preference that lets the user pick a new app icon
   -->
-  <string name="preference_select_app_icon_title">Изберете икона на приложение</string>
+  <string name="preference_select_app_icon_title">Избор на икона на приложение</string>
   <!--
     Theme Preferences
 
@@ -1330,6 +1293,12 @@
   <!-- Preference for using following device theme -->
   <string name="preference_follow_device_theme">Като темата на устройството</string>
   <!--
+    Tab Strip Preferences
+
+    Preferences for showing tab strip
+  -->
+  <string name="preference_tab_strip_show">Показване на лентата с раздели</string>
+  <!--
     Gestures Preferences
 
     Preferences for using pull to refresh in a webpage
@@ -1339,8 +1308,6 @@
   <string name="preference_gestures_dynamic_toolbar">Плъзване скрива лентата с инструменти</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Плъзване нагоре на лентата с инструменти отваря раздели</string>
-  <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Плъзване за скриване на адресната и лентата с инструменти</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Плъзване на адресната лента настрани превключва разделите</string>
   <!--
@@ -1474,9 +1441,9 @@
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Активни</string>
   <!-- Description for studies -->
-  <string name="studies_description_3">Изпробвайте функциите и идеите, преди да са пуснати за всички.</string>
+  <string name="studies_description_3">Изпробвайте функциите и идеите, преди да са достъпни за всички.</string>
   <!-- Title of the Studies data preference -->
-  <string name="studies_title">Инсталирайте и стартирайте проучвания</string>
+  <string name="studies_title">Инсталиране и стартиране на проучвания</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Научете повече</string>
   <!--
@@ -1567,9 +1534,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Изчистване на история</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">Историята е изчистена</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Историята е изчистена</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">Изтрито %1$s</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Изтрито %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Изтриване</string>
   <!--
@@ -1700,7 +1667,7 @@
     %1$s is the current file size that has been downloaded.
     %2$s is the total size of the downloaded file.
   -->
-  <string name="download_item_in_progress_description_pending">%1$s / %2$s • чака</string>
+  <string name="download_item_in_progress_description_pending">%1$s / %2$s • чакащи</string>
   <!--
     Description of an in progress download item, displayed in the downloads list when the total download size is unknown. This results in the estimated download time remaining to be unknown also.
     %1$s is the current file size that has been downloaded.
@@ -1754,7 +1721,9 @@
   <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
   <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">Помогнете да направим %1$s по-добър за всички. Служителите на Mozilla използват информацията, която изпращате, за да решават проблеми в уебсайта.</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="webcompat_reporter_description_2">Докладът ви ни помага да разберем и отстраним проблемите в %1$s, за да го направим по-добър за всички. Научете повече</string>
+  <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">Докладът ви ни помага да разберем и отстраним проблемите в %1$s, за да го направим по-добър за всички. Научете повече</string>
+  <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox") and %2$s is the learn more button. -->
+  <string name="webcompat_reporter_description_3">Докладът ви ни помага да разберем и отстраним проблемите в %1$s, за да го направим по-добър за всички. %2$s</string>
   <!-- The button text for navigating to the SUMO link to learn more about reporting a broken site. -->
   <string name="webcompat_reporter_learn_more">Научете повече</string>
   <!-- The text field label of the URL text field. This is displayed above the user-inputted URL. -->
@@ -1764,7 +1733,7 @@
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">Какво е повредено?</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">Изберете причина</string>
+  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">Избор на причина</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_2">Изберете причина</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
@@ -1786,19 +1755,11 @@
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
-    Broken site reason text for site slow or not working
+    Broken site reason text for site doesn’t load
   -->
-  <string name="webcompat_reporter_reason_slow" moz:removedIn="140" tools:ignore="UnusedResources">Сайтът е бавен или не работи</string>
-  <!-- Broken site reason text for site doesn’t load -->
   <string name="webcompat_reporter_reason_load">Страницата не се зарежда</string>
   <!-- Broken site reason text for can’t pay, check out or shop -->
   <string name="webcompat_reporter_reason_checkout">Не може да плаща, да плащане или да пазарувате</string>
-  <!-- Broken site reason text for images or videos -->
-  <string name="webcompat_reporter_reason_media" moz:removedIn="140" tools:ignore="UnusedResources">Изображения или видеоклипове</string>
-  <!-- Broken site reason text for buttons, links, and other content -->
-  <string name="webcompat_reporter_reason_content" moz:removedIn="140" tools:ignore="UnusedResources">Бутони, връзки и друго съдържание</string>
-  <!-- Broken site reason text for sign in or sign out -->
-  <string name="webcompat_reporter_reason_account" moz:removedIn="140" tools:ignore="UnusedResources">Вписване или излизане</string>
   <!-- Broken site reason text for site is slow -->
   <string name="webcompat_reporter_reason_slow2">Сайтът е бавен</string>
   <!-- Broken site reason text for video isn’t playing or loading -->
@@ -1807,8 +1768,6 @@
   <string name="webcompat_reporter_reason_content2">Липсващо съдържание</string>
   <!-- Broken site reason text for can’t sign in or register -->
   <string name="webcompat_reporter_reason_account2">Вписването или регистрирането е невъзможно</string>
-  <!-- Broken site reason text for ad blocker -->
-  <string name="webcompat_reporter_reason_ad_blocker" moz:removedIn="140" tools:ignore="UnusedResources">Блокиране на реклами</string>
   <!-- Broken site reason text for site asked to turn off ad blocker -->
   <string name="webcompat_reporter_reason_turn_off_adblocker">Сайтът поиска да изключи блокирането на реклами</string>
   <!-- Broken site reason text for browser isn’t supported or blocked -->
@@ -1828,7 +1787,9 @@
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">Възстановяване на раздел</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title">%s трябваше да бъде рестартиран</string>
+  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s трябваше да бъде рестартиран</string>
+  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
+  <string name="unsubmitted_crash_dialog_title_2">%s се срина. Изпращане на доклад?</string>
   <!-- Single unsubmitted crash matching remote settings. %1$s is the name of the app (for example "Firefox"). -->
   <string name="unsubmitted_crash_requested_by_devs_dialog_title">Имате неизпратен доклад за срив, свързан с разследвани сривове. Изпращайки го ще ни помогне да подобрим %1$s. Затварянето на това известие ще пренебрегне този доклад.</string>
   <!-- Multiple unsubmitted crashes matching remote settings. %1$d is the number of unsent crash reports, %2$s is the name of the app (for example "Firefox"). -->
@@ -1837,10 +1798,17 @@
   <string name="unsubmitted_crash_dialog_checkbox_label">Автоматично изпращане на доклади за срив</string>
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
   <string name="unsubmitted_crash_dialog_negative_button">Затваряне</string>
+  <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
+  <string name="unsubmitted_crash_dialog_negative_button_2">ЗАТВАРЯНЕ</string>
   <!-- Unsubmitted crash dialog negative button to never be asked for the submission -->
   <string name="unsubmitted_crash_requested_by_devs_dialog_never_button">Изключване на този въпрос</string>
   <!-- Unsubmitted crash dialog positive button to submit crash report -->
+  <string name="unsubmitted_crash_dialog_positive_button_2">ИЗПРАЩАНЕ</string>
+  <!-- Unsubmitted crash dialog positive button to submit crash report -->
   <string name="unsubmitted_crash_dialog_positive_button">Изпращане на доклад за срив</string>
+  <!-- Body text for crash report dialog. %s is the link text in the annotated string (ie. "Learn More") -->
+  <string name="unsubmitted_crash_dialog_body">Докладите за сривове ни помагат да откриваме и отстраняваме проблеми с браузъра. Докладите може да включват лични или чувствителни данни. %s</string>
+  <string name="unsubmitted_crash_dialog_learn_more">Научете повече</string>
   <!-- Unsubmitted crash dialog button to open a web page with more details on the feature and privacy policy -->
   <string name="unsubmitted_crash_requested_by_devs_learn_more">Научете повече</string>
   <!--
@@ -1848,11 +1816,11 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">Наистина ли искате да изтриете папката?</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">Наистина ли искате да изтриете папката?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items. -->
   <string name="bookmark_delete_folders_confirmation_dialog">Сигурни ли сте, че искате да изтриете избраните елементи?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog">%s ще изтрие избраните елементи.</string>
+  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s ще изтрие избраните елементи.</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">Отказ</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -1882,7 +1850,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">Изтриване</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">Запазване</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">Запазване</string>
   <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_custom">Подреждане по избор</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
@@ -1903,7 +1871,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">Промяна на папка</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">Влезте, за да видите синхронизираните отметки</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">Влезте, за да видите синхронизираните отметки</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -1915,24 +1883,24 @@
   <!-- Label for a text input field for a bookmark or folder name -->
   <string name="bookmark_name_label_normal_case">Име</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">Добавяне на папка</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">Добавяне на папка</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">Избиране на папка</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">Заглавието е задължително</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">Заглавието е задължително</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">Неправилен адрес</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">Липсват отметки</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">Липсват отметки</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">Изтрита %1$s</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">Отметките са изтрити</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">Отметките са изтрити</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3">Изтриване на избраните папки</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">Изтриване на избраните папки</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">ОТМЕНЯНЕ</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
@@ -1940,7 +1908,7 @@
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
   <string name="bookmark_delete_multiple_items">Изтрити елементи: %s</string>
   <!-- Text for the button to search all bookmarks -->
-  <string name="bookmark_search">Въведете търсене</string>
+  <string name="bookmark_search" tools:ignore="UnusedResources" moz:removedIn="143">Въведете търсене</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Връщане назад</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2096,7 +2064,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d раздел избран</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">Разделите са запазени!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Разделите са запазени!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection">Колекция запазена!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -2229,9 +2197,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">Списъкът е изтрит</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Списъкът е изтрит</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">Списъкът е преименуван</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Списъкът е преименуван</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Разделът е затворен</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -2268,9 +2236,9 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">Наистина ли искате да изтриете %1$s?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">Изтриване</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Изтриване</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">Адресът е копиран</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">Адресът е копиран</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Това е примерен текст. Той е тук, за да покаже как ще изглежда текста при намаляване и увеличаване на размера чрез тази настройка.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2782,6 +2750,10 @@
   <string name="preferences_addresses_save_and_autofill_addresses_2">Запазване и попълване на адреси</string>
   <!-- Preference summary for saving and filling address data -->
   <string name="preferences_addresses_save_and_autofill_addresses_summary_2">Включва телефонни номера и имейл адреси</string>
+  <!-- Preference option for syncing addresses across devices. This is displayed when the user is not signed into sync -->
+  <string name="preferences_addresses_sync_addresses_across_devices">Синхронизиране на адреси между устройства</string>
+  <!-- Preference option for syncing addresses across devices. This is displayed when the user is signed into sync -->
+  <string name="preferences_addresses_sync_addresses">Синхронизиране на адреси</string>
   <!-- Title of the "Add card" screen -->
   <string name="credit_cards_add_card">Добавяне на карта</string>
   <!-- Title of the "Edit card" screen -->
@@ -2906,14 +2878,12 @@
   <string name="search_add_custom_engine_error_empty_search_string">Въведете низ за търсене</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Уверете се, че низът за търсене съвпада с примера</string>
-  <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">Грешка при свързване с „%s“</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">%s е създадена</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s е създадена</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">%s е запазена</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s е запазена</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">%s е изтрита</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s е изтрита</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">За да разрешите:</string>
   <!-- First step for the allowing a permission -->
@@ -2941,7 +2911,7 @@
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">Няма изключения</string>
   <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation">Сигурен ли сте, че искате да изтриете отметката?</string>
+  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">Сигурен ли сте, че искате да изтриете отметката?</string>
   <!-- Browser menu button that adds a shortcut to the home fragment -->
   <string name="browser_menu_add_to_shortcuts">Добавяне към преки пътища</string>
   <!-- Browser menu button that removes a shortcut from the home fragment -->
@@ -3111,25 +3081,17 @@
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">Придвижване нагоре</string>
   <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description">Затваряне</string>
+  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">Затваряне</string>
   <!--
     Pocket recommended stories
 
     Header text for a section on the home screen.
   -->
-  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">Истории, провокиращи размисъл</string>
-  <!-- Header text for a section on the home screen. -->
   <string name="pocket_stories_header_2">Истории</string>
   <!-- Header text for a section on the home screen. -->
   <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">Истории по тема</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
   <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">Открийте повече</string>
-  <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-  <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">С подкрепата на %s.</string>
-  <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Част от семейството на Firefox. %s</string>
-  <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">Научете повече</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Спонсорирано</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -3162,8 +3124,6 @@
   <string name="a11y_action_label_wallpaper_collection_learn_more">отворете връзката, за да научите повече за тази колекция</string>
   <!-- Action label for links that point to an article. Talkback will append this to say "Double tap to read the article". -->
   <string name="a11y_action_label_read_article" moz:removedIn="141" tools:ignore="UnusedResources">прочетете статията</string>
-  <!-- Action label for links to the Firefox Pocket website. Talkback will append this to say "Double tap to open link to learn more". -->
-  <string name="a11y_action_label_pocket_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">отворете препратката, за да научите повече</string>
   <!-- Content description for headings announced by accessibility service. %s is the text of the heading. Talkback will announce the text and then speak the word "Heading" indicating to the user that this text is a heading for a section. -->
   <string name="a11y_heading">%s, Заглавие</string>
   <!-- Title for dialog displayed when trying to access links present in a text. -->
@@ -3805,7 +3765,9 @@
   <!-- The title of the explore extensions task for the setup checklist -->
   <string name="setup_checklist_task_explore_extensions">Разглеждане на разширения</string>
   <!-- The title of the search widget task for the setup checklist -->
-  <string name="setup_checklist_task_search_widget">Инсталиране на приспособление за търсене</string>
+  <string name="setup_checklist_task_search_widget" moz:removedIn="143" tools:ignore="UnusedResources">Инсталиране на приспособление за търсене</string>
+  <!-- The title of the search widget task for the setup checklist -->
+  <string name="setup_checklist_task_search_widget_2">Разгледайте приспособлението за търсене</string>
   <!--
     ===== Setup checklist feature: Group titles =====
 
@@ -3870,4 +3832,32 @@
   <string name="review_prompt_feedback_header">Съжаляваме, че имате проблеми. Кажете ни как можем да подобрим %1$s.</string>
   <!-- Label for a button opening a feedback forum -->
   <string name="review_prompt_feedback_button">Оставете обратна връзка</string>
+  <!--
+    Terms of use pop up prompt
+
+    Title for the pop up prompt
+  -->
+  <string name="terms_of_use_prompt_title">Имаме актуализация</string>
+  <!--
+    Message for the terms of use pop up prompt
+    %1$s is the product name "Firefox"
+    %2$s is the string terms_of_use_prompt_link_terms_of_use (Terms of Use) that is a link to the terms of use
+    %3$s is the string terms_of_use_prompt_link_privacy_notice (Privacy Notice) that is a link to the privacy notice
+  -->
+  <string name="terms_of_use_prompt_message_1">Въведохме %1$s %2$s и актуализирахме нашия %3$s.</string>
+  <!--
+    Second part of the terms of use pop up prompt
+    %1$s is the string terms_of_use_prompt_link_learn_more (Learn more) that is a link to a website with more information about the terms of use
+  -->
+  <string name="terms_of_use_prompt_message_2">Моля, отделете време за преглед и прием. %1$s.</string>
+  <!-- Terms of use link in the pop up prompt message that links to the terms of use -->
+  <string name="terms_of_use_prompt_link_terms_of_use">Условия за ползване</string>
+  <!-- Privacy notice link in the pop up prompt message that links to the privacy notice -->
+  <string name="terms_of_use_prompt_link_privacy_notice">Политика на поверителност</string>
+  <!-- Learn more link in the pop up prompt message that links to a site with more information about the terms of use -->
+  <string name="terms_of_use_prompt_link_learn_more">Научете повече</string>
+  <!-- Label for a button to accept the terms of use -->
+  <string name="terms_of_use_prompt_accept">Приемане</string>
+  <!-- Label for a button to postpone accepting the terms of use -->
+  <string name="terms_of_use_prompt_postpone">Напомни ми по-късно</string>
 </resources>

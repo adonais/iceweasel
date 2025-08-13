@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsDisplayListInvalidation.h"
+
 #include "nsDisplayList.h"
 #include "nsIFrame.h"
 #include "nsTableFrame.h"

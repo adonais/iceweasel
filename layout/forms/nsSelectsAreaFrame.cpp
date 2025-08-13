@@ -5,11 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "nsSelectsAreaFrame.h"
 
+#include "WritingModes.h"
 #include "mozilla/PresShell.h"
+#include "nsDisplayList.h"
 #include "nsIContent.h"
 #include "nsListControlFrame.h"
-#include "nsDisplayList.h"
-#include "WritingModes.h"
 
 using namespace mozilla;
 

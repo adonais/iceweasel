@@ -6,13 +6,13 @@
 
 #include "ContainStyleScopeManager.h"
 
-#include "mozilla/ServoStyleSet.h"
-#include "nsIContentInlines.h"
 #include "CounterStyleManager.h"
+#include "mozilla/ServoStyleSet.h"
+#include "nsContentUtils.h"
 #include "nsCounterManager.h"
 #include "nsIContent.h"
+#include "nsIContentInlines.h"
 #include "nsIFrame.h"
-#include "nsContentUtils.h"
 #include "nsQuoteList.h"
 
 namespace mozilla {

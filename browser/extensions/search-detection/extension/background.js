@@ -12,23 +12,21 @@ const TELEMETRY_VALUE_SERVER = "server";
 
 class AddonsSearchDetection {
   constructor() {
-    // The key is an URL pattern to monitor and its corresponding value is a
-    // list of add-on IDs.
-    this.matchPatterns = {};
+    /** @type {{baseUrl: string, addonId?: string, paramName?: string}[]} */
+    this.engines = [];
 
     this.onRedirectedListener = this.onRedirectedListener.bind(this);
   }
 
-  async getMatchPatterns() {
+  async getEngines() {
     try {
-      this.matchPatterns =
-        await browser.addonsSearchDetection.getMatchPatterns();
+      this.engines = await browser.addonsSearchDetection.getEngines();
     } catch (err) {
       console.error(`failed to retrieve the list of URL patterns: ${err}`);
-      this.matchPatterns = {};
+      this.engines = [];
     }
 
-    return this.matchPatterns;
+    return this.engines;
   }
 
   // When the search service changes the set of engines that are enabled, we
@@ -52,16 +50,16 @@ class AddonsSearchDetection {
     //
     // Note: search suggestions are system principal requests, so webRequest
     // cannot intercept them.
-    const matchPatterns = await this.getMatchPatterns();
-    const patterns = Object.keys(matchPatterns);
+    const engines = await this.getEngines();
+    const patterns = new Set(engines.map(e => e.baseUrl + "*"));
 
-    if (patterns.length === 0) {
+    if (patterns.size === 0) {
       return;
     }
 
     browser.addonsSearchDetection.onRedirected.addListener(
       this.onRedirectedListener,
-      { urls: patterns }
+      { urls: [...patterns] }
     );
   }
 
@@ -70,12 +68,15 @@ class AddonsSearchDetection {
     // likely detected a search server-side redirect.
     const maybeServerSideRedirect = !addonId;
 
+    // All engines that match the initial url.
+    let engines = this.getEnginesForUrl(firstUrl);
+
     let addonIds = [];
     // Search server-side redirects are possible because an extension has
     // registered a search engine, which is why we can (hopefully) retrieve the
     // add-on ID.
     if (maybeServerSideRedirect) {
-      addonIds = this.getAddonIdsForUrl(firstUrl);
+      addonIds = engines.filter(e => e.addonId).map(e => e.addonId);
     } else if (addonId) {
       addonIds = [addonId];
     }
@@ -90,15 +91,24 @@ class AddonsSearchDetection {
     // This is the final URL after redirect(s).
     const to = await browser.addonsSearchDetection.getPublicSuffix(lastUrl);
 
-    if (from === to) {
-      // We do not want to report redirects to same public suffixes. However,
-      // we will report redirects from public suffixes belonging to a same
-      // entity (.e.g., `example.com` -> `example.fr`).
-      //
+    let sameSite = from === to;
+    let paramChanged = false;
+    if (sameSite) {
+      // We report redirects within the same site separately.
+
       // Known limitation: if a redirect chain starts and ends with the same
-      // public suffix, we won't report any event, even if the chain contains
-      // different public suffixes in between.
-      return;
+      // public suffix, it will still get reported as a same_site_redirect,
+      // even if the chain contains different public suffixes in between.
+
+      // Need special logic to detect changes to the query param named in `paramName`.
+      let firstParams = new URLSearchParams(new URL(firstUrl).search);
+      let lastParams = new URLSearchParams(new URL(lastUrl).search);
+      for (let { paramName } of engines.filter(e => e.paramName)) {
+        if (firstParams.get(paramName) !== lastParams.get(paramName)) {
+          paramChanged = true;
+          break;
+        }
+      }
     }
 
     for (const id of addonIds) {
@@ -113,21 +123,19 @@ class AddonsSearchDetection {
           ? TELEMETRY_VALUE_SERVER
           : TELEMETRY_VALUE_EXTENSION,
       };
-      browser.addonsSearchDetection.report(maybeServerSideRedirect, extra);
+      if (sameSite) {
+        let ssr = { addonId: id, addonVersion, paramChanged };
+        browser.addonsSearchDetection.reportSameSiteRedirect(ssr);
+      } else if (maybeServerSideRedirect) {
+        browser.addonsSearchDetection.reportETLDChangeOther(extra);
+      } else {
+        browser.addonsSearchDetection.reportETLDChangeWebrequest(extra);
+      }
     }
   }
 
-  getAddonIdsForUrl(url) {
-    for (const pattern of Object.keys(this.matchPatterns)) {
-      // `getMatchPatterns()` returns the prefix plus "*".
-      const urlPrefix = pattern.slice(0, -1);
-
-      if (url.startsWith(urlPrefix)) {
-        return this.matchPatterns[pattern];
-      }
-    }
-
-    return [];
+  getEnginesForUrl(url) {
+    return this.engines.filter(e => url.startsWith(e.baseUrl));
   }
 }
 

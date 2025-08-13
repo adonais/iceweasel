@@ -163,6 +163,10 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
     @include wallpaper-contrast-fix;
   }
 
+  .tile {
+    color-scheme: initial;
+  }
+
   // Necessary for when navigating by a keyboard, having the context
   // menu open should display the "…" button. This style is a clone
   // of the `:active` state for `.context-menu-button`
@@ -306,20 +310,22 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
       box-shadow: $shadow-card;
       cursor: default;
     }
+  }
 
-    &.add-button {
-      .tile {
-        background-color: var(--button-background-color);
+  &.add-button {
+    .tile {
+      background-color: var(--button-background-color);
+      box-shadow: $shadow-card;
+      cursor: default;
 
-        .icon-wrapper {
-          background-image: url('chrome://global/skin/icons/plus-20.svg');
-          background-size: cover;
-          background-repeat: no-repeat;
-          height: 20px;
-          width: 20px;
-          fill: var(--icon-color);
-          -moz-context-properties: fill;
-        }
+      .icon-wrapper {
+        background-image: url('chrome://global/skin/icons/plus-20.svg');
+        background-size: cover;
+        background-repeat: no-repeat;
+        height: 20px;
+        width: 20px;
+        fill: var(--icon-color);
+        -moz-context-properties: fill;
       }
     }
   }
@@ -397,14 +403,14 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
       }
     }
 
+    .icon-wrapper {
+      width: 40px;
+      height: 40px;
+    }
+
     .tile {
       background: var(--newtab-background-card);
       border-radius: var(--border-radius-large);
-
-      .icon-wrapper {
-        width: 40px;
-        height: 40px;
-      }
 
       .top-site-icon {
         // Remove the white background colors on icons,

@@ -392,9 +392,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">ইতিহাস মুছুন</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">ইতিহাস মুছে ফেলা হয়েছে</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">ইতিহাস মুছে ফেলা হয়েছে</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">%1$s মুছে ফেলা হয়েছে</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s মুছে ফেলা হয়েছে</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">মুছুন</string>
   <!--
@@ -431,7 +431,7 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">আপনি কি নিশ্চিত যে আপনি এই ফোল্ডারটি মুছতে চান?</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">আপনি কি নিশ্চিত যে আপনি এই ফোল্ডারটি মুছতে চান?</string>
   <!-- Screen title for adding a bookmarks folder -->
   <string name="bookmark_add_folder">ফোল্ডার যোগ করুন</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
@@ -449,7 +449,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">মুছুন</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">সংরক্ষণ</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">সংরক্ষণ</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -460,7 +460,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">ফোল্ডার সম্পাদনা করুন</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">sync হওয়া বুকমার্কগুলি দেখতে সাইন ইন করুন</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">sync হওয়া বুকমার্কগুলি দেখতে সাইন ইন করুন</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -468,22 +468,22 @@
   <!-- Bookmark NAME editing field label -->
   <string name="bookmark_name_label">NAME</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">ফোল্ডার যোগ করুন</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">ফোল্ডার যোগ করুন</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">ফোল্ডার নির্বাচন করুন</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">একটি শিরোনাম থাকতেই হবে</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">একটি শিরোনাম থাকতেই হবে</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">অবৈধ URL</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">এখানে কোনও বুকমার্ক নেই</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">এখানে কোনও বুকমার্ক নেই</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s মুছে ফেলা হয়েছে</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">বুকমার্ক মুছে ফেলা হয়েছে</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">বুকমার্ক মুছে ফেলা হয়েছে</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">UNDO</string>
   <!--
@@ -573,7 +573,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ট্যাব নির্বাচন করা হয়েছে</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">ট্যাবগুলো সংরক্ষণ করা হয়েছে!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">ট্যাবগুলো সংরক্ষণ করা হয়েছে!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
   <string name="create_collection_tab_saved">ট্যাব সংরক্ষণ করা হয়েছে!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
@@ -636,9 +636,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">সংগ্রহ মুছে ফেলা হয়েছে</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">সংগ্রহ মুছে ফেলা হয়েছে</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">সংগ্রহের নামকরণ</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">সংগ্রহের নামকরণ</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">ট্যাব বন্ধ করা হয়েছে</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -663,9 +663,9 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">আপনি কি নিশ্চিত আপনি %1$s মুছতে চান?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">মুছে ফেলুন</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">মুছে ফেলুন</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">URL কপি হয়েছে</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL কপি হয়েছে</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">এটি নমুনা লেখা। আপনি যখন এই সেটিংটি দিয়ে আকার বাড়াবেন বা হ্রাস করবেন তখন লেখা কি ভাবে প্রদর্শিত হবে তা দেখানোর জন্য এটি এখানে।</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -867,11 +867,11 @@
   <!-- Text shown when a user leaves the name field empty -->
   <string name="search_add_custom_engine_error_empty_name">সার্চ ইঞ্জিনের নাম লিখুন</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">%s তৈরি করা হয়েছে</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s তৈরি করা হয়েছে</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">%s সংরক্ষণ করা হয়েছে</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s সংরক্ষণ করা হয়েছে</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">%s মুছে ফেলা হয়েছে</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s মুছে ফেলা হয়েছে</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">এটির অনুমতি দেওয়ার জন্য:</string>
   <!-- First step for the allowing a permission -->
@@ -881,7 +881,7 @@
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for a site -->
   <string name="confirm_clear_permissions_site">আপনি কি নিশ্চিত যে আপনি এই সাইটের জন্য সব অনুমতি সাফ করতে চান?</string>
   <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation">আপনি কি নিশ্চিত যে আপনি এই বুকমার্কটি মুছতে চান?</string>
+  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">আপনি কি নিশ্চিত যে আপনি এই বুকমার্কটি মুছতে চান?</string>
   <!--
     text shown before the issuer name to indicate who its verified by, %1$s is the name of
     the certificate authority that verified the ticket

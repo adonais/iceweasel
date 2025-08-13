@@ -7,11 +7,11 @@
 #ifndef mozilla_AnimatedPropertyID_h
 #define mozilla_AnimatedPropertyID_h
 
+#include "mozilla/HashFunctions.h"
+#include "mozilla/ServoBindings.h"
 #include "nsCSSPropertyID.h"
 #include "nsCSSProps.h"
 #include "nsString.h"
-#include "mozilla/HashFunctions.h"
-#include "mozilla/ServoBindings.h"
 
 namespace mozilla {
 

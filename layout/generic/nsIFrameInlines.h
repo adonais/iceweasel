@@ -7,14 +7,14 @@
 #ifndef nsIFrameInlines_h___
 #define nsIFrameInlines_h___
 
-#include "mozilla/dom/ElementInlines.h"
 #include "mozilla/ComputedStyleInlines.h"
+#include "mozilla/dom/ElementInlines.h"
+#include "nsCSSAnonBoxes.h"
 #include "nsContainerFrame.h"
+#include "nsFrameManager.h"
 #include "nsIContentInlines.h"
 #include "nsLayoutUtils.h"
 #include "nsPlaceholderFrame.h"
-#include "nsCSSAnonBoxes.h"
-#include "nsFrameManager.h"
 
 bool nsIFrame::IsFlexItem() const {
   return GetParent() && GetParent()->IsFlexContainerFrame() &&
@@ -200,6 +200,10 @@ mozilla::LogicalPoint nsIFrame::GetLogicalNormalPosition(
 
 bool nsIFrame::ContentIsEditable() const {
   return mContent && mContent->IsEditable();
+}
+
+inline bool nsIFrame::HasAnchorPosReference() const {
+  return IsAbsolutelyPositioned() && Style()->HasAnchorPosReference();
 }
 
 #endif

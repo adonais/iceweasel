@@ -182,7 +182,7 @@ Result<bool, nsresult> HTMLLabelElement::PerformAccesskey(
     return Err(NS_ERROR_ABORT);
   }
 
-  RefPtr<nsPresContext> presContext = GetPresContext(eForUncomposedDoc);
+  RefPtr<nsPresContext> presContext = GetPresContext(eForComposedDoc);
   if (!presContext) {
     return Err(NS_ERROR_UNEXPECTED);
   }

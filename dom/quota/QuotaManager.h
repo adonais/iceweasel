@@ -210,8 +210,7 @@ class QuotaManager final : public BackgroundThreadObject {
    * LSNG.
    */
   void InitQuotaForOrigin(const FullOriginMetadata& aFullOriginMetadata,
-                          const ClientUsageArray& aClientUsages,
-                          uint64_t aUsageBytes, bool aDirectoryExists = true);
+                          bool aDirectoryExists = true);
 
   // XXX clients can use QuotaObject instead of calling this method directly.
   void DecreaseUsageForClient(const ClientMetadata& aClientMetadata,
@@ -225,6 +224,9 @@ class QuotaManager final : public BackgroundThreadObject {
 
   void UpdateOriginAccessTime(const OriginMetadata& aOriginMetadata,
                               int64_t aTimestamp);
+
+  void UpdateOriginMaintenanceDate(const OriginMetadata& aOriginMetadata,
+                                   int32_t aMaintenanceDate);
 
   void UpdateOriginAccessed(const OriginMetadata& aOriginMetadata);
 
@@ -679,6 +681,7 @@ class QuotaManager final : public BackgroundThreadObject {
   void SetThumbnailPrivateIdentityId(uint32_t aThumbnailPrivateIdentityId);
 
   uint64_t GetGroupLimit() const;
+  static uint64_t GetGroupLimitForLimit(uint64_t aLimit);
 
   Maybe<OriginStateMetadata> GetOriginStateMetadata(
       const OriginMetadata& aOriginMetadata);

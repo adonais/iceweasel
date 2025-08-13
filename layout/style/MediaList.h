@@ -9,10 +9,9 @@
 #ifndef mozilla_dom_MediaList_h
 #define mozilla_dom_MediaList_h
 
-#include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoUtils.h"
-
+#include "mozilla/dom/BindingDeclarations.h"
 #include "nsWrapperCache.h"
 
 class nsMediaQueryResultCacheKey;

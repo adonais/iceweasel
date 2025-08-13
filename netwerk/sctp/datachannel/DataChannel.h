@@ -145,7 +145,11 @@ class DataChannelConnection : public net::NeckoTargetHolder {
     virtual ~DataConnectionListener() = default;
 
     // Called when a new DataChannel has been opened by the other side.
-    virtual void NotifyDataChannel(already_AddRefed<DataChannel> channel) = 0;
+    virtual void NotifyDataChannel(
+        already_AddRefed<DataChannel> aChannel, const nsACString& aLabel,
+        bool aOrdered, mozilla::dom::Nullable<uint16_t> aMaxLifeTime,
+        mozilla::dom::Nullable<uint16_t> aMaxRetransmits,
+        const nsACString& aProtocol, bool aNegotiated) = 0;
 
     // Called when a DataChannel transitions to state open
     virtual void NotifyDataChannelOpen(DataChannel* aChannel) = 0;
@@ -409,7 +413,7 @@ class DataChannel {
   void Close();
 
   // Set the listener (especially for channels created from the other side)
-  void SetListener(DataChannelListener* aListener, nsISupports* aContext);
+  void SetListener(DataChannelListener* aListener);
 
   // Helper for send methods that converts POSIX error codes to an ErrorResult.
   static void SendErrnoToErrorResult(int error, size_t aMessageSize,
@@ -423,16 +427,6 @@ class DataChannel {
 
   // Send a binary blob
   void SendBinaryBlob(dom::Blob& aBlob, ErrorResult& aRv);
-
-  DataChannelReliabilityPolicy GetType() const { return mPrPolicy; }
-
-  dom::Nullable<uint16_t> GetMaxPacketLifeTime() const;
-
-  dom::Nullable<uint16_t> GetMaxRetransmits() const;
-
-  bool GetNegotiated() const { return mNegotiated; }
-
-  bool GetOrdered() const { return mOrdered; }
 
   void IncrementBufferedAmount(uint32_t aSize, ErrorResult& aRv);
   void DecrementBufferedAmount(uint32_t aSize);
@@ -479,7 +473,6 @@ class DataChannel {
 
   // Mainthread only
   DataChannelListener* mListener = nullptr;
-  nsCOMPtr<nsISupports> mContext;
   bool mEverOpened = false;
   const nsCString mLabel;
   const nsCString mProtocol;

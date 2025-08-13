@@ -16849,7 +16849,6 @@ subsuite = "webgl1-core"
 subsuite = "webgl1-core"
 fail-if = [
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'",
-  "os == 'linux' && verify && debug",
 ]
 skip-if = [
   "os == 'android'",

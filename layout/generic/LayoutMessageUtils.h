@@ -9,9 +9,9 @@
 
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtils.h"
-#include "nsIFrame.h"
 #include "mozilla/AspectRatio.h"
 #include "mozilla/webrender/WebRenderTypes.h"
+#include "nsIFrame.h"
 
 namespace IPC {
 

@@ -45,12 +45,17 @@ class TaskbarTab {
   #userContextId;
   // URL opened when a Taskbar Tab is opened from the Taskbar.
   #startUrl;
+  // The path to the shortcut associated with this Taskbar Tab, *relative
+  // to the `Start Menu\Programs` folder.*
+  #shortcutRelativePath;
 
-  constructor({ id, scopes, startUrl, userContextId }) {
+  constructor({ id, scopes, startUrl, userContextId, shortcutRelativePath }) {
     this.#id = id;
     this.#scopes = scopes;
     this.#userContextId = userContextId;
     this.#startUrl = startUrl;
+
+    this.#shortcutRelativePath = shortcutRelativePath ?? null;
   }
 
   get id() {
@@ -69,10 +74,14 @@ class TaskbarTab {
     return this.#startUrl;
   }
 
+  get shortcutRelativePath() {
+    return this.#shortcutRelativePath;
+  }
+
   /**
    * Whether the provided URL is navigable from the Taskbar Tab.
    *
-   * @param {nsIURL} aUrl - The URL to navigate to.
+   * @param {nsIURI} aUrl - The URL to navigate to.
    * @returns {boolean} `true` if the URL is navigable from the Taskbar Tab associated to the ID.
    * @throws {Error} If `aId` is not a valid Taskbar Tabs ID.
    */
@@ -96,17 +105,33 @@ class TaskbarTab {
   }
 
   toJSON() {
+    const maybe = (self, name) => (self[name] ? { [name]: self[name] } : {});
     return {
       id: this.id,
       scopes: this.scopes,
       userContextId: this.userContextId,
       startUrl: this.startUrl,
+      ...maybe(this, "shortcutRelativePath"),
     };
+  }
+
+  /**
+   * Applies mutable fields from aPatch to this object.
+   *
+   * Always use TaskbarTabsRegistry.patchTaskbarTab instead. Aside
+   * from calling into this, it notifies other objects (especially
+   * the saver) about the change.
+   */
+  _applyPatch(aPatch) {
+    if ("shortcutRelativePath" in aPatch) {
+      this.#shortcutRelativePath = aPatch.shortcutRelativePath;
+    }
   }
 }
 
 export const kTaskbarTabsRegistryEvents = Object.freeze({
   created: "created",
+  patched: "patched",
   removed: "removed",
 });
 
@@ -118,6 +143,10 @@ export class TaskbarTabsRegistry {
   #taskbarTabs = [];
   // Signals when Taskbar Tabs have been created or removed.
   #emitter = new lazy.EventEmitter();
+
+  static get events() {
+    return kTaskbarTabsRegistryEvents;
+  }
 
   /**
    * Initializes a Taskbar Tabs Registry, optionally loading from a file.
@@ -177,7 +206,7 @@ export class TaskbarTabsRegistry {
   /**
    * Finds or creates a Taskbar Tab based on the provided URL and container.
    *
-   * @param {nsIURL} aUrl - The URL to match or derive the scope and start URL from.
+   * @param {nsIURI} aUrl - The URL to match or derive the scope and start URL from.
    * @param {number} aUserContextId - The container to start a Taskbar Tab in.
    * @returns {TaskbarTab} The matching or created Taskbar Tab.
    */
@@ -198,6 +227,7 @@ export class TaskbarTabsRegistry {
 
     lazy.logConsole.info(`Created Taskbar Tab with ID ${id}`);
 
+    Glean.webApp.install.record({});
     this.#emitter.emit(kTaskbarTabsRegistryEvents.created, taskbarTab);
 
     return taskbarTab;
@@ -218,6 +248,7 @@ export class TaskbarTabsRegistry {
       lazy.logConsole.info(`Removing Taskbar Tab Id ${tts[i].id}`);
       let removed = tts.splice(i, 1);
 
+      Glean.webApp.uninstall.record({});
       this.#emitter.emit(kTaskbarTabsRegistryEvents.removed, removed[0]);
     } else {
       lazy.logConsole.error(`Taskbar Tab ID ${aId} not found.`);
@@ -227,11 +258,24 @@ export class TaskbarTabsRegistry {
   /**
    * Searches for an existing Taskbar Tab matching the URL and Container.
    *
-   * @param {nsIURL} aUrl - The URL to match.
+   * @param {nsIURI} aUrl - The URL to match.
    * @param {number} aUserContextId - The container to match.
    * @returns {TaskbarTab|null} The matching Taskbar Tab, or null if none match.
    */
   findTaskbarTab(aUrl, aUserContextId) {
+    // Could be used in contexts reading from the command line, so validate
+    // input to guard against passing in strings.
+    if (!(aUrl instanceof Ci.nsIURI)) {
+      throw new TypeError(
+        "Invalid argument, `aUrl` should be instance of `nsIURI`"
+      );
+    }
+    if (typeof aUserContextId !== "number") {
+      throw new TypeError(
+        "Invalid argument, `aUserContextId` should be type of `number`"
+      );
+    }
+
     for (const tt of this.#taskbarTabs) {
       for (const scope of tt.scopes) {
         if (aUrl.host === scope.hostname) {
@@ -272,6 +316,23 @@ export class TaskbarTabsRegistry {
     }
 
     return tt;
+  }
+
+  /**
+   * Updates properties within the provided Taskbar Tab.
+   *
+   * All fields from aPatch will be assigned to aTaskbarTab, except
+   * for the ID.
+   *
+   * @param {TaskbarTab} aTaskbarTab - The taskbar tab to update.
+   * @param {object} aPatch - An object with properties to change.
+   * @throws {Error} If any taskbar tab in aTaskbarTabs is unknown.
+   */
+  patchTaskbarTab(aTaskbarTab, aPatch) {
+    // This is done from the registry to make it more clear that an event
+    // will fire, and thus that I/O might be possible.
+    aTaskbarTab._applyPatch(aPatch);
+    this.#emitter.emit(kTaskbarTabsRegistryEvents.patched, aTaskbarTab);
   }
 
   /**

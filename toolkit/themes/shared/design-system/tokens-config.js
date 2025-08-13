@@ -19,6 +19,7 @@ const TOKEN_SECTIONS = {
   "Focus Outline": "focus-outline",
   "Font Size": "font-size",
   "Font Weight": "font-weight",
+  Heading: "heading",
   Icon: "icon",
   "Input - Text": "input-text",
   "Input - Space": "input-space",
@@ -492,7 +493,12 @@ const SINGULAR_TABLE_CATEGORIES = [
 ];
 
 function getTableName(tokenName) {
-  let replacePattern = /^(button-|input-text-|focus-|checkbox-|table-row-)/;
+  if (tokenName.includes("page-main")) {
+    return "size";
+  }
+
+  let replacePattern =
+    /^(button-|input-text-|input-|focus-|checkbox-|table-row-|attention-dot-)/;
   if (tokenName.match(replacePattern)) {
     tokenName = tokenName.replace(replacePattern, "");
   }

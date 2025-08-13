@@ -352,7 +352,6 @@ skip-if = [
 
 ["test_bug836922_npolicies.html"]
 skip-if = [
-  "verify",
   "http3",
   "http2",
 ]
@@ -366,7 +365,6 @@ skip-if = [
 ["test_bug909029.html"]
 
 ["test_bug910139.html"]
-skip-if = ["verify"]
 
 ["test_bug941404.html"]
 
@@ -435,9 +433,8 @@ skip-if = [
 
 ["test_csp_error_messages.html"]
 support-files = ["file_csp_error_messages.html"]
-skip-if = [
-  "os == 'android' && android_version == '24' && processor == 'x86_64' && debug", # Bug 1915293
-]
+skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64' && debug"] # Bug 1915293
+
 ["test_csp_frame_ancestors_about_blank.html"]
 support-files = [
   "file_csp_frame_ancestors_about_blank.html",
@@ -518,13 +515,14 @@ skip-if = ["fission && xorigin && debug"]  # Bug 1716406 - New fission platform 
 
 ["test_iframe_sandbox.html"]
 skip-if = [
-  "fission && xorigin && debug && (os == 'win' || os == 'linux')",  # Bug 1716406 - New fission platform triage
+  "os == 'win' && debug && fission && xorigin", # Bug 1716406 - New fission platform triage
+  "os == 'linux' && debug && fission && xorigin", # Bug 1716406 - New fission platform triage
   "http3",
   "http2",
 ]
 
 ["test_iframe_sandbox_srcdoc.html"]
-skip-if = ["fission && xorigin && debug && os == 'win'"]  # Bug 1716406 - New fission platform triage
+skip-if = ["os == 'win' && debug && fission && xorigin"] # Bug 1716406 - New fission platform triage
 
 ["test_iframe_sandbox_top_1.html"]
 

@@ -6,13 +6,13 @@
 #define nsTableRowGroupFrame_h__
 
 #include "mozilla/Attributes.h"
-#include "nscore.h"
-#include "nsContainerFrame.h"
+#include "mozilla/WritingModes.h"
 #include "nsAtom.h"
+#include "nsContainerFrame.h"
 #include "nsILineIterator.h"
 #include "nsTArray.h"
 #include "nsTableFrame.h"
-#include "mozilla/WritingModes.h"
+#include "nscore.h"
 
 class nsTableRowFrame;
 namespace mozilla {

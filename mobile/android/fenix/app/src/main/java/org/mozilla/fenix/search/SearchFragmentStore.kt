@@ -4,30 +4,68 @@
 
 package org.mozilla.fenix.search
 
+import android.content.Context
 import androidx.annotation.VisibleForTesting
+import androidx.lifecycle.LifecycleOwner
+import androidx.navigation.NavController
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.state.searchEngines
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
+import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion
+import mozilla.components.concept.awesomebar.AwesomeBar.SuggestionProvider
 import mozilla.components.lib.state.Action
+import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
+import mozilla.components.lib.state.UiStore
 import org.mozilla.fenix.HomeActivity
+import org.mozilla.fenix.automotive.isAndroidAutomotiveAvailable
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.search.SearchFragmentAction.Init
+import org.mozilla.fenix.search.SearchFragmentStore.Environment
 import org.mozilla.fenix.utils.Settings
 
 /**
  * The [Store] for holding the [SearchFragmentState] and applying [SearchFragmentAction]s.
+ *
+ * @param initialState The initial state of the store.
+ * @param middleware The [Middleware]s to apply to the store.
  */
 class SearchFragmentStore(
     initialState: SearchFragmentState,
-) : Store<SearchFragmentState, SearchFragmentAction>(
-    initialState,
-    ::searchStateReducer,
-)
+    middleware: List<Middleware<SearchFragmentState, SearchFragmentAction>> = emptyList(),
+) : UiStore<SearchFragmentState, SearchFragmentAction>(
+    initialState = initialState,
+    reducer = ::searchStateReducer,
+    middleware = middleware,
+) {
+    init {
+        dispatch(Init)
+    }
+
+    /**
+     * The current environment of the search UX allowing access to various
+     * other application features that this integrates with.
+     *
+     * This is Activity/Fragment lifecycle dependent and should be handled carefully to avoid memory leaks.
+     *
+     * @property context Activity [Context] used for various system interactions.
+     * @property viewLifecycleOwner [LifecycleOwner] depending on which lifecycle related operations will be scheduled.
+     * @property browsingModeManager [BrowsingModeManager] for querying the current browsing mode.
+     * @property navController [NavController] used to navigate to other destinations.
+     */
+    data class Environment(
+        val context: Context,
+        val viewLifecycleOwner: LifecycleOwner,
+        val browsingModeManager: BrowsingModeManager,
+        val navController: NavController,
+    )
+}
 
 /**
  * Wraps a `SearchEngine` to give consumers the context that it was selected as a shortcut
@@ -78,6 +116,10 @@ sealed class SearchEngineSource {
  * for an already existing tab).
  * @property searchEngineSource The current selected search engine with the context of how it was selected.
  * @property defaultEngine The current default search engine (or null if none is available yet).
+ * @property searchSuggestionsProviders The list of search suggestions providers that the user can choose from.
+ * @property searchSuggestionsOrientedAtBottom Whether or not the search suggestions should be oriented at the
+ * bottom of the screen.
+ * @property shouldShowSearchSuggestions Whether or not to show search suggestions in the AwesomeBar.
  * @property showSearchSuggestions Whether or not to show search suggestions from the search engine in the AwesomeBar.
  * @property showSearchSuggestionsHint Whether or not to show search suggestions in private hint panel.
  * @property showSearchShortcuts Whether or not to show search shortcuts in the AwesomeBar.
@@ -119,6 +161,9 @@ data class SearchFragmentState(
     val searchTerms: String,
     val searchEngineSource: SearchEngineSource,
     val defaultEngine: SearchEngine?,
+    val searchSuggestionsProviders: List<SuggestionProvider>,
+    val searchSuggestionsOrientedAtBottom: Boolean,
+    val shouldShowSearchSuggestions: Boolean,
     val showSearchSuggestions: Boolean,
     val showSearchSuggestionsHint: Boolean,
     val showSearchShortcuts: Boolean,
@@ -144,7 +189,51 @@ data class SearchFragmentState(
     val pastedText: String? = null,
     val searchAccessPoint: MetricsUtils.Source,
     val clipboardHasUrl: Boolean = false,
-) : State
+) : State {
+    /**
+     * Static functionality of [SearchFragmentState].
+     */
+    companion object {
+        /**
+         * Default empty [SearchFragmentState].
+         */
+        val EMPTY = SearchFragmentState(
+            query = "",
+            url = "",
+            searchTerms = "",
+            searchEngineSource = SearchEngineSource.None,
+            defaultEngine = null,
+            searchSuggestionsProviders = emptyList(),
+            searchSuggestionsOrientedAtBottom = false,
+            shouldShowSearchSuggestions = false,
+            showSearchSuggestions = false,
+            showSearchSuggestionsHint = false,
+            showSearchShortcuts = false,
+            areShortcutsAvailable = false,
+            showSearchShortcutsSetting = false,
+            showClipboardSuggestions = false,
+            showSearchTermHistory = false,
+            showHistorySuggestionsForCurrentEngine = false,
+            showAllHistorySuggestions = false,
+            showBookmarksSuggestionsForCurrentEngine = false,
+            showAllBookmarkSuggestions = false,
+            showSyncedTabsSuggestionsForCurrentEngine = false,
+            showAllSyncedTabsSuggestions = false,
+            showSessionSuggestionsForCurrentEngine = false,
+            showAllSessionSuggestions = false,
+            showSponsoredSuggestions = false,
+            showNonSponsoredSuggestions = false,
+            showTrendingSearches = false,
+            showRecentSearches = false,
+            showShortcutsSuggestions = false,
+            showQrButton = false,
+            tabId = null,
+            pastedText = null,
+            searchAccessPoint = MetricsUtils.Source.NONE,
+            clipboardHasUrl = false,
+        )
+    }
+}
 
 /**
  * Creates the initial state for the search fragment.
@@ -156,7 +245,7 @@ fun createInitialSearchFragmentState(
     pastedText: String?,
     searchAccessPoint: MetricsUtils.Source,
     searchEngine: SearchEngine? = null,
-    isAndroidAutomotiveAvailable: Boolean,
+    isAndroidAutomotiveAvailable: Boolean = activity.isAndroidAutomotiveAvailable(),
 ): SearchFragmentState {
     val settings = components.settings
     val tab = tabId?.let { components.core.store.state.findTab(it) }
@@ -173,6 +262,9 @@ fun createInitialSearchFragmentState(
         url = url,
         searchTerms = tab?.content?.searchTerms.orEmpty(),
         searchEngineSource = searchEngineSource,
+        searchSuggestionsProviders = emptyList(),
+        searchSuggestionsOrientedAtBottom = false,
+        shouldShowSearchSuggestions = false,
         defaultEngine = null,
         showSearchSuggestions = shouldShowSearchSuggestions(
             browsingMode = activity.browsingModeManager.mode,
@@ -216,9 +308,51 @@ fun createInitialSearchFragmentState(
  */
 sealed class SearchFragmentAction : Action {
     /**
+     * Automated action for when the [SearchFragmentStore] is created to trigger all needed setup.
+     */
+    data object Init : SearchFragmentAction()
+
+    /**
+     * Action for when a new search is started.
+     *
+     * @property selectedSearchEngine The user selected search engine to use for the new search
+     * or `null` if the default search engine should be used.
+     * @property isUserSelected Whether or not the search engine was selected by the user.
+     * @property inPrivateMode Whether or not the search is started in private browsing mode.
+     */
+    data class SearchStarted(
+        val selectedSearchEngine: SearchEngine?,
+        val isUserSelected: Boolean,
+        val inPrivateMode: Boolean,
+    ) : SearchFragmentAction()
+
+    /**
+     * Action for when search suggestions should be visible or not.
+     *
+     * @property visible Whether or not the search suggestions should be visible.
+     */
+    data class SearchSuggestionsVisibilityUpdated(
+        val visible: Boolean,
+    ) : SearchFragmentAction()
+
+    /**
+     * Action to update the search suggestions providers.
+     *
+     * @property providers The new search suggestions providers.
+     */
+    data class SearchProvidersUpdated(
+        val providers: List<SuggestionProvider>,
+    ) : SearchFragmentAction()
+
+    /**
      * Action to enable or disable search suggestions.
      */
     data class SetShowSearchSuggestions(val show: Boolean) : SearchFragmentAction()
+
+    /**
+     * All actions through which a new search engine is selected
+     */
+    sealed class SearchEnginesSelectedActions : SearchFragmentAction()
 
     /**
      * Action when default search engine is selected.
@@ -227,7 +361,7 @@ sealed class SearchFragmentAction : Action {
         val engine: SearchEngine,
         val browsingMode: BrowsingMode,
         val settings: Settings,
-    ) : SearchFragmentAction()
+    ) : SearchEnginesSelectedActions()
 
     /**
      * Action when shortcut search engine is selected.
@@ -236,22 +370,22 @@ sealed class SearchFragmentAction : Action {
         val engine: SearchEngine,
         val browsingMode: BrowsingMode,
         val settings: Settings,
-    ) : SearchFragmentAction()
+    ) : SearchEnginesSelectedActions()
 
     /**
      * Action when history search engine is selected.
      */
-    data class SearchHistoryEngineSelected(val engine: SearchEngine) : SearchFragmentAction()
+    data class SearchHistoryEngineSelected(val engine: SearchEngine) : SearchEnginesSelectedActions()
 
     /**
      * Action when bookmarks search engine is selected.
      */
-    data class SearchBookmarksEngineSelected(val engine: SearchEngine) : SearchFragmentAction()
+    data class SearchBookmarksEngineSelected(val engine: SearchEngine) : SearchEnginesSelectedActions()
 
     /**
      * Action when tabs search engine is selected.
      */
-    data class SearchTabsEngineSelected(val engine: SearchEngine) : SearchFragmentAction()
+    data class SearchTabsEngineSelected(val engine: SearchEngine) : SearchEnginesSelectedActions()
 
     /**
      * Action when allow search suggestion in private mode hint is tapped.
@@ -273,6 +407,30 @@ sealed class SearchFragmentAction : Action {
      * If the unified search is enabled, then search shortcuts should not be shown.
      */
     data class UpdateSearchState(val search: SearchState, val isUnifiedSearchEnabled: Boolean) : SearchFragmentAction()
+
+    /**
+     * Action indicating a suggestion was clicked.
+     */
+    data class SuggestionClicked(
+        val suggestion: Suggestion,
+    ) : SearchFragmentAction()
+
+    /**
+     * Action indicating a suggestion was selected for being edited before loading it.
+     */
+    data class SuggestionSelected(
+        val suggestion: Suggestion,
+    ) : SearchFragmentAction()
+
+    /**
+     * Signals a new valid [Environment] has been set.
+     */
+    data class EnvironmentRehydrated(val environment: Environment) : SearchFragmentAction()
+
+    /**
+     * Signals the current [Environment] is not valid anymore.
+     */
+    data object EnvironmentCleared : SearchFragmentAction()
 }
 
 /**
@@ -281,6 +439,11 @@ sealed class SearchFragmentAction : Action {
 @Suppress("LongMethod")
 private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmentAction): SearchFragmentState {
     return when (action) {
+        is Init -> {
+            // no-op. Expected to be handled in middlewares.
+            state
+        }
+
         is SearchFragmentAction.SearchDefaultEngineSelected ->
             state.copy(
                 searchEngineSource = SearchEngineSource.Default(action.engine),
@@ -447,6 +610,26 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
             state.copy(
                 clipboardHasUrl = action.hasUrl,
             )
+        }
+
+        is SearchFragmentAction.SearchProvidersUpdated -> {
+            state.copy(
+                searchSuggestionsProviders = action.providers,
+            )
+        }
+
+        is SearchFragmentAction.SearchSuggestionsVisibilityUpdated -> {
+            state.copy(shouldShowSearchSuggestions = action.visible)
+        }
+
+        is SearchFragmentAction.EnvironmentRehydrated,
+        is SearchFragmentAction.EnvironmentCleared,
+        is SearchFragmentAction.SearchStarted,
+        is SearchFragmentAction.SuggestionClicked,
+        is SearchFragmentAction.SuggestionSelected,
+            -> {
+            // no-op. Expected to be handled in middlewares.
+            state
         }
     }
 }

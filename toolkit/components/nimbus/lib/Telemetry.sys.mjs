@@ -31,6 +31,7 @@ const EnrollmentStatusReason = Object.freeze({
   NAME_CONFLICT: "NameConflict",
   PREF_FLIPS_CONFLICT: "PrefFlipsConflict",
   ERROR: "Error",
+  UNENROLLED_IN_ANOTHER_PROFILE: "UnenrolledInAnotherProfile",
 });
 
 const EnrollmentFailureReason = Object.freeze({
@@ -72,6 +73,7 @@ const UnenrollReason = Object.freeze({
   RECIPE_NOT_SEEN: "recipe-not-seen",
   STUDIES_OPT_OUT: "studies-opt-out",
   TARGETING_MISMATCH: "targeting-mismatch",
+  UNENROLLED_IN_ANOTHER_PROFILE: "unenrolled-in-another-profile",
   UNKNOWN: "unknown",
 
   // Validation failure can cause unenrollment.
@@ -234,6 +236,11 @@ export const NimbusTelemetry = {
         legacyEvent.prefName = cause.prefName;
         gleanEvent.pref_name = cause.prefName;
         break;
+
+      case UnenrollReason.L10N_MISSING_ENTRY:
+      case UnenrollReason.L10N_MISSING_LOCALE:
+        gleanEvent.locale = cause.locale;
+        break;
     }
 
     Glean.normandy.unenrollNimbusExperiment.record(legacyEvent);
@@ -280,6 +287,12 @@ export const NimbusTelemetry = {
         enrollmentStatus.status = EnrollmentStatus.DISQUALIFIED;
         enrollmentStatus.reason = EnrollmentStatusReason.PREF_FLIPS_CONFLICT;
         enrollmentStatus.conflict_slug = cause.conflictingSlug;
+        break;
+
+      case UnenrollReason.UNENROLLED_IN_ANOTHER_PROFILE:
+        enrollmentStatus.status = EnrollmentStatus.DISQUALIFIED;
+        enrollmentStatus.reason =
+          EnrollmentStatusReason.UNENROLLED_IN_ANOTHER_PROFILE;
         break;
 
       default:

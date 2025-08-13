@@ -27,6 +27,7 @@ export function AdBannerContextMenu({
   position,
   type,
   showAdReporting,
+  toggleActive = () => {},
 }) {
   const ADBANNER_CONTEXT_MENU_OPTIONS = [
     "BlockAdUrl",
@@ -66,6 +67,7 @@ export function AdBannerContextMenu({
    */
   const toggleContextMenu = isKeyBoard => {
     toggleContextMenuStyleSwitch(!showContextMenu);
+    toggleActive(!showContextMenu);
     setShowContextMenu(!showContextMenu);
     setIsKeyboardAccess(isKeyBoard);
   };
@@ -84,6 +86,7 @@ export function AdBannerContextMenu({
 
   const onUpdate = () => {
     toggleContextMenuStyleSwitch(!showContextMenu);
+    toggleActive(!showContextMenu);
     setShowContextMenu(!showContextMenu);
   };
 

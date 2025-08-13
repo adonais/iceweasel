@@ -9,10 +9,14 @@
 var { ExtensionParent } = ChromeUtils.importESModule(
   "resource://gre/modules/ExtensionParent.sys.mjs"
 );
-
 var { ExtensionError } = ExtensionUtils;
 
 var { IconDetails } = ExtensionParent;
+
+ChromeUtils.defineESModuleGetters(this, {
+  SidebarManager:
+    "moz-src:///browser/components/sidebar/SidebarManager.sys.mjs",
+});
 
 // WeakMap[Extension -> SidebarAction]
 let sidebarActionMap = new WeakMap();
@@ -70,11 +74,21 @@ this.sidebarAction = class extends ExtensionAPI {
     this.build();
   }
 
+  /**
+   * Called by any extension when any of the following happens:
+   * - An extension has an update including whether it is a sidebar
+   * - An extension is disabled or removed
+   * - On browser shutdown
+   *
+   * @param {boolean} isAppShutdown
+   *        Whether this is called during app shutdown
+   */
   onShutdown(isAppShutdown) {
-    sidebarActionMap.delete(this.extension);
-
+    if (!sidebarActionMap.delete(this.extension)) {
+      // sidebar_action not specified for this extension.
+      return;
+    }
     this.tabContext.shutdown();
-
     // Don't remove everything on app shutdown so session restore can handle
     // restoring open sidebars.
     if (isAppShutdown) {
@@ -83,6 +97,9 @@ this.sidebarAction = class extends ExtensionAPI {
 
     for (let window of windowTracker.browserWindows()) {
       let { SidebarController } = window;
+      // Note: sidebar preferences such as sidebar.installed.extensions are kept to remember users preferences
+      // and should be remembered between browser/extension restarts, when the extension is disabled and re-enabled,
+      // and across updates (including updates that drop sidebar_action). We should only forget about these on uninstall.
       SidebarController.removeExtension(this.id);
     }
     windowTracker.removeOpenListener(this.windowOpenListener);
@@ -90,6 +107,15 @@ this.sidebarAction = class extends ExtensionAPI {
 
   static onUninstall(id) {
     const sidebarId = `${makeWidgetId(id)}-sidebar-action`;
+
+    let installedExtensions = Services.prefs
+      .getStringPref("sidebar.installed.extensions", "")
+      .split(",");
+    const index = installedExtensions.indexOf(id);
+    if (index != -1) {
+      SidebarManager.cleanupPrefs(id);
+    }
+
     for (let window of windowTracker.browserWindows()) {
       let { SidebarController } = window;
       if (SidebarController.lastOpenedId === sidebarId) {

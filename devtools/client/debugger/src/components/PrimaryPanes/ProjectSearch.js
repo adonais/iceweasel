@@ -59,7 +59,6 @@ export class ProjectSearch extends Component {
       // or when restoring primary panes from collapse.
       query: this.props.query || "",
 
-      inputFocused: false,
       focusedItem: null,
       expanded: new Set(),
       results: [],
@@ -402,14 +401,6 @@ export class ProjectSearch extends Component {
       showErrorEmoji: this.shouldShowErrorEmoji(),
       isLoading: status === statusType.fetching,
       onChange: this.inputOnChange,
-      onFocus: () =>
-        this.setState({
-          inputFocused: true,
-        }),
-      onBlur: () =>
-        this.setState({
-          inputFocused: false,
-        }),
       onKeyDown: this.onKeyDown,
       onHistoryScroll: this.onHistoryScroll,
       showClose: false,

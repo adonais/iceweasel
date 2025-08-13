@@ -99,14 +99,6 @@
     Text for the message displayed in the contextual feature recommendation popup promoting the erase private browsing feature.
   -->
   <string name="erase_action_cfr_message" moz:removedIn="141" tools:ignore="UnusedResources">Uue privaatseansi alustamiseks puuduta siit. Kustuta ajalugu, küpsised – kõik.</string>
-  <!--
-    Toolbar "contextual feature recommendation" (CFR)
-
-    Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
-  -->
-  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Uue navigeerimisega saad kiiremini sirvida</string>
-  <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Veebisaidil allapoole kerides tõmbub see riba kõrvale, et saada sirvimiseks lisaruumi.</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Vajalik on ligipääs kaamerale. Mine Androidi sätetesse, puuduta õigusi ja seejärel puuduta lubamise valikut.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -439,8 +431,6 @@
   <string name="preferences_add_private_browsing_shortcut">Lisa privaatse lehitsemise otsetee</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">Ainult HTTPS-režiim</string>
-  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary" moz:removedIn="140" tools:ignore="UnusedResources">Vaata kaarte sõrmejälje, näotuvastuse või PIN-koodi abil.</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_2">Vaata kaarte sõrmejälje, PIN-koodi või näotuvastusega.</string>
   <!-- Text for indicating cookie banner handling is off this site, this is shown as part of the protections panel with the tracking protection toggle -->
@@ -881,9 +871,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Kustuta ajalugu</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">Ajalugu kustutatud</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Ajalugu kustutatud</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">Ajaloost kustutati %1$s</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Ajaloost kustutati %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Kustuta</string>
   <!--
@@ -989,16 +979,6 @@
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
   <string name="webcompat_reporter_dismiss_success_snackbar_text">Sulge</string>
   <!--
-    These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
-
-    Broken site reason text for site slow or not working
-  -->
-  <string name="webcompat_reporter_reason_slow" moz:removedIn="140" tools:ignore="UnusedResources">Sait on aeglane või ei tööta</string>
-  <!-- Broken site reason text for images or videos -->
-  <string name="webcompat_reporter_reason_media" moz:removedIn="140" tools:ignore="UnusedResources">Pildid või videod</string>
-  <!-- Broken site reason text for buttons, links, and other content -->
-  <string name="webcompat_reporter_reason_content" moz:removedIn="140" tools:ignore="UnusedResources">Nupud, lingid ja muu sisu</string>
-  <!--
     Crashes
 
     Title text displayed on the tab crash page. %1$s is the name of the app (for example "Firefox").
@@ -1017,9 +997,9 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">Kas oled kindel, et soovid selle kausta kustutada?</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">Kas oled kindel, et soovid selle kausta kustutada?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog">%s kustutab valitud järjehoidjad ja/või kaustad.</string>
+  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s kustutab valitud järjehoidjad ja/või kaustad.</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">Loobu</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -1043,7 +1023,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">Kustuta</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">Salvesta</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">Salvesta</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -1054,7 +1034,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">Kausta muutmine</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">Sünkroonitud järjehoidjate nägemiseks logi sisse</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">Sünkroonitud järjehoidjate nägemiseks logi sisse</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -1066,30 +1046,30 @@
   <!-- Label for a text input field for a bookmark or folder name -->
   <string name="bookmark_name_label_normal_case">Nimi</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">Kausta lisamine</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">Kausta lisamine</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">Kausta valimine</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">Pealkiri peab olema</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">Pealkiri peab olema</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">Vigane URL</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">Järjehoidjad puuduvad</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">Järjehoidjad puuduvad</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">Kustutati järjehoidja %1$s</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">Järjehoidjad kustutati</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">Järjehoidjad kustutati</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3">Valitud kaustade kustutamine</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">Valitud kaustade kustutamine</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">VÕTA TAGASI</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
   <string name="bookmark_delete_single_item">%s kustutati</string>
   <!-- Text for the button to search all bookmarks -->
-  <string name="bookmark_search">Sisesta otsitav fraas</string>
+  <string name="bookmark_search" tools:ignore="UnusedResources" moz:removedIn="143">Sisesta otsitav fraas</string>
   <!-- Content description for the bookmark screen delete bookmark navigation bar button -->
   <string name="bookmark_delete_bookmark_content_description">Kustuta järjehoidja</string>
   <!-- Content description for the bookmark screen delete bookmark folder navigation bar button -->
@@ -1221,7 +1201,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d kaart valitud</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">Kaardid salvestati!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Kaardid salvestati!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection">Kollektsioon salvesti!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -1307,9 +1287,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">Kollektsioon kustutatud</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Kollektsioon kustutatud</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">Kollektsioon nimetati ümber</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Kollektsioon nimetati ümber</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Kaart suleti</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -1340,9 +1320,9 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">Kas oled kindel, et soovid kustutada kollektsiooni %1$s?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">Kustuta</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Kustuta</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">URL kopeeritud</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL kopeeritud</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">See on näidistekst. Siin näidatakse, kuidas teksti kuvatakse, kui selle sättega suurust suurendada või vähendada.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -1867,14 +1847,12 @@
   <string name="search_add_custom_engine_error_empty_search_string">Sisesta otsingustring</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Kontrolli, et otsingustring kattub näidises toodud formaadiga</string>
-  <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">Otsingumootoriga “%s” ühendumisel esines viga</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">Loodi otsingumootor %s</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Loodi otsingumootor %s</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">Otsingumootori %s muudatused salvestati</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Otsingumootori %s muudatused salvestati</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">Otsingumootor %s kustutati</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Otsingumootor %s kustutati</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Lubamiseks:</string>
   <!-- First step for the allowing a permission -->
@@ -1900,7 +1878,7 @@
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">Saidil puuduvad erandid</string>
   <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation">Kas oled kindel, et soovid selle järjehoidja kustutada?</string>
+  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">Kas oled kindel, et soovid selle järjehoidja kustutada?</string>
   <!-- Browser menu button that adds a shortcut to the home fragment -->
   <string name="browser_menu_add_to_shortcuts">Lisa otseteedesse</string>
   <!-- Browser menu button that removes a shortcut from the home fragment -->
@@ -2023,21 +2001,11 @@
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">Liigu üles</string>
   <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description">Sulge</string>
-  <!--
-    Pocket recommended stories
-
-    Header text for a section on the home screen.
-  -->
-  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">Mõtlema panevad lood</string>
+  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">Sulge</string>
   <!-- Header text for a section on the home screen. -->
   <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">Lood teemade kaupa</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
   <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">Avasta veel</string>
-  <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Osa Firefoxi perekonnast. %s</string>
-  <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">Rohkem teavet</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Sponsitud</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->

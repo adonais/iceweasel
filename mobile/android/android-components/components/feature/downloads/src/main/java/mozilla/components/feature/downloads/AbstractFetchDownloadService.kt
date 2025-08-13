@@ -379,8 +379,7 @@ abstract class AbstractFetchDownloadService : Service() {
      * @param notificationAccentColor accent color for all download notifications.
      */
     data class Style(
-        @ColorRes
-        val notificationAccentColor: Int = R.color.mozac_feature_downloads_notification,
+        @param:ColorRes val notificationAccentColor: Int = R.color.mozac_feature_downloads_notification,
     )
 
     /**
@@ -1152,14 +1151,17 @@ abstract class AbstractFetchDownloadService : Service() {
                 while (cursor.moveToNext()) {
                     val relativePath =
                         cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.RELATIVE_PATH))
-                    if (!limitToDownloadsFolder || relativePath == "Downloads/") {
+                    if (!limitToDownloadsFolder || isPathInDownloadsDirectory(relativePath)) {
                         val idColumnIndex = cursor.getColumnIndex(MediaStore.Downloads._ID)
                         return ContentUris.withAppendedId(collection, cursor.getLong(idColumnIndex))
                     }
                 }
             }
-
             return null
+        }
+
+        private fun isPathInDownloadsDirectory(relativePath: String): Boolean {
+            return relativePath == "Downloads/" || relativePath == "Download/"
         }
 
         @VisibleForTesting

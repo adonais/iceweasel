@@ -67,13 +67,10 @@ skip-if = [
 ["browser_autocomplete_primary_password.js"]
 
 ["browser_autofill_hidden_document.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && !debug", # high frequency intermittent, Bug 1716486
-]
+skip-if = ["os == 'mac' && os_version == '10.15' && processor == 'x86_64' && !debug"] # high frequency intermittent, Bug 1716486
 
 ["browser_autofill_http.js"]
 https_first_disabled = true
-skip-if = ["verify"]
 
 ["browser_autofill_track_filled_logins.js"]
 
@@ -92,7 +89,6 @@ skip-if = [
 ["browser_context_menu.js"]
 
 ["browser_context_menu_autocomplete_interaction.js"]
-skip-if = ["verify"]
 
 ["browser_context_menu_generated_password.js"]
 
@@ -147,9 +143,7 @@ support-files = [
 ["browser_doorhanger_password_edits.js"]
 
 ["browser_doorhanger_promptToChangePassword.js"]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1775906
-]
+skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64'"] # Bug 1775906
 
 ["browser_doorhanger_remembering.js"]
 
@@ -213,7 +207,6 @@ skip-if = ["tsan"] # Bug 1683730
 
 ["browser_insecurePasswordConsoleWarning.js"]
 https_first_disabled = true
-skip-if = ["verify"]
 
 ["browser_isProbablyASignUpForm.js"]
 support-files = ["form_signup_detection.html"]
@@ -246,9 +239,7 @@ support-files = [
   "subtst_privbrowsing_1.html",
   "form_password_change.html",
 ]
-skip-if = [
-  "os == 'linux' && os_version == '18.04' && bits == 64 && !debug", # Bug 1744976
-]
+skip-if = ["os == 'linux' && os_version == '18.04' && bits == 64 && !debug"] # Bug 1744976
 
 ["browser_proxyAuth_prompt.js"]
 skip-if = ["os == 'android'"]

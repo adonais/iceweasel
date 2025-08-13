@@ -8,14 +8,6 @@
 
 #include "mozilla/AttributeStyles.h"
 
-#include "nsGkAtoms.h"
-#include "nsPresContext.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/DocumentInlines.h"
-#include "mozilla/dom/Element.h"
-#include "nsStyleConsts.h"
-#include "nsError.h"
-#include "nsHashKeys.h"
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/OperatorNewExtensions.h"
@@ -23,6 +15,14 @@
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSet.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/Element.h"
+#include "nsError.h"
+#include "nsGkAtoms.h"
+#include "nsHashKeys.h"
+#include "nsPresContext.h"
+#include "nsStyleConsts.h"
 
 using namespace mozilla::dom;
 

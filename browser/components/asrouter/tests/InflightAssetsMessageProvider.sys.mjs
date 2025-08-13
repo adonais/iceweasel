@@ -11,129 +11,137 @@ export const InflightAssetsMessageProvider = {
     return [
       {
         id: "MILESTONE_MESSAGE_87",
-        groups: ["cfr"],
+        groups: [
+          "cfr"
+        ],
         content: {
           anchor_id: "tracking-protection-icon-container",
           bucket_id: "CFR_MILESTONE_MESSAGE",
           buttons: {
             primary: {
               action: {
-                type: "OPEN_PROTECTION_REPORT",
+                type: "OPEN_PROTECTION_REPORT"
               },
               event: "PROTECTION",
               label: {
-                string_id: "cfr-doorhanger-milestone-ok-button",
-              },
+                string_id: "cfr-doorhanger-milestone-ok-button"
+              }
             },
             secondary: [
               {
                 label: {
-                  string_id: "cfr-doorhanger-milestone-close-button",
+                  string_id: "cfr-doorhanger-milestone-close-button"
                 },
                 action: {
-                  type: "CANCEL",
+                  type: "CANCEL"
                 },
-                event: "DISMISS",
-              },
-            ],
+                event: "DISMISS"
+              }
+            ]
           },
           category: "cfrFeatures",
           heading_text: {
-            string_id: "cfr-doorhanger-milestone-heading2",
+            string_id: "cfr-doorhanger-milestone-heading2"
           },
           layout: "short_message",
           notification_text: "",
           skip_address_bar_notifier: true,
-          text: "",
+          text: ""
         },
         frequency: {
-          lifetime: 7,
+          lifetime: 7
         },
-        targeting:
-          "pageLoad >= 4 && firefoxVersion >= 115 && firefoxVersion < 121 && userPrefs.cfrFeatures",
+        targeting: "pageLoad >= 4 && firefoxVersion >= 115 && firefoxVersion < 121 && userPrefs.cfrFeatures",
         template: "milestone_message",
         trigger: {
           id: "contentBlocking",
-          params: ["ContentBlockingMilestone"],
-        },
+          params: [
+            "ContentBlockingMilestone"
+          ]
+        }
       },
       {
         id: "DOH_ROLLOUT_CONFIRMATION_89",
-        groups: ["cfr"],
-        targeting:
-          "profileAgeCreated < 1572480000000 && ( 'doh-rollout.enabled'|preferenceValue || 'doh-rollout.self-enabled'|preferenceValue || 'doh-rollout.ru.enabled'|preferenceValue || 'doh-rollout.ua.enabled'|preferenceValue ) && !( 'doh-rollout.disable-heuristics'|preferenceValue || 'doh-rollout.skipHeuristicsCheck'|preferenceValue || 'doh-rollout.doorhanger-decision'|preferenceValue ) && firefoxVersion >= 89",
+        groups: [
+          "cfr"
+        ],
+        targeting: "profileAgeCreated < 1572480000000 && ( 'doh-rollout.enabled'|preferenceValue || 'doh-rollout.self-enabled'|preferenceValue || 'doh-rollout.ru.enabled'|preferenceValue || 'doh-rollout.ua.enabled'|preferenceValue ) && !( 'doh-rollout.disable-heuristics'|preferenceValue || 'doh-rollout.skipHeuristicsCheck'|preferenceValue || 'doh-rollout.doorhanger-decision'|preferenceValue ) && firefoxVersion >= 89",
         template: "infobar",
         content: {
           priority: 3,
           type: "global",
           text: {
-            string_id: "cfr-doorhanger-doh-body",
+            string_id: "cfr-doorhanger-doh-body"
           },
           buttons: [
             {
               label: {
-                string_id: "cfr-doorhanger-doh-primary-button-2",
+                string_id: "cfr-doorhanger-doh-primary-button-2"
               },
               action: {
-                type: "ACCEPT_DOH",
+                type: "ACCEPT_DOH"
               },
-              primary: true,
+              primary: true
             },
             {
               label: {
-                string_id: "cfr-doorhanger-doh-secondary-button",
+                string_id: "cfr-doorhanger-doh-secondary-button"
               },
               action: {
-                type: "DISABLE_DOH",
-              },
+                type: "DISABLE_DOH"
+              }
             },
             {
               label: {
-                string_id: "notification-learnmore-default-label",
+                string_id: "notification-learnmore-default-label"
               },
               supportPage: "dns-over-https",
               callback: null,
               action: {
-                type: "CANCEL",
-              },
-            },
+                type: "CANCEL"
+              }
+            }
           ],
           bucket_id: "DOH_ROLLOUT_CONFIRMATION_89",
-          category: "cfrFeatures",
+          category: "cfrFeatures"
         },
         frequency: {
-          lifetime: 3,
+          lifetime: 3
         },
         trigger: {
           id: "openURL",
-          patterns: ["*://*/*"],
-        },
+          patterns: [
+            "*://*/*"
+          ]
+        }
       },
       {
         id: "INFOBAR_DEFAULT_AND_PIN_87",
-        groups: ["cfr"],
+        groups: [
+          "cfr"
+        ],
         content: {
           category: "cfrFeatures",
           bucket_id: "INFOBAR_DEFAULT_AND_PIN_87",
           text: {
-            string_id: "default-browser-notification-message",
+            string_id: "default-browser-notification-message"
           },
           type: "global",
           buttons: [
             {
               label: {
-                string_id: "default-browser-notification-button",
+                string_id: "default-browser-notification-button"
               },
               action: {
-                type: "PIN_AND_DEFAULT",
+                type: "PIN_AND_DEFAULT"
               },
               primary: true,
-              accessKey: "P",
-            },
-          ],
+              accessKey: "P"
+            }
+          ]
         },
         trigger: {
-          id: "defaultBrowserCheck",
+          id: "defaultBrowserCheck"
         },
         template: "infobar",
         frequency: {
@@ -141,18 +149,18 @@ export const InflightAssetsMessageProvider = {
           custom: [
             {
               period: 3024000000,
-              cap: 1,
-            },
-          ],
+              cap: 1
+            }
+          ]
         },
-        targeting:
-          "((firefoxVersion >= 87 && firefoxVersion < 89) || (firefoxVersion >= 89 && source == 'startup')) && !isDefaultBrowser && !'browser.shell.checkDefaultBrowser'|preferenceValue && isMajorUpgrade != true && platformName != 'linux' && ((currentDate|date - profileAgeCreated) / 604800000) >= 5 && !activeNotifications && 'browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features'|preferenceValue && ((currentDate|date - profileAgeCreated) / 604800000) < 15",
+        targeting: "((firefoxVersion >= 87 && firefoxVersion < 89) || (firefoxVersion >= 89 && firefoxVersion < 138 && source == 'startup')) && !isDefaultBrowser && !'browser.shell.checkDefaultBrowser'|preferenceValue && isMajorUpgrade != true && platformName != 'linux' && ((currentDate|date - profileAgeCreated) / 604800000) >= 5 && !activeNotifications && 'browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features'|preferenceValue && ((currentDate|date - profileAgeCreated) / 604800000) < 15"
       },
       {
         id: "CFR_FULL_VIDEO_SUPPORT_EN",
-        groups: ["cfr"],
-        targeting:
-          "firefoxVersion < 88 && firefoxVersion != 78 && localeLanguageCode in ['en', 'fr', 'de', 'ru', 'zh', 'es', 'it', 'pl']",
+        groups: [
+          "cfr"
+        ],
+        targeting: "firefoxVersion < 88 && firefoxVersion != 78 && localeLanguageCode in ['en', 'fr', 'de', 'ru', 'zh', 'es', 'it', 'pl']",
         template: "cfr_doorhanger",
         content: {
           skip_address_bar_notifier: true,
@@ -160,51 +168,54 @@ export const InflightAssetsMessageProvider = {
           anchor_id: "PanelUI-menu-button",
           layout: "icon_and_message",
           text: {
-            string_id: "cfr-doorhanger-video-support-body",
+            string_id: "cfr-doorhanger-video-support-body"
           },
           buttons: {
             secondary: [
               {
                 label: {
-                  string_id: "cfr-doorhanger-extension-cancel-button",
+                  string_id: "cfr-doorhanger-extension-cancel-button"
                 },
                 action: {
-                  type: "CANCEL",
-                },
-              },
+                  type: "CANCEL"
+                }
+              }
             ],
             primary: {
               label: {
-                string_id: "cfr-doorhanger-video-support-primary-button",
+                string_id: "cfr-doorhanger-video-support-primary-button"
               },
               action: {
                 type: "OPEN_URL",
                 data: {
                   args: "https://support.mozilla.org/kb/update-firefox-latest-release",
-                  where: "tabshifted",
-                },
-              },
-            },
+                  where: "tabshifted"
+                }
+              }
+            }
           },
           bucket_id: "CFR_FULL_VIDEO_SUPPORT_EN",
           heading_text: {
-            string_id: "cfr-doorhanger-video-support-header",
+            string_id: "cfr-doorhanger-video-support-header"
           },
           info_icon: {
             label: {
-              string_id: "cfr-doorhanger-extension-sumo-link",
+              string_id: "cfr-doorhanger-extension-sumo-link"
             },
-            sumo_path: "extensionrecommendations",
+            sumo_path: "extensionrecommendations"
           },
           notification_text: "Message from Firefox",
-          category: "cfrFeatures",
+          category: "cfrFeatures"
         },
         frequency: {
-          lifetime: 3,
+          lifetime: 3
         },
         trigger: {
           id: "openURL",
-          patterns: ["https://*/Amazon-Video/*", "https://*/Prime-Video/*"],
+          patterns: [
+            "https://*/Amazon-Video/*",
+            "https://*/Prime-Video/*"
+          ],
           params: [
             "www.hulu.com",
             "hulu.com",
@@ -223,10 +234,10 @@ export const InflightAssetsMessageProvider = {
             "www.sling.com",
             "sling.com",
             "www.facebook.com",
-            "facebook.com",
-          ],
-        },
-      },
+            "facebook.com"
+          ]
+        }
+      }
     ];
-  },
+  }
 };

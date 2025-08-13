@@ -22,6 +22,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.getSystemService
 import androidx.core.os.bundleOf
 import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
@@ -172,8 +173,9 @@ class SavedLoginsFragment : SecureFragment(), MenuProvider {
                                     getNavController = { lifecycleHolder.composeNavController },
                                     exitLogins = { lifecycleHolder.navController.popBackStack() },
                                     persistLoginsSortOrder = {
-                                        DefaultSavedLoginsStorage(requireContext().settings()).savedLoginsSortOrder =
-                                            it
+                                        DefaultSavedLoginsStorage(
+                                            lifecycleHolder.context.settings(),
+                                        ).savedLoginsSortOrder = it
                                     },
                                     openTab = { url, openInNewTab ->
                                         lifecycleHolder.homeActivity.openToBrowserAndLoad(
@@ -185,6 +187,7 @@ class SavedLoginsFragment : SecureFragment(), MenuProvider {
                                             ),
                                         )
                                     },
+                                    clipboardManager = requireActivity().getSystemService(),
                                 ),
                             ),
                             lifecycleHolder = lifecycleHolder,

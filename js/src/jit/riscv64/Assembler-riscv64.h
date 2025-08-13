@@ -89,9 +89,9 @@ struct ScratchRegisterScope : public AutoRegisterScope {
 
 class MacroAssembler;
 
-static constexpr uint32_t ABIStackAlignment = 8;
+static constexpr uint32_t ABIStackAlignment = 16;
 static constexpr uint32_t CodeAlignment = 16;
-static constexpr uint32_t JitStackAlignment = 8;
+static constexpr uint32_t JitStackAlignment = 16;
 static constexpr uint32_t JitStackValueAlignment =
     JitStackAlignment / sizeof(Value);
 static const uint32_t WasmStackAlignment = 16;
@@ -379,9 +379,9 @@ class Assembler : public AssemblerShared,
       nop();
     }
   }
-  virtual void emit(Instr x) {
+  virtual BufferOffset emit(Instr x) {
     MOZ_ASSERT(hasCreator());
-    m_buffer.putInt(x);
+    BufferOffset offset = m_buffer.putInt(x);
 #ifdef DEBUG
     if (!oom()) {
       DEBUG_PRINTF(
@@ -391,15 +391,16 @@ class Assembler : public AssemblerShared,
       disassembleInstr(x, JitSpewEnabled(JitSpew_Codegen));
     }
 #endif
+    return offset;
   }
-  virtual void emit(ShortInstr x) { MOZ_CRASH(); }
-  virtual void emit(uint64_t x) { MOZ_CRASH(); }
-  virtual void emit(uint32_t x) {
+  virtual BufferOffset emit(ShortInstr x) { MOZ_CRASH(); }
+  virtual BufferOffset emit(uint64_t x) { MOZ_CRASH(); }
+  virtual BufferOffset emit(uint32_t x) {
     DEBUG_PRINTF(
         "0x%" PRIx64 "(%" PRIxPTR "): uint32_t: %" PRId32 "\n",
         (uint64_t)editSrc(BufferOffset(currentOffset() - sizeof(Instr))),
         currentOffset() - sizeof(Instr), x);
-    m_buffer.putInt(x);
+    return m_buffer.putInt(x);
   }
 
   void instr_at_put(BufferOffset offset, Instr instr) {
@@ -585,7 +586,7 @@ class UseScratchRegisterScope {
 class Operand {
  public:
   enum Tag { REG, FREG, MEM, IMM };
-  Operand(FloatRegister freg) : tag(FREG), rm_(freg.code()) {}
+  Operand(FloatRegister freg) : tag(FREG), rm_(freg.encoding()) {}
 
   explicit Operand(Register base, Imm32 off)
       : tag(MEM), rm_(base.code()), offset_(off.value) {}
@@ -652,7 +653,7 @@ static inline bool GetIntArgReg(uint32_t usedIntArgs, Register* out) {
 
 static inline bool GetFloatArgReg(uint32_t usedFloatArgs, FloatRegister* out) {
   if (usedFloatArgs < NumFloatArgRegs) {
-    *out = FloatRegister::FromCode(fa0.code() + usedFloatArgs);
+    *out = FloatRegister::FromCode(fa0.encoding() + usedFloatArgs);
     return true;
   }
   return false;

@@ -62,6 +62,17 @@ loader.lazyRequireGetter(
   "clipboardHelper",
   "resource://devtools/shared/platform/clipboard.js"
 );
+loader.lazyRequireGetter(
+  this,
+  "openContentLink",
+  "resource://devtools/client/shared/link.js",
+  true
+);
+
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
+});
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 const PREF_UA_STYLES = "devtools.inspector.showUserAgentStyles";
@@ -269,6 +280,7 @@ function CssRuleView(inspector, document, store) {
   this.tooltips = new TooltipsOverlay(this);
 
   this.cssRegisteredPropertiesByTarget = new Map();
+  this._elementsWithPendingClicks = new this.styleWindow.WeakSet();
 }
 
 CssRuleView.prototype = {
@@ -495,6 +507,33 @@ CssRuleView.prototype = {
         this.inspector.selection.nodeFront,
         "rule"
       );
+    }
+
+    const valueSpan = target.closest(".ruleview-propertyvalue");
+    if (valueSpan) {
+      if (this._elementsWithPendingClicks.has(valueSpan)) {
+        // When we start handling a drag in the TextPropertyEditor valueSpan,
+        // we make the valueSpan capture the pointer. Then, `click` event target is always
+        // the valueSpan with the latest spec of Pointer Events.
+        // Therefore, we should stop immediate propagation of the `click` event
+        // if we've handled a drag to prevent moving focus to the inplace editor.
+        event.stopImmediatePropagation();
+        return;
+      }
+
+      // Handle link click in RuleEditor property value
+      if (target.nodeName === "a") {
+        event.stopPropagation();
+        event.preventDefault();
+        openContentLink(target.href, {
+          relatedToCurrent: true,
+          inBackground:
+            event.button === 1 ||
+            (lazy.AppConstants.platform === "macosx"
+              ? event.metaKey
+              : event.ctrlKey),
+        });
+      }
     }
   },
 
@@ -1429,7 +1468,9 @@ CssRuleView.prototype = {
 
       // Initialize rule editor
       if (!rule.editor) {
-        rule.editor = new RuleEditor(this, rule);
+        rule.editor = new RuleEditor(this, rule, {
+          elementsWithPendingClicks: this._elementsWithPendingClicks,
+        });
         editorReadyPromises.push(rule.editor.once("source-link-updated"));
       }
 
@@ -1672,7 +1713,7 @@ CssRuleView.prototype = {
       ? styleSheetSource === this.searchData.strictSearchValue
       : styleSheetSource.includes(this.searchValue);
 
-    if (isStyleSheetHighlighted) {
+    if (isStyleSheetHighlighted && rule.editor.source) {
       rule.editor.source.classList.add("ruleview-highlight");
     }
 
@@ -1761,7 +1802,7 @@ CssRuleView.prototype = {
     let isComputedHighlighted = false;
 
     // Highlight search matches in the computed list of properties
-    editor._populateComputed();
+    editor.populateComputed();
     for (const computed of editor.prop.computed) {
       if (computed.element) {
         // Get the actual property value displayed in the computed list

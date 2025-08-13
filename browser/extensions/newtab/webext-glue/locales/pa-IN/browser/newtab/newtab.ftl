@@ -8,6 +8,9 @@
 newtab-page-title = ਨਵੀਂ ਟੈਬ
 newtab-settings-button =
     .title = ਆਪਣੇ ਨਵੀਂ ਟੈਬ ਸਫ਼ੇ ਨੂੰ ਆਪਣੇ ਮੁਤਾਬਕ ਢਾਲੋ
+newtab-customize-panel-icon-button =
+    .title = ਇਸ ਸਫ਼ੇ ਨੂੰ ਕਸਟਮਾਈਜ਼ ਕਰੋ
+newtab-customize-panel-icon-button-label = ਕਸਟਮਾਈਜ਼
 newtab-personalize-settings-icon-label =
     .title = ਨਵੀਂ ਟੈਬ ਨੂੰ ਨਿੱਜੀ ਬਣਾਓ
     .aria-label = ਸੈਟਿੰਗਾਂ
@@ -500,6 +503,9 @@ newtab-topic-selection-button-pick-interests = ਆਪਣੀਆਂ ਦਿਲਚ�
 newtab-section-follow-button = ਫ਼ਾਲੋ ਕਰੋ
 newtab-section-following-button = ਫ਼ਾਲੋ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ
 newtab-section-unfollow-button = ਅਣ-ਫ਼ਾਲੋ ਕਰੋ
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = ਆਪਣੀ ਫੀਡ ਨੂੰ ਸੈੱਟ ਕਰੋ
+newtab-section-follow-highlight-subtitle = ਆਪਣੀਆਂ ਦਿਲਚਸਪੀਆਂ ਨੂੰ ਵੇਖਣ ਲਈ ਉਹਨਾਂ ਨੂੰ ਫ਼ਾਲੋ ਕਰੋ।
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -542,6 +548,11 @@ newtab-download-mobile-highlight-body-variant-c = ਕੀ ਤੁਹਾਨੂੰ �
 newtab-download-mobile-highlight-image =
     .aria-label = ਮੋਬਾਈਲ ਵਾਸਤੇ { -brand-product-name } ਡਾਊਨਲੋਡ ਕਰਨ ਲਈ QR ਕੋਡ
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = ਤੁਹਾਡੇ ਮਨਪਸੰਦ ਤੁਹਾਡੀਆਂ ਉਂਗਲਾਂ ਉੱਤੇ
+newtab-shortcuts-highlight-subtitle = ਆਪਣੀਆਂ ਮਨਪਸੰਦ ਸਾਈਟਾਂ ਨੂੰ ਕਲਿੱਕ ਨਾਲ ਖੋਲ੍ਹਣ ਲਈ ਸ਼ਾਰਟਕੱਟ ਵਿੱਚ ਜੋੜੋ।
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -575,3 +586,5 @@ newtab-trending-searches-hide-trending =
     .title = ਰੁਝਾਨ ਵਿੱਚ ਖੋਜਾਂ ਨੂੰ ਲੁਕਾਓ
 newtab-trending-searches-learn-more = ਹੋਰ ਜਾਣੋ
 newtab-trending-searches-dismiss = ਰੁਝਾਨ ਵਿੱਚ ਖੋਜਾਂ ਨੂੰ ਲੁਕਾਓ
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = ਰੁਝਾਨ ਵਿੱਚ ਖੋਜਾਂ

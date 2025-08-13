@@ -547,13 +547,8 @@ bool DCLayerTree::UseNativeCompositor() const {
 }
 
 bool DCLayerTree::UseLayerCompositor() const {
-// Only allow the layer compositor in nightly builds, for now.
-#ifdef NIGHTLY_BUILD
   return UseNativeCompositor() &&
          StaticPrefs::gfx_webrender_layer_compositor_AtStartup();
-#else
-  return false;
-#endif
 }
 
 void DCLayerTree::DisableNativeCompositor() {
@@ -811,14 +806,18 @@ void DCLayerTree::CreateSurface(wr::NativeSurfaceId aId,
 
 void DCLayerTree::CreateSwapChainSurface(wr::NativeSurfaceId aId,
                                          wr::DeviceIntSize aSize,
-                                         bool aIsOpaque) {
+                                         bool aIsOpaque,
+                                         bool aNeedsSyncDcompCommit) {
+  MOZ_ASSERT_IF(mEnableAsyncScreenshot, !aNeedsSyncDcompCommit);
+
   auto it = mDCSurfaces.find(aId);
   MOZ_RELEASE_ASSERT(it == mDCSurfaces.end());
 
   UniquePtr<DCSurface> surface;
   if (!mEnableAsyncScreenshot &&
-      StaticPrefs::
-          gfx_webrender_layer_compositor_use_composition_surface_AtStartup()) {
+      (aNeedsSyncDcompCommit ||
+       StaticPrefs::
+           gfx_webrender_layer_compositor_force_composition_surface_AtStartup())) {
     surface = MakeUnique<DCLayerCompositionSurface>(aSize, aIsOpaque, this);
     if (!surface->Initialize()) {
       gfxCriticalNote << "Failed to initialize DCLayerSurface: "

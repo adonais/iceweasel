@@ -435,6 +435,9 @@ newtab-topic-selection-button-maybe-later = Potser més tard
 ## Strings for download mobile highlight
 
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
 

@@ -8,6 +8,7 @@
 #define nsMathMLOperators_h___
 
 #include <stdint.h>
+
 #include "nsStringFwd.h"
 
 enum nsStretchDirection {

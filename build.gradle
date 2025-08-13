@@ -284,7 +284,7 @@ def getArtifactSuffix() {
     return suffix
 }
 
-class MachExec extends Exec {
+abstract class MachExec extends Exec {
     def MachExec() {
         // Bug 1543982: When invoking `mach build` recursively, the outer `mach
         // build` itself modifies the environment, causing configure to run
@@ -489,7 +489,7 @@ subprojects { project ->
                     include '**/*.java'
                     exclude '**/thirdparty/**'
                 }
-                googleJavaFormat('1.17.0')
+                googleJavaFormat('1.27.0')
             }
             kotlin {
                 target project.fileTree(project.projectDir) {
@@ -502,6 +502,7 @@ subprojects { project ->
                         'ktlint_standard_argument-list-wrapping'     : 'disabled',
                         'ktlint_standard_class-signature'            : 'disabled',
                         'ktlint_standard_enum-wrapping'              : 'disabled',
+                        'ktlint_standard_expression-operand-wrapping': 'disabled',
                         'ktlint_standard_function-expression-body'   : 'disabled',
                         'ktlint_standard_function-signature'         : 'disabled',
                         'ktlint_standard_max-line-length'            : 'disabled',
@@ -518,6 +519,23 @@ subprojects { project ->
         if (it.hasProperty('android') && projectName != 'exoplayer2') {
             kotlin {
                 jvmToolchain(config.jvmTargetCompatibility)
+            }
+        }
+
+        if (it.hasProperty('android')
+                && (project.projectDir.absolutePath.contains("android-components")
+                || projectName == "fenix"
+                || projectName == "focus-android")
+        ) {
+            dependencies {
+                lintChecks project.project(':components:tooling-lint')
+            }
+
+            android {
+                // Copied from subbproject's build.gradle
+                lint {
+                    baseline = file("${project.projectDir}/lint-baseline.xml")
+                }
             }
         }
     }
@@ -539,7 +557,6 @@ tasks.register("lint-a-c") {
     subprojects.each{
         if (it.tasks.findByName("lint") != null && it.projectDir.absolutePath.contains("android-components")) {
             dependsOn it.tasks.named("lint")
-            println("Subproject ${it.name} has a lint task")
         }
     }
 }

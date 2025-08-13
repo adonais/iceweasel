@@ -30,7 +30,9 @@ support-files = ["browser_about_logging_server.sjs"]
 
 ["browser_about_networking.js"]
 fail-if = ["a11y_checks"] # Bug 1854538 clicked #category-dns may not be focusable
-skip-if = ["os == 'mac' && os_version == '11.20' && arch == 'aarch64' && opt && socketprocess_networking"]
+skip-if = [
+  "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && opt && socketprocess_networking",
+]
 
 ["browser_autoscroll_disabled.js"]
 
@@ -167,12 +169,15 @@ support-files = [
 
 ["browser_moz_support_link_open_links_in_chrome.js"]
 
+["browser_popup_queue_panels.js"]
+
 ["browser_quickfind_editable.js"]
 
 ["browser_remoteness_change_listeners.js"]
 
 ["browser_resume_bkg_video_on_tab_hover.js"]
 skip-if = [
+  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1775552
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && asan", # Bug 1775552
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug", # Bug 1775552
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && socketprocess_networking", # Bug 1775552

@@ -5,23 +5,25 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsStyleUtil.h"
-#include "nsStyleConsts.h"
 
-#include "mozilla/dom/Document.h"
+#include <cctype>
+
 #include "mozilla/ExpandedPrincipal.h"
+#include "mozilla/TextUtils.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/intl/MozLocaleBindings.h"
 #include "mozilla/intl/oxilangtag_ffi_generated.h"
-#include "mozilla/TextUtils.h"
-#include "nsIContent.h"
 #include "nsCSSProps.h"
 #include "nsContentUtils.h"
-#include "nsROCSSPrimitiveValue.h"
-#include "nsStyleStruct.h"
+#include "nsIContent.h"
 #include "nsIContentPolicy.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsLayoutUtils.h"
 #include "nsPrintfCString.h"
-#include <cctype>
+#include "nsROCSSPrimitiveValue.h"
+#include "nsStyleConsts.h"
+#include "nsStyleStruct.h"
 
 using namespace mozilla;
 
@@ -353,10 +355,11 @@ bool nsStyleUtil::CSPAllowsInlineStyle(
                                   ->OverridesCSP(aDocument->NodePrincipal())) {
     nsCOMPtr<nsIExpandedPrincipal> ep = do_QueryInterface(aTriggeringPrincipal);
     if (ep) {
+      // Bug 1548468: Move CSP off ExpandedPrincipal
       csp = ep->GetCsp();
     }
   } else {
-    csp = aDocument->GetCsp();
+    csp = PolicyContainer::GetCSP(aDocument->GetPolicyContainer());
   }
 
   if (!csp) {

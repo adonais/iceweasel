@@ -38,9 +38,10 @@ interface nsIWindowsShellService : nsIShellService
    * @param aAppUserModelId The App User Model ID to set for the shortcut. This will
    *        affect which icon on the Taskbar the application groups with when first
    *        launched.
-   * @param aShortcutFolder The special Windows folder to create the shortcut in. One of:
-   *        CommonStartMenu, StartMenu, PublicDesktop, Desktop, or QuickLaunch.
-   * @param aShortcutName The filename of the shortcut within aShortcutFolder.
+   * @param aShortcutFolder The special Windows folder to create the shortcut in. Must be
+   *        either "Programs" or "Desktop".
+   * @param aShortcutRelativePath The relative path of the shortcut from the shortcut
+   *        folder.
    * @return The full native path to the created shortcut.
    *
    * @throws NS_ERROR_INVALID_ARG if an invalid shortcut folder is passed
@@ -51,7 +52,21 @@ interface nsIWindowsShellService : nsIShellService
   [implicit_jscontext]
   Promise createShortcut(in nsIFile aBinary, in Array<AString> aArguments,
     in AString aDescription, in nsIFile aIconFile, in unsigned short aIconIndex,
-    in AString aAppUserModelId, in AString aShortcutFolder, in AString aShortcutName);
+    in AString aAppUserModelId, in AString aShortcutFolder,
+    in AString aShortcutRelativePath);
+
+  /*
+   * Deletes the provided shortcut path relative to the shortcut folder, and removes it
+   * from the uninstaller's log file.
+   *
+   * @param aShortcutFolder The special Windows folder to create the shortcut in.
+   *        Should be either Desktop or StartMenu.
+   * @param aShortcutRelativePath The relative path to the shortcut file from the folder.
+   *
+   * @throws NS_ERROR_INVALID_ARG if an invalid shortcut folder is passed
+   */
+  [implicit_jscontext]
+  Promise deleteShortcut(in AString aShortcutFolder, in AString aShortcutRelativePath);
 
   /*
    * Searches the %USERPROFILE%\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
@@ -289,13 +304,17 @@ interface nsIWindowsShellService : nsIShellService
    * necessary given how few checks there are within.
    * @param  aAppUserModelId
    *         The aumid to be contained in the .lnk file
-   * @param  aShortcutPath
-   *         A path to the .lnk file that should be pinned to the taskbar.
+   * @param  aShortcutFolder The special Windows folder to create the shortcut
+   *         in. Must be either "Programs" or "Desktop".
+   * @param  aShortcutRelativePath
+   *         The path to the .lnk file that should be pinned to the taskbar,
+   *         relative to aShortcutFolder.
    */
   [implicit_jscontext]
   Promise pinShortcutToTaskbar(
     in AString aAppUserModelId,
-    in AString aShortcutPath
+    in AString aShortcutFolder,
+    in AString aShortcutRelativePath
   );
 
   /* This function can be used to convert compatible image formats into .ico
@@ -321,8 +340,11 @@ interface nsIWindowsShellService : nsIShellService
    *
    * This function should not be called unless it is certain that it's
    * necessary given how few checks there are within.
-   * @param  aShortcutPath
-   *         A path to the .lnk file that should be pinned to the taskbar.
+   * @param  aShortcutFolder The special Windows folder that the shortcut
+   *         is in. Must be either "Programs" or "Desktop".
+   * @param  aShortcutRelativePath
+   *         The path to the .lnk file that should be unpinned, relative
+   *         to aShortcutFolder.
    * @throws NS_ERROR_FAILURE
    *         If the COM service could not be initialized
    * @throws NS_ERROR_FILE_NOT_FOUND
@@ -332,45 +354,10 @@ interface nsIWindowsShellService : nsIShellService
    * @throws NS_ERROR_FILE_ACCESS_DENIED
    *         If the taskbar pins cannot be modified
    */
-  void unpinShortcutFromTaskbar(in AString aShortcutPath);
-
-
-  /**
-   * Gets the full path of a taskbar tab shortcut.
-   *
-   * @param  aShortcutName
-   *         The name of the taskbar tab shortcut, excluding the file extension.
-   * @throws NS_ERROR_FAILURE
-   *         If the user token cannot be found.
-   * @throws NS_ERROR_ABORT
-   *         If converting the sid to a string fails.
-   *
-   * @return The full path of the taskbar tab shortcut
-   */
-  AString getTaskbarTabShortcutPath(in AString aShortcutName);
-
-  /*
-   * Searches the %USERPROFILE%\AppData\Roaming\Microsoft\Windows\Start
-   * Menu\Programs folder and returns an array with the path of all
-   * shortcuts with a target matching the current Firefox install location
-   * and the -taskbar-tab argument.
-   *
-   * It is possible to return an empty array if no shortcuts are found.
-   *
-   * @return An array of paths for all taskbar tab shortcuts.
-   *
-   * @throws NS_ERROR_NOT_IMPLEMENTED
-   *         if run on a MinGW compilation
-   * @throws NS_ERROR_ABORT
-   *         if instance cannot be created.
-   * @throws NS_ERROR_FILE_NOT_FOUND
-   *         if %USERPROFILE%\AppData\Roaming\ cannot be opened.
-   * @throws NS_ERROR_FAILURE
-   *         if the executable file cannot be found.
-   * @throws NS_ERROR_FILE_UNRECOGNIZED_PATH
-   *         if the executable file cannot be converted into a string.
-   */
-  Array<AString> getTaskbarTabPins();
+  void unpinShortcutFromTaskbar(
+    in AString aShortcutFolder,
+    in AString aShortcutRelativePath
+  );
 
   /*
    * Determine where a given shortcut likely appears in the shell.

@@ -11,8 +11,8 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
-#include "nsContainerFrame.h"
 #include "nsColor.h"
+#include "nsContainerFrame.h"
 
 class nsIContent;
 class nsPresContext;

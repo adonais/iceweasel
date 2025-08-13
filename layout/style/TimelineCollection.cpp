@@ -6,11 +6,12 @@
 
 #include "TimelineCollection.h"
 
+#include <type_traits>
+
 #include "mozilla/ElementAnimationData.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ScrollTimeline.h"
 #include "mozilla/dom/ViewTimeline.h"
-#include <type_traits>
 
 namespace mozilla {
 

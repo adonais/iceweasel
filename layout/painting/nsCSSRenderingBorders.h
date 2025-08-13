@@ -8,16 +8,16 @@
 #define NS_CSS_RENDERING_BORDERS_H
 
 #include "gfxRect.h"
+#include "gfxUtils.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/BezierUtils.h"
 #include "mozilla/gfx/PathHelpers.h"
-#include "mozilla/RefPtr.h"
-#include "nsColor.h"
 #include "nsCOMPtr.h"
+#include "nsColor.h"
 #include "nsIFrame.h"
 #include "nsImageRenderer.h"
-#include "gfxUtils.h"
 
 struct nsBorderColors;
 

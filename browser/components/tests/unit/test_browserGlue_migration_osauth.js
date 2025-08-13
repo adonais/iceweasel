@@ -8,7 +8,8 @@ const TOPICDATA_BROWSERGLUE_TEST = "force-ui-migration";
 const gBrowserGlue = Cc["@mozilla.org/browser/browserglue;1"].getService(
   Ci.nsIObserver
 );
-const UI_VERSION = 147;
+const UI_VERSION = 157;
+const NIGHTLY_ONLY_DATA_MIGRATION = 158;
 
 const { LoginHelper } = ChromeUtils.importESModule(
   "resource://gre/modules/LoginHelper.sys.mjs"
@@ -17,17 +18,15 @@ const { FormAutofillUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/shared/FormAutofillUtils.sys.mjs"
 );
 
-const CC_OLD_PREF = "extensions.formautofill.reauth.enabled";
-const CC_TYPO_PREF = "extensions.formautofill.creditcards.reauth.optout";
-const CC_NEW_PREF = FormAutofillUtils.AUTOFILL_CREDITCARDS_REAUTH_PREF;
+const CC_OLD_PREF = "extensions.formautofill.creditCards.reauth.optout";
+const CC_NEW_PREF = FormAutofillUtils.AUTOFILL_CREDITCARDS_OS_AUTH_LOCKED_PREF;
 
-const PASSWORDS_OLD_PREF = "signon.management.page.os-auth.enabled";
-const PASSWORDS_NEW_PREF = LoginHelper.OS_AUTH_FOR_PASSWORDS_PREF;
+const PASSWORDS_OLD_PREF = "signon.management.page.os-auth.optout";
+const PASSWORDS_NEW_PREF = LoginHelper.OS_AUTH_FOR_PASSWORDS_BOOL_PREF;
 
 function clearPrefs() {
   Services.prefs.clearUserPref("browser.migration.version");
   Services.prefs.clearUserPref(CC_OLD_PREF);
-  Services.prefs.clearUserPref(CC_TYPO_PREF);
   Services.prefs.clearUserPref(CC_NEW_PREF);
   Services.prefs.clearUserPref(PASSWORDS_OLD_PREF);
   Services.prefs.clearUserPref(PASSWORDS_NEW_PREF);
@@ -48,17 +47,17 @@ add_task(async function setup() {
 
 add_task(async function test_pref_migration_old_pref_os_auth_disabled() {
   Services.prefs.setIntPref("browser.migration.version", UI_VERSION - 1);
-  Services.prefs.setBoolPref(CC_OLD_PREF, false);
-  Services.prefs.setBoolPref(PASSWORDS_OLD_PREF, false);
+  Services.prefs.setStringPref(CC_OLD_PREF, "off");
+  Services.prefs.setStringPref(PASSWORDS_OLD_PREF, "off");
 
   simulateUIMigration();
 
   Assert.ok(
-    !FormAutofillUtils.getOSAuthEnabled(CC_NEW_PREF),
+    !FormAutofillUtils.getOSAuthEnabled(),
     "OS Auth should be disabled for credit cards since it was disabled before migration."
   );
   Assert.ok(
-    !LoginHelper.getOSAuthEnabled(PASSWORDS_NEW_PREF),
+    !LoginHelper.getOSAuthEnabled(),
     "OS Auth should be disabled for passwords since it was disabled before migration."
   );
   clearPrefs();
@@ -66,94 +65,41 @@ add_task(async function test_pref_migration_old_pref_os_auth_disabled() {
 
 add_task(async function test_pref_migration_old_pref_os_auth_enabled() {
   Services.prefs.setIntPref("browser.migration.version", UI_VERSION - 1);
-  Services.prefs.setBoolPref(CC_OLD_PREF, true);
-  Services.prefs.setBoolPref(PASSWORDS_OLD_PREF, true);
+  Services.prefs.setStringPref(CC_OLD_PREF, "");
+  Services.prefs.setStringPref(PASSWORDS_OLD_PREF, "");
 
   simulateUIMigration();
 
   Assert.ok(
-    FormAutofillUtils.getOSAuthEnabled(CC_NEW_PREF),
+    FormAutofillUtils.getOSAuthEnabled(),
     "OS Auth should be enabled for credit cards since it was enabled before migration."
   );
   Assert.ok(
-    LoginHelper.getOSAuthEnabled(PASSWORDS_NEW_PREF),
+    LoginHelper.getOSAuthEnabled(),
     "OS Auth should be enabled for passwords since it was enabled before migration."
   );
   clearPrefs();
 });
 
-add_task(
-  async function test_creditCards_pref_migration_typo_pref_os_auth_disabled() {
-    Services.prefs.setIntPref("browser.migration.version", UI_VERSION - 1);
-    Services.prefs.setCharPref(
-      "browser.startup.homepage_override.mstone",
-      "127.0"
-    );
-    FormAutofillUtils.setOSAuthEnabled(CC_TYPO_PREF, false);
+add_task(async function test_pref_migration_real_pref_os_auth_disabled() {
+  Services.prefs.setIntPref(
+    "browser.migration.version",
+    NIGHTLY_ONLY_DATA_MIGRATION
+  );
+  Services.prefs.setCharPref(
+    "browser.startup.homepage_override.mstone",
+    "127.0"
+  );
 
-    simulateUIMigration();
+  simulateUIMigration();
 
-    Assert.ok(
-      !FormAutofillUtils.getOSAuthEnabled(CC_NEW_PREF),
-      "OS Auth should be disabled for credit cards since it was disabled before migration."
-    );
-    clearPrefs();
-  }
-);
-
-add_task(
-  async function test_creditCards_pref_migration_typo_pref_os_auth_enabled() {
-    Services.prefs.setIntPref("browser.migration.version", UI_VERSION - 1);
-    Services.prefs.setCharPref(
-      "browser.startup.homepage_override.mstone",
-      "127.0"
-    );
-    FormAutofillUtils.setOSAuthEnabled(CC_TYPO_PREF, true);
-
-    simulateUIMigration();
-
-    Assert.ok(
-      FormAutofillUtils.getOSAuthEnabled(CC_NEW_PREF),
-      "OS Auth should be enabled for credit cards since it was enabled before migration."
-    );
-    clearPrefs();
-  }
-);
-
-add_task(
-  async function test_creditCards_pref_migration_real_pref_os_auth_disabled() {
-    Services.prefs.setIntPref("browser.migration.version", UI_VERSION - 1);
-    Services.prefs.setCharPref(
-      "browser.startup.homepage_override.mstone",
-      "127.0"
-    );
-    FormAutofillUtils.setOSAuthEnabled(CC_NEW_PREF, false);
-
-    simulateUIMigration();
-
-    Assert.ok(
-      !FormAutofillUtils.getOSAuthEnabled(CC_NEW_PREF),
-      "OS Auth should be disabled for credit cards since it was disabled before migration."
-    );
-    clearPrefs();
-  }
-);
-
-add_task(
-  async function test_creditCards_pref_migration_real_pref_os_auth_enabled() {
-    Services.prefs.setIntPref("browser.migration.version", UI_VERSION - 1);
-    Services.prefs.setCharPref(
-      "browser.startup.homepage_override.mstone",
-      "127.0"
-    );
-    FormAutofillUtils.setOSAuthEnabled(CC_NEW_PREF, true);
-
-    simulateUIMigration();
-
-    Assert.ok(
-      FormAutofillUtils.getOSAuthEnabled(CC_NEW_PREF),
-      "OS Auth should be enabled for credit cards since it was enabled before migration."
-    );
-    clearPrefs();
-  }
-);
+  Assert.ok(
+    !FormAutofillUtils.getOSAuthEnabled(),
+    "OS Auth should be disabled for credit cards."
+  );
+  Assert.ok(
+    !LoginHelper.getOSAuthEnabled(),
+    "OS Auth should be disabled for passwords since it was disabled before migration."
+  );
+  clearPrefs();
+});

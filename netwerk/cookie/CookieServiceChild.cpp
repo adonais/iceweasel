@@ -350,7 +350,7 @@ CookieServiceChild::RecordDocumentCookie(Cookie* aCookie,
     }
   }
 
-  int64_t currentTime = PR_Now() / PR_USEC_PER_SEC;
+  int64_t currentTime = PR_Now() / PR_USEC_PER_MSEC;
   if (aCookie->Expiry() <= currentTime) {
     return cookieFound ? CookieNotificationAction::CookieDeleted
                        : CookieNotificationAction::NoActionNeeded;
@@ -481,7 +481,8 @@ CookieServiceChild::SetCookieStringFromHttp(nsIURI* aHostURI,
   parser.Parse(baseDomain, requireHostMatch, cookieStatus, cookieString,
                dateHeader, true, isForeignAndNotAddon, mustBePartitioned,
                storagePrincipalOriginAttributes.IsPrivateBrowsing(),
-               loadInfo->GetIsOn3PCBExceptionList());
+               loadInfo->GetIsOn3PCBExceptionList(),
+               CookieCommons::GetCurrentTimeFromChannel(aChannel));
   if (!parser.ContainsCookie()) {
     return NS_OK;
   }

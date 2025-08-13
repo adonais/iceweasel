@@ -5,6 +5,8 @@
 
 #include "nsTableCellFrame.h"
 
+#include <algorithm>
+
 #include "celldata.h"
 #include "gfxContext.h"
 #include "gfxUtils.h"
@@ -14,28 +16,27 @@
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Helpers.h"
-#include "nsTableFrame.h"
-#include "nsTableColFrame.h"
-#include "nsTableRowFrame.h"
-#include "nsTableRowGroupFrame.h"
-#include "nsStyleConsts.h"
-#include "nsPresContext.h"
+#include "nsAttrValueInlines.h"
 #include "nsCSSRendering.h"
+#include "nsDisplayList.h"
+#include "nsGenericHTMLElement.h"
+#include "nsGkAtoms.h"
+#include "nsHTMLParts.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
-#include "nsGenericHTMLElement.h"
-#include "nsAttrValueInlines.h"
-#include "nsHTMLParts.h"
-#include "nsGkAtoms.h"
-#include "nsDisplayList.h"
 #include "nsLayoutUtils.h"
+#include "nsPresContext.h"
+#include "nsStyleConsts.h"
+#include "nsTableColFrame.h"
+#include "nsTableFrame.h"
+#include "nsTableRowFrame.h"
+#include "nsTableRowGroupFrame.h"
 #include "nsTextFrame.h"
-#include <algorithm>
 
 // TABLECELL SELECTION
-#include "nsFrameSelection.h"
 #include "mozilla/LookAndFeel.h"
+#include "nsFrameSelection.h"
 
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"

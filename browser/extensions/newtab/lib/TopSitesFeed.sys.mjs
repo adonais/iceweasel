@@ -136,10 +136,7 @@ function smartshortcutsEnabled(values) {
   const experimentVariable = values.smartShortcutsConfig?.enabled;
   return systemPref || experimentVariable;
 }
-const OVERSAMPLE_MULTIPLIER = 5;
-const SHORTCUT_POSITIVE_PRIOR = 1;
-const SHORTCUT_NEGATIVE_PRIOR = 1;
-const SHORTCUT_THOM_WEIGHT = 90;
+const OVERSAMPLE_MULTIPLIER = 2;
 
 function getShortHostnameForCurrentSearch() {
   return lazy.NewTabUtils.shortHostname(
@@ -1485,15 +1482,7 @@ export class TopSitesFeed {
     // Sample topsites via thompson sampling, if in experiment
     let sampledSites;
     if (smartshortcutsEnabled(this.store.getState().Prefs.values)) {
-      sampledSites = await tsampleTopSites(
-        checkedAdult,
-        prefValues.smartShortcutsConfig?.positive_prior ??
-          SHORTCUT_POSITIVE_PRIOR,
-        prefValues.smartShortcutsConfig?.negative_prior ??
-          SHORTCUT_NEGATIVE_PRIOR,
-        (prefValues.smartShortcutsConfig?.thom_weight ?? SHORTCUT_THOM_WEIGHT) /
-          100
-      );
+      sampledSites = await tsampleTopSites(checkedAdult, prefValues);
     } else {
       sampledSites = checkedAdult;
     }

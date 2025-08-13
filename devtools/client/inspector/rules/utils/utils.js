@@ -351,23 +351,9 @@ async function getNodeCompatibilityInfo(node, elementStyle) {
   return issue;
 }
 
-/**
- * Returns true if the given CSS property value contains the given variable name.
- *
- * @param {String} propertyValue
- *        CSS property value (e.g. "var(--color)")
- * @param {String} variableName
- *        CSS variable name (e.g. "--color")
- * @return {Boolean}
- */
-function hasCSSVariable(propertyValue, variableName) {
-  return getCSSVariables(propertyValue).includes(variableName);
-}
-
 module.exports = {
   getCSSVariables,
   getNodeInfo,
   getRuleFromNode,
-  hasCSSVariable,
   getNodeCompatibilityInfo,
 };

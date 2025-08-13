@@ -11,7 +11,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
-import org.robolectric.Shadows
 
 @RunWith(AndroidJUnit4::class)
 class DownloadUtilsTest {
@@ -174,19 +173,23 @@ class DownloadUtilsTest {
 
     @Test
     fun guessFileName_mimeType() {
-        Shadows.shadowOf(MimeTypeMap.getSingleton()).addExtensionMimeTypeMapping("jpg", "image/jpeg")
-        Shadows.shadowOf(MimeTypeMap.getSingleton()).addExtensionMimeTypeMapping("zip", "application/zip")
-        Shadows.shadowOf(MimeTypeMap.getSingleton()).addExtensionMimeTypeMapping("tar.gz", "application/gzip")
-        Shadows.shadowOf(MimeTypeMap.getSingleton()).addExtensionMimeTypeMapping("bin", "application/octet-stream")
-
-        // For one mimetype to multiple extensions mapping
-        Shadows.shadowOf(MimeTypeMap.getSingleton()).addExtensionMimeTypeMapping("com", "application/x-msdos-program")
-        Shadows.shadowOf(MimeTypeMap.getSingleton()).addExtensionMimeTypeMapping("exe", "application/x-msdos-program")
-        Shadows.shadowOf(MimeTypeMap.getSingleton()).addExtensionMimeTypeMapping("bat", "application/x-msdos-program")
-        Shadows.shadowOf(MimeTypeMap.getSingleton()).addExtensionMimeTypeMapping("dll", "application/x-msdos-program")
-        // Matches the last inserted extension
-        assertEquals("dll", MimeTypeMap.getSingleton().getExtensionFromMimeType("application/x-msdos-program"))
-        assertEquals("application/x-msdos-program", MimeTypeMap.getSingleton().getMimeTypeFromExtension("exe"))
+        // Matches the first extension from official mapping: application/x-msdos-program -> com exe bat dll
+        assertEquals(
+            "com",
+            MimeTypeMap.getSingleton().getExtensionFromMimeType("application/x-msdos-program"),
+        )
+        assertEquals(
+            "application/x-msdos-program",
+            MimeTypeMap.getSingleton().getMimeTypeFromExtension("exe"),
+        )
+        assertEquals(
+            "application/x-msdos-program",
+            MimeTypeMap.getSingleton().getMimeTypeFromExtension("dll"),
+        )
+        assertEquals(
+            "application/x-msdos-program",
+            MimeTypeMap.getSingleton().getMimeTypeFromExtension("bat"),
+        )
 
         assertEquals(
             "file.jpg",
@@ -255,12 +258,21 @@ class DownloadUtilsTest {
             ),
         )
         assertEquals(
-            "file.txt",
+            "file.html",
             DownloadUtils.guessFileName(
                 contentDisposition = null,
                 destinationDirectory = folder.root.path,
                 url = "http://example.com/file.txt",
                 mimeType = "text/html",
+            ),
+        )
+        assertEquals(
+            "file.txt",
+            DownloadUtils.guessFileName(
+                contentDisposition = null,
+                destinationDirectory = folder.root.path,
+                url = "http://example.com/file.txt",
+                mimeType = "text/plain",
             ),
         )
         assertEquals(
@@ -365,11 +377,8 @@ class DownloadUtilsTest {
             ),
         )
 
-        Shadows.shadowOf(MimeTypeMap.getSingleton()).clearMappings()
-        Shadows.shadowOf(MimeTypeMap.getSingleton()).addExtensionMimeTypeMapping("exe", "application/x-msdos-program")
-
         assertEquals(
-            "file.exe",
+            "file.com",
             DownloadUtils.guessFileName(
                 contentDisposition = null,
                 destinationDirectory = folder.root.path,

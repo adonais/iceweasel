@@ -5,6 +5,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
   SkippableTimer: "resource:///modules/UrlbarUtils.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
   UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
@@ -39,6 +40,14 @@ export class MerinoClient {
    *   An optional name for the client. It will be included in log messages.
    * @param {object} options
    *   Options object
+   * @param {boolean} options.allowOhttp
+   *   Whether the client is allowed to make its requests using OHTTP. When true
+   *   and the following prefs are defined, all requests made by the client will
+   *   use OHTTP:
+   *
+   *   browser.urlbar.merino.ohttpConfigURL (Nimbus: merinoOhttpConfigURL)
+   *   browser.urlbar.merino.ohttpRelayURL (Nimbus: merinoOhttpRelayURL)
+   *
    * @param {string} options.cachePeriodMs
    *   Enables caching when nonzero. The client will cache the response
    *   suggestions from its most recent successful request for the specified
@@ -65,8 +74,12 @@ export class MerinoClient {
    *   caching, try working with the Merino team to add cache headers to the
    *   relevant responses so you can leverage Firefox's HTTP cache.
    */
-  constructor(name = "anonymous", { cachePeriodMs = 0 } = {}) {
+  constructor(
+    name = "anonymous",
+    { allowOhttp = false, cachePeriodMs = 0 } = {}
+  ) {
     this.#name = name;
+    this.#allowOhttp = allowOhttp;
     this.#cachePeriodMs = cachePeriodMs;
     ChromeUtils.defineLazyGetter(this, "logger", () =>
       lazy.UrlbarUtils.getLogger({ prefix: `MerinoClient [${name}]` })
@@ -285,12 +298,12 @@ export class MerinoClient {
           // `response` in the outer scope and set it here instead of returning
           // the response from this inner function and assuming it will also be
           // returned by `Promise.race`.
-          response = await fetch(url, { signal: controller.signal });
+          response = await this.#fetch(url, { signal: controller.signal });
           this.logger.debug("Got response", {
-            status: response.status,
+            status: response?.status,
             ...details,
           });
-          if (!response.ok) {
+          if (!response?.ok) {
             recordResponse?.("http_error");
           }
         } catch (error) {
@@ -416,6 +429,59 @@ export class MerinoClient {
     return this.#nextSessionResetDeferred.promise;
   }
 
+  /**
+   * Sends the Merino request. Uses OHTTP if `allowOhttp` is true and the Merino
+   * OHTTP prefs are defined.
+   *
+   * @param {string} url
+   *   The request URL.
+   * @param {object} options
+   *   Options object.
+   * @param {AbortSignal} options.signal
+   *   An `AbortController.signal` for the fetch.
+   * @returns {Response|null}
+   *   The fetch `Response` or null if a response can't be fetched.
+   */
+  async #fetch(url, { signal }) {
+    let configUrl;
+    let relayUrl;
+    if (this.#allowOhttp) {
+      configUrl = lazy.UrlbarPrefs.get("merinoOhttpConfigURL");
+      relayUrl = lazy.UrlbarPrefs.get("merinoOhttpRelayURL");
+    }
+
+    let useOhttp = configUrl && relayUrl;
+
+    let response;
+    let startMs = Cu.now();
+    if (!useOhttp) {
+      response = await fetch(url, { signal });
+    } else {
+      let config = await lazy.ObliviousHTTP.getOHTTPConfig(configUrl);
+      if (!config) {
+        this.logger.error("Couldn't get OHTTP config");
+        return null;
+      }
+
+      this.logger.debug("Sending request using OHTTP", { url });
+      response = await lazy.ObliviousHTTP.ohttpRequest(relayUrl, config, url, {
+        signal,
+        headers: {},
+      });
+    }
+
+    let elapsedMs = Cu.now() - startMs;
+    let label = response.status.toString();
+    if (useOhttp) {
+      label += "_ohttp";
+    }
+    Glean.urlbarMerino.latencyByResponseStatus[label].accumulateSamples([
+      elapsedMs,
+    ]);
+
+    return response;
+  }
+
   static _test_disableCache = false;
 
   get _test_sessionTimer() {
@@ -443,6 +509,7 @@ export class MerinoClient {
   #nextResponseDeferred = null;
   #nextSessionResetDeferred = null;
   #cachePeriodMs = 0;
+  #allowOhttp = false;
 
   // When caching is enabled, we cache response suggestions from the most recent
   // successful request.

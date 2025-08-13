@@ -69,15 +69,15 @@ class Downscaler {
    *                      output; this is the same buffer where the Decoder
    *                      would write its output when not downscaling during
    *                      decode.
-   * @param aHasAlpha Whether or not this frame has an alpha channel.
-   *                  Performance is a little better if it doesn't have one.
+   * @param aFormat The format of this frame. Performance is a little better if
+   *                it is opaque.
    * @param aFlipVertically If true, output rows will be written to the output
    *                        buffer in reverse order vertically, which matches
    *                        the way they are stored in some image formats.
    */
   nsresult BeginFrame(const nsIntSize& aOriginalSize,
                       const Maybe<nsIntRect>& aFrameRect,
-                      uint8_t* aOutputBuffer, bool aHasAlpha,
+                      uint8_t* aOutputBuffer, gfx::SurfaceFormat aFormat,
                       bool aFlipVertically = false);
 
   bool IsFrameComplete() const {
@@ -136,7 +136,7 @@ class Downscaler {
   int32_t mCurrentOutLine;
   int32_t mCurrentInLine;
 
-  bool mHasAlpha : 1;
+  gfx::SurfaceFormat mFormat;
   bool mFlipVertically : 1;
 };
 

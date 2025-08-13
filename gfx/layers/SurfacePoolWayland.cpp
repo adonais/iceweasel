@@ -69,6 +69,7 @@ void SurfacePoolWayland::DestroyGLResourcesForContext(GLContext* aGL) {
 bool SurfacePoolWayland::CanRecycleSurfaceForRequest(
     const MutexAutoLock& aProofOfLock, const SurfacePoolEntry& aEntry,
     const IntSize& aSize, GLContext* aGL) {
+  MOZ_DIAGNOSTIC_ASSERT(!aEntry.mWaylandBuffer->IsAttached());
   if (aEntry.mSize != aSize) {
     return false;
   }

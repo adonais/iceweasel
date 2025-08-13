@@ -7,17 +7,17 @@
 #ifndef mozilla_GlobalStyleSheetCache_h__
 #define mozilla_GlobalStyleSheetCache_h__
 
-#include "nsIMemoryReporter.h"
-#include "nsIObserver.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BuiltInStyleSheets.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/PreferenceSheet.h"
 #include "mozilla/NotNull.h"
+#include "mozilla/PreferenceSheet.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/css/Loader.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
 #include "mozilla/ipc/SharedMemoryMapping.h"
+#include "nsIMemoryReporter.h"
+#include "nsIObserver.h"
 
 class nsIFile;
 class nsIURI;

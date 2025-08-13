@@ -296,6 +296,7 @@ using BigIntStencilVector = Vector<BigIntStencil, 0, js::SystemAllocPolicy>;
 
 class ScopeStencil {
   friend class StencilXDR;
+  friend struct ScopeStencilRef;
   friend class InputScope;
   friend class AbstractBindingIter<frontend::TaggedParserAtomIndex>;
   friend struct CompilationStencil;

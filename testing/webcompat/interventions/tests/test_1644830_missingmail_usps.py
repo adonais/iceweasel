@@ -1,11 +1,6 @@
 import pytest
 
-URL = (
-    "https://missingmail.usps.com/?_gl=1*veidlp*_gcl_aw*R0NMLjE1OTE3MjUyNTkuRUF"
-    "JYUlRb2JDaE1Jd3AzaTBhYjE2UUlWa01EQUNoMlBBUVlrRUFBWUFTQUFFZ0lMeFBEX0J3RQ..*"
-    "_gcl_dc*R0NMLjE1OTE3MjUyNTkuRUFJYUlRb2JDaE1Jd3AzaTBhYjE2UUlWa01EQUNoMlBBUV"
-    "lrRUFBWUFTQUFFZ0lMeFBEX0J3RQ..#/"
-)
+URL = "https://missingmail.usps.com/?_gl=1*veidlp*_gcl_aw*R0NMLjE1OTE3MjUyNTkuRUFJYUlRb2JDaE1Jd3AzaTBhYjE2UUlWa01EQUNoMlBBUVlrRUFBWUFTQUFFZ0lMeFBEX0J3RQ..*_gcl_dc*R0NMLjE1OTE3MjUyNTkuRUFJYUlRb2JDaE1Jd3AzaTBhYjE2UUlWa01EQUNoMlBBUVlrRUFBWUFTQUFFZ0lMeFBEX0J3RQ..#/"
 
 USERNAME_CSS = "#username"
 PASSWORD_CSS = "#password"
@@ -22,6 +17,8 @@ TIMEOUT_MESSAGE = "USPS website is too slow, skipping test"
 
 
 async def are_checkboxes_clickable(client, credentials):
+    # The site seems to silently reject logins when it detects webdriver.
+    await client.make_preload_script("delete navigator.__proto__.webdriver")
     await client.navigate(URL)
 
     username = client.await_css(USERNAME_CSS)

@@ -15,7 +15,6 @@ import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
-import org.robolectric.Robolectric
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
@@ -23,7 +22,7 @@ class DynamicWidthRecyclerViewTest {
 
     @Test
     fun `minWidth and maxWidth should be initialized from xml attributes`() {
-        val dynamicRecyclerView = buildRecyclerView(100)
+        val dynamicRecyclerView = buildRecyclerView()
         dynamicRecyclerView.minWidth = 123
         dynamicRecyclerView.maxWidth = 456
 
@@ -33,7 +32,7 @@ class DynamicWidthRecyclerViewTest {
 
     @Test
     fun `If minWidth and maxWidth are not provided view should use layout_width`() {
-        val dynamicRecyclerView = buildRecyclerView(100)
+        val dynamicRecyclerView = buildRecyclerView()
 
         dynamicRecyclerView.measure(100, 100)
 
@@ -44,7 +43,7 @@ class DynamicWidthRecyclerViewTest {
 
     @Test
     fun `If only minWidth is provided view should use layout_width`() {
-        val dynamicRecyclerView = buildRecyclerView(100)
+        val dynamicRecyclerView = buildRecyclerView()
         dynamicRecyclerView.minWidth = 50
 
         dynamicRecyclerView.measure(100, 100)
@@ -56,7 +55,7 @@ class DynamicWidthRecyclerViewTest {
 
     @Test
     fun `If only maxWidth is provided view should use layout_width`() {
-        val dynamicRecyclerView = buildRecyclerView(100)
+        val dynamicRecyclerView = buildRecyclerView()
         dynamicRecyclerView.maxWidth = 300
 
         dynamicRecyclerView.measure(100, 100)
@@ -68,7 +67,7 @@ class DynamicWidthRecyclerViewTest {
 
     @Test
     fun `Should only allow for dynamic width if minWidth has a positive value`() {
-        val dynamicRecyclerView = buildRecyclerView(100)
+        val dynamicRecyclerView = buildRecyclerView()
         dynamicRecyclerView.minWidth = -1
         dynamicRecyclerView.maxWidth = 100
 
@@ -81,7 +80,7 @@ class DynamicWidthRecyclerViewTest {
 
     @Test
     fun `Should only allow for dynamic width if minWidth is smaller than maxWidth`() {
-        val dynamicRecyclerView = buildRecyclerView(100)
+        val dynamicRecyclerView = buildRecyclerView()
         dynamicRecyclerView.minWidth = 100
         dynamicRecyclerView.maxWidth = 100
 
@@ -94,7 +93,7 @@ class DynamicWidthRecyclerViewTest {
 
     @Test
     fun `To allow for dynamic width children can expand entirely between minWidth and maxWidth`() {
-        val dynamicRecyclerView = buildRecyclerView(100)
+        val dynamicRecyclerView = buildRecyclerView()
         dynamicRecyclerView.minWidth = 50
         dynamicRecyclerView.maxWidth = 100
 
@@ -119,7 +118,7 @@ class DynamicWidthRecyclerViewTest {
         val childrenWidth = 20
         val materialMinWidth = testContext.resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_item_width)
         // Layout width is *2 to allow bigger sizes. minWidth is /2 to verify the material min width is used.
-        val dynamicRecyclerView = buildRecyclerView(materialMinWidth * 2)
+        val dynamicRecyclerView = buildRecyclerView()
         dynamicRecyclerView.minWidth = materialMinWidth / 2
         dynamicRecyclerView.maxWidth = 500
 
@@ -133,7 +132,7 @@ class DynamicWidthRecyclerViewTest {
         val childrenWidth = 20
         // minWidth set in xml. Ensure it is bigger than the default.
         val minWidth = testContext.resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_item_width) + 10
-        val dynamicRecyclerView = buildRecyclerView(minWidth * 2)
+        val dynamicRecyclerView = buildRecyclerView()
         dynamicRecyclerView.minWidth = minWidth
         dynamicRecyclerView.maxWidth = 500
 
@@ -147,7 +146,7 @@ class DynamicWidthRecyclerViewTest {
         val materialMinWidth = testContext.resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_item_width)
         val childrenWidth = materialMinWidth + 10
         // Layout width is *2 to allow bigger sizes. minWidth is /2 to verify the material min width is used.
-        val dynamicRecyclerView = buildRecyclerView(materialMinWidth * 2)
+        val dynamicRecyclerView = buildRecyclerView()
         dynamicRecyclerView.minWidth = materialMinWidth
         dynamicRecyclerView.maxWidth = 500
 
@@ -163,7 +162,7 @@ class DynamicWidthRecyclerViewTest {
         val materialMaxWidth = 500 - testContext.resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_tap_area)
         val childrenWidth = materialMaxWidth
         val maxWidth = materialMaxWidth - 10
-        val dynamicRecyclerView = buildRecyclerView(1000)
+        val dynamicRecyclerView = buildRecyclerView()
         dynamicRecyclerView.minWidth = 100
         dynamicRecyclerView.maxWidth = maxWidth
 
@@ -178,7 +177,7 @@ class DynamicWidthRecyclerViewTest {
         val materialMaxWidth = 500 - testContext.resources.getDimensionPixelSize(R.dimen.mozac_browser_menu_material_min_tap_area)
         val maxWidth = 500
         val childrenWidth = maxWidth + 10
-        val dynamicRecyclerView = buildRecyclerView(1000)
+        val dynamicRecyclerView = buildRecyclerView()
         dynamicRecyclerView.minWidth = 100
         dynamicRecyclerView.maxWidth = maxWidth
 
@@ -215,12 +214,7 @@ class DynamicWidthRecyclerViewTest {
         verify(dynamicRecyclerView).setReconciledDimensions(42, 100)
     }
 
-    private fun buildRecyclerView(layoutWidth: Int): DynamicWidthRecyclerView {
-        val customAttributeSet = Robolectric.buildAttributeSet().apply {
-            // android.R.attr.layout_width needs to always be set
-            addAttribute(android.R.attr.layout_width, "${layoutWidth}dp")
-        }.build()
-
-        return spy(DynamicWidthRecyclerView(testContext, customAttributeSet))
+    private fun buildRecyclerView(): DynamicWidthRecyclerView {
+        return spy(DynamicWidthRecyclerView(testContext, null))
     }
 }

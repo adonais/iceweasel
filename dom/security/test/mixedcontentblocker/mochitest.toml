@@ -29,7 +29,6 @@ support-files = [
 
 ["test_bug803225.html"]
 skip-if = [
-  "os=='linux' && bits==32", # Linux32:bug 1324870
   "headless", # Headless:bug 1405870
   "tsan", # tsan:bug 1612707
   "http3",
@@ -55,14 +54,11 @@ skip-if = ["true"]  # Bug 1424752
 skip-if = [
   "true",
   "os == 'android'",
-  "verify && !debug && os == 'linux'",  # Android: TIMED_OUT; bug 1402554
-  "tsan",  # Times out / Memory consumption, bug 1612707
+  "tsan", # Times out / Memory consumption, bug 1612707
 ]
 
 ["test_redirect.html"]
 
 ["test_windowOpen.html"]
 scheme = "https"
-skip-if = [
-  "!debug" # Bug 1855588
-]
+skip-if = ["!debug"] # Bug 1855588

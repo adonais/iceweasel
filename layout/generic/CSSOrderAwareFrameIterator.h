@@ -10,10 +10,11 @@
 #define mozilla_CSSOrderAwareFrameIterator_h
 
 #include <limits>
+
+#include "mozilla/Assertions.h"
+#include "mozilla/Maybe.h"
 #include "nsFrameList.h"
 #include "nsIFrame.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/Assertions.h"
 
 namespace mozilla {
 

@@ -13,6 +13,7 @@
 #include "mozilla/dom/CloseWatcherManager.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/UserActivationIPCUtils.h"
+#include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/PermissionDelegateIPCUtils.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPtr.h"
@@ -239,7 +240,7 @@ bool WindowContext::CanSet(FieldIndex<IDX_IsSecure>, const bool& aIsSecure,
   return CheckOnlyOwningProcessCanSet(aSource);
 }
 
-bool WindowContext::CanSet(FieldIndex<IDX_HasBeforeUnload>,
+bool WindowContext::CanSet(FieldIndex<IDX_NeedsBeforeUnload>,
                            const bool& aHasBeforeUnload,
                            ContentParent* aSource) {
   return CheckOnlyOwningProcessCanSet(aSource);
@@ -358,6 +359,17 @@ bool WindowContext::CanSet(FieldIndex<IDX_HasActivePeerConnections>, bool,
   return XRE_IsParentProcess() && IsTop();
 }
 
+void WindowContext::ProcessCloseRequest() {
+  MOZ_ASSERT(XRE_IsParentProcess(), "Window must be Global Parent");
+  BrowsingContext* top = mBrowsingContext->Top();
+  top->PreOrderWalk([&](BrowsingContext* aBrowsingContext) {
+    CanonicalBrowsingContext* canonical = aBrowsingContext->Canonical();
+    if (WindowGlobalParent* parent = canonical->GetCurrentWindowGlobal()) {
+      Unused << parent->SendProcessCloseRequest(aBrowsingContext);
+    }
+  });
+}
+
 void WindowContext::RecomputeCanExecuteScripts(bool aApplyChanges) {
   const bool old = mCanExecuteScripts;
   if (!AllowJavascript()) {
@@ -401,6 +413,26 @@ void WindowContext::DidSet(FieldIndex<IDX_SHEntryHasUserInteraction>,
       activeEntry->SetHasUserInteraction(true);
     }
   }
+}
+
+void WindowContext::DidSet(FieldIndex<IDX_HasActivePeerConnections>,
+                           bool aOldValue) {
+  MOZ_ASSERT(
+      TopWindowContext() == this,
+      "IDX_HasActivePeerConnections can only be set on the top window context");
+
+  BrowsingContext* top = mBrowsingContext->Top();
+
+  top->PreOrderWalk([&](BrowsingContext* aBrowsingContext) {
+    WindowContext* windowContext = aBrowsingContext->GetCurrentWindowContext();
+    if (windowContext) {
+      auto* win{windowContext->GetInnerWindow()};
+      if (win && (aOldValue != win->HasActivePeerConnections())) {
+        dom::UpdateWorkersPeerConnections(*win,
+                                          win->HasActivePeerConnections());
+      }
+    }
+  });
 }
 
 void WindowContext::DidSet(FieldIndex<IDX_UserActivationStateAndModifiers>) {

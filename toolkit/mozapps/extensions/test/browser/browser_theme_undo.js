@@ -9,7 +9,9 @@ const { AppMenuNotifications } = ChromeUtils.importESModule(
   "resource://gre/modules/AppMenuNotifications.sys.mjs"
 );
 
-const DEFAULT_THEME_ID = "default-theme@mozilla.org";
+const { AddonSettings } = ChromeUtils.importESModule(
+  "resource://gre/modules/addons/AddonSettings.sys.mjs"
+);
 
 function promisePostInstallNotificationShown() {
   // The themes are unsigned, so we need to confirm we're okay with that first
@@ -147,7 +149,7 @@ add_task(async function test_undoTheme() {
   );
   Assert.strictEqual(
     (await AddonManager.getAddonByID(RED_THEME_ID)).previousActiveThemeID,
-    DEFAULT_THEME_ID,
+    AddonSettings.DEFAULT_THEME_ID,
     "Expected previous active theme ID to be the default theme"
   );
 

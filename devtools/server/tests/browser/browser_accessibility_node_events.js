@@ -48,6 +48,7 @@ add_task(async function () {
       tag: "button",
       "margin-right": "0px",
       id: "button",
+      formatting: "block",
       "margin-bottom": "0px",
     },
   });
@@ -107,6 +108,7 @@ add_task(async function () {
           display: "inline-block",
           "explicit-name": "true",
           id: "button",
+          formatting: "block",
           live: "polite",
           "margin-bottom": "0px",
           "margin-left": "0px",

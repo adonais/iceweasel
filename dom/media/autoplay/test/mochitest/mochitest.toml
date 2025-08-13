@@ -51,7 +51,6 @@ skip-if = ["os != 'android'"]
 ["test_autoplay_policy_eventdown_activation.html"]
 
 ["test_autoplay_policy_key_blacklist.html"]
-skip-if = ["verify && debug && os == 'win'"] # bug 1424903
 
 ["test_autoplay_policy_permission.html"]
 

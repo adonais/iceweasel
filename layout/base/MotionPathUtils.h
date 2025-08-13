@@ -7,12 +7,12 @@
 #ifndef mozilla_MotionPathUtils_h
 #define mozilla_MotionPathUtils_h
 
+#include "Units.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Rect.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/ServoStyleConsts.h"
-#include "Units.h"
 
 class nsIFrame;
 

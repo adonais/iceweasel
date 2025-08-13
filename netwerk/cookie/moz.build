@@ -21,7 +21,6 @@ XPIDL_SOURCES += [
 
 XPIDL_MODULE = "necko_cookie"
 
-
 EXPORTS.mozilla.net = [
     "Cookie.h",
     "CookieCommons.h",
@@ -30,6 +29,7 @@ EXPORTS.mozilla.net = [
     "CookieNotification.h",
     "CookieParser.h",
     "CookiePersistentStorage.h",
+    "CookiePrefixes.h",
     "CookiePrivateStorage.h",
     "CookieService.h",
     "CookieServiceChild.h",
@@ -38,6 +38,7 @@ EXPORTS.mozilla.net = [
     "CookieValidation.h",
     "ThirdPartyCookieBlockingExceptions.h",
 ]
+
 UNIFIED_SOURCES += [
     "Cookie.cpp",
     "CookieCommons.cpp",
@@ -46,6 +47,7 @@ UNIFIED_SOURCES += [
     "CookieNotification.cpp",
     "CookieParser.cpp",
     "CookiePersistentStorage.cpp",
+    "CookiePrefixes.cpp",
     "CookiePrivateStorage.cpp",
     "CookieService.cpp",
     "CookieServiceChild.cpp",
@@ -54,6 +56,7 @@ UNIFIED_SOURCES += [
     "CookieValidation.cpp",
     "ThirdPartyCookieBlockingExceptions.cpp",
 ]
+
 XPCSHELL_TESTS_MANIFESTS += [
     "test/unit/xpcshell.toml",
 ]

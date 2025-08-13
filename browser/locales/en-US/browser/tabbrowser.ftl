@@ -253,10 +253,13 @@ tab-group-editor-color-selector2-gray = Gray
 tab-group-editor-color-selector2-red = Red
   .title = Red
 
-# Variables:
-#  $tabGroupName (String): The name of the tab group. Defaults to the value
-#                          of tab-group-name-default.
+## Variables:
+##  $tabGroupName (String): The name of the tab group. Defaults to the value
+##                          of tab-group-name-default.
+
 tab-group-description = { $tabGroupName } — Tab Group
+tab-group-label-tooltip-collapsed = { $tabGroupName } — Collapsed
+tab-group-label-tooltip-expanded = { $tabGroupName } — Expanded
 
 tab-context-unnamed-group =
     .label = Unnamed group
@@ -264,6 +267,16 @@ tab-context-unnamed-group =
 ## Variables:
 ##  $tabCount (Number): the number of tabs that are affected by the action.
 
+# When a tab group containing the active tab is collapsed, the active tab
+# remains visible. An indicator appears at the end of the group showing the
+# number of remaining tabs that are hidden by the collapsed group,
+# e.g. "+2" for a group with 3 total tabs.
+tab-group-overflow-count = +{ $tabCount }
+tab-group-overflow-count-tooltip =
+    { $tabCount ->
+        [one] { $tabCount } more tab
+        *[other] { $tabCount } more tabs
+    }
 tab-context-move-tab-to-new-group =
     .label =
         { $tabCount ->
@@ -279,6 +292,10 @@ tab-context-move-tab-to-group =
         }
     .accesskey = G
 
+##
+
+tab-context-move-tab-to-group-saved-groups =
+    .label = Closed Groups
 tab-group-editor-action-new-tab =
     .label = New tab in group
 tab-group-editor-action-new-window =

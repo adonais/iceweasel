@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# Copyright 2013 The Chromium Authors. All rights reserved.
+#!/usr/bin/env python3
+# Copyright 2013 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -7,7 +7,6 @@
 # This script can be run manually (as root), but is also run as part
 # install-build-deps.sh.
 
-from __future__ import print_function
 
 import os
 import shutil
@@ -104,7 +103,12 @@ creating or editing a ~/.fonts.conf file:
     <edit name="autohint" mode="assign"><bool>true</bool></edit>
     <edit name="hinting" mode="assign"><bool>true</bool></edit>
     <edit name="hintstyle" mode="assign"><const>hintslight</const></edit>
-    <edit name="rgba" mode="assign"><const>rgb</const></edit>
+    <!--
+      Disable sub-pixel anti-aliasing to work around font corruption issues
+      in the emulator. This disables it for your entire system. See
+      http://crbug.com/1442627
+    -->
+    <edit name="rgba" mode="assign"><const>none</const></edit>
   </match>
 </fontconfig>
 

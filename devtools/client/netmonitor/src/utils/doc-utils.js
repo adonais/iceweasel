@@ -28,6 +28,8 @@ const SUPPORTED_HEADERS = [
   "Access-Control-Request-Method",
   "Age",
   "Allow",
+  "Alt-Svc",
+  "Alt-Used",
   "Authorization",
   "Cache-Control",
   "Clear-Site-Data",

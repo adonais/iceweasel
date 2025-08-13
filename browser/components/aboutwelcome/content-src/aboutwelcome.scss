@@ -98,31 +98,25 @@ html {
 }
 
 .onboardingContainer {
-  --grey-subtitle-1: #696977;
-  --mr-welcome-background-color: #F8F6F4;
+  --grey-subtitle-1: light-dark(#696977, #FFF);
+  --mr-welcome-background-color: light-dark(#F8F6F4, #333336);
   --mr-screen-heading-color: var(--in-content-text-color);
-  --mr-welcome-background-gradient: linear-gradient(0deg, rgba(144, 89, 255, 20%) 0%, rgba(2, 144, 238, 20%) 100%);
-  --mr-screen-background-color: #F8F6F4;
+  --mr-welcome-background-gradient: linear-gradient(
+    0deg,
+    light-dark(rgba(144, 89, 255, 20%), rgba(144, 89, 255, 30%)) 0%,
+    light-dark(rgba(2, 144, 238, 20%), rgba(2, 144, 238, 30%)) 100%
+  );
+  --mr-screen-background-color: light-dark(#F8F6F4, #62697A);
   --single-select-border-color: #8F8F9D;
-  --single-select-hover-color: #DEDEDF;
-  --picker-background-color: color-mix(in srgb, transparent 98%, black 2%);
-  --picker-hover-background-color: color-mix(in srgb, transparent 95%, black 5%);
+  --single-select-hover-color: light-dark(#DEDEDF, #52525E);
+  --picker-background-color: color-mix(in srgb, transparent 98%, light-dark(black, white) 2%);
+  --picker-hover-background-color: color-mix(in srgb, transparent 95%, light-dark(black, white) 5%);
   --picker-border-color: var(--in-content-border-color);
   --picker-checked-border-color: var(--in-content-item-selected);
   --picker-hover-border-color: var(--picker-border-color);
   --picker-focus-ring-color: var(--in-content-item-selected);
   --picker-checkbox-color: var(--in-content-item-selected);
   --picker-checkbox-hover-color: var(--picker-checkbox-color);
-
-  @media (prefers-color-scheme: dark) {
-    --grey-subtitle-1: #FFF;
-    --mr-welcome-background-color: #333336;
-    --mr-welcome-background-gradient: linear-gradient(0deg, rgba(144, 89, 255, 30%) 0%, rgba(2, 144, 238, 30%) 100%);
-    --mr-screen-background-color: #62697A;
-    --single-select-hover-color: #52525E;
-    --picker-background-color: color-mix(in srgb, transparent 98%, white 2%);
-    --picker-hover-background-color: color-mix(in srgb, transparent 95%, white 5%);
-  }
 
   @media (forced-colors: active) {
     --picker-background-color: ButtonFace;
@@ -666,7 +660,7 @@ html {
             text-align: start;
             font-size: 11px;
             line-height: 16.5px;
-            color: #5B5B66;
+            color: light-dark(#5B5B66, #CFCFD8);
 
             @mixin narrow-legal-paragraph {
               padding-inline: 30px;
@@ -680,9 +674,6 @@ html {
               @include narrow-legal-paragraph;
             }
 
-            @media (prefers-color-scheme: dark) {
-              color: #CFCFD8;
-            }
           }
 
           .main-content-inner {
@@ -832,10 +823,7 @@ html {
               min-height: 1em;
               font-size: 15px;
               line-height: 1.5;
-
-              @media (prefers-contrast: no-preference) {
-                color: #5B5B66;
-              }
+              color: light-dark(#5B5B66, #CFCFD8);
             }
           }
 
@@ -969,18 +957,6 @@ html {
 
         .select-item {
           min-width: 38px;
-        }
-      }
-
-      @media (prefers-contrast: no-preference) and (prefers-color-scheme: dark) {
-        .section-main .main-content {
-          .welcome-text h2 {
-            color: #CFCFD8;
-          }
-
-          .action-buttons .secondary {
-            background-color: #2B2A33;
-          }
         }
       }
 
@@ -1690,7 +1666,14 @@ html {
 
     &.fancy {
       h1 {
-        background-image: linear-gradient(90deg, #9059FF, #FF4AA2, #FF8C00, #FF4AA2, #9059FF);
+        background-image: linear-gradient(
+          90deg,
+          light-dark(#9059FF, #C688FF),
+          light-dark(#FF4AA2, #FF84C0),
+          light-dark(#FF8C00, #FFBD4F),
+          light-dark(#FF4AA2, #FF84C0),
+          light-dark(#9059FF, #C688FF)
+        );
         background-clip: text;
         background-size: 200%;
 
@@ -1699,8 +1682,6 @@ html {
         }
 
         @media (prefers-color-scheme: dark) {
-          background-image: linear-gradient(90deg, #C688FF, #FF84C0, #FFBD4F, #FF84C0, #C688FF);
-
           &::selection {
             color: #FFF;
             background-color: #696977;
@@ -1991,12 +1972,16 @@ html {
     gap: 16px;
     margin-block: -1em 2em;
     margin-inline: 1em;
-    color: #5B5B66;
     font-weight: 400;
     font-size: 14px;
     text-align: initial;
     transition: var(--transition);
     z-index: 1;
+    color: var(--in-content-page-color);
+
+    @media not (prefers-contrast) {
+      color: light-dark(#5B5B66, #CFCFD8);
+    }
 
     #multi-stage-multi-select-label {
       // These styles are based on .welcome-text>h2 (subtitle).
@@ -2019,12 +2004,8 @@ html {
       font-size: 15px;
       line-height: 1.5;
 
-      @media (prefers-contrast: no-preference) {
-        color: #5B5B66;
-      }
-
-      @media (prefers-contrast: no-preference) and (prefers-color-scheme: dark) {
-        color: #CFCFD8;
+      @media not (prefers-contrast) {
+        color: light-dark(#5B5B66, #CFCFD8);
       }
     }
 
@@ -2035,14 +2016,6 @@ html {
         flex-grow: 0;
         flex-shrink: 0;
       }
-    }
-
-    @media (prefers-color-scheme: dark) {
-      color: #CFCFD8;
-    }
-
-    @media (prefers-contrast) {
-      color: var(--in-content-page-color);
     }
   }
 
@@ -2148,11 +2121,7 @@ html {
     border-width: 1px 0;
 
     @media (prefers-contrast: no-preference) {
-      color: #5B5B66;
-    }
-
-    @media (prefers-contrast: no-preference) and (prefers-color-scheme: dark) {
-      color: #CFCFD8;
+      color: light-dark(#5B5B66, #CFCFD8);
     }
 
     @media (prefers-contrast) {

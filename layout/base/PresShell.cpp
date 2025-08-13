@@ -13,73 +13,40 @@
 #include "AnchorPositioningUtils.h"
 #include "AutoProfilerStyleMarker.h"
 #include "ChildIterator.h"
+#include "MobileViewportManager.h"
+#include "OverflowChangedTracker.h"
+#include "PLDHashTable.h"
+#include "PositionedEventTargeting.h"
+#include "ScrollSnap.h"
+#include "StickyScrollContainer.h"
+#include "Units.h"
+#include "VisualViewport.h"
+#include "XULTreeElement.h"
+#include "ZoomConstraintsClient.h"
 #include "gfxContext.h"
 #include "gfxPlatform.h"
 #include "gfxUserFontSet.h"
 #include "gfxUtils.h"
 #include "js/GCAPI.h"
-#include "MobileViewportManager.h"
 #include "mozilla/AccessibleCaretEventHub.h"
 #include "mozilla/AnimationEventDispatcher.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CaretAssociationHint.h"
+#include "mozilla/ConnectedAncestorTracker.h"
 #include "mozilla/ContentIterator.h"
-#include "mozilla/css/ImageLoader.h"
 #include "mozilla/DisplayPortUtils.h"
-#include "mozilla/dom/AncestorIterator.h"
-#include "mozilla/dom/BrowserBridgeChild.h"
-#include "mozilla/dom/BrowserChild.h"
-#include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/dom/CanonicalBrowsingContext.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/ContentParent.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/DocumentInlines.h"
-#include "mozilla/dom/DocumentTimeline.h"
-#include "mozilla/dom/DOMIntersectionObserver.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/ElementBinding.h"
-#include "mozilla/dom/ElementInlines.h"
-#include "mozilla/dom/FontFaceSet.h"
-#include "mozilla/dom/FragmentDirective.h"
-#include "mozilla/dom/HTMLAreaElement.h"
-#include "mozilla/dom/ImageTracker.h"
-#include "mozilla/dom/LargestContentfulPaint.h"
-#include "mozilla/dom/MouseEventBinding.h"
-#include "mozilla/dom/Performance.h"
-#include "mozilla/dom/PerformanceMainThread.h"
-#include "mozilla/dom/PointerEventBinding.h"
-#include "mozilla/dom/PointerEventHandler.h"
-#include "mozilla/dom/PopupBlocker.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/Selection.h"
-#include "mozilla/dom/ShadowIncludingTreeIterator.h"
-#include "mozilla/dom/SVGAnimationElement.h"
-#include "mozilla/dom/Touch.h"
-#include "mozilla/dom/TouchEvent.h"
-#include "mozilla/dom/UserActivation.h"
 #include "mozilla/EditorBase.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/GeckoMVMContext.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/Types.h"
 #include "mozilla/GlobalStyleSheetCache.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/InputTaskManager.h"
 #include "mozilla/IntegerRange.h"
-#include "mozilla/layers/APZPublicUtils.h"
-#include "mozilla/layers/CompositorBridgeChild.h"
-#include "mozilla/layers/FocusTarget.h"
-#include "mozilla/layers/InputAPZContext.h"
-#include "mozilla/layers/ScrollingInteractionContext.h"
-#include "mozilla/layers/WebRenderLayerManager.h"
-#include "mozilla/layers/WebRenderUserData.h"
-#include "mozilla/layout/ScrollAnchorContainer.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MemoryReporting.h"
@@ -93,13 +60,15 @@
 #include "mozilla/RangeUtils.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/RestyleManager.h"
+#include "mozilla/SMILAnimationController.h"
+#include "mozilla/SVGFragmentIdentifier.h"
+#include "mozilla/SVGObserverUtils.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ScrollTimelineAnimationTracker.h"
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSet.h"
-#include "mozilla/SMILAnimationController.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticAnalysisFunctions.h"
 #include "mozilla/StaticPrefs_apz.h"
@@ -111,10 +80,6 @@
 #include "mozilla/StaticPrefs_toolkit.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
-#include "mozilla/SVGFragmentIdentifier.h"
-#include "mozilla/SVGObserverUtils.h"
-#include "mozilla/glean/GfxMetrics.h"
-#include "mozilla/glean/LayoutMetrics.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextEvents.h"
@@ -125,21 +90,65 @@
 #include "mozilla/Unused.h"
 #include "mozilla/ViewportFrame.h"
 #include "mozilla/ViewportUtils.h"
+#include "mozilla/css/ImageLoader.h"
+#include "mozilla/dom/AncestorIterator.h"
+#include "mozilla/dom/BrowserBridgeChild.h"
+#include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/DOMIntersectionObserver.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/DocumentTimeline.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/ElementBinding.h"
+#include "mozilla/dom/ElementInlines.h"
+#include "mozilla/dom/FontFaceSet.h"
+#include "mozilla/dom/FragmentDirective.h"
+#include "mozilla/dom/HTMLAreaElement.h"
+#include "mozilla/dom/LargestContentfulPaint.h"
+#include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/dom/Performance.h"
+#include "mozilla/dom/PerformanceMainThread.h"
+#include "mozilla/dom/PointerEventBinding.h"
+#include "mozilla/dom/PointerEventHandler.h"
+#include "mozilla/dom/PopupBlocker.h"
+#include "mozilla/dom/SVGAnimationElement.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/Selection.h"
+#include "mozilla/dom/ShadowIncludingTreeIterator.h"
+#include "mozilla/dom/Touch.h"
+#include "mozilla/dom/TouchEvent.h"
+#include "mozilla/dom/UserActivation.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/Types.h"
+#include "mozilla/glean/GfxMetrics.h"
+#include "mozilla/glean/LayoutMetrics.h"
+#include "mozilla/layers/APZPublicUtils.h"
+#include "mozilla/layers/CompositorBridgeChild.h"
+#include "mozilla/layers/FocusTarget.h"
+#include "mozilla/layers/InputAPZContext.h"
+#include "mozilla/layers/ScrollingInteractionContext.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
+#include "mozilla/layers/WebRenderUserData.h"
+#include "mozilla/layout/ScrollAnchorContainer.h"
 #include "nsAnimationManager.h"
 #include "nsAutoLayoutPhase.h"
-#include "nsCanvasFrame.h"
-#include "nsCaret.h"
-#include "nsClassHashtable.h"
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
-#include "nsContainerFrame.h"
-#include "nsContentList.h"
 #include "nsCRTGlue.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsCSSRendering.h"
+#include "nsCanvasFrame.h"
+#include "nsCaret.h"
+#include "nsClassHashtable.h"
+#include "nsContainerFrame.h"
+#include "nsContentList.h"
+#include "nsDOMNavigationTiming.h"
 #include "nsDisplayList.h"
 #include "nsDocShell.h"  // for reflow observation
-#include "nsDOMNavigationTiming.h"
 #include "nsError.h"
 #include "nsFlexContainerFrame.h"
 #include "nsFocusManager.h"
@@ -149,30 +158,29 @@
 #include "nsHashKeys.h"
 #include "nsIBaseWindow.h"
 #include "nsIContent.h"
-#include "nsIDocShellTreeItem.h"
-#include "nsIDocShellTreeOwner.h"
 #include "nsIDOMXULMenuListElement.h"
 #include "nsIDOMXULMultSelectCntrlEl.h"
 #include "nsIDOMXULSelectCntrlItemEl.h"
+#include "nsIDocShellTreeItem.h"
+#include "nsIDocShellTreeOwner.h"
 #include "nsIDragSession.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
 #include "nsILayoutHistoryState.h"
 #include "nsILineIterator.h"  // for ScrollContentIntoView
-#include "nsImageFrame.h"
 #include "nsIObserverService.h"
 #include "nsIReflowCallback.h"
 #include "nsIScreen.h"
 #include "nsIScreenManager.h"
 #include "nsITimer.h"
 #include "nsIURI.h"
+#include "nsImageFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsMenuPopupFrame.h"
 #include "nsNameSpaceManager.h"  // for Pref-related rule management (bugs 22963,20760,31816)
 #include "nsNetUtil.h"
-#include "nsNetUtil.h"
-#include "nsPageSequenceFrame.h"
 #include "nsPIDOMWindow.h"
+#include "nsPageSequenceFrame.h"
 #include "nsPlaceholderFrame.h"
 #include "nsPresContext.h"
 #include "nsQueryObject.h"
@@ -194,17 +202,8 @@
 #include "nsWindowSizes.h"
 #include "nsXPCOM.h"
 #include "nsXULElement.h"
-#include "OverflowChangedTracker.h"
-#include "PLDHashTable.h"
-#include "PositionedEventTargeting.h"
 #include "prenv.h"
 #include "prinrval.h"
-#include "ScrollSnap.h"
-#include "StickyScrollContainer.h"
-#include "Units.h"
-#include "VisualViewport.h"
-#include "XULTreeElement.h"
-#include "ZoomConstraintsClient.h"
 
 #ifdef XP_WIN
 #  include "winuser.h"
@@ -565,8 +564,7 @@ class MOZ_RAII AutoPointerEventTargetUpdater final {
     // The frame may be a text frame, but the event target should be an element
     // node.  Therefore, refer aTargetContent first, then, if we have only a
     // frame, we should use inclusive ancestor of the content.
-    mOriginalPointerEventTarget =
-        aShell->mPointerEventTarget = [&]() -> nsIContent* {
+    mOriginalPointerEventTarget = [&]() -> nsIContent* {
       nsIContent* const target =
           aTargetContent ? aTargetContent
                          : (aFrame ? aFrame->GetContent() : nullptr);
@@ -579,6 +577,10 @@ class MOZ_RAII AutoPointerEventTargetUpdater final {
       }
       return target->GetInclusiveFlattenedTreeAncestorElement();
     }();
+    if (mOriginalPointerEventTarget &&
+        mOriginalPointerEventTarget->IsInComposedDoc()) {
+      mPointerEventTargetTracker.emplace(*mOriginalPointerEventTarget);
+    }
   }
 
   ~AutoPointerEventTargetUpdater() {
@@ -595,7 +597,14 @@ class MOZ_RAII AutoPointerEventTargetUpdater final {
       // this case), the event should be fired on the closest inclusive ancestor
       // of the pointer event target which is still connected.  The mutations
       // are tracked by PresShell::ContentRemoved.  Therefore, we should set it.
-      mShell->mPointerEventTarget.swap(*mOutTargetContent);
+      if (!mPointerEventTargetTracker ||
+          !mPointerEventTargetTracker->ContentWasRemoved()) {
+        mOriginalPointerEventTarget.swap(*mOutTargetContent);
+      } else {
+        nsCOMPtr<nsIContent> connectedAncestor =
+            mPointerEventTargetTracker->GetConnectedContent();
+        connectedAncestor.swap(*mOutTargetContent);
+      }
     }
   }
 
@@ -603,6 +612,7 @@ class MOZ_RAII AutoPointerEventTargetUpdater final {
   RefPtr<PresShell> mShell;
   nsCOMPtr<nsIContent> mOriginalPointerEventTarget;
   AutoWeakFrame mWeakFrame;
+  Maybe<AutoConnectedAncestorTracker> mPointerEventTargetTracker;
   nsIContent** mOutTargetContent;
   bool mFromTouch = false;
 };
@@ -703,6 +713,12 @@ void PresShell::AddWeakFrame(WeakFrame* aWeakFrame) {
   mWeakFrames.Insert(aWeakFrame);
 }
 
+void PresShell::AddConnectedAncestorTracker(
+    AutoConnectedAncestorTracker& aTracker) {
+  aTracker.mPreviousTracker = mLastConnectedAncestorTracker;
+  mLastConnectedAncestorTracker = &aTracker;
+}
+
 void PresShell::RemoveAutoWeakFrame(AutoWeakFrame* aWeakFrame) {
   if (mAutoWeakFrames == aWeakFrame) {
     mAutoWeakFrames = aWeakFrame->GetPreviousWeakFrame();
@@ -720,6 +736,21 @@ void PresShell::RemoveAutoWeakFrame(AutoWeakFrame* aWeakFrame) {
 void PresShell::RemoveWeakFrame(WeakFrame* aWeakFrame) {
   MOZ_ASSERT(mWeakFrames.Contains(aWeakFrame));
   mWeakFrames.Remove(aWeakFrame);
+}
+
+void PresShell::RemoveConnectedAncestorTracker(
+    const AutoConnectedAncestorTracker& aTracker) {
+  if (mLastConnectedAncestorTracker == &aTracker) {
+    mLastConnectedAncestorTracker = aTracker.mPreviousTracker;
+    return;
+  }
+  AutoConnectedAncestorTracker* nextTracker = mLastConnectedAncestorTracker;
+  while (nextTracker && nextTracker->mPreviousTracker != &aTracker) {
+    nextTracker = nextTracker->mPreviousTracker;
+  }
+  if (nextTracker) {
+    nextTracker->mPreviousTracker = aTracker.mPreviousTracker;
+  }
 }
 
 already_AddRefed<nsFrameSelection> PresShell::FrameSelection() {
@@ -751,7 +782,6 @@ PresShell::PresShell(Document* aDocument)
     : mDocument(aDocument),
       mViewManager(nullptr),
       mLastSelectionForToString(nullptr),
-      mAutoWeakFrames(nullptr),
 #ifdef ACCESSIBILITY
       mDocAccessible(nullptr),
 #endif  // ACCESSIBILITY
@@ -799,6 +829,7 @@ PresShell::PresShell(Document* aDocument)
       mDocumentLoading(false),
       mNoDelayedMouseEvents(false),
       mNoDelayedKeyEvents(false),
+      mNoDelayedSingleTap(false),
       mApproximateFrameVisibilityVisited(false),
       mIsLastChromeOnlyEscapeKeyConsumed(false),
       mHasReceivedPaintMessage(false),
@@ -1124,7 +1155,7 @@ void PresShell::Destroy() {
   NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
                "destroy called on presshell while scripts not blocked");
 
-  [[maybe_unused]] nsIURI* uri = mDocument->GetDocumentURI();
+  nsIURI* uri = mDocument->GetDocumentURI();
   AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING_RELEVANT_FOR_JS(
       "Layout tree destruction", LAYOUT_Destroy,
       uri ? uri->GetSpecOrDefault() : "N/A"_ns);
@@ -2539,6 +2570,8 @@ void PresShell::MaybeReleaseCapturingContent() {
 void PresShell::BeginLoad(Document* aDocument) {
   mDocumentLoading = true;
 
+  SuppressDisplayport(true);
+
   gfxTextPerfMetrics* tp = nullptr;
   if (mPresContext) {
     tp = mPresContext->GetTextPerfMetrics();
@@ -2560,6 +2593,7 @@ void PresShell::BeginLoad(Document* aDocument) {
 void PresShell::EndLoad(Document* aDocument) {
   MOZ_ASSERT(aDocument == mDocument, "Wrong document");
 
+  SuppressDisplayport(false);
   RestoreRootScrollPosition();
 
   mDocumentLoading = false;
@@ -4751,7 +4785,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::AttributeChanged(
 }
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentAppended(
-    nsIContent* aFirstNewContent) {
+    nsIContent* aFirstNewContent, const ContentAppendInfo&) {
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript());
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected ContentAppended");
   MOZ_ASSERT(aFirstNewContent->OwnerDoc() == mDocument, "Unexpected document");
@@ -4778,7 +4812,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentAppended(
 }
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentInserted(
-    nsIContent* aChild) {
+    nsIContent* aChild, const ContentInsertInfo&) {
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript());
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected ContentInserted");
   MOZ_ASSERT(aChild->OwnerDoc() == mDocument, "Unexpected document");
@@ -4799,7 +4833,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentInserted(
 }
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentWillBeRemoved(
-    nsIContent* aChild, const BatchRemovalState*) {
+    nsIContent* aChild, const ContentRemoveInfo&) {
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript());
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected ContentRemoved");
   MOZ_ASSERT(aChild->OwnerDoc() == mDocument, "Unexpected document");
@@ -4810,11 +4844,11 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentWillBeRemoved(
 
   nsAutoCauseReflowNotifier crNotifier(this);
 
-  // After removing aChild from tree we should save information about live
-  // ancestor
-  if (mPointerEventTarget &&
-      mPointerEventTarget->IsInclusiveDescendantOf(aChild)) {
-    mPointerEventTarget = aChild->GetParent();
+  for (AutoConnectedAncestorTracker* tracker = mLastConnectedAncestorTracker;
+       tracker; tracker = tracker->mPreviousTracker) {
+    if (tracker->ConnectedNode().IsInclusiveFlatTreeDescendantOf(aChild)) {
+      tracker->mConnectedAncestor = aChild->GetFlattenedTreeParentElement();
+    }
   }
 
   mFrameConstructor->ContentWillBeRemoved(
@@ -6274,8 +6308,24 @@ void PresShell::ClearApproximatelyVisibleFramesList(
   mApproximatelyVisibleFrames.Clear();
 }
 
+// aRect is relative to aFrame
+// aPreserve3DRect is set upon entering a preserve3d context and it doesn't
+// change, it stays relative to the root frame in the preserve3d context. Any
+// frame that is in a preserve3d context ignores aRect but takes aPreserve3DRect
+// and transforms it from the root of the preserve3d context to itself
+// (nsDisplayTransform::UntransformRect does this by default), and passes the
+// result down as aRect (leaving aPreserve3DRect untouched). Additionally, we
+// descend into every frame inside the preserve3d context (we skip the rect
+// intersection test). Any frame that is not in a preserve3d context just uses
+// aRect and doesn't need to know about any of this, even if it's parent frame
+// is in the preserve3d context. Any frame that is extend3d (ie has preserve3d
+// transform style) but not combines3d (ie its either transformed or backface
+// visibility hidden and its parent has preserve3d style) forms the root of a
+// preserve3d context. And any frame that is combines3d is in a preserve3d
+// context.
 void PresShell::MarkFramesInSubtreeApproximatelyVisible(
-    nsIFrame* aFrame, const nsRect& aRect, bool aRemoveOnly /* = false */) {
+    nsIFrame* aFrame, const nsRect& aRect, const nsRect& aPreserve3DRect,
+    bool aRemoveOnly /* = false */) {
   MOZ_DIAGNOSTIC_ASSERT(aFrame, "aFrame arg should be a valid frame pointer");
   MOZ_ASSERT(aFrame->PresShell() == this, "wrong presshell");
 
@@ -6349,8 +6399,6 @@ void PresShell::MarkFramesInSubtreeApproximatelyVisible(
     rect = scrollFrame->ExpandRectToNearlyVisible(rect);
   }
 
-  bool preserves3DChildren = aFrame->Extend3DContext();
-
   for (const auto& [list, listID] : aFrame->ChildLists()) {
     for (nsIFrame* child : list) {
       // Note: This assert should be trivially satisfied, just by virtue of how
@@ -6358,25 +6406,38 @@ void PresShell::MarkFramesInSubtreeApproximatelyVisible(
       // sentinel which should terminate the loop).  But we do somehow get
       // crash reports inside this loop that suggest `child` is null...
       MOZ_DIAGNOSTIC_ASSERT(child, "shouldn't have null values in child lists");
+
+      const bool extend3DContext = child->Extend3DContext();
+      const bool combines3DTransformWithAncestors =
+          (extend3DContext || child->IsTransformed()) &&
+          child->Combines3DTransformWithAncestors();
+
       nsRect r = rect - child->GetPosition();
-      if (!r.IntersectRect(r, child->InkOverflowRect())) {
-        continue;
-      }
-      if (child->IsTransformed()) {
-        // for children of a preserve3d element we just pass down the same dirty
-        // rect
-        if (!preserves3DChildren ||
-            !child->Combines3DTransformWithAncestors()) {
-          const nsRect overflow = child->InkOverflowRectRelativeToSelf();
-          nsRect out;
-          if (nsDisplayTransform::UntransformRect(r, overflow, child, &out)) {
-            r = out;
-          } else {
-            r.SetEmpty();
-          }
+      if (!combines3DTransformWithAncestors) {
+        if (!r.IntersectRect(r, child->InkOverflowRect())) {
+          continue;
         }
       }
-      MarkFramesInSubtreeApproximatelyVisible(child, r, aRemoveOnly);
+
+      nsRect newPreserve3DRect = aPreserve3DRect;
+      if (extend3DContext && !combines3DTransformWithAncestors) {
+        newPreserve3DRect = r;
+      }
+
+      if (child->IsTransformed()) {
+        if (combines3DTransformWithAncestors) {
+          r = newPreserve3DRect;
+        }
+        const nsRect overflow = child->InkOverflowRectRelativeToSelf();
+        nsRect out;
+        if (nsDisplayTransform::UntransformRect(r, overflow, child, &out)) {
+          r = out;
+        } else {
+          r.SetEmpty();
+        }
+      }
+      MarkFramesInSubtreeApproximatelyVisible(child, r, newPreserve3DRect,
+                                              aRemoveOnly);
     }
   }
 }
@@ -6417,7 +6478,7 @@ void PresShell::RebuildApproximateFrameVisibility(
     vis = vis.Intersect(visibleRect.valueOr(nsRect()));
   }
 
-  MarkFramesInSubtreeApproximatelyVisible(rootFrame, vis, aRemoveOnly);
+  MarkFramesInSubtreeApproximatelyVisible(rootFrame, vis, vis, aRemoveOnly);
 
   DecApproximateVisibleCount(oldApproximatelyVisibleFrames);
 }
@@ -7584,6 +7645,15 @@ nsresult PresShell::EnsurePrecedingPointerRawUpdate(
     WidgetMouseEvent mouseRawUpdateEvent(*mouseEvent);
     mouseRawUpdateEvent.mMessage = eMouseRawUpdate;
     mouseRawUpdateEvent.mCoalescedWidgetEvents = nullptr;
+    // PointerEvent.button of `pointerrawupdate` should always be -1 if the
+    // source event is not eMouseDown nor eMouseUp.  PointerEventHandler cannot
+    // distinguish whether eMouseRawUpdate is caused by eMouseDown/eMouseUp or
+    // not.  Therefore, we need to set the proper value in the latter case here
+    // (In the former case, the copy constructor did it already).
+    if (mouseEvent->mMessage != eMouseDown &&
+        mouseEvent->mMessage != eMouseUp) {
+      mouseRawUpdateEvent.mButton = MouseButton::eNotPressed;
+    }
     nsEventStatus rawUpdateStatus = nsEventStatus_eIgnore;
     EventHandler eventHandler(*this);
     return eventHandler.HandleEvent(aWeakFrameForPresShell,
@@ -8688,7 +8758,8 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
     return false;
   }
 
-  if (!aGUIEvent->IsMouseEventClassOrHasClickRelatedPointerEvent()) {
+  if (!aGUIEvent->IsMouseEventClassOrHasClickRelatedPointerEvent() &&
+      aGUIEvent->mMessage != eTouchStart) {
     return false;
   }
 
@@ -8704,22 +8775,57 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
 
   RefPtr<PresShell> ps = aFrameToHandleEvent->PresShell();
 
-  if (aGUIEvent->mMessage == eMouseDown) {
-    ps->mNoDelayedMouseEvents = true;
-  } else if (!ps->mNoDelayedMouseEvents) {
-    if (aGUIEvent->mMessage == eMouseUp ||
-        aGUIEvent->mMessage == eMouseExitFromWidget) {
+  switch (aGUIEvent->mMessage) {
+    case eTouchStart: {
+      // If we receive a single touch start during the suppression, its
+      // compatibility mouse events should not be fired later because the single
+      // tap sequence has not been sent to the web app.
+      const WidgetTouchEvent* const touchEvent = aGUIEvent->AsTouchEvent();
+      if (touchEvent->mTouches.Length() == 1) {
+        ps->mNoDelayedSingleTap = true;
+      }
+      // We won't dispatch eTouchStart as a delayed event later so that return
+      // false.
+      return false;
+    }
+    case eMouseDown: {
+      // If we receive a click sequence start during the suppression, we should
+      // not fire `click` event later because its sequence has not been send to
+      // the web app.  Note that if the eMouseDown is caused by a touch, we may
+      // have already sent the touch sequence to the web app.  In such case,
+      // the eMouseDown is NOT start of the click sequence.
+      const WidgetMouseEvent* const mouseEvent = aGUIEvent->AsMouseEvent();
+      if (ps->mNoDelayedSingleTap ||
+          mouseEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
+        ps->mNoDelayedMouseEvents = true;
+        break;
+      }
+      // Otherwise, put the event into the queue.
+      [[fallthrough]];
+    }
+    case eMouseUp:
+    case eMouseExitFromWidget: {
+      if (ps->mNoDelayedMouseEvents) {
+        break;
+      }
       UniquePtr<DelayedMouseEvent> delayedMouseEvent =
           MakeUnique<DelayedMouseEvent>(aGUIEvent->AsMouseEvent());
       ps->mDelayedEvents.AppendElement(std::move(delayedMouseEvent));
+      break;
     }
-    // contextmenu is triggered after right mouseup on Windows and right
-    // mousedown on other platforms.
-    else if (aGUIEvent->mMessage == eContextMenu) {
+    case eContextMenu: {
+      if (ps->mNoDelayedMouseEvents) {
+        break;
+      }
+      // contextmenu is triggered after right mouseup on Windows and right
+      // mousedown on other platforms.
       UniquePtr<DelayedPointerEvent> delayedPointerEvent =
           MakeUnique<DelayedPointerEvent>(aGUIEvent->AsPointerEvent());
       ps->mDelayedEvents.AppendElement(std::move(delayedPointerEvent));
+      break;
     }
+    default:
+      break;
   }
 
   // If there is a suppressed event listener associated with the document,
@@ -9591,9 +9697,9 @@ void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
 
       if (shouldExitFullscreen) {
         // ESC key released while in DOM fullscreen mode.
-        // Fully exit all browser windows and documents from
-        // fullscreen mode.
-        Document::AsyncExitFullscreen(nullptr);
+        // Fully exit fullscreen mode for the browser window and documents that
+        // received the event.
+        Document::AsyncExitFullscreen(root);
       }
     }
   }
@@ -10466,6 +10572,7 @@ void PresShell::Freeze(bool aIncludeSubDocuments) {
 void PresShell::FireOrClearDelayedEvents(bool aFireEvents) {
   mNoDelayedMouseEvents = false;
   mNoDelayedKeyEvents = false;
+  mNoDelayedSingleTap = false;
   if (!aFireEvents) {
     mDelayedEvents.Clear();
     return;
@@ -10629,7 +10736,7 @@ DOMHighResTimeStamp PresShell::GetPerformanceNowUnclamped() {
 
 bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
                          OverflowChangedTracker* aOverflowTracker) {
-  [[maybe_unused]] nsIURI* uri = mDocument->GetDocumentURI();
+  nsIURI* uri = mDocument->GetDocumentURI();
   AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING_RELEVANT_FOR_JS(
       "Reflow", LAYOUT_Reflow, uri ? uri->GetSpecOrDefault() : "N/A"_ns);
 
@@ -12220,12 +12327,10 @@ bool PresShell::UsesMobileViewportSizing() const {
 void PresShell::UpdateImageLockingState() {
   // We're locked if we're both thawed and active.
   const bool locked = !mFrozen && mIsActive;
-  auto* tracker = mDocument->ImageTracker();
-  if (locked == tracker->GetLockingState()) {
+  if (locked == mDocument->GetLockingImages()) {
     return;
   }
-
-  tracker->SetLockingState(locked);
+  mDocument->SetLockingImages(locked);
   if (locked) {
     // Request decodes for visible image frames; we want to start decoding as
     // quickly as possible when we get foregrounded to minimize flashing.
@@ -12656,22 +12761,19 @@ PresShell::WindowSizeConstraints PresShell::GetWindowSizeConstraints() {
   const auto* pos = rootFrame->StylePosition();
   const auto anchorResolutionParams =
       AnchorPosResolutionParams::From(rootFrame);
-  if (const auto styleMinWidth =
-          pos->GetMinWidth(anchorResolutionParams.mPosition);
+  if (const auto styleMinWidth = pos->GetMinWidth(anchorResolutionParams);
       styleMinWidth->ConvertsToLength()) {
     minSize.width = styleMinWidth->ToLength();
   }
-  if (const auto styleMinHeight =
-          pos->GetMinHeight(anchorResolutionParams.mPosition);
+  if (const auto styleMinHeight = pos->GetMinHeight(anchorResolutionParams);
       styleMinHeight->ConvertsToLength()) {
     minSize.height = styleMinHeight->ToLength();
   }
-  if (const auto maxWidth = pos->GetMaxWidth(anchorResolutionParams.mPosition);
+  if (const auto maxWidth = pos->GetMaxWidth(anchorResolutionParams);
       maxWidth->ConvertsToLength()) {
     maxSize.width = maxWidth->ToLength();
   }
-  if (const auto maxHeight =
-          pos->GetMaxHeight(anchorResolutionParams.mPosition);
+  if (const auto maxHeight = pos->GetMaxHeight(anchorResolutionParams);
       maxHeight->ConvertsToLength()) {
     maxSize.height = maxHeight->ToLength();
   }
@@ -12863,6 +12965,12 @@ void PresShell::EventHandler::EventTargetData::
   // If we know the event, we can compute the target correctly.
   if (aGUIEvent) {
     MOZ_ASSERT(mContent == mFrame->GetContentForEvent(aGUIEvent));
+    return;
+  }
+  // If clicking an image map, mFrame should be the image frame, but mContent
+  // should be the area element which handles the event at the position.
+  if (mContent->IsHTMLElement(nsGkAtoms::area)) {
+    MOZ_ASSERT(mContent->GetPrimaryFrame() == mFrame);
     return;
   }
 

@@ -55,6 +55,12 @@ add_setup(async function () {
 
   // Clear the tracking database.
   await TrackingDBService.clearAll();
+
+  registerCleanupFunction(async () => {
+    // Opening the protections panel for the first time sets this pref. Clean it
+    // up.
+    Services.prefs.clearUserPref("browser.protections_panel.infoMessage.seen");
+  });
 });
 
 add_task(
@@ -83,9 +89,25 @@ add_task(
     info("Run PurgeBounceTrackers");
     await btp.testRunPurgeBounceTrackers();
 
-    info("After purging test that the counter is showing and incremented.");
-    await assertProtectionsPanelCounter(BOUNCE_TRACKERS.length);
+    // If the mode is enabled, the counter should be incremented.
+    // If the mode is disabled or dry run, the counter should still be 0.
+    let expectedCount;
+    if (
+      Services.prefs.getIntPref("privacy.bounceTrackingProtection.mode") ==
+      Ci.nsIBounceTrackingProtection.MODE_ENABLED
+    ) {
+      info(
+        "After purging in enabled state test that the counter is showing and incremented."
+      );
+      expectedCount = BOUNCE_TRACKERS.length;
+    } else {
+      info(
+        "After purging in disabled state test that the counter is still 0 and hidden."
+      );
+      expectedCount = 0;
+    }
 
+    await assertProtectionsPanelCounter(expectedCount);
     registerCleanupFunction(async () => {
       // Reset global bounce tracking state.
       btp.clearAll();

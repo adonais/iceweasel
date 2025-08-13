@@ -117,16 +117,15 @@
     static suggestionsSection = /*html*/ `
       <html:div id="tab-group-suggestions-container" hidden="true">
 
-        <checkbox
-          checked="true"
-          type="checkbox"
+        <html:moz-checkbox
+          checked=""
           id="tab-group-select-checkbox"
           data-l10n-id="tab-group-editor-select-suggestions">
-        </checkbox>
-      
+        </html:moz-checkbox>
+
         <html:div id="tab-group-suggestions"></html:div>
 
-        <html:p 
+        <html:p
           data-l10n-id="tab-group-editor-information-message">
         </html:p>
 
@@ -250,7 +249,7 @@
             id="tab-group-suggestions-message"
             data-l10n-id="tab-group-editor-no-tabs-found-title">
           </html:moz-button>
-          <html:p 
+          <html:p
             data-l10n-id="tab-group-editor-no-tabs-found-message">
           </html:p>
         </html:div>
@@ -258,7 +257,7 @@
         ${this.defaultActions}
 
       </html:div>
-      
+
       ${this.loadingSection}
       ${this.loadingActions}
       ${this.suggestionsSection}
@@ -621,14 +620,13 @@
       this.#selectSuggestionsCheckbox = this.querySelector(
         "#tab-group-select-checkbox"
       );
-      this.#selectSuggestionsCheckbox.addEventListener(
-        "CheckboxStateChange",
-        () => {
-          this.#selectSuggestionsCheckbox.checked
-            ? this.#handleSelectAll()
-            : this.#handleDeselectAll();
+      this.#selectSuggestionsCheckbox.addEventListener("change", e => {
+        if (e.target.checked) {
+          this.#handleSelectAll();
+        } else {
+          this.#handleDeselectAll();
         }
-      );
+      });
       this.#suggestionsMessageContainer = this.querySelector(
         "#tab-group-suggestions-message-container"
       );
@@ -892,9 +890,13 @@
         flushes.push(TabStateFlusher.flush(tab.linkedBrowser));
       });
       Promise.allSettled(flushes).then(() => {
-        saveAndCloseGroup.disabled = !SessionStore.shouldSaveTabGroup(
-          this.activeGroup
-        );
+        // `this.activeGroup` could be no longer available if the menu was closed
+        // since starting the tab state flushes.
+        if (this.activeGroup?.tabs) {
+          saveAndCloseGroup.disabled = !SessionStore.shouldSaveTabsToGroup(
+            this.activeGroup.tabs
+          );
+        }
       });
     }
 
@@ -1169,18 +1171,18 @@
       });
     }
 
-    #createRow(tab, index) {
-      // Create Row
-      let row = document.createXULElement("toolbaritem");
-      row.setAttribute("context", "tabContextMenu");
-      row.setAttribute("id", `tab-bar-${index}`);
-
+    #createRow(tab) {
       // Create Checkbox
-      let checkbox = document.createXULElement("checkbox");
+      let checkbox = document.createElement("moz-checkbox");
       checkbox.value = tab;
-      checkbox.setAttribute("checked", true);
-      checkbox.classList.add("tab-group-suggestion-checkbox");
-      checkbox.addEventListener("CheckboxStateChange", e => {
+      checkbox.label = tab.label;
+      checkbox.iconSrc = tab.image;
+      checkbox.checked = true;
+      checkbox.classList.add(
+        "tab-group-suggestion-checkbox",
+        "text-truncated-ellipsis"
+      );
+      checkbox.addEventListener("change", e => {
         const isChecked = e.target.checked;
         const currentTab = e.target.value;
 
@@ -1193,25 +1195,8 @@
         }
       });
 
-      row.appendChild(checkbox);
-
-      // Create Row Label
-      let label = document.createXULElement("toolbarbutton");
-      label.classList.add(
-        "all-tabs-button",
-        "subviewbutton",
-        "subviewbutton-iconic",
-        "tab-group-suggestion-label"
-      );
-      label.setAttribute("flex", "1");
-      label.setAttribute("crop", "end");
-      label.label = tab.label;
-      label.image = tab.image;
-      label.disabled = true;
-      row.appendChild(label);
-
       // Apply Row to Suggestions
-      this.#suggestions.appendChild(row);
+      this.#suggestions.appendChild(checkbox);
     }
 
     /**
@@ -1279,11 +1264,14 @@
       this.#suggestedTabs = [];
       this.#selectedSuggestedTabs = [];
       if (this.#suggestions) {
-        this.#suggestions.innerHTML = "";
+        this.#suggestions.replaceChildren();
+      }
+      if (this.#selectSuggestionsCheckbox) {
+        this.#selectSuggestionsCheckbox.checkbox = true;
       }
       this.#showSmartSuggestionsContainer(false);
       if (this.#suggestionsOptinContainer) {
-        this.#suggestionsOptinContainer.innerHTML = "";
+        this.#suggestionsOptinContainer.replaceChildren();
       }
     }
 

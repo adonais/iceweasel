@@ -53,14 +53,32 @@
       add_task(async function testMozInputSearchSearchEvent() {
         const mozInputSearch = document.querySelector("moz-input-search");
         const inputElement = mozInputSearch.shadowRoot.querySelector("#input");
-        let searchEvent = new Promise(r => {
-          mozInputSearch.addEventListener("MozInputSearch:search", r, {
-            once: true,
+        {
+          let searchEvent = new Promise(r => {
+            mozInputSearch.addEventListener("MozInputSearch:search", r, {
+              once: true,
+            });
           });
-        });
-        SpecialPowers.wrap(inputElement).setUserInput("abc");
-        await searchEvent;
-        ok(true, "Typing some text eventually fires a debounced search event");
+          SpecialPowers.wrap(inputElement).setUserInput("abc");
+          await searchEvent;
+          ok(
+            true,
+            "Typing some text eventually fires a debounced search event"
+          );
+        }
+
+        {
+          let searchEvent = new Promise(r => {
+            mozInputSearch.addEventListener("MozInputSearch:search", r, {
+              once: true,
+            });
+          });
+          mozInputSearch.clear();
+          is(mozInputSearch.value, "", "clear() value");
+          is(inputElement.value, "", "clear() input value");
+          await searchEvent;
+          ok(true, "clear() dispatches the search event if needed");
+        }
       });
     </script>
   </head>

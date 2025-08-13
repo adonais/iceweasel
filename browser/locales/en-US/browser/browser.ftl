@@ -159,6 +159,10 @@ urlbar-result-menu-show-less-frequently =
 urlbar-result-menu-dont-show-weather-suggestions =
     .label = Don’t show weather suggestions
 
+# Used for Split Button.
+urlbar-splitbutton-dropmarker =
+    .title = Open menu
+
 # A message shown in the urlbar when the user submits feedback on a suggestion
 # (e.g., it shows an inaccurate location, it's shown too often, etc.).
 urlbar-feedback-acknowledgment = Thanks for your feedback
@@ -321,7 +325,7 @@ quickactions-cmd-downloads = downloads
 
 # Opens about:addons page in the extensions section
 quickactions-extensions = Manage extensions
-quickactions-cmd-extensions = extensions
+quickactions-cmd-extensions2 = extensions, addons, add-ons
 
 # Opens Firefox View
 quickactions-firefoxview = Open { -firefoxview-brand-name }
@@ -373,7 +377,10 @@ quickactions-cmd-settings2 = settings, preferences, options, manage
 
 # Opens about:addons page in the themes section
 quickactions-themes = Manage themes
-quickactions-cmd-themes = themes
+# In English we provide multiple spellings for "add-ons". If that's not
+# applicable to your language, only use the correct spelling (don't repeat the
+# same word).
+quickactions-cmd-themes2 = themes, add-ons, addons
 
 # Opens a SUMO article explaining how to update the browser
 quickactions-update = Update { -brand-short-name }
@@ -662,30 +669,8 @@ urlbar-result-action-tabtosearch-web = Search with { $engine } directly from the
 urlbar-result-action-tabtosearch-other-engine = Search { $engine } directly from the address bar
 # Action text for copying to clipboard.
 urlbar-result-action-copy-to-clipboard = Copy
-# Shows the result of a formula expression being calculated, the last = sign will be shown
-# as part of the result (e.g. "= 2").
-# Variables
-#  $result (String): the string representation for a formula result
-urlbar-result-action-calculator-result = = { $result }
 # The string returned for an undefined calculator result such as when dividing by 0
 urlbar-result-action-undefined-calculator-result = undefined
-# Shows the result of a formula expression being calculated, in scientific notation.
-# The last = sign will be shown as part of the result (e.g. "= 1.0e17").
-# Variables
-#  $result (String): the string representation for a result in scientific notation
-#  (e.g. "1.0e17").
-urlbar-result-action-calculator-result-scientific-notation = = { $result }
-# Shows the result of a formula expression being calculated, this is used for numbers >= 1.
-# The last = sign will be shown as part of the result (e.g. "= 2").
-# Variables
-#  $result (String): the string representation for a formula result
-urlbar-result-action-calculator-result-3 = = { NUMBER($result, useGrouping: "false", maximumFractionDigits: 8)}
-# Shows the result of a formula expression being calculated, to a maximum of 9 significant
-# digits. This is used for numbers < 1.
-# The last = sign will be shown as part of the result (e.g. "= 0.333333333").
-# Variables
-#  $result (String): the string representation for a formula result
-urlbar-result-action-calculator-result-decimal = = { NUMBER($result, maximumSignificantDigits: 9)}
 
 # The title of a weather suggestion in the urlbar. The temperature and unit
 # substring should be inside a <strong> tag. If the temperature and unit are not
@@ -754,12 +739,17 @@ urlbar-searchmode-actions =
     .label = Actions
 urlbar-searchmode-exit-button =
     .tooltiptext = Close
+urlbar-searchmode-default =
+    .tooltiptext = Default search engine
 
 # Label shown on the top of Searchmode Switcher popup. After this label, the
 # available search engines will be listed.
 urlbar-searchmode-popup-description = This time search with:
 urlbar-searchmode-popup-search-settings-menuitem =
     .label = Search Settings
+
+# Label shown next to a new search engine in the Searchmode Switcher popup to promote it.
+urlbar-searchmode-new = New
 
 # Label prompting user to search with a particular search engine.
 #  $engine (String): the name of a search engine that searches a specific site
@@ -1290,3 +1280,133 @@ file-picker-crashed-show-in-folder =
 onboarding-aw-finish-setup-button =
     .label = Finish setup
     .tooltiptext = Finish setting up { -brand-short-name }
+
+onboarding-checklist-button-label = Finish setup
+
+## The urlbar trust panel
+
+trustpanel-etp-label-enabled = Enhanced Tracking Protection is on
+trustpanel-etp-label-disabled = Enhanced Tracking Protection is off
+
+trustpanel-etp-description-enabled = If something looks broken on this site, try turning off protections.
+trustpanel-etp-description-disabled = { -brand-product-name } thinks companies should follow you less. We block as many trackers as we can when you turn on protections.
+
+trustpanel-connection-label-secure = Connection secure
+trustpanel-connection-label-insecure = Connection not secure
+
+trustpanel-header-enabled = { -brand-product-name } is on guard
+trustpanel-description-enabled = You’re protected. If we spot something, we’ll let you know
+
+trustpanel-header-disabled = You turned off protections
+trustpanel-description-disabled = { -brand-product-name } is off-duty. We suggest turning protections back on.
+
+trustpanel-clear-cookies-button = Clear cookies and site data
+trustpanel-privacy-link = Privacy Settings
+
+# Variables
+#  $host (String): the hostname of the site that is being displayed.
+trustpanel-clear-cookies-header =
+    .title = Clear cookies and site data for { $host }
+
+trustpanel-clear-cookies-description = Removing cookies and site data might log you out of websites and clear shopping carts.
+
+trustpanel-clear-cookies-subview-button-clear = Clear
+trustpanel-clear-cookies-subview-button-cancel = Cancel
+
+# Variables
+#  $host (String): the hostname of the site that is being displayed.
+trustpanel-site-information-header =
+    .title = Connection protections for { $host }
+
+trustpanel-connection-secure = You are securely connected to this site
+trustpanel-connection-not-secure = You are not securely connected to this site.
+
+trustpanel-siteinformation-morelink = More site information
+
+trustpanel-blocker-see-all = See All
+
+# Variables
+#  $host (String): the hostname of the site that is being displayed.
+trustpanel-blocker-header =
+    .title = Tracking protections for { $host }
+
+## Variables
+##  $count (String): the number of trackers blocked.
+
+trustpanel-blocker-section-header = { $count ->
+  [one] <span>{ $count }</span> Tracker blocked on this site
+  *[other] <span>{ $count }</span> Trackers blocked on this site
+}
+trustpanel-blocker-description = { -brand-product-name } thinks companies should follow you less. So we block as many as we can.
+trustpanel-blocked-header = { -brand-product-name } blocked these things for you:
+trustpanel-tracking-header = { -brand-product-name } allowed these things so sites don’t break:
+trustpanel-tracking-description = Without trackers, some buttons, forms, and login fields might not work.
+trustpanel-insecure-section-header = Your connection isn’t secure
+trustpanel-insecure-description = The data you’re sending to this site isn’t encrypted. It could be viewed, stolen, or altered.
+
+trustpanel-list-label-tracking-cookies = { $count ->
+  [one] { $count } Cross-site tracking cookie
+  *[other] { $count } Cross-site tracking cookies
+}
+trustpanel-list-label-tracking-content = Tracking content
+trustpanel-list-label-fingerprinter =  { $count ->
+  [one] { $count } Fingerprinters
+  *[other] { $count } Fingerprinters
+}
+trustpanel-list-label-social-tracking = { $count ->
+  [one] { $count } Social media tracker
+  *[other] { $count } Social media trackers
+}
+trustpanel-list-label-cryptominer = { $count ->
+  [one] { $count } Cryptominer
+  *[other] { $count } Cryptominers
+}
+trustpanel-social-tracking-blocking-tab-header = { $count ->
+  [one] { -brand-product-name } blocked { $count } social media tracker
+  *[other] { -brand-product-name } blocked { $count } social media trackers
+}
+trustpanel-social-tracking-not-blocking-tab-header = { $count ->
+  [one] { -brand-product-name } allowed { $count } social media tracker
+  *[other] { -brand-product-name } allowed { $count } social media trackers
+}
+trustpanel-social-tracking-tab-list-header = These sites are trying to track you:
+
+trustpanel-tracking-cookies-blocking-tab-header = { $count ->
+  [one] { -brand-product-name } blocked { $count } cross-site tracking cookie
+  *[other] { -brand-product-name } blocked { $count } cross-site tracking cookies
+}
+trustpanel-tracking-cookies-not-blocking-tab-header = { $count ->
+  [one] { -brand-product-name } allowed { $count } cross-site tracking cookie
+  *[other] { -brand-product-name } allowed { $count } cross-site tracking cookies
+}
+trustpanel-tracking-cookies-tab-list-header = These sites are trying to track you:
+
+trustpanel-tracking-content-blocking-tab-header = { $count ->
+  [one] { -brand-product-name } blocked { $count } tracker
+  *[other] { -brand-product-name } blocked { $count } trackers
+}
+trustpanel-tracking-content-not-blocking-tab-header = { $count ->
+  [one] { -brand-product-name } allowed { $count } tracker
+  *[other] { -brand-product-name } allowed { $count } trackers
+}
+trustpanel-tracking-content-tab-list-header = These sites are trying to track you:
+
+trustpanel-fingerprinter-blocking-tab-header = { $count ->
+  [one] { -brand-product-name } blocked { $count } fingerprinter
+  *[other] { -brand-product-name } blocked { $count } fingerprinters
+}
+trustpanel-fingerprinter-not-blocking-tab-header = { $count ->
+  [one] { -brand-product-name } allowed { $count } fingerprinter
+  *[other] { -brand-product-name } allowed { $count } fingerprinters
+}
+trustpanel-fingerprinter-list-header = These site are trying to fingerprint you:
+
+trustpanel-cryptominer-blocking-tab-header = { $count ->
+  [one] { -brand-product-name } blocked { $count } cryptominer
+  *[other] { -brand-product-name } blocked { $count } cryptominers
+}
+trustpanel-cryptominer-not-blocking-tab-header = { $count ->
+  [one] { -brand-product-name } allowed { $count } cryptominer
+  *[other] { -brand-product-name } allowed { $count } cryptominers
+}
+trustpanel-cryptominer-tab-list-header = These sites are trying to cryptomine:

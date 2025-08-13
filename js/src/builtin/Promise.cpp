@@ -48,6 +48,8 @@ static double MillisecondsSinceStartup() {
   return (now - mozilla::TimeStamp::FirstTimeStamp()).ToMilliseconds();
 }
 
+constexpr auto HostDefinedDataIsOptimizedOut = nullptr;
+
 enum ResolutionMode { ResolveMode, RejectMode };
 
 /**
@@ -97,9 +99,28 @@ enum RejectFunctionSlots {
   RejectFunctionSlot_ResolveFunction,
 };
 
+// The promise combinator builtins such as Promise.all and Promise.allSettled
+// allocate one or two functions for each array element. These functions store
+// some state in extended slots.
 enum PromiseCombinatorElementFunctionSlots {
-  PromiseCombinatorElementFunctionSlot_Data = 0,
-  PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc,
+  // This slot stores either:
+  //
+  // - The [[Index]] slot (the array index) as Int32Value.
+  //
+  // - For the onRejected functions for Promise.allSettled, a pointer to the
+  //   corresponding onFulfilled function stored as ObjectValue. In this case
+  //   the slots on that function must be used instead because the
+  //   [[AlreadyCalled]] flag must be shared by these two functions.
+  PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc = 0,
+
+  // This slot stores a pointer to the PromiseCombinatorDataHolder JS object.
+  // It's also used to represent the [[AlreadyCalled]] flag: we set this slot to
+  // UndefinedValue when [[AlreadyCalled]] is set to true in the spec.
+  //
+  // The onRejected functions for Promise.allSettled have a NullValue stored in
+  // this slot. In this case the slot shouldn't be used because the
+  // [[AlreadyCalled]] state must be shared by the two functions.
+  PromiseCombinatorElementFunctionSlot_Data
 };
 
 enum ReactionJobSlots {
@@ -2663,13 +2684,9 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
   // compartment.
   RootedObject promise(cx, &promiseToResolve.toObject());
 
-  Rooted<JSObject*> hostDefinedData(cx);
-  if (!cx->runtime()->getHostDefinedData(cx, &hostDefinedData)) {
-    return false;
-  }
-
   // Step X. HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
-  return cx->runtime()->enqueuePromiseJob(cx, job, promise, hostDefinedData);
+  return cx->runtime()->enqueuePromiseJob(cx, job, promise,
+                                          HostDefinedDataIsOptimizedOut);
 }
 
 /**
@@ -4049,16 +4066,19 @@ static JSFunction* NewPromiseCombinatorElementFunction(
     return nullptr;
   }
 
-  fn->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
-                      ObjectValue(*dataHolder));
+  // See the PromiseCombinatorElementFunctionSlots comment for an explanation of
+  // how these two slots are used.
   if (maybeResolveFunc.isObject()) {
     fn->setExtendedSlot(
         PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc,
         maybeResolveFunc);
+    fn->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data, NullValue());
   } else {
     fn->setExtendedSlot(
         PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc,
         Int32Value(index));
+    fn->setExtendedSlot(PromiseCombinatorElementFunctionSlot_Data,
+                        ObjectValue(*dataHolder));
   }
   return fn;
 }
@@ -4097,14 +4117,6 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
   // Step 1. Let F be the active function object.
   JSFunction* fn = &args.callee().as<JSFunction>();
 
-  constexpr size_t indexOrResolveFuncSlot =
-      PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc;
-  if (fn->getExtendedSlot(indexOrResolveFuncSlot).isObject()) {
-    Value slotVal = fn->getExtendedSlot(indexOrResolveFuncSlot);
-    fn = &slotVal.toObject().as<JSFunction>();
-  }
-  MOZ_RELEASE_ASSERT(fn->getExtendedSlot(indexOrResolveFuncSlot).isInt32());
-
   // Promise.{all,any} functions
   // Step 2. If F.[[AlreadyCalled]] is true, return undefined.
   // Promise.allSettled functions
@@ -4114,6 +4126,20 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
   // We use the existence of the data holder as a signal for whether the Promise
   // combinator element function was already called. Upon resolution, it's reset
   // to `undefined`.
+  //
+  // For Promise.allSettled, the [[AlreadyCalled]] state must be shared by the
+  // two functions, so we always use the resolve function's state.
+
+  constexpr size_t indexOrResolveFuncSlot =
+      PromiseCombinatorElementFunctionSlot_ElementIndexOrResolveFunc;
+  if (fn->getExtendedSlot(indexOrResolveFuncSlot).isObject()) {
+    // This is a reject function for Promise.allSettled. Get the corresponding
+    // resolve function.
+    Value slotVal = fn->getExtendedSlot(indexOrResolveFuncSlot);
+    fn = &slotVal.toObject().as<JSFunction>();
+  }
+  MOZ_RELEASE_ASSERT(fn->getExtendedSlot(indexOrResolveFuncSlot).isInt32());
+
   const Value& dataVal =
       fn->getExtendedSlot(PromiseCombinatorElementFunctionSlot_Data);
   if (dataVal.isUndefined()) {
@@ -4494,19 +4520,6 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
   Rooted<PromiseCombinatorElements> values(cx);
   if (!GetPromiseCombinatorElements(cx, data, &values)) {
     return false;
-  }
-
-  // Step 2. Let alreadyCalled be F.[[AlreadyCalled]].
-  // Step 3. If alreadyCalled.[[Value]] is true, return undefined.
-  //
-  // The already-called check above only handles the case when |this| function
-  // is called repeatedly, so we still need to check if the other pair of this
-  // resolving function was already called:
-  // We use the element value as a signal for whether the Promise was already
-  // fulfilled. Upon resolution, it's set to the result object created below.
-  if (!values.unwrappedArray()->getDenseElement(index).isUndefined()) {
-    args.rval().setUndefined();
-    return true;
   }
 
   // Step 9. Let obj be OrdinaryObjectCreate(%Object.prototype%).
@@ -5242,13 +5255,17 @@ bool js::Promise_static_species(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-enum class HostDefinedDataObject {
-  // Do not use the host defined data object, this is a special case used by the
-  // debugger.
-  No,
+enum class HostDefinedDataObjectOption {
+  // Allocate the host defined data object, this is the normal operation.
+  Allocate,
 
-  // Use host defined data object, this is the normal operation.
-  Yes
+  // Do not allocate the host defined data object because the embeddings can
+  // retrieve the same data on its own.
+  OptimizeOut,
+
+  // Did not allocate the host defined data object because this is a special
+  // case used by the debugger.
+  UnusedForDebugger,
 };
 
 /**
@@ -5264,10 +5281,10 @@ enum class HostDefinedDataObject {
 static PromiseReactionRecord* NewReactionRecord(
     JSContext* cx, Handle<PromiseCapability> resultCapability,
     HandleValue onFulfilled, HandleValue onRejected,
-    HostDefinedDataObject hostDefinedDataObjectOption) {
+    HostDefinedDataObjectOption hostDefinedDataObjectOption) {
 #ifdef DEBUG
   if (resultCapability.promise()) {
-    if (hostDefinedDataObjectOption == HostDefinedDataObject::Yes) {
+    if (hostDefinedDataObjectOption == HostDefinedDataObjectOption::Allocate) {
       if (resultCapability.promise()->is<PromiseObject>()) {
         // If `resultCapability.promise` is a Promise object,
         // `resultCapability.{resolve,reject}` may be optimized out,
@@ -5285,7 +5302,8 @@ static PromiseReactionRecord* NewReactionRecord(
         MOZ_ASSERT(resultCapability.reject());
         MOZ_ASSERT(IsCallable(resultCapability.reject()));
       }
-    } else {
+    } else if (hostDefinedDataObjectOption ==
+               HostDefinedDataObjectOption::UnusedForDebugger) {
       // For debugger usage, `resultCapability.promise` should be a
       // maybe-wrapped Promise object. The other fields are not used.
       //
@@ -5305,7 +5323,8 @@ static PromiseReactionRecord* NewReactionRecord(
     // In any case, other fields are also not used.
     MOZ_ASSERT(!resultCapability.resolve());
     MOZ_ASSERT(!resultCapability.reject());
-    MOZ_ASSERT(hostDefinedDataObjectOption == HostDefinedDataObject::Yes);
+    MOZ_ASSERT(hostDefinedDataObjectOption !=
+               HostDefinedDataObjectOption::UnusedForDebugger);
   }
 #endif
 
@@ -5327,7 +5346,7 @@ static PromiseReactionRecord* NewReactionRecord(
   MOZ_ASSERT(onFulfilled.isNull() == onRejected.isNull());
 
   RootedObject hostDefinedData(cx);
-  if (hostDefinedDataObjectOption == HostDefinedDataObject::Yes) {
+  if (hostDefinedDataObjectOption == HostDefinedDataObjectOption::Allocate) {
     if (!GetObjectFromHostDefinedData(cx, &hostDefinedData)) {
       return nullptr;
     }
@@ -5534,9 +5553,14 @@ static bool PromiseThenNewPromiseCapability(
   Rooted<PromiseCapability> resultCapability(cx);
   MOZ_ASSERT(!resultCapability.promise());
 
+  auto hostDefinedDataObjectOption =
+      unwrappedPromise->state() == JS::PromiseState::Pending
+          ? HostDefinedDataObjectOption::Allocate
+          : HostDefinedDataObjectOption::OptimizeOut;
+
   Rooted<PromiseReactionRecord*> reaction(
       cx, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected,
-                            HostDefinedDataObject::Yes));
+                            hostDefinedDataObjectOption));
   if (!reaction) {
     return false;
   }
@@ -5787,9 +5811,15 @@ template <typename T>
   RootedValue onRejectedValue(cx, Int32Value(int32_t(onRejected)));
   Rooted<PromiseCapability> resultCapability(cx);
   resultCapability.promise().set(resultPromise);
+
+  auto hostDefinedDataObjectOption =
+      unwrappedPromise->state() == JS::PromiseState::Pending
+          ? HostDefinedDataObjectOption::Allocate
+          : HostDefinedDataObjectOption::OptimizeOut;
+
   Rooted<PromiseReactionRecord*> reaction(
       cx, NewReactionRecord(cx, resultCapability, onFulfilledValue,
-                            onRejectedValue, HostDefinedDataObject::Yes));
+                            onRejectedValue, hostDefinedDataObjectOption));
   if (!reaction) {
     return false;
   }
@@ -6362,9 +6392,13 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
   //           [[Handler]]: onRejectedJobCallback }.
   //
   // NOTE: We use single object for both reactions.
+  auto hostDefinedDataObjectOption =
+      promise->state() == JS::PromiseState::Pending
+          ? HostDefinedDataObjectOption::Allocate
+          : HostDefinedDataObjectOption::OptimizeOut;
   Rooted<PromiseReactionRecord*> reaction(
       cx, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected,
-                            HostDefinedDataObject::Yes));
+                            hostDefinedDataObjectOption));
   if (!reaction) {
     return false;
   }
@@ -6396,6 +6430,15 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
   // Step 5.a. Let onRejectedJobCallback be empty.
   HandleValue onRejected = NullHandleValue;
 
+  // When the promise's state isn't pending, the embedding
+  // should be able to retrieve the host defined object
+  // on their own, so here we optimize out from the
+  // our side.
+  auto hostDefinedDataObjectOption =
+      promise->state() == JS::PromiseState::Pending
+          ? HostDefinedDataObjectOption::Allocate
+          : HostDefinedDataObjectOption::OptimizeOut;
+
   // Step 7. Let fulfillReaction be the PromiseReaction
   //         { [[Capability]]: resultCapability, [[Type]]: Fulfill,
   //           [[Handler]]: onFulfilledJobCallback }.
@@ -6404,7 +6447,7 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
   //           [[Handler]]: onRejectedJobCallback }.
   Rooted<PromiseReactionRecord*> reaction(
       cx, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected,
-                            HostDefinedDataObject::Yes));
+                            hostDefinedDataObjectOption));
   if (!reaction) {
     return false;
   }
@@ -6593,7 +6636,7 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
 
   Rooted<PromiseReactionRecord*> reaction(
       cx, NewReactionRecord(cx, capability, NullHandleValue, NullHandleValue,
-                            HostDefinedDataObject::No));
+                            HostDefinedDataObjectOption::UnusedForDebugger));
   if (!reaction) {
     return false;
   }

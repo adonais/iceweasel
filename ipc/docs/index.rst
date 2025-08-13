@@ -10,6 +10,7 @@ in mozilla-central in the 'ipc/docs' directory.
 
     ipdl
     processes
+    proc_shutdown
     utility_process
 
 For inter-process communication involving Javascript, see `JSActors`_.  They

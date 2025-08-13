@@ -115,14 +115,9 @@ EXPORTS += [
     "XPathGenerator.h",
 ]
 
-if CONFIG["MOZ_WEBRTC"]:
-    EXPORTS += [
-        "nsDOMDataChannel.h",
-        "nsDOMDataChannelDeclarations.h",
-    ]
-
 EXPORTS.mozilla += [
     "CallState.h",
+    "ConnectedAncestorTracker.h",
     "ContentIterator.h",
     "CORSMode.h",
     "FlushType.h",
@@ -209,7 +204,6 @@ EXPORTS.mozilla.dom += [
     "IdleRequest.h",
     "IDTracker.h",
     "ImageEncoder.h",
-    "ImageTracker.h",
     "InteractiveWidget.h",
     "IntlUtils.h",
     "JSExecutionUtils.h",
@@ -387,7 +381,6 @@ UNIFIED_SOURCES += [
     "IdleRequest.cpp",
     "IDTracker.cpp",
     "ImageEncoder.cpp",
-    "ImageTracker.cpp",
     "InProcessBrowserChildMessageManager.cpp",
     "IntlUtils.cpp",
     "JSExecutionUtils.cpp",
@@ -508,11 +501,6 @@ UNIFIED_SOURCES += [
     "WindowNamedPropertiesHandler.cpp",
     "XPathGenerator.cpp",
 ]
-
-if CONFIG["MOZ_WEBRTC"]:
-    UNIFIED_SOURCES += [
-        "nsDOMDataChannel.cpp",
-    ]
 
 if CONFIG["FUZZING"]:
     UNIFIED_SOURCES += [

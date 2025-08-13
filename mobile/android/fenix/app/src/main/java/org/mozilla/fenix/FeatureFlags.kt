@@ -23,11 +23,6 @@ object FeatureFlags {
     const val PULL_TO_REFRESH_ENABLED = true
 
     /**
-     * Enables the Sync Addresses feature.
-     */
-    const val SYNC_ADDRESSES_FEATURE = false
-
-    /**
      * Enables new search settings UI with two extra fragments, for managing the default engine
      * and managing search shortcuts in the quick search menu.
      */
@@ -49,11 +44,6 @@ object FeatureFlags {
     const val UNIFIED_TRUST_PANEL = false
 
     /**
-     * Enables the tab swipe to dismiss rewrite.
-     */
-    const val SWIPE_TO_DISMISS_2 = true
-
-    /**
      * Disables the Onboarding feature for debug builds by default. Set this to `true` if you need
      * to access the Onboarding feature for development purposes.
      *
@@ -65,4 +55,14 @@ object FeatureFlags {
      * Determines whether to show live downloads in progress in the UI.
      */
     val showLiveDownloads = Config.channel.isNightlyOrDebug
+
+    /**
+     * Enables the custom review pre-prompt.
+     */
+    const val CUSTOM_REVIEW_PROMPT_ENABLED = true
+
+    /**
+     * Enables the feature that allows the user to set an alternative app icon.
+     */
+    val alternativeAppIconFeatureEnabled = Config.channel.isDebug
 }

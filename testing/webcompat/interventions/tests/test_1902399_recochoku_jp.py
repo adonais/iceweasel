@@ -7,7 +7,7 @@ UNSUPPORTED_TEXT = "Chromeブラウザの最新版をご利用ください"
 
 
 async def visit_site(client):
-    await client.navigate(URL)
+    await client.navigate(URL, wait="none")
     hero, vpn = client.await_first_element_of(
         [client.css(HERO_CSS), client.text(VPN_TEXT)], is_displayed=True
     )

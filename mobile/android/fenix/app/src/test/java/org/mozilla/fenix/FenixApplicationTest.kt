@@ -75,6 +75,8 @@ class FenixApplicationTest {
         browsersCache = mockk(relaxed = true)
         mozillaProductDetector = mockk(relaxed = true)
         browserStore = BrowserStore()
+
+        every { testContext.components.core } returns mockk(relaxed = true)
         every { testContext.components.distributionIdManager } returns DistributionIdManager(
             context = testContext,
             browserStoreProvider = DefaultDistributionBrowserStoreProvider(browserStore),
@@ -174,8 +176,9 @@ class FenixApplicationTest {
         every { settings.inactiveTabsAreEnabled } returns true
         every { application.isDeviceRamAboveThreshold } returns true
 
-        assertTrue(settings.contileContextId.isEmpty())
-        assertNull(TopSites.contextId.testGetValue())
+        assertTrue(settings.contileContextId.isNotEmpty())
+        assertNotNull(TopSites.contextId.testGetValue())
+        assertEquals(TopSites.contextId.testGetValue()!!.toString(), settings.contileContextId)
 
         application.setStartupMetrics(
             browserStore = browserStore,

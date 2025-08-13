@@ -5,38 +5,42 @@
 package org.mozilla.fenix.components.appstate
 
 import mozilla.components.support.test.ext.joinBlocking
-import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SnackbarAction
-import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
+import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.DeletingBrowserDataInProgress
+import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.Dismiss
+import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.None
 
 class SnackbarStateReducerTest {
+    private val appStore = AppStore(
+        initialState = AppState(
+            snackbarState = DeletingBrowserDataInProgress,
+        ),
+    )
 
     @Test
     fun `WHEN snackbar dismissed action is dispatched THEN state is updated`() {
-        val appStore = AppStore()
-
         appStore.dispatch(SnackbarAction.SnackbarDismissed).joinBlocking()
 
-        assertEquals(SnackbarState.Dismiss, appStore.state.snackbarState)
+        assertTrue(appStore.state.snackbarState is Dismiss)
+        assertTrue((appStore.state.snackbarState as Dismiss).previous == DeletingBrowserDataInProgress)
     }
 
     @Test
     fun `WHEN snackbar shown action is dispatched THEN state is updated`() {
-        val appStore = AppStore()
-
         appStore.dispatch(SnackbarAction.SnackbarShown).joinBlocking()
 
-        assertEquals(SnackbarState.None, appStore.state.snackbarState)
+        assertTrue(appStore.state.snackbarState is None)
+        assertTrue((appStore.state.snackbarState as None).previous == DeletingBrowserDataInProgress)
     }
 
     @Test
     fun `WHEN reset action is dispatched THEN state is updated`() {
-        val appStore = AppStore()
-
         appStore.dispatch(SnackbarAction.Reset).joinBlocking()
 
-        assertEquals(SnackbarState.None, appStore.state.snackbarState)
+        assertTrue(appStore.state.snackbarState is None)
+        assertTrue((appStore.state.snackbarState as None).previous == DeletingBrowserDataInProgress)
     }
 }

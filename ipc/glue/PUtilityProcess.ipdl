@@ -8,7 +8,7 @@ include MemoryReportTypes;
 include PrefsTypes;
 
 include protocol PProfiler;
-include protocol PUtilityAudioDecoder;
+include protocol PUtilityMediaService;
 include protocol PJSOracle;
 
 #if defined(XP_WIN)
@@ -101,7 +101,7 @@ child:
 
   async TestTelemetryProbes();
 
-  async StartUtilityAudioDecoderService(Endpoint<PUtilityAudioDecoderParent> aEndpoint, GfxVarUpdate[] updates);
+  async StartUtilityMediaService(Endpoint<PUtilityMediaServiceParent> aEndpoint, GfxVarUpdate[] updates);
 
   async StartJSOracleService(Endpoint<PJSOracleChild> aEndpoint);
 

@@ -36,16 +36,6 @@ submenu-item-three = Submenu Item Three
   },
 };
 
-function openMenu(event) {
-  if (
-    event.type == "mousedown" ||
-    event.inputSource == MouseEvent.MOZ_SOURCE_KEYBOARD ||
-    !event.detail
-  ) {
-    event.target.getRootNode().querySelector("panel-list").toggle(event);
-  }
-}
-
 const Template = ({
   isOpen,
   items,
@@ -83,33 +73,30 @@ const Template = ({
     : html`
         <moz-button
           type="icon ghost"
-          @click=${openMenu}
-          @mousedown=${openMenu}
+          menuid="panel-list"
           ?wide=${wideAnchor}
         ></moz-button>
         <moz-button
           type="icon ghost"
           class="end"
-          @click=${openMenu}
-          @mousedown=${openMenu}
+          menuid="panel-list"
           ?wide=${wideAnchor}
         ></moz-button>
         <moz-button
           type="icon ghost"
           class="bottom"
-          @click=${openMenu}
-          @mousedown=${openMenu}
+          menuid="panel-list"
           ?wide=${wideAnchor}
         ></moz-button>
         <moz-button
           type="icon ghost"
           class="bottom end"
-          @click=${openMenu}
-          @mousedown=${openMenu}
+          menuid="panel-list"
           ?wide=${wideAnchor}
         ></moz-button>
       `}
   <panel-list
+    id="panel-list"
     ?stay-open=${isOpen}
     ?open=${isOpen}
     ?min-width-from-anchor=${wideAnchor}

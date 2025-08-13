@@ -322,6 +322,7 @@ ConcreteScope* Scope::create(
 template <typename ConcreteScope>
 inline void Scope::initData(
     MutableHandle<UniquePtr<typename ConcreteScope::RuntimeData>> data) {
+  MOZ_ASSERT(is<ConcreteScope>());
   MOZ_ASSERT(!rawData());
 
   AddCellMemory(this, SizeOfAllocatedData(data.get().get()),
@@ -389,10 +390,11 @@ uint32_t Scope::environmentChainLength() const {
 
 void Scope::finalize(JS::GCContext* gcx) {
   MOZ_ASSERT(CurrentThreadIsGCFinalizing());
-  applyScopeDataTyped([this, gcx](auto data) {
-    gcx->delete_(this, data, SizeOfAllocatedData(data), MemoryUse::ScopeData);
-  });
-  setHeaderPtr(nullptr);
+  if (rawData()) {
+    applyScopeDataTyped([this, gcx](auto data) {
+      gcx->delete_(this, data, SizeOfAllocatedData(data), MemoryUse::ScopeData);
+    });
+  }
 }
 
 size_t Scope::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
@@ -723,8 +725,8 @@ WasmInstanceScope::RuntimeData::RuntimeData(size_t length) {
 }
 
 /* static */
-WasmInstanceScope* WasmInstanceScope::create(JSContext* cx,
-                                             WasmInstanceObject* instance) {
+WasmInstanceScope* WasmInstanceScope::create(
+    JSContext* cx, Handle<WasmInstanceObject*> instance) {
   size_t namesCount = 0;
 
   size_t memoriesStart = namesCount;
@@ -735,13 +737,19 @@ WasmInstanceScope* WasmInstanceScope::create(JSContext* cx,
   size_t globalsCount = instance->instance().codeMeta().globals.length();
   namesCount += globalsCount;
 
+  Rooted<Scope*> enclosing(cx, &cx->global()->emptyGlobalScope());
+  Rooted<Scope*> scope(cx, Scope::create(cx, ScopeKind::WasmInstance, enclosing,
+                                         /* envShape = */ nullptr));
+  if (!scope) {
+    return nullptr;
+  }
+
   Rooted<UniquePtr<RuntimeData>> data(
       cx, NewEmptyScopeData<WasmInstanceScope, JSAtom>(cx, namesCount));
   if (!data) {
     return nullptr;
   }
 
-  Rooted<WasmInstanceObject*> rootedInstance(cx, instance);
   for (size_t i = 0; i < memoriesCount; i++) {
     JSAtom* wasmName = GenerateWasmName(cx, "memory", i);
     if (!wasmName) {
@@ -762,14 +770,13 @@ WasmInstanceScope* WasmInstanceScope::create(JSContext* cx,
 
   MOZ_ASSERT(data->length == namesCount);
 
-  data->instance.init(rootedInstance);
+  data->instance.init(instance);
   data->slotInfo.memoriesStart = memoriesStart;
   data->slotInfo.globalsStart = globalsStart;
 
-  Rooted<Scope*> enclosing(cx, &cx->global()->emptyGlobalScope());
-  return Scope::create<WasmInstanceScope>(cx, ScopeKind::WasmInstance,
-                                          enclosing,
-                                          /* envShape = */ nullptr, &data);
+  WasmInstanceScope* concreteScope = &scope->as<WasmInstanceScope>();
+  concreteScope->initData<WasmInstanceScope>(&data);
+  return concreteScope;
 }
 
 /* static */
@@ -889,7 +896,7 @@ AbstractBindingIter<frontend::TaggedParserAtomIndex>::AbstractBindingIter(
     const frontend::ScopeStencilRef& ref)
     : Base() {
   const ScopeStencil& scope = ref.scope();
-  BaseParserScopeData* data = ref.context_.scopeNames[ref.scopeIndex_];
+  BaseParserScopeData* data = ref.context()->scopeNames[ref.scopeIndex_];
   switch (scope.kind()) {
     case ScopeKind::Lexical:
     case ScopeKind::SimpleCatch:

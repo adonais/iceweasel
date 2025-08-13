@@ -23,7 +23,10 @@
   --theme-inline-preview-background: light-dark(rgb(251, 247, 255), rgb(43, 38, 50));
   --theme-inline-preview-border-color: light-dark(#ebd1ff, #47326c);
   --theme-inline-preview-label-trace-color: light-dark(#6300a6, #dfccff);
-  --theme-inline-preview-label-trace-background: light-dark(rgb(244, 230, 255), #3f2e5f);
+  --theme-inline-preview-label-trace-background: light-dark(
+    hsl(from rgb(244, 230, 255) h s calc(l * 0.7) / 30%) /* use 30% opacity to allow showing text selection background */,
+    hsl(from #3f2e5f h s calc(l * 2) / 30%) /* dark theme requires some specific luminosity factor */
+  );
   --paused-background-color: light-dark(hsl(54, 100%, 92%), hsl(42, 37%, 19%));
   --paused-color: light-dark(var(--theme-body-color), hsl(43, 94%, 81%));
   --paused-error-color: light-dark(var(--red-70), var(--red-20));

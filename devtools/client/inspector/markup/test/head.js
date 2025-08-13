@@ -24,15 +24,6 @@ SimpleTest.requestCompleteLog();
 // useful for fixing race conditions.
 // Services.prefs.setBoolPref("devtools.dump.emit", true);
 
-// Clear preferences that may be set during the course of tests.
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("devtools.dump.emit");
-  Services.prefs.clearUserPref("devtools.inspector.htmlPanelOpen");
-  Services.prefs.clearUserPref("devtools.inspector.sidebarOpen");
-  Services.prefs.clearUserPref("devtools.markup.pagesize");
-  Services.prefs.clearUserPref("devtools.inspector.showAllAnonymousContent");
-});
-
 /**
  * Some tests may need to import one or more of the test helper scripts.
  * A test helper script is simply a js file that contains common test code that
@@ -256,29 +247,6 @@ function redoChange(inspector) {
   const mutated = inspector.once("markupmutation");
   inspector.markup.undo.redo();
   return mutated;
-}
-
-/**
- * Get the selector-search input box from the inspector panel
- * @return {DOMNode}
- */
-function getSelectorSearchBox(inspector) {
-  return inspector.panelWin.document.getElementById("inspector-searchbox");
-}
-
-/**
- * Using the inspector panel's selector search box, search for a given selector.
- * The selector input string will be entered in the input field and the <ENTER>
- * keypress will be simulated.
- * This function won't wait for any events and is not async. It's up to callers
- * to subscribe to events and react accordingly.
- */
-function searchUsingSelectorSearch(selector, inspector) {
-  info('Entering "' + selector + '" into the selector-search input field');
-  const field = getSelectorSearchBox(inspector);
-  field.focus();
-  field.value = selector;
-  EventUtils.sendKey("return", inspector.panelWin);
 }
 
 /**

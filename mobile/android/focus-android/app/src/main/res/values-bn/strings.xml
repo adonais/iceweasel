@@ -20,6 +20,7 @@
   <string name="teaser">স্বয়ংক্রিয় প্রাইভেন্ট ব্রাউজিং। \nব্রাউজ করুন। মুছে দিন। আবার করুন।</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase">আপনার ব্রাউজিংয়ের পূর্ববর্তী তথ্য মুছে ফেলা হয়েছে।</string>
+  <string name="feedback_erase2">ব্রাউজিং ইতিহাস মুছে ফেলা হয়েছে</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">ট্যাব এর ব্রাউজিং ইতিহাস মুছে ফেলা হয়েছে।</string>
   <!--
@@ -46,10 +47,15 @@
   <string name="menu_open_with_a_browser2">খুলুন…</string>
   <!-- Menu item: Add the current page as a shortcut to the device's home screen (launcher). -->
   <string name="menu_add_to_home_screen">নীড় স্ক্রিনে যোগ</string>
+  <!-- Menu item: Add the current site as a shortcut on the Home screen -->
+  <string name="menu_add_to_shortcuts">শর্টকাটে যোগ করুন</string>
+  <!-- Menu item: Remove the current site as a shortcut from the Home screen -->
+  <string name="menu_remove_from_shortcuts">শর্টকাট থেকে সরান</string>
   <!-- Menu item: Shows information about features and changes that are new to this version -->
   <string name="menu_settings">সেটিং</string>
   <string name="menu_about">পরিচিতি</string>
   <string name="menu_help">সহায়তা</string>
+  <string name="menu_terms_of_use">ব্যবহারের শর্তাবলী</string>
   <!--
     Menu item: This is the label for a menu entry that shows how many trackers have been blocked
     for the currently loaded website. The number of blocked trackers is shown below this label.
@@ -78,6 +84,12 @@
     sharing an URL.
   -->
   <string name="share_dialog_title">শেয়ারের মাধ্যম</string>
+  <string name="notification_erase_title_android_14">ব্রাউজিং ইতিহাস মুছে ফেলতে চান?</string>
+  <!--
+    Text shown in the notification description that pops up to remind the user that a browsing session is active
+    for Android 14+.
+  -->
+  <string name="notification_erase_text_android_14_1">আপনার ব্রাউজিং ইতিহাস নিরাপদে মুছে ফেলতে এই বিজ্ঞপ্তিটি ট্যাপ বা সরিয়ে দিন।</string>
   <string name="notification_erase_text">ব্রাউজিং ইতিহাস মুছে দিন</string>
   <!-- Notification action to open Focus and resume the current browsing session. -->
   <string name="notification_action_open">খুলুন</string>
@@ -109,6 +121,37 @@
     %1$s will be replaced by the app name (e.g. Firefox Focus)
   -->
   <string name="shortcut_erase_and_open_long_label">মুছে ফেলুন এবং %1$s খুলুন</string>
+  <!--
+    This is the label of an action we offer when the user selects text in other third-party apps.
+    Focus is hard coded since we can't use variables in this context.
+    Do not translate or transliterate Focus.
+  -->
+  <string name="text_selection_search_action_focus" tools:ignore="BrandUsage">ফোকাস-এ খুঁজুন</string>
+  <!--
+    This is the label of an action we offer when the user selects text in other third-party apps.
+    Klar is hard coded since we can't use variables in this context.
+    Do not translate or transliterate Klar.
+  -->
+  <string name="text_selection_search_action_klar" tools:ignore="BrandUsage">Klar-এ খুঁজুন</string>
+  <!--
+    This is the label of an action we offer when the user selects text in other third-party apps.
+    Focus Beta is hard coded since we can't use variables in this context.
+    Do not translate or transliterate Focus Beta.
+  -->
+  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage">ফোকাস বিটা-তে খুঁজুন</string>
+  <!--
+    This is the label of an action we offer when the user selects text in other third-party apps.
+    Focus Nightly is hard coded since we can't use variables in this context.
+    Do not translate or transliterate Focus Nightly.
+  -->
+  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage">ফোকাস নাইটলি-তে খুঁজুন</string>
+  <!--
+    Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
+    %2$s is the url for the learn-more link.
+  -->
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s আপনাকে নিয়ন্ত্রণ দেয়।</p> <p>ব্যক্তিগত ব্রাউজার হিসাবে এটিকে ব্যবহার করুন: <ul> <li>সরাসরি অ্যাপেই সন্ধান এবং ব্রাউজ করুন</li> <li>ট্রাকারদেরকে অবরুদ্ধ করুন(অথবা ট্রাকারদের অনুমতি দিতে সেটিংস আপডেট করুন)</li> <li>কুকি ও ব্রাউজিং ইতিহাস মুছে ফেলতে “মুছে ফেলুন” ব্যবহার করুন</li> </ul> </p> <p>%1$s তৈরী করেছে Mozilla। আমাদের লক্ষ্য একটি সুস্থ ও মুক্ত ইন্টারনেট গড়ে তোলা।.<br/> <a href=\"%2$s\">আরও জানুন</a></p>]]></string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">আরও জানুন</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">গোপনীয়তা ও নিরাপত্তা</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -126,12 +169,16 @@
     %1$s will be replaced by the app name (e.g. Firefox Focus)
   -->
   <string name="preference_mozilla_summary">%1$s সম্বন্ধে, সাহায্য</string>
+  <!-- Preference category for ad blocking and enhanced tracking protection settings -->
+  <string name="preference_category_tracking_protection3">আরও ভাল ট্র্যাকিং সুরক্ষা</string>
   <!-- Preference category for settings related to controlling web content -->
   <string name="preference_category_web_content">ওয়েব কনটেন্ট</string>
   <!-- Preference category: stealth settings for while switching apps -->
   <string name="preference_category_switching_apps">সুইচিং অ্যাপস</string>
   <!-- Preference category for General Settings -->
   <string name="preference_category_general">সাধারণ</string>
+  <!-- Preference summary for General Settings category; the two things users can find in this category -->
+  <string name="preference_general_summary2">ডিফল্ট ব্রাউজার, ভাষা</string>
   <!-- Preference category for settings about sending usage data -->
   <string name="preference_category_data_collection_use">ডাটা সংগ্রহ ও ব্যবহার</string>
   <string name="preference_category_search">অনুসন্ধান</string>

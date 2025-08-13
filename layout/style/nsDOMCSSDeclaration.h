@@ -9,14 +9,13 @@
 #ifndef nsDOMCSSDeclaration_h___
 #define nsDOMCSSDeclaration_h___
 
-#include "nsICSSDeclaration.h"
-
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/URLExtraData.h"
 #include "nsAttrValue.h"
 #include "nsCOMPtr.h"
 #include "nsCompatibility.h"
+#include "nsICSSDeclaration.h"
 
 class nsIPrincipal;
 struct JSContext;

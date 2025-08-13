@@ -28,13 +28,17 @@
     align-items: center;
   }
 
+  .text-container {
+    padding-block: calc(1lh - var(--icon-size-default) / 2);
+  }
+
   .content {
     gap: 0 12px;
     height: fit-content;
   }
 
   .close {
-    margin-block: 2px;
+    margin-block: 4px;
     margin-inline-start: 8px;
     align-self: flex-start;
   }
@@ -79,6 +83,7 @@
 img.inline-icon {
   /* Align inline icon images in the message content */
   vertical-align: middle;
+  max-height: 1lh;
   /* Ensure they get the right fill color. */
   -moz-context-properties: fill;
   fill: currentColor;

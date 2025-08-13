@@ -21,10 +21,11 @@ tags = "os_integration"
 ["browser_contextmenu.js"]
 support-files = [ "../general/video.webm"  ]
 tags = "fullscreen"
-skip-if = [
-  "os == 'linux'",
-  "verify",
-]
+skip-if = ["os == 'linux'"]
+
+["browser_contextmenu_add_search_engine.js"]
+support-files = ["subtst_contextmenu_add_search_engine.html"]
+skip-if = ["os == 'linux'"] # disabled on Linux due to bug 513558
 
 ["browser_contextmenu_badiframe.js"]
 https_first_disabled = true
@@ -46,10 +47,6 @@ skip-if = ["os == 'linux'"]
 
 ["browser_contextmenu_inspect.js"]
 skip-if = ["os == 'linux' && socketprocess_networking"]
-
-["browser_contextmenu_add_search_engine.js"]
-support-files = ["subtst_contextmenu_add_search_engine.html"]
-skip-if = ["os == 'linux'"] # disabled on Linux due to bug 513558
 
 ["browser_contextmenu_linkopen.js"]
 skip-if = ["os == 'linux' && socketprocess_networking"]

@@ -16,7 +16,10 @@ from typing import Callable, Optional
 
 repos = ["autoland", "mozilla-central", "try", "mozilla-central", "mozilla-beta", "wpt"]
 
-default_fetch_task_filters = ["-web-platform-tests-|-spidermonkey-"]
+default_fetch_task_filters = {
+    "wpt": ["-firefox"],
+    None: ["-web-platform-tests-|-spidermonkey-"],
+}
 default_interop_task_filters = {
     "wpt": ["-firefox-"],
     None: [
@@ -212,13 +215,23 @@ def fetch_logs(
     runs = get_runs(commits)
 
     if not task_filters:
-        task_filters = default_fetch_task_filters
+        repos = {item[0] for item in runs}
+        task_filters = []
+        need_default_filter = False
+        for repo in repos:
+            if repo in default_fetch_task_filters:
+                task_filters.extend(default_fetch_task_filters[repo])
+            else:
+                need_default_filter = True
+        if need_default_filter:
+            task_filters.extend(default_fetch_task_filters[None])
 
     if log_dir is None:
         log_dir = os.path.abspath(os.curdir)
 
     for repo, commit in runs:
-        get_wptreports(repo, commit, task_filters, log_dir, check_complete)
+        task_data = get_wptreports(repo, commit, task_filters, log_dir, check_complete)
+        print(f"Downloaded {len(task_data)} log files")
 
 
 def get_expected_failures(path: str) -> Mapping[str, set[Optional[str]]]:
@@ -286,11 +299,11 @@ def score_runs(
             else:
                 filters = task_filters
 
-            log_paths = get_wptreports(repo, commit, filters, log_dir, check_complete)
-            if not log_paths:
+            task_data = get_wptreports(repo, commit, filters, log_dir, check_complete)
+            if not task_data:
                 print(f"Failed to get any logs for {repo}:{commit}", file=sys.stderr)
             else:
-                run_logs.append(log_paths)
+                run_logs.append([item.path for item in task_data])
 
         if not run_logs:
             print("No logs to process", file=sys.stderr)

@@ -1859,7 +1859,7 @@
         tabGroup,
         targetTab,
         triggeringPrincipal,
-        csp,
+        policyContainer,
         userContextId,
         fromExternal,
       } = {}
@@ -1932,7 +1932,7 @@
             loadFlags,
             postData: postDatas && postDatas[0],
             triggeringPrincipal,
-            csp,
+            policyContainer,
           });
         } catch (e) {
           // Ignore failure in case a URI is wrong, so we can continue
@@ -1948,7 +1948,7 @@
           userContextId,
           triggeringPrincipal,
           bulkOrderedOpen: multiple,
-          csp,
+          policyContainer,
           fromExternal,
           tabGroup,
         };
@@ -1971,7 +1971,7 @@
           userContextId,
           triggeringPrincipal,
           bulkOrderedOpen: true,
-          csp,
+          policyContainer,
           fromExternal,
           tabGroup,
         };
@@ -2701,7 +2701,7 @@
         tabGroup,
         triggeringPrincipal,
         userContextId,
-        csp,
+        policyContainer,
         skipLoad = createLazyBrowser,
         insertTab = true,
         globalHistoryOptions,
@@ -2891,7 +2891,7 @@
           referrerInfo,
           charset,
           postData,
-          csp,
+          policyContainer,
           globalHistoryOptions,
           triggeringRemoteType,
           schemelessInput,
@@ -3221,6 +3221,14 @@
       });
     }
 
+    /**
+     * Get all open tab groups from all windows. Does not include saved groups.
+     *
+     * @param {object} [options]
+     * @param {boolean} [options.sortByLastSeenActive]
+     *   Sort groups so that groups that have more recently seen and active
+     *   tabs appear first. Defaults to false.
+     */
     getAllTabGroups({ sortByLastSeenActive = false } = {}) {
       let groups = BrowserWindowTracker.getOrderedWindows({
         private: PrivateBrowsingUtils.isWindowPrivate(window),
@@ -3465,7 +3473,7 @@
         referrerInfo,
         charset,
         postData,
-        csp,
+        policyContainer,
         globalHistoryOptions,
         triggeringRemoteType,
         schemelessInput,
@@ -3531,7 +3539,7 @@
             referrerInfo,
             charset,
             postData,
-            csp,
+            policyContainer,
             globalHistoryOptions,
             triggeringRemoteType,
             schemelessInput,
@@ -3979,6 +3987,9 @@
       /** @type {MozTabbrowserTab|undefined} */
       let itemAfter = allItems.at(index);
 
+      if (pinned && !itemAfter?.pinned) {
+        itemAfter = null;
+      }
       // Prevent a flash of unstyled content by setting up the tab content
       // and inherited attributes before appending it (see Bug 1592054):
       tab.initialize();
@@ -4010,7 +4021,10 @@
         this.tabContainer.insertBefore(tab, itemAfter.group);
       } else {
         // Place ungrouped tab before `itemAfter` by default
-        this.tabContainer.insertBefore(tab, itemAfter);
+        const tabContainer = pinned
+          ? this.tabContainer.pinnedTabsContainer
+          : this.tabContainer;
+        tabContainer.insertBefore(tab, itemAfter);
       }
 
       this._updateTabsAfterInsert();
@@ -4957,6 +4971,10 @@
       if (newTab) {
         this.addTrustedTab(BROWSER_NEW_TAB_URL, {
           skipAnimation: true,
+          // In the event that insertAfterCurrent is set and the current tab is
+          // inside a group that is being closed we want to avoid creating the
+          // new tab inside that group.
+          tabIndex: 0,
         });
       } else {
         TabBarVisibility.update();
@@ -5897,6 +5915,7 @@
       if (!tabs.includes(selectedTab)) {
         selectedTab = tabs[0];
       }
+
       let win = this.replaceTabWithWindow(selectedTab, aOptions);
       win.addEventListener(
         "before-initial-tab-adopted",
@@ -5911,6 +5930,7 @@
                 continue;
               }
             }
+
             ++tabIndex;
           }
           // Restore tab selection
@@ -6383,6 +6403,9 @@
         createLazyBrowser,
       };
 
+      // We want to explicitly set this param rather than carry it over to
+      // avoid situations like an unpinned tab being dragged between pinned
+      // tabs but not getting pinned as expected.
       let numPinned = this.pinnedTabCount;
       if (index < numPinned || (aTab.pinned && index == numPinned)) {
         params.pinned = true;
@@ -8941,6 +8964,12 @@ var TabContextMenu = {
       ? gBrowser.selectedTabs
       : [this.contextTab];
 
+    // bug1973996: This call is not guaranteed to complete
+    // before the saved groups menu is populated
+    for (let tab of this.contextTabs) {
+      gBrowser.TabStateFlusher.flush(tab.linkedBrowser);
+    }
+
     let disabled = gBrowser.tabs.length == 1;
     let tabCountInfo = JSON.stringify({
       tabCount: this.contextTabs.length,
@@ -9001,7 +9030,7 @@ var TabContextMenu = {
         this.contextTabs.map(t => t.group).filter(g => g)
       ).size;
 
-      let availableGroupsToMoveTo = gBrowser.getAllTabGroups({
+      let openGroupsToMoveTo = gBrowser.getAllTabGroups({
         sortByLastSeenActive: true,
       });
 
@@ -9010,12 +9039,24 @@ var TabContextMenu = {
       if (selectedGroupCount == 1) {
         let groupToFilter = this.contextTabs[0].group;
         if (groupToFilter && this.contextTabs.every(t => t.group)) {
-          availableGroupsToMoveTo = availableGroupsToMoveTo.filter(
+          openGroupsToMoveTo = openGroupsToMoveTo.filter(
             group => group !== groupToFilter
           );
         }
       }
-      if (!availableGroupsToMoveTo.length) {
+
+      // Populate the saved groups context menu
+      // Only enable in non-private windows, or if at least one of the tabs is
+      // considered saveable
+      let savedGroupsToMoveTo = [];
+      if (
+        !PrivateBrowsingUtils.isWindowPrivate(window) &&
+        SessionStore.shouldSaveTabsToGroup(this.contextTabs)
+      ) {
+        savedGroupsToMoveTo = SessionStore.getSavedTabGroups();
+      }
+
+      if (!openGroupsToMoveTo.length && !savedGroupsToMoveTo.length) {
         contextMoveTabToGroup.hidden = true;
         contextMoveTabToNewGroup.hidden = false;
         contextMoveTabToNewGroup.setAttribute("data-l10n-args", tabCountInfo);
@@ -9024,34 +9065,42 @@ var TabContextMenu = {
         contextMoveTabToGroup.hidden = false;
         contextMoveTabToGroup.setAttribute("data-l10n-args", tabCountInfo);
 
-        const submenu = contextMoveTabToGroup.querySelector("menupopup");
-        submenu.querySelectorAll("[tab-group-id]").forEach(el => el.remove());
+        const openGroupsMenu = contextMoveTabToGroup.querySelector("menupopup");
+        openGroupsMenu
+          .querySelectorAll("[tab-group-id]")
+          .forEach(el => el.remove());
+        const upperSeparator = openGroupsMenu.querySelector(
+          `#open-tab-groups-separator-upper`
+        );
+        const lowerSeparator = openGroupsMenu.querySelector(
+          `#open-tab-groups-separator-lower`
+        );
 
-        availableGroupsToMoveTo.forEach(group => {
-          let item = document.createXULElement("menuitem");
-          item.setAttribute("tab-group-id", group.id);
-          if (group.label) {
-            item.setAttribute("label", group.label);
-          } else {
-            document.l10n.setAttributes(item, "tab-context-unnamed-group");
-          }
+        lowerSeparator.hidden = !openGroupsToMoveTo.length;
 
-          item.classList.add("menuitem-iconic");
-          item.classList.add("tab-group-icon");
-          item.style.setProperty(
-            "--tab-group-color",
-            group.style.getPropertyValue("--tab-group-color")
-          );
-          item.style.setProperty(
-            "--tab-group-color-invert",
-            group.style.getPropertyValue("--tab-group-color-invert")
-          );
-          item.style.setProperty(
-            "--tab-group-color-pale",
-            group.style.getPropertyValue("--tab-group-color-pale")
-          );
-          submenu.appendChild(item);
+        openGroupsToMoveTo.toReversed().forEach(group => {
+          let item = this._createTabGroupMenuItem(group, false);
+          upperSeparator.after(item);
         });
+
+        const savedGroupsMenu = contextMoveTabToGroup.querySelector(
+          "#context_moveTabToSavedGroup"
+        );
+        const savedGroupsMenuPopup = savedGroupsMenu.querySelector("menupopup");
+
+        savedGroupsMenuPopup
+          .querySelectorAll("[tab-group-id]")
+          .forEach(el => el.remove());
+        if (savedGroupsToMoveTo.length) {
+          savedGroupsMenu.disabled = false;
+
+          savedGroupsToMoveTo.forEach(group => {
+            let item = this._createTabGroupMenuItem(group, true);
+            savedGroupsMenuPopup.appendChild(item);
+          });
+        } else {
+          savedGroupsMenu.disabled = true;
+        }
       }
 
       contextUngroupTab.hidden = !selectedGroupCount;
@@ -9108,6 +9157,12 @@ var TabContextMenu = {
     );
     contextUnpinSelectedTabs.hidden =
       !this.contextTab.pinned || !this.multiselected;
+
+    // Build Ask Chat items
+    TabContextMenu.GenAI.buildTabMenu(
+      document.getElementById("context_askChat"),
+      this
+    );
 
     // Move Tab items
     let contextMoveTabOptions = document.getElementById(
@@ -9279,6 +9334,38 @@ var TabContextMenu = {
     );
   },
 
+  _createTabGroupMenuItem(group, isSaved) {
+    let item = document.createXULElement("menuitem");
+    item.setAttribute("tab-group-id", group.id);
+
+    // Open groups have labels, and saved groups have names
+    let label = group.label ?? group.name;
+    if (label) {
+      item.setAttribute("label", label);
+    } else {
+      document.l10n.setAttributes(item, "tab-context-unnamed-group");
+    }
+
+    let iconClass = isSaved ? "tab-group-icon-closed" : "tab-group-icon";
+    item.classList.add("menuitem-iconic");
+    item.classList.add(iconClass);
+
+    item.style.setProperty(
+      "--tab-group-color",
+      `var(--tab-group-color-${group.color})`
+    );
+    item.style.setProperty(
+      "--tab-group-color-invert",
+      `var(--tab-group-color-${group.color}-invert)`
+    );
+    item.style.setProperty(
+      "--tab-group-color-pale",
+      `var(--tab-group-color-${group.color}-pale)`
+    );
+
+    return item;
+  },
+
   handleEvent(aEvent) {
     switch (aEvent.type) {
       case "popuphidden":
@@ -9367,6 +9454,11 @@ var TabContextMenu = {
         triggeringPrincipal,
       });
 
+      Glean.containers.tabAssignedContainer.record({
+        from_container_id: tab.getAttribute("usercontextid"),
+        to_container_id: userContextId,
+      });
+
       if (gBrowser.selectedTab == tab) {
         gBrowser.selectedTab = newTab;
       }
@@ -9428,9 +9520,18 @@ var TabContextMenu = {
     group.ownerGlobal.focus();
   },
 
+  addTabsToSavedGroup(groupId) {
+    SessionStore.addTabsToSavedGroup(groupId, this.contextTabs);
+    this.closeContextTabs();
+  },
+
   ungroupTabs() {
     for (let i = this.contextTabs.length - 1; i >= 0; i--) {
       gBrowser.ungroupTab(this.contextTabs[i]);
     }
   },
 };
+
+ChromeUtils.defineESModuleGetters(TabContextMenu, {
+  GenAI: "resource:///modules/GenAI.sys.mjs",
+});

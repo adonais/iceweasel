@@ -50,7 +50,9 @@ export const HeuristicsRegExp = {
     // Firefox-specific rules
     {
       "street-address": "ulica(.*(numer|nr))?", // pl-PL
-      "address-line1": "addrline1|address_1|addl1",
+      "address-line1": "addrline1|address_1|addl1" +
+        // TODO: Bug 1829583
+        "|(?<neg>nome.*)|endereço", // es
       "address-line2":
         "addrline2|address_2|addl2" +
         "|landmark", // common in IN
@@ -456,7 +458,7 @@ export const HeuristicsRegExp = {
         "city|town" +
         "|\\bort\\b|stadt" + // de-DE
         "|suburb" + // en-AU
-        "|ciudad|provincia|localidad|poblacion" + // es
+        "|ciudad|localidad|poblacion" + // es
         "|ville|commune" + // fr-FR
         "|localita" + // it-IT
         "|市区町村" + // ja-JP
@@ -663,8 +665,8 @@ export const HeuristicsRegExp = {
       "address-line2":
         "address|line" +
         "|house|building|apartment|floor" +    // de-DE
-        "|apartamento|" +    // pt
-        "|adresse" +      // fr-FR
+        "|apartamento" +    // pt
+        "|adresse|maison|bâtiment|immeuble|appartement|étage" +      // fr-FR
         "|indirizzo" +    // it-IT
         "|地址" +         // zh-CN
         "|주소" +         // ko-KR

@@ -49,23 +49,22 @@ template("nacl_toolchain") {
       # We do not support component builds with the NaCl toolchains.
       is_component_build = false
 
-      # We do not support tcmalloc in the NaCl toolchains.
-      use_allocator = "none"
-      use_allocator_shim = false
-
       # We do not support clang profiling in the NaCl toolchains.
       use_clang_profiling = false
       use_clang_coverage = false
       coverage_instrumentation_input_file = ""
 
-      if (use_remoteexec) {
+      if (use_reclient) {
         if (is_win) {
-          rbe_cc_cfg_file = "${rbe_cfg_dir}/nacl/rewrapper_windows.cfg"
+          reclient_cc_cfg_file = rebase_path(reclient_cfg_dir, root_build_dir) +
+                                 "/nacl/rewrapper_windows.cfg"
         } else if (is_mac) {
-          rbe_cc_cfg_file = "${rbe_cfg_dir}/nacl/rewrapper_mac.cfg"
+          reclient_cc_cfg_file = rebase_path(reclient_cfg_dir, root_build_dir) +
+                                 "/nacl/rewrapper_mac.cfg"
         } else {
           # TODO(ukai): non linux?
-          rbe_cc_cfg_file = "${rbe_cfg_dir}/nacl/rewrapper_linux.cfg"
+          reclient_cc_cfg_file = rebase_path(reclient_cfg_dir, root_build_dir) +
+                                 "/nacl/rewrapper_linux.cfg"
         }
       }
     }

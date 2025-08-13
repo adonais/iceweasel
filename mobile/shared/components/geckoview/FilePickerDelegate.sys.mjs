@@ -108,9 +108,9 @@ export class FilePickerDelegate {
     const filesInWebKitDirectory = [];
 
     for (const info of files) {
-      const { filePath, uri, name, type, lastModified } = info;
+      const { filePath, uri, relativePath, name, type, lastModified } = info;
       if (filePath) {
-        const file = (() => {
+        const file = await (() => {
           if (this._prompt.domWin) {
             return this._prompt.domWin.File.createFromFileName(filePath, {
               type,
@@ -123,7 +123,8 @@ export class FilePickerDelegate {
           });
         })();
 
-        filesInWebKitDirectory.push(await file);
+        file.setMozRelativePath(relativePath);
+        filesInWebKitDirectory.push(file);
         continue;
       }
 
@@ -133,6 +134,7 @@ export class FilePickerDelegate {
       ].createInstance(Ci.nsIAndroidContentInputStream);
       input.init(Services.io.newURI(uri));
       const buffer = lazy.NetUtil.readInputStream(input);
+      input.close();
 
       const file = (() => {
         if (this._prompt.domWin) {
@@ -143,6 +145,7 @@ export class FilePickerDelegate {
         }
         return new File([buffer], name, { type, lastModified });
       })();
+      file.setMozRelativePath(relativePath);
       filesInWebKitDirectory.push(file);
     }
 

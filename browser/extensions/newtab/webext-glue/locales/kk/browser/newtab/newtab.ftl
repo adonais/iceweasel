@@ -8,6 +8,9 @@
 newtab-page-title = Жаңа бет
 newtab-settings-button =
     .title = Жаңа бетті баптаңыз
+newtab-customize-panel-icon-button =
+    .title = Бұл бетті баптау
+newtab-customize-panel-icon-button-label = Баптау
 newtab-personalize-settings-icon-label =
     .title = Жаңа бетті жекелендіру
     .aria-label = Баптаулар
@@ -117,6 +120,8 @@ newtab-menu-delete-pocket = { -pocket-brand-name }-тен өшіру
 newtab-menu-archive-pocket = { -pocket-brand-name }-те архивтеу
 newtab-menu-show-privacy-info = Біздің демеушілеріміз және сіздің жекелігіңіз
 newtab-menu-about-fakespot = { -fakespot-brand-name } туралы
+# Report is a verb (i.e. report issue with the content).
+newtab-menu-report = Хабарлау
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Блоктау
@@ -190,6 +195,8 @@ newtab-label-sponsored-by = { $sponsor } демеушісінен
 #   $source (string) - The name of a company or their domain
 #   $timeToRead (number) - The estimated number of minutes to read this story
 newtab-label-source-read-time = { $source } · { $timeToRead } мин
+# This string is used under fixed size ads to indicate sponsored content
+newtab-label-sponsored-fixed = Демеуленген
 
 ## Section Menu: These strings are displayed in the section context menu and are
 ## meant as a call to action for the given section.
@@ -519,6 +526,9 @@ newtab-custom-wallpaper-cta = Қолданып көру
 newtab-download-mobile-highlight-title = Мобильді { -brand-product-name } жүктеп алу
 newtab-download-mobile-highlight-image =
     .aria-label = Мобильді { -brand-product-name } жүктеп алу үшін QR коды
+
+## Strings for shortcuts highlight
+
 
 ## Strings for reporting ads and content
 

@@ -14,8 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,7 +68,7 @@ internal fun MenuHeader(
                 contentDescription = stringResource(
                     id = R.string.browser_main_menu_content_description_help_button,
                 ),
-                tint = FirefoxTheme.colors.iconSecondary,
+                tint = FirefoxTheme.colors.iconPrimary,
             )
         }
 
@@ -80,7 +80,7 @@ internal fun MenuHeader(
                 contentDescription = stringResource(
                     id = R.string.browser_main_menu_content_description_settings_button,
                 ),
-                tint = FirefoxTheme.colors.iconSecondary,
+                tint = FirefoxTheme.colors.iconPrimary,
             )
         }
     }

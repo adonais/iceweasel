@@ -20,8 +20,6 @@ import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.snackbar.Snackbar
-import org.mozilla.fenix.compose.snackbar.SnackbarState
 import org.mozilla.fenix.databinding.FragmentSaveSearchEngineBinding
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
@@ -148,20 +146,6 @@ class SaveSearchEngineFragment : Fragment(R.layout.fragment_save_search_engine) 
 
             requireComponents.useCases.searchUseCases.addSearchEngine(update)
 
-            val successMessage = if (searchEngine != null) {
-                resources.getString(R.string.search_edit_custom_engine_success_message, name)
-            } else {
-                resources.getString(R.string.search_add_custom_engine_success_message, name)
-            }
-
-            view?.also {
-                Snackbar.make(
-                    snackBarParentView = it,
-                    snackbarState = SnackbarState(
-                        message = successMessage,
-                    ),
-                ).show()
-            }
             findNavController().popBackStack()
         }
     }

@@ -9,8 +9,9 @@
  */
 
 #include "SpanningCellSorter.h"
-#include "nsTArray.h"
+
 #include "mozilla/HashFunctions.h"
+#include "nsTArray.h"
 
 using namespace mozilla;
 

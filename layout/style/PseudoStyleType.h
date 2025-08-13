@@ -7,13 +7,13 @@
 #ifndef mozilla_PseudoStyleType_h
 #define mozilla_PseudoStyleType_h
 
-#include "mozilla/RefPtr.h"
-#include "nsAtom.h"
-#include "PLDHashTable.h"
-
 #include <cstddef>
 #include <cstdint>
 #include <iosfwd>
+
+#include "PLDHashTable.h"
+#include "mozilla/RefPtr.h"
+#include "nsAtom.h"
 
 namespace mozilla {
 namespace dom {

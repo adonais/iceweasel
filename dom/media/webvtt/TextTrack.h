@@ -72,7 +72,7 @@ class TextTrack final : public DOMEventTargetHelper {
   }
 
   TextTrackCueList* GetActiveCues();
-  void GetActiveCueArray(nsTArray<RefPtr<TextTrackCue> >& aCues);
+  void GetActiveCueArray(nsTArray<RefPtr<TextTrackCue>>& aCues);
 
   TextTrackReadyState ReadyState() const;
   void SetReadyState(TextTrackReadyState aState);
@@ -104,15 +104,49 @@ class TextTrack final : public DOMEventTargetHelper {
   // would add or remove the cue to the active cue list.
   void NotifyCueActiveStateChanged(TextTrackCue* aCue);
 
-  // Use this function to request current cues, which start time are less than
-  // or equal to the current playback position and whose end times are greater
-  // than the current playback position, and other cues, which are not in the
-  // current cues. Because there would be LOTS of cues in the other cues, and we
-  // don't actually need all of them. Therefore, we use a time interval to get
-  // the cues which are overlapping within the time interval.
-  void GetCurrentCuesAndOtherCues(RefPtr<TextTrackCueList>& aCurrentCues,
-                                  RefPtr<TextTrackCueList>& aOtherCues,
-                                  const media::TimeInterval& aInterval) const;
+  enum class CueActivityState : uint8_t { Inactive = 0, Active, All, Count };
+  class CueBuckets final {
+   public:
+    void AddCue(TextTrackCue* aCue);
+
+    nsTArray<RefPtr<TextTrackCue>>& ActiveCues() {
+      return mCues[static_cast<size_t>(CueActivityState::Active)];
+    }
+
+    nsTArray<RefPtr<TextTrackCue>>& InactiveCues() {
+      return mCues[static_cast<size_t>(CueActivityState::Inactive)];
+    }
+
+    nsTArray<RefPtr<TextTrackCue>>& AllCues() {
+      return mCues[static_cast<size_t>(CueActivityState::All)];
+    }
+
+    bool HasPauseOnExit(CueActivityState aState) const {
+      MOZ_DIAGNOSTIC_ASSERT(aState != CueActivityState::Count);
+      return mHasPauseOnExist[static_cast<uint8_t>(aState)];
+    }
+
+   private:
+    nsTArray<RefPtr<TextTrackCue>>
+        mCues[static_cast<size_t>(CueActivityState::Count)];
+
+    // Returns true if any cue has in the given stage has the PauseOnExit flag
+    // set to true.
+    bool mHasPauseOnExist[static_cast<size_t>(CueActivityState::Count)] = {
+        false};
+  };
+
+  // Use this function to get `current cues`, `other cues` and `miss cues`
+  // which are overlapping with the given interval.
+  // The `current cues` have start time are less than or equal to the current
+  // playback position and whose end times are greater than the current playback
+  // position. the `other cues` are not in the current cues.
+  // `aLastTime` is the last time defined in the time marches on step3, it will
+  // only exists when miss cues calculation is needed.
+  void GetOverlappingCurrentOtherAndMissCues(
+      CueBuckets* aCurrentCues, CueBuckets* aOtherCues, CueBuckets* aMissCues,
+      const media::TimeInterval& aInterval,
+      const Maybe<double>& aLastTime) const;
 
   void ClearAllCues();
 

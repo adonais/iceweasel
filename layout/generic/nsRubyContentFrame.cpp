@@ -9,8 +9,8 @@
 #include "nsRubyContentFrame.h"
 
 #include "mozilla/ComputedStyle.h"
-#include "nsPresContext.h"
 #include "nsCSSAnonBoxes.h"
+#include "nsPresContext.h"
 
 using namespace mozilla;
 

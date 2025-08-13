@@ -22,6 +22,15 @@ legend {
   }
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+}
+
 #description {
   margin: 0;
   margin-block-start: var(--space-xxsmall);
@@ -39,6 +48,9 @@ legend {
 
   fieldset[aria-orientation="horizontal"] & {
     flex-direction: row;
+    flex-wrap: wrap;
+    row-gap: var(--space-small);
+    column-gap: var(--space-medium);
   }
 }
 

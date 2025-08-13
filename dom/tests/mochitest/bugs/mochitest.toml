@@ -100,7 +100,7 @@ skip-if = [
 ]
 
 ["test_bug369306.html"]
-skip-if = ["condprof"]  #: "The focus should not have been changed with URL=test2_bug369306.htm"
+skip-if = ["condprof"] # "The focus should not have been changed with URL=test2_bug369306.htm"
 
 ["test_bug370098.html"]
 
@@ -277,7 +277,7 @@ skip-if = [
 
 ["test_devicemotion_multiple_listeners.html"]
 skip-if = [
-  "os == 'android'",  # Bug 1780219
+  "os == 'android'", # Bug 1780219
   "http3",
   "http2",
 ]
@@ -295,7 +295,7 @@ skip-if = [
 ]
 
 ["test_no_find_showDialog.html"]
-skip-if = ["os == 'android'"] # Bug 1358633 - window.find doesn't work for Android
+run-if = ["os != 'android'"] # Bug 1358633 - window.find doesn't work for Android
 
 ["test_onerror_message.html"]
 

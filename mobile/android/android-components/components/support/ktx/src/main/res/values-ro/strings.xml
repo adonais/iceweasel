@@ -4,6 +4,6 @@
   <string name="mozac_support_ktx_menu_call_with">Sună cu…</string>
   <!-- Text displayed when choosing which app to email with after selecting an email address -->
   <string name="mozac_support_ktx_menu_email_with">Trimite mesaj pe e-mail cu…</string>
-  <string name="mozac_support_ktx_menu_share_with">Partajează cu…</string>
-  <string name="mozac_support_ktx_share_dialog_title">Partajează prin</string>
+  <string name="mozac_support_ktx_menu_share_with">Distribuie către…</string>
+  <string name="mozac_support_ktx_share_dialog_title">Distribuie prin</string>
 </resources>

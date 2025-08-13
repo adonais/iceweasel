@@ -38,9 +38,6 @@ enum class CustomReviewPromptState : State {
 
 /** [Action]s to dispatch to [CustomReviewPromptStore] to modify [CustomReviewPromptState]. */
 sealed class CustomReviewPromptAction : Action {
-    /** Dispatched when the accessibility affordance to dismiss the prompt is clicked. */
-    data object DismissRequested : CustomReviewPromptAction()
-
     /** Dispatched when the negative button in the pre-prompt is clicked. */
     data object NegativePrePromptButtonClicked : CustomReviewPromptAction()
 
@@ -55,6 +52,9 @@ sealed class CustomReviewPromptAction : Action {
 
     /** Dispatched when the custom review prompt is shown to the user. */
     data object Displayed : CustomReviewPromptAction()
+
+    /** Dispatched when the custom review prompt is dismissed. */
+    data object Dismissed : CustomReviewPromptAction()
 }
 
 internal fun reduceCustomReviewPromptActions(
@@ -63,8 +63,8 @@ internal fun reduceCustomReviewPromptActions(
 ): CustomReviewPromptState = when (action) {
     CustomReviewPromptAction.NegativePrePromptButtonClicked -> CustomReviewPromptState.Feedback
     CustomReviewPromptAction.PositivePrePromptButtonClicked -> CustomReviewPromptState.Rate
-    CustomReviewPromptAction.DismissRequested -> state
     CustomReviewPromptAction.RateButtonClicked -> state
     CustomReviewPromptAction.LeaveFeedbackButtonClicked -> state
     CustomReviewPromptAction.Displayed -> state
+    CustomReviewPromptAction.Dismissed -> state
 }

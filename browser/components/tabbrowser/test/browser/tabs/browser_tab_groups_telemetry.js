@@ -55,12 +55,8 @@ add_task(async function test_tabGroupTelemetry() {
 
   await BrowserTestUtils.waitForCondition(() => {
     tabGroupCreateTelemetry = Glean.tabgroup.createGroup.testGetValue();
-    return (
-      tabGroupCreateTelemetry?.length == 1 &&
-      Glean.tabgroup.tabCountInGroups.inside.testGetValue() !== null &&
-      Glean.tabgroup.tabsPerActiveGroup.average.testGetValue() !== null
-    );
-  }, "Wait for createGroup and at least one metric from the tabCountInGroups and tabsPerActiveGroup to be set");
+    return tabGroupCreateTelemetry?.length == 1;
+  }, "Wait for createGroup event to be recorded");
 
   Assert.deepEqual(
     tabGroupCreateTelemetry[0].extra,
@@ -73,6 +69,13 @@ add_task(async function test_tabGroupTelemetry() {
     "tabGroupCreate event extra_keys has correct values after tab group create"
   );
 
+  await BrowserTestUtils.waitForCondition(() => {
+    return (
+      Glean.tabgroup.tabCountInGroups.inside.testGetValue() == 1 &&
+      Glean.tabgroup.tabCountInGroups.outside.testGetValue() == 2
+    );
+  }, "Wait for group tab counts to settle");
+
   Assert.equal(
     Glean.tabgroup.tabCountInGroups.inside.testGetValue(),
     1,
@@ -83,6 +86,16 @@ add_task(async function test_tabGroupTelemetry() {
     2,
     "tabCountInGroups.outside has correct value"
   );
+
+  await BrowserTestUtils.waitForCondition(() => {
+    return (
+      Glean.tabgroup.tabsPerActiveGroup.median.testGetValue() == 1 &&
+      Glean.tabgroup.tabsPerActiveGroup.average.testGetValue() == 1 &&
+      Glean.tabgroup.tabsPerActiveGroup.max.testGetValue() == 1 &&
+      Glean.tabgroup.tabsPerActiveGroup.min.testGetValue() == 1
+    );
+  }, "Wait for active group tab statistics to settle");
+
   Assert.equal(
     Glean.tabgroup.tabsPerActiveGroup.median.testGetValue(),
     1,
@@ -123,10 +136,10 @@ add_task(async function test_tabGroupTelemetry() {
 
   await BrowserTestUtils.waitForCondition(() => {
     return (
-      Glean.tabgroup.tabCountInGroups.inside.testGetValue() !== null &&
-      Glean.tabgroup.tabsPerActiveGroup.average.testGetValue() !== null
+      Glean.tabgroup.tabCountInGroups.inside.testGetValue() == 4 &&
+      Glean.tabgroup.tabCountInGroups.outside.testGetValue() == 2
     );
-  }, "Wait for at least one metric from the tabCountInGroups and tabsPerActiveGroup to be set after adding a new tab group");
+  }, "Wait for group tab counts to settle");
 
   Assert.equal(
     Glean.tabgroup.tabCountInGroups.inside.testGetValue(),
@@ -138,6 +151,16 @@ add_task(async function test_tabGroupTelemetry() {
     2,
     "tabCountInGroups.outside has correct value after adding a new tab group"
   );
+
+  await BrowserTestUtils.waitForCondition(() => {
+    return (
+      Glean.tabgroup.tabsPerActiveGroup.median.testGetValue() == 2 &&
+      Glean.tabgroup.tabsPerActiveGroup.average.testGetValue() == 2 &&
+      Glean.tabgroup.tabsPerActiveGroup.max.testGetValue() == 3 &&
+      Glean.tabgroup.tabsPerActiveGroup.min.testGetValue() == 1
+    );
+  }, "Wait for active group tab statistics to settle");
+
   Assert.equal(
     Glean.tabgroup.tabsPerActiveGroup.median.testGetValue(),
     2,
@@ -171,10 +194,10 @@ add_task(async function test_tabGroupTelemetry() {
 
   await BrowserTestUtils.waitForCondition(() => {
     return (
-      Glean.tabgroup.tabCountInGroups.inside.testGetValue() !== null &&
-      Glean.tabgroup.tabsPerActiveGroup.average.testGetValue() !== null
+      Glean.tabgroup.tabCountInGroups.inside.testGetValue() == 5 &&
+      Glean.tabgroup.tabCountInGroups.outside.testGetValue() == 2
     );
-  }, "Wait for at least one metric from the tabCountInGroups and tabsPerActiveGroup to be set after modifying a tab group");
+  }, "Wait for group tab counts to settle");
 
   Assert.equal(
     Glean.tabgroup.tabCountInGroups.inside.testGetValue(),
@@ -186,6 +209,16 @@ add_task(async function test_tabGroupTelemetry() {
     2,
     "tabCountInGroups.outside has correct value after modifying a tab group"
   );
+
+  await BrowserTestUtils.waitForCondition(() => {
+    return (
+      Glean.tabgroup.tabsPerActiveGroup.median.testGetValue() == 2 &&
+      Glean.tabgroup.tabsPerActiveGroup.average.testGetValue() == 2 &&
+      Glean.tabgroup.tabsPerActiveGroup.max.testGetValue() == 4 &&
+      Glean.tabgroup.tabsPerActiveGroup.min.testGetValue() == 1
+    );
+  }, "Wait for active group tab statistics to settle");
+
   Assert.equal(
     Glean.tabgroup.tabsPerActiveGroup.median.testGetValue(),
     2,
@@ -212,8 +245,11 @@ add_task(async function test_tabGroupTelemetry() {
   group2.collapsed = true;
 
   await BrowserTestUtils.waitForCondition(() => {
-    return Glean.tabgroup.activeGroups.collapsed.testGetValue() !== null;
-  }, "Wait for the activeGroups metric to be set after collapsing a tab group");
+    return (
+      Glean.tabgroup.activeGroups.collapsed.testGetValue() == 1 &&
+      Glean.tabgroup.activeGroups.expanded.testGetValue() == 1
+    );
+  }, "Wait for the activeGroups metrics to settle");
 
   Assert.equal(
     Glean.tabgroup.activeGroups.collapsed.testGetValue(),
@@ -223,7 +259,7 @@ add_task(async function test_tabGroupTelemetry() {
   Assert.equal(
     Glean.tabgroup.activeGroups.expanded.testGetValue(),
     1,
-    "activeGroups.collapsed has correct value after collapsing a tab group"
+    "activeGroups.expanded has correct value after collapsing a tab group"
   );
 
   await resetTelemetry();

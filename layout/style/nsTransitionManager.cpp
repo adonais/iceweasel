@@ -7,28 +7,28 @@
 /* Code to start and animate CSS transitions. */
 
 #include "nsTransitionManager.h"
-#include "mozilla/dom/Document.h"
-#include "nsAnimationManager.h"
 
-#include "nsIContent.h"
 #include "AnimatedPropertyID.h"
 #include "AnimatedPropertyIDSet.h"
 #include "mozilla/ComputedStyle.h"
-#include "mozilla/MemoryReporting.h"
-#include "nsCSSPropertyIDSet.h"
 #include "mozilla/EffectSet.h"
 #include "mozilla/ElementAnimationData.h"
 #include "mozilla/EventDispatcher.h"
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/RestyleManager.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/StyleAnimationValue.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/Element.h"
-#include "nsIFrame.h"
+#include "nsAnimationManager.h"
+#include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h"
 #include "nsDisplayList.h"
+#include "nsIContent.h"
+#include "nsIFrame.h"
 #include "nsRFPService.h"
 #include "nsStyleChangeList.h"
-#include "mozilla/RestyleManager.h"
 
 using mozilla::dom::CSSTransition;
 using mozilla::dom::DocumentTimeline;

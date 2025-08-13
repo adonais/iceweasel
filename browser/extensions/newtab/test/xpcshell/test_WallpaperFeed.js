@@ -7,6 +7,7 @@ ChromeUtils.defineESModuleGetters(this, {
   actionCreators: "resource://newtab/common/Actions.mjs",
   actionTypes: "resource://newtab/common/Actions.mjs",
   Utils: "resource://services-settings/Utils.sys.mjs",
+  reducers: "resource://newtab/common/Reducers.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
   WallpaperFeed: "resource://newtab/lib/WallpaperFeed.sys.mjs",
 });
@@ -33,9 +34,10 @@ add_task(async function test_construction() {
   info("WallpaperFeed constructor should create initial values");
 
   Assert.ok(feed, "Could construct a WallpaperFeed");
-  Assert.ok(feed.loaded === false, "WallpaperFeed is not loaded");
-  Assert.ok(
-    feed.wallpaperClient === null,
+  Assert.strictEqual(feed.loaded, false, "WallpaperFeed is not loaded");
+  Assert.strictEqual(
+    feed.wallpaperClient,
+    null,
     "wallpaperClient is initialized as null"
   );
 });
@@ -66,7 +68,7 @@ add_task(async function test_onAction_INIT() {
     type: actionTypes.INIT,
   });
 
-  Assert.ok(feed.store.dispatch.callCount >= 3);
+  Assert.greaterOrEqual(feed.store.dispatch.callCount, 3);
 
   const matchingCall = feed.store.dispatch
     .getCalls()
@@ -176,6 +178,67 @@ add_task(async function test_Wallpaper_Upload() {
 
   // Confirm written filename UUID matches the stored UUID pref
   Assert.equal(writtenUUID, storedUUID);
+
+  // Cleanup files
+  await IOUtils.remove(testWallpaperFile);
+  await IOUtils.remove(writtenFile);
+  Services.prefs.clearUserPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID);
+
+  sandbox.restore();
+});
+
+/**
+ * Tests that the parent process sends down a consistent object URL to newtab to
+ * render as the background.
+ */
+add_task(async function test_Wallpaper_objectURI() {
+  let sandbox = sinon.createSandbox();
+  let feed = getWallpaperFeedForTest(sandbox);
+
+  // Stub out a fake RemoteClient so that updateWallpapers won't complain
+  // when we eventually call it.
+  feed.wallpaperClient = {
+    async get() {
+      return [];
+    },
+  };
+
+  const testUploadContents = "custom-wallpaper-upload-test";
+  const testFileName = "test-wallpaper.jpg";
+
+  const testWallpaperFile = await IOUtils.createUniqueFile(
+    PathUtils.tempDir,
+    testFileName
+  );
+
+  await IOUtils.writeUTF8(testWallpaperFile, testUploadContents);
+  let testNsIFile = await IOUtils.getFile(testWallpaperFile);
+  let testFileToUpload = await File.createFromNsIFile(testNsIFile);
+
+  // Upload test file
+  let writtenFile = await feed.wallpaperUpload(testFileToUpload);
+
+  Assert.ok(
+    feed.store.dispatch.calledWith(
+      actionCreators.BroadcastToContent({
+        type: actionTypes.WALLPAPERS_CUSTOM_SET,
+        data: sinon.match("blob:null/"),
+      })
+    )
+  );
+
+  // Now ensure that a consistent object URL gets returned for each subsequent
+  // request for a wallpaper by checking to see that it exists in the state
+  // object. This URL is non-deterministic, but we can pull it out from what was
+  // just passed to the store dispatch method.
+  const [action] = feed.store.dispatch.getCall(0).args;
+  const wallpaperURL = action.data;
+  const state = reducers.Wallpapers(null, action);
+  Assert.equal(
+    state.uploadedWallpaper,
+    wallpaperURL,
+    "Should have updated the state to include the object URL"
+  );
 
   // Cleanup files
   await IOUtils.remove(testWallpaperFile);

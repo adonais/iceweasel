@@ -5,5 +5,5 @@ support-files = ["file_access_sanitized_pref.html"]
 skip-if = [
   "ccov",
   "tsan",
-  "os == 'linux' && asan"
+  "os == 'linux' && asan",
 ]

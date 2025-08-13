@@ -8,14 +8,14 @@
 
 #include "Rule.h"
 
+#include "mozilla/HoldDropJSObjects.h"
+#include "mozilla/ServoBindings.h"
 #include "mozilla/css/GroupRule.h"
 #include "mozilla/dom/CSSImportRule.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
 #include "nsCCUncollectableMarker.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/HoldDropJSObjects.h"
 #include "nsWrapperCacheInlines.h"
-#include "mozilla/ServoBindings.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -60,6 +60,9 @@ void Rule::UnlinkDeclarationWrapper(nsWrapperCache& aDecl) {
   //
   // So we reimplement a modified version of nsWrapperCache::ReleaseWrapper here
   // that unpreserves both wrappers before doing any clearing.
+  //
+  // XXX nsWrapperCache::ReleaseWrapper now calls JS::HeapObjectPostWriteBarrier
+  // Should it be called also here? See bug 1977384.
   bool needDrop = PreservingWrapper() || aDecl.PreservingWrapper();
   SetPreservingWrapper(false);
   aDecl.SetPreservingWrapper(false);

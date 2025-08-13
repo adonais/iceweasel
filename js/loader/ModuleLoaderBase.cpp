@@ -683,7 +683,7 @@ nsresult ModuleLoaderBase::OnFetchComplete(ModuleLoadRequest* aRequest,
   MOZ_ASSERT(NS_SUCCEEDED(rv) == bool(aRequest->mModuleScript));
   SetModuleFetchFinishedAndResumeWaitingRequests(aRequest, rv);
 
-  if (!aRequest->IsErrored()) {
+  if (!aRequest->IsErrored() && !aRequest->IsCanceled()) {
     StartFetchingModuleDependencies(aRequest);
   }
 
@@ -1180,6 +1180,20 @@ ModuleLoaderBase::~ModuleLoaderBase() {
   LOG(("ModuleLoaderBase::~ModuleLoaderBase %p", this));
 }
 
+void ModuleLoaderBase::CancelFetchingModules() {
+  for (const auto& entry : mFetchingModules) {
+    RefPtr<LoadingRequest> loadingRequest = entry.GetData();
+    loadingRequest->mRequest->Cancel();
+
+    for (const auto& request : loadingRequest->mWaiting) {
+      request->Cancel();
+    }
+  }
+
+  // We don't clear mFetchingModules here, as the fetching requests might arrive
+  // after the global is still shutting down.
+}
+
 void ModuleLoaderBase::Shutdown() {
   CancelAndClearDynamicImports();
 
@@ -1320,38 +1334,6 @@ bool ModuleLoaderBase::InstantiateModuleGraph(ModuleLoadRequest* aRequest) {
   return true;
 }
 
-nsresult ModuleLoaderBase::InitDebuggerDataForModuleGraph(
-    JSContext* aCx, ModuleLoadRequest* aRequest) {
-  // JS scripts can be associated with a DOM element for use by the debugger,
-  // but preloading can cause scripts to be compiled before DOM script element
-  // nodes have been created. This method ensures that this association takes
-  // place before the first time a module script is run.
-
-  MOZ_ASSERT(aRequest);
-
-  ModuleScript* moduleScript = aRequest->mModuleScript;
-  if (moduleScript->DebuggerDataInitialized()) {
-    return NS_OK;
-  }
-
-  for (ModuleLoadRequest* childRequest : aRequest->mImports) {
-    nsresult rv = InitDebuggerDataForModuleGraph(aCx, childRequest);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  JS::Rooted<JSObject*> module(aCx, moduleScript->ModuleRecord());
-  MOZ_ASSERT(module);
-
-  // The script is now ready to be exposed to the debugger.
-  JS::Rooted<JSScript*> script(aCx, JS::GetModuleScript(module));
-  if (script) {
-    JS::ExposeScriptToDebugger(aCx, script);
-  }
-
-  moduleScript->SetDebuggerDataInitialized();
-  return NS_OK;
-}
-
 void ModuleLoaderBase::ProcessDynamicImport(ModuleLoadRequest* aRequest) {
   if (!aRequest->mModuleScript) {
     FinishDynamicImportAndReject(aRequest, NS_ERROR_FAILURE);
@@ -1436,9 +1418,6 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
     return NS_OK;
   }
 
-  nsresult rv = InitDebuggerDataForModuleGraph(aCx, aRequest);
-  NS_ENSURE_SUCCESS(rv, rv);
-
   if (aRequest->HasScriptLoadContext()) {
     TRACE_FOR_TEST(aRequest, "scriptloader_evaluate_module");
   }
@@ -1453,6 +1432,7 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
   // unless the user cancels execution.
   MOZ_ASSERT_IF(ok, !JS_IsExceptionPending(aCx));
 
+  nsresult rv = NS_OK;
   if (!ok || IsModuleEvaluationAborted(aRequest)) {
     LOG(("ScriptLoadRequest (%p):   evaluation failed", aRequest));
     // For a dynamic import, the promise is rejected. Otherwise an error is

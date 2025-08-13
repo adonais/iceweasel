@@ -75,8 +75,6 @@ class MenuTelemetryMiddleware(
                 ),
             )
 
-            MenuAction.Navigate.CustomizeHomepage -> AppMenu.customizeHomepage.record(NoExtras())
-
             MenuAction.Navigate.Downloads -> Events.browserMenuAction.record(
                 Events.BrowserMenuActionExtra(
                     item = "downloads",

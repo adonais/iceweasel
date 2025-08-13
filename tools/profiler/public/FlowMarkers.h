@@ -229,6 +229,38 @@ class MOZ_RAII AutoProfilerTerminatingFlowMarker {
   Flow mFlow;
 };
 
+class MOZ_RAII AutoProfilerTerminatingFlowMarkerFlowOnly {
+ public:
+  AutoProfilerTerminatingFlowMarkerFlowOnly(
+      const char* aMarkerName, const mozilla::MarkerCategory& aCategory,
+      Flow aFlow)
+      : mMarkerName(aMarkerName), mCategory(aCategory), mFlow(aFlow) {
+    MOZ_ASSERT(mOptions.Timing().EndTime().IsNull(),
+               "AutoProfilerTextMarker options shouldn't have an end time");
+    if (profiler_is_active_and_unpaused() &&
+        profiler_feature_active(ProfilerFeature::Flows) &&
+        mOptions.Timing().StartTime().IsNull()) {
+      mOptions.Set(mozilla::MarkerTiming::InstantNow());
+    }
+  }
+
+  ~AutoProfilerTerminatingFlowMarkerFlowOnly() {
+    if (profiler_is_active_and_unpaused() &&
+        profiler_feature_active(ProfilerFeature::Flows)) {
+      mOptions.TimingRef().SetIntervalEnd();
+      profiler_add_marker(
+          mozilla::ProfilerString8View::WrapNullTerminatedString(mMarkerName),
+          mCategory, std::move(mOptions), TerminatingFlowStackMarker{}, mFlow);
+    }
+  }
+
+ public:
+  const char* mMarkerName;
+  mozilla::MarkerCategory mCategory;
+  mozilla::MarkerOptions mOptions;
+  Flow mFlow;
+};
+
 #define AUTO_PROFILER_FLOW_MARKER(markerName, categoryName, flow) \
   AutoProfilerFlowMarker PROFILER_RAII(                           \
       markerName, ::mozilla::baseprofiler::category::categoryName, flow)
@@ -236,6 +268,21 @@ class MOZ_RAII AutoProfilerTerminatingFlowMarker {
 #define AUTO_PROFILER_TERMINATING_FLOW_MARKER(markerName, categoryName, flow) \
   AutoProfilerTerminatingFlowMarker PROFILER_RAII(                            \
       markerName, ::mozilla::baseprofiler::category::categoryName, flow)
+
+#define AUTO_PROFILER_TERMINATING_FLOW_MARKER_FLOW_ONLY(markerName,         \
+                                                        categoryName, flow) \
+  AutoProfilerTerminatingFlowMarkerFlowOnly PROFILER_RAII(                  \
+      markerName, ::mozilla::baseprofiler::category::categoryName, flow)
+
+#define PROFILER_MARKER_FLOW_ONLY(markerName, categoryName, options,           \
+                                  MarkerType, ...)                             \
+  do {                                                                         \
+    if (profiler_feature_active(ProfilerFeature::Flows)) {                     \
+      profiler_add_marker(markerName, ::geckoprofiler::category::categoryName, \
+                          options, ::geckoprofiler::markers::MarkerType{},     \
+                          ##__VA_ARGS__);                                      \
+    }                                                                          \
+  } while (false)
 
 }  // namespace mozilla
 #endif  // FlowMarkers_h

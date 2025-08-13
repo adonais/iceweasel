@@ -552,9 +552,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">इतिहास मिटाएं</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">इतिहास मिटा दिया गया</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">इतिहास मिटा दिया गया</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">%1$s मिटाया गया</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s मिटाया गया</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">मिटाएं</string>
   <!--
@@ -596,9 +596,9 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">क्या आप वाकई इस फ़ोल्डर को हटाना चाहते हैं?</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">क्या आप वाकई इस फ़ोल्डर को हटाना चाहते हैं?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog">%s चयनित वस्तुओं को मिटा देगा।</string>
+  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s चयनित वस्तुओं को मिटा देगा।</string>
   <!-- Screen title for adding a bookmarks folder -->
   <string name="bookmark_add_folder">फ़ोल्डर जोड़ें</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
@@ -616,7 +616,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">मिटाएं</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">सहेजें</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">सहेजें</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -627,7 +627,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">फ़ोल्डर सम्पादित करें</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">सिंक किए हुए बुकमार्क को देखने के लिए साइन इन करें</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">सिंक किए हुए बुकमार्क को देखने के लिए साइन इन करें</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -635,24 +635,24 @@
   <!-- Bookmark NAME editing field label -->
   <string name="bookmark_name_label">नाम</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">फ़ोल्डर जोड़ें</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">फ़ोल्डर जोड़ें</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">फ़ोल्डर चुनें</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">शीर्षक होना चाहिए</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">शीर्षक होना चाहिए</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">अवैध URL</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">यहां कोई बुकमार्क नहीं है</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">यहां कोई बुकमार्क नहीं है</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s मिटाया गया</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">बुकमार्क मिटा दिए गए</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">बुकमार्क मिटा दिए गए</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3">चयनित फोल्डर मिटाए जा रहे हैं</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">चयनित फोल्डर मिटाए जा रहे हैं</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">पूर्ववत करें</string>
   <!--
@@ -758,7 +758,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d टैब चुना गया</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">टैब सहेजे गए!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">टैब सहेजे गए!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection">संग्रह सहेजा गया!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -825,9 +825,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">संग्रह बनाया गया</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">संग्रह बनाया गया</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">संग्रह का नाम बदला गया</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">संग्रह का नाम बदला गया</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">टैब बंद हो गया</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -856,9 +856,9 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">क्या आप वाकई %1$s को हटाना चाहते हैं?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">मिटाएं</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">मिटाएं</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">URL कॉपी हो गया</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL कॉपी हो गया</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">यह नमूना पाठ है। यहाँ यह दिखाने के लिए है कि जब आप इस सेटिंग के साथ आकार बढ़ाते या घटाते हैं तो पाठ कैसे दिखाई देगा।</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -1160,14 +1160,12 @@
   <string name="search_add_custom_engine_error_empty_search_string">एक खोज स्ट्रिंग दर्ज करें</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">जाँचें कि खोज स्ट्रिंग उदाहरण संरूप से मेल खाती है</string>
-  <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">\"%s\" से संपर्क में त्रुटि</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">%s बनाया गया</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s बनाया गया</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">%s सहेजा गया</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s सहेजा गया</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">%s हटाया गया</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s हटाया गया</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">इसे अनुमति देने के लिए:</string>
   <!-- First step for the allowing a permission -->
@@ -1191,7 +1189,7 @@
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">कोई साइट अपवाद नहीं है</string>
   <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation">क्या आप वाकई इस बुकमार्क को हटाना चाहते हैं?</string>
+  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">क्या आप वाकई इस बुकमार्क को हटाना चाहते हैं?</string>
   <!--
     text shown before the issuer name to indicate who its verified by, %1$s is the name of
     the certificate authority that verified the ticket
@@ -1260,11 +1258,9 @@
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">ऊपर जाएँ</string>
   <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description">बंद करें</string>
+  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">बंद करें</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
   <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">और जानें</string>
-  <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">अधिक जानें</string>
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->

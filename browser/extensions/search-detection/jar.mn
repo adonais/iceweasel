@@ -3,5 +3,4 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 browser.jar:
-%   resource builtin-addons %builtin-addons/  contentaccessible=yes
     builtin-addons/search-detection/ (extension/**)

@@ -4,9 +4,6 @@ support-files = [
   "dummy.html"]
 
 ["browser_BrowserTestUtils.js"]
-skip-if = [
-  "verify",
-]
 
 ["browser_EventUtils.js"]
 
@@ -23,50 +20,26 @@ https_first_disabled = true
 ["browser_document_builder_sjs.js"]
 
 ["browser_fail.js"]
-skip-if = [
-  "verify",
-]
 
 ["browser_fail_add_task.js"]
-skip-if = [
-  "verify",
-]
 
 ["browser_fail_add_task_uncaught_rejection.js"]
-skip-if = [
-  "verify",
-]
 
 ["browser_fail_async.js"]
-skip-if = [
-  "verify",
-]
 
 ["browser_fail_if.js"]
 fail-if = ["true"]
 
 ["browser_fail_throw.js"]
-skip-if = [
-  "verify",
-]
 
 ["browser_fail_timeout.js"]
 disabled = "Disabled beacuse it takes too long (bug 1178959)"
 
 ["browser_fail_uncaught_rejection.js"]
-skip-if = [
-  "verify",
-]
 
 ["browser_fail_uncaught_rejection_expected.js"]
-skip-if = [
-  "verify",
-]
 
 ["browser_fail_uncaught_rejection_expected_multi.js"]
-skip-if = [
-  "verify",
-]
 
 ["browser_fail_unexpectedTimeout.js"]
 disabled = "Disabled beacuse it takes too long (bug 1178959)"
@@ -94,6 +67,8 @@ disabled = "Disabled beacuse it takes too long (bug 1178959)"
 ["browser_setup_runs_first.js"]
 
 ["browser_setup_runs_for_only_tests.js"]
+
+["browser_signal.js"]
 
 ["browser_tasks_skip.js"]
 

@@ -30,7 +30,7 @@ sealed class CrashState {
     /**
      * Crash reporter is presenting UI to the user to send unsent crash reports.
      */
-    data object Reporting : CrashState()
+    data class Reporting(val crashIDs: List<String> = listOf()) : CrashState()
 
     /**
      * Crash reporter is done.

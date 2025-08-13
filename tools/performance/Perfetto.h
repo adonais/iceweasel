@@ -225,6 +225,8 @@ ADD_DEBUG_STRING_ANNOTATION_IMPL(size_t N, char[N], char*, aValue)
 ADD_DEBUG_STRING_ANNOTATION(mozilla::ProfilerString16View,
                             NS_ConvertUTF16toUTF8(aValue).get())
 ADD_DEBUG_STRING_ANNOTATION(nsAString, NS_ConvertUTF16toUTF8(aValue).get())
+ADD_DEBUG_STRING_ANNOTATION_IMPL(size_t N, nsAutoStringN<N>, nsAutoStringN<N>&,
+                                 NS_ConvertUTF16toUTF8(aValue).get())
 ADD_DEBUG_STRING_ANNOTATION_IMPL(, const nsAString&, nsAString&,
                                  NS_ConvertUTF16toUTF8(aValue).get())
 ADD_DEBUG_STRING_ANNOTATION(nsString, NS_ConvertUTF16toUTF8(aValue).get())

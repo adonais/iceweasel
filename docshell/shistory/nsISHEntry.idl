@@ -11,7 +11,7 @@
 
 #include "nsISupports.idl"
 
-interface nsIContentSecurityPolicy;
+interface nsIPolicyContainer;
 interface nsIMutableArray;
 interface nsILayoutHistoryState;
 interface nsIDocumentViewer;
@@ -193,11 +193,11 @@ interface nsISHEntry : nsISupports
     [infallible] attribute nsIPrincipal partitionedPrincipalToInherit;
 
     /**
-     * Get the csp, if any, that was used for this document load. That
-     * is not the CSP that was applied to subresource loads within the
-     * document, but the CSP that was applied to this document load.
+     * Get the policyContainer, if any, that was used for this document load. That
+     * is not the policyContainer that was applied to subresource loads within the
+     * document, but the policyContainer that was applied to this document load.
      */
-    [infallible] attribute nsIContentSecurityPolicy csp;
+    [infallible] attribute nsIPolicyContainer policyContainer;
 
     /**
      * Get/set data associated with this history state via a pushState() call,
@@ -330,7 +330,7 @@ interface nsISHEntry : nsISupports
                            in nsIPrincipal triggeringPrincipal,
                            in nsIPrincipal principalToInherit,
                            in nsIPrincipal partitionedPrincipalToInherit,
-                           in nsIContentSecurityPolicy aCsp,
+                           in nsIPolicyContainer policyContainer,
                            in nsIDRef docshellID,
                            in boolean dynamicCreation,
                            in nsIURI originalURI,

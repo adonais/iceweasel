@@ -52,6 +52,24 @@ async function do_test_invalid_cookies(options) {
 
   const tests = [
     {
+      cookie: {},
+      title: "Unset name and value",
+      errorString:
+        "Cookie with an empty name and an empty value has been rejected.",
+    },
+    {
+      cookie: { name: "" },
+      title: "Empty name and unset value",
+      errorString:
+        "Cookie with an empty name and an empty value has been rejected.",
+    },
+    {
+      cookie: { value: "" },
+      title: "Unset name and empty value",
+      errorString:
+        "Cookie with an empty name and an empty value has been rejected.",
+    },
+    {
       cookie: { name: "", value: "" },
       title: "Empty name and value",
       errorString:

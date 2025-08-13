@@ -563,17 +563,15 @@ class ElementStyle {
    *
    * @param {TextProperty} declaration
    *        A TextProperty of a rule.
-   * @param {Set<>String} variableNamesSet
+   * @param {Set<String>} variableNamesSet
    *        A Set of CSS variable names that have been updated.
    */
   _hasUpdatedCSSVariable(declaration, variableNamesSet) {
-    for (const variableName of variableNamesSet) {
-      if (declaration.hasCSSVariable(variableName)) {
-        return true;
-      }
+    if (variableNamesSet.size === 0) {
+      return false;
     }
 
-    return false;
+    return !variableNamesSet.isDisjointFrom(declaration.usedVariables);
   }
 
   /**

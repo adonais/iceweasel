@@ -4,26 +4,25 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gfxContext.h"
 #include "nsMathMLmtableFrame.h"
-#include "nsPresContext.h"
-#include "nsStyleConsts.h"
-#include "nsNameSpaceManager.h"
-#include "nsCSSRendering.h"
-#include "mozilla/dom/MathMLElement.h"
 
-#include "nsCRT.h"
-#include "nsTArray.h"
-#include "nsTableFrame.h"
-#include "celldata.h"
-
-#include "mozilla/PresShell.h"
-#include "mozilla/RestyleManager.h"
 #include <algorithm>
 
-#include "nsIScriptError.h"
+#include "celldata.h"
+#include "gfxContext.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/RestyleManager.h"
+#include "mozilla/dom/MathMLElement.h"
+#include "nsCRT.h"
+#include "nsCSSRendering.h"
 #include "nsContentUtils.h"
+#include "nsIScriptError.h"
 #include "nsLayoutUtils.h"
+#include "nsNameSpaceManager.h"
+#include "nsPresContext.h"
+#include "nsStyleConsts.h"
+#include "nsTArray.h"
+#include "nsTableFrame.h"
 
 using namespace mozilla;
 using namespace mozilla::image;

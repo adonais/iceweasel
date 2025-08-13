@@ -112,7 +112,7 @@ one.
 - **summarization**: Xenova/distilbart-cnn-6-6
 - **translation**: Xenova/t5-small
 - **text2text-generation**: Xenova/flan-t5-small
-- **text-generation**: Xenova/gpt2
+- **text-generation**: onnx-community/gpt2-ONNX
 - **zero-shot-classification**: Xenova/distilbert-base-uncased-mnli
 - **image-to-text**: Mozilla/distilvit
 - **image-classification**: Xenova/vit-base-patch16-224
@@ -177,7 +177,7 @@ Last, but not least, if the device memory resources are getting too low, engine 
 be deleted and an error will be thrown.
 
 
-Full example
-------------
+Examples
+--------
 
-We've implemented a full example that leverages our `image-to-text model` to generate a caption on a right click. :ref:`See the README <Trial Inference API Extension Example>`.
+We've implemented some examples, look for all repositories starting with `webext-ai` in https://github.com/firefox-ai.

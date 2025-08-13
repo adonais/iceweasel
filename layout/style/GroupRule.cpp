@@ -12,7 +12,6 @@
 #include "mozilla/css/GroupRule.h"
 
 #include "mozilla/dom/CSSRuleList.h"
-
 #include "nsPrintfCString.h"
 
 using namespace mozilla::dom;

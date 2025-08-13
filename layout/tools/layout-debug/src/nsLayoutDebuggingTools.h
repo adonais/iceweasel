@@ -7,9 +7,9 @@
 #ifndef nsLayoutDebuggingTools_h
 #define nsLayoutDebuggingTools_h
 
-#include "nsILayoutDebuggingTools.h"
-#include "nsIDocShell.h"
 #include "nsCOMPtr.h"
+#include "nsIDocShell.h"
+#include "nsILayoutDebuggingTools.h"
 
 class nsLayoutDebuggingTools : public nsILayoutDebuggingTools {
  public:

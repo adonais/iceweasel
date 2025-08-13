@@ -9,8 +9,8 @@
 #ifndef nsRubyFrame_h___
 #define nsRubyFrame_h___
 
-#include "nsInlineFrame.h"
 #include "RubyUtils.h"
+#include "nsInlineFrame.h"
 
 namespace mozilla {
 class PresShell;

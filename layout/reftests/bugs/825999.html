@@ -15,7 +15,10 @@
                 padding-left:6px;
                 padding-right:17px;
                 outline: 1px solid blue;
+                margin: 2px;
             }
+            /* Avoid baseline differences between scrollable and non-scrollable buttons */
+            button, select { display: block }
             span {
                 display:inline-block;
                 overflow: hidden;
@@ -29,6 +32,7 @@
                 vertical-align:top;
                 background:lime;
                 width:36px;
+                scrollbar-width: none;
             }
             x > span {
                 /* As of bug 1768921, <x>'s padding on right contributes to the
@@ -36,6 +40,7 @@
                    of <x>'s. */
                 padding-right: 16px;
             }
+            .bb, .cb { width: 300px; display: inline-block }
             .bb * {
                 box-sizing: border-box;
             }

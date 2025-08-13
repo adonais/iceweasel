@@ -148,7 +148,6 @@ class DefaultBookmarkController(
     override fun handleCopyUrl(item: BookmarkNode) {
         val urlClipData = ClipData.newPlainText(item.url, item.url)
         clipboardManager?.setPrimaryClip(urlClipData)
-        showSnackbar(resources.getString(R.string.url_copied))
     }
 
     override fun handleBookmarkSharing(item: BookmarkNode) {

@@ -8,24 +8,24 @@
 
 #include "mozilla/css/ErrorReporter.h"
 
+#include "mozilla/Components.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/css/Loader.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/SchedulerGroup.h"
-#include "mozilla/Components.h"
-#include "nsIConsoleService.h"
 #include "mozilla/dom/Document.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIConsoleService.h"
 #include "nsIDocShell.h"
 #include "nsIFactory.h"
 #include "nsINode.h"
 #include "nsIScriptError.h"
 #include "nsIStringBundle.h"
+#include "nsNetUtil.h"
 #include "nsServiceManagerUtils.h"
 #include "nsStyleUtil.h"
 #include "nsThreadUtils.h"
-#include "nsNetUtil.h"
 
 using namespace mozilla;
 using namespace mozilla::css;

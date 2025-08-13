@@ -7,9 +7,8 @@
 #ifndef mozilla_dom_CSSFontPaletteValuesRule_h
 #define mozilla_dom_CSSFontPaletteValuesRule_h
 
-#include "mozilla/css/Rule.h"
 #include "mozilla/ServoBindingTypes.h"
-
+#include "mozilla/css/Rule.h"
 #include "nsICSSDeclaration.h"
 
 namespace mozilla::dom {

@@ -7,9 +7,13 @@
 #include "IntegrityPolicy.h"
 
 #include "nsCOMPtr.h"
+#include "nsIClassInfoImpl.h"
+#include "nsIObjectInputStream.h"
+#include "nsIObjectOutputStream.h"
 #include "nsString.h"
 
 #include "mozilla/dom/RequestBinding.h"
+#include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/Logging.h"
 #include "mozilla/net/SFVService.h"
 #include "mozilla/StaticPrefs_security.h"
@@ -39,6 +43,11 @@ RequestDestination ContentTypeToDestination(nsContentPolicyType aType) {
     case nsIContentPolicy::TYPE_SCRIPT:
       return RequestDestination::Script;
 
+    case nsIContentPolicy::TYPE_STYLESHEET:
+    case nsIContentPolicy::TYPE_INTERNAL_STYLESHEET:
+    case nsIContentPolicy::TYPE_INTERNAL_STYLESHEET_PRELOAD:
+      return RequestDestination::Style;
+
     default:
       return RequestDestination::_empty;
   }
@@ -49,6 +58,10 @@ Maybe<IntegrityPolicy::DestinationType> DOMRequestDestinationToDestinationType(
   switch (aDestination) {
     case RequestDestination::Script:
       return Some(IntegrityPolicy::DestinationType::Script);
+    case RequestDestination::Style:
+      return StaticPrefs::security_integrity_policy_stylesheet_enabled()
+                 ? Some(IntegrityPolicy::DestinationType::Style)
+                 : Nothing{};
 
     default:
       return Nothing{};
@@ -151,6 +164,10 @@ Result<IntegrityPolicy::Destinations, nsresult> ParseDestinations(
   for (const auto& destination : destinations) {
     if (destination.EqualsLiteral("script")) {
       result += IntegrityPolicy::DestinationType::Script;
+    } else if (destination.EqualsLiteral("style")) {
+      if (StaticPrefs::security_integrity_policy_stylesheet_enabled()) {
+        result += IntegrityPolicy::DestinationType::Style;
+      }
     } else {
       LOG("ParseDestinations: Unknown destination: {}", destination.get());
       // Unknown destination, we don't know how to handle it
@@ -159,6 +176,25 @@ Result<IntegrityPolicy::Destinations, nsresult> ParseDestinations(
   }
 
   return result;
+}
+
+/* static */
+Result<nsTArray<nsCString>, nsresult> ParseEndpoints(nsISFVDictionary* aDict) {
+  // endpoints, a list of strings, initially empty.
+  nsCOMPtr<nsISFVItemOrInnerList> iil;
+  nsresult rv = aDict->Get("endpoints"_ns, getter_AddRefs(iil));
+  if (NS_FAILED(rv)) {
+    // The key doesn't exists, return empty list.
+    return nsTArray<nsCString>();
+  }
+
+  nsCOMPtr<nsISFVInnerList> il(do_QueryInterface(iil));
+  NS_ENSURE_TRUE(il, Err(NS_ERROR_FAILURE));
+  nsTArray<nsCString> endpoints;
+  rv = GetStringsFromInnerList(il, true, endpoints);
+  NS_ENSURE_SUCCESS(rv, Err(rv));
+
+  return endpoints;
 }
 
 /* static */
@@ -220,15 +256,23 @@ nsresult IntegrityPolicy::ParseHeaders(const nsACString& aHeader,
     }
 
     // 5. If dictionary["endpoints"] exists:
-    // TODO: We don't support Reporting API, so we don't need to parse endpoints
-    // (yay?)
+    auto endpointsResult = ParseEndpoints(dict);
+    if (endpointsResult.isErr()) {
+      LOG("[{}] Failed to parse endpoints for {} header.",
+          static_cast<void*>(policy),
+          isROHeader ? "report-only" : "enforcement");
+      continue;
+    }
 
-    LOG("[{}] Creating policy for {} header. sources={} destinations={}",
+    LOG("[{}] Creating policy for {} header. sources={} destinations={} "
+        "endpoints=[{}]",
         static_cast<void*>(policy), isROHeader ? "report-only" : "enforcement",
         sourcesResult.unwrap().serialize(),
-        destinationsResult.unwrap().serialize());
+        destinationsResult.unwrap().serialize(),
+        fmt::join(endpointsResult.unwrap(), ", "));
 
-    Entry entry = Entry(sourcesResult.unwrap(), destinationsResult.unwrap());
+    Entry entry = Entry(sourcesResult.unwrap(), destinationsResult.unwrap(),
+                        endpointsResult.unwrap());
     if (isROHeader) {
       policy->mReportOnly.emplace(entry);
     } else {
@@ -266,7 +310,209 @@ void IntegrityPolicy::PolicyContains(DestinationType aDestination,
   }
 }
 
-NS_IMPL_ISUPPORTS(IntegrityPolicy, nsIIntegrityPolicy)
+void IntegrityPolicy::ToArgs(const IntegrityPolicy* aPolicy,
+                             mozilla::ipc::IntegrityPolicyArgs& aArgs) {
+  aArgs.enforcement() = Nothing();
+  aArgs.reportOnly() = Nothing();
+
+  if (!aPolicy) {
+    return;
+  }
+
+  if (aPolicy->mEnforcement) {
+    mozilla::ipc::IntegrityPolicyEntry entry;
+    entry.sources() = aPolicy->mEnforcement->mSources;
+    entry.destinations() = aPolicy->mEnforcement->mDestinations;
+    entry.endpoints() = aPolicy->mEnforcement->mEndpoints.Clone();
+    aArgs.enforcement() = Some(entry);
+  }
+
+  if (aPolicy->mReportOnly) {
+    mozilla::ipc::IntegrityPolicyEntry entry;
+    entry.sources() = aPolicy->mReportOnly->mSources;
+    entry.destinations() = aPolicy->mReportOnly->mDestinations;
+    entry.endpoints() = aPolicy->mReportOnly->mEndpoints.Clone();
+    aArgs.reportOnly() = Some(entry);
+  }
+}
+
+void IntegrityPolicy::FromArgs(const mozilla::ipc::IntegrityPolicyArgs& aArgs,
+                               IntegrityPolicy** aPolicy) {
+  RefPtr<IntegrityPolicy> policy = new IntegrityPolicy();
+
+  if (aArgs.enforcement().isSome()) {
+    const auto& entry = *aArgs.enforcement();
+    policy->mEnforcement.emplace(Entry(entry.sources(), entry.destinations(),
+                                       entry.endpoints().Clone()));
+  }
+
+  if (aArgs.reportOnly().isSome()) {
+    const auto& entry = *aArgs.reportOnly();
+    policy->mReportOnly.emplace(Entry(entry.sources(), entry.destinations(),
+                                      entry.endpoints().Clone()));
+  }
+
+  policy.forget(aPolicy);
+}
+
+void IntegrityPolicy::InitFromOther(IntegrityPolicy* aOther) {
+  if (!aOther) {
+    return;
+  }
+
+  if (aOther->mEnforcement) {
+    mEnforcement.emplace(Entry(*aOther->mEnforcement));
+  }
+
+  if (aOther->mReportOnly) {
+    mReportOnly.emplace(Entry(*aOther->mReportOnly));
+  }
+}
+
+bool IntegrityPolicy::Equals(const IntegrityPolicy* aPolicy,
+                             const IntegrityPolicy* aOtherPolicy) {
+  // Do a quick pointer check first, also checks if both are null.
+  if (aPolicy == aOtherPolicy) {
+    return true;
+  }
+
+  // We checked if they were null above, so make sure one of them is not null.
+  if (!aPolicy || !aOtherPolicy) {
+    return false;
+  }
+
+  if (!Entry::Equals(aPolicy->mEnforcement, aOtherPolicy->mEnforcement)) {
+    return false;
+  }
+
+  if (!Entry::Equals(aPolicy->mReportOnly, aOtherPolicy->mReportOnly)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool IntegrityPolicy::Entry::Equals(const Maybe<Entry>& aPolicy,
+                                    const Maybe<Entry>& aOtherPolicy) {
+  // If one is set and the other is not, they are not equal.
+  if (aPolicy.isSome() != aOtherPolicy.isSome()) {
+    return false;
+  }
+
+  // If both are not set, they are equal.
+  if (aPolicy.isNothing() && aOtherPolicy.isNothing()) {
+    return true;
+  }
+
+  if (aPolicy->mSources != aOtherPolicy->mSources) {
+    return false;
+  }
+
+  if (aPolicy->mDestinations != aOtherPolicy->mDestinations) {
+    return false;
+  }
+
+  if (aPolicy->mEndpoints != aOtherPolicy->mEndpoints) {
+    return false;
+  }
+
+  return true;
+}
+
+constexpr static const uint32_t kIntegrityPolicySerializationVersion = 1;
+
+NS_IMETHODIMP
+IntegrityPolicy::Read(nsIObjectInputStream* aStream) {
+  nsresult rv;
+
+  uint32_t version;
+  rv = aStream->Read32(&version);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (version != kIntegrityPolicySerializationVersion) {
+    LOG("IntegrityPolicy::Read: Unsupported version: {}", version);
+    return NS_ERROR_FAILURE;
+  }
+
+  for (const bool& isRO : {false, true}) {
+    bool hasPolicy;
+    rv = aStream->ReadBoolean(&hasPolicy);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (!hasPolicy) {
+      continue;
+    }
+
+    uint32_t sources;
+    rv = aStream->Read32(&sources);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    Sources sourcesSet;
+    sourcesSet.deserialize(sources);
+
+    uint32_t destinations;
+    rv = aStream->Read32(&destinations);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    Destinations destinationsSet;
+    destinationsSet.deserialize(destinations);
+
+    uint32_t endpointsLen;
+    rv = aStream->Read32(&endpointsLen);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    nsTArray<nsCString> endpoints(endpointsLen);
+    for (size_t endpointI = 0; endpointI < endpointsLen; endpointI++) {
+      nsCString endpoint;
+      rv = aStream->ReadCString(endpoint);
+      NS_ENSURE_SUCCESS(rv, rv);
+      endpoints.AppendElement(std::move(endpoint));
+    }
+
+    Entry entry = Entry(sourcesSet, destinationsSet, std::move(endpoints));
+    if (isRO) {
+      mReportOnly.emplace(entry);
+    } else {
+      mEnforcement.emplace(entry);
+    }
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+IntegrityPolicy::Write(nsIObjectOutputStream* aStream) {
+  nsresult rv;
+
+  rv = aStream->Write32(kIntegrityPolicySerializationVersion);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  for (const auto& entry : {mEnforcement, mReportOnly}) {
+    if (!entry) {
+      aStream->WriteBoolean(false);
+      continue;
+    }
+
+    aStream->WriteBoolean(true);
+
+    rv = aStream->Write32(entry->mSources.serialize());
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = aStream->Write32(entry->mDestinations.serialize());
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = aStream->Write32(entry->mEndpoints.Length());
+    for (const auto& endpoint : entry->mEndpoints) {
+      rv = aStream->WriteCString(endpoint);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+  }
+
+  return NS_OK;
+}
+
+NS_IMPL_CLASSINFO(IntegrityPolicy, nullptr, 0, NS_IINTEGRITYPOLICY_IID)
+NS_IMPL_ISUPPORTS_CI(IntegrityPolicy, nsIIntegrityPolicy, nsISerializable)
 
 }  // namespace mozilla::dom
 

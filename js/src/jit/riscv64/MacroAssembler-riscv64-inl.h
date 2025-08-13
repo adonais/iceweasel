@@ -1127,7 +1127,13 @@ void MacroAssembler::branchTestPtr(Condition cond, Register lhs, Imm32 rhs,
 
 void MacroAssembler::branchTestPtr(Condition cond, Register lhs, ImmWord rhs,
                                    Label* label) {
-  MOZ_CRASH("NYI");
+  MOZ_ASSERT(cond == Zero || cond == NonZero || cond == Signed ||
+             cond == NotSigned);
+  UseScratchRegisterScope temps(this);
+  Register scratch = temps.Acquire();
+  ma_li(scratch, rhs);
+  ma_and(scratch, lhs, scratch);
+  ma_b(scratch, scratch, label, cond);
 }
 
 void MacroAssembler::branchTestPtr(Condition cond, const Address& lhs,
@@ -1513,8 +1519,8 @@ void MacroAssembler::cmpPtrMovePtr(Condition cond, Register lhs,
   MOZ_CRASH("NYI");
 }
 
-void MacroAssembler::ctz32(Register rd, Register rs, bool knownNotZero) {
-  Ctz32(rd, rs);
+void MacroAssembler::ctz32(Register src, Register dest, bool knownNotZero) {
+  Ctz32(dest, src);
 }
 
 void MacroAssembler::decBranchPtr(Condition cond, Register lhs, Imm32 rhs,
@@ -1681,7 +1687,7 @@ void MacroAssembler::move64To32(Register64 src, Register dest) {
 }
 
 void MacroAssembler::move8ZeroExtend(Register src, Register dest) {
-  MOZ_CRASH("NYI");
+  andi(dest, src, 0xFF);
 }
 
 void MacroAssembler::move8SignExtend(Register src, Register dest) {
@@ -1855,7 +1861,8 @@ void MacroAssembler::patchSub32FromStackPtr(CodeOffset offset, Imm32 imm) {
                offset.offset(), imm.value);
   Instruction* inst0 =
       (Instruction*)m_buffer.getInst(BufferOffset(offset.offset()));
-  Instruction* inst1 = (Instruction*)(inst0 + 4);
+  Instruction* inst1 =
+      (Instruction*)m_buffer.getInst(BufferOffset(offset.offset() + 4));
   MOZ_ASSERT(IsLui(*reinterpret_cast<Instr*>(inst0)));
   MOZ_ASSERT(IsAddi(*reinterpret_cast<Instr*>(inst1)));
 
@@ -1863,13 +1870,14 @@ void MacroAssembler::patchSub32FromStackPtr(CodeOffset offset, Imm32 imm) {
   int64_t high_20 = ((value + 0x800) >> 12);
   int64_t low_12 = value << 52 >> 52;
 
-  uint32_t* p = reinterpret_cast<uint32_t*>(inst0);
+  uint32_t* p0 = reinterpret_cast<uint32_t*>(inst0);
+  uint32_t* p1 = reinterpret_cast<uint32_t*>(inst1);
 
-  (*p) = (*p) & 0xfff;
-  (*p) = (*p) | ((int32_t)high_20 << 12);
+  (*p0) = (*p0) & 0xfff;
+  (*p0) = (*p0) | ((int32_t)high_20 << 12);
+  (*p1) = (*p1) & 0xfffff;
+  (*p1) = (*p1) | ((int32_t)low_12 << 20);
 
-  *(p + 1) = *(p + 1) & 0xfffff;
-  *(p + 1) = *(p + 1) | ((int32_t)low_12 << 20);
   disassembleInstr(inst0->InstructionBits());
   disassembleInstr(inst1->InstructionBits());
   MOZ_ASSERT((int32_t)(inst0->Imm20UValue() << kImm20Shift) +
@@ -2186,13 +2194,21 @@ void MacroAssembler::test32LoadPtr(Condition cond, const Address& addr,
   loadPtr(src, dest);
   bind(&skip);
 }
-void MacroAssembler::test32MovePtr(Condition, const Address&, Imm32, Register,
-                                   Register) {
-  MOZ_CRASH();
+void MacroAssembler::test32MovePtr(Condition cond, const Address& addr,
+                                   Imm32 mask, Register src, Register dest) {
+  MOZ_ASSERT(cond == Assembler::Zero || cond == Assembler::NonZero);
+  Label skip;
+  branchTest32(Assembler::InvertCondition(cond), addr, mask, &skip);
+  movePtr(src, dest);
+  bind(&skip);
 }
 void MacroAssembler::test32MovePtr(Condition cond, Register operand, Imm32 mask,
                                    Register src, Register dest) {
-  MOZ_CRASH();
+  MOZ_ASSERT(cond == Assembler::Zero || cond == Assembler::NonZero);
+  Label skip;
+  branchTest32(Assembler::InvertCondition(cond), operand, mask, &skip);
+  movePtr(src, dest);
+  bind(&skip);
 }
 void MacroAssembler::xor32(Register src, Register dest) {
   ma_xor(dest, dest, src);

@@ -28,10 +28,7 @@ export const ReportContent = spocs => {
     const {
       card_type,
       corpus_item_id,
-      is_section_followed,
       position,
-      received_rank,
-      recommended_at,
       reporting_url,
       scheduled_corpus_item_id,
       section_position,
@@ -48,9 +45,6 @@ export const ReportContent = spocs => {
           data: {
             card_type,
             corpus_item_id,
-            is_section_followed,
-            received_rank,
-            recommended_at,
             report_reason: selectedReason,
             scheduled_corpus_item_id,
             section_position,

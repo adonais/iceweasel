@@ -441,8 +441,8 @@ newtab-weather-menu-weather-display = Намоиши обу ҳаво
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
-newtab-weather-menu-weather-display-option-simple = Одӣ
-newtab-weather-menu-change-weather-display-simple = Гузариш ба намуди одӣ
+newtab-weather-menu-weather-display-option-simple = Оддӣ
+newtab-weather-menu-change-weather-display-simple = Гузариш ба намуди оддӣ
 newtab-weather-menu-weather-display-option-detailed = Ботафсил
 newtab-weather-menu-change-weather-display-detailed = Гузариш ба намуди ботафсил
 newtab-weather-menu-temperature-units = Воҳидҳои ченаки ҳарорат
@@ -502,6 +502,9 @@ newtab-topic-selection-button-pick-interests = Манфиатҳои худро �
 newtab-section-follow-button = Обуна шавед
 newtab-section-following-button = Обуна шуд
 newtab-section-unfollow-button = Бекор кардани обуна
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Навори хабарҳои худро ба таври дилхоҳ танзим кунед
+newtab-section-follow-highlight-subtitle = Чизҳои дилбастагии худро пайгирӣ кунед, то чизҳои бештареро, ки ба шумо маъқуланд, бубинед.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -544,6 +547,11 @@ newtab-download-mobile-highlight-body-variant-c = Оё шумо медонист
 newtab-download-mobile-highlight-image =
     .aria-label = Рамзи «QR» барои боргирӣ кардани версияи мобилии «{ -brand-product-name }»
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Сомонаҳои дӯстдоштаи шумо дар нӯгҳои ангуштони шумо
+newtab-shortcuts-highlight-subtitle = Миёнбуреро илова кунед, то сомонаҳои дӯстдоштаи шумо бо зеркунии як тугма дастрас шаванд.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -577,3 +585,5 @@ newtab-trending-searches-hide-trending =
     .title = Пинҳон кардани ҷустуҷӯҳои ҳавасангез
 newtab-trending-searches-learn-more = Маълумоти бештар
 newtab-trending-searches-dismiss = Пинҳон кардани ҷустуҷӯҳои ҳавасангез
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Ҷустуҷӯҳои ҳавасангез

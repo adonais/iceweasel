@@ -102,13 +102,13 @@ class FirefoxWebDriver(WebDriver):
         if "use_strict_etp" in test_config:
             prefs[STRICT_ETP_PREF] = test_config["use_strict_etp"]
 
-        if "no_overlay_scrollbars" in test_config:
+        if test_config.get("no_overlay_scrollbars"):
             prefs["widget.gtk.overlay-scrollbars.enabled"] = False
             prefs["widget.windows.overlay-scrollbars.enabled"] = False
 
-        if "enable_moztransform" in test_config:
+        if test_config.get("enable_moztransform"):
             prefs["layout.css.prefixes.transforms"] = True
-        elif "disable_moztransform" in test_config:
+        elif test_config.get("disable_moztransform"):
             prefs["layout.css.prefixes.transforms"] = False
 
         # keep system addon updates off to prevent bug 1882562
@@ -448,6 +448,10 @@ def only_platforms(bug_number, platform, request, session):
     is_fenix = "org.mozilla.fenix" in session.capabilities.get("moz:profile", "")
     actualPlatform = session.capabilities["platformName"]
     actualPlatformRequired = request.node.get_closest_marker("actual_platform_required")
+    if actualPlatformRequired and request.config.getoption("platform_override"):
+        pytest.skip(
+            f"Bug #{bug_number} skipped; needs to be run on the actual platform, won't work while overriding"
+        )
     if request.node.get_closest_marker("only_platforms"):
         plats = request.node.get_closest_marker("only_platforms").args
         for only in plats:

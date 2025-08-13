@@ -15,6 +15,9 @@ const { sinon } = ChromeUtils.importESModule(
 );
 const TEST_LINK_URL = "https://example.com";
 
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("browser.ml.linkPreview.onboardingTimes");
+});
 /**
  * Test that optin and collapsed preferences properly update existing cards.
  *

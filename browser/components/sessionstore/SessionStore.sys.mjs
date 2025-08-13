@@ -838,6 +838,17 @@ export var SessionStore = {
   },
 
   /**
+   * Add tabs to an existing saved tab group.
+   *
+   * @param {string} tabGroupId - The ID of the group to save to
+   * @param {MozTabbrowserTab[]} tabs - The list of tabs to add to the group
+   * @returns {SavedTabGroupStateData}
+   */
+  addTabsToSavedGroup(tabGroupId, tabs) {
+    return SessionStoreInternal.addTabsToSavedGroup(tabGroupId, tabs);
+  },
+
+  /**
    * Retrieve the tab group state of a saved tab group by ID.
    *
    * @param {string} tabGroupId
@@ -924,14 +935,18 @@ export var SessionStore = {
   },
 
   /**
-   * Determine whether a group is saveable, based on whether any of its tabs
-   * are saveable per ssi_shouldSaveTabState.
-   * @param {MozTabbrowserTabGroup} group the tab group to check
-   * @returns {boolean} true if the group can be saved, false if it should
-   *  be discarded.
+   * Determine whether a list of tabs should be considered saveable.
+   * A list of tabs is considered saveable if any of the tabs in the list
+   * are worth saving.
+   *
+   * This is used to determine if a tab group should be saved, or if any active
+   * tabs in a selection are eligible to be added to an existing saved group.
+   *
+   * @param {MozTabbrowserTab[]} tabs - the list of tabs to check
+   * @returns {boolean} true if any of the tabs are saveable.
    */
-  shouldSaveTabGroup(group) {
-    return SessionStoreInternal.shouldSaveTabGroup(group);
+  shouldSaveTabsToGroup(tabs) {
+    return SessionStoreInternal.shouldSaveTabsToGroup(tabs);
   },
 
   /**
@@ -2379,6 +2394,9 @@ var SessionStoreInternal = {
         Object.values(this._windows).filter(
           wData => !wData.isPrivate && !wData.isTaskbarTab
         ).length == 1;
+      this._log.debug(
+        `onClose, closing window isLastRegularWindow? ${isLastRegularWindow}`
+      );
 
       let taskbarTabsRemains = Object.values(this._windows).some(
         wData => wData.isTaskbarTab
@@ -2568,6 +2586,10 @@ var SessionStoreInternal = {
         this._capClosedWindows();
         this._saveOpenTabGroupsOnClose(winData);
         this._closedObjectsChanged = true;
+        this._log.debug(
+          `Saved closed window:${winData.closedId} with ${winData.tabs.length} open tabs, ${winData._closedTabs.length} closed tabs`
+        );
+
         // The first time we close a window, ensure it can be restored from the
         // hidden window.
         if (
@@ -2593,7 +2615,7 @@ var SessionStoreInternal = {
           return;
         }
         this._log.warn(
-          `Discarding window with 0 saveable tabs and ${winData._closedTabs.length} closed tabs`
+          `Discarding window:${winData.closedId} with 0 saveable tabs and ${winData._closedTabs.length} closed tabs`
         );
       }
     }
@@ -2692,6 +2714,12 @@ var SessionStoreInternal = {
       this._collectWindowData(window);
       this._windows[window.__SSi].zIndex = ++index;
     }
+    this._log.debug(
+      `onQuitApplicationGranted, shutdown of ${index} windows will be sync? ${syncShutdown}`
+    );
+    this._log.debug(
+      `Last session save attempt: ${Date.now() - lazy.SessionSaver.lastSaveTime}ms ago`
+    );
 
     // Now add an AsyncShutdown blocker that'll spin the event loop
     // until the windows have all been flushed.
@@ -2720,6 +2748,8 @@ var SessionStoreInternal = {
       //    abnormal shutdown) is observed, or
       // 4. flushAllWindowsAsync completes (hopefully the normal case).
 
+      Glean.sessionRestore.shutdownType.async.add(1);
+
       // Set up the list of promises that will signal a complete sessionstore
       // shutdown: either all data is saved, or we crashed or the message IPC
       // channel went away in the meantime.
@@ -2730,18 +2760,32 @@ var SessionStoreInternal = {
         const observer = subject => {
           // Skip abort on ipc:content-shutdown if not abnormal/crashed
           subject.QueryInterface(Ci.nsIPropertyBag2);
-          if (!(topic == "ipc:content-shutdown" && !subject.get("abnormal"))) {
-            deferred.resolve();
+          switch (topic) {
+            case "ipc:content-shutdown":
+              if (subject.get("abnormal")) {
+                this._log.debug(
+                  "Observed abnormal ipc:content-shutdown during shutdown"
+                );
+                Glean.sessionRestore.shutdownFlushAllOutcomes.abnormal_content_shutdown.add(
+                  1
+                );
+                deferred.resolve();
+              }
+              break;
+            case "oop-frameloader-crashed":
+              this._log.debug(`Observed topic: ${topic} during shutdown`);
+              Glean.sessionRestore.shutdownFlushAllOutcomes.oop_frameloader_crashed.add(
+                1
+              );
+              deferred.resolve();
+              break;
           }
         };
         const cleanup = () => {
           try {
             Services.obs.removeObserver(observer, topic);
           } catch (ex) {
-            console.error(
-              "SessionStore: exception whilst flushing all windows: ",
-              ex
-            );
+            this._log.error("Exception whilst flushing all windows", ex);
           }
         };
         Services.obs.addObserver(observer, topic);
@@ -2782,6 +2826,7 @@ var SessionStoreInternal = {
         () => isDone
       );
     } else {
+      Glean.sessionRestore.shutdownType.sync.add(1);
       // We have to shut down NOW, which means we only get to save whatever
       // we already had cached.
     }
@@ -2846,6 +2891,7 @@ var SessionStoreInternal = {
       this.activeWindowSSiCache = activeWindow.__SSi || "";
     }
     DirtyWindows.clear();
+    Glean.sessionRestore.shutdownFlushAllOutcomes.complete.add(1);
   },
 
   /**
@@ -3242,12 +3288,20 @@ var SessionStoreInternal = {
    *
    * @param {MozTabbrowserTab[]} tabs
    * @param {Window} win
+   * @param {object} [options]
+   * @param {string} [options.updateTabGroupId]
+   *         Manually set a tab group id on the the tab state for each tab.
+   *         This is mainly used to add closing tabs to pre-existing
+   *         saved groups.
    * @returns {ClosedTabStateData[]}
    */
-  _collectClosedTabsForTabGroup(tabs, win) {
+  _collectClosedTabsForTabGroup(tabs, win, { updateTabGroupId } = {}) {
     let closedTabs = [];
     tabs.forEach(tab => {
       let tabState = lazy.TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
+      if (updateTabGroupId) {
+        tabState.groupId = updateTabGroupId;
+      }
       this.maybeSaveClosedTab(win, tab, tabState, {
         closedTabsArray: closedTabs,
         closedInTabGroup: true,
@@ -3317,7 +3371,7 @@ var SessionStoreInternal = {
       pos: aTab._tPos,
       closedAt: Date.now(),
       closedInGroup: aTab._closedInMultiselection,
-      closedInTabGroupId: closedInTabGroup ? aTab.group.id : null,
+      closedInTabGroupId: closedInTabGroup ? tabState.groupId : null,
       sourceWindowId: aWindow.__SSi,
     };
 
@@ -3478,9 +3532,11 @@ var SessionStoreInternal = {
   saveClosedTabData(winData, closedTabs, tabData, saveAction = true) {
     // Find the index of the first tab in the list
     // of closed tabs that was closed before our tab.
-    let index = closedTabs.findIndex(tab => {
-      return tab.closedAt < tabData.closedAt;
-    });
+    let index = tabData.closedInTabGroupId
+      ? closedTabs.length
+      : closedTabs.findIndex(tab => {
+          return tab.closedAt < tabData.closedAt;
+        });
 
     // If we found no tab closed before our
     // tab then just append it to the list.
@@ -3966,6 +4022,7 @@ var SessionStoreInternal = {
         : {}),
       skipLoad: true,
       preferredRemoteType: aTab.linkedBrowser.remoteType,
+      tabGroup: aTab.group,
     };
     let newTab = aWindow.gBrowser.addTrustedTab(null, tabOptions);
 
@@ -5740,6 +5797,14 @@ var SessionStoreInternal = {
       this._log.debug(
         `restoreWindow, createTabsForSessionRestore returned ${tabs.length} tabs`
       );
+      // If restoring this window resulted in reopening any saved tab groups,
+      // we no longer need to track those saved tab groups.
+      const openTabGroupIdsInWindow = new Set(
+        tabbrowser.tabGroups.map(group => group.id)
+      );
+      this._savedGroups = this._savedGroups.filter(
+        savedTabGroup => !openTabGroupIdsInWindow.has(savedTabGroup.id)
+      );
     }
 
     // Move the originally open tabs to the end.
@@ -6878,7 +6943,7 @@ var SessionStoreInternal = {
     }
 
     this._log.debug(
-      `Opening window with features: ${features.join(
+      `Opening window:${winState.closedId} with features: ${features.join(
         ","
       )}, argString: ${argString}.`
     );
@@ -7097,17 +7162,14 @@ var SessionStoreInternal = {
   },
 
   /**
-   * Determine if a tab group should be saved based on whether any of its tabs
-   * should be saved.
-   *
-   * @param {MozTabbrowserTabGroup} group the tab group to check
-   * @returns {boolean} true if the group is saveable.
+   * @param {MozTabbrowserTab[]} tabs
+   * @returns {boolean}
    */
-  shouldSaveTabGroup: function ssi_shouldSaveTabGroup(group) {
-    if (!group) {
+  shouldSaveTabsToGroup: function ssi_shouldSaveTabsToGroup(tabs) {
+    if (!tabs) {
       return false;
     }
-    for (let tab of group.tabs) {
+    for (let tab of tabs) {
       let tabState = lazy.TabState.collect(tab);
       if (this._shouldSaveTabState(tabState)) {
         return true;
@@ -7660,6 +7722,8 @@ var SessionStoreInternal = {
     timer.initWithCallback(
       function () {
         if (beats <= 0) {
+          this._log.debug(`looseTimer of ${delay} timed out`);
+          Glean.sessionRestore.shutdownFlushAllOutcomes.timed_out.add(1);
           deferred.resolve();
         }
         --beats;
@@ -8076,6 +8140,37 @@ var SessionStoreInternal = {
       tabGroup.ownerGlobal
     );
     this._recordSavedTabGroupState(tabGroupState);
+  },
+
+  /**
+   * @param {string} tabGroupId
+   * @param {MozTabbrowserTab[]} tabs
+   * @returns {SavedTabGroupStateData}
+   */
+  addTabsToSavedGroup(tabGroupId, tabs) {
+    let tabGroupState = this.getSavedTabGroup(tabGroupId);
+    if (!tabGroupState) {
+      throw new Error(`No tab group found with id ${tabGroupId}`);
+    }
+
+    const win = tabs[0].ownerGlobal;
+    if (!tabs.every(tab => tab.ownerGlobal === win)) {
+      throw new Error(`All tabs must be part of the same window`);
+    }
+
+    if (PrivateBrowsingUtils.isWindowPrivate(win)) {
+      throw new Error(
+        "Refusing to add tabs from private window to a saved tab group"
+      );
+    }
+
+    let newTabState = this._collectClosedTabsForTabGroup(tabs, win, {
+      updateTabGroupId: tabGroupId,
+    });
+    tabGroupState.tabs.push(...newTabState);
+
+    this._notifyOfSavedTabGroupsChange();
+    return tabGroupState;
   },
 
   /**

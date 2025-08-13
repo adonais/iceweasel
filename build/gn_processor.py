@@ -18,6 +18,7 @@ import mozpack.path as mozpath
 from mozbuild.bootstrap import bootstrap_toolchain
 from mozbuild.dirutils import mkdir
 from mozbuild.frontend.sandbox import alphabetical_sorted
+from mozfile import json as mozfile_json
 
 license_header = """# This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -196,8 +197,8 @@ def filter_gn_config(path, gn_result, sandbox_vars, input_vars, gn_target):
         "OS_TARGET": oses[input_vars["target_os"]],
         "TARGET_CPU": cpus.get(input_vars["target_cpu"], input_vars["target_cpu"]),
     }
-    if "use_x11" in input_vars:
-        mozbuild_args["MOZ_X11"] = "1" if input_vars["use_x11"] else None
+    if "ozone_platform_x11" in input_vars:
+        mozbuild_args["MOZ_X11"] = "1" if input_vars["ozone_platform_x11"] else None
 
     gn_out["mozbuild_args"] = mozbuild_args
     all_deps = find_deps(gn_result["targets"], gn_target)
@@ -729,13 +730,13 @@ def generate_gn_config(
                 "visual_studio_path": "/",
                 "visual_studio_version": 2015,
                 "wdk_path": "/",
+                "windows_sdk_version": "n/a",
             }
         )
     if input_variables["target_os"] == "mac":
         input_variables.update(
             {
                 "mac_sdk_path": "/",
-                "enable_wmax_tokens": False,
             }
         )
 
@@ -765,7 +766,7 @@ def generate_gn_config(
             raw_json = fh.read()
             raw_json = raw_json.replace(f"{target_dir}/", "")
             raw_json = raw_json.replace(f"{target_dir}:", ":")
-            gn_config = json.loads(raw_json)
+            gn_config = mozfile_json.loads(raw_json)
             gn_config = filter_gn_config(
                 resolved_tempdir,
                 gn_config,
@@ -794,7 +795,7 @@ def main():
         raise Exception("The GN program must be present to generate GN configs.")
 
     with open(args.config) as fh:
-        config = json.load(fh)
+        config = mozfile_json.load(fh)
 
     topsrcdir = Path(__file__).parent.parent.resolve()
 
@@ -820,12 +821,12 @@ def main():
                     "target_os": target_os,
                 }
                 if target_os == "linux":
-                    for use_x11 in (True, False):
-                        vars["use_x11"] = use_x11
+                    for enable_x11 in (True, False):
+                        vars["ozone_platform_x11"] = enable_x11
                         vars_set.append(vars.copy())
                 else:
                     if target_os == "openbsd":
-                        vars["use_x11"] = True
+                        vars["ozone_platform_x11"] = True
                     vars_set.append(vars)
 
     gn_configs = []

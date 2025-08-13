@@ -9,8 +9,8 @@
 #ifndef nsRubyBaseContainerFrame_h___
 #define nsRubyBaseContainerFrame_h___
 
-#include "nsContainerFrame.h"
 #include "RubyUtils.h"
+#include "nsContainerFrame.h"
 
 namespace mozilla {
 class PresShell;

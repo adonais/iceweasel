@@ -40,13 +40,6 @@ class CustomReviewPromptStateTest {
             initialState,
             reduceCustomReviewPromptActions(
                 initialState,
-                CustomReviewPromptAction.DismissRequested,
-            ),
-        )
-        assertEquals(
-            initialState,
-            reduceCustomReviewPromptActions(
-                initialState,
                 CustomReviewPromptAction.RateButtonClicked,
             ),
         )
@@ -55,6 +48,20 @@ class CustomReviewPromptStateTest {
             reduceCustomReviewPromptActions(
                 initialState,
                 CustomReviewPromptAction.LeaveFeedbackButtonClicked,
+            ),
+        )
+        assertEquals(
+            initialState,
+            reduceCustomReviewPromptActions(
+                initialState,
+                CustomReviewPromptAction.Displayed,
+            ),
+        )
+        assertEquals(
+            initialState,
+            reduceCustomReviewPromptActions(
+                initialState,
+                CustomReviewPromptAction.Dismissed,
             ),
         )
     }

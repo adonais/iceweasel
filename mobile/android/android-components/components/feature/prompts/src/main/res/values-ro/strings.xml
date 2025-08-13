@@ -50,6 +50,8 @@
   <string name="mozac_feature_prompts_allow">Permite</string>
   <!-- Text of a negative button in dialog requesting to open a new window. -->
   <string name="mozac_feature_prompts_deny">Refuză</string>
+  <!-- Text of the title of a dialog when a page is requesting to open a new window. -->
+  <string name="mozac_feature_prompts_popup_dialog_title">Permiți deschiderea acestui site?</string>
   <!-- Title of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
   <string name="mozac_feature_prompt_before_unload_dialog_title">Ești sigur(ă)?</string>
   <!-- Body text of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
@@ -97,11 +99,13 @@
   <!-- Content description for the suggest strong password prompt to allow users to fill a form with a suggested strong password -->
   <string name="mozac_feature_prompts_suggest_strong_password_content_description">Sugerează o parolă puternică</string>
   <!-- Header for the suggest strong password prompt to allow users to fill a form with a suggested strong password -->
-  <string name="mozac_feature_prompts_suggest_strong_password_2">Utilizează o parolă puternică</string>
+  <string name="mozac_feature_prompts_suggest_strong_password_2">Folosește o parolă puternică</string>
   <!-- Title for using the suggest strong password confirmation dialog. %1$s will be replaced with the generated password -->
-  <string name="mozac_feature_prompts_suggest_strong_password_message">Utilizează o parolă puternică: %1$s</string>
+  <string name="mozac_feature_prompts_suggest_strong_password_message">Folosește o parolă puternică: %1$s</string>
   <!-- Title for using the suggest strong password confirmation dialog -->
-  <string name="mozac_feature_prompts_suggest_strong_password_title">Utilizează o parolă puternică?</string>
+  <string name="mozac_feature_prompts_suggest_strong_password_title">Folosești o parolă puternică?</string>
+  <!-- Content description for the suggest strong password confirmation dialog -->
+  <string name="mozac_feature_prompts_suggest_strong_password_description_3">Protejează-ți contul folosind o parolă puternică, generată aleatoriu. Aceasta va fi salvată în contul tău pentru utilizare ulterioară.</string>
   <!-- Pressing this will use the suggested strong password -->
   <string name="mozac_feature_prompts_suggest_strong_password_use_password">Folosește parola</string>
   <!-- Pressing this will dismiss the suggested strong password dialog -->
@@ -110,6 +114,8 @@
   <string name="mozac_feature_prompts_suggest_strong_password_saved_snackbar_title" tools:ignore="UnusedResources" moz:removedIn="142">Parola salvată</string>
   <!-- Title for showing the suggest strong password updated confirmation snackbar -->
   <string name="mozac_feature_prompts_suggest_strong_password_updated_snackbar_title">Parolă actualizată</string>
+  <!-- Title for showing the username updated confirmation snackbar -->
+  <string name="mozac_feature_prompt_login_snackbar_username_updated" tools:ignore="UnusedResources" moz:removedIn="142">Nume de utilizator actualizat</string>
   <!-- Strings shown in a dialog that appear when users try to refresh a certain kind of webpages -->
   <string name="mozac_feature_prompt_repost_title">Retrimite date acestui site?</string>
   <string name="mozac_feature_prompt_repost_message">Actualizarea acestei pagini ar putea duplica acțiunile recente, cum ar fi trimiterea unei plăți sau postarea unui comentariu de două ori.</string>
@@ -117,6 +123,14 @@
   <string name="mozac_feature_prompt_repost_positive_button_text">Retrimite datele</string>
   <!-- Pressing this will dismiss the dialog and not refresh the webpage -->
   <string name="mozac_feature_prompt_repost_negative_button_text">Anulează</string>
+  <!-- Strings show in a dialog that appear when user confirm folder upload -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_title">Încarci fișiere?</string>
+  <!-- Prompt message displayed when user selects a specific folder. %1$s is a folder / directory name. -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_message">Asigură-te că ai încredere în acest site înainte de a încărca fișiere de pe „%1$s”.</string>
+  <!-- Pressing this will dismiss the dialog and allow to upload folder -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_positive_button_text">Încarcă</string>
+  <!-- Pressing this will dismiss the dialog and disallow to upload folder -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_negative_button_text">Anulează</string>
   <!--
     Credit Card Autofill
 
@@ -133,6 +147,36 @@
   <string name="mozac_feature_prompts_save_credit_card_prompt_title">Salvează securizat acest card?</string>
   <!-- Text for the title of an update credit card dialog. -->
   <string name="mozac_feature_prompts_update_credit_card_prompt_title">Actualizează data de expirare a cardului?</string>
+  <!-- Subtitle text displayed under the title of the saved card dialog. %s is the name of the app (for example "Firefox"). -->
+  <string name="mozac_feature_prompts_save_credit_card_prompt_body_2">%s criptează numărul cardului tău. Codul tău de securitate nu va fi salvat.</string>
+  <!--
+    Address Autofill
+
+    Header for the select address prompt to allow users to fill a form with a saved address.
+  -->
+  <string name="mozac_feature_prompts_select_address_2">Selectează adresa</string>
+  <!-- Content description for expanding the saved addresses options in the select address prompt. -->
+  <string name="mozac_feature_prompts_expand_address_content_description_2">Extinde adresele salvate</string>
+  <!-- Content description for collapsing the saved address options in the select address prompt. -->
+  <string name="mozac_feature_prompts_collapse_address_content_description_2">Restrânge adresele salvate</string>
   <!-- Text for the manage addresses button. -->
   <string name="mozac_feature_prompts_manage_address">Gestionează adrese</string>
+  <!--
+    Federated Credential Management prompts
+
+    Content description for the Account picture in the Select Account FedCM prompt
+  -->
+  <string name="mozac_feature_prompts_account_picture">Imaginea contului</string>
+  <!-- Title of the Identity Credential provider dialog chooser. -->
+  <string name="mozac_feature_prompts_identity_credentials_choose_provider">Alege un furnizor de autentificare</string>
+  <!-- Title of an account picker dialog for identity credentials. The %1$s will be replaced with the name of the provider -->
+  <string name="mozac_feature_prompts_identity_credentials_choose_account_for_provider">Conectează-te cu un cont %1$s</string>
+  <!-- Title of the Identity Credential privacy policy dialog title. The %1$s will be replaced with the name of the provider. -->
+  <string name="mozac_feature_prompts_identity_credentials_privacy_policy_title">Folosește %1$s ca furnizor de autentificare</string>
+  <!-- Title of the Identity Credential privacy policy dialog description. The %1$s will be replaced with the name of the provider, %2$s will be replaced with the account, %3$s will be replaced with the privacy policy url and  %4$s will be replaced with the terms of service. -->
+  <string name="mozac_feature_prompts_identity_credentials_privacy_policy_description" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[Autentificarea în %1$s cu un cont %2$s face obiectul <a href=\"%3$s\">Politicii lor de confidențialitate</a> și <a href=\"%4$s\">Condițiilor lor de utilizare a serviciilor</a>]]></string>
+  <!-- Text for the positive button of the Identity Credential dialogs. -->
+  <string name="mozac_feature_prompts_identity_credentials_continue">Continuă</string>
+  <!-- Text for the cancel button of the Identity Credential dialogs. -->
+  <string name="mozac_feature_prompts_identity_credentials_cancel">Anulează</string>
 </resources>

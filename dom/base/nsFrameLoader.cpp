@@ -91,6 +91,7 @@
 #include "mozilla/dom/InProcessChild.h"
 #include "mozilla/dom/MozFrameLoaderOwnerBinding.h"
 #include "mozilla/dom/PBrowser.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/SessionStoreChild.h"
 #include "mozilla/dom/SessionStoreParent.h"
@@ -509,16 +510,16 @@ void nsFrameLoader::LoadFrame(bool aOriginalSrc,
 
   nsAutoString src;
   nsCOMPtr<nsIPrincipal> principal;
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  nsCOMPtr<nsIPolicyContainer> policyContainer;
 
   bool isSrcdoc = mOwnerContent->IsHTMLElement(nsGkAtoms::iframe) &&
                   mOwnerContent->HasAttr(nsGkAtoms::srcdoc);
   if (isSrcdoc) {
     src.AssignLiteral("about:srcdoc");
     principal = mOwnerContent->NodePrincipal();
-    csp = mOwnerContent->GetCsp();
+    policyContainer = mOwnerContent->GetPolicyContainer();
   } else {
-    GetURL(src, getter_AddRefs(principal), getter_AddRefs(csp));
+    GetURL(src, getter_AddRefs(principal), getter_AddRefs(policyContainer));
 
     src.Trim(" \t\n\r");
 
@@ -533,7 +534,7 @@ void nsFrameLoader::LoadFrame(bool aOriginalSrc,
       }
       src.AssignLiteral("about:blank");
       principal = mOwnerContent->NodePrincipal();
-      csp = mOwnerContent->GetCsp();
+      policyContainer = mOwnerContent->GetPolicyContainer();
     }
   }
 
@@ -558,7 +559,8 @@ void nsFrameLoader::LoadFrame(bool aOriginalSrc,
   }
 
   if (NS_SUCCEEDED(rv)) {
-    rv = LoadURI(uri, principal, csp, aOriginalSrc, aShouldCheckForRecursion);
+    rv = LoadURI(uri, principal, policyContainer, aOriginalSrc,
+                 aShouldCheckForRecursion);
   }
 
   if (NS_FAILED(rv)) {
@@ -589,7 +591,7 @@ void nsFrameLoader::FireErrorEvent() {
 
 nsresult nsFrameLoader::LoadURI(nsIURI* aURI,
                                 nsIPrincipal* aTriggeringPrincipal,
-                                nsIContentSecurityPolicy* aCsp,
+                                nsIPolicyContainer* aPolicyContainer,
                                 bool aOriginalSrc,
                                 bool aShouldCheckForRecursion) {
   if (!aURI) return NS_ERROR_INVALID_POINTER;
@@ -609,12 +611,12 @@ nsresult nsFrameLoader::LoadURI(nsIURI* aURI,
 
   mURIToLoad = aURI;
   mTriggeringPrincipal = aTriggeringPrincipal;
-  mCsp = aCsp;
+  mPolicyContainer = aPolicyContainer;
   rv = doc->InitializeFrameLoader(this);
   if (NS_FAILED(rv)) {
     mURIToLoad = nullptr;
     mTriggeringPrincipal = nullptr;
-    mCsp = nullptr;
+    mPolicyContainer = nullptr;
   }
   return rv;
 }
@@ -636,13 +638,13 @@ void nsFrameLoader::ResumeLoad(uint64_t aPendingSwitchID) {
   mURIToLoad = nullptr;
   mPendingSwitchID = aPendingSwitchID;
   mTriggeringPrincipal = mOwnerContent->NodePrincipal();
-  mCsp = mOwnerContent->GetCsp();
+  mPolicyContainer = mOwnerContent->GetPolicyContainer();
 
   nsresult rv = doc->InitializeFrameLoader(this);
   if (NS_FAILED(rv)) {
     mPendingSwitchID = 0;
     mTriggeringPrincipal = nullptr;
-    mCsp = nullptr;
+    mPolicyContainer = nullptr;
 
     FireErrorEvent();
   }
@@ -678,16 +680,17 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
       loadState->SetTriggeringPrincipal(mOwnerContent->NodePrincipal());
     }
 
-    // If we have an explicit CSP, we set it. If not, we only query it from
-    // the document in case there was no explicit triggeringPrincipal.
+    // If we have an explicit policyContainer, we set it. If not, we only query
+    // it from the document in case there was no explicit triggeringPrincipal.
     // Otherwise it's possible that the original triggeringPrincipal did not
-    // have a CSP which causes the CSP on the Principal and explicit CSP
-    // to be out of sync.
-    if (mCsp) {
-      loadState->SetCsp(mCsp);
+    // have a policyContainer which causes the policyContainer on the Principal
+    // and explicit policyContainer to be out of sync.
+    if (mPolicyContainer) {
+      loadState->SetPolicyContainer(mPolicyContainer);
     } else if (!mTriggeringPrincipal) {
-      nsCOMPtr<nsIContentSecurityPolicy> csp = mOwnerContent->GetCsp();
-      loadState->SetCsp(csp);
+      nsCOMPtr<nsIPolicyContainer> policyContainer =
+          mOwnerContent->GetPolicyContainer();
+      loadState->SetPolicyContainer(policyContainer);
     }
 
     nsAutoString srcdoc;
@@ -2315,21 +2318,22 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   return NS_OK;
 }
 
-void nsFrameLoader::GetURL(nsString& aURI, nsIPrincipal** aTriggeringPrincipal,
-                           nsIContentSecurityPolicy** aCsp) {
-  aURI.Truncate();
+void nsFrameLoader::GetURL(nsString& aURL, nsIPrincipal** aTriggeringPrincipal,
+                           nsIPolicyContainer** aPolicyContainer) {
+  aURL.Truncate();
   // Within this function we default to using the NodePrincipal as the
   // triggeringPrincipal and the CSP of the document.
   // Expanded Principals however override the CSP of the document, hence
   // if frame->GetSrcTriggeringPrincipal() returns a valid principal, we
   // have to query the CSP from that Principal.
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = mOwnerContent->NodePrincipal();
-  nsCOMPtr<nsIContentSecurityPolicy> csp = mOwnerContent->GetCsp();
+  nsCOMPtr<nsIPolicyContainer> policyContainer =
+      mOwnerContent->GetPolicyContainer();
 
   if (mOwnerContent->IsHTMLElement(nsGkAtoms::object)) {
-    mOwnerContent->GetAttr(nsGkAtoms::data, aURI);
+    mOwnerContent->GetAttr(nsGkAtoms::data, aURL);
   } else {
-    mOwnerContent->GetAttr(nsGkAtoms::src, aURI);
+    mOwnerContent->GetAttr(nsGkAtoms::src, aURL);
     if (RefPtr<nsGenericHTMLFrameElement> frame =
             do_QueryObject(mOwnerContent)) {
       nsCOMPtr<nsIPrincipal> srcPrincipal = frame->GetSrcTriggeringPrincipal();
@@ -2338,13 +2342,19 @@ void nsFrameLoader::GetURL(nsString& aURI, nsIPrincipal** aTriggeringPrincipal,
         nsCOMPtr<nsIExpandedPrincipal> ep =
             do_QueryInterface(triggeringPrincipal);
         if (ep) {
-          csp = ep->GetCsp();
+          // Bug 1548468: Move CSP off ExpandedPrincipal
+          RefPtr<PolicyContainer> addonPolicyContainer;
+          if (nsCOMPtr<nsIContentSecurityPolicy> addonCSP = ep->GetCsp()) {
+            addonPolicyContainer = new PolicyContainer();
+            addonPolicyContainer->SetCSP(addonCSP);
+          }
+          policyContainer = addonPolicyContainer.forget();
         }
       }
     }
   }
   triggeringPrincipal.forget(aTriggeringPrincipal);
-  csp.forget(aCsp);
+  policyContainer.forget(aPolicyContainer);
 }
 
 nsresult nsFrameLoader::CheckForRecursiveLoad(nsIURI* aURI) {

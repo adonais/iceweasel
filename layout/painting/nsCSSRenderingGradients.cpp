@@ -10,34 +10,31 @@
 
 #include <tuple>
 
+#include "Units.h"
 #include "gfx2DGlue.h"
+#include "gfxContext.h"
+#include "gfxGradientCache.h"
+#include "gfxUtils.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/Helpers.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/ProfilerLabels.h"
-
-#include "nsLayoutUtils.h"
-#include "nsStyleConsts.h"
-#include "nsPresContext.h"
-#include "nsPoint.h"
-#include "nsRect.h"
-#include "nsCSSColorUtils.h"
-#include "gfxContext.h"
-#include "nsStyleStructInlines.h"
-#include "nsCSSProps.h"
-#include "gfxUtils.h"
-#include "gfxGradientCache.h"
-
+#include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/Helpers.h"
 #include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
-#include "mozilla/webrender/WebRenderTypes.h"
 #include "mozilla/webrender/WebRenderAPI.h"
-#include "Units.h"
-
-#include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/webrender/WebRenderTypes.h"
+#include "nsCSSColorUtils.h"
+#include "nsCSSProps.h"
+#include "nsLayoutUtils.h"
+#include "nsPoint.h"
+#include "nsPresContext.h"
+#include "nsRect.h"
+#include "nsStyleConsts.h"
+#include "nsStyleStructInlines.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

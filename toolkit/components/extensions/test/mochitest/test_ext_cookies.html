@@ -258,7 +258,7 @@ add_task(async function test_cookies() {
     browser.test.assertEq(true, cookie.secure, "secure cookie set");
 
     cookie = await browser.cookies.get({url: TEST_SECURE_URL, name: "name1"});
-    browser.test.assertEq(true, cookie.session, "got secure cookie");
+    browser.test.assertEq(true, cookie.session, "got session cookie");
 
     cookies = await browser.cookies.getAll({secure: true});
     browser.test.assertEq(1, cookies.length, "one secure cookie found");
@@ -301,10 +301,21 @@ add_task(async function test_cookies() {
     details = await browser.cookies.remove({url: TEST_URL, name: "name1"});
     assertExpected({url: TEST_URL, name: "name1", storeId: STORE_ID, firstPartyDomain: "", partitionKey: null}, details);
 
-    cookie = await browser.cookies.set({url: TEST_URL});
-    browser.test.assertEq("", cookie.name, "default name set");
+    cookie = await browser.cookies.set({name: "dummy", url: TEST_URL});
+    browser.test.assertEq("dummy", cookie.name, "dummy name set");
     browser.test.assertEq("", cookie.value, "default value set");
     browser.test.assertEq(true, cookie.session, "no expiry date created session cookie");
+
+    details = await browser.cookies.remove({url: TEST_URL, name: "dummy"});
+    assertExpected({url: TEST_URL, name: "dummy", storeId: STORE_ID, firstPartyDomain: "", partitionKey: null}, details);
+
+    cookie = await browser.cookies.set({value: "dummy", url: TEST_URL});
+    browser.test.assertEq("", cookie.name, "default name set");
+    browser.test.assertEq("dummy", cookie.value, "dummy value set");
+    browser.test.assertEq(true, cookie.session, "no expiry date created session cookie");
+
+    details = await browser.cookies.remove({url: TEST_URL, name: ""});
+    assertExpected({url: TEST_URL, name: "", storeId: STORE_ID, firstPartyDomain: "", partitionKey: null}, details);
 
     // TODO bug 1372178: Opening private windows/tabs is not supported on Android
     if (browser.windows) {

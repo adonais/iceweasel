@@ -5,6 +5,7 @@
 package org.mozilla.fenix.components.appstate
 
 import io.mockk.mockk
+import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarkNodeType
@@ -12,6 +13,7 @@ import mozilla.components.lib.crash.Crash.NativeCodeCrash
 import mozilla.components.support.test.ext.joinBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.components.AppStore
@@ -19,7 +21,10 @@ import org.mozilla.fenix.components.appstate.AppAction.AddNonFatalCrash
 import org.mozilla.fenix.components.appstate.AppAction.RemoveAllNonFatalCrashes
 import org.mozilla.fenix.components.appstate.AppAction.RemoveNonFatalCrash
 import org.mozilla.fenix.components.appstate.AppAction.UpdateInactiveExpanded
+import org.mozilla.fenix.components.appstate.search.SearchState
+import org.mozilla.fenix.components.appstate.search.SelectedSearchEngine
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
+import org.mozilla.fenix.components.metrics.MetricsUtils
 
 class AppStoreReducerTest {
     @Test
@@ -81,24 +86,59 @@ class AppStoreReducerTest {
     }
 
     @Test
-    fun `WHEN UpdateSearchDialogVisibility is called THEN isSearchDialogVisible gets updated`() {
+    fun `WHEN a new search is started THEN update state to reflect it`() {
         val initialState = AppState()
 
-        assertFalse(initialState.isSearchDialogVisible)
+        assertFalse(initialState.searchState.isSearchActive)
 
         var updatedState = AppStoreReducer.reduce(
             initialState,
-            AppAction.UpdateSearchDialogVisibility(isVisible = true),
+            AppAction.SearchAction.SearchStarted(
+                tabId = "test",
+                source = MetricsUtils.Source.ACTION,
+            ),
         )
 
-        assertTrue(updatedState.isSearchDialogVisible)
+        assertTrue(updatedState.searchState.isSearchActive)
+        assertEquals(updatedState.searchState.sourceTabId, "test")
+        assertEquals(updatedState.searchState.searchAccessPoint, MetricsUtils.Source.ACTION)
+    }
 
-        updatedState = AppStoreReducer.reduce(
+    @Test
+    fun `WHEN search is aborted THEN reset the search related state`() {
+        val initialState = AppState(
+            searchState = SearchState.EMPTY.copy(
+                selectedSearchEngine = mockk(),
+            ),
+        )
+
+        val updatedState = AppStoreReducer.reduce(
             initialState,
-            AppAction.UpdateSearchDialogVisibility(isVisible = false),
+            AppAction.SearchAction.SearchEnded,
         )
 
-        assertFalse(updatedState.isSearchDialogVisible)
+        assertFalse(updatedState.searchState.isSearchActive)
+        assertNull(updatedState.searchState.selectedSearchEngine)
+        assertNull(updatedState.searchState.sourceTabId)
+        assertEquals(updatedState.searchState.searchAccessPoint, MetricsUtils.Source.NONE)
+    }
+
+    @Test
+    fun `WHEN a new search engine is selected THEN update state to reflect it`() {
+        val initialState = AppState()
+
+        assertNull(initialState.searchState.selectedSearchEngine)
+
+        val newSearchEngineSelection: SearchEngine = mockk()
+        val updatedState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SearchAction.SearchEngineSelected(newSearchEngineSelection, true),
+        )
+
+        assertEquals(
+            SelectedSearchEngine(newSearchEngineSelection, true),
+            updatedState.searchState.selectedSearchEngine,
+        )
     }
 
     @Test

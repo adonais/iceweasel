@@ -40,63 +40,13 @@ async protocol PWebGPU
   manager PCanvasManager;
 
 parent:
-  async DeviceAction(RawId selfId, ByteBuf buf);
-  async DeviceActionWithAck(RawId selfId, ByteBuf buf) returns (bool dummy);
-  async TextureAction(RawId selfId, RawId aDeviceId, ByteBuf buf);
-  async CommandEncoderAction(RawId selfId, RawId aDeviceId, ByteBuf buf);
-  async RenderPass(RawId selfId, RawId aDeviceId, ByteBuf buf);
-  async ComputePass(RawId selfId, RawId aDeviceId, ByteBuf buf);
-
-  async DeviceCreateBuffer(RawId deviceId, RawId bufferId, GPUBufferDescriptor desc, MutableSharedMemoryHandle shm);
-
-  async InstanceRequestAdapter(GPURequestAdapterOptions options, RawId aAdapterId) returns (ByteBuf byteBuf);
-  async AdapterRequestDevice(
-      RawId adapterId,
-      ByteBuf descriptorBuf,
-      RawId newDeviceId,
-      RawId newQueueId
-  ) returns (bool success);
-  async AdapterDrop(RawId selfId);
-  // TODO: We want to return an array of compilation messages.
-  async DeviceCreateShaderModule(RawId selfId, RawId bufferId, nsString label, nsCString code) returns (WebGPUCompilationMessage[] messages);
-  async BufferMap(RawId deviceId, RawId bufferId, uint32_t aMode, uint64_t offset, uint64_t size) returns (BufferMapResult result);
-  async BufferUnmap(RawId deviceId, RawId bufferId, bool flush);
-  async BufferDestroy(RawId selfId);
-  async BufferDrop(RawId selfId);
-  async TextureDestroy(RawId selfId, RawId deviceId);
-  async TextureDrop(RawId selfId);
-  async TextureViewDrop(RawId selfId);
-  async SamplerDrop(RawId selfId);
-  async QuerySetDrop(RawId selfId);
-  async DeviceDestroy(RawId selfId);
-  async DeviceDrop(RawId selfId);
-
-  async CommandEncoderFinish(RawId selfId, RawId deviceId, GPUCommandBufferDescriptor desc);
-  async CommandEncoderDrop(RawId selfId);
-  async RenderBundleDrop(RawId selfId);
-  async QueueSubmit(RawId selfId, RawId aDeviceId, RawId[] commandBuffers, RawId[] textureIds);
-  async QueueOnSubmittedWorkDone(RawId selfId) returns (void_t ok);
-  // In the case of a zero-sized write action, `shmem` will be an invalid handle.
-  async QueueWriteAction(RawId selfId, RawId aDeviceId, ByteBuf buf, MutableSharedMemoryHandle shmem);
-
-  async BindGroupLayoutDrop(RawId selfId);
-  async PipelineLayoutDrop(RawId selfId);
-  async BindGroupDrop(RawId selfId);
-  async ShaderModuleDrop(RawId selfId);
-  async ComputePipelineDrop(RawId selfId);
-  async RenderPipelineDrop(RawId selfId);
-  async ImplicitLayoutDrop(RawId implicitPlId, RawId[] implicitBglIds);
-  async DeviceCreateSwapChain(RawId selfId, RawId queueId, RGBDescriptor desc, RawId[] bufferIds, RemoteTextureOwnerId ownerId, bool useExternalTextureInSwapChain);
-  async SwapChainPresent(RawId textureId, RawId commandEncoderId, RemoteTextureId remoteTextureId, RemoteTextureOwnerId remoteTextureOwnerId);
-  async SwapChainDrop(RemoteTextureOwnerId ownerId, RemoteTextureTxnType txnType, RemoteTextureTxnId txnId);
-
-  async DevicePushErrorScope(RawId selfId, GPUErrorFilter aFilter);
-  async DevicePopErrorScope(RawId selfId) returns (PopErrorScopeResult result);
-  async ReportError(RawId selfId, GPUErrorFilter aType, nsCString message);
+  async Messages(uint32_t nrOfMessages, ByteBuf serializedMessages, ByteBuf[] dataBuffers, MutableSharedMemoryHandle[] shmems);
 
 child:
-  async UncapturedError(RawId? aDeviceId, nsCString message);
-  async DeviceLost(RawId aDeviceId, uint8_t? reason, nsCString message);
+  async ServerMessage(ByteBuf buf);
+
+  async UncapturedError(RawId aDeviceId, nsCString message);
+  async DeviceLost(RawId aDeviceId, uint8_t reason, nsCString message);
   async __delete__();
 };
 

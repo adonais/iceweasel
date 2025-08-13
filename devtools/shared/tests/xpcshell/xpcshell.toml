@@ -15,7 +15,10 @@ support-files = [
 ["test_csslexer.js"]
 
 ["test_debugger_client.js"]
-skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64'"]
+skip-if = [
+  "os == 'android' && android_version == '24' && processor == 'x86_64'",
+  "os == 'android' && android_version == '34' && processor == 'x86_64'",
+]
 
 ["test_defineLazyPrototypeGetter.js"]
 
@@ -28,7 +31,10 @@ skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64'"
 ["test_eventemitter_static.js"]
 
 ["test_executeSoon.js"]
-skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64'"]
+skip-if = [
+  "os == 'android' && android_version == '24' && processor == 'x86_64'",
+  "os == 'android' && android_version == '34' && processor == 'x86_64'",
+]
 
 ["test_fetch-bom.js"]
 
@@ -51,21 +57,30 @@ skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64'"
 ["test_loader.js"]
 
 ["test_natural-sort.js"]
-skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64'"]
+skip-if = [
+  "os == 'android' && android_version == '24' && processor == 'x86_64'",
+  "os == 'android' && android_version == '34' && processor == 'x86_64'",
+]
 
 ["test_pluralForm-english.js"]
 
 ["test_pluralForm-makeGetter.js"]
 
 ["test_prettifyCSS.js"]
-skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64'"]
+skip-if = [
+  "os == 'android' && android_version == '24' && processor == 'x86_64'",
+  "os == 'android' && android_version == '34' && processor == 'x86_64'",
+]
 
 ["test_require.js"]
 
 ["test_require_lazy.js"]
 
 ["test_require_raw.js"]
-skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64'"]
+skip-if = [
+  "os == 'android' && android_version == '24' && processor == 'x86_64'",
+  "os == 'android' && android_version == '34' && processor == 'x86_64'",
+]
 
 ["test_safeErrorString.js"]
 

@@ -6,7 +6,7 @@ task-defaults:
     description: "cbindgen toolchain build"
     attributes:
         local-toolchain: true
-    worker-type: b-linux-gcp
+    worker-type: b-linux-amd
     worker:
         max-run-time: 3600
     run:

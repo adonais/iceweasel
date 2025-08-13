@@ -4,27 +4,26 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "nsTableRowGroupFrame.h"
 
+#include <algorithm>
+
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_layout.h"
-
 #include "nsCOMPtr.h"
-#include "nsTableRowFrame.h"
-#include "nsTableFrame.h"
-#include "nsTableCellFrame.h"
-#include "nsPresContext.h"
-#include "nsStyleConsts.h"
+#include "nsCSSFrameConstructor.h"
+#include "nsCSSRendering.h"
+#include "nsCellMap.h"  //table cell navigation
+#include "nsDisplayList.h"
+#include "nsGkAtoms.h"
+#include "nsHTMLParts.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
-#include "nsGkAtoms.h"
-#include "nsCSSRendering.h"
-#include "nsHTMLParts.h"
-#include "nsCSSFrameConstructor.h"
-#include "nsDisplayList.h"
-
-#include "nsCellMap.h"  //table cell navigation
-#include <algorithm>
+#include "nsPresContext.h"
+#include "nsStyleConsts.h"
+#include "nsTableCellFrame.h"
+#include "nsTableFrame.h"
+#include "nsTableRowFrame.h"
 
 using namespace mozilla;
 using namespace mozilla::layout;
@@ -401,7 +400,7 @@ void nsTableRowGroupFrame::ReflowChildren(
           // the overflow area may have changed inflate the overflow area
           const nsStylePosition* stylePos = StylePosition();
           if (tableFrame->IsAutoBSize(wm) &&
-              !stylePos->BSize(wm, StyleDisplay()->mPosition)
+              !stylePos->BSize(wm, AnchorPosResolutionParams::From(this))
                    ->ConvertsToLength()) {
             // Because other cells in the row may need to be aligned
             // differently, repaint the entire row

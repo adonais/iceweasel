@@ -1,0 +1,16 @@
+<style>
+    SLOT {
+        display: list-item block;
+    }
+</style>
+<script>
+  document.addEventListener("DOMContentLoaded", async () => {
+    const selection = document.getSelection()
+    try {
+      selection.extend(document.getElementById("id_0"), document.getElementById("id_0").childNodes.length)
+    } catch (e) {}
+    setTimeout("location.reload()", 500)
+  })
+</script>
+<slot contenteditable>
+  <slot id="id_0" autofocus tabindex="-32768">

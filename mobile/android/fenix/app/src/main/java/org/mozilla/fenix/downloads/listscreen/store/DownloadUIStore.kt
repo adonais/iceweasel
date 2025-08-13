@@ -42,7 +42,11 @@ private fun downloadStateReducer(
 
         is DownloadUIAction.AddAllItemsForRemoval -> {
             state.copy(
-                mode = Mode.Editing(state.itemsMatchingFilters.toSet()),
+                mode = Mode.Editing(
+                    selectedItems = state.itemsMatchingFilters
+                        .filter { it.status == FileItem.Status.Completed }
+                        .toSet(),
+                ),
             )
         }
 

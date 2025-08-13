@@ -1,8 +1,9 @@
-// Copyright 2021 The Chromium Authors. All rights reserved.
+// Copyright 2021 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// This file is copied from //base/immediate_crash.h.
+// This file has been copied from //base/immediate_crash.h.
+// TODO(crbug.com/40279749): Avoid code duplication / reuse code.
 
 #ifndef BUILD_RUST_STD_IMMEDIATE_CRASH_H_
 #define BUILD_RUST_STD_IMMEDIATE_CRASH_H_
@@ -43,7 +44,7 @@
 
 #if defined(COMPILER_GCC)
 
-#if defined(OS_NACL)
+#if BUILDFLAG(IS_NACL)
 
 // Crash report accuracy is not guaranteed on NaCl.
 #define TRAP_SEQUENCE1_() __builtin_trap()
@@ -51,19 +52,19 @@
 
 #elif defined(ARCH_CPU_X86_FAMILY)
 
-// TODO(https://crbug.com/958675): In theory, it should be possible to use just
+// TODO(crbug.com/40625592): In theory, it should be possible to use just
 // int3. However, there are a number of crashes with SIGILL as the exception
 // code, so it seems likely that there's a signal handler that allows execution
 // to continue after SIGTRAP.
 #define TRAP_SEQUENCE1_() asm volatile("int3")
 
-#if defined(OS_APPLE)
+#if BUILDFLAG(IS_APPLE)
 // Intentionally empty: __builtin_unreachable() is always part of the sequence
 // (see IMMEDIATE_CRASH below) and already emits a ud2 on Mac.
 #define TRAP_SEQUENCE2_() asm volatile("")
 #else
 #define TRAP_SEQUENCE2_() asm volatile("ud2")
-#endif  // defined(OS_APPLE)
+#endif  // BUILDFLAG(IS_APPLE)
 
 #elif defined(ARCH_CPU_ARMEL)
 
@@ -71,14 +72,14 @@
 // as a 32 bit userspace app on arm64. There doesn't seem to be any way to
 // cause a SIGTRAP from userspace without using a syscall (which would be a
 // problem for sandboxing).
-// TODO(https://crbug.com/958675): Remove bkpt from this sequence.
+// TODO(crbug.com/40625592): Remove bkpt from this sequence.
 #define TRAP_SEQUENCE1_() asm volatile("bkpt #0")
 #define TRAP_SEQUENCE2_() asm volatile("udf #0")
 
 #elif defined(ARCH_CPU_ARM64)
 
 // This will always generate a SIGTRAP on arm64.
-// TODO(https://crbug.com/958675): Remove brk from this sequence.
+// TODO(crbug.com/40625592): Remove brk from this sequence.
 #define TRAP_SEQUENCE1_() asm volatile("brk #0")
 #define TRAP_SEQUENCE2_() asm volatile("hlt #0")
 
@@ -136,7 +137,7 @@
 // calling function, but to this anonymous lambda. This is still useful as the
 // full name of the lambda will typically include the name of the function that
 // calls CHECK() and the debugger will still break at the right line of code.
-#if !defined(COMPILER_GCC)
+#if !defined(COMPILER_GCC) || defined(__clang__)
 
 #define WRAPPED_TRAP_SEQUENCE_() TRAP_SEQUENCE_()
 
@@ -147,7 +148,7 @@
     [] { TRAP_SEQUENCE_(); }();  \
   } while (false)
 
-#endif  // !defined(COMPILER_GCC)
+#endif  // !defined(COMPILER_GCC) || defined(__clang__)
 
 #if defined(__clang__) || defined(COMPILER_GCC)
 

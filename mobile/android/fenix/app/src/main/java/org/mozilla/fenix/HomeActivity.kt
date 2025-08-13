@@ -36,6 +36,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.text.layoutDirection
+import androidx.core.view.doOnLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
@@ -53,7 +54,6 @@ import mozilla.components.browser.state.action.MediaSessionAction
 import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
-import mozilla.components.browser.state.selector.privateTabs
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.WebExtensionState
 import mozilla.components.concept.engine.EngineSession
@@ -159,6 +159,7 @@ import org.mozilla.fenix.tabstray.TabsTrayFragment
 import org.mozilla.fenix.theme.DefaultThemeManager
 import org.mozilla.fenix.theme.StatusBarColorManager
 import org.mozilla.fenix.theme.ThemeManager
+import org.mozilla.fenix.utils.AccessibilityUtils.announcePrivateModeForAccessibility
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.changeAppLauncherIcon
 import java.lang.ref.WeakReference
@@ -195,6 +196,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             store = components.core.store,
             context = this@HomeActivity,
             fragmentManager = supportFragmentManager,
+            navController = navHost.navController,
             onLinkClicked = { url, shouldOpenInBrowser ->
                 if (shouldOpenInBrowser) {
                     openToBrowserAndLoad(
@@ -214,8 +216,16 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         )
     }
 
+    private val aboutHomeBinding by lazy {
+        AboutHomeBinding(
+            browserStore = components.core.store,
+            navController = navHost.navController,
+        )
+    }
+
     private val crashReporterBinding by lazy {
         CrashReporterBinding(
+            context = this,
             store = components.appStore,
             onReporting = ::showCrashReporter,
         )
@@ -318,7 +328,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         // There is disk read violations on some devices such as samsung and pixel for android 9/10
         components.strictMode.resetAfter(StrictMode.allowThreadDiskReads()) {
             // Browsing mode & theme setup should always be called before super.onCreate.
-            setupBrowsingMode(getModeFromIntentOrLastKnown(intent))
+            browsingModeManager = createBrowsingModeManager(intent)
             setupTheme()
 
             super.onCreate(savedInstanceState)
@@ -493,14 +503,11 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             extensionsProcessDisabledForegroundController,
             extensionsProcessDisabledBackgroundController,
             serviceWorkerSupport,
+            aboutHomeBinding,
             crashReporterBinding,
             TopSitesRefresher(
                 settings = settings(),
-                topSitesProvider = if (settings().marsAPIEnabled) {
-                    components.core.marsTopSitesProvider
-                } else {
-                    components.core.contileTopSitesProvider
-                },
+                topSitesProvider = components.core.marsTopSitesProvider,
             ),
             components.privateBrowsingLockFeature,
         )
@@ -525,7 +532,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         components.core.requestInterceptor.setNavigationController(navHost.navController)
 
         supportFragmentManager.registerFragmentLifecycleCallbacks(
-            StatusBarColorManager(themeManager, this),
+            StatusBarColorManager(themeManager, this, settings().isTabStripEnabled),
             true,
         )
 
@@ -545,21 +552,12 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
                 components.core.pocketStoriesService.startPeriodicContentRecommendationsRefresh()
             }
 
-            if (settings().marsAPIEnabled && !settings().hasPocketSponsoredStoriesProfileMigrated) {
+            if (!settings().hasPocketSponsoredStoriesProfileMigrated) {
                 migratePocketSponsoredStoriesProfile(components.core.pocketStoriesService)
             }
 
             if (settings().showPocketSponsoredStories) {
-                if (settings().marsAPIEnabled) {
-                    components.core.pocketStoriesService.startPeriodicSponsoredContentsRefresh()
-                } else {
-                    components.core.pocketStoriesService.startPeriodicSponsoredStoriesRefresh()
-                    // If the secret setting for sponsored stories parameters is set,
-                    // force refresh the sponsored Pocket stories.
-                    if (settings().useCustomConfigurationForSponsoredStories) {
-                        components.core.pocketStoriesService.refreshSponsoredStories()
-                    }
-                }
+                components.core.pocketStoriesService.startPeriodicSponsoredContentsRefresh()
             }
         }
 
@@ -656,6 +654,12 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         breadcrumb(
             message = "onResume()",
         )
+
+        binding.root.doOnLayout {
+            if (browsingModeManager.mode.isPrivate) {
+                it.announcePrivateModeForAccessibility()
+            }
+        }
 
         lifecycleScope.launch(IO) {
             if (settings().checkIfFenixIsDefaultBrowserOnAppResume()) {
@@ -883,8 +887,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
                 CrashReporterIntentProcessor(components.appStore),
             ) + externalSourceIntentProcessors
         val intentHandled =
-            intentProcessors.any { it.process(intent, navHost.navController, this.intent) }
-        browsingModeManager.mode = getModeFromIntentOrLastKnown(intent)
+            intentProcessors.any { it.process(intent, navHost.navController, this.intent, settings()) }
+        browsingModeManager.updateMode(intent)
 
         if (intentHandled) {
             supportFragmentManager
@@ -1102,29 +1106,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     }
 
     /**
-     * External sources such as 3rd party links and shortcuts use this function to enter
-     * private mode directly before the content view is created. Returns the mode set by the intent
-     * otherwise falls back to normal browsing mode.
-     */
-    @VisibleForTesting
-    internal fun getModeFromIntentOrLastKnown(intent: Intent?): BrowsingMode {
-        intent?.toSafeIntent()?.let {
-            if (it.hasExtra(PRIVATE_BROWSING_MODE)) {
-                val startPrivateMode = it.getBooleanExtra(PRIVATE_BROWSING_MODE, false)
-                return BrowsingMode.fromBoolean(isPrivate = startPrivateMode)
-            }
-        }
-
-        if (settings().lastKnownMode.isPrivate &&
-            components.core.store.state.getNormalOrPrivateTabs(private = true).isNotEmpty()
-        ) {
-            return BrowsingMode.Private
-        }
-
-        return BrowsingMode.Normal
-    }
-
-    /**
      * Determines whether the activity should be pushed to be backstack (i.e., 'minimized' to the recents
      * screen) upon starting.
      * @param intent - The intent that started this activity. Is checked for having the 'START_IN_RECENTS_SCREEN'-extra.
@@ -1135,11 +1116,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             return it.getBooleanExtra(START_IN_RECENTS_SCREEN, false)
         }
         return false
-    }
-
-    private fun setupBrowsingMode(mode: BrowsingMode) {
-        settings().lastKnownMode = mode
-        browsingModeManager = createBrowsingModeManager(mode)
     }
 
     private fun setupTheme() {
@@ -1292,21 +1268,21 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         return super.getSystemService(name)
     }
 
-    private fun createBrowsingModeManager(initialMode: BrowsingMode): BrowsingModeManager {
+    private fun createBrowsingModeManager(intent: Intent?): BrowsingModeManager {
         return DefaultBrowsingModeManager(
-            initialMode = initialMode,
+            intent = intent,
+            store = components.core.store,
             settings = components.settings,
-            modeDidChange = { newMode ->
+            onModeChange = { newMode ->
                 updateSecureWindowFlags(newMode)
-                addPrivateHomepageTabIfNecessary(newMode)
-                themeManager.currentTheme = newMode
-            },
-            updateAppStateMode = { newMode ->
+
+                if (::themeManager.isInitialized) {
+                    themeManager.currentTheme = newMode
+                }
+
                 components.appStore.dispatch(AppAction.BrowsingModeManagerModeChanged(mode = newMode))
             },
-        ).also {
-            updateSecureWindowFlags(initialMode)
-        }
+        )
     }
 
     private fun updateSecureWindowFlags(mode: BrowsingMode = browsingModeManager.mode) {
@@ -1314,22 +1290,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             window.addFlags(FLAG_SECURE)
         } else {
             window.clearFlags(FLAG_SECURE)
-        }
-    }
-
-    /**
-     * When switching to private mode, add a private homepage tab if there are
-     * no private tabs available.
-     *
-     * @param mode The new [BrowsingMode] that is being swapped to.
-     */
-    @VisibleForTesting
-    internal fun addPrivateHomepageTabIfNecessary(mode: BrowsingMode) {
-        if (settings().enableHomepageAsNewTab &&
-            mode.isPrivate &&
-            components.core.store.state.privateTabs.isEmpty()
-        ) {
-            components.useCases.fenixBrowserUseCases.addNewHomepageTab(private = true)
         }
     }
 
@@ -1399,6 +1359,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
                 intent,
                 navHost.navController,
                 this.intent,
+                settings(),
             )
         }
     }
@@ -1442,12 +1403,18 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         messaging.onMessageDisplayed(nextMessage, currentBootUniqueIdentifier)
     }
 
-    private fun showCrashReporter() {
+    @VisibleForTesting
+    internal fun showCrashReporter(crashIDs: List<String>?, ctxt: Context) {
         if (!settings().useNewCrashReporterDialog) {
             return
         }
+
         UnsubmittedCrashDialog(
-            dispatcher = { action -> components.appStore.dispatch(AppAction.CrashActionWrapper(action)) },
+            dispatcher = { action ->
+                components.appStore.dispatch(AppAction.CrashActionWrapper(action))
+            },
+            crashIDs = crashIDs,
+            localContext = ctxt,
         ).show(supportFragmentManager, UnsubmittedCrashDialog.TAG)
     }
 

@@ -1,27 +1,79 @@
 From: Michael Froman <mfroman@mozilla.com>
 Date: Mon, 20 Jun 2022 22:34:00 +0000
-Subject: Bug 1775143 - pt12 - (mirror) 0391681090bb r=ng
+Subject: Bug 1775143 - pt17 - account for is_desktop_linux going away and
+ using is_linux r=ng
 
 (skip-generation)
 
-Depends on D149825
+Depends on D149830
 
-Differential Revision: https://phabricator.services.mozilla.com/D149826
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/75a76abe648ad8bdb9ea858a673bf99a4ec9eb20
+Differential Revision: https://phabricator.services.mozilla.com/D149831
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/aad17933ade0176606c4d7b694669bc67f5f92b5
 ---
- vs_toolchain.py | 2 ++
- 1 file changed, 2 insertions(+)
+ config/compiler/BUILD.gn | 2 +-
+ config/linux/gtk/gtk.gni | 2 +-
+ config/ozone.gni         | 4 ++--
+ config/ui.gni            | 2 +-
+ 4 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/vs_toolchain.py b/vs_toolchain.py
-index ecf0971ab..55372ba3a 100755
---- a/vs_toolchain.py
-+++ b/vs_toolchain.py
-@@ -566,6 +566,8 @@ def main():
-   if len(sys.argv) < 2 or sys.argv[1] not in commands:
-     print('Expected one of: %s' % ', '.join(commands), file=sys.stderr)
-     return 1
-+  if sys.argv[1] == 'copy_dlls':
-+    return 0
-   return commands[sys.argv[1]](*sys.argv[2:])
+diff --git a/config/compiler/BUILD.gn b/config/compiler/BUILD.gn
+index 6b36c5c2a..422161013 100644
+--- a/config/compiler/BUILD.gn
++++ b/config/compiler/BUILD.gn
+@@ -2308,7 +2308,7 @@ config("no_rtti") {
+ # (de)allocate memory on a different heap, which would spell trouble if pointers
+ # to heap-allocated memory are passed over shared library boundaries.
+ config("export_dynamic") {
+-  if (is_linux || export_libcxxabi_from_executables) {
++  if (is_linux || is_bsd || export_libcxxabi_from_executables) {
+     ldflags = [ "-rdynamic" ]
+   }
+ }
+diff --git a/config/linux/gtk/gtk.gni b/config/linux/gtk/gtk.gni
+index 9e6131d4c..4f560b290 100644
+--- a/config/linux/gtk/gtk.gni
++++ b/config/linux/gtk/gtk.gni
+@@ -6,7 +6,7 @@ import("//build/config/ui.gni")
  
+ declare_args() {
+   # Whether or not we should use libgtk.
+-  use_gtk = is_linux && !is_castos
++  use_gtk = (is_linux || is_bsd) && !is_castos
  
+   # The (major) version of GTK to build against.  A different version may be
+   # loaded at runtime.
+diff --git a/config/ozone.gni b/config/ozone.gni
+index 9c92cdc02..a74459ca9 100644
+--- a/config/ozone.gni
++++ b/config/ozone.gni
+@@ -8,7 +8,7 @@ import("//build/toolchain/toolchain.gni")
+ declare_args() {
+   # Indicates if Ozone is enabled. Ozone is a low-level library layer for Linux
+   # that does not require X11.
+-  use_ozone = is_chromeos || is_fuchsia || is_linux
++  use_ozone = is_chromeos || is_fuchsia || is_linux || is_bsd
+ }
+ 
+ declare_args() {
+@@ -80,7 +80,7 @@ declare_args() {
+       ozone_platform = "x11"
+       ozone_platform_drm = true
+       ozone_platform_x11 = true
+-    } else if (is_linux) {
++    } else if (is_linux || is_bsd) {
+       ozone_platform = "x11"
+       ozone_platform_wayland = true
+       ozone_platform_x11 = true
+diff --git a/config/ui.gni b/config/ui.gni
+index 2c526a92f..20e446e34 100644
+--- a/config/ui.gni
++++ b/config/ui.gni
+@@ -33,7 +33,7 @@ declare_args() {
+   toolkit_views = is_mac || is_win || is_linux || is_chromeos || is_fuchsia
+ 
+   use_glib =
+-      is_linux && !is_castos &&
++      (is_linux || is_bsd) && !is_castos &&
+       # Avoid the need for glib when Android is building things via secondary
+       # toolchains.
+       target_os != "android"

@@ -6,12 +6,12 @@
 
 #include "mozilla/dom/CSSKeyframesRule.h"
 
+#include <limits>
+
+#include "mozilla/ServoBindings.h"
 #include "mozilla/dom/CSSKeyframesRuleBinding.h"
 #include "mozilla/dom/CSSRuleList.h"
-#include "mozilla/ServoBindings.h"
 #include "nsCOMArray.h"
-
-#include <limits>
 
 namespace mozilla::dom {
 

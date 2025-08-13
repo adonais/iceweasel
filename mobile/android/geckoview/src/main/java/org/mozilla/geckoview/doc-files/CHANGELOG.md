@@ -13,6 +13,25 @@ exclude: true
 
 ⚠️  breaking change and deprecation notices
 
+## v142
+- Added support for data collection permissions to [`WebExtensionController.onOptionalPrompt`][142.1] ([bug 1964999]({{bugzilla}}1964999))
+- ⚠️ Removed deprecated functions that were scheduled for removal in GeckoView 142. ([bug 1963053]({{bugzilla}}1963053))
+- Added `setBounceTrackingProtectionMode`, `getBounceTrackingProtectionMode` to [`ContentBlocking.Settings`][142.2].
+  ([bug 1963445]({{bugzilla}}1963445))
+- Added the list of data collection permission names to [`WebExtension`][142.3] ([bug 1972228]({{bugzilla}}1972228))
+- Added [`@ExperimentalGeckoViewApi`][142.4] to annotate APIs that need special care. Opt in via `@OptIn(markerClass = ExperimentalGeckoViewApi.class)` to accept the risks.
+- ⚠️ [`GeckoPreferenceController`][140.1] is now annotated with `@ExperimentalGeckoViewApi`.
+- Added `setAllowListBaselineTrackingProtection`, `getAllowListBaselineTrackingProtection`, `setAllowListConvenienceTrackingProtection`, `setAllowListConvenienceTrackingProtection` to [`ContentBlocking.Settings`][142.5].
+  ([bug 1970649]({{bugzilla}}1970649))
+- Added support for data collection permissions to [`WebExtensionController.onUpdatePrompt`][142.6] ([bug 1974742]({{bugzilla}}1974742))
+
+[142.1]: {{javadoc_uri}}/WebExtensionController.PromptDelegate.html#onOptionalPrompt(org.mozilla.geckoview.WebExtension,java.lang.String[],java.lang.String[],java.lang.String[])
+[142.2]: {{javadoc_uri}}/ContentBlocking.html
+[142.3]: {{javadoc_uri}}/WebExtension.html
+[142.4]: {{javadoc_uri}}/ExperimentalGeckoViewApi.html
+[142.5]: {{javadoc_uri}}/ContentBlocking.html
+[142.6]: {{javadoc_uri}}/WebExtensionController.PromptDelegate.html#onUpdatePrompt(org.mozilla.geckoview.WebExtension,java.lang.String[],java.lang.String[],java.lang.String[])
+
 ## v141
 - Changed the methods in [`ProfilerController`][141.1] to static.
   ([bug 1955403]({{bugzilla}}1955403))
@@ -27,6 +46,8 @@ exclude: true
 - Added [`WebNotification.actions`][141.14] and a new function signature with `action` to [`WebNotification.click()`][141.15] to indicate action click.
 - Added support for special "technical and interaction" data collection permission ([bug 1964992]({{bugilla}}1964992))
 - Added support for data collection permissions in [`WebExtensionController.addOptionalPermissions`][141.16] and [`WebExtensionController.removeOptionalPermissions`][141.17] ([bug 1964992]({{bugzilla}}1964992))
+- Added [`CrashPullController.Delegate`][141.18] interface, which allows Gecko's `RemoteSettingsCrashPull` module to request that the application uploads a specified subset of user crash dumps.
+
 
 [141.1]: {{javadoc_uri}}/ProfilerController.html
 [141.2]: {{javadoc_uri}}/GeckoRuntime.html#getProfilerController()
@@ -44,6 +65,7 @@ exclude: true
 [141.15]: {{javadoc_uri}}/WebNotification.html#click(java.lang.String)
 [141.16]: {{javadoc_uri}}/WebExtensionController.html#addOptionalPermissions
 [141.17]: {{javadoc_uri}}/WebExtensionController.html#removeOptionalPermissions
+[141.18]: {{javadoc_uri}}/CrashPullController.html#CrashPullController.Delegate
 
 ## v140
 - Added a [`GeckoPreferenceController`][140.1] class to manage Gecko preferences.
@@ -1776,4 +1798,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: 1349d47faf840e4f4aef12f316dc9fba7cf740b1
+[api-version]: f97051e0321472fb865c7f70a56e579387b407e5

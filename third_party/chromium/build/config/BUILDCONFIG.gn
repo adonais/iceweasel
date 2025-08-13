@@ -1,4 +1,4 @@
-# Copyright (c) 2013 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -6,7 +6,7 @@
 # WHAT IS THIS FILE?
 # =============================================================================
 #
-# This is the master GN build configuration. This file is loaded after the
+# This is the main GN build configuration. This file is loaded after the
 # build args (args.gn) for the build directory and after the toplevel ".gn"
 # file (which points to this file as the build configuration).
 #
@@ -128,6 +128,11 @@ declare_args() {
   # release (!is_debug). This might be better expressed as a tri-state
   # (debug, release, official) but for historical reasons there are two
   # separate flags.
+  #
+  # IMPORTANT NOTE: (!is_debug) is *not* sufficient to get satisfying
+  # performance. In particular, DCHECK()s are still enabled for release builds,
+  # which can halve overall performance, and do increase memory usage. Always
+  # set "is_official_build" to true for any build intended to ship to end-users.
   is_official_build = false
 
   # Set to true when compiling with the Clang compiler.
@@ -145,6 +150,11 @@ declare_args() {
   # every toolchain can pass through the "global" value via toolchain_args().
   host_toolchain = ""
 
+  # Do not set this directly.
+  # It should be set only by //build/toolchains/android:robolectric_x64.
+  # True when compiling native code for use with robolectric_binary().
+  is_robolectric = false
+
   # DON'T ADD MORE FLAGS HERE. Read the comment above.
 }
 
@@ -160,10 +170,22 @@ declare_args() {
   #
   # For more information see
   # https://chromium.googlesource.com/chromium/src/+/main/docs/component_build.md
-  is_component_build = is_debug && current_os != "ios"
+  is_component_build =
+      is_debug && current_os != "ios" && current_os != "watchos"
 }
 
 assert(!(is_debug && is_official_build), "Can't do official debug builds")
+assert(!(current_os == "ios" && is_component_build),
+       "Can't use component build on iOS")
+assert(!(current_os == "watchos" && is_component_build),
+       "Can't use component build on watchOS")
+
+declare_args() {
+  # Unsafe buffers. Location of file used by plugins to track portions of
+  # the codebase which have been made manifestly safe.
+  clang_unsafe_buffers_paths = ""
+  clang_warning_suppression_file = ""
+}
 
 # ==============================================================================
 # TOOLCHAIN SETUP
@@ -211,6 +233,8 @@ if (host_toolchain == "") {
     }
   } else if (host_os == "aix") {
     host_toolchain = "//chromium/build/toolchain/aix:$host_cpu"
+  } else if (host_os == "zos") {
+    host_toolchain = "//chromium/build/toolchain/zos:$host_cpu"
   } else {
     assert(false, "Unsupported host_os: $host_os")
   }
@@ -219,8 +243,8 @@ if (host_toolchain == "") {
 _default_toolchain = ""
 
 if (target_os == "android") {
-  assert(host_os == "linux" || host_os == "mac",
-         "Android builds are only supported on Linux and Mac hosts.")
+  # Targeting android on Mac is best-effort and not guaranteed to work.
+  #assert(host_os == "linux", "Android builds are only supported on Linux.")
   _default_toolchain = "//chromium/build/toolchain/android:android_clang_$target_cpu"
 } else if (target_os == "chromeos" || target_os == "linux" || target_os == "openbsd") {
   # See comments in build/toolchain/cros/BUILD.gn about board compiles.
@@ -253,6 +277,8 @@ if (target_os == "android") {
   _default_toolchain = "//chromium/build/toolchain/win:uwp_$target_cpu"
 } else if (target_os == "aix") {
   _default_toolchain = "//chromium/build/toolchain/aix:$target_cpu"
+} else if (target_os == "zos") {
+  _default_toolchain = "//chromium/build/toolchain/zos:$target_cpu"
 } else {
   assert(false, "Unsupported target_os: $target_os")
 }
@@ -291,9 +317,11 @@ is_linux = current_os == "linux"
 is_bsd = current_os == "openbsd"
 is_mac = current_os == "mac"
 is_nacl = current_os == "nacl"
+is_wasm = current_os == "emscripten"
+is_watchos = current_os == "watchos"
 is_win = current_os == "win" || current_os == "winuwp"
 
-is_apple = is_ios || is_mac
+is_apple = is_ios || is_mac || is_watchos
 is_posix = !is_win && !is_fuchsia
 
 # =============================================================================
@@ -319,22 +347,24 @@ default_compiler_configs = [
   "//chromium/build/config/compiler:afdo",
   "//chromium/build/config/compiler:afdo_optimize_size",
   "//chromium/build/config/compiler:cet_shadow_stack",
+  "//chromium/build/config/compiler:chromium_code",
   "//chromium/build/config/compiler:compiler",
   "//chromium/build/config/compiler:compiler_arm_fpu",
   "//chromium/build/config/compiler:compiler_arm_thumb",
-  "//chromium/build/config/compiler:chromium_code",
   "//chromium/build/config/compiler:default_include_dirs",
+  "//chromium/build/config/compiler:default_init_stack_vars",
   "//chromium/build/config/compiler:default_optimization",
   "//chromium/build/config/compiler:default_stack_frames",
   "//chromium/build/config/compiler:default_symbols",
-  "//chromium/build/config/compiler:export_dynamic",
+  "//chromium/build/config/compiler:disallow_unstable_features",
+  "//chromium/build/config/compiler:libcxx_hardening",
+  "//chromium/build/config/compiler:libcxx_module",
   "//chromium/build/config/compiler:no_exceptions",
   "//chromium/build/config/compiler:no_rtti",
+  "//chromium/build/config/compiler:no_unresolved_symbols",
   "//chromium/build/config/compiler:runtime_library",
   "//chromium/build/config/compiler:thin_archive",
   "//chromium/build/config/compiler:thinlto_optimize_default",
-  "//chromium/build/config/compiler:default_init_stack_vars",
-  "//chromium/build/config/compiler:no_unresolved_symbols",
   "//chromium/build/config/compiler/pgo:default_pgo_flags",
   "//chromium/build/config/coverage:default_coverage",
   "//chromium/build/config/sanitizers:default_sanitizer_flags",
@@ -349,6 +379,10 @@ if (is_win) {
     "//chromium/build/config/win:unicode",
     "//chromium/build/config/win:winver",
   ]
+}
+
+if (is_apple) {
+  default_compiler_configs += [ "//chromium/build/config/compiler:enable_arc" ]
 }
 
 if (is_posix) {
@@ -369,8 +403,9 @@ if (is_android) {
 
 if (is_clang && !is_nacl) {
   default_compiler_configs += [
-    "//chromium/build/config/clang:find_bad_constructs",
     "//chromium/build/config/clang:extra_warnings",
+    "//chromium/build/config/clang:find_bad_constructs",
+    "//chromium/build/config/clang:unsafe_buffers",
   ]
 }
 
@@ -391,9 +426,6 @@ set_defaults("source_set") {
 set_defaults("rust_library") {
   configs = default_compiler_configs
 }
-set_defaults("rust_proc_macro") {
-  configs = default_compiler_configs
-}
 
 # Compute the set of configs common to all linked targets (shared libraries,
 # loadable modules, executables) to avoid duplication below.
@@ -407,14 +439,15 @@ if (is_win) {
     # that shouldn't use the windows subsystem.
     "//chromium/build/config/win:console",
   ]
-} else if (is_mac) {
-  _linker_configs = [ "//chromium/build/config/mac:strip_all" ]
+} else if (is_apple) {
+  _linker_configs = [ "//chromium/build/config/apple:strip_all" ]
 } else {
   _linker_configs = []
 }
 
 # Executable defaults.
 default_executable_configs = default_compiler_configs + [
+                               "//chromium/build/config/compiler:export_dynamic",
                                "//chromium/build/config:default_libs",
                                "//chromium/build/config:executable_config",
                              ] + _linker_configs
@@ -423,6 +456,14 @@ if (is_win) {
   # Turn on linker CFI for executables, and position it so it can be removed
   # if needed.
   default_executable_configs += [ "//chromium/build/config/win:cfi_linker" ]
+}
+if (is_fuchsia) {
+  # Sometimes executables are linked by rustc passing a command line to
+  # clang++. It includes "-pie" which is pointless on Fuchsia. Suppress the
+  # resulting (fatal) warning. Unfortunately there's no way to do this only
+  # for binaries linked by rustc; gn does not make the distinction.
+  default_executable_configs +=
+      [ "//chromium/build/config/fuchsia:rustc_no_pie_warning" ]
 }
 
 set_defaults("executable") {
@@ -446,6 +487,14 @@ if (is_android) {
   default_shared_library_configs +=
       [ "//chromium/build/config/android:hide_all_but_jni_onload" ]
 }
+if (is_fuchsia) {
+  # Sometimes shared libraries are linked by rustc passing a command line to
+  # clang++. It includes "-pie" which is pointless on Fuchsia. Suppress the
+  # resulting (fatal) warning. Unfortunately there's no way to do this only
+  # for binaries linked by rustc; gn does not make the distinction.
+  default_shared_library_configs +=
+      [ "//chromium/build/config/fuchsia:rustc_no_pie_warning" ]
+}
 set_defaults("shared_library") {
   configs = default_shared_library_configs
 }
@@ -456,6 +505,22 @@ set_defaults("loadable_module") {
   if (is_android) {
     configs -= [ "//chromium/build/config/android:hide_all_but_jni_onload" ]
   }
+}
+
+default_rust_proc_macro_configs =
+    default_shared_library_configs + [ "//chromium/build/rust:proc_macro_extern" ] +
+    # Rust proc macros don't support (Thin)LTO, so always remove it.
+    [
+      "//chromium/build/config/compiler:thinlto_optimize_default",
+      "//chromium/build/config/compiler:thinlto_optimize_max",
+    ] -
+    [
+      "//chromium/build/config/compiler:thinlto_optimize_default",
+      "//chromium/build/config/compiler:thinlto_optimize_max",
+    ]
+
+set_defaults("rust_proc_macro") {
+  configs = default_rust_proc_macro_configs
 }
 
 # A helper for forwarding testonly and visibility.
@@ -470,6 +535,73 @@ TESTONLY_AND_VISIBILITY = [
   "visibility",
 ]
 
+# Sets default dependencies for static_library and source_set targets.
+#
+# Variables
+#   use_libcxx_modules: If true, libc++'s modules are added to deps.
+#       This is true by default.
+foreach(_target_type,
+        [
+          "source_set",
+          "static_library",
+        ]) {
+  template(_target_type) {
+    target(_target_type, target_name) {
+      forward_variables_from(invoker,
+                             "*",
+                             TESTONLY_AND_VISIBILITY + [ "use_libcxx_modules" ])
+      forward_variables_from(invoker, TESTONLY_AND_VISIBILITY)
+      if (!defined(inputs)) {
+        inputs = []
+      }
+      if (!defined(deps)) {
+        deps = []
+      }
+
+      if (false) { # Mozilla
+      if (is_clang && (!defined(invoker.use_libcxx_modules) ||
+                       invoker.use_libcxx_modules)) {
+        # This is necessary for Clang modules builds.
+        deps += [
+          "//buildtools/third_party/libc++:std",
+          "//buildtools/third_party/libc++:std_config",
+          "//buildtools/third_party/libc++:std_core",
+          "//buildtools/third_party/libc++:std_ctype_h",
+          "//buildtools/third_party/libc++:std_errno_h",
+          "//buildtools/third_party/libc++:std_fenv_h",
+          "//buildtools/third_party/libc++:std_float_h",
+          "//buildtools/third_party/libc++:std_inttypes_h",
+          "//buildtools/third_party/libc++:std_math_h",
+          "//buildtools/third_party/libc++:std_private_mbstate_t",
+          "//buildtools/third_party/libc++:std_string_h",
+          "//buildtools/third_party/libc++:std_uchar_h",
+          "//buildtools/third_party/libc++:std_wctype_h",
+        ]
+      }
+      }
+
+      # Consumed by the unsafe-buffers plugin during compile.
+      #
+      # TODO(crbug.com/326584510): Reclient doesn't respect this variable, see
+      # rbe_bug_326584510_missing_inputs in //build/config/clang/clang.gni
+      _uses_cflags = false
+      if (defined(sources)) {
+        foreach(f, sources) {
+          if (string_replace(f + ".END", ".cc.END", "") != f + ".END" ||
+              string_replace(f + ".END", ".c.END", "") != f + ".END" ||
+              string_replace(f + ".END", ".mm.END", "") != f + ".END" ||
+              string_replace(f + ".END", ".m.END", "") != f + ".END") {
+            _uses_cflags = true
+          }
+        }
+      }
+      if (_uses_cflags && clang_unsafe_buffers_paths != "") {
+        inputs += [ clang_unsafe_buffers_paths ]
+      }
+    }
+  }
+}
+
 # Sets default dependencies for executable and shared_library targets.
 #
 # Variables
@@ -477,6 +609,8 @@ TESTONLY_AND_VISIBILITY = [
 #       Targets that set this usually also want to remove
 #       "//chromium/build/config/compiler:runtime_library" from configs (to remove
 #       its subconfig "//chromium/build/config/c++:runtime_library").
+#   use_libcxx_modules: If true, libc++'s modules are added to deps.
+#       This is true by default.
 foreach(_target_type,
         [
           "executable",
@@ -489,11 +623,38 @@ foreach(_target_type,
     target(_target_type, _target_name) {
       forward_variables_from(invoker,
                              "*",
-                             TESTONLY_AND_VISIBILITY + [ "no_default_deps" ])
+                             TESTONLY_AND_VISIBILITY + [
+                                   "no_default_deps",
+                                   "use_libcxx_modules",
+                                 ])
       forward_variables_from(invoker, TESTONLY_AND_VISIBILITY)
+      if (!defined(inputs)) {
+        inputs = []
+      }
+
+      # Consumed by the unsafe-buffers plugin during compile.
+      #
+      # TODO(crbug.com/326584510): Reclient doesn't respect this variable, see
+      # rbe_bug_326584510_missing_inputs in //build/config/clang/clang.gni
+      _uses_cflags = false
+      if (defined(sources)) {
+        foreach(f, sources) {
+          if (string_replace(f + ".END", ".cc.END", "") != f + ".END" ||
+              string_replace(f + ".END", ".c.END", "") != f + ".END" ||
+              string_replace(f + ".END", ".mm.END", "") != f + ".END" ||
+              string_replace(f + ".END", ".m.END", "") != f + ".END") {
+            _uses_cflags = true
+          }
+        }
+      }
+      if (_uses_cflags && clang_unsafe_buffers_paths != "") {
+        inputs += [ clang_unsafe_buffers_paths ]
+      }
+
       if (!defined(deps)) {
         deps = []
       }
+      if (false) { # Mozilla
       if (!defined(invoker.no_default_deps) || !invoker.no_default_deps) {
         # This pulls in one of:
         # //build/config:executable_deps
@@ -504,10 +665,34 @@ foreach(_target_type,
         deps += [ "//chromium/build/config:${_target_type}_deps" ]
       }
 
+      if (is_clang && (!defined(invoker.use_libcxx_modules) ||
+                       invoker.use_libcxx_modules)) {
+        # These are necessary for Clang modules builds.
+        deps += [
+          "//buildtools/third_party/libc++:_Builtin_limits",
+          "//buildtools/third_party/libc++:_Builtin_stdarg",
+          "//buildtools/third_party/libc++:_Builtin_stddef",
+          "//buildtools/third_party/libc++:std",
+          "//buildtools/third_party/libc++:std_config",
+          "//buildtools/third_party/libc++:std_core",
+          "//buildtools/third_party/libc++:std_ctype_h",
+          "//buildtools/third_party/libc++:std_errno_h",
+          "//buildtools/third_party/libc++:std_fenv_h",
+          "//buildtools/third_party/libc++:std_float_h",
+          "//buildtools/third_party/libc++:std_inttypes_h",
+          "//buildtools/third_party/libc++:std_math_h",
+          "//buildtools/third_party/libc++:std_private_mbstate_t",
+          "//buildtools/third_party/libc++:std_string_h",
+          "//buildtools/third_party/libc++:std_uchar_h",
+          "//buildtools/third_party/libc++:std_wctype_h",
+        ]
+      }
+      }
+
       # On Android, write shared library output file to metadata. We will use
       # this information to, for instance, collect all shared libraries that
       # should be packaged into an APK.
-      if (!defined(invoker.metadata) && is_android &&
+      if (!defined(invoker.metadata) && (is_android || is_robolectric) &&
           (_target_type == "shared_library" ||
            _target_type == "loadable_module")) {
         _output_name = _target_name
@@ -525,8 +710,6 @@ foreach(_target_type,
 
         if (defined(output_extension)) {
           _shlib_extension = ".$output_extension"
-        } else if (is_component_build && _target_type != "loadable_module") {
-          _shlib_extension = ".cr.so"
         } else {
           _shlib_extension = ".so"
         }
@@ -558,6 +741,16 @@ foreach(_target_type,
 template("component") {
   if (is_component_build) {
     _component_mode = "shared_library"
+
+    # Generate a unique output_name for a shared library if not set by invoker.
+    if (!defined(invoker.output_name)) {
+      _output_name = get_label_info(":$target_name", "label_no_toolchain")
+      _output_name =
+          string_replace(_output_name, "$target_name:$target_name", target_name)
+      _output_name = string_replace(_output_name, "//", "")
+      _output_name = string_replace(_output_name, "/", "_")
+      _output_name = string_replace(_output_name, ":", "_")
+    }
   } else if (defined(invoker.static_component_type)) {
     assert(invoker.static_component_type == "static_library" ||
            invoker.static_component_type == "source_set")
@@ -570,19 +763,37 @@ template("component") {
     _component_mode = "static_library"
   }
   target(_component_mode, target_name) {
+    if (defined(_output_name)) {
+      output_name = _output_name
+    }
+    if (is_component_build && is_android) {
+      # By appending .cr, we prevent name collisions with libraries already
+      # loaded by the Android zygote.
+      output_extension = "cr.so"
+    }
     forward_variables_from(invoker, TESTONLY_AND_VISIBILITY)
     forward_variables_from(invoker, "*", TESTONLY_AND_VISIBILITY)
   }
 }
 
 # Component defaults
-set_defaults("component") {
-  if (is_component_build) {
-    configs = default_shared_library_configs
-    if (is_android) {
-      configs -= [ "//chromium/build/config/android:hide_all_but_jni_onload" ]
-    }
-  } else {
-    configs = default_compiler_configs
+# Set a variable since we also want to make this available
+# to mixed_component.gni
+if (is_component_build) {
+  default_component_configs = default_shared_library_configs
+  if (is_android) {
+    default_component_configs -=
+        [ "//chromium/build/config/android:hide_all_but_jni_onload" ]
   }
+  if (is_win) {
+    # We don't want component dlls to statically load OS dlls that aren't
+    # loaded normally.
+    default_component_configs += [ "//chromium/build/config/win:delayloads" ]
+  }
+} else {
+  default_component_configs = default_compiler_configs
+}
+
+set_defaults("component") {
+  configs = default_component_configs
 }

@@ -5,5 +5,5 @@
     Used to distinguish between History search suggestions from your
     browsing history and your open tabs
   -->
-  <string name="switch_to_tab_description">Comută la filă</string>
+  <string name="switch_to_tab_description">Treci la o altă filă</string>
 </resources>

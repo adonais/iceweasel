@@ -33,8 +33,10 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
  public:
   static AVCodec* FindSoftwareEncoder(const FFmpegLibWrapper* aLib,
                                       AVCodecID aCodecId);
+#ifdef MOZ_USE_HWDECODE
   static AVCodec* FindHardwareEncoder(const FFmpegLibWrapper* aLib,
                                       AVCodecID aCodecId);
+#endif
 
   FFmpegDataEncoder(const FFmpegLibWrapper* aLib, AVCodecID aCodecID,
                     const RefPtr<TaskQueue>& aTaskQueue,
@@ -90,7 +92,6 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
       AVPacket* aPacket) = 0;
   virtual Result<already_AddRefed<MediaByteBuffer>, MediaResult> GetExtraData(
       AVPacket* aPacket) = 0;
-  void ForceEnablingFFmpegDebugLogs();
 
   // This refers to a static FFmpegLibWrapper, so raw pointer is adequate.
   const FFmpegLibWrapper* mLib;

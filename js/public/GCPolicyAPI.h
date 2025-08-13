@@ -87,8 +87,18 @@ namespace JS {
 // traceWeak) if it is never used in a context that requires the other.
 template <typename T>
 struct StructGCPolicy {
-  static_assert(!std::is_pointer_v<T>,
-                "Pointer type not allowed for StructGCPolicy");
+  static_assert(
+      !std::is_pointer_v<T>,
+      "Pointer types must have a GCPolicy<> specialization.\n"
+      "  - Public GC pointer types (eg JSObject*, JSString*) use "
+      "GCPointerPolicy.\n"
+      "  - Internal GC pointer types are handled by InternalGCPointerPolicy "
+      "from gc/Policy.h; make sure you are including that file.\n"
+      "  - Other pointer types (eg Realm*) must define their own "
+      "specialization.\n"
+      "The most likely cause of this error is attempting to root a non-GC "
+      "pointer that should not be rooted. Only pointers on the stack that "
+      "point to GC pointers should be or need to be rooted.");
 
   static void trace(JSTracer* trc, T* tp, const char* name) { tp->trace(trc); }
 

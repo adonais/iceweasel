@@ -7,6 +7,7 @@
 #ifndef mozilla_ServoStyleSet_h
 #define mozilla_ServoStyleSet_h
 
+#include "MainThreadUtils.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/AnonymousContentKey.h"
 #include "mozilla/AtomArray.h"
@@ -15,17 +16,16 @@
 #include "mozilla/PostTraversalTask.h"
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoUtils.h"
-#include "mozilla/dom/RustTypes.h"
 #include "mozilla/UniquePtr.h"
-#include "MainThreadUtils.h"
-#include "nsCSSPseudoElements.h"
+#include "mozilla/dom/RustTypes.h"
+#include "nsAtom.h"
 #include "nsCSSAnonBoxes.h"
+#include "nsCSSPseudoElements.h"
 #include "nsChangeHint.h"
 #include "nsCoord.h"
-#include "nsAtom.h"
 #include "nsIMemoryReporter.h"
-#include "nsTArray.h"
 #include "nsSize.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 enum class MediaFeatureChangeReason : uint8_t;

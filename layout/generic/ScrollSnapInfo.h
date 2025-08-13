@@ -8,10 +8,11 @@
 #define mozilla_layout_ScrollSnapInfo_h_
 
 #include <memory>
-#include "mozilla/ScrollTypes.h"
-#include "mozilla/ScrollSnapTargetId.h"
-#include "mozilla/ServoStyleConsts.h"
+
 #include "mozilla/Maybe.h"
+#include "mozilla/ScrollSnapTargetId.h"
+#include "mozilla/ScrollTypes.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsPoint.h"
 

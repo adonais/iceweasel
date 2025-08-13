@@ -6,9 +6,7 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   AppProvidedSearchEngine:
     "moz-src:///toolkit/components/search/AppProvidedSearchEngine.sys.mjs",
@@ -35,21 +33,23 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/search/AppProvidedSearchEngine.sys.mjs",
   UserSearchEngine:
     "moz-src:///toolkit/components/search/UserSearchEngine.sys.mjs",
+  logConsole: () =>
+    console.createInstance({
+      prefix: "SearchService",
+      maxLogLevel: lazy.SearchUtils.loggingEnabled ? "Debug" : "Warn",
+    }),
+  timerManager: {
+    service: "@mozilla.org/updates/timer-manager;1",
+    iid: Ci.nsIUpdateTimerManager,
+  },
+  idleService: {
+    service: "@mozilla.org/widget/useridleservice;1",
+    iid: Ci.nsIUserIdleService,
+  },
+  defaultOverrideAllowlist: () => {
+    return new SearchDefaultOverrideAllowlistHandler();
+  },
 });
-
-ChromeUtils.defineLazyGetter(lazy, "logConsole", () => {
-  return console.createInstance({
-    prefix: "SearchService",
-    maxLogLevel: lazy.SearchUtils.loggingEnabled ? "Debug" : "Warn",
-  });
-});
-
-XPCOMUtils.defineLazyServiceGetter(
-  lazy,
-  "timerManager",
-  "@mozilla.org/updates/timer-manager;1",
-  "nsIUpdateTimerManager"
-);
 
 /**
  * @typedef {import("AddonSearchEngine.sys.mjs").AddonSearchEngine} AddonSearchEngine
@@ -59,15 +59,6 @@ XPCOMUtils.defineLazyServiceGetter(
  * @typedef {import("SearchEngineSelector.sys.mjs").SearchEngineSelector} SearchEngineSelector
  * @typedef {import("UserSearchEngine.sys.mjs").FormInfo} FormInfo
  */
-
-/**
- * A reference to the handler for the default override allowlist.
- *
- * @type {SearchDefaultOverrideAllowlistHandler}
- */
-ChromeUtils.defineLazyGetter(lazy, "defaultOverrideAllowlist", () => {
-  return new SearchDefaultOverrideAllowlistHandler();
-});
 
 const TOPIC_LOCALES_CHANGE = "intl:app-locales-changed";
 const QUIT_APPLICATION_TOPIC = "quit-application";
@@ -214,8 +205,6 @@ export class SearchService {
     // a test.
     this._engines = new Map();
     this._settings = new lazy.SearchSettings(this);
-
-    this.#defineLazyPreferenceGetters();
   }
 
   classID = Components.ID("{7319788a-fe93-4db3-9f39-818cf08f4256}");
@@ -225,25 +214,9 @@ export class SearchService {
     return this._getEngineDefault(false);
   }
 
-  set defaultEngine(newEngine) {
-    this.#ensureInitialized();
-    this.#setEngineDefault(false, newEngine);
-  }
-
   get defaultPrivateEngine() {
     this.#ensureInitialized();
     return this._getEngineDefault(this.#separatePrivateDefault);
-  }
-
-  set defaultPrivateEngine(newEngine) {
-    this.#ensureInitialized();
-    if (!this._separatePrivateDefaultPrefValue) {
-      Services.prefs.setBoolPref(
-        lazy.SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
-        true
-      );
-    }
-    this.#setEngineDefault(this.#separatePrivateDefault, newEngine);
   }
 
   async getDefault() {
@@ -263,7 +236,7 @@ export class SearchService {
 
   async setDefaultPrivate(engine, changeReason) {
     await this.init();
-    if (!this._separatePrivateDefaultPrefValue) {
+    if (!this.#lazyPrefs.separatePrivateDefaultPrefValue) {
       Services.prefs.setBoolPref(
         lazy.SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
         true
@@ -849,7 +822,8 @@ export class SearchService {
       );
     }
 
-    if (engineToRemove.inMemory) {
+    let userInstalled = engineToRemove instanceof lazy.UserInstalledAppEngine;
+    if (engineToRemove.inMemory && !userInstalled) {
       // Just hide it (the "hidden" setter will notify) and remove its alias to
       // avoid future conflicts with other engines.
       engineToRemove.hidden = true;
@@ -865,8 +839,17 @@ export class SearchService {
         }
         engineToRemove._filePath = null;
       }
-      this.#internalRemoveEngine(engineToRemove);
 
+      if (userInstalled) {
+        // If the engine is a user-installed app provided engine,
+        // reset its seen counter so it can be added again.
+        let seenEngines =
+          this._settings.getMetaDataAttribute(ENGINES_SEEN_KEY) ?? {};
+        delete seenEngines[engineToRemove._loadPath];
+        this._settings.setMetaDataAttribute(ENGINES_SEEN_KEY, seenEngines);
+      }
+
+      this.#internalRemoveEngine(engineToRemove);
       // Since we removed an engine, we may need to update the preferences.
       if (!this.#dontSetUseSavedOrder) {
         this.#saveSortedEngineList();
@@ -1044,6 +1027,13 @@ export class SearchService {
 
   getAlternateDomains(domain) {
     return lazy.SearchStaticData.getAlternateDomains(domain);
+  }
+
+  /**
+   * Whether to display the "Search in Private Window" result in the urlbar.
+   */
+  get separatePrivateDefaultUrlbarResultEnabled() {
+    return this.#lazyPrefs.separatePrivateDefaultUrlbarResultEnabled;
   }
 
   /**
@@ -1250,8 +1240,8 @@ export class SearchService {
    */
   get #separatePrivateDefault() {
     return (
-      this._separatePrivateDefaultPrefValue &&
-      this._separatePrivateDefaultEnabledPrefValue
+      this.#lazyPrefs.separatePrivateDefaultPrefValue &&
+      this.#lazyPrefs.separatePrivateDefaultEnabledPrefValue
     );
   }
 
@@ -1371,47 +1361,29 @@ export class SearchService {
     throw err;
   }
 
-  /**
-   * Define lazy preference getters for separate private default engine in
-   * private browsing mode.
-   */
-  #defineLazyPreferenceGetters() {
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_separatePrivateDefaultPrefValue",
-      lazy.SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
-      false,
-      this.#onSeparateDefaultPrefChanged.bind(this)
-    );
-
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_separatePrivateDefaultEnabledPrefValue",
-      lazy.SearchUtils.BROWSER_SEARCH_PREF +
-        "separatePrivateDefault.ui.enabled",
-      false,
-      this.#onSeparateDefaultPrefChanged.bind(this)
-    );
-
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "separatePrivateDefaultUrlbarResultEnabled",
-      lazy.SearchUtils.BROWSER_SEARCH_PREF +
-        "separatePrivateDefault.urlbarResult.enabled",
-      false
+  #lazyPrefs = XPCOMUtils.declareLazy({
+    separatePrivateDefaultPrefValue: {
+      pref: "browser.search.separatePrivateDefault",
+      default: false,
+      onUpdate: this.#onSeparateDefaultPrefChanged.bind(this),
+    },
+    separatePrivateDefaultEnabledPrefValue: {
+      pref: "browser.search.separatePrivateDefault.ui.enabled",
+      default: false,
+      onUpdate: this.#onSeparateDefaultPrefChanged.bind(this),
+    },
+    separatePrivateDefaultUrlbarResultEnabled: {
+      pref: "browser.search.separatePrivateDefault.urlbarResult.enabled",
+      default: false,
       // No need to reload engines, as this only affects the Urlbar result list.
-    );
-
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_experimentPrefValue",
-      lazy.SearchUtils.BROWSER_SEARCH_PREF + "experiment",
-      "",
-      () => {
-        this._maybeReloadEngines(Ci.nsISearchService.CHANGE_REASON_EXPERIMENT);
-      }
-    );
-  }
+    },
+    experimentPrefValue: {
+      pref: "browser.search.experiment",
+      default: "",
+      onUpdate: () =>
+        this._maybeReloadEngines(Ci.nsISearchService.CHANGE_REASON_EXPERIMENT),
+    },
+  });
 
   /**
    * This function adds observers, retrieves the search engine ignore list, and
@@ -1631,7 +1603,9 @@ export class SearchService {
     // reload the engines - it is possible the settings just had one engine in it,
     // and that is now empty, so we need to load from our main list.
     if (engineRemoved && !this._engines.size) {
-      this._maybeReloadEngines().catch(console.error);
+      this._maybeReloadEngines(
+        Ci.nsISearchService.CHANGE_REASON_ENGINE_IGNORE_LIST_UPDATED
+      ).catch(console.error);
     }
   }
 
@@ -1669,7 +1643,7 @@ export class SearchService {
 
     this.#queuedIdle = true;
 
-    this.idleService.addIdleObserver(this, RECONFIG_IDLE_TIME_SEC);
+    lazy.idleService.addIdleObserver(this, RECONFIG_IDLE_TIME_SEC);
   }
 
   /**
@@ -2527,7 +2501,10 @@ export class SearchService {
           let existingEngine = this.#getEngineByName(engineJSON._name);
           let extensionId = engineJSON.extensionID ?? engineJSON._extensionID;
 
-          if (existingEngine && existingEngine._extensionID == extensionId) {
+          if (
+            existingEngine instanceof lazy.AddonSearchEngine &&
+            existingEngine._extensionID == extensionId
+          ) {
             // We assume that this WebExtension was already loaded as part of
             // #loadStartupEngines, and therefore do not try to add it again.
             lazy.logConsole.log(
@@ -2635,7 +2612,7 @@ export class SearchService {
       locale: Services.locale.appLocaleAsBCP47,
       region: lazy.Region.home || "unknown",
       channel: lazy.SearchUtils.MODIFIED_APP_CHANNEL,
-      experiment: this._experimentPrefValue,
+      experiment: this.#lazyPrefs.experimentPrefValue,
       distroID: lazy.SearchUtils.distroID ?? "",
     };
 
@@ -3204,7 +3181,10 @@ export class SearchService {
     const appDefaultEngine = privateMode
       ? this.appPrivateDefaultEngine
       : this.appDefaultEngine;
-    if (newCurrentEngine == appDefaultEngine && !this._experimentPrefValue) {
+    if (
+      newCurrentEngine == appDefaultEngine &&
+      !this.#lazyPrefs.experimentPrefValue
+    ) {
       newId = "";
     }
 
@@ -3582,7 +3562,7 @@ export class SearchService {
       delete this.ignoreListListener;
     }
     if (this.#queuedIdle) {
-      this.idleService.removeIdleObserver(this, RECONFIG_IDLE_TIME_SEC);
+      lazy.idleService.removeIdleObserver(this, RECONFIG_IDLE_TIME_SEC);
       this.#queuedIdle = false;
     }
 
@@ -3631,7 +3611,7 @@ export class SearchService {
         break;
 
       case "idle": {
-        this.idleService.removeIdleObserver(this, RECONFIG_IDLE_TIME_SEC);
+        lazy.idleService.removeIdleObserver(this, RECONFIG_IDLE_TIME_SEC);
         this.#queuedIdle = false;
         lazy.logConsole.debug(
           "Reloading engines after idle due to configuration change"
@@ -3765,13 +3745,6 @@ export class SearchService {
     }
   }
 } // end SearchService class
-
-XPCOMUtils.defineLazyServiceGetter(
-  SearchService.prototype,
-  "idleService",
-  "@mozilla.org/widget/useridleservice;1",
-  "nsIUserIdleService"
-);
 
 /**
  * Handles getting and checking extensions against the allow list.

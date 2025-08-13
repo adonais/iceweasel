@@ -83,6 +83,9 @@ class File final : public Blob {
 
   void GetRelativePath(nsAString& aPath) const;
 
+  // ChromeOnly
+  void SetMozRelativePath(const nsAString& aPath);
+
   void GetMozFullPath(nsAString& aFilename, SystemCallerGuarantee aGuarantee,
                       ErrorResult& aRv);
 

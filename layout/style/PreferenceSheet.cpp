@@ -6,18 +6,18 @@
 
 #include "PreferenceSheet.h"
 
-#include "ServoCSSParser.h"
 #include "MainThreadUtils.h"
+#include "ServoCSSParser.h"
 #include "mozilla/Encoding.h"
+#include "mozilla/LookAndFeel.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/ServoBindings.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/StaticPrefs_ui.h"
-#include "mozilla/glean/AccessibleMetrics.h"
-#include "mozilla/LookAndFeel.h"
-#include "mozilla/ServoBindings.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/glean/AccessibleMetrics.h"
 #include "nsContentUtils.h"
 
 namespace mozilla {

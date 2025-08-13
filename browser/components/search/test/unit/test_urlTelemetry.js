@@ -139,7 +139,7 @@ const TESTS = [
   },
   {
     title: "DuckDuckGo organic",
-    trackingUrl: "https://duckduckgo.com/?q=test&t=other&ia=news",
+    trackingUrl: "https://duckduckgo.com/?q=test&t=other&ia=shopping",
     expectedSearchCountEntry: "duckduckgo:organic:other",
     expectedAdKey: "duckduckgo:organic",
     adUrls: ["https://duckduckgo.com/y.js?ad_provider=foo"],
@@ -147,7 +147,7 @@ const TESTS = [
   },
   {
     title: "DuckDuckGo expected organic code",
-    trackingUrl: "https://duckduckgo.com/?q=test&t=h_&ia=news",
+    trackingUrl: "https://duckduckgo.com/?q=test&t=h_&ia=shopping",
     expectedSearchCountEntry: "duckduckgo:organic:none",
     expectedAdKey: "duckduckgo:organic",
     adUrls: ["https://duckduckgo.com/y.js?ad_provider=foo"],
@@ -155,7 +155,7 @@ const TESTS = [
   },
   {
     title: "DuckDuckGo expected organic code 2",
-    trackingUrl: "https://duckduckgo.com/?q=test&t=hz&ia=news",
+    trackingUrl: "https://duckduckgo.com/?q=test&t=hz&ia=shopping",
     expectedSearchCountEntry: "duckduckgo:organic:none",
     expectedAdKey: "duckduckgo:organic",
     adUrls: ["https://duckduckgo.com/y.js?ad_provider=foo"],
@@ -163,7 +163,7 @@ const TESTS = [
   },
   {
     title: "DuckDuckGo organic no code",
-    trackingUrl: "https://duckduckgo.com/?q=test&ia=news",
+    trackingUrl: "https://duckduckgo.com/?q=test&ia=shopping",
     expectedSearchCountEntry: "duckduckgo:organic:none",
     expectedAdKey: "duckduckgo:organic",
     adUrls: ["https://duckduckgo.com/y.js?ad_provider=foo"],

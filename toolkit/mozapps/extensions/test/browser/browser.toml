@@ -91,9 +91,7 @@ support-files = ["head_disco.js"]
 ["browser_html_discover_view_prefs.js"]
 
 ["browser_html_list_view.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks && swgl", # Bug 1781893
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks && swgl"] # Bug 1781893
 
 ["browser_html_list_view_recommendations.js"]
 skip-if = [
@@ -117,7 +115,6 @@ skip-if = [
 https_first_disabled = true
 
 ["browser_html_scroll_restoration.js"]
-skip-if = ["os == 'mac' && verify && debug"] # Bug 1850159
 
 ["browser_html_sitepermission_addons.js"]
 
@@ -148,9 +145,7 @@ skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && d
 ["browser_page_options_updates.js"]
 
 ["browser_permission_prompt.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks && swgl", # Bug 1964764
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks && swgl"] # Bug 1964764
 
 ["browser_permission_prompt_userScripts.js"]
 

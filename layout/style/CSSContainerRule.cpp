@@ -6,9 +6,9 @@
 
 #include "mozilla/dom/CSSContainerRule.h"
 
+#include "mozilla/ServoBindings.h"
 #include "mozilla/css/GroupRule.h"
 #include "mozilla/dom/CSSContainerRuleBinding.h"
-#include "mozilla/ServoBindings.h"
 
 using namespace mozilla::css;
 

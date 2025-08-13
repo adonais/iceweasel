@@ -35,9 +35,7 @@ void BindGroup::Cleanup() {
     return;
   }
 
-  if (bridge->CanSend()) {
-    bridge->SendBindGroupDrop(mId);
-  }
+  ffi::wgpu_client_drop_bind_group(bridge->GetClient(), mId);
 
   wgpu_client_free_bind_group_id(bridge->GetClient(), mId);
 }

@@ -39,18 +39,22 @@ class TextDirectiveCreator {
    *
    * @param aDocument   The document in which `aInputRange` lives.
    * @param aInputRange The input range. This range will not be modified.
+   * @param aWatchdog   A watchdog to ensure the operation does not run
+   *                    longer than the predefined timeout.
    *
    * @return Returns a percent-encoded text directive string on success, an
    *         empty string if it's not possible to create a text fragment for the
    *         given range, or an error code.
    */
   static Result<nsCString, ErrorResult> CreateTextDirectiveFromRange(
-      Document& aDocument, AbstractRange* aInputRange);
+      Document* aDocument, AbstractRange* aInputRange,
+      const TimeoutWatchdog* aWatchdog);
 
-  virtual ~TextDirectiveCreator() = default;
+  virtual ~TextDirectiveCreator();
 
  protected:
-  TextDirectiveCreator(Document& aDocument, AbstractRange* aRange);
+  TextDirectiveCreator(Document* aDocument, AbstractRange* aRange,
+                       const TimeoutWatchdog* aWatchdog);
 
   /**
    * @brief Ensures the boundary points of the range point to word boundaries.
@@ -77,7 +81,8 @@ class TextDirectiveCreator {
    * @brief Creates an instance either for exact or range-based matching.
    */
   static Result<UniquePtr<TextDirectiveCreator>, ErrorResult> CreateInstance(
-      Document& aDocument, AbstractRange* aRange);
+      Document* aDocument, AbstractRange* aRange,
+      const TimeoutWatchdog* aWatchdog);
 
   /**
    * @brief Collects text content surrounding the target range.
@@ -199,19 +204,35 @@ class TextDirectiveCreator {
       const nsTArray<uint32_t>& aFirstExtendedToWordBoundaries,
       const nsTArray<uint32_t>& aSecondExtendedToWordBoundaries);
 
+  // The maximum length of the context terms around the target range.
+  // If a context term is longer, it will be truncated to this length.
+  // If -- which seems highly unlikely -- there is another match for the target
+  // range which happens to have a context term with the same content, it will
+  // essentially be ignored:
+  // The common length would be equal to this value, also the maximum common
+  // length extended to the word boundary. Therefore, the algorithm could not
+  // find a candidate which exceeds this length, therefore ignoring it
+  // altogether.
+  //
+  // If -- even more unlikely -- this condition would happen for _every_ context
+  // term, the algorithm would determine that it cannot create a text
+  // directive for the target range because it would be ambiguous.
+  static constexpr uint32_t kMaxContextTermLength = 1024;
+
   nsString mPrefixContent;
   nsString mPrefixFoldCaseContent;
   nsTArray<uint32_t> mPrefixWordBeginDistances;
 
   nsString mStartContent;
-  nsString mStartFoldCaseContent;
 
   nsString mSuffixContent;
   nsString mSuffixFoldCaseContent;
   nsTArray<uint32_t> mSuffixWordEndDistances;
 
-  Document& mDocument;
-  RefPtr<AbstractRange> mRange;
+  NotNull<RefPtr<Document>> mDocument;
+  NotNull<RefPtr<AbstractRange>> mRange;
+
+  NotNull<RefPtr<nsFind>> mFinder;
 
   /**
    * The watchdog ensures that the algorithm exits after a defined time
@@ -220,7 +241,7 @@ class TextDirectiveCreator {
    * The duration is defined by the pref
    * `dom.text_fragments.create_text_fragment.timeout`.
    */
-  TimeoutWatchdog mWatchdog;
+  RefPtr<const TimeoutWatchdog> mWatchdog;
 
   nsContentUtils::NodeIndexCache mNodeIndexCache;
 };
@@ -248,8 +269,26 @@ class RangeBasedTextDirectiveCreator : public TextDirectiveCreator {
   Maybe<TextDirective> FindShortestCombination() const override;
 
   nsString mEndContent;
+  // The fold case contents for start and end terms don't include the first/last
+  // word of the start and end terms, because they are only used for finding the
+  // common lengths for other matches.
+  nsString mStartFoldCaseContent;
   nsString mEndFoldCaseContent;
 
+  // These values are only passed into nsFind, therefore fold case is not
+  // required.
+  nsString mFirstWordOfStartContent;
+  nsString mLastWordOfEndContent;
+
+  // The lengths of the first/last word of the start and end terms, including
+  // whitespace to the next word.
+  // Therefore, these values are equal to
+  // `m[Start|End]Content.Length() - m[Start|End]FoldCaseContent.Length()`.
+  uint32_t mStartFirstWordLengthIncludingWhitespace = 0;
+  uint32_t mEndLastWordLengthIncludingWhitespace = 0;
+
+  // The distances are bound to the Fold Case Content strings, which do not
+  // include the first/last word of the start and end terms.
   nsTArray<uint32_t> mStartWordEndDistances;
   nsTArray<uint32_t> mEndWordBeginDistances;
 

@@ -307,6 +307,9 @@ function MarkupView(inspector, frame, controllerWindow) {
   this._onToolboxPickerCanceled = this._onToolboxPickerCanceled.bind(this);
   this._onToolboxPickerHover = this._onToolboxPickerHover.bind(this);
   this._onDomMutation = this._onDomMutation.bind(this);
+  this._updateSearchResultsHighlightingInSelectedNode =
+    this._updateSearchResultsHighlightingInSelectedNode.bind(this);
+  this._onToolboxSelect = this._onToolboxSelect.bind(this);
 
   // Listening to various events.
   this._elt.addEventListener("blur", this._onBlur, true);
@@ -316,6 +319,10 @@ function MarkupView(inspector, frame, controllerWindow) {
   this._elt.addEventListener("mouseout", this._onMouseOut);
   this._frame.addEventListener("focus", this._onFocus);
   this.inspector.selection.on("new-node-front", this._onNewSelection);
+  this.inspector.on(
+    "search-cleared",
+    this._updateSearchResultsHighlightingInSelectedNode
+  );
   this._unsubscribeFromToolboxStore = this.inspector.toolbox.store.subscribe(
     this._onDomMutation
   );
@@ -346,6 +353,7 @@ function MarkupView(inspector, frame, controllerWindow) {
     "highlighter-hidden",
     this.onHighlighterHidden
   );
+  this.inspector.toolbox.once("select", this._onToolboxSelect);
 
   this._onNewSelection(this.inspector.selection.nodeFront);
   if (this.inspector.selection.nodeFront) {
@@ -525,6 +533,20 @@ MarkupView.prototype = {
   _onToolboxPickerCanceled() {
     if (this._selectedContainer) {
       scrollIntoViewIfNeeded(this._selectedContainer.editor.elt);
+    }
+  },
+
+  _onToolboxSelect(id) {
+    if (id !== "inspector") {
+      return;
+    }
+
+    // If the inspector was opened from the "Inspect" context menu, the node gets selected
+    // in the MarkupView constructor, but the Toolbox focuses the Inspector iframe once
+    // the tool is loaded (and the iframe is actually visible), so we need to focus
+    // the selected node after the inspector was properly selected and focused (See Bug 1979591).
+    if (this.inspector.selection?.reason === "browser-context-menu") {
+      this.maybeNavigateToNewSelection();
     }
   },
 
@@ -1071,7 +1093,18 @@ MarkupView.prototype = {
 
     const slotted = selection.isSlotted();
     const smoothScroll = reason === "reveal-from-slot";
-    const onShow = this.showNode(selection.nodeFront, { slotted, smoothScroll })
+    const selectionSearchQuery = selection.getSearchQuery();
+
+    const onShow = this.showNode(selection.nodeFront, {
+      slotted,
+      smoothScroll,
+      // Don't scroll if we selected the node from the search, we'll scroll to the first
+      // matching Range done in _updateSearchResultsHighlightingInSelectedNode.
+      // This need to be done there because the matching Range might be out of screen,
+      // for example if the node is very tall, or if the markup view overflows horizontally
+      // and the Range is located near the right end of the node container.
+      scroll: !selectionSearchQuery,
+    })
       .then(() => {
         // We could be destroyed by now.
         if (this._destroyed) {
@@ -1081,6 +1114,9 @@ MarkupView.prototype = {
         // Mark the node as selected.
         const container = this.getContainer(selection.nodeFront, slotted);
         this._markContainerAsSelected(container);
+        this._updateSearchResultsHighlightingInSelectedNode(
+          selectionSearchQuery
+        );
 
         // Make sure the new selection is navigated to.
         this.maybeNavigateToNewSelection();
@@ -1089,6 +1125,117 @@ MarkupView.prototype = {
       .catch(this._handleRejectionIfNotDestroyed);
 
     Promise.all([onShowBoxModel, onShow]).then(done);
+  },
+
+  _getSearchResultsHighlight() {
+    const highlightName = "devtools-search";
+    const highlights = this.win.CSS.highlights;
+
+    if (!highlights.has(highlightName)) {
+      highlights.set(highlightName, new this.win.Highlight());
+    }
+
+    return highlights.get(highlightName);
+  },
+
+  /**
+   * @returns {nsISelectionController}
+   */
+  _getSelectionController() {
+    if (!this._selectionController) {
+      // QueryInterface can be expensive, so cache the controller.
+      this._selectionController = this.win.docShell
+        .QueryInterface(Ci.nsIInterfaceRequestor)
+        .getInterface(Ci.nsISelectionDisplay)
+        .QueryInterface(Ci.nsISelectionController);
+    }
+    return this._selectionController;
+  },
+
+  /**
+   * Highlight search results in the markup view.
+   *
+   * @param {String|null} searchQuery: The search string we want to highlight. Pass null
+   *                                   to clear existing highlighting.
+   */
+  _updateSearchResultsHighlightingInSelectedNode(searchQuery) {
+    // Clear any existing search highlights
+    const searchHighlight = this._getSearchResultsHighlight();
+    searchHighlight.clear();
+
+    // If there's no selected container, or if the search is empty, we don't have anything
+    // to highlight.
+    if (!this._selectedContainer || !searchQuery) {
+      return;
+    }
+
+    // Look for search string occurences in the tag
+    const treeWalker = this.doc.createTreeWalker(
+      this._selectedContainer.tagLine,
+      NodeFilter.SHOW_TEXT
+    );
+    searchQuery = searchQuery.toLowerCase();
+    const searchQueryLength = searchQuery.length;
+    let currentNode = treeWalker.nextNode();
+    let scrolled = false;
+
+    while (currentNode) {
+      const text = currentNode.textContent.toLowerCase();
+      let startPos = 0;
+      while (startPos < text.length) {
+        const index = text.indexOf(searchQuery, startPos);
+        if (index === -1) {
+          break;
+        }
+
+        const range = new this.win.Range();
+        range.setStart(currentNode, index);
+        range.setEnd(currentNode, index + searchQueryLength);
+
+        searchHighlight.add(range);
+
+        startPos = index + searchQuery.length;
+
+        // We want to scroll the first matching range into view
+        if (!scrolled) {
+          // We want to take advantage of nsISelectionController.scrollSelectionIntoView,
+          // so we need to put the range in the selection. That's fine to do here because
+          // in this situation the user shouldn't have any text selected
+          const selection = this.win.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+
+          const selectionController = this._getSelectionController();
+          selectionController.scrollSelectionIntoView(
+            selectionController.SELECTION_NORMAL,
+            selectionController.SELECTION_ON,
+            selectionController.SCROLL_SYNCHRONOUS |
+              selectionController.SCROLL_VERTICAL_CENTER
+          );
+          selection.removeAllRanges();
+          scrolled = true;
+        }
+      }
+
+      currentNode = treeWalker.nextNode();
+    }
+
+    // It can happen that we didn't find a Range for a search result (e.g. if the matching
+    // string is in a cropped attribute). In such case, go back to scroll the container
+    // into view.
+    if (!scrolled) {
+      const container = this.getContainer(
+        this.inspector.selection.nodeFront,
+        this.inspector.selection.isSlotted()
+      );
+      scrollIntoViewIfNeeded(
+        container.editor.elt,
+        // centered
+        true,
+        // smoothScroll
+        false
+      );
+    }
   },
 
   /**
@@ -1703,12 +1850,23 @@ MarkupView.prototype = {
   /**
    * Make sure the given node's parents are expanded and the
    * node is scrolled on to screen.
+   *
+   * @param {NodeFront} nodeFront
+   * @param {Object} options
+   * @param {Boolean} options.centered
+   * @param {Boolean} options.scroll
+   * @param {Boolean} options.slotted
+   * @param {Boolean} options.smoothScroll
+   * @returns
    */
-  showNode(node, { centered = true, slotted, smoothScroll = false } = {}) {
-    if (slotted && !this.hasContainer(node, slotted)) {
+  showNode(
+    nodeFront,
+    { centered = true, scroll = true, slotted, smoothScroll = false } = {}
+  ) {
+    if (slotted && !this.hasContainer(nodeFront, slotted)) {
       throw new Error("Tried to show a slotted node not previously imported");
     } else {
-      this._ensureNodeImported(node);
+      this._ensureNodeImported(nodeFront);
     }
 
     return this._waitForChildren()
@@ -1716,10 +1874,14 @@ MarkupView.prototype = {
         if (this._destroyed) {
           return Promise.reject("markupview destroyed");
         }
-        return this._ensureVisible(node);
+        return this._ensureVisible(nodeFront);
       })
       .then(() => {
-        const container = this.getContainer(node, slotted);
+        if (!scroll) {
+          return;
+        }
+
+        const container = this.getContainer(nodeFront, slotted);
         scrollIntoViewIfNeeded(container.editor.elt, centered, smoothScroll);
       }, this._handleRejectionIfNotDestroyed);
   },
@@ -2522,6 +2684,10 @@ MarkupView.prototype = {
     this._frame.removeEventListener("focus", this._onFocus);
     this._unsubscribeFromToolboxStore();
     this.inspector.selection.off("new-node-front", this._onNewSelection);
+    this.inspector.off(
+      "search-cleared",
+      this._updateSearchResultsHighlightingInSelectedNode
+    );
     this.resourceCommand.unwatchResources(
       [this.resourceCommand.TYPES.ROOT_NODE],
       { onAvailable: this._onResourceAvailable }
@@ -2547,6 +2713,7 @@ MarkupView.prototype = {
       "highlighter-hidden",
       this.onHighlighterHidden
     );
+    this.inspector.toolbox.off("select", this._onToolboxSelect);
     this.win.removeEventListener("copy", this._onCopy);
     this.win.removeEventListener("mouseup", this._onMouseUp);
 
@@ -2571,6 +2738,7 @@ MarkupView.prototype = {
     this._elt.innerHTML = "";
     this._elt = null;
 
+    this._selectionController = null;
     this.controllerWindow = null;
     this.doc = null;
     this.highlighters = null;

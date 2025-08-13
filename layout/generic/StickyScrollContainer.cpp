@@ -11,12 +11,12 @@
 
 #include "StickyScrollContainer.h"
 
+#include "PresShell.h"
 #include "mozilla/OverflowChangedTracker.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
 #include "nsLayoutUtils.h"
-#include "PresShell.h"
 
 namespace mozilla {
 

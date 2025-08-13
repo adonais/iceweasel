@@ -50,15 +50,14 @@ export class ModelFilesView extends MozLitElement {
    */
   handleDeleteModelClick(model) {
     this.dispatch(ModelFilesView.events.delete, {
-      model: model.name,
-      revision: model.revision,
+      ...model,
     });
   }
 
   removeModel(model) {
     this.models = this.models.filter(modelToCheck => {
       return (
-        modelToCheck.name !== model.name &&
+        modelToCheck.name !== model.name ||
         modelToCheck.revision != model.revision
       );
     });

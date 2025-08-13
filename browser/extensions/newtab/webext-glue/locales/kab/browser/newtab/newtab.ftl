@@ -319,15 +319,21 @@ newtab-wallpaper-dark-mountain = Tugna n yidurar
 
 ## Solid Colors
 
+newtab-wallpaper-category-title-colors = Initen imsariyen
 newtab-wallpaper-blue = Amidadi
+newtab-wallpaper-light-blue = Amidadi ifaw
+newtab-wallpaper-light-purple = Avyuli ifaw
+newtab-wallpaper-light-green = Azegzaw ifaw
 newtab-wallpaper-green = Azegzaw
 newtab-wallpaper-beige = Beige
 newtab-wallpaper-yellow = Awraɣ
 newtab-wallpaper-orange = Ačinawi
 newtab-wallpaper-pink = Axuxi
+newtab-wallpaper-light-pink = Axuxi ifaw
 newtab-wallpaper-red = Azggaɣ
 newtab-wallpaper-dark-blue = Amidadi iḥemqen
 newtab-wallpaper-dark-purple = Axuxi Iḥemqen
+newtab-wallpaper-dark-green = Azegzaw iḥemqen
 newtab-wallpaper-brown = Aqehwi
 
 ## Abstract
@@ -336,6 +342,7 @@ newtab-wallpaper-category-title-abstract = Amadwan
 
 ## Celestial
 
+newtab-wallpaper-category-title-photographs = Tiwlafin
 newtab-wallpaper-white-mountains = Idurar imellalen
 # Variables
 #   $author_string (String) - The name of the creator of the photo.
@@ -446,6 +453,9 @@ newtab-custom-wallpaper-cta = Ɛreḍ-it
 newtab-download-mobile-highlight-title = Sader { -brand-product-name } i uziraz
 newtab-download-mobile-highlight-image =
     .aria-label = Tangalt QR i usader n { -brand-product-name } i uziraz
+
+## Strings for shortcuts highlight
+
 
 ## Strings for reporting ads and content
 

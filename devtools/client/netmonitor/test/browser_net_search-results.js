@@ -206,6 +206,9 @@ add_task(async function () {
   typeInNetmonitor(SEARCH_STRING, monitor);
   EventUtils.synthesizeKey("KEY_Enter");
 
+  // Wait for all the updates to complete
+  await waitForAllNetworkUpdateEvents();
+
   // Wait until there are two resources rendered in the results
   await waitForDOMIfNeeded(
     document,
@@ -233,14 +236,27 @@ add_task(async function () {
     ".search-panel-content .treeRow.resultRow"
   );
 
-  // test contex menu entries for contained content:
+  // test context menu entries for contained content:
   const firstContentMatch = contentMatches[0];
+  ok(
+    document.querySelector(".treeRow.selected.opened"),
+    "The previous line, which is the selected line, is expanded to show the result row"
+  );
   await checkContentMenuCopy(firstContentMatch, matchingUrls[0], monitor);
 
   // test the context menu entries for resources
   const secondResourceMatch = resourceMatches[1];
   await checkResourceMenuCopyUrl(secondResourceMatch, matchingUrls[1], monitor);
+
+  // checkResourceMenuResend will trigger a new request, which will be added to the search results
   await checkResourceMenuResend(secondResourceMatch, monitor);
+
+  // Assert that the previously expanded search result is kept expanded when a new request is added
+  ok(
+    document.querySelector(".treeRow.selected.opened"),
+    "The previous line is still expanded after having added a new request is the result list"
+  );
+
   await checkResourceMenuBlockUnblock(
     secondResourceMatch,
     matchingUrls[1],

@@ -2,11 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { actionCreators as ac } from "common/Actions.mjs";
 import { FeatureHighlight } from "./FeatureHighlight";
-import React, { useCallback, useEffect } from "react";
-
-const FEATURE_ID = "FEATURE_FOLLOW_SECTION_BUTTON";
+import React, { useCallback } from "react";
 
 export function FollowSectionButtonHighlight({
   arrowPosition,
@@ -15,36 +12,12 @@ export function FollowSectionButtonHighlight({
   dispatch,
   handleDismiss,
   handleBlock,
-  isIntersecting,
+  feature,
 }) {
   const onDismiss = useCallback(() => {
-    // This event is emitted manually because the feature may be triggered outside the OMC flow,
-    // and may not be captured by the messaging-system’s automatic reporting.
-    dispatch(
-      ac.DiscoveryStreamUserEvent({
-        event: "FEATURE_HIGHLIGHT_DISMISS",
-        source: "FEATURE_HIGHLIGHT",
-        value: FEATURE_ID,
-      })
-    );
-
     handleDismiss();
     handleBlock();
-  }, [dispatch, handleDismiss, handleBlock]);
-
-  useEffect(() => {
-    if (isIntersecting) {
-      // This event is emitted manually because the feature may be triggered outside the OMC flow,
-      // and may not be captured by the messaging-system’s automatic reporting.
-      dispatch(
-        ac.DiscoveryStreamUserEvent({
-          event: "FEATURE_HIGHLIGHT_IMPRESSION",
-          source: "FEATURE_HIGHLIGHT",
-          value: FEATURE_ID,
-        })
-      );
-    }
-  }, [dispatch, isIntersecting]);
+  }, [handleDismiss, handleBlock]);
 
   return (
     <div className="follow-section-button-highlight">
@@ -52,13 +25,12 @@ export function FollowSectionButtonHighlight({
         position={position}
         arrowPosition={arrowPosition}
         verticalPosition={verticalPosition}
-        feature={FEATURE_ID}
+        feature={feature}
         dispatch={dispatch}
         message={
           <div className="follow-section-button-highlight-content">
             <img
               src="chrome://browser/content/asrouter/assets/smiling-fox-icon.svg"
-              data-l10n-id="newtab-download-mobile-highlight-image"
               width="24"
               height="24"
               alt=""

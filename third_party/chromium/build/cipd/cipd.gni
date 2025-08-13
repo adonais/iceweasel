@@ -1,4 +1,4 @@
-# Copyright 2020 The Chromium Authors. All rights reserved.
+# Copyright 2020 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -6,7 +6,7 @@
 #
 # Prepares a CIPD archive and generates a manifest file.
 #
-# TODO(crbug.com/1042819): Add support for including directories.
+# TODO(crbug.com/40115002): Add support for including directories.
 #
 # Parameters:
 #   package_definition_yaml: CIPD package definition filename. "cipd.yaml"
@@ -123,7 +123,7 @@ template("cipd_package_definition_by_file") {
   }
   action(target_name) {
     script = "//chromium/build/cipd/cipd_from_file.py"
-    inputs = [ "//chromium/build/cipd/cipd_from_file.py" ]
+    inputs = [ invoker.files_file ]
     args = [
       "--description=" + invoker.description,
       "--buildtype=" + invoker.buildtype,

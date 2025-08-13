@@ -14,9 +14,9 @@
 
 #include "Units.h"
 #include "mozilla/BasicEvents.h"
-#include "mozilla/dom/Touch.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TouchEvents.h"
+#include "mozilla/dom/Touch.h"
 #include "nsRefPtrHashtable.h"
 
 namespace mozilla {

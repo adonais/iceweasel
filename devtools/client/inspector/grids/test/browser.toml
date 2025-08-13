@@ -1,6 +1,7 @@
 [DEFAULT]
 tags = "devtools"
 subsuite = "devtools"
+prefs = ["devtools.toolbox.footer.height=350"]
 support-files = [
   "doc_iframe_reloaded.html",
   "doc_subgrid.html",
@@ -74,9 +75,7 @@ skip-if = [
 ["browser_grids_highlighter-toggle-telemetry.js"]
 
 ["browser_grids_number-of-css-grids-telemetry.js"]
-skip-if = [
-  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && opt && socketprocess_networking", # Bug 1971598
-]
+skip-if = ["os == 'mac' && os_version == '10.15' && processor == 'x86_64' && opt && socketprocess_networking"] # Bug 1971598
 
 ["browser_grids_persist-color-palette.js"]
 

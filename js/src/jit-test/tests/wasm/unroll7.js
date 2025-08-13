@@ -1,4 +1,4 @@
-// |jit-test| skip-if: true
+// |jit-test| skip-if: wasmCompileMode() != "ion"
 
 // Tests that unrolling actually transforms a loop into something new, by
 // unrolling a loop with just one FP mul and one FP add in it and checking that

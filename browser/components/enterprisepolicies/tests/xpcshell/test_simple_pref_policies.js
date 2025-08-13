@@ -80,6 +80,7 @@ const POLICIES_TESTS = [
         Cryptomining: true,
         Fingerprinting: true,
         EmailTracking: true,
+        SuspectedFingerprinting: true,
         Locked: true,
       },
     },
@@ -88,6 +89,8 @@ const POLICIES_TESTS = [
       "privacy.trackingprotection.fingerprinting.enabled": true,
       "privacy.trackingprotection.emailtracking.enabled": true,
       "privacy.trackingprotection.emailtracking.pbmode.enabled": true,
+      "privacy.fingerprintingProtection": true,
+      "privacy.fingerprintingProtection.pbmode": true,
     },
   },
 
@@ -1175,10 +1178,9 @@ const POLICIES_TESTS = [
       SkipTermsOfUse: true,
     },
     lockedPrefs: {
-      "datareporting.policy.dataSubmissionPolicyAcceptedVersion": 999,
-      // "datareporting.policy.dataSubmissionPolicyNotifiedTime" is a string of
-      // the timestamp at which the policy was set, this is tested in
-      // browser/components/enterprisepolicies/tests/browser/browser_policy_usermessaging.js
+      "termsofuse.acceptedVersion": 999,
+      // "termsofuse.acceptedVersion" is a string of
+      // the timestamp at which the policy was set
     },
   },
 ];

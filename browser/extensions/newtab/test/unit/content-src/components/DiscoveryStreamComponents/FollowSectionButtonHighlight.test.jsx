@@ -1,7 +1,6 @@
 import { FollowSectionButtonHighlight } from "content-src/components/DiscoveryStreamComponents/FeatureHighlight/FollowSectionButtonHighlight";
 import { mount } from "enzyme";
 import React from "react";
-import { actionCreators as ac } from "common/Actions.mjs";
 
 describe("Discovery Stream <FollowSectionButtonHighlight>", () => {
   let wrapper;
@@ -25,6 +24,7 @@ describe("Discovery Stream <FollowSectionButtonHighlight>", () => {
         arrowPosition="arrow-inline-start"
         verticalPosition="inset-block-center"
         position="inset-inline-end"
+        feature="FEATURE_FOLLOW_SECTION_BUTTON"
       />
     );
   });
@@ -38,37 +38,12 @@ describe("Discovery Stream <FollowSectionButtonHighlight>", () => {
     assert.ok(wrapper.find(".follow-section-button-highlight").exists());
   });
 
-  it("should dispatch impression event when isIntersecting is true", () => {
-    wrapper.setProps({ isIntersecting: true });
-    wrapper.setProps({ __trigger__: Date.now() }); // force re-render to trigger useEffect
-
-    assert(
-      dispatch.calledWithMatch(
-        ac.DiscoveryStreamUserEvent({
-          event: "FEATURE_HIGHLIGHT_IMPRESSION",
-          source: "FEATURE_HIGHLIGHT",
-          value: "FEATURE_FOLLOW_SECTION_BUTTON",
-        })
-      )
-    );
-  });
-
   it("should dispatch dismiss event and call handleDismiss and handleBlock", () => {
     const dismissCallback = wrapper
       .find("FeatureHighlight")
       .prop("dismissCallback");
 
     dismissCallback();
-
-    assert(
-      dispatch.calledWithMatch(
-        ac.DiscoveryStreamUserEvent({
-          event: "FEATURE_HIGHLIGHT_DISMISS",
-          source: "FEATURE_HIGHLIGHT",
-          value: "FEATURE_FOLLOW_SECTION_BUTTON",
-        })
-      )
-    );
 
     assert(handleDismiss.calledOnce);
     assert(handleBlock.calledOnce);

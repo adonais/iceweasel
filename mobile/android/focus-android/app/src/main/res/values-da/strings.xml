@@ -150,6 +150,8 @@
     %2$s is the url for the learn-more link.
   -->
   <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s giver dig fuld kontrol.</p> <p>Anvend den som privat browser: <ul> <li>Søg og surf direkte i appen</li> <li>Bloker sporing (eller opdater indstillingerne og tillad sporing)</li> <li>Fjern nemt cookies samt søge- og browser-historik</li> </ul> </p> <p>%1$s er udviklet af Mozilla. Vores formål er at fremme et sundt, åbent internet.<br/> <a href=\"%2$s\">Læs mere</a></p>]]></string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">Læs mere</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">Privatliv og sikkerhed</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -486,8 +488,6 @@
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
   <string name="onboarding_first_screen_privacy_notice_link_2">privatlivserklæring</string>
   <!-- New Onboarding flow first screen button label -->
-  <string name="onboarding_first_screen_button_agree_and_continue" moz:removedIn="140" tools:ignore="UnusedResources">Accepter og fortsæt</string>
-  <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue_2">Fortsæt</string>
   <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
   <string name="a11y_link_available">Link tilgængeligt</string>
@@ -708,18 +708,6 @@
   <string name="preference_block_autoplay_audio_only_summary">Anbefalet</string>
   <!-- Preference for block autoplay audio and video -->
   <string name="preference_block_autoplay_audio_video">Bloker lyd og video</string>
-  <!-- Preference for studies -->
-  <string name="preference_studies" moz:removedIn="140">Undersøgelser</string>
-  <!-- Preference for studies summary -->
-  <string name="preference_studies_summary" tools:ignore="BrandUsage" moz:removedIn="140">Firefox kan installere og afvikle undersøgelser.</string>
-  <!-- Learn more link for studies, links to an article for more information about studies. -->
-  <string name="studies_learn_more" moz:removedIn="140">Læs mere</string>
-  <!-- Title of the remove studies button -->
-  <string name="studies_remove" moz:removedIn="140">Fjern</string>
-  <!-- Title of the active section on the studies list -->
-  <string name="studies_active" moz:removedIn="140">Aktive</string>
-  <!-- Title of the completed section on the studies list -->
-  <string name="studies_completed" moz:removedIn="140">Gennemførte</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">Ekstern debugging via USB/wi-fi</string>
   <!-- Text Button for show biometric prompt -->

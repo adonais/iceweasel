@@ -93,7 +93,7 @@ mime-guess-ffi = { path = "../../../../dom/fs/parent/rust/mime-guess-ffi" }
 # changing this version.
 rusqlite = { workspace = true, features = ["modern_sqlite", "in_gecko"] }
 
-fluent = { version = "0.16.0", features = ["fluent-pseudo"] }
+fluent = { version = "0.17.0", features = ["fluent-pseudo"] }
 fluent-ffi = { path = "../../../../intl/l10n/rust/fluent-ffi" }
 l10nregistry-ffi = { path = "../../../../intl/l10n/rust/l10nregistry-ffi" }
 l10nregistry = { path = "../../../../intl/l10n/rust/l10nregistry-rs" }
@@ -108,6 +108,8 @@ aa-stroke = { git = "https://github.com/FirefoxGraphics/aa-stroke", rev = "a821f
 etagere = { version = "0.2.13", features = ["ffi"] }
 
 url = "2.5.0"
+urlpattern = "0.3.0"
+urlpattern_glue = { path = "../../../../netwerk/base/urlpattern_glue" }
 
 libz-rs-sys = { version = "0.4.1", features = ["custom-prefix"], optional = true }
 

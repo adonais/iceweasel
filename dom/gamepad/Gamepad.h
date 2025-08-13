@@ -43,9 +43,8 @@ class Gamepad final : public nsISupports, public nsWrapperCache {
  public:
   Gamepad(nsISupports* aParent, const nsAString& aID, int32_t aIndex,
           GamepadHandle aHandle, GamepadMappingType aMapping, GamepadHand aHand,
-          uint32_t aDisplayID, uint32_t aNumButtons, uint32_t aNumAxes,
-          uint32_t aNumHaptics, uint32_t aNumLightIndicator,
-          uint32_t aNumTouchEvents);
+          uint32_t aNumButtons, uint32_t aNumAxes, uint32_t aNumHaptics,
+          uint32_t aNumLightIndicator, uint32_t aNumTouchEvents);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Gamepad)
@@ -77,8 +76,6 @@ class Gamepad final : public nsISupports, public nsWrapperCache {
   DOMHighResTimeStamp Timestamp() const { return mTimestamp; }
 
   GamepadMappingType Mapping() { return mMapping; }
-
-  uint32_t DisplayId() const { return mDisplayId; }
 
   GamepadHand Hand() { return mHand; }
 
@@ -120,7 +117,6 @@ class Gamepad final : public nsISupports, public nsWrapperCache {
   int32_t mIndex;
   // the gamepad hash key in GamepadManager
   GamepadHandle mHandle;
-  uint32_t mDisplayId;
   uint32_t mTouchIdHashValue;
   // The mapping in use.
   GamepadMappingType mMapping;

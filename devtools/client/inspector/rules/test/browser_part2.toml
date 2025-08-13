@@ -333,9 +333,7 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_rules_selector_highlight.js"]
 
 ["browser_rules_selector_warnings.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1945519, perma failing on windows.
-]
+skip-if = ["os == 'win' && os_version == '11.26100' && processor == 'x86_64'"] # Bug 1945519, perma failing on windows.
 
 ["browser_rules_shadowdom_slot_rules.js"]
 

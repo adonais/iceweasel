@@ -35,18 +35,10 @@ export const TaskbarTabsPageAction = {
    * @param {DOMWindow} aWindow - The browser window.
    */
   init(aWindow) {
-    let taskbarTabsEnabled = lazy.TaskbarTabsUtils.isEnabled();
     let isPopupWindow = !aWindow.toolbar.visible;
-    // WARNING: If we ever enable private browsing in Taskbar Tabs, we need to
-    // revisit pin code which assumes we're not in a private context.
     let isPrivate = lazy.PrivateBrowsingUtils.isWindowPrivate(aWindow);
 
-    if (
-      !taskbarTabsEnabled ||
-      isPopupWindow ||
-      isPrivate ||
-      AppConstants.platform != "win"
-    ) {
+    if (isPopupWindow || isPrivate || AppConstants.platform != "win") {
       lazy.logConsole.info("Not initializing Taskbar Tabs Page Action.");
       return;
     }
@@ -56,7 +48,7 @@ export const TaskbarTabsPageAction = {
     let taskbarTabsButton = aWindow.document.getElementById(kWidgetId);
     taskbarTabsButton.addEventListener("click", this, true);
 
-    taskbarTabsButton.hidden = false;
+    initVisibilityChanges(aWindow, taskbarTabsButton);
   },
 
   /**
@@ -68,6 +60,11 @@ export const TaskbarTabsPageAction = {
    * @returns {Promise} Resolves once the event has been handled.
    */
   async handleEvent(aEvent) {
+    if (aEvent.button != 0) {
+      // Only handle left-click events.
+      return;
+    }
+
     let window = aEvent.target.ownerGlobal;
     let currentTab = window.gBrowser.selectedTab;
 
@@ -120,3 +117,37 @@ export const TaskbarTabsPageAction = {
     }
   },
 };
+
+/**
+ * Shows or hides the page action as the user navigates.
+ *
+ * @param {Window} aWindow - The window that contains the page action.
+ * @param {Element} aElement - The element that makes up the page action.
+ */
+function initVisibilityChanges(aWindow, aElement) {
+  // Filled in at the end; memoized to avoid performance failures.
+  let isTaskbarTabsEnabled = false;
+
+  const shouldHide = aLocation =>
+    !(aLocation.scheme.startsWith("http") && isTaskbarTabsEnabled);
+
+  aWindow.gBrowser.addProgressListener({
+    onLocationChange(aWebProgress, aRequest, aLocation) {
+      if (aWebProgress.isTopLevel) {
+        aElement.hidden = shouldHide(aLocation);
+      }
+    },
+  });
+
+  const observer = () => {
+    isTaskbarTabsEnabled = lazy.TaskbarTabsUtils.isEnabled();
+    aElement.hidden = shouldHide(aWindow.gBrowser.currentURI);
+  };
+
+  Services.prefs.addObserver("browser.taskbarTabs.enabled", observer);
+  aWindow.addEventListener("unload", function () {
+    Services.prefs.removeObserver("browser.taskbarTabs.enabled", observer);
+  });
+
+  observer();
+}

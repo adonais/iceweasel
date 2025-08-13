@@ -190,8 +190,11 @@ void AbstractRange::UnmarkDescendants(nsINode& aNode) {
 
 // NOTE: If you need to change default value of members of AbstractRange,
 //       update nsRange::Create(nsINode* aNode) and ClearForReuse() too.
-AbstractRange::AbstractRange(nsINode* aNode, bool aIsDynamicRange)
-    : mRegisteredClosestCommonInclusiveAncestor(nullptr),
+AbstractRange::AbstractRange(nsINode* aNode, bool aIsDynamicRange,
+                             TreeKind aBoundaryTreeKind)
+    : mStart(aBoundaryTreeKind),
+      mEnd(aBoundaryTreeKind),
+      mRegisteredClosestCommonInclusiveAncestor(nullptr),
       mIsPositioned(false),
       mIsGenerated(false),
       mCalledByJS(false),
@@ -261,8 +264,10 @@ nsINode* AbstractRange::GetClosestCommonInclusiveAncestor(
   nsINode* endContainer = ShadowDOMSelectionHelpers::GetEndContainer(
       this, aAllowCrossShadowBoundary);
 
-  if (MayCrossShadowBoundary() &&
-      aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
+  if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes) {
+    if (startContainer == endContainer) {
+      return startContainer;
+    }
     // Since both the start container and the end container are
     // guaranteed to be in the same composed document.
     // If one of the boundary is a document, use that document
@@ -369,10 +374,12 @@ nsresult AbstractRange::SetStartAndEndInternal(
       // Don't create the cross shadow bounday range if the one of the roots is
       // an UA widget regardless whether the boundaries are allowed to cross
       // shadow boundary or not.
-      if (!IsRootUAWidget(newStartRoot) && !IsRootUAWidget(newEndRoot)) {
+      if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes &&
+          !IsRootUAWidget(newStartRoot) && !IsRootUAWidget(newEndRoot)) {
         aRange->AsDynamicRange()
-            ->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(aStartBoundary,
-                                                             aEndBoundary);
+            ->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+                aStartBoundary.AsRangeBoundaryInFlatTree(),
+                aEndBoundary.AsRangeBoundaryInFlatTree());
       }
     }
     return NS_OK;
@@ -399,6 +406,16 @@ nsresult AbstractRange::SetStartAndEndInternal(
 
   // Otherwise, set the range as specified.
   aRange->DoSetRange(aStartBoundary, aEndBoundary, newStartRoot);
+
+  if (aAllowCrossShadowBoundary == AllowRangeCrossShadowBoundary::Yes &&
+      aRange->IsDynamicRange()) {
+    auto startInFlat = aStartBoundary.AsRangeBoundaryInFlatTree();
+    auto endInFlat = aEndBoundary.AsRangeBoundaryInFlatTree();
+
+    aRange->AsDynamicRange()->CreateOrUpdateCrossShadowBoundaryRangeIfNeeded(
+        startInFlat, endInFlat);
+  }
+
   return NS_OK;
 }
 
@@ -603,8 +620,8 @@ bool AbstractRange::AreNormalRangeAndCrossShadowBoundaryRangeCollapsed() const {
 
 void AbstractRange::ClearForReuse() {
   mOwner = nullptr;
-  mStart = RangeBoundary();
-  mEnd = RangeBoundary();
+  mStart = RangeBoundary(mStart.GetTreeKind());
+  mEnd = RangeBoundary(mEnd.GetTreeKind());
   mIsPositioned = false;
   mIsGenerated = false;
   mCalledByJS = false;

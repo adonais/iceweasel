@@ -181,7 +181,7 @@ reftest.Runner = class {
     lazy.assert.positiveInteger(height);
 
     let reftestWin = this.parentWindow.open(
-      "chrome://remote/content/marionette/reftest.xhtml",
+      "chrome://remote/content/marionette/reftest-chrome/reftest.xhtml",
       "reftest",
       `chrome,height=${height},width=${width}`
     );

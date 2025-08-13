@@ -7,6 +7,7 @@
 include "mozilla/dom/DomSecurityIPCUtils.h";
 include "mozilla/GfxMessageUtils.h";
 include "mozilla/dom/CSPMessageUtils.h";
+include "mozilla/dom/PolicyContainerMessageUtils.h";
 include "mozilla/dom/DocShellMessageUtils.h";
 include "mozilla/dom/NavigationAPIIPCUtils.h";
 include "mozilla/dom/PermissionMessageUtils.h";
@@ -52,7 +53,7 @@ using nsILoadInfo::SchemelessInputType from "nsILoadInfo.h";
 [RefCounted] using class nsIPrincipal from "nsIPrincipal.h";
 using mozilla::dom::MaybeDiscardedBrowsingContext from "mozilla/dom/BrowsingContext.h";
 [RefCounted] using class nsIURI from "nsIURI.h";
-[RefCounted] using class nsIContentSecurityPolicy from "nsIContentSecurityPolicy.h";
+[RefCounted] using class nsIPolicyContainer from "nsIPolicyContainer.h";
 [RefCounted] using class nsIInputStream from "mozilla/ipc/IPCStreamUtils.h";
 [RefCounted] using class nsIReferrerInfo from "nsIReferrerInfo.h";
 [RefCounted] using class nsIVariant from "nsIVariant.h";
@@ -164,13 +165,13 @@ struct DocShellLoadStateInit
   nullable nsIPrincipal PrincipalToInherit;
   nullable nsIPrincipal PartitionedPrincipalToInherit;
   nullable nsIURI BaseURI;
-  // The Content Security Policy of the load, that is, the CSP of the entity
-  // responsible for causing the load to occur. Most likely this is the CSP
+  // The Policy Container of the load, that is, the policyContainer of the entity
+  // responsible for causing the load to occur. Most likely this is the policyContainer
   // of the document that started the load. In case the entity starting the
-  // load did not use a CSP, then Csp can be null. Please note that this is
-  // also the CSP that will be applied to the load in case the load
+  // load did not use a policyContainer, then policyContainer can be null. Please note that
+  // this is also the policyContainer that will be applied to the load in case the load
   // encounters a server side redirect.
-  nullable nsIContentSecurityPolicy Csp;
+  nullable nsIPolicyContainer PolicyContainer;
   nullable nsIInputStream PostDataStream;
   nullable nsIInputStream HeadersStream;
   nullable nsIURI UnstrippedURI;

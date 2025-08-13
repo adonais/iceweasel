@@ -117,6 +117,14 @@ const PREF_USER_INFERRED_PERSONALIZATION =
   "discoverystream.sections.personalization.inferred.user.enabled";
 const PREF_SYSTEM_INFERRED_PERSONALIZATION =
   "discoverystream.sections.personalization.inferred.enabled";
+const PREF_BILLBOARD_ENABLED = "newtabAdSize.billboard";
+const PREF_LEADERBOARD_ENABLED = "newtabAdSize.leaderboard";
+const PREF_LEADERBOARD_POSITION = "newtabAdSize.leaderboard.position";
+const PREF_BILLBOARD_POSITION = "newtabAdSize.billboard.position";
+const PREF_CONTEXTUAL_BANNER_PLACEMENTS =
+  "discoverystream.placements.contextualBanners";
+const PREF_CONTEXTUAL_BANNER_COUNTS =
+  "discoverystream.placements.contextualBanners.counts";
 
 const PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
 const PREF_SECTIONS_FOLLOWING = "discoverystream.sections.following";
@@ -127,6 +135,8 @@ const PREF_VISIBLE_SECTIONS =
   "discoverystream.sections.interestPicker.visibleSections";
 const PREF_PRIVATE_PING_ENABLED = "telemetry.privatePing.enabled";
 const PREF_SURFACE_ID = "telemetry.surfaceId";
+
+const PREF_WIDGET_LISTS_ENABLED = "widgets.lists.enabled";
 
 let getHardcodedLayout;
 
@@ -799,6 +809,10 @@ export class DiscoveryStreamFeed {
     const sponsoredCollectionsEnabled =
       this.store.getState().Prefs.values[PREF_COLLECTIONS_ENABLED];
 
+    // TODO: Add all pref logic
+    const widgetsEnabled =
+      this.store.getState().Prefs.values[PREF_WIDGET_LISTS_ENABLED];
+
     const pocketConfig = this.store.getState().Prefs.values?.pocketConfig || {};
     const onboardingExperience =
       this.isBff && pocketConfig.onboardingExperience;
@@ -938,6 +952,7 @@ export class DiscoveryStreamFeed {
         ? spocMessageVariant
         : "",
       pocketStoriesHeadlineId: pocketConfig.pocketStoriesHeadlineId,
+      widgetsEnabled,
     });
 
     sendUpdate({
@@ -1205,34 +1220,63 @@ export class DiscoveryStreamFeed {
   // The results are ads that are contextual, and match an IAB category.
   getContextualAdsPlacements() {
     const state = this.store.getState();
-    const placementsArray = state.Prefs.values[
+
+    const billboardEnabled = state.Prefs.values[PREF_BILLBOARD_ENABLED];
+    const billboardPosition = state.Prefs.values[PREF_BILLBOARD_POSITION];
+    const leaderboardEnabled = state.Prefs.values[PREF_LEADERBOARD_ENABLED];
+    const leaderboardPosition = state.Prefs.values[PREF_LEADERBOARD_POSITION];
+
+    function getContextualStringPref(prefName) {
+      return state.Prefs.values[prefName]
+        ?.split(",")
+        .map(s => s.trim())
+        .filter(item => item);
+    }
+
+    function getContextualCountPref(prefName) {
+      return state.Prefs.values[prefName]
+        ?.split(`,`)
+        .map(s => s.trim())
+        .filter(item => item)
+        .map(item => parseInt(item, 10));
+    }
+
+    const placementSpocsArray = getContextualStringPref(
       PREF_CONTEXTUAL_SPOC_PLACEMENTS
-    ]?.split(`,`)
-      .map(s => s.trim())
-      .filter(item => item);
-    const countsArray = state.Prefs.values[PREF_CONTEXTUAL_SPOC_COUNTS]?.split(
-      `,`
-    )
-      .map(s => s.trim())
-      .filter(item => item)
-      .map(item => parseInt(item, 10));
+    );
+    const countsSpocsArray = getContextualCountPref(
+      PREF_CONTEXTUAL_SPOC_COUNTS
+    );
+    const bannerPlacementsArray = getContextualStringPref(
+      PREF_CONTEXTUAL_BANNER_PLACEMENTS
+    );
+    const bannerCountsArray = getContextualCountPref(
+      PREF_CONTEXTUAL_BANNER_COUNTS
+    );
 
     const feeds = state.DiscoveryStream.feeds.data;
+
     const recsFeed = Object.values(feeds).find(
       feed => feed?.data?.sections?.length
     );
 
+    let iabSections = [];
     let iabPlacements = [];
+    let bannerPlacements = [];
 
     // If we don't have recsFeed, it means we are loading for the first time,
     // and don't have any cached data.
     // In this situation, we don't fill iabPlacements,
     // and go with the non IAB default contextual placement prefs.
     if (recsFeed) {
-      // An array of all iab placements, flattened, sorted, and filtered.
-      iabPlacements = recsFeed.data.sections
+      iabSections = recsFeed.data.sections
         .filter(section => section.iab)
-        .sort((a, b) => a.receivedRank - b.receivedRank)
+        .sort((a, b) => a.receivedRank - b.receivedRank);
+
+      // An array of all iab placement, flattened, sorted, and filtered.
+      iabPlacements = iabSections
+        // .filter(section => section.iab)
+        // .sort((a, b) => a.receivedRank - b.receivedRank)
         .reduce((acc, section) => {
           const iabArray = section.layout.responsiveLayouts[0].tiles
             .filter(tile => tile.hasAd)
@@ -1243,11 +1287,31 @@ export class DiscoveryStreamFeed {
         }, []);
     }
 
-    return placementsArray.map((placement, index) => ({
+    const spocPlacements = placementSpocsArray.map((placement, index) => ({
       placement,
-      count: countsArray[index],
+      count: countsSpocsArray[index],
       ...(iabPlacements[index] ? { content: iabPlacements[index] } : {}),
     }));
+
+    if (billboardEnabled) {
+      bannerPlacements = bannerPlacementsArray.map((placement, index) => ({
+        placement,
+        count: bannerCountsArray[index],
+        ...(iabSections[billboardPosition - 2]
+          ? { content: iabSections[billboardPosition - 2].iab }
+          : {}),
+      }));
+    } else if (leaderboardEnabled) {
+      bannerPlacements = bannerPlacementsArray.map((placement, index) => ({
+        placement,
+        count: bannerCountsArray[index],
+        ...(iabSections[leaderboardPosition - 2]
+          ? { content: iabSections[leaderboardPosition - 2].iab }
+          : {}),
+      }));
+    }
+
+    return [...spocPlacements, ...bannerPlacements];
   }
 
   // This returns ad placements that don't contain IAB content.
@@ -1612,12 +1676,20 @@ export class DiscoveryStreamFeed {
     }
     const headers = new Headers();
     headers.append("content-type", "application/json");
+    const marsOhttpEnabled = Services.prefs.getBoolPref(
+      "browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled",
+      false
+    );
 
-    await this.fetchFromEndpoint(endpoint, {
-      method: "DELETE",
-      headers,
-      body: JSON.stringify(body),
-    });
+    await this.fetchFromEndpoint(
+      endpoint,
+      {
+        method: "DELETE",
+        headers,
+        body: JSON.stringify(body),
+      },
+      marsOhttpEnabled
+    );
   }
 
   observe(subject, topic, data) {
@@ -2764,7 +2836,7 @@ export class DiscoveryStreamFeed {
       // Check if spocs was disabled. Remove them if they were.
       case PREF_SHOW_SPONSORED:
       case PREF_SHOW_SPONSORED_TOPSITES: {
-        this.updateOrRemoveSpocs();
+        await this.updateOrRemoveSpocs();
         break;
       }
     }
@@ -3115,6 +3187,7 @@ getHardcodedLayout = ({
   ctaButtonVariant = "",
   spocMessageVariant = "",
   pocketStoriesHeadlineId = "newtab-section-header-stories",
+  widgetsEnabled = false,
 }) => ({
   lastUpdate: Date.now(),
   spocs: {
@@ -3149,6 +3222,13 @@ getHardcodedLayout = ({
             : {}),
           properties: {},
         },
+        ...(widgetsEnabled
+          ? [
+              {
+                type: "Widgets",
+              },
+            ]
+          : []),
         ...(sponsoredCollectionsEnabled
           ? [
               {

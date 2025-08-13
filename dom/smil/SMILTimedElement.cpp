@@ -2022,7 +2022,7 @@ bool SMILTimedElement::GetNextMilestone(SMILMilestone& aNextMilestone) const {
 
       // Check for an early end before that time
       SMILInstanceTime* earlyEnd = CheckForEarlyEnd(nextMilestone);
-      if (earlyEnd) {
+      if (earlyEnd && earlyEnd->Time().IsDefinite()) {
         aNextMilestone.mIsEnd = true;
         aNextMilestone.mTime = earlyEnd->Time().GetMillis();
         return true;

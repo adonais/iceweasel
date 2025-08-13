@@ -997,6 +997,12 @@ final class BasicGeckoViewPrompt implements GeckoSession.PromptDelegate {
     }
 
     Uri uri = data.getData();
+
+    if (prompt.type == FilePrompt.Type.FOLDER) {
+      res.complete(prompt.confirm(mActivity, uri));
+      return;
+    }
+
     final ClipData clip = data.getClipData();
 
     if (uri == null) return;
@@ -1020,8 +1026,6 @@ final class BasicGeckoViewPrompt implements GeckoSession.PromptDelegate {
         uris.add(clip.getItemAt(i).getUri());
       }
       res.complete(prompt.confirm(mActivity, uris.toArray(new Uri[uris.size()])));
-    } else if (prompt.type == FilePrompt.Type.FOLDER) {
-      res.complete(prompt.confirm(mActivity, uri));
     }
   }
 

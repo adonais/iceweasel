@@ -6,45 +6,42 @@
 
 #include "nsLayoutModule.h"
 
-#include "base/basictypes.h"
-
+#include "ThirdPartyUtil.h"
 #include "XPCModule.h"
+#include "base/basictypes.h"
+#include "gfxPlatform.h"
 #include "mozilla/Components.h"
 #include "mozilla/ModuleUtils.h"
-#include "nsImageModule.h"
-#include "nsLayoutStatics.h"
+#include "mozilla/dom/quota/QuotaManagerService.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "nsContentDLF.h"
 #include "nsContentPolicyUtils.h"
-#include "nsDataDocumentContentPolicy.h"
-#include "nsNoDataProtocolContentPolicy.h"
 #include "nsDOMCID.h"
+#include "nsDataDocumentContentPolicy.h"
+#include "nsFocusManager.h"
 #include "nsFrameMessageManager.h"
 #include "nsHTMLContentSerializer.h"
 #include "nsHTMLParts.h"
 #include "nsIContentSerializer.h"
 #include "nsIDocumentViewer.h"
-#include "nsPlainTextSerializer.h"
-#include "nsXMLContentSerializer.h"
-#include "nsXHTMLContentSerializer.h"
-#include "nsFocusManager.h"
-#include "ThirdPartyUtil.h"
-#include "gfxPlatform.h"
-#include "mozilla/gfx/gfxVars.h"
-#include "mozilla/dom/quota/QuotaManagerService.h"
-
 #include "nsIEventListenerService.h"
+#include "nsImageModule.h"
+#include "nsLayoutStatics.h"
+#include "nsNoDataProtocolContentPolicy.h"
+#include "nsPlainTextSerializer.h"
+#include "nsXHTMLContentSerializer.h"
+#include "nsXMLContentSerializer.h"
 
 // view stuff
-#include "nsContentCreatorFunctions.h"
-
 #include "mozilla/dom/LocalStorageCommon.h"
 #include "mozilla/dom/LocalStorageManager.h"
 #include "mozilla/dom/LocalStorageManager2.h"
 #include "mozilla/dom/SessionStorageManager.h"
+#include "nsContentCreatorFunctions.h"
 
 #ifdef MOZ_WEBSPEECH
-#  include "mozilla/dom/nsSynthVoiceRegistry.h"
 #  include "mozilla/dom/OnlineSpeechRecognitionService.h"
+#  include "mozilla/dom/nsSynthVoiceRegistry.h"
 #endif
 
 #include "mozilla/dom/PushNotifier.h"
@@ -52,8 +49,8 @@ using mozilla::dom::PushNotifier;
 #define PUSHNOTIFIER_CID \
   {0x2fc2d3e3, 0x020f, 0x404e, {0xb0, 0x6a, 0x6e, 0xcf, 0x3e, 0xa2, 0x33, 0x4a}}
 
-#include "nsScriptSecurityManager.h"
 #include "nsNetCID.h"
+#include "nsScriptSecurityManager.h"
 #if defined(MOZ_WIDGET_ANDROID)
 #  include "nsHapticFeedback.h"
 #endif

@@ -1,0 +1,44 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <title>action.onUserSettingsChanged Test</title>
+  <script type="text/javascript" src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script type="text/javascript" src="/tests/SimpleTest/ExtensionTestUtils.js"></script>
+  <script type="text/javascript" src="head.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css" />
+</head>
+
+<body>
+  <script type="text/javascript">
+    "use strict";
+    async function background() {
+      let action = browser.action || browser.browserAction;
+
+      let listener = function () {};
+
+      browser.test.log("Test basic functionality of action.onUserSettingsChanged event");
+
+      action.onUserSettingsChanged.addListener(listener);
+      action.onUserSettingsChanged.removeListener(listener);
+
+      await browser.test.notifyPass("onUserSettingsChanged");
+    }
+    add_task(async function browserAction_onUserSettingsChanged() {
+      let extensionData = { manifest: { manifest_version: 2, browser_action: {} }, background }
+      let extension = ExtensionTestUtils.loadExtension(extensionData);
+      await extension.startup();
+      await extension.awaitFinish("onUserSettingsChanged");
+      await extension.unload();
+    });
+    add_task(async function action_onUserSettingsChanged() {
+      let extensionData = { manifest: { manifest_version: 3, action: {} }, background }
+      let extension = ExtensionTestUtils.loadExtension(extensionData);
+      await extension.startup();
+      await extension.awaitFinish("onUserSettingsChanged");
+      await extension.unload();
+    });
+  </script>
+</body>
+
+</html>

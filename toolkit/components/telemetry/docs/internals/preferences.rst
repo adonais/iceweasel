@@ -198,6 +198,36 @@ Data-choices notification
 
   This is the only channel-specific version that we currently use for the minimum policy version.
 
+.. The data-choices notification preferences (``datareporting.policy.*``) and
+.. their associated code paths represent the legacy telemetry data submission
+.. policy flow and are slated for deprecation. The newer Terms of Use
+.. notification flow (``termsofuse.*`` preferences) described below is now the
+.. primary mechanism for managing user consent and will be the supported path
+.. going forward.
+
+Terms of Use notification
+-------------------------
+
+``termsofuse.acceptedDate``
+
+  Records the stringified timestamp (ms since epoch) when the user accepted the Terms of Use.
+
+``termsofuse.acceptedVersion``
+
+  Records the version number of the Terms of Use that the user accepted.
+
+``termsofuse.minimumVersion``
+
+  The minimum Terms of Use version the user must have accepted to skip re-notification.
+
+``termsofuse.currentVersion``
+
+  Stores the current Terms of Use version, overrides the default value defined in TelemetryReportingPolicy.sys.mjs.
+
+``termsofuse.bypassNotification``
+
+  If true, suppresses showing the Terms of Use flow (used for tests or explicit bypass).
+
 Testing
 -------
 

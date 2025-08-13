@@ -6,6 +6,8 @@
 
 #include "PositionedEventTargeting.h"
 
+#include <algorithm>
+
 #include "Units.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/MouseEvents.h"
@@ -15,24 +17,23 @@
 #include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/ToString.h"
 #include "mozilla/ViewportUtils.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsContainerFrame.h"
 #include "nsCoord.h"
-#include "nsFrameList.h"  // for DEBUG_FRAME_DUMP
-#include "nsHTMLParts.h"
-#include "nsLayoutUtils.h"
-#include "nsGkAtoms.h"
+#include "nsDeviceContext.h"
 #include "nsFontMetrics.h"
+#include "nsFrameList.h"  // for DEBUG_FRAME_DUMP
+#include "nsGkAtoms.h"
+#include "nsHTMLParts.h"
 #include "nsIContentInlines.h"
+#include "nsIFrame.h"
+#include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsPrintfCString.h"
-#include "mozilla/dom/Element.h"
 #include "nsRegion.h"
-#include "nsDeviceContext.h"
-#include "nsIFrame.h"
-#include <algorithm>
 
 using namespace mozilla;
 using namespace mozilla::dom;

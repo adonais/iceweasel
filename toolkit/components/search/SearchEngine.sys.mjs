@@ -6,23 +6,20 @@
 
 /**
  * @typedef {import("./AddonSearchEngine.sys.mjs").AddonSearchEngine} AddonSearchEngine
- * @typedef {import("./OpenSearchEngine.sys.mjs").OpenSearchEngine} OpenSearchEngine
  */
 
-const lazy = {};
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   SearchSettings: "moz-src:///toolkit/components/search/SearchSettings.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   OpenSearchEngine:
     "moz-src:///toolkit/components/search/OpenSearchEngine.sys.mjs",
-});
-
-ChromeUtils.defineLazyGetter(lazy, "logConsole", () => {
-  return console.createInstance({
-    prefix: "SearchEngine",
-    maxLogLevel: lazy.SearchUtils.loggingEnabled ? "Debug" : "Warn",
-  });
+  logConsole: () =>
+    console.createInstance({
+      prefix: "SearchEngine",
+      maxLogLevel: lazy.SearchUtils.loggingEnabled ? "Debug" : "Warn",
+    }),
 });
 
 // Supported OpenSearch parameters
@@ -856,7 +853,7 @@ export class SearchEngine {
    *
    * @param {object} options
    *   The options for this function.
-   * @param {AddonSearchEngine|OpenSearchEngine} [options.engine]
+   * @param {AddonSearchEngine|InstanceType<typeof lazy.OpenSearchEngine>} [options.engine]
    *   The search engine to override with this engine. If not specified, `manifest`
    *   must be provided.
    * @param {object} [options.extension]
@@ -873,9 +870,11 @@ export class SearchEngine {
       this.copyUserSettingsFrom(engine);
 
       this._urls = engine._urls;
-      this.setAttr("overriddenBy", engine._extensionID ?? engine.id);
       if (engine instanceof lazy.OpenSearchEngine) {
+        this.setAttr("overriddenBy", engine.id);
         this.setAttr("overriddenByOpenSearch", engine.toJSON());
+      } else {
+        this.setAttr("overriddenBy", engine._extensionID);
       }
     } else {
       this._urls = [];
@@ -1202,7 +1201,7 @@ export class SearchEngine {
    *
    * @param {string} searchTerms
    *   The search term(s) for the submission.
-   * @param {lazy.SearchUtils.URL_TYPE} [responseType]
+   * @param {Values<typeof lazy.SearchUtils.URL_TYPE>} [responseType]
    *   The MIME type that we'd like to receive in response
    *   to this submission.  If null, will default to "text/html".
    * @returns {nsISearchSubmission|null}
@@ -1462,7 +1461,9 @@ export class SearchEngine {
 
     let searchURI = this.searchURLWithNoTerms;
 
-    let callbacks = options.window.docShell.QueryInterface(Ci.nsILoadContext);
+    let callbacks = options.window.docShell.QueryInterface(
+      Ci.nsIInterfaceRequestor
+    );
 
     // Using the content principal which is constructed by the search URI
     // and given originAttributes. If originAttributes are not given, we

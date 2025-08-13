@@ -8,7 +8,7 @@
   add_task(async function setup_db() {
     await SpecialPowers.spawnChrome([location.href], async (url) => {
       let { db } = ChromeUtils.importESModule(
-        "resource://gre/modules/NotificationDB.sys.mjs"
+        "moz-src:///dom/notification/NotificationDB.sys.mjs"
       );
 
       const origin = new URL(url).origin;

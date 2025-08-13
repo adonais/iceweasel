@@ -7,9 +7,9 @@
 #ifndef mozilla_BorderCache_h_
 #define mozilla_BorderCache_h_
 
-#include "mozilla/gfx/2D.h"
-#include "mozilla/HashFunctions.h"
 #include "PLDHashTable.h"
+#include "mozilla/HashFunctions.h"
+#include "mozilla/gfx/2D.h"
 
 namespace mozilla {
 // Cache for best overlap and best dashLength.

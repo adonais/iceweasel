@@ -9,8 +9,8 @@
 
 #include "mozilla/Attributes.h"
 #include "nsBlockFrame.h"
-#include "nsIDOMEventListener.h"
 #include "nsIAnonymousContentCreator.h"
+#include "nsIDOMEventListener.h"
 
 namespace mozilla::dom {
 class FileList;

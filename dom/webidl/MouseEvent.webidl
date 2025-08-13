@@ -67,6 +67,11 @@ interface MouseEvent : UIEvent {
                          optional EventTarget? relatedTargetArg = null);
   // Introduced in DOM Level 3:
   boolean                           getModifierState(DOMString keyArg);
+
+  [ChromeOnly]
+  // The event that triggered this event.
+  // This will be available for popupshowing event only.
+  readonly attribute Event? triggerEvent;
 };
 
 // Suggested initMouseEvent replacement initializer:

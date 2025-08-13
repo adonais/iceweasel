@@ -1068,14 +1068,9 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
     }
     case nsIAccessibleEvent::EVENT_FOCUS: {
       LayoutDeviceIntRect rect;
-      // The caret rect is only used on Windows, so just pass an empty rect on
-      // other platforms.
-#ifdef XP_WIN
       if (HyperTextAccessible* text = target->AsHyperText()) {
-        nsIWidget* widget = nullptr;
-        rect = text->GetCaretRect(&widget);
+        rect = text->GetCaretRect().first;
       }
-#endif
       PlatformFocusEvent(target, rect);
       break;
     }
@@ -1265,7 +1260,7 @@ already_AddRefed<AccAttributes> LocalAccessible::NativeAttributes() {
     // This is here only to guarantee that we do the same as getComputedStyle
     // does, so that we don't hit precision errors in tests.
     const auto margin =
-        f->StyleMargin()->GetMargin(aSide, f->StyleDisplay()->mPosition);
+        f->StyleMargin()->GetMargin(aSide, AnchorPosResolutionParams::From(f));
     if (margin->ConvertsToLength()) {
       return margin->AsLengthPercentage().ToLengthInCSSPixels();
     }

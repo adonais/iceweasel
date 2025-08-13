@@ -11,48 +11,46 @@
 
 #include "nsSubDocumentFrame.h"
 
+#include "RetainedDisplayListBuilder.h"
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLFrameElement.h"
 #include "mozilla/dom/ImageDocument.h"
-#include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/RemoteBrowser.h"
-
+#include "mozilla/layers/RenderRootStateManager.h"
+#include "mozilla/layers/StackingContextHelper.h"  // for StackingContextHelper
+#include "mozilla/layers/WebRenderScrollData.h"
+#include "mozilla/layers/WebRenderUserData.h"
+#include "nsAttrValueInlines.h"
 #include "nsCOMPtr.h"
+#include "nsContentUtils.h"
+#include "nsDisplayList.h"
+#include "nsFrameSetFrame.h"
 #include "nsGenericHTMLElement.h"
 #include "nsGenericHTMLFrameElement.h"
-#include "nsAttrValueInlines.h"
+#include "nsGkAtoms.h"
+#include "nsIContentInlines.h"
 #include "nsIDocShell.h"
 #include "nsIDocumentViewer.h"
-#include "nsIContentInlines.h"
+#include "nsIObjectLoadingContent.h"
+#include "nsLayoutUtils.h"
+#include "nsNameSpaceManager.h"
+#include "nsObjectLoadingContent.h"
 #include "nsPresContext.h"
-#include "nsView.h"
-#include "nsViewManager.h"
-#include "nsGkAtoms.h"
+#include "nsQueryObject.h"
+#include "nsServiceManagerUtils.h"
 #include "nsStyleConsts.h"
 #include "nsStyleStruct.h"
 #include "nsStyleStructInlines.h"
-#include "nsFrameSetFrame.h"
-#include "nsNameSpaceManager.h"
-#include "nsDisplayList.h"
-#include "nsIObjectLoadingContent.h"
-#include "nsLayoutUtils.h"
-#include "nsContentUtils.h"
-#include "nsServiceManagerUtils.h"
-#include "nsQueryObject.h"
-#include "RetainedDisplayListBuilder.h"
-#include "nsObjectLoadingContent.h"
-
-#include "mozilla/layers/WebRenderUserData.h"
-#include "mozilla/layers/WebRenderScrollData.h"
-#include "mozilla/layers/RenderRootStateManager.h"
-#include "mozilla/layers/StackingContextHelper.h"  // for StackingContextHelper
-#include "mozilla/ProfilerLabels.h"
+#include "nsView.h"
+#include "nsViewManager.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -1285,8 +1283,8 @@ void nsSubDocumentFrame::SubdocumentIntrinsicSizeOrRatioChanged() {
   const nsStylePosition* pos = StylePosition();
   const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
   bool dependsOnIntrinsics =
-      !pos->GetWidth(anchorResolutionParams.mPosition)->ConvertsToLength() ||
-      !pos->GetHeight(anchorResolutionParams.mPosition)->ConvertsToLength();
+      !pos->GetWidth(anchorResolutionParams)->ConvertsToLength() ||
+      !pos->GetHeight(anchorResolutionParams)->ConvertsToLength();
 
   if (dependsOnIntrinsics || pos->mObjectFit != StyleObjectFit::Fill) {
     auto dirtyHint = dependsOnIntrinsics

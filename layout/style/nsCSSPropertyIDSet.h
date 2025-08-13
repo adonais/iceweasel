@@ -7,8 +7,9 @@
 #ifndef nsCSSPropertyIDSet_h__
 #define nsCSSPropertyIDSet_h__
 
-#include <initializer_list>
 #include <limits.h>  // for CHAR_BIT
+
+#include <initializer_list>
 #include <ostream>
 
 #include "mozilla/ArrayUtils.h"
@@ -16,8 +17,8 @@
 // COMPOSITOR_ANIMATABLE_PROPERTY_LIST_LENGTH
 #include "mozilla/AnimatedPropertyID.h"
 #include "mozilla/CompositorAnimatableProperties.h"
-#include "nsCSSProps.h"  // For operator<< for nsCSSPropertyID
 #include "nsCSSPropertyID.h"
+#include "nsCSSProps.h"  // For operator<< for nsCSSPropertyID
 
 /**
  * nsCSSPropertyIDSet maintains a set of non-shorthand CSS properties.  In

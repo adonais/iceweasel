@@ -7,14 +7,14 @@
 #ifndef mozilla_css_StreamLoader_h
 #define mozilla_css_StreamLoader_h
 
-#include "nsIStreamListener.h"
-#include "nsIThreadRetargetableStreamListener.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/css/SheetLoadData.h"
 #include "nsIChannelEventSink.h"
 #include "nsIInterfaceRequestor.h"
+#include "nsIStreamListener.h"
+#include "nsIThreadRetargetableStreamListener.h"
 #include "nsIURI.h"
 #include "nsString.h"
-#include "mozilla/css/SheetLoadData.h"
-#include "mozilla/Assertions.h"
 
 class nsIInputStream;
 

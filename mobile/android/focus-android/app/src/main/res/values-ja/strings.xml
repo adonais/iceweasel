@@ -150,6 +150,8 @@
     %2$s is the url for the learn-more link.
   -->
   <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s ではあなたがすべてをコントロールできます。</p> <p>次のようにプライベートブラウザーとして使えます。 <ul> <li>アプリで適切に検索、閲覧</li> <li>トラッカーをブロック （あるいは設定を更新して許可）</li> <li>検索履歴、閲覧履歴の消去だけでなく Cookie を削除</li> </ul> </p> <p>%1$s は Mozilla が開発しています。私たちのミッションは健全で開かれたインターネットを発展させることです。<br/> <a href=\"%2$s\">詳しくはこちら</a></p>]]></string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">詳細情報</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">プライバシーとセキュリティ</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -486,8 +488,6 @@
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
   <string name="onboarding_first_screen_privacy_notice_link_2">プライバシー通知</string>
   <!-- New Onboarding flow first screen button label -->
-  <string name="onboarding_first_screen_button_agree_and_continue" moz:removedIn="140" tools:ignore="UnusedResources">同意して続ける</string>
-  <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue_2">続ける</string>
   <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
   <string name="a11y_link_available">リンクあり</string>
@@ -708,18 +708,6 @@
   <string name="preference_block_autoplay_audio_only_summary">おすすめ</string>
   <!-- Preference for block autoplay audio and video -->
   <string name="preference_block_autoplay_audio_video">音声と動画をブロック</string>
-  <!-- Preference for studies -->
-  <string name="preference_studies" moz:removedIn="140">調査</string>
-  <!-- Preference for studies summary -->
-  <string name="preference_studies_summary" tools:ignore="BrandUsage" moz:removedIn="140">Firefox が調査をインストールして実行することがあります。</string>
-  <!-- Learn more link for studies, links to an article for more information about studies. -->
-  <string name="studies_learn_more" moz:removedIn="140">詳細情報</string>
-  <!-- Title of the remove studies button -->
-  <string name="studies_remove" moz:removedIn="140">削除</string>
-  <!-- Title of the active section on the studies list -->
-  <string name="studies_active" moz:removedIn="140">有効</string>
-  <!-- Title of the completed section on the studies list -->
-  <string name="studies_completed" moz:removedIn="140">完了</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">USB/Wi-Fi を通じたリモートデバッグ</string>
   <!-- Text Button for show biometric prompt -->

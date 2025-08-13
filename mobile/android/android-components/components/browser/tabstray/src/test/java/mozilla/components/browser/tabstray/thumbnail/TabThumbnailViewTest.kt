@@ -17,20 +17,19 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
-import org.robolectric.Robolectric.buildAttributeSet
 
 @RunWith(AndroidJUnit4::class)
 class TabThumbnailViewTest {
 
     @Test
     fun `view should always use Matrix ScaleType`() {
-        val view = TabThumbnailView(testContext, emptyAttributeSet())
+        val view = TabThumbnailView(testContext, null)
         assertEquals(ImageView.ScaleType.MATRIX, view.scaleType)
     }
 
     @Test
     fun `view updates matrix when changed`() {
-        val view = TabThumbnailView(testContext, emptyAttributeSet())
+        val view = TabThumbnailView(testContext, null)
         val matrix = view.imageMatrix
         val drawable: Drawable = mock()
 
@@ -47,7 +46,7 @@ class TabThumbnailViewTest {
 
     @Test
     fun `view updates don't change matrix if no changes to frame`() {
-        val view = TabThumbnailView(testContext, emptyAttributeSet())
+        val view = TabThumbnailView(testContext, null)
         val drawable: Drawable = mock()
 
         `when`(drawable.intrinsicWidth).thenReturn(5)
@@ -67,7 +66,7 @@ class TabThumbnailViewTest {
 
     @Test
     fun `view scaleFactor does not change if there is no drawable`() {
-        val view = spy(TabThumbnailView(testContext, emptyAttributeSet()))
+        val view = spy(TabThumbnailView(testContext, null))
         val matrix: Matrix = spy(Matrix())
 
         `when`(view.imageMatrix).thenReturn(matrix)
@@ -77,5 +76,3 @@ class TabThumbnailViewTest {
         verify(matrix).setScale(1f, 1f, 0f, 0f)
     }
 }
-
-private fun emptyAttributeSet() = buildAttributeSet().build()

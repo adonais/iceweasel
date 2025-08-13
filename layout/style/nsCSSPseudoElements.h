@@ -9,11 +9,11 @@
 #ifndef nsCSSPseudoElements_h___
 #define nsCSSPseudoElements_h___
 
-#include "nsGkAtoms.h"
 #include "mozilla/CSSEnabledState.h"
 #include "mozilla/PseudoStyleType.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "nsGkAtoms.h"
 
 // Is this pseudo-element a CSS2 pseudo-element that can be specified
 // with the single colon syntax (in addition to the double-colon syntax,

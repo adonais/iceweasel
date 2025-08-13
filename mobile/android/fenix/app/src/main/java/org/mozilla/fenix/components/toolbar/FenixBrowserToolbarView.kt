@@ -14,7 +14,6 @@ import mozilla.components.browser.state.state.ExternalAppType
 import mozilla.components.concept.toolbar.ScrollableToolbar
 import mozilla.components.ui.widgets.behavior.EngineViewScrollingBehavior
 import mozilla.components.ui.widgets.behavior.ViewPosition
-import org.mozilla.fenix.browser.tabstrip.isTabStripEnabled
 import org.mozilla.fenix.utils.Settings
 
 /**
@@ -95,10 +94,11 @@ abstract class FenixBrowserToolbarView(
      *  Also if the user has not explicitly set a toolbar position and has a screen reader enabled
      *  the toolbar will be placed at the top and in a fixed position.
      *
+     * @param toolbarPosition [ToolbarPosition] to set the toolbar to.
      * @param shouldDisableScroll force disable of the dynamic behavior irrespective of the intrinsic checks.
      */
-    fun setToolbarBehavior(shouldDisableScroll: Boolean = false) {
-        when (settings.toolbarPosition) {
+    fun setToolbarBehavior(toolbarPosition: ToolbarPosition, shouldDisableScroll: Boolean = false) {
+        when (toolbarPosition) {
             ToolbarPosition.BOTTOM -> {
                 if (settings.isDynamicToolbarEnabled &&
                     !settings.shouldUseFixedTopToolbar
@@ -136,5 +136,5 @@ abstract class FenixBrowserToolbarView(
         }
     }
 
-    protected fun shouldShowTabStrip() = customTabSession == null && context.isTabStripEnabled()
+    protected fun shouldShowTabStrip() = customTabSession == null && settings.isTabStripEnabled
 }

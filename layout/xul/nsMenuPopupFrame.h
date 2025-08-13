@@ -11,18 +11,17 @@
 #ifndef nsMenuPopupFrame_h__
 #define nsMenuPopupFrame_h__
 
+#include "Units.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/gfx/Types.h"
 #include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/gfx/Types.h"
 #include "nsAtom.h"
+#include "nsBlockFrame.h"
 #include "nsCOMPtr.h"
+#include "nsExpirationState.h"
 #include "nsIDOMEventListener.h"
 #include "nsXULPopupManager.h"
-
-#include "nsBlockFrame.h"
-
-#include "Units.h"
 
 class nsIWidget;
 
@@ -203,8 +202,11 @@ class nsMenuPopupFrame final : public nsBlockFrame {
 
   bool HasRemoteContent() const;
 
-  // Whether we should create a widget on Init().
-  bool ShouldCreateWidgetUpfront() const;
+  // Whether this is a drag popup to show drag feedback.
+  bool IsDragPopup() const;
+
+  // Whether we should have a widget even when we're not shown.
+  bool ShouldHaveWidgetWhenHidden() const;
 
   // Whether we should expand the menu to take the size of the parent menulist.
   bool ShouldExpandToInflowParentOrAnchor() const;
@@ -556,6 +558,9 @@ class nsMenuPopupFrame final : public nsBlockFrame {
     mAPZFocusSequenceNumber = aNewNumber;
   }
 
+  void DestroyWidgetIfNeeded();
+  nsExpirationState* GetExpirationState() { return &mExpirationState; }
+
  protected:
   nsString mIncrementalString;  // for incremental typing navigation
 
@@ -659,8 +664,9 @@ class nsMenuPopupFrame final : public nsBlockFrame {
 
   nsRect mOverrideConstraintRect;
 
-  static mozilla::TimeStamp sLastKeyTime;
+  nsExpirationState mExpirationState;
 
+  static mozilla::TimeStamp sLastKeyTime;
 };  // class nsMenuPopupFrame
 
 #endif

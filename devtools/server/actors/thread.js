@@ -819,6 +819,13 @@ class ThreadActor extends Actor {
     }
     if ("pauseOverlay" in options) {
       this._shouldShowPauseOverlay = !!options.pauseOverlay;
+      if (this.isPaused()) {
+        if (!this._shouldShowPauseOverlay) {
+          this.hideOverlay();
+        } else {
+          this.showOverlay();
+        }
+      }
     }
 
     if (

@@ -9,6 +9,7 @@
 #include "nsIPrincipal.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/dom/nsCSPContext.h"
+#include "mozilla/dom/PolicyContainer.h"
 
 using mozilla::dom::Document;
 using mozilla::net::LoadInfo;
@@ -73,12 +74,14 @@ void URIUtils::ResetWithSource(Document* aNewDoc, nsINode* aSourceNode) {
   aNewDoc->SetReferrerInfo(sourceDoc->GetReferrerInfo());
   aNewDoc->SetEmbedderPolicy(sourceDoc->GetEmbedderPolicy());
 
-  // Inherit the csp if there is one
-  nsCOMPtr<nsIContentSecurityPolicy> csp = sourceDoc->GetCsp();
-  if (csp) {
-    RefPtr<nsCSPContext> cspToInherit = new nsCSPContext();
-    cspToInherit->InitFromOther(static_cast<nsCSPContext*>(csp.get()));
-    aNewDoc->SetCsp(cspToInherit);
+  // Inherit the policyContainer if there is one
+  nsCOMPtr<nsIPolicyContainer> policyContainer =
+      sourceDoc->GetPolicyContainer();
+  if (policyContainer) {
+    RefPtr<PolicyContainer> policyContainerToInherit = new PolicyContainer();
+    policyContainerToInherit->InitFromOther(
+        PolicyContainer::Cast(policyContainer.get()));
+    aNewDoc->SetPolicyContainer(policyContainerToInherit);
   }
   // Copy charset
   aNewDoc->SetDocumentCharacterSetSource(

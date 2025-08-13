@@ -7,12 +7,12 @@
 #ifndef mozilla_DisplayPortUtils_h__
 #define mozilla_DisplayPortUtils_h__
 
+#include <cstdint>
+#include <iosfwd>
+
 #include "Units.h"
 #include "nsDisplayList.h"
 #include "nsRect.h"
-
-#include <cstdint>
-#include <iosfwd>
 
 class nsIContent;
 class nsIFrame;

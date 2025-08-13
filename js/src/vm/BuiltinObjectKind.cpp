@@ -17,8 +17,6 @@ static JSProtoKey ToProtoKey(BuiltinObjectKind kind) {
   switch (kind) {
     case BuiltinObjectKind::Array:
       return JSProto_Array;
-    case BuiltinObjectKind::ListFormat:
-      return JSProto_ListFormat;
     case BuiltinObjectKind::Map:
       return JSProto_Map;
     case BuiltinObjectKind::Promise:
@@ -49,7 +47,6 @@ static JSProtoKey ToProtoKey(BuiltinObjectKind kind) {
 static bool IsPrototype(BuiltinObjectKind kind) {
   switch (kind) {
     case BuiltinObjectKind::Array:
-    case BuiltinObjectKind::ListFormat:
     case BuiltinObjectKind::Map:
     case BuiltinObjectKind::Promise:
     case BuiltinObjectKind::RegExp:
@@ -75,9 +72,6 @@ BuiltinObjectKind js::BuiltinConstructorForName(
     frontend::TaggedParserAtomIndex name) {
   if (name == frontend::TaggedParserAtomIndex::WellKnown::Array()) {
     return BuiltinObjectKind::Array;
-  }
-  if (name == frontend::TaggedParserAtomIndex::WellKnown::ListFormat()) {
-    return BuiltinObjectKind::ListFormat;
   }
   if (name == frontend::TaggedParserAtomIndex::WellKnown::Map()) {
     return BuiltinObjectKind::Map;
@@ -135,8 +129,6 @@ const char* js::BuiltinObjectName(BuiltinObjectKind kind) {
   switch (kind) {
     case BuiltinObjectKind::Array:
       return "Array";
-    case BuiltinObjectKind::ListFormat:
-      return "ListFormat";
     case BuiltinObjectKind::Map:
       return "Map";
     case BuiltinObjectKind::Promise:

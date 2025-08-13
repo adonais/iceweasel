@@ -345,6 +345,9 @@ newtab-section-mangage-topics-blocked-topics = අවහිරයි
 ## Strings for download mobile highlight
 
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
 

@@ -5,8 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsAnimationManager.h"
-#include "nsINode.h"
-#include "nsTransitionManager.h"
+
+#include <math.h>
+
+#include <algorithm>  // std::stable_sort
 
 #include "mozilla/AnimationEventDispatcher.h"
 #include "mozilla/AnimationUtils.h"
@@ -16,22 +18,21 @@
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/TimelineCollection.h"
 #include "mozilla/dom/AnimationEffect.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/KeyframeEffect.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/ScrollTimeline.h"
 #include "mozilla/dom/ViewTimeline.h"
-
+#include "nsDOMMutationObserver.h"
+#include "nsIFrame.h"
+#include "nsINode.h"
+#include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsPresContextInlines.h"
-#include "nsStyleChangeList.h"
-#include "nsLayoutUtils.h"
-#include "nsIFrame.h"
-#include "mozilla/dom/Document.h"
-#include "nsDOMMutationObserver.h"
 #include "nsRFPService.h"
-#include <algorithm>  // std::stable_sort
-#include <math.h>
+#include "nsStyleChangeList.h"
+#include "nsTransitionManager.h"
 
 using namespace mozilla;
 using namespace mozilla::css;

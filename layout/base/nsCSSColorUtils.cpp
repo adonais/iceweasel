@@ -7,8 +7,10 @@
 /* functions that manipulate colors */
 
 #include "nsCSSColorUtils.h"
-#include "nsDebug.h"
+
 #include <math.h>
+
+#include "nsDebug.h"
 
 // Weird color computing code stolen from winfe which was stolen
 // from the xfe which was written originally by Eric Bina. So there.

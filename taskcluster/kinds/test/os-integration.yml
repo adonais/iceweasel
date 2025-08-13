@@ -122,3 +122,6 @@
       - taskgraph-tests
       - telemetry-python
       - tryselect
+
+### Startup tests
+- kind: startup-test

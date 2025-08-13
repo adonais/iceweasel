@@ -42,7 +42,7 @@ class ClientSource;
 
 interface nsIURI;
 interface nsIChannel;
-interface nsIContentSecurityPolicy;
+interface nsIPolicyContainer;
 interface nsIDocumentViewer;
 interface nsIEditor;
 interface nsIEditingSession;
@@ -452,11 +452,11 @@ interface nsIDocShell : nsIDocShellTreeItem
    * @param aPrincipal the principal to use for the new document.
    * @param aPartitionedPrincipal the partitioned principal to use for the new
    *        document.
-   * @param aCsp the CSP to use for the new document.
+   * @param aPolicyContainer the policyContainer to use for the new document.
    */
   void createAboutBlankDocumentViewer(in nsIPrincipal aPrincipal,
                                      in nsIPrincipal aPartitionedPrincipal,
-                                     [optional] in nsIContentSecurityPolicy aCSP);
+                                     [optional] in nsIPolicyContainer aPolicyContainer);
 
   /**
    * Upon getting, returns the canonical encoding label of the document

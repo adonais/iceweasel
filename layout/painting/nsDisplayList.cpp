@@ -17,96 +17,68 @@
 #include "nsDisplayList.h"
 
 #include <stdint.h>
+
 #include <algorithm>
 #include <limits>
 
+#include "ActiveLayerTracker.h"
+#include "BorderConsts.h"
+#include "ImageContainer.h"
+#include "LayerAnimationInfo.h"
+#include "StickyScrollContainer.h"
+#include "TextDrawTarget.h"
+#include "UnitTransforms.h"
 #include "gfxContext.h"
+#include "gfxMatrix.h"
 #include "gfxUtils.h"
+#include "imgIContainer.h"
+#include "mozilla/AnimationPerformanceWarning.h"
+#include "mozilla/AnimationUtils.h"
+#include "mozilla/AutoRestore.h"
 #include "mozilla/DisplayPortUtils.h"
+#include "mozilla/EffectCompositor.h"
+#include "mozilla/EffectSet.h"
+#include "mozilla/EventStateManager.h"
+#include "mozilla/HashTable.h"
 #include "mozilla/Likely.h"
-#include "mozilla/dom/BrowserChild.h"
-#include "mozilla/dom/HTMLCanvasElement.h"
-#include "mozilla/dom/RemoteBrowser.h"
-#include "mozilla/dom/Selection.h"
-#include "mozilla/dom/ViewTransition.h"
-#include "mozilla/dom/ServiceWorkerRegistrar.h"
-#include "mozilla/dom/ServiceWorkerRegistration.h"
-#include "mozilla/dom/SVGElement.h"
-#include "mozilla/dom/TouchEvent.h"
-#include "mozilla/dom/PerformanceMainThread.h"
-#include "mozilla/gfx/2D.h"
+#include "mozilla/LookAndFeel.h"
+#include "mozilla/MathAlgorithms.h"
+#include "mozilla/OperatorNewExtensions.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/ProfilerMarkers.h"
+#include "mozilla/SVGClipPathFrame.h"
+#include "mozilla/SVGIntegrationUtils.h"
+#include "mozilla/SVGMaskFrame.h"
+#include "mozilla/SVGObserverUtils.h"
+#include "mozilla/SVGUtils.h"
 #include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/ServoBindings.h"
 #include "mozilla/ShapeUtils.h"
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPrefs_print.h"
-#include "mozilla/SVGIntegrationUtils.h"
-#include "mozilla/SVGUtils.h"
-#include "mozilla/ViewportUtils.h"
-#include "nsCSSRendering.h"
-#include "nsCSSRenderingGradients.h"
-#include "nsCaseTreatment.h"
-#include "nsRefreshDriver.h"
-#include "nsRegion.h"
-#include "nsStyleStructInlines.h"
-#include "nsStyleTransformMatrix.h"
-#include "nsTransitionManager.h"
-#include "gfxMatrix.h"
-#include "nsLayoutUtils.h"
-#include "nsIFrameInlines.h"
-#include "nsStyleConsts.h"
-#include "BorderConsts.h"
-#include "mozilla/MathAlgorithms.h"
-
-#include "imgIContainer.h"
-#include "nsImageFrame.h"
-#include "nsSubDocumentFrame.h"
-#include "nsViewManager.h"
-#include "ImageContainer.h"
-#include "nsCanvasFrame.h"
-#include "nsSubDocumentFrame.h"
-#include "StickyScrollContainer.h"
-#include "mozilla/AnimationPerformanceWarning.h"
-#include "mozilla/AnimationUtils.h"
-#include "mozilla/AutoRestore.h"
-#include "mozilla/EffectCompositor.h"
-#include "mozilla/EffectSet.h"
-#include "mozilla/glean/GfxMetrics.h"
-#include "mozilla/HashTable.h"
-#include "mozilla/LookAndFeel.h"
-#include "mozilla/OperatorNewExtensions.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/ProfilerLabels.h"
-#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StyleAnimationValue.h"
-#include "mozilla/ServoBindings.h"
-#include "mozilla/SVGClipPathFrame.h"
-#include "mozilla/SVGMaskFrame.h"
-#include "mozilla/SVGObserverUtils.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/ViewportFrame.h"
+#include "mozilla/ViewportUtils.h"
+#include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/dom/PerformanceMainThread.h"
+#include "mozilla/dom/RemoteBrowser.h"
+#include "mozilla/dom/SVGElement.h"
+#include "mozilla/dom/Selection.h"
+#include "mozilla/dom/ServiceWorkerRegistrar.h"
+#include "mozilla/dom/ServiceWorkerRegistration.h"
+#include "mozilla/dom/TouchEvent.h"
+#include "mozilla/dom/ViewTransition.h"
+#include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/gfxVars.h"
-#include "ActiveLayerTracker.h"
-#include "nsEscape.h"
-#include "nsPresContextInlines.h"
-#include "nsPrintfCString.h"
-#include "UnitTransforms.h"
-#include "LayerAnimationInfo.h"
-#include "mozilla/EventStateManager.h"
-#include "nsCaret.h"
-#include "nsDOMTokenList.h"
-#include "nsCSSProps.h"
-#include "nsTableCellFrame.h"
-#include "nsTableColFrame.h"
-#include "nsTextFrame.h"
-#include "nsTextPaintStyle.h"
-#include "nsSliderFrame.h"
-#include "nsFocusManager.h"
-#include "TextDrawTarget.h"
+#include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/layers/AnimationHelper.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/InputAPZContext.h"
@@ -117,6 +89,33 @@
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/WebRenderMessages.h"
 #include "mozilla/layers/WebRenderScrollData.h"
+#include "nsCSSProps.h"
+#include "nsCSSRendering.h"
+#include "nsCSSRenderingGradients.h"
+#include "nsCanvasFrame.h"
+#include "nsCaret.h"
+#include "nsCaseTreatment.h"
+#include "nsDOMTokenList.h"
+#include "nsEscape.h"
+#include "nsFocusManager.h"
+#include "nsIFrameInlines.h"
+#include "nsImageFrame.h"
+#include "nsLayoutUtils.h"
+#include "nsPresContextInlines.h"
+#include "nsPrintfCString.h"
+#include "nsRefreshDriver.h"
+#include "nsRegion.h"
+#include "nsSliderFrame.h"
+#include "nsStyleConsts.h"
+#include "nsStyleStructInlines.h"
+#include "nsStyleTransformMatrix.h"
+#include "nsSubDocumentFrame.h"
+#include "nsTableCellFrame.h"
+#include "nsTableColFrame.h"
+#include "nsTextFrame.h"
+#include "nsTextPaintStyle.h"
+#include "nsTransitionManager.h"
+#include "nsViewManager.h"
 
 namespace mozilla {
 
@@ -703,7 +702,6 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mDirtyRect(-1, -1, -1, -1),
       mBuildingExtraPagesForPageNum(0),
       mMode(aMode),
-      mContainsBlendMode(false),
       mIsBuildingScrollbar(false),
       mCurrentScrollbarWillHaveLayer(false),
       mBuildCaret(aBuildCaret),
@@ -718,7 +716,6 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mInEventsOnly(false),
       mInFilter(false),
       mInViewTransitionCapture(false),
-      mInPageSequence(false),
       mIsInChromePresContext(false),
       mSyncDecodeImages(false),
       mIsPaintingToWindow(false),
@@ -4753,13 +4750,14 @@ nsresult nsDisplayItemWrapper::WrapListsInPlace(
 nsDisplayOpacity::nsDisplayOpacity(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
     const ActiveScrolledRoot* aActiveScrolledRoot, bool aForEventsOnly,
-    bool aNeedsActiveLayer, bool aWrapsBackdropFilter)
+    bool aNeedsActiveLayer, bool aWrapsBackdropFilter, bool aForceBackdropRoot)
     : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot, true),
       mOpacity(aFrame->StyleEffects()->mOpacity),
       mForEventsOnly(aForEventsOnly),
       mNeedsActiveLayer(aNeedsActiveLayer),
       mChildOpacityState(ChildOpacityState::Unknown),
-      mWrapsBackdropFilter(aWrapsBackdropFilter) {
+      mWrapsBackdropFilter(aWrapsBackdropFilter),
+      mForceBackdropRoot(aForceBackdropRoot) {
   MOZ_COUNT_CTOR(nsDisplayOpacity);
 }
 
@@ -5048,6 +5046,9 @@ bool nsDisplayOpacity::CreateWebRenderCommands(
   if (mWrapsBackdropFilter) {
     params.flags |= wr::StackingContextFlags::WRAPS_BACKDROP_FILTER;
   }
+  if (mForceBackdropRoot) {
+    params.flags |= wr::StackingContextFlags::IS_BACKDROP_ROOT;
+  }
   StackingContextHelper sc(aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder,
                            params);
 
@@ -5151,8 +5152,9 @@ bool nsDisplayBlendMode::CanMerge(const nsDisplayItem* aItem) const {
 nsDisplayBlendContainer* nsDisplayBlendContainer::CreateForMixBlendMode(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
     const ActiveScrolledRoot* aActiveScrolledRoot) {
-  return MakeDisplayItem<nsDisplayBlendContainer>(aBuilder, aFrame, aList,
-                                                  aActiveScrolledRoot, false);
+  return MakeDisplayItem<nsDisplayBlendContainer>(
+      aBuilder, aFrame, aList, aActiveScrolledRoot,
+      BlendContainerType::MixBlendMode);
 }
 
 /* static */
@@ -5164,19 +5166,31 @@ nsDisplayBlendContainer* nsDisplayBlendContainer::CreateForBackgroundBlendMode(
     auto index = static_cast<uint16_t>(type);
 
     return MakeDisplayItemWithIndex<nsDisplayTableBlendContainer>(
-        aBuilder, aSecondaryFrame, index, aList, aActiveScrolledRoot, true,
-        aFrame);
+        aBuilder, aSecondaryFrame, index, aList, aActiveScrolledRoot,
+        BlendContainerType::BackgroundBlendMode, aFrame);
   }
 
   return MakeDisplayItemWithIndex<nsDisplayBlendContainer>(
-      aBuilder, aFrame, 1, aList, aActiveScrolledRoot, true);
+      aBuilder, aFrame, 1, aList, aActiveScrolledRoot,
+      BlendContainerType::BackgroundBlendMode);
+}
+
+/* static */
+nsDisplayBlendContainer* nsDisplayBlendContainer::CreateForBackdropRoot(
+    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
+    const ActiveScrolledRoot* aActiveScrolledRoot, bool aNeedsBackdropRoot) {
+  return MakeDisplayItem<nsDisplayBlendContainer>(
+      aBuilder, aFrame, aList, aActiveScrolledRoot,
+      aNeedsBackdropRoot ? BlendContainerType::BackdropRootNeedsContainer
+                         : BlendContainerType::BackdropRootNothing);
 }
 
 nsDisplayBlendContainer::nsDisplayBlendContainer(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
-    const ActiveScrolledRoot* aActiveScrolledRoot, bool aIsForBackground)
+    const ActiveScrolledRoot* aActiveScrolledRoot,
+    BlendContainerType aBlendContainerType)
     : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot, true),
-      mIsForBackground(aIsForBackground) {
+      mBlendContainerType(aBlendContainerType) {
   MOZ_COUNT_CTOR(nsDisplayBlendContainer);
 }
 
@@ -5192,15 +5206,19 @@ bool nsDisplayBlendContainer::CreateWebRenderCommands(
     wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
     const StackingContextHelper& aSc, RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
-  wr::StackingContextParams params;
-  params.flags |= wr::StackingContextFlags::IS_BLEND_CONTAINER;
-  params.clip =
-      wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId());
-  StackingContextHelper sc(aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder,
-                           params);
+  Maybe<StackingContextHelper> layer;
+  const StackingContextHelper* sc = &aSc;
+  if (CreatesStackingContextHelper()) {
+    wr::StackingContextParams params;
+    params.flags |= wr::StackingContextFlags::IS_BLEND_CONTAINER;
+    params.clip =
+        wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId());
+    layer.emplace(aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder, params);
+    sc = layer.ptr();
+  }
 
   return nsDisplayWrapList::CreateWebRenderCommands(
-      aBuilder, aResources, sc, aManager, aDisplayListBuilder);
+      aBuilder, aResources, *sc, aManager, aDisplayListBuilder);
 }
 
 void nsDisplayTableBlendContainer::Destroy(nsDisplayListBuilder* aBuilder) {
@@ -8474,6 +8492,7 @@ bool nsDisplayBackdropFilters::CreateWebRenderCommands(
   wr::StackingContextParams params;
   params.clip =
       wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId());
+  params.flags = wr::StackingContextFlags::IS_BACKDROP_ROOT;
   StackingContextHelper sc(aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder,
                            params);
 

@@ -18,6 +18,7 @@ namespace mozilla::glean {
  * @param aMsg The text message to print to the console.
  */
 void LogToBrowserConsole(uint32_t aLogLevel, const nsAString& aMsg);
+bool IsCamelCase(const nsAString& aStr);
 
 }  // namespace mozilla::glean
 

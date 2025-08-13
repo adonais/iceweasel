@@ -9,9 +9,9 @@
 #include "nsROCSSPrimitiveValue.h"
 
 #include "mozilla/ErrorResult.h"
+#include "nsError.h"
 #include "nsPresContext.h"
 #include "nsStyleUtil.h"
-#include "nsError.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

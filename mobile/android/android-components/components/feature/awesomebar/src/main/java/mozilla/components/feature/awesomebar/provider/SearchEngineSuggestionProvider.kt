@@ -4,9 +4,7 @@
 
 package mozilla.components.feature.awesomebar.provider
 
-import android.content.Context
 import android.graphics.Bitmap
-import androidx.annotation.StringRes
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.concept.awesomebar.AwesomeBar
 import java.lang.Integer.MAX_VALUE
@@ -17,23 +15,20 @@ import java.util.UUID
  *
  * @property searchEnginesList a search engine list used to search
  * @property selectShortcutEngine the use case invoked to temporarily change engine used for search
- * @property title String resource for the title to be shown for the suggestion(s), it
- * includes a placeholder for engine name
  * @property description the description to be shown for the suggestion(s), same description for all
  * @property searchIcon the icon to be shown for the suggestion(s), same icon for all
  * @property maxSuggestions the maximum number of suggestions to be provided
  * @property charactersThreshold the minimum typed characters used to match to a search engine name
+ * @property titleFormatter a function to format the title of the suggestion, typically used to apply
  */
 class SearchEngineSuggestionProvider(
-    private val context: Context,
     private val searchEnginesList: List<SearchEngine>,
     private val selectShortcutEngine: (engine: SearchEngine) -> Unit,
-    @StringRes
-    private val title: Int,
     private val description: String?,
     private val searchIcon: Bitmap?,
     internal val maxSuggestions: Int = DEFAULT_MAX_SUGGESTIONS,
     internal val charactersThreshold: Int = DEFAULT_CHARACTERS_THRESHOLD,
+    private val titleFormatter: (String) -> String,
 ) : AwesomeBar.SuggestionProvider {
     override val id: String = UUID.randomUUID().toString()
 
@@ -62,7 +57,7 @@ class SearchEngineSuggestionProvider(
                 id = it.id,
                 icon = searchIcon,
                 flags = setOf(AwesomeBar.Suggestion.Flag.BOOKMARK),
-                title = context.getString(title, it.name),
+                title = titleFormatter(it.name),
                 description = description,
                 onSuggestionClicked = { selectShortcutEngine(it) },
                 score = MAX_VALUE,

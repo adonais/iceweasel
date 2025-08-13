@@ -370,7 +370,7 @@ Result<IPCInternalRequest, nsresult> GetIPCInternalRequest(
   }
 
   nsAutoString integrity;
-  MOZ_TRY(internalChannel->GetIntegrityMetadata(integrity));
+  MOZ_TRY(loadInfo->GetIntegrityMetadata(integrity));
 
   RefPtr<HeaderFiller> headerFiller =
       MakeRefPtr<HeaderFiller>(HeadersGuardEnum::Request);
@@ -1050,8 +1050,7 @@ nsresult ServiceWorkerPrivate::SendPushSubscriptionChangeEvent(
 }
 
 nsresult ServiceWorkerPrivate::SendNotificationClickEvent(
-    const nsAString& aScope, const IPCNotification& aNotification,
-    const nsAString& aAction) {
+    const IPCNotification& aNotification, const nsAString& aAction) {
   MOZ_ASSERT(NS_IsMainThread());
 
   ServiceWorkerNotificationClickEventOpArgs clickArgs;
@@ -1068,7 +1067,7 @@ nsresult ServiceWorkerPrivate::SendNotificationClickEvent(
 }
 
 nsresult ServiceWorkerPrivate::SendNotificationCloseEvent(
-    const nsAString& aScope, const IPCNotification& aNotification) {
+    const IPCNotification& aNotification) {
   MOZ_ASSERT(NS_IsMainThread());
 
   ServiceWorkerNotificationCloseEventOpArgs closeArgs;

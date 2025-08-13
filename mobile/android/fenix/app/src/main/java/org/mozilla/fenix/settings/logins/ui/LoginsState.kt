@@ -17,7 +17,8 @@ import mozilla.components.lib.state.State
  * @property loginsAddLoginState State representing the add login subscreen, if visible.
  * @property loginsEditLoginState State representing the edit login subscreen, if visible.
  * @property loginsLoginDetailState State representing the login detail subscreen, if visible.
- * @property loginsDeletionDialogState State representing the deletion dialog state.
+ * @property loginsDeletionState State representing the deletion state.
+ * @property newLoginState State representing the new login to be added state.
  */
 internal data class LoginsState(
     val loginItems: List<LoginItem> = listOf(),
@@ -29,7 +30,8 @@ internal data class LoginsState(
     val loginsAddLoginState: LoginsAddLoginState? = null,
     val loginsEditLoginState: LoginsEditLoginState? = null,
     val loginsLoginDetailState: LoginsLoginDetailState? = null,
-    val loginsDeletionDialogState: DeletionDialogState? = null,
+    val loginsDeletionState: LoginDeletionState? = null,
+    val newLoginState: NewLoginState? = NewLoginState.None,
 ) : State
 
 internal sealed class BiometricAuthenticationDialogState {
@@ -38,11 +40,16 @@ internal sealed class BiometricAuthenticationDialogState {
     data object NonAuthorized : BiometricAuthenticationDialogState()
 }
 
-internal sealed class DeletionDialogState {
-    data object None : DeletionDialogState()
+internal sealed class NewLoginState {
+    data object None : NewLoginState()
+    data object Duplicate : NewLoginState()
+}
+
+internal sealed class LoginDeletionState {
+    data object None : LoginDeletionState()
     data class Presenting(
         val guidToDelete: String,
-    ) : DeletionDialogState()
+    ) : LoginDeletionState()
 }
 
 internal data class LoginsListState(
@@ -51,12 +58,16 @@ internal data class LoginsListState(
 
 internal data class LoginsEditLoginState(
     val login: LoginItem,
+    val newUsername: String,
+    val newPassword: String,
+    val isPasswordVisible: Boolean,
 )
 
-internal sealed class LoginsAddLoginState {
-    data object None : LoginsAddLoginState()
-    data class Presenting(val login: LoginItem) : LoginsAddLoginState()
-}
+internal data class LoginsAddLoginState(
+    val host: String?,
+    val username: String?,
+    val password: String?,
+)
 
 internal data class LoginsLoginDetailState(
     val login: LoginItem,
@@ -108,5 +119,10 @@ sealed class LoginsSortOrder {
                 else -> default
             }
         }
+    }
+
+    internal fun LoginsState.isGuidToDelete(guid: String): Boolean = when (loginsDeletionState) {
+        is LoginDeletionState.Presenting -> loginsDeletionState.guidToDelete == guid
+        else -> false
     }
 }

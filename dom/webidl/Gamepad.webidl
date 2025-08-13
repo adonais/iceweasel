@@ -61,13 +61,6 @@ interface Gamepad {
   readonly attribute GamepadHand hand;
 
   /**
-   * The displayId in use for as an association point in the VRDisplay API
-   * to identify which VRDisplay that the gamepad is associated with.
-   */
-  [Pref="dom.vr.enabled"]
-  readonly attribute unsigned long displayId;
-
-  /**
    * true if this gamepad is currently connected to the system.
    */
   readonly attribute boolean connected;

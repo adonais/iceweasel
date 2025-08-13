@@ -460,3 +460,79 @@ add_task(async function test_multiple_acccount_show_picture() {
   // Close tabs.
   await BrowserTestUtils.removeTab(tab);
 });
+
+add_task(async function test_single_acccount_missing_name() {
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+
+  let popupShown = BrowserTestUtils.waitForEvent(
+    PopupNotifications.panel,
+    "popupshown"
+  );
+
+  // Test a single account without name, but has email and tel
+  let prompt = IdentityCredentialPromptService.showAccountListPrompt(
+    tab.linkedBrowser.browsingContext,
+    {
+      accounts: [
+        {
+          id: "00000000-0000-0000-0000-000000000000",
+          email: "test@idp.example",
+          tel: "123-123-1234",
+        },
+      ],
+    },
+    {
+      configURL: "https://idp.example/",
+      clientId: "123",
+    },
+    {
+      accounts_endpoint: "",
+      client_metadata_endpoint: "",
+      id_assertion_endpoint: "",
+    }
+  );
+
+  // Wait for the popup to appear
+  await popupShown;
+
+  let popupHiding = BrowserTestUtils.waitForEvent(
+    PopupNotifications.panel,
+    "popuphiding"
+  );
+
+  let document = tab.linkedBrowser.browsingContext.topChromeWindow.document;
+
+  // Validate the popup contents
+  let inputs = document
+    .getElementById("identity-credential-account")
+    .getElementsByClassName("identity-credential-list-item");
+  is(inputs.length, 1, "One account expected");
+  let label = inputs[0].getElementsByClassName(
+    "identity-credential-list-item-label-stack"
+  )[0];
+  ok(
+    label.textContent.includes("test@idp.example"),
+    "Label includes the account email"
+  );
+  ok(
+    label.textContent.includes("123-123-1234"),
+    "Label includes the account telephone number"
+  );
+
+  let title = document.getElementById("identity-credential-header-text");
+  ok(
+    title.textContent.includes("idp.example"),
+    "Popup title includes the IDP Site"
+  );
+
+  document
+    .getElementsByClassName("popup-notification-primary-button")[0]
+    .click();
+
+  let value = await prompt;
+  is(value, 0);
+
+  await popupHiding;
+
+  await BrowserTestUtils.removeTab(tab);
+});

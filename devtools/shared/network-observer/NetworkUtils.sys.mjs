@@ -43,6 +43,7 @@ const NETWORK_EVENT_TYPES = {
   RESPONSE_HEADERS: "responseHeaders",
   RESPONSE_START: "responseStart",
   SECURITY_INFO: "securityInfo",
+  RESPONSE_END: "responseEnd",
 };
 
 /**
@@ -353,30 +354,6 @@ function isFromCache(channel) {
     return channel.isFromCache();
   }
 
-  return false;
-}
-
-const REDIRECT_STATES = [
-  301, // HTTP Moved Permanently
-  302, // HTTP Found
-  303, // HTTP See Other
-  307, // HTTP Temporary Redirect
-];
-/**
- * Check if the channel's status corresponds to a known redirect status.
- *
- * @param {nsIChannel} channel
- *     The channel for which we need to check the redirect status.
- *
- * @returns {boolean}
- *     True if the channel data is a redirect, false otherwise.
- */
-function isRedirectedChannel(channel) {
-  try {
-    return REDIRECT_STATES.includes(channel.responseStatus);
-  } catch (e) {
-    // Throws NS_ERROR_NOT_AVAILABLE if the request was not sent yet.
-  }
   return false;
 }
 
@@ -797,11 +774,6 @@ function handleDataChannel(channel, networkEventActor) {
     !lazy.NetworkHelper.isTextMimeType(response.mimeType)
   ) {
     response.encoding = "base64";
-    try {
-      response.text = btoa(response.text);
-    } catch (err) {
-      // Ignore.
-    }
   }
 
   // Note: `size`` is only used by DevTools, WebDriverBiDi relies on
@@ -821,15 +793,18 @@ function handleDataChannel(channel, networkEventActor) {
  * is available. The flag is used by the consumer of the resource (frontend)
  * to determine when to lazily fetch the data.
  *
- * @param {Object} resourceUpdates
- * @param {String} networkEvent
+ * @param {Object} resource - This could be a network resource object or a network resource
+ *                            updates object.
+ * @param {Array} networkEvents
  */
-function setEventAsAvailable(resourceUpdates, networkEvent) {
-  if (!Object.values(NETWORK_EVENT_TYPES).includes(networkEvent)) {
-    console.warn(`${networkEvent} is not a valid network event type.`);
-    return;
+function setEventAsAvailable(resource, networkEvents) {
+  for (const event of networkEvents) {
+    if (!Object.values(NETWORK_EVENT_TYPES).includes(event)) {
+      console.warn(`${event} is not a valid network event type.`);
+      return;
+    }
+    resource[`${event}Available`] = true;
   }
-  resourceUpdates[`${networkEvent}Available`] = true;
 }
 
 export const NetworkUtils = {
@@ -852,7 +827,6 @@ export const NetworkUtils = {
   isFromCache,
   isNavigationRequest,
   isPreloadRequest,
-  isRedirectedChannel,
   isThirdPartyTrackingResource,
   matchRequest,
   NETWORK_EVENT_TYPES,

@@ -14,11 +14,12 @@
 #include "DepthOrderedFrameList.h"
 #include "FrameMetrics.h"
 #include "LayoutConstants.h"
+#include "TouchManager.h"
+#include "Units.h"
+#include "Visibility.h"
 #include "mozilla/ArenaObjectID.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/DocumentBinding.h"
 #include "mozilla/FlushType.h"
-#include "mozilla/layers/FocusTarget.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PresShellForwards.h"
@@ -26,10 +27,12 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
-#include "nsColor.h"
+#include "mozilla/dom/DocumentBinding.h"
+#include "mozilla/layers/FocusTarget.h"
 #include "nsCOMArray.h"
-#include "nsCoord.h"
 #include "nsCSSFrameConstructor.h"
+#include "nsColor.h"
+#include "nsCoord.h"
 #include "nsDOMNavigationTiming.h"
 #include "nsFrameState.h"
 #include "nsIContent.h"
@@ -45,9 +48,6 @@
 #include "nsTHashSet.h"
 #include "nsThreadUtils.h"
 #include "nsWeakReference.h"
-#include "TouchManager.h"
-#include "Units.h"
-#include "Visibility.h"
 
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
@@ -99,6 +99,7 @@ class ProfileChunkedBuffer;
 class ScrollContainerFrame;
 class StyleSheet;
 
+struct AutoConnectedAncestorTracker;
 struct PointerInfo;
 
 #ifdef ACCESSIBILITY
@@ -879,9 +880,12 @@ class PresShell final : public nsStubDocumentObserver,
 
   void AddAutoWeakFrame(AutoWeakFrame* aWeakFrame);
   void AddWeakFrame(WeakFrame* aWeakFrame);
+  void AddConnectedAncestorTracker(AutoConnectedAncestorTracker& aTracker);
 
   void RemoveAutoWeakFrame(AutoWeakFrame* aWeakFrame);
   void RemoveWeakFrame(WeakFrame* aWeakFrame);
+  void RemoveConnectedAncestorTracker(
+      const AutoConnectedAncestorTracker& aTracker);
 
   /**
    * Stop or restart non synthetic test mouse event handling on *all*
@@ -899,11 +903,11 @@ class PresShell final : public nsStubDocumentObserver,
    * PresShell::PaintDefaultBackground, and nsDocShell::SetupNewViewer;
    * bug 488242, bug 476557 and other bugs mentioned there.
    */
-  void SetCanvasBackground(nscolor aColor) {
-    mCanvasBackground.mViewport.mColor = aColor;
+  void SetViewportCanvasBackground(const SingleCanvasBackground& aBg) {
+    mCanvasBackground.mViewport = aBg;
   }
-  nscolor GetCanvasBackground() const {
-    return mCanvasBackground.mViewport.mColor;
+  const SingleCanvasBackground& GetViewportCanvasBackground() const {
+    return mCanvasBackground.mViewport;
   }
 
   const SingleCanvasBackground& GetCanvasBackground(bool aForPage) const {
@@ -1073,6 +1077,8 @@ class PresShell final : public nsStubDocumentObserver,
 
   /* Whether or not the displayport is currently suppressed. */
   bool IsDisplayportSuppressed();
+
+  bool IsDocumentLoading() const { return mDocumentLoading; }
 
   void AddSizeOfIncludingThis(nsWindowSizes& aWindowSizes) const;
 
@@ -3111,6 +3117,7 @@ class PresShell final : public nsStubDocumentObserver,
   static void MarkFramesInListApproximatelyVisible(const nsDisplayList& aList);
   void MarkFramesInSubtreeApproximatelyVisible(nsIFrame* aFrame,
                                                const nsRect& aRect,
+                                               const nsRect& aPreserve3DRect,
                                                bool aRemoveOnly = false);
 
   void DecApproximateVisibleCount(
@@ -3181,7 +3188,9 @@ class PresShell final : public nsStubDocumentObserver,
 
   // A list of stack weak frames. This is a pointer to the last item in the
   // list.
-  AutoWeakFrame* mAutoWeakFrames;
+  AutoWeakFrame* mAutoWeakFrames = nullptr;
+
+  AutoConnectedAncestorTracker* mLastConnectedAncestorTracker = nullptr;
 
   // A hash table of heap allocated weak frames.
   nsTHashSet<WeakFrame*> mWeakFrames;
@@ -3211,11 +3220,6 @@ class PresShell final : public nsStubDocumentObserver,
   // or all frames are constructed, we won't paint anything but
   // our <body> background and scrollbars.
   nsCOMPtr<nsITimer> mPaintSuppressionTimer;
-
-  // Information about live content (which still stay in DOM tree).
-  // Used in case we need re-dispatch event after sending pointer event,
-  // when target of pointer event was deleted during executing user handlers.
-  nsCOMPtr<nsIContent> mPointerEventTarget;
 
   nsCOMPtr<nsIContent> mLastAnchorScrolledTo;
 
@@ -3407,6 +3411,7 @@ class PresShell final : public nsStubDocumentObserver,
   bool mDocumentLoading : 1;
   bool mNoDelayedMouseEvents : 1;
   bool mNoDelayedKeyEvents : 1;
+  bool mNoDelayedSingleTap : 1;
 
   bool mApproximateFrameVisibilityVisited : 1;
 

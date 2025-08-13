@@ -32,6 +32,11 @@ async function waitForPanelOpen(message = "waiting for preview panel to open") {
 }
 
 add_task(async function test_default_telemetry() {
+  //set value to browser.ml.linkPreview.onboardingTimes to avoid  changed-pref test error
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.linkPreview.onboardingTimes", ""]],
+  });
+
   // Open a window to initialize metrics in case previous test file reset
   await BrowserTestUtils.closeWindow(
     await BrowserTestUtils.openNewBrowserWindow()

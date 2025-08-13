@@ -44,6 +44,7 @@
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PerformanceStorage.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/RequestBinding.h"
 #include "mozilla/dom/WindowGlobalParent.h"
@@ -211,45 +212,11 @@ static OpaqueResponseFilterFetch ConfiguredFilterFetchResponseBehaviour() {
 HttpBaseChannel::HttpBaseChannel()
     : mReportCollector(new ConsoleReportCollector()),
       mHttpHandler(gHttpHandler),
-      mChannelCreationTime(0),
-      mComputedCrossOriginOpenerPolicy(nsILoadInfo::OPENER_POLICY_UNSAFE_NONE),
-      mStartPos(UINT64_MAX),
-      mTransferSize(0),
-      mRequestSize(0),
-      mDecodedBodySize(0),
-      mSupportsHTTP3(false),
-      mEncodedBodySize(0),
-      mRequestContextID(0),
-      mContentWindowId(0),
-      mBrowserId(0),
-      mAltDataLength(-1),
-      mChannelId(0),
-      mReqContentLength(0U),
-      mStatus(NS_OK),
-      mCanceled(false),
-      mFirstPartyClassificationFlags(0),
-      mThirdPartyClassificationFlags(0),
-      mLoadFlags(LOAD_NORMAL),
-      mCaps(0),
       mClassOfService(0, false),
-      mTlsFlags(0),
-      mSuspendCount(0),
-      mInitialRwin(0),
-      mProxyResolveFlags(0),
-      mContentDispositionHint(UINT32_MAX),
       mRequestMode(RequestMode::No_cors),
-      mRedirectMode(nsIHttpChannelInternal::REDIRECT_MODE_FOLLOW),
-      mLastRedirectFlags(0),
-      mPriority(PRIORITY_NORMAL),
       mRedirectionLimit(gHttpHandler->RedirectionLimit()),
-      mRedirectCount(0),
-      mInternalRedirectCount(0),
       mCachedOpaqueResponseBlockingPref(
-          StaticPrefs::browser_opaqueResponseBlocking()),
-      mChannelBlockedByOpaqueResponse(false),
-      mDummyChannelForCachedResource(false),
-      mHasContentDecompressed(false),
-      mRenderBlocking(false) {
+          StaticPrefs::browser_opaqueResponseBlocking()) {
   StoreApplyConversion(true);
   StoreAllowSTS(true);
   StoreTracingEnabled(true);
@@ -4178,18 +4145,6 @@ HttpBaseChannel::SetFetchCacheMode(uint32_t aFetchCacheMode) {
   return NS_OK;
 }
 
-NS_IMETHODIMP
-HttpBaseChannel::SetIntegrityMetadata(const nsAString& aIntegrityMetadata) {
-  mIntegrityMetadata = aIntegrityMetadata;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-HttpBaseChannel::GetIntegrityMetadata(nsAString& aIntegrityMetadata) {
-  aIntegrityMetadata = mIntegrityMetadata;
-  return NS_OK;
-}
-
 //-----------------------------------------------------------------------------
 // HttpBaseChannel::nsISupportsPriority
 //-----------------------------------------------------------------------------
@@ -4464,7 +4419,10 @@ already_AddRefed<nsILoadInfo> HttpBaseChannel::CloneLoadInfoForRedirect(
     // since it should only apply to same-origin navigations (redirects).
     // we only do this if the CSP of the triggering element (the cspToInherit)
     // uses 'upgrade-insecure-requests', otherwise UIR does not apply.
-    nsCOMPtr<nsIContentSecurityPolicy> csp = newLoadInfo->GetCspToInherit();
+    nsCOMPtr<nsIPolicyContainer> policyContainer =
+        newLoadInfo->GetPolicyContainerToInherit();
+    nsCOMPtr<nsIContentSecurityPolicy> csp =
+        PolicyContainer::GetCSP(policyContainer);
     if (csp) {
       bool upgradeInsecureRequests = false;
       csp->GetUpgradeInsecureRequests(&upgradeInsecureRequests);
@@ -5241,10 +5199,6 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
 
     // Preserve Redirect mode flag.
     rv = httpInternal->SetRedirectMode(mRedirectMode);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-
-    // Preserve Integrity metadata.
-    rv = httpInternal->SetIntegrityMetadata(mIntegrityMetadata);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
 
     httpInternal->SetAltDataForChild(LoadAltDataForChild());

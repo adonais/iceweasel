@@ -2813,6 +2813,11 @@ toolbar#nav-bar {
             args.append("-foreground")
             self.start_script_kwargs["testUrl"] = testUrl or "about:blank"
 
+            # Log if slow events are used from chrome.
+            env["MOZ_LOG"] = (
+                env["MOZ_LOG"] + "," if env["MOZ_LOG"] else ""
+            ) + "SlowChromeEvent:3"
+
             if detectShutdownLeaks:
                 env["MOZ_LOG"] = (
                     env["MOZ_LOG"] + "," if env["MOZ_LOG"] else ""
@@ -3548,6 +3553,7 @@ toolbar#nav-bar {
                 "android": mozinfo.info.get("android", False),
                 "is_emulator": mozinfo.info.get("is_emulator", False),
                 "coverage": mozinfo.info.get("coverage", False),
+                "nogpu": mozinfo.info.get("nogpu", False),
             }
         )
 

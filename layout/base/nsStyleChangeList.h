@@ -13,9 +13,8 @@
 #define nsStyleChangeList_h___
 
 #include "mozilla/Attributes.h"
-
-#include "nsChangeHint.h"
 #include "nsCOMPtr.h"
+#include "nsChangeHint.h"
 #include "nsTArray.h"
 
 class nsIFrame;

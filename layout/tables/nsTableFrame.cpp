@@ -10,54 +10,51 @@
 
 #include "nsTableFrame.h"
 
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/Helpers.h"
+#include <algorithm>
+
+#include "BasicTableLayoutStrategy.h"
+#include "FixedTableLayoutStrategy.h"
+#include "gfxContext.h"
+#include "mozilla/ComputedStyle.h"
+#include "mozilla/IntegerRange.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MathAlgorithms.h"
-#include "mozilla/IntegerRange.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
+#include "mozilla/Range.h"
+#include "mozilla/RestyleManager.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/WritingModes.h"
-
-#include "gfxContext.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/Helpers.h"
+#include "mozilla/layers/RenderRootStateManager.h"
+#include "mozilla/layers/StackingContextHelper.h"
 #include "nsCOMPtr.h"
-#include "mozilla/ComputedStyle.h"
-#include "nsIFrameInlines.h"
-#include "nsFrameList.h"
-#include "nsStyleConsts.h"
-#include "nsIContent.h"
+#include "nsCSSAnonBoxes.h"
+#include "nsCSSFrameConstructor.h"
+#include "nsCSSProps.h"
+#include "nsCSSRendering.h"
 #include "nsCellMap.h"
-#include "nsTableCellFrame.h"
+#include "nsContentUtils.h"
+#include "nsDisplayList.h"
+#include "nsError.h"
+#include "nsFrameList.h"
+#include "nsFrameManager.h"
+#include "nsGkAtoms.h"
 #include "nsHTMLParts.h"
+#include "nsIContent.h"
+#include "nsIFrameInlines.h"
+#include "nsIScriptError.h"
+#include "nsLayoutUtils.h"
+#include "nsPresContext.h"
+#include "nsStyleChangeList.h"
+#include "nsStyleConsts.h"
+#include "nsTableCellFrame.h"
 #include "nsTableColFrame.h"
 #include "nsTableColGroupFrame.h"
 #include "nsTableRowFrame.h"
 #include "nsTableRowGroupFrame.h"
 #include "nsTableWrapperFrame.h"
-
-#include "BasicTableLayoutStrategy.h"
-#include "FixedTableLayoutStrategy.h"
-
-#include "nsPresContext.h"
-#include "nsContentUtils.h"
-#include "nsCSSRendering.h"
-#include "nsGkAtoms.h"
-#include "nsCSSAnonBoxes.h"
-#include "nsIScriptError.h"
-#include "nsFrameManager.h"
-#include "nsError.h"
-#include "nsCSSFrameConstructor.h"
-#include "mozilla/Range.h"
-#include "mozilla/RestyleManager.h"
-#include "mozilla/ServoStyleSet.h"
-#include "nsDisplayList.h"
-#include "nsCSSProps.h"
-#include "nsLayoutUtils.h"
-#include "nsStyleChangeList.h"
-#include <algorithm>
-
-#include "mozilla/layers/StackingContextHelper.h"
-#include "mozilla/layers/RenderRootStateManager.h"
 
 using namespace mozilla;
 using namespace mozilla::image;
@@ -1484,7 +1481,7 @@ bool nsTableFrame::AncestorsHaveStyleBSize(
         LayoutFrameType::TableRow == frameType ||
         LayoutFrameType::TableRowGroup == frameType) {
       const auto bsize =
-          rs->mStylePosition->BSize(wm, rs->mStyleDisplay->mPosition);
+          rs->mStylePosition->BSize(wm, AnchorPosResolutionParams::From(rs));
       // calc() with both lengths and percentages treated like 'auto' on
       // internal table elements
       if (!bsize->IsAuto() && !bsize->HasLengthAndPercentage()) {
@@ -1492,7 +1489,7 @@ bool nsTableFrame::AncestorsHaveStyleBSize(
       }
     } else if (LayoutFrameType::Table == frameType) {
       // we reached the containing table, so always return
-      return !rs->mStylePosition->BSize(wm, rs->mStyleDisplay->mPosition)
+      return !rs->mStylePosition->BSize(wm, AnchorPosResolutionParams::From(rs))
                   ->IsAuto();
     }
   }
@@ -1514,7 +1511,7 @@ void nsTableFrame::CheckRequestSpecialBSizeReflow(
            aReflowInput.ComputedBSize() ||  // no computed bsize
        0 == aReflowInput.ComputedBSize()) &&
       aReflowInput.mStylePosition
-          ->BSize(wm, aReflowInput.mStyleDisplay->mPosition)
+          ->BSize(wm, AnchorPosResolutionParams::From(&aReflowInput))
           ->ConvertsToPercentage() &&  // pct bsize
       nsTableFrame::AncestorsHaveStyleBSize(*aReflowInput.mParentReflowInput)) {
     nsTableFrame::RequestSpecialBSizeReflow(aReflowInput);
@@ -3479,7 +3476,8 @@ nsTableFrame* nsTableFrame::GetTableFrame(nsIFrame* aFrame) {
 }
 
 bool nsTableFrame::IsAutoBSize(WritingMode aWM) {
-  const auto bsize = StylePosition()->BSize(aWM, StyleDisplay()->mPosition);
+  const auto bsize =
+      StylePosition()->BSize(aWM, AnchorPosResolutionParams::From(this));
   if (bsize->IsAuto()) {
     return true;
   }
@@ -3509,8 +3507,8 @@ bool nsTableFrame::IsAutoLayout() {
   // and tables with inline size set to 'max-content' must be
   // auto-layout (at least as long as
   // FixedTableLayoutStrategy::GetPrefISize returns nscoord_MAX)
-  const auto iSize =
-      StylePosition()->ISize(GetWritingMode(), StyleDisplay()->mPosition);
+  const auto iSize = StylePosition()->ISize(
+      GetWritingMode(), AnchorPosResolutionParams::From(this));
   return iSize->IsAuto() || iSize->IsMaxContent();
 }
 
@@ -3656,17 +3654,17 @@ bool nsTableFrame::ColumnHasCellSpacingBefore(int32_t aColIndex) const {
   // Note: percentages and calc(%) are intentionally not considered.
   if (const auto* col = fif->GetColFrame(aColIndex)) {
     const auto anchorResolutionParams = AnchorPosResolutionParams::From(col);
-    const auto iSize = col->StylePosition()->ISize(
-        GetWritingMode(), anchorResolutionParams.mPosition);
+    const auto iSize =
+        col->StylePosition()->ISize(GetWritingMode(), anchorResolutionParams);
     if (iSize->ConvertsToLength() && iSize->ToLength() > 0) {
       const auto maxISize = col->StylePosition()->MaxISize(
-          GetWritingMode(), anchorResolutionParams.mPosition);
+          GetWritingMode(), anchorResolutionParams);
       if (!maxISize->ConvertsToLength() || maxISize->ToLength() > 0) {
         return true;
       }
     }
     const auto minISize = col->StylePosition()->MinISize(
-        GetWritingMode(), anchorResolutionParams.mPosition);
+        GetWritingMode(), anchorResolutionParams);
     if (minISize->ConvertsToLength() && minISize->ToLength() > 0) {
       return true;
     }

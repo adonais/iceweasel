@@ -192,7 +192,30 @@ describe("PrefsFeed", () => {
       })
     );
   });
+  it("should dispatch PREF_CHANGED when onWidgetsUpdated is called", () => {
+    sandbox
+      .stub(global.NimbusFeatures.newtabWidgets, "getAllVariables")
+      .returns({
+        listsEnabled: true,
+        timerEnabled: false,
+      });
 
+    feed.onWidgetsUpdated();
+
+    assert.calledWith(
+      feed.store.dispatch,
+      ac.BroadcastToContent({
+        type: at.PREF_CHANGED,
+        data: {
+          name: "widgetsConfig",
+          value: {
+            listsEnabled: true,
+            timerEnabled: false,
+          },
+        },
+      })
+    );
+  });
   it("should remove all events on removeListeners", () => {
     feed.geo = "";
     sandbox.spy(global.NimbusFeatures.pocketNewtab, "offUpdate");

@@ -13,6 +13,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.appservices.logins.DatabaseLoginsStorage
+import mozilla.appservices.logins.KeyRegenerationEventReason
+import mozilla.appservices.logins.recordKeyRegenerationEvent
+import mozilla.components.concept.storage.KeyGenerationReason
 import mozilla.components.concept.storage.Login
 import mozilla.components.concept.storage.LoginEntry
 import mozilla.components.concept.storage.LoginsStorage
@@ -88,13 +91,24 @@ class SyncableLoginsStorage(
     val crypto by lazy { LoginsCrypto(context, securePrefs.value, this) }
 
     private val conn: Deferred<DatabaseLoginsStorage> = CoroutineScope(coroutineContext).async {
-        val key = crypto.getOrGenerateKey().key
+        val managedKey = crypto.getOrGenerateKey()
+        val key = managedKey.key
         val keyManager = object : mozilla.appservices.logins.KeyManager {
             override fun getKey(): ByteArray {
                 return key.toByteArray()
             }
         }
-        DatabaseLoginsStorage(context.getDatabasePath(DB_NAME).absolutePath, keyManager)
+        val path = context.getDatabasePath(DB_NAME)
+        val pathExisted = path.exists()
+        val storage = DatabaseLoginsStorage(path.absolutePath, keyManager)
+        // If the path existed, but we generated a new key, then the key can't decrypt any existing
+        // logins.  Run wipeLocal, to try to recover
+        // (https://bugzilla.mozilla.org/show_bug.cgi?id=1970409)
+        if (managedKey.wasGenerated == KeyGenerationReason.New && pathExisted) {
+            recordKeyRegenerationEvent(KeyRegenerationEventReason.Other)
+            tryWithStorageOr(Unit) { wipeLocal() }
+        }
+        storage
     }
 
     internal suspend fun getStorage(): DatabaseLoginsStorage = conn.await()
@@ -113,7 +127,7 @@ class SyncableLoginsStorage(
      */
     @Throws(LoginsApiException::class)
     override suspend fun wipeLocal() = withContext(coroutineContext) {
-        getStorage().wipeLocal()
+         tryWithStorageOr(Unit) { wipeLocal() }
     }
 
     /**
@@ -122,7 +136,7 @@ class SyncableLoginsStorage(
      */
     @Throws(LoginsApiException::class)
     override suspend fun delete(guid: String): Boolean = withContext(coroutineContext) {
-        getStorage().delete(guid)
+        tryWithStorageOr(false) { delete(guid) }
     }
 
     /**
@@ -131,7 +145,7 @@ class SyncableLoginsStorage(
      */
     @Throws(LoginsApiException::class)
     override suspend fun get(guid: String): Login? = withContext(coroutineContext) {
-        getStorage().get(guid)?.toLogin()
+        tryWithStorageOr(null) { get(guid)?.toLogin() }
     }
 
     /**
@@ -141,7 +155,7 @@ class SyncableLoginsStorage(
      */
     @Throws(NoSuchRecordException::class, LoginsApiException::class)
     override suspend fun touch(guid: String) = withContext(coroutineContext) {
-        getStorage().touch(guid)
+        tryWithStorageOr(Unit) { touch(guid) }
     }
 
     /**
@@ -150,7 +164,7 @@ class SyncableLoginsStorage(
      */
     @Throws(LoginsApiException::class)
     override suspend fun list(): List<Login> = withContext(coroutineContext) {
-        getStorage().list().map { it.toLogin() }
+        tryWithStorageOr(listOf()) { list().map { it.toLogin() } }
     }
 
     /**
@@ -194,7 +208,7 @@ class SyncableLoginsStorage(
 
     override fun registerWithSyncManager() {
         CoroutineScope(coroutineContext).launch {
-            getStorage().registerWithSyncManager()
+            tryWithStorageOr(Unit) { registerWithSyncManager() }
         }
     }
 
@@ -203,7 +217,7 @@ class SyncableLoginsStorage(
      */
     @Throws(LoginsApiException::class)
     override suspend fun getByBaseDomain(origin: String): List<Login> = withContext(coroutineContext) {
-        getStorage().getByBaseDomain(origin).map { it.toLogin() }
+        tryWithStorageOr(listOf()) { getByBaseDomain(origin).map { it.toLogin() } }
     }
 
     /**
@@ -212,13 +226,22 @@ class SyncableLoginsStorage(
      */
     @Throws(LoginsApiException::class)
     override suspend fun findLoginToUpdate(entry: LoginEntry): Login? = withContext(coroutineContext) {
-        getStorage().findLoginToUpdate(entry.toLoginEntry())?.toLogin()
+        tryWithStorageOr(null) { findLoginToUpdate(entry.toLoginEntry())?.toLogin() }
     }
 
     override fun close() {
         CoroutineScope(coroutineContext).launch {
-            getStorage().close()
+            tryWithStorageOr(Unit) { close() }
             this.cancel()
+        }
+    }
+
+    private suspend fun <T> tryWithStorageOr(default: T, operation: DatabaseLoginsStorage.() -> T): T {
+        return try {
+            getStorage().operation()
+        } catch (e: LoginsApiException) {
+            logger.error("Error during logins operation", e)
+            default
         }
     }
 }

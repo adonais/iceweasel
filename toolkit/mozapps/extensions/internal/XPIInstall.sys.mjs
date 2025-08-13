@@ -539,6 +539,10 @@ async function loadManifestFromWebManifest(aPackage, aLocation) {
   addon.optionalPermissions = extension.manifestOptionalPermissions;
   addon.requestedPermissions = extension.getRequestedPermissions();
   addon.applyBackgroundUpdates = AddonManager.AUTOUPDATE_DEFAULT;
+  // This property is exposed in the `AddonInstallWrapper` and only used in the
+  // update logic (in the prompt handler). We don't store it in the add-on DB.
+  addon.hasPreviousConsent =
+    extension.getDataCollectionPermissions().hasPreviousConsent;
 
   function getLocale(aLocale) {
     // Use the raw manifest, here, since we need values with their
@@ -1800,7 +1804,6 @@ class AddonInstall {
             // to install/uninstall/enable/disable addons.  We may need to
             // do that here in the future.
             this._callInstallListeners("onInstallFailed");
-            this.removeTemporaryFile();
           } else {
             logger.info(`Install of ${this.addon.id} cancelled by user`);
             this.state = AddonManager.STATE_CANCELLED;
@@ -1810,6 +1813,7 @@ class AddonInstall {
               /* aCancelledByUser */ true
             );
           }
+          this.removeTemporaryFile();
           return;
         }
       }
@@ -2919,6 +2923,10 @@ AddonInstallWrapper.prototype = {
   get addon() {
     let install = installFor(this);
     return install.addon ? install.addon.wrapper : null;
+  },
+
+  get addonHasPreviousConsent() {
+    return installFor(this).addon?.hasPreviousConsent;
   },
 
   get sourceURI() {

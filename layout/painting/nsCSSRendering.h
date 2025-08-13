@@ -11,14 +11,14 @@
 
 #include "gfxBlur.h"
 #include "gfxContext.h"
+#include "gfxTextRun.h"
+#include "mozilla/TypedEnumBits.h"
 #include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/gfx/Rect.h"
-#include "mozilla/TypedEnumBits.h"
-#include "nsStyleStruct.h"
+#include "nsCSSRenderingBorders.h"
 #include "nsIFrame.h"
 #include "nsImageRenderer.h"
-#include "nsCSSRenderingBorders.h"
-#include "gfxTextRun.h"
+#include "nsStyleStruct.h"
 
 class gfxContext;
 class nsPresContext;

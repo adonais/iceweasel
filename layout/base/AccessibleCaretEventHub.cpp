@@ -8,7 +8,6 @@
 
 #include "AccessibleCaretLogger.h"
 #include "AccessibleCaretManager.h"
-
 #include "mozilla/AutoRestore.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_layout.h"

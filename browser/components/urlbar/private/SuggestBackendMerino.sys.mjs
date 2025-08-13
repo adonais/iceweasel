@@ -47,7 +47,7 @@ export class SuggestBackendMerino extends SuggestBackend {
     this.logger.debug("Handling query", { searchString });
 
     if (!this.#client) {
-      this.#client = new lazy.MerinoClient(this.name);
+      this.#client = new lazy.MerinoClient(this.name, { allowOhttp: true });
     }
 
     let providers;

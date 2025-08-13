@@ -8,6 +8,7 @@
 #define MOZILLA_RENDERINGPHASE_H_
 
 #include <cstdint>
+
 #include "mozilla/EnumSet.h"
 
 namespace mozilla {

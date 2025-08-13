@@ -7,12 +7,12 @@
 #ifndef nsComboboxControlFrame_h___
 #define nsComboboxControlFrame_h___
 
+#include "ButtonControlFrame.h"
 #include "mozilla/Attributes.h"
 #include "nsIAnonymousContentCreator.h"
-#include "nsISelectControlFrame.h"
 #include "nsIRollupListener.h"
+#include "nsISelectControlFrame.h"
 #include "nsThreadUtils.h"
-#include "nsHTMLButtonControlFrame.h"
 
 namespace mozilla {
 class PresShell;
@@ -23,8 +23,7 @@ class HTMLSelectElement;
 }
 }  // namespace mozilla
 
-class nsComboboxControlFrame final : public nsHTMLButtonControlFrame,
-                                     public nsIAnonymousContentCreator,
+class nsComboboxControlFrame final : public mozilla::ButtonControlFrame,
                                      public nsISelectControlFrame {
   using Element = mozilla::dom::Element;
 
@@ -48,10 +47,8 @@ class nsComboboxControlFrame final : public nsHTMLButtonControlFrame,
 
   nscoord IntrinsicISize(const mozilla::IntrinsicSizeInput& aInput,
                          mozilla::IntrinsicISizeType aType) final;
-
-  // We're a leaf, so we need to report ourselves as the content insertion
-  // frame.
-  nsContainerFrame* GetContentInsertionFrame() override { return this; }
+  void GetLabelText(nsAString&);
+  void UpdateLabelText();
 
   void Reflow(nsPresContext* aCX, ReflowOutput& aDesiredSize,
               const ReflowInput& aReflowInput, nsReflowStatus& aStatus) final;
@@ -98,16 +95,6 @@ class nsComboboxControlFrame final : public nsHTMLButtonControlFrame,
   bool HasDropDownButton() const;
   nscoord DropDownButtonISize();
 
-  enum DropDownPositionState {
-    // can't show the dropdown at its current position
-    eDropDownPositionSuppressed,
-    // a resize reflow is pending, don't show it yet
-    eDropDownPositionPendingResize,
-    // the dropdown has its final size and position and can be displayed here
-    eDropDownPositionFinal
-  };
-  DropDownPositionState AbsolutelyPositionDropDown();
-
   enum class Type { Longest, Current };
   nscoord GetOptionISize(gfxContext*, Type) const;
 
@@ -125,11 +112,13 @@ class nsComboboxControlFrame final : public nsHTMLButtonControlFrame,
 
   nsresult RedisplayText();
   void HandleRedisplayTextEvent();
-  void ActuallyDisplayText(bool aNotify);
 
   mozilla::dom::HTMLSelectElement& Select() const;
   void GetOptionText(uint32_t aIndex, nsAString& aText) const;
 
+  // TODO(emilio): Would be nice to either paint the dropmarker as part of the
+  // background somehow, or alternatively rejigger stuff a bit (using flex) so
+  // that we can get rid of the label element.
   RefPtr<Element> mDisplayLabel;   // Anonymous content for the label
   RefPtr<Element> mButtonContent;  // Anonymous content for the button
   nsRevocableEventPtr<RedisplayTextEvent> mRedisplayTextEvent;
@@ -138,7 +127,6 @@ class nsComboboxControlFrame final : public nsHTMLButtonControlFrame,
   // the full inline size except the drop-marker.
   nscoord mDisplayISize = 0;
   int32_t mDisplayedIndex = -1;
-  nsString mDisplayedOptionTextOrPreview;
   RefPtr<mozilla::HTMLSelectEventListener> mEventListener;
 };
 

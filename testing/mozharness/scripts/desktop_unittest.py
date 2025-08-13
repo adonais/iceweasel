@@ -1297,18 +1297,12 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
 
         def do_gnome_video_recording(suite_name, upload_dir, ev):
             import os
-            import subprocess
 
             import dbus
 
             target_file = os.path.join(
                 upload_dir,
                 f"video_{suite_name}.webm",
-            )
-
-            tmp_file = os.path.join(
-                upload_dir,
-                f"video_{suite_name}_tmp.webm",
             )
 
             self.info(f"Recording suite {suite_name} to {target_file}")
@@ -1321,38 +1315,21 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                 "Screencast",
                 signature="sa{sv}",
                 args=[
-                    tmp_file,
+                    target_file,
                     {"draw-cursor": True, "framerate": 35},
                 ],
             )
 
             ev.wait()
 
-            # Use ffmpeg to add duration headers in the screen recording.
-            try:
-                subprocess.run(
-                    [
-                        "ffmpeg",
-                        "-i",
-                        tmp_file,
-                        "-vcodec",
-                        "copy",
-                        "-acodec",
-                        "copy",
-                        target_file,
-                    ],
-                    check=True,
-                )
-                # If subprocess.run did not raise CalledProcessError, remove
-                # the temporary file.
-                os.remove(tmp_file)
-            except subprocess.CalledProcessError as e:
-                self.error(
-                    f"Error occurred while running ffmpeg: {e.stderr} ({e.returncode})"
-                )
-                # If subprocess.run failed, rename the temporary file to the
-                # expected target file name.
-                os.rename(tmp_file, target_file)
+            session_bus.call_blocking(
+                "org.gnome.Shell.Screencast",
+                "/org/gnome/Shell/Screencast",
+                "org.gnome.Shell.Screencast",
+                "StopScreencast",
+                signature="",
+                args=[],
+            )
 
         def do_macos_video_recording(suite_name, upload_dir, ev):
             import os

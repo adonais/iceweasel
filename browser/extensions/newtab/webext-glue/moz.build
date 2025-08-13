@@ -8,6 +8,7 @@ with Files("**"):
     BUG_COMPONENT = ("Firefox", "New Tab Page")
 
 XPI_NAME = "newtab"
+XPI_PKGNAME = "newtab@mozilla.org"
 
 DIST_SUBDIR = ""
 
@@ -23,10 +24,6 @@ FINAL_TARGET_FILES += [
 FINAL_TARGET_FILES["webext-glue"] += [
     "background.js",
     "metrics/**",
-    "schema.json",
-]
-FINAL_TARGET_PP_FILES["webext-glue"] += [
-    "builtin-newtab.js",
 ]
 FINAL_TARGET_FILES.lib += [
     "../lib/**",

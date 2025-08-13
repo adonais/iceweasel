@@ -19,13 +19,21 @@ const getShadowBtn = (el, selector) =>
 async function openLoginForm(megalist, isFromMenuDropdown = true) {
   info("Opening login form.");
 
-  let button = megalist.querySelector(".empty-state-add-password");
+  let button = null;
   if (isFromMenuDropdown) {
+    await BrowserTestUtils.waitForCondition(
+      () => megalist.querySelector("#more-options-menubutton"),
+      "menu button failed to render"
+    );
+
     const menu = megalist.querySelector("panel-list");
+
     const menuButton = megalist.querySelector("#more-options-menubutton");
     menuButton.click();
     await BrowserTestUtils.waitForEvent(menu, "shown");
     button = getShadowBtn(menu, "[action='add-password']");
+  } else {
+    button = megalist.querySelector(".empty-state-add-password");
   }
 
   const loginFormPromise = BrowserTestUtils.waitForCondition(
@@ -84,12 +92,12 @@ add_task(async function test_add_login_success() {
 
   const megalist = await openPasswordsSidebar();
   await waitForSnapshots();
-  await openLoginForm(megalist);
+  await openLoginForm(megalist, false);
 
   let toolbarEvents = Glean.contextualManager.toolbarAction.testGetValue();
   Assert.equal(toolbarEvents.length, 1, "Recorded add password once.");
   assertCPMGleanEvent(toolbarEvents[0], {
-    trigger: "toolbar",
+    trigger: "empty_state_card",
     option_name: "add_new",
   });
 
@@ -154,12 +162,14 @@ add_task(async function test_add_login_empty_origin() {
   is(logins.length, 0, "No login was added after submitting form.");
 
   LoginTestUtils.clearData();
+  info("Closing the sidebar");
+  SidebarController.hide();
 });
 
 add_task(async function test_add_login_empty_password() {
   const megalist = await openPasswordsSidebar();
   await waitForSnapshots();
-  await openLoginForm(megalist);
+  await openLoginForm(megalist, false);
   addLogin(megalist, {
     ...TEST_LOGIN_1,
     password: "",
@@ -170,6 +180,8 @@ add_task(async function test_add_login_empty_password() {
   is(logins.length, 0, "No login was added after submitting form.");
 
   LoginTestUtils.clearData();
+  info("Closing the sidebar");
+  SidebarController.hide();
 });
 
 add_task(async function test_view_login_command() {

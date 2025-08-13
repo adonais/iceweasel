@@ -39,6 +39,8 @@ tags = "addons"
 ["test_PingSender.js"]
 skip-if = ["os == 'android'"]
 
+["test_PrefMigrationForTOU.js"]
+
 ["test_RDDScalars.js"]
 skip-if = ["os == 'android'"] # RDD is not a thing on Android?
 
@@ -50,6 +52,8 @@ tags = "addons"
 
 ["test_SyncPingIntegration.js"]
 skip-if = ["os == 'android'"]
+
+["test_TOUNotificationFlow.js"]
 
 ["test_TelemetryClientID_reset.js"]
 skip-if = ["os == 'android'"] # Disabled as Android/GeckoView doesn't run TelemetryController

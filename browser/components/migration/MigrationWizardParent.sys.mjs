@@ -844,7 +844,6 @@ export class MigrationWizardParent extends JSWindowActorParent {
         triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
           {}
         ),
-        csp: null,
       }
     );
   }

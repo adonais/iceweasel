@@ -7,12 +7,12 @@
 #ifndef LAYOUT_SVG_SVGMASKFRAME_H_
 #define LAYOUT_SVG_SVGMASKFRAME_H_
 
+#include "gfxMatrix.h"
+#include "gfxPattern.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SVGContainerFrame.h"
 #include "mozilla/gfx/2D.h"
-#include "gfxPattern.h"
-#include "gfxMatrix.h"
 
 class gfxContext;
 

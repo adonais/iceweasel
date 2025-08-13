@@ -11,8 +11,8 @@
 
 #include <tuple>
 
-#include "mozilla/dom/FlexBinding.h"
 #include "mozilla/IntrinsicISizesCache.h"
+#include "mozilla/dom/FlexBinding.h"
 #include "nsContainerFrame.h"
 #include "nsILineIterator.h"
 

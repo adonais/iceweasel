@@ -393,6 +393,7 @@ def test_mochitest_ci_subsuite(
 @mock.patch("moztest.resolve.TestResolver", new=mock.MagicMock())
 @mock.patch("mozperftest.test.mochitest.ON_TRY", new=True)
 @mock.patch("mozperftest.utils.ON_TRY", new=True)
+@mock.patch("mochitest_options.MochitestArgumentParser", new=mock.MagicMock())
 @mock.patch("mochitest.mochitest_options.MochitestArgumentParser", new=mock.MagicMock())
 @mock.patch("manifestparser.TestManifest", new=mock.MagicMock())
 def test_mochitest_android_ci_metrics(formatter_mock, run_test_harness_mock):

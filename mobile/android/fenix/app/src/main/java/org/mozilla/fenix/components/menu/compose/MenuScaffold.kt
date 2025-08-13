@@ -98,7 +98,7 @@ internal fun MenuFrame(
                     end = 8.dp,
                     bottom = 12.dp,
                 ),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             content()
         }

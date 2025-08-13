@@ -25,9 +25,13 @@ export REPO_PATH="$EXT_REPO_LOCATION/build"
 export REPO_URL="https://chromium.googlesource.com/chromium/src/build"
 export DEST_PATH="`pwd`/third_party/chromium/build"
 export BASE_COMMIT_FILE="$DEST_PATH/README.mozilla.last-vendor"
+export BUG_NUMBER=1234
+export SCRIPT_DIR="$DEST_PATH/moz-exp-scripts"
+export TMP_DIR=$EXT_REPO_LOCATION
 
 
 # prepare build repo
+rm -rf $REPO_PATH
 mkdir -p $EXT_REPO_LOCATION
 git clone $REPO_URL $REPO_PATH
 ( cd $REPO_PATH \
@@ -44,14 +48,14 @@ git clone $REPO_URL $REPO_PATH
 && ( cd $REPO_PATH \
      && echo "# base of lastest vendoring" >> $BASE_COMMIT_FILE \
      && git rev-parse --short `git merge-base mozpatches main` >> $BASE_COMMIT_FILE \
-   )
+   ) ; hg status
 
 
 # to save the newly vendored files
 hg status -nd | xargs hg rm
 hg status -nu | xargs hg add
 ( NEW_BASE_SHA=`tail -1 $BASE_COMMIT_FILE` ; \
-  hg commit -m "Bug xxx - vendor chromium/build from $NEW_BASE_SHA" )
+  hg commit -m "Bug $BUG_NUMBER - vendor chromium/build from $NEW_BASE_SHA" )
 
 
 # to save the patch-stack as a separate commit
@@ -62,7 +66,7 @@ hg status -nu | xargs hg add
   --target-branch-head `tail -1 $BASE_COMMIT_FILE` \
   --patch-path $DEST_PATH/moz-patch-stack \
   --skip-startup-sanity \
-  --separate-commit-bug-number 1234
+  --separate-commit-bug-number $BUG_NUMBER
 
 
 # to save the patch-stack and amend it with the current commit
@@ -81,4 +85,16 @@ hg status -nu | xargs hg add
 mv mailbox.patch $REPO_PATH
 ( cd $REPO_PATH \
   && git am mailbox.patch \
+)
+
+
+# rebase to the next commit
+(cd $REPO_PATH && \
+ git reset --hard mozpatches^^ && \
+ MERGE_BASE=`git merge-base mozpatches main` ; \
+ NEXT_COMMIT=`git log --oneline $MERGE_BASE..main --pretty=%h | tail -1` ; \
+ echo $NEXT_COMMIT ; \
+ git rebase $NEXT_COMMIT && \
+ bash $SCRIPT_DIR/add_build_location_patches.sh && \
+ bash $SCRIPT_DIR/add_target_cpu_patches.sh
 )

@@ -90,4 +90,14 @@ export const AboutWelcomeUtils = {
         return obj;
       }, {});
   },
+  getTileStyle(tile, validStyle) {
+    const preferredTileStyle = tile?.style;
+    const legacyTileStyle = tile?.tiles?.style ?? null;
+
+    return this.getValidStyle(
+      preferredTileStyle ?? legacyTileStyle,
+      validStyle,
+      true
+    );
+  },
 };

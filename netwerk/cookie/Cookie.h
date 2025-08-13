@@ -83,7 +83,7 @@ class Cookie final : public nsICookie {
     return nsDependentCSubstring(mData.host(), IsDomain() ? 1 : 0);
   }
   inline const nsCString& Path() const { return mData.path(); }
-  inline int64_t Expiry() const { return mData.expiry(); }  // in seconds
+  inline int64_t Expiry() const { return mData.expiry(); }  // in milliseconds
   inline int64_t LastAccessed() const {
     return mData.lastAccessed();
   }  // in microseconds
@@ -117,6 +117,7 @@ class Cookie final : public nsICookie {
   inline void SetSchemeMap(uint8_t aSchemeMap) {
     mData.schemeMap() = aSchemeMap;
   }
+  inline void SetSameSite(int32_t aSameSite) { mData.sameSite() = aSameSite; }
   inline void SetHost(const nsACString& aHost) { mData.host() = aHost; }
 
   uint32_t NameAndValueBytes() {

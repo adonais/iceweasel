@@ -162,6 +162,7 @@ enum GPUFeatureName {
 interface GPUDevice : EventTarget {
     [SameObject] readonly attribute GPUSupportedFeatures features;
     [SameObject] readonly attribute GPUSupportedLimits limits;
+    [SameObject, BinaryName="GetAdapterInfo"] readonly attribute GPUAdapterInfo adapterInfo;
 
     [SameObject, BinaryName="getQueue"] readonly attribute GPUQueue queue;
 
@@ -521,6 +522,7 @@ dictionary GPUBindGroupLayoutEntry {
     GPUSamplerBindingLayout sampler;
     GPUTextureBindingLayout texture;
     GPUStorageTextureBindingLayout storageTexture;
+    GPUExternalTextureBindingLayout externalTexture;
 };
 
 typedef [EnforceRange] unsigned long GPUShaderStageFlags;
@@ -580,6 +582,9 @@ dictionary GPUStorageTextureBindingLayout {
     GPUTextureViewDimension viewDimension = "2d";
 };
 
+dictionary GPUExternalTextureBindingLayout {
+};
+
 [Func="mozilla::webgpu::Instance::PrefEnabled",
  Exposed=(Window, Worker), SecureContext]
 interface GPUBindGroup {
@@ -592,7 +597,11 @@ dictionary GPUBindGroupDescriptor
     required sequence<GPUBindGroupEntry> entries;
 };
 
-typedef (GPUSampler or GPUTextureView or GPUBufferBinding) GPUBindingResource;
+typedef (GPUSampler or
+         GPUTexture or
+         GPUTextureView or
+         GPUBuffer or
+         GPUBufferBinding) GPUBindingResource;
 
 dictionary GPUBindGroupEntry {
     required GPUIndex32 binding;
@@ -1113,9 +1122,9 @@ dictionary GPURenderPassDescriptor
 };
 
 dictionary GPURenderPassColorAttachment {
-    required GPUTextureView view;
+    required (GPUTexture or GPUTextureView) view;
     GPUIntegerCoordinate depthSlice;
-    GPUTextureView resolveTarget;
+    (GPUTexture or GPUTextureView) resolveTarget;
 
     GPUColor clearValue;
     required GPULoadOp loadOp;
@@ -1123,7 +1132,7 @@ dictionary GPURenderPassColorAttachment {
 };
 
 dictionary GPURenderPassDepthStencilAttachment {
-    required GPUTextureView view;
+    required (GPUTexture or GPUTextureView) view;
 
     float depthClearValue;
     GPULoadOp depthLoadOp;
@@ -1283,13 +1292,14 @@ dictionary GPUCanvasConfiguration {
 };
 
 enum GPUDeviceLostReason {
+    "unknown",
     "destroyed",
 };
 
 [Func="mozilla::webgpu::Instance::PrefEnabled",
  Exposed=(Window, Worker), SecureContext]
 interface GPUDeviceLostInfo {
-    readonly attribute any reason; // GPUDeviceLostReason or undefined
+    readonly attribute GPUDeviceLostReason reason;
     readonly attribute DOMString message;
 };
 

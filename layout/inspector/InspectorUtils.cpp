@@ -4,58 +4,60 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/ArrayUtils.h"
+#include "mozilla/dom/InspectorUtils.h"
 
-#include "inLayoutUtils.h"
-
-#include "gfxTextRun.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/dom/HTMLSlotElement.h"
-#include "nsArray.h"
-#include "nsContentList.h"
-#include "nsString.h"
-#include "nsIContentInlines.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/DocumentInlines.h"
-#include "mozilla/dom/HTMLTemplateElement.h"
 #include "ChildIterator.h"
-#include "nsComputedDOMStyle.h"
+#include "gfxTextRun.h"
+#include "inLayoutUtils.h"
+#include "mozilla/ArrayUtils.h"
+#include "mozilla/DeclarationBlock.h"
 #include "mozilla/EventStateManager.h"
-#include "nsAtom.h"
-#include "nsBlockFrame.h"
-#include "nsPresContext.h"
-#include "nsRange.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/ServoBindings.h"
+#include "mozilla/ServoCSSParser.h"
+#include "mozilla/ServoStyleRuleMap.h"
+#include "mozilla/ServoStyleSet.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StyleSheetInlines.h"
-#include "mozilla/dom/CharacterData.h"
+#include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/CSS2PropertiesBinding.h"
 #include "mozilla/dom/CSSBinding.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/CSSStyleRule.h"
 #include "mozilla/dom/CSSKeyframesRule.h"
+#include "mozilla/dom/CSSStyleRule.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/CharacterData.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLSlotElement.h"
+#include "mozilla/dom/HTMLTemplateElement.h"
 #include "mozilla/dom/Highlight.h"
 #include "mozilla/dom/HighlightRegistry.h"
+#include "mozilla/dom/InspectorFontFace.h"
 #include "mozilla/dom/InspectorUtilsBinding.h"
-#include "mozilla/dom/CSS2PropertiesBinding.h"
 #include "mozilla/dom/LinkStyle.h"
 #include "mozilla/dom/ToJSValue.h"
-#include "mozilla/DeclarationBlock.h"
+#include "mozilla/gfx/Matrix.h"
+#include "nsArray.h"
+#include "nsAtom.h"
+#include "nsBlockFrame.h"
 #include "nsCSSProps.h"
 #include "nsCSSValue.h"
 #include "nsColor.h"
-#include "mozilla/ServoStyleSet.h"
+#include "nsComputedDOMStyle.h"
+#include "nsContentList.h"
+#include "nsGlobalWindowInner.h"
+#include "nsIContentInlines.h"
 #include "nsLayoutUtils.h"
 #include "nsNameSpaceManager.h"
-#include "nsStyleUtil.h"
+#include "nsPresContext.h"
 #include "nsQueryObject.h"
-#include "mozilla/ServoBindings.h"
-#include "mozilla/ServoStyleRuleMap.h"
-#include "mozilla/ServoCSSParser.h"
-#include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/dom/InspectorUtils.h"
-#include "mozilla/dom/InspectorFontFace.h"
-#include "mozilla/gfx/Matrix.h"
+#include "nsRange.h"
+#include "nsString.h"
+#include "nsStyleUtil.h"
 
 using namespace mozilla;
 using namespace mozilla::css;
@@ -744,18 +746,31 @@ void InspectorUtils::RgbToColorName(GlobalObject&, uint8_t aR, uint8_t aG,
 }
 
 /* static */
-void InspectorUtils::ColorToRGBA(GlobalObject&, const nsACString& aColorString,
-                                 const Document* aDoc,
+void InspectorUtils::ColorToRGBA(GlobalObject& aGlobal,
+                                 const nsACString& aColorString,
                                  Nullable<InspectorRGBATuple>& aResult) {
-  nscolor color = NS_RGB(0, 0, 0);
-
-  ServoStyleSet* styleSet = nullptr;
-  if (aDoc) {
-    if (PresShell* ps = aDoc->GetPresShell()) {
-      styleSet = ps->StyleSet();
+  auto* styleSet = [&]() -> ServoStyleSet* {
+    nsCOMPtr<nsIGlobalObject> global =
+        do_QueryInterface(aGlobal.GetAsSupports());
+    if (!global) {
+      return nullptr;
     }
-  }
+    auto* win = global->GetAsInnerWindow();
+    if (!win) {
+      return nullptr;
+    }
+    Document* doc = win->GetExtantDoc();
+    if (!doc) {
+      return nullptr;
+    }
+    PresShell* ps = doc->GetPresShell();
+    if (!ps) {
+      return nullptr;
+    }
+    return ps->StyleSet();
+  }();
 
+  nscolor color = NS_RGB(0, 0, 0);
   if (!ServoCSSParser::ComputeColor(styleSet, NS_RGB(0, 0, 0), aColorString,
                                     &color)) {
     aResult.SetNull();
@@ -1017,10 +1032,8 @@ static bool FrameHasSpecifiedSize(const nsIFrame* aFrame) {
   const nsStylePosition* stylePos = aFrame->StylePosition();
   const auto anchorResolutionParams = AnchorPosResolutionParams::From(aFrame);
 
-  return stylePos->ISize(wm, anchorResolutionParams.mPosition)
-             ->IsLengthPercentage() ||
-         stylePos->BSize(wm, anchorResolutionParams.mPosition)
-             ->IsLengthPercentage();
+  return stylePos->ISize(wm, anchorResolutionParams)->IsLengthPercentage() ||
+         stylePos->BSize(wm, anchorResolutionParams)->IsLengthPercentage();
 }
 
 static bool IsFrameOutsideOfAncestor(const nsIFrame* aFrame,
@@ -1195,5 +1208,51 @@ void InspectorUtils::ReplaceBlockRuleBodyTextInStylesheet(
     nsACString& aNewStyleSheetText) {
   Servo_ReplaceBlockRuleBodyTextInStylesheetText(
       &aStyleSheetText, aLine, aColumn, &aNewBodyText, &aNewStyleSheetText);
+}
+
+void InspectorUtils::SetVerticalClipping(GlobalObject&,
+                                         BrowsingContext* aContext,
+                                         mozilla::ScreenIntCoord aOffset) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  if (!aContext) {
+    return;
+  }
+
+  CanonicalBrowsingContext* canonical = aContext->Canonical();
+  if (!canonical) {
+    return;
+  }
+
+  BrowserParent* parent = canonical->GetBrowserParent();
+  if (!parent) {
+    return;
+  }
+  parent->DynamicToolbarOffsetChanged(aOffset);
+
+  RefPtr<nsIWidget> widget = canonical->GetParentProcessWidgetContaining();
+  if (!widget) {
+    return;
+  }
+  widget->DynamicToolbarOffsetChanged(aOffset);
+}
+
+void InspectorUtils::SetDynamicToolbarMaxHeight(
+    GlobalObject&, BrowsingContext* aContext, mozilla::ScreenIntCoord aHeight) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  if (!aContext) {
+    return;
+  }
+
+  CanonicalBrowsingContext* canonical = aContext->Canonical();
+  if (!canonical) {
+    return;
+  }
+
+  BrowserParent* parent = canonical->GetBrowserParent();
+  if (!parent) {
+    return;
+  }
+
+  parent->DynamicToolbarMaxHeightChanged(aHeight);
 }
 }  // namespace mozilla::dom

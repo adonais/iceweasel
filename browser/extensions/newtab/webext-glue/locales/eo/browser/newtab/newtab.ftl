@@ -8,6 +8,9 @@
 newtab-page-title = Nova langeto
 newtab-settings-button =
     .title = Personecigi la paĝon por novaj langetoj
+newtab-customize-panel-icon-button =
+    .title = Personecigi tiun ĉi paĝon
+newtab-customize-panel-icon-button-label = Personecigi
 newtab-personalize-settings-icon-label =
     .title = Personecigi la paĝon por novaj langetoj
     .aria-label = Agordoj
@@ -497,6 +500,9 @@ newtab-topic-selection-button-pick-interests = Elekti viajn interesojn
 newtab-section-follow-button = Sekvi
 newtab-section-following-button = Sekvata
 newtab-section-unfollow-button = Ne plu sekvi
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Personecigu vian informan fonton
+newtab-section-follow-highlight-subtitle = Sekvu viajn interesojn por vidi pli da tio, kion vi ŝatas.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -539,6 +545,11 @@ newtab-download-mobile-highlight-body-variant-c = Ĉu vi sciis ke vi povas porti
 newtab-download-mobile-highlight-image =
     .aria-label = Kodo QR por elŝuti { -brand-product-name } por poŝaparatoj
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Viaj plej ŝatataj retejoj ĉemane
+newtab-shortcuts-highlight-subtitle = Aldonu ŝparvojon por havi viajn plej ŝatatajn retejojn je unu alklako.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -572,3 +583,5 @@ newtab-trending-searches-hide-trending =
     .title = Kaŝi popularajn serĉojn
 newtab-trending-searches-learn-more = Pli da informo
 newtab-trending-searches-dismiss = Kaŝi popularajn serĉojn
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Popularaj serĉoj

@@ -66,7 +66,6 @@ skip-if = ["os == 'android'"] #TIMED_OUT
 ["test_fileapi_slice_realFile_1.html"]
 
 ["test_fileapi_slice_realFile_2.html"]
-skip-if = ["verify && !debug && os == 'win'"]
 
 ["test_fileapi_twice.html"]
 
@@ -74,7 +73,7 @@ skip-if = ["verify && !debug && os == 'win'"]
 
 ["test_mozfiledataurl.html"]
 skip-if = [
-  "os == 'android'", #TIMED_OUT
+  "os == 'android'", # TIMED_OUT
   "http3",
   "http2",
 ]

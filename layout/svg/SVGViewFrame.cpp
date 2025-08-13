@@ -10,8 +10,8 @@
 #include "mozilla/SVGUtils.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/SVGViewElement.h"
-#include "nsIFrame.h"
 #include "nsGkAtoms.h"
+#include "nsIFrame.h"
 
 using namespace mozilla::dom;
 

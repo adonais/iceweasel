@@ -387,6 +387,14 @@ interface nsIIOService : nsISupports
      * Clears the essential domain mapping.
      */
     void clearEssentialDomainMapping();
+
+    /**
+     * Runs a string through the CacheControlParser and attempts to extract
+     * and return relevant parsed values. The structure that is returned is
+     * a HTTPCacheControlParseResult dictionary (see ChromeUtils.webidl).
+     */
+    [implicit_jscontext]
+    jsval parseCacheControlHeader(in ACString aCacheControlHeader);
 };
 
 %{C++

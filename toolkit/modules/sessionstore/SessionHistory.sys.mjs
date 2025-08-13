@@ -8,6 +8,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
 });
 
+ChromeUtils.defineLazyGetter(lazy, "PolicyContainer", () => {
+  return Components.Constructor(
+    "@mozilla.org/policycontainer;1",
+    "nsIPolicyContainer",
+    "initFromCSP"
+  );
+});
+
 /**
  * The external API exported by this module.
  */
@@ -285,8 +293,8 @@ var SessionHistoryInternal = {
       );
     }
 
-    if (shEntry.csp) {
-      entry.csp = lazy.E10SUtils.serializeCSP(shEntry.csp);
+    if (shEntry.policyContainer?.csp) {
+      entry.csp = lazy.E10SUtils.serializeCSP(shEntry.policyContainer.csp);
     }
 
     entry.docIdentifier = shEntry.bfcacheID;
@@ -580,7 +588,8 @@ var SessionHistoryInternal = {
       );
     }
     if (entry.csp) {
-      shEntry.csp = lazy.E10SUtils.deserializeCSP(entry.csp);
+      const csp = lazy.E10SUtils.deserializeCSP(entry.csp);
+      shEntry.policyContainer = new lazy.PolicyContainer(csp);
     }
     if (entry.wireframe) {
       shEntry.wireframe = entry.wireframe;

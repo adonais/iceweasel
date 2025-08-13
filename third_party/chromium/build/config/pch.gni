@@ -1,15 +1,20 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2016 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//chromium/build/toolchain/goma.gni")
+import("//chromium/build/toolchain/cc_wrapper.gni")
 import("//chromium/build/toolchain/rbe.gni")
+import("//chromium/build/toolchain/siso.gni")
 
 declare_args() {
-  # Precompiled header file support is by default available,
-  # but for distributed build system uses (like goma or rbe) or when
-  # doing official builds.
-  # On Linux it slows down the build, so don't enable it by default.
+  # Precompiled header file support is by default available, except on the
+  # following scenarios:
+  # - Remote executions or when doing official builds.
+  # - When using cc_wrapper because ccache requires a particular configuration
+  #   and some compiler options currently not used by Chromium:
+  #   https://ccache.dev/manual/latest.html#_precompiled_headers and it isn't
+  #   supported by sccache: https://github.com/mozilla/sccache/issues/978.
+  # - On Linux it slows down the build.
   enable_precompiled_headers =
-      !is_official_build && !(use_goma || use_remoteexec) && !is_linux
+      !is_official_build && !use_remoteexec && cc_wrapper == "" && !is_linux
 }

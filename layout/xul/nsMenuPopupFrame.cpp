@@ -5,63 +5,65 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsMenuPopupFrame.h"
+
+#include <algorithm>
+
 #include "LayoutConstants.h"
+#include "X11UndefineNone.h"
 #include "XULButtonElement.h"
 #include "XULPopupElement.h"
-#include "mozilla/dom/XULPopupElement.h"
-#include "nsGkAtoms.h"
-#include "nsIContent.h"
-#include "nsIFrameInlines.h"
-#include "nsAtom.h"
-#include "nsPresContext.h"
-#include "mozilla/ComputedStyle.h"
-#include "nsCSSRendering.h"
-#include "nsNameSpaceManager.h"
-#include "nsIFrameInlines.h"
-#include "nsViewManager.h"
-#include "nsWidgetsCID.h"
-#include "nsPIDOMWindow.h"
-#include "nsFrameManager.h"
-#include "mozilla/dom/Document.h"
-#include "nsRect.h"
-#include "nsIPopupContainer.h"
-#include "nsIDocShell.h"
-#include "nsReadableUtils.h"
-#include "nsUnicharUtils.h"
-#include "nsLayoutUtils.h"
-#include "nsContentUtils.h"
-#include "nsCSSFrameConstructor.h"
-#include "nsPIWindowRoot.h"
-#include "nsIReflowCallback.h"
-#include "nsIDocShellTreeOwner.h"
-#include "nsIBaseWindow.h"
-#include "nsISound.h"
-#include "nsIScreenManager.h"
-#include "nsServiceManagerUtils.h"
-#include "nsStyleConsts.h"
-#include "nsStyleStructInlines.h"
-#include "nsTransitionManager.h"
-#include "nsDisplayList.h"
-#include "nsIDOMXULSelectCntrlEl.h"
-#include "mozilla/widget/ScreenManager.h"
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/ComputedStyle.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MouseEvents.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/Services.h"
 #include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/KeyboardEvent.h"
 #include "mozilla/dom/KeyboardEventBinding.h"
-#include <algorithm>
-
-#include "X11UndefineNone.h"
+#include "mozilla/dom/XULPopupElement.h"
+#include "mozilla/widget/ScreenManager.h"
+#include "nsAtom.h"
+#include "nsCSSFrameConstructor.h"
+#include "nsCSSRendering.h"
+#include "nsContentUtils.h"
+#include "nsDisplayList.h"
+#include "nsExpirationTracker.h"
+#include "nsFrameManager.h"
+#include "nsGkAtoms.h"
+#include "nsIBaseWindow.h"
+#include "nsIContent.h"
+#include "nsIDOMXULSelectCntrlEl.h"
+#include "nsIDocShell.h"
+#include "nsIDocShellTreeOwner.h"
+#include "nsIFrameInlines.h"
+#include "nsIPopupContainer.h"
+#include "nsIReflowCallback.h"
+#include "nsIScreenManager.h"
+#include "nsISound.h"
+#include "nsLayoutUtils.h"
+#include "nsNameSpaceManager.h"
+#include "nsPIDOMWindow.h"
+#include "nsPIWindowRoot.h"
+#include "nsPresContext.h"
+#include "nsReadableUtils.h"
+#include "nsRect.h"
+#include "nsServiceManagerUtils.h"
+#include "nsStyleConsts.h"
+#include "nsStyleStructInlines.h"
+#include "nsTransitionManager.h"
+#include "nsUnicharUtils.h"
+#include "nsViewManager.h"
+#include "nsWidgetsCID.h"
 #include "nsXULPopupManager.h"
 
 using namespace mozilla;
@@ -83,10 +85,6 @@ extern mozilla::LazyLogModule gWidgetPopupLog;
 #  define LOG_WAYLAND(...)
 #endif
 
-// NS_NewMenuPopupFrame
-//
-// Wrapper for creating a new menu popup container
-//
 nsIFrame* NS_NewMenuPopupFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell)
       nsMenuPopupFrame(aStyle, aPresShell->GetPresContext());
@@ -98,9 +96,32 @@ NS_QUERYFRAME_HEAD(nsMenuPopupFrame)
   NS_QUERYFRAME_ENTRY(nsMenuPopupFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsBlockFrame)
 
-//
-// nsMenuPopupFrame ctor
-//
+// Three generations of 5000ms (so 15s to get rid of all the closed popups).
+class PopupExpirationTracker final
+    : public nsExpirationTracker<nsMenuPopupFrame, 3> {
+  static StaticAutoPtr<PopupExpirationTracker> sInstance;
+
+  void NotifyExpired(nsMenuPopupFrame* aPopup) override {
+    // printf_stderr("PopupExpirationTracker::NotifyExpired(%s)\n",
+    //               aPopup->ListTag().get());
+    RemoveObject(aPopup);
+    aPopup->DestroyWidgetIfNeeded();
+  }
+
+ public:
+  PopupExpirationTracker()
+      : nsExpirationTracker(5000 /* ms */, "PopupExpirationTracker") {}
+  static PopupExpirationTracker* Get() { return sInstance.get(); }
+  static PopupExpirationTracker& GetOrCreate() {
+    if (!sInstance) {
+      sInstance = new PopupExpirationTracker();
+      ClearOnShutdown(&sInstance);
+    }
+    return *sInstance;
+  }
+};
+StaticAutoPtr<PopupExpirationTracker> PopupExpirationTracker::sInstance;
+
 nsMenuPopupFrame::nsMenuPopupFrame(ComputedStyle* aStyle,
                                    nsPresContext* aPresContext)
     : nsBlockFrame(aStyle, aPresContext, kClassID) {}
@@ -121,16 +142,29 @@ static nsIWidget::InputRegion ComputeInputRegion(const ComputedStyle& aStyle,
               .Truncated()};
 }
 
-bool nsMenuPopupFrame::ShouldCreateWidgetUpfront() const {
-  if (mPopupType != PopupType::Menu) {
-    // Any panel with a type attribute, such as the autocomplete popup, is
-    // always generated right away.
-    return mContent->AsElement()->HasAttr(nsGkAtoms::type);
-  }
+bool nsMenuPopupFrame::IsDragPopup() const {
+  return !mInContentShell && mPopupType == PopupType::Panel &&
+         mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
+                                            nsGkAtoms::drag, eIgnoreCase);
+}
 
-  // Generate the widget up-front if the parent menu is a <menulist> unless its
-  // sizetopopup is set to "none".
-  return ShouldExpandToInflowParentOrAnchor();
+bool nsMenuPopupFrame::ShouldHaveWidgetWhenHidden() const {
+  if (mContent->AsElement()->HasAttr(nsGkAtoms::neverhidden)) {
+    // Create a widget upfront for panels that never hide frames for their
+    // contents (like web extension popups). These, for now, need to create the
+    // widgets upfront, so that the frames inside the popup don't get
+    // "reparented" in the widget tree.
+    //
+    // TODO(emilio, bug 1976324): Try to somehow remove this special-case,
+    // web-ext panel needs it to compute the "natural" bounds of their contents
+    // before showing the popup, but that seems like it could be tweaked.
+    return true;
+  }
+  if (IsDragPopup()) {
+    // Create widgets upfront for the drag popup for now, see bug 1976623.
+    return true;
+  }
+  return false;
 }
 
 void nsMenuPopupFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
@@ -164,12 +198,7 @@ void nsMenuPopupFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     }
   }
 
-  // To improve performance, create the widget for the popup if needed. Popups
-  // such as menus will create their widgets later when the popup opens.
-  //
-  // FIXME(emilio): Doing this up-front for all menupopups causes a bunch of
-  // assertions, while it's supposed to be just an optimization.
-  if (!ourView->HasWidget() && ShouldCreateWidgetUpfront()) {
+  if (!ourView->HasWidget() && ShouldHaveWidgetWhenHidden()) {
     CreateWidgetForView(ourView);
   }
 
@@ -230,6 +259,9 @@ widget::PopupLevel nsMenuPopupFrame::GetPopupLevel(bool aIsNoAutoHide) const {
 }
 
 void nsMenuPopupFrame::PrepareWidget(bool aForceRecreate) {
+  if (mExpirationState.IsTracked()) {
+    PopupExpirationTracker::Get()->RemoveObject(this);
+  }
   nsView* ourView = GetView();
   if (auto* widget = GetWidget()) {
     nsCOMPtr<nsIWidget> parent = ComputeParentWidget();
@@ -284,15 +316,7 @@ nsresult nsMenuPopupFrame::CreateWidgetForView(nsView* aView) {
   widgetData.mBorderStyle = widget::BorderStyle::Default;
   widgetData.mClipSiblings = true;
   widgetData.mPopupHint = mPopupType;
-
-  if (!mInContentShell) {
-    // A drag popup may be used for non-static translucent drag feedback
-    if (mPopupType == PopupType::Panel &&
-        mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                                           nsGkAtoms::drag, eIgnoreCase)) {
-      widgetData.mIsDragPopup = true;
-    }
-  }
+  widgetData.mIsDragPopup = IsDragPopup();
 
   const bool remote = HasRemoteContent();
 
@@ -1045,6 +1069,9 @@ void nsMenuPopupFrame::HidePopup(bool aDeselectMenu, nsPopupState aNewState,
 
   if (auto* widget = GetWidget()) {
     widget->ClearCachedWebrenderResources();
+    if (!aFromFrameDestruction && !ShouldHaveWidgetWhenHidden()) {
+      PopupExpirationTracker::GetOrCreate().AddObject(this);
+    }
   }
 
   nsView* view = GetView();
@@ -1772,9 +1799,18 @@ Maybe<nsRect> nsMenuPopupFrame::GetConstraintRect(
   // Determine the available screen space. It will be reduced by the OS chrome
   // such as menubars. It addition, for content shells, it will be the area of
   // the content rather than the screen.
-  // In Wayland we can't use the screen rect because we can't know absolute
-  // window position.
-  if (!IS_WAYLAND_DISPLAY()) {
+  if (IS_WAYLAND_DISPLAY()) {
+    // In Wayland we can't use the screen rect, because we can't know the
+    // absolute window position. MoveToRect usually deals with this, but we
+    // can't use it unconditionally. Tooltips are presumed small enough, and
+    // they can open basically at any time with any other open menu, so we
+    // constrain them to the window area, see bug 1941237.
+    // TODO(emilio, stransky): Do we want to constrain other popups to the
+    // window area, if the window is big enough or maximized?
+    if (mPopupType == PopupType::Tooltip) {
+      AddConstraint(aRootScreenRect);
+    }
+  } else {
     const DesktopToLayoutDeviceScale scale =
         pc->DeviceContext()->GetDesktopToDeviceScale();
     // For content shells, get the screen where the root frame is located. This
@@ -2125,6 +2161,10 @@ void nsMenuPopupFrame::Destroy(DestroyContext& aContext) {
   HidePopup(/* aDeselectMenu = */ false, ePopupClosed,
             /* aFromFrameDestruction = */ true);
 
+  if (mExpirationState.IsTracked()) {
+    PopupExpirationTracker::Get()->RemoveObject(this);
+  }
+
   if (RefPtr<nsXULPopupManager> pm = nsXULPopupManager::GetInstance()) {
     pm->PopupDestroyed(this);
   }
@@ -2165,6 +2205,16 @@ nsMargin nsMenuPopupFrame::GetMargin() const {
     margin.right -= mExtraMargin.x;
   }
   return margin;
+}
+
+void nsMenuPopupFrame::DestroyWidgetIfNeeded() {
+  if (IsVisibleOrShowing()) {
+    MOZ_ASSERT_UNREACHABLE("Shouldn't be tracked while visible");
+    return;
+  }
+  if (auto* view = GetView()) {
+    view->DestroyWidget();
+  }
 }
 
 void nsMenuPopupFrame::MoveTo(const CSSPoint& aPos, bool aUpdateAttrs,

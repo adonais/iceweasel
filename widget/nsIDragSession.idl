@@ -25,7 +25,7 @@ class BrowserParent;
 } // namespace mozilla
 %}
 
-interface nsIContentSecurityPolicy;
+interface nsIPolicyContainer;
 interface nsIFile;
 
 [ptr] native BrowserParentPtr(mozilla::dom::BrowserParent);
@@ -108,11 +108,11 @@ interface nsIDragSession : nsISupports
   attribute nsIPrincipal triggeringPrincipal;
 
   /**
-   * the triggering csp.  This may be different than sourceNode's
-   * csp when sourceNode is xul:browser and the drag is
+   * the triggering policyContainer.  This may be different than sourceNode's
+   * policyContainer when sourceNode is xul:browser and the drag is
    * triggered in a browsing context inside it.
    */
-  attribute nsIContentSecurityPolicy csp;
+  attribute nsIPolicyContainer policyContainer;
 
   /**
    * The data transfer object for the current drag.

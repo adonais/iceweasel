@@ -7,10 +7,10 @@
 #ifndef LAYOUT_SVG_SVGGRADIENTFRAME_H_
 #define LAYOUT_SVG_SVGGRADIENTFRAME_H_
 
-#include "mozilla/Attributes.h"
-#include "mozilla/SVGPaintServerFrame.h"
 #include "gfxMatrix.h"
 #include "gfxRect.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/SVGPaintServerFrame.h"
 #include "nsCOMPtr.h"
 #include "nsCSSRenderingGradients.h"
 #include "nsIFrame.h"

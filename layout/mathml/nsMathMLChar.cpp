@@ -6,43 +6,38 @@
 
 #include "nsMathMLChar.h"
 
+#include <algorithm>
+
 #include "gfxContext.h"
+#include "gfxMathTable.h"
 #include "gfxTextRun.h"
 #include "gfxUtils.h"
+#include "mozilla/ComputedStyle.h"
+#include "mozilla/LookAndFeel.h"
+#include "mozilla/MathAlgorithms.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/Sprintf.h"
+#include "mozilla/StaticPrefs_mathml.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
-#include "mozilla/ComputedStyle.h"
-#include "mozilla/MathAlgorithms.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
-#include "mozilla/StaticPrefs_mathml.h"
-
 #include "nsCOMPtr.h"
+#include "nsCSSRendering.h"
+#include "nsContentUtils.h"
 #include "nsDeviceContext.h"
+#include "nsDisplayList.h"
 #include "nsFontMetrics.h"
 #include "nsIFrame.h"
+#include "nsIObserver.h"
+#include "nsIObserverService.h"
+#include "nsIPersistentProperties2.h"
 #include "nsLayoutUtils.h"
+#include "nsMathMLOperators.h"
+#include "nsNetUtil.h"
 #include "nsPresContext.h"
 #include "nsUnicharUtils.h"
-
-#include "mozilla/Preferences.h"
-#include "nsIPersistentProperties2.h"
-#include "nsIObserverService.h"
-#include "nsIObserver.h"
-#include "nsNetUtil.h"
-#include "nsContentUtils.h"
-
-#include "mozilla/LookAndFeel.h"
-#include "nsCSSRendering.h"
-#include "mozilla/Sprintf.h"
-
-#include "nsDisplayList.h"
-
-#include "nsMathMLOperators.h"
-#include <algorithm>
-
-#include "gfxMathTable.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

@@ -235,7 +235,7 @@ class CookieJarSettings final : public nsICookieJarSettings {
 
   CookiePermissionList& GetCookiePermissionsListRef();
 
-  virtual ~CookieJarSettings();
+  ~CookieJarSettings();
 
   uint32_t mCookieBehavior;
   bool mIsFirstPartyIsolated;

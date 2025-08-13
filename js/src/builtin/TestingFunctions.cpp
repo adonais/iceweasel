@@ -56,7 +56,7 @@
 #include "builtin/Promise.h"
 #include "builtin/TestingUtility.h"  // js::ParseCompileOptions, js::ParseDebugMetadata
 #include "builtin/WeakMapObject.h"
-#include "ds/IdValuePair.h"          // js::IdValuePair
+#include "ds/IdValuePair.h"               // js::IdValuePair
 #include "frontend/CompilationStencil.h"  // frontend::CompilationStencil
 #include "frontend/FrontendContext.h"     // AutoReportFrontendContext
 #include "gc/GC.h"
@@ -9053,7 +9053,7 @@ static bool GetPrefValue(JSContext* cx, unsigned argc, Value* vp) {
 
   // Search for a matching pref and return its value.
 #define CHECK_PREF(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF) \
-  if (StringEqualsAscii(name, NAME)) {                            \
+  if (StringEqualsLiteral(name, NAME)) {                          \
     setReturnValue(JS::Prefs::CPP_NAME());                        \
     return true;                                                  \
   }
@@ -9512,19 +9512,19 @@ static bool GetICUOptions(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  intl::FormatBuffer<char16_t, intl::INITIAL_CHAR_BUFFER_SIZE> buf(cx);
-
-  if (auto ok = DateTimeInfo::timeZoneId(DateTimeInfo::ForceUTC::No, buf);
-      ok.isErr()) {
-    intl::ReportInternalError(cx, ok.unwrapErr());
+  TimeZoneIdentifierVector timeZoneId;
+  if (!DateTimeInfo::timeZoneId(DateTimeInfo::ForceUTC::No, timeZoneId)) {
+    ReportOutOfMemory(cx);
     return false;
   }
 
-  str = buf.toString(cx);
+  str = NewStringCopy<CanGC>(
+      cx, static_cast<mozilla::Span<const char>>(timeZoneId));
   if (!str || !JS_DefineProperty(cx, info, "timezone", str, JSPROP_ENUMERATE)) {
     return false;
   }
 
+  intl::FormatBuffer<char16_t, intl::INITIAL_CHAR_BUFFER_SIZE> buf(cx);
   if (auto ok = mozilla::intl::TimeZone::GetHostTimeZone(buf); ok.isErr()) {
     intl::ReportInternalError(cx, ok.unwrapErr());
     return false;

@@ -9,9 +9,15 @@
 #include "mozilla/intl/Locale.h"
 #include "mozilla/Span.h"
 
+#include "builtin/intl/CommonFunctions.h"
+#include "builtin/intl/FormatBuffer.h"
 #include "builtin/intl/StringAsciiChars.h"
 #include "gc/Tracer.h"
+#include "vm/JSAtomState.h"
 #include "vm/JSContext.h"
+
+#include "vm/JSObject-inl.h"
+#include "vm/ObjectOperations-inl.h"
 
 bool js::intl::ParseLocale(JSContext* cx, Handle<JSLinearString*> str,
                            mozilla::intl::Locale& result) {
@@ -233,6 +239,42 @@ JS::Result<JSString*> js::intl::ParseStandaloneISO639LanguageTag(
     return cx->alreadyReportedOOM();
   }
   return result;
+}
+
+JS::UniqueChars js::intl::FormatLocale(
+    JSContext* cx, JS::Handle<JSObject*> internals,
+    JS::HandleVector<UnicodeExtensionKeyword> keywords) {
+  RootedValue value(cx);
+  if (!GetProperty(cx, internals, internals, cx->names().locale, &value)) {
+    return nullptr;
+  }
+
+  mozilla::intl::Locale tag;
+  {
+    Rooted<JSLinearString*> locale(cx, value.toString()->ensureLinear(cx));
+    if (!locale) {
+      return nullptr;
+    }
+
+    if (!ParseLocale(cx, locale, tag)) {
+      return nullptr;
+    }
+  }
+
+  // |ApplyUnicodeExtensionToTag| applies the new keywords to the front of
+  // the Unicode extension subtag. We're then relying on ICU to follow RFC
+  // 6067, which states that any trailing keywords using the same key
+  // should be ignored.
+  if (!ApplyUnicodeExtensionToTag(cx, tag, keywords)) {
+    return nullptr;
+  }
+
+  FormatBuffer<char> buffer(cx);
+  if (auto result = tag.ToString(buffer); result.isErr()) {
+    ReportInternalError(cx, result.unwrapErr());
+    return nullptr;
+  }
+  return buffer.extractStringZ();
 }
 
 void js::intl::UnicodeExtensionKeyword::trace(JSTracer* trc) {

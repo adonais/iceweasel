@@ -108,6 +108,10 @@ bool wasm::InCompiledCode(void* pc) {
 }
 
 #ifdef WASM_SUPPORTS_HUGE_MEMORY
+#  if defined(__riscv)
+// On riscv64, Sv39 is not enough for huge memory, so we require at least Sv48.
+static const size_t MinAddressBitsForHugeMemory = 47;
+#  else
 /*
  * Some 64 bit systems greatly limit the range of available virtual memory. We
  * require about 6GiB for each wasm huge memory, which can exhaust the address
@@ -119,6 +123,7 @@ bool wasm::InCompiledCode(void* pc) {
  * for error in detecting the address space limit.
  */
 static const size_t MinAddressBitsForHugeMemory = 38;
+#  endif
 
 /*
  * In addition to the above, some systems impose an independent limit on the

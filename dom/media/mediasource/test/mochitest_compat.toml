@@ -284,9 +284,7 @@ skip-if = ["!mda_gpu"]
 ["test_OnEvents.html"]
 
 ["test_PlayEventsAutoPlaying.html"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && ccov",
-]
+skip-if = ["os == 'win' && os_version == '11.26100' && processor == 'x86_64' && ccov"]
 
 ["test_PlayEventsAutoPlaying2.html"]
 
@@ -298,9 +296,7 @@ skip-if = ["os == 'android' && verify"] # Crash
 ["test_SeekNoData_mp4.html"]
 
 ["test_SeekToEnd_mp4.html"]
-skip-if = [
-  "os == 'android' && android_version == '24' && processor == 'x86_64' && opt", # Bug 1781577
-]
+skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64' && opt"] # Bug 1781577
 
 ["test_SeekTwice_mp4.html"]
 

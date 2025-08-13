@@ -9,12 +9,12 @@
 #ifndef nsContainerFrame_h___
 #define nsContainerFrame_h___
 
-#include "mozilla/Attributes.h"
 #include "LayoutConstants.h"
-#include "nsISelectionDisplay.h"
-#include "nsSplittableFrame.h"
+#include "mozilla/Attributes.h"
 #include "nsFrameList.h"
+#include "nsISelectionDisplay.h"
 #include "nsLineBox.h"
+#include "nsSplittableFrame.h"
 #include "nsTHashSet.h"
 
 class nsOverflowContinuationTracker;

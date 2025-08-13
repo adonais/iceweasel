@@ -1191,7 +1191,7 @@ void nsHttpChannelAuthProvider::GetIdentityFromURI(uint32_t authFlags,
   CopyUTF8toUTF16(buf, passBuf);
 
   nsDependentSubstring user(userBuf, 0);
-  nsDependentSubstring domain(u""_ns, 0);
+  nsDependentSubstring domain(EmptyString(), 0);
 
   if (authFlags & nsIHttpAuthenticator::IDENTITY_INCLUDES_DOMAIN) {
     ParseUserDomain(userBuf, user, domain);

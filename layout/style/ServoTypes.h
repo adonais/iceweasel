@@ -9,11 +9,11 @@
 #ifndef mozilla_ServoTypes_h
 #define mozilla_ServoTypes_h
 
+#include "X11UndefineNone.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TypedEnumBits.h"
 #include "nsCSSPropertyID.h"
 #include "nsCoord.h"
-#include "X11UndefineNone.h"
 
 namespace mozilla {
 struct StyleLockedFontFaceRule;

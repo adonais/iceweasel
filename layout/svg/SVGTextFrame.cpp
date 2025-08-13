@@ -8,30 +8,24 @@
 #include "SVGTextFrame.h"
 
 // Keep others in (case-insensitive) order:
+#include <algorithm>
+#include <cmath>
+#include <limits>
+
 #include "DOMSVGPoint.h"
+#include "LookAndFeel.h"
+#include "SVGAnimatedNumberList.h"
+#include "SVGContentUtils.h"
+#include "SVGContextPaint.h"
+#include "SVGLengthList.h"
+#include "SVGNumberList.h"
+#include "SVGPaintServerFrame.h"
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxFont.h"
 #include "gfxSkipChars.h"
 #include "gfxTypes.h"
 #include "gfxUtils.h"
-#include "LookAndFeel.h"
-#include "nsBidiPresUtils.h"
-#include "nsBlockFrame.h"
-#include "nsCaret.h"
-#include "nsContentUtils.h"
-#include "nsGkAtoms.h"
-#include "SVGPaintServerFrame.h"
-#include "nsTArray.h"
-#include "nsTextFrame.h"
-#include "SVGAnimatedNumberList.h"
-#include "SVGContentUtils.h"
-#include "SVGContextPaint.h"
-#include "SVGLengthList.h"
-#include "SVGNumberList.h"
-#include "nsLayoutUtils.h"
-#include "nsFrameSelection.h"
-#include "nsStyleStructInlines.h"
 #include "mozilla/CaretAssociationHint.h"
 #include "mozilla/DisplaySVGItem.h"
 #include "mozilla/Likely.h"
@@ -40,17 +34,24 @@
 #include "mozilla/SVGOuterSVGFrame.h"
 #include "mozilla/SVGUtils.h"
 #include "mozilla/dom/DOMPointBinding.h"
-#include "mozilla/dom/Selection.h"
 #include "mozilla/dom/SVGGeometryElement.h"
 #include "mozilla/dom/SVGRect.h"
 #include "mozilla/dom/SVGTextContentElementBinding.h"
 #include "mozilla/dom/SVGTextPathElement.h"
+#include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/PatternHelpers.h"
-#include <algorithm>
-#include <cmath>
-#include <limits>
+#include "nsBidiPresUtils.h"
+#include "nsBlockFrame.h"
+#include "nsCaret.h"
+#include "nsContentUtils.h"
+#include "nsFrameSelection.h"
+#include "nsGkAtoms.h"
+#include "nsLayoutUtils.h"
+#include "nsStyleStructInlines.h"
+#include "nsTArray.h"
+#include "nsTextFrame.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::dom::SVGTextContentElement_Binding;
@@ -2890,17 +2891,18 @@ void SVGTextFrame::ScheduleReflowSVGNonDisplayText(IntrinsicDirty aReason) {
 NS_IMPL_ISUPPORTS(SVGTextFrame::MutationObserver, nsIMutationObserver)
 
 void SVGTextFrame::MutationObserver::ContentAppended(
-    nsIContent* aFirstNewContent) {
+    nsIContent* aFirstNewContent, const ContentAppendInfo&) {
   mFrame->NotifyGlyphMetricsChange(true);
 }
 
-void SVGTextFrame::MutationObserver::ContentInserted(nsIContent* aChild) {
+void SVGTextFrame::MutationObserver::ContentInserted(nsIContent* aChild,
+                                                     const ContentInsertInfo&) {
   mFrame->NotifyGlyphMetricsChange(true);
 }
 
 void SVGTextFrame::MutationObserver::ContentWillBeRemoved(
-    nsIContent* aChild, const BatchRemovalState* aState) {
-  if (aState && !aState->mIsFirst) {
+    nsIContent* aChild, const ContentRemoveInfo& aInfo) {
+  if (aInfo.mBatchRemovalState && !aInfo.mBatchRemovalState->mIsFirst) {
     return;
   }
   mFrame->NotifyGlyphMetricsChange(true);

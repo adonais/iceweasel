@@ -19,7 +19,7 @@
   <string name="urlbar_hint">ابحث أو أدخل عنوانا</string>
   <string name="teaser">تصفح خاص تلقائي.\nتصفح. امسح. كرر.</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
-  <string name="feedback_erase">لقد مسح تأريخ تصفحك.</string>
+  <string name="feedback_erase">لقد مُسح تأريخ تصفحك.</string>
   <string name="feedback_erase2">مُسح تأريخ التصفح</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">مُسح تأريخ التصفّح للسان.</string>
@@ -396,7 +396,7 @@
     This text is not visible. Instead it will be read by the accessibility service once we
     finished loading a website
   -->
-  <string name="accessibility_announcement_loading_finished">تم تحميل الموقع</string>
+  <string name="accessibility_announcement_loading_finished">حُمّل الموقع</string>
   <!-- Content description (not visible, for screen readers etc.): "Three dot" menu button. -->
   <string name="content_description_menu">المزيد من الخيارات</string>
   <!--
@@ -475,8 +475,6 @@
   <string name="onboarding_first_screen_privacy_notice_text" moz:removedIn="141" tools:ignore="BrandUsage">يهتم Firefox بخصوصيتك. تعرّف على المزيد في قسم %1$s</string>
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
   <string name="onboarding_first_screen_privacy_notice_link" moz:removedIn="141" tools:ignore="UnusedResources">تنويه الخصوصية.</string>
-  <!-- New Onboarding flow first screen button label -->
-  <string name="onboarding_first_screen_button_agree_and_continue" moz:removedIn="140" tools:ignore="UnusedResources">موافقة ومتابعة</string>
   <!--
     Onboarding second screen: Title
 
@@ -694,18 +692,6 @@
   <string name="preference_block_autoplay_audio_only_summary">يُنصح به</string>
   <!-- Preference for block autoplay audio and video -->
   <string name="preference_block_autoplay_audio_video">احجب الصوت والڤِديو</string>
-  <!-- Preference for studies -->
-  <string name="preference_studies" moz:removedIn="140">الدراسات</string>
-  <!-- Preference for studies summary -->
-  <string name="preference_studies_summary" tools:ignore="BrandUsage" moz:removedIn="140">قد يثبّت Firefox بعض الدراسات ويشغّلها من وقت لآخر.</string>
-  <!-- Learn more link for studies, links to an article for more information about studies. -->
-  <string name="studies_learn_more" moz:removedIn="140">اعرف المزيد</string>
-  <!-- Title of the remove studies button -->
-  <string name="studies_remove" moz:removedIn="140">أزِل</string>
-  <!-- Title of the active section on the studies list -->
-  <string name="studies_active" moz:removedIn="140">مفعّلة</string>
-  <!-- Title of the completed section on the studies list -->
-  <string name="studies_completed" moz:removedIn="140">مكتملة</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">التنقيح عن بعد عبر واي-فاي/USB</string>
   <!-- Text Button for show biometric prompt -->

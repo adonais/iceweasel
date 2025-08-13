@@ -51,6 +51,14 @@ struct YuvLumaCoeffs final {
   auto Members() const { return std::tie(r, g, b); }
   MOZ_MIXIN_DERIVE_CMP_OPS_BY_MEMBERS(YuvLumaCoeffs)
 
+  static constexpr auto Rec601() {
+    return YuvLumaCoeffs{
+        .r = 0.299,
+        .g = 0.587,
+        .b = 0.114,
+    };
+  }
+
   static constexpr auto Rec709() { return YuvLumaCoeffs(); }
 
   static constexpr auto Rec2020() {
@@ -66,7 +74,7 @@ struct YuvLumaCoeffs final {
 
 struct PiecewiseGammaDesc final {
   // tf = { k * linear                   | linear < b
-  //      { a * pow(linear, 1/g) - (1-a) | linear >= b
+  //      { a * pow(linear, 1/g) - (a-1) | linear >= b
 
   // Default to Srgb
   float a = 1.055;

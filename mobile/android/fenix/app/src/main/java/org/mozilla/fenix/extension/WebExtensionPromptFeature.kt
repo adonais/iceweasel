@@ -13,6 +13,7 @@ import androidx.annotation.UiContext
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.FragmentManager
+import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -33,6 +34,7 @@ import mozilla.components.support.ktx.android.content.appVersionName
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.R
+import org.mozilla.fenix.addons.AddonsManagementFragmentDirections
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.theme.ThemeManager
@@ -42,9 +44,10 @@ import org.mozilla.fenix.theme.ThemeManager
  */
 class WebExtensionPromptFeature(
     private val store: BrowserStore,
-    @UiContext private val context: Context,
+    @param:UiContext private val context: Context,
     private val fragmentManager: FragmentManager,
     private val onLinkClicked: (String, Boolean) -> Unit,
+    private val navController: NavController,
     private val addonManager: AddonManager = context.components.addonManager,
 ) : LifecycleAwareFeature {
 
@@ -145,7 +148,7 @@ class WebExtensionPromptFeature(
         val shouldGrantWithoutPrompt = Addon.localizePermissions(
             promptRequest.permissions,
             context,
-        ).isEmpty() && promptRequest.origins.isEmpty()
+        ).isEmpty() && promptRequest.origins.isEmpty() && promptRequest.dataCollectionPermissions.isEmpty()
 
         // If we don't have any promptable permissions, just proceed.
         if (shouldGrantWithoutPrompt) {
@@ -164,6 +167,7 @@ class WebExtensionPromptFeature(
             forOptionalPermissions = true,
             permissions = promptRequest.permissions,
             origins = promptRequest.origins,
+            dataCollectionPermissions = promptRequest.dataCollectionPermissions,
         )
     }
 
@@ -268,9 +272,9 @@ class WebExtensionPromptFeature(
         permissions: List<String> = emptyList(),
         origins: List<String> = emptyList(),
         dataCollectionPermissions: List<String> = emptyList(),
-    ) {
+    ): PermissionsDialogFragment? {
         if (isInstallationInProgress || hasExistingPermissionDialogFragment()) {
-            return
+            return null
         }
 
         val dialog = PermissionsDialogFragment.newInstance(
@@ -331,10 +335,9 @@ class WebExtensionPromptFeature(
                 )
             },
         )
-        dialog.show(
-            fragmentManager,
-            PERMISSIONS_DIALOG_FRAGMENT_TAG,
-        )
+        dialog.show(fragmentManager, PERMISSIONS_DIALOG_FRAGMENT_TAG)
+
+        return dialog
     }
 
     private fun tryToReAttachButtonHandlersToPreviousDialog() {
@@ -436,7 +439,8 @@ class WebExtensionPromptFeature(
         ) as? AddonInstallationDialogFragment
     }
 
-    private fun showPostInstallationDialog(addon: Addon) {
+    @VisibleForTesting
+    internal fun showPostInstallationDialog(addon: Addon): AddonInstallationDialogFragment? {
         if (!isInstallationInProgress && !hasExistingAddonPostInstallationDialogFragment()) {
             val dialog = AddonInstallationDialogFragment.newInstance(
                 addon = addon,
@@ -460,9 +464,19 @@ class WebExtensionPromptFeature(
                 onConfirmButtonClicked = { _ ->
                     consumePromptRequest()
                 },
+                onExtensionSettingsLinkClicked = {
+                    navController.navigate(
+                        AddonsManagementFragmentDirections.actionGlobalToInstalledAddonDetailsFragment(it),
+                    )
+                    consumePromptRequest()
+                },
             )
             dialog.show(fragmentManager, POST_INSTALLATION_DIALOG_FRAGMENT_TAG)
+
+            return dialog
         }
+
+        return null
     }
 
     @VisibleForTesting

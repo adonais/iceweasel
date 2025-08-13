@@ -6,9 +6,8 @@
 #ifndef mozilla_dom_CSSPositionTryRule_h
 #define mozilla_dom_CSSPositionTryRule_h
 
-#include "mozilla/css/Rule.h"
 #include "mozilla/ServoBindingTypes.h"
-
+#include "mozilla/css/Rule.h"
 #include "nsDOMCSSDeclaration.h"
 #include "nsICSSDeclaration.h"
 

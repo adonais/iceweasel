@@ -506,6 +506,9 @@ newtab-topic-selection-button-pick-interests = Wubjeŕśo swóje zajmy
 newtab-section-follow-button = Slědowaś
 newtab-section-following-button = Slědujucy
 newtab-section-unfollow-button = Wěcej njeslědowaś
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Zgłosujśo swój kanal nadrobno
+newtab-section-follow-highlight-subtitle = Slědujśo swójim zajmam, aby wěcej wó tom wiźeł, což se wam spódoba.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -548,6 +551,11 @@ newtab-download-mobile-highlight-body-variant-c = Sćo wěźeł, až móžośo {
 newtab-download-mobile-highlight-image =
     .aria-label = QR-kod za ześěgnjenje { -brand-product-name } za mobilne rědy
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Waše fawority k ruce
+newtab-shortcuts-highlight-subtitle = Pśidajśo zwězanje, aby swóje nejlubše sedła jadno kliknjenje pšec źaržał.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -581,3 +589,5 @@ newtab-trending-searches-hide-trending =
     .title = Woblubowane pytanja schowaś
 newtab-trending-searches-learn-more = Dalšne informacije
 newtab-trending-searches-dismiss = Woblubowane pytanja schowaś
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Woblubowane pytanja

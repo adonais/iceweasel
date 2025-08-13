@@ -37,7 +37,7 @@ add_task(async function test() {
     "mozilla",
     false,
     Services.scriptSecurityManager.getSystemPrincipal(),
-    Services.scriptSecurityManager.getSystemPrincipal().csp,
+    undefined,
     new PointerEvent("click")
   );
   SearchUIUtils.loadSearchFromContext(
@@ -45,7 +45,7 @@ add_task(async function test() {
     "firefox",
     false,
     Services.scriptSecurityManager.getSystemPrincipal(),
-    Services.scriptSecurityManager.getSystemPrincipal().csp,
+    undefined,
     new PointerEvent("click")
   );
 

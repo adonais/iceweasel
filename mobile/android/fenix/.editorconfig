@@ -31,6 +31,7 @@ ktlint_standard_if-else-wrapping = disabled
 
 # rules that enforce style we don't want
 ktlint_standard_backing-property-naming = disabled # it would force making backed properties public.
+ktlint_standard_expression-operand-wrapping = disabled # noisy and doesn't improve readability much
 ktlint_standard_max-line-length = disabled # already enabled in detekt
 ktlint_standard_no-consecutive-comments = disabled # it would limit one line comments to one per line
 

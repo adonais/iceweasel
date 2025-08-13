@@ -280,9 +280,9 @@ class nsDragSession : public nsBaseDragSession, public nsIObserver {
   // nsIDragSession
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD InvokeDragSession(
       nsIWidget* aWidget, nsINode* aDOMNode, nsIPrincipal* aPrincipal,
-      nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings,
-      nsIArray* anArrayTransferables, uint32_t aActionType,
-      nsContentPolicyType aContentPolicyType) override;
+      nsIPolicyContainer* aPolicyContainer,
+      nsICookieJarSettings* aCookieJarSettings, nsIArray* anArrayTransferables,
+      uint32_t aActionType, nsContentPolicyType aContentPolicyType) override;
 
   // Methods called from nsWindow to handle responding to GTK drag
   // destination signals

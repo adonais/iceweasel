@@ -4,14 +4,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsReadableUtils.h"
 #include "nsTreeUtils.h"
+
 #include "ChildIterator.h"
-#include "nsCRT.h"
 #include "nsAtom.h"
-#include "nsNameSpaceManager.h"
+#include "nsCRT.h"
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
+#include "nsNameSpaceManager.h"
+#include "nsReadableUtils.h"
 
 using namespace mozilla;
 

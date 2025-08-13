@@ -45,10 +45,6 @@
 #include "sslproto.h"
 #include "SSLTokensCache.h"
 
-#include "TrustOverrideUtils.h"
-#include "TrustOverride-SymantecData.inc"
-#include "TrustOverride-AppleGoogleDigiCertData.inc"
-
 using namespace mozilla;
 using namespace mozilla::pkix;
 using namespace mozilla::psm;

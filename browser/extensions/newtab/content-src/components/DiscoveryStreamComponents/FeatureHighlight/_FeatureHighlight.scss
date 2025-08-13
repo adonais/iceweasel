@@ -20,14 +20,12 @@
       opacity 0.3s,
       visibility 0.3s;
 
-    .icon-dismiss {
-      flex-shrink: 0;
-      background-size: $smaller-icon-size;
-      height: $smaller-icon-size;
-      width: $smaller-icon-size;
-      margin: var(--space-medium);
-      color: var(--icon-color);
-      border: none;
+    // The "Dismiss" button in the top right corner of the highlight
+    > moz-button {
+      margin-inline-start: var(--space-xsmall);
+      // Make sure the focus outline is not overlapped by the arrow
+      // if the arrow is positioned near the button
+      z-index: 1;
     }
 
     .message-icon {
@@ -56,6 +54,10 @@
       &::after {
         inset-block-end: calc(var(--space-medium) * -1);
         transform: rotate(45deg);
+      }
+
+      &:dir(rtl)::after  {
+        transform: rotate(225deg);
       }
     }
 

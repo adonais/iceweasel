@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (c) 2012 The Chromium Authors. All rights reserved.
+# Copyright 2012 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -19,9 +19,9 @@ monitoring for the deletion of the aforementioned file.
 """
 # pylint: disable=W0702
 
+import argparse
 import io
 import logging
-import optparse
 import os
 import re
 import signal
@@ -112,7 +112,7 @@ def GetDeviceLogs(log_filenames, logger):
     logger.debug('%s: %s', device, str(device_files))
     device_file_lines = []
     for cur_file in device_files:
-      with open(cur_file) as f:
+      with open(cur_file, encoding='latin1') as f:
         device_file_lines += [(cur_file, f.read().splitlines())]
     combined_lines = CombineLogFiles(device_file_lines, logger)
     # Prepend each line with a short unique ID so it's easy to see
@@ -152,13 +152,13 @@ def ShutdownLogcatMonitor(base_dir, logger):
 
 
 def main(argv):
-  parser = optparse.OptionParser(usage='Usage: %prog [options] <log dir>')
-  parser.add_option('--output-path',
-                    help='Output file path (if unspecified, prints to stdout)')
-  options, args = parser.parse_args(argv)
-  if len(args) != 1:
-    parser.error('Wrong number of unparsed args')
-  base_dir = args[0]
+  parser = argparse.ArgumentParser()
+  parser.add_argument(
+      '--output-path',
+      help='Output file path (if unspecified, prints to stdout)')
+  parser.add_argument('log_dir')
+  args = parser.parse_args(argv)
+  base_dir = args.log_dir
 
   log_stringio = io.StringIO()
   logger = logging.getLogger('LogcatPrinter')
@@ -168,16 +168,16 @@ def main(argv):
                                     ' %(message)s'))
   logger.addHandler(sh)
 
-  if options.output_path:
-    if not os.path.exists(os.path.dirname(options.output_path)):
+  if args.output_path:
+    if not os.path.exists(os.path.dirname(args.output_path)):
       logger.warning('Output dir %s doesn\'t exist. Creating it.',
-                      os.path.dirname(options.output_path))
-      os.makedirs(os.path.dirname(options.output_path))
-    output_file = open(options.output_path, 'w')
-    logger.info('Dumping logcat to local file %s. If running in a build, '
-                'this file will likely will be uploaded to google storage '
-                'in a later step. It can be downloaded from there.',
-                options.output_path)
+                     os.path.dirname(args.output_path))
+      os.makedirs(os.path.dirname(args.output_path))
+    output_file = open(args.output_path, 'w')
+    logger.info(
+        'Dumping logcat to local file %s. If running in a build, '
+        'this file will likely will be uploaded to google storage '
+        'in a later step. It can be downloaded from there.', args.output_path)
   else:
     output_file = sys.stdout
 

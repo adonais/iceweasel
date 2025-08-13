@@ -8,6 +8,9 @@
 newtab-page-title = Nova aba
 newtab-settings-button =
     .title = Personalizar sua página de nova aba
+newtab-customize-panel-icon-button =
+    .title = Personalizar esta página
+newtab-customize-panel-icon-button-label = Personalizar
 newtab-personalize-settings-icon-label =
     .title = Personalizar página de nova aba
     .aria-label = Configurações
@@ -497,6 +500,9 @@ newtab-topic-selection-button-pick-interests = Escolha seus interesses
 newtab-section-follow-button = Seguir
 newtab-section-following-button = Seguindo
 newtab-section-unfollow-button = Parar de seguir
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Personalize seu canal de notícias
+newtab-section-follow-highlight-subtitle = Siga o que você se interessa para aparecer mais do que você gosta.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -539,6 +545,11 @@ newtab-download-mobile-highlight-body-variant-c = Sabia que você pode levar o {
 newtab-download-mobile-highlight-image =
     .aria-label = Código QR para instalar o { -brand-product-name } de dispositivos móveis
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Seus preferidos na ponta dos dedos.
+newtab-shortcuts-highlight-subtitle = Adicione um atalho para manter seus sites preferidos a um clique de distância.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -572,3 +583,5 @@ newtab-trending-searches-hide-trending =
     .title = Ocultar pesquisas em alta
 newtab-trending-searches-learn-more = Saiba mais
 newtab-trending-searches-dismiss = Ocultar pesquisas em alta
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Pesquisas em alta

@@ -5,7 +5,6 @@
 package org.mozilla.fenix.components.toolbar
 
 import android.content.Context
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.annotation.LayoutRes
@@ -20,6 +19,7 @@ import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.CustomTabSessionState
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.browser.toolbar.display.DisplayToolbar
+import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.concept.toolbar.ScrollableToolbar
 import mozilla.components.support.ktx.util.URLStringUtils
 import org.mozilla.fenix.R
@@ -108,7 +108,7 @@ class BrowserToolbarView(
                 resources.getDimension(R.dimen.browser_fragment_toolbar_elevation)
 
             toolbar.apply {
-                setToolbarBehavior()
+                setToolbarBehavior(settings.toolbarPosition)
                 setDisplayToolbarColors()
 
                 if (!isCustomTabSession) {
@@ -131,7 +131,12 @@ class BrowserToolbarView(
                 }
 
                 display.urlFormatter = { url ->
-                    URLStringUtils.toDisplayUrl(url)
+                    if (url.contentEquals(ABOUT_HOME_URL)) {
+                        // Default to showing the toolbar hint when the URL is ABOUT_HOME.
+                        ""
+                    } else {
+                        URLStringUtils.toDisplayUrl(url)
+                    }
                 }
 
                 display.hint = context.getString(R.string.search_hint)
@@ -229,7 +234,7 @@ class BrowserToolbarView(
         toolbar.display.colors = toolbar.display.colors.copy(
             text = primaryTextColor,
             siteInfoIconSecure = primaryTextColor,
-            siteInfoIconInsecure = Color.TRANSPARENT,
+            siteInfoIconInsecure = primaryTextColor,
             siteInfoIconLocalPdf = primaryTextColor,
             menu = primaryTextColor,
             hint = secondaryTextColor,

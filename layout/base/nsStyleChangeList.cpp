@@ -12,7 +12,6 @@
 #include "nsStyleChangeList.h"
 
 #include "mozilla/dom/ElementInlines.h"
-
 #include "nsCSSFrameConstructor.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"

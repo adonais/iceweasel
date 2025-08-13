@@ -5,9 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/CSSNestedDeclarations.h"
-#include "mozilla/dom/CSSNestedDeclarationsBinding.h"
 
 #include "mozilla/DeclarationBlock.h"
+#include "mozilla/dom/CSSNestedDeclarationsBinding.h"
 
 namespace mozilla::dom {
 

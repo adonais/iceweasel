@@ -12,7 +12,6 @@
 #include <inttypes.h>
 
 #include "X11UndefineNone.h"
-
 #include "gfxFontConstants.h"
 #include "mozilla/ServoStyleConsts.h"
 

@@ -164,6 +164,10 @@
         app:popUpTo="@id/tabsTrayFragment"
         app:popUpToInclusive="true" />
     <action
+        android:id="@+id/action_global_tabManagementFragment"
+        app:destination="@id/tabManagementFragment"
+        app:popUpTo="@id/tabManagementFragment" />
+    <action
         android:id="@+id/action_global_savedLoginsAuthFragment"
         app:destination="@id/savedLoginsAuthFragment" />
     <action
@@ -189,10 +193,30 @@
     <action
         android:id="@+id/action_global_customReviewPromptDialogFragment"
         app:destination="@id/customReviewPromptDialogFragment" />
+    <action
+        android:id="@+id/action_global_to_installedAddonDetailsFragment"
+        app:destination="@id/installedAddonDetailsFragment" />
 
     <dialog
         android:id="@+id/tabsTrayFragment"
         android:name="org.mozilla.fenix.tabstray.TabsTrayFragment">
+        <argument
+            android:name="enterMultiselect"
+            android:defaultValue="false"
+            app:argType="boolean" />
+        <argument
+            android:name="page"
+            android:defaultValue="NormalTabs"
+            app:argType="org.mozilla.fenix.tabstray.Page" />
+        <argument
+            android:name="accessPoint"
+            android:defaultValue="None"
+            app:argType="org.mozilla.fenix.tabstray.TabsTrayAccessPoint" />
+    </dialog>
+
+    <dialog
+        android:id="@+id/tabManagementFragment"
+        android:name="org.mozilla.fenix.tabstray.ui.TabManagementFragment">
         <argument
             android:name="enterMultiselect"
             android:defaultValue="false"
@@ -237,11 +261,16 @@
             app:argType="string"
             app:nullable="true" />
         <argument
-            android:name="focusOnAddressBar"
-            android:defaultValue="false"
-            app:argType="boolean" />
+            android:name="sessionToStartSearchFor"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
         <argument
-            android:name="scrollToCollection"
+            android:name="search_access_point"
+            android:defaultValue="NONE"
+            app:argType="org.mozilla.fenix.components.metrics.MetricsUtils$Source" />
+        <argument
+            android:name="focusOnAddressBar"
             android:defaultValue="false"
             app:argType="boolean" />
         <action
@@ -704,6 +733,13 @@
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
         <action
+            android:id="@+id/action_settingsFragment_to_openDownloadsSettingsFragment"
+            app:destination="@id/openDownloadsSettingsFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
             android:id="@+id/action_settingsFragment_to_linkSharingFragment"
             app:destination="@id/linkSharingFragment"
             app:enterAnim="@anim/slide_in_right"
@@ -783,8 +819,8 @@
         android:label="@string/customize_wallpapers"/>
     <fragment
         android:id="@+id/dataChoicesFragment"
-        android:name="org.mozilla.fenix.settings.DataChoicesFragment"
-        android:label="@string/preferences_data_choices">
+        android:name="org.mozilla.fenix.settings.datachoices.DataChoicesFragment"
+        android:label="@string/preferences_data_collection">
         <action
             android:id="@+id/action_dataChoicesFragment_to_studiesFragment"
             app:destination="@id/studiesFragment"
@@ -932,6 +968,9 @@
     <fragment
         android:id="@+id/openLinksInAppsFragment"
         android:name="org.mozilla.fenix.settings.OpenLinksInAppsFragment" />
+    <fragment
+        android:id="@+id/openDownloadsSettingsFragment"
+        android:name="org.mozilla.fenix.settings.DownloadsSettingsFragment" />
     <fragment
         android:id="@+id/linkSharingFragment"
         android:name="org.mozilla.fenix.settings.LinkSharingFragment" />
@@ -1217,6 +1256,9 @@
     <fragment
         android:id="@+id/unlockPrivateTabsFragment"
         android:name="org.mozilla.fenix.biometricauthentication.UnlockPrivateTabsFragment">
+        <argument
+            android:name="navigationOrigin"
+            app:argType="org.mozilla.fenix.biometricauthentication.NavigationOrigin" />
     </fragment>
 
     <navigation

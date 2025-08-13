@@ -211,7 +211,7 @@ class ChecklistItemTest {
                 tasks = listOf(
                     ChecklistItem.Task(
                         type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
-                        title = R.string.setup_checklist_task_search_widget,
+                        title = R.string.setup_checklist_task_search_widget_2,
                         icon = R.drawable.ic_search,
                         isCompleted = isCompleted,
                     ),
@@ -278,7 +278,7 @@ class ChecklistItemTest {
                 tasks = listOf(
                     ChecklistItem.Task(
                         type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
-                        title = R.string.setup_checklist_task_search_widget,
+                        title = R.string.setup_checklist_task_search_widget_2,
                         icon = R.drawable.ic_search,
                         isCompleted = isCompleted,
                     ),

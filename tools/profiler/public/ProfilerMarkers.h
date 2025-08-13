@@ -34,6 +34,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/BaseProfilerMarkers.h"
+#include "mozilla/MacroForEach.h"
 #include "mozilla/ProfilerMarkersDetail.h"
 #include "mozilla/ProfilerLabels.h"
 #include "nsJSUtils.h"  // for nsJSUtils::GetCurrentlyRunningCodeInnerWindowID
@@ -263,6 +264,96 @@ using Tracing = mozilla::baseprofiler::markers::Tracing;
     }                                                                         \
   } while (false)
 
+namespace geckoprofiler::markers {
+// This allows us to bundle the argument name and its type into a single class
+// so they may be passed to the SimplePayloadMarkerTemplate class.
+template <const char* ArgName, typename ArgType>
+struct FieldDescription {
+  static constexpr const char* name = ArgName;
+  static constexpr ArgType var = {};
+};
+
+// This is a template class at the compile unit scope because function scope
+// classes cannot have static members. (Event when constexpr)
+template <const char ArgName[], const char ArgTableLabel[],
+          typename... ArgTypes>
+struct SimplePayloadMarkerTemplate
+    : public mozilla::BaseMarkerType<
+          SimplePayloadMarkerTemplate<ArgName, ArgTableLabel, ArgTypes...>> {
+  static constexpr const char* Name = ArgName;
+
+  using MS = mozilla::MarkerSchema;
+
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {ArgTypes::name,
+       MS::getDefaultInputTypeForType<decltype(ArgTypes::var)>(),
+       ArgTypes::name,
+       MS::getDefaultFormatForType<decltype(ArgTypes::var)>()}...};
+
+  static constexpr const char* TableLabel = ArgTableLabel;
+
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+
+  static void StreamJSONMarkerData(
+      mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
+      const decltype(ArgTypes::var)&... args) {
+    mozilla::BaseMarkerType<
+        SimplePayloadMarkerTemplate<ArgName, ArgTableLabel, ArgTypes...>>::
+        StreamJSONMarkerDataImpl(aWriter, args...);
+  }
+};
+}  // namespace geckoprofiler::markers
+
+// This defines the classes needed for the template class.
+#define DEFINE_FIELD_STRUCT(arg)                                   \
+  static constexpr char defined_name_##arg[] = #arg;               \
+  using FieldDescription##arg =                                    \
+      geckoprofiler::markers::FieldDescription<defined_name_##arg, \
+                                               decltype(arg)>;
+
+#define DEFINE_FIELD_STRUCTS(...) \
+  MOZ_FOR_EACH(DEFINE_FIELD_STRUCT, (), (__VA_ARGS__))
+
+#define MARKER_GET_ARG_TYPE(arg) FieldDescription##arg
+
+// This adds a profiler marker with a schema for payload based on the arguments
+// passed. Note that each marker must have a unique name so you can only use
+// each name once. If you want to use a markerName in multiple places you
+// should define your own marker struct.
+//
+// Arguments must be simple tokens (i.e. (start - end) will not work as an
+// argument)
+//
+// Example: PROFILER_MARKER_SIMPLE_PAYLOAD("My Marker", DOM, mOpaque, mCount)
+//
+// Alternatively a label for the marker table can be specified:
+// Example: PROFILER_MARKET_SIMPLE_PAYLOAD("My Marker", DOM, "This is element
+// number {marker.data.mCount}. Opaque: {marker.data.mOpaque}", mOpaque, mCount)
+#define PROFILER_MARKER_SIMPLE_PAYLOAD_WITH_LABEL(markerName, categoryName,  \
+                                                  label, ...)                \
+  do {                                                                       \
+    static constexpr char marker_name[] = markerName;                        \
+    static constexpr char table_label[] = label;                             \
+    DEFINE_FIELD_STRUCTS(__VA_ARGS__)                                        \
+    using SimplePayloadMarkerImpl =                                          \
+        geckoprofiler::markers::SimplePayloadMarkerTemplate<                 \
+            marker_name, table_label,                                        \
+            MOZ_FOR_EACH_SEPARATED(MARKER_GET_ARG_TYPE, (, ), (),            \
+                                   (__VA_ARGS__))>;                          \
+    profiler_add_marker(markerName,                                          \
+                        ::mozilla::baseprofiler::category::categoryName, {}, \
+                        SimplePayloadMarkerImpl{}, __VA_ARGS__);             \
+  } while (false)
+
+#define MARKER_LABEL_FOR_ARG(arg) #arg ": {marker.data." #arg "}"
+
+#define PROFILER_MARKER_SIMPLE_PAYLOAD(markerName, categoryName, ...)          \
+  PROFILER_MARKER_SIMPLE_PAYLOAD_WITH_LABEL(                                   \
+      markerName, categoryName,                                                \
+      MOZ_FOR_EACH_SEPARATED(MARKER_LABEL_FOR_ARG, (", "), (), (__VA_ARGS__)), \
+      __VA_ARGS__)
+
 // RAII object that adds a PROFILER_MARKER_UNTYPED when destroyed; the marker's
 // timing will be the interval from construction (unless an instant or start
 // time is already specified in the provided options) until destruction.
@@ -343,8 +434,8 @@ class MOZ_RAII AutoProfilerTextMarker {
       AUTO_PROFILER_STATS(AUTO_PROFILER_MARKER_TEXT);
       profiler_add_marker(
           mozilla::ProfilerString8View::WrapNullTerminatedString(mMarkerName),
-          mCategory, std::move(mOptions), mozilla::baseprofiler::markers::TextStackMarker{},
-          mText);
+          mCategory, std::move(mOptions),
+          mozilla::baseprofiler::markers::TextStackMarker{}, mText);
     }
   }
 
@@ -410,7 +501,8 @@ class AutoProfilerFmtMarker {
       AUTO_PROFILER_STATS(AUTO_PROFILER_MARKER_TEXT);
       profiler_add_marker(
           mozilla::ProfilerString8View::WrapNullTerminatedString(mMarkerName),
-          mCategory, std::move(mOptions), mozilla::baseprofiler::markers::TextStackMarker{},
+          mCategory, std::move(mOptions),
+          mozilla::baseprofiler::markers::TextStackMarker{},
           mozilla::ProfilerString8View::WrapNullTerminatedString(mFormatted));
     }
   }

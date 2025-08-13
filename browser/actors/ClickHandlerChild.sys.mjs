@@ -12,12 +12,26 @@ ChromeUtils.defineESModuleGetters(lazy, {
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "autoscrollEnabled",
+  "general.autoScroll",
+  true
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "blockJavascript",
+  "browser.link.alternative_click.block_javascript",
+  true
+);
+
 export class MiddleMousePasteHandlerChild extends JSWindowActorChild {
   handleEvent(clickEvent) {
     if (
       clickEvent.defaultPrevented ||
       clickEvent.button != 1 ||
-      MiddleMousePasteHandlerChild.autoscrollEnabled
+      lazy.autoscrollEnabled
     ) {
       return;
     }
@@ -33,13 +47,6 @@ export class MiddleMousePasteHandlerChild extends JSWindowActorChild {
     this.sendAsyncMessage("MiddleClickPaste", data);
   }
 }
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  MiddleMousePasteHandlerChild,
-  "autoscrollEnabled",
-  "general.autoScroll",
-  true
-);
 
 export class ClickHandlerChild extends JSWindowActorChild {
   handleEvent(wrapperEvent) {
@@ -84,9 +91,10 @@ export class ClickHandlerChild extends JSWindowActorChild {
     let [href, node, principal] =
       lazy.BrowserUtils.hrefAndLinkNodeForClickEvent(event);
 
-    let csp = ownerDoc.csp;
-    if (csp) {
-      csp = lazy.E10SUtils.serializeCSP(csp);
+    let policyContainer = ownerDoc.policyContainer;
+    if (policyContainer) {
+      policyContainer =
+        lazy.E10SUtils.serializePolicyContainer(policyContainer);
     }
 
     let referrerInfo = Cc["@mozilla.org/referrer-info;1"].createInstance(
@@ -107,11 +115,19 @@ export class ClickHandlerChild extends JSWindowActorChild {
       altKey: event.altKey,
       href: null,
       title: null,
-      csp,
+      policyContainer,
       referrerInfo,
     };
 
     if (href && !isFromMiddleMousePasteHandler) {
+      if (
+        lazy.blockJavascript &&
+        Services.io.extractScheme(href) == "javascript"
+      ) {
+        // We don't want to open new tabs or windows for javascript: links.
+        return;
+      }
+
       try {
         Services.scriptSecurityManager.checkLoadURIStrWithPrincipal(
           principal,

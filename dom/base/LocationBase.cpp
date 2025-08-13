@@ -19,6 +19,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/WindowContext.h"
+#include "mozilla/dom/PolicyContainer.h"
 
 namespace mozilla::dom {
 
@@ -102,7 +103,7 @@ already_AddRefed<nsDocShellLoadState> LocationBase::CheckURL(
   }
   loadState->SetTriggeringPrincipal(triggeringPrincipal);
   loadState->SetTriggeringSandboxFlags(doc->GetSandboxFlags());
-  loadState->SetCsp(doc->GetCsp());
+  loadState->SetPolicyContainer(doc->GetPolicyContainer());
   if (referrerInfo) {
     loadState->SetReferrerInfo(referrerInfo);
   }

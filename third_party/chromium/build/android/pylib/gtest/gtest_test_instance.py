@@ -1,9 +1,10 @@
-# Copyright 2014 The Chromium Authors. All rights reserved.
+# Copyright 2014 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 
 
+import html.parser
 import json
 import logging
 import os
@@ -12,7 +13,6 @@ import tempfile
 import threading
 import xml.etree.ElementTree
 
-import six
 from devil.android import apk_helper
 from pylib import constants
 from pylib.constants import host_paths
@@ -21,17 +21,14 @@ from pylib.base import test_instance
 from pylib.symbols import stack_symbolizer
 from pylib.utils import test_filter
 
-
-with host_paths.SysPath(host_paths.BUILD_COMMON_PATH):
-  import unittest_util # pylint: disable=import-error
-
+with host_paths.SysPath(host_paths.BUILD_UTIL_PATH):
+  from lib.common import unittest_util
 
 BROWSER_TEST_SUITES = [
     'android_browsertests',
     'android_sync_integration_tests',
     'components_browsertests',
     'content_browsertests',
-    'hybrid_browsertest',
     'weblayer_browsertests',
 ]
 
@@ -106,10 +103,19 @@ _RE_TEST_STATUS = re.compile(
 _RE_TEST_ERROR = re.compile(r'FAILURES!!! Tests run: \d+,'
                                     r' Failures: \d+, Errors: 1')
 _RE_TEST_CURRENTLY_RUNNING = re.compile(
-    r'\[ERROR:.*?\] Currently running: (.*)')
+    r'\[.*ERROR:.*?\] Currently running: (.*)')
 _RE_TEST_DCHECK_FATAL = re.compile(r'\[.*:FATAL:.*\] (.*)')
 _RE_DISABLED = re.compile(r'DISABLED_')
 _RE_FLAKY = re.compile(r'FLAKY_')
+
+# Detect a new launcher invocation. When encountered, the output parser will
+# stop recording logs for a suddenly crashed test (if one was running) in the
+# previous invocation.
+_RE_LAUNCHER_MAIN_START = re.compile(r'>>ScopedMainEntryLogger')
+
+# Regex that matches the printout when there are test failures.
+# matches "[  FAILED  ] 1 test, listed below:"
+_RE_ANY_TESTS_FAILED = re.compile(r'\[ +FAILED +\].*listed below')
 
 # Detect stack line in stdout.
 _STACK_LINE_RE = re.compile(r'\s*#\d+')
@@ -191,6 +197,7 @@ def ParseGTestOutput(output, symbolizer, device_abi):
 
   for l in output:
     matcher = _RE_TEST_STATUS.match(l)
+    launcher_main_start_match = _RE_LAUNCHER_MAIN_START.match(l)
     if matcher:
       if matcher.group(1) == 'RUN':
         handle_possibly_unknown_test()
@@ -220,15 +227,17 @@ def ParseGTestOutput(output, symbolizer, device_abi):
         test_name = currently_running_matcher.group(1)
         result_type = base_test_result.ResultType.CRASH
         duration = None  # Don't know. Not using 0 as this is unknown vs 0.
-      elif dcheck_matcher:
+      elif dcheck_matcher or launcher_main_start_match:
         result_type = base_test_result.ResultType.CRASH
         duration = None  # Don't know.  Not using 0 as this is unknown vs 0.
 
-    if log is not None:
+    if not launcher_main_start_match:
+      log.append(l)
       if not matcher and _STACK_LINE_RE.match(l):
         stack.append(l)
-      else:
-        log.append(l)
+
+    if _RE_ANY_TESTS_FAILED.match(l):
+      break
 
     if result_type and test_name:
       # Don't bother symbolizing output if the test passed.
@@ -239,7 +248,10 @@ def ParseGTestOutput(output, symbolizer, device_abi):
           log=symbolize_stack_and_merge_with_log()))
       test_name = None
 
-  handle_possibly_unknown_test()
+  else:
+    # Executing this after tests have finished with a failure causes a
+    # duplicate test entry to be added to results. crbug/1380825
+    handle_possibly_unknown_test()
 
   return results
 
@@ -250,7 +262,7 @@ def ParseGTestXML(xml_content):
   if not xml_content:
     return results
 
-  html = six.moves.html_parser.HTMLParser()
+  html_parser = html.parser.HTMLParser()
 
   testsuites = xml.etree.ElementTree.fromstring(xml_content)
   for testsuite in testsuites:
@@ -261,7 +273,7 @@ def ParseGTestXML(xml_content):
       log = []
       for failure in testcase:
         result_type = base_test_result.ResultType.FAIL
-        log.append(html.unescape(failure.attrib['message']))
+        log.append(html_parser.unescape(failure.attrib['message']))
 
       results.append(base_test_result.BaseTestResult(
           '%s.%s' % (suite_name, TestNameWithoutDisabledPrefix(case_name)),
@@ -298,7 +310,7 @@ def ParseGTestJSON(json_content):
         result_type = base_test_result.ResultType.FAIL
       results.append(base_test_result.BaseTestResult(name, result_type))
     else:
-      openstack += [("%s.%s" % (name, k), v) for k, v in six.iteritems(value)]
+      openstack += [("%s.%s" % (name, k), v) for k, v in value.items()]
 
   return results
 
@@ -320,10 +332,11 @@ def TestNameWithoutDisabledPrefix(test_name):
 class GtestTestInstance(test_instance.TestInstance):
 
   def __init__(self, args, data_deps_delegate, error_func):
-    super(GtestTestInstance, self).__init__()
+    super().__init__()
     # TODO(jbudorick): Support multiple test suites.
     if len(args.suite_name) > 1:
       raise ValueError('Platform mode currently supports only 1 gtest suite')
+    self._additional_apks = []
     self._coverage_dir = args.coverage_dir
     self._exe_dist_dir = None
     self._external_shard_index = args.test_launcher_shard_index
@@ -341,6 +354,7 @@ class GtestTestInstance(test_instance.TestInstance):
     self._total_external_shards = args.test_launcher_total_shards
     self._wait_for_java_debugger = args.wait_for_java_debugger
     self._use_existing_test_data = args.use_existing_test_data
+    self._deploy_mock_openxr_runtime = args.deploy_mock_openxr_runtime
 
     # GYP:
     if args.executable_dist_dir:
@@ -374,6 +388,9 @@ class GtestTestInstance(test_instance.TestInstance):
       self._extras = {
           _EXTRA_NATIVE_TEST_ACTIVITY: self._apk_helper.GetActivityName(),
       }
+      if args.timeout_scale and args.timeout_scale != 1:
+        self._extras[_EXTRA_RUN_IN_SUB_THREAD] = 1
+
       if self._suite in RUN_IN_SUB_THREAD_TEST_SUITES:
         self._extras[_EXTRA_RUN_IN_SUB_THREAD] = 1
       if self._suite in BROWSER_TEST_SUITES:
@@ -386,9 +403,17 @@ class GtestTestInstance(test_instance.TestInstance):
     if not self._apk_helper and not self._exe_dist_dir:
       error_func('Could not find apk or executable for %s' % self._suite)
 
+    for x in args.additional_apks:
+      if not os.path.exists(x):
+        error_func('Could not find additional APK: %s' % x)
+
+      apk = apk_helper.ToHelper(x)
+      self._additional_apks.append(apk)
+
     self._data_deps = []
-    self._gtest_filter = test_filter.InitializeFilterFromArgs(args)
+    self._gtest_filters = test_filter.InitializeFiltersFromArgs(args)
     self._run_disabled = args.run_disabled
+    self._run_pre_tests = args.run_pre_tests
 
     self._data_deps_delegate = data_deps_delegate
     self._runtime_deps_path = args.runtime_deps_path
@@ -428,6 +453,10 @@ class GtestTestInstance(test_instance.TestInstance):
     return self._apk_helper and self._apk_helper.GetActivityName()
 
   @property
+  def additional_apks(self):
+    return self._additional_apks
+
+  @property
   def apk(self):
     return self._apk_helper and self._apk_helper.path
 
@@ -446,6 +475,10 @@ class GtestTestInstance(test_instance.TestInstance):
   @property
   def coverage_dir(self):
     return self._coverage_dir
+
+  @property
+  def deploy_mock_openxr_runtime(self):
+    return self._deploy_mock_openxr_runtime
 
   @property
   def enable_xml_result_parsing(self):
@@ -476,8 +509,8 @@ class GtestTestInstance(test_instance.TestInstance):
     return self._gs_test_artifacts_bucket
 
   @property
-  def gtest_filter(self):
-    return self._gtest_filter
+  def gtest_filters(self):
+    return self._gtest_filters
 
   @property
   def isolated_script_test_output(self):
@@ -539,6 +572,10 @@ class GtestTestInstance(test_instance.TestInstance):
   def use_existing_test_data(self):
     return self._use_existing_test_data
 
+  @property
+  def run_pre_tests(self):
+    return self._run_pre_tests
+
   #override
   def TestType(self):
     return 'gtest'
@@ -576,8 +613,8 @@ class GtestTestInstance(test_instance.TestInstance):
     """
     gtest_filter_strings = [
         self._GenerateDisabledFilterString(disabled_prefixes)]
-    if self._gtest_filter:
-      gtest_filter_strings.append(self._gtest_filter)
+    if self._gtest_filters:
+      gtest_filter_strings.extend(self._gtest_filters)
 
     filtered_test_list = test_list
     # This lock is required because on older versions of Python
@@ -588,12 +625,16 @@ class GtestTestInstance(test_instance.TestInstance):
         filtered_test_list = unittest_util.FilterTestNames(
             filtered_test_list, gtest_filter_string)
 
-      if self._run_disabled and self._gtest_filter:
+      if self._run_disabled and self._gtest_filters:
         out_filtered_test_list = list(set(test_list)-set(filtered_test_list))
         for test in out_filtered_test_list:
           test_name_no_disabled = TestNameWithoutDisabledPrefix(test)
-          if test_name_no_disabled != test and unittest_util.FilterTestNames(
-              [test_name_no_disabled], self._gtest_filter):
+          if test_name_no_disabled == test:
+            continue
+          if all(
+              unittest_util.FilterTestNames([test_name_no_disabled],
+                                            gtest_filter)
+              for gtest_filter in self._gtest_filters):
             filtered_test_list.append(test)
     return filtered_test_list
 
@@ -601,11 +642,13 @@ class GtestTestInstance(test_instance.TestInstance):
     disabled_filter_items = []
 
     if disabled_prefixes is None:
-      disabled_prefixes = ['FAILS_', 'PRE_']
+      disabled_prefixes = ['FAILS_']
       if '--run-manual' not in self._flags:
         disabled_prefixes += ['MANUAL_']
       if not self._run_disabled:
         disabled_prefixes += ['DISABLED_', 'FLAKY_']
+      if not self._run_pre_tests:
+        disabled_prefixes += ['PRE_']
 
     disabled_filter_items += ['%s*' % dp for dp in disabled_prefixes]
     disabled_filter_items += ['*.%s*' % dp for dp in disabled_prefixes]
@@ -624,4 +667,3 @@ class GtestTestInstance(test_instance.TestInstance):
   #override
   def TearDown(self):
     """Do nothing."""
-    pass

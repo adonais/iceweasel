@@ -141,4 +141,47 @@ const kTests = [
       return doc.querySelector("div");
     },
   },
+
+  // img element in preserve3d
+  {
+    html: `
+      <!doctype html>
+      <style>
+        div {
+          transform-style: preserve-3d;
+        }
+        img {
+          translate: 0;
+        }
+      </style>
+      <div><img src="animated1.gif"></div>
+    `,
+    element(doc) {
+      return doc.querySelector("img");
+    },
+  },
+
+  // img element in preserve3d with 3d transforms
+  {
+    html: `
+      <!doctype html>
+      <style>
+        .card-inner {
+          transform-style: preserve-3d;
+          transform: rotateY(180deg);
+        }
+        .card-back {
+          transform: rotateY(180deg);
+        }
+      </style>
+      <div class="card-inner">
+        <div class="card-back">
+          <img src="animated1.gif">
+        </div>
+      </div>
+    `,
+    element(doc) {
+      return doc.querySelector("img");
+    },
+  },
 ];

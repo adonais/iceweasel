@@ -23,9 +23,7 @@ const {
 const COMMON_DIALOG = "chrome://global/content/commonDialog.xhtml";
 const SELECT_DIALOG = "chrome://global/content/selectDialog.xhtml";
 
-export function Prompter() {
-  // Note that EmbedPrompter clones this implementation.
-}
+export function Prompter() {}
 
 /**
  * Implements nsIPromptService and nsIPromptFactory

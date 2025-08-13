@@ -57,9 +57,10 @@ object Constants {
         "Privacy Badger",
         "AdGuard AdBlocker",
         "Dark Reader",
-        "Bitwarden Password Manager",
+        "Bitwarden",
         "Tampermonkey",
-        "FoxyProxy",
+        // FoxyProxy from the suggested extensions because it instead of the add-on name the main menu extensions button displays "Disabled" and no name is being displayed in the installed "Extensions" list, only the add-on icon
+        // "FoxyProxy",
         "NoScript",
         "Search by Image",
         "ClearURLs",

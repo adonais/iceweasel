@@ -2,7 +2,7 @@
 tags = "devtools"
 head = "head_dbg.js"
 firefox-appdir = "browser"
-skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64'"]
+run-if = ["os != 'android'"]
 # While not every devtools test uses evalInSandbox over 80 do, so it's easier to
 # set allow_parent_unrestricted_js_loads for all the tests here.
 # Similar story for the eval restrictions
@@ -167,8 +167,8 @@ skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && ccov", # Bug 1813406
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1612707
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && asan", # Bug 1612707
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug", # Bug 1612707
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && ccov", # Bug 1612707
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug", # Bug 1612707
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", # Bug 1813406
 ]
 
@@ -224,6 +224,7 @@ skip-if = [
 
 ["test_javascript_object_actors.js"]
 support-files = ["test_javascript_object_actors.snapshot.mjs"]
+tags = "object-snapshots"
 
 ["test_layout-reflows-observer.js"]
 

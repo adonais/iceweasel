@@ -34,13 +34,13 @@ support-files = [
 
 ["browser_link_preview_nimbus.js"]
 
-["browser_link_preview_optin.js"]
+["browser_link_preview_onboarding.js"]
 support-files = [
   "data/readableFr.html",
   "data/readableEn.html"
 ]
 
-["browser_link_preview_onboarding.js"]
+["browser_link_preview_optin.js"]
 support-files = [
   "data/readableFr.html",
   "data/readableEn.html"

@@ -4,17 +4,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nsTreeSelection.h"
+
+#include "XULTreeElement.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/dom/Element.h"
 #include "nsCOMPtr.h"
-#include "nsTreeSelection.h"
-#include "XULTreeElement.h"
-#include "nsITreeView.h"
-#include "nsString.h"
-#include "nsIContent.h"
-#include "nsNameSpaceManager.h"
-#include "nsGkAtoms.h"
 #include "nsComponentManagerUtils.h"
+#include "nsGkAtoms.h"
+#include "nsIContent.h"
+#include "nsITreeView.h"
+#include "nsNameSpaceManager.h"
+#include "nsString.h"
 #include "nsTreeColumns.h"
 
 using namespace mozilla;

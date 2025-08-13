@@ -7,7 +7,6 @@
 #include "ImportScanner.h"
 
 #include "mozilla/ServoBindings.h"
-#include "mozilla/StaticPrefs_layout.h"
 #include "nsContentUtils.h"
 
 namespace mozilla {
@@ -17,11 +16,6 @@ static inline bool IsWhitespace(char16_t aChar) {
 }
 
 static inline bool OptionalSupportsMatches(const nsAString& aAfterRuleValue) {
-  // Ensure pref for @import supports() is enabled before wanting to check.
-  if (!StaticPrefs::layout_css_import_supports_enabled()) {
-    return true;
-  }
-
   // Empty, don't bother checking.
   if (aAfterRuleValue.IsEmpty()) {
     return true;

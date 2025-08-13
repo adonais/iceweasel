@@ -45,6 +45,10 @@ let READ_FROM_DATABASE_ENABLED = Services.prefs.getBoolPref(
   "nimbus.profilesdatastoreservice.read.enabled",
   false
 );
+let SYNC_ENROLLMENTS_ENABLED = Services.prefs.getBoolPref(
+  "nimbus.profilesdatastoreservice.sync.enabled",
+  false
+);
 
 /**
  * Handles queueing changes to the NimbusEnrollments database table in the
@@ -433,7 +437,14 @@ export class NimbusEnrollments {
    */
   static get readFromDatabaseEnabled() {
     // TODO(bug 1972426): Enable this behaviour by default and remove this pref.
-    return READ_FROM_DATABASE_ENABLED;
+    return DATABASE_ENABLED && READ_FROM_DATABASE_ENABLED;
+  }
+
+  static get syncEnrollmentsEnabled() {
+    // TODO(bug 1956087): Enable this behaviour by default and remove this pref.
+    return (
+      DATABASE_ENABLED && READ_FROM_DATABASE_ENABLED && SYNC_ENROLLMENTS_ENABLED
+    );
   }
 
   /**
@@ -530,6 +541,31 @@ export class NimbusEnrollments {
   }
 
   /**
+   * Load the slugs of all experiments from other profiles that have unenrolled.
+   *
+   * @returns {Set<string>} The slugs of the experiments.
+   */
+  static async loadUnenrolledExperimentSlugsFromOtherProfiles() {
+    const conn = await lazy.ProfilesDatastoreService.getConnection();
+    const rows = await conn.execute(
+      `
+        SELECT DISTINCT
+          slug
+        FROM NimbusEnrollments
+        WHERE
+              NOT active
+          AND NOT json_extract(recipe, "$.isRollout")
+          AND profileId != :profileId;
+      `,
+      {
+        profileId: lazy.ExperimentAPI.profileId,
+      }
+    );
+
+    return new Set(rows.map(row => row.getResultByName("slug")));
+  }
+
+  /**
    * Reload the database-related prefs
    *
    * ** TEST ONLY **
@@ -541,6 +577,10 @@ export class NimbusEnrollments {
     );
     READ_FROM_DATABASE_ENABLED = Services.prefs.getBoolPref(
       "nimbus.profilesdatastoreservice.read.enabled",
+      false
+    );
+    SYNC_ENROLLMENTS_ENABLED = Services.prefs.getBoolPref(
+      "nimbus.profilesdatastoreservice.sync.enabled",
       false
     );
   }

@@ -46,6 +46,9 @@ newtab-topsites-add-search-engine-header = Add Search Engine
 newtab-topsites-add-shortcut-header = New Shortcut
 newtab-topsites-edit-shortcut-header = Edit Shortcut
 newtab-topsites-add-shortcut-label = Add Shortcut
+newtab-topsites-add-shortcut-title =
+    .title = Add Shortcut
+    .aria-label = Add Shortcut
 newtab-topsites-title-label = Title
 newtab-topsites-title-input =
     .placeholder = Enter a title
@@ -451,6 +454,9 @@ newtab-topic-selection-button-pick-interests = Pick your interests
 newtab-section-follow-button = Follow
 newtab-section-following-button = Following
 newtab-section-unfollow-button = Unfollow
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Fine-tune your feed
+newtab-section-follow-highlight-subtitle = Follow your interests to see more of what you like.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -487,6 +493,12 @@ newtab-custom-wallpaper-title = Custom wallpapers are here
 newtab-custom-wallpaper-subtitle = Upload your own wallpaper or pick a custom color to make { -brand-product-name } yours.
 newtab-custom-wallpaper-cta = Try it
 
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Choose a wallpaper to make { -brand-product-name } yours
+newtab-new-user-custom-wallpaper-subtitle = Make every new tab feel like home with custom wallpapers and colors.
+newtab-new-user-custom-wallpaper-cta = Try it now
+
 ## Strings for download mobile highlight
 
 newtab-download-mobile-highlight-title = Download { -brand-product-name } for mobile
@@ -496,6 +508,11 @@ newtab-download-mobile-highlight-body-variant-b = Pick up where you left off whe
 newtab-download-mobile-highlight-body-variant-c = Did you know you can take { -brand-product-name } on the go? Same browser. In your pocket.
 newtab-download-mobile-highlight-image =
     .aria-label = QR code to download { -brand-product-name } for mobile
+
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Your favorites at your fingertips
+newtab-shortcuts-highlight-subtitle = Add a shortcut to keep your favorite sites one click away.
 
 ## Strings for reporting ads and content
 
@@ -522,8 +539,8 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Trending on Google
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Trending searches
 newtab-trending-searches-show-trending =
     .title = Show trending searches
 newtab-trending-searches-hide-trending =

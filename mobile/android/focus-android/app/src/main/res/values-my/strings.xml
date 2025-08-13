@@ -477,8 +477,6 @@
   <string name="onboarding_first_screen_privacy_notice_text" moz:removedIn="141" tools:ignore="BrandUsage">Firefox သည် သင်၏ privacy ကို ဂရုစိုက်သည်။ ကျွန်ုပ်တို့၏ %1$s တွင် ပိုမိုလေ့လာပါ</string>
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
   <string name="onboarding_first_screen_privacy_notice_link" moz:removedIn="141" tools:ignore="UnusedResources">ကိုယ်ရေးကာကွယ်မှု သတိပေးချက်</string>
-  <!-- New Onboarding flow first screen button label -->
-  <string name="onboarding_first_screen_button_agree_and_continue" moz:removedIn="140" tools:ignore="UnusedResources">သဘောတူပြီး ဆက်လုပ်ပါ</string>
   <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
   <string name="a11y_link_available">ရနိုင်သောလင်ခ့်</string>
   <!--

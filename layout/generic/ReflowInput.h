@@ -9,16 +9,17 @@
 #ifndef mozilla_ReflowInput_h
 #define mozilla_ReflowInput_h
 
-#include "nsMargin.h"
-#include "nsStyleConsts.h"
+#include <algorithm>
+
+#include "LayoutConstants.h"
+#include "ReflowOutput.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/LayoutStructs.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/WritingModes.h"
-#include "LayoutConstants.h"
-#include "ReflowOutput.h"
-#include <algorithm>
+#include "nsMargin.h"
+#include "nsStyleConsts.h"
 
 class gfxContext;
 class nsFloatManager;

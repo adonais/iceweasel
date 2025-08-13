@@ -4,6 +4,7 @@
 
 package org.mozilla.focus.activity.robots
 
+import android.net.Uri
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.IdlingResource
@@ -115,6 +116,13 @@ class BrowserRobot {
         }
     }
 
+    fun verifyCustomTabUrl(url: String) {
+        val uri = Uri.parse(url)
+        val expectedText = uri.host ?: url // fallback if host is null
+
+        verifyPageURL(expectedText)
+    }
+
     fun verifyPageURL(expectedText: String) {
         browserURLbar.waitForExists(waitingTime)
         sessionLoadedIdlingResource = SessionLoadedIdlingResource()
@@ -169,7 +177,7 @@ class BrowserRobot {
     fun verifyNumberOfTabsOpened(tabsCount: Int) {
         assertTrue(
             mDevice.findObject(
-                UiSelector().description("Tabs Open: $tabsCount. Tap to switch tabs."),
+                UiSelector().description("Private Tabs Open: $tabsCount. Tap to switch tabs."),
             ).waitForExists(waitingTime),
         )
     }

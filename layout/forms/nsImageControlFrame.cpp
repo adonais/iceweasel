@@ -4,15 +4,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsImageFrame.h"
-
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
-#include "nsPresContext.h"
 #include "nsGkAtoms.h"
-#include "nsStyleConsts.h"
-#include "nsLayoutUtils.h"
 #include "nsIContent.h"
+#include "nsImageFrame.h"
+#include "nsLayoutUtils.h"
+#include "nsPresContext.h"
+#include "nsStyleConsts.h"
 
 using namespace mozilla;
 

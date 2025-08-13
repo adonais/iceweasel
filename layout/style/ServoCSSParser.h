@@ -11,8 +11,8 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/gfx/Matrix.h"
-#include "nsColor.h"
 #include "nsCSSPropertyID.h"
+#include "nsColor.h"
 #include "nsDOMCSSDeclaration.h"
 #include "nsStringFwd.h"
 

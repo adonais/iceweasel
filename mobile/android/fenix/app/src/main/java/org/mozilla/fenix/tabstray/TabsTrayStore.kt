@@ -85,11 +85,41 @@ enum class Page {
     ;
 
     companion object {
+        /**
+         * Returns the [Page] that corresponds to the [position].
+         *
+         * @param position The index of the page.
+         */
         fun positionToPage(position: Int): Page {
-            return when (position) {
-                0 -> NormalTabs
-                1 -> PrivateTabs
-                else -> SyncedTabs
+            return if (DefaultTabManagementFeatureHelper.enhancementsEnabled) {
+                when (position) {
+                    0 -> PrivateTabs
+                    1 -> NormalTabs
+                    else -> SyncedTabs
+                }
+            } else {
+                when (position) {
+                    0 -> NormalTabs
+                    1 -> PrivateTabs
+                    else -> SyncedTabs
+                }
+            }
+        }
+
+        /**
+         * Returns the visual index that corresponds to the [page].
+         *
+         * @param page The [Page] whose visual index is being looked-up.
+         */
+        fun pageToPosition(page: Page): Int {
+            return if (DefaultTabManagementFeatureHelper.enhancementsEnabled) {
+                when (page) {
+                    PrivateTabs -> 0
+                    NormalTabs -> 1
+                    SyncedTabs -> 2
+                }
+            } else {
+                page.ordinal
             }
         }
     }

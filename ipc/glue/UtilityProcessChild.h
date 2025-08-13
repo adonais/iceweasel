@@ -7,7 +7,7 @@
 #define _include_ipc_glue_UtilityProcessChild_h_
 #include "mozilla/ipc/PUtilityProcessChild.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
-#include "mozilla/ipc/UtilityAudioDecoderParent.h"
+#include "mozilla/ipc/UtilityMediaServiceParent.h"
 #include "mozilla/UniquePtr.h"
 #include "ChildProfilerController.h"
 
@@ -62,8 +62,8 @@ class UtilityProcessChild final : public PUtilityProcessChild {
 
   mozilla::ipc::IPCResult RecvTestTelemetryProbes();
 
-  mozilla::ipc::IPCResult RecvStartUtilityAudioDecoderService(
-      Endpoint<PUtilityAudioDecoderParent>&& aEndpoint,
+  mozilla::ipc::IPCResult RecvStartUtilityMediaService(
+      Endpoint<PUtilityMediaServiceParent>&& aEndpoint,
       nsTArray<gfx::GfxVarUpdate>&& aUpdates);
 
   mozilla::ipc::IPCResult RecvStartJSOracleService(
@@ -90,6 +90,10 @@ class UtilityProcessChild final : public PUtilityProcessChild {
       Endpoint<PSandboxTestingChild>&& aEndpoint);
 #endif
 
+  RefPtr<UtilityMediaServiceParent> GetMediaService() const {
+    return mUtilityMediaServiceInstance;
+  }
+
  protected:
   friend class UtilityProcessImpl;
   ~UtilityProcessChild();
@@ -97,7 +101,7 @@ class UtilityProcessChild final : public PUtilityProcessChild {
  private:
   TimeStamp mChildStartTime;
   RefPtr<ChildProfilerController> mProfilerController;
-  RefPtr<UtilityAudioDecoderParent> mUtilityAudioDecoderInstance{};
+  RefPtr<UtilityMediaServiceParent> mUtilityMediaServiceInstance{};
   RefPtr<dom::JSOracleChild> mJSOracleInstance{};
 #ifdef XP_WIN
   RefPtr<PWindowsUtilsChild> mWindowsUtilsInstance;

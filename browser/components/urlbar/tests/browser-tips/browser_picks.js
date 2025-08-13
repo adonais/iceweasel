@@ -127,7 +127,7 @@ async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
   });
   let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
   let mainButton = row._buttons.get("0");
-  let target = helpUrl ? row._buttons.get("menu") : mainButton;
+  let target = helpUrl ? row._buttons.get("result-menu") : mainButton;
 
   // If we're picking the tip with the keyboard, TAB to select the proper
   // target.

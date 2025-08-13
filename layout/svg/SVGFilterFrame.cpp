@@ -9,14 +9,14 @@
 
 // Keep others in (case-insensitive) order:
 #include "AutoReferenceChainGuard.h"
+#include "SVGElement.h"
+#include "SVGFilterInstance.h"
+#include "SVGObserverUtils.h"
 #include "gfxUtils.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/SVGFilterElement.h"
-#include "nsGkAtoms.h"
-#include "SVGObserverUtils.h"
-#include "SVGElement.h"
-#include "SVGFilterInstance.h"
 #include "nsContentUtils.h"
+#include "nsGkAtoms.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

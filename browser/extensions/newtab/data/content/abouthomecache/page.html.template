@@ -49,5 +49,7 @@
     <script async type="module" src="chrome://global/content/elements/moz-box-button.mjs"></script>
     <script async type="module" src="chrome://global/content/elements/moz-message-bar.mjs"></script>
     <script async type="module" src="chrome://global/content/elements/moz-radio-group.mjs"></script>
+    <script async type="module" src="chrome://global/content/elements/moz-select.mjs"></script>
+    <script async type="module" src="chrome://global/content/elements/moz-reorderable-list.mjs"></script>
   </body>
 </html>

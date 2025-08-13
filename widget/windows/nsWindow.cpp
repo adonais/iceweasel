@@ -8030,6 +8030,54 @@ bool nsWindow::OnPenPointerEvents(uint32_t aPointerId, UINT aMsg,
   if (!mPointerEvents.GetPointerPenInfo(aPointerId, &penInfo)) {
     return false;
   }
+  // The tiltX, tiltY and twist may require the high-end modes of pen tables.
+  // Allowing testers check whether the given these valures are exposed to the
+  // web, here allows the prefs override the values.
+  if (StaticPrefs::widget_windows_pen_tilt_override_enabled() ||
+      StaticPrefs::widget_windows_pen_twist_override_enabled()) {
+    static uint32_t sPendingToUpdate =
+        StaticPrefs::widget_widnows_pen_override_number_of_preserver_value();
+    if (StaticPrefs::widget_windows_pen_tilt_override_enabled()) {
+      static int32_t sOverrideTiltX = 30;
+      static int32_t sOverrideTiltY = 0;
+      if (sPendingToUpdate) {
+        penInfo.tiltX = sOverrideTiltX;
+        penInfo.tiltY = sOverrideTiltY;
+      } else {
+        const auto GetCurrentOverrideValueWithUpdatingNextValue =
+            [](int32_t& aOverrideTilt) {
+              const int32_t oldValue = aOverrideTilt;
+              aOverrideTilt = aOverrideTilt >= 45 ? -45 : aOverrideTilt + 5;
+              return oldValue;
+            };
+        penInfo.tiltX =
+            GetCurrentOverrideValueWithUpdatingNextValue(sOverrideTiltX);
+        penInfo.tiltY =
+            GetCurrentOverrideValueWithUpdatingNextValue(sOverrideTiltY);
+      }
+    }
+    if (StaticPrefs::widget_windows_pen_twist_override_enabled()) {
+      static uint32_t sOverrideTwist = 0;
+      if (sPendingToUpdate) {
+        penInfo.rotation = sOverrideTwist;
+      } else {
+        const auto GetCurrentOverrideValueWithUpdatingNextValue =
+            [](uint32_t& aOverrideTwist) {
+              const uint32_t oldValue = aOverrideTwist;
+              aOverrideTwist = aOverrideTwist >= 350 ? 0 : aOverrideTwist + 10;
+              return oldValue;
+            };
+        penInfo.rotation =
+            GetCurrentOverrideValueWithUpdatingNextValue(sOverrideTwist);
+      }
+    }
+    if (sPendingToUpdate) {
+      sPendingToUpdate--;
+    } else {
+      sPendingToUpdate =
+          StaticPrefs::widget_widnows_pen_override_number_of_preserver_value();
+    }
+  }
 
   // When dispatching mouse events with pen, there may be some
   // WM_POINTERUPDATE messages between WM_POINTERDOWN and WM_POINTERUP with

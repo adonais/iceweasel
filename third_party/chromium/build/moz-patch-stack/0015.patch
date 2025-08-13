@@ -1,34 +1,33 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Mon, 20 Jun 2022 22:34:00 +0000
-Subject: Bug 1775143 - pt16 - (mirror) 65d11ae74c1e r=ng
+Date: Mon, 7 Jul 2025 20:46:00 -0500
+Subject: Bug 1974813 - (fix-373e84d10) disable
+ 'clang_lib("compiler_builtins")' target
 
-(skip-generation)
-
-Depends on D149829
-
-Differential Revision: https://phabricator.services.mozilla.com/D149830
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/ae0c945f3d38d37251ca87428c011012bea81fb2
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/cf812ff032ed58f1b396d24bde810b127dd24907
 ---
- build_config.h | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ config/clang/BUILD.gn | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/build_config.h b/build_config.h
-index 584b22a12..c39ae9da5 100644
---- a/build_config.h
-+++ b/build_config.h
-@@ -201,6 +201,15 @@
- #define ARCH_CPU_RISCV64 1
- #define ARCH_CPU_64_BITS 1
- #define ARCH_CPU_LITTLE_ENDIAN 1
-+#elif defined(__sparc__)
-+#if defined(__LP64__)
-+#define ARCH_CPU_SPARC64 1
-+#define ARCH_CPU_64_BITS 1
-+#define ARCH_CPU_BIG_ENDIAN 1
-+#endif
-+#define ARCH_CPU_SPARC 1
-+#define ARCH_CPU_32_BITS 1
-+#define ARCH_CPU_BIG_ENDIAN 1
- #else
- #error Please add support for your architecture in build/build_config.h
- #endif
+diff --git a/config/clang/BUILD.gn b/config/clang/BUILD.gn
+index 0d648fa31..beb81db98 100644
+--- a/config/clang/BUILD.gn
++++ b/config/clang/BUILD.gn
+@@ -252,6 +252,10 @@ template("clang_lib") {
+ 
+ # Adds a dependency on the Clang runtime library clang_rt.builtins.
+ clang_lib("compiler_builtins") {
++# Mozilla: in the past, this checked for !toolchain_has_rust, and
++# effectively made this section a no-op.  We'll make it a definite
++# no-op.  Without this, we see errors during generation.
++if (false) {
+   if (is_mac) {
+     libname = "osx"
+   } else if (is_ios) {
+@@ -280,6 +284,7 @@ clang_lib("compiler_builtins") {
+     libname = "builtins"
+   }
+ }
++}
+ 
+ # Adds a dependency on the Clang runtime library clang_rt.profile.
+ clang_lib("compiler_profile") {

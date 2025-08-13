@@ -6,10 +6,10 @@
 
 #include "mozilla/dom/CSSImportRule.h"
 
-#include "mozilla/dom/CSSImportRuleBinding.h"
-#include "mozilla/dom/MediaList.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/StyleSheet.h"
+#include "mozilla/dom/CSSImportRuleBinding.h"
+#include "mozilla/dom/MediaList.h"
 
 namespace mozilla {
 namespace dom {

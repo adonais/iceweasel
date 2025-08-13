@@ -5,21 +5,26 @@ package org.mozilla.fenix.ui.robots
 
 import android.util.Log
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_OFF
+import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_ON
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.EXTENSIONS
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
+import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
 import org.mozilla.fenix.helpers.TestHelper.appName
 import org.mozilla.fenix.helpers.TestHelper.mDevice
@@ -41,8 +46,13 @@ class ThreeDotMenuMainRobotCompose(private val composeTestRule: ComposeTestRule)
 
     fun verifyHomeMainMenuItems() {
         Log.i(TAG, "verifyHomeMainMenuItems: Trying to verify the main menu items on the home page.")
-        composeTestRule.whatsNewButton().assertIsDisplayed()
-        composeTestRule.customizeHomeButton().assertIsDisplayed()
+        composeTestRule.backButton().assertIsDisplayed()
+        composeTestRule.forwardButton().assertIsDisplayed()
+        composeTestRule.refreshButton().assertIsDisplayed()
+        composeTestRule.shareButton().assertIsDisplayed()
+
+        verifyMakeFirefoxYourDefaultBrowserPromotionBanner()
+
         composeTestRule.extensionsButton().assertIsDisplayed()
 
         composeTestRule.bookmarksButton().assertIsDisplayed()
@@ -98,7 +108,7 @@ class ThreeDotMenuMainRobotCompose(private val composeTestRule: ComposeTestRule)
     @OptIn(ExperimentalTestApi::class)
     fun verifySwitchToDesktopSiteButtonIsEnabled(isEnabled: Boolean) {
         Log.i(TAG, "verifySuggestedUserName: Waiting for the \"Desktop site\" button to exist")
-        composeTestRule.waitUntilAtLeastOneExists(hasContentDescription(getStringResource(R.string.browser_menu_desktop_site)))
+        composeTestRule.waitUntilAtLeastOneExists(hasContentDescription(getStringResource(R.string.browser_menu_desktop_site), substring = true))
         Log.i(TAG, "verifySuggestedUserName: Waited for the \"Desktop site\" button to exist")
         Log.i(TAG, "verifySwitchToDesktopSiteButtonIsEnabled: Trying to verify the Switch to Desktop Site button from the new main menu design is enabled.")
         if (isEnabled) {
@@ -116,22 +126,22 @@ class ThreeDotMenuMainRobotCompose(private val composeTestRule: ComposeTestRule)
         Log.i(TAG, "verifySwitchToDesktopSiteButton: Verified that the \"Switch to desktop site\" button is displayed.")
     }
 
-    fun verifySwitchToMobileSiteButton() {
-        Log.i(TAG, "verifySwitchToMobileSiteButton: Trying to verify that the \"Switch to mobile site\" button is displayed.")
-        composeTestRule.mobileSiteButton().assertIsDisplayed()
-        Log.i(TAG, "verifySwitchToMobileSiteButton: Verified that the \"Switch to mobile site\" button is displayed.")
+    fun verifyDesktopSiteButtonState(isEnabled: Boolean) {
+        if (isEnabled) {
+            Log.i(TAG, "verifyDesktopSiteButtonState: Trying to verify that the \"Desktop site\" button is set to \"On\".")
+            composeTestRule.enabledDesktopSiteButton().assertIsDisplayed()
+            Log.i(TAG, "verifyDesktopSiteButtonState: Verified that the \"Desktop site\" button is set to \"On\".")
+        } else {
+            Log.i(TAG, "verifyDesktopSiteButtonState: Trying to verify that the \"Desktop site\" button is set to \"Off\".")
+            composeTestRule.disabledDesktopSiteButton().assertIsDisplayed()
+            Log.i(TAG, "verifyDesktopSiteButtonState: Verified that the \"Desktop site\" button is set to \"Off\".")
+        }
     }
 
     fun clickSwitchToDesktopSiteButton() {
         Log.i(TAG, "clickSwitchToDesktopSiteButton: Trying to click the \"Switch to desktop site\" button.")
         composeTestRule.desktopSiteButton().performClick()
         Log.i(TAG, "clickSwitchToDesktopSiteButton: Clicked the \"Switch to desktop site\" button.")
-    }
-
-    fun clickSwitchToMobileSiteButton() {
-        Log.i(TAG, "clickSwitchToMobileSiteButton: Trying to click the \"Switch to mobile site\" button.")
-        composeTestRule.mobileSiteButton().performClick()
-        Log.i(TAG, "clickSwitchToMobileSiteButton: Clicked the \"Switch to mobile site\" button.")
     }
 
     fun verifyOpenInAppButtonIsEnabled(appName: String = "", isEnabled: Boolean) {
@@ -173,10 +183,18 @@ class ThreeDotMenuMainRobotCompose(private val composeTestRule: ComposeTestRule)
         mDevice.waitForIdle()
     }
 
-    fun verifyNoExtensionsButton() {
-        Log.i(TAG, "verifyNoExtensionsButton: Trying to verify that the \"Extensions\" button exists.")
-        composeTestRule.noExtensionsButton().assertExists()
-        Log.i(TAG, "verifyNoExtensionsButton: Verified that the \"Extensions\" button exists.")
+    @OptIn(ExperimentalTestApi::class)
+    fun verifyExtensionsButtonWithInstalledExtension(extensionTitle: String) {
+        Log.i(TAG, "verifyExtensionsButtonWithInstalledExtension: Waiting for $waitingTime for the collapsed \"Extensions\" button with installed $extensionTitle to exist.")
+        composeTestRule.waitUntilAtLeastOneExists(hasContentDescription(extensionTitle, substring = true, ignoreCase = true), waitingTime)
+        Log.i(TAG, "verifyExtensionsButtonWithInstalledExtension: Waited for $waitingTime for the collapsed \"Extensions\" button with installed $extensionTitle to exist.")
+        Log.i(TAG, "verifyExtensionsButtonWithInstalledExtension: Trying to verify that the collapsed \"Extensions\" button with installed $extensionTitle exists.")
+        composeTestRule.onNode(
+            hasTestTag("mainMenu.extensions"),
+        ).assert(
+            hasContentDescription(extensionTitle, substring = true, ignoreCase = true),
+        ).assertIsDisplayed()
+        Log.i(TAG, "verifyExtensionsButtonWithInstalledExtension: Verified that the collapsed \"Extensions\" button with installed $extensionTitle exists.")
     }
 
     fun verifyTryRecommendedExtensionButton() {
@@ -211,6 +229,18 @@ class ThreeDotMenuMainRobotCompose(private val composeTestRule: ComposeTestRule)
         Log.i(TAG, "clickQuitFirefoxButton: Trying to click the \"Quit $appName\" button from the new main menu design.")
         composeTestRule.quitFirefoxButton().performClick()
         Log.i(TAG, "clickQuitFirefoxButton: Clicked the \"Quit $appName\" button from the new main menu design.")
+    }
+
+    fun verifyTranslatePageButton() {
+        Log.i(TAG, "verifyTranslatePageButton: Trying to verify that the \"Translate page\" button exists.")
+        composeTestRule.translatePageButton().assertIsDisplayed()
+        Log.i(TAG, "verifyTranslatePageButton: Verified that the \"Translate page\" button exists.")
+    }
+
+    fun verifyMakeFirefoxYourDefaultBrowserPromotionBanner() {
+        composeTestRule.onNodeWithText(getStringResource(R.string.browser_menu_default_banner_title, appName)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(getStringResource(R.string.browser_menu_default_banner_subtitle_2)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(getStringResource(R.string.browser_menu_default_banner_dismiss_promotion)).assertIsDisplayed()
     }
 
     class Transition(private val composeTestRule: ComposeTestRule) {
@@ -409,15 +439,6 @@ class ThreeDotMenuMainRobotCompose(private val composeTestRule: ComposeTestRule)
             return ShareOverlayRobot.Transition()
         }
 
-        fun clickCustomizeHomepageButton(interact: SettingsSubMenuHomepageRobot.() -> Unit): SettingsSubMenuHomepageRobot.Transition {
-            Log.i(TAG, "clickCustomizeHomepageButton: Trying to click the \"Customize homepage\" button")
-            composeTestRule.customizeHomeButton().performClick()
-            Log.i(TAG, "clickCustomizeHomepageButton: Clicked the \"Customize homepage\" button")
-
-            SettingsSubMenuHomepageRobot().interact()
-            return SettingsSubMenuHomepageRobot.Transition()
-        }
-
         fun clickOutsideTheMainMenu(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             Log.i(TAG, "clickOutsideTheMainMenu: Trying to click outside the main menu.")
             itemWithResId("$packageName:id/touch_outside").clickTopLeft()
@@ -475,37 +496,33 @@ private fun ComposeTestRule.refreshButton() = onNodeWithText("Refresh")
 
 private fun ComposeTestRule.shareButton() = onNodeWithText("Share")
 
-private fun ComposeTestRule.signInButton() = onNodeWithContentDescription("Sign inSync passwords, bookmarks, and more")
-
-private fun ComposeTestRule.customizeHomeButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_customize_home_1))
+private fun ComposeTestRule.signInButton() = onNodeWithContentDescription("Sign in Sync passwords, bookmarks, and more")
 
 private fun ComposeTestRule.settingsButton() = onNodeWithContentDescription("Settings")
 
 private fun ComposeTestRule.extensionsButton() = onNodeWithTag(EXTENSIONS)
 
-private fun ComposeTestRule.tryRecommendedExtensionButton() = onNodeWithContentDescription("ExtensionsTry a recommended extension")
+private fun ComposeTestRule.tryRecommendedExtensionButton() = onNodeWithContentDescription("Extensions Try a recommended extension", substring = true)
 
-private fun ComposeTestRule.noExtensionsButton() = onNodeWithContentDescription("ExtensionsNo extensions enabled")
+private fun ComposeTestRule.noExtensionsEnabledButton() = onNodeWithContentDescription("Extensions No extensions enabled", substring = true)
 
-private fun ComposeTestRule.noExtensionsEnabledButton() = onNodeWithContentDescription("ExtensionsNo extensions enabled")
+private fun ComposeTestRule.moreButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_more_settings), substring = true)
 
-private fun ComposeTestRule.moreButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_more_settings))
+private fun ComposeTestRule.bookmarksButton() = onNodeWithContentDescription(getStringResource(R.string.library_bookmarks), substring = true)
 
-private fun ComposeTestRule.bookmarksButton() = onNodeWithContentDescription(getStringResource(R.string.library_bookmarks))
+private fun ComposeTestRule.historyButton() = onNodeWithContentDescription(getStringResource(R.string.library_history), substring = true)
 
-private fun ComposeTestRule.historyButton() = onNodeWithContentDescription(getStringResource(R.string.library_history))
+private fun ComposeTestRule.downloadsButton() = onNodeWithContentDescription(getStringResource(R.string.library_downloads), substring = true)
 
-private fun ComposeTestRule.downloadsButton() = onNodeWithContentDescription(getStringResource(R.string.library_downloads))
+private fun ComposeTestRule.passwordsButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_passwords), substring = true)
 
-private fun ComposeTestRule.passwordsButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_passwords))
-
-private fun ComposeTestRule.whatsNewButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_new_in_firefox))
+private fun ComposeTestRule.backToMainMenuButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_back_button_content_description))
 
 private fun ComposeTestRule.quitFirefoxButton() = onNodeWithContentDescription("Quit $appName")
 
 // Page main menu items
 
-private fun ComposeTestRule.findInPageButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_find_in_page))
+private fun ComposeTestRule.findInPageButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_find_in_page), substring = true)
 
 private fun ComposeTestRule.toolsMenuButton() = onNodeWithTag("mainMenu.tools")
 
@@ -513,9 +530,13 @@ private fun ComposeTestRule.saveMenuButton() = onNodeWithTag("mainMenu.save")
 
 private fun ComposeTestRule.bookmarkPageButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_bookmark_this_page_2))
 
-private fun ComposeTestRule.desktopSiteButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_desktop_site))
+private fun ComposeTestRule.desktopSiteButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_desktop_site), substring = true)
 
-private fun ComposeTestRule.mobileSiteButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_switch_to_mobile_site))
+private fun ComposeTestRule.enabledDesktopSiteButton() = onNodeWithTag(DESKTOP_SITE_ON)
+
+private fun ComposeTestRule.disabledDesktopSiteButton() = onNodeWithTag(DESKTOP_SITE_OFF)
+
+// Save sub menu items
 
 private fun ComposeTestRule.editBookmarkButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_edit_bookmark))
 

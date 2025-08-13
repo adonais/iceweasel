@@ -9,14 +9,14 @@
 #ifndef nsLineBox_h___
 #define nsLineBox_h___
 
+#include <algorithm>
+
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
-#include "nsILineIterator.h"
 #include "nsIFrame.h"
+#include "nsILineIterator.h"
 #include "nsStyleConsts.h"
 #include "nsTHashSet.h"
-
-#include <algorithm>
 
 class nsLineBox;
 class nsWindowSizes;

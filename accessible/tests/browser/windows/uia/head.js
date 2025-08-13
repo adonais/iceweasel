@@ -38,12 +38,26 @@ function addUiaTask(doc, task, options = {}) {
   function addTask(shouldEnable) {
     async function uiaTask(browser, docAcc, topDocAcc) {
       await SpecialPowers.pushPrefEnv({
-        set: [["accessibility.uia.enable", shouldEnable ? 2 : 0]],
+        // 1 means enable unconditionally. 2 means enable only if NVDA or JAWS
+        // isn't detected. The user could be running a screen reader while
+        // running the tests, so use 1 to enable unconditionally lest the tests
+        // fail.
+        set: [["accessibility.uia.enable", shouldEnable ? 1 : 0]],
       });
       gIsUiaEnabled = shouldEnable;
       info(shouldEnable ? "Gecko UIA enabled" : "Gecko UIA disabled");
       await task(browser, docAcc, topDocAcc);
     }
+    // Propagate the name of the task function to our wrapper function so it shows
+    // up in test run output. Suffix with the test type. For example:
+    // 0:39.16 INFO Entering test bound testProtected_uiaEnabled_remoteIframe
+    // The "name" property of functions is not writable, but we can override that
+    // using Object.defineProperty.
+    let name = task.name;
+    if (name) {
+      name += shouldEnable ? "_uiaEnabled" : "_uiaDisabled";
+    }
+    Object.defineProperty(uiaTask, "name", { value: name });
     addAccessibleTask(doc, uiaTask, options);
   }
 

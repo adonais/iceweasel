@@ -4980,7 +4980,8 @@ bool CacheIRCompiler::emitLoadArgumentsObjectArgExistsResult(
 }
 
 bool CacheIRCompiler::emitLoadDenseElementResult(ObjOperandId objId,
-                                                 Int32OperandId indexId) {
+                                                 Int32OperandId indexId,
+                                                 bool expectPackedElements) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   AutoOutputRegister output(*this);
   Register obj = allocator.useRegister(masm, objId);
@@ -5000,9 +5001,19 @@ bool CacheIRCompiler::emitLoadDenseElementResult(ObjOperandId objId,
   Address initLength(scratch1, ObjectElements::offsetOfInitializedLength());
   masm.spectreBoundsCheck32(index, initLength, scratch2, failure->label());
 
-  // Hole check.
+  if (expectPackedElements) {
+    Address flags(scratch1, ObjectElements::offsetOfFlags());
+    masm.branchTest32(Assembler::NonZero, flags,
+                      Imm32(ObjectElements::NON_PACKED), failure->label());
+  }
+
   BaseObjectElementIndex element(scratch1, index);
-  masm.branchTestMagic(Assembler::Equal, element, failure->label());
+
+  // If we did not check the packed flag, we must check for a hole value.
+  if (!expectPackedElements) {
+    masm.branchTestMagic(Assembler::Equal, element, failure->label());
+  }
+
   masm.loadTypedOrValue(element, output);
   return true;
 }
@@ -6872,7 +6883,8 @@ static void EmitStoreDenseElement(MacroAssembler& masm,
 
 bool CacheIRCompiler::emitStoreDenseElement(ObjOperandId objId,
                                             Int32OperandId indexId,
-                                            ValOperandId rhsId) {
+                                            ValOperandId rhsId,
+                                            bool expectPackedElements) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
 
   Register obj = allocator.useRegister(masm, objId);
@@ -6895,9 +6907,15 @@ bool CacheIRCompiler::emitStoreDenseElement(ObjOperandId objId,
   Address initLength(scratch, ObjectElements::offsetOfInitializedLength());
   masm.spectreBoundsCheck32(index, initLength, spectreTemp, failure->label());
 
-  // Hole check.
   BaseObjectElementIndex element(scratch, index);
-  masm.branchTestMagic(Assembler::Equal, element, failure->label());
+  if (expectPackedElements) {
+    Address flags(scratch, ObjectElements::offsetOfFlags());
+    masm.branchTest32(Assembler::NonZero, flags,
+                      Imm32(ObjectElements::NON_PACKED), failure->label());
+  } else {
+    // Hole check.
+    masm.branchTestMagic(Assembler::Equal, element, failure->label());
+  }
 
   // Perform the store.
   EmitPreBarrier(masm, element, MIRType::Value);

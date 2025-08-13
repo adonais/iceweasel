@@ -56,15 +56,20 @@ class MultiLogCTVerifier {
   //                               won't be verified.
   // |sctListFromOCSPResponse|  SCT list included in a stapled OCSP response
   //                            for |cert|. Empty if not available.
-  // |sctListFromTLSExtension|  is the SCT list from the TLS extension. Empty
+  // |sctListFromTLSExtension|  The SCT list from the TLS extension. Empty
   //                            if no extension was present.
-  // |time|  the current time. Used to make sure SCTs are not in the future.
+  // |time|  The current time. Used to make sure SCTs are not in the future.
+  // |distrustAfterTime|  If the root CA has a time past which newly issued
+  //                      certificates are no longer trusted, this will be set
+  //                      to that time. Used to ensure no SCTs with timestamps
+  //                      after that time are accepted.
   // |result|  will be filled with the SCTs present, divided into categories
   //           based on the verification result.
   pkix::Result Verify(pkix::Input cert, pkix::Input issuerSubjectPublicKeyInfo,
                       pkix::Input sctListFromCert,
                       pkix::Input sctListFromOCSPResponse,
                       pkix::Input sctListFromTLSExtension, pkix::Time time,
+                      Maybe<pkix::Time> distrustAfterTime,
                       CTVerifyResult& result);
 
  private:
@@ -73,13 +78,15 @@ class MultiLogCTVerifier {
   // come from |origin| (as will be reflected in the origin field of each SCT).
   pkix::Result VerifySCTs(pkix::Input encodedSctList,
                           const LogEntry& expectedEntry, SCTOrigin origin,
-                          pkix::Time time, CTVerifyResult& result);
+                          pkix::Time time, Maybe<pkix::Time> distrustAfterTime,
+                          CTVerifyResult& result);
 
   // Verifies a single, parsed SCT against all known logs.
   // Note: moves |sct| to the target list in |result|, invalidating |sct|.
   pkix::Result VerifySingleSCT(SignedCertificateTimestamp&& sct,
                                const ct::LogEntry& expectedEntry,
                                SCTOrigin origin, pkix::Time time,
+                               Maybe<pkix::Time> distrustAfterTime,
                                CTVerifyResult& result);
 
   // The list of known logs.

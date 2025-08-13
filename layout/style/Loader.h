@@ -14,18 +14,18 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/CORSMode.h"
-#include "mozilla/css/StylePreloadKind.h"
-#include "mozilla/dom/LinkStyle.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/SharedSubResourceCache.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/css/StylePreloadKind.h"
+#include "mozilla/dom/LinkStyle.h"
 #include "nsCompatibility.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsRefPtrHashtable.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
 #include "nsTObserverArray.h"
 #include "nsURIHashKey.h"
-#include "nsRefPtrHashtable.h"
 
 class nsICSSLoaderObserver;
 class nsIConsoleReportCollector;
@@ -460,6 +460,9 @@ class Loader final {
 
   bool ShouldBypassCache() const;
 
+  // Inserts a style sheet in a document or a ShadowRoot.
+  void InsertSheetInTree(StyleSheet& aSheet);
+
   enum class PendingLoad { No, Yes };
 
  private:
@@ -519,7 +522,8 @@ class Loader final {
   nsresult CheckContentPolicy(nsIPrincipal* aLoadingPrincipal,
                               nsIPrincipal* aTriggeringPrincipal,
                               nsIURI* aTargetURI, nsINode* aRequestingNode,
-                              const nsAString& aNonce, StylePreloadKind);
+                              const nsAString& aNonce, StylePreloadKind,
+                              CORSMode aCORSMode, const nsAString& aIntegrity);
 
   bool MaybePutIntoLoadsPerformed(SheetLoadData& aLoadData);
 
@@ -555,8 +559,6 @@ class Loader final {
                             const nsAString& aMediaString, dom::MediaList*,
                             IsAlternate, IsExplicitlyEnabled);
 
-  // Inserts a style sheet in a document or a ShadowRoot.
-  void InsertSheetInTree(StyleSheet& aSheet);
   // Inserts a style sheet into a parent style sheet.
   void InsertChildSheet(StyleSheet& aSheet, StyleSheet& aParentSheet);
 
@@ -567,7 +569,8 @@ class Loader final {
       CORSMode aCORSMode, const nsAString& aNonce, const nsAString& aIntegrity,
       uint64_t aEarlyHintPreloaderId, dom::FetchPriority aFetchPriority);
 
-  RefPtr<StyleSheet> LookupInlineSheetInCache(const nsAString&, nsIPrincipal*);
+  RefPtr<StyleSheet> LookupInlineSheetInCache(const nsAString&, nsIPrincipal*,
+                                              nsIURI* aBaseURI);
 
   // Synchronously notify of a cached load data.
   void NotifyOfCachedLoad(RefPtr<SheetLoadData>);

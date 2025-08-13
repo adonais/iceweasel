@@ -365,8 +365,14 @@ class TextPercentageSeekBarPreference @JvmOverloads constructor(
                 ) {
                     super.onInitializeAccessibilityNodeInfo(host, info)
                     val initialInfo = info.rangeInfo
+                    val percentageValueDescription = String.format(
+                        context.getString(R.string.a11y_preference_accessibility_font_size_percentage),
+                        value,
+                    )
+
                     info.rangeInfo = initialInfo?.let {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            host.stateDescription = percentageValueDescription
                             RangeInfo(
                                 RangeInfo.RANGE_TYPE_PERCENT,
                                 MIN_VALUE.toFloat(),
@@ -495,6 +501,6 @@ class TextPercentageSeekBarPreference @JvmOverloads constructor(
         private const val MIN_VALUE = 50
         private const val DECIMAL_CONVERSION = 100f
         private const val TEXT_SIZE = 16f
-        private const val SEEK_BAR_MAX = 100
+        private const val SEEK_BAR_MAX = 200
     }
 }

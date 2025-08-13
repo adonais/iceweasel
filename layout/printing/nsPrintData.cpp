@@ -6,12 +6,12 @@
 
 #include "nsPrintData.h"
 
+#include "mozilla/Services.h"
 #include "mozilla/gfx/PrintPromise.h"
 #include "nsIStringBundle.h"
+#include "nsIWebProgressListener.h"
 #include "nsIWidget.h"
 #include "nsPrintObject.h"
-#include "nsIWebProgressListener.h"
-#include "mozilla/Services.h"
 
 //-----------------------------------------------------
 // PR LOGGING

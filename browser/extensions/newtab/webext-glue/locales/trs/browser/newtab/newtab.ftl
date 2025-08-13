@@ -235,6 +235,9 @@ newtab-error-fallback-refresh-link = Nagi'iaj nakà pagina nī garahue ñut
 ## Strings for download mobile highlight
 
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
 

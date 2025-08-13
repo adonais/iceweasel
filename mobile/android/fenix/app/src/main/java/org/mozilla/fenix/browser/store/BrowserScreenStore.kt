@@ -4,10 +4,16 @@
 
 package org.mozilla.fenix.browser.store
 
+import android.content.Context
+import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.LifecycleOwner
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.UiStore
 import org.mozilla.fenix.browser.store.BrowserScreenAction.CancelPrivateDownloadsOnPrivateTabsClosedAccepted
 import org.mozilla.fenix.browser.store.BrowserScreenAction.ClosingLastPrivateTab
+import org.mozilla.fenix.browser.store.BrowserScreenAction.CustomTabColorsUpdated
+import org.mozilla.fenix.browser.store.BrowserScreenAction.EnvironmentCleared
+import org.mozilla.fenix.browser.store.BrowserScreenAction.EnvironmentRehydrated
 import org.mozilla.fenix.browser.store.BrowserScreenAction.PageTranslationStatusUpdated
 import org.mozilla.fenix.browser.store.BrowserScreenAction.ReaderModeStatusUpdated
 
@@ -24,7 +30,23 @@ class BrowserScreenStore(
     initialState = initialState,
     reducer = ::reduce,
     middleware = middleware,
-)
+) {
+    /**
+     * The current environment of the browser screen allowing access to various
+     * other application features that this integrates with.
+     *
+     * This is Activity/Fragment lifecycle dependent and should be handled carefully to avoid memory leaks.
+     *
+     * @property context [Context] used for various system interactions.
+     * @property viewLifecycleOwner [LifecycleOwner] depending on which lifecycle related operations will be scheduled.
+     * @property fragmentManager [FragmentManager] to use for showing other fragments.
+     */
+    data class Environment(
+        val context: Context,
+        val viewLifecycleOwner: LifecycleOwner,
+        val fragmentManager: FragmentManager,
+    )
+}
 
 private fun reduce(state: BrowserScreenState, action: BrowserScreenAction): BrowserScreenState = when (action) {
     is ClosingLastPrivateTab -> state.copy(
@@ -40,4 +62,16 @@ private fun reduce(state: BrowserScreenState, action: BrowserScreenAction): Brow
     )
 
     is PageTranslationStatusUpdated -> state.copy(pageTranslationStatus = action.pageTranslationStatus)
+
+    is CustomTabColorsUpdated -> state.copy(
+        customTabColors = action.customTabColors,
+    )
+
+    is EnvironmentRehydrated,
+    is EnvironmentCleared,
+        -> {
+        // no-op
+        // Expected to be handled in middlewares set by integrators.
+        state
+    }
 }

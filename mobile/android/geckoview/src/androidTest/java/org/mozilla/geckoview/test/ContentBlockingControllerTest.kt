@@ -604,4 +604,123 @@ class ContentBlockingControllerTest : BaseSessionTest() {
             equalTo(true),
         )
     }
+
+    @Test
+    fun bounceTrackingProtectionModeSettings() {
+        // Check default value
+        val contentBlocking = sessionRule.runtime.settings.contentBlocking
+
+        assertThat(
+            "Expect correct default value which is off",
+            contentBlocking.bounceTrackingProtectionMode,
+            equalTo(ContentBlocking.BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_DISABLED),
+        )
+
+        // Checks that the pref value is also consistent with the runtime settings
+        val originalPrefs = sessionRule.getPrefs(
+            "privacy.bounceTrackingProtection.mode",
+        )
+
+        assertThat(
+            "Initial value is correct",
+            originalPrefs[0] as Int,
+            equalTo(contentBlocking.bounceTrackingProtectionMode),
+        )
+
+        contentBlocking.bounceTrackingProtectionMode = ContentBlocking.BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_ENABLED
+
+        val actualPrefs = sessionRule.getPrefs(
+            "privacy.bounceTrackingProtection.mode",
+        )
+
+        assertThat(
+            "The value is updated",
+            actualPrefs[0] as Int,
+            equalTo(contentBlocking.bounceTrackingProtectionMode),
+        )
+
+        // Set a new pref value, with a different setter method.
+        contentBlocking.setBounceTrackingProtectionMode(ContentBlocking.BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_ENABLED_STANDBY)
+
+        val actualPrefs2 = sessionRule.getPrefs(
+            "privacy.bounceTrackingProtection.mode",
+        )
+
+        assertThat(
+            "The value is updated",
+            actualPrefs2[0] as Int,
+            equalTo(contentBlocking.bounceTrackingProtectionMode),
+        )
+
+        // Test that the getter returns the correct value.
+        assertThat(
+            "The getter returns the correct value",
+            contentBlocking.getBounceTrackingProtectionMode(),
+            equalTo(ContentBlocking.BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_ENABLED_STANDBY),
+        )
+    }
+
+    @Test
+    fun allowListTrackingProtectionSettings() {
+        // Check default value
+        val contentBlocking = sessionRule.runtime.settings.contentBlocking
+
+        assertThat(
+            "Expect correct default for allowListBaselineTrackingProtection value which is true",
+            contentBlocking.allowListBaselineTrackingProtection,
+            equalTo(true),
+        )
+
+        assertThat(
+            "Expect correct default for allowListConvenienceTrackingProtection value which is true",
+            contentBlocking.allowListConvenienceTrackingProtection,
+            equalTo(true),
+        )
+
+        // Checks that the pref value is also consistent with the runtime settings
+        val originalAllowListBaseline = sessionRule.getPrefs(
+            "privacy.trackingprotection.allow_list.baseline.enabled",
+        )
+
+        val originalAllowListConvenience = sessionRule.getPrefs(
+            "privacy.trackingprotection.allow_list.convenience.enabled",
+        )
+
+        assertThat(
+            "Initial allow list baseline value is correct",
+            originalAllowListBaseline[0],
+            equalTo(contentBlocking.allowListBaselineTrackingProtection),
+        )
+
+        assertThat(
+            "Initial initial allow list convenience value is correct",
+            originalAllowListConvenience[0],
+            equalTo(contentBlocking.allowListConvenienceTrackingProtection),
+        )
+
+        contentBlocking.allowListConvenienceTrackingProtection = false
+
+        val actualPrefs = sessionRule.getPrefs(
+            "privacy.trackingprotection.allow_list.convenience.enabled",
+        )
+
+        assertThat(
+            "Convenience is updated",
+            actualPrefs[0] as Boolean,
+            equalTo(false),
+        )
+
+        // Set a new pref value, with a different setter method.
+        contentBlocking.setAllowListConvenienceTrackingProtection(true)
+
+        val actualPrefs2 = sessionRule.getPrefs(
+            "privacy.trackingprotection.allow_list.convenience.enabled",
+        )
+
+        assertThat(
+            "Convenience is updated",
+            actualPrefs2[0] as Boolean,
+            equalTo(true),
+        )
+    }
 }

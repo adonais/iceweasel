@@ -7,9 +7,9 @@
 #ifndef mozilla_dom_CSSMozDocumentRule_h
 #define mozilla_dom_CSSMozDocumentRule_h
 
-#include "mozilla/css/GroupRule.h"
-#include "mozilla/css/DocumentMatchingFunction.h"
 #include "mozilla/ServoBindingTypes.h"
+#include "mozilla/css/DocumentMatchingFunction.h"
+#include "mozilla/css/GroupRule.h"
 
 namespace mozilla::dom {
 

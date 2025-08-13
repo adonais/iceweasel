@@ -11,6 +11,7 @@
 #include <cfloat>
 #include <cmath>
 #include "mozilla/Vector.h"
+#include "Types.h"
 
 namespace skia {
 
@@ -152,15 +153,17 @@ class SkConvolutionFilter1D {
 
 void convolve_horizontally(const unsigned char* srcData,
                            const SkConvolutionFilter1D& filter,
-                           unsigned char* outRow, bool hasAlpha);
+                           unsigned char* outRow,
+                           mozilla::gfx::SurfaceFormat format);
 
 void convolve_vertically(
     const SkConvolutionFilter1D::ConvolutionFixed* filterValues,
     int filterLength, unsigned char* const* sourceDataRows, int pixelWidth,
-    unsigned char* outRow, bool hasAlpha);
+    unsigned char* outRow, mozilla::gfx::SurfaceFormat format);
 
 bool BGRAConvolve2D(const unsigned char* sourceData, int sourceByteRowStride,
-                    bool sourceHasAlpha, const SkConvolutionFilter1D& filterX,
+                    mozilla::gfx::SurfaceFormat format,
+                    const SkConvolutionFilter1D& filterX,
                     const SkConvolutionFilter1D& filterY,
                     int outputByteRowStride, unsigned char* output);
 

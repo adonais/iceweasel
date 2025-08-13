@@ -12,14 +12,12 @@
  * build).
  */
 
-#include "nsXPCOM.h"
-#include "nsCOMPtr.h"
-
-#include "nsIFile.h"
-#include "nsNetUtil.h"
-
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/css/Loader.h"
+#include "nsCOMPtr.h"
+#include "nsIFile.h"
+#include "nsNetUtil.h"
+#include "nsXPCOM.h"
 
 using namespace mozilla;
 

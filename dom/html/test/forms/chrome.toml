@@ -6,4 +6,6 @@ prefs = ["layout.forms.input-type-search.enabled=true"]
 
 ["test_input_search.html"]
 
+["test_mozistextfield.html"]
+
 ["test_submit_invalid_file.html"]

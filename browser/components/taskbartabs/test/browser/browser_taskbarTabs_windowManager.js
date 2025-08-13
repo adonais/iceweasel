@@ -4,6 +4,8 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  sinon: "resource://testing-common/Sinon.sys.mjs",
+  TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
   TaskbarTabsUtils: "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs",
 });
 
@@ -22,12 +24,6 @@ const url2 = Services.io.newURI("https://subdomain.example.com");
 const userContextId2 = 1;
 const taskbarTab2 = registry.findOrCreateTaskbarTab(url2, userContextId2);
 const id2 = taskbarTab2.id;
-
-add_setup(async () => {
-  await SpecialPowers.pushPrefEnv({
-    set: [["network.dns.localDomains", [url1.host, url2.host]]],
-  });
-});
 
 add_task(async function test_count_for_id() {
   const wm = new TaskbarTabsWindowManager();
@@ -196,4 +192,64 @@ add_task(async function test_window_aumid() {
     BrowserTestUtils.closeWindow(winOpen),
     BrowserTestUtils.closeWindow(winReplace),
   ]);
+});
+
+add_task(async function testTaskbarTabCount() {
+  const count = () => TaskbarTabs.getCountForId(taskbarTab1.id);
+
+  is(await count(), 0, "window count starts at 0");
+
+  const window1 = await TaskbarTabs.openWindow(taskbarTab1);
+  is(await count(), 1, "window count increases on first open");
+
+  const window2 = await TaskbarTabs.openWindow(taskbarTab1);
+  is(await count(), 2, "window count increases on second open");
+
+  await BrowserTestUtils.closeWindow(window1);
+  is(await count(), 1, "window count decreases on first close");
+
+  const addedTab = BrowserTestUtils.addTab(gBrowser, url1.spec);
+  const window3 = await TaskbarTabs.replaceTabWithWindow(taskbarTab1, addedTab);
+  is(await count(), 2, "window count increases on replace");
+
+  await TaskbarTabs.ejectWindow(window2);
+  await BrowserTestUtils.windowClosed(window2);
+  is(await count(), 1, "window count decreases on ejection");
+
+  await BrowserTestUtils.closeWindow(window3);
+  is(await count(), 0, "window count decreases on final close");
+
+  const ejected = gBrowser.tabs[gBrowser.tabs.length - 1];
+  const promise = BrowserTestUtils.waitForTabClosing(ejected);
+  gBrowser.removeTab(ejected);
+  await promise;
+
+  TaskbarTabs.removeTaskbarTab(taskbarTab1.id);
+});
+
+add_task(async function testWindowIconSet() {
+  const wm = new TaskbarTabsWindowManager();
+
+  let mockWindowsUIUtils = {
+    QueryInterface: ChromeUtils.generateQI(["nsIWindowsUIUtils"]),
+    setWindowIcon: sinon.spy(),
+  };
+  wm.testOnlyMockUIUtils(mockWindowsUIUtils);
+
+  let windowPromise = BrowserTestUtils.waitForNewWindow();
+  await wm.openWindow(taskbarTab1);
+  let win = await windowPromise;
+
+  ok(
+    mockWindowsUIUtils.setWindowIcon.calledOnce,
+    "The Window icon should have been set."
+  );
+
+  // `sinon.spy` will hold a reference to the window by virtue of holding it's
+  // arguments, causing tests to fail from a "leaked" window. Release it before
+  // closing the window.
+  sinon.resetHistory();
+  wm.testOnlyMockUIUtils(null);
+
+  await BrowserTestUtils.closeWindow(win);
 });

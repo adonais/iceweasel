@@ -10,6 +10,7 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
@@ -241,7 +242,9 @@ nsresult WorkerLoadInfo::SetPrincipalsAndCSPFromChannel(nsIChannel* aChannel) {
   nsCOMPtr<nsIContentSecurityPolicy> csp;
   if (CSP_ShouldResponseInheritCSP(aChannel)) {
     nsCOMPtr<nsILoadInfo> loadinfo = aChannel->LoadInfo();
-    csp = loadinfo->GetCsp();
+    nsCOMPtr<nsIPolicyContainer> policyContainer =
+        loadinfo->GetPolicyContainer();
+    csp = PolicyContainer::GetCSP(policyContainer);
   }
   return SetPrincipalsAndCSPOnMainThread(principal, partitionedPrincipal,
                                          loadGroup, csp);

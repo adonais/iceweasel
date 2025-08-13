@@ -111,12 +111,14 @@ Result<nsCOMPtr<nsIPrincipal>, nsresult> ClientInfo::GetPrincipal() const {
   return PrincipalInfoToPrincipal(PrincipalInfo());
 }
 
-const Maybe<mozilla::ipc::CSPInfo>& ClientInfo::GetCspInfo() const {
-  return mData->cspInfo();
+const Maybe<mozilla::ipc::PolicyContainerArgs>&
+ClientInfo::GetPolicyContainerArgs() const {
+  return mData->policyContainerArgs();
 }
 
-void ClientInfo::SetCspInfo(const mozilla::ipc::CSPInfo& aCSPInfo) {
-  mData->cspInfo() = Some(aCSPInfo);
+void ClientInfo::SetPolicyContainerArgs(
+    const mozilla::ipc::PolicyContainerArgs& aPolicyContainer) {
+  mData->policyContainerArgs() = Some(aPolicyContainer);
 }
 
 const Maybe<mozilla::ipc::CSPInfo>& ClientInfo::GetPreloadCspInfo() const {

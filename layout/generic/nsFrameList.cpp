@@ -6,9 +6,9 @@
 
 #include "nsFrameList.h"
 
-#include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/ArenaObjectID.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "nsBidiPresUtils.h"
 #include "nsContainerFrame.h"
 #include "nsGkAtoms.h"

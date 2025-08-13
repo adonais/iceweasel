@@ -423,9 +423,7 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_inspector_switch-to-inspector-on-pick.js"]
 
 ["browser_inspector_textbox-menu.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1968688
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks"] # Bug 1968688
 
 ["browser_inspector_textbox-menu_reopen_toolbox.js"]
 

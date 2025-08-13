@@ -9,16 +9,17 @@
 #ifndef mozilla_ServoStyleConstsInlines_h
 #define mozilla_ServoStyleConstsInlines_h
 
-#include "mozilla/ServoStyleConsts.h"
+#include <new>
+#include <type_traits>
+
+#include "MainThreadUtils.h"
 #include "mozilla/AspectRatio.h"
 #include "mozilla/EndianUtils.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/URLExtraData.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "nsGkAtoms.h"
-#include "MainThreadUtils.h"
 #include "nsNetUtil.h"
-#include <type_traits>
-#include <new>
 
 // TODO(emilio): there are quite a few other implementations scattered around
 // that should move here.
@@ -1288,6 +1289,16 @@ inline StylePhysicalSide ToStylePhysicalSide(mozilla::Side aSide) {
                     static_cast<uint8_t>(StylePhysicalSide::Bottom),
                 "Left side doesn't match");
   return static_cast<StylePhysicalSide>(static_cast<uint8_t>(aSide));
+}
+
+inline StylePhysicalAxis ToStylePhysicalAxis(StylePhysicalSide aSide) {
+  return aSide == StylePhysicalSide::Top || aSide == StylePhysicalSide::Bottom
+             ? StylePhysicalAxis::Vertical
+             : StylePhysicalAxis::Horizontal;
+}
+
+inline StylePhysicalAxis ToStylePhysicalAxis(mozilla::Side aSide) {
+  return ToStylePhysicalAxis(ToStylePhysicalSide(aSide));
 }
 
 inline mozilla::Side ToSide(StylePhysicalSide aSide) {

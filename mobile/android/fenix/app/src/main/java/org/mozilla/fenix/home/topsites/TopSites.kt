@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -24,9 +25,10 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Card
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -196,7 +198,9 @@ fun TopSites(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        if (items != topSitesWindows.last()) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
                     }
 
                     if (needsInvisibleRow && page > 0) {
@@ -207,8 +211,6 @@ fun TopSites(
         }
 
         if (pagerState.pageCount > 1) {
-            Spacer(modifier = Modifier.height(8.dp))
-
             PagerIndicator(
                 pagerState = pagerState,
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -427,10 +429,13 @@ private fun TopSiteFaviconCard(
             }
             .size(TOP_SITES_FAVICON_CARD_SIZE.dp),
         shape = CircleShape,
-        backgroundColor = backgroundColor,
-        elevation = 0.dp,
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
             Surface(
                 modifier = Modifier.size(TOP_SITES_FAVICON_SIZE.dp),
                 color = backgroundColor,
@@ -526,7 +531,7 @@ private fun getMenuItems(
 @PreviewLightDark
 private fun TopSitesPreview() {
     FirefoxTheme {
-        Box(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {
+        Box(modifier = Modifier.background(color = FirefoxTheme.colors.layer1).padding(16.dp)) {
             TopSites(
                 topSites = FakeHomepagePreview.topSites(),
                 onTopSiteClick = {},

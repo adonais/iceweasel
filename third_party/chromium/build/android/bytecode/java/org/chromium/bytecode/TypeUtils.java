@@ -1,4 +1,4 @@
-// Copyright 2017 The Chromium Authors. All rights reserved.
+// Copyright 2017 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -35,6 +35,7 @@ class TypeUtils {
     static final String INT = "I";
     static final String VOID = "V";
     private static final Map<String, Type> PRIMITIVE_DESCRIPTORS;
+
     static {
         PRIMITIVE_DESCRIPTORS = new HashMap<>();
         PRIMITIVE_DESCRIPTORS.put(Type.BOOLEAN_TYPE.toString(), Type.BOOLEAN_TYPE);

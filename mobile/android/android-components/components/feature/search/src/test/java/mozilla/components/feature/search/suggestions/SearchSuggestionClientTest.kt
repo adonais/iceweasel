@@ -11,7 +11,6 @@ import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.search.ext.createSearchEngine
 import mozilla.components.support.test.mock
-import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -97,7 +96,6 @@ class SearchSuggestionClientTest {
         )
 
         val client = SearchSuggestionClient(
-            testContext,
             store,
             GOOGLE_MOCK_RESPONSE,
         )

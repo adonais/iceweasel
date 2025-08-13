@@ -79,29 +79,46 @@ The general format in EBNF is:
     cookie    ::= "|jit-test|"
     item      ::= flag | attribute
 
-    flag      ::= "slow" | "allow-oom" | "valgrind" | "tz-pacific" | "debug" |
-                  "--" switch
+    flag      ::= "slow" | "heavy" | "allow-oom" | "allow-unhandlable-oom" |
+                  "allow-overrecursed" | "valgrind" | "tz-pacific" | "module" |
+                  "crash" | "test-also=" values | "test-join=" values |
+                  "--" switch | "-P" pref
 
     attribute ::= name ":" value
-    name      ::= "error" | "exitstatus"
+    name      ::= "error" | "exitstatus" | "thread-count" | "include" |
+                  "local-include" | "skip-if" | "skip-variant-if"
     value     ::= <string>
+    values    ::= <whitespace-separated-strings>
     switch    ::= <string>
+    pref      ::= <string>
 
 The metaline may appear anywhere in the first line of the file: this allows it
 to be placed inside any kind of comment.
 
 The meaning of the items:
 
-    slow         Test runs slowly. Do not run if the --no-slow option is given.
-    allow-oom    If the test runs out of memory, it counts as passing.
-    valgrind     Run test under valgrind.
-    tz-pacific   Always run test with the Pacific time zone (TZ=PST8PDT).
+    slow              Test runs slowly. Do not run if the --no-slow option is given.
+    heavy             Test is heavy and should not be run in parallel with other tests.
+    allow-oom         If the test runs out of memory, it counts as passing.
+    allow-unhandlable-oom  Allow unhandlable OOM errors (used for testing OOM handling).
+    allow-overrecursed     Allow over-recursion errors.
+    valgrind          Run test under valgrind.
+    tz-pacific        Always run test with the Pacific time zone (TZ=PST8PDT).
+    module            Test file is a module.
+    crash             Test is expected to crash (only allowed in self-test).
+    test-also=        Run the test with additional configurations (space-separated).
+    test-join=        Join multiple tests together (space-separated).
 
-    error        The test should be considered to pass iff it throws the
-                 given JS exception.
-    exitstatus   The test should exit with the given status value (an integer).
+    error             The test should be considered to pass iff it throws the
+                      given JS exception.
+    exitstatus        The test should exit with the given status value (an integer).
+    thread-count      Set the number of threads for the test.
+    include           Include additional library files.
+    local-include     Include additional script files from the test directory.
+    skip-if           Skip test if the condition is true.
+    skip-variant-if   Skip specific test variant if the condition is true (format: variant,condition).
 
-    debug        Run js with -d, whether --jitflags says to or not
-    --SWITCH     Pass --SWITCH through to js
+    --SWITCH          Pass --SWITCH through to js
+    -P pref=value     Set a preference (e.g., -P pref=value)
 
 * END

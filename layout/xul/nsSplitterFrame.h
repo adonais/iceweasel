@@ -11,9 +11,9 @@
 #ifndef nsSplitterFrame_h__
 #define nsSplitterFrame_h__
 
+#include "SimpleXULLeafFrame.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
-#include "SimpleXULLeafFrame.h"
 
 class nsSplitterFrameInner;
 

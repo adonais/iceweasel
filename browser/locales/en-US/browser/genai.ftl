@@ -46,15 +46,18 @@ genai-prompts-proofread =
 
 ## Chatbot menu shortcuts
 
-genai-menu-no-provider =
+genai-menu-no-provider-2 =
     .label = Ask an AI Chatbot
+    .accesskey = h
 genai-menu-choose-chatbot =
     .label = Choose an AI Chatbot
-genai-menu-ask-generic =
+genai-menu-ask-generic-2 =
     .label = Ask AI Chatbot
+    .accesskey = h
 # $provider (string) - name of the provider
-genai-menu-ask-provider =
+genai-menu-ask-provider-2 =
     .label = Ask { $provider }
+    .accesskey = h
 genai-menu-open-generic =
     .label = Open AI Chatbot
 # $provider (string) - name of the provider

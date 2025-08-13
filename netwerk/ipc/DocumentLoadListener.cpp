@@ -675,8 +675,7 @@ static Result<SessionHistoryEntry*, const char*> ValidateHistoryLoad(
                    aLoadState->PrincipalToInherit())) {
     return Err("PrincipalToInherit");
   }
-  if (snapshot->GetPartitionedPrincipalToInherit() &&
-      !principalEq(snapshot->GetPartitionedPrincipalToInherit(),
+  if (!principalEq(snapshot->GetPartitionedPrincipalToInherit(),
                    aLoadState->PartitionedPrincipalToInherit())) {
     return Err("PartitionedPrincipalToInherit");
   }
@@ -812,6 +811,39 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
     return nullptr;
   }
 
+  if (nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel)) {
+    // We need to set the partitioned principal to the load state so that we can
+    // propagate it to the loadingSessionHistoryInfo. To do this, we need to
+    // get the finalized cookieJarSettings for the channel because it is used by
+    // StoragePrincipalHelper to mint the partitioned principal.
+    //
+    // ClientChannelHelper below also needs us to have finalized the principal
+    // for the channel because it will request that StoragePrincipalHelper mint
+    // a principal that needs to match the same principal that a later call to
+    // StoragePrincipalHelper will mint when determining the right origin to
+    // look up the ServiceWorker.
+    //
+    // Because nsHttpChannel::AsyncOpen calls UpdateAntiTrackingInfoForChannel
+    // which potentially flips the third party bit/flag on the partition key on
+    // the cookie jar which impacts the principal that will be minted, it is
+    // essential that UpdateAntiTrackingInfoForChannel is called before
+    // AddClientChannelHelperInParent below.
+    //
+    // Because the call to UpdateAntiTrackingInfoForChannel is largely
+    // idempotent, we currently just make the call ourselves right now.  The one
+    // caveat is that the RFPRandomKey may be spuriously regenerated for
+    // top-level documents.
+    AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(httpChannel);
+
+    nsCOMPtr<nsIPrincipal> partitionedPrincipal;
+
+    Unused << StoragePrincipalHelper::GetPrincipal(
+        httpChannel, StoragePrincipalHelper::ePartitionedPrincipal,
+        getter_AddRefs(partitionedPrincipal));
+
+    aLoadState->SetPartitionedPrincipalToInherit(partitionedPrincipal);
+  }
+
   if (documentContext && aLoadState->LoadType() != LOAD_ERROR_PAGE &&
       mozilla::SessionHistoryInParent()) {
     // It's hard to know at this point whether session history will be enabled
@@ -874,24 +906,6 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
     if (cos && aUrgentStart) {
       cos->AddClassFlags(nsIClassOfService::UrgentStart);
     }
-
-    // ClientChannelHelper below needs us to have finalized the principal for
-    // the channel because it will request that StoragePrincipalHelper mint us a
-    // principal that needs to match the same principal that a later call to
-    // StoragePrincipalHelper will mint when determining the right origin to
-    // look up the ServiceWorker.
-    //
-    // Because nsHttpChannel::AsyncOpen calls UpdateAntiTrackingInfoForChannel
-    // which potentially flips the third party bit/flag on the partition key on
-    // the cookie jar which impacts the principal that will be minted, it is
-    // essential that UpdateAntiTrackingInfoForChannel is called before
-    // AddClientChannelHelperInParent below.
-    //
-    // Because the call to UpdateAntiTrackingInfoForChannel is largely
-    // idempotent, we currently just make the call ourselves right now.  The one
-    // caveat is that the RFPRandomKey may be spuriously regenerated for
-    // top-level documents.
-    AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(httpChannel);
   }
 
   // Setup a ClientChannelHelper to watch for redirects, and copy
@@ -1874,7 +1888,7 @@ static RefPtr<dom::BrowsingContextCallbackReceivedPromise> SwitchToNewTab(
         nsresult rv = browserDOMWindow->CreateContentWindow(
             /* uri */ nullptr, openInfo, aWhere,
             nsIBrowserDOMWindow::OPEN_NO_REFERRER, triggeringPrincipal,
-            /* csp */ nullptr, getter_AddRefs(bc));
+            /* policyContainer */ nullptr, getter_AddRefs(bc));
         if (NS_WARN_IF(NS_FAILED(rv))) {
           MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
                   ("Process Switch Abort: CreateContentWindow threw"));
@@ -2557,8 +2571,9 @@ bool DocumentLoadListener::MaybeHandleLoadErrorWithURIFixup(nsresult aStatus) {
   RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(newURI);
   nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
 
-  nsCOMPtr<nsIContentSecurityPolicy> cspToInherit = loadInfo->GetCspToInherit();
-  loadState->SetCsp(cspToInherit);
+  nsCOMPtr<nsIPolicyContainer> policyContainerToInherit =
+      loadInfo->GetPolicyContainerToInherit();
+  loadState->SetPolicyContainer(policyContainerToInherit);
 
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = loadInfo->TriggeringPrincipal();
   loadState->SetTriggeringPrincipal(triggeringPrincipal);
@@ -2747,11 +2762,9 @@ nsresult DocumentLoadListener::DoOnStartRequest(nsIRequest* aRequest) {
     // Not every browsing context has a BounceTrackingState. It's also null when
     // the feature is disabled.
     if (bounceTrackingState) {
-      DebugOnly<nsresult> rv =
-          bounceTrackingState->OnDocumentStartRequest(mChannel);
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
-          "BounceTrackingState::OnDocumentStartRequest failed.");
+      // Don't warn when OnDocumentStartRequest fails until bug 1894936 is
+      // fixed, because it fails frequently because of that.
+      Unused << bounceTrackingState->OnDocumentStartRequest(mChannel);
 
       DynamicFpiNavigationHeuristic::MaybeGrantStorageAccess(loadingContext,
                                                              mChannel);

@@ -146,16 +146,17 @@ interface WebExtensionDelegate {
      * new version. This requires user interaction as the updated extension will not be installed,
      * until the user grants the new permissions.
      *
-     * @param current The current [WebExtension].
-     * @param updated The update [WebExtension] that requires extra permissions.
-     * @param newPermissions Contains a list of all the new permissions.
-     * @param onPermissionsGranted A callback to indicate if the new permissions from the [updated] extension
-     * are granted or not.
+     * @param extension The new version of the [WebExtension] being updated.
+     * @param newPermissions Contains a list of all the new required permissions.
+     * @param newOrigins Contains a list of all the new required origins.
+     * @param newDataCollectionPermissions Contains a list of all the new required data collection permissions.
+     * @param onPermissionsGranted A callback to indicate if the new permissions are granted or not.
      */
     fun onUpdatePermissionRequest(
-        current: WebExtension,
-        updated: WebExtension,
+        extension: WebExtension,
         newPermissions: List<String>,
+        newOrigins: List<String>,
+        newDataCollectionPermissions: List<String>,
         onPermissionsGranted: ((Boolean) -> Unit),
     ) = Unit
 
@@ -164,14 +165,16 @@ interface WebExtensionDelegate {
      * user needs to grant or revoke these optional permissions.
      *
      * @param extension The [WebExtension].
-     * @param permissions The list of all the optional permissions.
-     * @param origins The list of all the optional host permissions.
+     * @param permissions The list of optional permissions.
+     * @param origins The list of optional host permissions.
+     * @param dataCollectionPermissions The list of optional data collection permissions.
      * @param onPermissionsGranted A callback to indicate if the optional permissions have been granted or not.
      */
     fun onOptionalPermissionsRequest(
         extension: WebExtension,
         permissions: List<String>,
         origins: List<String>,
+        dataCollectionPermissions: List<String>,
         onPermissionsGranted: ((Boolean) -> Unit),
     ) = Unit
 

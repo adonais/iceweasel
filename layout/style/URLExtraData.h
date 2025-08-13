@@ -11,8 +11,8 @@
 
 #include <utility>
 
-#include "mozilla/StaticPtr.h"
 #include "mozilla/BuiltInStyleSheets.h"
+#include "mozilla/StaticPtr.h"
 #include "nsCOMPtr.h"
 #include "nsIPrincipal.h"
 #include "nsIReferrerInfo.h"

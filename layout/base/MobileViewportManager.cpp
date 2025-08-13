@@ -6,18 +6,18 @@
 
 #include "MobileViewportManager.h"
 
+#include "UnitTransforms.h"
+#include "gfxPlatform.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ToString.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventTarget.h"
 #include "mozilla/dom/InteractiveWidget.h"
-#include "gfxPlatform.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsViewManager.h"
 #include "nsViewportInfo.h"
-#include "UnitTransforms.h"
 
 mozilla::LazyLogModule MobileViewportManager::gLog("apz.mobileviewport");
 #define MVM_LOG(...) \

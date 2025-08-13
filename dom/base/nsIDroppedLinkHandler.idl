@@ -4,7 +4,7 @@
 
 #include "nsISupports.idl"
 #include "nsIPrincipal.idl"
-#include "nsIContentSecurityPolicy.idl"
+#include "nsIPolicyContainer.idl"
 
 webidl DragEvent;
 webidl DataTransfer;
@@ -83,7 +83,7 @@ interface nsIDroppedLinkHandler : nsISupports
   nsIPrincipal getTriggeringPrincipal(in DragEvent aEvent);
 
   /**
-   * Given a drop event aEvent, determines the CSP for the event and returns it.
+   * Given a drop event aEvent, determines the policyContainer for the event and returns it.
    */
-  nsIContentSecurityPolicy getCsp(in DragEvent aEvent);
+  nsIPolicyContainer getPolicyContainer(in DragEvent aEvent);
 };

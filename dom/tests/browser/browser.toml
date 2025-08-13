@@ -97,16 +97,10 @@ skip-if = ["true"]
 ["browser_localStorage_e10s.js"]
 https_first_disabled = true
 fail-if = ["true"]
-skip-if = [
-  "verify",
-  "tsan", # Times out on TSan intermittently.
-]
+skip-if = ["tsan"] # Times out on TSan intermittently.
 
 ["browser_localStorage_fis.js"]
-skip-if = [
-  "verify",
-  "tsan",
-]
+skip-if = ["tsan"]
 
 ["browser_localStorage_privatestorageevent.js"]
 
@@ -115,7 +109,6 @@ skip-if = [
 ["browser_navigate_replace_browsingcontext.js"]
 
 ["browser_noopener.js"]
-skip-if = ["os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && verify"]
 support-files = [
   "test_noopener_source.html",
   "test_noopener_target.html",
@@ -201,7 +194,6 @@ support-files = [
 ]
 
 ["browser_test_focus_after_modal_state.js"]
-skip-if = ["verify"]
 support-files = ["focus_after_prompt.html"]
 
 ["browser_test_new_window_from_content.js"]

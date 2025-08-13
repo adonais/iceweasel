@@ -7,10 +7,10 @@
 #ifndef nsLayoutStatics_h__
 #define nsLayoutStatics_h__
 
-#include "nscore.h"
 #include "MainThreadUtils.h"
-#include "nsISupportsImpl.h"
 #include "nsDebug.h"
+#include "nsISupportsImpl.h"
+#include "nscore.h"
 
 // This isn't really a class, it's a namespace for static methods.
 // Documents and other objects can hold a reference to the layout static

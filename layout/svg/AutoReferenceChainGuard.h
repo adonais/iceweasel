@@ -10,10 +10,10 @@
 #include "Element.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/ReentrancyGuard.h"
 #include "mozilla/Likely.h"
-#include "nsDebug.h"
+#include "mozilla/ReentrancyGuard.h"
 #include "mozilla/dom/Document.h"
+#include "nsDebug.h"
 #include "nsIFrame.h"
 
 namespace mozilla {

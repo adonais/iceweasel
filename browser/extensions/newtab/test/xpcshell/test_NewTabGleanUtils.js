@@ -111,6 +111,47 @@ add_task(async function test_registerMetricsAndPings_validFormat() {
 });
 
 /**
+ * Test case: Handle ping configuration options name from runtime-metrics JSON
+ * Verifies successful registration of pings with ping config options (such as `include_client_id`)
+ * in snake case inside runtime-metrics JSON
+ */
+add_task(async function test_registerPings_validSnakeCaseFormat() {
+  const sandbox = test_setup();
+  NewTabGleanUtils.readJSON.returns({
+    pings: {
+      newtab_ping_1: {
+        include_client_id: false,
+        send_if_empty: false,
+        precise_timestamps: true,
+        include_info_sections: true,
+        enabled: true,
+        schedules_pings: [],
+        reason_codes: [],
+        follows_collection_enabled: true,
+        uploader_capabilities: [],
+      },
+    },
+    metrics: {
+      newtab_category_1: {
+        metric1: {
+          type: "text",
+          description: "test-description",
+          lifetime: "ping",
+          pings: ["newtab"],
+          disabled: false,
+        },
+      },
+    },
+  });
+
+  let result =
+    await NewTabGleanUtils.registerMetricsAndPings(TEST_RESOURCE_URI);
+  Assert.ok(result, "Registration success for valid metric and ping formats");
+
+  sandbox.restore();
+});
+
+/**
  * Test case: Optional metric description
  * Verifies that metric registration succeeds even when description is missing
  * Tests that description is not a required field for metric registration
@@ -182,8 +223,9 @@ add_task(async function test_registerMetricIfNeeded_telemetrySent() {
   );
 
   // Check instrumented telemetry records failure
-  Assert.ok(
-    Glean.newtab.metricRegistered.metric2.testGetValue() === false,
+  Assert.strictEqual(
+    Glean.newtab.metricRegistered.metric2.testGetValue(),
+    false,
     "Glean metricRegistered telemetry sent with value as false"
   );
 });
@@ -234,8 +276,9 @@ add_task(async function test_registerPingIfNeeded_telemetrySent() {
   );
 
   // Check instrumented telemetry records failure
-  Assert.ok(
-    Glean.newtab.pingRegistered.ping2.testGetValue() === false,
+  Assert.strictEqual(
+    Glean.newtab.pingRegistered.ping2.testGetValue(),
+    false,
     "Glean pingRegistered telemetry sent with value as false for ping2"
   );
 });

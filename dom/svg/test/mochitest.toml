@@ -1,7 +1,4 @@
 [DEFAULT]
-prefs = [
-  "dom.svg.pathSegment.enabled=true",
-]
 support-files = [
   "MutationEventChecker.js",
   "a_href_destination.svg",

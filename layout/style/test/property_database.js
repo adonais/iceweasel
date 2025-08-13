@@ -3843,7 +3843,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     initial_values: ["view-box"],
-    other_values: ["fill-box", "border-box"],
+    other_values: ["fill-box", "border-box", "content-box", "stroke-box"],
     invalid_values: ["padding-box", "margin-box"],
   },
   "transform-origin": {
@@ -8363,8 +8363,22 @@ var gCSSProperties = {
       "calc(3*25px)",
       "calc(25px*3)",
       "calc(3*25px + 50%)",
+      "2em hanging",
+      "5% each-line",
+      "-10px hanging each-line",
+      "hanging calc(2px)",
+      "each-line calc(-2px)",
+      "each-line calc(50%) hanging",
+      "hanging calc(3*25px) each-line",
+      "each-line hanging calc(25px*3)",
     ],
-    invalid_values: ["stretch"],
+    invalid_values: [
+      "stretch",
+      "hanging",
+      "each-line",
+      "-10px hanging hanging",
+      "each-line calc(2px) each-line",
+    ],
     quirks_values: { 5: "5px" },
   },
   "text-overflow": {
@@ -8486,12 +8500,18 @@ var gCSSProperties = {
     domProp: "textWrap",
     inherited: true,
     type: CSS_TYPE_TRUE_SHORTHAND,
-    subproperties: ["text-wrap-mode"],
+    subproperties: ["text-wrap-mode", "text-wrap-style"],
     applies_to_placeholder: true,
     applies_to_cue: true,
     applies_to_marker: true,
     initial_values: ["wrap"],
-    other_values: ["nowrap"],
+    other_values: [
+      "nowrap",
+      "stable",
+      "balance",
+      "wrap stable",
+      "nowrap balance",
+    ],
     invalid_values: [],
   },
   "text-wrap-mode": {
@@ -12119,15 +12139,6 @@ gCSSProperties.scale = {
   ],
 };
 
-if (
-  IsCSSPropertyPrefEnabled("layout.css.transform-box-content-stroke.enabled")
-) {
-  gCSSProperties["transform-box"]["other_values"].push(
-    "content-box",
-    "stroke-box"
-  );
-}
-
 gCSSProperties["touch-action"] = {
   domProp: "touchAction",
   inherited: false,
@@ -12297,25 +12308,6 @@ gCSSProperties["text-justify"] = {
   other_values: ["none", "inter-word", "inter-character", "distribute"],
   invalid_values: [],
 };
-
-if (IsCSSPropertyPrefEnabled("layout.css.text-indent-keywords.enabled")) {
-  gCSSProperties["text-indent"].other_values.push(
-    "2em hanging",
-    "5% each-line",
-    "-10px hanging each-line",
-    "hanging calc(2px)",
-    "each-line calc(-2px)",
-    "each-line calc(50%) hanging",
-    "hanging calc(3*25px) each-line",
-    "each-line hanging calc(25px*3)"
-  );
-  gCSSProperties["text-indent"].invalid_values.push(
-    "hanging",
-    "each-line",
-    "-10px hanging hanging",
-    "each-line calc(2px) each-line"
-  );
-}
 
 if (IsCSSPropertyPrefEnabled("layout.css.font-variations.enabled")) {
   gCSSProperties["font-variation-settings"] = {
@@ -13185,57 +13177,55 @@ if (IsCSSPropertyPrefEnabled("layout.css.overflow-clip-box.enabled")) {
   };
 }
 
-if (IsCSSPropertyPrefEnabled("layout.css.overscroll-behavior.enabled")) {
-  gCSSProperties["overscroll-behavior-x"] = {
-    domProp: "overscrollBehaviorX",
-    inherited: false,
-    type: CSS_TYPE_LONGHAND,
-    initial_values: ["auto"],
-    other_values: ["contain", "none"],
-    invalid_values: ["left", "1px"],
-  };
-  gCSSProperties["overscroll-behavior-y"] = {
-    domProp: "overscrollBehaviorY",
-    inherited: false,
-    type: CSS_TYPE_LONGHAND,
-    initial_values: ["auto"],
-    other_values: ["contain", "none"],
-    invalid_values: ["left", "1px"],
-  };
-  gCSSProperties["overscroll-behavior-inline"] = {
-    domProp: "overscrollBehaviorInline",
-    inherited: false,
-    logical: true,
-    type: CSS_TYPE_LONGHAND,
-    initial_values: ["auto"],
-    other_values: ["contain", "none"],
-    invalid_values: ["left", "1px"],
-  };
-  gCSSProperties["overscroll-behavior-block"] = {
-    domProp: "overscrollBehaviorBlock",
-    inherited: false,
-    logical: true,
-    type: CSS_TYPE_LONGHAND,
-    initial_values: ["auto"],
-    other_values: ["contain", "none"],
-    invalid_values: ["left", "1px"],
-  };
-  gCSSProperties["overscroll-behavior"] = {
-    domProp: "overscrollBehavior",
-    inherited: false,
-    type: CSS_TYPE_TRUE_SHORTHAND,
-    subproperties: ["overscroll-behavior-x", "overscroll-behavior-y"],
-    initial_values: ["auto"],
-    other_values: [
-      "contain",
-      "none",
-      "contain contain",
-      "contain auto",
-      "none contain",
-    ],
-    invalid_values: ["left", "1px", "contain auto none", "contain nonsense"],
-  };
-}
+gCSSProperties["overscroll-behavior-x"] = {
+  domProp: "overscrollBehaviorX",
+  inherited: false,
+  type: CSS_TYPE_LONGHAND,
+  initial_values: ["auto"],
+  other_values: ["contain", "none"],
+  invalid_values: ["left", "1px"],
+};
+gCSSProperties["overscroll-behavior-y"] = {
+  domProp: "overscrollBehaviorY",
+  inherited: false,
+  type: CSS_TYPE_LONGHAND,
+  initial_values: ["auto"],
+  other_values: ["contain", "none"],
+  invalid_values: ["left", "1px"],
+};
+gCSSProperties["overscroll-behavior-inline"] = {
+  domProp: "overscrollBehaviorInline",
+  inherited: false,
+  logical: true,
+  type: CSS_TYPE_LONGHAND,
+  initial_values: ["auto"],
+  other_values: ["contain", "none"],
+  invalid_values: ["left", "1px"],
+};
+gCSSProperties["overscroll-behavior-block"] = {
+  domProp: "overscrollBehaviorBlock",
+  inherited: false,
+  logical: true,
+  type: CSS_TYPE_LONGHAND,
+  initial_values: ["auto"],
+  other_values: ["contain", "none"],
+  invalid_values: ["left", "1px"],
+};
+gCSSProperties["overscroll-behavior"] = {
+  domProp: "overscrollBehavior",
+  inherited: false,
+  type: CSS_TYPE_TRUE_SHORTHAND,
+  subproperties: ["overscroll-behavior-x", "overscroll-behavior-y"],
+  initial_values: ["auto"],
+  other_values: [
+    "contain",
+    "none",
+    "contain contain",
+    "contain auto",
+    "none contain",
+  ],
+  invalid_values: ["left", "1px", "contain auto none", "contain nonsense"],
+};
 
 {
   const patterns = {
@@ -13267,6 +13257,8 @@ if (IsCSSPropertyPrefEnabled("layout.css.overscroll-behavior.enabled")) {
   }
 }
 
+// XXXdholbert The formerly-pref-controlled assignments below should all just
+// merge into the major gCSSProperties = { ... } bundle above.
 gCSSProperties["display"].other_values.push("flow-root");
 
 gCSSProperties["hyphenate-character"] = {
@@ -13295,52 +13287,50 @@ gCSSProperties["content-visibility"] = {
   ],
 };
 
-if (IsCSSPropertyPrefEnabled("layout.css.contain-intrinsic-size.enabled")) {
-  gCSSProperties["contain-intrinsic-width"] = {
-    domProp: "containIntrinsicWidth",
-    inherited: false,
-    type: CSS_TYPE_LONGHAND,
-    initial_values: ["none"],
-    other_values: ["1em", "1px", "auto 1px", "auto none"],
-    invalid_values: ["auto auto", "auto", "-1px"],
-  };
-  gCSSProperties["contain-intrinsic-height"] = {
-    domProp: "containIntrinsicHeight",
-    inherited: false,
-    type: CSS_TYPE_LONGHAND,
-    initial_values: ["none"],
-    other_values: ["1em", "1px", "auto 1px", "auto none"],
-    invalid_values: ["auto auto", "auto", "-1px"],
-  };
-  gCSSProperties["contain-intrinsic-block-size"] = {
-    domProp: "containIntrinsicBlockSize",
-    inherited: false,
-    logical: true,
-    type: CSS_TYPE_LONGHAND,
-    initial_values: ["none"],
-    other_values: ["1em", "1px", "auto 1px", "auto none"],
-    invalid_values: ["auto auto", "auto", "-1px"],
-  };
-  gCSSProperties["contain-intrinsic-inline-size"] = {
-    domProp: "containIntrinsicInlineSize",
-    inherited: false,
-    logical: true,
-    type: CSS_TYPE_LONGHAND,
-    initial_values: ["none"],
-    other_values: ["1em", "1px", "auto 1px", "auto none"],
-    invalid_values: ["auto auto", "auto", "-1px"],
-  };
+gCSSProperties["contain-intrinsic-width"] = {
+  domProp: "containIntrinsicWidth",
+  inherited: false,
+  type: CSS_TYPE_LONGHAND,
+  initial_values: ["none"],
+  other_values: ["1em", "1px", "auto 1px", "auto none"],
+  invalid_values: ["auto auto", "auto", "-1px"],
+};
+gCSSProperties["contain-intrinsic-height"] = {
+  domProp: "containIntrinsicHeight",
+  inherited: false,
+  type: CSS_TYPE_LONGHAND,
+  initial_values: ["none"],
+  other_values: ["1em", "1px", "auto 1px", "auto none"],
+  invalid_values: ["auto auto", "auto", "-1px"],
+};
+gCSSProperties["contain-intrinsic-block-size"] = {
+  domProp: "containIntrinsicBlockSize",
+  inherited: false,
+  logical: true,
+  type: CSS_TYPE_LONGHAND,
+  initial_values: ["none"],
+  other_values: ["1em", "1px", "auto 1px", "auto none"],
+  invalid_values: ["auto auto", "auto", "-1px"],
+};
+gCSSProperties["contain-intrinsic-inline-size"] = {
+  domProp: "containIntrinsicInlineSize",
+  inherited: false,
+  logical: true,
+  type: CSS_TYPE_LONGHAND,
+  initial_values: ["none"],
+  other_values: ["1em", "1px", "auto 1px", "auto none"],
+  invalid_values: ["auto auto", "auto", "-1px"],
+};
 
-  gCSSProperties["contain-intrinsic-size"] = {
-    domProp: "containIntrinsicSize",
-    inherited: false,
-    type: CSS_TYPE_TRUE_SHORTHAND,
-    subproperties: ["contain-intrinsic-width", "contain-intrinsic-height"],
-    initial_values: ["none"],
-    other_values: ["1em 1em", "1px 1px", "auto 1px auto 1px", "1px auto 1px"],
-    invalid_values: ["auto auto", "-1px -1px", "1px, auto none"],
-  };
-}
+gCSSProperties["contain-intrinsic-size"] = {
+  domProp: "containIntrinsicSize",
+  inherited: false,
+  type: CSS_TYPE_TRUE_SHORTHAND,
+  subproperties: ["contain-intrinsic-width", "contain-intrinsic-height"],
+  initial_values: ["none"],
+  other_values: ["1em 1em", "1px 1px", "auto 1px auto 1px", "1px auto 1px"],
+  invalid_values: ["auto auto", "-1px -1px", "1px, auto none"],
+};
 
 if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
   gCSSProperties["anchor-name"] = {
@@ -13586,19 +13576,17 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
   };
 }
 
-if (IsCSSPropertyPrefEnabled("layout.css.hyphenate-limit-chars.enabled")) {
-  gCSSProperties["hyphenate-limit-chars"] = {
-    domProp: "hyphenateLimitChars",
-    inherited: true,
-    type: CSS_TYPE_LONGHAND,
-    applies_to_first_letter: true,
-    applies_to_first_line: true,
-    applies_to_placeholder: true,
-    initial_values: ["auto"],
-    other_values: ["6", "6 2", "8 2 4", "6 2 auto", "6 auto 4"],
-    invalid_values: ["none", "auto auto auto auto", "1 2 3 4", '"string"'],
-  };
-}
+gCSSProperties["hyphenate-limit-chars"] = {
+  domProp: "hyphenateLimitChars",
+  inherited: true,
+  type: CSS_TYPE_LONGHAND,
+  applies_to_first_letter: true,
+  applies_to_first_line: true,
+  applies_to_placeholder: true,
+  initial_values: ["auto"],
+  other_values: ["6", "6 2", "8 2 4", "6 2 auto", "6 auto 4"],
+  invalid_values: ["none", "auto auto auto auto", "1 2 3 4", '"string"'],
+};
 
 if (false) {
   // TODO These properties are chrome-only, and are not exposed via CSSOM.
@@ -13891,23 +13879,21 @@ gCSSProperties["forced-color-adjust"] = {
   invalid_values: [],
 };
 
-if (IsCSSPropertyPrefEnabled("layout.css.animation-composition.enabled")) {
-  gCSSProperties["animation-composition"] = {
-    domProp: "animationComposition",
-    inherited: false,
-    type: CSS_TYPE_LONGHAND,
-    applies_to_marker: true,
-    initial_values: ["replace"],
-    other_values: [
-      "add",
-      "accumulate",
-      "replace, add",
-      "add, accumulate",
-      "replace, add, accumulate",
-    ],
-    invalid_values: ["all", "none"],
-  };
-}
+gCSSProperties["animation-composition"] = {
+  domProp: "animationComposition",
+  inherited: false,
+  type: CSS_TYPE_LONGHAND,
+  applies_to_marker: true,
+  initial_values: ["replace"],
+  other_values: [
+    "add",
+    "accumulate",
+    "replace, add",
+    "add, accumulate",
+    "replace, add, accumulate",
+  ],
+  invalid_values: ["all", "none"],
+};
 
 if (IsCSSPropertyPrefEnabled("layout.css.prefixes.animations")) {
   Object.assign(gCSSProperties, {
@@ -14184,24 +14170,17 @@ gCSSProperties["scrollbar-gutter"] = {
   ],
 };
 
-if (IsCSSPropertyPrefEnabled("layout.css.text-wrap-balance.enabled")) {
-  gCSSProperties["text-wrap-style"] = {
-    domProp: "textWrapStyle",
-    inherited: true,
-    type: CSS_TYPE_LONGHAND,
-    applies_to_placeholder: true,
-    applies_to_cue: true,
-    applies_to_marker: true,
-    initial_values: ["auto"],
-    other_values: ["stable", "balance"],
-    invalid_values: ["wrap", "nowrap", "normal"],
-  };
-  gCSSProperties["text-wrap"].subproperties.push("text-wrap-style");
-  gCSSProperties["text-wrap"].other_values.push("stable");
-  gCSSProperties["text-wrap"].other_values.push("balance");
-  gCSSProperties["text-wrap"].other_values.push("wrap stable");
-  gCSSProperties["text-wrap"].other_values.push("nowrap balance");
-}
+gCSSProperties["text-wrap-style"] = {
+  domProp: "textWrapStyle",
+  inherited: true,
+  type: CSS_TYPE_LONGHAND,
+  applies_to_placeholder: true,
+  applies_to_cue: true,
+  applies_to_marker: true,
+  initial_values: ["auto"],
+  other_values: ["stable", "balance"],
+  invalid_values: ["wrap", "nowrap", "normal"],
+};
 
 if (IsCSSPropertyPrefEnabled("layout.css.prefixes.transforms")) {
   Object.assign(gCSSProperties, {

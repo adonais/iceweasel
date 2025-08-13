@@ -5,13 +5,13 @@
 #ifndef nsTableColFrame_h__
 #define nsTableColFrame_h__
 
-#include "mozilla/Attributes.h"
 #include "celldata.h"
-#include "nscore.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/WritingModes.h"
 #include "nsContainerFrame.h"
 #include "nsTArray.h"
 #include "nsTableColGroupFrame.h"
-#include "mozilla/WritingModes.h"
+#include "nscore.h"
 
 namespace mozilla {
 class PresShell;

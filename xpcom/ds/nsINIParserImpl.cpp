@@ -115,6 +115,17 @@ nsINIParserImpl::InitFromString(const nsACString& aData) {
 }
 
 NS_IMETHODIMP
+nsINIParserImpl::DeleteString(const nsACString& aSection,
+                              const nsACString& aKey) {
+  if (ContainsNull(aSection) || ContainsNull(aKey)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  return mParser.DeleteString(PromiseFlatCString(aSection).get(),
+                              PromiseFlatCString(aKey).get());
+}
+
+NS_IMETHODIMP
 nsINIParserImpl::SetString(const nsACString& aSection, const nsACString& aKey,
                            const nsACString& aValue) {
   if (ContainsNull(aSection) || ContainsNull(aKey) || ContainsNull(aValue)) {

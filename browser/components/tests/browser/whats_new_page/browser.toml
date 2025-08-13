@@ -1,6 +1,5 @@
 [DEFAULT]
 run-if = ["!msix"] # Updater is disabled in MSIX builds; what's new pages therefore have no meaning.
-skip-if = ["verify"]
 
 reason = "This is a startup test. Verify runs tests multiple times after startup."
 support-files = [

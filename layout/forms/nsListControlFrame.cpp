@@ -4,25 +4,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nscore.h"
-#include "nsCOMPtr.h"
-#include "nsUnicharUtils.h"
 #include "nsListControlFrame.h"
+
+#include <algorithm>
+
 #include "HTMLSelectEventListener.h"
-#include "nsGkAtoms.h"
-#include "nsComboboxControlFrame.h"
-#include "nsFontMetrics.h"
-#include "nsCSSRendering.h"
-#include "nsLayoutUtils.h"
-#include "nsDisplayList.h"
-#include "nsContentUtils.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/Event.h"
-#include "mozilla/dom/HTMLOptGroupElement.h"
-#include "mozilla/dom/HTMLOptionsCollection.h"
-#include "mozilla/dom/HTMLSelectElement.h"
-#include "mozilla/dom/MouseEvent.h"
-#include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MouseEvents.h"
@@ -31,7 +18,22 @@
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/TextEvents.h"
-#include <algorithm>
+#include "mozilla/dom/Event.h"
+#include "mozilla/dom/HTMLOptGroupElement.h"
+#include "mozilla/dom/HTMLOptionsCollection.h"
+#include "mozilla/dom/HTMLSelectElement.h"
+#include "mozilla/dom/MouseEvent.h"
+#include "mozilla/dom/MouseEventBinding.h"
+#include "nsCOMPtr.h"
+#include "nsCSSRendering.h"
+#include "nsComboboxControlFrame.h"
+#include "nsContentUtils.h"
+#include "nsDisplayList.h"
+#include "nsFontMetrics.h"
+#include "nsGkAtoms.h"
+#include "nsLayoutUtils.h"
+#include "nsUnicharUtils.h"
+#include "nscore.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

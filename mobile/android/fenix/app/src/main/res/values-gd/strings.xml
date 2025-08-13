@@ -100,16 +100,6 @@
   -->
   <string name="erase_action_cfr_message" moz:removedIn="141" tools:ignore="UnusedResources">Thoir gnogag an-seo a thòiseachadh air seisean prìobhaideach ùr. Sguab às an eachdraidh agad, na briosgaidean – a h-uile rud.</string>
   <!--
-    Toolbar "contextual feature recommendation" (CFR)
-
-    Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
-  -->
-  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Dèan brabhsadh nas luaithe leis an t-seòladaireachd ùr</string>
-  <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Air làrach-lìn, crìonaidh am bàr seo air falbh is tu a’ sgroladh sìos airson ’s gum bi barrachd àite agad.</string>
-  <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Thoir gnogag air na saighdean is cùm iad airson leum a ghearradh eadar duilleagan eachdraidh an taba seo.</string>
-  <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
     Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar.
@@ -336,7 +326,7 @@
   <!-- Browser menu label that toggles the request for the desktop site of the currently visited page -->
   <string name="browser_menu_switch_to_desktop_site" moz:removedIn="141" tools:ignore="UnusedResources">Seall an làrach desktop</string>
   <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site">Seall an làrach mobile</string>
+  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Seall an làrach mobile</string>
   <!-- Browser menu label that navigates to the page tools sub-menu -->
   <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">Innealan</string>
   <!-- Content description (not visible, for screen readers etc.): Back button for all menu redesign sub-menu -->
@@ -416,7 +406,7 @@
   -->
   <string name="browser_menu_default_banner_title">Cleachd %1$s mar am brabhsair bunaiteach agad</string>
   <!-- Label text within the set as default banner -->
-  <string name="browser_menu_default_banner_subtitle">Cha toir e ach diog. Atharraich e uair sam bith.</string>
+  <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">Cha toir e ach diog. Atharraich e uair sam bith.</string>
   <!-- Content description for the button that dismisses the set as default banner in the menu -->
   <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">Leig seachad</string>
   <!--
@@ -588,45 +578,6 @@
   <string name="juno_onboarding_add_search_widget_positive_button" tools:ignore="BrandUsage,UnusedResources">Cuir ris widget Firefox</string>
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">Chan ann an-dràsta</string>
-  <!--
-    Onboarding header for the add-ons card used by Nimbus experiments. Nimbus experiments do not support string placeholders.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="onboarding_add_on_header" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Gnàthaich am Firefox agad le leudachain</string>
-  <!-- Onboarding sub header for the add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_sub_header" moz:removedIn="140" tools:ignore="UnusedResources">Cuir leudachain le treas-phàrtaidhean ris airson barrachd tèarainteachd, tarbhachd is mòran a bharrachd.</string>
-  <!-- Onboarding add-ons card, for checking more add-ons on, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_explore_more_extensions_2" moz:removedIn="140" tools:ignore="UnusedResources">Rùraich barrachd leudachan</string>
-  <!-- Onboarding add-ons card, button for start browsing, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_start_browsing_button_2" moz:removedIn="140" tools:ignore="UnusedResources">Tòisich air brabhsadh</string>
-  <!-- Ublock name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Ublock Origin" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_ublock_name" moz:removedIn="140" tools:ignore="UnusedResources">uBlock Origin</string>
-  <!-- Ublock description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_ublock_description" moz:removedIn="140" tools:ignore="UnusedResources">Gu math èifeachdach airson sanasachd a bhacadh.</string>
-  <!-- Privacy Badger name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Privacy Badger" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_privacy_badger_name" moz:removedIn="140" tools:ignore="UnusedResources">Privacy Badger</string>
-  <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_privacy_badger_description" moz:removedIn="140" tools:ignore="UnusedResources">Seud nan gleusan an aghaidh tracaidh. Cuir stad air tracaichean is sanasachd brathaidh.</string>
-  <!-- Search by Image name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Search by Image" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_search_by_image_name" moz:removedIn="140" tools:ignore="UnusedResources">Lorg a-rèir deilbh</string>
-  <!-- Search by Image description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_search_by_image_description" moz:removedIn="140" tools:ignore="UnusedResources">Faigh barrachd fiosrachaidh mu dhealbhan inntinneach a chì thu.</string>
-  <!-- Dark Reader name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Dark Reader" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_dark_reader_name" moz:removedIn="140" tools:ignore="UnusedResources">Dark Reader</string>
-  <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_dark_reader_description" moz:removedIn="140" tools:ignore="UnusedResources">Modh dorcha gnàthaichte airson an lìn mhobile.</string>
-  <!-- Label for the number of reviews for an add-on. %1$s is the formatted number of reviews e.g. "1,234", "12,345", "123,456". -->
-  <string name="onboarding_add_on_reviews_label" moz:removedIn="140" tools:ignore="UnusedResources">Lèirmheasan: %1$s</string>
-  <!-- Content description for the add-on icon. -->
-  <string name="onboarding_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Ìomhaigheag an tuilleadain</string>
-  <!-- Content description for the an installed add-on icon. -->
-  <string name="onboarding_installed_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Tuilleadan a chaidh a stàladh</string>
-  <!-- Content description for the an installing add-on icon. -->
-  <string name="onboarding_installing_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">A’ stàladh an tuilleadain</string>
-  <!-- Content description for the add add-on button. -->
-  <string name="onboarding_add_on_add_button_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Am putan airson tuilleadan a chur ris</string>
-  <!-- Content description for the star rating group. %1$s is the rating. -->
-  <string name="onboarding_add_on_star_rating_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Rangaichte %1$s à 5</string>
   <!-- Title for the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_title" tools:ignore="BrandUsage">Cuidich leinn a’ dèanamh Firefox nas fheàrr</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
@@ -646,8 +597,6 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Brabhsadh-lìn luath ’s tèarainte</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Thoir aonta is lean air adhart</string>
-  <!-- Terms of service onboarding page continue button label. -->
   <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Lean air adhart</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Ma leanas tu air adhart, bidh tu ag aontachadh ri %1$s.</string>
@@ -666,7 +615,7 @@
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Ma dh’innseas tu do chàch mar a fhuair thusa lorg air Firefox is gu bheil thu ga chleachdadh, bidh e nas fhasa daoine eile a thàladh dhan bhrabhsair.</string>
   <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Co-rinn glè bheag de dhàta le com-pàirtichean teicneolas margaideachd Mozilla. Cha tèid an dàta seo a reic idir is cha chleachdar e airson sanasachd a shealltainn dhut.</string>
+  <string name="onboarding_marketing_opt_in_checkbox" moz:removedIn="143" tools:ignore="UnusedResources">Co-rinn glè bheag de dhàta le com-pàirtichean teicneolas margaideachd Mozilla. Cha tèid an dàta seo a reic idir is cha chleachdar e airson sanasachd a shealltainn dhut.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
   <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Mar a chleachdas sinn an dàta seo</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
@@ -993,11 +942,7 @@
   -->
   <string name="customize_toggle_recently_visited">Air tadhal orra o chionn goirid</string>
   <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">Sgeulachdan smuainteachail</string>
-  <!-- Title for the customize home screen section with Pocket. -->
   <string name="customize_toggle_pocket_3">Sgeulachdan</string>
-  <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-  <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">Artaigealan le cumhachd %s</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">Sgeulachdan sponsairichte</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -1256,8 +1201,6 @@
   <string name="preference_gestures_dynamic_toolbar">Dèan sgroladh airson am bàr-inneal a chur am falach</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Grad-shlaighd am bàr-inneal suas airson tabaichean fhosgladh</string>
-  <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Dèan sgroladh airson bàr an t-seòlaidh is am bàr-inneal a chur am falach</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Grad-shlaighd bàr an t-seòlaidh gu taobh airson leum a ghearradh gu taba eile</string>
   <!--
@@ -1455,9 +1398,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Sguab an eachdraidh às</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">Chaidh an eachdraidh a sguabadh às</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Chaidh an eachdraidh a sguabadh às</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">Chaidh %1$s a sguabadh às</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Chaidh %1$s a sguabadh às</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Sguab às</string>
   <!--
@@ -1495,7 +1438,7 @@
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">Aisig an taba</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title">B’ fheudar dha %s ath-thòiseachadh</string>
+  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">B’ fheudar dha %s ath-thòiseachadh</string>
   <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
   <string name="unsubmitted_crash_dialog_checkbox_label">Cuir aithisgean tuislidh gu fèin-obrachail</string>
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
@@ -1507,11 +1450,11 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">A bheil thu cinnteach gu bheil thu airson am pasgan seo a sguabadh às?</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">A bheil thu cinnteach gu bheil thu airson am pasgan seo a sguabadh às?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items. -->
   <string name="bookmark_delete_folders_confirmation_dialog">A bheil thu cinnteach gu bheil thu airson na nithean a thagh thu a sguabadh às?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog">Sguabaidh %s na nithean a thagh thu às.</string>
+  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">Sguabaidh %s na nithean a thagh thu às.</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">Sguir dheth</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -1539,7 +1482,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">Sguab às</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">Sàbhail</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">Sàbhail</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -1550,7 +1493,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">Deasaich am pasgan</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">Clàraich a-steach a dh’fhaicinn nan comharran-lìn sioncronaichte</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">Clàraich a-steach a dh’fhaicinn nan comharran-lìn sioncronaichte</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -1562,24 +1505,24 @@
   <!-- Label for a text input field for a bookmark or folder name -->
   <string name="bookmark_name_label_normal_case">An t-ainm</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">Cuir pasgan ris</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">Cuir pasgan ris</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">Tagh pasgan</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">Feumaidh tiotal a bhith aige</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">Feumaidh tiotal a bhith aige</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">URL mì-dhligheach</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">Chan eil comharra-lìn sam bith an-seo</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">Chan eil comharra-lìn sam bith an-seo</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">Chaidh %1$s a sguabadh às</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">Chaidh na comharran-lìn a sguabadh às</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">Chaidh na comharran-lìn a sguabadh às</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3">A’ sguabadh às nam pasganan a thagh thu</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">A’ sguabadh às nam pasganan a thagh thu</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">NEO-DHÈAN</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
@@ -1587,7 +1530,7 @@
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
   <string name="bookmark_delete_multiple_items">Chaidh na nithean a sguabadh às, %s dhiubh</string>
   <!-- Text for the button to search all bookmarks -->
-  <string name="bookmark_search">Cuir a-steach briathran-luirg</string>
+  <string name="bookmark_search" tools:ignore="UnusedResources" moz:removedIn="143">Cuir a-steach briathran-luirg</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Air ais</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -1739,7 +1682,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d taba air a thaghadh</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">Chaidh na tabaichean a shàbhaladh!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Chaidh na tabaichean a shàbhaladh!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection">Chaidh an cruinneachadh a shàbhaladh!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -1868,9 +1811,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">Chaidh an cruinneachadh a sguabadh às</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Chaidh an cruinneachadh a sguabadh às</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">Chaidh ainm ùr a thoirt air a’ chruinneachadh</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Chaidh ainm ùr a thoirt air a’ chruinneachadh</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Chaidh an taba a dhùnadh</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -1907,9 +1850,9 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">A bheil thu cinnteach gu bheil thu airson %1$s a sguabadh às?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">Sguab às</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Sguab às</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">Lethbhreac dhen URL air a dhèanamh</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">Lethbhreac dhen URL air a dhèanamh</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Seo ball-eisimpleir de theacsa. Tha e an-seo airson ’s gum faic thu cò ris a bhios an teacsa coltach ’s tu ga lùghdachadh no meudachadh leis an roghainn seo.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2433,14 +2376,12 @@
   <string name="search_add_custom_engine_error_empty_search_string">Cuir a-steach sreang-luirg</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Dèan cinnteach gu bheil an t-sreang luirg a’ leantainn fòrmat a’ bhuill-eisimpleir</string>
-  <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">Mearachd a’ ceangal ri “%s”</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">Chaidh %s a chruthachadh</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Chaidh %s a chruthachadh</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">Chaidh %s a shàbhaladh</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Chaidh %s a shàbhaladh</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">Chaidh %s a sguabadh às</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Chaidh %s a sguabadh às</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Airson a cheadachadh:</string>
   <!-- First step for the allowing a permission -->
@@ -2466,7 +2407,7 @@
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">Chan eil eisgeachd làraich ann</string>
   <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation">A bheil thu cinnteach gu bheil thu airson an comharra-lìn seo a sguabadh às?</string>
+  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">A bheil thu cinnteach gu bheil thu airson an comharra-lìn seo a sguabadh às?</string>
   <!-- Browser menu button that adds a shortcut to the home fragment -->
   <string name="browser_menu_add_to_shortcuts">Cuir ris na h-ath-ghoiridean</string>
   <!-- Browser menu button that removes a shortcut from the home fragment -->
@@ -2623,23 +2564,11 @@
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">Seòl suas</string>
   <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description">Dùin</string>
-  <!--
-    Pocket recommended stories
-
-    Header text for a section on the home screen.
-  -->
-  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">Sgeulachdan smuainteachail</string>
+  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">Dùin</string>
   <!-- Header text for a section on the home screen. -->
   <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">Sgeulachdan a-rèir cuspair</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
   <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">Fidir barrachd</string>
-  <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-  <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">Le cumhachd %s.</string>
-  <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Na phàirt de theaghladh Firefox. %s</string>
-  <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">Barrachd fiosrachaidh</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Sponsairichte</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -2672,8 +2601,6 @@
   <string name="a11y_action_label_wallpaper_collection_learn_more">fosgail an ceangal airson barrachd fiosrachaidh mun chruinneachadh seo</string>
   <!-- Action label for links that point to an article. Talkback will append this to say "Double tap to read the article". -->
   <string name="a11y_action_label_read_article" moz:removedIn="141" tools:ignore="UnusedResources">leugh an t-artaigeal</string>
-  <!-- Action label for links to the Firefox Pocket website. Talkback will append this to say "Double tap to open link to learn more". -->
-  <string name="a11y_action_label_pocket_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">fosgail an ceangal airson barrachd fiosrachaidh</string>
   <!-- Content description for headings announced by accessibility service. %s is the text of the heading. Talkback will announce the text and then speak the word "Heading" indicating to the user that this text is a heading for a section. -->
   <string name="a11y_heading">%s, bann-cinn</string>
   <!-- Title for dialog displayed when trying to access links present in a text. -->

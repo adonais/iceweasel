@@ -9,6 +9,7 @@
 
 // Keep others in (case-insensitive) order:
 #include "ImgDrawResult.h"
+#include "SVGAnimatedTransformList.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/SVGObserverUtils.h"
@@ -16,7 +17,6 @@
 #include "mozilla/SVGUtils.h"
 #include "mozilla/dom/SVGElement.h"
 #include "nsCSSFrameConstructor.h"
-#include "SVGAnimatedTransformList.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::image;

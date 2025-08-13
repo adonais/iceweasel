@@ -11,10 +11,10 @@
 #include "mozilla/UniquePtr.h"
 
 // Interfaces
+#include "nsCOMArray.h"
 #include "nsDeviceContext.h"
 #include "nsIPrintSettings.h"
 #include "nsISupportsImpl.h"
-#include "nsCOMArray.h"
 
 class nsPrintObject;
 class nsIWebProgressListener;

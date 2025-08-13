@@ -58,9 +58,7 @@ void Texture::Cleanup() {
     return;
   }
 
-  if (bridge->CanSend()) {
-    bridge->SendTextureDrop(mId);
-  }
+  ffi::wgpu_client_drop_texture(bridge->GetClient(), mId);
 
   wgpu_client_free_texture_id(bridge->GetClient(), mId);
 }
@@ -102,12 +100,8 @@ already_AddRefed<TextureView> Texture::CreateView(
   desc.array_layer_count =
       aDesc.mArrayLayerCount.WasPassed() ? &layerCount : nullptr;
 
-  ipc::ByteBuf bb;
-  RawId id = ffi::wgpu_client_create_texture_view(bridge->GetClient(), &desc,
-                                                  ToFFI(&bb));
-  if (bridge->CanSend()) {
-    bridge->SendTextureAction(mId, mParent->mId, std::move(bb));
-  }
+  RawId id = ffi::wgpu_client_create_texture_view(bridge->GetClient(),
+                                                  mParent->mId, mId, &desc);
 
   RefPtr<TextureView> view = new TextureView(this, id);
   view->SetLabel(aDesc.mLabel);
@@ -116,9 +110,7 @@ already_AddRefed<TextureView> Texture::CreateView(
 
 void Texture::Destroy() {
   auto bridge = mParent->GetBridge();
-  if (bridge && bridge->CanSend()) {
-    bridge->SendTextureDestroy(mId, mParent->GetId());
-  }
-}
 
+  ffi::wgpu_client_destroy_texture(bridge->GetClient(), mId);
+}
 }  // namespace mozilla::webgpu

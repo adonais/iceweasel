@@ -1712,7 +1712,7 @@ class MutableWrappedPtrOperations<UniquePtr<T, D>, Container>
   UniquePtr<T, D>& uniquePtr() { return static_cast<Container*>(this)->get(); }
 
  public:
-  [[nodiscard]] typename UniquePtr<T, D>::Pointer release() {
+  [[nodiscard]] typename UniquePtr<T, D>::pointer release() {
     return uniquePtr().release();
   }
   void reset(T* ptr = T()) { uniquePtr().reset(ptr); }

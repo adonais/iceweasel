@@ -4,10 +4,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Chromium headers must come before Mozilla headers.
-#include "base/process_util.h"
-
 #include "LayoutLogging.h"
+
+#include "base/process_util.h"
 
 namespace mozilla {
 namespace detail {

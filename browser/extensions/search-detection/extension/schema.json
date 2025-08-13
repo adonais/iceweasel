@@ -3,7 +3,7 @@
     "namespace": "addonsSearchDetection",
     "functions": [
       {
-        "name": "getMatchPatterns",
+        "name": "getEngines",
         "type": "function",
         "async": true,
         "parameters": []
@@ -21,11 +21,44 @@
         "parameters": [{ "name": "url", "type": "string" }]
       },
       {
-        "name": "report",
+        "name": "reportSameSiteRedirect",
         "type": "function",
         "async": false,
         "parameters": [
-          { "name": "maybeServerSideRedirect", "type": "boolean" },
+          {
+            "name": "extra",
+            "type": "object",
+            "properties": {
+              "addonId": { "type": "string" },
+              "addonVersion": { "type": "string" },
+              "paramChanged": { "type": "boolean" }
+            }
+          }
+        ]
+      },
+      {
+        "name": "reportETLDChangeOther",
+        "type": "function",
+        "async": false,
+        "parameters": [
+          {
+            "name": "extra",
+            "type": "object",
+            "properties": {
+              "addonId": { "type": "string" },
+              "addonVersion": { "type": "string" },
+              "from": { "type": "string" },
+              "to": { "type": "string" },
+              "value": { "type": "string" }
+            }
+          }
+        ]
+      },
+      {
+        "name": "reportETLDChangeWebrequest",
+        "type": "function",
+        "async": false,
+        "parameters": [
           {
             "name": "extra",
             "type": "object",

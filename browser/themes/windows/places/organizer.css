@@ -77,8 +77,7 @@
   background-color: var(--organizer-toolbar-background);
   color: var(--organizer-color);
   border-bottom: 1px solid var(--organizer-border-color);
-  padding: 4px;
-  padding-inline-end: 6px;
+  padding-inline: 4px 0;
 
   > toolbarbutton {
     appearance: none;

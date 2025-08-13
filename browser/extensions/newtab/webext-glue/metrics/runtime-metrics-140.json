@@ -1,6 +1,36 @@
 {
   "metrics": {
     "newtab": {
+      "feature_highlight_dismiss": {
+        "description": "recorded when a feature highlight is dismissed\n",
+        "disabled": false,
+        "extraArgs": {
+          "allowed_extra_keys": ["feature", "newtab_visit_id"]
+        },
+        "lifetime": "ping",
+        "pings": ["newtab"],
+        "type": "event"
+      },
+      "feature_highlight_impression": {
+        "description": "recorded when a feature highlight impression occurs\n",
+        "disabled": false,
+        "extraArgs": {
+          "allowed_extra_keys": ["feature", "newtab_visit_id"]
+        },
+        "lifetime": "ping",
+        "pings": ["newtab"],
+        "type": "event"
+      },
+      "feature_highlight_open": {
+        "description": "recorded when a feature highlight is opened\n",
+        "disabled": false,
+        "extraArgs": {
+          "allowed_extra_keys": ["feature", "newtab_visit_id"]
+        },
+        "lifetime": "ping",
+        "pings": ["newtab"],
+        "type": "event"
+      },
       "trending_search_dismiss": {
         "description": "recorded when a user either collapses or dismisses the trending search widget\n",
         "disabled": false,

@@ -1453,6 +1453,8 @@ class MochitestArgumentParser(ArgumentParser):
 
         mozlog.commandline.add_logging_group(self)
 
+        self.build_args()
+
     @property
     def containers(self):
         if self._containers:
@@ -1467,8 +1469,8 @@ class MochitestArgumentParser(ArgumentParser):
             args = container.validate(self, args, self.context)
         return args
 
-    def parse_known_args(self, args=None, namespace=None):
-        if not self.app and any("--android" == arg for arg in args):
+    def build_args(self, args=None):
+        if args and not self.app and any("--android" == arg for arg in args):
             self.app = "android"
 
         if not self.app and build_obj:
@@ -1508,4 +1510,5 @@ class MochitestArgumentParser(ArgumentParser):
 
         self.set_defaults(**defaults)
 
+    def parse_known_args(self, args=None, namespace=None):
         return super().parse_known_args(args, namespace)

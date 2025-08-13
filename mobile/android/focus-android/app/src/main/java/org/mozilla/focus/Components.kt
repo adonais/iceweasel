@@ -185,7 +185,11 @@ class Components(
         BrowserStore(
             middleware = listOf(
                 TelemetryMiddleware(),
-                DownloadMiddleware(context, DownloadService::class.java),
+                DownloadMiddleware(
+                    applicationContext = context,
+                    downloadServiceClass = DownloadService::class.java,
+                    deleteFileFromStorage = { false },
+                ),
                 SanityCheckMiddleware(),
                 // We are currently using the default location service. We should consider using
                 // an actual implementation:
@@ -273,7 +277,6 @@ class Components(
     val appLinksInterceptor by lazy {
         AppLinksInterceptor(
             context,
-            interceptLinkClicks = true,
             launchInApp = {
                 context.settings.openLinksInExternalApp
             },

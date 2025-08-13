@@ -44,6 +44,11 @@ class Navigation final : public DOMEventTargetHelper {
 
   explicit Navigation(nsPIDOMWindowInner* aWindow);
 
+  using EventTarget::EventListenerAdded;
+  virtual void EventListenerAdded(nsAtom* aType) override;
+  using EventTarget::EventListenerRemoved;
+  virtual void EventListenerRemoved(nsAtom* aType) override;
+
   // Navigation.webidl
   void Entries(nsTArray<RefPtr<NavigationHistoryEntry>>& aResult) const;
   already_AddRefed<NavigationHistoryEntry> GetCurrentEntry() const;
@@ -109,12 +114,13 @@ class Navigation final : public DOMEventTargetHelper {
   // https://html.spec.whatwg.org/#navigate-event-firing
 
   MOZ_CAN_RUN_SCRIPT bool FireTraverseNavigateEvent(
-      JSContext* aCx, SessionHistoryInfo* aDestinationSessionHistoryInfo,
+      JSContext* aCx, const SessionHistoryInfo& aDestinationSessionHistoryInfo,
       Maybe<UserNavigationInvolvement> aUserInvolvement);
 
   MOZ_CAN_RUN_SCRIPT bool FirePushReplaceReloadNavigateEvent(
       JSContext* aCx, NavigationType aNavigationType, nsIURI* aDestinationURL,
-      bool aIsSameDocument, Maybe<UserNavigationInvolvement> aUserInvolvement,
+      bool aIsSameDocument, bool aIsSync,
+      Maybe<UserNavigationInvolvement> aUserInvolvement,
       Element* aSourceElement, already_AddRefed<FormData> aFormDataEntryList,
       nsIStructuredCloneContainer* aNavigationAPIState,
       nsIStructuredCloneContainer* aClassicHistoryAPIState);
@@ -166,7 +172,7 @@ class Navigation final : public DOMEventTargetHelper {
       const nsAString& aDownloadRequestFilename);
 
   NavigationHistoryEntry* FindNavigationHistoryEntry(
-      SessionHistoryInfo* aSessionHistoryInfo) const;
+      const SessionHistoryInfo& aSessionHistoryInfo) const;
 
   void PromoteUpcomingAPIMethodTrackerToOngoing(Maybe<nsID>&& aDestinationKey);
 
@@ -178,13 +184,16 @@ class Navigation final : public DOMEventTargetHelper {
   RefPtr<NavigationAPIMethodTracker> AddUpcomingTraverseAPIMethodTracker(
       const nsID& aKey, JS::Handle<JS::Value> aInfo);
 
-  void SetEarlyErrorResult(NavigationResult& aResult, ErrorResult&& aRv) const;
+  void SetEarlyErrorResult(JSContext* aCx, NavigationResult& aResult,
+                           ErrorResult&& aRv) const;
 
   bool CheckIfDocumentIsFullyActiveAndMaybeSetEarlyErrorResult(
-      const Document* aDocument, NavigationResult& aResult) const;
+      JSContext* aCx, const Document* aDocument,
+      NavigationResult& aResult) const;
 
   bool CheckDocumentUnloadCounterAndMaybeSetEarlyErrorResult(
-      const Document* aDocument, NavigationResult& aResult) const;
+      JSContext* aCx, const Document* aDocument,
+      NavigationResult& aResult) const;
 
   already_AddRefed<nsIStructuredCloneContainer>
   CreateSerializedStateAndMaybeSetEarlyErrorResult(

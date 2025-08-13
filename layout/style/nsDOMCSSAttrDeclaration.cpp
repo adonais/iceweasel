@@ -8,19 +8,19 @@
 
 #include "nsDOMCSSAttrDeclaration.h"
 
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/SVGElement.h"
-#include "mozilla/dom/MutationEventBinding.h"
-#include "mozilla/layers/ScrollLinkedEffectDetector.h"
+#include "ActiveLayerTracker.h"
+#include "mozAutoDocUpdate.h"
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/InternalMutationEvent.h"
 #include "mozilla/SMILCSSValueType.h"
 #include "mozilla/SMILValue.h"
-#include "mozAutoDocUpdate.h"
-#include "nsWrapperCacheInlines.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/MutationEventBinding.h"
+#include "mozilla/dom/SVGElement.h"
+#include "mozilla/layers/ScrollLinkedEffectDetector.h"
 #include "nsIFrame.h"
-#include "ActiveLayerTracker.h"
+#include "nsWrapperCacheInlines.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

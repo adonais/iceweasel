@@ -48,11 +48,16 @@ class IdentityCredential final : public Credential {
       const GlobalObject& aGlobal,
       const IdentityCredentialDisconnectOptions& aOptions, ErrorResult& aRv);
   // Getter and setter for the token member of this class
-  void GetToken(nsAString& aToken) const;
-  void SetToken(const nsAString& aToken);
+  void GetToken(nsACString& aToken) const;
+  void SetToken(const nsACString& aToken);
+  void GetConfigURL(nsACString& aConfigURL) const;
+  void SetConfigURL(const nsACString& aConfigURL);
+  bool IsAutoSelected() const;
 
  private:
-  nsAutoString mToken;
+  nsCString mToken;
+  nsCString mConfigURL;
+  bool mIsAutoSelected;
 };
 }  // namespace mozilla::dom
 

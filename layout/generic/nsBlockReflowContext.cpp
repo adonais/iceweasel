@@ -7,13 +7,14 @@
 /* class that a parent frame uses to reflow a block frame */
 
 #include "nsBlockReflowContext.h"
+
 #include "BlockReflowState.h"
-#include "nsFloatManager.h"
+#include "nsBlockFrame.h"
 #include "nsColumnSetFrame.h"
 #include "nsContainerFrame.h"
-#include "nsBlockFrame.h"
-#include "nsLineBox.h"
+#include "nsFloatManager.h"
 #include "nsLayoutUtils.h"
+#include "nsLineBox.h"
 
 using namespace mozilla;
 

@@ -5,6 +5,7 @@
 package org.mozilla.fenix.reviewprompt
 
 import android.app.Dialog
+import android.content.DialogInterface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -20,7 +21,6 @@ import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.lazyStore
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.reviewprompt.CustomReviewPromptAction.DismissRequested
 import org.mozilla.fenix.reviewprompt.CustomReviewPromptAction.LeaveFeedbackButtonClicked
 import org.mozilla.fenix.reviewprompt.CustomReviewPromptAction.NegativePrePromptButtonClicked
 import org.mozilla.fenix.reviewprompt.CustomReviewPromptAction.PositivePrePromptButtonClicked
@@ -35,6 +35,7 @@ class CustomReviewPromptBottomSheetFragment : BottomSheetDialogFragment() {
             initialState = CustomReviewPromptState.PrePrompt,
             middleware = listOf(
                 CustomReviewPromptNavigationMiddleware(viewModelScope),
+                CustomReviewPromptTelemetryMiddleware(),
             ),
         )
     }
@@ -62,7 +63,7 @@ class CustomReviewPromptBottomSheetFragment : BottomSheetDialogFragment() {
         FirefoxTheme {
             CustomReviewPrompt(
                 state = state,
-                onRequestDismiss = { store.dispatch(DismissRequested) },
+                onRequestDismiss = { dismissAllowingStateLoss() },
                 onNegativePrePromptButtonClick = { store.dispatch(NegativePrePromptButtonClicked) },
                 onPositivePrePromptButtonClick = { store.dispatch(PositivePrePromptButtonClicked) },
                 onRateButtonClick = { store.dispatch(RateButtonClicked) },
@@ -90,5 +91,10 @@ class CustomReviewPromptBottomSheetFragment : BottomSheetDialogFragment() {
                 }
             }
         }
+    }
+
+    override fun onDismiss(dialog: DialogInterface) {
+        super.onDismiss(dialog)
+        store.dispatch(CustomReviewPromptAction.Dismissed)
     }
 }

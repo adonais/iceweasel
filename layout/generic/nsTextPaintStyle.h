@@ -11,7 +11,6 @@
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/Span.h"
-
 #include "nsAtomHashKeys.h"
 #include "nsISelectionController.h"
 #include "nsTHashMap.h"

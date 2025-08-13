@@ -33,7 +33,7 @@ class InvalidatingRealmFuse : public InvalidatingFuse {
  public:
   virtual void popFuse(JSContext* cx, RealmFuses& realmFuses);
   virtual bool addFuseDependency(JSContext* cx,
-                                 Handle<JSScript*> script) override;
+                                 const jit::IonScriptKey& ionScript) override;
 
  protected:
   virtual void popFuse(JSContext* cx) override {
@@ -359,7 +359,7 @@ struct RealmFuses {
     MOZ_CRASH("Fuse Not Found");
   }
 
-  DependentScriptGroup fuseDependencies;
+  DependentIonScriptGroup fuseDependencies;
 
   static int32_t fuseOffsets[];
   static const char* fuseNames[];

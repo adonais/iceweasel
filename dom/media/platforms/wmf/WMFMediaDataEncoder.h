@@ -66,7 +66,8 @@ class WMFMediaDataEncoder final : public MediaDataEncoder {
   RefPtr<InitPromise> ProcessInit();
 
   HRESULT InitMFTEncoder(RefPtr<MFTEncoder>& aEncoder);
-  void FillConfigData();
+  void InitializeConfigData();
+  void SetConfigData(const nsTArray<UINT8>& aHeader);
 
   RefPtr<EncodePromise> ProcessEncode(RefPtr<const VideoData>&& aSample);
 
@@ -74,9 +75,9 @@ class WMFMediaDataEncoder final : public MediaDataEncoder {
       RefPtr<const VideoData>&& aData);
 
   RefPtr<EncodePromise> ProcessOutputSamples(
-      nsTArray<RefPtr<IMFSample>>& aSamples);
-  already_AddRefed<MediaRawData> IMFSampleToMediaData(
-      RefPtr<IMFSample>& aSample);
+      nsTArray<MFTEncoder::OutputSample>&& aSamples);
+  already_AddRefed<MediaRawData> OutputSampleToMediaData(
+      MFTEncoder::OutputSample& aSample);
 
   bool WriteFrameData(RefPtr<MediaRawData>& aDest, LockBuffer& aSrc,
                       bool aIsKeyframe);

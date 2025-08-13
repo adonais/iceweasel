@@ -18,6 +18,9 @@ import { SidebarPage } from "./sidebar-page.mjs";
 ChromeUtils.defineESModuleGetters(lazy, {
   HistoryController: "resource:///modules/HistoryController.sys.mjs",
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
+  SidebarTreeView:
+    "moz-src:///browser/components/sidebar/SidebarTreeView.sys.mjs",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
 });
 
 const NEVER_REMEMBER_HISTORY_PREF = "browser.privatebrowsing.autostart";
@@ -38,7 +41,7 @@ export class SidebarHistory extends SidebarPage {
     this.controller = new lazy.HistoryController(this, {
       component: "sidebar",
     });
-    this.selectedLists = new Set();
+    this.treeView = new lazy.SidebarTreeView(this);
   }
 
   connectedCallback() {
@@ -55,8 +58,6 @@ export class SidebarHistory extends SidebarPage {
     );
     this._menu.addEventListener("command", this);
     this._menu.addEventListener("popuphidden", this.handlePopupEvent);
-    this.addEventListener("update-selection", this);
-    this.addEventListener("clear-selection", this);
     this._contextMenu.addEventListener("popupshowing", this);
     this.addContextMenuListeners();
     this.addSidebarFocusedListeners();
@@ -67,8 +68,6 @@ export class SidebarHistory extends SidebarPage {
     super.disconnectedCallback();
     this._menu.removeEventListener("command", this);
     this._menu.removeEventListener("popuphidden", this.handlePopupEvent);
-    this.removeEventListener("update-selection", this);
-    this.removeEventListener("clear-selection", this);
     this._contextMenu.removeEventListener("popupshowing", this);
     this.removeContextMenuListeners();
     this.removeSidebarFocusedListeners();
@@ -76,13 +75,6 @@ export class SidebarHistory extends SidebarPage {
 
   handleEvent(e) {
     switch (e.type) {
-      case "update-selection":
-        this.selectedLists.add(e.originalTarget);
-        break;
-      case "clear-selection":
-        this.selectedLists.delete(e.originalTarget);
-        this.#clearSelection();
-        break;
       case "popupshowing":
         this.updateContextMenu();
         break;
@@ -92,7 +84,7 @@ export class SidebarHistory extends SidebarPage {
   }
 
   get isMultipleRowsSelected() {
-    return !!this.selectedLists.size;
+    return !!this.treeView.selectedLists.size;
   }
 
   /**
@@ -139,12 +131,19 @@ export class SidebarHistory extends SidebarPage {
         this.controller.deleteFromHistory().catch(console.error);
         break;
       case "sidebar-history-context-delete-pages":
-        this.controller.deleteMultipleFromHistory().catch(console.error);
+        this.#deleteMultipleFromHistory().catch(console.error);
         break;
       default:
         super.handleCommandEvent(e);
         break;
     }
+  }
+
+  #deleteMultipleFromHistory() {
+    const pageGuids = [...this.treeView.selectedLists].flatMap(
+      ({ selectedGuids }) => [...selectedGuids]
+    );
+    return lazy.PlacesUtils.history.remove(pageGuids);
   }
 
   // We should let moz-button handle this, see bug 1875374.
@@ -164,119 +163,12 @@ export class SidebarHistory extends SidebarPage {
       return;
     }
     navigateToLink(e);
-    this.#clearSelection();
+    this.treeView.clearSelection();
   }
 
   onSecondaryAction(e) {
     this.triggerNode = e.detail.item;
     this.controller.deleteFromHistory().catch(console.error);
-  }
-
-  handleCardKeydown(e) {
-    if (e.originalTarget != e.target.summaryEl) {
-      return;
-    }
-    let nextSibling = e.target.nextElementSibling;
-    let prevSibling = e.target.previousElementSibling;
-    let focusedRow = null;
-    switch (e.code) {
-      case "Tab":
-        if (prevSibling.localName == "moz-card") {
-          e.preventDefault();
-        }
-        break;
-      case "ArrowUp":
-        if (!prevSibling || prevSibling.localName !== "moz-card") {
-          const { classList, parentElement: dateCard } = e.target;
-          if (classList.contains("nested-card")) {
-            // Going up from the first site card. Focus the date header.
-            dateCard.summaryEl.focus();
-          }
-          break;
-        }
-        if (prevSibling.expanded) {
-          let innerElement = prevSibling.contentSlotEl.assignedElements()[0];
-          if (innerElement.classList.contains("nested-card")) {
-            // Going up from a date header. Focus the last site card from the
-            // date card above this one.
-            const prevSite = prevSibling.lastElementChild;
-            if (prevSite.expanded) {
-              const prevTabList = prevSite.contentSlotEl.assignedElements()[0];
-              focusedRow = prevTabList.rowEls[prevTabList.rowEls.length - 1];
-              focusedRow.focus();
-            } else {
-              prevSite.summaryEl.focus();
-            }
-          } else {
-            // Not sorted by Date & Site, innerElement is a SidebarTabList.
-            focusedRow = innerElement.rowEls[innerElement.rowEls.length - 1];
-            focusedRow.focus();
-          }
-        } else {
-          prevSibling.summaryEl.focus();
-        }
-        break;
-      case "ArrowDown":
-        if (e.target.expanded) {
-          let innerElement = e.target.contentSlotEl.assignedElements()[0];
-          if (innerElement.classList.contains("nested-card")) {
-            // Going down from a date header. Focus the first site card.
-            innerElement.summaryEl.focus();
-          } else {
-            // Not sorted by Date & Site, innerElement is a SidebarTabList.
-            focusedRow = innerElement.rowEls[0];
-            focusedRow.focus();
-          }
-        } else if (nextSibling && nextSibling.localName == "moz-card") {
-          nextSibling.summaryEl.focus();
-        } else if (e.target.classList.contains("last-card")) {
-          // Going down from the last site card. Focus the next date header.
-          const dateCard = e.target.parentElement;
-          const nextDate = dateCard.nextElementSibling;
-          nextDate?.summaryEl.focus();
-        }
-        break;
-      case "ArrowLeft":
-        e.target.expanded = false;
-        break;
-      case "ArrowRight":
-        e.target.expanded = true;
-        break;
-    }
-    this.#updateSelection(e, focusedRow);
-  }
-
-  /**
-   * When a row is focused while the shift key is held down, add it to the
-   * selection. If shift key was not held down, clear the selection.
-   *
-   * @param {KeyboardEvent} event
-   * @param {Element} rowEl
-   */
-  #updateSelection(event, rowEl) {
-    if (event.code !== "ArrowUp" && event.code !== "ArrowDown") {
-      return;
-    }
-    if (!event.shiftKey) {
-      this.#clearSelection();
-      return;
-    }
-    if (rowEl != null) {
-      const listForRow = rowEl.getRootNode().host;
-      listForRow.selectedGuids.add(rowEl.guid);
-      listForRow.requestVirtualListUpdate();
-      this.selectedLists.add(listForRow);
-    }
-  }
-
-  /**
-   * Clear the selection from all lists.
-   */
-  #clearSelection() {
-    for (const list of this.selectedLists) {
-      list.clearSelection();
-    }
-    this.selectedLists.clear();
   }
 
   /**
@@ -331,7 +223,7 @@ export class SidebarHistory extends SidebarPage {
       data-l10n-args=${JSON.stringify({
         date: isDateSite ? items[0][1][0].time : items[0].time,
       })}
-      @keydown=${this.handleCardKeydown}
+      @keydown=${e => this.treeView.handleCardKeydown(e)}
       tabindex=${ifDefined(tabIndex)}
     >
       ${isDateSite
@@ -365,7 +257,7 @@ export class SidebarHistory extends SidebarPage {
       type="accordion"
       ?expanded=${!isDateSite}
       heading=${domain}
-      @keydown=${this.handleCardKeydown}
+      @keydown=${e => this.treeView.handleCardKeydown(e)}
       tabindex=${ifDefined(tabIndex)}
       data-l10n-id=${domain ? nothing : "sidebar-history-site-localhost"}
       data-l10n-attrs=${domain ? nothing : "heading"}

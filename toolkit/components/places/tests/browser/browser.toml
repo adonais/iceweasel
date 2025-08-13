@@ -26,7 +26,6 @@ https_first_disabled = true
 
 ["browser_bug680727.js"]
 https_first_disabled = true
-skip-if = ["verify"]
 
 ["browser_bug1601563.js"]
 https_first_disabled = true
@@ -69,7 +68,6 @@ support-files = [
 
 ["browser_onvisit_title_null_for_navigation.js"]
 https_first_disabled = true
-skip-if = ["verify"]
 support-files = ["empty_page.html"]
 
 ["browser_redirect.js"]
@@ -102,9 +100,7 @@ support-files = [
   "redirect_twice.sjs",
   "userpass.html",
 ]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt", # Bug 1889180
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt"] # Bug 1889180
 
 ["browser_visituri_nohistory.js"]
 support-files = [
@@ -122,13 +118,7 @@ support-files = [
 ]
 
 ["browser_visituri_restriction.js"]
-skip-if = [
-  "verify",
-  "os == 'linux' && (asan || tsan)", # Bug 1891145
-]
+skip-if = ["os == 'linux' && (asan || tsan)"] # Bug 1891145
 
 ["browser_visituri_restriction_origin.js"]
-skip-if = [
-  "verify",
-  "os == 'linux' && (asan || tsan)", # Bug 1891145
-]
+skip-if = ["os == 'linux' && (asan || tsan)"] # Bug 1891145

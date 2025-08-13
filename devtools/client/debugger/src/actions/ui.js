@@ -205,10 +205,6 @@ export function updateViewport() {
   };
 }
 
-export function updateCursorPosition(cursorPosition) {
-  return { type: "SET_CURSOR_POSITION", cursorPosition };
-}
-
 export function setOrientation(orientation) {
   return { type: "SET_ORIENTATION", orientation };
 }
@@ -246,5 +242,12 @@ export function toggleSourceMapIgnoreList(shouldEnable) {
       type: "ENABLE_SOURCEMAP_IGNORELIST",
       shouldEnable,
     });
+  };
+}
+
+export function togglePausedOverlay(shouldEnable) {
+  return {
+    type: "ENABLE_PAUSED_OVERLAY",
+    shouldEnable,
   };
 }

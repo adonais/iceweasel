@@ -312,6 +312,9 @@ newtab-custom-settings = Keisti daugiau nuostatų
 ## Strings for download mobile highlight
 
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
 

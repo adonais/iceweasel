@@ -801,6 +801,10 @@ impl super::Adapter {
             max_compute_workgroups_per_dimension,
             max_buffer_size: i32::MAX as u64,
             max_non_sampler_bindings: u32::MAX,
+            max_blas_primitive_count: 0,
+            max_blas_geometry_count: 0,
+            max_tlas_instance_count: 0,
+            max_acceleration_structures_per_shader_stage: 0,
         };
 
         let mut workarounds = super::Workarounds::empty();
@@ -992,7 +996,7 @@ impl crate::Adapter for super::Adapter {
         {
             Some(unsafe {
                 Self::create_shader_clear_program(gl, self.shared.es)
-                    .ok_or(crate::DeviceError::ResourceCreationFailed)?
+                    .ok_or(crate::DeviceError::Lost)?
             })
         } else {
             // If we don't need the workaround, don't waste time and resources compiling the clear program

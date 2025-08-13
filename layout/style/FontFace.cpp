@@ -7,7 +7,14 @@
 #include "mozilla/dom/FontFace.h"
 
 #include <algorithm>
+
 #include "gfxFontUtils.h"
+#include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/ServoBindings.h"
+#include "mozilla/ServoCSSParser.h"
+#include "mozilla/ServoStyleSet.h"
+#include "mozilla/ServoUtils.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/CSSFontFaceRule.h"
 #include "mozilla/dom/FontFaceBinding.h"
 #include "mozilla/dom/FontFaceImpl.h"
@@ -15,12 +22,6 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/UnionTypes.h"
-#include "mozilla/CycleCollectedJSContext.h"
-#include "mozilla/ServoBindings.h"
-#include "mozilla/ServoCSSParser.h"
-#include "mozilla/ServoStyleSet.h"
-#include "mozilla/ServoUtils.h"
-#include "mozilla/StaticPrefs_layout.h"
 #include "nsStyleUtil.h"
 
 namespace mozilla {

@@ -218,6 +218,10 @@ for (const mvcontent of META_VIEWPORT_CONTENTS) {
                   content.requestAnimationFrame(resolve);
                 });
               });
+              // Ensure that we get correct coordinates in the iframe.
+              await SpecialPowers.spawn(host, [], async () => {
+                await SpecialPowers.contentTransformsReceived(content);
+              });
 
               // Now we're going to calculate screen coordinates for the upper-left
               // quadrant of the target area. We're going to do that by using the

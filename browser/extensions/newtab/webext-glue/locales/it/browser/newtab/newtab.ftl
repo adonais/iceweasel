@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Nuova scorciatoia
 newtab-topsites-edit-topsites-header = Modifica sito principale
 newtab-topsites-edit-shortcut-header = Modifica scorciatoia
 newtab-topsites-add-shortcut-label = Aggiungi scorciatoia
+newtab-topsites-add-shortcut-title =
+    .title = Aggiungi scorciatoia
+    .aria-label = Aggiungi scorciatoia
 newtab-topsites-title-label = Titolo
 newtab-topsites-title-input =
     .placeholder = Inserire un titolo
@@ -506,6 +509,9 @@ newtab-topic-selection-button-pick-interests = Scegli i tuoi interessi
 newtab-section-follow-button = Segui
 newtab-section-following-button = Stai seguendo
 newtab-section-unfollow-button = Smetti di seguire
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Perfeziona il tuo feed
+newtab-section-follow-highlight-subtitle = Segui gli argomenti che ti interessano per scoprire di più su ciò che ti appassiona.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -538,6 +544,12 @@ newtab-custom-wallpaper-title = Ora puoi utilizzare sfondi personalizzati
 newtab-custom-wallpaper-subtitle = Carica il tuo sfondo o scegli un colore personalizzato per personalizzare { -brand-product-name }.
 newtab-custom-wallpaper-cta = Prova
 
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Scegli uno sfondo per rendere { -brand-product-name } davvero tuo
+newtab-new-user-custom-wallpaper-subtitle = Fai sentire ogni nuova scheda come se fosse casa tua con sfondi e colori personalizzati.
+newtab-new-user-custom-wallpaper-cta = Provalo ora
+
 ## Strings for download mobile highlight
 
 newtab-download-mobile-highlight-title = Scarica { -brand-product-name } per dispositivi mobili
@@ -547,6 +559,11 @@ newtab-download-mobile-highlight-body-variant-b = Riprendi da dove eri rimasto s
 newtab-download-mobile-highlight-body-variant-c = Lo sapevi che puoi portare { -brand-product-name } sempre con te? Lo stesso browser, nella tua tasca.
 newtab-download-mobile-highlight-image =
     .aria-label = Codice QR per scaricare { -brand-product-name } per dispositivi mobili
+
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = I tuoi preferiti a portata di mano
+newtab-shortcuts-highlight-subtitle = Aggiungi una scorciatoia per mantenere i tuoi siti preferiti a portata di clic.
 
 ## Strings for reporting ads and content
 
@@ -581,4 +598,5 @@ newtab-trending-searches-hide-trending =
     .title = Nascondi ricerche di tendenza
 newtab-trending-searches-learn-more = Ulteriori informazioni
 newtab-trending-searches-dismiss = Nascondi ricerche di tendenza
-
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Ricerche di tendenza

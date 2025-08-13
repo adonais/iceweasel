@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.awesomebar.provider
 
-import android.content.res.Resources
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import androidx.annotation.VisibleForTesting
@@ -15,7 +14,6 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.awesomebar.AwesomeBar
-import mozilla.components.feature.awesomebar.R
 import mozilla.components.feature.awesomebar.facts.emitOpenTabSuggestionClickedFact
 import mozilla.components.feature.tabs.TabsUseCases
 import java.util.UUID
@@ -25,13 +23,13 @@ import java.util.UUID
  * [SessionManager] (Open tabs).
  */
 class SessionSuggestionProvider(
-    private val resources: Resources,
     private val store: BrowserStore,
     private val selectTabUseCase: TabsUseCases.SelectTabUseCase,
     private val icons: BrowserIcons? = null,
     private val indicatorIcon: Drawable? = null,
     private val excludeSelectedSession: Boolean = false,
     private val suggestionsHeader: String? = null,
+    private val switchToTabDescription: String,
     @get:VisibleForTesting val resultsUriFilter: ((Uri) -> Boolean)? = null,
 ) : AwesomeBar.SuggestionProvider {
     override val id: String = UUID.randomUUID().toString()
@@ -65,7 +63,7 @@ class SessionSuggestionProvider(
                     provider = this,
                     id = item.id,
                     title = item.content.title.ifBlank { item.content.url },
-                    description = resources.getString(R.string.switch_to_tab_description),
+                    description = switchToTabDescription,
                     flags = setOf(AwesomeBar.Suggestion.Flag.OPEN_TAB),
                     icon = iconRequest?.await()?.bitmap,
                     indicatorIcon = indicatorIcon,

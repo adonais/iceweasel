@@ -84,7 +84,6 @@ classes_with_WrapForJNI = [
     "WebMessage",
     "WebNotification",
     "WebNotificationAction",
-    "WebNotificationDelegate",
     "WebRequest",
     "WebRequestError",
     "WebResponse",

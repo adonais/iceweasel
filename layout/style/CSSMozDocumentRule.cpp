@@ -5,11 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/CSSMozDocumentRule.h"
-#include "mozilla/dom/CSSMozDocumentRuleBinding.h"
 
 #include "js/RegExpFlags.h"
-#include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/CSSMozDocumentRuleBinding.h"
 #include "nsContentUtils.h"
 #include "nsHTMLDocument.h"
 

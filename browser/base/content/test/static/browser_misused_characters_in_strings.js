@@ -219,47 +219,6 @@ add_task(async function checkAllTheProperties() {
   }
 });
 
-var checkDTD = async function (aURISpec) {
-  let rawContents = await fetchFile(aURISpec);
-  // The regular expression below is adapted from:
-  // https://hg.mozilla.org/mozilla-central/file/68c0b7d6f16ce5bb023e08050102b5f2fe4aacd8/python/compare-locales/compare_locales/parser.py#l233
-  let entities = rawContents.match(
-    /<!ENTITY\s+([\w\.]*)\s+("[^"]*"|'[^']*')\s*>/g
-  );
-  if (!entities) {
-    // Some files have no entities defined.
-    return;
-  }
-  for (let entity of entities) {
-    let [, key, str] = entity.match(
-      /<!ENTITY\s+([\w\.]*)\s+("[^"]*"|'[^']*')\s*>/
-    );
-    // The matched string includes the enclosing quotation marks,
-    // we need to slice them off.
-    str = str.slice(1, -1);
-    testForErrors(aURISpec, key, str);
-  }
-};
-
-add_task(async function checkAllTheDTDs() {
-  let uris = await getAllTheFiles(".dtd");
-  ok(
-    uris.length,
-    `Found ${uris.length} .dtd files to scan for misused characters`
-  );
-  for (let uri of uris) {
-    await checkDTD(uri.spec);
-  }
-
-  // This support DTD file supplies a string with a newline to make sure
-  // the regex in checkDTD works correctly for that case.
-  let dtdLocation = gTestPath.replace(
-    /\/[^\/]*$/i,
-    "/bug1262648_string_with_newlines.dtd"
-  );
-  await checkDTD(dtdLocation);
-});
-
 add_task(async function checkAllTheFluents() {
   let uris = await getAllTheFiles(".ftl");
 

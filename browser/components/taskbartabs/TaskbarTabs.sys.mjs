@@ -100,6 +100,9 @@ async function initRegistry() {
   registry.on(kTaskbarTabsRegistryEvents.created, () => {
     storage.save();
   });
+  registry.on(kTaskbarTabsRegistryEvents.patched, () => {
+    storage.save();
+  });
   registry.on(kTaskbarTabsRegistryEvents.removed, () => {
     storage.save();
   });
@@ -125,9 +128,9 @@ function initWindowManager() {
  */
 function initPinManager(aRegistry) {
   aRegistry.on(kTaskbarTabsRegistryEvents.created, (_, taskbarTab) => {
-    return TaskbarTabsPin.pinTaskbarTab(taskbarTab);
+    return TaskbarTabsPin.pinTaskbarTab(taskbarTab, aRegistry);
   });
   aRegistry.on(kTaskbarTabsRegistryEvents.removed, (_, taskbarTab) => {
-    return TaskbarTabsPin.unpinTaskbarTab(taskbarTab);
+    return TaskbarTabsPin.unpinTaskbarTab(taskbarTab, aRegistry);
   });
 }

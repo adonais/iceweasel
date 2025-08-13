@@ -7,8 +7,8 @@
 #ifndef nsIDocumentViewerPrint_h___
 #define nsIDocumentViewerPrint_h___
 
-#include "nsISupports.h"
 #include "mozilla/UniquePtr.h"
+#include "nsISupports.h"
 
 namespace mozilla {
 class PresShell;

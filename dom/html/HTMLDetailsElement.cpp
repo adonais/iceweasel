@@ -9,7 +9,7 @@
 #include "mozilla/dom/HTMLDetailsElementBinding.h"
 #include "mozilla/dom/HTMLSummaryElement.h"
 #include "mozilla/dom/ShadowRoot.h"
-#include "mozilla/ScopeExit.h"
+#include "mozilla/BuiltInStyleSheets.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "nsContentUtils.h"
 #include "nsTextNode.h"
@@ -156,8 +156,9 @@ JSObject* HTMLDetailsElement::WrapNode(JSContext* aCx,
 
 bool HTMLDetailsElement::IsValidCommandAction(Command aCommand) const {
   return nsGenericHTMLElement::IsValidCommandAction(aCommand) ||
-         aCommand == Command::Toggle || aCommand == Command::Close ||
-         aCommand == Command::Open;
+         (StaticPrefs::dom_element_commandfor_on_details_enabled() &&
+          (aCommand == Command::Toggle || aCommand == Command::Close ||
+           aCommand == Command::Open));
 }
 
 bool HTMLDetailsElement::HandleCommandInternal(Element* aSource,
@@ -167,15 +168,18 @@ bool HTMLDetailsElement::HandleCommandInternal(Element* aSource,
     return true;
   }
 
-  if (aCommand == Command::Auto || aCommand == Command::Toggle) {
+  MOZ_ASSERT(StaticPrefs::dom_element_commandfor_on_details_enabled());
+  if (aCommand == Command::Toggle) {
     ToggleOpen();
     return true;
-  } else if (aCommand == Command::Close) {
+  }
+  if (aCommand == Command::Close) {
     if (Open()) {
       SetOpen(false, IgnoreErrors());
     }
     return true;
-  } else if (aCommand == Command::Open) {
+  }
+  if (aCommand == Command::Open) {
     if (!Open()) {
       SetOpen(true, IgnoreErrors());
     }

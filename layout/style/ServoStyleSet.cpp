@@ -5,62 +5,62 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/ServoStyleSet.h"
-#include "mozilla/ServoStyleSetInlines.h"
 
-#include "mozilla/DocumentStyleRootIterator.h"
+#include "gfxUserFontSet.h"
 #include "mozilla/AttributeStyles.h"
-#include "mozilla/EffectCompositor.h"
 #include "mozilla/DeclarationBlock.h"
+#include "mozilla/DocumentStyleRootIterator.h"
+#include "mozilla/EffectCompositor.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Keyframe.h"
 #include "mozilla/LookAndFeel.h"
+#include "mozilla/MediaFeatureChange.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerLabels.h"
-#include "mozilla/ServoBindings.h"
 #include "mozilla/RestyleManager.h"
-#include "mozilla/ServoStyleRuleMap.h"
-#include "mozilla/ServoTypes.h"
 #include "mozilla/SMILAnimationController.h"
-#include "mozilla/MediaFeatureChange.h"
+#include "mozilla/ServoBindings.h"
+#include "mozilla/ServoStyleRuleMap.h"
+#include "mozilla/ServoStyleSetInlines.h"
+#include "mozilla/ServoTypes.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/css/Loader.h"
 #include "mozilla/dom/AnonymousContent.h"
-#include "mozilla/dom/ViewTransition.h"
 #include "mozilla/dom/CSSBinding.h"
+#include "mozilla/dom/CSSContainerRule.h"
 #include "mozilla/dom/CSSCounterStyleRule.h"
 #include "mozilla/dom/CSSFontFaceRule.h"
 #include "mozilla/dom/CSSFontFeatureValuesRule.h"
 #include "mozilla/dom/CSSFontPaletteValuesRule.h"
 #include "mozilla/dom/CSSImportRule.h"
-#include "mozilla/dom/CSSContainerRule.h"
+#include "mozilla/dom/CSSKeyframeRule.h"
+#include "mozilla/dom/CSSKeyframesRule.h"
 #include "mozilla/dom/CSSLayerBlockRule.h"
 #include "mozilla/dom/CSSLayerStatementRule.h"
 #include "mozilla/dom/CSSMarginRule.h"
 #include "mozilla/dom/CSSMediaRule.h"
 #include "mozilla/dom/CSSMozDocumentRule.h"
-#include "mozilla/dom/CSSKeyframesRule.h"
-#include "mozilla/dom/CSSKeyframeRule.h"
 #include "mozilla/dom/CSSNamespaceRule.h"
 #include "mozilla/dom/CSSNestedDeclarations.h"
 #include "mozilla/dom/CSSPageRule.h"
-#include "mozilla/dom/CSSPropertyRule.h"
 #include "mozilla/dom/CSSPositionTryRule.h"
+#include "mozilla/dom/CSSPropertyRule.h"
 #include "mozilla/dom/CSSScopeRule.h"
-#include "mozilla/dom/CSSSupportsRule.h"
 #include "mozilla/dom/CSSStartingStyleRule.h"
 #include "mozilla/dom/CSSStyleRule.h"
-#include "mozilla/dom/FontFaceSet.h"
+#include "mozilla/dom/CSSSupportsRule.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
+#include "mozilla/dom/FontFaceSet.h"
+#include "mozilla/dom/ViewTransition.h"
 #include "nsCSSAnonBoxes.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsCSSPseudoElements.h"
 #include "nsDeviceContext.h"
 #include "nsIAnonymousContentCreator.h"
 #include "nsLayoutUtils.h"
-#include "mozilla/dom/DocumentInlines.h"
 #include "nsPrintfCString.h"
-#include "gfxUserFontSet.h"
 #include "nsWindowSizes.h"
 
 namespace mozilla {
@@ -106,15 +106,12 @@ class MOZ_RAII AutoSetInServoTraversal {
 };
 
 // Sets up for one or more calls to Servo_TraverseSubtree.
-class MOZ_RAII AutoPrepareTraversal {
+class MOZ_RAII AutoPrepareTraversal : public AutoSetInServoTraversal {
  public:
   explicit AutoPrepareTraversal(ServoStyleSet* aSet)
-      : mSetInServoTraversal(aSet) {
+      : AutoSetInServoTraversal(aSet) {
     MOZ_ASSERT(!aSet->StylistNeedsUpdate());
   }
-
- private:
-  AutoSetInServoTraversal mSetInServoTraversal;
 };
 
 ServoStyleSet::ServoStyleSet(Document& aDocument) : mDocument(&aDocument) {
@@ -864,6 +861,7 @@ bool ServoStyleSet::StyleDocument(ServoTraversalFlags aFlags) {
   if (GetPresContext()->EffectCompositor()->PreTraverse(aFlags)) {
     DocumentStyleRootIterator iter(mDocument->GetServoRestyleRoot());
     while (Element* root = iter.GetNextStyleRoot()) {
+      AutoPrepareTraversal guard(this);
       postTraversalRequired |=
           Servo_TraverseSubtree(root, mRawData.get(), &snapshots, aFlags) ||
           root->HasAnyOfFlags(Element::kAllServoDescendantBits |

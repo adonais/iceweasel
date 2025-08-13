@@ -65,7 +65,7 @@ class DownscalingFilter final : public SurfaceFilter {
         mRowsInWindow(0),
         mInputRow(0),
         mOutputRow(0),
-        mHasAlpha(true) {}
+        mFormat(gfx::SurfaceFormat::UNKNOWN) {}
 
   ~DownscalingFilter() { ReleaseWindow(); }
 
@@ -98,7 +98,7 @@ class DownscalingFilter final : public SurfaceFilter {
     mScale =
         gfx::MatrixScalesDouble(double(mInputSize.width) / outputSize.width,
                                 double(mInputSize.height) / outputSize.height);
-    mHasAlpha = aConfig.mFormat == gfx::SurfaceFormat::OS_RGBA;
+    mFormat = aConfig.mFormat;
 
     ReleaseWindow();
 
@@ -193,7 +193,7 @@ class DownscalingFilter final : public SurfaceFilter {
       MOZ_RELEASE_ASSERT(mRowsInWindow < mWindowCapacity,
                          "Need more rows than capacity!");
       mXFilter.ConvolveHorizontally(aInputRow, mWindow[mRowsInWindow++],
-                                    mHasAlpha);
+                                    mFormat);
     }
 
     MOZ_ASSERT(mOutputRow < mNext.InputSize().height,
@@ -241,7 +241,7 @@ class DownscalingFilter final : public SurfaceFilter {
                                                         uint32_t aLength) {
       mYFilter.ConvolveVertically(mWindow.get(),
                                   reinterpret_cast<uint8_t*>(aRow), mOutputRow,
-                                  mXFilter.NumValues(), mHasAlpha);
+                                  mXFilter.NumValues(), mFormat);
     });
 
     mOutputRow++;
@@ -303,7 +303,7 @@ class DownscalingFilter final : public SurfaceFilter {
   int32_t mInputRow;      /// The current row we're reading. (0-indexed)
   int32_t mOutputRow;     /// The current row we're writing. (0-indexed)
 
-  bool mHasAlpha;  /// If true, the image has transparency.
+  gfx::SurfaceFormat mFormat;  /// The image format
 };
 
 }  // namespace image

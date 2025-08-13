@@ -37,13 +37,10 @@ void RenderPipeline::Cleanup() {
     return;
   }
 
-  if (bridge->CanSend()) {
-    bridge->SendRenderPipelineDrop(mId);
-    if (mImplicitPipelineLayoutId) {
-      bridge->SendImplicitLayoutDrop(mImplicitPipelineLayoutId,
-                                     mImplicitBindGroupLayoutIds);
-    }
-  }
+  ffi::wgpu_client_drop_render_pipeline(bridge->GetClient(), mId,
+                                        mImplicitPipelineLayoutId,
+                                        mImplicitBindGroupLayoutIds.Elements(),
+                                        mImplicitBindGroupLayoutIds.Length());
 
   if (mImplicitPipelineLayoutId) {
     wgpu_client_free_pipeline_layout_id(bridge->GetClient(),
@@ -58,14 +55,9 @@ void RenderPipeline::Cleanup() {
 already_AddRefed<BindGroupLayout> RenderPipeline::GetBindGroupLayout(
     uint32_t aIndex) const {
   auto bridge = mParent->GetBridge();
-  MOZ_ASSERT(bridge && bridge->CanSend());
-  auto* client = bridge->GetClient();
 
-  ipc::ByteBuf bb;
   const RawId bglId = ffi::wgpu_client_render_pipeline_get_bind_group_layout(
-      client, mId, aIndex, ToFFI(&bb));
-
-  bridge->SendDeviceAction(mParent->GetId(), std::move(bb));
+      bridge->GetClient(), mParent->GetId(), mId, aIndex);
 
   RefPtr<BindGroupLayout> object = new BindGroupLayout(mParent, bglId, false);
   return object.forget();

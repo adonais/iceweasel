@@ -10,25 +10,24 @@
 
 #include "mozilla/css/ImageLoader.h"
 
+#include "Image.h"
+#include "imgIContainer.h"
+#include "imgINotificationObserver.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/SVGObserverUtils.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/LargestContentfulPaint.h"
-#include "mozilla/dom/ImageTracker.h"
+#include "mozilla/layers/WebRenderUserData.h"
+#include "nsCanvasFrame.h"
 #include "nsContentUtils.h"
+#include "nsDisplayList.h"
+#include "nsError.h"
+#include "nsIFrameInlines.h"
 #include "nsIReflowCallback.h"
 #include "nsLayoutUtils.h"
-#include "nsError.h"
-#include "nsCanvasFrame.h"
-#include "nsDisplayList.h"
-#include "nsIFrameInlines.h"
-#include "imgIContainer.h"
-#include "imgINotificationObserver.h"
-#include "Image.h"
-#include "mozilla/PresShell.h"
-#include "mozilla/ProfilerLabels.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/SVGObserverUtils.h"
-#include "mozilla/layers/WebRenderUserData.h"
 #include "nsTHashSet.h"
 
 using namespace mozilla::dom;
@@ -184,7 +183,7 @@ void ImageLoader::AssociateRequestToFrame(imgIRequest* aRequest,
           .LookupOrInsertWith(
               aRequest,
               [&] {
-                mDocument->ImageTracker()->Add(aRequest);
+                mDocument->TrackImage(aRequest);
 
                 if (auto entry = sImages->Lookup(aRequest)) {
                   DebugOnly<bool> inserted =
@@ -307,7 +306,7 @@ void ImageLoader::RemoveRequestToFrameMapping(imgIRequest* aRequest,
 
 void ImageLoader::DeregisterImageRequest(imgIRequest* aRequest,
                                          nsPresContext* aPresContext) {
-  mDocument->ImageTracker()->Remove(aRequest);
+  mDocument->UntrackImage(aRequest);
 
   if (auto entry = sImages->Lookup(aRequest)) {
     entry.Data()->mImageLoaders.EnsureRemoved(this);

@@ -221,14 +221,12 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     masm.bind(&noNewTarget);
   }
   JitSpew(JitSpew_Codegen, "__Line__: %d", __LINE__);
-  // Make stack algined
+  // Make stack aligned
   masm.ma_and(s2, reg_argc, Imm32(1));
-  masm.ma_sub64(s1, zero, Imm32(sizeof(Value)));
-  Label no_zero;
-  masm.ma_branch(&no_zero, Assembler::Condition::Equal, s2, Operand(0));
-  masm.mv(s1, zero);
-  masm.bind(&no_zero);
-  masm.ma_add64(StackPointer, StackPointer, s1);
+  Label skip_sub_padding;
+  masm.ma_b(s2, zero, &skip_sub_padding, Assembler::Equal, ShortJump);
+  masm.ma_sub64(StackPointer, Imm32(static_cast<int32_t>(sizeof(Value))));
+  masm.bind(&skip_sub_padding);
 
   masm.slli(s2, reg_argc, 3);  // Value* argv
   masm.addPtr(reg_argv, s2);   // s2 = &argv[argc]

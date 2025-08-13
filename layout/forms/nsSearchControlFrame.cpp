@@ -7,8 +7,8 @@
 #include "nsSearchControlFrame.h"
 
 #include "mozilla/PresShell.h"
-#include "nsGkAtoms.h"
 #include "nsContentUtils.h"
+#include "nsGkAtoms.h"
 
 using namespace mozilla;
 

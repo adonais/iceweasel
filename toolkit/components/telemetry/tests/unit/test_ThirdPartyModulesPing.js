@@ -119,7 +119,7 @@ add_task(
     // Test the ping payload's validity.
     Assert.ok(found, "Untrusted modules ping submitted");
     Assert.ok(found.environment, "Ping has an environment");
-    Assert.ok(typeof found.clientId != "undefined", "Ping has a client ID");
+    Assert.notEqual(typeof found.clientId, "undefined", "Ping has a client ID");
 
     Assert.equal(found.payload.structVersion, 1, "Version is correct");
     Assert.ok(found.payload.modules, "'modules' object exists");
@@ -167,7 +167,7 @@ add_task(
       "browser",
       "'processType' is correct"
     );
-    Assert.ok(typeof ourProcInfo.elapsed == "number", "'elapsed' exists");
+    Assert.equal(typeof ourProcInfo.elapsed, "number", "'elapsed' exists");
     Assert.ok(
       Number.isFinite(Number.parseFloat(curProcInfo.elapsed)),
       "'elapsed' is a number (in a string)"

@@ -11,75 +11,20 @@ ChromeUtils.defineLazyGetter(lazy, "console", () => {
   });
 });
 
-const kMessageGetAllOk = "GetAll:Return:OK";
-const kMessageGetAllKo = "GetAll:Return:KO";
-const kMessageSaveKo = "Save:Return:KO";
-const kMessageDeleteKo = "Delete:Return:KO";
+/** @import {NotificationDB} from "./NotificationDB.sys.mjs" */
 
 export class NotificationStorage {
-  #requests = {};
-  #requestCount = 0;
+  /** @type {NotificationDB} */
+  db = ChromeUtils.importESModule(
+    "moz-src:///dom/notification/NotificationDB.sys.mjs"
+  ).db;
 
-  constructor() {
-    Services.obs.addObserver(this, "xpcom-shutdown");
-
-    ChromeUtils.importESModule(
-      "resource://gre/modules/MemoryNotificationDB.sys.mjs"
-    );
-
-    ChromeUtils.importESModule("resource://gre/modules/NotificationDB.sys.mjs");
-
-    // Register for message listeners.
-    this.registerListeners();
-  }
-
-  storageQualifier() {
-    return "Notification";
-  }
-
-  prefixStorageQualifier(message) {
-    return `${this.storageQualifier()}:${message}`;
-  }
-
-  formatMessageType(message) {
-    return this.prefixStorageQualifier(message);
-  }
-
-  supportedMessages() {
-    return [
-      this.formatMessageType(kMessageGetAllOk),
-      this.formatMessageType(kMessageGetAllKo),
-      this.formatMessageType(kMessageSaveKo),
-      this.formatMessageType(kMessageDeleteKo),
-    ];
-  }
-
-  registerListeners() {
-    for (let message of this.supportedMessages()) {
-      Services.cpmm.addMessageListener(message, this);
-    }
-  }
-
-  unregisterListeners() {
-    for (let message of this.supportedMessages()) {
-      Services.cpmm.removeMessageListener(message, this);
-    }
-  }
-
-  observe(aSubject, aTopic) {
-    lazy.console.debug(`Topic: ${aTopic}`);
-    if (aTopic === "xpcom-shutdown") {
-      Services.obs.removeObserver(this, "xpcom-shutdown");
-      this.unregisterListeners();
-    }
-  }
-
-  put(aOrigin, aEntry, aScope) {
+  async put(aOrigin, aEntry, aScope) {
     lazy.console.debug(`PUT: ${aOrigin} ${aEntry.id}: ${aEntry.title}`);
     let notification = {
       ...aEntry,
 
-      // XPCOM objects cannot be sent as-is. See also bug 1937194 to skip this step
+      // Storing QueryInterface confuses XPCOM to think it's passing an XPCOM object
       actions: aEntry.actions.map(rawAction => {
         let actionEntry = { ...rawAction };
         delete actionEntry.QueryInterface;
@@ -90,102 +35,50 @@ export class NotificationStorage {
     };
     delete notification.QueryInterface;
 
-    Services.cpmm.sendAsyncMessage(this.formatMessageType("Save"), {
+    await this.db.queueTask("save", {
       origin: aOrigin,
       notification,
     });
   }
 
-  get(origin, scope, tag, callback) {
+  async get(origin, scope, tag, callback) {
     lazy.console.debug(`GET: ${origin} ${tag}`);
-    this.#fetchFromDB(origin, scope, tag, callback);
+    let notifications = await this.db.queueTask("getall", {
+      origin,
+      scope,
+      tag,
+    });
+    callback.done(notifications);
   }
 
-  delete(origin, id) {
+  /**
+   * @param {string} origin The site origin
+   * @param {string} id The notification ID
+   */
+  async getById(origin, id) {
+    lazy.console.debug(`GETBYID: ${origin} ${id}`);
+
+    return await this.db.queueTask("get", { origin, id });
+  }
+
+  async delete(origin, id) {
     lazy.console.debug(`DELETE: ${id}`);
-    Services.cpmm.sendAsyncMessage(this.formatMessageType("Delete"), {
+    await this.db.queueTask("delete", {
       origin,
       id,
     });
   }
 
-  deleteAllExcept(ids) {
+  async deleteAllExcept(ids) {
     lazy.console.debug(`DELETEALLEXCEPT: ${ids}`);
-    Services.cpmm.sendAsyncMessage(this.formatMessageType("DeleteAllExcept"), {
-      ids,
-    });
-  }
-
-  receiveMessage(message) {
-    var request = this.#requests[message.data.requestID];
-
-    switch (message.name) {
-      case this.formatMessageType(kMessageGetAllOk):
-        delete this.#requests[message.data.requestID];
-        this.#returnNotifications(message.data.notifications, request.callback);
-        break;
-
-      case this.formatMessageType(kMessageGetAllKo):
-        delete this.#requests[message.data.requestID];
-        try {
-          request.callback.done();
-        } catch (e) {
-          lazy.console.debug(`Error calling callback done: ${e}`);
-        }
-        break;
-      case this.formatMessageType(kMessageSaveKo):
-      case this.formatMessageType(kMessageDeleteKo):
-        lazy.console.debug(
-          `Error received when treating: '${message.name}': ${message.data.errorMsg}`
-        );
-        break;
-
-      default:
-        lazy.console.debug(`Unrecognized message: ${message.name}`);
-        break;
-    }
-  }
-
-  #getUniqueRequestID() {
-    // This assumes the count will never go above MAX_SAFE_INTEGER, as
-    // notifications are not supposed to happen that frequently.
-    this.#requestCount += 1;
-    return this.#requestCount;
-  }
-
-  #fetchFromDB(origin, scope, tag, callback) {
-    var request = {
-      origin,
-      scope,
-      tag,
-      callback,
-    };
-    var requestID = this.#getUniqueRequestID();
-    this.#requests[requestID] = request;
-    Services.cpmm.sendAsyncMessage(this.formatMessageType("GetAll"), {
-      origin,
-      scope,
-      tag,
-      requestID,
-    });
-  }
-
-  #returnNotifications(notifications, callback) {
-    // Pass each notification back separately.
-    // The callback is called asynchronously to match the behaviour when
-    // fetching from the database.
-    try {
-      Services.tm.dispatchToMainThread(() => callback.done(notifications));
-    } catch (e) {
-      lazy.console.debug(`Error calling callback handle: ${e}`);
-    }
+    await this.db.queueTask("deleteAllExcept", { ids });
   }
 
   QueryInterface = ChromeUtils.generateQI(["nsINotificationStorage"]);
 }
 
 export class MemoryNotificationStorage extends NotificationStorage {
-  storageQualifier() {
-    return "MemoryNotification";
-  }
+  db = new (ChromeUtils.importESModule(
+    "moz-src:///dom/notification/MemoryNotificationDB.sys.mjs"
+  ).MemoryNotificationDB)();
 }

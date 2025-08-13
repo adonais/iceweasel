@@ -16,6 +16,7 @@
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/CloseWatcherManager.h"
 #include "mozilla/dom/IdentityCredential.h"
 #include "mozilla/dom/SecurityPolicyViolationEvent.h"
 #include "mozilla/dom/SessionStoreRestoreData.h"
@@ -309,23 +310,48 @@ bool WindowGlobalChild::IsProcessRoot() {
   return !BrowsingContext()->GetEmbedderElement();
 }
 
+// When a "beforeunload" handler is added, it's recorded to be able to know when
+// dispatching "beforeunload" is needed.
 void WindowGlobalChild::BeforeUnloadAdded() {
   // Don't bother notifying the parent if we don't have an IPC link open.
   if (mBeforeUnloadListeners == 0 && CanSend()) {
-    Unused << mWindowContext->SetHasBeforeUnload(true);
+    Unused << mWindowContext->SetNeedsBeforeUnload(true);
   }
 
   mBeforeUnloadListeners++;
   MOZ_ASSERT(mBeforeUnloadListeners > 0);
 }
 
+// This is the inverse of `BeforeUnloadAdded`, making sure that "beforeunload"
+// isn't dispatched if all "beforeunload" handlers have been removed.
 void WindowGlobalChild::BeforeUnloadRemoved() {
   mBeforeUnloadListeners--;
   MOZ_ASSERT(mBeforeUnloadListeners >= 0);
 
   if (mBeforeUnloadListeners == 0) {
-    Unused << mWindowContext->SetHasBeforeUnload(false);
+    Unused << mWindowContext->SetNeedsBeforeUnload(false);
   }
+}
+
+// This is very similar to what is done for "beforeunload" and uses the same
+// state to keep track, but is only ever used for a top level window. It's used
+// to be able to track when a "navigate" event needs to be dispatched to the top
+// level window's navigation object, which needs to happen right after a
+// "beforeunload" event for that window would be dispatched, regardless of if it
+// is.
+void WindowGlobalChild::NavigateAdded() {
+  if (!BrowsingContext()->IsTop()) {
+    return;
+  }
+  BeforeUnloadAdded();
+}
+
+// The inverse of `NavigateAdded`, again only ever used for a top level window.
+void WindowGlobalChild::NavigateRemoved() {
+  if (!BrowsingContext()->IsTop()) {
+    return;
+  }
+  BeforeUnloadRemoved();
 }
 
 void WindowGlobalChild::Destroy() {
@@ -575,6 +601,23 @@ IPCResult WindowGlobalChild::RecvNotifyPermissionChange(const nsCString& aType,
   return IPC_OK();
 }
 
+IPCResult WindowGlobalChild::RecvProcessCloseRequest(
+    const MaybeDiscarded<dom::BrowsingContext>& aFocused) {
+  RefPtr<nsFocusManager> focusManager = nsFocusManager::GetFocusManager();
+  RefPtr<dom::BrowsingContext> focusedContext =
+      focusManager ? focusManager->GetFocusedBrowsingContext() : nullptr;
+  MOZ_ASSERT(focusedContext, "Cannot find focused context");
+  // Only the currently focused context's CloseWatcher should be processed.
+  if (RefPtr<Document> doc = focusedContext->GetExtantDocument()) {
+    RefPtr<nsPIDOMWindowInner> win = doc->GetInnerWindow();
+    if (win && win->IsFullyActive()) {
+      RefPtr manager = win->EnsureCloseWatcherManager();
+      manager->ProcessCloseRequest();
+    }
+  }
+  return IPC_OK();
+}
+
 void WindowGlobalChild::SetDocumentURI(nsIURI* aDocumentURI) {
   // Registers a DOM Window with the profiler. It re-registers the same Inner
   // Window ID with different URIs because when a Browsing context is first
@@ -589,21 +632,18 @@ void WindowGlobalChild::SetDocumentURI(nsIURI* aDocumentURI) {
       nsContentUtils::TruncatedURLForDisplay(aDocumentURI, 1024),
       embedderInnerWindowID, BrowsingContext()->UsePrivateBrowsing());
 
-  if (StaticPrefs::dom_security_setdocumenturi()) {
-    nsCOMPtr<nsIURI> principalURI = mDocumentPrincipal->GetURI();
-    if (mDocumentPrincipal->GetIsNullPrincipal()) {
-      nsCOMPtr<nsIPrincipal> precursor =
-          mDocumentPrincipal->GetPrecursorPrincipal();
-      if (precursor) {
-        principalURI = precursor->GetURI();
-      }
+  nsCOMPtr<nsIURI> principalURI = mDocumentPrincipal->GetURI();
+  if (mDocumentPrincipal->GetIsNullPrincipal()) {
+    if (nsCOMPtr<nsIPrincipal> precursor =
+            mDocumentPrincipal->GetPrecursorPrincipal()) {
+      principalURI = precursor->GetURI();
     }
-
-    MOZ_DIAGNOSTIC_ASSERT(!nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(
-                              principalURI, aDocumentURI),
-                          "Setting DocumentURI with a different origin "
-                          "than principal URI");
   }
+
+  MOZ_DIAGNOSTIC_ASSERT(!nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(
+                            principalURI, aDocumentURI),
+                        "Setting DocumentURI with a different origin "
+                        "than principal URI");
 
   mDocumentURI = aDocumentURI;
   SendUpdateDocumentURI(WrapNotNull(aDocumentURI));

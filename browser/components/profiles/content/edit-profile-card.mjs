@@ -7,8 +7,6 @@
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { html, ifDefined } from "chrome://global/content/vendor/lit.all.mjs";
 
-const UPDATED_AVATAR_SELECTOR_PREF = "browser.profiles.updated-avatar-selector";
-
 /**
  * Like DeferredTask but usable from content.
  */
@@ -59,11 +57,11 @@ import "chrome://global/content/elements/moz-button.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-button-group.mjs";
 // eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/elements/moz-visual-picker.mjs";
+// eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/profiles/avatar.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/profiles/profiles-theme-card.mjs";
-// eslint-disable-next-line import/no-unassigned-import
-import "chrome://browser/content/profiles/profiles-group.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/profiles/profile-avatar-selector.mjs";
 
@@ -89,7 +87,6 @@ export class EditProfileCard extends MozLitElement {
     doneButton: "#done-button",
     moreThemesLink: "#more-themes",
     headerAvatar: "#header-avatar",
-    avatarsPicker: "#avatars",
     themesPicker: "#themes",
     avatarSelector: "profile-avatar-selector",
     avatarSelectorLink: "#profile-avatar-selector-link",
@@ -97,10 +94,6 @@ export class EditProfileCard extends MozLitElement {
 
   updateNameDebouncer = null;
   clearSavedMessageTimer = null;
-
-  get avatars() {
-    return this.avatarsPicker.childElements;
-  }
 
   get themeCards() {
     return this.themesPicker.childElements;
@@ -125,11 +118,8 @@ export class EditProfileCard extends MozLitElement {
 
     window.addEventListener("beforeunload", this);
     window.addEventListener("pagehide", this);
-
-    if (RPMGetBoolPref(UPDATED_AVATAR_SELECTOR_PREF, false)) {
-      document.addEventListener("click", this);
-      document.addEventListener("Profiles:CustomAvatarUpload", this);
-    }
+    document.addEventListener("Profiles:CustomAvatarUpload", this);
+    document.addEventListener("Profiles:AvatarSelected", this);
 
     this.init().then(() => (this.initialized = true));
   }
@@ -188,25 +178,6 @@ export class EditProfileCard extends MozLitElement {
     favicon.href = this.profile.avatarURLs.url16;
   }
 
-  getAvatarL10nId(value) {
-    switch (value) {
-      case "book":
-        return "book-avatar";
-      case "briefcase":
-        return "briefcase-avatar";
-      case "flower":
-        return "flower-avatar";
-      case "heart":
-        return "heart-avatar";
-      case "shopping":
-        return "shopping-avatar";
-      case "star":
-        return "star-avatar";
-    }
-
-    return "";
-  }
-
   handleEvent(event) {
     switch (event.type) {
       case "beforeunload": {
@@ -223,16 +194,14 @@ export class EditProfileCard extends MozLitElement {
         RPMSendAsyncMessage("Profiles:PageHide");
         break;
       }
-      case "click": {
-        if (event.originalTarget.closest("#avatar-selector")) {
-          return;
-        }
-        this.avatarSelector.hidden = true;
-        break;
-      }
       case "Profiles:CustomAvatarUpload": {
         let { file } = event.detail;
         this.updateAvatar(file);
+        break;
+      }
+      case "Profiles:AvatarSelected": {
+        let { avatar } = event.detail;
+        this.updateAvatar(avatar);
         break;
       }
     }
@@ -390,16 +359,18 @@ export class EditProfileCard extends MozLitElement {
       return null;
     }
 
-    return html`<profiles-group
+    return html`<moz-visual-picker
+      type="listbox"
       id="themes"
       value=${this.profile.themeId}
       data-l10n-id="edit-profile-page-theme-header-2"
       name="theme"
-      @click=${this.handleThemeClick}
+      @change=${this.handleThemeChange}
     >
       ${this.themes.map(
         t =>
-          html`<profiles-group-item
+          html`<moz-visual-picker-item
+            class="theme-item"
             l10nId=${ifDefined(t.dataL10nId)}
             name=${ifDefined(t.name)}
             value=${t.id}
@@ -409,75 +380,48 @@ export class EditProfileCard extends MozLitElement {
               .theme=${t}
               value=${t.id}
             ></profiles-theme-card>
-          </profiles-group-item>`
+          </moz-visual-picker-item>`
       )}
-    </profiles-group>`;
+    </moz-visual-picker>`;
   }
 
-  handleThemeClick() {
+  handleThemeChange() {
     this.updateTheme(this.themesPicker.value);
   }
 
-  avatarsTemplate() {
-    if (RPMGetBoolPref(UPDATED_AVATAR_SELECTOR_PREF, false)) {
-      return null;
-    }
-
-    let avatars = ["book", "briefcase", "flower", "heart", "shopping", "star"];
-
-    return html`<profiles-group
-      value=${this.profile.avatar}
-      data-l10n-id="edit-profile-page-avatar-header-2"
-      name="avatar"
-      id="avatars"
-      @click=${this.handleAvatarClick}
-      >${avatars.map(
-        avatar =>
-          html`<profiles-group-item
-            l10nId=${this.getAvatarL10nId(avatar)}
-            value=${avatar}
-            ><profiles-avatar value=${avatar}></profiles-avatar
-          ></profiles-group-item>`
-      )}</profiles-group
-    >`;
-  }
-
   headerAvatarTemplate() {
-    if (RPMGetBoolPref(UPDATED_AVATAR_SELECTOR_PREF, false)) {
-      return html`<div class="avatar-header-content">
-        <img
-          id="header-avatar"
-          data-l10n-id=${this.profile.avatarL10nId}
-          src=${this.profile.avatarURLs.url80}
-        />
-        <a
-          id="profile-avatar-selector-link"
-          @click=${this.toggleAvatarSelectorCard}
-          data-l10n-id="edit-profile-page-avatar-selector-opener-link"
-        ></a>
-        <div class="avatar-selector-parent">
-          <profile-avatar-selector
-            hidden
-            value=${this.profile.avatar}
-          ></profile-avatar-selector>
-        </div>
-      </div>`;
-    }
-
-    return html`<img
-      id="header-avatar"
-      data-l10n-id=${this.profile.avatarL10nId}
-      src=${this.profile.avatarURLs.url80}
-    />`;
+    return html`<div class="avatar-header-content">
+      <img
+        id="header-avatar"
+        data-l10n-id=${this.profile.avatarL10nId}
+        src=${this.profile.avatarURLs.url80}
+      />
+      <a
+        id="profile-avatar-selector-link"
+        tabindex="0"
+        @click=${this.toggleAvatarSelectorCard}
+        @keydown=${this.handleAvatarSelectorKeyDown}
+        data-l10n-id="edit-profile-page-avatar-selector-opener-link"
+      ></a>
+      <div class="avatar-selector-parent">
+        <profile-avatar-selector
+          hidden
+          value=${this.profile.avatar}
+        ></profile-avatar-selector>
+      </div>
+    </div>`;
   }
 
   toggleAvatarSelectorCard(event) {
     event.stopPropagation();
-    this.avatarSelector.hidden = !this.avatarSelector.hidden;
+    this.avatarSelector.toggleHidden();
   }
 
-  handleAvatarClick() {
-    this.updateAvatar(this.avatarsPicker.value);
+  handleAvatarSelectorKeyDown(event) {
+    if (event.code === "Enter" || event.code === "Space") {
+      event.preventDefault();
+      this.toggleAvatarSelectorCard(event);
+    }
   }
 
   onDeleteClick() {
@@ -549,8 +493,6 @@ export class EditProfileCard extends MozLitElement {
               @click=${this.onMoreThemesClick}
               data-l10n-id="edit-profile-page-explore-themes"
             ></a>
-
-            ${this.avatarsTemplate()}
 
             <moz-button-group>${this.buttonsTemplate()}</moz-button-group>
           </div>

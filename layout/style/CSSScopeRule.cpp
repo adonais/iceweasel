@@ -5,8 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/CSSScopeRule.h"
-#include "mozilla/dom/CSSScopeRuleBinding.h"
+
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSScopeRuleBinding.h"
 
 namespace mozilla::dom {
 

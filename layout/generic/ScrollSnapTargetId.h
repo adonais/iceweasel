@@ -6,9 +6,10 @@
 #define mozilla_ScrollSnapTargetId_h_
 
 #include <cstdint>
+
+#include "Units.h"
 #include "nsPoint.h"
 #include "nsTArray.h"
-#include "Units.h"
 
 namespace mozilla {
 

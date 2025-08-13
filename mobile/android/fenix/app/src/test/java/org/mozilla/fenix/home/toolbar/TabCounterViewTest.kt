@@ -12,6 +12,7 @@ import io.mockk.verify
 import io.mockk.verifyOrder
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
+import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.ui.tabcounter.TabCounterMenu
 import org.junit.Assert.assertEquals
@@ -28,9 +29,9 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.browser.browsingmode.DefaultBrowsingModeManager
 import org.mozilla.fenix.components.AppStore
-import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.FenixGleanTestRule
+import org.mozilla.fenix.tabstray.TabManagementFeatureHelper
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 import mozilla.components.ui.tabcounter.TabCounterView as MozacTabCounter
@@ -45,7 +46,7 @@ class TabCounterViewTest {
     private lateinit var browsingModeManager: BrowsingModeManager
     private lateinit var settings: Settings
     private lateinit var appStore: AppStore
-    private lateinit var modeDidChange: (BrowsingMode) -> Unit
+    private lateinit var onModeChange: (BrowsingMode) -> Unit
     private lateinit var tabCounterView: TabCounterView
     private lateinit var tabCounter: MozacTabCounter
 
@@ -54,15 +55,15 @@ class TabCounterViewTest {
         navController = mockk(relaxed = true)
         settings = mockk(relaxed = true)
         appStore = mockk(relaxed = true)
-        modeDidChange = mockk(relaxed = true)
+        onModeChange = mockk(relaxed = true)
 
         tabCounter = spyk(MozacTabCounter(testContext))
 
         browsingModeManager = DefaultBrowsingModeManager(
-            initialMode = BrowsingMode.Normal,
+            intent = null,
+            store = BrowserStore(),
             settings = settings,
-            modeDidChange = modeDidChange,
-            updateAppStateMode = {},
+            onModeChange = onModeChange,
         )
     }
 
@@ -78,9 +79,9 @@ class TabCounterViewTest {
         assertNotNull(StartOnHome.openTabsTray.testGetValue())
 
         verify {
-            navController.nav(
-                R.id.homeFragment,
+            navController.navigate(
                 NavGraphDirections.actionGlobalTabsTrayFragment(),
+                null,
             )
         }
     }
@@ -194,6 +195,16 @@ class TabCounterViewTest {
             navController = navController,
             tabCounter = tabCounter,
             showLongPressMenu = showLongPressMenu,
+            tabManagementFeatureHelper = object : TabManagementFeatureHelper {
+                override val enhancementsEnabledNightly: Boolean
+                    get() = false
+                override val enhancementsEnabledBeta: Boolean
+                    get() = false
+                override val enhancementsEnabledRelease: Boolean
+                    get() = false
+                override val enhancementsEnabled: Boolean
+                    get() = false
+            },
         )
     }
 }

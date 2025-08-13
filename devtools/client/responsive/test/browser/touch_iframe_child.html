@@ -1,0 +1,16 @@
+<!doctype html>
+<script>
+  "use strict";
+  for (const type of ["mousedown", "mousemove", "mouseup",
+                      "touchstart", "touchmove", "touchend",
+                      "pointerdown", "pointermove", "pointerup",
+                      "click", "dblclick", "contextmenu"]) {
+    document.addEventListener(type, ev => {
+      window.top.postMessage({ from: location.origin, type: ev.type }, "*");
+      // Workaround for Bug 1976659: First click after contextmenu event is ignored with touch simulation
+      if (ev.type === "contextmenu") {
+        ev.preventDefault();
+      }
+    });
+  }
+</script>

@@ -803,6 +803,11 @@
         } else if (rows == UIEvent.SCROLL_PAGE_DOWN) {
           this.scrollByPages(1);
         } else {
+          let children = this.querySelector("treechildren");
+          let maxRows = Math.floor(children.scrollHeight / this.rowHeight);
+          if (Math.abs(rows) > maxRows) {
+            rows = rows > 0 ? maxRows : -maxRows;
+          }
           this.scrollByLines(rows);
         }
       });

@@ -7,10 +7,10 @@
 #ifndef mozilla_dom_FontFaceSet_h
 #define mozilla_dom_FontFaceSet_h
 
+#include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/FontFace.h"
 #include "mozilla/dom/FontFaceSetBinding.h"
 #include "mozilla/dom/FontFaceSetImpl.h"
-#include "mozilla/DOMEventTargetHelper.h"
 #include "nsICSSLoaderObserver.h"
 #include "nsIDOMEventListener.h"
 

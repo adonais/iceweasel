@@ -10,10 +10,8 @@
 
 #include "X11UndefineNone.h"
 #include "nsXPLookAndFeel.h"
-#include "nsCOMPtr.h"
 #include "gfxFont.h"
 
-enum WidgetNodeType : int;
 struct _GtkStyle;
 typedef struct _GDBusProxy GDBusProxy;
 typedef struct _GtkCssProvider GtkCssProvider;
@@ -105,7 +103,6 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
   using ThemeFamily = mozilla::StyleGtkThemeFamily;
 
  protected:
-  static bool WidgetUsesImage(WidgetNodeType aNodeType);
   void RecordLookAndFeelSpecificTelemetry() override;
   static bool ShouldHonorThemeScrollbarColors();
   mozilla::Maybe<ColorScheme> ComputeColorSchemeSetting();
@@ -170,16 +167,13 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
     ColorPair mTitlebarInactive;
 
     nscolor mThemedScrollbar = kWhite;
-    nscolor mThemedScrollbarInactive = kWhite;
     nscolor mThemedScrollbarThumb = kBlack;
     nscolor mThemedScrollbarThumbHover = kBlack;
     nscolor mThemedScrollbarThumbActive = kBlack;
-    nscolor mThemedScrollbarThumbInactive = kBlack;
 
     float mCaretRatio = 0.0f;
     int32_t mTitlebarRadius = 0;
     int32_t mTooltipRadius = 0;
-    int32_t mTitlebarButtonSpacing = 0;
     char16_t mInvisibleCharacter = 0;
     bool mMenuSupportsDrag = false;
 
@@ -188,6 +182,15 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
     bool GetFont(FontID, nsString& aFontName, gfxFontStyle&,
                  float aTextScaleFactor) const;
     void InitCellHighlightColors();
+    void RestoreColorOverrides();
+    void ApplyColorOverride(nscolor* aMember, nscolor aNewColor);
+    void ApplyColorOverride(ColorPair* aMember, const ColorPair& aNewPair);
+
+    struct ColorOverride {
+      uint32_t mByteOffset;
+      nscolor mOriginalColor;
+    };
+    nsTArray<ColorOverride> mOverrides;
   };
 
   PerThemeData mSystemTheme;

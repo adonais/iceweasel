@@ -91,7 +91,7 @@ default_args = {
   use_fuzztest_wrapper = false
 
   # Enable Rust in WebRTC
-  enable_rust = true
+  enable_rust = false # Mozilla
   enable_rust_cxx = true
   enable_chromium_prelude = true
 }

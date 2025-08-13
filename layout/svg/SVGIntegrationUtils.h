@@ -10,10 +10,10 @@
 #include "ImgDrawResult.h"
 #include "gfxMatrix.h"
 #include "gfxRect.h"
-#include "nsRegionFwd.h"
-#include "mozilla/gfx/Rect.h"
 #include "mozilla/ServoStyleConsts.h"
+#include "mozilla/gfx/Rect.h"
 #include "mozilla/webrender/WebRenderTypes.h"
+#include "nsRegionFwd.h"
 
 class gfxContext;
 class gfxDrawable;

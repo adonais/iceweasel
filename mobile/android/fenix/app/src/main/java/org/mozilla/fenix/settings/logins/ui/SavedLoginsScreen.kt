@@ -10,16 +10,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Icon
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -55,6 +58,7 @@ import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.compose.list.IconListItem
 import org.mozilla.fenix.compose.list.SelectableFaviconListItem
+import org.mozilla.fenix.settings.logins.ui.LoginsSortOrder.Alphabetical.isGuidToDelete
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -87,13 +91,16 @@ internal fun SavedLoginsScreen(
             LoginsList(store = store)
         }
         composable(route = LoginsDestinations.ADD_LOGIN) {
-            BackHandler { store.dispatch(AddLoginAction.BackAddClicked) }
+            BackHandler { store.dispatch(AddLoginBackClicked) }
+            AddLoginScreen(store = store)
         }
         composable(route = LoginsDestinations.EDIT_LOGIN) {
-            BackHandler { store.dispatch(EditLoginAction.BackEditClicked) }
+            BackHandler { store.dispatch(EditLoginBackClicked) }
+            EditLoginScreen(store = store)
         }
         composable(route = LoginsDestinations.LOGIN_DETAILS) {
-            BackHandler { store.dispatch(DetailLoginAction.BackDetailClicked) }
+            BackHandler { store.dispatch(LoginsDetailBackClicked) }
+            LoginDetailsScreen(store = store)
         }
     }
 }
@@ -116,7 +123,8 @@ private fun LoginsList(store: LoginsStore) {
                 text = state.searchText ?: "",
             )
         },
-        backgroundColor = FirefoxTheme.colors.layer1,
+        containerColor = FirefoxTheme.colors.layer1,
+        contentWindowInsets = WindowInsets(0.dp),
     ) { paddingValues ->
 
         if (state.searchText.isNullOrEmpty() && state.loginItems.isEmpty()) {
@@ -124,31 +132,36 @@ private fun LoginsList(store: LoginsStore) {
             return@Scaffold
         }
 
-        LazyColumn(
-            modifier = Modifier
-                .padding(paddingValues)
-                .padding(vertical = 16.dp)
-                .semantics {
-                    collectionInfo =
-                        CollectionInfo(rowCount = state.loginItems.size, columnCount = 1)
-                },
-        ) {
-            itemsIndexed(state.loginItems) { _, item ->
+        Column(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f, false)
+                    .padding(paddingValues)
+                    .padding(vertical = 16.dp)
+                    .semantics {
+                        collectionInfo =
+                            CollectionInfo(rowCount = state.loginItems.size, columnCount = 1)
+                    },
+            ) {
+                itemsIndexed(state.loginItems) { _, item ->
 
-                SelectableFaviconListItem(
-                    label = item.url.trimmed(),
-                    url = item.url,
-                    isSelected = false,
-                    onClick = { store.dispatch(LoginClicked(item)) },
-                    description = item.username.trimmed(),
-                )
+                    if (state.isGuidToDelete(item.guid)) {
+                        return@itemsIndexed
+                    }
+
+                    SelectableFaviconListItem(
+                        label = item.url.trimmed(),
+                        url = item.url,
+                        isSelected = false,
+                        onClick = { store.dispatch(LoginClicked(item)) },
+                        description = item.username.trimmed(),
+                    )
+                }
             }
 
-            item {
-                AddPasswordItem(
-                    onAddPasswordClicked = { store.dispatch(InitAdd) },
-                )
-            }
+            AddPasswordItem(
+                onAddPasswordClicked = { store.dispatch(AddLoginAction.InitAdd) },
+            )
         }
     }
 }
@@ -206,12 +219,13 @@ private fun EmptyList(
             )
 
             AddPasswordItem(
-                onAddPasswordClicked = { dispatcher(InitAdd) },
+                onAddPasswordClicked = { dispatcher(AddLoginAction.InitAdd) },
             )
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Suppress("LongMethod")
 private fun LoginsListTopBar(
@@ -225,7 +239,11 @@ private fun LoginsListTopBar(
 
     Box {
         TopAppBar(
-            backgroundColor = FirefoxTheme.colors.layer1,
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = FirefoxTheme.colors.layer1),
+            windowInsets = WindowInsets(
+                top = 0.dp,
+                bottom = 0.dp,
+            ),
             title = {
                 if (!searchActive) {
                     Text(
@@ -387,7 +405,7 @@ private fun LoginsListScreenPreview() {
                 loginsAddLoginState = null,
                 loginsEditLoginState = null,
                 loginsLoginDetailState = null,
-                loginsDeletionDialogState = null,
+                loginsDeletionState = null,
             ),
         )
     }
@@ -413,7 +431,7 @@ private fun EmptyLoginsListScreenPreview() {
                 loginsAddLoginState = null,
                 loginsEditLoginState = null,
                 loginsLoginDetailState = null,
-                loginsDeletionDialogState = null,
+                loginsDeletionState = null,
             ),
         )
     }

@@ -94,15 +94,15 @@ class MOZ_STACK_CLASS SVGPathSegmentInitWrapper final {
         return StylePathCommand::Arc(
             StyleByTo::To, {mInit.mValues[5], mInit.mValues[6]},
             {mInit.mValues[0], mInit.mValues[1]},
-            mInit.mValues[3] ? StyleArcSweep::Cw : StyleArcSweep::Ccw,
-            mInit.mValues[4] ? StyleArcSize::Large : StyleArcSize::Small,
+            mInit.mValues[4] ? StyleArcSweep::Cw : StyleArcSweep::Ccw,
+            mInit.mValues[3] ? StyleArcSize::Large : StyleArcSize::Small,
             mInit.mValues[2]);
       case 'a':
         return StylePathCommand::Arc(
             StyleByTo::By, {mInit.mValues[5], mInit.mValues[6]},
             {mInit.mValues[0], mInit.mValues[1]},
-            mInit.mValues[3] ? StyleArcSweep::Cw : StyleArcSweep::Ccw,
-            mInit.mValues[4] ? StyleArcSize::Large : StyleArcSize::Small,
+            mInit.mValues[4] ? StyleArcSweep::Cw : StyleArcSweep::Ccw,
+            mInit.mValues[3] ? StyleArcSize::Large : StyleArcSize::Small,
             mInit.mValues[2]);
       case 'H':
         return StylePathCommand::HLine(StyleByTo::To, mInit.mValues[0]);

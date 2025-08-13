@@ -6,9 +6,12 @@ package mozilla.components.compose.browser.toolbar.store
 
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.BrowserActionsEndUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.BrowserActionsStartUpdated
+import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.NavigationActionsUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.PageActionsEndUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.PageActionsStartUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.PageOriginUpdated
+import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.SearchAborted
+import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.UrlSuggestionAutocompleted
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.UiStore
@@ -16,7 +19,7 @@ import mozilla.components.lib.state.UiStore
 /**
  * [UiStore] for maintaining the state of the browser toolbar.
  */
-class BrowserToolbarStore(
+open class BrowserToolbarStore(
     initialState: BrowserToolbarState = BrowserToolbarState(),
     middleware: List<Middleware<BrowserToolbarState, BrowserToolbarAction>> = emptyList(),
 ) : UiStore<BrowserToolbarState, BrowserToolbarAction>(
@@ -36,6 +39,7 @@ class BrowserToolbarStore(
     }
 }
 
+@Suppress("LongMethod")
 private fun reduce(state: BrowserToolbarState, action: BrowserToolbarAction): BrowserToolbarState {
     return when (action) {
         is BrowserToolbarAction.Init -> BrowserToolbarState(
@@ -47,7 +51,7 @@ private fun reduce(state: BrowserToolbarState, action: BrowserToolbarAction): Br
         is BrowserToolbarAction.ToggleEditMode -> state.copy(
             mode = if (action.editMode) Mode.EDIT else Mode.DISPLAY,
             editState = state.editState.copy(
-                editText = if (action.editMode) null else state.editState.editText,
+                query = if (action.editMode) state.editState.query else "",
             ),
         )
 
@@ -83,21 +87,34 @@ private fun reduce(state: BrowserToolbarState, action: BrowserToolbarAction): Br
             ),
         )
 
-        is BrowserEditToolbarAction.UpdateEditText -> state.copy(
-            editState = state.editState.copy(
-                editText = action.text,
+        is NavigationActionsUpdated -> state.copy(
+            displayState = state.displayState.copy(
+                navigationActions = action.actions,
             ),
         )
 
-        is BrowserEditToolbarAction.AddEditActionStart -> state.copy(
+        is BrowserEditToolbarAction.SearchQueryUpdated -> state.copy(
             editState = state.editState.copy(
-                editActionsStart = state.editState.editActionsStart + action.action,
+                query = action.query,
+                showQueryAsPreselected = action.showAsPreselected,
             ),
         )
 
-        is BrowserEditToolbarAction.AddEditActionEnd -> state.copy(
+        is BrowserEditToolbarAction.AutocompleteProvidersUpdated -> state.copy(
             editState = state.editState.copy(
-                editActionsEnd = state.editState.editActionsEnd + action.action,
+                autocompleteProviders = action.autocompleteProviders,
+            ),
+        )
+
+        is BrowserEditToolbarAction.SearchActionsStartUpdated -> state.copy(
+            editState = state.editState.copy(
+                editActionsStart = action.actions,
+            ),
+        )
+
+        is BrowserEditToolbarAction.SearchActionsEndUpdated -> state.copy(
+            editState = state.editState.copy(
+                editActionsEnd = action.actions,
             ),
         )
 
@@ -107,10 +124,18 @@ private fun reduce(state: BrowserToolbarState, action: BrowserToolbarAction): Br
             ),
         )
 
-        is BrowserToolbarEvent -> {
+        is EnvironmentRehydrated,
+        is EnvironmentCleared,
+        is SearchAborted,
+        is UrlSuggestionAutocompleted,
+        is BrowserToolbarEvent,
+            -> {
             // no-op
             // Expected to be handled in middlewares set by integrators.
             state
         }
+
+        is BrowserEditToolbarAction.HintUpdated ->
+            state.copy(editState = state.editState.copy(hint = action.hint))
     }
 }

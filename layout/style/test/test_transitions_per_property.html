@@ -366,11 +366,8 @@ if (IsCSSPropertyPrefEnabled("layout.css.font-variations.enabled")) {
   supported_properties["font-variation-settings"] = [ test_font_variations_transition ];
 }
 
-if (IsCSSPropertyPrefEnabled("layout.css.contain-intrinsic-size.enabled")) {
-  supported_properties["contain-intrinsic-width"] = [ test_length_transition, test_auto_with_length_transition ];
-  supported_properties["contain-intrinsic-height"] = supported_properties["contain-intrinsic-width"];
-}
-
+supported_properties["contain-intrinsic-width"] = [ test_length_transition, test_auto_with_length_transition ];
+supported_properties["contain-intrinsic-height"] = supported_properties["contain-intrinsic-width"];
 supported_properties["content-visibility"] = [test_content_visibility_transition];
 
 if (IsCSSPropertyPrefEnabled("layout.css.zoom.enabled")) {
@@ -411,9 +408,7 @@ for (const logical_size of ["inline", "block"]) {
   supported_properties[logical_size + "-size"] = supported_properties["width"];
   supported_properties["min-" + logical_size + "-size"] = supported_properties["min-width"];
   supported_properties["max-" + logical_size + "-size"] = supported_properties["max-width"];
-  if (IsCSSPropertyPrefEnabled("layout.css.contain-intrinsic-size.enabled")) {
-    supported_properties["contain-intrinsic-" + logical_size + "-size"] = supported_properties["contain-intrinsic-width"];
-  }
+  supported_properties["contain-intrinsic-" + logical_size + "-size"] = supported_properties["contain-intrinsic-width"];
 }
 
 var div = document.getElementById("display");

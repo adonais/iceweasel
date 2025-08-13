@@ -7,8 +7,8 @@
 #ifndef nsStyleAutoArray_h_
 #define nsStyleAutoArray_h_
 
-#include "nsTArray.h"
 #include "mozilla/Assertions.h"
+#include "nsTArray.h"
 
 /**
  * An array of objects, similar to AutoTArray<T,1> but which is memmovable. It

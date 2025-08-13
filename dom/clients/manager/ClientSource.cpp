@@ -27,6 +27,7 @@
 #include "mozilla/dom/ServiceWorkerContainer.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/dom/ServiceWorkerUtils.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StorageAccess.h"
@@ -606,18 +607,17 @@ Result<ClientState, ErrorResult> ClientSource::SnapshotState() {
 
 nsISerialEventTarget* ClientSource::EventTarget() const { return mEventTarget; }
 
-void ClientSource::SetCsp(nsIContentSecurityPolicy* aCsp) {
+void ClientSource::SetPolicyContainer(nsIPolicyContainer* aPolicyContainer) {
   NS_ASSERT_OWNINGTHREAD(ClientSource);
-  if (!aCsp) {
+  if (!aPolicyContainer) {
     return;
   }
 
-  CSPInfo cspInfo;
-  nsresult rv = CSPToCSPInfo(aCsp, &cspInfo);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-  mClientInfo.SetCspInfo(cspInfo);
+  mozilla::ipc::PolicyContainerArgs policyContainerArgs;
+  PolicyContainer::ToArgs(PolicyContainer::Cast(aPolicyContainer),
+                          policyContainerArgs);
+
+  SetPolicyContainerArgs(policyContainerArgs);
 }
 
 void ClientSource::SetPreloadCsp(nsIContentSecurityPolicy* aPreloadCsp) {
@@ -634,14 +634,16 @@ void ClientSource::SetPreloadCsp(nsIContentSecurityPolicy* aPreloadCsp) {
   mClientInfo.SetPreloadCspInfo(cspPreloadInfo);
 }
 
-void ClientSource::SetCspInfo(const CSPInfo& aCSPInfo) {
+void ClientSource::SetPolicyContainerArgs(
+    const mozilla::ipc::PolicyContainerArgs& aPolicyContainer) {
   NS_ASSERT_OWNINGTHREAD(ClientSource);
-  mClientInfo.SetCspInfo(aCSPInfo);
+  mClientInfo.SetPolicyContainerArgs(aPolicyContainer);
 }
 
-const Maybe<mozilla::ipc::CSPInfo>& ClientSource::GetCspInfo() {
+const Maybe<mozilla::ipc::PolicyContainerArgs>&
+ClientSource::GetPolicyContainerArgs() {
   NS_ASSERT_OWNINGTHREAD(ClientSource);
-  return mClientInfo.GetCspInfo();
+  return mClientInfo.GetPolicyContainerArgs();
 }
 
 void ClientSource::Traverse(nsCycleCollectionTraversalCallback& aCallback,

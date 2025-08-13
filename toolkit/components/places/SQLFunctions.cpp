@@ -845,14 +845,13 @@ CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "  ORDER BY created_at DESC "
       "  LIMIT :numSampledVisits "
       "), "
-      "visit_interaction AS ( "
+      "sampled_visits AS ( "
       "  SELECT "
       "    vs.id, "
       "    vs.from_visit, "
       "    vs.place_id, "
       "    vs.visit_date, "
       "    vs.visit_type, "
-      "    vs.session, "
       "    vs.source, "
       "    ( "
       "      SELECT EXISTS ( "
@@ -866,17 +865,16 @@ CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "    ) AS is_interesting "
       "  FROM moz_historyvisits vs "
       "  WHERE place_id = :pageId "
-      "    AND vs.visit_date BETWEEN "
-      "      strftime('%s', 'now', :maxDaysFromToday) * 1000000 "
-      "        AND strftime('%s', 'now', '+1 day') * 1000000 "
-      "  UNION ALL "
+      "  ORDER BY visit_date DESC "
+      "  LIMIT :numSampledVisits "
+      "), "
+      "virtual_visits AS ( "
       "  SELECT "
       "    NULL AS id, "
       "    0 AS from_visit, "
       "    i.place_id, "
       "    i.visit_date, "
       "    1 AS visit_type, "
-      "    0 AS session, "
       "    0 AS source, "
       "    1 AS is_interesting "
       "  FROM interactions i "
@@ -887,6 +885,11 @@ CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "        i.visit_date - :maxVisitGapSeconds * 1000000 "
       "        AND i.visit_date + :maxVisitGapSeconds * 1000000 "
       "  ) "
+      "), "
+      "visit_interaction AS ( "
+      "  SELECT * FROM sampled_visits "
+      "  UNION ALL "
+      "  SELECT * FROM virtual_visits "
       "  ORDER BY visit_date DESC "
       "  LIMIT :numSampledVisits "
       "), "
@@ -989,12 +992,6 @@ CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "veryHighWeight"_ns,
       StaticPrefs::
           places_frecency_pages_alternative_veryHighWeight_AtStartup());
-  NS_ENSURE_SUCCESS(rv, rv);
-  nsCString maxDaysFromToday = nsPrintfCString(
-      "-%d days",
-      StaticPrefs::
-          places_frecency_pages_alternative_maxDaysFromToday_AtStartup());
-  rv = stmt->BindUTF8StringByName("maxDaysFromToday"_ns, maxDaysFromToday);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = stmt->BindInt64ByName(
       "maxVisitGapSeconds"_ns,

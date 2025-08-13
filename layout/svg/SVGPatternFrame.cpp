@@ -9,6 +9,7 @@
 
 // Keep others in (case-insensitive) order:
 #include "AutoReferenceChainGuard.h"
+#include "SVGAnimatedTransformList.h"
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxMatrix.h"
@@ -26,7 +27,6 @@
 #include "mozilla/gfx/2D.h"
 #include "nsGkAtoms.h"
 #include "nsIFrameInlines.h"
-#include "SVGAnimatedTransformList.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::dom::SVGUnitTypes_Binding;
@@ -194,7 +194,7 @@ static nsresult GetTargetGeometry(gfxRect* aBBox,
 
   // Sanity check
   if (IncludeBBoxScale(aViewBox, aPatternContentUnits, aPatternUnits) &&
-      (aBBox->Width() <= 0 || aBBox->Height() <= 0)) {
+      aBBox->IsEmpty()) {
     return NS_ERROR_FAILURE;
   }
 
@@ -326,7 +326,7 @@ already_AddRefed<SourceSurface> SVGPatternFrame::PaintPattern(
   // box for the pattern tile.
   gfxRect bbox =
       GetPatternRect(patternUnits, callerBBox, aContextMatrix, aSource);
-  if (bbox.Width() <= 0.0 || bbox.Height() <= 0.0) {
+  if (bbox.IsEmpty()) {
     return nullptr;
   }
 

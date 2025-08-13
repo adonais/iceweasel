@@ -609,18 +609,20 @@ int32_t HyperTextAccessible::CaretOffset() const {
   return DOMPointToOffset(focusNode, focusOffset);
 }
 
-LayoutDeviceIntRect HyperTextAccessible::GetCaretRect(nsIWidget** aWidget) {
-  *aWidget = nullptr;
-
+std::pair<LayoutDeviceIntRect, nsIWidget*> HyperTextAccessible::GetCaretRect() {
   RefPtr<nsCaret> caret = mDoc->PresShellPtr()->GetCaret();
-  NS_ENSURE_TRUE(caret, LayoutDeviceIntRect());
+  NS_ENSURE_TRUE(caret, {});
 
   bool isVisible = caret->IsVisible();
-  if (!isVisible) return LayoutDeviceIntRect();
+  if (!isVisible) {
+    return {};
+  }
 
   nsRect rect;
   nsIFrame* frame = caret->GetGeometry(&rect);
-  if (!frame || rect.IsEmpty()) return LayoutDeviceIntRect();
+  if (!frame || rect.IsEmpty()) {
+    return {};
+  }
 
   PresShell* presShell = mDoc->PresShellPtr();
   // Transform rect to be relative to the root frame.
@@ -652,115 +654,22 @@ LayoutDeviceIntRect HyperTextAccessible::GetCaretRect(nsIWidget** aWidget) {
     // the DOM node contaning the caret might be focused, but the Accessible
     // might not be; e.g. due to an autocomplete popup suggestion having a11y
     // focus.
-    return LayoutDeviceIntRect();
+    return {};
   }
-  LayoutDeviceIntRect charRect = CharBounds(
-      caretOffset, nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE);
+
+  // Vertically align the caret to the top of the line.
+  TextLeafPoint caretPoint = TextLeafPoint::GetCaret(this);
+  if (caretPoint.mIsEndOfLineInsertionPoint) {
+    caretPoint =
+        caretPoint.FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
+  }
+
+  LayoutDeviceIntRect charRect = caretPoint.CharBounds();
   if (!charRect.IsEmpty()) {
     caretRect.SetTopEdge(charRect.Y());
   }
 
-  *aWidget = frame->GetNearestWidget();
-  return caretRect;
-}
-
-void HyperTextAccessible::GetSelectionDOMRanges(SelectionType aSelectionType,
-                                                nsTArray<nsRange*>* aRanges) {
-  if (IsDoc() && !AsDoc()->HasLoadState(DocAccessible::eTreeConstructed)) {
-    // Rarely, a client query can be handled after a DocAccessible is created
-    // but before the initial tree is constructed, since DoInitialUpdate happens
-    // during a refresh tick. In that case, there might be a DOM selection, but
-    // we can't use it. We will crash if we try due to mContent being null, etc.
-    // This should only happen in the parent process because we should never
-    // try to push the cache in a content process before the initial tree is
-    // constructed.
-    MOZ_ASSERT(XRE_IsParentProcess(), "Query before DoInitialUpdate");
-    return;
-  }
-  // Ignore selection if it is not visible.
-  RefPtr<nsFrameSelection> frameSelection = FrameSelection();
-  if (!frameSelection || frameSelection->GetDisplaySelection() <=
-                             nsISelectionController::SELECTION_HIDDEN) {
-    return;
-  }
-
-  dom::Selection* domSel = frameSelection->GetSelection(aSelectionType);
-  if (!domSel) return;
-
-  nsINode* startNode = GetNode();
-
-  RefPtr<EditorBase> editorBase = GetEditor();
-  if (editorBase) {
-    startNode = editorBase->GetRoot();
-  }
-
-  if (!startNode) return;
-
-  uint32_t childCount = startNode->GetChildCount();
-  nsresult rv = domSel->GetDynamicRangesForIntervalArray(
-      startNode, 0, startNode, childCount, true, aRanges);
-  NS_ENSURE_SUCCESS_VOID(rv);
-
-  // Remove collapsed ranges
-  aRanges->RemoveElementsBy(
-      [](const auto& range) { return range->Collapsed(); });
-}
-
-int32_t HyperTextAccessible::SelectionCount() {
-  nsTArray<nsRange*> ranges;
-  GetSelectionDOMRanges(SelectionType::eNormal, &ranges);
-  return ranges.Length();
-}
-
-bool HyperTextAccessible::SelectionBoundsAt(int32_t aSelectionNum,
-                                            int32_t* aStartOffset,
-                                            int32_t* aEndOffset) {
-  *aStartOffset = *aEndOffset = 0;
-
-  nsTArray<nsRange*> ranges;
-  GetSelectionDOMRanges(SelectionType::eNormal, &ranges);
-
-  uint32_t rangeCount = ranges.Length();
-  if (aSelectionNum < 0 || aSelectionNum >= static_cast<int32_t>(rangeCount)) {
-    return false;
-  }
-
-  nsRange* range = ranges[aSelectionNum];
-
-  // Make sure start is before end, by swapping DOM points.  This occurs when
-  // the user selects backwards in the text.
-  const Maybe<int32_t> order =
-      nsContentUtils::ComparePoints(range->EndRef(), range->StartRef());
-
-  if (!order) {
-    MOZ_ASSERT_UNREACHABLE();
-    return false;
-  }
-
-  const RangeBoundary& precedingBoundary =
-      *order < 0 ? range->EndRef() : range->StartRef();
-  const RangeBoundary& followingBoundary =
-      *order < 0 ? range->StartRef() : range->EndRef();
-
-  if (!precedingBoundary.GetContainer()->IsInclusiveDescendantOf(mContent)) {
-    *aStartOffset = 0;
-  } else {
-    *aStartOffset = DOMPointToOffset(
-        precedingBoundary.GetContainer(),
-        AssertedCast<int32_t>(*precedingBoundary.Offset(
-            RangeBoundary::OffsetFilter::kValidOrInvalidOffsets)));
-  }
-
-  if (!followingBoundary.GetContainer()->IsInclusiveDescendantOf(mContent)) {
-    *aEndOffset = CharacterCount();
-  } else {
-    *aEndOffset = DOMPointToOffset(
-        followingBoundary.GetContainer(),
-        AssertedCast<int32_t>(*followingBoundary.Offset(
-            RangeBoundary::OffsetFilter::kValidOrInvalidOffsets)),
-        true);
-  }
-  return true;
+  return {caretRect, frame->GetNearestWidget()};
 }
 
 bool HyperTextAccessible::RemoveFromSelection(int32_t aSelectionNum) {
@@ -845,11 +754,24 @@ void HyperTextAccessible::ScrollSubstringToPoint(int32_t aStartOffset,
 
 void HyperTextAccessible::SelectionRanges(
     nsTArray<a11y::TextRange>* aRanges) const {
-  dom::Selection* sel = DOMSelection();
-  if (!sel) {
+  if (IsDoc() && !AsDoc()->HasLoadState(DocAccessible::eTreeConstructed)) {
+    // Rarely, a client query can be handled after a DocAccessible is created
+    // but before the initial tree is constructed, since DoInitialUpdate happens
+    // during a refresh tick. In that case, there might be a DOM selection, but
+    // we can't use it. We will crash if we try due to mContent being null, etc.
+    // This should only happen in the parent process because we should never
+    // try to push the cache in a content process before the initial tree is
+    // constructed.
+    MOZ_ASSERT(XRE_IsParentProcess(), "Query before DoInitialUpdate");
     return;
   }
-
+  // Ignore selection if it is not visible.
+  RefPtr<nsFrameSelection> frameSelection = FrameSelection();
+  if (!frameSelection || frameSelection->GetDisplaySelection() <=
+                             nsISelectionController::SELECTION_HIDDEN) {
+    return;
+  }
+  dom::Selection* sel = &frameSelection->NormalSelection();
   TextRange::TextRangesFromSelection(sel, aRanges);
 }
 

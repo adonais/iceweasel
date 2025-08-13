@@ -7,16 +7,15 @@
 #ifndef mozilla_layout_RemotePrintJobParent_h
 #define mozilla_layout_RemotePrintJobParent_h
 
-#include "mozilla/layout/PRemotePrintJobParent.h"
-#include "mozilla/layout/printing/DrawEventRecorder.h"
-
-#include "nsCOMArray.h"
-#include "nsCOMPtr.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/gfx/CrossProcessPaint.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/RecordedEvent.h"
-#include "mozilla/gfx/CrossProcessPaint.h"
+#include "mozilla/layout/PRemotePrintJobParent.h"
+#include "mozilla/layout/printing/DrawEventRecorder.h"
+#include "nsCOMArray.h"
+#include "nsCOMPtr.h"
 
 class nsDeviceContext;
 class nsIPrintSettings;

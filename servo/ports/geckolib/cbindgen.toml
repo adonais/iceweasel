@@ -175,6 +175,7 @@ include = [
   "Overflow",
   "LengthPercentage",
   "LetterSpacing",
+  "LikelyBaseUriDependency",
   "NonNegativeLengthPercentage",
   "LengthPercentageOrAuto",
   "LineHeight",
@@ -336,6 +337,7 @@ include = [
   "PhysicalAxis",
   "PhysicalSide",
   "QueryFontMetricsFlags",
+  "AllowAnchorPosResolutionInCalcPercentage",
 ]
 item_types = [
   "enums",
@@ -1048,7 +1050,7 @@ renaming_overrides_prefixing = true
 """
 
 "Zoom" = """
- SERVO_FIXED_POINT_HELPERS(StyleZoom, uint16_t, StyleZOOM_FRACTION_BITS);
+ float ToFloat() const { return _0; }
  inline float Zoom(float) const;
  inline float Unzoom(float) const;
  inline nscoord ZoomCoord(nscoord) const;
@@ -1075,11 +1077,6 @@ renaming_overrides_prefixing = true
 "GenericViewTimelineInset" = """
  public:
   inline StyleGenericViewTimelineInset();
-"""
-
-"ViewTransitionName" = """
- public:
-  StyleViewTransitionName() : _0(nsGkAtoms::_empty) {}
 """
 
 "Time" = """

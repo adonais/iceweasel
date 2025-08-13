@@ -9,8 +9,9 @@ static_assert(false, "This should not be compiled in !DEBUG");
 #endif  // DEBUG
 
 #include "nsAutoLayoutPhase.h"
-#include "nsPresContext.h"
+
 #include "nsContentUtils.h"
+#include "nsPresContext.h"
 
 nsAutoLayoutPhase::nsAutoLayoutPhase(nsPresContext* aPresContext,
                                      nsLayoutPhase aPhase)

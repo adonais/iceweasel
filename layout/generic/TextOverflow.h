@@ -7,13 +7,14 @@
 #ifndef TextOverflow_h_
 #define TextOverflow_h_
 
-#include "nsDisplayList.h"
-#include "nsTHashSet.h"
+#include <algorithm>
+
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WritingModes.h"
-#include <algorithm>
+#include "nsDisplayList.h"
+#include "nsTHashSet.h"
 
 class nsBlockFrame;
 class nsLineBox;

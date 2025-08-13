@@ -3,15 +3,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.fenix
+
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
+import io.mockk.verify
 import mozilla.components.browser.errorpages.ErrorPages
 import mozilla.components.browser.errorpages.ErrorType
 import mozilla.components.concept.engine.request.RequestInterceptor
+import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -44,6 +49,50 @@ class AppRequestInterceptorTest {
         )
 
         every { (interceptor as AppRequestInterceptor).isConnected() } returns true
+    }
+
+    @Test
+    fun `GIVEN request to ABOUT_HOME WHEN request is intercepted THEN return a null interception response and navigate to the homepage`() {
+        val result = interceptor.onLoadRequest(
+            engineSession = mockk(),
+            uri = ABOUT_HOME_URL,
+            lastUri = ABOUT_HOME_URL,
+            hasUserGesture = true,
+            isSameDomain = true,
+            isDirectNavigation = false,
+            isRedirect = false,
+            isSubframeRequest = false,
+        )
+
+        assertNull(result)
+
+        verify {
+            navigationController.navigate(NavGraphDirections.actionGlobalHome())
+        }
+    }
+
+    @Test
+    fun `GIVEN homepage is currently shown and a request to ABOUT_HOME WHEN request is intercepted THEN return a null interception response and do not navigate to the homepage`() {
+        val mockDestination: NavDestination = mockk(relaxed = true)
+        every { mockDestination.id } returns R.id.homeFragment
+        every { navigationController.currentDestination } returns mockDestination
+
+        val result = interceptor.onLoadRequest(
+            engineSession = mockk(),
+            uri = ABOUT_HOME_URL,
+            lastUri = ABOUT_HOME_URL,
+            hasUserGesture = true,
+            isSameDomain = true,
+            isDirectNavigation = false,
+            isRedirect = false,
+            isSubframeRequest = false,
+        )
+
+        assertNull(result)
+
+        verify(exactly = 0) {
+            navigationController.navigate(NavGraphDirections.actionGlobalHome())
+        }
     }
 
     @Test

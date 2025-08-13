@@ -3483,6 +3483,11 @@ bool WasmTagObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   if (!ParseValTypes(cx, paramsVal, params)) {
     return false;
   }
+  if (params.length() > MaxParams) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_EXN_TAG_PARAMS);
+    return false;
+  }
 
   RefPtr<TypeContext> types = js_new<TypeContext>();
   if (!types) {
@@ -5135,6 +5140,12 @@ static bool RejectWithErrorNumber(JSContext* cx, uint32_t errorNumber,
   return RejectWithPendingException(cx, promise);
 }
 
+static bool RejectWithOutOfMemory(JSContext* cx,
+                                  Handle<PromiseObject*> promise) {
+  ReportOutOfMemory(cx);
+  return RejectWithPendingException(cx, promise);
+}
+
 static bool ResolveResponse_OnFulfilled(JSContext* cx, unsigned argc,
                                         Value* vp) {
   CallArgs callArgs = CallArgsFromVp(argc, vp);
@@ -5149,7 +5160,7 @@ static bool ResolveResponse_OnFulfilled(JSContext* cx, unsigned argc,
   auto task = cx->make_unique<CompileStreamTask>(cx, promise, compileArgs,
                                                  instantiate, importObj);
   if (!task || !task->init(cx)) {
-    return false;
+    return RejectWithOutOfMemory(cx, promise);
   }
 
   if (!callArgs.get(0).isObject()) {

@@ -504,6 +504,9 @@ newtab-topic-selection-button-pick-interests = Välj dina intressen
 newtab-section-follow-button = Följ
 newtab-section-following-button = Följer
 newtab-section-unfollow-button = Sluta följa
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Finjustera ditt flöde
+newtab-section-follow-highlight-subtitle = Följ dina intressen för att se mer av vad du gillar.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -546,6 +549,11 @@ newtab-download-mobile-highlight-body-variant-c = Visste du att du kan ta med { 
 newtab-download-mobile-highlight-image =
     .aria-label = QR-kod för att ladda ner { -brand-product-name } för mobil
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Dina favoriter nära till hands
+newtab-shortcuts-highlight-subtitle = Lägg till en genväg så att du har dina favoritwebbplatser bara ett klick bort.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -579,3 +587,5 @@ newtab-trending-searches-hide-trending =
     .title = Dölj trendiga sökningar
 newtab-trending-searches-learn-more = Läs mer
 newtab-trending-searches-dismiss = Dölj trendiga sökningar
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Populära sökningar

@@ -103,6 +103,7 @@ use.counter:
     expires: never
     send_in_pings:
       - use-counters
+      - metrics
 
   dedicated_workers_destroyed:
     type: counter
@@ -666,8 +667,8 @@ namespace mozilla::dom {
 const char* IncrementUseCounter(UseCounter aUseCounter, bool aIsPage) {
   static constexpr struct {
     const char* name;
-    glean::impl::CounterMetric doc_metric;
-    glean::impl::CounterMetric page_metric;
+    glean::impl::CounterMetric<> doc_metric;
+    glean::impl::CounterMetric<> page_metric;
   } kEntries[] = {
 """
     )
@@ -738,9 +739,9 @@ const char* IncrementUseCounter(UseCounter aUseCounter, bool aIsPage) {
 const char* IncrementWorkerUseCounter(UseCounterWorker aUseCounter, WorkerKind aKind) {
   static constexpr struct {
     const char* name;
-    glean::impl::CounterMetric dedicated_metric;
-    glean::impl::CounterMetric shared_metric;
-    glean::impl::CounterMetric service_metric;
+    glean::impl::CounterMetric<> dedicated_metric;
+    glean::impl::CounterMetric<> shared_metric;
+    glean::impl::CounterMetric<> service_metric;
   } kEntries[] = {
 """
     )

@@ -13,6 +13,7 @@ window.onclick = function foo() {
   function subFunction() { nestedSubFunction(); };
   function nestedSubFunction() {};
 };
+window.scriptReady = true;
 `;
 const TEST_URL =
   "data:text/html,<!DOCTYPE html><html><script>" + JS_CODE + " </script>";
@@ -21,6 +22,11 @@ add_task(async function testTracingDocument() {
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    info("Wait for scriptReady on the window object");
+    await ContentTaskUtils.waitForCondition(
+      () => content.wrappedJSObject.scriptReady
+    );
+
     const { JSTracer } = ChromeUtils.importESModule(
       "resource://devtools/server/tracer/tracer.sys.mjs",
       { global: "shared" }

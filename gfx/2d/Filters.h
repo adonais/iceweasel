@@ -22,6 +22,7 @@ class SourceSurface;
 enum FilterBackend {
   FILTER_BACKEND_SOFTWARE = 0,
   FILTER_BACKEND_DIRECT2D1_1,
+  FILTER_BACKEND_WEBGL,
   FILTER_BACKEND_RECORDING,
   FILTER_BACKEND_CAPTURE
 };
@@ -169,7 +170,7 @@ enum ConvolveMatrixAtts {
   ATT_CONVOLVE_MATRIX_DIVISOR,             // Float
   ATT_CONVOLVE_MATRIX_BIAS,                // Float
   ATT_CONVOLVE_MATRIX_TARGET,              // IntPoint
-  ATT_CONVOLVE_MATRIX_SOURCE_RECT,         // IntRect
+  ATT_CONVOLVE_MATRIX_RENDER_RECT,         // IntRect
   ATT_CONVOLVE_MATRIX_EDGE_MODE,           // ConvolveMatrixEdgeMode
   ATT_CONVOLVE_MATRIX_KERNEL_UNIT_LENGTH,  // Size
   ATT_CONVOLVE_MATRIX_PRESERVE_ALPHA,      // bool
@@ -271,6 +272,7 @@ enum LightingAtts {
   ATT_LIGHTING_COLOR,               // Color
   ATT_LIGHTING_SURFACE_SCALE,       // Float
   ATT_LIGHTING_KERNEL_UNIT_LENGTH,  // Size
+  ATT_LIGHTING_RENDER_RECT,         // IntRect
 
   ATT_DIFFUSE_LIGHTING_DIFFUSE_CONSTANT,  // Float
 

@@ -5,8 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DepthOrderedFrameList.h"
-#include "nsIFrame.h"
+
 #include "nsContainerFrame.h"
+#include "nsIFrame.h"
 
 namespace mozilla {
 

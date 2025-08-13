@@ -1,0 +1,12 @@
+# Copyright 2025 The Chromium Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//chromium/build/rust/rust_executable.gni")
+
+rust_executable("test_rust_exe_2") {
+  crate_root = "main.rs"
+  sources = [ "main.rs" ]
+  deps = [ "//chromium/build/rust/tests/test_proc_macro_crate_2:test_proc_macro_crate" ]
+  build_native_rust_unit_tests = true
+}

@@ -1,4 +1,4 @@
-# Copyright (c) 2016 The Chromium Authors. All rights reserved.
+# Copyright 2016 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -6,11 +6,11 @@
 # to make it easier to roll new versions of //build in.
 
 build_dotfile_settings = {
-  exec_script_whitelist = [
-    "//chromium/build/config/android/config.gni",
-    "//chromium/build/config/android/internal_rules.gni",
+  exec_script_allowlist = [
     "//chromium/build/config/android/rules.gni",
+    "//chromium/build/config/apple/mobile_config.gni",
     "//chromium/build/config/chromeos/rules.gni",
+    "//chromium/build/config/clang/BUILD.gn",
     "//chromium/build/config/compiler/BUILD.gn",
     "//chromium/build/config/compiler/pgo/BUILD.gn",
     "//chromium/build/config/gcc/gcc_version.gni",
@@ -25,18 +25,24 @@ build_dotfile_settings = {
     "//chromium/build/config/mac/mac_sdk.gni",
     "//chromium/build/config/mac/rules.gni",
     "//chromium/build/config/posix/BUILD.gn",
-    "//chromium/build/config/sysroot.gni",
+    "//chromium/build/config/rust.gni",
     "//chromium/build/config/win/BUILD.gn",
     "//chromium/build/config/win/visual_studio_version.gni",
+    "//chromium/build/rust/analyze.gni",
     "//chromium/build/timestamp.gni",
     "//chromium/build/toolchain/apple/toolchain.gni",
     "//chromium/build/toolchain/BUILD.gn",
     "//chromium/build/toolchain/concurrent_links.gni",
-    "//chromium/build/toolchain/goma.gni",
     "//chromium/build/toolchain/nacl/BUILD.gn",
+    "//chromium/build/toolchain/rbe.gni",
     "//chromium/build/toolchain/toolchain.gni",
     "//chromium/build/toolchain/win/BUILD.gn",
+    "//chromium/build/toolchain/win/win_toolchain_data.gni",
+    "//chromium/build/toolchain/zos/BUILD.gn",
     "//chromium/build/util/branding.gni",
-    "//chromium/build/util/version.gni",
   ]
+
+  # TODO(crbug.com/389986807) - move other clients to `exec_script_allowlist`
+  # so that we don't need to keep supporting `exec_script_whitelist`.
+  exec_script_whitelist = exec_script_allowlist
 }

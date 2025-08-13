@@ -31,6 +31,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/dom/TrustedTypesConstants.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/StaticPrefs_security.h"
 
 using namespace mozilla;
@@ -143,7 +144,8 @@ void CSP_ApplyMetaCSPToDoc(mozilla::dom::Document& aDoc,
     return;
   }
 
-  nsCOMPtr<nsIContentSecurityPolicy> csp = aDoc.GetCsp();
+  nsCOMPtr<nsIContentSecurityPolicy> csp =
+      PolicyContainer::GetCSP(aDoc.GetPolicyContainer());
   if (!csp) {
     MOZ_ASSERT(false, "how come there is no CSP");
     return;
@@ -165,7 +167,12 @@ void CSP_ApplyMetaCSPToDoc(mozilla::dom::Document& aDoc,
       true);  // delivered through the meta tag
   NS_ENSURE_SUCCESS_VOID(rv);
   if (nsPIDOMWindowInner* inner = aDoc.GetInnerWindow()) {
-    inner->SetCsp(csp);
+    if (nsIPolicyContainer* policyContainer = inner->GetPolicyContainer()) {
+      inner->SetPolicyContainer(policyContainer);
+    } else {
+      RefPtr<PolicyContainer> newPolicyContainer = new PolicyContainer();
+      inner->SetPolicyContainer(newPolicyContainer);
+    }
   }
   aDoc.ApplySettingsFromCSP(false);
 }
@@ -465,6 +472,16 @@ nsCSPHostSrc* CSP_CreateHostSrcFromSelfURI(nsIURI* aSelfURI) {
 bool CSP_IsEmptyDirective(const nsAString& aValue, const nsAString& aDir) {
   return (aDir.Length() == 0 && aValue.Length() == 0);
 }
+
+bool CSP_IsInvalidDirectiveValue(mozilla::Span<const char16_t> aValue) {
+  for (char16_t c : aValue) {
+    if (!(c >= 0x21 && c <= 0x7E)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool CSP_IsDirective(const nsAString& aValue, CSPDirective aDir) {
   return aValue.LowerCaseEqualsASCII(CSP_CSPDirectiveToString(aDir));
 }
@@ -1265,11 +1282,6 @@ bool nsCSPDirective::permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo,
 
         nsTArray<SRIMetadata> integritySources =
             ParseSRIMetadata(integrityMetadata);
-        MOZ_ASSERT(
-            integritySources.IsEmpty() == integrityMetadata.IsEmpty(),
-            "The integrity metadata should be only be empty, "
-            "when the parsed string was completely empty, otherwise it should "
-            "include at least one valid hash");
 
         // Step 1.3.2. If integrity sources is "no metadata" or an empty set,
         // skip the remaining substeps.

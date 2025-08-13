@@ -26,15 +26,12 @@ dictionary SVGPathDataSettings {
 };
 
 interface mixin SVGPathData {
-   [Pref="dom.svg.pathSegment.enabled"]
    sequence<SVGPathSegment> getPathData(optional SVGPathDataSettings settings = {});
-   [Pref="dom.svg.pathSegment.enabled"]
    undefined setPathData(sequence<SVGPathSegmentInit> pathData);
 };
 
 [Exposed=Window]
 interface SVGPathElement : SVGGeometryElement {
-  [Pref="dom.svg.pathSegment.enabled"]
   SVGPathSegment? getPathSegmentAtLength(float distance);
 };
 

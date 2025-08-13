@@ -18,9 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Card
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,26 +40,27 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.Divider
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem.CheckableItem
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.text.value
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.menu.compose.MenuBadgeItem
 import org.mozilla.fenix.components.menu.compose.MenuGroup
 import org.mozilla.fenix.components.menu.compose.MenuItem
 import org.mozilla.fenix.components.menu.compose.MenuScaffold
 import org.mozilla.fenix.components.menu.compose.MenuTextItem
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
-import org.mozilla.fenix.compose.SwitchWithLabel
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.trustpanel.store.AutoplayValue
 import org.mozilla.fenix.settings.trustpanel.store.WebsiteInfoState
 import org.mozilla.fenix.settings.trustpanel.store.WebsitePermission
 import org.mozilla.fenix.theme.FirefoxTheme
 
-private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(4.dp)
+private val BANNER_ROUNDED_CORNER_SHAPE = RoundedCornerShape(
+    topStart = 28.dp, topEnd = 28.dp, bottomStart = 4.dp, bottomEnd = 4.dp,
+)
 
 @Suppress("LongParameterList", "LongMethod")
 @Composable
@@ -81,7 +83,6 @@ internal fun ProtectionPanel(
             ProtectionPanelHeader(
                 icon = icon,
                 websiteInfoState = websiteInfoState,
-                onConnectionSecurityClick = onConnectionSecurityClick,
             )
         },
     ) {
@@ -89,6 +90,22 @@ internal fun ProtectionPanel(
             ProtectionPanelBanner(
                 isSecured = websiteInfoState.isSecured,
                 isTrackingProtectionEnabled = isTrackingProtectionEnabled,
+            )
+
+            MenuBadgeItem(
+                label = stringResource(id = R.string.protection_panel_etp_toggle_label),
+                checked = isTrackingProtectionEnabled,
+                description = if (isTrackingProtectionEnabled) {
+                    stringResource(id = R.string.protection_panel_etp_toggle_enabled_description_2)
+                } else {
+                    stringResource(id = R.string.protection_panel_etp_toggle_disabled_description_2)
+                },
+                badgeText = if (isTrackingProtectionEnabled) {
+                    stringResource(id = R.string.protection_panel_etp_toggle_on)
+                } else {
+                    stringResource(id = R.string.protection_panel_etp_toggle_off)
+                },
+                onClick = onTrackingProtectionToggleClick,
             )
 
             if (numberOfTrackersBlocked == 0) {
@@ -107,19 +124,32 @@ internal fun ProtectionPanel(
                     afterIconPainter = painterResource(id = R.drawable.mozac_ic_chevron_right_24),
                 )
             }
+        }
 
-            Divider(color = FirefoxTheme.colors.borderSecondary)
+        MenuGroup {
+            if (websiteInfoState.isSecured) {
+                MenuItem(
+                    label = stringResource(id = R.string.connection_security_panel_secure),
+                    beforeIconPainter = painterResource(id = R.drawable.mozac_ic_lock_24),
+                    description = stringResource(
+                        id = R.string.connection_security_panel_verified_by,
+                        websiteInfoState.certificateName,
+                    ),
+                    onClick = onConnectionSecurityClick,
+                )
+            } else {
+                MenuItem(
+                    label = stringResource(id = R.string.connection_security_panel_not_secure),
+                    beforeIconPainter = painterResource(id = R.drawable.mozac_ic_lock_slash_24),
+                    onClick = onConnectionSecurityClick,
+                )
+            }
+        }
 
-            SwitchWithLabel(
-                label = stringResource(id = R.string.protection_panel_etp_toggle_label),
-                checked = isTrackingProtectionEnabled,
-                modifier = Modifier.padding(start = 16.dp, top = 6.dp, end = 9.dp, bottom = 14.dp),
-                description = if (isTrackingProtectionEnabled) {
-                    stringResource(id = R.string.protection_panel_etp_toggle_enabled_description)
-                } else {
-                    stringResource(id = R.string.protection_panel_etp_toggle_disabled_description)
-                },
-                onCheckedChange = { onTrackingProtectionToggleClick() },
+        MenuGroup {
+            MenuTextItem(
+                label = stringResource(id = R.string.clear_site_data),
+                onClick = onClearSiteDataMenuClick,
             )
         }
 
@@ -131,18 +161,11 @@ internal fun ProtectionPanel(
             )
         }
 
-        MenuGroup {
-            MenuTextItem(
-                label = stringResource(id = R.string.clear_site_data),
-                onClick = onClearSiteDataMenuClick,
-            )
-        }
-
         LinkText(
-            text = stringResource(id = R.string.protection_panel_privacy_and_security_settings),
+            text = stringResource(id = R.string.protection_panel_privacy_and_security_settings_2),
             linkTextStates = listOf(
                 LinkTextState(
-                    text = stringResource(id = R.string.protection_panel_privacy_and_security_settings),
+                    text = stringResource(id = R.string.protection_panel_privacy_and_security_settings_2),
                     url = "",
                     onClick = { onPrivacySecuritySettingsClick() },
                 ),
@@ -158,18 +181,17 @@ private fun ProtectionPanelBanner(
     isSecured: Boolean,
     isTrackingProtectionEnabled: Boolean,
 ) {
-    val backgroundColor: Color
+    var backgroundColor: Color = FirefoxTheme.colors.layer3
     val imageId: Int
     val title: String
     val description: String
 
     if (!isSecured) {
-        backgroundColor = FirefoxTheme.colors.layerCritical
         imageId = R.drawable.protection_panel_not_secure
         title = stringResource(id = R.string.protection_panel_banner_not_secure_title)
         description = stringResource(id = R.string.protection_panel_banner_not_secure_description)
     } else if (!isTrackingProtectionEnabled) {
-        backgroundColor = FirefoxTheme.colors.layer3
+        backgroundColor = FirefoxTheme.colors.layerSearch
         imageId = R.drawable.protection_panel_not_protected
         title = stringResource(id = R.string.protection_panel_banner_not_protected_title)
         description = stringResource(
@@ -177,7 +199,6 @@ private fun ProtectionPanelBanner(
             stringResource(id = R.string.app_name),
         )
     } else {
-        backgroundColor = FirefoxTheme.colors.layerAccentNonOpaque
         imageId = R.drawable.protection_panel_protected
         title = stringResource(
             id = R.string.protection_panel_banner_protected_title,
@@ -187,16 +208,14 @@ private fun ProtectionPanelBanner(
     }
 
     Card(
-        modifier = Modifier
-            .padding(start = 8.dp, top = 8.dp, end = 8.dp)
-            .fillMaxWidth(),
-        backgroundColor = backgroundColor,
-        elevation = 0.dp,
-        shape = ROUNDED_CORNER_SHAPE,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        shape = BANNER_ROUNDED_CORNER_SHAPE,
     ) {
         Row(
-            modifier = Modifier.padding(start = 12.dp, top = 16.dp, end = 16.dp, bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Image(
                 modifier = Modifier.size(90.dp),
@@ -229,9 +248,10 @@ private fun WebsitePermissionsMenuGroup(
     onAutoplayValueClick: (AutoplayValue) -> Unit,
     onToggleablePermissionClick: (WebsitePermission.Toggleable) -> Unit,
 ) {
-    MenuGroup {
+    Column {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             Text(
                 text = stringResource(id = R.string.protection_panel_permissions_title),
@@ -240,23 +260,27 @@ private fun WebsitePermissionsMenuGroup(
             )
         }
 
-        websitePermissions.forEachIndexed { index, websitePermission ->
-            if (index != 0) {
-                Divider(color = FirefoxTheme.colors.borderSecondary)
-            }
+        MenuGroup {
+            websitePermissions.forEachIndexed { index, websitePermission ->
+                MenuItem(
+                    label = stringResource(id = websitePermission.deviceFeature.getLabelId()),
+                    beforeIconPainter = painterResource(id = websitePermission.deviceFeature.getIconId()),
+                    afterContent = when (websitePermission) {
+                        is WebsitePermission.Autoplay -> {
+                            { AutoplayDropdownMenu(websitePermission, onAutoplayValueClick) }
+                        }
 
-            MenuItem(
-                label = stringResource(id = websitePermission.deviceFeature.getLabelId()),
-                beforeIconPainter = painterResource(id = websitePermission.deviceFeature.getIconId()),
-                afterContent = when (websitePermission) {
-                    is WebsitePermission.Autoplay -> {
-                        { AutoplayDropdownMenu(websitePermission, onAutoplayValueClick) }
-                    }
-                    is WebsitePermission.Toggleable -> {
-                        { WebsitePermissionToggle(websitePermission, onToggleablePermissionClick) }
-                    }
-                },
-            )
+                        is WebsitePermission.Toggleable -> {
+                            {
+                                WebsitePermissionToggle(
+                                    websitePermission,
+                                    onToggleablePermissionClick,
+                                )
+                            }
+                        }
+                    },
+                )
+            }
         }
     }
 }
@@ -353,7 +377,7 @@ private fun ProtectionPanelPreview() {
     FirefoxTheme {
         Column(
             modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer3),
+                .background(color = FirefoxTheme.colors.layer1),
         ) {
             ProtectionPanel(
                 icon = null,

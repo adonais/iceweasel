@@ -140,6 +140,7 @@ class PopoverData;
 class Promise;
 class Sanitizer;
 class ShadowRoot;
+class StylePropertyMapReadOnly;
 class TrustedHTMLOrString;
 class UnrestrictedDoubleOrKeyframeAnimationOptions;
 template <typename T>
@@ -1172,19 +1173,17 @@ class Element : public FragmentOrElement {
   enum class Command : uint8_t {
     Invalid,
     Custom,
-    Auto,
     TogglePopover,
     ShowPopover,
     HidePopover,
     ShowModal,
+    RequestClose,
     Toggle,
     Close,
     Open,
   };
 
-  virtual bool IsValidCommandAction(Command aCommand) const {
-    return aCommand == Command::Auto;
-  }
+  virtual bool IsValidCommandAction(Command aCommand) const { return false; }
 
   /**
    * Elements can provide their own default behaviours for "Invoke" (see
@@ -1627,6 +1626,38 @@ class Element : public FragmentOrElement {
 
   MOZ_CAN_RUN_SCRIPT double CurrentCSSZoom();
 
+  Element* GetOffsetParent() {
+    CSSIntRect rcFrame;
+    return GetOffsetRect(rcFrame);
+  }
+  int32_t OffsetTop() {
+    CSSIntRect rcFrame;
+    GetOffsetRect(rcFrame);
+    return rcFrame.y;
+  }
+  int32_t OffsetLeft() {
+    CSSIntRect rcFrame;
+    GetOffsetRect(rcFrame);
+    return rcFrame.x;
+  }
+  int32_t OffsetWidth() {
+    CSSIntRect rcFrame;
+    GetOffsetRect(rcFrame);
+    return rcFrame.Width();
+  }
+  int32_t OffsetHeight() {
+    CSSIntRect rcFrame;
+    GetOffsetRect(rcFrame);
+    return rcFrame.Height();
+  }
+  /**
+   * Get the frame's offset information for offsetTop/Left/Width/Height.
+   * Returns the parent the offset is relative to.
+   * @note This method flushes pending notifications (FlushType::Layout).
+   * @param aRect the offset information [OUT]
+   */
+  Element* GetOffsetRect(CSSIntRect& aRect);
+
   // This function will return the block size of first line box, no matter if
   // the box is 'block' or 'inline'. The return unit is pixel. If the element
   // can't get a primary frame, we will return be zero.
@@ -1698,6 +1729,8 @@ class Element : public FragmentOrElement {
                              ErrorResult& aError);
 
   void GetHTML(const GetHTMLOptions& aOptions, nsAString& aResult);
+
+  StylePropertyMapReadOnly* ComputedStyleMap();
 
   //----------------------------------------
 

@@ -15,8 +15,8 @@ class CrashReducerTest {
     fun `middlewear actions don't manipulate the state`() {
         listOf(
             CrashAction.Initialize,
-            CrashAction.CheckDeferred,
-            CrashAction.CheckForCrashes,
+            CrashAction.CheckDeferred(),
+            CrashAction.CheckForCrashes(),
             CrashAction.FinishCheckingForCrashes(hasUnsentCrashes = true),
             CrashAction.FinishCheckingForCrashes(hasUnsentCrashes = false),
         ).forEach {
@@ -44,17 +44,23 @@ class CrashReducerTest {
 
     @Test
     fun `GIVEN a Ready state WHEN we process a ShowPrompt action THEN update state to Reporting`() {
-        val state = crashReducer(CrashState.Idle, CrashAction.ShowPrompt)
-        assertEquals(state, CrashState.Reporting)
+        val state = crashReducer(CrashState.Idle, CrashAction.ShowPrompt())
+        assertEquals(state, CrashState.Reporting())
     }
 
     @Test
     fun `GIVEN a Reporting state WHEN we process a CancelTapped or ReportTapped action THEN update state to Done`() {
         listOf(
             CrashAction.CancelTapped,
-            CrashAction.ReportTapped(automaticallySendChecked = true),
+            CrashAction.ReportTapped(automaticallySendChecked = true, crashIDs = listOf()),
         ).forEach {
-            assertEquals(crashReducer(CrashState.Reporting, it), CrashState.Done)
+            assertEquals(crashReducer(CrashState.Reporting(), it), CrashState.Done)
         }
+    }
+
+    @Test
+    fun `GIVEN a ReportingPull state WHEN we process a CancelForEverTapped action THEN update state to Done`() {
+        val state = crashReducer(CrashState.Reporting(listOf("1", "2")), CrashAction.CancelForEverTapped)
+        assertEquals(state, CrashState.Done)
     }
 }

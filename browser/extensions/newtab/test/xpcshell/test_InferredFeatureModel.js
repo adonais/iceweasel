@@ -87,20 +87,24 @@ add_task(function test_DayTimeWeighting_getDateIntervals() {
     2,
     "Should return one interval per pastDay entry"
   );
-  Assert.ok(
-    intervals[0].end <= new Date(now),
+  Assert.lessOrEqual(
+    intervals[0].end,
+    new Date(now),
     "Each interval end should be before or equal to now"
   );
-  Assert.ok(
-    intervals[0].start < intervals[0].end,
+  Assert.less(
+    intervals[0].start,
+    intervals[0].end,
     "Start should be before end"
   );
-  Assert.ok(
-    intervals[1].end <= new Date(now),
+  Assert.lessOrEqual(
+    intervals[1].end,
+    new Date(now),
     "Each interval end should be before or equal to now"
   );
-  Assert.ok(
-    intervals[1].start < intervals[0].end,
+  Assert.less(
+    intervals[1].start,
+    intervals[0].end,
     "Start should be before end"
   );
 });
@@ -274,12 +278,14 @@ add_task(function test_FeatureModel_fromJSON() {
   const intervals = model.getDateIntervals(curTime);
   Assert.equal(intervals.length, jsonModelData.day_time_weighting.days.length);
   for (const interval of intervals) {
-    Assert.ok(
-      interval.start.getTime() <= interval.end.getTime(),
+    Assert.lessOrEqual(
+      interval.start.getTime(),
+      interval.end.getTime(),
       "Interval start and end are in correct order"
     );
-    Assert.ok(
-      interval.end.getTime() <= curTime.getTime(),
+    Assert.lessOrEqual(
+      interval.end.getTime(),
+      curTime.getTime(),
       "Interval end is not in future"
     );
   }
@@ -425,8 +431,9 @@ add_task(function test_computeMultipleVectors() {
     Number.isInteger(result.coarseInferredInterests.parenting),
     "Threshold is applied for coarse interest"
   );
-  Assert.ok(
-    result.inferredInterests.parenting > 0,
+  Assert.greater(
+    result.inferredInterests.parenting,
+    0,
     "Original inferred interest is returned"
   );
 });
@@ -460,8 +467,9 @@ add_task(function test_computeMultipleVectorsCondensed() {
     "test",
     "Model id returned"
   );
-  Assert.ok(
-    result.inferredInterests.parenting > 0,
+  Assert.greater(
+    result.inferredInterests.parenting,
+    0,
     "Original inferred interest is returned"
   );
 });
@@ -479,8 +487,9 @@ add_task(function test_computeMultipleVectorsNoPrivate() {
     "No coarse private interests available"
   );
   Assert.ok(!result.coarseInferredInterests, "No coarse interests available");
-  Assert.ok(
-    result.inferredInterests.parenting > 0,
+  Assert.greater(
+    result.inferredInterests.parenting,
+    0,
     "Original inferred interest is returned"
   );
 });
@@ -538,6 +547,7 @@ add_task(function test_computeCTRInterestVectorsNoNoise() {
     impressions: impressionInferredInterests,
     model_id: "test-ctr-model",
   });
+  console.log(JSON.stringify(result));
   Assert.equal(
     result.inferredInterests.model_id,
     "test-ctr-model",

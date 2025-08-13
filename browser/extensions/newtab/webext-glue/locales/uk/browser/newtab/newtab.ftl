@@ -8,6 +8,9 @@
 newtab-page-title = Нова вкладка
 newtab-settings-button =
     .title = Налаштуйте свою сторінку нової вкладки
+newtab-customize-panel-icon-button =
+    .title = Налаштувати цю сторінку
+newtab-customize-panel-icon-button-label = Налаштувати
 newtab-personalize-settings-icon-label =
     .title = Персоналізувати нову вкладку
     .aria-label = Налаштування
@@ -109,7 +112,7 @@ newtab-menu-edit-topsites = Змінити
 newtab-menu-open-new-window = Відкрити в новому вікні
 newtab-menu-open-new-private-window = Відкрити в приватному вікні
 newtab-menu-dismiss = Сховати
-newtab-menu-pin = Прикріпити
+newtab-menu-pin = Закріпити
 newtab-menu-unpin = Відкріпити
 newtab-menu-delete-history = Видалити з історії
 newtab-menu-save-to-pocket = Зберегти в { -pocket-brand-name }
@@ -502,6 +505,9 @@ newtab-topic-selection-button-pick-interests = Виберіть свої інт�
 newtab-section-follow-button = Читати
 newtab-section-following-button = Ви читаєте
 newtab-section-unfollow-button = Відписатися
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Налаштуйте свою стрічку
+newtab-section-follow-highlight-subtitle = Слідкуйте за своїми інтересами, щоб бачити більше того, що вам подобається.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -544,6 +550,11 @@ newtab-download-mobile-highlight-body-variant-c = Чи знаєте ви, що {
 newtab-download-mobile-highlight-image =
     .aria-label = QR-код для завантаження { -brand-product-name } для мобільних пристроїв
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Ваші закладки завжди під рукою
+newtab-shortcuts-highlight-subtitle = Додайте ярлик, щоб мати миттєвий доступ до своїх улюблених сайтів.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -577,3 +588,5 @@ newtab-trending-searches-hide-trending =
     .title = Приховати популярні пошукові запити
 newtab-trending-searches-learn-more = Докладніше
 newtab-trending-searches-dismiss = Приховати популярні пошукові запити
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Популярні пошукові запити

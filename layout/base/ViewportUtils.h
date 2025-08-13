@@ -9,6 +9,7 @@
 #include "mozilla/layers/ScrollableLayerGuid.h"
 
 class nsIFrame;
+class nsIContent;
 class nsPresContext;
 
 namespace mozilla {

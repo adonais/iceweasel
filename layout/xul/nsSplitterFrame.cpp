@@ -11,35 +11,36 @@
 // See documentation in associated header file
 //
 
+#include "nsSplitterFrame.h"
+
 #include "LayoutConstants.h"
 #include "SimpleXULLeafFrame.h"
 #include "gfxContext.h"
-#include "mozilla/ReflowInput.h"
-#include "nsSplitterFrame.h"
-#include "nsGkAtoms.h"
-#include "nsXULElement.h"
-#include "nsPresContext.h"
-#include "mozilla/dom/Document.h"
-#include "nsNameSpaceManager.h"
-#include "nsScrollbarButtonFrame.h"
-#include "nsIDOMEventListener.h"
-#include "nsICSSDeclaration.h"
-#include "nsFrameList.h"
-#include "nsHTMLParts.h"
-#include "mozilla/ComputedStyle.h"
 #include "mozilla/CSSOrderAwareFrameIterator.h"
-#include "nsContainerFrame.h"
-#include "nsLayoutUtils.h"
-#include "nsDisplayList.h"
-#include "nsContentUtils.h"
-#include "nsFlexContainerFrame.h"
+#include "mozilla/ComputedStyle.h"
+#include "mozilla/MouseEvents.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/MouseEvent.h"
-#include "mozilla/MouseEvents.h"
-#include "mozilla/PresShell.h"
-#include "mozilla/UniquePtr.h"
+#include "nsContainerFrame.h"
+#include "nsContentUtils.h"
+#include "nsDisplayList.h"
+#include "nsFlexContainerFrame.h"
+#include "nsFrameList.h"
+#include "nsGkAtoms.h"
+#include "nsHTMLParts.h"
+#include "nsICSSDeclaration.h"
+#include "nsIDOMEventListener.h"
+#include "nsLayoutUtils.h"
+#include "nsNameSpaceManager.h"
+#include "nsPresContext.h"
+#include "nsScrollbarButtonFrame.h"
 #include "nsStyledElement.h"
+#include "nsXULElement.h"
 
 using namespace mozilla;
 
@@ -639,18 +640,16 @@ nsresult nsSplitterFrameInner::MouseDown(Event* aMouseEvent) {
     const auto& pos = *childBox->StylePosition();
     const auto anchorResolutionParams =
         AnchorPosResolutionParams::From(childBox);
-    nsSize minSize = ToLengthWithFallback(
-        *pos.GetMinWidth(anchorResolutionParams.mPosition),
-        *pos.GetMinHeight(anchorResolutionParams.mPosition));
+    nsSize minSize =
+        ToLengthWithFallback(*pos.GetMinWidth(anchorResolutionParams),
+                             *pos.GetMinHeight(anchorResolutionParams));
     nsSize maxSize = ToLengthWithFallback(
-        *pos.GetMaxWidth(anchorResolutionParams.mPosition),
-        *pos.GetMaxHeight(anchorResolutionParams.mPosition),
-        NS_UNCONSTRAINEDSIZE);
-    nsSize prefSize(
-        ToLengthWithFallback(*pos.GetWidth(anchorResolutionParams.mPosition),
-                             curSize.width),
-        ToLengthWithFallback(*pos.GetHeight(anchorResolutionParams.mPosition),
-                             curSize.height));
+        *pos.GetMaxWidth(anchorResolutionParams),
+        *pos.GetMaxHeight(anchorResolutionParams), NS_UNCONSTRAINEDSIZE);
+    nsSize prefSize(ToLengthWithFallback(*pos.GetWidth(anchorResolutionParams),
+                                         curSize.width),
+                    ToLengthWithFallback(*pos.GetHeight(anchorResolutionParams),
+                                         curSize.height));
 
     maxSize.width = std::max(maxSize.width, minSize.width);
     maxSize.height = std::max(maxSize.height, minSize.height);

@@ -26,4 +26,3 @@ skip-if = [
 ["browser_ManifestObtainer_obtain.js"]
 
 ["browser_Manifest_install.js"]
-skip-if = ["verify"]

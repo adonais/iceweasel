@@ -89,6 +89,7 @@ import org.mozilla.geckoview.CompositorController;
 import org.mozilla.geckoview.ContentBlocking;
 import org.mozilla.geckoview.ContentBlockingController;
 import org.mozilla.geckoview.CrashHandler;
+import org.mozilla.geckoview.CrashPullController;
 import org.mozilla.geckoview.DeprecationSchedule;
 import org.mozilla.geckoview.ExperimentDelegate;
 import org.mozilla.geckoview.GeckoDisplay;
@@ -104,7 +105,6 @@ import org.mozilla.geckoview.MediaSession;
 import org.mozilla.geckoview.OrientationController;
 import org.mozilla.geckoview.OverscrollEdgeEffect;
 import org.mozilla.geckoview.PanZoomController;
-import org.mozilla.geckoview.ProfilerController;
 import org.mozilla.geckoview.RuntimeSettings;
 import org.mozilla.geckoview.ScreenLength;
 import org.mozilla.geckoview.SessionAccessibility;
@@ -449,7 +449,18 @@ package org.mozilla.geckoview {
     field @NonNull public final String uri;
   }
 
+  public static class ContentBlocking.BounceTrackingProtectionMode {
+    ctor protected BounceTrackingProtectionMode();
+    field public static final int BOUNCE_TRACKING_PROTECTION_MODE_DISABLED = 0;
+    field public static final int BOUNCE_TRACKING_PROTECTION_MODE_ENABLED = 1;
+    field public static final int BOUNCE_TRACKING_PROTECTION_MODE_ENABLED_DRY_RUN = 3;
+    field public static final int BOUNCE_TRACKING_PROTECTION_MODE_ENABLED_STANDBY = 2;
+  }
+
   @Retention(value=RetentionPolicy.SOURCE) public static interface ContentBlocking.CBAntiTracking {
+  }
+
+  @Retention(value=RetentionPolicy.SOURCE) public static interface ContentBlocking.CBCBounceTrackingProtectionMode {
   }
 
   @Retention(value=RetentionPolicy.SOURCE) public static interface ContentBlocking.CBCookieBannerMode {
@@ -547,7 +558,10 @@ package org.mozilla.geckoview {
   }
 
   @AnyThread public static class ContentBlocking.Settings extends RuntimeSettings {
+    method public boolean getAllowListBaselineTrackingProtection();
+    method public boolean getAllowListConvenienceTrackingProtection();
     method public int getAntiTrackingCategories();
+    method public int getBounceTrackingProtectionMode();
     method public boolean getCookieBannerDetectOnlyMode();
     method public boolean getCookieBannerGlobalRulesEnabled();
     method public boolean getCookieBannerGlobalRulesSubFramesEnabled();
@@ -568,7 +582,10 @@ package org.mozilla.geckoview {
     method @NonNull public String[] getSafeBrowsingPhishingTable();
     method @NonNull public Collection<ContentBlocking.SafeBrowsingProvider> getSafeBrowsingProviders();
     method public boolean getStrictSocialTrackingProtection();
+    method @NonNull public ContentBlocking.Settings setAllowListBaselineTrackingProtection(boolean);
+    method @NonNull public ContentBlocking.Settings setAllowListConvenienceTrackingProtection(boolean);
     method @NonNull public ContentBlocking.Settings setAntiTracking(int);
+    method @NonNull public ContentBlocking.Settings setBounceTrackingProtectionMode(int);
     method @NonNull public ContentBlocking.Settings setCookieBannerDetectOnlyMode(boolean);
     method @NonNull public ContentBlocking.Settings setCookieBannerGlobalRulesEnabled(boolean);
     method @NonNull public ContentBlocking.Settings setCookieBannerGlobalRulesSubFramesEnabled(boolean);
@@ -594,7 +611,10 @@ package org.mozilla.geckoview {
 
   @AnyThread public static class ContentBlocking.Settings.Builder extends RuntimeSettings.Builder<ContentBlocking.Settings> {
     ctor public Builder();
+    method @NonNull public ContentBlocking.Settings.Builder allowListBaselineTrackingProtection(boolean);
+    method @NonNull public ContentBlocking.Settings.Builder allowListConvenienceTrackingProtection(boolean);
     method @NonNull public ContentBlocking.Settings.Builder antiTracking(int);
+    method @NonNull public ContentBlocking.Settings.Builder bounceTrackingProtectionMode(int);
     method @NonNull public ContentBlocking.Settings.Builder cookieBannerGlobalRulesEnabled(boolean);
     method @NonNull public ContentBlocking.Settings.Builder cookieBannerGlobalRulesSubFramesEnabled(boolean);
     method @NonNull public ContentBlocking.Settings.Builder cookieBannerHandlingDetectOnlyMode(boolean);
@@ -689,6 +709,14 @@ package org.mozilla.geckoview {
     method @AnyThread public void unregister();
   }
 
+  public class CrashPullController {
+    ctor public CrashPullController();
+  }
+
+  public static interface CrashPullController.Delegate {
+    method @UiThread default public void onCrashPull(@NonNull String[]);
+  }
+
   public class CrashReporter {
     ctor public CrashReporter();
     method @AnyThread @NonNull public static GeckoResult<String> sendCrashReport(@NonNull Context, @NonNull Intent, @NonNull String);
@@ -719,6 +747,9 @@ package org.mozilla.geckoview {
   }
 
   @Retention(value=RetentionPolicy.SOURCE) public static interface ExperimentDelegate.ExperimentException.Codes {
+  }
+
+  @Retention(value=RetentionPolicy.CLASS) @Target(value={ElementType.TYPE, ElementType.TYPE_USE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.PACKAGE}) public interface ExperimentalGeckoViewApi {
   }
 
   public class GeckoDisplay {
@@ -870,11 +901,11 @@ package org.mozilla.geckoview {
     method @Nullable @UiThread public GeckoRuntime.ActivityDelegate getActivityDelegate();
     method @Nullable @UiThread public Autocomplete.StorageDelegate getAutocompleteStorageDelegate();
     method @NonNull @UiThread public ContentBlockingController getContentBlockingController();
+    method @Nullable @UiThread public CrashPullController.Delegate getCrashPullDelegate();
     method @NonNull @UiThread public static synchronized GeckoRuntime getDefault(@NonNull Context);
     method @Nullable @UiThread public GeckoRuntime.Delegate getDelegate();
     method @NonNull @UiThread public OrientationController getOrientationController();
     method @AnyThread @Nullable public GeckoPreferenceController.Observer.Delegate getPreferencesObserverDelegate();
-    method @Deprecated @DeprecationSchedule(id="GeckoRuntime-getProfilerController",version=142) @NonNull @UiThread public ProfilerController getProfilerController();
     method @Nullable @UiThread public GeckoRuntime.ServiceWorkerDelegate getServiceWorkerDelegate();
     method @AnyThread @NonNull public GeckoRuntimeSettings getSettings();
     method @NonNull @UiThread public StorageController getStorageController();
@@ -888,15 +919,13 @@ package org.mozilla.geckoview {
     method @AnyThread public void readFromParcel(@NonNull Parcel);
     method @UiThread public void setActivityDelegate(@Nullable GeckoRuntime.ActivityDelegate);
     method @UiThread public void setAutocompleteStorageDelegate(@Nullable Autocomplete.StorageDelegate);
+    method @UiThread public void setCrashPullDelegate(@Nullable CrashPullController.Delegate);
     method @UiThread public void setDelegate(@Nullable GeckoRuntime.Delegate);
     method @AnyThread public void setPreferencesObserverDelegate(@Nullable GeckoPreferenceController.Observer.Delegate);
     method @UiThread public void setServiceWorkerDelegate(@Nullable GeckoRuntime.ServiceWorkerDelegate);
     method @UiThread public void setWebNotificationDelegate(@Nullable WebNotificationDelegate);
     method @AnyThread public void shutdown();
     field public static final String ACTION_CRASHED = "org.mozilla.gecko.ACTION_CRASHED";
-    field @Deprecated @DeprecationSchedule(id="GeckoRuntime-CRASHED_PROCESS_TYPE_BACKGROUND_CHILD",version=142) public static final String CRASHED_PROCESS_TYPE_BACKGROUND_CHILD = "BACKGROUND_CHILD";
-    field @Deprecated @DeprecationSchedule(id="GeckoRuntime-CRASHED_PROCESS_TYPE_FOREGROUND_CHILD",version=142) public static final String CRASHED_PROCESS_TYPE_FOREGROUND_CHILD = "FOREGROUND_CHILD";
-    field @Deprecated @DeprecationSchedule(id="GeckoRuntime-CRASHED_PROCESS_TYPE_MAIN",version=142) public static final String CRASHED_PROCESS_TYPE_MAIN = "MAIN";
     field public static final String CRASHED_PROCESS_VISIBILITY_BACKGROUND_CHILD = "BACKGROUND_CHILD";
     field public static final String CRASHED_PROCESS_VISIBILITY_FOREGROUND_CHILD = "FOREGROUND_CHILD";
     field public static final String CRASHED_PROCESS_VISIBILITY_MAIN = "MAIN";
@@ -910,9 +939,6 @@ package org.mozilla.geckoview {
 
   public static interface GeckoRuntime.ActivityDelegate {
     method @Nullable @UiThread public GeckoResult<Intent> onStartActivityForResult(@NonNull PendingIntent);
-  }
-
-  @Deprecated @DeprecationSchedule(id="GeckoRuntime-CrashedProcessType",version=142) @Retention(value=RetentionPolicy.SOURCE) public static interface GeckoRuntime.CrashedProcessType {
   }
 
   @Retention(value=RetentionPolicy.SOURCE) public static interface GeckoRuntime.CrashedProcessVisibility {
@@ -1029,6 +1055,7 @@ package org.mozilla.geckoview {
     method @NonNull public GeckoRuntimeSettings setPostQuantumKeyExchangeEnabled(boolean);
     method @NonNull public GeckoRuntimeSettings setPreferredColorScheme(int);
     method @NonNull public GeckoRuntimeSettings setRemoteDebuggingEnabled(boolean);
+    method @NonNull public GeckoRuntimeSettings setRemoteSettingCrashPullNeverShowAgain(boolean);
     method @NonNull public GeckoRuntimeSettings setSameDocumentNavigationOverridesLoadType(boolean);
     method @NonNull public GeckoRuntimeSettings setSameDocumentNavigationOverridesLoadTypeForceDisable(@NonNull String);
     method @NonNull public GeckoRuntimeSettings setTranslationsOfferPopup(boolean);
@@ -1065,6 +1092,7 @@ package org.mozilla.geckoview {
     method @NonNull public GeckoRuntimeSettings.Builder consoleOutput(boolean);
     method @NonNull public GeckoRuntimeSettings.Builder contentBlocking(@NonNull ContentBlocking.Settings);
     method @NonNull public GeckoRuntimeSettings.Builder crashHandler(@Nullable Class<? extends android.app.Service>);
+    method @NonNull public GeckoRuntimeSettings.Builder crashPullNeverShowAgain(boolean);
     method @NonNull public GeckoRuntimeSettings.Builder debugLogging(boolean);
     method @NonNull public GeckoRuntimeSettings.Builder defaultRecursiveResolverUri(@NonNull String);
     method @NonNull public GeckoRuntimeSettings.Builder disableShip(boolean);
@@ -2488,6 +2516,7 @@ package org.mozilla.geckoview {
     method @UiThread public void setDownloadDelegate(@Nullable WebExtension.DownloadDelegate);
     method @UiThread public void setMessageDelegate(@Nullable WebExtension.MessageDelegate, @NonNull String);
     method @UiThread public void setTabDelegate(@Nullable WebExtension.TabDelegate);
+    field public static final List<String> DATA_COLLECTION_PERMISSIONS;
     field public final long flags;
     field @NonNull public final String id;
     field public final boolean isBuiltIn;
@@ -2896,8 +2925,10 @@ package org.mozilla.geckoview {
   @UiThread public static interface WebExtensionController.PromptDelegate {
     method @Deprecated @DeprecationSchedule(id="web-extension-on-install-prompt-request",version=143) @Nullable default public GeckoResult<WebExtension.PermissionPromptResponse> onInstallPromptRequest(@NonNull WebExtension, @NonNull String[], @NonNull String[]);
     method @Nullable default public GeckoResult<WebExtension.PermissionPromptResponse> onInstallPromptRequest(@NonNull WebExtension, @NonNull String[], @NonNull String[], @NonNull String[]);
-    method @Nullable default public GeckoResult<AllowOrDeny> onOptionalPrompt(@NonNull WebExtension, @NonNull String[], @NonNull String[]);
-    method @Nullable default public GeckoResult<AllowOrDeny> onUpdatePrompt(@NonNull WebExtension, @NonNull WebExtension, @NonNull String[], @NonNull String[]);
+    method @Deprecated @DeprecationSchedule(id="web-extension-on-optional-prompt",version=144) @Nullable default public GeckoResult<AllowOrDeny> onOptionalPrompt(@NonNull WebExtension, @NonNull String[], @NonNull String[]);
+    method @Nullable default public GeckoResult<AllowOrDeny> onOptionalPrompt(@NonNull WebExtension, @NonNull String[], @NonNull String[], @NonNull String[]);
+    method @Deprecated @DeprecationSchedule(id="web-extension-on-update-prompt",version=144) @Nullable default public GeckoResult<AllowOrDeny> onUpdatePrompt(@NonNull WebExtension, @NonNull WebExtension, @NonNull String[], @NonNull String[]);
+    method @Nullable default public GeckoResult<AllowOrDeny> onUpdatePrompt(@NonNull WebExtension, @NonNull String[], @NonNull String[], @NonNull String[]);
   }
 
   @AnyThread public abstract class WebMessage {

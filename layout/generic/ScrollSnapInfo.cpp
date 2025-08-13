@@ -6,10 +6,10 @@
 
 #include "ScrollSnapInfo.h"
 
+#include "mozilla/WritingModes.h"
 #include "nsPoint.h"
 #include "nsRect.h"
 #include "nsStyleStruct.h"
-#include "mozilla/WritingModes.h"
 
 namespace mozilla {
 

@@ -35,7 +35,7 @@ data class WebCompatReporterState(
      *
      * @property displayStringId The string ID corresponding to the reason.
      */
-    enum class BrokenSiteReason(@StringRes val displayStringId: Int) {
+    enum class BrokenSiteReason(@param:StringRes val displayStringId: Int) {
         Load(
             displayStringId = R.string.webcompat_reporter_reason_load,
         ),
@@ -126,6 +126,11 @@ sealed class WebCompatReporterAction : Action {
     sealed interface NavigationAction
 
     /**
+     * Dispatched when the "Learn more" button is clicked.
+     */
+    data object LearnMoreClicked : WebCompatReporterAction(), WebCompatReporterStorageAction, NavigationAction
+
+    /**
      * Dispatched when the user requests to send the WebCompat report.
      */
     data object SendReportClicked : WebCompatReporterAction()
@@ -175,6 +180,7 @@ private fun reduce(
     is WebCompatReporterAction.NavigationAction -> state
     is WebCompatReporterAction.SendReportClicked -> state
     WebCompatReporterAction.SendMoreInfoClicked -> state
+    WebCompatReporterAction.LearnMoreClicked -> state
 }
 
 /**

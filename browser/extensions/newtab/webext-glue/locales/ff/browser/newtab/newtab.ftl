@@ -253,6 +253,9 @@ newtab-error-fallback-refresh-link = Wultin hello ngoo ngam ennditde.
 ## Strings for download mobile highlight
 
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
 

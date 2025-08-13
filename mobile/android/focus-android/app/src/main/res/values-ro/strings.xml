@@ -246,7 +246,7 @@
     how to set Focus as a default browser.
     %1$s will be replaced by the app name (e.g. Firefox Focus)
   -->
-  <string name="preference_default_browser2">Desemnează %1$s ca browser implicit</string>
+  <string name="preference_default_browser2">Setează %1$s ca browser implicit</string>
   <string name="preference_category_mozilla">Mozilla</string>
   <string name="preference_mozilla_telemetry2">Trimite date privind utilizarea</string>
   <!-- A link to SUMO at the end of the summary (preference_mozilla_telemetry_summary2) of the "Send anonymous usage data" setting. -->
@@ -453,7 +453,7 @@
   <!-- Displayed after a user long presses on the URL in a custom tab to copy the URL -->
   <string name="custom_tab_copy_url_action">URL copiat</string>
   <!-- Description of what a user may find in the Advanced Setting category, used for debugging -->
-  <string name="preference_advanced_summary">Unelte dezvoltator</string>
+  <string name="preference_advanced_summary">Instrumente de dezvoltare</string>
   <!-- Title of Advanced Setting category -->
   <string name="preference_category_advanced">Avansat</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->

@@ -498,6 +498,9 @@ newtab-topic-selection-button-pick-interests = בחירת תחומי העניי�
 newtab-section-follow-button = לעקוב
 newtab-section-following-button = במעקב
 newtab-section-unfollow-button = ביטול המעקב
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = כיוונון הפיד שלך
+newtab-section-follow-highlight-subtitle = ניתן לעקוב אחר תחומי העניין שלך כדי לראות עוד ממה שאהוב עליך.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -540,6 +543,9 @@ newtab-download-mobile-highlight-body-variant-c = ידעת שניתן לקחת �
 newtab-download-mobile-highlight-image =
     .aria-label = קוד QR להורדת { -brand-product-name } לנייד
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -573,3 +579,5 @@ newtab-trending-searches-hide-trending =
     .title = הסתרת חיפושים פופולריים
 newtab-trending-searches-learn-more = מידע נוסף
 newtab-trending-searches-dismiss = הסתרת חיפושים פופולריים
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = חיפושים פופולריים

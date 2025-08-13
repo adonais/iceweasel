@@ -63,13 +63,10 @@ dictionary RTCDataChannelInit {
   unsigned short maxPacketLifeTime;
   [EnforceRange]
   unsigned short maxRetransmits;
-  DOMString      protocol = "";
+  UTF8String     protocol = "";
   boolean        negotiated = false;
   [EnforceRange]
   unsigned short id;
-
-  // These are deprecated due to renaming in the spec, but still supported for Fx53
-  unsigned short maxRetransmitTime;
 };
 
 dictionary RTCOfferAnswerOptions {
@@ -171,7 +168,7 @@ interface RTCPeerConnection : EventTarget  {
 
   readonly attribute RTCSctpTransport? sctp;
   // Data channel.
-  RTCDataChannel createDataChannel (DOMString label,
+  RTCDataChannel createDataChannel (UTF8String label,
                                     optional RTCDataChannelInit dataChannelDict = {});
   attribute EventHandler ondatachannel;
 };

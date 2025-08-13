@@ -12,6 +12,7 @@
 //
 
 #include "nsRepeatService.h"
+
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/Document.h"
 

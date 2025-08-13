@@ -1,11 +1,10 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2016 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 
 import logging
 
-from six.moves import range  # pylint: disable=redefined-builtin
 from devil.android import device_errors
 from devil.android.sdk import intent
 from pylib import constants
@@ -16,9 +15,6 @@ from pylib.local.device import local_device_test_run
 _CHROME_PACKAGE = constants.PACKAGE_INFO['chrome'].package
 
 class LocalDeviceMonkeyTestRun(local_device_test_run.LocalDeviceTestRun):
-  def __init__(self, env, test_instance):
-    super(LocalDeviceMonkeyTestRun, self).__init__(env, test_instance)
-
   def TestPackage(self):
     return 'monkey'
 
@@ -91,11 +87,26 @@ class LocalDeviceMonkeyTestRun(local_device_test_run.LocalDeviceTestRun):
     pass
 
   #override
-  def _CreateShards(self, tests):
+  def _CreateShardsForDevices(self, tests):
+    """Create shards of tests to run on devices.
+
+    Args:
+      tests: List containing tests or test batches.
+
+    Returns:
+      True if tests should be sharded across several devices,
+      False otherwise.
+    """
     return tests
 
   #override
-  def _ShouldShard(self):
+  def _ShouldShardTestsForDevices(self):
+    """Shard tests across several devices.
+
+    Returns:
+      True if tests should be sharded across several devices,
+      False otherwise.
+    """
     # TODO(mikecase): Run Monkey test concurrently on each attached device.
     return False
 

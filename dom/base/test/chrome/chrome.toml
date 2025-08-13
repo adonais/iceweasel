@@ -51,7 +51,6 @@ support-files = ["../file_bug357450.js"]
 ["test_bug473284.xhtml"]
 
 ["test_bug549682.xhtml"]
-skip-if = ["verify"]
 
 ["test_bug571390.xhtml"]
 
@@ -126,6 +125,8 @@ support-files = [
 support-files = ["../dummy.html"]
 
 ["test_range_getClientRectsAndTexts.html"]
+
+["test_setMozRelativePath.html"]
 
 ["test_title.xhtml"]
 support-files = ["file_title.xhtml"]

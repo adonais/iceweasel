@@ -7,15 +7,15 @@
 #ifndef MobileViewportManager_h_
 #define MobileViewportManager_h_
 
+#include "UnitTransforms.h"
+#include "Units.h"
 #include "mozilla/Logging.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/MVMContext.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/PresShellForwards.h"
 #include "nsCOMPtr.h"
 #include "nsIDOMEventListener.h"
 #include "nsIObserver.h"
-#include "Units.h"
-#include "UnitTransforms.h"
 
 class nsViewportInfo;
 

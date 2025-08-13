@@ -25,12 +25,6 @@ class CustomReviewPromptNavigationMiddleware(
     ) {
         val events = (context.store as CustomReviewPromptStore).navigationEvents
         when (action) {
-            CustomReviewPromptAction.DismissRequested -> {
-                scope.launch {
-                    events.emit(CustomReviewPromptNavigationEvent.Dismiss)
-                }
-            }
-
             CustomReviewPromptAction.RateButtonClicked -> {
                 scope.launch {
                     events.emit(CustomReviewPromptNavigationEvent.OpenPlayStoreReviewPrompt)
@@ -48,6 +42,7 @@ class CustomReviewPromptNavigationMiddleware(
             CustomReviewPromptAction.NegativePrePromptButtonClicked -> {}
             CustomReviewPromptAction.PositivePrePromptButtonClicked -> {}
             CustomReviewPromptAction.Displayed -> {}
+            CustomReviewPromptAction.Dismissed -> {}
         }
         next(action)
     }

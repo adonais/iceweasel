@@ -25,7 +25,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 // eslint-disable-next-line mozilla/reject-importGlobalProperties
-XPCOMUtils.defineLazyGlobalGetters(this, ["ChannelWrapper"]);
+XPCOMUtils.defineLazyGlobalGetters(this, ["ChannelWrapper", "URLSearchParams"]);
 
 const SEARCH_TOPIC_ENGINE_MODIFIED = "browser-search-engine-modified";
 
@@ -40,15 +40,15 @@ this.addonsSearchDetection = class extends ExtensionAPI {
 
     return {
       addonsSearchDetection: {
-        // `getMatchPatterns()` returns a map where each key is an URL pattern
-        // to monitor and its corresponding value is a list of add-on IDs
-        // (search engines).
+        // `getEngines()` returns an array of engines, each with a baseUrl.
+        // AppProvided engines also include a partner paramName,
+        // while Addon provided engines include the addonId.
         //
         // Note: We don't return a simple list of URL patterns because the
         // background script might want to lookup add-on IDs for a given URL in
         // the case of server-side redirects.
-        async getMatchPatterns() {
-          const patterns = {};
+        async getEngines() {
+          const results = [];
 
           try {
             // Delaying accessing Services.search if we didn't get to first paint yet
@@ -63,7 +63,7 @@ this.addonsSearchDetection = class extends ExtensionAPI {
             }
             // Return earlier if the extension or the application is shutting down.
             if (extension.hasShutdown || Services.startup.shuttingDown) {
-              return patterns;
+              return results;
             }
             await Services.search.promiseInitialized;
             const engines = await Services.search.getEngines();
@@ -80,34 +80,30 @@ this.addonsSearchDetection = class extends ExtensionAPI {
               // term.
               let submission = engine.getSubmission("searchTerm");
               if (submission) {
-                // If this is changed, double check the code in the background
-                // script because `getAddonIdsForUrl` truncates the last
-                // character.
-                const pattern =
-                  submission.uri.prePath + submission.uri.filePath + "*";
-
-                // Multiple search engines could register URL templates that
-                // would become the same URL pattern as defined above so we
-                // store a list of extension IDs per URL pattern.
-                if (!patterns[pattern]) {
-                  patterns[pattern] = [];
-                }
+                const uri = submission.uri;
+                const baseUrl = uri.prePath + uri.filePath;
 
                 // We don't store ids for application provided search engines
                 // because we don't need to report them. However, we do ensure
                 // the pattern is recorded (above), so that we check for
                 // redirects against those.
-                const _extensionID = engine.wrappedJSObject._extensionID;
-                if (_extensionID && !patterns[pattern].includes(_extensionID)) {
-                  patterns[pattern].push(_extensionID);
+                const addonId = engine.wrappedJSObject._extensionID;
+
+                let paramName;
+                for (let [key, value] of new URLSearchParams(uri.query)) {
+                  if (value && value === engine.partnerCode) {
+                    paramName = key;
+                  }
                 }
+
+                results.push({ baseUrl, addonId, paramName });
               }
             }
           } catch (err) {
             console.error(err);
           }
 
-          return patterns;
+          return results;
         },
 
         // `getAddonVersion()` returns the add-on version if it exists.
@@ -128,13 +124,16 @@ this.addonsSearchDetection = class extends ExtensionAPI {
           }
         },
 
-        // Report a redirect via Glean and Telemetry.
-        report(maybeServerSideRedirect, extra) {
-          if (maybeServerSideRedirect) {
-            Glean.addonsSearchDetection.etldChangeOther.record(extra);
-          } else {
-            Glean.addonsSearchDetection.etldChangeWebrequest.record(extra);
-          }
+        reportSameSiteRedirect(extra) {
+          Glean.addonsSearchDetection.sameSiteRedirect.record(extra);
+        },
+
+        reportETLDChangeOther(extra) {
+          Glean.addonsSearchDetection.etldChangeOther.record(extra);
+        },
+
+        reportETLDChangeWebrequest(extra) {
+          Glean.addonsSearchDetection.etldChangeWebrequest.record(extra);
         },
 
         // `onSearchEngineModified` is an event that occurs when the list of

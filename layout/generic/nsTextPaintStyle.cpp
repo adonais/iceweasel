@@ -6,14 +6,13 @@
 
 #include "nsTextPaintStyle.h"
 
+#include "mozilla/LookAndFeel.h"
 #include "nsCSSColorUtils.h"
 #include "nsCSSRendering.h"
 #include "nsFrameSelection.h"
 #include "nsLayoutUtils.h"
-#include "nsTextFrame.h"
 #include "nsStyleConsts.h"
-
-#include "mozilla/LookAndFeel.h"
+#include "nsTextFrame.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

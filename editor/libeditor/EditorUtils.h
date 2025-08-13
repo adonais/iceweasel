@@ -463,7 +463,11 @@ class EditorUtils final {
 
   /**
    * IsNewLinePreformatted() checks whether the linefeed characters are
-   * preformatted or collapsible white-spaces.  This does NOT flush layout.
+   * preformatted or white-spaces.  This does NOT flush layout.
+   * Be aware that even if this returns false, the linefeed characters may be
+   * rendered as non-collapsible white-spaces.  Therefore, if you want to check
+   * whether linefeeds are collapsible or not, you should refer the result of
+   * IsWhiteSpacePreformatted().
    */
   static bool IsNewLinePreformatted(const nsIContent& aContent);
 

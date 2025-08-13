@@ -34,12 +34,12 @@ export class MegalistViewModel {
   #messageToView;
   #authExpirationTime;
 
-  static #aggregator = new DefaultAggregator();
+  #aggregator = new DefaultAggregator();
 
   constructor(messageToView) {
     this.#messageToView = messageToView;
     this.#authExpirationTime = Number.NEGATIVE_INFINITY;
-    MegalistViewModel.#aggregator.attachViewModel(this);
+    this.#aggregator.attachViewModel(this);
   }
 
   get authExpirationTime() {
@@ -47,7 +47,8 @@ export class MegalistViewModel {
   }
 
   willDestroy() {
-    MegalistViewModel.#aggregator.detachViewModel(this);
+    this.#aggregator.detachViewModel(this);
+    this.#aggregator = null;
   }
 
   refreshAllLinesOnScreen() {
@@ -141,7 +142,7 @@ export class MegalistViewModel {
 
   #rebuildSnapshots() {
     this.#snapshots = Array.from(
-      MegalistViewModel.#aggregator.enumerateLines(this.#searchText)
+      this.#aggregator.enumerateLines(this.#searchText)
     );
 
     // Expose relevant line properties to view
@@ -182,7 +183,7 @@ export class MegalistViewModel {
     if (dotIndex >= 0) {
       const dataSourceName = commandId.substring(0, dotIndex);
       const functionName = commandId.substring(dotIndex + 1);
-      MegalistViewModel.#aggregator.callFunction(
+      this.#aggregator.callFunction(
         dataSourceName,
         functionName,
         snapshot?.record
@@ -208,10 +209,10 @@ export class MegalistViewModel {
       Edit: "edit_cpm",
     };
     const reason = reasonMap[command.id];
-
+    const osAuthForPw = lazy.LoginHelper.getOSAuthEnabled();
     const { isAuthorized } = await lazy.LoginHelper.requestReauth(
       lazy.BrowserWindowTracker.getTopWindow().gBrowser,
-      this.getOSAuthEnabled(),
+      osAuthForPw,
       this.#authExpirationTime,
       command.OSAuthPromptMessage,
       command.OSAuthCaptionMessage,
@@ -219,7 +220,7 @@ export class MegalistViewModel {
     );
 
     if (isAuthorized) {
-      const authTimeoutMs = MegalistViewModel.#aggregator.callFunction(
+      const authTimeoutMs = this.#aggregator.callFunction(
         "LoginDataSource",
         "getAuthTimeoutMs"
       );
@@ -228,56 +229,5 @@ export class MegalistViewModel {
 
     this.#messageToView("ReauthResponse", isAuthorized);
     return isAuthorized;
-  }
-
-  /**
-   * Get the decrypted value for a string pref.
-   *
-   * @param {string} prefName -> The pref whose value is needed.
-   * @param {string} safeDefaultValue -> Value to be returned incase the pref is not yet set.
-   * @returns {string}
-   */
-  #getSecurePref(prefName, safeDefaultValue) {
-    try {
-      let encryptedValue = Services.prefs.getStringPref(prefName, "");
-      return this._crypto.decrypt(encryptedValue);
-    } catch {
-      return safeDefaultValue;
-    }
-  }
-
-  /**
-   * Set the pref to the encrypted form of the value.
-   *
-   * @param {string} prefName -> The pref whose value is to be set.
-   * @param {string} value -> The value to be set in its encryoted form.
-   */
-  #setSecurePref(prefName, value) {
-    let encryptedValue = this._crypto.encrypt(value);
-    Services.prefs.setStringPref(prefName, encryptedValue);
-  }
-
-  /**
-   * Get whether the OSAuth is enabled or not.
-   *
-   * @param {string} prefName -> The name of the pref (creditcards or addresses)
-   * @returns {boolean}
-   */
-  getOSAuthEnabled(prefName) {
-    return this.#getSecurePref(prefName, "") !== "opt out";
-  }
-
-  /**
-   * Set whether the OSAuth is enabled or not.
-   *
-   * @param {string} prefName -> The pref to encrypt.
-   * @param {boolean} enable -> Whether the pref is to be enabled.
-   */
-  setOSAuthEnabled(prefName, enable) {
-    if (enable) {
-      Services.prefs.clearUserPref(prefName);
-    } else {
-      this.#setSecurePref(prefName, "opt out");
-    }
   }
 }

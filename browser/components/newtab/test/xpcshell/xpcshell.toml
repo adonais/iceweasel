@@ -1,7 +1,19 @@
 [DEFAULT]
 firefox-appdir = "browser"
 head = "../../../../extensions/newtab/test/xpcshell/head.js"
+prefs = [
+  "browser.newtabpage.resource-mapping.log=true"
+]
 
 ["test_AboutNewTab.js"]
 
 ["test_AboutNewTabRedirector.js"]
+
+["test_disableNewTabAsAddon_pref.js"]
+prefs = ["browser.newtabpage.disableNewTabAsAddon=true"]
+
+["test_nimbus_newtabTrainhopAddon.js"]
+head = "../../../../extensions/newtab/test/xpcshell/head.js head_nimbus_trainhop.js"
+
+["test_nimbus_newtabTrainhopAddon_onBrowserReady.js"]
+head = "../../../../extensions/newtab/test/xpcshell/head.js head_nimbus_trainhop.js"

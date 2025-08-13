@@ -73,7 +73,7 @@ add_task(async function test_fog_timespan_works() {
   await sleep(10);
   Glean.testOnly.canWeTimeIt.stop();
 
-  Assert.ok(Glean.testOnly.canWeTimeIt.testGetValue("test-ping") > 0);
+  Assert.greater(Glean.testOnly.canWeTimeIt.testGetValue("test-ping"), 0);
 });
 
 add_task(async function test_fog_timespan_throws_on_stop_wout_start() {
@@ -947,5 +947,38 @@ add_task(function test_collection_disabled_pings_work() {
   Assert.equal(
     undefined,
     Glean.testOnly.collectionDisabledCounter.testGetValue()
+  );
+});
+
+add_task(function test_dual_labeled_counter_works() {
+  Glean.testOnly.keyedCategories.get("to the city", "lasered").add(1);
+  Glean.testOnly.keyedCategories.get("to the city", "cut").add(4);
+  Glean.testOnly.keyedCategories.get("to my heart", "polished").add(1);
+
+  Assert.equal(
+    1,
+    Glean.testOnly.keyedCategories.get("to the city", "lasered").testGetValue()
+  );
+  Assert.equal(
+    4,
+    Glean.testOnly.keyedCategories.get("to the city", "cut").testGetValue()
+  );
+  Assert.equal(
+    1,
+    Glean.testOnly.keyedCategories.get("to my heart", "polished").testGetValue()
+  );
+
+  Assert.equal(
+    undefined,
+    Glean.testOnly.keyedCategories
+      .get("to the city", "__other__")
+      .testGetValue()
+  );
+  Glean.testOnly.keyedCategories.get("to the city", "cryptographic").add(3);
+  Assert.equal(
+    3,
+    Glean.testOnly.keyedCategories
+      .get("to the city", "__other__")
+      .testGetValue()
   );
 });

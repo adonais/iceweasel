@@ -93,5 +93,4 @@ support-files = [
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1784772
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1784772
-  "verify", # Bug 1800022
 ]

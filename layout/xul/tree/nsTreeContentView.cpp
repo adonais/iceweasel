@@ -4,21 +4,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsNameSpaceManager.h"
-#include "nsGkAtoms.h"
-#include "nsTreeUtils.h"
 #include "nsTreeContentView.h"
+
 #include "ChildIterator.h"
-#include "nsError.h"
-#include "nsXULSortService.h"
-#include "nsTreeBodyFrame.h"
-#include "nsTreeColumns.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/TreeContentViewBinding.h"
 #include "mozilla/dom/XULTreeElement.h"
+#include "nsError.h"
+#include "nsGkAtoms.h"
+#include "nsNameSpaceManager.h"
 #include "nsServiceManagerUtils.h"
-#include "mozilla/dom/Document.h"
+#include "nsTreeBodyFrame.h"
+#include "nsTreeColumns.h"
+#include "nsTreeUtils.h"
+#include "nsXULSortService.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -863,14 +864,16 @@ void nsTreeContentView::AttributeChanged(dom::Element* aElement,
   }
 }
 
-void nsTreeContentView::ContentAppended(nsIContent* aFirstNewContent) {
+void nsTreeContentView::ContentAppended(nsIContent* aFirstNewContent,
+                                        const ContentAppendInfo& aInfo) {
   for (nsIContent* cur = aFirstNewContent; cur; cur = cur->GetNextSibling()) {
     // Our contentinserted doesn't use the index
-    ContentInserted(cur);
+    ContentInserted(cur, aInfo);
   }
 }
 
-void nsTreeContentView::ContentInserted(nsIContent* aChild) {
+void nsTreeContentView::ContentInserted(nsIContent* aChild,
+                                        const ContentInsertInfo&) {
   NS_ASSERTION(aChild, "null ptr");
   nsIContent* container = aChild->GetParent();
 
@@ -939,7 +942,7 @@ void nsTreeContentView::ContentInserted(nsIContent* aChild) {
 }
 
 void nsTreeContentView::ContentWillBeRemoved(nsIContent* aChild,
-                                             const BatchRemovalState*) {
+                                             const ContentRemoveInfo&) {
   NS_ASSERTION(aChild, "null ptr");
 
   nsIContent* container = aChild->GetParent();

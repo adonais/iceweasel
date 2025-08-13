@@ -423,7 +423,7 @@
 
 /* Result menu button */
 
-.urlbarView-button-menu {
+.urlbarView-button-result-menu {
   background-image: url("chrome://global/skin/icons/more.svg");
   background-color: var(--button-background-color);
 
@@ -456,7 +456,7 @@
 
 /* Button with label, e.g. tip button */
 
-.urlbarView-button:not(:empty):not(.urlbarView-button-menu) {
+.urlbarView-button:where(:not(:empty):not(.urlbarView-button-result-menu)) {
   border-radius: var(--toolbarbutton-border-radius);
   padding: 0.5em 1em;
   margin-inline-end: 1.4em;
@@ -487,6 +487,25 @@
       background-color: var(--color-accent-primary-active);
     }
   }
+}
+
+/* Split Buton component */
+.urlbarView-splitbutton-main {
+  margin-inline-start: 0;
+  /* Make the cap to the dropmarker */
+  margin-inline-end: 1px;
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.urlbarView-splitbutton-dropmarker {
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  padding-inline: 0;
+  min-width: 2em;
+  border-inline-start: none;
+  -moz-context-properties: fill;
+  fill: currentColor;
 }
 
 /* Tip rows */

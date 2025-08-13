@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1973726
+-->
+<head>
+  <meta charset="utf-8">
+  <title>Test for setMozRelativePath</title>
+  <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css"/>
+</head>
+<body>
+  <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=1973726">Mozilla Bug 1973726</a>
+<p id="display"></p>
+<div id="content" style="display: none"></div>
+<pre id="test">
+<script>
+function createFileWithData(fileData) {
+  var testFile = Services.dirsvc.get("ProfD", Ci.nsIFile);
+  testFile.append("setMozRelativePath");
+
+  var outStream =
+    Cc["@mozilla.org/network/file-output-stream;1"].createInstance(Ci.nsIFileOutputStream);
+  outStream.init(testFile, 0x02 | 0x08 | 0x20, // write, create, truncate
+                 0o666, 0);
+  outStream.write(fileData, fileData.length);
+  outStream.close();
+
+  return testFile;
+}
+
+add_task(async () => {
+    let testFile = createFileWithData("setMozRelativePath");
+    let file = await File.createFromNsIFile(testFile);
+
+    file.setMozRelativePath("/test/relative/path");
+
+    // Verify that the relative path was set correctly.
+    is(file.webkitRelativePath, "test/relative/path",
+       "The relative path should match the expected value.");
+});
+</script>
+</pre>
+</body>
+</html>

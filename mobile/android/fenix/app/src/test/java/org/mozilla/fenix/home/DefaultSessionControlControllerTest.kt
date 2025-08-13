@@ -10,9 +10,7 @@ import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.spyk
-import io.mockk.unmockkStatic
 import io.mockk.verify
 import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.browser.state.action.TabListAction
@@ -24,7 +22,6 @@ import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.state.recover.RecoverableTab
 import mozilla.components.browser.state.state.recover.TabState
-import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
 import mozilla.components.feature.session.SessionUseCases
@@ -69,15 +66,17 @@ import org.mozilla.fenix.home.bookmarks.Bookmark
 import org.mozilla.fenix.home.mars.MARSUseCases
 import org.mozilla.fenix.home.recenttabs.RecentTab
 import org.mozilla.fenix.home.sessioncontrol.DefaultSessionControlController
+import org.mozilla.fenix.home.sessioncontrol.SessionControlControllerCallback
 import org.mozilla.fenix.messaging.MessageController
 import org.mozilla.fenix.onboarding.WallpaperOnboardingDialogFragment.Companion.THUMBNAILS_SELECTION_COUNT
 import org.mozilla.fenix.settings.SupportUtils
+import org.mozilla.fenix.tabstray.TabManagementFeatureHelper
 import org.mozilla.fenix.utils.Settings
-import org.mozilla.fenix.utils.maybeShowAddSearchWidgetPrompt
 import org.mozilla.fenix.wallpapers.Wallpaper
 import org.mozilla.fenix.wallpapers.WallpaperState
 import org.robolectric.RobolectricTestRunner
 import java.io.File
+import java.lang.ref.WeakReference
 import mozilla.components.feature.tab.collections.Tab as ComponentTab
 
 @RunWith(RobolectricTestRunner::class) // For gleanTestRule
@@ -132,9 +131,11 @@ class DefaultSessionControlControllerTest {
 
     private lateinit var store: BrowserStore
     private val appState: AppState = mockk(relaxed = true)
+    private var showAddSearchWidgetPromptCalled = false
 
     @Before
     fun setup() {
+        showAddSearchWidgetPromptCalled = false
         store = BrowserStore(
             BrowserState(
                 search = SearchState(
@@ -738,25 +739,17 @@ class DefaultSessionControlControllerTest {
 
         every { controller.getAvailableSearchEngines() } returns listOf(googleSearchEngine)
 
-        try {
-            mockkStatic("mozilla.components.browser.state.state.SearchStateKt")
+        controller.handleSelectTopSite(topSite, position = 0)
 
-            every { any<SearchState>().selectedOrDefaultSearchEngine } returns googleSearchEngine
+        assertNotNull(Events.performedSearch.testGetValue())
 
-            controller.handleSelectTopSite(topSite, position = 0)
+        assertNotNull(TopSites.openDefault.testGetValue())
+        assertEquals(1, TopSites.openDefault.testGetValue()!!.size)
+        assertNull(TopSites.openDefault.testGetValue()!!.single().extra)
 
-            assertNotNull(Events.performedSearch.testGetValue())
-
-            assertNotNull(TopSites.openDefault.testGetValue())
-            assertEquals(1, TopSites.openDefault.testGetValue()!!.size)
-            assertNull(TopSites.openDefault.testGetValue()!!.single().extra)
-
-            assertNotNull(TopSites.openGoogleSearchAttribution.testGetValue())
-            assertEquals(1, TopSites.openGoogleSearchAttribution.testGetValue()!!.size)
-            assertNull(TopSites.openGoogleSearchAttribution.testGetValue()!!.single().extra)
-        } finally {
-            unmockkStatic("mozilla.components.browser.state.state.SearchStateKt")
-        }
+        assertNotNull(TopSites.openGoogleSearchAttribution.testGetValue())
+        assertEquals(1, TopSites.openGoogleSearchAttribution.testGetValue()!!.size)
+        assertNull(TopSites.openGoogleSearchAttribution.testGetValue()!!.single().extra)
     }
 
     @Test
@@ -776,17 +769,9 @@ class DefaultSessionControlControllerTest {
             duckDuckGoSearchEngine,
         )
 
-        try {
-            mockkStatic("mozilla.components.browser.state.state.SearchStateKt")
+        controller.handleSelectTopSite(topSite, position = 0)
 
-            every { any<SearchState>().selectedOrDefaultSearchEngine } returns googleSearchEngine
-
-            controller.handleSelectTopSite(topSite, position = 0)
-
-            assertNotNull(Events.performedSearch.testGetValue())
-        } finally {
-            unmockkStatic("mozilla.components.browser.state.state.SearchStateKt")
-        }
+        assertNotNull(Events.performedSearch.testGetValue())
     }
 
     @Test
@@ -979,51 +964,7 @@ class DefaultSessionControlControllerTest {
     }
 
     @Test
-    fun `GIVEN a provided top site WHEN the provided top site is clicked THEN submit a top site impression ping`() {
-        val controller = spyk(createController())
-        val topSite = TopSite.Provided(
-            id = 3,
-            title = "Mozilla",
-            url = "https://mozilla.com",
-            clickUrl = "https://mozilla.com/click",
-            imageUrl = "https://test.com/image2.jpg",
-            impressionUrl = "https://example.com",
-            createdAt = 3,
-        )
-        val position = 0
-        assertNull(TopSites.contileImpression.testGetValue())
-
-        var topSiteImpressionPinged = false
-        Pings.topsitesImpression.testBeforeNextSubmit {
-            assertNotNull(TopSites.contileTileId.testGetValue())
-            assertEquals(3L, TopSites.contileTileId.testGetValue())
-
-            assertNotNull(TopSites.contileAdvertiser.testGetValue())
-            assertEquals("mozilla", TopSites.contileAdvertiser.testGetValue())
-
-            assertNotNull(TopSites.contileReportingUrl.testGetValue())
-            assertEquals(topSite.clickUrl, TopSites.contileReportingUrl.testGetValue())
-
-            topSiteImpressionPinged = true
-        }
-
-        controller.recordTopSitesClickTelemetry(topSite, position)
-
-        assertNotNull(TopSites.contileClick.testGetValue())
-
-        val event = TopSites.contileClick.testGetValue()!!
-
-        assertEquals(1, event.size)
-        assertEquals("top_sites", event[0].category)
-        assertEquals("contile_click", event[0].name)
-        assertEquals("1", event[0].extra!!["position"])
-        assertEquals("newtab", event[0].extra!!["source"])
-
-        assertTrue(topSiteImpressionPinged)
-    }
-
-    @Test
-    fun `GIVEN MARS API integration is enabled WHEN the provided top site is clicked THEN send a click callback request`() {
+    fun `WHEN the provided top site is clicked THEN send a click callback request`() {
         val controller = spyk(createController())
         val topSite = TopSite.Provided(
             id = 3,
@@ -1037,9 +978,8 @@ class DefaultSessionControlControllerTest {
         val position = 0
 
         every { controller.getAvailableSearchEngines() } returns listOf(searchEngine)
-        every { settings.marsAPIEnabled } returns true
 
-        assertNull(TopSites.contileImpression.testGetValue())
+        assertNull(TopSites.contileClick.testGetValue())
 
         var topSiteImpressionPinged = false
         Pings.topsitesImpression.testBeforeNextSubmit {
@@ -1066,7 +1006,7 @@ class DefaultSessionControlControllerTest {
     }
 
     @Test
-    fun `GIVEN MARS API integration is enabled WHEN the provided top site is seen THEN send a impression callback request`() {
+    fun `WHEN the provided top site is seen THEN send a impression callback request`() {
         val controller = spyk(createController())
         val topSite = TopSite.Provided(
             id = 3,
@@ -1080,7 +1020,6 @@ class DefaultSessionControlControllerTest {
         val position = 0
 
         every { controller.getAvailableSearchEngines() } returns listOf(searchEngine)
-        every { settings.marsAPIEnabled } returns true
 
         assertNull(TopSites.contileImpression.testGetValue())
 
@@ -1096,51 +1035,6 @@ class DefaultSessionControlControllerTest {
         controller.handleTopSiteImpression(topSite, position)
 
         verify { marsUseCases.recordInteraction(topSite.impressionUrl) }
-
-        val event = TopSites.contileImpression.testGetValue()!!
-
-        assertEquals(1, event.size)
-        assertEquals("top_sites", event[0].category)
-        assertEquals("contile_impression", event[0].name)
-        assertEquals("1", event[0].extra!!["position"])
-        assertEquals("newtab", event[0].extra!!["source"])
-
-        assertTrue(topSiteImpressionSubmitted)
-    }
-
-    @Test
-    fun `GIVEN a provided top site WHEN the provided top site has an impression THEN submit a top site impression ping`() {
-        val controller = spyk(createController())
-        val topSite = TopSite.Provided(
-            id = 3,
-            title = "Mozilla",
-            url = "https://mozilla.com",
-            clickUrl = "https://mozilla.com/click",
-            imageUrl = "https://test.com/image2.jpg",
-            impressionUrl = "https://example.com",
-            createdAt = 3,
-        )
-        val position = 0
-
-        assertNull(TopSites.contileImpression.testGetValue())
-
-        var topSiteImpressionSubmitted = false
-        Pings.topsitesImpression.testBeforeNextSubmit {
-            assertNotNull(TopSites.contileTileId.testGetValue())
-            assertEquals(3L, TopSites.contileTileId.testGetValue())
-
-            assertNotNull(TopSites.contileAdvertiser.testGetValue())
-            assertEquals("mozilla", TopSites.contileAdvertiser.testGetValue())
-
-            assertNotNull(TopSites.contileReportingUrl.testGetValue())
-            assertEquals(topSite.impressionUrl, TopSites.contileReportingUrl.testGetValue())
-
-            topSiteImpressionSubmitted = true
-        }
-
-        controller.handleTopSiteImpression(topSite, position)
-
-        assertNotNull(TopSites.contileImpression.testGetValue())
 
         val event = TopSites.contileImpression.testGetValue()!!
 
@@ -1603,17 +1497,14 @@ class DefaultSessionControlControllerTest {
 
     @Test
     fun `WHEN install search widget task THEN navigationActionFor calls the add search widget prompt`() {
+        assertFalse("flag is false at test start", showAddSearchWidgetPromptCalled)
         val controller = createController()
         val task = mockk<ChecklistItem.Task>()
-        mockkStatic("org.mozilla.fenix.utils.AddSearchWidgetPromptKt")
-        every { maybeShowAddSearchWidgetPrompt(activity) } just Runs
         every { task.type } returns ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET
 
         controller.navigationActionFor(task)
 
-        verify {
-            maybeShowAddSearchWidgetPrompt(activity)
-        }
+        assertTrue("showAddSearchWidgetPrompt should have been called", showAddSearchWidgetPromptCalled)
     }
 
     @Test
@@ -1651,7 +1542,7 @@ class DefaultSessionControlControllerTest {
         showUndoSnackbarForTopSite: (topSite: TopSite) -> Unit = { },
     ): DefaultSessionControlController {
         return DefaultSessionControlController(
-            activity = activity,
+            activityRef = WeakReference(activity),
             settings = settings,
             engine = engine,
             store = store,
@@ -1664,13 +1555,38 @@ class DefaultSessionControlControllerTest {
             topSitesUseCases = topSitesUseCases,
             marsUseCases = marsUseCases,
             appStore = appStore,
-            navController = navController,
+            navControllerRef = WeakReference(navController),
             viewLifecycleScope = scope,
-            registerCollectionStorageObserver = registerCollectionStorageObserver,
-            removeCollectionWithUndo = removeCollectionWithUndo,
-            showUndoSnackbarForTopSite = showUndoSnackbarForTopSite,
-            showTabTray = showTabTray,
-        )
+            tabManagementFeatureHelper = object : TabManagementFeatureHelper {
+                override val enhancementsEnabledNightly: Boolean
+                    get() = false
+                override val enhancementsEnabledBeta: Boolean
+                    get() = false
+                override val enhancementsEnabledRelease: Boolean
+                    get() = false
+                override val enhancementsEnabled: Boolean
+                    get() = false
+            },
+            showAddSearchWidgetPrompt = { showAddSearchWidgetPromptCalled = true },
+        ).apply {
+            registerCallback(object : SessionControlControllerCallback {
+                override fun registerCollectionStorageObserver() {
+                    registerCollectionStorageObserver()
+                }
+
+                override fun removeCollectionWithUndo(tabCollection: TabCollection) {
+                    removeCollectionWithUndo(tabCollection)
+                }
+
+                override fun showUndoSnackbarForTopSite(topSite: TopSite) {
+                    showUndoSnackbarForTopSite(topSite)
+                }
+
+                override fun showTabTray() {
+                    showTabTray()
+                }
+            })
+        }
     }
 
     private fun makeFakeRemoteWallpapers(size: Int, hasError: Boolean): List<Wallpaper> {

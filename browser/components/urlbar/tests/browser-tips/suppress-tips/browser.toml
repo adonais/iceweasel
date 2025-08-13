@@ -2,8 +2,7 @@
 
 [DEFAULT]
 run-if = ["!msix"] # Updater is disabled in MSIX builds
-skip-if = ["verify"]
-reason = "This is a startup test. Verify runs tests multiple times after startup."
+skip-if = ["verify"] # This is a startup test. Verify runs tests multiple times after startup.
 support-files = [
   "../head.js",
   "active-update.xml",

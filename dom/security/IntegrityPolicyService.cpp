@@ -14,6 +14,7 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/IntegrityPolicy.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/RequestBinding.h"
 #include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/Logging.h"
@@ -145,13 +146,10 @@ bool IntegrityPolicyService::ShouldRequestBeBlocked(nsIURI* aContentLocation,
   }
 
   // We only support integrity policy for documents so far.
-  // TODO(fkilic): Add aLoadInfo->GetIntegrityPolicy(), instead of
-  // getting the document and integrity policy from it.
-  // It may do the same thing but it would be more organized.
-  RefPtr<mozilla::dom::Document> doc;
-  aLoadInfo->GetLoadingDocument(getter_AddRefs(doc));
-  if (!doc) {
-    LOG("ShouldLoad: [{}] No document", static_cast<void*>(aLoadInfo));
+  nsCOMPtr<nsIPolicyContainer> policyContainer =
+      aLoadInfo->GetPolicyContainer();
+  if (!policyContainer) {
+    LOG("ShouldLoad: [{}] No policy container", static_cast<void*>(aLoadInfo));
     return false;
   }
 
@@ -159,7 +157,8 @@ bool IntegrityPolicyService::ShouldRequestBeBlocked(nsIURI* aContentLocation,
   // 6. Let reportPolicy be policyContainer’s report only integrity policy.
   // Our IntegrityPolicy struct contains both the enforcement and
   // report-only policies.
-  RefPtr<IntegrityPolicy> policy = doc->GetIntegrityPolicy();
+  RefPtr<IntegrityPolicy> policy = IntegrityPolicy::Cast(
+      PolicyContainer::Cast(policyContainer)->IntegrityPolicy());
   if (!policy) {
     // 7. If both policy and reportPolicy are empty integrity policy structs,
     // return "Allowed".
@@ -178,15 +177,32 @@ bool IntegrityPolicyService::ShouldRequestBeBlocked(nsIURI* aContentLocation,
 
   // TODO: 14. If block is true or reportBlock is true, then report violation
   // with request, block, reportBlock, policy and reportPolicy.
-  MaybeReport(aContentLocation, aLoadInfo, contains, roContains);
+  MaybeReport(aContentLocation, aLoadInfo, *destination, contains, roContains);
 
   // 15. If block is true, then return "Blocked"; otherwise "Allowed".
   return contains;
 }
 
-void IntegrityPolicyService::MaybeReport(nsIURI* aContentLocation,
-                                         nsILoadInfo* aLoadInfo, bool aEnforce,
-                                         bool aReportOnly) {
+const char* GetReportMessageKey(bool aEnforcing,
+                                IntegrityPolicy::DestinationType aDestination) {
+  // If we are not enforcing, we are reporting only.
+  switch (aDestination) {
+    case IntegrityPolicy::DestinationType::Script:
+      return aEnforcing ? "IntegrityPolicyEnforceBlockedScript"
+                        : "IntegrityPolicyReportOnlyBlockedScript";
+    case IntegrityPolicy::DestinationType::Style:
+      return aEnforcing ? "IntegrityPolicyEnforceBlockedStylesheet"
+                        : "IntegrityPolicyReportOnlyBlockedStylesheet";
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unhandled destination type");
+      return nullptr;
+  }
+}
+
+void IntegrityPolicyService::MaybeReport(
+    nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
+    IntegrityPolicy::DestinationType aDestination, bool aEnforce,
+    bool aReportOnly) {
   if (!aEnforce && !aReportOnly) {
     return;
   }
@@ -195,22 +211,23 @@ void IntegrityPolicyService::MaybeReport(nsIURI* aContentLocation,
     return;  // Don't report for preloads.
   }
 
+  const char* messageKey = GetReportMessageKey(aEnforce, aDestination);
+  NS_ENSURE_TRUE_VOID(messageKey);
+
   // We just report to the console for now. We should use the reporting API
   // in the future.
-  uint64_t windowID = aLoadInfo->GetInnerWindowID();
   AutoTArray<nsString, 1> params = {
       NS_ConvertUTF8toUTF16(aContentLocation->GetSpecOrDefault())};
   nsAutoString localizedMsg;
   nsresult rv = nsContentUtils::FormatLocalizedString(
-      nsContentUtils::eSECURITY_PROPERTIES,
-      aReportOnly ? "IntegrityPolicyReportOnlyBlockResource"
-                  : "IntegrityPolicyEnforceBlockResource",
-      params, localizedMsg);
+      nsContentUtils::eSECURITY_PROPERTIES, messageKey, params, localizedMsg);
   NS_ENSURE_SUCCESS_VOID(rv);
+
+  uint64_t windowID = aLoadInfo->GetInnerWindowID();
 
   nsContentUtils::ReportToConsoleByWindowID(
       localizedMsg,
-      aReportOnly ? nsIScriptError::warningFlag : nsIScriptError::errorFlag,
+      aEnforce ? nsIScriptError::errorFlag : nsIScriptError::warningFlag,
       "Security"_ns, windowID);
 }
 

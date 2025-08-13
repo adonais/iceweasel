@@ -14,6 +14,7 @@
 #  include <mach/vm_map.h>
 #endif
 
+#include "gc/BufferAllocatorInternals.h"
 #include "gc/GCInternals.h"
 #include "gc/GCLock.h"
 #include "gc/PublicIterators.h"
@@ -105,7 +106,7 @@ struct BufferAllocator::FreeRegion
     return fromEndAddr(uintptr_t(chunk) + endOffset);
   }
   static FreeRegion* fromEndAddr(uintptr_t endAddr) {
-    MOZ_ASSERT((endAddr % MinMediumAllocSize) == 0);
+    MOZ_ASSERT((endAddr % MediumAllocGranularity) == 0);
     auto* region = reinterpret_cast<FreeRegion*>(endAddr - sizeof(FreeRegion));
     region->check();
     return region;
@@ -129,14 +130,13 @@ struct BufferChunk : public ChunkBase,
   MainThreadData<bool> hasNurseryOwnedAllocs;
   MainThreadOrGCTaskData<bool> hasNurseryOwnedAllocsAfterSweep;
 
-  static constexpr size_t MaxAllocsPerChunk = ChunkSize / MinMediumAllocSize;
-  using PerAllocByteArray = uint8_t[MaxAllocsPerChunk];
-  PerAllocByteArray sizeClassArray;
+  static constexpr size_t MaxAllocsPerChunk =
+      ChunkSize / MediumAllocGranularity;
+  using EncodedSizeArray = MediumBufferSize[MaxAllocsPerChunk];
+  EncodedSizeArray encodedSizeArray;
 
   // Mark bitmap: one bit minimum per allocation, no gray bits.
-  static constexpr size_t BytesPerMarkBit = MinMediumAllocSize;
-  using BufferMarkBitmap = MarkBitmap<BytesPerMarkBit, 0>;
-  MainThreadOrGCTaskData<BufferMarkBitmap> markBits;
+  MainThreadOrGCTaskData<AtomicBitmap<MaxAllocsPerChunk>> markBits;
 
   using PerAllocBitmap = mozilla::BitSet<MaxAllocsPerChunk>;
   MainThreadOrGCTaskData<PerAllocBitmap> allocBitmap;
@@ -145,6 +145,8 @@ struct BufferChunk : public ChunkBase,
   static constexpr size_t PagesPerChunk = ChunkSize / PageSize;
   using PerPageBitmap = mozilla::BitSet<PagesPerChunk, uint32_t>;
   MainThreadOrGCTaskData<PerPageBitmap> decommittedPages;
+
+  class AllocIter;
 
   static BufferChunk* from(void* alloc) {
     ChunkBase* chunk = js::gc::detail::GetGCAddressChunkBase(alloc);
@@ -155,10 +157,6 @@ struct BufferChunk : public ChunkBase,
   explicit BufferChunk(Zone* zone);
   ~BufferChunk();
 
-  void checkAlloc(const void* alloc) const;
-
-  const void* ptrFromOffset(uintptr_t offset) const;
-
   void setAllocated(void* alloc, bool allocated);
   bool isAllocated(const void* alloc) const;
   bool isAllocated(uintptr_t offset) const;
@@ -166,59 +164,86 @@ struct BufferChunk : public ChunkBase,
   void setNurseryOwned(void* alloc, bool nurseryOwned);
   bool isNurseryOwned(const void* alloc) const;
 
-  void setSizeClass(void* alloc, size_t sizeClass);
-  size_t sizeClass(const void* alloc) const;
+  void setAllocBytes(void* alloc, size_t bytes);
   size_t allocBytes(const void* alloc) const;
+
+  bool setMarked(void* alloc);
+  void setUnmarked(void* alloc);
+  bool isMarked(const void* alloc) const;
 
   // Find next/previous allocations from |offset|. Return ChunkSize on failure.
   size_t findNextAllocated(uintptr_t offset) const;
   size_t findPrevAllocated(uintptr_t offset) const;
 
+  // Find next/previous free region from a start/end address.
+  using FreeRegion = BufferAllocator::FreeRegion;
+  FreeRegion* findFollowingFreeRegion(uintptr_t startAddr);
+  FreeRegion* findPrecedingFreeRegion(uintptr_t endAddr);
+
   bool isPointerWithinAllocation(void* ptr) const;
 
  private:
-  uintptr_t ptrToOffset(const void* alloc) const;
+  size_t ptrToIndex(const void* alloc) const {
+    MOZ_ASSERT((uintptr_t(alloc) & ~ChunkMask) == uintptr_t(this));
+    uintptr_t offset = uintptr_t(alloc) & ChunkMask;
+    return offsetToIndex(offset);
+  }
+
+  static size_t offsetToIndex(uintptr_t offset) {
+    MOZ_ASSERT(isValidOffset(offset));
+    MOZ_ASSERT(offset % MediumAllocGranularity == 0);
+    return offset / MediumAllocGranularity;
+  }
+
+  const void* ptrFromOffset(uintptr_t offset) const {
+    MOZ_ASSERT(isValidOffset(offset));
+    MOZ_ASSERT(offset % MediumAllocGranularity == 0);
+    return reinterpret_cast<void*>(uintptr_t(this) + offset);
+  }
+
+#ifdef DEBUG
+  static bool isValidOffset(uintptr_t offset);
+#endif
 };
 
 constexpr size_t FirstMediumAllocOffset =
-    RoundUp(sizeof(BufferChunk), MinMediumAllocSize);
+    RoundUp(sizeof(BufferChunk), MediumAllocGranularity);
 
-// Iterate allocations in a BufferChunk.
-class BufferChunkIter {
+#ifdef DEBUG
+/* static */
+bool BufferChunk::isValidOffset(uintptr_t offset) {
+  return offset >= FirstMediumAllocOffset && offset < ChunkSize;
+}
+#endif
+
+class BufferChunk::AllocIter {
   BufferChunk* chunk;
-  size_t offset = FirstMediumAllocOffset;
-  size_t size = 0;
+  size_t bit = 0;
 
  public:
-  explicit BufferChunkIter(BufferChunk* chunk) : chunk(chunk) { settle(); }
-  bool done() const { return offset == ChunkSize; }
+  explicit AllocIter(BufferChunk* chunk) : chunk(chunk) {
+    MOZ_ASSERT(!chunk->allocBitmap.ref()[bit]);
+    next();
+  }
+  bool done() const {
+    MOZ_ASSERT(bit <= MaxAllocsPerChunk || bit == SIZE_MAX);
+    return bit >= MaxAllocsPerChunk;
+  }
   void next() {
     MOZ_ASSERT(!done());
-    offset += size;
-    MOZ_ASSERT(offset <= ChunkSize);
-    if (!done()) {
-      settle();
+    bit++;
+    if (bit != MaxAllocsPerChunk) {
+      bit = chunk->allocBitmap.ref().FindNext(bit);
     }
   }
   size_t getOffset() const {
     MOZ_ASSERT(!done());
-    return offset;
+    return bit * MediumAllocGranularity;
   }
   void* get() const {
-    MOZ_ASSERT(!done());
-    MOZ_ASSERT(offset < ChunkSize);
-    MOZ_ASSERT((offset % MinMediumAllocSize) == 0);
-    return reinterpret_cast<void*>(uintptr_t(chunk) + offset);
+    return reinterpret_cast<void*>(uintptr_t(chunk) + getOffset());
   }
   operator void*() { return get(); }
-
- private:
-  void settle() {
-    offset = chunk->findNextAllocated(offset);
-    if (!done()) {
-      size = chunk->allocBytes(get());
-    }
-  }
 };
 
 static void CheckHighBitsOfPointer(void* ptr) {
@@ -356,12 +381,15 @@ MOZ_ALWAYS_INLINE void PoisonAlloc(void* alloc, uint8_t value, size_t bytes,
 
 BufferChunk::BufferChunk(Zone* zone)
     : ChunkBase(zone->runtimeFromMainThread(), ChunkKind::MediumBuffers) {
-  mozilla::PodArrayZero(sizeClassArray);
+  mozilla::PodArrayZero(encodedSizeArray);
 #ifdef DEBUG
   this->zone = zone;
   MOZ_ASSERT(allocBitmap.ref().IsEmpty());
   MOZ_ASSERT(nurseryOwnedBitmap.ref().IsEmpty());
   MOZ_ASSERT(decommittedPages.ref().IsEmpty());
+  for (const auto& encodedSize : encodedSizeArray) {
+    MOZ_ASSERT(encodedSize.get() == 0);
+  }
 #endif
 }
 
@@ -369,109 +397,98 @@ BufferChunk::~BufferChunk() {
 #ifdef DEBUG
   MOZ_ASSERT(allocBitmap.ref().IsEmpty());
   MOZ_ASSERT(nurseryOwnedBitmap.ref().IsEmpty());
-  for (const auto& sizeClass : sizeClassArray) {
-    MOZ_ASSERT(sizeClass == 0);
+  for (const auto& encodedSize : encodedSizeArray) {
+    MOZ_ASSERT(encodedSize.get() == 0);
   }
 #endif
 }
 
-uintptr_t BufferChunk::ptrToOffset(const void* alloc) const {
-  checkAlloc(alloc);
-
-  uintptr_t offset = uintptr_t(alloc) & ChunkMask;
-  MOZ_ASSERT(offset >= FirstMediumAllocOffset);
-
-  return offset;
-}
-
-const void* BufferChunk::ptrFromOffset(uintptr_t offset) const {
-  void* alloc = reinterpret_cast<void*>(uintptr_t(this) + offset);
-  checkAlloc(alloc);
-  return alloc;
-}
-
-void BufferChunk::checkAlloc(const void* alloc) const {
-  MOZ_ASSERT((uintptr_t(alloc) & ~ChunkMask) == uintptr_t(this));
-  MOZ_ASSERT((uintptr_t(alloc) % MinMediumAllocSize) == 0);
-}
-
 void BufferChunk::setAllocated(void* alloc, bool allocated) {
-  uintptr_t offset = ptrToOffset(alloc);
-  size_t bit = offset / MinMediumAllocSize;
+  size_t bit = ptrToIndex(alloc);
   MOZ_ASSERT(allocBitmap.ref()[bit] != allocated);
   allocBitmap.ref()[bit] = allocated;
 }
 
 bool BufferChunk::isAllocated(const void* alloc) const {
-  return isAllocated(ptrToOffset(alloc));
+  size_t bit = ptrToIndex(alloc);
+  return allocBitmap.ref()[bit];
 }
 
 bool BufferChunk::isAllocated(uintptr_t offset) const {
-  MOZ_ASSERT(offset >= FirstMediumAllocOffset);
-  MOZ_ASSERT(offset < ChunkSize);
-
-  size_t bit = offset / MinMediumAllocSize;
+  size_t bit = offsetToIndex(offset);
   return allocBitmap.ref()[bit];
 }
 
 size_t BufferChunk::findNextAllocated(uintptr_t offset) const {
-  MOZ_ASSERT(offset >= FirstMediumAllocOffset);
-  MOZ_ASSERT(offset < ChunkSize);
-
-  size_t bit = offset / MinMediumAllocSize;
+  size_t bit = offsetToIndex(offset);
   size_t next = allocBitmap.ref().FindNext(bit);
   if (next == SIZE_MAX) {
     return ChunkSize;
   }
 
-  return next * MinMediumAllocSize;
+  return next * MediumAllocGranularity;
 }
 
 size_t BufferChunk::findPrevAllocated(uintptr_t offset) const {
-  MOZ_ASSERT(offset >= FirstMediumAllocOffset);
-  MOZ_ASSERT(offset < ChunkSize);
-
-  size_t bit = offset / MinMediumAllocSize;
+  size_t bit = offsetToIndex(offset);
   size_t prev = allocBitmap.ref().FindPrev(bit);
   if (prev == SIZE_MAX) {
     return ChunkSize;
   }
 
-  return prev * MinMediumAllocSize;
+  return prev * MediumAllocGranularity;
 }
 
 void BufferChunk::setNurseryOwned(void* alloc, bool nurseryOwned) {
   MOZ_ASSERT(isAllocated(alloc));
-  uintptr_t offset = ptrToOffset(alloc);
-  size_t bit = offset / MinMediumAllocSize;
+  size_t bit = ptrToIndex(alloc);
   nurseryOwnedBitmap.ref()[bit] = nurseryOwned;
 }
 
 bool BufferChunk::isNurseryOwned(const void* alloc) const {
   MOZ_ASSERT(isAllocated(alloc));
-  uintptr_t offset = ptrToOffset(alloc);
-  size_t bit = offset / MinMediumAllocSize;
+  size_t bit = ptrToIndex(alloc);
   return nurseryOwnedBitmap.ref()[bit];
 }
 
-void BufferChunk::setSizeClass(void* alloc, size_t sizeClass) {
+void BufferChunk::setAllocBytes(void* alloc, size_t bytes) {
   MOZ_ASSERT(isAllocated(alloc));
-  uintptr_t offset = ptrToOffset(alloc);
-  size_t index = offset / MinMediumAllocSize;
-  MOZ_ASSERT(index < std::size(sizeClassArray));
-  sizeClassArray[index] = sizeClass;
-}
-
-size_t BufferChunk::sizeClass(const void* alloc) const {
-  MOZ_ASSERT(isAllocated(alloc));
-  uintptr_t offset = ptrToOffset(alloc);
-  size_t index = offset / MinMediumAllocSize;
-  MOZ_ASSERT(index < std::size(sizeClassArray));
-  return sizeClassArray[index];
+  size_t index = ptrToIndex(alloc);
+  MOZ_ASSERT(index < std::size(encodedSizeArray));
+  encodedSizeArray[index].set(bytes);
 }
 
 size_t BufferChunk::allocBytes(const void* alloc) const {
-  return BufferAllocator::SizeClassBytes(sizeClass(alloc));
+  MOZ_ASSERT(isAllocated(alloc));
+  size_t index = ptrToIndex(alloc);
+  MOZ_ASSERT(index < std::size(encodedSizeArray));
+  return encodedSizeArray[index].get();
+}
+
+bool BufferChunk::setMarked(void* alloc) {
+  MOZ_ASSERT(isAllocated(alloc));
+  size_t bit = ptrToIndex(alloc);
+
+  // This is thread safe but can return false positives if another thread also
+  // marked the same allocation at the same time;
+  if (markBits.ref().getBit(bit)) {
+    return false;
+  }
+
+  markBits.ref().setBit(bit, true);
+  return true;
+}
+
+void BufferChunk::setUnmarked(void* alloc) {
+  MOZ_ASSERT(isAllocated(alloc));
+  size_t bit = ptrToIndex(alloc);
+  markBits.ref().setBit(bit, false);
+}
+
+bool BufferChunk::isMarked(const void* alloc) const {
+  MOZ_ASSERT(isAllocated(alloc));
+  size_t bit = ptrToIndex(alloc);
+  return markBits.ref().getBit(bit);
 }
 
 BufferAllocator::BufferAllocator(Zone* zone)
@@ -519,7 +536,7 @@ void* BufferAllocator::alloc(size_t bytes, bool nurseryOwned) {
   }
 
   if (IsSmallAllocSize(bytes)) {
-    return allocSmall(bytes, nurseryOwned);
+    return allocSmall(bytes, nurseryOwned, false);
   }
 
   return allocMedium(bytes, nurseryOwned, false);
@@ -535,7 +552,7 @@ void* BufferAllocator::allocInGC(size_t bytes, bool nurseryOwned) {
   if (IsLargeAllocSize(bytes)) {
     result = allocLarge(bytes, nurseryOwned, true);
   } else if (IsSmallAllocSize(bytes)) {
-    result = allocSmallInGC(bytes, nurseryOwned);
+    result = allocSmall(bytes, nurseryOwned, true);
   } else {
     result = allocMedium(bytes, nurseryOwned, true);
   }
@@ -784,7 +801,7 @@ void BufferAllocator::markMediumNurseryOwnedBuffer(void* alloc,
     return;
   }
 
-  chunk->markBits.ref().markIfUnmarked(alloc, MarkColor::Black);
+  chunk->setMarked(alloc);
 }
 
 void BufferAllocator::markLargeNurseryOwnedBuffer(LargeBuffer* buffer,
@@ -816,8 +833,7 @@ bool BufferAllocator::isMarkedBlack(void* alloc) {
 
   MOZ_ASSERT(IsMediumAlloc(alloc));
   BufferChunk* chunk = BufferChunk::from(alloc);
-  MOZ_ASSERT(chunk->isAllocated(alloc));
-  return chunk->markBits.ref().isMarkedBlack(alloc);
+  return chunk->isMarked(alloc);
 }
 
 void BufferAllocator::traceEdge(JSTracer* trc, Cell* owner, void** bufferp,
@@ -938,8 +954,7 @@ bool BufferAllocator::markMediumTenuredAlloc(void* alloc) {
     return false;
   }
 
-  return chunk->markBits.ref().markIfUnmarkedThreadSafe(alloc,
-                                                        MarkColor::Black);
+  return chunk->setMarked(alloc);
 }
 
 void BufferAllocator::startMinorCollection(MaybeLock& lock) {
@@ -1519,27 +1534,18 @@ void BufferAllocator::checkChunkGCStateNotInUse(
     BufferChunk* chunk, bool allowAllocatedDuringCollection) {
   MOZ_ASSERT_IF(!allowAllocatedDuringCollection,
                 !chunk->allocatedDuringCollection);
-
-  static constexpr size_t StepBytes = MinMediumAllocSize;
-
-  // Check nothing's marked.
-  uintptr_t chunkAddr = uintptr_t(chunk);
-  auto& markBits = chunk->markBits.ref();
-  for (size_t offset = 0; offset < ChunkSize; offset += StepBytes) {
-    void* alloc = reinterpret_cast<void*>(chunkAddr + offset);
-    MOZ_ASSERT(!markBits.isMarkedBlack(alloc));
-  }
+  MOZ_ASSERT(chunk->markBits.ref().isEmpty());
 }
 
 void BufferAllocator::verifyChunk(BufferChunk* chunk,
                                   bool hasNurseryOwnedAllocs) {
   MOZ_ASSERT(chunk->hasNurseryOwnedAllocs == hasNurseryOwnedAllocs);
 
-  static constexpr size_t StepBytes = MinMediumAllocSize;
+  static constexpr size_t StepBytes = MediumAllocGranularity;
 
   size_t freeOffset = FirstMediumAllocOffset;
 
-  for (BufferChunkIter iter(chunk); !iter.done(); iter.next()) {
+  for (BufferChunk::AllocIter iter(chunk); !iter.done(); iter.next()) {
     // Check any free region preceding this allocation.
     size_t offset = iter.getOffset();
     MOZ_ASSERT(offset >= FirstMediumAllocOffset);
@@ -1550,7 +1556,7 @@ void BufferAllocator::verifyChunk(BufferChunk* chunk,
     // Check this allocation.
     void* alloc = iter.get();
     MOZ_ASSERT_IF(chunk->isNurseryOwned(alloc), hasNurseryOwnedAllocs);
-    size_t bytes = SizeClassBytes(chunk->sizeClass(alloc));
+    size_t bytes = chunk->allocBytes(alloc);
     uintptr_t endOffset = offset + bytes;
     MOZ_ASSERT(endOffset <= ChunkSize);
     for (size_t i = offset + StepBytes; i < endOffset; i += StepBytes) {
@@ -1583,10 +1589,16 @@ void BufferAllocator::checkAllocListGCStateNotInUse(LargeAllocList& list,
 
 #endif
 
-void* BufferAllocator::allocSmall(size_t bytes, bool nurseryOwned) {
+void* BufferAllocator::allocSmall(size_t bytes, bool nurseryOwned, bool inGC) {
   AllocKind kind = AllocKindForSmallAlloc(bytes);
 
-  void* ptr = CellAllocator::AllocTenuredCellUnchecked<NoGC>(zone, kind);
+  void* ptr;
+  if (inGC) {
+    ptr = AllocateTenuredCellInGC(zone, kind);
+  } else {
+    ptr = CellAllocator::AllocTenuredCellUnchecked<NoGC>(zone, kind);
+  }
+
   if (!ptr) {
     return nullptr;
   }
@@ -1594,26 +1606,6 @@ void* BufferAllocator::allocSmall(size_t bytes, bool nurseryOwned) {
   auto* cell = new (ptr) SmallBuffer();
   cell->setNurseryOwned(nurseryOwned);
   MOZ_ASSERT(cell->isNurseryOwned() == nurseryOwned);
-  void* alloc = cell->data();
-
-  MOZ_ASSERT(IsSmallAlloc(alloc));
-  MOZ_ASSERT(getAllocSize(alloc) >= bytes);
-  MOZ_ASSERT(getAllocSize(alloc) < 2 * bytes);
-
-  return alloc;
-}
-
-/* static */
-void* BufferAllocator::allocSmallInGC(size_t bytes, bool nurseryOwned) {
-  AllocKind kind = AllocKindForSmallAlloc(bytes);
-
-  void* ptr = AllocateTenuredCellInGC(zone, kind);
-  if (!ptr) {
-    return nullptr;
-  }
-
-  auto* cell = new (ptr) SmallBuffer();
-  cell->setNurseryOwned(nurseryOwned);
   void* alloc = cell->data();
 
   MOZ_ASSERT(IsSmallAlloc(alloc));
@@ -1655,15 +1647,19 @@ bool BufferAllocator::IsSmallAlloc(void* alloc) {
 void* BufferAllocator::allocMedium(size_t bytes, bool nurseryOwned, bool inGC) {
   MOZ_ASSERT(!IsSmallAllocSize(bytes));
   MOZ_ASSERT(!IsLargeAllocSize(bytes));
-  bytes = mozilla::RoundUpPow2(std::max(bytes, MinMediumAllocSize));
+
+  // Round up to next allowed size.
+  bytes = MediumBufferSize(bytes).get();
 
   // Get size class from |bytes|.
   size_t sizeClass = SizeClassForAlloc(bytes);
-  MOZ_ASSERT(SizeClassBytes(sizeClass) == GetGoodAllocSize(bytes));
 
-  void* alloc = bumpAllocOrRetry(sizeClass, inGC);
-  if (!alloc) {
-    return nullptr;
+  void* alloc = bumpAlloc(bytes, sizeClass);
+  if (MOZ_UNLIKELY(!alloc)) {
+    alloc = retryBumpAlloc(bytes, sizeClass, inGC);
+    if (!alloc) {
+      return nullptr;
+    }
   }
 
   BufferChunk* chunk = BufferChunk::from(alloc);
@@ -1672,8 +1668,9 @@ void* BufferAllocator::allocMedium(size_t bytes, bool nurseryOwned, bool inGC) {
   MOZ_ASSERT(!chunk->isNurseryOwned(alloc));
   chunk->setNurseryOwned(alloc, nurseryOwned);
 
-  MOZ_ASSERT(chunk->sizeClass(alloc) == 0);
-  chunk->setSizeClass(alloc, sizeClass);
+  MOZ_ASSERT(chunk->allocBytes(alloc) == 0);
+  chunk->setAllocBytes(alloc, bytes);
+  MOZ_ASSERT(chunk->allocBytes(alloc) == bytes);
 
   if (nurseryOwned && !chunk->hasNurseryOwnedAllocs) {
     mediumTenuredChunks.ref().remove(chunk);
@@ -1681,28 +1678,24 @@ void* BufferAllocator::allocMedium(size_t bytes, bool nurseryOwned, bool inGC) {
     mediumMixedChunks.ref().pushBack(chunk);
   }
 
-  MOZ_ASSERT(!chunk->markBits.ref().isMarkedBlack(alloc));
+  MOZ_ASSERT(!chunk->isMarked(alloc));
 
   if (!nurseryOwned) {
     bool checkThresholds = !inGC;
     updateHeapSize(bytes, checkThresholds, false);
   }
 
-  chunk->checkAlloc(alloc);
   return alloc;
 }
 
-void* BufferAllocator::bumpAllocOrRetry(size_t sizeClass, bool inGC) {
-  void* ptr = bumpAlloc(sizeClass);
-  if (ptr) {
-    return ptr;
-  }
-
+MOZ_NEVER_INLINE void* BufferAllocator::retryBumpAlloc(size_t bytes,
+                                                       size_t sizeClass,
+                                                       bool inGC) {
   if (hasMinorSweepDataToMerge) {
     // Avoid taking the lock unless we know there is data to merge. This reduces
     // context switches.
     mergeSweptData();
-    ptr = bumpAlloc(sizeClass);
+    void* ptr = bumpAlloc(bytes, sizeClass);
     if (ptr) {
       return ptr;
     }
@@ -1712,14 +1705,12 @@ void* BufferAllocator::bumpAllocOrRetry(size_t sizeClass, bool inGC) {
     return nullptr;
   }
 
-  ptr = bumpAlloc(sizeClass);
+  void* ptr = bumpAlloc(bytes, sizeClass);
   MOZ_ASSERT(ptr);
   return ptr;
 }
 
-void* BufferAllocator::bumpAlloc(size_t sizeClass) {
-  size_t requestedBytes = SizeClassBytes(sizeClass);
-
+void* BufferAllocator::bumpAlloc(size_t bytes, size_t sizeClass) {
   mediumFreeLists.ref().checkAvailable();
 
   // Find smallest suitable size class that has free regions.
@@ -1729,18 +1720,17 @@ void* BufferAllocator::bumpAlloc(size_t sizeClass) {
   }
 
   FreeRegion* region = mediumFreeLists.ref().getFirstRegion(sizeClass);
-  void* ptr = allocFromRegion(region, requestedBytes, sizeClass);
+  void* ptr = allocFromRegion(region, bytes, sizeClass);
   updateFreeListsAfterAlloc(&mediumFreeLists.ref(), region, sizeClass);
   return ptr;
 }
 
-void* BufferAllocator::allocFromRegion(FreeRegion* region,
-                                       size_t requestedBytes,
+void* BufferAllocator::allocFromRegion(FreeRegion* region, size_t bytes,
                                        size_t sizeClass) {
   uintptr_t start = region->startAddr;
   MOZ_ASSERT(region->getEnd() > start);
   MOZ_ASSERT(region->size() >= SizeClassBytes(sizeClass));
-  MOZ_ASSERT((region->size() % MinMediumAllocSize) == 0);
+  MOZ_ASSERT((region->size() % MediumAllocGranularity) == 0);
 
   // Ensure whole region is commited.
   if (region->hasDecommittedPages) {
@@ -1749,7 +1739,7 @@ void* BufferAllocator::allocFromRegion(FreeRegion* region,
 
   // Allocate from start of region.
   void* ptr = reinterpret_cast<void*>(start);
-  start += requestedBytes;
+  start += bytes;
   MOZ_ASSERT(region->getEnd() >= start);
 
   // Update region start.
@@ -1769,7 +1759,7 @@ void BufferAllocator::updateFreeListsAfterAlloc(FreeLists* freeLists,
   // then there's nothing to do.
   size_t classBytes = SizeClassBytes(sizeClass);
   size_t newSize = region->size();
-  MOZ_ASSERT((newSize % MinMediumAllocSize) == 0);
+  MOZ_ASSERT((newSize % MediumAllocGranularity) == 0);
   if (newSize >= classBytes) {
     return;
   }
@@ -1825,7 +1815,7 @@ static inline StallAndRetry ShouldStallAndRetry(bool inGC) {
 bool BufferAllocator::allocNewChunk(bool inGC) {
   GCRuntime* gc = &zone->runtimeFromMainThread()->gc;
   AutoLockGCBgAlloc lock(gc);
-  ArenaChunk* baseChunk = gc->takeOrAllocChunk(ShouldStallAndRetry(inGC), lock);
+  ArenaChunk* baseChunk = gc->getOrAllocChunk(ShouldStallAndRetry(inGC), lock);
   if (!baseChunk) {
     return false;
   }
@@ -1879,7 +1869,7 @@ bool BufferAllocator::sweepChunk(BufferChunk* chunk, OwnerKind ownerKindToSweep,
   bool sweptAny = false;
   size_t mallocHeapBytesFreed = 0;
 
-  for (BufferChunkIter iter(chunk); !iter.done(); iter.next()) {
+  for (BufferChunk::AllocIter iter(chunk); !iter.done(); iter.next()) {
     void* alloc = iter.get();
 
     size_t bytes = chunk->allocBytes(alloc);
@@ -1890,7 +1880,7 @@ bool BufferAllocator::sweepChunk(BufferChunk* chunk, OwnerKind ownerKindToSweep,
     MOZ_ASSERT_IF(nurseryOwned, ownerKind == OwnerKind::Nursery);
     MOZ_ASSERT_IF(!nurseryOwned, ownerKind == OwnerKind::Tenured);
     bool canSweep = ownerKind == ownerKindToSweep;
-    bool shouldSweep = canSweep && !chunk->markBits.ref().isMarkedBlack(alloc);
+    bool shouldSweep = canSweep && !chunk->isMarked(alloc);
 
     if (shouldSweep) {
       // Dead. Update allocated bitmap, metadata and heap size accounting.
@@ -1898,7 +1888,7 @@ bool BufferAllocator::sweepChunk(BufferChunk* chunk, OwnerKind ownerKindToSweep,
         mallocHeapBytesFreed += bytes;
       }
       chunk->setNurseryOwned(alloc, false);
-      chunk->setSizeClass(alloc, 0);
+      chunk->setAllocBytes(alloc, 0);
       chunk->setAllocated(alloc, false);
       PoisonAlloc(alloc, JS_SWEPT_TENURED_PATTERN, bytes,
                   MemCheckKind::MakeUndefined);
@@ -1912,7 +1902,7 @@ bool BufferAllocator::sweepChunk(BufferChunk* chunk, OwnerKind ownerKindToSweep,
       }
       freeStart = allocEnd;
       if (canSweep) {
-        chunk->markBits.ref().unmarkOneBit(alloc, ColorBit::BlackBit);
+        chunk->setUnmarked(alloc);
       }
       if (nurseryOwned) {
         MOZ_ASSERT(ownerKindToSweep == OwnerKind::Nursery);
@@ -1931,8 +1921,7 @@ bool BufferAllocator::sweepChunk(BufferChunk* chunk, OwnerKind ownerKindToSweep,
     // Chunk is empty. Give it back to the system.
     bool allMemoryCommitted = chunk->decommittedPages.ref().IsEmpty();
     chunk->~BufferChunk();
-    ArenaChunk* tenuredChunk =
-        ArenaChunk::emplace(chunk, gc, allMemoryCommitted);
+    ArenaChunk* tenuredChunk = ArenaChunk::init(chunk, gc, allMemoryCommitted);
     AutoLockGC lock(gc);
     gc->recycleChunk(tenuredChunk, lock);
     return false;
@@ -1959,8 +1948,8 @@ void BufferAllocator::addSweptRegion(BufferChunk* chunk, uintptr_t freeStart,
   MOZ_ASSERT(freeStart >= FirstMediumAllocOffset);
   MOZ_ASSERT(freeStart < freeEnd);
   MOZ_ASSERT(freeEnd <= ChunkSize);
-  MOZ_ASSERT((freeStart % MinMediumAllocSize) == 0);
-  MOZ_ASSERT((freeEnd % MinMediumAllocSize) == 0);
+  MOZ_ASSERT((freeStart % MediumAllocGranularity) == 0);
+  MOZ_ASSERT((freeEnd % MediumAllocGranularity) == 0);
   MOZ_ASSERT_IF(shouldDecommit, DecommitEnabled());
 
   // Decommit pages if |shouldDecommit| was specified, but leave space for
@@ -1994,8 +1983,7 @@ void BufferAllocator::addSweptRegion(BufferChunk* chunk, uintptr_t freeStart,
   freeStart += uintptr_t(chunk);
   freeEnd += uintptr_t(chunk);
 
-  size_t sizeClass = SizeClassForFreeRegion(freeEnd - freeStart);
-  addFreeRegion(&freeLists, sizeClass, freeStart, freeEnd, anyDecommitted,
+  addFreeRegion(&freeLists, freeStart, freeEnd - freeStart, anyDecommitted,
                 ListPosition::Back, expectUnchanged);
 }
 
@@ -2024,15 +2012,15 @@ void BufferAllocator::freeMedium(void* alloc) {
 
   // Update metadata.
   chunk->setNurseryOwned(alloc, false);
-  chunk->setSizeClass(alloc, 0);
-
-  // Set region as not allocated and then clear mark bit.
-  chunk->setAllocated(alloc, false);
+  chunk->setAllocBytes(alloc, 0);
 
   // TODO: Since the mark bits are atomic, it's probably OK to unmark even if
   // the chunk is currently being swept. If we get lucky the memory will be
   // freed sooner.
-  chunk->markBits.ref().unmarkOneBit(alloc, ColorBit::BlackBit);
+  chunk->setUnmarked(alloc);
+
+  // Set region as not allocated and then clear mark bit.
+  chunk->setAllocated(alloc, false);
 
   FreeLists* freeLists = getChunkFreeLists(chunk);
 
@@ -2049,19 +2037,18 @@ void BufferAllocator::freeMedium(void* alloc) {
     // The new region is added to the front of relevant list so as to reuse
     // recently freed memory preferentially. This may reduce fragmentation. See
     // "The Memory Fragmentation Problem: Solved?"  by Johnstone et al.
-    size_t sizeClass = SizeClassForFreeRegion(bytes);
-    region = addFreeRegion(freeLists, sizeClass, startAddr, endAddr, false,
-                           ListPosition::Front);
+    region =
+        addFreeRegion(freeLists, startAddr, bytes, false, ListPosition::Front);
   } else {
     // There is a free region following this allocation. Expand the existing
     // region down to cover the newly freed space.
-    region = findFollowingFreeRegion(endAddr);
+    region = chunk->findFollowingFreeRegion(endAddr);
     MOZ_ASSERT(region->startAddr == endAddr);
     updateFreeRegionStart(freeLists, region, startAddr);
   }
 
   // Next check for any preceding free region and coalesce.
-  FreeRegion* precRegion = findPrecedingFreeRegion(startAddr);
+  FreeRegion* precRegion = chunk->findPrecedingFreeRegion(startAddr);
   if (precRegion) {
     if (freeLists) {
       size_t sizeClass = SizeClassForFreeRegion(precRegion->size());
@@ -2113,11 +2100,10 @@ bool BufferAllocator::isSweepingChunk(BufferChunk* chunk) {
 }
 
 BufferAllocator::FreeRegion* BufferAllocator::addFreeRegion(
-    FreeLists* freeLists, size_t sizeClass, uintptr_t start, uintptr_t end,
-    bool anyDecommitted, ListPosition position,
-    bool expectUnchanged /* = false */) {
+    FreeLists* freeLists, uintptr_t start, size_t bytes, bool anyDecommitted,
+    ListPosition position, bool expectUnchanged /* = false */) {
+  uintptr_t end = start + bytes;
 #ifdef DEBUG
-  MOZ_ASSERT(end - start >= SizeClassBytes(sizeClass));
   if (expectUnchanged) {
     // We didn't free any allocations so there should already be a FreeRegion
     // from |start| to |end|.
@@ -2126,6 +2112,9 @@ BufferAllocator::FreeRegion* BufferAllocator::addFreeRegion(
     MOZ_ASSERT(region->startAddr == start);
   }
 #endif
+
+  size_t sizeClass = SizeClassForFreeRegion(bytes);
+  MOZ_ASSERT(bytes >= SizeClassBytes(sizeClass));
 
   void* ptr = reinterpret_cast<void*>(end - sizeof(FreeRegion));
   FreeRegion* region = new (ptr) FreeRegion(start, anyDecommitted);
@@ -2176,7 +2165,7 @@ bool BufferAllocator::growMedium(void* alloc, size_t newBytes) {
     return false;  // We can't grow if the chunk is currently being swept.
   }
 
-  size_t currentBytes = SizeClassBytes(chunk->sizeClass(alloc));
+  size_t currentBytes = chunk->allocBytes(alloc);
   MOZ_ASSERT(newBytes > currentBytes);
 
   uintptr_t endOffset = (uintptr_t(alloc) & ChunkMask) + currentBytes;
@@ -2190,7 +2179,7 @@ bool BufferAllocator::growMedium(void* alloc, size_t newBytes) {
     return false;  // Can't extend because we abut another allocation.
   }
 
-  FreeRegion* region = findFollowingFreeRegion(endAddr);
+  FreeRegion* region = chunk->findFollowingFreeRegion(endAddr);
   MOZ_ASSERT(region->startAddr == endAddr);
 
   size_t extraBytes = newBytes - currentBytes;
@@ -2208,7 +2197,9 @@ bool BufferAllocator::growMedium(void* alloc, size_t newBytes) {
     updateFreeListsAfterAlloc(freeLists, region, sizeClass);
   }
 
-  chunk->setSizeClass(alloc, SizeClassForAlloc(newBytes));
+  chunk->setAllocBytes(alloc, newBytes);
+  MOZ_ASSERT(chunk->allocBytes(alloc) == newBytes);
+
   if (!chunk->isNurseryOwned(alloc)) {
     bool updateRetained =
         majorState == State::Marking && !chunk->allocatedDuringCollection;
@@ -2241,7 +2232,8 @@ bool BufferAllocator::shrinkMedium(void* alloc, size_t newBytes) {
   size_t sizeChange = currentBytes - newBytes;
 
   // Update allocation size.
-  chunk->setSizeClass(alloc, SizeClassForAlloc(newBytes));
+  chunk->setAllocBytes(alloc, newBytes);
+  MOZ_ASSERT(chunk->allocBytes(alloc) == newBytes);
   if (!chunk->isNurseryOwned(alloc)) {
     bool updateRetained =
         majorState == State::Marking && !chunk->allocatedDuringCollection;
@@ -2263,16 +2255,13 @@ bool BufferAllocator::shrinkMedium(void* alloc, size_t newBytes) {
 
   // If we abut another allocation then add a new free region.
   if (oldEndOffset == ChunkSize || chunk->isAllocated(oldEndOffset)) {
-    size_t sizeClass = SizeClassForFreeRegion(sizeChange);
     uintptr_t freeStart = chunkAddr + newEndOffset;
-    uintptr_t freeEnd = chunkAddr + oldEndOffset;
-    addFreeRegion(freeLists, sizeClass, freeStart, freeEnd, false,
-                  ListPosition::Front);
+    addFreeRegion(freeLists, freeStart, sizeChange, false, ListPosition::Front);
     return true;
   }
 
   // Otherwise find the following free region and extend it down.
-  FreeRegion* region = findFollowingFreeRegion(chunkAddr + oldEndOffset);
+  FreeRegion* region = chunk->findFollowingFreeRegion(chunkAddr + oldEndOffset);
   MOZ_ASSERT(region->startAddr == chunkAddr + oldEndOffset);
   updateFreeRegionStart(freeLists, region, chunkAddr + newEndOffset);
 
@@ -2292,49 +2281,45 @@ BufferAllocator::FreeLists* BufferAllocator::getChunkFreeLists(
   return &mediumFreeLists.ref();
 }
 
-BufferAllocator::FreeRegion* BufferAllocator::findFollowingFreeRegion(
+BufferAllocator::FreeRegion* BufferChunk::findFollowingFreeRegion(
     uintptr_t startAddr) {
   // Find the free region that starts at |startAddr|, which is not allocated and
   // not at the end of the chunk. Always returns a region.
 
   uintptr_t offset = uintptr_t(startAddr) & ChunkMask;
-  MOZ_ASSERT(offset >= FirstMediumAllocOffset);
-  MOZ_ASSERT(offset < ChunkSize);
-  MOZ_ASSERT((offset % MinMediumAllocSize) == 0);
+  MOZ_ASSERT(isValidOffset(offset));
+  MOZ_ASSERT((offset % MediumAllocGranularity) == 0);
 
-  BufferChunk* chunk = BufferChunk::from(reinterpret_cast<void*>(startAddr));
-  MOZ_ASSERT(!chunk->isAllocated(offset));  // Already marked as not allocated.
-  offset = chunk->findNextAllocated(offset);
+  MOZ_ASSERT(!isAllocated(offset));  // Already marked as not allocated.
+  offset = findNextAllocated(offset);
   MOZ_ASSERT(offset <= ChunkSize);
 
-  auto* region = FreeRegion::fromEndOffset(chunk, offset);
+  auto* region = FreeRegion::fromEndOffset(this, offset);
   MOZ_ASSERT(region->startAddr == startAddr);
 
   return region;
 }
 
-BufferAllocator::FreeRegion* BufferAllocator::findPrecedingFreeRegion(
+BufferAllocator::FreeRegion* BufferChunk::findPrecedingFreeRegion(
     uintptr_t endAddr) {
   // Find the free region, if any, that ends at |endAddr|, which may be
   // allocated or at the start of the chunk.
 
   uintptr_t offset = uintptr_t(endAddr) & ChunkMask;
-  MOZ_ASSERT(offset >= FirstMediumAllocOffset);
-  MOZ_ASSERT(offset < ChunkSize);
-  MOZ_ASSERT((offset % MinMediumAllocSize) == 0);
+  MOZ_ASSERT(isValidOffset(offset));
+  MOZ_ASSERT((offset % MediumAllocGranularity) == 0);
 
   if (offset == FirstMediumAllocOffset) {
     return nullptr;  // Already at start of chunk.
   }
 
-  BufferChunk* chunk = BufferChunk::from(reinterpret_cast<void*>(endAddr));
-  MOZ_ASSERT(!chunk->isAllocated(offset));
-  offset = chunk->findPrevAllocated(offset);
+  MOZ_ASSERT(!isAllocated(offset));
+  offset = findPrevAllocated(offset);
 
   if (offset != ChunkSize) {
     // Found a preceding allocation.
-    const void* alloc = chunk->ptrFromOffset(offset);
-    size_t bytes = SizeClassBytes(chunk->sizeClass(alloc));
+    const void* alloc = ptrFromOffset(offset);
+    size_t bytes = allocBytes(alloc);
     MOZ_ASSERT(uintptr_t(alloc) + bytes <= endAddr);
     if (uintptr_t(alloc) + bytes == endAddr) {
       // No free space between preceding allocation and |endAddr|.
@@ -2347,11 +2332,11 @@ BufferAllocator::FreeRegion* BufferAllocator::findPrecedingFreeRegion(
 #ifdef DEBUG
   region->check();
   if (offset != ChunkSize) {
-    const void* alloc = chunk->ptrFromOffset(offset);
-    size_t bytes = chunk->allocBytes(alloc);
+    const void* alloc = ptrFromOffset(offset);
+    size_t bytes = allocBytes(alloc);
     MOZ_ASSERT(region->startAddr == uintptr_t(alloc) + bytes);
   } else {
-    MOZ_ASSERT(region->startAddr == uintptr_t(chunk) + FirstMediumAllocOffset);
+    MOZ_ASSERT(region->startAddr == uintptr_t(this) + FirstMediumAllocOffset);
   }
 #endif
 
@@ -2431,7 +2416,7 @@ void* BufferAllocator::allocLarge(size_t bytes, bool nurseryOwned, bool inGC) {
 
   // Allocate a small buffer the size of a LargeBuffer to hold the metadata.
   static_assert(sizeof(LargeBuffer) <= MaxSmallAllocSize);
-  void* bufferPtr = allocSmall(sizeof(LargeBuffer), nurseryOwned);
+  void* bufferPtr = allocSmall(sizeof(LargeBuffer), nurseryOwned, inGC);
   if (!bufferPtr) {
     return nullptr;
   }
@@ -2716,7 +2701,7 @@ size_t BufferAllocator::getSizeOfNurseryBuffers() {
   size_t bytes = 0;
 
   for (BufferChunk* chunk : mediumMixedChunks.ref()) {
-    for (BufferChunkIter alloc(chunk); !alloc.done(); alloc.next()) {
+    for (BufferChunk::AllocIter alloc(chunk); !alloc.done(); alloc.next()) {
       if (chunk->isNurseryOwned(alloc)) {
         bytes += chunk->allocBytes(alloc);
       }

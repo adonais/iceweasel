@@ -7,9 +7,9 @@
 #ifndef nsLayoutModule_h
 #define nsLayoutModule_h
 
-#include "nscore.h"
-#include "nsID.h"
 #include "mozilla/AlreadyAddRefed.h"
+#include "nsID.h"
+#include "nscore.h"
 
 class nsIPresentationService;
 class nsISupports;

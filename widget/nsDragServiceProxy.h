@@ -15,9 +15,9 @@ class nsDragSessionProxy : public nsBaseDragSession {
 
   MOZ_CAN_RUN_SCRIPT virtual nsresult InvokeDragSession(
       nsIWidget* aWidget, nsINode* aDOMNode, nsIPrincipal* aPrincipal,
-      nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings,
-      nsIArray* aTransferableArray, uint32_t aActionType,
-      nsContentPolicyType aContentPolicyType) override;
+      nsIPolicyContainer* aPolicyContainer,
+      nsICookieJarSettings* aCookieJarSettings, nsIArray* aTransferableArray,
+      uint32_t aActionType, nsContentPolicyType aContentPolicyType) override;
 
   nsresult InvokeDragSessionImpl(
       nsIWidget* aWidget, nsIArray* anArrayTransferables,

@@ -270,7 +270,6 @@ impl SpecNewSessionParameters {
                     }
                 },
 
-                "ftpProxy" => SpecNewSessionParameters::validate_host(value, "ftpProxy")?,
                 "httpProxy" => SpecNewSessionParameters::validate_host(value, "httpProxy")?,
                 "noProxy" => SpecNewSessionParameters::validate_no_proxy(value)?,
                 "sslProxy" => SpecNewSessionParameters::validate_host(value, "sslProxy")?,

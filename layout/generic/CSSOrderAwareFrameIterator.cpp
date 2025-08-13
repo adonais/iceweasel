@@ -7,6 +7,7 @@
 /* Iterator class for frame lists that respect CSS "order" during layout */
 
 #include "CSSOrderAwareFrameIterator.h"
+
 #include "nsIFrameInlines.h"
 
 static bool CanUse(const nsIFrame* aFrame) {

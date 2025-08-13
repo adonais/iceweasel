@@ -346,6 +346,7 @@ void SVGMotionSMILAnimationFunction::CheckKeyPoints() {
   // attribute is ignored for calcMode="paced" (even if it's got errors)
   if (GetCalcMode() == CALC_PACED) {
     SetKeyPointsErrorFlag(false);
+    return;
   }
 
   if (mKeyPoints.Length() != mKeyTimes.Length()) {
@@ -358,6 +359,7 @@ void SVGMotionSMILAnimationFunction::CheckKeyPoints() {
   // -  Formatting & range issues will be caught in SetKeyPoints, and will
   //  result in an empty mKeyPoints array, which will drop us into the error
   //  case above.
+  SetKeyPointsErrorFlag(false);
 }
 
 nsresult SVGMotionSMILAnimationFunction::SetKeyPoints(

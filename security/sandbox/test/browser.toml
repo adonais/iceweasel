@@ -1,7 +1,7 @@
 [DEFAULT]
 skip-if = [
   "ccov",
-  "os == 'linux' && (asan || tsan)" # bug 1784517
+  "os == 'linux' && (asan || tsan)", # bug 1784517
 ]
 tags = "contentsandbox"
 support-files = [
@@ -14,9 +14,7 @@ support-files = [
 ["browser_bug1393259.js"]
 support-files = ["bug1393259.html"]
 run-if = ["os == 'mac'"] # This is a Mac-specific test
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1929424
-]
+skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64'"] # Bug 1929424
 tags = "os_integration"
 
 ["browser_content_sandbox_fs.js"]

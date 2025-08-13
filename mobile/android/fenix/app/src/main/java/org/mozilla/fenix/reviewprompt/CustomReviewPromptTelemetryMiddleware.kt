@@ -40,7 +40,7 @@ internal class CustomReviewPromptTelemetryMiddleware :
                 CustomReviewPrompt.openMozillaConnectClicked.record(NoExtras())
             }
 
-            CustomReviewPromptAction.DismissRequested -> {
+            CustomReviewPromptAction.Dismissed -> {
                 CustomReviewPrompt.promptDismissed.record(NoExtras())
             }
         }

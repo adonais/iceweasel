@@ -3,9 +3,6 @@
 const { ExperimentStore } = ChromeUtils.importESModule(
   "resource://nimbus/lib/ExperimentStore.sys.mjs"
 );
-const { ProfilesDatastoreService } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs"
-);
 
 const { SYNC_DATA_PREF_BRANCH, SYNC_DEFAULTS_PREF_BRANCH } = ExperimentStore;
 
@@ -843,44 +840,13 @@ add_task(async function test_cleanupOldRecipes() {
   // Insert a row belonging to another profile.
   const otherProfileId = Services.uuid.generateUUID().toString().slice(1, -1);
 
-  const conn = await ProfilesDatastoreService.getConnection();
-  await conn.execute(
-    `
-      INSERT INTO NimbusEnrollments(
-        profileId,
-        slug,
-        branchSlug,
-        recipe,
-        active,
-        unenrollReason,
-        lastSeen,
-        setPrefs,
-        prefFlips,
-        source
-      ) VALUES(
-        :profileId,
-        :slug,
-        :branchSlug,
-        :recipe,
-        :active,
-        :unenrollReason,
-        :lastSeen,
-        null,
-        null,
-        :source
-      );
-    `,
-    {
-      profileId: otherProfileId,
-      slug: inactiveOverTwelveMonths.slug,
-      branchSlug: inactiveOverTwelveMonths.branches[0].slug,
+  await NimbusTestUtils.insertEnrollment(inactiveOverTwelveMonths, "control", {
+    extra: {
       active: false,
-      unenrollReason: "unknown",
-      lastSeen: new Date(NOW - ONE_YEAR - ONE_DAY).toJSON(),
-      source: "NimbusTestUtils",
-      recipe: JSON.stringify({}),
-    }
-  );
+      lastSeen: new Date(NOW - ONE_YEAR - ONE_DAY),
+    },
+    profileId: otherProfileId,
+  });
 
   store._cleanupOldRecipes();
   await NimbusTestUtils.flushStore(store);
@@ -922,7 +888,8 @@ add_task(async function test_cleanupOldRecipes() {
   store.deactivateEnrollment(active.slug);
   await NimbusTestUtils.flushStore();
 
-  await NimbusTestUtils.assert.storeIsEmpty(store);
+  await NimbusTestUtils.deleteEnrollmentsFromProfiles([otherProfileId]);
+  await NimbusTestUtils.assert.storeIsEmpty(store, { allProfiles: true });
 });
 
 async function test_restore() {

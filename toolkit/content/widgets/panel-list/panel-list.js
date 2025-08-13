@@ -216,7 +216,9 @@
 
         requestAnimationFrame(() =>
           setTimeout(() => {
-            let target = this.getTargetForEvent(this.triggeringEvent);
+            let target =
+              this.lastAnchorNode ||
+              this.getTargetForEvent(this.triggeringEvent);
             let anchorElement = target || hostElement;
             // It's possible this is being used in a context where windowUtils is
             // not available. In that case, fallback to using the element.

@@ -509,9 +509,9 @@ class LinkPreviewCard extends MozLitElement {
           ${description
             ? html`<p class="og-card-description">${description}</p>`
             : ""}
-          ${readingTimeMinsFast && readingTimeMinsSlow
-            ? html`
-                <div class="reading-time-settings-container">
+          <div class="reading-time-settings-container">
+            ${readingTimeMinsFast && readingTimeMinsSlow
+              ? html`
                   <div
                     class="og-card-reading-time"
                     data-l10n-id="link-preview-reading-time"
@@ -529,17 +529,17 @@ class LinkPreviewCard extends MozLitElement {
                             ),
                     })}
                   ></div>
-                  <moz-button
-                    type="icon ghost"
-                    iconSrc="chrome://global/skin/icons/settings.svg"
-                    data-l10n-id="link-preview-settings-button"
-                    data-l10n-attrs="title"
-                    @click=${this.handleSettingsClick}
-                  >
-                  </moz-button>
-                </div>
-              `
-            : ""}
+                `
+              : html`<div></div>`}
+            <moz-button
+              type="icon ghost"
+              iconSrc="chrome://global/skin/icons/settings.svg"
+              data-l10n-id="link-preview-settings-button"
+              data-l10n-attrs="title"
+              @click=${this.handleSettingsClick}
+            >
+            </moz-button>
+          </div>
         </div>
         ${this.renderKeyPointsSection(pageUrl)}
       </div>

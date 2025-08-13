@@ -176,6 +176,7 @@ partial interface HTMLInputElement {
   [ChromeOnly, NewObject]
   Promise<sequence<(File or Directory)>> getFilesAndDirectories();
 
+  [ChromeOnly]
   boolean mozIsTextField(boolean aExcludePassword);
 
   [ChromeOnly]

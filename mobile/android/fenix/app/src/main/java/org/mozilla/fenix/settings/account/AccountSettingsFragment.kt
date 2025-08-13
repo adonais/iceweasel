@@ -24,6 +24,7 @@ import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.launch
+import mozilla.appservices.syncmanager.SyncTelemetry
 import mozilla.components.concept.sync.AccountObserver
 import mozilla.components.concept.sync.ConstellationState
 import mozilla.components.concept.sync.DeviceConstellationObserver
@@ -38,7 +39,6 @@ import mozilla.components.service.fxa.sync.setLastSynced
 import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.FeatureFlags
 import org.mozilla.fenix.GleanMetrics.SyncAccount
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.StoreProvider
@@ -88,7 +88,33 @@ class AccountSettingsFragment : PreferenceFragmentCompat() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SyncTelemetry.processOpenSyncSettingsMenuTelemetry()
         SyncAccount.opened.record(NoExtras())
+    }
+
+    override fun onStop() {
+        super.onStop()
+        val allEngines = listOf(
+            SyncEngine.Bookmarks,
+            SyncEngine.Addresses,
+            SyncEngine.CreditCards,
+            SyncEngine.History,
+            SyncEngine.Passwords,
+            SyncEngine.Tabs,
+        )
+        val enabledEngines = mutableListOf<String>()
+        val disabledEngines = mutableListOf<String>()
+        val syncEnginesStatus = SyncEnginesStorage(requireContext()).getStatus()
+        for (syncEngine in allEngines) {
+            if (syncEnginesStatus.containsKey(syncEngine)) {
+                if (syncEnginesStatus.getOrElse(syncEngine) { true }) {
+                    enabledEngines.add(syncEngine.nativeName)
+                } else {
+                    disabledEngines.add(syncEngine.nativeName)
+                }
+            }
+        }
+        SyncTelemetry.processSaveSyncSettingsTelemetry(enabledEngines, disabledEngines)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -306,6 +332,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat() {
      * Updates the status of all [SyncEngine] states.
      */
     private fun updateSyncEngineStates() {
+        val settings = requireContext().settings()
         val syncEnginesStatus = SyncEnginesStorage(requireContext()).getStatus()
         requirePreference<CheckBoxPreference>(R.string.pref_key_sync_bookmarks).apply {
             isEnabled = syncEnginesStatus.containsKey(SyncEngine.Bookmarks)
@@ -328,7 +355,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat() {
             isChecked = syncEnginesStatus.getOrElse(SyncEngine.Tabs) { true }
         }
         requirePreference<CheckBoxPreference>(R.string.pref_key_sync_address).apply {
-            isVisible = FeatureFlags.SYNC_ADDRESSES_FEATURE
+            isVisible = settings.isAddressSyncEnabled
             isEnabled = syncEnginesStatus.containsKey(SyncEngine.Addresses)
             isChecked = syncEnginesStatus.getOrElse(SyncEngine.Addresses) { true }
         }

@@ -9,6 +9,7 @@ import android.content.Context
 import android.graphics.Color
 import android.os.Looper.getMainLooper
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.browser.engine.gecko.ext.getAntiTrackingPolicy
 import mozilla.components.browser.engine.gecko.mediaquery.toGeckoValue
 import mozilla.components.browser.engine.gecko.preferences.GeckoPreferenceAccessor
@@ -302,7 +303,7 @@ class GeckoEngineTest {
         // Specifying no ua-string default should result in GeckoView's default.
         assertEquals(GeckoSession.getDefaultUserAgent(), engine.settings.userAgentString)
         // It also should be possible to read and set a new default.
-        engine.settings.userAgentString = engine.settings.userAgentString + "-test"
+        engine.settings.userAgentString += "-test"
         assertEquals(GeckoSession.getDefaultUserAgent() + "-test", engine.settings.userAgentString)
 
         assertEquals(null, engine.settings.trackingProtectionPolicy)
@@ -343,6 +344,9 @@ class GeckoEngineTest {
         assertEquals(contentBlockingSettings.queryParameterStrippingPrivateBrowsingEnabled, engine.settings.queryParameterStrippingPrivateBrowsing)
         assertEquals(contentBlockingSettings.queryParameterStrippingAllowList[0], engine.settings.queryParameterStrippingAllowList)
         assertEquals(contentBlockingSettings.queryParameterStrippingStripList[0], engine.settings.queryParameterStrippingStripList)
+        assertEquals(contentBlockingSettings.bounceTrackingProtectionMode, EngineSession.BounceTrackingProtectionMode.ENABLED.mode)
+        assertEquals(contentBlockingSettings.allowListBaselineTrackingProtection, (engine.settings.trackingProtectionPolicy as EngineSession.TrackingProtectionPolicyForSessionTypes).allowListBaselineTrackingProtection)
+        assertEquals(contentBlockingSettings.allowListConvenienceTrackingProtection, (engine.settings.trackingProtectionPolicy as EngineSession.TrackingProtectionPolicyForSessionTypes).allowListConvenienceTrackingProtection)
 
         assertEquals(contentBlockingSettings.emailTrackerBlockingPrivateBrowsingEnabled, engine.settings.emailTrackerBlockingPrivateBrowsing)
 
@@ -415,6 +419,133 @@ class GeckoEngineTest {
         verify(mockRuntime.settings.contentBlocking).setEnhancedTrackingProtectionLevel(
             ContentBlocking.EtpLevel.STRICT,
         )
+    }
+
+    @Test
+    fun `WHEN a recommended tracking protection policy is set THEN Bounce Tracking Protection must be in standby mode`() {
+        val mockRuntime = mock<GeckoRuntime>()
+        whenever(mockRuntime.settings).thenReturn(mock())
+        whenever(mockRuntime.settings.contentBlocking).thenReturn(mock())
+
+        val engine = GeckoEngine(testContext, runtime = mockRuntime)
+
+        engine.settings.trackingProtectionPolicy = TrackingProtectionPolicy.recommended()
+
+        verify(mockRuntime.settings.contentBlocking).setBounceTrackingProtectionMode(
+            EngineSession.BounceTrackingProtectionMode.ENABLED_STANDBY.mode,
+        )
+    }
+
+    @Test
+    fun `WHEN a strict tracking protection policy is set THEN Bounce Tracking Protection must be enabled`() {
+        val mockRuntime = mock<GeckoRuntime>()
+        whenever(mockRuntime.settings).thenReturn(mock())
+        whenever(mockRuntime.settings.contentBlocking).thenReturn(mock())
+
+        val engine = GeckoEngine(testContext, runtime = mockRuntime)
+
+        engine.settings.trackingProtectionPolicy = TrackingProtectionPolicy.strict()
+
+        verify(mockRuntime.settings.contentBlocking).setBounceTrackingProtectionMode(
+            EngineSession.BounceTrackingProtectionMode.ENABLED.mode,
+        )
+    }
+
+    @Test
+    fun `WHEN a custom tracking protection policy is set THEN Bounce Tracking Protection must be in standby mode`() {
+        val mockRuntime = mock<GeckoRuntime>()
+        whenever(mockRuntime.settings).thenReturn(mock())
+        whenever(mockRuntime.settings.contentBlocking).thenReturn(mock())
+
+        val engine = GeckoEngine(testContext, runtime = mockRuntime)
+
+        engine.settings.trackingProtectionPolicy = TrackingProtectionPolicy.select(
+            // Set only an unrelated setting.
+            strictSocialTrackingProtection = true,
+        )
+
+        verify(mockRuntime.settings.contentBlocking).setBounceTrackingProtectionMode(
+            EngineSession.BounceTrackingProtectionMode.ENABLED_STANDBY.mode,
+        )
+    }
+
+    @Test
+    fun `WHEN a custom tracking protection policy enables BTP THEN Bounce Tracking Protection must be enabled`() {
+        val mockRuntime = mock<GeckoRuntime>()
+        whenever(mockRuntime.settings).thenReturn(mock())
+        whenever(mockRuntime.settings.contentBlocking).thenReturn(mock())
+
+        val engine = GeckoEngine(testContext, runtime = mockRuntime)
+
+        engine.settings.trackingProtectionPolicy = TrackingProtectionPolicy.select(
+            // Set only an unrelated setting.
+            strictSocialTrackingProtection = true,
+            bounceTrackingProtectionMode = EngineSession.BounceTrackingProtectionMode.ENABLED,
+        )
+
+        verify(mockRuntime.settings.contentBlocking).setBounceTrackingProtectionMode(
+            EngineSession.BounceTrackingProtectionMode.ENABLED.mode,
+        )
+    }
+
+    @Test
+    fun `WHEN a none tracking protection policy is set THEN Bounce Tracking Protection must be in standby mode`() {
+        val mockRuntime = mock<GeckoRuntime>()
+        whenever(mockRuntime.settings).thenReturn(mock())
+        whenever(mockRuntime.settings.contentBlocking).thenReturn(mock())
+
+        val engine = GeckoEngine(testContext, runtime = mockRuntime)
+
+        engine.settings.trackingProtectionPolicy = TrackingProtectionPolicy.none()
+
+        verify(mockRuntime.settings.contentBlocking).setBounceTrackingProtectionMode(
+            EngineSession.BounceTrackingProtectionMode.ENABLED_STANDBY.mode,
+        )
+    }
+
+    @Test
+    fun `WHEN a recommended tracking protection policy is set THEN Allow List baseline and convenience must be true`() {
+        val mockRuntime = mock<GeckoRuntime>()
+        whenever(mockRuntime.settings).thenReturn(mock())
+        whenever(mockRuntime.settings.contentBlocking).thenReturn(mock())
+
+        val engine = GeckoEngine(testContext, runtime = mockRuntime)
+
+        engine.settings.trackingProtectionPolicy = TrackingProtectionPolicy.recommended()
+
+        val policy = engine.settings.trackingProtectionPolicy as EngineSession.TrackingProtectionPolicyForSessionTypes
+        assertTrue(policy.allowListBaselineTrackingProtection)
+        assertTrue(policy.allowListConvenienceTrackingProtection)
+    }
+
+    @Test
+    fun `WHEN a strict tracking protection policy is set THEN Allow List baseline must be true and convenience must be false by default`() {
+        val mockRuntime = mock<GeckoRuntime>()
+        whenever(mockRuntime.settings).thenReturn(mock())
+        whenever(mockRuntime.settings.contentBlocking).thenReturn(mock())
+
+        val engine = GeckoEngine(testContext, runtime = mockRuntime)
+
+        engine.settings.trackingProtectionPolicy = TrackingProtectionPolicy.strict()
+
+        val policy = engine.settings.trackingProtectionPolicy as EngineSession.TrackingProtectionPolicyForSessionTypes
+        assertTrue(policy.allowListBaselineTrackingProtection)
+        assertFalse(policy.allowListConvenienceTrackingProtection)
+    }
+
+    @Test
+    fun `WHEN a custom tracking protection policy is set THEN Allow List baseline must be true and convenience must be false by default`() {
+        val mockRuntime = mock<GeckoRuntime>()
+        whenever(mockRuntime.settings).thenReturn(mock())
+        whenever(mockRuntime.settings.contentBlocking).thenReturn(mock())
+
+        val engine = GeckoEngine(testContext, runtime = mockRuntime)
+
+        engine.settings.trackingProtectionPolicy = TrackingProtectionPolicy.select()
+
+        val policy = engine.settings.trackingProtectionPolicy as EngineSession.TrackingProtectionPolicyForSessionTypes
+        assertTrue(policy.allowListBaselineTrackingProtection)
+        assertFalse(policy.allowListConvenienceTrackingProtection)
     }
 
     @Test
@@ -1532,10 +1663,10 @@ class GeckoEngineTest {
         val webExtensionController: WebExtensionController = mock()
         whenever(runtime.webExtensionController).thenReturn(webExtensionController)
 
-        val currentExtension = mockNativeWebExtension("test", "uri")
-        val updatedExtension = mockNativeWebExtension("testUpdated", "uri")
-        val updatedPermissions = arrayOf("p1", "p2")
-        val hostPermissions = arrayOf("p3", "p4")
+        val extension = mockNativeWebExtension("test", "uri")
+        val permissions = arrayOf("p1", "p2")
+        val origins = arrayOf("p3", "p4")
+        val dataCollectionPermissions = arrayOf("p5")
         val webExtensionsDelegate: WebExtensionDelegate = mock()
         val engine = GeckoEngine(context, runtime = runtime)
         engine.registerWebExtensionDelegate(webExtensionsDelegate)
@@ -1544,28 +1675,24 @@ class GeckoEngineTest {
         verify(webExtensionController).promptDelegate = geckoDelegateCaptor.capture()
 
         val result = geckoDelegateCaptor.value.onUpdatePrompt(
-            currentExtension,
-            updatedExtension,
-            updatedPermissions,
-            hostPermissions,
+            extension,
+            permissions,
+            origins,
+            dataCollectionPermissions,
         )
         assertNotNull(result)
 
-        val currentExtensionCaptor = argumentCaptor<WebExtension>()
-        val updatedExtensionCaptor = argumentCaptor<WebExtension>()
+        val extensionCaptor = argumentCaptor<WebExtension>()
         val onPermissionsGrantedCaptor = argumentCaptor<((Boolean) -> Unit)>()
         verify(webExtensionsDelegate).onUpdatePermissionRequest(
-            currentExtensionCaptor.capture(),
-            updatedExtensionCaptor.capture(),
-            eq(updatedPermissions.toList() + hostPermissions.toList()),
+            extensionCaptor.capture(),
+            eq(permissions.toList()),
+            eq(origins.toList()),
+            eq(dataCollectionPermissions.toList()),
             onPermissionsGrantedCaptor.capture(),
         )
-        val current =
-            currentExtensionCaptor.value as mozilla.components.browser.engine.gecko.webextension.GeckoWebExtension
-        assertEquals(currentExtension, current.nativeExtension)
-        val updated =
-            updatedExtensionCaptor.value as mozilla.components.browser.engine.gecko.webextension.GeckoWebExtension
-        assertEquals(updatedExtension, updated.nativeExtension)
+        val ext = extensionCaptor.value as mozilla.components.browser.engine.gecko.webextension.GeckoWebExtension
+        assertEquals(extension, ext.nativeExtension)
 
         onPermissionsGrantedCaptor.value.invoke(true)
         assertEquals(GeckoResult.allow(), result)
@@ -1577,9 +1704,8 @@ class GeckoEngineTest {
         val webExtensionController: WebExtensionController = mock()
         whenever(runtime.webExtensionController).thenReturn(webExtensionController)
 
-        val currentExtension = mockNativeWebExtension("test", "uri")
-        val updatedExtension = mockNativeWebExtension("testUpdated", "uri")
-        val updatedPermissions = arrayOf("p1", "p2")
+        val extension = mockNativeWebExtension("testUpdated", "uri")
+        val permissions = arrayOf("p1", "p2")
         val webExtensionsDelegate: WebExtensionDelegate = mock()
         val engine = GeckoEngine(context, runtime = runtime)
         engine.registerWebExtensionDelegate(webExtensionsDelegate)
@@ -1588,28 +1714,24 @@ class GeckoEngineTest {
         verify(webExtensionController).promptDelegate = geckoDelegateCaptor.capture()
 
         val result = geckoDelegateCaptor.value.onUpdatePrompt(
-            currentExtension,
-            updatedExtension,
-            updatedPermissions,
+            extension,
+            permissions,
+            emptyArray(),
             emptyArray(),
         )
         assertNotNull(result)
 
-        val currentExtensionCaptor = argumentCaptor<WebExtension>()
-        val updatedExtensionCaptor = argumentCaptor<WebExtension>()
+        val extensionCaptor = argumentCaptor<WebExtension>()
         val onPermissionsGrantedCaptor = argumentCaptor<((Boolean) -> Unit)>()
         verify(webExtensionsDelegate).onUpdatePermissionRequest(
-            currentExtensionCaptor.capture(),
-            updatedExtensionCaptor.capture(),
-            eq(updatedPermissions.toList()),
+            extensionCaptor.capture(),
+            eq(permissions.toList()),
+            eq(emptyList()),
+            eq(emptyList()),
             onPermissionsGrantedCaptor.capture(),
         )
-        val current =
-            currentExtensionCaptor.value as mozilla.components.browser.engine.gecko.webextension.GeckoWebExtension
-        assertEquals(currentExtension, current.nativeExtension)
-        val updated =
-            updatedExtensionCaptor.value as mozilla.components.browser.engine.gecko.webextension.GeckoWebExtension
-        assertEquals(updatedExtension, updated.nativeExtension)
+        val ext = extensionCaptor.value as mozilla.components.browser.engine.gecko.webextension.GeckoWebExtension
+        assertEquals(extension, ext.nativeExtension)
 
         onPermissionsGrantedCaptor.value.invoke(true)
         assertEquals(GeckoResult.allow(), result)
@@ -1624,6 +1746,7 @@ class GeckoEngineTest {
         val extension = mockNativeWebExtension("test", "uri")
         val permissions = arrayOf("p1", "p2")
         val origins = arrayOf("p3", "p4")
+        val dataCollectionPermissions = arrayOf("p5", "p6")
         val webExtensionsDelegate: WebExtensionDelegate = mock()
         val engine = GeckoEngine(context, runtime = runtime)
         engine.registerWebExtensionDelegate(webExtensionsDelegate)
@@ -1631,7 +1754,7 @@ class GeckoEngineTest {
         val geckoDelegateCaptor = argumentCaptor<WebExtensionController.PromptDelegate>()
         verify(webExtensionController).promptDelegate = geckoDelegateCaptor.capture()
 
-        val result = geckoDelegateCaptor.value.onOptionalPrompt(extension, permissions, origins)
+        val result = geckoDelegateCaptor.value.onOptionalPrompt(extension, permissions, origins, dataCollectionPermissions)
         assertNotNull(result)
 
         val extensionCaptor = argumentCaptor<WebExtension>()
@@ -1640,6 +1763,7 @@ class GeckoEngineTest {
             extensionCaptor.capture(),
             eq(permissions.toList()),
             eq(origins.toList()),
+            eq(dataCollectionPermissions.toList()),
             onPermissionsGrantedCaptor.capture(),
         )
         val current = extensionCaptor.value as mozilla.components.browser.engine.gecko.webextension.GeckoWebExtension
@@ -1658,6 +1782,7 @@ class GeckoEngineTest {
         val extension = mockNativeWebExtension("test", "uri")
         val permissions = arrayOf("p1", "p2")
         val origins = emptyArray<String>()
+        val dataCollectionPermissions = emptyArray<String>()
         val webExtensionsDelegate: WebExtensionDelegate = mock()
         val engine = GeckoEngine(context, runtime = runtime)
         engine.registerWebExtensionDelegate(webExtensionsDelegate)
@@ -1665,7 +1790,12 @@ class GeckoEngineTest {
         val geckoDelegateCaptor = argumentCaptor<WebExtensionController.PromptDelegate>()
         verify(webExtensionController).promptDelegate = geckoDelegateCaptor.capture()
 
-        val result = geckoDelegateCaptor.value.onOptionalPrompt(extension, permissions, origins)
+        val result = geckoDelegateCaptor.value.onOptionalPrompt(
+            extension,
+            permissions,
+            origins,
+            dataCollectionPermissions,
+        )
         assertNotNull(result)
 
         val extensionCaptor = argumentCaptor<WebExtension>()
@@ -1674,6 +1804,7 @@ class GeckoEngineTest {
             extensionCaptor.capture(),
             eq(permissions.toList()),
             eq(origins.toList()),
+            eq(dataCollectionPermissions.toList()),
             onPermissionsGrantedCaptor.capture(),
         )
         val current = extensionCaptor.value as mozilla.components.browser.engine.gecko.webextension.GeckoWebExtension
@@ -3207,7 +3338,7 @@ class GeckoEngineTest {
         val geckoResult = GeckoResult<TranslationSupport>()
         val toLanguage = Language("de", "German")
         val fromLanguage = Language("es", "Spanish")
-        val geckoResultValue = TranslationSupport(listOf<Language>(fromLanguage), listOf<Language>(toLanguage))
+        val geckoResultValue = TranslationSupport(listOf(fromLanguage), listOf(toLanguage))
 
         // simulate successful response call
         `when`(
@@ -3282,7 +3413,7 @@ class GeckoEngineTest {
         val onSuccess: () -> Unit = { onSuccessCalled = true }
         val onError: (Throwable) -> Unit = { onErrorCalled = true }
 
-        var options = ModelManagementOptions(null, ModelOperation.DOWNLOAD, OperationLevel.ALL)
+        val options = ModelManagementOptions(null, ModelOperation.DOWNLOAD, OperationLevel.ALL)
         val geckoResult = GeckoResult<Void>()
 
         // simulate successful response call
@@ -3318,7 +3449,7 @@ class GeckoEngineTest {
         val onSuccess: () -> Unit = { onSuccessCalled = true }
         val onError: (Throwable) -> Unit = { onErrorCalled = true }
 
-        var options = ModelManagementOptions(null, ModelOperation.DOWNLOAD, OperationLevel.ALL)
+        val options = ModelManagementOptions(null, ModelOperation.DOWNLOAD, OperationLevel.ALL)
         val geckoResult = GeckoResult<Void>()
 
         // simulate unsuccessful response call
@@ -3973,6 +4104,7 @@ class GeckoEngineTest {
             geckoPreferenceAccessor = geckoPreferenceAccessor,
         )
 
+        @OptIn(ExperimentalAndroidComponentsApi::class)
         engine.getBrowserPref(
             geckoPref,
             onSuccess = {
@@ -4009,6 +4141,7 @@ class GeckoEngineTest {
             geckoPreferenceAccessor = geckoPreferenceAccessor,
         )
 
+        @OptIn(ExperimentalAndroidComponentsApi::class)
         engine.setBrowserPref(
             "test.test.test",
             1,
@@ -4047,6 +4180,7 @@ class GeckoEngineTest {
             geckoPreferenceAccessor = geckoPreferenceAccessor,
         )
 
+        @OptIn(ExperimentalAndroidComponentsApi::class)
         engine.clearBrowserUserPref(
             "test.test.test",
 

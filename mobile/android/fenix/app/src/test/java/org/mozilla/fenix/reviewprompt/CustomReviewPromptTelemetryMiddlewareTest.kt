@@ -84,11 +84,11 @@ class CustomReviewPromptTelemetryMiddlewareTest {
     }
 
     @Test
-    fun `WHEN DismissRequested is dispatched THEN promptDismissed event is recorded`() {
+    fun `WHEN Dismissed is dispatched THEN promptDismissed event is recorded`() {
         assertNull(CustomReviewPrompt.promptDismissed.testGetValue())
 
         val store = createStore()
-        store.dispatch(CustomReviewPromptAction.DismissRequested).joinBlocking()
+        store.dispatch(CustomReviewPromptAction.Dismissed).joinBlocking()
 
         assertEventRecorded("prompt_dismissed") {
             CustomReviewPrompt.promptDismissed.testGetValue()

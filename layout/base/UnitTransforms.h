@@ -8,8 +8,8 @@
 #define MOZ_UNIT_TRANSFORMS_H_
 
 #include "Units.h"
-#include "mozilla/gfx/Matrix.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/gfx/Matrix.h"
 #include "nsRegion.h"
 
 namespace mozilla {

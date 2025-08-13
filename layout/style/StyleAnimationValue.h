@@ -9,13 +9,13 @@
 #ifndef mozilla_StyleAnimationValue_h_
 #define mozilla_StyleAnimationValue_h_
 
+#include "mozilla/AnimatedPropertyID.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoStyleConsts.h"  // Servo_AnimationValue_Dump
-#include "mozilla/AnimatedPropertyID.h"
-#include "nsStringFwd.h"
-#include "nsColor.h"
 #include "nsCSSPropertyID.h"
+#include "nsColor.h"
+#include "nsStringFwd.h"
 #include "nsStyleTransformMatrix.h"
 
 class nsIFrame;

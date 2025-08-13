@@ -880,7 +880,7 @@ nsresult HTMLFormElement::SubmitSubmission(
     loadState->SetIsFormSubmission(true);
     loadState->SetTriggeringPrincipal(NodePrincipal());
     loadState->SetPrincipalToInherit(NodePrincipal());
-    loadState->SetCsp(GetCsp());
+    loadState->SetPolicyContainer(GetPolicyContainer());
     loadState->SetAllowFocusMove(UserActivation::IsHandlingUserInput());
 
     const bool hasValidUserGestureActivation =

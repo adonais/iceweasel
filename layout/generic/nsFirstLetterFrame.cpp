@@ -7,22 +7,23 @@
 /* rendering object for CSS :first-letter pseudo-element */
 
 #include "nsFirstLetterFrame.h"
-#include "nsPresContext.h"
-#include "nsPresContextInlines.h"
+
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "nsCSSFrameConstructor.h"
+#include "nsFrameManager.h"
+#include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsLayoutUtils.h"
 #include "nsLineLayout.h"
-#include "nsGkAtoms.h"
-#include "nsFrameManager.h"
 #include "nsPlaceholderFrame.h"
+#include "nsPresContext.h"
+#include "nsPresContextInlines.h"
 #include "nsTextFrame.h"
-#include "nsCSSFrameConstructor.h"
 
 using namespace mozilla;
 using namespace mozilla::layout;
@@ -172,15 +173,15 @@ bool nsFirstLetterFrame::UseTightBounds() const {
   const auto wm = GetWritingMode();
   const auto* styleMargin = StyleMargin();
   const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
-  const auto bStart = styleMargin->GetMargin(LogicalSide::BStart, wm,
-                                             anchorResolutionParams.mPosition);
+  const auto bStart =
+      styleMargin->GetMargin(LogicalSide::BStart, wm, anchorResolutionParams);
   // Currently, we only check for margins with negative *length* values;
   // negative percentages seem unlikely to be used/useful in this context.
   if (bStart->ConvertsToLength() && bStart->ToLength() < 0) {
     return false;
   }
-  const auto bEnd = styleMargin->GetMargin(LogicalSide::BEnd, wm,
-                                           anchorResolutionParams.mPosition);
+  const auto bEnd =
+      styleMargin->GetMargin(LogicalSide::BEnd, wm, anchorResolutionParams);
   return !(bEnd->ConvertsToLength() && bEnd->ToLength() < 0);
 }
 

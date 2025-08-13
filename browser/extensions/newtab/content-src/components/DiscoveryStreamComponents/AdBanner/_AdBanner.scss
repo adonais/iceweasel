@@ -1,22 +1,26 @@
 .ad-banner-wrapper {
+  --banner-padding: var(--space-large);
   --billboard-width: 970px;
+  --billboard-container-width: calc( var(--billboard-width) + ( var(--banner-padding) * 2 ));
   --billboard-height: 250px;
   --leaderboard-width: 728px;
+  --leaderboard-container-width: calc(var(--leaderboard-width) + ( var(--banner-padding) * 2 ));
   --leaderboard-height: 90px;
 
   position: relative;
   grid-column: 1/-1;
-  overflow: hidden;
   // allow the ad banner to take up full width
   // of screen rather than card-grid width
   width: 100%;
   inset-inline-start: 50%;
   transform: translate3d(-50%, 0, 0);
+  margin-block-start: var(--space-medium);
+  margin-block-end: var(--space-xlarge);
 
   // Adding min-width if .billboard/.leaderboard exist within
   // .ad-banner-inner to keep the banners from shrinking on smaller screens
   &:has(.ad-banner-inner.billboard) {
-    min-width: 970px;
+    min-width: var(--billboard-container-width);
 
     @media (width <= 1015px) {
       min-width: auto;
@@ -24,7 +28,7 @@
   }
 
   &:has(.ad-banner-inner.leaderboard) {
-    min-width: 728px;
+    min-width: var(--leaderboard-container-width);
 
     @media (width <= 758px) {
       min-width: auto;
@@ -33,12 +37,58 @@
 
   .ad-banner-inner {
     margin-inline: auto;
+    position: relative;
+    background: var(--newtab-background-card);
+    box-shadow: var(--box-shadow-card);
+    border-radius: var(--border-radius-large);
+
+    &:hover {
+      box-shadow: var(--box-shadow-card-hover);
+    }
+
+    .ad-banner-link {
+      text-decoration: none;
+      padding-block-start: var(--banner-padding);
+      padding-inline: var(--banner-padding);
+      display: inline-block;
+
+      &:focus {
+        outline: var(--focus-outline);
+        border-radius: var(--border-radius-large);
+      }
+
+      &:hover + .ad-banner-hover-background,
+      &:focus + .ad-banner-hover-background {
+        opacity: 1;
+      }
+    }
+
+    .ad-banner-hover-background {
+      opacity: 0;
+      position: absolute;
+      inset-block-start: 0;
+      pointer-events: none;
+      height: 100%;
+
+      &:hover, &:focus-within {
+        opacity: 1;
+      }
+
+      .ads-context-menu-wrapper {
+        pointer-events: auto;
+      }
+    }
 
     &.leaderboard {
-      max-width: var(--leaderboard-width);
+      max-width: var(--leaderboard-container-width);
 
       .ad-banner-content {
         height: var(--leaderboard-height);
+        width: var(--leaderboard-width);
+      }
+
+      .ad-banner-hover-background {
+        width: var(--leaderboard-container-width);
       }
 
       .ad-banner-sponsored {
@@ -51,10 +101,15 @@
     }
 
     &.billboard {
-      width: var(--billboard-width);
+      width: var(--billboard-container-width);
 
       .ad-banner-content {
         height: var(--billboard-height);
+        width: var(--billboard-width);
+      }
+
+      .ad-banner-hover-background {
+        width: var(--billboard-container-width);
       }
 
       .ad-banner-sponsored {
@@ -66,21 +121,23 @@
       }
     }
 
-    .ad-banner-link {
-      display: inline-block;
-    }
-
     .ad-banner-sponsored {
-      // Contrast fix for users who have wallpapers set
-      @include wallpaper-contrast-fix;
-
-      margin-block: var(--space-small) 0;
+      height: 32px;
+      display: flex;
+      align-items: center;
 
       span {
-        text-transform: uppercase;
         font-size: var(--font-size-small);
         color: var(--newtab-contextual-text-secondary-color);
       }
     }
+  }
+
+  &.active {
+    .ad-banner-hover-background {
+      opacity: 1;
+    }
+
+    z-index: 1;
   }
 }

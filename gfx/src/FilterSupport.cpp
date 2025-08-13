@@ -56,7 +56,7 @@ static const float glinearRGBTosRGBMap[256] = {
 
 // c = n / 255
 // c <= 0.04045f ? c / 12.92f : powf((c + 0.055f) / 1.055f, 2.4f)
-extern const float gsRGBToLinearRGBMap[256] = {
+static const float gsRGBToLinearRGBMap[256] = {
     0.000f, 0.000f, 0.001f, 0.001f, 0.001f, 0.002f, 0.002f, 0.002f, 0.002f,
     0.003f, 0.003f, 0.003f, 0.004f, 0.004f, 0.004f, 0.005f, 0.005f, 0.006f,
     0.006f, 0.007f, 0.007f, 0.007f, 0.008f, 0.009f, 0.009f, 0.010f, 0.010f,
@@ -156,7 +156,7 @@ static already_AddRefed<FilterNode> SRGBToLinearRGB(DrawTarget* aDT,
   return nullptr;
 }
 
-static sRGBColor SRGBToLinearRGB(const sRGBColor& color) {
+sRGBColor SRGBToLinearRGB(const sRGBColor& color) {
   return sRGBColor(gsRGBToLinearRGBMap[uint8_t(color.r * 255)],
                    gsRGBToLinearRGBMap[uint8_t(color.g * 255)],
                    gsRGBToLinearRGBMap[uint8_t(color.b * 255)], color.a);
@@ -860,7 +860,8 @@ static already_AddRefed<FilterNode> FilterNodeFromPrimitiveDescription(
                            aConvolveMatrix.mDivisor);
       filter->SetAttribute(ATT_CONVOLVE_MATRIX_BIAS, aConvolveMatrix.mBias);
       filter->SetAttribute(ATT_CONVOLVE_MATRIX_TARGET, aConvolveMatrix.mTarget);
-      filter->SetAttribute(ATT_CONVOLVE_MATRIX_SOURCE_RECT, mSourceRegions[0]);
+      filter->SetAttribute(ATT_CONVOLVE_MATRIX_RENDER_RECT,
+                           mDescription.PrimitiveSubregion());
       uint32_t edgeMode = aConvolveMatrix.mEdgeMode;
       static const uint8_t edgeModes[SVG_EDGEMODE_NONE + 1] = {
           EDGE_MODE_NONE,       // SVG_EDGEMODE_UNKNOWN
@@ -1036,13 +1037,7 @@ static already_AddRefed<FilterNode> FilterNodeFromPrimitiveDescription(
     }
 
     already_AddRefed<FilterNode> operator()(
-        const SpecularLightingAttributes& aLighting) {
-      return operator()(
-          *(static_cast<const DiffuseLightingAttributes*>(&aLighting)));
-    }
-
-    already_AddRefed<FilterNode> operator()(
-        const DiffuseLightingAttributes& aLighting) {
+        const LightingAttributes& aLighting) {
       bool isSpecular =
           mDescription.Attributes().is<SpecularLightingAttributes>();
 
@@ -1081,6 +1076,8 @@ static already_AddRefed<FilterNode> FilterNodeFromPrimitiveDescription(
       filter->SetAttribute(ATT_LIGHTING_SURFACE_SCALE, aLighting.mSurfaceScale);
       filter->SetAttribute(ATT_LIGHTING_KERNEL_UNIT_LENGTH,
                            aLighting.mKernelUnitLength);
+      filter->SetAttribute(ATT_LIGHTING_RENDER_RECT,
+                           mDescription.PrimitiveSubregion());
 
       if (isSpecular) {
         filter->SetAttribute(ATT_SPECULAR_LIGHTING_SPECULAR_CONSTANT,
@@ -1328,27 +1325,14 @@ already_AddRefed<FilterNode> FilterNodeGraphFromDescription(
 
 void FilterSupport::RenderFilterDescription(
     DrawTarget* aDT, const FilterDescription& aFilter, const Rect& aRenderRect,
-    SourceSurface* aSourceGraphic, const IntRect& aSourceGraphicRect,
-    SourceSurface* aFillPaint, const IntRect& aFillPaintRect,
-    SourceSurface* aStrokePaint, const IntRect& aStrokePaintRect,
+    RefPtr<FilterNode> aSourceGraphic, const IntRect& aSourceGraphicRect,
+    RefPtr<FilterNode> aFillPaint, const IntRect& aFillPaintRect,
+    RefPtr<FilterNode> aStrokePaint, const IntRect& aStrokePaintRect,
     nsTArray<RefPtr<SourceSurface>>& aAdditionalImages, const Point& aDestPoint,
     const DrawOptions& aOptions) {
-  RefPtr<FilterNode> sourceGraphic, fillPaint, strokePaint;
-  if (aSourceGraphic) {
-    sourceGraphic = FilterWrappers::ForSurface(aDT, aSourceGraphic,
-                                               aSourceGraphicRect.TopLeft());
-  }
-  if (aFillPaint) {
-    fillPaint =
-        FilterWrappers::ForSurface(aDT, aFillPaint, aFillPaintRect.TopLeft());
-  }
-  if (aStrokePaint) {
-    strokePaint = FilterWrappers::ForSurface(aDT, aStrokePaint,
-                                             aStrokePaintRect.TopLeft());
-  }
   RefPtr<FilterNode> resultFilter = FilterNodeGraphFromDescription(
-      aDT, aFilter, aRenderRect, sourceGraphic, aSourceGraphicRect, fillPaint,
-      strokePaint, aAdditionalImages);
+      aDT, aFilter, aRenderRect, aSourceGraphic, aSourceGraphicRect, aFillPaint,
+      aStrokePaint, aAdditionalImages);
   if (!resultFilter) {
     gfxWarning() << "Filter is NULL.";
     return;
@@ -1480,12 +1464,7 @@ static nsIntRegion ResultChangeRegionForPrimitive(
       return blurRegion;
     }
 
-    nsIntRegion operator()(const SpecularLightingAttributes& aLighting) {
-      return operator()(
-          *(static_cast<const DiffuseLightingAttributes*>(&aLighting)));
-    }
-
-    nsIntRegion operator()(const DiffuseLightingAttributes& aLighting) {
+    nsIntRegion operator()(const LightingAttributes& aLighting) {
       Size kernelUnitLength = aLighting.mKernelUnitLength;
       int32_t dx = ceil(kernelUnitLength.width);
       int32_t dy = ceil(kernelUnitLength.height);
@@ -1639,6 +1618,9 @@ nsIntRegion FilterSupport::PostFilterExtentsForPrimitive(
     }
 
     nsIntRegion operator()(const ConvolveMatrixAttributes& aConvolveMatrix) {
+      if (!aConvolveMatrix.mPreserveAlpha && aConvolveMatrix.mBias > 0) {
+        return mDescription.PrimitiveSubregion();
+      }
       return ResultChangeRegionForPrimitive(mDescription, mInputExtents);
     }
 
@@ -1697,12 +1679,7 @@ nsIntRegion FilterSupport::PostFilterExtentsForPrimitive(
       return ResultChangeRegionForPrimitive(mDescription, mInputExtents);
     }
 
-    nsIntRegion operator()(const DiffuseLightingAttributes& aDiffuseLighting) {
-      return mDescription.PrimitiveSubregion();
-    }
-
-    nsIntRegion operator()(
-        const SpecularLightingAttributes& aSpecularLighting) {
+    nsIntRegion operator()(const LightingAttributes& aLighting) {
       return mDescription.PrimitiveSubregion();
     }
 
@@ -1864,12 +1841,7 @@ static nsIntRegion SourceNeededRegionForPrimitive(
       return blurRegion;
     }
 
-    nsIntRegion operator()(const SpecularLightingAttributes& aLighting) {
-      return operator()(
-          *(static_cast<const DiffuseLightingAttributes*>(&aLighting)));
-    }
-
-    nsIntRegion operator()(const DiffuseLightingAttributes& aLighting) {
+    nsIntRegion operator()(const LightingAttributes& aLighting) {
       Size kernelUnitLength = aLighting.mKernelUnitLength;
       int32_t dx = ceil(kernelUnitLength.width);
       int32_t dy = ceil(kernelUnitLength.height);

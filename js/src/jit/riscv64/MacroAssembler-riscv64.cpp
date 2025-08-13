@@ -1676,12 +1676,11 @@ void MacroAssemblerRiscv64Compat::loadInt32OrDouble(const Address& src,
   // If it's an int, convert it to double.
   UseScratchRegisterScope temps(this);
   Register ScratchRegister = temps.Acquire();
-  Register SecondScratchReg = temps.Acquire();
   loadPtr(Address(src.base, src.offset), ScratchRegister);
-  srli(SecondScratchReg, ScratchRegister, JSVAL_TAG_SHIFT);
-  asMasm().branchTestInt32(Assembler::NotEqual, SecondScratchReg, &notInt32);
-  loadPtr(Address(src.base, src.offset), SecondScratchReg);
-  convertInt32ToDouble(SecondScratchReg, dest);
+  srli(ScratchRegister, ScratchRegister, JSVAL_TAG_SHIFT);
+  asMasm().branchTestInt32(Assembler::NotEqual, ScratchRegister, &notInt32);
+  loadPtr(Address(src.base, src.offset), ScratchRegister);
+  convertInt32ToDouble(ScratchRegister, dest);
   ma_branch(&end);
 
   // Not an int, just load as double.
@@ -1696,25 +1695,24 @@ void MacroAssemblerRiscv64Compat::loadInt32OrDouble(const BaseIndex& addr,
 
   UseScratchRegisterScope temps(this);
   Register ScratchRegister = temps.Acquire();
-  Register SecondScratchReg = temps.Acquire();
   // If it's an int, convert it to double.
-  computeScaledAddress(addr, SecondScratchReg);
+  computeScaledAddress(addr, ScratchRegister);
   // Since we only have one scratch, we need to stomp over it with the tag.
-  loadPtr(Address(SecondScratchReg, 0), ScratchRegister);
-  srli(SecondScratchReg, ScratchRegister, JSVAL_TAG_SHIFT);
-  asMasm().branchTestInt32(Assembler::NotEqual, SecondScratchReg, &notInt32);
+  loadPtr(Address(ScratchRegister, 0), ScratchRegister);
+  srli(ScratchRegister, ScratchRegister, JSVAL_TAG_SHIFT);
+  asMasm().branchTestInt32(Assembler::NotEqual, ScratchRegister, &notInt32);
 
-  computeScaledAddress(addr, SecondScratchReg);
-  loadPtr(Address(SecondScratchReg, 0), SecondScratchReg);
-  convertInt32ToDouble(SecondScratchReg, dest);
+  computeScaledAddress(addr, ScratchRegister);
+  loadPtr(Address(ScratchRegister, 0), ScratchRegister);
+  convertInt32ToDouble(ScratchRegister, dest);
   ma_branch(&end);
 
   // Not an int, just load as double.
   bind(&notInt32);
   // First, recompute the offset that had been stored in the scratch register
   // since the scratch register was overwritten loading in the type.
-  computeScaledAddress(addr, SecondScratchReg);
-  unboxDouble(Address(SecondScratchReg, 0), dest);
+  computeScaledAddress(addr, ScratchRegister);
+  unboxDouble(Address(ScratchRegister, 0), dest);
   bind(&end);
 }
 
@@ -2214,8 +2212,8 @@ static void AtomicExchange(MacroAssembler& masm,
                            const T& mem, Register value, Register valueTemp,
                            Register offsetTemp, Register maskTemp,
                            Register output) {
-  ScratchRegisterScope scratch(masm);
   UseScratchRegisterScope temps(&masm);
+  Register scratch = temps.Acquire();
   Register scratch2 = temps.Acquire();
   bool signExtend = Scalar::isSignedIntType(type);
   unsigned nbytes = Scalar::byteSize(type);
@@ -2297,18 +2295,16 @@ static void AtomicExchange(MacroAssembler& masm,
   switch (nbytes) {
     case 1:
       if (signExtend) {
-        masm.slliw(output, output, 32 - 8);
-        masm.sraiw(output, output, 32 - 8);
+        masm.SignExtendByte(output, output);
       } else {
-        masm.andi(valueTemp, value, 0xff);
+        masm.andi(output, output, 0xff);
       }
       break;
     case 2:
       if (signExtend) {
-        masm.slliw(output, output, 32 - 16);
-        masm.sraiw(output, output, 32 - 16);
+        masm.SignExtendShort(output, output);
       } else {
-        masm.ma_and(valueTemp, value, Imm32(0xffff));
+        masm.ma_and(output, Imm32(0xffff));
       }
       break;
   }
@@ -2532,8 +2528,8 @@ static void AtomicFetchOp(MacroAssembler& masm,
                           const T& mem, Register value, Register valueTemp,
                           Register offsetTemp, Register maskTemp,
                           Register output) {
-  ScratchRegisterScope scratch(masm);
   UseScratchRegisterScope temps(&masm);
+  Register scratch = temps.Acquire();
   Register scratch2 = temps.Acquire();
   bool signExtend = Scalar::isSignedIntType(type);
   unsigned nbytes = Scalar::byteSize(type);
@@ -2639,7 +2635,7 @@ static void AtomicFetchOp(MacroAssembler& masm,
       masm.andi(valueTemp, valueTemp, 0xff);
       break;
     case 2:
-      masm.andi(valueTemp, valueTemp, 0xffff);
+      masm.ma_and(valueTemp, Imm32(0xffff));
       break;
   }
 
@@ -2656,18 +2652,16 @@ static void AtomicFetchOp(MacroAssembler& masm,
   switch (nbytes) {
     case 1:
       if (signExtend) {
-        masm.slliw(output, output, 32 - 8);
-        masm.sraiw(output, output, 32 - 8);
+        masm.SignExtendByte(output, output);
       } else {
         masm.andi(output, output, 0xff);
       }
       break;
     case 2:
       if (signExtend) {
-        masm.slliw(output, output, 32 - 16);
-        masm.sraiw(output, output, 32 - 16);
+        masm.SignExtendShort(output, output);
       } else {
-        masm.andi(output, output, 0xffff);
+        masm.ma_and(output, Imm32(0xffff));
       }
       break;
   }
@@ -2828,7 +2822,11 @@ void MacroAssembler::atomicFetchOp(Scalar::Type type, Synchronization sync,
                 offsetTemp, maskTemp, output);
 }
 
-void MacroAssembler::atomicPause() { MOZ_CRASH("NYI"); }
+void MacroAssembler::atomicPause() {
+  // `pause` hint defined in Zihintpause extension.
+  // It is encoded as `fence w, 0`.
+  fence(0b0001, 0b0000);
+}
 
 void MacroAssembler::branchPtrInNurseryChunk(Condition cond, Register ptr,
                                              Register temp, Label* label) {
@@ -3135,11 +3133,27 @@ void MacroAssembler::enterFakeExitFrameForWasm(Register cxreg, Register scratch,
 }
 CodeOffset MacroAssembler::sub32FromMemAndBranchIfNegativeWithPatch(
     Address address, Label* label) {
-  MOZ_CRASH("needs to be implemented on this platform");
+  ScratchRegisterScope scratch(asMasm());
+  MOZ_ASSERT(scratch != address.base);
+  ma_load(scratch, address);
+  addiw(scratch, scratch, 128);
+  CodeOffset patchPoint = CodeOffset(currentOffset());
+  ma_store(scratch, address);
+  ma_b(scratch, scratch, label, Assembler::Signed);
+  return patchPoint;
 }
 void MacroAssembler::patchSub32FromMemAndBranchIfNegative(CodeOffset offset,
                                                           Imm32 imm) {
-  MOZ_CRASH("needs to be implemented on this platform");
+  int32_t val = imm.value;
+  MOZ_RELEASE_ASSERT(val >= 1 && val <= 127);
+  auto* inst = m_buffer.getInst(BufferOffset(offset.offset() - 4));
+  inst->InstructionOpcodeType();
+  MOZ_ASSERT(IsAddiw(inst->InstructionBits()));
+  /*
+   * | imm[11:0] | rs1 | 000 | rd | 0011011 |
+   */
+  inst->SetInstructionBits(((uint32_t)inst->InstructionBits() & ~kImm12Mask) |
+                           (((uint32_t)(-val) & 0xfff) << kImm12Shift));
 }
 void MacroAssembler::flexibleDivMod32(Register rhs, Register srcDest,
                                       Register remOutput, bool isUnsigned,
@@ -4035,8 +4049,9 @@ static void CompareExchange(MacroAssembler& masm,
 
   Label again, end;
   UseScratchRegisterScope temps(&masm);
-  Register SecondScratchReg = temps.Acquire();
-  masm.computeEffectiveAddress(mem, SecondScratchReg);
+  Register scratch1 = temps.Acquire();
+  Register scratch2 = temps.Acquire();
+  masm.computeEffectiveAddress(mem, scratch2);
 
   if (nbytes == 4) {
     masm.memoryBarrierBefore(sync);
@@ -4047,12 +4062,13 @@ static void CompareExchange(MacroAssembler& masm,
                   FaultingCodeOffset(masm.currentOffset()));
     }
 
-    masm.lr_w(true, true, output, SecondScratchReg);
+    masm.lr_w(true, true, output, scratch2);
+    masm.ma_li(scratch1, Imm64(UINT32_MAX));
+    masm.and_(oldval, oldval, scratch1);
     masm.ma_b(output, oldval, &end, Assembler::NotEqual, ShortJump);
-    masm.mv(ScratchRegister, newval);
-    masm.sc_w(true, true, ScratchRegister, SecondScratchReg, ScratchRegister);
-    masm.ma_b(ScratchRegister, ScratchRegister, &again, Assembler::NonZero,
-              ShortJump);
+    masm.mv(scratch1, newval);
+    masm.sc_w(true, true, scratch1, scratch2, scratch1);
+    masm.ma_b(scratch1, scratch1, &again, Assembler::NonZero, ShortJump);
 
     masm.memoryBarrierAfter(sync);
     masm.bind(&end);
@@ -4060,15 +4076,15 @@ static void CompareExchange(MacroAssembler& masm,
     return;
   }
 
-  masm.andi(offsetTemp, SecondScratchReg, 3);
-  masm.subPtr(offsetTemp, SecondScratchReg);
+  masm.andi(offsetTemp, scratch2, 3);
+  masm.subPtr(offsetTemp, scratch2);
 #if !MOZ_LITTLE_ENDIAN()
   masm.as_xori(offsetTemp, offsetTemp, 3);
 #endif
   masm.slli(offsetTemp, offsetTemp, 3);
   masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
   masm.sll(maskTemp, maskTemp, offsetTemp);
-  masm.nor(maskTemp, zero, maskTemp);
+  masm.not_(maskTemp, maskTemp);
 
   masm.memoryBarrierBefore(sync);
 
@@ -4079,40 +4095,45 @@ static void CompareExchange(MacroAssembler& masm,
                 FaultingCodeOffset(masm.currentOffset()));
   }
 
-  masm.lr_w(true, true, ScratchRegister, SecondScratchReg);
+  masm.lr_w(true, true, scratch1, scratch2);
 
-  masm.srl(output, ScratchRegister, offsetTemp);
+  masm.srl(output, scratch1, offsetTemp);
 
   switch (nbytes) {
     case 1:
       if (signExtend) {
         masm.SignExtendByte(valueTemp, oldval);
         masm.SignExtendByte(output, output);
+        masm.SignExtendByte(newval, newval);
       } else {
         masm.andi(valueTemp, oldval, 0xff);
         masm.andi(output, output, 0xff);
+        masm.andi(newval, newval, 0xff);
       }
       break;
     case 2:
       if (signExtend) {
         masm.SignExtendShort(valueTemp, oldval);
         masm.SignExtendShort(output, output);
+        masm.SignExtendShort(newval, newval);
       } else {
-        masm.andi(valueTemp, oldval, 0xffff);
-        masm.andi(output, output, 0xffff);
+        ScratchRegisterScope mask(masm);
+        masm.ma_li(mask, Imm32(0xffff));
+        masm.and_(valueTemp, oldval, mask);
+        masm.and_(output, output, mask);
+        masm.and_(newval, newval, mask);
       }
       break;
   }
 
   masm.ma_b(output, valueTemp, &end, Assembler::NotEqual, ShortJump);
 
-  masm.sll(valueTemp, newval, offsetTemp);
-  masm.and_(ScratchRegister, ScratchRegister, maskTemp);
-  masm.or_(ScratchRegister, ScratchRegister, valueTemp);
-  masm.sc_w(true, true, ScratchRegister, SecondScratchReg, ScratchRegister);
+  masm.sllw(valueTemp, newval, offsetTemp);
+  masm.and_(scratch1, scratch1, maskTemp);
+  masm.or_(scratch1, scratch1, valueTemp);
+  masm.sc_w(true, true, scratch1, scratch2, scratch1);
 
-  masm.ma_b(ScratchRegister, ScratchRegister, &again, Assembler::NonZero,
-            ShortJump);
+  masm.ma_b(scratch1, scratch1, &again, Assembler::NonZero, ShortJump);
 
   masm.memoryBarrierAfter(sync);
 
@@ -5522,7 +5543,7 @@ void MacroAssemblerRiscv64::ma_addPtrTestOverflow(Register rd, Register rj,
 
     add(rd, rj, rk);
     slti(scratch, rj, 0);
-    slt(scratch2, rd, rj);
+    slt(scratch2, rd, rk);
     ma_b(scratch, Register(scratch2), overflow, Assembler::NotEqual);
   }
 }

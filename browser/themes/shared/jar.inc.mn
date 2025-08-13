@@ -20,7 +20,6 @@
   skin/classic/browser/browser-shared.css                      (../shared/browser-shared.css)
   skin/classic/browser/formautofill-notification.css           (../shared/formautofill-notification.css)
   skin/classic/browser/identity-credential-notification.css    (../shared/identity-credential-notification.css)
-  skin/classic/browser/light-dark-overrides.css                (../shared/light-dark-overrides.css)
   skin/classic/browser/menupanel.css                           (../shared/menupanel.css)
   skin/classic/browser/notification-icons.css                  (../shared/notification-icons.css)
   skin/classic/browser/pageInfo.css                            (../shared/pageInfo.css)
@@ -101,6 +100,14 @@
   skin/classic/browser/notification-icons/xr.svg                            (../shared/notification-icons/xr.svg)
   skin/classic/browser/notification-icons/midi.svg                          (../shared/notification-icons/midi.svg)
 
+  skin/classic/browser/trust-icon-active.svg            (../shared/identity-block/trust-icon-active.svg)
+  skin/classic/browser/trust-icon-disabled.svg          (../shared/identity-block/trust-icon-disabled.svg)
+  skin/classic/browser/trust-icon-insecure.svg          (../shared/identity-block/trust-icon-insecure.svg)
+  skin/classic/browser/trust-icon-warning.svg           (../shared/identity-block/trust-icon-warning.svg)
+  skin/classic/browser/trustpanel-graphic-enabled.svg   (../shared/identity-block/trustpanel-graphic-enabled.svg)
+  skin/classic/browser/trustpanel-graphic-disabled.svg  (../shared/identity-block/trustpanel-graphic-disabled.svg)
+  skin/classic/browser/trustpanel-graphic-warning.svg   (../shared/identity-block/trustpanel-graphic-warning.svg)
+
   skin/classic/browser/tracking-protection.svg                        (../shared/identity-block/tracking-protection.svg)
   skin/classic/browser/tracking-protection-disabled.svg               (../shared/identity-block/tracking-protection-disabled.svg)
   skin/classic/browser/tracking-protection-active.svg                 (../shared/identity-block/tracking-protection-active.svg)
@@ -139,6 +146,7 @@
   skin/classic/browser/fxa/sync-illustration-issue.svg         (../shared/fxa/sync-illustration-issue.svg)
   skin/classic/browser/fxa/send-to-device.svg                  (../shared/fxa/send-to-device.svg)
   skin/classic/browser/preferences/solo-ai-logo.svg            (../shared/preferences/solo-ai-logo.svg)
+  skin/classic/browser/preferences/mdn-logo.svg                (../shared/preferences/mdn-logo.svg)
 
   skin/classic/browser/fxa/avatar.svg                          (../shared/fxa/avatar.svg)
   skin/classic/browser/fxa/avatar-color.svg                    (../shared/fxa/avatar-color.svg)

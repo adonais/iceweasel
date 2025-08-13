@@ -8,12 +8,12 @@
 #define nsSliderFrame_h__
 
 #include "mozilla/Attributes.h"
-#include "nsContainerFrame.h"
-#include "nsRepeatService.h"
 #include "nsAtom.h"
 #include "nsCOMPtr.h"
-#include "nsITimer.h"
+#include "nsContainerFrame.h"
 #include "nsIDOMEventListener.h"
+#include "nsITimer.h"
+#include "nsRepeatService.h"
 
 class nsITimer;
 class nsScrollbarFrame;

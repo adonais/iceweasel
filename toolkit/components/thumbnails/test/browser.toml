@@ -36,10 +36,8 @@ run-if = ["crashreporter"]
 ["browser_thumbnails_bg_no_auth_prompt.js"]
 
 ["browser_thumbnails_bg_no_cookies_sent.js"]
-skip-if = ["verify"]
 
 ["browser_thumbnails_bg_no_cookies_stored.js"]
-skip-if = ["verify"]
 
 ["browser_thumbnails_bg_no_duplicates.js"]
 
@@ -56,7 +54,6 @@ skip-if = ["verify"]
 ["browser_thumbnails_bug727765.js"]
 
 ["browser_thumbnails_bug818225.js"]
-skip-if = ["verify && debug && os == 'linux'"]
 
 ["browser_thumbnails_capture.js"]
 

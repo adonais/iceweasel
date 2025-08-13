@@ -121,6 +121,8 @@ skip-if = [
 ["test_crashreporter_crash.js"]
 run-sequentially = "very high failure rate in parallel"
 
+["test_crashreporter_omnijar_loading.js"]
+
 ["test_event_files.js"]
 
 ["test_kill.js"]

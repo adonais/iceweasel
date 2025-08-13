@@ -4,10 +4,8 @@
 
 package mozilla.components.feature.awesomebar.provider
 
-import android.content.res.Resources
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.BrowserState
@@ -20,20 +18,14 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
-import org.mockito.Mockito.`when`
 
-@ExperimentalCoroutinesApi // for runTest
 @RunWith(AndroidJUnit4::class)
 class SessionSuggestionProviderTest {
     @Test
     fun `Provider returns empty list when text is empty`() = runTest {
-        val resources: Resources = mock()
-        `when`(resources.getString(anyInt())).thenReturn("Switch to tab")
-
-        val provider = SessionSuggestionProvider(resources, mock(), mock())
+        val provider = SessionSuggestionProvider(mock(), mock(), switchToTabDescription = "Switch to tab")
 
         val suggestions = provider.onInputChanged("")
         assertTrue(suggestions.isEmpty())
@@ -48,10 +40,7 @@ class SessionSuggestionProviderTest {
         val tab3 = createTab("https://firefox.com")
         val tab4 = createTab("https://example.org/")
 
-        val resources: Resources = mock()
-        `when`(resources.getString(anyInt())).thenReturn("Switch to tab")
-
-        val provider = SessionSuggestionProvider(resources, store, mock())
+        val provider = SessionSuggestionProvider(store, mock(), switchToTabDescription = "Switch to tab")
 
         run {
             val suggestions = provider.onInputChanged("Example")
@@ -91,10 +80,7 @@ class SessionSuggestionProviderTest {
             val tab1 = createTab("https://www.mozilla.org")
             val tab2 = createTab("https://www.mozilla.org/example/of/content")
 
-            val resources: Resources = mock()
-            `when`(resources.getString(anyInt())).thenReturn("Switch to tab")
-
-            val provider = SessionSuggestionProvider(resources, store, mock())
+            val provider = SessionSuggestionProvider(store, mock(), switchToTabDescription = "Switch to tab")
             store.dispatch(TabListAction.AddTabAction(tab1)).join()
             store.dispatch(TabListAction.AddTabAction(tab2)).join()
 
@@ -118,10 +104,7 @@ class SessionSuggestionProviderTest {
             val tab1 = createTab("https://www.mozilla.org")
             val tab2 = createTab("https://www.mozilla.org/example/of/content")
 
-            val resources: Resources = mock()
-            `when`(resources.getString(anyInt())).thenReturn("Switch to tab")
-
-            val provider = SessionSuggestionProvider(resources, store, mock())
+            val provider = SessionSuggestionProvider(store, mock(), switchToTabDescription = "Switch to tab")
             store.dispatch(TabListAction.AddTabAction(tab1)).join()
             store.dispatch(TabListAction.AddTabAction(tab2)).join()
 
@@ -144,10 +127,7 @@ class SessionSuggestionProviderTest {
 
             val tab1 = createTab("https://www.mozilla.org/example/of/content")
 
-            val resources: Resources = mock()
-            `when`(resources.getString(anyInt())).thenReturn("Switch to tab")
-
-            val provider = SessionSuggestionProvider(resources, store, mock())
+            val provider = SessionSuggestionProvider(store, mock(), switchToTabDescription = "Switch to tab")
             store.dispatch(TabListAction.AddTabAction(tab1)).join()
 
             run {
@@ -166,10 +146,7 @@ class SessionSuggestionProviderTest {
 
             val tab1 = createTab("https://www.mozilla.org/example/of/content")
 
-            val resources: Resources = mock()
-            `when`(resources.getString(anyInt())).thenReturn("Switch to tab")
-
-            val provider = SessionSuggestionProvider(resources, store, mock())
+            val provider = SessionSuggestionProvider(store, mock(), switchToTabDescription = "Switch to tab")
             store.dispatch(TabListAction.AddTabAction(tab1)).join()
 
             run {
@@ -190,10 +167,7 @@ class SessionSuggestionProviderTest {
             ),
         )
 
-        val resources: Resources = mock()
-        `when`(resources.getString(anyInt())).thenReturn("Switch to tab")
-
-        val provider = SessionSuggestionProvider(resources, store, mock())
+        val provider = SessionSuggestionProvider(store, mock(), switchToTabDescription = "Switch to tab")
 
         run {
             val suggestions = provider.onInputChanged("Browser")
@@ -226,12 +200,10 @@ class SessionSuggestionProviderTest {
             ),
         )
 
-        val resources: Resources = mock()
-        `when`(resources.getString(anyInt())).thenReturn("Switch to tab")
-
         val useCase: TabsUseCases.SelectTabUseCase = mock()
 
-        val provider = SessionSuggestionProvider(resources, store, useCase)
+        val provider =
+            SessionSuggestionProvider(store, useCase, switchToTabDescription = "Switch to tab")
         val suggestions = provider.onInputChanged("mozilla")
 
         assertEquals(1, suggestions.size)
@@ -239,9 +211,6 @@ class SessionSuggestionProviderTest {
 
     @Test
     fun `Clicking suggestion invokes SelectTabUseCase`() = runTest {
-        val resources: Resources = mock()
-        `when`(resources.getString(anyInt())).thenReturn("Switch to tab")
-
         val tab = createTab("https://www.mozilla.org")
 
         val store = BrowserStore(
@@ -252,7 +221,7 @@ class SessionSuggestionProviderTest {
 
         val useCase: TabsUseCases.SelectTabUseCase = mock()
 
-        val provider = SessionSuggestionProvider(resources, store, useCase)
+        val provider = SessionSuggestionProvider(store, useCase, switchToTabDescription = "Switch to tab")
         val suggestions = provider.onInputChanged("mozilla")
         assertEquals(1, suggestions.size)
 
@@ -277,12 +246,12 @@ class SessionSuggestionProviderTest {
             ),
         )
 
-        val resources: Resources = mock()
-        `when`(resources.getString(anyInt())).thenReturn("Switch to tab")
-
         val useCase: TabsUseCases.SelectTabUseCase = mock()
 
-        val provider = SessionSuggestionProvider(resources, store, useCase, excludeSelectedSession = true)
+        val provider = SessionSuggestionProvider(
+            store, useCase, excludeSelectedSession = true,
+            switchToTabDescription = "Switch to tab",
+        )
         val suggestions = provider.onInputChanged("org")
 
         assertEquals(1, suggestions.size)
@@ -302,12 +271,14 @@ class SessionSuggestionProviderTest {
             ),
         )
 
-        val resources: Resources = mock()
-        `when`(resources.getString(anyInt())).thenReturn("Switch to tab")
-
         val useCase: TabsUseCases.SelectTabUseCase = mock()
 
-        val provider = SessionSuggestionProvider(resources, store, useCase, excludeSelectedSession = false)
+        val provider = SessionSuggestionProvider(
+            store,
+            useCase,
+            excludeSelectedSession = false,
+            switchToTabDescription = "Switch to tab",
+        )
         val suggestions = provider.onInputChanged("mozilla")
 
         assertEquals(1, suggestions.size)
@@ -327,12 +298,14 @@ class SessionSuggestionProviderTest {
             ),
         )
 
-        val resources: Resources = mock()
-        `when`(resources.getString(anyInt())).thenReturn("Switch to tab")
-
         val useCase: TabsUseCases.SelectTabUseCase = mock()
 
-        val provider = SessionSuggestionProvider(resources, store, useCase, excludeSelectedSession = false)
+        val provider = SessionSuggestionProvider(
+            store,
+            useCase,
+            excludeSelectedSession = false,
+            switchToTabDescription = "Switch to tab",
+        )
         var suggestions = provider.onInputChanged("mozilla")
 
         assertEquals(1, suggestions.size)
@@ -360,15 +333,14 @@ class SessionSuggestionProviderTest {
                 selectedTabId = "d",
             ),
         )
-        val resources: Resources = mock()
-        `when`(resources.getString(anyInt())).thenReturn("Switch to tab")
+
         val provider = SessionSuggestionProvider(
-            resources = resources,
             store = store,
             selectTabUseCase = mock(),
             resultsUriFilter = {
                 it.sameHostWithoutMobileSubdomainAs("https://mozilla.org".toUri())
             },
+            switchToTabDescription = "Switch to tab",
         )
 
         val suggestions = provider.onInputChanged("moz")
@@ -394,16 +366,15 @@ class SessionSuggestionProviderTest {
                 selectedTabId = "d",
             ),
         )
-        val resources: Resources = mock()
-        `when`(resources.getString(anyInt())).thenReturn("Switch to tab")
+
         val uriFilter = "https://mozilla.org".toUri()
         val provider = SessionSuggestionProvider(
-            resources = resources,
             store = store,
             selectTabUseCase = mock(),
             resultsUriFilter = {
                 it.sameHostWithoutMobileSubdomainAs(uriFilter)
             },
+            switchToTabDescription = "Switch to tab",
         )
 
         val suggestions = provider.onInputChanged("moz")
@@ -425,10 +396,7 @@ class SessionSuggestionProviderTest {
         val tab2 = createTab(url)
         val tab3 = createTab(url)
 
-        val resources: Resources = mock()
-        `when`(resources.getString(anyInt())).thenReturn("Switch to tab")
-
-        val provider = SessionSuggestionProvider(resources, store, mock())
+        val provider = SessionSuggestionProvider(store, mock(), switchToTabDescription = "Switch to tab")
 
         run {
             val suggestions = provider.onInputChanged("Mozilla")

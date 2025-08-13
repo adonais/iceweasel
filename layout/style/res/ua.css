@@ -234,8 +234,8 @@
      blocks with overflow: scroll; */
   unicode-bidi: inherit;
   text-overflow: inherit;
-  /* Please keep the declarations below in sync with ::-moz-fieldset-content /
-     ::-moz-button-content in forms.css */
+  /* Please keep the declarations below in sync with ::-moz-fieldset-content
+     in forms.css */
   content: inherit;
   /* Multicol container */
   column-count: inherit;
@@ -562,5 +562,11 @@ parsererror|sourcetext {
     to {
       mix-blend-mode: plus-lighter;
     }
+  }
+}
+
+@media print {
+  :-moz-suppress-for-print-selection {
+    display: none !important;
   }
 }

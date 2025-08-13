@@ -8,10 +8,10 @@
 #include "LayoutConstants.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
-#include "nscore.h"
-#include "nsContainerFrame.h"
 #include "nsCellMap.h"
+#include "nsContainerFrame.h"
 #include "nsTableFrame.h"
+#include "nscore.h"
 
 namespace mozilla {
 class PresShell;

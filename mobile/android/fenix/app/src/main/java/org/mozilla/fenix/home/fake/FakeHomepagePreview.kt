@@ -24,6 +24,7 @@ import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
 import mozilla.components.service.pocket.PocketStory.PocketSponsoredStory
 import mozilla.components.service.pocket.PocketStory.PocketSponsoredStoryCaps
 import mozilla.components.service.pocket.PocketStory.PocketSponsoredStoryShim
+import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.appstate.AppState
@@ -47,6 +48,7 @@ import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryGroup
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryHighlight
 import org.mozilla.fenix.home.recentvisits.interactor.RecentVisitsInteractor
+import org.mozilla.fenix.home.search.HomeSearchInteractor
 import org.mozilla.fenix.home.sessioncontrol.CollectionInteractor
 import org.mozilla.fenix.home.sessioncontrol.TopSiteInteractor
 import org.mozilla.fenix.home.store.NimbusMessageState
@@ -72,6 +74,7 @@ internal object FakeHomepagePreview {
             RecentSyncedTabInteractor by recentSyncedTabInterator,
             BookmarksInteractor by bookmarksInteractor,
             RecentVisitsInteractor by recentVisitsInteractor,
+            HomeSearchInteractor by homeSearchInteractor,
             CollectionInteractor by collectionInteractor {
             override fun reportSessionMetrics(state: AppState) { /* no op */ }
 
@@ -204,6 +207,11 @@ internal object FakeHomepagePreview {
             override fun onRemoveCollectionsPlaceholder() { /* no op */ }
         }
 
+    internal val homeSearchInteractor: HomeSearchInteractor
+        get() = object : HomeSearchInteractor {
+            override fun onHomeContentFocusedWhileSearchIsActive() { /* no op */ }
+        }
+
     @Composable
     internal fun nimbusMessageState() = NimbusMessageState(
         cardState = messageCardState(),
@@ -234,21 +242,10 @@ internal object FakeHomepagePreview {
     )
 
     internal fun topSites(
-        pinnedCount: Int = 2,
         providedCount: Int = 2,
-        defaultCount: Int = 2,
+        pinnedCount: Int = 2,
+        defaultCount: Int = 8,
     ) = mutableListOf<TopSite>().apply {
-        repeat(pinnedCount) {
-            add(
-                TopSite.Pinned(
-                    id = randomLong(),
-                    title = "Mozilla",
-                    url = URL,
-                    createdAt = randomLong(),
-                ),
-            )
-        }
-
         repeat(providedCount) {
             add(
                 TopSite.Provided(
@@ -258,6 +255,17 @@ internal object FakeHomepagePreview {
                     clickUrl = URL,
                     imageUrl = URL,
                     impressionUrl = URL,
+                    createdAt = randomLong(),
+                ),
+            )
+        }
+
+        repeat(pinnedCount) {
+            add(
+                TopSite.Pinned(
+                    id = randomLong(),
+                    title = "Mozilla",
+                    url = URL,
                     createdAt = randomLong(),
                 ),
             )
@@ -390,53 +398,76 @@ internal object FakeHomepagePreview {
         linkTextColor = FirefoxTheme.colors.textAccent,
     )
 
+    internal fun contentRecommendation(index: Int = 0): ContentRecommendation =
+        ContentRecommendation(
+            corpusItemId = "corpusItemId$index",
+            scheduledCorpusItemId = "scheduledCorpusItemId$index",
+            url = "https://story$index.com",
+            title = "Recommendation - This is a ${"very ".repeat(index)} long title",
+            excerpt = "Excerpt",
+            topic = null,
+            publisher = "Publisher",
+            isTimeSensitive = false,
+            imageUrl = URL,
+            tileId = index.toLong(),
+            receivedRank = index,
+            recommendedAt = index.toLong(),
+            impressions = index.toLong(),
+        )
+
+    internal fun pocketRecommendedStory(index: Int = 0) = PocketRecommendedStory(
+            title = "Story - This is a ${"very ".repeat(index)} long title",
+            publisher = "Publisher",
+            url = "https://story$index.com",
+            imageUrl = URL,
+            timeToRead = index,
+            category = "Category #$index",
+            timesShown = index.toLong(),
+        )
+
+    internal fun pocketSponsoredStory(index: Int = 0) = PocketSponsoredStory(
+        id = index,
+        title = "This is a ${"very ".repeat(index)} long title",
+        url = "https://sponsored-story$index.com",
+        imageUrl = URL,
+        sponsor = "Mozilla",
+        shim = PocketSponsoredStoryShim("", ""),
+        priority = index,
+        caps = PocketSponsoredStoryCaps(
+            flightCount = index,
+            flightPeriod = index * 2,
+            lifetimeCount = index * 3,
+        ),
+    )
+
+    internal fun sponsoredContent(index: Int = 0) = SponsoredContent(
+        url = "https://sponsored-story$index.com",
+        title = "This is a ${"very ".repeat(index)} long title",
+        callbacks = PocketStory.SponsoredContentCallbacks(clickUrl = "", impressionUrl = ""),
+        imageUrl = URL,
+        domain = "domain",
+        excerpt = "excerpt",
+        sponsor = "Mozilla",
+        blockKey = "",
+        priority = index,
+        caps = PocketStory.SponsoredContentFrequencyCaps(flightPeriod = 1, flightCount = 0),
+    )
+
     @Suppress("MagicNumber")
-    internal fun pocketStories(limit: Int = 1) = mutableListOf<PocketStory>().apply {
+    internal fun pocketStories(limit: Int = 5) = mutableListOf<PocketStory>().apply {
         for (index in 0 until limit) {
             when {
+                (index % 4 == 0) -> add(
+                    sponsoredContent(index),
+                )
                 (index % 3 == 0) -> add(
-                    ContentRecommendation(
-                        corpusItemId = "corpusItemId$index",
-                        scheduledCorpusItemId = "scheduledCorpusItemId$index",
-                        url = "https://story$index.com",
-                        title = "Recommendation - This is a ${"very ".repeat(index)} long title",
-                        excerpt = "Excerpt",
-                        topic = null,
-                        publisher = "Publisher",
-                        isTimeSensitive = false,
-                        imageUrl = URL,
-                        tileId = index.toLong(),
-                        receivedRank = index,
-                        recommendedAt = index.toLong(),
-                        impressions = index.toLong(),
-                    ),
+                    contentRecommendation(index),
                 )
                 (index % 2 == 0) -> add(
-                    PocketRecommendedStory(
-                        title = "Story - This is a ${"very ".repeat(index)} long title",
-                        publisher = "Publisher",
-                        url = "https://story$index.com",
-                        imageUrl = URL,
-                        timeToRead = index,
-                        category = "Category #$index",
-                        timesShown = index.toLong(),
-                    ),
+                    pocketRecommendedStory(index),
                 )
                 else -> add(
-                    PocketSponsoredStory(
-                        id = index,
-                        title = "This is a ${"very ".repeat(index)} long title",
-                        url = "https://sponsored-story$index.com",
-                        imageUrl = URL,
-                        sponsor = "Mozilla",
-                        shim = PocketSponsoredStoryShim("", ""),
-                        priority = index,
-                        caps = PocketSponsoredStoryCaps(
-                            flightCount = index,
-                            flightPeriod = index * 2,
-                            lifetimeCount = index * 3,
-                        ),
-                    ),
+                    pocketSponsoredStory(index),
                 )
             }
         }

@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_CSSMediaRule_h
 #define mozilla_dom_CSSMediaRule_h
 
-#include "mozilla/css/GroupRule.h"
 #include "mozilla/ServoBindingTypes.h"
+#include "mozilla/css/GroupRule.h"
 
 namespace mozilla::dom {
 

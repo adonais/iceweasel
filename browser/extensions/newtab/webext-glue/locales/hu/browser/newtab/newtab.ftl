@@ -504,6 +504,9 @@ newtab-topic-selection-button-pick-interests = Válassza ki az érdeklődési k�
 newtab-section-follow-button = Követés
 newtab-section-following-button = Követés
 newtab-section-unfollow-button = Követés megszüntetése
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Finomhangolja a hírfolyamát
+newtab-section-follow-highlight-subtitle = Kövesse az érdeklődési köreit, hogy többet lásson abból, amit kedvel.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -546,6 +549,11 @@ newtab-download-mobile-highlight-body-variant-c = Tudta, hogy magával viheti a 
 newtab-download-mobile-highlight-image =
     .aria-label = QR-kód a mobilos { -brand-product-name } letöltéséhez
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = A kedvencei egy karnyújtásnyira
+newtab-shortcuts-highlight-subtitle = Adjon hozzá egy indítót, hogy a kedvenc oldalai egy kattintásra legyenek.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -579,3 +587,5 @@ newtab-trending-searches-hide-trending =
     .title = Felkapott keresések elrejtése
 newtab-trending-searches-learn-more = További tudnivalók
 newtab-trending-searches-dismiss = Felkapott keresések elrejtése
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Felkapott keresések

@@ -9,9 +9,9 @@
 
 #include <ostream>
 
-#include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/EnumSet.h"
+#include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "nsRect.h"
 #include "nsStyleStruct.h"
 
@@ -539,6 +539,58 @@ class WritingMode {
     NS_ASSERTION(myStartSide % 2 == otherWMStartSide % 2,
                  "Should end up with sides in the same physical axis");
     return myStartSide == otherWMStartSide;
+  }
+
+  /**
+   * Determine a writing mode for determining the line-over/line-under side of a
+   * box to use for baseline alignment, based on the container and item's
+   * writing modes and the alignment axis.
+   *
+   * See: https://drafts.csswg.org/css-align-3/#baseline-export
+   *
+   * @param aContainerWM writing mode of the container (alignment context).
+   * @param aItemWM writing mode of the item being aligned.
+   * @param aAlignmentAxis axis of alignment, in the container’s writing mode.
+   *        LogicalAxis::Inline (rows) for align-{items,self}:[last] baseline.
+   *        LogicalAxis::Block (columns) for justify-{items,self}:[last]
+   *        baseline.
+   */
+  static WritingMode DetermineWritingModeForBaselineSynthesis(
+      const WritingMode& aContainerWM, const WritingMode& aItemWM,
+      LogicalAxis aAlignmentAxis) {
+    // Use the physical alignment axis for comparison:
+    auto physicalAlignmentAxis = aContainerWM.PhysicalAxis(aAlignmentAxis);
+
+    // If the item's block flow direction is orthogonal to the alignment axis,
+    // use its writing mode.
+    auto itemAxis = aItemWM.PhysicalAxis(LogicalAxis::Block);
+    if (itemAxis != physicalAlignmentAxis) {
+      return aItemWM;
+    }
+
+    // If the container's block flow direction is orthogonal to the alignment
+    // axis, use its writing mode.
+    auto containerAxis = aContainerWM.PhysicalAxis(LogicalAxis::Block);
+    if (containerAxis != physicalAlignmentAxis) {
+      return aContainerWM;
+    }
+
+    // If not using the item or container writing mode, synthesize an
+    // axis-compatible writing mode based on the container's writing mode.
+    //
+    // From https://drafts.csswg.org/css-align-3/#baseline-export:
+    //
+    // - If the box’s own writing mode is vertical, assume `horizontal-tb`.
+    // - If the box’s own writing mode is horizontal, assume `vertical-lr` if
+    //   direction is `ltr` and `vertical-rl` if direction is `rtl`.
+
+    if (aContainerWM.IsVertical()) {
+      return WritingMode{StyleWritingMode::WRITING_MODE_HORIZONTAL_TB._0};
+    }
+
+    return (aContainerWM.IsBidiLTR())
+               ? WritingMode{StyleWritingMode::WRITING_MODE_VERTICAL_LR._0}
+               : WritingMode{StyleWritingMode::WRITING_MODE_VERTICAL_RL._0};
   }
 
   uint8_t GetBits() const { return mWritingMode._0; }
@@ -2138,54 +2190,54 @@ inline AnchorResolvedInset nsStylePosition::GetAnchorResolvedInset(
 }
 
 inline AnchorResolvedSize nsStylePosition::ISize(
-    WritingMode aWM, mozilla::StylePositionProperty aProp) const {
-  return aWM.IsVertical() ? GetHeight(aProp) : GetWidth(aProp);
+    WritingMode aWM, const AnchorPosResolutionParams& aParams) const {
+  return aWM.IsVertical() ? GetHeight(aParams) : GetWidth(aParams);
 }
 
 inline AnchorResolvedSize nsStylePosition::MinISize(
-    WritingMode aWM, mozilla::StylePositionProperty aProp) const {
-  return aWM.IsVertical() ? GetMinHeight(aProp) : GetMinWidth(aProp);
+    WritingMode aWM, const AnchorPosResolutionParams& aParams) const {
+  return aWM.IsVertical() ? GetMinHeight(aParams) : GetMinWidth(aParams);
 }
 
 inline AnchorResolvedMaxSize nsStylePosition::MaxISize(
-    WritingMode aWM, mozilla::StylePositionProperty aProp) const {
-  return aWM.IsVertical() ? GetMaxHeight(aProp) : GetMaxWidth(aProp);
+    WritingMode aWM, const AnchorPosResolutionParams& aParams) const {
+  return aWM.IsVertical() ? GetMaxHeight(aParams) : GetMaxWidth(aParams);
 }
 
 inline AnchorResolvedSize nsStylePosition::BSize(
-    WritingMode aWM, mozilla::StylePositionProperty aProp) const {
-  return aWM.IsVertical() ? GetWidth(aProp) : GetHeight(aProp);
+    WritingMode aWM, const AnchorPosResolutionParams& aParams) const {
+  return aWM.IsVertical() ? GetWidth(aParams) : GetHeight(aParams);
 }
 
 inline AnchorResolvedSize nsStylePosition::MinBSize(
-    WritingMode aWM, mozilla::StylePositionProperty aProp) const {
-  return aWM.IsVertical() ? GetMinWidth(aProp) : GetMinHeight(aProp);
+    WritingMode aWM, const AnchorPosResolutionParams& aParams) const {
+  return aWM.IsVertical() ? GetMinWidth(aParams) : GetMinHeight(aParams);
 }
 
 inline AnchorResolvedMaxSize nsStylePosition::MaxBSize(
-    WritingMode aWM, mozilla::StylePositionProperty aProp) const {
-  return aWM.IsVertical() ? GetMaxWidth(aProp) : GetMaxHeight(aProp);
+    WritingMode aWM, const AnchorPosResolutionParams& aParams) const {
+  return aWM.IsVertical() ? GetMaxWidth(aParams) : GetMaxHeight(aParams);
 }
 
 inline AnchorResolvedSize nsStylePosition::Size(
     mozilla::LogicalAxis aAxis, WritingMode aWM,
-    mozilla::StylePositionProperty aProp) const {
-  return aAxis == mozilla::LogicalAxis::Inline ? ISize(aWM, aProp)
-                                               : BSize(aWM, aProp);
+    const AnchorPosResolutionParams& aParams) const {
+  return aAxis == mozilla::LogicalAxis::Inline ? ISize(aWM, aParams)
+                                               : BSize(aWM, aParams);
 }
 
 inline AnchorResolvedSize nsStylePosition::MinSize(
     mozilla::LogicalAxis aAxis, WritingMode aWM,
-    mozilla::StylePositionProperty aProp) const {
-  return aAxis == mozilla::LogicalAxis::Inline ? MinISize(aWM, aProp)
-                                               : MinBSize(aWM, aProp);
+    const AnchorPosResolutionParams& aParams) const {
+  return aAxis == mozilla::LogicalAxis::Inline ? MinISize(aWM, aParams)
+                                               : MinBSize(aWM, aParams);
 }
 
 inline AnchorResolvedMaxSize nsStylePosition::MaxSize(
     mozilla::LogicalAxis aAxis, mozilla::WritingMode aWM,
-    mozilla::StylePositionProperty aProp) const {
-  return aAxis == mozilla::LogicalAxis::Inline ? MaxISize(aWM, aProp)
-                                               : MaxBSize(aWM, aProp);
+    const AnchorPosResolutionParams& aParams) const {
+  return aAxis == mozilla::LogicalAxis::Inline ? MaxISize(aWM, aParams)
+                                               : MaxBSize(aWM, aParams);
 }
 
 inline bool nsStylePosition::ISizeDependsOnContainer(
@@ -2236,29 +2288,28 @@ inline bool nsStylePosition::MaxBSizeDependsOnContainer(
 }
 
 inline bool nsStyleMargin::HasBlockAxisAuto(
-    mozilla::WritingMode aWM, mozilla::StylePositionProperty aPosition) const {
-  return GetMargin(mozilla::LogicalSide::BStart, aWM, aPosition)->IsAuto() ||
-         GetMargin(mozilla::LogicalSide::BEnd, aWM, aPosition)->IsAuto();
+    mozilla::WritingMode aWM, const AnchorPosResolutionParams& aParams) const {
+  return GetMargin(mozilla::LogicalSide::BStart, aWM, aParams)->IsAuto() ||
+         GetMargin(mozilla::LogicalSide::BEnd, aWM, aParams)->IsAuto();
 }
 
 inline bool nsStyleMargin::HasInlineAxisAuto(
-    mozilla::WritingMode aWM, mozilla::StylePositionProperty aPosition) const {
-  return GetMargin(mozilla::LogicalSide::IStart, aWM, aPosition)->IsAuto() ||
-         GetMargin(mozilla::LogicalSide::IEnd, aWM, aPosition)->IsAuto();
+    mozilla::WritingMode aWM, const AnchorPosResolutionParams& aParams) const {
+  return GetMargin(mozilla::LogicalSide::IStart, aWM, aParams)->IsAuto() ||
+         GetMargin(mozilla::LogicalSide::IEnd, aWM, aParams)->IsAuto();
 }
 
 inline bool nsStyleMargin::HasAuto(
     mozilla::LogicalAxis aAxis, mozilla::WritingMode aWM,
-    mozilla::StylePositionProperty aPosition) const {
-  return aAxis == mozilla::LogicalAxis::Inline
-             ? HasInlineAxisAuto(aWM, aPosition)
-             : HasBlockAxisAuto(aWM, aPosition);
+    const AnchorPosResolutionParams& aParams) const {
+  return aAxis == mozilla::LogicalAxis::Inline ? HasInlineAxisAuto(aWM, aParams)
+                                               : HasBlockAxisAuto(aWM, aParams);
 }
 
 inline AnchorResolvedMargin nsStyleMargin::GetMargin(
     mozilla::LogicalSide aSide, mozilla::WritingMode aWM,
-    mozilla::StylePositionProperty aPosition) const {
-  return GetMargin(aWM.PhysicalSide(aSide), aPosition);
+    const AnchorPosResolutionParams& aParams) const {
+  return GetMargin(aWM.PhysicalSide(aSide), aParams);
 }
 
 inline mozilla::StyleAlignFlags nsStylePosition::UsedSelfAlignment(

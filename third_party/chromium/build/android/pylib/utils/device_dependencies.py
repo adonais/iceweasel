@@ -1,22 +1,28 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2016 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import glob
 import os
+import posixpath
 import re
 
 from pylib import constants
 
-
 _EXCLUSIONS = [
-    re.compile(r'.*OWNERS'),  # Should never be included.
+    # Misc files that exist to document directories
+    re.compile(r'.*METADATA'),
+    re.compile(r'.*OWNERS'),
+    re.compile(r'.*\.md'),
     re.compile(r'.*\.crx'),  # Chrome extension zip files.
-    re.compile(os.path.join('.*',
-                            r'\.git.*')),  # Any '.git*' directories/files.
+    re.compile(r'.*/\.git.*'),  # Any '.git*' directories/files.
     re.compile(r'.*\.so'),  # Libraries packed into .apk.
     re.compile(r'.*Mojo.*manifest\.json'),  # Some source_set()s pull these in.
     re.compile(r'.*\.py'),  # Some test_support targets include python deps.
     re.compile(r'.*\.apk'),  # Should be installed separately.
+    re.compile(r'.*\.jar'),  # Never need java intermediates.
+    re.compile(r'.*\.crx'),  # Used by download_from_google_storage.
+    re.compile(r'.*\.wpr'),  # Web-page-relay files needed only on host.
     re.compile(r'.*lib.java/.*'),  # Never need java intermediates.
 
     # Test filter files:
@@ -25,26 +31,30 @@ _EXCLUSIONS = [
     # Chrome external extensions config file.
     re.compile(r'.*external_extensions\.json'),
 
-    # Exists just to test the compile, not to be run.
-    re.compile(r'.*jni_generator_tests'),
-
     # v8's blobs and icu data get packaged into APKs.
     re.compile(r'.*snapshot_blob.*\.bin'),
-    re.compile(r'.*icudtl.bin'),
+    re.compile(r'.*icudtl\.bin'),
 
     # Scripts that are needed by swarming, but not on devices:
     re.compile(r'.*llvm-symbolizer'),
-    re.compile(r'.*md5sum_bin'),
-    re.compile(os.path.join('.*', 'development', 'scripts', 'stack')),
+    re.compile(r'.*devil_util_(?:bin|dist)'),
+    re.compile(r'.*md5sum_(?:bin|dist)'),
+    re.compile(r'.*/development/scripts/stack'),
+    re.compile(r'.*/build/android/pylib/symbols'),
+    re.compile(r'.*/build/android/stacktrace'),
 
     # Required for java deobfuscation on the host:
     re.compile(r'.*build/android/stacktrace/.*'),
     re.compile(r'.*third_party/jdk/.*'),
     re.compile(r'.*third_party/proguard/.*'),
 
+    # Our tests don't need these.
+    re.compile(r'.*/devtools-frontend/.*front_end/.*'),
+
     # Build artifacts:
     re.compile(r'.*\.stamp'),
-    re.compile(r'.*.pak\.info'),
+    re.compile(r'.*\.pak\.info'),
+    re.compile(r'.*\.build_config.json'),
     re.compile(r'.*\.incremental\.json'),
 ]
 
@@ -56,7 +66,7 @@ def _FilterDataDeps(abs_host_files):
   return [p for p in abs_host_files if not any(r.match(p) for r in exclusions)]
 
 
-def DevicePathComponentsFor(host_path, output_directory):
+def DevicePathComponentsFor(host_path, output_directory=None):
   """Returns the device path components for a given host path.
 
   This returns the device path as a list of joinable path components,
@@ -93,6 +103,7 @@ def DevicePathComponentsFor(host_path, output_directory):
   Returns:
     A list of device path components.
   """
+  output_directory = output_directory or constants.GetOutDirectory()
   if (host_path.startswith(output_directory) and
       os.path.splitext(host_path)[1] == '.pak'):
     return [None, 'paks', os.path.basename(host_path)]
@@ -123,14 +134,41 @@ def GetDataDependencies(runtime_deps_path):
     return []
 
   with open(runtime_deps_path, 'r') as runtime_deps_file:
-    rel_host_files = [l.strip() for l in runtime_deps_file if l]
+    # .runtime_deps can contain duplicates.
+    rel_host_files = sorted({l.strip() for l in runtime_deps_file if l})
 
   output_directory = constants.GetOutDirectory()
   abs_host_files = [
       os.path.abspath(os.path.join(output_directory, r))
       for r in rel_host_files]
   filtered_abs_host_files = _FilterDataDeps(abs_host_files)
-  # TODO(crbug.com/752610): Filter out host executables, and investigate
+  # TODO(crbug.com/40533647): Filter out host executables, and investigate
   # whether other files could be filtered as well.
   return [(f, DevicePathComponentsFor(f, output_directory))
           for f in filtered_abs_host_files]
+
+
+def SubstituteDeviceRootSingle(device_path, device_root):
+  if not device_path:
+    return device_root
+  if isinstance(device_path, list):
+    return posixpath.join(*(p if p else device_root for p in device_path))
+  return device_path
+
+
+def SubstituteDeviceRoot(host_device_tuples, device_root):
+  return [(h, SubstituteDeviceRootSingle(d, device_root))
+          for h, d in host_device_tuples]
+
+
+def ExpandDataDependencies(host_device_tuples):
+  ret = []
+  for h, d in host_device_tuples:
+    if os.path.isdir(h):
+      for subpath in glob.glob(f'{h}/**', recursive=True):
+        if not os.path.isdir(subpath):
+          new_part = subpath[len(h):]
+          ret.append((subpath, d + new_part))
+    else:
+      ret.append((h, d))
+  return ret

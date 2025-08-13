@@ -100,8 +100,8 @@ async def get_accept_button(client, in_headless_mode):
 
 
 @pytest.mark.asyncio
-@pytest.mark.with_interventions
-async def test_enabled(client, in_headless_mode):
+@pytest.mark.without_interventions
+async def test_regression(client, in_headless_mode):
     await get_accept_button(client, in_headless_mode)
     client.await_css(
         "button",
@@ -109,10 +109,3 @@ async def test_enabled(client, in_headless_mode):
         is_displayed=True,
     ).click()
     assert client.await_css(OOPS_CSS, is_displayed=True)
-
-
-@pytest.mark.asyncio
-@pytest.mark.without_interventions
-async def test_disabled(client, in_headless_mode):
-    client.click(await get_accept_button(client, in_headless_mode), force=True)
-    await (await client.promise_console_message_listener(FAIL_MSG))

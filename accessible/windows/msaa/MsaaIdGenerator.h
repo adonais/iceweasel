@@ -29,6 +29,7 @@ class MsaaIdGenerator {
  private:
   bool ReleaseID(uint32_t aID);
   void ReleasePendingIDs();
+  static void ReleasePendingIdsCallback(nsITimer* aTimer, void* aClosure);
 
  private:
   static constexpr uint32_t kNumFullIDBits = 31UL;

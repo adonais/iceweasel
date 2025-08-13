@@ -305,9 +305,16 @@ class StatisticsPanel extends Component {
         data[type].time += request.totalTime || 0;
         data[type].size += request.contentSize || 0;
         data[type].transferredSize += request.transferredSize || 0;
-        const nonBlockingTime =
-          request.eventTimings.totalTime - request.eventTimings.timings.blocked;
-        data[type].nonBlockingTime += nonBlockingTime || 0;
+        // Short term fix to avoid a netmonitor panel breakage.
+        // Todo: Refactor the Statistics panel to handle updates properly (Bug 1976819)
+        if (request.eventTimings) {
+          const nonBlockingTime =
+            request.eventTimings.totalTime -
+            request.eventTimings.timings.blocked;
+          data[type].nonBlockingTime += nonBlockingTime || 0;
+        } else {
+          data[type].nonBlockingTime = 0;
+        }
       } else {
         data[type].cached++;
       }

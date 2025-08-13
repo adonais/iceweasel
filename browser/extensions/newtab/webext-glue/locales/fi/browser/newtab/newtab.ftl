@@ -504,6 +504,9 @@ newtab-topic-selection-button-pick-interests = Valitse kiinnostuksen kohteesi
 newtab-section-follow-button = Seuraa
 newtab-section-following-button = Seurataan
 newtab-section-unfollow-button = Lopeta seuraaminen
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Hienosäädä syötettä
+newtab-section-follow-highlight-subtitle = Seuraa kiinnostuksen kohteitasi nähdäksesi enemmän sinua kiinnostavia asioita.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -546,6 +549,11 @@ newtab-download-mobile-highlight-body-variant-c = Tiesitkö, että voit ottaa { 
 newtab-download-mobile-highlight-image =
     .aria-label = QR-koodi { -brand-product-name }in lataamiseksi mobiililaitteille
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Suosikkisi sormiesi ulottuvilla
+newtab-shortcuts-highlight-subtitle = Lisää pikakuvake, niin suosikkisivustosi ovat yhden napsautuksen päässä.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -579,3 +587,5 @@ newtab-trending-searches-hide-trending =
     .title = Piilota nousussa olevat haut
 newtab-trending-searches-learn-more = Lue lisää
 newtab-trending-searches-dismiss = Piilota nousussa olevat haut
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Nousussa olevat haut

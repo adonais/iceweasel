@@ -755,7 +755,8 @@ void InitLibrary() {
   if (sCubebSandbox && XRE_IsContentProcess()) {
 #  if defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID)
     if (atp_set_real_time_limit(0, 48000)) {
-      NS_WARNING("could not set real-time limit in CubebUtils::InitLibrary");
+      MOZ_LOG(gCubebLog, LogLevel::Warning,
+              ("could not set real-time limit in CubebUtils::InitLibrary"));
     }
     InstallSoftRealTimeLimitHandler();
 #  endif

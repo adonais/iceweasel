@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.search.suggestions
 
-import android.content.Context
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
@@ -23,7 +22,6 @@ typealias SearchSuggestionFetcher = suspend (url: String) -> String?
  *  Provides an interface to get search suggestions from a given SearchEngine.
  */
 class SearchSuggestionClient {
-    private val context: Context?
     private val fetcher: SearchSuggestionFetcher
     private val logger = Logger("SearchSuggestionClient")
 
@@ -32,25 +30,22 @@ class SearchSuggestionClient {
         private set
 
     internal constructor(
-        context: Context?,
         store: BrowserStore?,
         searchEngine: SearchEngine?,
         fetcher: SearchSuggestionFetcher,
     ) {
-        this.context = context
         this.store = store
         this.searchEngine = searchEngine
         this.fetcher = fetcher
     }
 
     constructor(searchEngine: SearchEngine, fetcher: SearchSuggestionFetcher) :
-        this (null, null, searchEngine, fetcher)
+        this(null, searchEngine, fetcher)
 
     constructor(
-        context: Context,
         store: BrowserStore,
         fetcher: SearchSuggestionFetcher,
-    ) : this (context, store, null, fetcher)
+    ) : this(store, null, fetcher)
 
     /**
      * Exception types for errors caught while getting a list of suggestions
@@ -64,7 +59,6 @@ class SearchSuggestionClient {
     suspend fun getSuggestions(query: String): List<String>? {
         val searchEngine = searchEngine ?: run {
             requireNotNull(store)
-            requireNotNull(context)
 
             val searchEngine = store.state.search.selectedOrDefaultSearchEngine
             if (searchEngine == null) {

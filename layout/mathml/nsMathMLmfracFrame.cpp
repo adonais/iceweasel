@@ -6,20 +6,21 @@
 
 #include "nsMathMLmfracFrame.h"
 
+#include <algorithm>
+
+#include "gfxContext.h"
+#include "gfxMathTable.h"
+#include "gfxTextRun.h"
 #include "gfxUtils.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_mathml.h"
-#include "nsLayoutUtils.h"
-#include "nsPresContext.h"
-#include "nsDisplayList.h"
-#include "gfxContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/MathMLElement.h"
-#include <algorithm>
-#include "gfxMathTable.h"
-#include "gfxTextRun.h"
+#include "mozilla/gfx/2D.h"
+#include "nsDisplayList.h"
+#include "nsLayoutUtils.h"
+#include "nsPresContext.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

@@ -219,7 +219,8 @@ void CertVerifier::LoadKnownCTLogs() {
 
     const CTLogOperatorInfo& logOperator =
         kCTLogOperatorList[log.operatorIndex];
-    CTLogVerifier logVerifier(logOperator.id, log.state, log.timestamp);
+    CTLogVerifier logVerifier(logOperator.id, log.state, log.format,
+                              log.timestamp);
     rv = logVerifier.Init(publicKey);
     if (rv != Success) {
       MOZ_ASSERT_UNREACHABLE("Failed initializing a known CT Log");
@@ -403,7 +404,8 @@ Result CertVerifier::VerifyCertificateTransparencyPolicyInner(
 
   CTVerifyResult result;
   rv = mCTVerifier->Verify(endEntityInput, issuerPublicKeyInput, embeddedSCTs,
-                           sctsFromOCSP, sctsFromTLS, time, result);
+                           sctsFromOCSP, sctsFromTLS, time,
+                           trustDomain.GetDistrustAfterTime(), result);
   if (rv != Success) {
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
             ("SCT verification failed with fatal error %" PRId32 "\n",
@@ -428,10 +430,10 @@ Result CertVerifier::VerifyCertificateTransparencyPolicyInner(
             ("SCT verification result: "
              "valid=%zu unknownLog=%zu retiredLog=%zu "
              "invalidSignature=%zu invalidTimestamp=%zu "
-             "decodingErrors=%zu\n",
+             "distrustedTimestamp=%zu decodingErrors=%zu\n",
              validCount, result.sctsFromUnknownLogs, retiredLogCount,
              result.sctsWithInvalidSignatures, result.sctsWithInvalidTimestamps,
-             result.decodingErrors));
+             result.sctsWithDistrustedTimestamps, result.decodingErrors));
   }
 
   BackCert endEntityBackCert(endEntityInput, EndEntityOrCA::MustBeEndEntity,
@@ -682,15 +684,6 @@ Result CertVerifier::VerifyCert(
         }
         if (issuerSources) {
           *issuerSources = trustDomain.GetIssuerSources();
-        }
-        if (rv != Success && !IsFatalError(rv) &&
-            rv != Result::ERROR_REVOKED_CERTIFICATE &&
-            trustDomain.GetIsErrorDueToDistrustedCAPolicy()) {
-          // Bug 1444440 - If there are multiple paths, at least one to a CA
-          // distrusted-by-policy, and none of them ending in a trusted root,
-          // then we might show a different error (UNKNOWN_ISSUER) than we
-          // intend, confusing users.
-          rv = Result::ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED;
         }
         if (rv == Success) {
           rv = VerifyCertificateTransparencyPolicy(trustDomain, builtChain,

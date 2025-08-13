@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright (c) 2012 The Chromium Authors. All rights reserved.
+# Copyright 2012 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -20,7 +20,6 @@
 # by the time the app target is done, the info.plist is correct.
 #
 
-from __future__ import print_function
 
 import optparse
 import os
@@ -32,12 +31,30 @@ import tempfile
 
 TOP = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
+assert sys.version_info.major >= 3, "Requires python 3.0 or higher."
 
-def _ConvertPlist(source_plist, output_plist, fmt):
-  """Convert |source_plist| to |fmt| and save as |output_plist|."""
-  assert sys.version_info.major == 2, "Use plistlib directly in Python 3"
-  return subprocess.call(
-      ['plutil', '-convert', fmt, '-o', output_plist, source_plist])
+
+def _WritePlistIfChanged(plist, output_path, fmt):
+  """Write a plist file.
+
+  Write `plist` to `output_path` in `fmt`. If `output_path` already exist,
+  the file is only overwritten if its content would be different. This allows
+  ninja to consider all dependent step to be considered as unnecessary (see
+  "restat" in ninja documentation).
+  """
+  if os.path.isfile(output_path):
+    with open(output_path, 'rb') as f:
+      try:
+        exising_plist = plistlib.load(f)
+        if exising_plist == plist:
+          return
+      except plistlib.InvalidFileException:
+        # If the file cannot be parsed by plistlib, then overwrite it.
+        pass
+
+  with open(output_path, 'wb') as f:
+    plist_format = {'binary1': plistlib.FMT_BINARY, 'xml1': plistlib.FMT_XML}
+    plistlib.dump(plist, f, fmt=plist_format[fmt])
 
 
 def _GetOutput(args):
@@ -229,6 +246,16 @@ def _RemoveGTMKeys(plist):
   _RemoveKeys(plist, 'GTMUserAgentID', 'GTMUserAgentVersion')
 
 
+def _AddPrivilegedHelperId(plist, privileged_helper_id):
+  plist['SMPrivilegedExecutables'] = {
+      privileged_helper_id: 'identifier ' + privileged_helper_id
+  }
+
+
+def _RemovePrivilegedHelperId(plist):
+  _RemoveKeys(plist, 'SMPrivilegedExecutables')
+
+
 def Main(argv):
   parser = optparse.OptionParser('%prog [options]')
   parser.add_option('--plist',
@@ -280,7 +307,7 @@ def Main(argv):
                     default=None,
                     help='The bundle id of the binary')
   parser.add_option('--platform',
-                    choices=('ios', 'mac'),
+                    choices=('ios', 'mac', 'watchos'),
                     default='mac',
                     help='The target platform of the bundle')
   parser.add_option('--add-gtm-metadata',
@@ -289,9 +316,6 @@ def Main(argv):
                     type='int',
                     default=False,
                     help='Add GTM metadata [1 or 0]')
-  # TODO(crbug.com/1140474): Remove once iOS 14.2 reaches mass adoption.
-  parser.add_option('--lock-to-version',
-                    help='Set CFBundleVersion to given value + @MAJOR@@PATH@')
   parser.add_option(
       '--version-overrides',
       action='append',
@@ -309,6 +333,12 @@ def Main(argv):
                     type='string',
                     default=None,
                     help='The version string [major.minor.build.patch]')
+  parser.add_option('--privileged_helper_id',
+                    dest='privileged_helper_id',
+                    action='store',
+                    type='string',
+                    default=None,
+                    help='The id of the privileged helper executable.')
   (options, args) = parser.parse_args(argv)
 
   if len(args) > 0:
@@ -319,17 +349,9 @@ def Main(argv):
     print('No --plist specified.', file=sys.stderr)
     return 1
 
-  # Read the plist into its parsed format. Convert the file to 'xml1' as
-  # plistlib only supports that format in Python 2.7.
-  with tempfile.NamedTemporaryFile() as temp_info_plist:
-    if sys.version_info.major == 2:
-      retcode = _ConvertPlist(options.plist_path, temp_info_plist.name, 'xml1')
-      if retcode != 0:
-        return retcode
-      plist = plistlib.readPlist(temp_info_plist.name)
-    else:
-      with open(options.plist_path, 'rb') as f:
-        plist = plistlib.load(f)
+  # Read the plist into its parsed format.
+  with open(options.plist_path, 'rb') as f:
+    plist = plistlib.load(f)
 
   # Convert overrides.
   overrides = {}
@@ -359,25 +381,10 @@ def Main(argv):
         'CFBundleVersion': '@BUILD@.@PATCH@',
     }
   else:
-    # TODO(crbug.com/1140474): Remove once iOS 14.2 reaches mass adoption.
-    if options.lock_to_version:
-      # Pull in the PATCH number and format it to 3 digits.
-      VERSION_TOOL = os.path.join(TOP, 'build/util/version.py')
-      VERSION_FILE = os.path.join(TOP, 'chrome/VERSION')
-      (stdout,
-       retval) = _GetOutput([VERSION_TOOL, '-f', VERSION_FILE, '-t', '@PATCH@'])
-      if retval != 0:
-        return 2
-      patch = '{:03d}'.format(int(stdout))
-      version_format_for_key = {
-          'CFBundleShortVersionString': '@MAJOR@.@BUILD@.@PATCH@',
-          'CFBundleVersion': options.lock_to_version + '.@MAJOR@' + patch
-      }
-    else:
-      version_format_for_key = {
-          'CFBundleShortVersionString': '@MAJOR@.@BUILD@.@PATCH@',
-          'CFBundleVersion': '@MAJOR@.@MINOR@.@BUILD@.@PATCH@'
-      }
+    version_format_for_key = {
+        'CFBundleShortVersionString': '@MAJOR@.@BUILD@.@PATCH@',
+        'CFBundleVersion': '@MAJOR@.@MINOR@.@BUILD@.@PATCH@'
+    }
 
   if options.use_breakpad:
     version_format_for_key['BreakpadVersion'] = \
@@ -423,6 +430,12 @@ def Main(argv):
   else:
     _RemoveGTMKeys(plist)
 
+  # Add SMPrivilegedExecutables keys.
+  if options.privileged_helper_id:
+    _AddPrivilegedHelperId(plist, options.privileged_helper_id)
+  else:
+    _RemovePrivilegedHelperId(plist)
+
   output_path = options.plist_path
   if options.plist_output is not None:
     output_path = options.plist_output
@@ -430,17 +443,11 @@ def Main(argv):
   # Now that all keys have been mutated, rewrite the file.
   # Convert Info.plist to the format requested by the --format flag. Any
   # format would work on Mac but iOS requires specific format.
-  if sys.version_info.major == 2:
-    with tempfile.NamedTemporaryFile() as temp_info_plist:
-      plistlib.writePlist(plist, temp_info_plist.name)
-      return _ConvertPlist(temp_info_plist.name, output_path, options.format)
-  with open(output_path, 'wb') as f:
-    plist_format = {'binary1': plistlib.FMT_BINARY, 'xml1': plistlib.FMT_XML}
-    plistlib.dump(plist, f, fmt=plist_format[options.format])
+  _WritePlistIfChanged(plist, output_path, options.format)
 
 
 if __name__ == '__main__':
-  # TODO(https://crbug.com/941669): Temporary workaround until all scripts use
+  # TODO(crbug.com/40618161): Temporary workaround until all scripts use
   # python3 by default.
   if sys.version_info[0] < 3:
     os.execvp('python3', ['python3'] + sys.argv)

@@ -85,11 +85,14 @@ export function FeatureHighlight({
       >
         <div className="message-icon">{icon}</div>
         <p className="content-wrapper">{message}</p>
-        <button
+        <moz-button
+          type="icon ghost"
+          size="small"
           data-l10n-id="feature-highlight-dismiss-button"
-          className="icon icon-dismiss"
+          iconsrc="chrome://global/skin/icons/close.svg"
           onClick={onDismissClick}
-        ></button>
+          onKeyDown={onDismissClick}
+        />
       </div>
     </div>
   );

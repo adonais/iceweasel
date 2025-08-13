@@ -44,6 +44,9 @@ moz-button-titled =
   .title = View logins
 moz-button-aria-labelled =
   .aria-label = View logins
+moz-button-more-options =
+  .aria-label = More options
+  .title = More options
 `,
   },
 };
@@ -59,6 +62,7 @@ const Template = ({
   showOuterPadding,
   attention,
   iconPosition,
+  menuId,
 }) => html`
   <style>
     .show-outer-padding {
@@ -77,8 +81,16 @@ const Template = ({
     accesskey=${ifDefined(accesskey)}
     ?attention=${attention}
     iconPosition=${ifDefined(iconPosition)}
+    menuId=${ifDefined(menuId)}
     class=${classMap({ "show-outer-padding": showOuterPadding })}
   ></moz-button>
+  ${menuId
+    ? html` <panel-list id="panel-list">
+        <panel-item>Item One</panel-item>
+        <panel-item>Item Two</panel-item>
+        <panel-item>Item Three</panel-item>
+      </panel-list>`
+    : ""}
 `;
 
 export const Default = Template.bind({});
@@ -157,4 +169,11 @@ Badged.args = {
   ...Icon.args,
   type: "icon",
   attention: true,
+};
+export const MenuButton = Template.bind({});
+MenuButton.args = {
+  ...Icon.args,
+  type: "icon",
+  l10nId: "moz-button-more-options",
+  menuId: "panel-list",
 };

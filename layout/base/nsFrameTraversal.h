@@ -8,6 +8,7 @@
 #define NSFRAMETRAVERSAL_H
 
 #include <cstdint>
+
 #include "mozilla/Attributes.h"
 
 class nsIFrame;

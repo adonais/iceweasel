@@ -98,6 +98,11 @@ PER_PROJECT_PARAMETERS = {
         "target_tasks_method": "pine_tasks",
         "release_type": "nightly-pine",
     },
+    "maple": {
+        # Prevent it from running everything - For now just use "Add New Jobs"
+        "target_tasks_method": "nothing",
+        "release_type": "release",
+    },
     "cypress": {
         "target_tasks_method": "cypress_tasks",
     },

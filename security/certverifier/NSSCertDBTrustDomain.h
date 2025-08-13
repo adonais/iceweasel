@@ -230,6 +230,9 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   // Resets the OCSP stapling status and SCT lists accumulated during
   // the chain building.
   void ResetAccumulatedState();
+  // Resets state related to a fully-built candidate chain that becomes invalid
+  // if that chain is found to not be acceptable.
+  void ResetCandidateBuiltChainState();
 
   CertVerifier::OCSPStaplingStatus GetOCSPStaplingStatus() const {
     return mOCSPStaplingStatus;
@@ -245,10 +248,11 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
 
   bool GetIsBuiltChainRootBuiltInRoot() const;
 
-  bool GetIsErrorDueToDistrustedCAPolicy() const;
-
   OCSPFetchStatus GetOCSPFetchStatus() { return mOCSPFetchStatus; }
   IssuerSources GetIssuerSources() { return mIssuerSources; }
+  Maybe<mozilla::pkix::Time> GetDistrustAfterTime() {
+    return mDistrustAfterTime;
+  }
 
  private:
   Result CheckCRLite(
@@ -308,7 +312,6 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   ValidityCheckingMode mValidityCheckingMode;
   NetscapeStepUpPolicy mNetscapeStepUpPolicy;
   CRLiteMode mCRLiteMode;
-  bool mSawDistrustedCAByPolicyError;
   const OriginAttributes& mOriginAttributes;
   const nsTArray<mozilla::pkix::Input>& mThirdPartyRootInputs;  // non-owning
   const nsTArray<mozilla::pkix::Input>&
@@ -329,6 +332,7 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
 
   OCSPFetchStatus mOCSPFetchStatus;
   IssuerSources mIssuerSources;
+  Maybe<mozilla::pkix::Time> mDistrustAfterTime;
 };
 
 }  // namespace psm

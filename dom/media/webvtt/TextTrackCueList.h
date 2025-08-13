@@ -10,6 +10,7 @@
 #include "nsTArray.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsTHashSet.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla {
@@ -40,6 +41,7 @@ class TextTrackCueList final : public nsISupports, public nsWrapperCache {
   TextTrackCue* operator[](uint32_t aIndex);
   TextTrackCue* GetCueById(const nsAString& aId);
   TextTrackCueList& operator=(const TextTrackCueList& aOther);
+
   // Adds a cue to mList by performing an insertion sort on mList.
   // We expect most files to already be sorted, so an insertion sort starting
   // from the end of the current array should be more efficient than a general
@@ -47,14 +49,12 @@ class TextTrackCueList final : public nsISupports, public nsWrapperCache {
   void AddCue(TextTrackCue& aCue);
   void RemoveCue(TextTrackCue& aCue);
   void RemoveCue(TextTrackCue& aCue, ErrorResult& aRv);
-  void RemoveCueAt(uint32_t aIndex);
-  void RemoveAll();
   void GetArray(nsTArray<RefPtr<TextTrackCue>>& aCues);
 
   void SetCuesInactive();
 
   void NotifyCueUpdated(TextTrackCue* aCue);
-  bool IsCueExist(TextTrackCue* aCue);
+  bool IsCueExist(TextTrackCue* aCue) const;
   nsTArray<RefPtr<TextTrackCue>>& GetCuesArray();
 
  private:
@@ -65,6 +65,9 @@ class TextTrackCueList final : public nsISupports, public nsWrapperCache {
   // A sorted list of TextTrackCues sorted by earliest start time. If the start
   // times are equal then it will be sorted by end time, earliest first.
   nsTArray<RefPtr<TextTrackCue>> mList;
+
+  // Utilized for rapid cue existence verification.
+  nsTHashSet<TextTrackCue*> mCueSet;
 };
 
 }  // namespace dom

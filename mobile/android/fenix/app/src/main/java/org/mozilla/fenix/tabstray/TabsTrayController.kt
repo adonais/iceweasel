@@ -24,6 +24,7 @@ import mozilla.components.browser.storage.sync.Tab
 import mozilla.components.concept.base.profiler.Profiler
 import mozilla.components.concept.engine.mediasession.MediaSession.PlaybackState
 import mozilla.components.concept.engine.prompt.ShareData
+import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.concept.storage.BookmarksStorage
 import mozilla.components.feature.accounts.push.CloseTabsUseCases
 import mozilla.components.feature.downloads.ui.DownloadCancelDialogFragment
@@ -69,15 +70,19 @@ interface TabsTrayController : SyncedTabsController, InactiveTabsController, Tab
     /**
      * Set the current tray item to the clamped [position].
      *
-     * @param position The position on the tray to focus.
-     * @param smoothScroll If true, animate the scrolling from the current tab to [position].
+     * @param page The page on the tab tray to focus.
      */
-    fun handleTrayScrollingToPosition(position: Int, smoothScroll: Boolean)
+    fun handleTabPageClicked(page: Page)
 
     /**
      * Navigate from TabsTray to Browser.
      */
     fun handleNavigateToBrowser()
+
+    /**
+     * Navigates from the tabs tray to the homepage.
+     */
+    fun handleNavigateToHome()
 
     /**
      * Deletes the [TabSessionState] with the specified [tabId] or calls [DownloadCancelDialogFragment]
@@ -161,13 +166,6 @@ interface TabsTrayController : SyncedTabsController, InactiveTabsController, Tab
         tab: TabSessionState,
         source: String?,
     )
-
-    /**
-     * Removes the provided tab from the current selection of tabs.
-     *
-     * @param tab [TabSessionState] to be unselected.
-     */
-    fun handleTabUnselected(tab: TabSessionState)
 
     /**
      * Exits multi select mode when the back button was pressed.
@@ -262,11 +260,12 @@ class DefaultTabsTrayController(
             fenixBrowserUseCases.addNewHomepageTab(
                 private = isPrivate,
             )
+        } else {
+            navController.navigate(
+                TabsTrayFragmentDirections.actionGlobalHome(focusOnAddressBar = true),
+            )
         }
 
-        navController.navigate(
-            TabsTrayFragmentDirections.actionGlobalHome(focusOnAddressBar = true),
-        )
         navigationInteractor.onTabTrayDismissed()
         profiler?.addMarker(
             "DefaultTabTrayController.onNewTabTapped",
@@ -275,9 +274,7 @@ class DefaultTabsTrayController(
         sendNewTabEvent(isPrivate)
     }
 
-    override fun handleTrayScrollingToPosition(position: Int, smoothScroll: Boolean) {
-        val page = Page.positionToPage(position)
-
+    override fun handleTabPageClicked(page: Page) {
         if (page != tabsTrayStore.state.selectedPage) {
             when (page) {
                 Page.NormalTabs -> TabsTray.normalModeTapped.record(NoExtras())
@@ -298,6 +295,21 @@ class DefaultTabsTrayController(
             return
         } else if (!navController.popBackStack(R.id.browserFragment, false)) {
             navController.navigate(R.id.browserFragment)
+        }
+    }
+
+    /**
+     * Dismisses the tabs tray and navigates to the homepage.
+     */
+    override fun handleNavigateToHome() {
+        dismissTray()
+
+        if (navController.currentDestination?.id == R.id.homeFragment) {
+            return
+        } else if (!navController.popBackStack(R.id.homeFragment, false)) {
+            navController.navigate(
+                TabsTrayFragmentDirections.actionGlobalHome(),
+            )
         }
     }
 
@@ -579,17 +591,22 @@ class DefaultTabsTrayController(
                 tabsUseCases.selectTab(tab.id)
                 val mode = BrowsingMode.fromBoolean(tab.content.private)
                 browsingModeManager.mode = mode
-                handleNavigateToBrowser()
+
+                if (tab.content.url == ABOUT_HOME_URL) {
+                    handleNavigateToHome()
+                } else {
+                    handleNavigateToBrowser()
+                }
             }
-            tab.id in selected.map { it.id } -> handleTabUnselected(tab)
+
+            tab.id in selected.map { it.id } -> {
+                tabsTrayStore.dispatch(TabsTrayAction.RemoveSelectTab(tab))
+            }
+
             source != INACTIVE_TABS_FEATURE_NAME -> {
                 tabsTrayStore.dispatch(TabsTrayAction.AddSelectTab(tab))
             }
         }
-    }
-
-    override fun handleTabUnselected(tab: TabSessionState) {
-        tabsTrayStore.dispatch(TabsTrayAction.RemoveSelectTab(tab))
     }
 
     override fun handleBackPressed(): Boolean {

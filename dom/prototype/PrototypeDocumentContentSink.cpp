@@ -48,6 +48,7 @@
 #include "mozilla/dom/XMLStylesheetProcessingInstruction.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/nsCSPUtils.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerLabels.h"
@@ -1017,7 +1018,8 @@ nsresult PrototypeDocumentContentSink::ExecuteScript(
 
   if (!aScript->mOutOfLine) {
     // Check if CSP allows loading of inline scripts.
-    if (nsCOMPtr<nsIContentSecurityPolicy> csp = mDocument->GetCsp()) {
+    if (nsCOMPtr<nsIContentSecurityPolicy> csp =
+            PolicyContainer::GetCSP(mDocument->GetPolicyContainer())) {
       nsAutoJSString content;
       JS::Rooted<JSString*> decompiled(cx,
                                        JS_DecompileScript(cx, scriptObject));

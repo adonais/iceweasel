@@ -69,6 +69,7 @@ class BrowserToolbarIntegration(
     private val tabCounterListener: () -> Unit,
     private val customTabId: String? = null,
     isOnboardingTab: Boolean = false,
+    renderStyle: ToolbarFeature.RenderStyle = ToolbarFeature.RenderStyle.ColoredUrl,
 ) : LifecycleAwareFeature {
     private val presenter = ToolbarPresenter(
         toolbar,
@@ -78,7 +79,7 @@ class BrowserToolbarIntegration(
             toolbar.context.components.publicSuffixList,
             ContextCompat.getColor(toolbar.context, R.color.primaryText),
             ContextCompat.getColor(toolbar.context, R.color.secondaryText),
-            ToolbarFeature.RenderStyle.ColoredUrl,
+            renderStyle,
         ),
     )
 
@@ -155,11 +156,11 @@ class BrowserToolbarIntegration(
             icons = icons.copy(
                 trackingProtectionTrackersBlocked = AppCompatResources.getDrawable(
                     context,
-                    R.drawable.mozac_ic_shield_24,
+                    R.drawable.mozac_ic_shield_checkmark_24,
                 )!!,
                 trackingProtectionNothingBlocked = AppCompatResources.getDrawable(
                     context,
-                    R.drawable.mozac_ic_shield_24,
+                    R.drawable.mozac_ic_shield_checkmark_24,
                 )!!,
                 trackingProtectionException = AppCompatResources.getDrawable(
                     context,

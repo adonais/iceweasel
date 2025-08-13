@@ -500,6 +500,9 @@ newtab-topic-selection-button-pick-interests = İlgi alanlarınızı seçin
 newtab-section-follow-button = Takip et
 newtab-section-following-button = Takip ediliyor
 newtab-section-unfollow-button = Takibi bırak
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Akışınıza ince ayar yapın
+newtab-section-follow-highlight-subtitle = Beğendiğiniz diğer içerikleri görmek için ilgi alanlarınızı takip edin.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -542,6 +545,11 @@ newtab-download-mobile-highlight-body-variant-c = { -brand-product-name } taray�
 newtab-download-mobile-highlight-image =
     .aria-label = Mobil cihazlar için { -brand-product-name }’u indirebileceğiniz QR kodu
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Favorileri siteleriniz parmaklarınızın ucunda
+newtab-shortcuts-highlight-subtitle = Sevdiğiniz siteleri bir tık kadar yakınınızda tutmak için kısayol ekleyebilirsiniz.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -575,3 +583,5 @@ newtab-trending-searches-hide-trending =
     .title = Arama trendlerini gizle
 newtab-trending-searches-learn-more = Daha fazla bilgi al
 newtab-trending-searches-dismiss = Arama trendlerini gizle
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Gündemdeki aramalar

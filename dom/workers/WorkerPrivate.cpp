@@ -48,6 +48,7 @@
 #include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PerformanceStorageWorker.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/PromiseDebugging.h"
 #include "mozilla/dom/PRemoteWorkerDebuggerParent.h"
 #include "mozilla/dom/ReferrerInfo.h"
@@ -554,6 +555,24 @@ class ChangePlaybackStateRunnable final : public WorkerControlRunnable {
   bool mIsPlayingAudio = false;
 };
 
+class ChangeActivePeerConnectionsRunnable final : public WorkerControlRunnable {
+ public:
+  ChangeActivePeerConnectionsRunnable() = delete;
+  explicit ChangeActivePeerConnectionsRunnable(WorkerPrivate* aWorkerPrivate) =
+      delete;
+  ChangeActivePeerConnectionsRunnable(WorkerPrivate* aWorkerPrivate,
+                                      bool aHasPeerConnections)
+      : WorkerControlRunnable("ChangeActivePeerConnectionsRunnable"),
+        mConnections(aHasPeerConnections) {}
+
+ private:
+  virtual bool WorkerRun(JSContext* aCx,
+                         WorkerPrivate* aWorkerPrivate) override {
+    return aWorkerPrivate->ChangePeerConnectionsInternal(mConnections);
+  }
+  bool mConnections = false;
+};
+
 class PropagateStorageAccessPermissionGrantedRunnable final
     : public WorkerControlRunnable {
  public:
@@ -638,42 +657,6 @@ class ReportErrorToConsoleRunnable final : public WorkerParentThreadRunnable {
   const nsTArray<nsString> mParams;
   const mozilla::SourceLocation mLocation;
 };
-
-class RunExpiredTimoutsRunnable final : public WorkerThreadRunnable,
-                                        public nsITimerCallback {
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-
-  explicit RunExpiredTimoutsRunnable(WorkerPrivate* aWorkerPrivate)
-      : WorkerThreadRunnable("RunExpiredTimoutsRunnable") {}
-
- private:
-  ~RunExpiredTimoutsRunnable() = default;
-
-  virtual bool PreDispatch(WorkerPrivate* aWorkerPrivate) override {
-    // Silence bad assertions.
-    return true;
-  }
-
-  virtual void PostDispatch(WorkerPrivate* aWorkerPrivate,
-                            bool aDispatchResult) override {
-    // Silence bad assertions.
-  }
-
-  // MOZ_CAN_RUN_SCRIPT_BOUNDARY until worker runnables are generally
-  // MOZ_CAN_RUN_SCRIPT.
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual bool WorkerRun(JSContext* aCx,
-                         WorkerPrivate* aWorkerPrivate) override {
-    return aWorkerPrivate->RunExpiredTimeouts(aCx);
-  }
-
-  NS_IMETHOD
-  Notify(nsITimer* aTimer) override { return Run(); }
-};
-
-NS_IMPL_ISUPPORTS_INHERITED(RunExpiredTimoutsRunnable, WorkerThreadRunnable,
-                            nsITimerCallback)
 
 class DebuggerImmediateRunnable final : public WorkerThreadRunnable {
   RefPtr<dom::Function> mHandler;
@@ -1070,58 +1053,6 @@ class WorkerPrivate::EventTarget final : public nsISerialEventTarget {
 
  private:
   ~EventTarget() = default;
-};
-
-struct WorkerPrivate::TimeoutInfo {
-  TimeoutInfo()
-      : mId(0),
-        mNestingLevel(0),
-        mReason(Timeout::Reason::eTimeoutOrInterval),
-        mIsInterval(false),
-        mCanceled(false),
-        mOnChromeWorker(false) {
-    MOZ_COUNT_CTOR(mozilla::dom::WorkerPrivate::TimeoutInfo);
-  }
-
-  ~TimeoutInfo() { MOZ_COUNT_DTOR(mozilla::dom::WorkerPrivate::TimeoutInfo); }
-
-  bool operator==(const TimeoutInfo& aOther) const {
-    return mTargetTime == aOther.mTargetTime;
-  }
-
-  bool operator<(const TimeoutInfo& aOther) const {
-    return mTargetTime < aOther.mTargetTime;
-  }
-
-  void AccumulateNestingLevel(const uint32_t& aBaseLevel) {
-    if (aBaseLevel < StaticPrefs::dom_clamp_timeout_nesting_level()) {
-      mNestingLevel = aBaseLevel + 1;
-      return;
-    }
-    mNestingLevel = StaticPrefs::dom_clamp_timeout_nesting_level();
-  }
-
-  void CalculateTargetTime() {
-    auto target = mInterval;
-    // Don't clamp timeout for chrome workers
-    if (mNestingLevel >= StaticPrefs::dom_clamp_timeout_nesting_level() &&
-        !mOnChromeWorker) {
-      target = TimeDuration::Max(
-          mInterval,
-          TimeDuration::FromMilliseconds(StaticPrefs::dom_min_timeout_value()));
-    }
-    mTargetTime = TimeStamp::Now() + target;
-  }
-
-  RefPtr<TimeoutHandler> mHandler;
-  mozilla::TimeStamp mTargetTime;
-  mozilla::TimeDuration mInterval;
-  int32_t mId;
-  uint32_t mNestingLevel;
-  Timeout::Reason mReason;
-  bool mIsInterval;
-  bool mCanceled;
-  bool mOnChromeWorker;
 };
 
 class WorkerJSContextStats final : public JS::RuntimeStats {
@@ -1561,8 +1492,10 @@ void WorkerPrivate::StoreCSPOnClient() {
   auto data = mWorkerThreadAccessible.Access();
   MOZ_ASSERT(data->mScope);
   if (mLoadInfo.mCSPContext) {
-    data->mScope->MutableClientSourceRef().SetCspInfo(
-        mLoadInfo.mCSPContext->CSPInfo());
+    mozilla::ipc::PolicyContainerArgs policyContainerArgs;
+    policyContainerArgs.csp() = Some(mLoadInfo.mCSPContext->CSPInfo());
+    data->mScope->MutableClientSourceRef().SetPolicyContainerArgs(
+        policyContainerArgs);
   }
 }
 
@@ -2497,6 +2430,12 @@ void WorkerPrivate::OfflineStatusChangeEventInternal(bool aIsOffline) {
     return;
   }
 
+  if (ShouldResistFingerprinting(RFPTarget::NetworkConnection)) {
+    // We always report the worker as online if resistFingerprinting is
+    // enabled, regardless of the actual network status.
+    return;
+  }
+
   for (uint32_t index = 0; index < data->mChildWorkers.Length(); ++index) {
     data->mChildWorkers[index]->OfflineStatusChangeEvent(aIsOffline);
   }
@@ -2770,12 +2709,8 @@ WorkerPrivate::WorkerThreadAccessible::WorkerThreadAccessible(
       mDebuggerEventLoopLevel(0),
       mNonblockingCCBackgroundActorCount(0),
       mErrorHandlerRecursionCount(0),
-      mNextTimeoutId(1),
-      mCurrentTimerNestingLevel(0),
       mFrozen(false),
       mDebuggerInterruptRequested(false),
-      mTimerRunning(false),
-      mRunningExpiredTimeouts(false),
       mPeriodicGCTimerRunning(false),
       mIdleGCTimerRunning(false),
       mOnLine(aParent ? aParent->OnLine() : !NS_IsOffline()),
@@ -2903,6 +2838,10 @@ WorkerPrivate::WorkerPrivate(
       mIsPlayingAudio = true;
     }
 
+    if (aParent->HasActivePeerConnections()) {
+      mHasActivePeerConnections = true;
+    }
+
     mIsPrivilegedAddonGlobal = aParent->mIsPrivilegedAddonGlobal;
   } else {
     AssertIsOnMainThread();
@@ -2984,6 +2923,11 @@ WorkerPrivate::WorkerPrivate(
     if (mLoadInfo.mWindow &&
         nsGlobalWindowInner::Cast(mLoadInfo.mWindow)->IsPlayingAudio()) {
       SetIsPlayingAudio(true);
+    }
+
+    if (mLoadInfo.mWindow && nsGlobalWindowInner::Cast(mLoadInfo.mWindow)
+                                 ->HasActivePeerConnections()) {
+      SetActivePeerConnections(true);
     }
   }
 
@@ -3263,6 +3207,18 @@ void WorkerPrivate::SetIsPlayingAudio(bool aIsPlayingAudio) {
 
   AUTO_PROFILER_MARKER_UNTYPED("WorkerPrivate::SetIsPlayingAudio", DOM, {});
   LOG(WorkerLog(), ("SetIsPlayingAudio [%p]", this));
+}
+
+void WorkerPrivate::SetActivePeerConnections(bool aHasPeerConnections) {
+  AssertIsOnParentThread();
+
+  RefPtr<ChangeActivePeerConnectionsRunnable> runnable =
+      new ChangeActivePeerConnectionsRunnable(this, aHasPeerConnections);
+  runnable->Dispatch(this);
+
+  AUTO_PROFILER_MARKER_UNTYPED("WorkerPrivate::SetActivePeerConnections", DOM,
+                               {});
+  LOG(WorkerLog(), ("SetActivePeerConnections [%p]", this));
 }
 
 nsresult WorkerPrivate::SetIsDebuggerReady(bool aReady) {
@@ -4779,16 +4735,22 @@ bool WorkerPrivate::FreezeInternal() {
   for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
     data->mChildWorkers[index]->Freeze(nullptr);
   }
-
-  if (StaticPrefs::dom_workers_timeoutmanager_AtStartup()) {
-    auto* timeoutManager =
-        data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-    if (timeoutManager) {
-      timeoutManager->Suspend();
-    }
+  auto* timeoutManager =
+      data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+  if (timeoutManager) {
+    timeoutManager->Suspend();
   }
 
   return true;
+}
+
+bool WorkerPrivate::HasActiveWorkerRefs() {
+  auto data = mWorkerThreadAccessible.Access();
+  auto* timeoutManager =
+      data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+  return !data->mChildWorkers.IsEmpty() ||
+         (timeoutManager && timeoutManager->HasTimeouts()) ||
+         !data->mWorkerRefs.IsEmpty();
 }
 
 bool WorkerPrivate::ThawInternal() {
@@ -4808,12 +4770,10 @@ bool WorkerPrivate::ThawInternal() {
     data->mScope->MutableClientSourceRef().Thaw();
   }
 
-  if (StaticPrefs::dom_workers_timeoutmanager_AtStartup()) {
-    auto* timeoutManager =
-        data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-    if (timeoutManager) {
-      timeoutManager->Resume();
-    }
+  auto* timeoutManager =
+      data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+  if (timeoutManager) {
+    timeoutManager->Resume();
   }
 
   return true;
@@ -4823,8 +4783,7 @@ bool WorkerPrivate::ChangeBackgroundStateInternal(bool aIsBackground) {
   AssertIsOnWorkerThread();
   mIsInBackground = aIsBackground;
   auto data = mWorkerThreadAccessible.Access();
-  if (StaticPrefs::dom_workers_timeoutmanager_AtStartup() &&
-      StaticPrefs::dom_workers_throttling_enabled_AtStartup()) {
+  if (StaticPrefs::dom_workers_throttling_enabled_AtStartup()) {
     auto* timeoutManager =
         data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
     if (timeoutManager) {
@@ -4853,6 +4812,17 @@ bool WorkerPrivate::ChangePlaybackStateInternal(bool aIsPlayingAudio) {
   return true;
 }
 
+bool WorkerPrivate::ChangePeerConnectionsInternal(bool aHasPeerConnections) {
+  AssertIsOnWorkerThread();
+  mHasActivePeerConnections = aHasPeerConnections;
+  auto data = mWorkerThreadAccessible.Access();
+
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->SetActivePeerConnections(aHasPeerConnections);
+  }
+  return true;
+}
+
 void WorkerPrivate::PropagateStorageAccessPermissionGrantedInternal() {
   auto data = mWorkerThreadAccessible.Access();
 
@@ -4871,37 +4841,25 @@ void WorkerPrivate::PropagateStorageAccessPermissionGrantedInternal() {
 
 void WorkerPrivate::TraverseTimeouts(nsCycleCollectionTraversalCallback& cb) {
   auto data = mWorkerThreadAccessible.Access();
-  if (StaticPrefs::dom_workers_timeoutmanager_AtStartup()) {
-    auto* timeoutManager =
-        data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-    if (timeoutManager) {
-      timeoutManager->ForEachUnorderedTimeout([&cb](Timeout* timeout) {
-        cb.NoteNativeChild(timeout, NS_CYCLE_COLLECTION_PARTICIPANT(Timeout));
-      });
-    }
-    return;
-  }
-  for (uint32_t i = 0; i < data->mTimeouts.Length(); ++i) {
-    // TODO(erahm): No idea what's going on here.
-    TimeoutInfo* tmp = data->mTimeouts[i].get();
-    NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mHandler)
+  auto* timeoutManager =
+      data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+  if (timeoutManager) {
+    timeoutManager->ForEachUnorderedTimeout([&cb](Timeout* timeout) {
+      cb.NoteNativeChild(timeout, NS_CYCLE_COLLECTION_PARTICIPANT(Timeout));
+    });
   }
 }
 
 void WorkerPrivate::UnlinkTimeouts() {
   auto data = mWorkerThreadAccessible.Access();
-  if (StaticPrefs::dom_workers_timeoutmanager_AtStartup()) {
-    auto* timeoutManager =
-        data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-    if (timeoutManager) {
-      timeoutManager->ClearAllTimeouts();
-      if (!timeoutManager->HasTimeouts()) {
-        UpdateCCFlag(CCFlag::EligibleForTimeout);
-      }
+  auto* timeoutManager =
+      data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+  if (timeoutManager) {
+    timeoutManager->ClearAllTimeouts();
+    if (!timeoutManager->HasTimeouts()) {
+      UpdateCCFlag(CCFlag::EligibleForTimeout);
     }
-    return;
   }
-  data->mTimeouts.Clear();
 }
 
 bool WorkerPrivate::AddChildWorker(WorkerPrivate& aChildWorker) {
@@ -5116,23 +5074,15 @@ void WorkerPrivate::UpdateCCFlag(const CCFlag aFlag) {
       break;
     }
     case CCFlag::EligibleForTimeout: {
-      if (StaticPrefs::dom_workers_timeoutmanager_AtStartup()) {
-        auto* timeoutManager =
-            data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-        MOZ_ASSERT(timeoutManager && !timeoutManager->HasTimeouts());
-        break;
-      }
-      MOZ_ASSERT(data->mTimeouts.IsEmpty());
+      auto* timeoutManager =
+          data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+      MOZ_ASSERT(timeoutManager && !timeoutManager->HasTimeouts());
       break;
     }
     case CCFlag::IneligibleForTimeout: {
-      if (StaticPrefs::dom_workers_timeoutmanager_AtStartup()) {
-        auto* timeoutManager =
-            data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-        MOZ_ASSERT(!timeoutManager || timeoutManager->HasTimeouts());
-        break;
-      }
-      MOZ_ASSERT(!data->mTimeouts.IsEmpty());
+      auto* timeoutManager =
+          data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+      MOZ_ASSERT(!timeoutManager || timeoutManager->HasTimeouts());
       break;
     }
     case CCFlag::CheckBackgroundActors: {
@@ -5161,14 +5111,12 @@ void WorkerPrivate::UpdateCCFlag(const CCFlag aFlag) {
     return totalCount > nonblockingActorCount;
   };
 
-  bool noTimeouts{data->mTimeouts.IsEmpty()};
+  auto* timeoutManager =
+      data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
 
-  if (StaticPrefs::dom_workers_timeoutmanager_AtStartup()) {
-    auto* timeoutManager =
-        data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-    if (timeoutManager) {
-      noTimeouts = !timeoutManager->HasTimeouts();
-    }
+  bool noTimeouts{true};
+  if (timeoutManager) {
+    noTimeouts = !timeoutManager->HasTimeouts();
   }
 
   bool eligibleForCC = data->mChildWorkers.IsEmpty() && noTimeouts &&
@@ -5220,54 +5168,16 @@ bool WorkerPrivate::IsEligibleForCC() {
 void WorkerPrivate::CancelAllTimeouts() {
   auto data = mWorkerThreadAccessible.Access();
 
-  if (StaticPrefs::dom_workers_timeoutmanager_AtStartup()) {
-    auto* timeoutManager =
-        data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-    if (timeoutManager) {
-      timeoutManager->ClearAllTimeouts();
-      if (!timeoutManager->HasTimeouts()) {
-        UpdateCCFlag(CCFlag::EligibleForTimeout);
-      }
+  auto* timeoutManager =
+      data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
+  if (timeoutManager) {
+    timeoutManager->ClearAllTimeouts();
+    if (!timeoutManager->HasTimeouts()) {
+      UpdateCCFlag(CCFlag::EligibleForTimeout);
     }
-    return;
   }
 
   LOG(TimeoutsLog(), ("Worker %p CancelAllTimeouts.\n", this));
-
-  if (data->mTimerRunning) {
-    NS_ASSERTION(data->mTimer && data->mTimerRunnable, "Huh?!");
-    NS_ASSERTION(!data->mTimeouts.IsEmpty(), "Huh?!");
-
-    if (NS_FAILED(data->mTimer->Cancel())) {
-      NS_WARNING("Failed to cancel timer!");
-    }
-
-    for (uint32_t index = 0; index < data->mTimeouts.Length(); index++) {
-      data->mTimeouts[index]->mCanceled = true;
-    }
-
-    // If mRunningExpiredTimeouts, then the fact that they are all canceled now
-    // means that the currently executing RunExpiredTimeouts will deal with
-    // them.  Otherwise, we need to clean them up ourselves.
-    if (!data->mRunningExpiredTimeouts) {
-      data->mTimeouts.Clear();
-      UpdateCCFlag(CCFlag::EligibleForTimeout);
-    }
-
-    // Set mTimerRunning false even if mRunningExpiredTimeouts is true, so that
-    // if we get reentered under this same RunExpiredTimeouts call we don't
-    // assert above that !mTimeouts().IsEmpty(), because that's clearly false
-    // now.
-    data->mTimerRunning = false;
-  }
-#ifdef DEBUG
-  else if (!data->mRunningExpiredTimeouts) {
-    NS_ASSERTION(data->mTimeouts.IsEmpty(), "Huh?!");
-  }
-#endif
-
-  data->mTimer = nullptr;
-  data->mTimerRunnable = nullptr;
 }
 
 already_AddRefed<nsISerialEventTarget> WorkerPrivate::CreateNewSyncLoop(
@@ -5993,333 +5903,45 @@ int32_t WorkerPrivate::SetTimeout(JSContext* aCx, TimeoutHandler* aHandler,
   auto data = mWorkerThreadAccessible.Access();
   MOZ_ASSERT(aHandler);
 
-  if (StaticPrefs::dom_workers_timeoutmanager_AtStartup()) {
-    WorkerGlobalScope* globalScope = GlobalScope();
-    MOZ_DIAGNOSTIC_ASSERT(globalScope);
-    auto* timeoutManager = globalScope->GetTimeoutManager();
-    int32_t timerId = -1;
-    WorkerStatus status;
-    {
-      MutexAutoLock lock(mMutex);
-      status = mStatus;
-    }
-    // If the worker is trying to call setTimeout/setInterval and the
-    // worker itself which has initiated the close process.
-    if (status >= Closing) {
-      return timeoutManager->GetTimeoutId(aReason);
-    }
-    bool hadTimeouts = timeoutManager->HasTimeouts();
-    nsresult rv = timeoutManager->SetTimeout(aHandler, aTimeout, aIsInterval,
-                                             aReason, &timerId);
-    if (NS_FAILED(rv)) {
-      aRv.Throw(NS_ERROR_FAILURE);
-      return timerId;
-    }
-    if (!hadTimeouts) {
-      UpdateCCFlag(CCFlag::IneligibleForTimeout);
-    }
-    return timerId;
-  }
-
-  // Reasons that doesn't support cancellation will get -1 as their ids.
+  WorkerGlobalScope* globalScope = GlobalScope();
+  MOZ_DIAGNOSTIC_ASSERT(globalScope);
+  auto* timeoutManager = globalScope->GetTimeoutManager();
+  MOZ_DIAGNOSTIC_ASSERT(timeoutManager);
   int32_t timerId = -1;
-  if (aReason == Timeout::Reason::eTimeoutOrInterval) {
-    timerId = data->mNextTimeoutId;
-    data->mNextTimeoutId += 1;
-  }
-
-  WorkerStatus currentStatus;
+  WorkerStatus status;
   {
     MutexAutoLock lock(mMutex);
-    currentStatus = mStatus;
+    status = mStatus;
   }
-
-  // If the worker is trying to call setTimeout/setInterval and the parent
-  // thread has initiated the close process then just silently fail.
-  if (currentStatus >= Closing) {
+  // If the worker is trying to call setTimeout/setInterval and the
+  // worker itself which has initiated the close process.
+  if (status >= Closing) {
+    return timeoutManager->GetTimeoutId(aReason);
+  }
+  bool hadTimeouts = timeoutManager->HasTimeouts();
+  nsresult rv = timeoutManager->SetTimeout(aHandler, aTimeout, aIsInterval,
+                                           aReason, &timerId);
+  if (NS_FAILED(rv)) {
+    aRv.Throw(NS_ERROR_FAILURE);
     return timerId;
   }
-
-  auto newInfo = MakeUnique<TimeoutInfo>();
-  newInfo->mReason = aReason;
-  newInfo->mOnChromeWorker = mIsChromeWorker;
-  newInfo->mIsInterval = aIsInterval;
-  newInfo->mId = timerId;
-  if (newInfo->mReason == Timeout::Reason::eTimeoutOrInterval ||
-      newInfo->mReason == Timeout::Reason::eIdleCallbackTimeout) {
-    newInfo->AccumulateNestingLevel(data->mCurrentTimerNestingLevel);
+  if (!hadTimeouts) {
+    UpdateCCFlag(CCFlag::IneligibleForTimeout);
   }
-
-  if (MOZ_UNLIKELY(timerId == INT32_MAX)) {
-    NS_WARNING("Timeout ids overflowed!");
-    if (aReason == Timeout::Reason::eTimeoutOrInterval) {
-      data->mNextTimeoutId = 1;
-    }
-  }
-
-  newInfo->mHandler = aHandler;
-
-  // See if any of the optional arguments were passed.
-  aTimeout = std::max(0, aTimeout);
-  newInfo->mInterval = TimeDuration::FromMilliseconds(aTimeout);
-  newInfo->CalculateTargetTime();
-
-  const auto& insertedInfo = data->mTimeouts.InsertElementSorted(
-      std::move(newInfo), GetUniquePtrComparator(data->mTimeouts));
-
-  LOG(TimeoutsLog(), ("Worker %p has new timeout: delay=%d interval=%s\n", this,
-                      aTimeout, aIsInterval ? "yes" : "no"));
-
-  // If the timeout we just made is set to fire next then we need to update the
-  // timer, unless we're currently running timeouts.
-  if (insertedInfo == data->mTimeouts.Elements() &&
-      !data->mRunningExpiredTimeouts) {
-    if (!data->mTimer) {
-      data->mTimer = NS_NewTimer(GlobalScope()->SerialEventTarget());
-      if (!data->mTimer) {
-        aRv.Throw(NS_ERROR_UNEXPECTED);
-        return 0;
-      }
-
-      data->mTimerRunnable = new RunExpiredTimoutsRunnable(this);
-    }
-
-    if (!data->mTimerRunning) {
-      UpdateCCFlag(CCFlag::IneligibleForTimeout);
-      data->mTimerRunning = true;
-    }
-
-    if (!RescheduleTimeoutTimer(aCx)) {
-      aRv.Throw(NS_ERROR_FAILURE);
-      return 0;
-    }
-  }
-
   return timerId;
 }
 
 void WorkerPrivate::ClearTimeout(int32_t aId, Timeout::Reason aReason) {
   MOZ_ASSERT(aReason == Timeout::Reason::eTimeoutOrInterval,
              "This timeout reason doesn't support cancellation.");
-  if (StaticPrefs::dom_workers_timeoutmanager_AtStartup()) {
-    WorkerGlobalScope* globalScope = GlobalScope();
-    MOZ_DIAGNOSTIC_ASSERT(globalScope);
-    auto* timeoutManager = globalScope->GetTimeoutManager();
-    timeoutManager->ClearTimeout(aId, aReason);
-    if (!timeoutManager->HasTimeouts()) {
-      UpdateCCFlag(CCFlag::EligibleForTimeout);
-    }
-    return;
-  }
-
-  auto data = mWorkerThreadAccessible.Access();
-
-  if (!data->mTimeouts.IsEmpty()) {
-    NS_ASSERTION(data->mTimerRunning, "Huh?!");
-
-    for (uint32_t index = 0; index < data->mTimeouts.Length(); index++) {
-      const auto& info = data->mTimeouts[index];
-      if (info->mId == aId && info->mReason == aReason) {
-        info->mCanceled = true;
-        break;
-      }
-    }
-  }
-}
-
-bool WorkerPrivate::RunExpiredTimeouts(JSContext* aCx) {
-  auto data = mWorkerThreadAccessible.Access();
-
-  // We may be called recursively (e.g. close() inside a timeout) or we could
-  // have been canceled while this event was pending, bail out if there is
-  // nothing to do.
-  if (data->mRunningExpiredTimeouts || !data->mTimerRunning) {
-    return true;
-  }
-
-  NS_ASSERTION(data->mTimer && data->mTimerRunnable, "Must have a timer!");
-  NS_ASSERTION(!data->mTimeouts.IsEmpty(), "Should have some work to do!");
-
-  bool retval = true;
-
-  auto comparator = GetUniquePtrComparator(data->mTimeouts);
-  JS::Rooted<JSObject*> global(aCx, JS::CurrentGlobalOrNull(aCx));
-
-  // We want to make sure to run *something*, even if the timer fired a little
-  // early. Fudge the value of now to at least include the first timeout.
-  const TimeStamp actual_now = TimeStamp::Now();
-  const TimeStamp now = std::max(actual_now, data->mTimeouts[0]->mTargetTime);
-
-  if (now != actual_now) {
-    LOG(TimeoutsLog(), ("Worker %p fudged timeout by %f ms.\n", this,
-                        (now - actual_now).ToMilliseconds()));
-#ifdef DEBUG
-    double microseconds = (now - actual_now).ToMicroseconds();
-    uint32_t allowedEarlyFiringMicroseconds;
-    data->mTimer->GetAllowedEarlyFiringMicroseconds(
-        &allowedEarlyFiringMicroseconds);
-    MOZ_ASSERT(microseconds < allowedEarlyFiringMicroseconds);
-#endif
-  }
-
-  AutoTArray<TimeoutInfo*, 10> expiredTimeouts;
-  for (uint32_t index = 0; index < data->mTimeouts.Length(); index++) {
-    TimeoutInfo* info = data->mTimeouts[index].get();
-    if (info->mTargetTime > now) {
-      break;
-    }
-    expiredTimeouts.AppendElement(info);
-  }
-
-  // Guard against recursion.
-  data->mRunningExpiredTimeouts = true;
-
-  MOZ_DIAGNOSTIC_ASSERT(data->mCurrentTimerNestingLevel == 0);
-
-  // Run expired timeouts.
-  for (uint32_t index = 0; index < expiredTimeouts.Length(); index++) {
-    TimeoutInfo*& info = expiredTimeouts[index];
-    AutoRestore<uint32_t> nestingLevel(data->mCurrentTimerNestingLevel);
-
-    if (info->mCanceled) {
-      continue;
-    }
-
-    // Set current timer nesting level to current running timer handler's
-    // nesting level
-    data->mCurrentTimerNestingLevel = info->mNestingLevel;
-
-    LOG(TimeoutsLog(),
-        ("Worker %p executing timeout with original delay %f ms.\n", this,
-         info->mInterval.ToMilliseconds()));
-
-    // Always check JS_IsExceptionPending if something fails, and if
-    // JS_IsExceptionPending returns false (i.e. uncatchable exception) then
-    // break out of the loop.
-
-    RefPtr<TimeoutHandler> handler(info->mHandler);
-
-    const char* reason;
-    switch (info->mReason) {
-      case Timeout::Reason::eTimeoutOrInterval:
-        if (info->mIsInterval) {
-          reason = "setInterval handler";
-        } else {
-          reason = "setTimeout handler";
-        }
-        break;
-      case Timeout::Reason::eDelayedWebTaskTimeout:
-        reason = "delayedWebTask handler";
-        break;
-      case Timeout::Reason::eJSTimeout:
-        reason = "JS timeout handler";
-        break;
-      default:
-        MOZ_ASSERT(info->mReason == Timeout::Reason::eAbortSignalTimeout);
-        reason = "AbortSignal Timeout";
-    }
-    if (info->mReason == Timeout::Reason::eTimeoutOrInterval ||
-        info->mReason == Timeout::Reason::eDelayedWebTaskTimeout) {
-      RefPtr<WorkerGlobalScope> scope(this->GlobalScope());
-      CallbackDebuggerNotificationGuard guard(
-          scope, info->mIsInterval
-                     ? DebuggerNotificationType::SetIntervalCallback
-                     : DebuggerNotificationType::SetTimeoutCallback);
-
-      if (!handler->Call(reason)) {
-        retval = false;
-        break;
-      }
-    } else {
-      MOZ_ASSERT(info->mReason == Timeout::Reason::eAbortSignalTimeout);
-      MOZ_ALWAYS_TRUE(handler->Call(reason));
-    }
-
-    NS_ASSERTION(data->mRunningExpiredTimeouts, "Someone changed this!");
-  }
-
-  // No longer possible to be called recursively.
-  data->mRunningExpiredTimeouts = false;
-
-  // Now remove canceled and expired timeouts from the main list.
-  // NB: The timeouts present in expiredTimeouts must have the same order
-  // with respect to each other in mTimeouts.  That is, mTimeouts is just
-  // expiredTimeouts with extra elements inserted.  There may be unexpired
-  // timeouts that have been inserted between the expired timeouts if the
-  // timeout event handler called setTimeout/setInterval.
-  for (uint32_t index = 0, expiredTimeoutIndex = 0,
-                expiredTimeoutLength = expiredTimeouts.Length();
-       index < data->mTimeouts.Length();) {
-    const auto& info = data->mTimeouts[index];
-    if ((expiredTimeoutIndex < expiredTimeoutLength &&
-         info == expiredTimeouts[expiredTimeoutIndex] &&
-         ++expiredTimeoutIndex) ||
-        info->mCanceled) {
-      if (info->mIsInterval && !info->mCanceled) {
-        // Reschedule intervals.
-        // Reschedule a timeout, if needed, increase the nesting level.
-        info->AccumulateNestingLevel(info->mNestingLevel);
-        info->CalculateTargetTime();
-        // Don't resort the list here, we'll do that at the end.
-        ++index;
-      } else {
-        data->mTimeouts.RemoveElement(info);
-      }
-    } else {
-      // If info did not match the current entry in expiredTimeouts, it
-      // shouldn't be there at all.
-      NS_ASSERTION(!expiredTimeouts.Contains(info),
-                   "Our timeouts are out of order!");
-      ++index;
-    }
-  }
-
-  data->mTimeouts.Sort(comparator);
-
-  // Either signal the parent that we're no longer using timeouts or reschedule
-  // the timer.
-  if (data->mTimeouts.IsEmpty()) {
+  WorkerGlobalScope* globalScope = GlobalScope();
+  MOZ_DIAGNOSTIC_ASSERT(globalScope);
+  auto* timeoutManager = globalScope->GetTimeoutManager();
+  MOZ_DIAGNOSTIC_ASSERT(timeoutManager);
+  timeoutManager->ClearTimeout(aId, aReason);
+  if (!timeoutManager->HasTimeouts()) {
     UpdateCCFlag(CCFlag::EligibleForTimeout);
-    data->mTimerRunning = false;
-  } else if (retval && !RescheduleTimeoutTimer(aCx)) {
-    retval = false;
   }
-
-  return retval;
-}
-
-bool WorkerPrivate::RescheduleTimeoutTimer(JSContext* aCx) {
-  auto data = mWorkerThreadAccessible.Access();
-  MOZ_ASSERT(!data->mRunningExpiredTimeouts);
-  NS_ASSERTION(!data->mTimeouts.IsEmpty(), "Should have some timeouts!");
-  NS_ASSERTION(data->mTimer && data->mTimerRunnable, "Should have a timer!");
-
-  // NB: This is important! The timer may have already fired, e.g. if a timeout
-  // callback itself calls setTimeout for a short duration and then takes longer
-  // than that to finish executing. If that has happened, it's very important
-  // that we don't execute the event that is now pending in our event queue, or
-  // our code in RunExpiredTimeouts to "fudge" the timeout value will unleash an
-  // early timeout when we execute the event we're about to queue.
-  data->mTimer->Cancel();
-
-  double delta =
-      (data->mTimeouts[0]->mTargetTime - TimeStamp::Now()).ToMilliseconds();
-  uint32_t delay = delta > 0 ? static_cast<uint32_t>(std::ceil(
-                                   std::min(delta, double(UINT32_MAX))))
-                             : 0;
-
-  LOG(TimeoutsLog(),
-      ("Worker %p scheduled timer for %d ms, %zu pending timeouts\n", this,
-       delay, data->mTimeouts.Length()));
-
-  nsresult rv = data->mTimer->InitWithCallback(data->mTimerRunnable, delay,
-                                               nsITimer::TYPE_ONE_SHOT);
-  if (NS_FAILED(rv)) {
-    JS_ReportErrorASCII(aCx, "Failed to start timer!");
-    return false;
-  }
-
-  return true;
 }
 
 void WorkerPrivate::StartCancelingTimer() {
@@ -6439,14 +6061,9 @@ void WorkerPrivate::SetCCCollectedAnything(bool collectedAnything) {
 
 uint32_t WorkerPrivate::GetCurrentTimerNestingLevel() const {
   auto data = mWorkerThreadAccessible.Access();
-
-  auto* timeoutManager =
-      data->mScope ? data->mScope->GetTimeoutManager() : nullptr;
-  if (timeoutManager) {
-    return timeoutManager->GetNestingLevelForWorker();
-  }
-
-  return data->mCurrentTimerNestingLevel;
+  return data->mScope
+             ? data->mScope->GetTimeoutManager()->GetNestingLevelForWorker()
+             : 0;
 }
 
 bool WorkerPrivate::isLastCCCollectedAnything() {

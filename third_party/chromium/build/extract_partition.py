@@ -1,12 +1,11 @@
-#!/usr/bin/env python
-# Copyright 2019 The Chromium Authors. All rights reserved.
+#!/usr/bin/env python3
+# Copyright 2019 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 """Extracts an LLD partition from an ELF file."""
 
 import argparse
 import hashlib
-import math
 import os
 import struct
 import subprocess
@@ -73,16 +72,11 @@ def _ExtractPartition(objcopy, input_elf, output_elf, partition):
     old_build_id_file = os.path.join(tempdir, 'old_build_id')
     new_build_id_file = os.path.join(tempdir, 'new_build_id')
 
-    # Dump out build-id section and remove original build-id section from
-    # ELF file.
+    # Dump out build-id section.
     subprocess.check_call([
         objcopy,
         '--extract-partition',
         partition,
-        # Note: Not using '--update-section' here as it is not supported
-        # by llvm-objcopy.
-        '--remove-section',
-        build_id_section,
         '--dump-section',
         '{}={}'.format(build_id_section, old_build_id_file),
         input_elf,
@@ -112,15 +106,11 @@ def _ExtractPartition(objcopy, input_elf, output_elf, partition):
     with open(new_build_id_file, 'wb') as f:
       f.write(prefix + _ComputeNewBuildId(build_id, output_elf))
 
-    # Write back the new build-id section.
+    # Update the build-id section.
     subprocess.check_call([
         objcopy,
-        '--add-section',
+        '--update-section',
         '{}={}'.format(build_id_section, new_build_id_file),
-        # Add alloc section flag, or else the section will be removed by
-        # objcopy --strip-all when generating unstripped lib file.
-        '--set-section-flags',
-        '{}={}'.format(build_id_section, 'alloc'),
         temp_elf,
         output_elf,
     ])
@@ -147,7 +137,7 @@ def main():
       required=True,
       help='Stripped output file',
       metavar='FILE')
-  parser.add_argument('--dwp', help='Path to dwp binary', metavar='FILE')
+  parser.add_argument('--split-dwarf', action='store_true')
   parser.add_argument('input', help='Input file')
   args = parser.parse_args()
 
@@ -160,14 +150,16 @@ def main():
       args.stripped_output,
   ])
 
-  if args.dwp:
-    dwp_args = [
-        args.dwp, '-e', args.unstripped_output, '-o',
-        args.unstripped_output + '.dwp'
-    ]
-    # Suppress output here because it doesn't seem to be useful. The most
-    # common error is a segfault, which will happen if files are missing.
-    subprocess.check_output(dwp_args, stderr=subprocess.STDOUT)
+  # Debug info for partitions is the same as for the main library, so just
+  # symlink the .dwp files.
+  if args.split_dwarf:
+    dest = args.unstripped_output + '.dwp'
+    try:
+      os.unlink(dest)
+    except OSError:
+      pass
+    relpath = os.path.relpath(args.input + '.dwp', os.path.dirname(dest))
+    os.symlink(relpath, dest)
 
 
 if __name__ == '__main__':

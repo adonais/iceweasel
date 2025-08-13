@@ -50,6 +50,7 @@ add_setup(async function () {
       ["network.websocket.delay-failed-reconnects", false],
       ["network.websocket.max-connections", 1000],
       ["network.lna.block_trackers", true],
+      ["network.lna.address_space.public.override", "127.0.0.1:4443"],
     ],
   });
 
@@ -201,6 +202,7 @@ add_task(async function test_tracker_initiated_lna_fetch() {
   await UrlClassifierTestUtils.addTestTrackers();
 
   for (let test of testCases) {
+    Services.fog.testResetFOG();
     let rand = Math.random();
     let promise = observeAndCheck(
       test.type,
@@ -215,6 +217,10 @@ add_task(async function test_tracker_initiated_lna_fetch() {
 
     await promise;
     gBrowser.removeTab(tab);
+    is(
+      await Glean.networking.localNetworkBlockedTracker.testGetValue(),
+      test.trackerStatus == Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED ? 1 : null
+    );
   }
 
   // check that when adding the permission the fetch req succeeds.

@@ -244,26 +244,9 @@ bool js::intl_availableCollations(JSContext* cx, unsigned argc, Value* vp) {
 static mozilla::intl::Collator* NewIntlCollator(
     JSContext* cx, Handle<CollatorObject*> collator) {
   RootedValue value(cx);
-
   RootedObject internals(cx, intl::GetInternalsObject(cx, collator));
   if (!internals) {
     return nullptr;
-  }
-
-  if (!GetProperty(cx, internals, internals, cx->names().locale, &value)) {
-    return nullptr;
-  }
-
-  mozilla::intl::Locale tag;
-  {
-    Rooted<JSLinearString*> locale(cx, value.toString()->ensureLinear(cx));
-    if (!locale) {
-      return nullptr;
-    }
-
-    if (!intl::ParseLocale(cx, locale, tag)) {
-      return nullptr;
-    }
   }
 
   using mozilla::intl::Collator;
@@ -331,21 +314,7 @@ static mozilla::intl::Collator* NewIntlCollator(
     }
   }
 
-  // |ApplyUnicodeExtensionToTag| applies the new keywords to the front of the
-  // Unicode extension subtag. We're then relying on ICU to follow RFC 6067,
-  // which states that any trailing keywords using the same key should be
-  // ignored.
-  if (!intl::ApplyUnicodeExtensionToTag(cx, tag, keywords)) {
-    return nullptr;
-  }
-
-  intl::FormatBuffer<char> buffer(cx);
-  if (auto result = tag.ToString(buffer); result.isErr()) {
-    intl::ReportInternalError(cx, result.unwrapErr());
-    return nullptr;
-  }
-
-  UniqueChars locale = buffer.extractStringZ();
+  UniqueChars locale = intl::FormatLocale(cx, internals, keywords);
   if (!locale) {
     return nullptr;
   }

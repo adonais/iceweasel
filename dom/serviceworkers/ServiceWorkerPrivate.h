@@ -120,12 +120,10 @@ class ServiceWorkerPrivate final : public RemoteWorkerObserver {
   nsresult SendPushSubscriptionChangeEvent(
       const RefPtr<nsIPushSubscription>& aOldSubscription);
 
-  nsresult SendNotificationClickEvent(const nsAString& aScope,
-                                      const IPCNotification& aNotification,
+  nsresult SendNotificationClickEvent(const IPCNotification& aNotification,
                                       const nsAString& aAction);
 
-  nsresult SendNotificationCloseEvent(const nsAString& aScope,
-                                      const IPCNotification& aNotification);
+  nsresult SendNotificationCloseEvent(const IPCNotification& aNotification);
 
   nsresult SendFetchEvent(nsCOMPtr<nsIInterceptedChannel> aChannel,
                           nsILoadGroup* aLoadGroup, const nsAString& aClientId,

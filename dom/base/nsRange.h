@@ -40,11 +40,6 @@ class TrustedHTMLOrString;
 enum class RangeBehaviour : uint8_t {
   // Keep both ranges
   KeepDefaultRangeAndCrossShadowBoundaryRanges,
-  // Merge both ranges; This is the case where the range boundaries was in
-  // different roots initially, and becoming in the same roots now. Since
-  // they start to be in the same root, using normal range is good enough
-  // to represent it
-  MergeDefaultRangeAndCrossShadowBoundaryRanges,
   // Collapse the default range
   CollapseDefaultRange,
   // Collapse both the default range and the cross-shadow-boundary range
@@ -88,13 +83,14 @@ class nsRange final : public mozilla::dom::AbstractRange,
     return nsRange::Create(aAbstractRange->StartRef(), aAbstractRange->EndRef(),
                            aRv);
   }
-  static already_AddRefed<nsRange> Create(nsINode* aStartContainer,
-                                          uint32_t aStartOffset,
-                                          nsINode* aEndContainer,
-                                          uint32_t aEndOffset,
-                                          ErrorResult& aRv) {
+  static already_AddRefed<nsRange> Create(
+      nsINode* aStartContainer, uint32_t aStartOffset, nsINode* aEndContainer,
+      uint32_t aEndOffset, ErrorResult& aRv,
+      AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary =
+          AllowRangeCrossShadowBoundary::No) {
     return nsRange::Create(RawRangeBoundary(aStartContainer, aStartOffset),
-                           RawRangeBoundary(aEndContainer, aEndOffset), aRv);
+                           RawRangeBoundary(aEndContainer, aEndOffset), aRv,
+                           aAllowCrossShadowBoundary);
   }
   template <typename SPT, typename SRT, typename EPT, typename ERT>
   static already_AddRefed<nsRange> Create(
@@ -334,16 +330,22 @@ class nsRange final : public mozilla::dom::AbstractRange,
       const mozilla::RangeBoundaryBase<EPT, ERT>& aEndBoundary,
       const nsINode* aRootNode, bool aNotInsertedYet = false);
 
+  using ElementHandler = void (*)(mozilla::dom::Element*);
   /**
    * Cut or delete the range's contents.
    *
    * @param aFragment DocumentFragment containing the nodes.
    *                  May be null to indicate the caller doesn't want a
    *                  fragment.
+   * @param aElementHandler If this handler is provided, any element node
+   *                        subtree root fully contained in this range is
+   *                        passed to it, instead of being deleted. Any
+   *                        mutation that trips nsMutationGuard is disallowed.
+   *                        Currently incompatible with non-null aFragment.
    * @param aRv The error if any.
    */
   void CutContents(mozilla::dom::DocumentFragment** aFragment,
-                   ErrorResult& aRv);
+                   ElementHandler aElementHandler, ErrorResult& aRv);
 
   static nsresult CloneParentsBetween(nsINode* aAncestor, nsINode* aNode,
                                       nsINode** aClosestAncestor,
@@ -438,7 +440,6 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
   void ResetCrossShadowBoundaryRange() { mCrossShadowBoundaryRange = nullptr; }
 
-#ifdef DEBUG
   bool CrossShadowBoundaryRangeCollapsed() const {
     MOZ_ASSERT(mCrossShadowBoundaryRange);
 
@@ -448,7 +449,6 @@ class nsRange final : public mozilla::dom::AbstractRange,
             mCrossShadowBoundaryRange->StartOffset() ==
                 mCrossShadowBoundaryRange->EndOffset());
   }
-#endif
 
   /*
    * The methods marked with MayCrossShadowBoundary[..] additionally check for
@@ -506,6 +506,20 @@ class nsRange final : public mozilla::dom::AbstractRange,
     return mCrossShadowBoundaryRange ? mCrossShadowBoundaryRange->EndRef()
                                      : EndRef();
   }
+
+  /**
+   * Suppress rendering of selected nodes for print selection, assuming that
+   * this range represents a part of nodes that are outside of the selection.
+   * For all non-Element nodes, this behaves identically to DeleteContents().
+   * Elements that are wholly contained by this range is instead marked with
+   * state that matches :-moz-suppress-for-print-selection.
+   * This is required to preserve matched style rules using tree-structural
+   * pseudo-classes, as well as any feature that depends on the location of
+   * the style node in the DOM tree (e.g. @scope with implicit scope).
+   *
+   * @param aRv The error, if any.
+   */
+  void SuppressContentsForPrintSelection(ErrorResult& aRv);
 
  protected:
   /**

@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.ui
 
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -22,13 +23,15 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
 class GlobalPrivacyControlTest : TestSetup() {
     private lateinit var gpcPage: TestAsset
 
-    @get:Rule
-    val activityTestRule = HomeActivityIntentTestRule(
-        isWallpaperOnboardingEnabled = false,
-        skipOnboarding = true,
-    )
+    @get:Rule(order = 0)
+    val activityTestRule =
+        AndroidComposeTestRule(
+            HomeActivityIntentTestRule.withDefaultSettingsOverrides(
+                skipOnboarding = true,
+            ),
+        ) { it.activity }
 
-    @get:Rule
+    @get:Rule(order = 1)
     val memoryLeaksRule = DetectMemoryLeaksRule()
 
     @Before

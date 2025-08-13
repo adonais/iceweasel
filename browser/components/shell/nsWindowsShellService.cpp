@@ -814,29 +814,36 @@ nsWindowsShellService::SetDesktopBackgroundColor(uint32_t aColor) {
   return regKey->Close();
 }
 
+enum class ShortcutsLogChange {
+  Add,
+  Remove,
+};
+
 /*
- * Writes information about a shortcut to a shortcuts log in
+ * Updates information about a shortcut to a shortcuts log in
  * %PROGRAMDATA%\Mozilla-1de4eec8-1241-4177-a864-e594e8d1fb38.
  * (This is the same directory used for update staging.)
  * For more on the shortcuts log format and purpose, consult
  * /toolkit/mozapps/installer/windows/nsis/common.nsh.
  *
- * The shortcuts log created or appended here is named after
- * the currently running application and current user SID.
- * For example: Firefox_$SID_shortcuts.ini.
+ * The shortcuts log modified here is named after the currently
+ * running application and current user SID. For example:
+ * Firefox_$SID_shortcuts.ini.
  *
- * If it does not exist, it will be created. If it exists
- * and a matching shortcut named already exists in the file,
- * a new one will not be appended.
+ * A new file will be created when the first shortcut is added.
+ * If a matching shortcut already exists, a new one will not
+ * be appended. The file will not be deleted if the last one is
+ * removed.
  *
  * In an ideal world this function would not need aShortcutsLogDir
  * passed to it, but it is called by at least one function that runs
  * asynchronously, and is therefore unable to use nsDirectoryService
  * to look it up itself.
  */
-static nsresult WriteShortcutToLog(nsIFile* aShortcutsLogDir,
-                                   KNOWNFOLDERID aFolderId,
-                                   const nsAString& aShortcutName) {
+static nsresult UpdateShortcutInLog(nsIFile* aShortcutsLogDir,
+                                    KNOWNFOLDERID aFolderId,
+                                    ShortcutsLogChange aChange,
+                                    const nsAString& aShortcutRelativePath) {
   // the section inside the shortcuts log
   nsAutoCString section;
   // the shortcuts log wants "Programs" shortcuts in its "STARTMENU" section
@@ -870,38 +877,62 @@ static nsresult WriteShortcutToLog(nsIFile* aShortcutsLogDir,
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsINIParser parser;
-  bool fileExists = false;
   bool shortcutsLogEntryExists = false;
-  nsAutoCString keyName, shortcutName;
-  shortcutName = NS_ConvertUTF16toUTF8(aShortcutName);
+  nsAutoCString keyName, shortcutRelativePath, iniShortcut;
 
-  shortcutsLog->IsFile(&fileExists);
-  // if the shortcuts log exists, find either an existing matching
-  // entry, or the next available shortcut index
-  if (fileExists) {
-    rv = parser.Init(shortcutsLog);
-    NS_ENSURE_SUCCESS(rv, rv);
+  shortcutRelativePath = NS_ConvertUTF16toUTF8(aShortcutRelativePath);
 
-    nsCString iniShortcut;
-    // surely we'll never need more than 10 shortcuts in one section...
-    for (int i = 0; i < 10; i++) {
+  // Last key that was valid.
+  nsAutoCString lastValidKey;
+  // Last key where the filename was found.
+  nsAutoCString fileFoundAtKeyName;
+
+  // If the shortcuts log exists, find either an existing matching
+  // entry, or the next available shortcut index.
+  rv = parser.Init(shortcutsLog);
+  if (NS_SUCCEEDED(rv)) {
+    for (int i = 0;; i++) {
       keyName.AssignLiteral("Shortcut");
       keyName.AppendInt(i);
       rv = parser.GetString(section.get(), keyName.get(), iniShortcut);
-      if (NS_FAILED(rv)) {
-        // we found an unused index
-        break;
-      } else if (iniShortcut.Equals(shortcutName)) {
-        shortcutsLogEntryExists = true;
+      if (NS_FAILED(rv) && rv != NS_ERROR_FAILURE) {
+        return rv;
       }
+
+      if (rv == NS_ERROR_FAILURE) {
+        // This is the end of the file (as far as we're concerned.)
+        break;
+      } else if (iniShortcut.Equals(shortcutRelativePath)) {
+        shortcutsLogEntryExists = true;
+        fileFoundAtKeyName = keyName;
+      }
+
+      lastValidKey = keyName;
     }
-    // otherwise, this is safe to use
-  } else {
+  } else if (rv == NS_ERROR_FILE_NOT_FOUND) {
+    // If the file doesn't exist, then start at Shortcut0.
+    // When removing, this does nothing; when adding, this is always
+    // a safe place to start.
     keyName.AssignLiteral("Shortcut0");
+  } else {
+    return rv;
   }
 
-  if (!shortcutsLogEntryExists) {
-    parser.SetString(section.get(), keyName.get(), shortcutName.get());
+  bool changed = false;
+  if (aChange == ShortcutsLogChange::Add && !shortcutsLogEntryExists) {
+    parser.SetString(section.get(), keyName.get(), shortcutRelativePath.get());
+    changed = true;
+  } else if (aChange == ShortcutsLogChange::Remove && shortcutsLogEntryExists) {
+    // Don't just remove it! The first missing index is considered
+    // the end of the log. Instead, move the last one in, then delete
+    // the last one, reducing the total length by one.
+    parser.SetString(section.get(), fileFoundAtKeyName.get(),
+                     iniShortcut.get());
+    parser.DeleteString(section.get(), lastValidKey.get());
+    changed = true;
+  }
+
+  if (changed) {
     // We write this ourselves instead of using parser->WriteToFile because
     // the INI parser in our uninstaller needs to read this, and only supports
     // UTF-16LE encoding. nsINIParser does not support UTF-16.
@@ -981,17 +1012,25 @@ nsresult CreateShellLinkObject(nsIFile* aBinary,
   return NS_OK;
 }
 
-static nsresult CreateShortcutImpl(
-    nsIFile* aBinary, const CopyableTArray<nsString>& aArguments,
-    const nsAString& aDescription, nsIFile* aIconFile, uint16_t aIconIndex,
-    const nsAString& aAppUserModelId, KNOWNFOLDERID aShortcutFolder,
-    const nsAString& aShortcutName, const nsString& aShortcutFile,
-    nsIFile* aShortcutsLogDir) {
+struct ShortcutLocations {
+  KNOWNFOLDERID folderId;
+  nsCOMPtr<nsIFile> shortcutsLogDir;
+  nsCOMPtr<nsIFile> shortcutFile;
+};
+
+static nsresult CreateShortcutImpl(nsIFile* aBinary,
+                                   const CopyableTArray<nsString>& aArguments,
+                                   const nsAString& aDescription,
+                                   nsIFile* aIconFile, uint16_t aIconIndex,
+                                   const nsAString& aAppUserModelId,
+                                   const ShortcutLocations& location,
+                                   const nsAString& aShortcutRelativePath) {
   NS_ENSURE_ARG(aBinary);
   NS_ENSURE_ARG(aIconFile);
 
   nsresult rv =
-      WriteShortcutToLog(aShortcutsLogDir, aShortcutFolder, aShortcutName);
+      UpdateShortcutInLog(location.shortcutsLogDir, location.folderId,
+                          ShortcutsLogChange::Add, aShortcutRelativePath);
   NS_ENSURE_SUCCESS(rv, rv);
 
   RefPtr<IShellLinkW> link;
@@ -1003,18 +1042,64 @@ static nsresult CreateShortcutImpl(
   HRESULT hr = link->QueryInterface(IID_IPersistFile, getter_AddRefs(persist));
   NS_ENSURE_HRESULT(hr, NS_ERROR_FAILURE);
 
-  hr = persist->Save(aShortcutFile.get(), TRUE);
+  hr = persist->Save(location.shortcutFile->NativePath().get(), TRUE);
   NS_ENSURE_HRESULT(hr, NS_ERROR_FAILURE);
 
   return NS_OK;
 }
 
+static Result<ShortcutLocations, nsresult> GetShortcutPaths(
+    const nsAString& aShortcutFolder, const nsAString& aShortcutRelativePath) {
+  KNOWNFOLDERID folderId;
+  if (aShortcutFolder.Equals(L"Programs")) {
+    folderId = FOLDERID_Programs;
+  } else if (aShortcutFolder.Equals(L"Desktop")) {
+    folderId = FOLDERID_Desktop;
+  } else {
+    return Err(NS_ERROR_INVALID_ARG);
+  }
+
+  nsCOMPtr<nsIFile> updRoot, shortcutsLogDir;
+  nsresult nsrv =
+      NS_GetSpecialDirectory(XRE_UPDATE_ROOT_DIR, getter_AddRefs(updRoot));
+  NS_ENSURE_SUCCESS(nsrv, Err(nsrv));
+  nsrv = updRoot->GetParent(getter_AddRefs(shortcutsLogDir));
+  NS_ENSURE_SUCCESS(nsrv, Err(nsrv));
+
+  nsCOMPtr<nsIFile> shortcutFile;
+  if (folderId == FOLDERID_Programs) {
+    nsrv = NS_GetSpecialDirectory(NS_WIN_PROGRAMS_DIR,
+                                  getter_AddRefs(shortcutFile));
+  } else if (folderId == FOLDERID_Desktop) {
+    nsrv =
+        NS_GetSpecialDirectory(NS_OS_DESKTOP_DIR, getter_AddRefs(shortcutFile));
+  } else {
+    return Err(NS_ERROR_FILE_NOT_FOUND);
+  }
+
+  if (NS_FAILED(nsrv)) {
+    return Err(NS_ERROR_FILE_NOT_FOUND);
+  }
+
+  nsrv = shortcutFile->AppendRelativePath(aShortcutRelativePath);
+  NS_ENSURE_SUCCESS(nsrv, Err(nsrv));
+
+  ShortcutLocations result{};
+  result.folderId = folderId;
+  result.shortcutsLogDir = std::move(shortcutsLogDir);
+  result.shortcutFile = std::move(shortcutFile);
+  return result;
+}
+
 NS_IMETHODIMP
-nsWindowsShellService::CreateShortcut(
-    nsIFile* aBinary, const nsTArray<nsString>& aArguments,
-    const nsAString& aDescription, nsIFile* aIconFile, uint16_t aIconIndex,
-    const nsAString& aAppUserModelId, const nsAString& aShortcutFolder,
-    const nsAString& aShortcutName, JSContext* aCx, dom::Promise** aPromise) {
+nsWindowsShellService::CreateShortcut(nsIFile* aBinary,
+                                      const nsTArray<nsString>& aArguments,
+                                      const nsAString& aDescription,
+                                      nsIFile* aIconFile, uint16_t aIconIndex,
+                                      const nsAString& aAppUserModelId,
+                                      const nsAString& aShortcutFolder,
+                                      const nsAString& aShortcutRelativePath,
+                                      JSContext* aCx, dom::Promise** aPromise) {
 #ifndef TT_MEMUTIL
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
@@ -1027,41 +1112,18 @@ nsWindowsShellService::CreateShortcut(
   if (MOZ_UNLIKELY(rv.Failed())) {
     return rv.StealNSResult();
   }
-  // In an ideal world we'd probably send along nsIFile pointers
-  // here, but it's easier to determine the needed shortcuts log
-  // entry with a KNOWNFOLDERID - so we pass this along instead
-  // and let CreateShortcutImpl take care of converting it to
-  // an nsIFile.
-  KNOWNFOLDERID folderId;
-  if (aShortcutFolder.Equals(L"Programs")) {
-    folderId = FOLDERID_Programs;
-  } else if (aShortcutFolder.Equals(L"Desktop")) {
-    folderId = FOLDERID_Desktop;
-  } else {
-    return NS_ERROR_INVALID_ARG;
-  }
 
-  nsCOMPtr<nsIFile> updRoot, shortcutsLogDir;
-  nsresult nsrv =
-      NS_GetSpecialDirectory(XRE_UPDATE_ROOT_DIR, getter_AddRefs(updRoot));
-  NS_ENSURE_SUCCESS(nsrv, nsrv);
-  nsrv = updRoot->GetParent(getter_AddRefs(shortcutsLogDir));
-  NS_ENSURE_SUCCESS(nsrv, nsrv);
+  ShortcutLocations location =
+      MOZ_TRY(GetShortcutPaths(aShortcutFolder, aShortcutRelativePath));
 
-  nsCOMPtr<nsIFile> shortcutFile;
-  if (folderId == FOLDERID_Programs) {
-    nsrv = NS_GetSpecialDirectory(NS_WIN_PROGRAMS_DIR,
-                                  getter_AddRefs(shortcutFile));
-  } else if (folderId == FOLDERID_Desktop) {
-    nsrv =
-        NS_GetSpecialDirectory(NS_OS_DESKTOP_DIR, getter_AddRefs(shortcutFile));
-  } else {
-    return NS_ERROR_FILE_NOT_FOUND;
+  nsCOMPtr<nsIFile> parentDirectory;
+  nsresult nsrv;
+  nsrv = location.shortcutFile->GetParent(getter_AddRefs(parentDirectory));
+  NS_ENSURE_SUCCESS(nsrv, nsrv);
+  nsrv = parentDirectory->Create(nsIFile::DIRECTORY_TYPE, 0755);
+  if (NS_FAILED(nsrv) && nsrv != NS_ERROR_FILE_ALREADY_EXISTS) {
+    return nsrv;
   }
-  if (NS_FAILED(nsrv)) {
-    return NS_ERROR_FILE_NOT_FOUND;
-  }
-  shortcutFile->Append(aShortcutName);
 
   auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
       "CreateShortcut promise", promise);
@@ -1073,18 +1135,19 @@ nsWindowsShellService::CreateShortcut(
           "CreateShortcut",
           [binary, aArguments = CopyableTArray<nsString>(aArguments),
            aDescription = nsString{aDescription}, iconFile, aIconIndex,
-           aAppUserModelId = nsString{aAppUserModelId}, folderId,
+           aAppUserModelId = nsString{aAppUserModelId},
+           location = std::move(location),
            aShortcutFolder = nsString{aShortcutFolder},
-           aShortcutName = nsString{aShortcutName}, shortcutsLogDir,
-           shortcutFile, promiseHolder = std::move(promiseHolder)] {
+           aShortcutRelativePath = nsString{aShortcutRelativePath},
+           promiseHolder = std::move(promiseHolder)] {
             nsresult rv = CreateShortcutImpl(
                 binary.get(), aArguments, aDescription, iconFile.get(),
-                aIconIndex, aAppUserModelId, folderId, aShortcutName,
-                shortcutFile->NativePath(), shortcutsLogDir.get());
+                aIconIndex, aAppUserModelId, location, aShortcutRelativePath);
 
             NS_DispatchToMainThread(NS_NewRunnableFunction(
                 "CreateShortcut callback",
-                [rv, shortcutFile, promiseHolder = std::move(promiseHolder)] {
+                [rv, shortcutFile = location.shortcutFile,
+                 promiseHolder = std::move(promiseHolder)] {
                   dom::Promise* promise = promiseHolder.get()->get();
 
                   if (NS_SUCCEEDED(rv)) {
@@ -1098,6 +1161,69 @@ nsWindowsShellService::CreateShortcut(
 
   promise.forget(aPromise);
 #endif
+  return NS_OK;
+}
+
+static nsresult DeleteShortcutImpl(const ShortcutLocations& aLocation,
+                                   const nsAString& aShortcutRelativePath) {
+  // Do the removal first so an error keeps it in the log.
+  nsresult rv = aLocation.shortcutFile->Remove(false);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = UpdateShortcutInLog(aLocation.shortcutsLogDir, aLocation.folderId,
+                           ShortcutsLogChange::Remove, aShortcutRelativePath);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsWindowsShellService::DeleteShortcut(const nsAString& aShortcutFolder,
+                                      const nsAString& aShortcutRelativePath,
+                                      JSContext* aCx, dom::Promise** aPromise) {
+  if (!NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  ErrorResult rv;
+  RefPtr<dom::Promise> promise =
+      dom::Promise::Create(xpc::CurrentNativeGlobal(aCx), rv);
+
+  if (MOZ_UNLIKELY(rv.Failed())) {
+    return rv.StealNSResult();
+  }
+
+  ShortcutLocations location =
+      MOZ_TRY(GetShortcutPaths(aShortcutFolder, aShortcutRelativePath));
+
+  auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
+      "DeleteShortcut promise", promise);
+
+  NS_DispatchBackgroundTask(
+      NS_NewRunnableFunction(
+          "DeleteShortcut",
+          [aShortcutFolder = nsString{aShortcutFolder},
+           aShortcutRelativePath = nsString{aShortcutRelativePath},
+           location = std::move(location),
+           promiseHolder = std::move(promiseHolder)] {
+            nsresult rv = DeleteShortcutImpl(location, aShortcutRelativePath);
+
+            NS_DispatchToMainThread(NS_NewRunnableFunction(
+                "DeleteShortcut callback",
+                [rv, shortcutFile = location.shortcutFile,
+                 promiseHolder = std::move(promiseHolder)] {
+                  dom::Promise* promise = promiseHolder.get()->get();
+
+                  if (NS_SUCCEEDED(rv)) {
+                    promise->MaybeResolve(shortcutFile->NativePath());
+                  } else {
+                    promise->MaybeReject(rv);
+                  }
+                }));
+          }),
+      NS_DISPATCH_EVENT_MAY_BLOCK);
+
+  promise.forget(aPromise);
   return NS_OK;
 }
 
@@ -1710,10 +1836,10 @@ static nsresult PinShortcutToTaskbarImpl(bool aCheckOnly,
  *        Path for existing shortcuts (e.g., start menu)
  */
 NS_IMETHODIMP
-nsWindowsShellService::PinShortcutToTaskbar(const nsAString& aAppUserModelId,
-                                            const nsAString& aShortcutPath,
-                                            JSContext* aCx,
-                                            dom::Promise** aPromise) {
+nsWindowsShellService::PinShortcutToTaskbar(
+    const nsAString& aAppUserModelId, const nsAString& aShortcutFolder,
+    const nsAString& aShortcutRelativePath, JSContext* aCx,
+    dom::Promise** aPromise) {
   NS_ENSURE_ARG_POINTER(aCx);
   NS_ENSURE_ARG_POINTER(aPromise);
 
@@ -1734,20 +1860,23 @@ nsWindowsShellService::PinShortcutToTaskbar(const nsAString& aAppUserModelId,
     return rv.StealNSResult();
   }
 
+  ShortcutLocations location =
+      MOZ_TRY(GetShortcutPaths(aShortcutFolder, aShortcutRelativePath));
+
   auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
       "pinShortcutToTaskbar promise", promise);
 
   NS_DispatchBackgroundTask(
       NS_NewRunnableFunction(
           "pinShortcutToTaskbar",
-          [aumid = nsString{aAppUserModelId},
-           shortcutPath = nsString(aShortcutPath),
+          [aumid = nsString{aAppUserModelId}, location = std::move(location),
            promiseHolder = std::move(promiseHolder)] {
             nsresult rv = NS_ERROR_FAILURE;
             HRESULT hr = CoInitialize(nullptr);
 
             if (SUCCEEDED(hr)) {
-              rv = PinShortcutToTaskbarImpl(false, aumid, shortcutPath);
+              rv = PinShortcutToTaskbarImpl(
+                  false, aumid, location.shortcutFile->NativePath());
               CoUninitialize();
             }
 
@@ -1771,174 +1900,15 @@ nsWindowsShellService::PinShortcutToTaskbar(const nsAString& aAppUserModelId,
 
 NS_IMETHODIMP
 nsWindowsShellService::UnpinShortcutFromTaskbar(
-    const nsAString& aShortcutPath) {
+    const nsAString& aShortcutFolder, const nsAString& aShortcutRelativePath) {
   const bool pinType = false;  // false means unpin
   const bool runInTestMode = false;
-  return ManageShortcutTaskbarPins(runInTestMode, pinType, aShortcutPath);
-}
 
-// Ensure that the supplied name doesn't have invalid characters.
-static void ValidateFilename(nsAString& aFilename) {
-  nsCOMPtr<nsIMIMEService> mimeService = do_GetService("@mozilla.org/mime;1");
-  if (NS_WARN_IF(!mimeService)) {
-    aFilename.Truncate();
-    return;
-  }
+  ShortcutLocations location =
+      MOZ_TRY(GetShortcutPaths(aShortcutFolder, aShortcutRelativePath));
 
-  uint32_t flags = nsIMIMEService::VALIDATE_SANITIZE_ONLY |
-                   nsIMIMEService::VALIDATE_DONT_COLLAPSE_WHITESPACE;
-
-  nsAutoString outFilename;
-  mimeService->ValidateFileNameForSaving(aFilename, EmptyCString(), flags,
-                                         outFilename);
-  aFilename = outFilename;
-}
-
-NS_IMETHODIMP
-nsWindowsShellService::GetTaskbarTabShortcutPath(const nsAString& aShortcutName,
-                                                 nsAString& aRetPath) {
-  nsAutoString sanitizedShortcutName(aShortcutName);
-  ValidateFilename(sanitizedShortcutName);
-  if (sanitizedShortcutName != aShortcutName) {
-    return NS_ERROR_FILE_INVALID_PATH;
-  }
-
-  // The taskbar tab shortcut will always be in
-  // %APPDATA%\Microsoft\Windows\Start Menu\Programs
-  RefPtr<IKnownFolderManager> fManager;
-  RefPtr<IKnownFolder> progFolder;
-  LPWSTR progFolderW;
-  nsString progFolderNS;
-  HRESULT hr =
-      CoCreateInstance(CLSID_KnownFolderManager, nullptr, CLSCTX_INPROC_SERVER,
-                       IID_IKnownFolderManager, getter_AddRefs(fManager));
-  if (NS_WARN_IF(FAILED(hr))) {
-    return NS_ERROR_ABORT;
-  }
-  fManager->GetFolder(FOLDERID_Programs, progFolder.StartAssignment());
-  hr = progFolder->GetPath(0, &progFolderW);
-  if (FAILED(hr)) {
-    return NS_ERROR_FILE_NOT_FOUND;
-  }
-  progFolderNS.Assign(progFolderW);
-  aRetPath = progFolderNS + u"\\"_ns + aShortcutName + u".lnk"_ns;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWindowsShellService::GetTaskbarTabPins(nsTArray<nsString>& aShortcutPaths) {
-#ifdef __MINGW32__
-  return NS_ERROR_NOT_IMPLEMENTED;
-#else
-  aShortcutPaths.Clear();
-
-  // Get AppData\\Roaming folder using a known folder ID
-  RefPtr<IKnownFolderManager> fManager;
-  RefPtr<IKnownFolder> roamingAppData;
-  LPWSTR roamingAppDataW;
-  nsString roamingAppDataNS;
-  HRESULT hr =
-      CoCreateInstance(CLSID_KnownFolderManager, nullptr, CLSCTX_INPROC_SERVER,
-                       IID_IKnownFolderManager, getter_AddRefs(fManager));
-  if (NS_WARN_IF(FAILED(hr))) {
-    return NS_ERROR_ABORT;
-  }
-  fManager->GetFolder(FOLDERID_RoamingAppData,
-                      roamingAppData.StartAssignment());
-  hr = roamingAppData->GetPath(0, &roamingAppDataW);
-  if (FAILED(hr)) {
-    return NS_ERROR_FILE_NOT_FOUND;
-  }
-
-  // Append taskbar pins folder to AppData\\Roaming
-  roamingAppDataNS.Assign(roamingAppDataW);
-  CoTaskMemFree(roamingAppDataW);
-  nsString taskbarFolder =
-      roamingAppDataNS + u"\\Microsoft\\Windows\\Start Menu\\Programs"_ns;
-  nsString taskbarFolderWildcard = taskbarFolder + u"\\*.lnk"_ns;
-
-  // Get known path for binary file for later comparison with shortcuts.
-  // Returns lowercase file path which should be fine for Windows as all
-  // directories and files are case-insensitive by default.
-  RefPtr<nsIFile> binFile;
-  nsString binPath;
-  nsresult rv = XRE_GetBinaryPath(binFile.StartAssignment());
-  if (NS_WARN_IF(FAILED(rv))) {
-    return NS_ERROR_FAILURE;
-  }
-  rv = binFile->GetPath(binPath);
-  if (NS_WARN_IF(FAILED(rv))) {
-    return NS_ERROR_FILE_UNRECOGNIZED_PATH;
-  }
-
-  // Check for if first file exists with a shortcut extension (.lnk)
-  WIN32_FIND_DATAW ffd;
-  HANDLE fileHandle = INVALID_HANDLE_VALUE;
-  fileHandle = FindFirstFileW(taskbarFolderWildcard.get(), &ffd);
-  if (fileHandle == INVALID_HANDLE_VALUE) {
-    // This means that no files were found in the folder which
-    // doesn't imply an error.
-    return NS_OK;
-  }
-
-  do {
-    // Extract shortcut target path from every
-    // shortcut in the taskbar pins folder.
-    nsString fileName(ffd.cFileName);
-    RefPtr<IShellLinkW> link;
-    RefPtr<IPropertyStore> pps;
-    nsString target;
-    target.SetLength(MAX_PATH);
-    hr = CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER,
-                          IID_IShellLinkW, getter_AddRefs(link));
-    if (NS_WARN_IF(FAILED(hr))) {
-      continue;
-    }
-    nsString filePath = taskbarFolder + u"\\"_ns + fileName;
-    if (NS_WARN_IF(FAILED(hr))) {
-      continue;
-    }
-
-    // After loading shortcut, search through arguments to find if
-    // it is a taskbar tab shortcut.
-    hr = SHGetPropertyStoreFromParsingName(filePath.get(), nullptr,
-                                           GPS_READWRITE, IID_IPropertyStore,
-                                           getter_AddRefs(pps));
-    if (NS_WARN_IF(FAILED(hr)) || pps == nullptr) {
-      continue;
-    }
-    PROPVARIANT propVar;
-    PropVariantInit(&propVar);
-    auto cleanupPropVariant =
-        MakeScopeExit([&] { PropVariantClear(&propVar); });
-    // Get the PKEY_Link_Arguments property
-    hr = pps->GetValue(PKEY_Link_Arguments, &propVar);
-    if (NS_WARN_IF(FAILED(hr))) {
-      continue;
-    }
-    // Check if the argument matches
-    if (!(propVar.vt == VT_LPWSTR && propVar.pwszVal != nullptr &&
-          wcsstr(propVar.pwszVal, L"-taskbar-tab") != nullptr)) {
-      continue;
-    }
-
-    hr = link->GetPath(target.get(), MAX_PATH, nullptr, 0);
-    if (NS_WARN_IF(FAILED(hr))) {
-      continue;
-    }
-
-    // If shortcut target matches known binary file value
-    // then add the path to the shortcut as a valid
-    // shortcut. This has to be a substring search as
-    // the user could have added unknown command line arguments
-    // to the shortcut.
-    if (_wcsnicmp(target.get(), binPath.get(), binPath.Length()) == 0) {
-      aShortcutPaths.AppendElement(filePath);
-    }
-  } while (FindNextFile(fileHandle, &ffd) != 0);
-  FindClose(fileHandle);
-  return NS_OK;
-#endif
+  return ManageShortcutTaskbarPins(runInTestMode, pinType,
+                                   location.shortcutFile->NativePath());
 }
 
 static nsresult PinCurrentAppToTaskbarWin10(bool aCheckOnly,
@@ -2039,7 +2009,7 @@ static bool PollAppsFolderForShortcut(const nsAString& aAppUserModelId,
 static nsresult PinCurrentAppToTaskbarImpl(
     bool aCheckOnly, bool aPrivateBrowsing, const nsAString& aAppUserModelId,
     const nsAString& aShortcutName, const nsAString& aShortcutSubstring,
-    nsIFile* aShortcutsLogDir, nsIFile* aGreDir, nsIFile* aProgramsDir) {
+    nsIFile* aGreDir, const ShortcutLocations& location) {
   MOZ_DIAGNOSTIC_ASSERT(
       !NS_IsMainThread(),
       "PinCurrentAppToTaskbarImpl should be called off main thread only");
@@ -2079,17 +2049,12 @@ static nsresult PinCurrentAppToTaskbarImpl(
       }
     }
 
-    nsCOMPtr<nsIFile> shortcutFile(aProgramsDir);
-    shortcutFile->Append(aShortcutName);
-    shortcutPath.Assign(shortcutFile->NativePath());
-
     nsTArray<nsString> arguments;
     rv = CreateShortcutImpl(exeFile, arguments, aShortcutName, exeFile,
                             // Icon indexes are defined as Resource IDs, but
                             // CreateShortcutImpl needs an index.
-                            IDI_APPICON - 1, aAppUserModelId, FOLDERID_Programs,
-                            linkName, shortcutFile->NativePath(),
-                            aShortcutsLogDir);
+                            IDI_APPICON - 1, aAppUserModelId, location,
+                            linkName);
     if (!NS_SUCCEEDED(rv)) {
       return NS_ERROR_FILE_NOT_FOUND;
     }
@@ -2153,15 +2118,12 @@ static nsresult PinCurrentAppToTaskbarAsyncImpl(bool aCheckOnly,
     shortcutName.AppendLiteral(MOZ_APP_DISPLAYNAME ".lnk");
   }
 
-  nsCOMPtr<nsIFile> greDir, updRoot, programsDir, shortcutsLogDir;
+  nsCOMPtr<nsIFile> greDir;
   nsresult nsrv = NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(greDir));
   NS_ENSURE_SUCCESS(nsrv, nsrv);
-  nsrv = NS_GetSpecialDirectory(XRE_UPDATE_ROOT_DIR, getter_AddRefs(updRoot));
-  NS_ENSURE_SUCCESS(nsrv, nsrv);
-  rv = NS_GetSpecialDirectory(NS_WIN_PROGRAMS_DIR, getter_AddRefs(programsDir));
-  NS_ENSURE_SUCCESS(nsrv, nsrv);
-  nsrv = updRoot->GetParent(getter_AddRefs(shortcutsLogDir));
-  NS_ENSURE_SUCCESS(nsrv, nsrv);
+
+  ShortcutLocations location =
+      MOZ_TRY(GetShortcutPaths(nsString(L"Programs"), shortcutName));
 
   auto promiseHolder = MakeRefPtr<nsMainThreadPtrHolder<dom::Promise>>(
       "CheckPinCurrentAppToTaskbarAsync promise", promise);
@@ -2170,7 +2132,7 @@ static nsresult PinCurrentAppToTaskbarAsyncImpl(bool aCheckOnly,
       NS_NewRunnableFunction(
           "CheckPinCurrentAppToTaskbarAsync",
           [aCheckOnly, aPrivateBrowsing, shortcutName, aumid = nsString{aumid},
-           shortcutsLogDir, greDir, programsDir,
+           greDir, location = std::move(location),
            promiseHolder = std::move(promiseHolder)] {
             nsresult rv = NS_ERROR_FAILURE;
             HRESULT hr = CoInitialize(nullptr);
@@ -2180,8 +2142,7 @@ static nsresult PinCurrentAppToTaskbarAsyncImpl(bool aCheckOnly,
               shortcutSubstring.AssignLiteral(MOZ_APP_DISPLAYNAME);
               rv = PinCurrentAppToTaskbarImpl(
                   aCheckOnly, aPrivateBrowsing, aumid, shortcutName,
-                  shortcutSubstring, shortcutsLogDir.get(), greDir.get(),
-                  programsDir.get());
+                  shortcutSubstring, greDir.get(), location);
               CoUninitialize();
             }
 

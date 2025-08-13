@@ -8,6 +8,9 @@
 newtab-page-title = New Tab
 newtab-settings-button =
     .title = Customize your New Tab page
+newtab-customize-panel-icon-button =
+    .title = Customize this page
+newtab-customize-panel-icon-button-label = Customize
 newtab-personalize-settings-icon-label =
     .title = Personalize New Tab
     .aria-label = Settings
@@ -130,6 +133,7 @@ newtab-menu-section-unfollow = Unfollow topic
 
 newtab-menu-manage-sponsored-content = Manage sponsored content
 newtab-menu-our-sponsors-and-your-privacy = Our sponsors and your privacy
+newtab-menu-report-this-ad = Report this ad
 
 ## Message displayed in a modal window to explain privacy and provide context for sponsored content.
 
@@ -191,6 +195,8 @@ newtab-label-sponsored-by = Sponsored by { $sponsor }
 #   $source (string) - The name of a company or their domain
 #   $timeToRead (number) - The estimated number of minutes to read this story
 newtab-label-source-read-time = { $source } · { $timeToRead } min
+# This string is used under fixed size ads to indicate sponsored content
+newtab-label-sponsored-fixed = Sponsored
 
 ## Section Menu: These strings are displayed in the section context menu and are
 ## meant as a call to action for the given section.
@@ -312,6 +318,9 @@ newtab-custom-recent-toggle =
 newtab-custom-weather-toggle =
     .label = Weather
     .description = Today’s forecast at a glance
+newtab-custom-trending-search-toggle =
+    .label = Trending searches
+    .description = Popular and frequently searched topics
 newtab-custom-close-button = Close
 newtab-custom-settings = Manage more settings
 
@@ -495,6 +504,9 @@ newtab-topic-selection-button-pick-interests = Pick your interests
 newtab-section-follow-button = Follow
 newtab-section-following-button = Following
 newtab-section-unfollow-button = Unfollow
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Fine-tune your feed
+newtab-section-follow-highlight-subtitle = Follow your interests to see more of what you like.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -522,12 +534,58 @@ newtab-section-mangage-topics-followed-topics = Followed
 newtab-section-mangage-topics-followed-topics-empty-state = You have not followed any topics yet.
 newtab-section-mangage-topics-blocked-topics = Blocked
 newtab-section-mangage-topics-blocked-topics-empty-state = You have not blocked any topics yet.
+newtab-custom-wallpaper-title = Custom wallpapers are here
+# 'Make firefox yours" means to customize or personalize
+newtab-custom-wallpaper-subtitle = Upload your own wallpaper or pick a custom colour to make { -brand-product-name } yours.
+newtab-custom-wallpaper-cta = Try it
 
 ## Strings for download mobile highlight
 
+newtab-download-mobile-highlight-title = Download { -brand-product-name } for mobile
+# "Scan the code" refers to scanning the QR code that appears above the body text that leads to Firefox for mobile download.
+newtab-download-mobile-highlight-body-variant-a = Scan the code to securely browse on the go.
+newtab-download-mobile-highlight-body-variant-b = Pick up where you left off when you sync your tabs, passwords, and more.
+newtab-download-mobile-highlight-body-variant-c = Did you know you can take { -brand-product-name } on the go? Same browser. In your pocket.
+newtab-download-mobile-highlight-image =
+    .aria-label = QR code to download { -brand-product-name } for mobile
+
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Your favourites at your fingertips
+newtab-shortcuts-highlight-subtitle = Add a shortcut to keep your favourite sites one click away.
 
 ## Strings for reporting ads and content
 
+newtab-report-content-why-reporting-this =
+    .label = Why are you reporting this?
+newtab-report-ads-reason-not-interested =
+    .label = I’m not interested
+newtab-report-ads-reason-inappropriate =
+    .label = It’s inappropriate
+newtab-report-ads-reason-seen-it-too-many-times =
+    .label = I’ve seen it too many times
+newtab-report-content-wrong-category =
+    .label = Wrong category
+newtab-report-content-outdated =
+    .label = Outdated
+newtab-report-content-inappropriate-offensive =
+    .label = Inappropriate or offensive
+newtab-report-content-spam-misleading =
+    .label = Spam or misleading
+newtab-report-cancel = Cancel
+newtab-report-submit = Submit
+newtab-toast-thanks-for-reporting =
+    .message = Thank you for reporting this.
 
 ## Strings for trending searches
 
+# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
+newtab-trending-searches-trending-on-google = Trending on Google
+newtab-trending-searches-show-trending =
+    .title = Show trending searches
+newtab-trending-searches-hide-trending =
+    .title = Hide trending searches
+newtab-trending-searches-learn-more = Learn more
+newtab-trending-searches-dismiss = Hide trending searches
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Trending searches

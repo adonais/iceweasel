@@ -22,5 +22,14 @@
   <button id="b1" disabled>button[disabled]</button>
   <p id="p3" class="c2"><strong>p&gt;strong</strong></p>
 
+  <!-- Check that matches inside the node and its text node for inlineTextNode only report a single match -->
+  <section data-search="yo">yo yo yo</section>
+  <!-- if the text node has more than 50 chars (see WalkerActor DEFAULT_VALUE_SUMMARY_LENGTH)
+       it's text child won't be inlined -->
+  <section data-search="blah">
+    blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah blah
+  </section>
+</body>
+
 </body>
 </html>

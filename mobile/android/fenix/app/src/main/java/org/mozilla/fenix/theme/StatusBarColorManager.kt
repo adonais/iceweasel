@@ -10,7 +10,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.navigation.fragment.NavHostFragment
 import org.mozilla.fenix.browser.BrowserFragment
-import org.mozilla.fenix.browser.tabstrip.isTabStripEnabled
 import org.mozilla.fenix.customtabs.ExternalAppBrowserFragment
 import org.mozilla.fenix.home.HomeFragment
 import org.mozilla.fenix.search.SearchDialogFragment
@@ -20,13 +19,13 @@ import org.mozilla.fenix.search.SearchDialogFragment
  *
  * @param themeManager The [ThemeManager] to use for setting the status bar color.
  * @param activity The [Activity] to set the status bar color on.
+ * @param isTabStripEnabled Whether or not tab strip is enabled.
  */
 class StatusBarColorManager(
     private val themeManager: ThemeManager,
     private val activity: Activity,
+    private val isTabStripEnabled: Boolean,
 ) : FragmentManager.FragmentLifecycleCallbacks() {
-
-    private val isTabStripEnabled = activity.isTabStripEnabled()
 
     override fun onFragmentResumed(fragmentManager: FragmentManager, fragment: Fragment) {
         if (fragment is NavHostFragment ||

@@ -9,14 +9,13 @@
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/Document.h"
-
-#include "nsContentUtils.h"
-#include "nsPageFrame.h"
 #include "nsCSSFrameConstructor.h"
-#include "nsPresContext.h"
+#include "nsContentUtils.h"
 #include "nsGkAtoms.h"
 #include "nsLayoutUtils.h"
+#include "nsPageFrame.h"
 #include "nsPageSequenceFrame.h"
+#include "nsPresContext.h"
 
 using namespace mozilla;
 

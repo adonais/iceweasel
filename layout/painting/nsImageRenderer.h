@@ -7,10 +7,10 @@
 #ifndef nsImageRenderer_h__
 #define nsImageRenderer_h__
 
-#include "nsStyleStruct.h"
 #include "Units.h"
 #include "mozilla/AspectRatio.h"
 #include "mozilla/SurfaceFromElementResult.h"
+#include "nsStyleStruct.h"
 
 class gfxDrawable;
 

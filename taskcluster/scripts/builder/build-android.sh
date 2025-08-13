@@ -28,6 +28,9 @@ export MOZ_OBJDIR=/builds/worker/workspace/obj-build
 
 ./mach configure
 
+# Partial build ensures that `moz.build` generated code is in place.
+./mach build pre-export export -v
+
 eval $PRE_GRADLEW
 
 eval $GET_SECRETS

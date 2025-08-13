@@ -180,7 +180,7 @@ class NodeActor extends Actor {
   // Returns the JSON representation of this object over the wire.
   form() {
     const parentNode = this.walker.parentNode(this);
-    const inlineTextChild = this.walker.inlineTextChild(this);
+    const inlineTextChild = this.walker.inlineTextChild(this.rawNode);
     const shadowRoot = isShadowRoot(this.rawNode);
     const hostActor = shadowRoot
       ? this.walker.getNode(this.rawNode.host)

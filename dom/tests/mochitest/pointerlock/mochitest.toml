@@ -9,11 +9,6 @@ support-files = [
 
 ["test_pointerlock-api.html"]
 tags = "fullscreen"
-skip-if = [
-  "os == 'android'", # Bug 1612553
-  "display == 'wayland' && os_version == '22.04'", # Bug 1857057
-  "!debug && !asan && !tsan && !ccov", # Bug 1833142
-]
 support-files = [
   "file_pointerlock-api.html",
   "file_pointerlock-api-with-shadow.html",
@@ -34,6 +29,12 @@ support-files = [
   "file_locksvgelement.html",
   "file_allowPointerLockSandboxFlag.html",
   "file_changeLockElement.html",
+]
+skip-if = [
+  "!debug && !asan && !tsan && !ccov", # Bug 1833142
+  "display == 'wayland' && os_version == '22.04'", # Bug 1857057
+  "os == 'android'", # Bug 1612553
+  "os == 'mac' && os_version == '14.70' && processor == 'x86_64' && debug", # Bug 1886190
 ]
 
 ["test_pointerlock_focus.html"]

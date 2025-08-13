@@ -10,7 +10,10 @@ add_setup(async function () {
       ["signon.rememberSignons", true],
     ],
   });
-  registerCleanupFunction(LoginTestUtils.clearData);
+  registerCleanupFunction(() => {
+    LoginTestUtils.clearData();
+    Services.prefs.clearUserPref("sidebar.new-sidebar.has-used");
+  });
 });
 
 add_task(async function test_update_login_success() {
@@ -149,7 +152,7 @@ add_task(async function test_update_login_discard_changes() {
   );
 
   info("Cancelling form.");
-  const loginForm = megalist.querySelector("login-form");
+  let loginForm = megalist.querySelector("login-form");
 
   // Only show the discard changes notification if the login form has been modified.
   setInputValue(loginForm, "login-username-field", login.username + "added");
@@ -204,6 +207,10 @@ add_task(async function test_update_login_discard_changes() {
     () => megalist.querySelector("login-form"),
     "Login form failed to render"
   );
+
+  loginForm = megalist.querySelector("login-form");
+  setInputValue(loginForm, "login-username-field", login.username + "added");
+
   SidebarController.hide();
   notifMsgBar = await checkNotificationAndTelemetry(
     megalist,
@@ -264,7 +271,6 @@ add_task(async function test_update_login_without_changes() {
   await checkAllLoginsRendered(megalist);
   ok(true, "List view of logins is shown again");
 
-  /* TODO: Fix this in Bug 1946726
   info("Try closing sidebar while editing a login");
   await waitForReauth(() => passwordCard.editBtn.click());
   await BrowserTestUtils.waitForCondition(
@@ -277,22 +283,23 @@ add_task(async function test_update_login_without_changes() {
     return !SidebarController.isOpen;
   }, "Sidebar did not close.");
   ok(!SidebarController.isOpen, "Sidebar closed");
-  */
 
   LoginTestUtils.clearData();
 });
 
 add_task(async function test_update_login_username_notification() {
-  const canTestOSAuth = await resetTelemetryIfKeyStoreTestable();
-  if (!canTestOSAuth) {
+  if (!OSKeyStoreTestUtils.canTestOSKeyStoreLogin()) {
+    ok(true, "Cannot test OSAuth.");
     return;
   }
+
+  SidebarController.hide();
 
   info("Add login with no username");
   const login = LoginTestUtils.testData.formLogin({
     username: "",
     password: "pass1",
-    origin: "https://example1.com",
+    origin: "https://blahblah.com",
   });
   await LoginTestUtils.addLogin(login);
 

@@ -8,7 +8,9 @@ import android.content.Context
 import android.os.Parcelable
 import android.util.AttributeSet
 import android.util.JsonReader
+import androidx.annotation.OptIn
 import androidx.annotation.VisibleForTesting
+import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.browser.engine.fission.GeckoWebContentIsolationMapper.intoWebContentIsolationStrategy
 import mozilla.components.browser.engine.gecko.activity.GeckoActivityDelegate
 import mozilla.components.browser.engine.gecko.activity.GeckoScreenOrientationDelegate
@@ -79,6 +81,7 @@ import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.ContentBlocking
 import org.mozilla.geckoview.ContentBlockingController
 import org.mozilla.geckoview.ContentBlockingController.Event
+import org.mozilla.geckoview.ExperimentalGeckoViewApi
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoRuntimeSettings
@@ -390,18 +393,17 @@ class GeckoEngine(
             }
 
             override fun onUpdatePrompt(
-                current: org.mozilla.geckoview.WebExtension,
-                updated: org.mozilla.geckoview.WebExtension,
+                extension: org.mozilla.geckoview.WebExtension,
                 newPermissions: Array<out String>,
                 newOrigins: Array<out String>,
+                newDataCollectionPermissions: Array<out String>,
             ): GeckoResult<AllowOrDeny>? {
                 val result = GeckoResult<AllowOrDeny>()
                 webExtensionDelegate.onUpdatePermissionRequest(
-                    GeckoWebExtension(current, runtime),
-                    GeckoWebExtension(updated, runtime),
-                    // We pass both permissions and origins as a single list of
-                    // permissions to be shown to the user.
-                    newPermissions.toList() + newOrigins.toList(),
+                    GeckoWebExtension(extension, runtime),
+                    newPermissions.toList(),
+                    newOrigins.toList(),
+                    newDataCollectionPermissions.toList(),
                 ) { allow ->
                     if (allow) result.complete(AllowOrDeny.ALLOW) else result.complete(AllowOrDeny.DENY)
                 }
@@ -412,12 +414,14 @@ class GeckoEngine(
                 extension: org.mozilla.geckoview.WebExtension,
                 permissions: Array<out String>,
                 origins: Array<out String>,
+                dataCollectionPermissions: Array<out String>,
             ): GeckoResult<AllowOrDeny>? {
                 val result = GeckoResult<AllowOrDeny>()
                 webExtensionDelegate.onOptionalPermissionsRequest(
                     GeckoWebExtension(extension, runtime),
                     permissions.toList(),
                     origins.toList(),
+                    dataCollectionPermissions.toList(),
                 ) { allow ->
                     if (allow) result.complete(AllowOrDeny.ALLOW) else result.complete(AllowOrDeny.DENY)
                 }
@@ -969,6 +973,8 @@ class GeckoEngine(
     /**
      * See [Engine.getBrowserPref].
      */
+    @ExperimentalAndroidComponentsApi
+    @OptIn(ExperimentalGeckoViewApi::class)
     override fun getBrowserPref(
         pref: String,
         onSuccess: (BrowserPreference<*>) -> Unit,
@@ -995,6 +1001,7 @@ class GeckoEngine(
     /**
      * See [Engine.setBrowserPref].
      */
+    @ExperimentalAndroidComponentsApi
     override fun setBrowserPref(
         pref: String,
         value: String,
@@ -1017,6 +1024,7 @@ class GeckoEngine(
     /**
      * See [Engine.setBrowserPref].
      */
+    @ExperimentalAndroidComponentsApi
     override fun setBrowserPref(
         pref: String,
         value: Int,
@@ -1039,6 +1047,7 @@ class GeckoEngine(
     /**
      * See [Engine.setBrowserPref].
      */
+    @ExperimentalAndroidComponentsApi
     override fun setBrowserPref(
         pref: String,
         value: Boolean,
@@ -1061,6 +1070,7 @@ class GeckoEngine(
     /**
      * See [Engine.clearBrowserUserPref].
      */
+    @ExperimentalAndroidComponentsApi
     override fun clearBrowserUserPref(
         pref: String,
         onSuccess: () -> Unit,
@@ -1151,6 +1161,18 @@ class GeckoEngine(
 
                         if (cookiePurging != value.cookiePurging) {
                             setCookiePurging(value.cookiePurging)
+                        }
+
+                        if (getBounceTrackingProtectionMode() != policy.bounceTrackingProtectionMode.mode) {
+                            setBounceTrackingProtectionMode(policy.bounceTrackingProtectionMode.mode)
+                        }
+
+                        if (allowListBaselineTrackingProtection != value.allowListBaselineTrackingProtection) {
+                            setAllowListBaselineTrackingProtection(value.allowListBaselineTrackingProtection)
+                        }
+
+                        if (allowListConvenienceTrackingProtection != value.allowListConvenienceTrackingProtection) {
+                            setAllowListConvenienceTrackingProtection(value.allowListConvenienceTrackingProtection)
                         }
                     }
 

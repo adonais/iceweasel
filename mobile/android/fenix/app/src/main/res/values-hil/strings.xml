@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Pribado %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -110,7 +110,7 @@
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Ambit</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">Mag save</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">Mag save</string>
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->

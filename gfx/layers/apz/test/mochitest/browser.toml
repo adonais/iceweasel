@@ -56,9 +56,7 @@ run-if = ["os != 'mac'"] # On Mac popup windows having no remote content doesn't
 
 ["browser_test_position_sticky.js"]
 support-files = ["helper_position_sticky_flicker.html"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && a11y_checks", # bug 1924676
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && a11y_checks"] # bug 1924676
 
 ["browser_test_reset_scaling_zoom.js"]
 support-files = ["helper_test_reset_scaling_zoom.html"]
@@ -67,7 +65,6 @@ support-files = ["helper_test_reset_scaling_zoom.html"]
 support-files = ["helper_scroll_thumb_dragging.html"]
 
 ["browser_test_scrollbar_in_extension_popup_window.js"]
-skip-if = ["verify"]
 
 ["browser_test_scrolling_in_extension_popup_window.js"]
 

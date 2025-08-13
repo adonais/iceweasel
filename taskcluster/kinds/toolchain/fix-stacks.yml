@@ -6,7 +6,7 @@ task-defaults:
     description: "fix-stacks toolchain build"
     attributes:
         local-toolchain: true
-    worker-type: b-linux-gcp
+    worker-type: b-linux-amd
     worker:
         max-run-time: 1800
     run:
@@ -26,6 +26,17 @@ linux64-fix-stacks:
             - linux64-clang-toolchain
             - linux64-rust-toolchain
             - sysroot-x86_64-linux-gnu
+
+linux64-aarch64-fix-stacks:
+    treeherder:
+        symbol: TLA64(fix-stacks)
+    run:
+        arguments: ['aarch64-unknown-linux-gnu']
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-toolchain
+            - sysroot-aarch64-linux-gnu
 
 macosx64-fix-stacks:
     treeherder:

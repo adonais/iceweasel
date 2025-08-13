@@ -8,10 +8,10 @@
 #define mozilla_ShadowParts_h
 
 #include "nsAtomHashKeys.h"
-#include "nsTHashtable.h"
 #include "nsClassHashtable.h"
 #include "nsRefPtrHashtable.h"
 #include "nsStringFwd.h"
+#include "nsTHashtable.h"
 
 namespace mozilla {
 

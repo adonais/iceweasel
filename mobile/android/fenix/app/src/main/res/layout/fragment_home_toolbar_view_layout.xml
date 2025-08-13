@@ -35,7 +35,7 @@
         android:layout_height="40dp"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="0dp"
-        android:background="@drawable/home_search_background"
+        android:background="@drawable/search_url_background"
         android:clickable="true"
         android:contentDescription="@string/search_hint"
         android:focusable="true"

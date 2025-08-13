@@ -48,8 +48,7 @@ import mozilla.components.service.sync.logins.SyncableLoginsStorage
 import mozilla.components.support.utils.RunWhenReadyQueue
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.Config
-import org.mozilla.fenix.FeatureFlags
-import org.mozilla.fenix.GleanMetrics.Metrics.clientAssociation
+import org.mozilla.fenix.GleanMetrics.ClientAssociation
 import org.mozilla.fenix.GleanMetrics.Pings.fxAccounts
 import org.mozilla.fenix.GleanMetrics.SyncAuth
 import org.mozilla.fenix.R
@@ -60,6 +59,7 @@ import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.perf.StrictModeManager
 import org.mozilla.fenix.perf.lazyMonitored
 import org.mozilla.fenix.sync.SyncedTabsIntegration
+import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.getUndoDelay
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -78,6 +78,7 @@ private val DEFAULT_SYNCED_TABS_COMMANDS_EXTRA_FLUSH_DELAY = 5.seconds
 class BackgroundServices(
     private val context: Context,
     private val push: Push,
+    settings: Settings,
     crashReporter: CrashReporter,
     historyStorage: Lazy<PlacesHistoryStorage>,
     bookmarkStorage: Lazy<PlacesBookmarksStorage>,
@@ -124,7 +125,7 @@ class BackgroundServices(
             SyncEngine.Passwords,
             SyncEngine.Tabs,
             SyncEngine.CreditCards,
-            if (FeatureFlags.SYNC_ADDRESSES_FEATURE) SyncEngine.Addresses else null,
+            if (settings.isAddressSyncEnabled) SyncEngine.Addresses else null,
         )
     private val syncConfig =
         SyncConfig(supportedEngines, PeriodicSyncConfig(periodMinutes = 240)) // four hours
@@ -146,7 +147,7 @@ class BackgroundServices(
             storePair = SyncEngine.CreditCards to creditCardsStorage,
             keyProvider = lazy { creditCardKeyProvider },
         )
-        if (FeatureFlags.SYNC_ADDRESSES_FEATURE) {
+        if (settings.isAddressSyncEnabled) {
             GlobalSyncableStoreProvider.configureStore(SyncEngine.Addresses to creditCardsStorage)
         }
     }
@@ -273,7 +274,7 @@ internal class TelemetryMiddleware : Middleware<SyncState, SyncAction> {
         next(action)
         val accountUid = context.store.state.account?.uid
         if (prevState.account?.uid != accountUid && accountUid != null) {
-            clientAssociation.set(accountUid)
+            ClientAssociation.uid.set(accountUid)
             fxAccounts.submit()
         }
     }

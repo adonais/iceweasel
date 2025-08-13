@@ -61,7 +61,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_dbg-outline-focus.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-skip-if = ["verify"]
 
 ["browser_dbg-outline-pretty.js"]
 
@@ -159,9 +158,7 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 
 ["browser_dbg-quick-open.js"]
-skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1721999
-]
+skip-if = ["os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan"] # Bug 1721999
 
 ["browser_dbg-react-app.js"]
 
@@ -244,7 +241,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_dbg-sourcemaps-ignorelist.js"]
 
 ["browser_dbg-sourcemaps-indexed.js"]
-skip-if = ["verify"] # Bug 1434792
 
 ["browser_dbg-sourcemaps-redirect.js"]
 

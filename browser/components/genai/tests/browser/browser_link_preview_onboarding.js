@@ -248,3 +248,51 @@ add_task(async function test_onboarding_times_set_on_preview_usage() {
   LinkPreview.keyboardComboActive = false;
   Services.prefs.clearUserPref("browser.ml.linkPreview.onboardingTimes");
 });
+
+/**
+ * Tests that canShowPreferences is true after the feature has been used,
+ * even if it's subsequently disabled.
+ */
+add_task(async function test_can_show_preferences_after_usage() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.linkPreview.enabled", false],
+      ["browser.ml.linkPreview.onboardingTimes", ""],
+    ],
+  });
+  ok(
+    !LinkPreview.canShowPreferences,
+    "canShowPreferences should be false when disabled and never used"
+  );
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.linkPreview.enabled", true],
+      ["browser.ml.linkPreview.onboardingMaxShowFreq", 2],
+    ],
+  });
+
+  const generateStub = sinon.stub(LinkPreviewModel, "generateTextAI");
+  const READABLE_PAGE_URL =
+    "https://example.com/browser/browser/components/genai/tests/browser/data/readableEn.html";
+
+  LinkPreview.keyboardComboActive = "shift";
+  XULBrowserWindow.setOverLink(READABLE_PAGE_URL, {});
+
+  const panel = await waitForPanelOpen();
+  ok(panel, "Panel created for link preview, simulating usage");
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.linkPreview.enabled", false]],
+  });
+
+  ok(
+    LinkPreview.canShowPreferences,
+    "canShowPreferences should be true after usage, even if disabled"
+  );
+
+  panel.remove();
+  generateStub.restore();
+  LinkPreview.keyboardComboActive = false;
+  Services.prefs.clearUserPref("browser.ml.linkPreview.onboardingTimes");
+});

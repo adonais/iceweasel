@@ -7,11 +7,11 @@
 #ifndef LAYOUT_SVG_SVGFILTERINSTANCE_H_
 #define LAYOUT_SVG_SVGFILTERINSTANCE_H_
 
-#include "gfxMatrix.h"
-#include "gfxRect.h"
 #include "SVGAnimatedNumber.h"
 #include "SVGAnimatedNumberPair.h"
 #include "SVGFilters.h"
+#include "gfxMatrix.h"
+#include "gfxRect.h"
 #include "mozilla/ServoStyleConsts.h"
 
 namespace mozilla {
@@ -108,6 +108,8 @@ class SVGFilterInstance {
       nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
       nsTArray<RefPtr<SourceSurface>>& aInputImages, bool aInputIsTainted);
 
+  float GetPrimitiveUserSpaceUnitValue(uint8_t aCtxType) const;
+
   float GetPrimitiveNumber(uint8_t aCtxType,
                            const SVGAnimatedNumber* aNumber) const {
     return GetPrimitiveNumber(aCtxType, aNumber->GetAnimValue());
@@ -124,6 +126,12 @@ class SVGFilterInstance {
    * objectBoundingBoxUnits, the bounding box offset is applied to the point.)
    */
   Point3D ConvertLocation(const Point3D& aPoint) const;
+
+  /*
+   * Transform a float in a particular direction between user space
+   * and filter space.
+   */
+  float UserSpaceToFilterSpace(uint8_t aCtxType, float aValue) const;
 
   /**
    * Transform a rect between user space and filter space.

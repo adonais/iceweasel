@@ -85,12 +85,16 @@ use alloc::{
     vec::Vec,
 };
 use core::{
+    convert::Infallible,
     num::{NonZeroU32, NonZeroU64},
     ops::Range,
 };
 
 use arrayvec::ArrayVec;
 use thiserror::Error;
+
+use wgpu_hal::ShouldBeNonZeroExt;
+use wgt::error::{ErrorType, WebGpuError};
 
 use crate::{
     binding_model::{BindError, BindGroup, PipelineLayout},
@@ -108,7 +112,7 @@ use crate::{
     pipeline::{PipelineFlags, RenderPipeline, VertexStep},
     resource::{
         Buffer, DestroyedResourceError, Fallible, InvalidResourceError, Labeled, ParentDevice,
-        TrackingData,
+        RawResourceAccess, TrackingData,
     },
     resource_log,
     snatch::SnatchGuard,
@@ -117,6 +121,7 @@ use crate::{
 };
 
 use super::{
+    pass,
     render_command::{ArcRenderCommand, RenderCommand},
     DrawKind,
 };
@@ -153,7 +158,7 @@ pub struct RenderBundleEncoderDescriptor<'a> {
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct RenderBundleEncoder {
-    base: BasePass<RenderCommand>,
+    base: BasePass<RenderCommand, Infallible>,
     parent_id: id::DeviceId,
     pub(crate) context: RenderPassContext,
     pub(crate) is_depth_read_only: bool,
@@ -170,7 +175,7 @@ impl RenderBundleEncoder {
     pub fn new(
         desc: &RenderBundleEncoderDescriptor,
         parent_id: id::DeviceId,
-        base: Option<BasePass<RenderCommand>>,
+        base: Option<BasePass<RenderCommand, Infallible>>,
     ) -> Result<Self, CreateRenderBundleError> {
         let (is_depth_read_only, is_stencil_read_only) = match desc.depth_stencil {
             Some(ds) => {
@@ -248,7 +253,7 @@ impl RenderBundleEncoder {
     }
 
     #[cfg(feature = "trace")]
-    pub(crate) fn to_base_pass(&self) -> BasePass<RenderCommand> {
+    pub(crate) fn to_base_pass(&self) -> BasePass<RenderCommand, Infallible> {
         self.base.clone()
     }
 
@@ -466,6 +471,7 @@ impl RenderBundleEncoder {
         let render_bundle = RenderBundle {
             base: BasePass {
                 label: desc.label.as_deref().map(str::to_owned),
+                error: None,
                 commands,
                 dynamic_offsets: flat_dynamic_offsets,
                 string_data: self.base.string_data,
@@ -525,11 +531,13 @@ fn set_bind_group(
 
     let max_bind_groups = state.device.limits.max_bind_groups;
     if index >= max_bind_groups {
-        return Err(RenderCommandError::BindGroupIndexOutOfRange {
-            index,
-            max: max_bind_groups,
-        }
-        .into());
+        return Err(
+            RenderCommandError::BindGroupIndexOutOfRange(pass::BindGroupIndexOutOfRange {
+                index,
+                max: max_bind_groups,
+            })
+            .into(),
+        );
     }
 
     // Identify the next `num_dynamic_offsets` entries from `dynamic_offsets`.
@@ -595,6 +603,7 @@ fn set_pipeline(
     Ok(())
 }
 
+// This function is duplicative of `render::set_index_buffer`.
 fn set_index_buffer(
     state: &mut State,
     buffer_guard: &crate::storage::Storage<Fallible<Buffer>>,
@@ -613,21 +622,20 @@ fn set_index_buffer(
     buffer.same_device(&state.device)?;
     buffer.check_usage(wgt::BufferUsages::INDEX)?;
 
-    let end = match size {
-        Some(s) => offset + s.get(),
-        None => buffer.size,
-    };
+    let end = offset + buffer.resolve_binding_size(offset, size)?;
+
     state
         .buffer_memory_init_actions
         .extend(buffer.initialization_status.read().create_action(
             &buffer,
-            offset..end,
+            offset..end.get(),
             MemoryInitKind::NeedsInitializedMemory,
         ));
-    state.set_index_buffer(buffer, index_format, offset..end);
+    state.set_index_buffer(buffer, index_format, offset..end.get());
     Ok(())
 }
 
+// This function is duplicative of `render::set_vertex_buffer`.
 fn set_vertex_buffer(
     state: &mut State,
     buffer_guard: &crate::storage::Storage<Fallible<Buffer>>,
@@ -655,18 +663,16 @@ fn set_vertex_buffer(
     buffer.same_device(&state.device)?;
     buffer.check_usage(wgt::BufferUsages::VERTEX)?;
 
-    let end = match size {
-        Some(s) => offset + s.get(),
-        None => buffer.size,
-    };
+    let end = offset + buffer.resolve_binding_size(offset, size)?;
+
     state
         .buffer_memory_init_actions
         .extend(buffer.initialization_status.read().create_action(
             &buffer,
-            offset..end,
+            offset..end.get(),
             MemoryInitKind::NeedsInitializedMemory,
         ));
-    state.vertex[slot as usize] = Some(VertexState::new(buffer, offset..end));
+    state.vertex[slot as usize] = Some(VertexState::new(buffer, offset..end.get()));
     Ok(())
 }
 
@@ -842,6 +848,15 @@ pub enum CreateRenderBundleError {
     InvalidSampleCount(u32),
 }
 
+impl WebGpuError for CreateRenderBundleError {
+    fn webgpu_error_type(&self) -> ErrorType {
+        match self {
+            Self::ColorAttachment(e) => e.webgpu_error_type(),
+            Self::InvalidSampleCount(_) => ErrorType::Validation,
+        }
+    }
+}
+
 /// Error type returned from `RenderBundleEncoder::new` if the sample count is invalid.
 #[derive(Clone, Debug, Error)]
 #[non_exhaustive]
@@ -863,7 +878,7 @@ pub type RenderBundleDescriptor<'a> = wgt::RenderBundleDescriptor<Label<'a>>;
 pub struct RenderBundle {
     // Normalized command stream. It can be executed verbatim,
     // without re-binding anything on the pipeline change.
-    base: BasePass<ArcRenderCommand>,
+    base: BasePass<ArcRenderCommand, Infallible>,
     pub(super) is_depth_read_only: bool,
     pub(super) is_stencil_read_only: bool,
     pub(crate) device: Arc<Device>,
@@ -949,11 +964,9 @@ impl RenderBundle {
                     size,
                 } => {
                     let buffer = buffer.try_raw(snatch_guard)?;
-                    let bb = hal::BufferBinding {
-                        buffer,
-                        offset: *offset,
-                        size: *size,
-                    };
+                    // SAFETY: The binding size was checked against the buffer size
+                    // in `set_index_buffer` and again in `IndexState::flush`.
+                    let bb = hal::BufferBinding::new_unchecked(buffer, *offset, *size);
                     unsafe { raw.set_index_buffer(bb, *index_format) };
                 }
                 Cmd::SetVertexBuffer {
@@ -963,11 +976,9 @@ impl RenderBundle {
                     size,
                 } => {
                     let buffer = buffer.try_raw(snatch_guard)?;
-                    let bb = hal::BufferBinding {
-                        buffer,
-                        offset: *offset,
-                        size: *size,
-                    };
+                    // SAFETY: The binding size was checked against the buffer size
+                    // in `set_vertex_buffer` and again in `VertexState::flush`.
+                    let bb = hal::BufferBinding::new_unchecked(buffer, *offset, *size);
                     unsafe { raw.set_vertex_buffer(*slot, bb) };
                 }
                 Cmd::SetPushConstant {
@@ -1115,6 +1126,9 @@ crate::impl_trackable!(RenderBundle);
 /// [`RenderBundleEncoder::finish`] records the currently set index buffer here,
 /// and calls [`State::flush_index`] before any indexed draw command to produce
 /// a `SetIndexBuffer` command if one is necessary.
+///
+/// Binding ranges must be validated against the size of the buffer before
+/// being stored in `IndexState`.
 #[derive(Debug)]
 struct IndexState {
     buffer: Arc<Buffer>,
@@ -1136,13 +1150,21 @@ impl IndexState {
     /// Generate a `SetIndexBuffer` command to prepare for an indexed draw
     /// command, if needed.
     fn flush(&mut self) -> Option<ArcRenderCommand> {
+        // This was all checked before, but let's check again just in case.
+        let binding_size = self
+            .range
+            .end
+            .checked_sub(self.range.start)
+            .filter(|_| self.range.end <= self.buffer.size)
+            .expect("index range must be contained in buffer");
+
         if self.is_dirty {
             self.is_dirty = false;
             Some(ArcRenderCommand::SetIndexBuffer {
                 buffer: self.buffer.clone(),
                 index_format: self.format,
                 offset: self.range.start,
-                size: wgt::BufferSize::new(self.range.end - self.range.start),
+                size: NonZeroU64::new(binding_size),
             })
         } else {
             None
@@ -1158,6 +1180,9 @@ impl IndexState {
 /// calls this type's [`flush`] method just before any draw command to
 /// produce a `SetVertexBuffer` commands if one is necessary.
 ///
+/// Binding ranges must be validated against the size of the buffer before
+/// being stored in `VertexState`.
+///
 /// [`flush`]: IndexState::flush
 #[derive(Debug)]
 struct VertexState {
@@ -1167,6 +1192,9 @@ struct VertexState {
 }
 
 impl VertexState {
+    /// Create a new `VertexState`.
+    ///
+    /// The `range` must be contained within `buffer`.
     fn new(buffer: Arc<Buffer>, range: Range<wgt::BufferAddress>) -> Self {
         Self {
             buffer,
@@ -1179,13 +1207,20 @@ impl VertexState {
     ///
     /// `slot` is the index of the vertex buffer slot that `self` tracks.
     fn flush(&mut self, slot: u32) -> Option<ArcRenderCommand> {
+        let binding_size = self
+            .range
+            .end
+            .checked_sub(self.range.start)
+            .filter(|_| self.range.end <= self.buffer.size)
+            .expect("vertex range must be contained in buffer");
+
         if self.is_dirty {
             self.is_dirty = false;
             Some(ArcRenderCommand::SetVertexBuffer {
                 slot,
                 buffer: self.buffer.clone(),
                 offset: self.range.start,
-                size: wgt::BufferSize::new(self.range.end - self.range.start),
+                size: NonZeroU64::new(binding_size),
             })
         } else {
             None
@@ -1310,7 +1345,7 @@ impl State {
     fn pipeline(&self) -> Result<&PipelineState, RenderBundleErrorInner> {
         self.pipeline
             .as_ref()
-            .ok_or(DrawError::MissingPipeline.into())
+            .ok_or(DrawError::MissingPipeline(pass::MissingPipeline).into())
     }
 
     /// Mark all non-empty bind group table entries from `index` onwards as dirty.
@@ -1508,6 +1543,21 @@ pub struct RenderBundleError {
     pub scope: PassErrorScope,
     #[source]
     inner: RenderBundleErrorInner,
+}
+
+impl WebGpuError for RenderBundleError {
+    fn webgpu_error_type(&self) -> ErrorType {
+        let Self { scope: _, inner } = self;
+        let e: &dyn WebGpuError = match inner {
+            RenderBundleErrorInner::Device(e) => e,
+            RenderBundleErrorInner::RenderCommand(e) => e,
+            RenderBundleErrorInner::Draw(e) => e,
+            RenderBundleErrorInner::MissingDownlevelFlags(e) => e,
+            RenderBundleErrorInner::Bind(e) => e,
+            RenderBundleErrorInner::InvalidResource(e) => e,
+        };
+        e.webgpu_error_type()
+    }
 }
 
 impl RenderBundleError {

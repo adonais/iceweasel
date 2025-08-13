@@ -80,9 +80,7 @@ class SVGScriptElement final : public SVGScriptElementBase,
 
   StringAttributesInfo GetStringInfo() override;
 
-  // SVG Script elements don't have the ability to set async properties on
-  // themselves, so this will always return false.
-  bool GetAsyncState() override { return false; }
+  bool GetAsyncState() override { return Async(); }
 
   nsIContent* GetAsContent() override { return this; }
 

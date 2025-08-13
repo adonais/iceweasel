@@ -9,9 +9,13 @@ prefs = [
 
 ["browser_taskbarTabs_cmd.js"]
 
+["browser_taskbarTabs_content.js"]
+
 ["browser_taskbarTabs_nimbus.js"]
 
 ["browser_taskbarTabs_pageAction.js"]
+
+["browser_taskbarTabs_telemetry.js"]
 
 ["browser_taskbarTabs_uriTest.js"]
 

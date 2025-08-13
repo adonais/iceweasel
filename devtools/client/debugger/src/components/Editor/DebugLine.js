@@ -75,9 +75,9 @@ export class DebugLine extends PureComponent {
         const pausedLocation = document.createElement("span");
         pausedLocation.className = `paused-location${isFirstNonSpaceColumn ? " first-column" : ""}`;
 
-        const bar = document.createElement("span");
-        bar.className = `vertical-bar`;
-        pausedLocation.appendChild(bar);
+        const triangle = document.createElement("span");
+        triangle.className = `triangle`;
+        pausedLocation.appendChild(triangle);
 
         return pausedLocation;
       },

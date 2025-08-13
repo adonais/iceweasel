@@ -27,6 +27,7 @@
 #include "mozilla/dom/quota/CommonMetadata.h"
 #include "mozilla/dom/quota/Client.h"
 #include "mozilla/dom/quota/Constants.h"
+#include "mozilla/dom/quota/Date.h"
 #include "mozilla/dom/quota/DirectoryLock.h"
 #include "mozilla/dom/quota/DirectoryLockInlines.h"
 #include "mozilla/dom/quota/OriginDirectoryLock.h"
@@ -3554,7 +3555,8 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
   if (created) {
     // A new origin directory has been created.
 
-    const auto [timestamp, accessed] = [&aQuotaManager, &originMetadata]() {
+    const auto [timestamp, maintenanceDate, accessed] = [&aQuotaManager,
+                                                         &originMetadata]() {
       // Update OriginInfo too if temporary origin was already initialized.
       if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
         if (aQuotaManager.IsTemporaryOriginInitializedInternal(
@@ -3567,21 +3569,30 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
           return aQuotaManager.WithOriginInfo(
               originMetadata, [](const auto& originInfo) {
                 const int64_t timestamp = originInfo->LockedAccessTime();
+                const int32_t maintenanceDate =
+                    originInfo->LockedMaintenanceDate();
                 const bool accessed = originInfo->LockedAccessed();
 
                 originInfo->LockedDirectoryCreated();
 
-                return std::make_pair(timestamp, accessed);
+                return std::make_tuple(timestamp, maintenanceDate, accessed);
               });
         }
       }
 
-      return std::make_pair(/* timestamp */ PR_Now(), /* accessed */ false);
+      const int64_t timestamp = PR_Now();
+
+      return std::make_tuple(
+          /* timestamp */ timestamp,
+          /* maintenanceDate */ Date::FromTimestamp(timestamp).ToDays(),
+          /* accessed */ false);
     }();
 
     FullOriginMetadata fullOriginMetadata = FullOriginMetadata{
         originMetadata,
-        OriginStateMetadata{timestamp, accessed, /* aPersisted */ true}};
+        OriginStateMetadata{timestamp, maintenanceDate, accessed,
+                            /* aPersisted */ true},
+        ClientUsageArray(), /* aUsage */ 0, kCurrentQuotaVersion};
 
     if (aQuotaManager.IsTemporaryStorageInitializedInternal()) {
       // Usually, infallible operations are placed after fallible ones.
@@ -3609,8 +3620,7 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
         // initialized yet. So OriginInfo needs to be created because the
         // origin directory has been just created.
 
-        aQuotaManager.InitQuotaForOrigin(fullOriginMetadata, ClientUsageArray(),
-                                         /* aUsageBytes */ 0);
+        aQuotaManager.InitQuotaForOrigin(fullOriginMetadata);
       }
     }
   } else {

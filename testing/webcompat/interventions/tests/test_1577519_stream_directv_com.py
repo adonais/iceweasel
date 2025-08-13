@@ -1,7 +1,7 @@
 import pytest
 
 URL = "https://stream.directv.com/"
-LOGIN_CSS = "#userID"
+LOGIN_CSS = "#userID, [data-testid='emailInput_TextInput']"
 UNSUPPORTED_CSS = ".title-new-browse-ff"
 DENIED_XPATH = "//h1[text()='Access Denied']"
 BLOCKED_TEXT = "An error occurred while processing your request."
@@ -25,7 +25,9 @@ async def check_site(client, should_pass):
         return
 
     if denied:
-        pytest.skip("Region-locked, cannot test. Try using a VPN set to USA.")
+        pytest.skip(
+            "Region-locked, cannot test. Try using a VPN set to a different region in the USA."
+        )
         return
 
     assert (should_pass and login) or (not should_pass and unsupported)

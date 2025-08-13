@@ -264,7 +264,6 @@ var BrowserCommands = {
           inBackground: loadInBackground,
           triggeringPrincipal:
             Services.scriptSecurityManager.getSystemPrincipal(),
-          csp: null,
         });
         if (!loadInBackground) {
           if (isBlankPageURL(homePage)) {
@@ -600,5 +599,9 @@ var BrowserCommands = {
     BrowserCommands.reloadWithFlags(
       Ci.nsIWebNavigation.LOAD_FLAGS_CHARSET_CHANGE
     );
+  },
+
+  processCloseRequest() {
+    gBrowser.selectedBrowser.processCloseRequest();
   },
 };

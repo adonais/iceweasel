@@ -636,7 +636,7 @@ nsresult nsAppShellService::JustCreateTopWindow(
       rv = docShell->CreateAboutBlankDocumentViewer(
           nsContentUtils::GetSystemPrincipal(),
           nsContentUtils::GetSystemPrincipal(),
-          /* aCsp = */ nullptr, /* aBaseURI = */ nullptr,
+          /* aPolicyContainer = */ nullptr, /* aBaseURI = */ nullptr,
           /* aIsInitialDocument = */ true);
       NS_ENSURE_SUCCESS(rv, rv);
       RefPtr<dom::Document> doc = docShell->GetDocument();

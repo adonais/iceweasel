@@ -9,7 +9,9 @@
 #ifndef nsPresContext_h___
 #define nsPresContext_h___
 
-#include "mozilla/intl/Bidi.h"
+#include "Units.h"
+#include "gfxRect.h"
+#include "gfxTypes.h"
 #include "mozilla/AppUnits.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DepthOrderedFrameList.h"
@@ -23,27 +25,25 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/intl/Bidi.h"
 #include "mozilla/widget/ThemeChangeKind.h"
+#include "nsAtom.h"
+#include "nsCOMPtr.h"
+#include "nsChangeHint.h"
 #include "nsColor.h"
 #include "nsCompatibility.h"
 #include "nsCoord.h"
-#include "nsCOMPtr.h"
+#include "nsCycleCollectionParticipant.h"
 #include "nsFontMetrics.h"
+#include "nsGkAtoms.h"
 #include "nsHashKeys.h"
+#include "nsIWidgetListener.h"  // for nsSizeMode
 #include "nsRect.h"
 #include "nsStringFwd.h"
+#include "nsTArray.h"
 #include "nsTHashSet.h"
 #include "nsTHashtable.h"
-#include "nsAtom.h"
-#include "nsIWidgetListener.h"  // for nsSizeMode
-#include "nsGkAtoms.h"
-#include "nsCycleCollectionParticipant.h"
-#include "nsChangeHint.h"
-#include "gfxTypes.h"
-#include "gfxRect.h"
-#include "nsTArray.h"
 #include "nsThreadUtils.h"
-#include "Units.h"
 
 class nsIPrintSettings;
 class nsDocShell;

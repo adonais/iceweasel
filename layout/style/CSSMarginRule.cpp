@@ -5,10 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/CSSMarginRule.h"
-#include "mozilla/dom/CSSMarginRuleBinding.h"
 
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSMarginRuleBinding.h"
 
 namespace mozilla::dom {
 

@@ -8,6 +8,5 @@ class Telemetry {
   recordEvent() {}
   start() {}
   finish() {}
-  getKeyedHistogramById = () => ({ add: () => {} });
 }
 module.exports = Telemetry;

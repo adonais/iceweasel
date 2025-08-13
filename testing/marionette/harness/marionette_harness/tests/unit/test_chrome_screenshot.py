@@ -2,11 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import base64
 import os
 import sys
-
-import mozinfo
 
 from marionette_driver import By
 from marionette_driver.errors import NoSuchWindowException
@@ -15,10 +12,13 @@ from marionette_harness import WindowManagerMixin
 # add this directory to the path
 sys.path.append(os.path.dirname(__file__))
 
-from test_screenshot import inline, ScreenCaptureTestCase
+from chrome_handler_mixin import ChromeHandlerMixin
+from test_screenshot import ScreenCaptureTestCase
 
 
-class TestScreenCaptureChrome(WindowManagerMixin, ScreenCaptureTestCase):
+class TestScreenCaptureChrome(
+    ChromeHandlerMixin, WindowManagerMixin, ScreenCaptureTestCase
+):
     def setUp(self):
         super(TestScreenCaptureChrome, self).setUp()
         self.marionette.set_context("chrome")
@@ -40,9 +40,7 @@ class TestScreenCaptureChrome(WindowManagerMixin, ScreenCaptureTestCase):
         )
 
     def open_dialog(self):
-        return self.open_chrome_window(
-            "chrome://remote/content/marionette/test_dialog.xhtml"
-        )
+        return self.open_chrome_window(self.chrome_base_url + "test_dialog.xhtml")
 
     def test_capture_different_context(self):
         """Check that screenshots in content and chrome are different."""

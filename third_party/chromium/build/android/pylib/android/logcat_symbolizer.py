@@ -1,4 +1,4 @@
-# Copyright 2017 The Chromium Authors. All rights reserved.
+# Copyright 2017 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -65,7 +65,7 @@ def SymbolizeLogcat(logcat, dest, symbolizer, abi):
       # crash log inside the logcat and pass only the crash log to the script,
       # because we don't want to lose other information in the logcat that,
       # if passed to the stack script, will just be ignored by it.
-      # TODO(crbug.com/755225): Rewrite the logic here.
+      # TODO(crbug.com/41339210): Rewrite the logic here.
       outside_of_crash_log = True
       in_lower_half_crash = False
       data_to_symbolize = []

@@ -11,13 +11,14 @@
 
 #include "FixedTableLayoutStrategy.h"
 
+#include <algorithm>
+
+#include "WritingModes.h"
 #include "nsLayoutUtils.h"
 #include "nsStyleConsts.h"
-#include "nsTableFrame.h"
-#include "nsTableColFrame.h"
 #include "nsTableCellFrame.h"
-#include "WritingModes.h"
-#include <algorithm>
+#include "nsTableColFrame.h"
+#include "nsTableFrame.h"
 
 using namespace mozilla;
 
@@ -69,7 +70,7 @@ nscoord FixedTableLayoutStrategy::GetMinISize(gfxContext* aRenderingContext) {
     }
     nscoord spacing = mTableFrame->GetColSpacing(col);
     auto styleISize = colFrame->StylePosition()->ISize(
-        wm, colFrame->StyleDisplay()->mPosition);
+        wm, AnchorPosResolutionParams::From(colFrame));
     if (styleISize->ConvertsToLength()) {
       result += styleISize->ToLength();
     } else if (styleISize->ConvertsToPercentage()) {
@@ -83,7 +84,7 @@ nscoord FixedTableLayoutStrategy::GetMinISize(gfxContext* aRenderingContext) {
           cellMap->GetCellInfoAt(0, col, &originates, &colSpan);
       if (cellFrame) {
         styleISize = cellFrame->StylePosition()->ISize(
-            wm, cellFrame->StyleDisplay()->mPosition);
+            wm, AnchorPosResolutionParams::From(cellFrame));
         if (styleISize->ConvertsToLength() || styleISize->IsMinContent() ||
             styleISize->IsMaxContent()) {
           nscoord cellISize = nsLayoutUtils::IntrinsicForContainer(
@@ -199,7 +200,7 @@ void FixedTableLayoutStrategy::ComputeColumnISizes(
     oldColISizes.AppendElement(colFrame->GetFinalISize());
     colFrame->ResetPrefPercent();
     auto styleISize = colFrame->StylePosition()->ISize(
-        wm, colFrame->StyleDisplay()->mPosition);
+        wm, AnchorPosResolutionParams::From(colFrame));
     nscoord colISize;
     if (styleISize->ConvertsToLength()) {
       colISize = styleISize->ToLength();
@@ -219,7 +220,7 @@ void FixedTableLayoutStrategy::ComputeColumnISizes(
       if (cellFrame) {
         const nsStylePosition* cellStylePos = cellFrame->StylePosition();
         styleISize =
-            cellStylePos->ISize(wm, cellFrame->StyleDisplay()->mPosition);
+            cellStylePos->ISize(wm, AnchorPosResolutionParams::From(cellFrame));
         if (styleISize->ConvertsToLength() || styleISize->IsMaxContent() ||
             styleISize->IsMinContent()) {
           // XXX This should use real percentage padding

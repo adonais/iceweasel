@@ -13,11 +13,13 @@
 #include "mozilla/Logging.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TimeStamp.h"
 #include "nsStringFwd.h"
 
 class nsIURI;
 class nsINode;
+class nsFind;
 class nsRange;
 struct TextDirective;
 
@@ -58,12 +60,14 @@ class TextDirectiveUtil final {
   /**
    * @brief Finds the search query in the given search range.
    *
-   * This is a thin wrapper around `nsFind`.
+   * This function parametrizes the `nsFind` instance.
    */
-  static RefPtr<nsRange> FindStringInRange(
-      const RangeBoundary& aSearchStart, const RangeBoundary& aSearchEnd,
-      const nsAString& aQuery, bool aWordStartBounded, bool aWordEndBounded,
-      nsContentUtils::NodeIndexCache* aCache = nullptr);
+  static RefPtr<nsRange> FindStringInRange(nsFind* aFinder,
+                                           const RangeBoundary& aSearchStart,
+                                           const RangeBoundary& aSearchEnd,
+                                           const nsAString& aQuery,
+                                           bool aWordStartBounded,
+                                           bool aWordEndBounded);
 
   /**
    * @brief Tests if there is whitespace at the given position.
@@ -205,10 +209,24 @@ class TextDirectiveUtil final {
   template <TextScanDirection direction>
   static nsTArray<uint32_t> ComputeWordBoundaryDistances(
       const nsAString& aString);
+
+  /**
+   * @brief Returns true if the word between `aWordBegin` and `aWordEnd` is
+   *        just whitespace or punctuation.
+   * @param aString The string to check. Must not be empty.
+   * @param aWordBegin The start index of the word.
+   * @param aWordEnd The end index of the word.
+   * @return true if the word is just whitespace or punctuation, false
+   * otherwise.
+   */
+  static bool WordIsJustWhitespaceOrPunctuation(const nsAString& aString,
+                                                uint32_t aWordBegin,
+                                                uint32_t aWordEnd);
 };
 
 class TimeoutWatchdog final {
  public:
+  NS_INLINE_DECL_REFCOUNTING(TimeoutWatchdog);
   TimeoutWatchdog()
       : mStartTime(TimeStamp::Now()),
         mDuration(TimeDuration::FromSeconds(
@@ -217,6 +235,7 @@ class TimeoutWatchdog final {
   bool IsDone() const { return TimeStamp::Now() - mStartTime > mDuration; }
 
  private:
+  ~TimeoutWatchdog() = default;
   TimeStamp mStartTime;
   TimeDuration mDuration;
 };
@@ -393,7 +412,7 @@ template <TextScanDirection direction>
   // (if the next word boundary would be at the beginning/end of the text node)
   nsString textBuffer;
   for (Text* textNode : SameBlockVisibleTextNodeIterator<direction>(*node)) {
-    if (!textNode) {
+    if (!textNode || textNode->Length() == 0) {
       continue;
     }
     nsString data;
@@ -446,7 +465,8 @@ template <TextScanDirection direction>
 }
 
 template <TextScanDirection direction>
-void LogCommonSubstringLengths(const nsAString& aReferenceString,
+void LogCommonSubstringLengths(const char* aFunc,
+                               const nsAString& aReferenceString,
                                const nsTArray<nsString>& aTextContentPieces,
                                uint32_t aCommonLength) {
   if (!TextDirectiveUtil::ShouldLog()) {
@@ -462,27 +482,27 @@ void LogCommonSubstringLengths(const nsAString& aReferenceString,
   concatenatedTextContents.CompressWhitespace();
   const uint32_t maxLength =
       std::max(aReferenceString.Length(), concatenatedTextContents.Length());
-  TEXT_FRAGMENT_LOG("Direction: {}.",
-                    direction == TextScanDirection::Left ? "left" : "right");
+  TEXT_FRAGMENT_LOG_FN("Direction: {}.", aFunc,
+                       direction == TextScanDirection::Left ? "left" : "right");
 
   if constexpr (direction == TextScanDirection::Left) {
-    TEXT_FRAGMENT_LOG("Ref:    {:>{}}", NS_ConvertUTF16toUTF8(aReferenceString),
-                      maxLength);
-    TEXT_FRAGMENT_LOG("Other:  {:>{}}",
-                      NS_ConvertUTF16toUTF8(concatenatedTextContents),
-                      maxLength);
-    TEXT_FRAGMENT_LOG(
-        "Common: {:>{}} ({} chars)",
+    TEXT_FRAGMENT_LOG_FN("Ref:    {:>{}}", aFunc,
+                         NS_ConvertUTF16toUTF8(aReferenceString), maxLength);
+    TEXT_FRAGMENT_LOG_FN("Other:  {:>{}}", aFunc,
+                         NS_ConvertUTF16toUTF8(concatenatedTextContents),
+                         maxLength);
+    TEXT_FRAGMENT_LOG_FN(
+        "Common: {:>{}} ({} chars)", aFunc,
         NS_ConvertUTF16toUTF8(Substring(aReferenceString, aCommonLength)),
         maxLength, aCommonLength);
   } else {
-    TEXT_FRAGMENT_LOG("Ref:    {:<{}}", NS_ConvertUTF16toUTF8(aReferenceString),
-                      maxLength);
-    TEXT_FRAGMENT_LOG("Other:  {:<{}}",
-                      NS_ConvertUTF16toUTF8(concatenatedTextContents),
-                      maxLength);
-    TEXT_FRAGMENT_LOG(
-        "Common: {:<{}} ({} chars)",
+    TEXT_FRAGMENT_LOG_FN("Ref:    {:<{}}", aFunc,
+                         NS_ConvertUTF16toUTF8(aReferenceString), maxLength);
+    TEXT_FRAGMENT_LOG_FN("Other:  {:<{}}", aFunc,
+                         NS_ConvertUTF16toUTF8(concatenatedTextContents),
+                         maxLength);
+    TEXT_FRAGMENT_LOG_FN(
+        "Common: {:<{}} ({} chars)", aFunc,
         NS_ConvertUTF16toUTF8(Substring(aReferenceString, 0, aCommonLength)),
         maxLength, aCommonLength);
   }
@@ -491,31 +511,26 @@ void LogCommonSubstringLengths(const nsAString& aReferenceString,
 template <TextScanDirection direction>
 /*static*/ nsTArray<uint32_t> TextDirectiveUtil::ComputeWordBoundaryDistances(
     const nsAString& aString) {
-  // Limit the amount of words to look out for.
-  // If it's not possible to create a text directive because 32 words in _all_
-  // directions are equal, it's reasonable to say that it's not possible to
-  // create a text directive at all. Without this limit, this algorithm could
-  // blow up for extremely large text nodes, such as opening a text file with
-  // megabytes of text.
-  constexpr uint32_t kMaxWordCount = 32;
-  AutoTArray<uint32_t, kMaxWordCount> wordBoundaryDistances;
-  uint32_t pos = 0;
-  while (pos < aString.Length() &&
-         wordBoundaryDistances.Length() < kMaxWordCount) {
+  AutoTArray<uint32_t, 32> wordBoundaryDistances;
+  uint32_t pos =
+      direction == TextScanDirection::Left ? aString.Length() - 1 : 0;
+
+  // This loop relies on underflowing `pos` when going left as stop condition.
+  while (pos < aString.Length()) {
     auto [wordBegin, wordEnd] = intl::WordBreaker::FindWord(aString, pos);
-    if constexpr (direction == TextScanDirection::Left) {
-      // If direction is right-to-left, the distances are relative to the end of
-      // the string, and the array is reversed. This way the distances are
-      // always monotonically increasing.
-      wordBoundaryDistances.AppendElement(aString.Length() - wordBegin);
-    } else {
-      wordBoundaryDistances.AppendElement(wordEnd);
+    pos = direction == TextScanDirection::Left ? wordBegin - 1 : wordEnd + 1;
+    if (WordIsJustWhitespaceOrPunctuation(aString, wordBegin, wordEnd)) {
+      // The WordBreaker algorithm breaks at punctuation, so that "foo bar. baz"
+      // would be split into four words: [foo, bar, ., baz].
+      // To avoid this, we skip words which are just whitespace or punctuation
+      // and add the punctuation to the previous word, so that the above example
+      // would yield three words: [foo, bar., baz].
+      continue;
     }
-    pos = wordEnd + 1;
-  }
-  if constexpr (direction == TextScanDirection::Left) {
-    // Reverse the positions to align with the direction of the search algorithm
-    wordBoundaryDistances.Reverse();
+
+    wordBoundaryDistances.AppendElement(direction == TextScanDirection::Left
+                                            ? aString.Length() - wordBegin
+                                            : wordEnd);
   }
   return std::move(wordBoundaryDistances);
 }
@@ -542,6 +557,9 @@ template <TextScanDirection direction>
   nsTArray<nsString> textContentForLogging;
   for (Text* text : SameBlockVisibleTextNodeIterator<direction>(
            *aBoundaryPoint.GetContainer())) {
+    if (!text || text->Length() == 0) {
+      continue;
+    }
     uint32_t offset =
         direction == TextScanDirection::Left ? text->Length() - 1 : 0;
     if (text == aBoundaryPoint.GetContainer()) {
@@ -567,9 +585,12 @@ template <TextScanDirection direction>
       }
       textContentForLogging.AppendElement(std::move(textContent));
     }
-    while (offset < text->Length() &&
+    const nsTextFragment* textData = text->GetText();
+    MOZ_DIAGNOSTIC_ASSERT(textData);
+    const uint32_t textLength = textData->GetLength();
+    while (offset < textLength &&
            referenceStringPosition < aReferenceString.Length()) {
-      char16_t ch = text->GetText()->CharAt(offset);
+      char16_t ch = textData->CharAt(offset);
       char16_t refCh = aReferenceString.CharAt(referenceStringPosition);
       const bool chIsWhitespace = nsContentUtils::IsHTMLWhitespace(ch);
       const bool refChIsWhitespace = nsContentUtils::IsHTMLWhitespace(refCh);
@@ -601,7 +622,7 @@ template <TextScanDirection direction>
       } else {
         commonLength = referenceStringPosition;
       }
-      LogCommonSubstringLengths<direction>(aReferenceString,
+      LogCommonSubstringLengths<direction>(__FUNCTION__, aReferenceString,
                                            textContentForLogging, commonLength);
       return commonLength;
     }

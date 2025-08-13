@@ -9,16 +9,16 @@
 
 #include "nsPresArena.h"
 
+#include <inttypes.h>
+
+#include "mozilla/ArrayUtils.h"
+#include "mozilla/ComputedStyle.h"
+#include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/Poison.h"
 #include "nsDebug.h"
 #include "nsDisplayList.h"
 #include "nsPrintfCString.h"
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/ComputedStyle.h"
-#include "mozilla/ComputedStyleInlines.h"
 #include "nsWindowSizes.h"
-
-#include <inttypes.h>
 
 using namespace mozilla;
 

@@ -5,15 +5,15 @@
 #ifndef nsTableFrame_h__
 #define nsTableFrame_h__
 
-#include "mozilla/Attributes.h"
-#include "celldata.h"
-#include "nscore.h"
-#include "nsContainerFrame.h"
-#include "nsStyleConsts.h"
-#include "nsCellMap.h"
-#include "nsGkAtoms.h"
-#include "nsDisplayList.h"
 #include "TableArea.h"
+#include "celldata.h"
+#include "mozilla/Attributes.h"
+#include "nsCellMap.h"
+#include "nsContainerFrame.h"
+#include "nsDisplayList.h"
+#include "nsGkAtoms.h"
+#include "nsStyleConsts.h"
+#include "nscore.h"
 
 struct BCPaintBorderAction;
 class nsTableCellFrame;

@@ -33,6 +33,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.HitResult
 import mozilla.components.concept.engine.history.HistoryItem
 import mozilla.components.concept.engine.manifest.WebAppManifest
+import mozilla.components.concept.engine.permission.Permission.AppLocationCoarse
 import mozilla.components.concept.engine.permission.Permission.ContentGeoLocation
 import mozilla.components.concept.engine.permission.PermissionRequest
 import mozilla.components.concept.engine.prompt.PromptRequest
@@ -912,6 +913,22 @@ class ContentActionTest {
 
         store.dispatch(ContentAction.UpdatePermissionsRequest(tab.id, request1))
         store.dispatch(ContentAction.UpdatePermissionsRequest(tab.id, request2))
+        store.waitUntilIdle()
+
+        verify(request1).merge(request2)
+    }
+
+    @Test
+    fun `merge app permission request if same request`() {
+        val request1: PermissionRequest = mock {
+            whenever(permissions).thenReturn(listOf(AppLocationCoarse(id = "permission")))
+        }
+        val request2: PermissionRequest = mock {
+            whenever(permissions).thenReturn(listOf(AppLocationCoarse(id = "permission")))
+        }
+
+        store.dispatch(ContentAction.UpdateAppPermissionsRequest(tab.id, request1))
+        store.dispatch(ContentAction.UpdateAppPermissionsRequest(tab.id, request2))
         store.waitUntilIdle()
 
         verify(request1).merge(request2)

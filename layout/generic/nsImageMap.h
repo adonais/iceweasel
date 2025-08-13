@@ -9,13 +9,13 @@
 #ifndef nsImageMap_h
 #define nsImageMap_h
 
+#include "Units.h"
 #include "mozilla/gfx/2D.h"
 #include "nsCOMPtr.h"
 #include "nsCoord.h"
-#include "nsTArray.h"
-#include "nsStubMutationObserver.h"
 #include "nsIDOMEventListener.h"
-#include "Units.h"
+#include "nsStubMutationObserver.h"
+#include "nsTArray.h"
 
 class Area;
 class nsImageFrame;

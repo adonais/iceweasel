@@ -41,7 +41,8 @@ class CookieParser final {
              CookieStatus aStatus, nsCString& aCookieHeader,
              const nsACString& aDateHeader, bool aFromHttp,
              bool aIsForeignAndNotAddon, bool aPartitionedOnly,
-             bool aIsInPrivateBrowsing, bool aOn3pcbException);
+             bool aIsInPrivateBrowsing, bool aOn3pcbException,
+             int64_t aCurrentTimeInMSec);
 
   bool ContainsCookie() const {
     return mValidation && mValidation->Result() == nsICookieValidation::eOK;
@@ -69,6 +70,7 @@ class CookieParser final {
   void ParseAttributes(nsCString& aCookieHeader, nsACString& aExpires,
                        nsACString& aMaxage, bool& aAcceptedByParser);
 
+  // aCurrentTime is in milliseconds, and expiry will be stored in milliseconds.
   bool GetExpiry(CookieStruct& aCookieData, const nsACString& aExpires,
                  const nsACString& aMaxage, int64_t aCurrentTime,
                  const nsACString& aDateHeader, bool aFromHttp);

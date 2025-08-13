@@ -68,9 +68,16 @@ class GitRepository(Repository):
 
     def is_cinnabar_repo(self) -> bool:
         """Return `True` if the repo is a git-cinnabar clone."""
-        output = self._run("for-each-ref")
 
-        return "refs/cinnabar" in output
+        try:
+            # First revision of the canonical Firefox repository
+            self._run(
+                "cat-file", "-e", "2ca566cd74d5d0863ba7ef0529a4f88b2823eb43^{commit}"
+            )
+        except subprocess.CalledProcessError:
+            output = self._run("for-each-ref")
+            return "refs/cinnabar" in output
+        return False
 
     def get_mozilla_upstream_remotes(self) -> Iterator[str]:
         """Return the Mozilla-official upstream remotes for this repo."""

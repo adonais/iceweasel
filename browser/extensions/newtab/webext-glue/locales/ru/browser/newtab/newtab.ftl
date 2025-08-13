@@ -505,6 +505,9 @@ newtab-topic-selection-button-pick-interests = Выберите ваши инт�
 newtab-section-follow-button = Подписаться
 newtab-section-following-button = Подписан
 newtab-section-unfollow-button = Отписаться
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Настройте вашу ленту новостей
+newtab-section-follow-highlight-subtitle = Подпишитесь на свои интересы, чтобы увидеть больше того, что вам нравится.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -547,6 +550,11 @@ newtab-download-mobile-highlight-body-variant-c = Знаете ли вы, что
 newtab-download-mobile-highlight-image =
     .aria-label = QR-код для загрузки { -brand-product-name } для мобильных устройств
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Ваше любимое на кончиках ваших пальцев
+newtab-shortcuts-highlight-subtitle = Добавьте ярлык, чтобы держать под рукой любимые сайты.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -580,3 +588,5 @@ newtab-trending-searches-hide-trending =
     .title = Скрыть популярные поисковые запросы
 newtab-trending-searches-learn-more = Узнать больше
 newtab-trending-searches-dismiss = Скрыть популярные поисковые запросы
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Популярные поисковые запросы

@@ -1,12 +1,16 @@
 import os
-
+import sys
 from urllib.parse import quote
 
 from marionette_driver import By, errors
 from marionette_driver.marionette import Alert, WebElement
 from marionette_driver.wait import Wait
-
 from marionette_harness import MarionetteTestCase, WindowManagerMixin
+
+# add this directory to the path
+sys.path.append(os.path.dirname(__file__))
+
+from chrome_handler_mixin import ChromeHandlerMixin
 
 
 def inline(doc):
@@ -496,12 +500,12 @@ class TestExecuteContent(MarionetteTestCase):
         self.assertIsNone(res)
 
 
-class TestExecuteChrome(WindowManagerMixin, TestExecuteContent):
+class TestExecuteChrome(ChromeHandlerMixin, WindowManagerMixin, TestExecuteContent):
     def setUp(self):
         super(TestExecuteChrome, self).setUp()
 
         self.marionette.set_context("chrome")
-        win = self.open_chrome_window("chrome://remote/content/marionette/test.xhtml")
+        win = self.open_chrome_window(self.chrome_base_url + "test.xhtml")
         self.marionette.switch_to_window(win)
 
     def tearDown(self):

@@ -686,17 +686,17 @@ function getRuleViewSelector(view, selectorText) {
 }
 
 /**
- * Get a rule-link from the rule-view given its index
+ * Get a rule-link from the rule-view given the rule index
  *
  * @param {CssRuleView} view
  *        The instance of the rule-view panel
  * @param {Number} index
  *        The index of the link to get
- * @return {DOMNode} The link if any at this index
+ * @return {DOMNode|null} The link if any at this rule index, or null if it doesn't exist
  */
 function getRuleViewLinkByIndex(view, index) {
-  const links = view.styleDocument.querySelectorAll(".ruleview-rule-source");
-  return links[index];
+  const ruleEl = view.styleDocument.querySelectorAll(".ruleview-rule")[index];
+  return ruleEl?.querySelector(".ruleview-rule-source") || null;
 }
 
 /**
@@ -1169,4 +1169,36 @@ async function setProperty(
     ruleView.styleDocument.activeElement.blur();
   }
   await onPopupClosed;
+}
+
+/**
+ * Return the markup view search input
+ *
+ * @param {Inspector} inspector
+ * @returns {Element}
+ */
+function getMarkupViewSearchInput(inspector) {
+  return inspector.panelWin.document.getElementById("inspector-searchbox");
+}
+
+/**
+ * Using the inspector panel's selector search box, search for a given selector.
+ * The selector input string will be entered in the input field and the <ENTER>
+ * keypress will be simulated.
+ */
+async function searchInMarkupView(inspector, search) {
+  info(`Entering "${search}" into the markup view search field`);
+  const inspectorSearchboxEl = getMarkupViewSearchInput(inspector);
+  inspectorSearchboxEl.focus();
+  inspectorSearchboxEl.value = search;
+
+  const onNewNodeFront = inspector.selection.once("new-node-front");
+  const onSearchResult = inspector.search.once("search-result");
+  EventUtils.sendKey("return", inspector.panelWin);
+
+  info("Wait for search-result");
+  await onSearchResult;
+
+  info("Wait for new node being selected");
+  await onNewNodeFront;
 }

@@ -6,8 +6,8 @@
 
 #include "FontPreloader.h"
 
-#include "mozilla/FontLoaderUtils.h"
 #include "gfxPlatform.h"
+#include "mozilla/FontLoaderUtils.h"
 
 namespace mozilla {
 

@@ -25,7 +25,6 @@
 #include "GLContextProvider.h"
 #include "GLContext.h"
 #include "GtkCompositorWidget.h"
-#include "gtkdrawing.h"
 #include "imgIContainer.h"
 #include "InputData.h"
 #include "mozilla/ArrayUtils.h"
@@ -201,6 +200,7 @@ constexpr gint kEvents =
 /* utility functions */
 static bool is_mouse_in_window(GdkWindow* aWindow, gdouble aMouseX,
                                gdouble aMouseY);
+static bool is_drag_threshold_exceeded(GdkEvent* aEvent);
 static nsWindow* get_window_for_gtk_widget(GtkWidget* widget);
 static nsWindow* get_window_for_gdk_window(GdkWindow* window);
 static GtkWidget* get_gtk_widget_for_gdk_window(GdkWindow* window);
@@ -799,6 +799,20 @@ bool nsWindow::WidgetTypeSupportsAcceleration() {
     return HasRemoteContent();
   }
   return true;
+}
+
+bool nsWindow::WidgetTypeSupportsNativeCompositing() {
+  if (mIsDragPopup) {
+    return false;
+  }
+#if defined(NIGHTLY_BUILD)
+  // For testing purpose use layered native composition for popups
+  // on nightly. It uses rapid map/unmap sequences it may reveal
+  // hidden bugs in layered code.
+  return true;
+#else
+  return WidgetTypeSupportsAcceleration();
+#endif
 }
 
 static bool IsPenEvent(GdkEvent* aEvent, bool* isEraser) {
@@ -1716,9 +1730,9 @@ void nsWindow::LogPopupHierarchy() {
             "Anchored %d Visible %d MovedByRect %d\n",
             indentString.get(), window->GetFrameTag().get(),
             window->GetPopupTypeName().get(), window,
-            window->WaylandPopupIsPermanent(),
-            window->mPopupContextMenu, window->mPopupAnchored,
-            gtk_widget_is_visible(window->mShell), window->mPopupUseMoveToRect);
+            window->WaylandPopupIsPermanent(), window->mPopupContextMenu,
+            window->mPopupAnchored, gtk_widget_is_visible(window->mShell),
+            window->mPopupUseMoveToRect);
       } else {
         LOG("%s null window\n", indentString.get());
       }
@@ -1943,10 +1957,11 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
         // popups are adjacent.
         return false;
       }
-      if (popup->mPopupType == PopupType::Panel &&
-          popup->WaylandPopupIsFirst() &&
-          popup->WaylandPopupFitsToplevelWindow(/* aMove */ true)) {
-        // Workaround for https://gitlab.gnome.org/GNOME/gtk/-/issues/1986
+      if (popup->WaylandPopupIsFirst() &&
+          popup->WaylandPopupFitsToplevelWindow()) {
+        // Avoid move-to-rect if our requested rect fits the toplevel.
+        // This serves as an optimization, but also as a workaround for
+        // https://gitlab.gnome.org/GNOME/gtk/-/issues/1986
         //
         // PopupType::Panel types are used for extension popups which may be
         // resized. If such popup uses move-to-rect, we need to hide it before
@@ -1959,6 +1974,7 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
         // Use it for first popups only due to another mutter bug
         // https://gitlab.gnome.org/GNOME/gtk/-/issues/5089
         // https://bugzilla.mozilla.org/show_bug.cgi?id=1784873
+        // And so that we can move-to-rect nested popups, see below.
         return false;
       }
       if (!popup->WaylandPopupIsFirst() &&
@@ -2227,8 +2243,8 @@ void nsWindow::WaylandPopupSetDirectPosition() {
   }
 }
 
-bool nsWindow::WaylandPopupFitsToplevelWindow(bool aMove) {
-  LOG("nsWindow::WaylandPopupFitsToplevelWindow() move %d", aMove);
+bool nsWindow::WaylandPopupFitsToplevelWindow() {
+  LOG("nsWindow::WaylandPopupFitsToplevelWindow()");
 
   GtkWindow* parent = gtk_window_get_transient_for(GTK_WINDOW(mShell));
   GtkWindow* tmp = parent;
@@ -2236,8 +2252,7 @@ bool nsWindow::WaylandPopupFitsToplevelWindow(bool aMove) {
     parent = tmp;
   }
   GdkWindow* toplevelGdkWindow = gtk_widget_get_window(GTK_WIDGET(parent));
-  if (!toplevelGdkWindow) {
-    NS_WARNING("Toplevel widget without GdkWindow?");
+  if (NS_WARN_IF(!toplevelGdkWindow)) {
     return false;
   }
 
@@ -2247,14 +2262,11 @@ bool nsWindow::WaylandPopupFitsToplevelWindow(bool aMove) {
 
   GdkRectangle requestedRect = DevicePixelsToGdkRectRoundOut(
       LayoutDeviceIntRect(mLastMoveRequest, mLastSizeRequest));
-  GdkPoint topLeft =
-      aMove ? mPopupPosition : GdkPoint{requestedRect.x, requestedRect.y};
-  LOG("  popup topleft %d, %d size %d x %d", topLeft.x, topLeft.y,
+  LOG("  popup topleft %d, %d size %d x %d", requestedRect.x, requestedRect.y,
       requestedRect.width, requestedRect.height);
-  int fits = topLeft.x >= 0 && topLeft.y >= 0 &&
-             topLeft.x + requestedRect.width <= parentWidth &&
-             topLeft.y + requestedRect.height <= parentHeight;
-
+  bool fits = requestedRect.x >= 0 && requestedRect.y >= 0 &&
+              requestedRect.x + requestedRect.width <= parentWidth &&
+              requestedRect.y + requestedRect.height <= parentHeight;
   LOG("  fits %d", fits);
   return fits;
 }
@@ -2291,16 +2303,14 @@ void nsWindow::NativeMoveResizeWaylandPopup(bool aMove, bool aResize) {
   mResizedAfterMoveToRect = false;
 
   bool trackedInHierarchy = WaylandPopupConfigure();
-
   // Read popup position from layout if it was moved or newly created.
   // This position is used by move-to-rect method as we need anchor and other
   // info to place popup correctly.
   // We need WaylandPopupConfigure() to be called before to have all needed
   // popup info in place (mainly the anchored flag).
-  if (aMove) {
+  if (aMove || !mPopupMoveToRectParams.mAnchorSet) {
     mPopupMoveToRectParams = WaylandPopupGetPositionFromLayout();
   }
-
   if (!trackedInHierarchy) {
     WaylandPopupSetDirectPosition();
     return;
@@ -2311,7 +2321,7 @@ void nsWindow::NativeMoveResizeWaylandPopup(bool aMove, bool aResize) {
     gtk_window_resize(GTK_WINDOW(mShell), rect.width, rect.height);
   }
 
-  if (!aMove && WaylandPopupFitsToplevelWindow(aMove)) {
+  if (!aMove && WaylandPopupFitsToplevelWindow()) {
     // Popup position has not been changed and its position/size fits
     // parent window so no need to reposition the window.
     LOG("  fits parent window size, just resize\n");
@@ -2538,48 +2548,32 @@ nsWindow::WaylandPopupGetPositionFromLayout() {
 
   LOG("  parentRect gravity: %d anchor gravity: %d\n", rectAnchor, menuAnchor);
 
-  // Gtk default is: GDK_ANCHOR_FLIP | GDK_ANCHOR_SLIDE | GDK_ANCHOR_RESIZE.
-  // We want to SLIDE_X menu on the dual monitor setup rather than resize it
-  // on the other monitor.
-  GdkAnchorHints hints =
-      GdkAnchorHints(GDK_ANCHOR_FLIP | GDK_ANCHOR_SLIDE_X | GDK_ANCHOR_RESIZE);
-
   // slideHorizontal from nsMenuPopupFrame::SetPopupPosition
-  int8_t position = popupFrame->GetAlignmentPosition();
-  if (position >= POPUPPOSITION_BEFORESTART &&
-      position <= POPUPPOSITION_AFTEREND) {
-    hints = GdkAnchorHints(hints | GDK_ANCHOR_SLIDE_X);
-  }
-  // slideVertical from nsMenuPopupFrame::SetPopupPosition
-  if (position >= POPUPPOSITION_STARTBEFORE &&
-      position <= POPUPPOSITION_ENDAFTER) {
-    hints = GdkAnchorHints(hints | GDK_ANCHOR_SLIDE_Y);
-  }
-
-  FlipType flipType = popupFrame->GetFlipType();
-  if (rectAnchor == GDK_GRAVITY_CENTER && menuAnchor == GDK_GRAVITY_CENTER) {
-    // only slide
-    hints = GdkAnchorHints(hints | GDK_ANCHOR_SLIDE);
-  } else {
-    switch (flipType) {
-      case FlipType::Both:
-      case FlipType::Default:
-        hints = GdkAnchorHints(hints | GDK_ANCHOR_FLIP);
-        break;
-      case FlipType::Slide:
-        hints = GdkAnchorHints(hints | GDK_ANCHOR_SLIDE);
-        break;
-      case FlipType::None:
-        break;
+  const int8_t position = popupFrame->GetAlignmentPosition();
+  // Gtk default is: GDK_ANCHOR_FLIP | GDK_ANCHOR_SLIDE | GDK_ANCHOR_RESIZE.
+  const auto hints = GdkAnchorHints([&] {
+    // We want tooltips to flip vertically or slide only.
+    // See nsMenuPopupFrame::SetPopupPosition().
+    // https://searchfox.org/mozilla-central/rev/d0f5bc50aff3462c9d1546b88d60c5cb020eb15c/layout/xul/nsMenuPopupFrame.cpp#1603
+    if (mPopupType == PopupType::Tooltip) {
+      return GDK_ANCHOR_FLIP_Y | GDK_ANCHOR_SLIDE;
     }
-  }
-
-  // We want tooltips to flip verticaly or slide only.
-  // See nsMenuPopupFrame::SetPopupPosition().
-  // https://searchfox.org/mozilla-central/rev/d0f5bc50aff3462c9d1546b88d60c5cb020eb15c/layout/xul/nsMenuPopupFrame.cpp#1603
-  if (mPopupType == PopupType::Tooltip) {
-    hints = GdkAnchorHints(GDK_ANCHOR_FLIP_Y | GDK_ANCHOR_SLIDE);
-  }
+    // We want to SLIDE_X menu on dual monitor setup rather than resize it
+    // on the other monitor, so we always allow sliding horizontally.
+    // slideVertical position check comes from the same variable in
+    // nsMenuPopupFrame::SetPopupPosition.
+    //
+    // NOTE(emilio): It feels odd to not honor Gecko's FlipType more, but
+    // historically we've done that... Maybe reconsider? But note that
+    // flipping is tried before sliding, so it seems not too bad?
+    const bool slideVertical =
+        (position >= POPUPPOSITION_STARTBEFORE &&
+         position <= POPUPPOSITION_ENDAFTER) ||
+        !anchored || popupFrame->GetFlipType() == FlipType::Slide ||
+        (rectAnchor == GDK_GRAVITY_CENTER && menuAnchor == GDK_GRAVITY_CENTER);
+    return GDK_ANCHOR_FLIP | GDK_ANCHOR_SLIDE_X |
+           (slideVertical ? GDK_ANCHOR_SLIDE_Y : 0) | GDK_ANCHOR_RESIZE;
+  }());
 
   return {
       anchorRect,
@@ -4451,8 +4445,12 @@ void nsWindow::OnMotionNotifyEvent(GdkEventMotion* aEvent) {
     return;
   }
 
-  if (mWindowShouldStartDragging) {
+  if (mWindowShouldStartDragging &&
+      is_drag_threshold_exceeded((GdkEvent*)aEvent)) {
     mWindowShouldStartDragging = false;
+    // when the drag ends, we don't get a button release event, so we clear
+    // the last mouse press event here.
+    SetLastPointerDownEvent(nullptr);
     GdkWindow* dragWindow = nullptr;
 
     // find the top-level window
@@ -4714,7 +4712,7 @@ bool nsWindow::DoTitlebarAction(LookAndFeel::TitlebarEvent aEvent,
 void nsWindow::OnButtonPressEvent(GdkEventButton* aEvent) {
   LOG("Button %u press\n", aEvent->button);
 
-  SetLastMousePressEvent((GdkEvent*)aEvent);
+  SetLastPointerDownEvent((GdkEvent*)aEvent);
   mLastMouseCoordinates.Set(aEvent);
 
   // If you double click in GDK, it will actually generate a second
@@ -4891,7 +4889,7 @@ void nsWindow::OnButtonPressEvent(GdkEventButton* aEvent) {
 void nsWindow::OnButtonReleaseEvent(GdkEventButton* aEvent) {
   LOG("Button %u release\n", aEvent->button);
 
-  SetLastMousePressEvent(nullptr);
+  SetLastPointerDownEvent(nullptr);
   mLastMouseCoordinates.Set(aEvent);
 
   if (!mGdkWindow) {
@@ -5578,21 +5576,21 @@ void nsWindow::RefreshScale(bool aRefreshScreen) {
   LOG("nsWindow::RefreshScale() GdkWindow scale %d refresh %d",
       gdk_window_get_scale_factor(mGdkWindow), aRefreshScreen);
 
+  MOZ_DIAGNOSTIC_ASSERT(mIsMapped && mGdkWindow);
+  int ceiledScale = gdk_window_get_scale_factor(mGdkWindow);
+  const bool scaleChanged = GdkCeiledScaleFactor() != ceiledScale;
+
 #ifdef MOZ_WAYLAND
   if (GdkIsWaylandDisplay()) {
     WaylandSurfaceLock lock(mSurface);
-    mSurface->SetCeiledScaleLocked(lock,
-                                   gdk_window_get_scale_factor(mGdkWindow));
+    mSurface->SetCeiledScaleLocked(lock, ceiledScale);
   }
 #endif
+  mCeiledScaleFactor = ceiledScale;
 
-  MOZ_DIAGNOSTIC_ASSERT(mIsMapped && mGdkWindow);
-  int ceiledScale = gdk_window_get_scale_factor(mGdkWindow);
-  bool scaleChanged = (mCeiledScaleFactor != ceiledScale);
   if (!scaleChanged) {
     return;
   }
-  mCeiledScaleFactor = ceiledScale;
 
   NotifyAPZOfDPIChange();
 
@@ -5844,6 +5842,7 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
   EventMessage msg;
   switch (aEvent->type) {
     case GDK_TOUCH_BEGIN:
+      SetLastPointerDownEvent((GdkEvent*)aEvent);
       // check to see if we should rollup
       if (CheckForRollup(aEvent->x_root, aEvent->y_root, false, false)) {
         return FALSE;
@@ -5853,7 +5852,8 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
     case GDK_TOUCH_UPDATE:
       msg = eTouchMove;
       // Start dragging when motion events happens in the dragging area
-      if (mWindowShouldStartDragging) {
+      if (mWindowShouldStartDragging &&
+          is_drag_threshold_exceeded((GdkEvent*)aEvent)) {
         mWindowShouldStartDragging = false;
         if (auto* topLevel = GetToplevelGdkWindow()) {
           LOG("  start window dragging window\n");
@@ -5878,6 +5878,7 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
       break;
     case GDK_TOUCH_END:
       msg = eTouchEnd;
+      SetLastPointerDownEvent(nullptr);
       if (mWindowShouldStartDragging) {
         LOG("  end of window dragging window\n");
         mWindowShouldStartDragging = false;
@@ -5885,6 +5886,7 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
       break;
     case GDK_TOUCH_CANCEL:
       msg = eTouchCancel;
+      SetLastPointerDownEvent(nullptr);
       break;
     default:
       return FALSE;
@@ -7036,17 +7038,10 @@ void nsWindow::UpdateOpaqueRegionInternal() {
     return;
   }
 
-  if (!IsTopLevelWidget()) {
-    // We need to clear target buffer alpha values of popup windows as
-    // SW-WR paints with alpha blending (see Bug 1674473).
-    return;
-  }
-
   GdkWindow* window = GetToplevelGdkWindow();
   if (!window) {
     return;
   }
-  MOZ_ASSERT(gdk_window_get_window_type(window) == GDK_WINDOW_TOPLEVEL);
 
   {
     AutoReadLock lock(mOpaqueRegionLock);
@@ -7063,8 +7058,14 @@ void nsWindow::UpdateOpaqueRegionInternal() {
 
       region = cairo_region_create();
 
+      const auto clientRegion =
+          LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetClientSize());
       for (auto iter = mOpaqueRegion.RectIter(); !iter.Done(); iter.Next()) {
-        auto gdkRect = DevicePixelsToGdkRectRoundIn(iter.Get());
+        auto thisRect = iter.Get().Intersect(clientRegion);
+        if (thisRect.IsEmpty()) {
+          continue;
+        }
+        auto gdkRect = DevicePixelsToGdkRectRoundIn(thisRect);
         cairo_rectangle_int_t rect = {gdkRect.x + offset.x,
                                       gdkRect.y + offset.y, gdkRect.width,
                                       gdkRect.height};
@@ -7594,6 +7595,26 @@ static bool is_mouse_in_window(GdkWindow* aWindow, gdouble aMouseX,
   gint h = gdk_window_get_height(aWindow) - margin;
 
   return aMouseX > x && aMouseX < x + w && aMouseY > y && aMouseY < y + h;
+}
+
+static bool is_drag_threshold_exceeded(GdkEvent* aEvent) {
+  GdkEvent* lastEvent = GetLastPointerDownEvent();
+
+  if (!lastEvent) {
+    return false;
+  }
+
+  const int32_t pixelThresholdX =
+      LookAndFeel::GetInt(LookAndFeel::IntID::DragThresholdX, 5);
+  const int32_t pixelThresholdY =
+      LookAndFeel::GetInt(LookAndFeel::IntID::DragThresholdY, 5);
+
+  gdouble lastX, lastY, currentX, currentY;
+  gdk_event_get_root_coords(lastEvent, &lastX, &lastY);
+  gdk_event_get_root_coords(aEvent, &currentX, &currentY);
+
+  return std::abs(currentX - lastX) > pixelThresholdX ||
+         std::abs(currentY - lastY) > pixelThresholdY;
 }
 
 static GtkWidget* get_gtk_widget_for_gdk_window(GdkWindow* window) {

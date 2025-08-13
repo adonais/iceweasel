@@ -8,12 +8,14 @@
 
 #include "nsArrayUtils.h"
 #include "nsCursorManager.h"
+#include "nsIAppStartup.h"
 #include "nsIDOMWindowUtils.h"
 #include "nsILocalFileMac.h"
 #include "GLContextCGL.h"
 #include "MacThemeGeometryType.h"
 #include "NativeMenuSupport.h"
 #include "WindowRenderer.h"
+#include "mozilla/Components.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/SwipeTracker.h"
 #include "mozilla/layers/APZInputBridge.h"
@@ -841,7 +843,8 @@ void nsCocoaWindow::PaintWindowInContentLayer() {
 }
 
 void nsCocoaWindow::HandleMainThreadCATransaction() {
-  AUTO_PROFILER_TRACING_MARKER("Paint", "HandleMainThreadCATransaction", GRAPHICS);
+  AUTO_PROFILER_TRACING_MARKER("Paint", "HandleMainThreadCATransaction",
+                               GRAPHICS);
   WillPaintWindow();
 
   if (GetWindowRenderer()->GetBackendType() == LayersBackend::LAYERS_NONE) {
@@ -6846,6 +6849,13 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
 + (void)paintMenubarForWindow:(NSWindow*)aWindow {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
+  if (!NSApp.active) {
+    // Early exit if the app isn't active. This is because we can't safely
+    // set the NSApp.mainMenu property in such a case. We early exit so we
+    // also don't invoke any side effects.
+    return;
+  }
+
   // make sure we only act on windows that have this kind of
   // object as a delegate
   id windowDelegate = [aWindow delegate];
@@ -7106,9 +7116,17 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   RefPtr<nsMenuBarX> hiddenWindowMenuBar =
       nsMenuUtilsX::GetHiddenWindowMenuBar();
   if (hiddenWindowMenuBar) {
-    // We do an async paint in order to prevent crashes when macOS is actively
-    // enumerating the menu items in `NSApp.mainMenu`.
-    hiddenWindowMenuBar->PaintAsyncIfNeeded();
+    bool isTerminating = false;
+    nsCOMPtr<nsIAppStartup> appStartup(components::AppStartup::Service());
+    if (appStartup) {
+      appStartup->GetAttemptingQuit(&isTerminating);
+    }
+
+    if (!isTerminating) {
+      // We do an async paint in order to prevent crashes when macOS is actively
+      // enumerating the menu items in `NSApp.mainMenu`.
+      hiddenWindowMenuBar->PaintAsyncIfNeeded();
+    }
   }
 
   NSWindow* window = [aNotification object];

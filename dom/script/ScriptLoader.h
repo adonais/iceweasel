@@ -780,9 +780,11 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   void MaybeMoveToLoadedList(ScriptLoadRequest* aRequest);
 
-  // Returns wether we should save the bytecode of this script after the
-  // execution of the script.
-  static void CalculateBytecodeCacheFlag(ScriptLoadRequest* aRequest);
+  // Check whether the bytecode for the request should be saved or not.
+  // If the request is a non-top-level module request and it passed the
+  // condition, it's stored into mBytecodeEncodableDependencyModules in order
+  // to iterate over them later.
+  void CalculateBytecodeCacheFlag(ScriptLoadRequest* aRequest);
 
   void RunScriptWhenSafe(ScriptLoadRequest* aRequest);
 
@@ -794,20 +796,47 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   Document* mDocument;  // [WEAK]
   nsCOMArray<nsIScriptLoaderObserver> mObservers;
+
+  // The following lists maintains the list of requests for each phase and
+  // situation.
+  // Each request can be a part of at most one list.
+
+  // Holds non-async, non-parser-created requests until it's evaluated or it
+  // hits load error.
   ScriptLoadRequestList mNonAsyncExternalScriptInsertedRequests;
-  // mLoadingAsyncRequests holds async requests while they're loading; when they
-  // have been loaded they are moved to mLoadedAsyncRequests.
+
+  // Holds async requests until it's loaded or it hits load error.
+  // When they have been loaded they are moved to mLoadedAsyncRequests.
   ScriptLoadRequestList mLoadingAsyncRequests;
-  // mLoadedAsyncRequests holds async script requests and dynamic module import
-  // requests, which are processed in the same way.
+
+  // Holds async script requests and dynamic module import
+  // requests, which are processed in the same way, until it's evaluated,
+  // or it's passed to off-thread.
   ScriptLoadRequestList mLoadedAsyncRequests;
+
+  // Holds non-async, parser-created, defer requests, until it's evaluated
+  // or it hits load error.
   ScriptLoadRequestList mDeferRequests;
+
+  // Holds parser-created XSLT requests, until it's evaluated or it hits
+  // load error.
   ScriptLoadRequestList mXSLTRequests;
+
   RefPtr<ScriptLoadRequest> mParserBlockingRequest;
+
+  // Holds requests which is passed to off-thread compilation.
+  // When the off-thread compilation finishes, the request is added back to
+  // the original list if any.
   ScriptLoadRequestList mOffThreadCompilingRequests;
 
-  // List of script load request that are holding a buffer which has to be saved
-  // on the cache.
+  // Holds non-top-level module requests which passed the bytecode encoding
+  // conditions, until it's queued to mBytecodeEncodingQueue.
+  //
+  // TODO: Remove this and per-ScriptLoader encoding queue (bug 1902951).
+  ScriptLoadRequestList mBytecodeEncodableDependencyModules;
+
+  // Holds already-evaluted requests that are holding a buffer which has to be
+  // saved on the cache, until it's encoded or the encoding is aborted.
   ScriptLoadRequestList mBytecodeEncodingQueue;
 
   // In mRequests, the additional information here is stored by the element.

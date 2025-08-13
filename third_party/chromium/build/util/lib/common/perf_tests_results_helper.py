@@ -1,8 +1,7 @@
-# Copyright 2013 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-from __future__ import print_function
 
 import re
 import sys
@@ -11,7 +10,7 @@ import json
 import logging
 import math
 
-import perf_result_data_type
+from lib.common import perf_result_data_type
 
 
 # Mapping from result type to test output
@@ -102,8 +101,6 @@ def PrintPerfResult(measurement, trace, values, units,
 
   The string args may be empty but they must not contain any colons (:) or
   equals signs (=).
-  This is parsed by the buildbot using:
-  http://src.chromium.org/viewvc/chrome/trunk/tools/build/scripts/slave/process_log_utils.py
 
   Args:
     measurement: A description of the quantity being measured, e.g. "vm_peak".

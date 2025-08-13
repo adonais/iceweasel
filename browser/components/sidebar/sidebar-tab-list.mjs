@@ -19,6 +19,7 @@ export class SidebarTabList extends FxviewTabListBase {
     super();
     // Panel is open, assume we always want to react to updates.
     this.updatesPaused = false;
+    this.multiSelect = true;
     this.selectedGuids = new Set();
     this.shortcutsLocalization = new Localization(
       ["toolkit/global/textActions.ftl"],
@@ -45,33 +46,20 @@ export class SidebarTabList extends FxviewTabListBase {
       (e.code == "ArrowDown" && this.activeIndex < this.rowEls.length - 1)
     ) {
       super.handleFocusElementInRow(e);
-    } else if (e.code == "ArrowUp" && this.activeIndex == 0) {
-      let parentCard = e.target.getRootNode().host.closest("moz-card");
-      if (parentCard) {
-        parentCard.summaryEl.focus();
-      }
+    } else if (
+      (e.code == "ArrowUp" && this.activeIndex == 0) ||
+      e.code === "ArrowLeft"
+    ) {
+      this.#focusParentHeader(e.target);
     } else if (
       e.code == "ArrowDown" &&
       this.activeIndex == this.rowEls.length - 1
     ) {
-      let parentCard = e.target.getRootNode().host.closest("moz-card");
-      if (
-        this.sortOption == "datesite" &&
-        parentCard.classList.contains("last-card")
-      ) {
-        // If we're going down from the last site, then focus the next date.
-        const dateCard = parentCard.parentElement;
-        const nextDate = dateCard.nextElementSibling;
-        nextDate?.summaryEl.focus();
-      }
-      let nextCard = parentCard.nextElementSibling;
-      if (nextCard && nextCard.localName == "moz-card") {
-        nextCard.summaryEl.focus();
-      }
+      this.#focusNextHeader(e.target);
     }
 
     // Update or clear multi-selection (depending on whether shift key is used).
-    if (e.code === "ArrowUp" || e.code === "ArrowDown") {
+    if (this.multiSelect && (e.code === "ArrowUp" || e.code === "ArrowDown")) {
       this.#updateSelection(e);
     }
 
@@ -82,6 +70,30 @@ export class SidebarTabList extends FxviewTabListBase {
     ) {
       e.preventDefault();
       this.#selectAll();
+    }
+  }
+
+  #focusParentHeader(row) {
+    let parentCard = row.getRootNode().host.closest("moz-card");
+    if (parentCard) {
+      parentCard.summaryEl.focus();
+    }
+  }
+
+  #focusNextHeader(row) {
+    let parentCard = row.getRootNode().host.closest("moz-card");
+    if (
+      this.sortOption == "datesite" &&
+      parentCard.classList.contains("last-card")
+    ) {
+      // If we're going down from the last site, then focus the next date.
+      const dateCard = parentCard.parentElement;
+      const nextDate = dateCard.nextElementSibling;
+      nextDate?.summaryEl.focus();
+    }
+    let nextCard = parentCard.nextElementSibling;
+    if (nextCard && nextCard.localName == "moz-card") {
+      nextCard.summaryEl.focus();
     }
   }
 

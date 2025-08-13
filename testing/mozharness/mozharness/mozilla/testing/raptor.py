@@ -1331,7 +1331,11 @@ class Raptor(
                     installer_path = self.installer_path
 
                 self.info(f"Installing APK from: {installer_path}")
-                self.install_android_app(str(installer_path))
+                if self.app == "fenix":
+                    self.info("Installing Fenix APK with baseline profile")
+                    self.device.install_app_baseline_profile(installer_path)
+                else:
+                    self.install_android_app(str(installer_path))
             else:
                 super(Raptor, self).install()
 

@@ -6,13 +6,13 @@
 #ifndef nsStyleUtil_h___
 #define nsStyleUtil_h___
 
-#include "nsCoord.h"
-#include "nsCSSPropertyID.h"
-#include "nsTArrayForwardDeclare.h"
-#include "nsStringFwd.h"
 #include "nsCRT.h"
+#include "nsCSSPropertyID.h"
 #include "nsColor.h"
+#include "nsCoord.h"
 #include "nsGkAtoms.h"
+#include "nsStringFwd.h"
+#include "nsTArrayForwardDeclare.h"
 
 class nsCSSValue;
 class nsIContent;

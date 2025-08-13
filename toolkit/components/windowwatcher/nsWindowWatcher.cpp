@@ -30,6 +30,7 @@
 #include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/UserActivation.h"
 #include "nsIDragService.h"
 #include "nsIPrompt.h"
@@ -948,7 +949,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   }
 
   uint32_t activeDocsSandboxFlags = 0;
-  nsCOMPtr<nsIContentSecurityPolicy> cspToInheritForAboutBlank;
+  nsCOMPtr<nsIPolicyContainer> policyContainerToInheritForAboutBlank;
   Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> coepToInheritForAboutBlank;
   if (!targetBC) {
     // We're going to either open up a new window ourselves or ask a
@@ -963,7 +964,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       activeDocsSandboxFlags = parentDoc->GetSandboxFlags();
 
       if (!aForceNoOpener) {
-        cspToInheritForAboutBlank = parentDoc->GetCsp();
+        policyContainerToInheritForAboutBlank = parentDoc->GetPolicyContainer();
         coepToInheritForAboutBlank = parentDoc->GetEmbedderPolicy();
       }
 
@@ -1271,7 +1272,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       MOZ_ASSERT(!targetOuterWin->GetSameProcessOpener() ||
                  targetOuterWin->GetSameProcessOpener() == aParent);
       targetOuterWin->SetInitialPrincipal(newWindowPrincipal,
-                                          cspToInheritForAboutBlank,
+                                          policyContainerToInheritForAboutBlank,
                                           coepToInheritForAboutBlank);
 
       if (aIsPopupSpam) {
@@ -1347,8 +1348,9 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     if (cx) {
       nsGlobalWindowInner* win = xpc::CurrentWindowOrNull(cx);
       if (win) {
-        nsCOMPtr<nsIContentSecurityPolicy> csp = win->GetCsp();
-        aLoadState->SetCsp(csp);
+        nsCOMPtr<nsIPolicyContainer> policyContainer =
+            win->GetPolicyContainer();
+        aLoadState->SetPolicyContainer(policyContainer);
       }
     }
   }

@@ -162,15 +162,16 @@ class TabManagerClass {
    * @param {string=} options.userContextId
    *     A user context id from UserContextManager.
    * @param {window=} options.window
-   *     The window where the new tab will open. Defaults to Services.wm.getMostRecentWindow
-   *     if no window is provided. Will be ignored if referenceTab is provided.
+   *     The window where the new tab will open. Defaults to
+   *     Services.wm.getMostRecentBrowserWindow if no window is provided.
+   *     Will be ignored if referenceTab is provided.
    */
   async addTab(options = {}) {
     let {
       focus = false,
       referenceTab = null,
       userContextId = null,
-      window = Services.wm.getMostRecentWindow(null),
+      window = Services.wm.getMostRecentBrowserWindow(),
     } = options;
 
     let tabIndex;

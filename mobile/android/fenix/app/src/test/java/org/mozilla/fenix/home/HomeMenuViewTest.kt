@@ -7,7 +7,12 @@ package org.mozilla.fenix.home
 import android.view.View
 import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
+import androidx.navigation.NavDirections
+import androidx.navigation.NavOptions
+import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.spyk
 import io.mockk.verify
 import mozilla.appservices.places.BookmarkRoot
@@ -27,7 +32,6 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.AccountState
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
-import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.whatsnew.WhatsNew
@@ -44,7 +48,6 @@ class HomeMenuViewTest {
     private lateinit var view: View
     private lateinit var lifecycleOwner: LifecycleOwner
     private lateinit var homeActivity: HomeActivity
-    private lateinit var homeFragment: HomeFragment
     private lateinit var navController: NavController
     private lateinit var menuButton: MenuButton
     private lateinit var homeMenuView: HomeMenuView
@@ -54,8 +57,10 @@ class HomeMenuViewTest {
         view = mockk(relaxed = true)
         lifecycleOwner = mockk(relaxed = true)
         homeActivity = mockk(relaxed = true)
-        homeFragment = mockk(relaxed = true)
-        navController = mockk(relaxed = true)
+        navController = mockk(relaxed = true) {
+            every { navigate(any<NavDirections>(), any<NavOptions>()) } just runs
+            every { currentDestination?.id } returns R.id.homeFragment
+        }
 
         menuButton = spyk(MenuButton(testContext))
 
@@ -64,7 +69,6 @@ class HomeMenuViewTest {
             lifecycleOwner = lifecycleOwner,
             homeActivity = homeActivity,
             navController = navController,
-            homeFragment = homeFragment,
             menuButton = WeakReference(menuButton),
         )
     }
@@ -87,9 +91,9 @@ class HomeMenuViewTest {
         assertNotNull(HomeMenuMetrics.settingsItemClicked.testGetValue())
 
         verify {
-            navController.nav(
-                R.id.homeFragment,
+            navController.navigate(
                 HomeFragmentDirections.actionGlobalSettingsFragment(),
+                null,
             )
         }
     }
@@ -103,9 +107,9 @@ class HomeMenuViewTest {
         assertNotNull(HomeScreen.customizeHomeClicked.testGetValue())
 
         verify {
-            navController.nav(
-                R.id.homeFragment,
+            navController.navigate(
                 HomeFragmentDirections.actionGlobalHomeSettingsFragment(),
+                null,
             )
         }
     }
@@ -115,29 +119,29 @@ class HomeMenuViewTest {
         homeMenuView.onItemTapped(HomeMenu.Item.SyncAccount(AccountState.AUTHENTICATED))
 
         verify {
-            navController.nav(
-                R.id.homeFragment,
+            navController.navigate(
                 HomeFragmentDirections.actionGlobalAccountSettingsFragment(),
+                null,
             )
         }
 
         homeMenuView.onItemTapped(HomeMenu.Item.SyncAccount(AccountState.NEEDS_REAUTHENTICATION))
 
         verify {
-            navController.nav(
-                R.id.homeFragment,
+            navController.navigate(
                 HomeFragmentDirections.actionGlobalAccountProblemFragment(
                     entrypoint = FenixFxAEntryPoint.HomeMenu,
                 ),
+                null,
             )
         }
 
         homeMenuView.onItemTapped(HomeMenu.Item.SyncAccount(AccountState.NO_ACCOUNT))
 
         verify {
-            navController.nav(
-                R.id.homeFragment,
+            navController.navigate(
                 HomeFragmentDirections.actionGlobalTurnOnSync(entrypoint = FenixFxAEntryPoint.HomeMenu),
+                null,
             )
         }
     }
@@ -147,9 +151,9 @@ class HomeMenuViewTest {
         homeMenuView.onItemTapped(HomeMenu.Item.Bookmarks)
 
         verify {
-            navController.nav(
-                R.id.homeFragment,
+            navController.navigate(
                 HomeFragmentDirections.actionGlobalBookmarkFragment(BookmarkRoot.Mobile.id),
+                null,
             )
         }
     }
@@ -159,9 +163,9 @@ class HomeMenuViewTest {
         homeMenuView.onItemTapped(HomeMenu.Item.History)
 
         verify {
-            navController.nav(
-                R.id.homeFragment,
+            navController.navigate(
                 HomeFragmentDirections.actionGlobalHistoryFragment(),
+                null,
             )
         }
     }
@@ -171,9 +175,9 @@ class HomeMenuViewTest {
         homeMenuView.onItemTapped(HomeMenu.Item.Downloads)
 
         verify {
-            navController.nav(
-                R.id.homeFragment,
+            navController.navigate(
                 HomeFragmentDirections.actionGlobalDownloadsFragment(),
+                null,
             )
         }
     }
@@ -227,11 +231,11 @@ class HomeMenuViewTest {
         homeMenuView.onItemTapped(HomeMenu.Item.ReconnectSync)
 
         verify {
-            navController.nav(
-                R.id.homeFragment,
+            navController.navigate(
                 HomeFragmentDirections.actionGlobalAccountProblemFragment(
                     entrypoint = FenixFxAEntryPoint.HomeMenu,
                 ),
+                null,
             )
         }
     }
@@ -241,9 +245,9 @@ class HomeMenuViewTest {
         homeMenuView.onItemTapped(HomeMenu.Item.Extensions)
 
         verify {
-            navController.nav(
-                R.id.homeFragment,
+            navController.navigate(
                 HomeFragmentDirections.actionGlobalAddonsManagementFragment(),
+                null,
             )
         }
     }

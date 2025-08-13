@@ -8,6 +8,9 @@
 
 "use strict";
 
+let tomorrow = new Date();
+tomorrow.setDate(tomorrow.getDate() + 1);
+let tomorrowStr = tomorrow.toISOString().slice(0, 10);
 const CONFIG = [
   {
     recordType: "engine",
@@ -32,6 +35,7 @@ const CONFIG = [
     variants: [
       {
         environment: { allRegionsAndLocales: true },
+        isNewUntil: tomorrowStr,
       },
     ],
   },
@@ -55,9 +59,27 @@ add_task(async function test_perplexity_has_been_in_search_mode() {
   );
 
   let popup = await UrlbarTestUtils.openSearchModeSwitcher(window);
+
+  Assert.equal(
+    BrowserTestUtils.isVisible(popup.querySelector("menuitem")),
+    true,
+    "Unified Search Button is visible."
+  );
+
+  info("Check the badge is next to perplexity engine");
+  let perplexity = popup.querySelector("menuitem[label=Perplexity]");
+  let computedStyle = getComputedStyle(perplexity, ":after");
+  let badgeContent = perplexity.getAttribute("badge");
+  Assert.equal(
+    computedStyle.content,
+    "attr(badge)",
+    "Should have the badge attribute."
+  );
+  Assert.equal(badgeContent, "New", "Badge attribute value should be 'New'.");
+
   info("Press on the Perplexity menu button and enter search mode");
   let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
-  popup.querySelector("menuitem[label=Perplexity]").click();
+  perplexity.click();
   await popupHidden;
 
   await UrlbarTestUtils.assertSearchMode(window, {

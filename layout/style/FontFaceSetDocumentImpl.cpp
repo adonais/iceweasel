@@ -5,6 +5,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FontFaceSetDocumentImpl.h"
+
 #include "mozilla/FontLoaderUtils.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/PresShell.h"

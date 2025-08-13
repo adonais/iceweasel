@@ -7,16 +7,16 @@
 #ifndef LAYOUT_SVG_SVGOBSERVERUTILS_H_
 #define LAYOUT_SVG_SVGOBSERVERUTILS_H_
 
+#include "FrameProperties.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/SVGIntegrationUtils.h"
 #include "mozilla/dom/IDTracker.h"
-#include "FrameProperties.h"
 #include "nsID.h"
 #include "nsIFrame.h"  // only for LayoutFrameType
 #include "nsIMutationObserver.h"
+#include "nsIReferrerInfo.h"
 #include "nsISupports.h"
 #include "nsISupportsImpl.h"
-#include "nsIReferrerInfo.h"
 #include "nsStringFwd.h"
 #include "nsStubMutationObserver.h"
 #include "nsStyleStruct.h"

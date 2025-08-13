@@ -111,7 +111,7 @@ const gLoggingPresets = {
   },
   "media-playback": {
     modules:
-      "HTMLMediaElement:4,HTMLMediaElementEvents:4,cubeb:5,PlatformDecoderModule:5,AudioSink:5,AudioSinkWrapper:5,MediaDecoderStateMachine:4,MediaDecoder:4,MediaFormatReader:5,GMP:5,EME:5,MediaSource:5,MediaSourceSamples:5,Autoplay:5,MFMediaEngine:5",
+      "HTMLMediaElement:4,HTMLMediaElementEvents:4,cubeb:5,PlatformDecoderModule:5,AudioSink:5,AudioSinkWrapper:5,MediaDecoderStateMachine:4,MediaDecoder:4,MediaFormatReader:5,GMP:5,EME:5,MediaSource:5,MediaSourceSamples:5,Autoplay:5,GVAutoplay:5,MFMediaEngine:5,FFmpegVideo:5,FFmpegAudio:5,FFmpegLib:4",
     l10nIds: {
       label: "about-logging-preset-media-playback-label",
       description: "about-logging-preset-media-playback-description",
@@ -133,7 +133,7 @@ const gLoggingPresets = {
   },
   webcodecs: {
     modules:
-      "WebCodecs:5,PlatformDecoderModule:5,PlatformEncoderModule:5,MediaDecoder:5,FFmpegVideo:5,FFmpegAudio:5,GMP:5,ImageUtils:5",
+      "WebCodecs:5,PlatformDecoderModule:5,PlatformEncoderModule:5,MediaDecoder:5,FFmpegVideo:5,FFmpegAudio:5,FFmpegLib:4,GMP:5,ImageUtils:5",
     l10nIds: {
       label: "about-logging-preset-webcodecs-label",
       description: "about-logging-preset-webcodecs-description",
@@ -158,6 +158,15 @@ const gLoggingPresets = {
     // The graphics profiler preset enables the threads we want but loses the screenshots.
     // We could add an extra preset for that if we miss it.
     profilerPreset: "graphics",
+  },
+  ml: {
+    modules:
+      "GeckoMLEngineParent:4,GeckoMLEngineChild:4,GeckoMLUtils:4,GeckoMLUtils:4,GeckoMLModelHub:4,GeckoMLONNXPipeline:4,GeckoMLOPFS:4,GeckoMLEmbeddingsGenerator:4,GeckoML:4,GeckoMLONNXNative:4",
+    l10nIds: {
+      label: "about-logging-preset-ml-label",
+      description: "about-logging-preset-ml-description",
+    },
+    profilerPreset: "ml",
   },
   ...gOsSpecificLoggingPresets,
   custom: {

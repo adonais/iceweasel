@@ -187,6 +187,7 @@
                             aria-expanded="false"
                             aria-haspopup="menu"
                             tooltip="dynamic-shortcut-tooltip"
+                            data-l10n-id="urlbar-searchmode-default"
                             class="chromeclass-toolbar-additional"
                             type="menu">
               <image id="searchmode-switcher-icon" class="toolbarbutton-icon"/>
@@ -215,6 +216,9 @@
                               role="button"
                               data-l10n-id="urlbar-searchmode-exit-button"
                               class="toolbarbutton-icon close-button" />
+            </box>
+            <box id="trust-icon-container" align="center" role="button" data-l10n-id="urlbar-identity-button">
+              <image id="trust-icon"/>
             </box>
             <!-- Use onclick instead of normal popup= syntax since the popup
                  code fires onmousedown, and hence eats our favicon drag events. -->

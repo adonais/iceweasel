@@ -19,7 +19,6 @@ skip-if = ["os == 'android'"] #android: bug 1267092
 ["test_subresources_prompts.html"]
 skip-if = [
   "os == 'android'",
-  "verify",
   "http3",
   "http2",
 ]

@@ -36,7 +36,7 @@
         android:paddingEnd="5dp"
         android:textColor="?android:attr/textColorPrimary"
         android:textSize="16sp"
-        tools:text="@string/mozac_feature_addons_installed_dialog_title"
+        tools:text="@string/mozac_feature_addons_installed_dialog_title_2"
         tools:textColor="#000000" />
 
     <TextView
@@ -46,11 +46,12 @@
         android:layout_below="@id/title"
         android:layout_alignStart="@id/title"
         android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
         android:paddingStart="5dp"
         android:paddingTop="4dp"
         android:paddingEnd="5dp"
         android:textColor="?android:attr/textColorPrimary"
-        tools:text="@string/mozac_feature_addons_installed_dialog_description_2" />
+        tools:text="@string/mozac_feature_addons_installed_dialog_description_3" />
 
 
     <Button

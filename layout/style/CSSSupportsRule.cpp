@@ -6,9 +6,9 @@
 
 #include "mozilla/dom/CSSSupportsRule.h"
 
+#include "mozilla/ServoBindings.h"
 #include "mozilla/css/GroupRule.h"
 #include "mozilla/dom/CSSSupportsRuleBinding.h"
-#include "mozilla/ServoBindings.h"
 
 using namespace mozilla::css;
 

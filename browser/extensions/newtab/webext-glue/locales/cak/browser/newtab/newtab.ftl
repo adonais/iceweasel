@@ -314,6 +314,9 @@ newtab-custom-settings = Tinuk'samajïx ch'aqa' runuk'ulem
 ## Strings for download mobile highlight
 
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
 

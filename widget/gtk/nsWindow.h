@@ -433,7 +433,7 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntMargin GtkBorderToDevicePixels(const GtkBorder&);
 
   bool WidgetTypeSupportsAcceleration() override;
-  bool WidgetTypeSupportsNativeCompositing() override { return !mIsDragPopup; }
+  bool WidgetTypeSupportsNativeCompositing() override;
 
   nsresult SetSystemFont(const nsCString& aFontName) override;
   nsresult GetSystemFont(nsCString& aFontName) override;
@@ -893,7 +893,7 @@ class nsWindow final : public nsBaseWidget {
   void WaylandPopupMarkAsClosed();
   void WaylandPopupRemoveClosedPopups();
   void WaylandPopupSetDirectPosition();
-  bool WaylandPopupFitsToplevelWindow(bool aMove);
+  bool WaylandPopupFitsToplevelWindow();
   const WaylandPopupMoveToRectParams WaylandPopupGetPositionFromLayout();
   void WaylandPopupPropagateChangesToLayout(bool aMove, bool aResize);
   nsWindow* WaylandPopupFindLast(nsWindow* aPopup);

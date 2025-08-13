@@ -59,7 +59,7 @@ class WebCompatReducerTest {
                 reason = "slow",
                 problemDescription = "problem description",
             ),
-            snackbarState = SnackbarState.None,
+            snackbarState = SnackbarState.None(),
         )
 
         val actual = WebCompatReducer.reduce(appState, WebCompatAction.WebCompatReportSent)

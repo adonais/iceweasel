@@ -17,8 +17,8 @@ import org.mozilla.fenix.R
  */
 data class SettingsAppIcon(
     val activityAlias: ActivityAlias,
-    @StringRes val titleId: Int,
-    @StringRes val subtitleId: Int? = null,
+    @param:StringRes val titleId: Int,
+    @param:StringRes val subtitleId: Int? = null,
     val isSelected: Boolean = false,
 ) {
 
@@ -27,7 +27,7 @@ data class SettingsAppIcon(
      */
     companion object {
 
-        private val appDefault = SettingsAppIcon(
+        val appDefault = SettingsAppIcon(
             activityAlias = ActivityAlias.AppDefault,
             titleId = R.string.alternative_app_icon_option_default,
         )
@@ -118,31 +118,44 @@ data class SettingsAppIcon(
         )
 
         /**
-         *  A list of all available [SettingsAppIcon] options used for icon selection.
+         *  Grouped [SettingsAppIcon] options used in the icon picker screen.
          */
-        val settingsAppIcons: List<SettingsAppIcon> = listOf(
-            appDefault,
-            appSolidLight,
-            appSolidDark,
-            appSolidRed,
-            appSolidGreen,
-            appSolidBlue,
-            appSolidPurple,
-            appSolidPurpleDark,
-            appGradientSunrise,
-            appGradientGoldenHour,
-            appGradientSunset,
-            appGradientBlueHour,
-            appGradientTwilight,
-            appGradientMidnight,
-            appGradientNorthernLights,
-            appRetro2004,
-            appRetro2017,
-            appPixelated,
-            appMinimal,
-            appPride,
-            appCute,
-            appMomo,
+        val groupedAppIcons: Map<SettingsGroupTitle, List<SettingsAppIcon>> = mapOf(
+            SettingsGroupTitle(R.string.alternative_app_icon_group_solid_colors) to listOf(
+                appDefault,
+                appSolidLight,
+                appSolidDark,
+                appSolidRed,
+                appSolidGreen,
+                appSolidBlue,
+                appSolidPurple,
+                appSolidPurpleDark,
+            ),
+            SettingsGroupTitle(R.string.alternative_app_icon_group_gradients) to listOf(
+                appGradientSunrise,
+                appGradientGoldenHour,
+                appGradientSunset,
+                appGradientBlueHour,
+                appGradientTwilight,
+                appGradientMidnight,
+                appGradientNorthernLights,
+            ),
+            SettingsGroupTitle(R.string.alternative_app_icon_group_other) to listOf(
+                appRetro2004,
+                appRetro2017,
+                appPixelated,
+                appMinimal,
+                appPride,
+                appCute,
+                appMomo,
+            ),
         )
     }
 }
+
+/**
+ * Type that represents a group title in the icon picker UI.
+ *
+ * @property titleId A string resource describing the group title.
+ */
+data class SettingsGroupTitle(@param:StringRes val titleId: Int)

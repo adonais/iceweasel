@@ -62,6 +62,7 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Exceptions.h"
 #include "mozilla/dom/nsCSPContext.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ExtensionPolicyService.h"
@@ -514,7 +515,7 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
   // Get the window, if any, corresponding to the current global
   nsCOMPtr<nsIContentSecurityPolicy> csp;
   if (nsGlobalWindowInner* win = xpc::CurrentWindowOrNull(cx)) {
-    csp = win->GetCsp();
+    csp = PolicyContainer::GetCSP(win->GetPolicyContainer());
   }
 
   if (!csp) {

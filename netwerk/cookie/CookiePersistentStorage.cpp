@@ -7,6 +7,7 @@
 #include "CookieCommons.h"
 #include "CookieLogging.h"
 #include "CookiePersistentStorage.h"
+#include "CookieService.h"
 #include "CookieValidation.h"
 
 #include "mozilla/FileUtils.h"
@@ -20,7 +21,6 @@
 #include "mozStorageHelper.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsICookieNotification.h"
-#include "nsICookieService.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsILineInputStream.h"
 #include "nsIURIMutator.h"
@@ -28,11 +28,7 @@
 #include "nsVariant.h"
 #include "prprf.h"
 
-// XXX_hack. See bug 178993.
-// This is a hack to hide HttpOnly cookies from older browsers
-#define HTTP_ONLY_PREFIX "#HttpOnly_"
-
-constexpr auto COOKIES_SCHEMA_VERSION = 15;
+constexpr auto COOKIES_SCHEMA_VERSION = 16;
 
 // parameter indexes; see |Read|
 constexpr auto IDX_NAME = 0;
@@ -1574,6 +1570,14 @@ CookiePersistentStorage::OpenDBResult CookiePersistentStorage::TryInitDB(
             "ALTER TABLE moz_cookies DROP COLUMN rawSameSite;"));
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
 
+        [[fallthrough]];
+      }
+
+      case 15: {
+        rv = mSyncConn->ExecuteSimpleSQL(
+            nsLiteralCString("UPDATE moz_cookies SET expiry = expiry * 1000;"));
+        NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
+
         // No more upgrades. Update the schema version.
         rv = mSyncConn->SetSchemaVersion(COOKIES_SCHEMA_VERSION);
         NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
@@ -2377,17 +2381,96 @@ void CookiePersistentStorage::CollectCookieJarSizeData() {
 void CookiePersistentStorage::RecordValidationTelemetry() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsTArray<RefPtr<nsICookie>> cookies;
-  GetAll(cookies);
+  RefPtr<CookieService> cs = CookieService::GetSingleton();
+  if (!cs) {
+    // We are shutting down, or something bad is happening.
+    return;
+  }
 
-  for (nsICookie* rawCookie : cookies) {
-    Cookie* cookie = Cookie::Cast(rawCookie);
+  struct CookieToAddOrRemove {
+    nsCString mBaseDomain;
+    OriginAttributes mOriginAttributes;
+    RefPtr<Cookie> mCookie;
+  };
 
-    RefPtr<CookieValidation> validation =
-        CookieValidation::Validate(cookie->ToIPC());
-    mozilla::glean::networking::cookie_db_validation
-        .Get(ValidationErrorToLabel(validation->Result()))
-        .Add(1);
+  nsTArray<CookieToAddOrRemove> listToAdd;
+  nsTArray<CookieToAddOrRemove> listToRemove;
+
+  for (const auto& entry : mHostTable) {
+    const CookieEntry::ArrayType& cookies = entry.GetCookies();
+    for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
+      Cookie* cookie = cookies[i];
+
+      RefPtr<CookieValidation> validation =
+          CookieValidation::Validate(cookie->ToIPC());
+      mozilla::glean::networking::cookie_db_validation
+          .Get(ValidationErrorToLabel(validation->Result()))
+          .Add(1);
+
+      // We are unable to recover from all the possible errors. Let's fix the
+      // most common ones.
+      switch (validation->Result()) {
+        case nsICookieValidation::eRejectedNoneRequiresSecure: {
+          RefPtr<Cookie> newCookie =
+              Cookie::Create(cookie->ToIPC(), entry.mOriginAttributes);
+          MOZ_ASSERT(newCookie);
+
+          newCookie->SetSameSite(nsICookie::SAMESITE_UNSET);
+          newCookie->SetCreationTime(cookie->CreationTime());
+
+          listToAdd.AppendElement(CookieToAddOrRemove{
+              entry.mBaseDomain, entry.mOriginAttributes, newCookie});
+          break;
+        }
+
+        case nsICookieValidation::eRejectedAttributeExpiryOversize: {
+          RefPtr<Cookie> newCookie =
+              Cookie::Create(cookie->ToIPC(), entry.mOriginAttributes);
+          MOZ_ASSERT(newCookie);
+
+          int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
+
+          newCookie->SetExpiry(CookieCommons::MaybeCapExpiry(currentTimeInMSec,
+                                                             cookie->Expiry()));
+          newCookie->SetCreationTime(cookie->CreationTime());
+
+          listToAdd.AppendElement(CookieToAddOrRemove{
+              entry.mBaseDomain, entry.mOriginAttributes, newCookie});
+          break;
+        }
+
+        case nsICookieValidation::eRejectedEmptyNameAndValue:
+          [[fallthrough]];
+        case nsICookieValidation::eRejectedInvalidCharName:
+          [[fallthrough]];
+        case nsICookieValidation::eRejectedInvalidCharValue:
+          listToRemove.AppendElement(CookieToAddOrRemove{
+              entry.mBaseDomain, entry.mOriginAttributes, cookie});
+          break;
+
+        default:
+          // Nothing to do here.
+          break;
+      }
+    }
+  }
+
+  for (CookieToAddOrRemove& data : listToAdd) {
+    AddCookie(nullptr, data.mBaseDomain, data.mOriginAttributes, data.mCookie,
+              data.mCookie->CreationTime(), nullptr, VoidCString(), true,
+              !data.mOriginAttributes.mPartitionKey.IsEmpty(), nullptr,
+              nullptr);
+  }
+
+  for (CookieToAddOrRemove& data : listToRemove) {
+    RemoveCookie(data.mBaseDomain, data.mOriginAttributes, data.mCookie->Host(),
+                 data.mCookie->Name(), data.mCookie->Path(),
+                 /* is http: */ true, nullptr);
+  }
+
+  nsCOMPtr<nsIObserverService> os = services::GetObserverService();
+  if (os) {
+    os->NotifyObservers(nullptr, "cookies-validated", nullptr);
   }
 }
 

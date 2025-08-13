@@ -801,7 +801,8 @@ export class _ExperimentFeature {
 
     if (missingIds?.size) {
       throw new ExperimentLocalizationError(
-        lazy.NimbusTelemetry.ValidationFailureReason.L10N_MISSING_ENTRY
+        lazy.NimbusTelemetry.ValidationFailureReason.L10N_MISSING_ENTRY,
+        Services.locale.appLocaleAsBCP47
       );
     }
 
@@ -856,7 +857,8 @@ export class _ExperimentFeature {
             break;
           } else {
             throw new ExperimentLocalizationError(
-              lazy.NimbusTelemetry.ValidationFailureReason.L10N_MISSING_ENTRY
+              lazy.NimbusTelemetry.ValidationFailureReason.L10N_MISSING_ENTRY,
+              Services.locale.appLocaleAsBCP47
             );
           }
         }
@@ -895,9 +897,7 @@ export class _ExperimentFeature {
       ) {
         ExperimentAPI.manager._unenroll(
           enrollment,
-          lazy.UnenrollmentCause.fromReason(
-            lazy.NimbusTelemetry.UnenrollReason.L10N_MISSING_LOCALE
-          )
+          lazy.UnenrollmentCause.MissingLocale(locale)
         );
         return undefined;
       }
@@ -920,7 +920,7 @@ export class _ExperimentFeature {
           if (e instanceof ExperimentLocalizationError) {
             ExperimentAPI.manager._unenroll(
               enrollment,
-              lazy.UnenrollmentCause.fromReason(e.reason)
+              e.asUnenrollmentCause()
             );
           } else {
             throw e;
@@ -949,8 +949,16 @@ ChromeUtils.defineLazyGetter(
 );
 
 class ExperimentLocalizationError extends Error {
-  constructor(reason) {
+  constructor(reason, locale) {
     super(`Localized experiment error (${reason})`);
     this.reason = reason;
+    this.locale = locale;
+  }
+
+  asUnenrollmentCause() {
+    return {
+      reason: this.reason,
+      locale: this.locale,
+    };
   }
 }

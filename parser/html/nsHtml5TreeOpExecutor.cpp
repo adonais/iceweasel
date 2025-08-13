@@ -11,6 +11,7 @@
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/nsCSPService.h"
+#include "mozilla/dom/PolicyContainer.h"
 
 #include "mozAutoDocUpdate.h"
 #include "mozilla/IdleTaskRunner.h"
@@ -1321,7 +1322,8 @@ void nsHtml5TreeOpExecutor::SetSpeculationBase(const nsAString& aURL) {
   }
 
   // Check the document's CSP usually delivered via the CSP header.
-  if (nsCOMPtr<nsIContentSecurityPolicy> csp = mDocument->GetCsp()) {
+  if (nsCOMPtr<nsIContentSecurityPolicy> csp =
+          PolicyContainer::GetCSP(mDocument->GetPolicyContainer())) {
     // base-uri should not fallback to the default-src and preloads should not
     // trigger violation reports.
     bool cspPermitsBaseURI = true;

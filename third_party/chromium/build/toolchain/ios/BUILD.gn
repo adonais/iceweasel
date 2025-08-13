@@ -1,4 +1,4 @@
-# Copyright 2021 The Chromium Authors. All rights reserved.
+# Copyright 2021 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -16,13 +16,56 @@ template("ios_toolchain") {
 
     sdk_developer_dir = ios_sdk_developer_dir
     deployment_target = ios_deployment_target
-    sdk_name = ios_sdk_name
+    target_environment = target_environment
     bin_path = ios_bin_path
-    strip_with_lipo = true
 
     toolchain_args = {
       forward_variables_from(invoker.toolchain_args, "*")
+      xcode_build = xcode_build
       current_os = "ios"
+    }
+  }
+}
+
+# Specialisation of the ios_toolchain template to declare the toolchain
+# and its tools to build application extension for iOS platform.
+template("ios_app_ext_toolchain") {
+  assert(defined(invoker.toolchain_args),
+         "Toolchains must declare toolchain_args")
+
+  ios_toolchain(target_name) {
+    forward_variables_from(invoker, "*", [ "toolchain_args" ])
+
+    toolchain_args = {
+      forward_variables_from(invoker.toolchain_args, "*")
+
+      ios_is_app_extension = true
+
+      # Those variables are defined outside of //build and thus only exists
+      # when used as part of Chromium. Use build_with_chromium to check if
+      # they can be overridden safely. This prevents breaking third-party
+      # projects such as WebRTC that only uses //build but not //base.
+      if (build_with_chromium) {
+        use_partition_alloc = false
+        ios_partition_alloc_enabled = false
+      }
+    }
+  }
+}
+
+# Specialisation of the ios_toolchain template to declare the toolchain
+# and its tools to build application extension for iOS platform.
+template("ios_blink_app_ext_toolchain") {
+  assert(defined(invoker.toolchain_args),
+         "Toolchains must declare toolchain_args")
+
+  ios_toolchain(target_name) {
+    forward_variables_from(invoker, "*", [ "toolchain_args" ])
+
+    toolchain_args = {
+      forward_variables_from(invoker.toolchain_args, "*")
+
+      ios_is_app_extension = true
     }
   }
 }
@@ -33,31 +76,10 @@ ios_toolchain("ios_clang_arm64") {
   }
 }
 
-ios_toolchain("ios_clang_arm64_13_0") {
+ios_toolchain("ios_clang_arm64_16_0") {
   toolchain_args = {
     target_cpu = "arm64"
-    ios_deployment_target = "13.0"
-  }
-}
-
-ios_toolchain("ios_clang_arm64_14_0") {
-  toolchain_args = {
-    target_cpu = "arm64"
-    ios_deployment_target = "14.0"
-  }
-}
-
-ios_toolchain("ios_clang_arm64_fat_arm") {
-  toolchain_args = {
-    target_cpu = "arm"
-    is_fat_secondary_toolchain = true
-    primary_fat_toolchain_name = "//chromium/build/toolchain/ios:ios_clang_arm64"
-  }
-}
-
-ios_toolchain("ios_clang_arm") {
-  toolchain_args = {
-    target_cpu = "arm"
+    ios_deployment_target = "16.0"
   }
 }
 
@@ -67,47 +89,56 @@ ios_toolchain("ios_clang_x64") {
   }
 }
 
-ios_toolchain("ios_clang_x64_fat_arm64") {
-  toolchain_args = {
-    target_cpu = "arm64"
-    is_fat_secondary_toolchain = true
-    primary_fat_toolchain_name = "//chromium/build/toolchain/ios:ios_clang_x64"
-  }
-}
-
-ios_toolchain("ios_clang_x64_13_0") {
+ios_toolchain("ios_clang_x64_16_0") {
   toolchain_args = {
     target_cpu = "x64"
-    ios_deployment_target = "13.0"
+    ios_deployment_target = "16.0"
   }
 }
 
-ios_toolchain("ios_clang_x64_14_0") {
-  toolchain_args = {
-    target_cpu = "x64"
-    ios_deployment_target = "14.0"
-  }
-}
-
-ios_toolchain("ios_clang_x64_14_0_fat_arm64") {
+ios_app_ext_toolchain("ios_clang_arm64_app_ext") {
   toolchain_args = {
     target_cpu = "arm64"
-    ios_deployment_target = "14.0"
-    is_fat_secondary_toolchain = true
-    primary_fat_toolchain_name = "//chromium/build/toolchain/ios:ios_clang_x64_14_0"
   }
 }
 
-ios_toolchain("ios_clang_x64_fat_x86") {
+ios_blink_app_ext_toolchain("ios_clang_arm64_blink_app_ext") {
   toolchain_args = {
-    target_cpu = "x86"
-    is_fat_secondary_toolchain = true
-    primary_fat_toolchain_name = "//chromium/build/toolchain/ios:ios_clang_x64"
+    target_cpu = "arm64"
+    use_blink = true
   }
 }
 
-ios_toolchain("ios_clang_x86") {
+ios_blink_app_ext_toolchain("ios_clang_x64_blink_app_ext") {
   toolchain_args = {
-    target_cpu = "x86"
+    target_cpu = "x64"
+    use_blink = true
+  }
+}
+
+ios_app_ext_toolchain("ios_clang_arm64_app_ext_13_4") {
+  toolchain_args = {
+    target_cpu = "arm64"
+    ios_deployment_target = "13.4"
+  }
+}
+
+ios_app_ext_toolchain("ios_clang_x64_app_ext") {
+  toolchain_args = {
+    target_cpu = "x64"
+  }
+}
+
+ios_app_ext_toolchain("ios_clang_x64_app_ext_13_4") {
+  toolchain_args = {
+    target_cpu = "x64"
+    ios_deployment_target = "13.4"
+  }
+}
+
+ios_toolchain("ios_clang_arm64_blink") {
+  toolchain_args = {
+    target_cpu = "arm64"
+    use_blink = true
   }
 }

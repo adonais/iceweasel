@@ -6,22 +6,22 @@
 
 #include "nsMathMLmencloseFrame.h"
 
+#include <algorithm>
+
 #include "gfx2DGlue.h"
+#include "gfxContext.h"
 #include "gfxUtils.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_mathml.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/PathHelpers.h"
+#include "nsDisplayList.h"
 #include "nsLayoutUtils.h"
+#include "nsMathMLChar.h"
 #include "nsPresContext.h"
 #include "nsWhitespaceTokenizer.h"
-
-#include "nsDisplayList.h"
-#include "gfxContext.h"
-#include "nsMathMLChar.h"
-#include <algorithm>
 
 using namespace mozilla;
 using namespace mozilla::gfx;

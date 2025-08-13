@@ -7,7 +7,7 @@
 # linux.yml would make using task-defaults there significantly less useful.
 ---
 task-defaults:
-    worker-type: b-linux-gcp
+    worker-type: b-linux-amd
     run:
         extra-config:
             extra_mozconfig_content:

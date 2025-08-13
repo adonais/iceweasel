@@ -7,10 +7,10 @@
 #include "HitTestInfo.h"
 
 #include "mozilla/StaticPtr.h"
+#include "mozilla/layers/ScrollableLayerGuid.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "nsDisplayList.h"
 #include "nsIFrame.h"
-#include "mozilla/layers/ScrollableLayerGuid.h"
 
 using namespace mozilla::gfx;
 

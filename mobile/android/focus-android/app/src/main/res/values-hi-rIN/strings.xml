@@ -521,18 +521,6 @@
   <string name="preference_phone_feature_camera">कैमरा</string>
   <!-- Preference for altering the microphone access for all websites -->
   <string name="preference_phone_feature_microphone">माइक्रोफ़ोन</string>
-  <!-- Preference for studies -->
-  <string name="preference_studies" moz:removedIn="140">अध्ययन</string>
-  <!-- Preference for studies summary -->
-  <string name="preference_studies_summary" tools:ignore="BrandUsage" moz:removedIn="140">Firefox संस्थापन और समय-समय पर अध्ययन कर सकता है.</string>
-  <!-- Learn more link for studies, links to an article for more information about studies. -->
-  <string name="studies_learn_more" moz:removedIn="140">और अधिक जानें</string>
-  <!-- Title of the remove studies button -->
-  <string name="studies_remove" moz:removedIn="140">हटाएँ</string>
-  <!-- Title of the active section on the studies list -->
-  <string name="studies_active" moz:removedIn="140">सक्रिय</string>
-  <!-- Title of the completed section on the studies list -->
-  <string name="studies_completed" moz:removedIn="140">पूर्ण</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">यूएसबी/वाई-फाई से दूरस्थ दोषसुधार</string>
   <!--

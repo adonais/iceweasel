@@ -232,8 +232,8 @@ using SourceData = mozilla::UniquePtr<void, JS::FreePolicy>;
 
 template <typename Unit>
 inline SourceData ToSourceData(EntryUnits<Unit> chars) {
-  static_assert(std::is_same_v<SourceData::DeleterType,
-                               typename EntryUnits<Unit>::DeleterType>,
+  static_assert(std::is_same_v<SourceData::deleter_type,
+                               typename EntryUnits<Unit>::deleter_type>,
                 "EntryUnits and SourceData must share the same deleter "
                 "type, that need not know the type of the data being freed, "
                 "for the upcast below to be safe");

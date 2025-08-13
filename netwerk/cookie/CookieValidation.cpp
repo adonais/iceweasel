@@ -6,6 +6,7 @@
 #include "CookieValidation.h"
 #include "CookieLogging.h"
 #include "CookieService.h"
+#include "CookiePrefixes.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/StaticPrefs_network.h"
 
@@ -91,10 +92,9 @@ void CookieValidation::ValidateInternal() {
     return;
   }
 
-  // If a cookie is nameless, then its value must not start with
-  // `__Host-` or `__Secure-`
-  if (mCookieData.name().IsEmpty() && (HasSecurePrefix(mCookieData.value()) ||
-                                       HasHostPrefix(mCookieData.value()))) {
+  // If a cookie is nameless, then its value must not start with a known prefix.
+  if (mCookieData.name().IsEmpty() &&
+      CookiePrefixes::Has(mCookieData.value())) {
     mResult = eRejectedInvalidPrefix;
     return;
   }
@@ -115,9 +115,9 @@ void CookieValidation::ValidateInternal() {
   // This part checks if the caleers have set the expiry value to max 400 days.
   if (!mCookieData.isSession()) {
     int64_t maxageCap = StaticPrefs::network_cookie_maxageCap();
-    int64_t currentTimeInSec = PR_Now() / PR_USEC_PER_SEC;
-    int64_t expiry = mCookieData.expiry() / PR_USEC_PER_SEC;
-    if (maxageCap && expiry > currentTimeInSec + maxageCap) {
+    int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
+    int64_t expiry = mCookieData.expiry();
+    if (maxageCap && expiry > currentTimeInMSec + maxageCap * 1000) {
       mResult = eRejectedAttributeExpiryOversize;
       return;
     }
@@ -150,7 +150,12 @@ void CookieValidation::ValidateForHostInternal(nsIURI* aHostURI,
   bool potentiallyTrustworthy =
       nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aHostURI);
 
-  if (!CheckPrefixes(mCookieData, potentiallyTrustworthy)) {
+  // FixDomain() and FixPath() from CookieParser MUST be run first to make sure
+  // invalid attributes are rejected and to regularlize them. In particular all
+  // explicit domain attributes result in a host that starts with a dot, and if
+  // the host doesn't start with a dot it correctly matches the true
+  // host.
+  if (!CookiePrefixes::Check(mCookieData, potentiallyTrustworthy)) {
     mResult = eRejectedInvalidPrefix;
     return;
   }
@@ -270,55 +275,6 @@ bool CookieValidation::CheckDomain(const CookieStruct& aCookieData,
    * it breaks sites (IE doesn't enforce it), so we don't perform this check.
    */
   return false;
-}
-
-// static
-bool CookieValidation::HasSecurePrefix(const nsACString& aString) {
-  return StringBeginsWith(aString, "__Secure-"_ns,
-                          nsCaseInsensitiveCStringComparator);
-}
-
-// static
-bool CookieValidation::HasHostPrefix(const nsACString& aString) {
-  return StringBeginsWith(aString, "__Host-"_ns,
-                          nsCaseInsensitiveCStringComparator);
-}
-
-// CheckPrefixes
-//
-// Reject cookies whose name starts with the magic prefixes from
-// https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis
-// if they do not meet the criteria required by the prefix.
-bool CookieValidation::CheckPrefixes(const CookieStruct& aCookieData,
-                                     bool aSecureRequest) {
-  bool hasSecurePrefix = HasSecurePrefix(aCookieData.name());
-  bool hasHostPrefix = HasHostPrefix(aCookieData.name());
-
-  if (!hasSecurePrefix && !hasHostPrefix) {
-    // not one of the magic prefixes: carry on
-    return true;
-  }
-
-  if (!aSecureRequest || !aCookieData.isSecure()) {
-    // the magic prefixes may only be used from a secure request and
-    // the secure attribute must be set on the cookie
-    return false;
-  }
-
-  if (hasHostPrefix) {
-    // The host prefix requires that the path is "/" and that the cookie had no
-    // domain attribute. FixDomain() and FixPath() from CookieParser MUST be
-    // run first to make sure invalid attributes are rejected and to
-    // regularlize them. In particular all explicit domain attributes result in
-    // a host that starts with a dot, and if the host doesn't start with a dot
-    // it correctly matches the true host.
-    if (aCookieData.host()[0] == '.' ||
-        !aCookieData.path().EqualsLiteral("/")) {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 void CookieValidation::RetrieveErrorLogData(uint32_t* aFlags,

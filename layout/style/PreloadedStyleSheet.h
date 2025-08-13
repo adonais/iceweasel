@@ -9,9 +9,9 @@
 #ifndef mozilla_PreloadedStyleSheet_h
 #define mozilla_PreloadedStyleSheet_h
 
-#include "mozilla/css/SheetParsingMode.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/Result.h"
+#include "mozilla/css/SheetParsingMode.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsICSSLoaderObserver.h"

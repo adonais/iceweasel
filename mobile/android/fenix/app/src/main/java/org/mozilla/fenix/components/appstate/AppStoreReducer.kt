@@ -11,6 +11,7 @@ import org.mozilla.fenix.components.appstate.privatebrowsinglock.PrivateBrowsing
 import org.mozilla.fenix.components.appstate.readerview.ReaderViewStateReducer
 import org.mozilla.fenix.components.appstate.recommendations.ContentRecommendationsReducer
 import org.mozilla.fenix.components.appstate.reducer.FindInPageStateReducer
+import org.mozilla.fenix.components.appstate.search.SearchStateReducer
 import org.mozilla.fenix.components.appstate.setup.checklist.SetupChecklistReducer
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarStateReducer
@@ -151,8 +152,6 @@ internal object AppStoreReducer {
             wasLastTabClosedPrivate = action.private,
         )
 
-        is AppAction.UpdateSearchDialogVisibility -> state.copy(isSearchDialogVisible = action.isVisible)
-
         is AppAction.TranslationsAction.TranslationStarted -> state.copy(
             snackbarState = SnackbarState.TranslationInProgress(sessionId = action.sessionId),
         )
@@ -247,6 +246,8 @@ internal object AppStoreReducer {
         is AppAction.PrivateBrowsingLockAction -> PrivateBrowsingLockReducer.reduce(state, action)
 
         is AppAction.ReviewPromptAction -> ReviewPromptReducer.reduce(state, action)
+
+        is AppAction.SearchAction -> SearchStateReducer.reduce(state, action)
     }
 }
 

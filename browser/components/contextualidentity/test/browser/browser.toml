@@ -28,7 +28,6 @@ support-files = [
 
 ["browser_forgetAPI_quota_clearStoragesForPrincipal.js"]
 https_first_disabled = true
-skip-if = ["verify"]
 
 ["browser_forgetaboutsite.js"]
 skip-if = ["true"] # Bug 1924563
@@ -38,10 +37,7 @@ skip-if = ["true"] # Bug 1924563
 ["browser_imageCache.js"]
 
 ["browser_middleClick.js"]
-skip-if = [
-  "verify && debug && os == 'linux'",
-  "os == 'mac' && os_version == '11.20' && arch == 'aarch64'", # Disabled due to bleedover with other tests when run in regular suites; passes in "failures" jobs
-]
+skip-if = ["os == 'mac' && os_version == '11.20' && arch == 'aarch64'"] # Disabled due to bleedover with other tests when run in regular suites; passes in "failures" jobs
 tags = "bleedover"
 
 ["browser_newtabButton.js"]
@@ -66,7 +62,6 @@ skip-if = [
 ["browser_restore_getCookiesWithOriginAttributes.js"]
 
 ["browser_saveLink.js"]
-skip-if = ["verify && !debug && os == 'win'"]
 support-files = [
   "saveLink.sjs",
   "!/toolkit/content/tests/browser/common/mockTransfer.js",
@@ -77,6 +72,13 @@ support-files = [
 ["browser_switchTab_across_user_context.js"]
 
 ["browser_tab_color_update.js"]
+
+["browser_telemetry.js"]
+https_first_disabled = true
+skip-if = [
+  "os == 'mac' && os_version == '11.20' && arch == 'aarch64'", # Bug 1783491
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1783491
+]
 
 ["browser_usercontext.js"]
 

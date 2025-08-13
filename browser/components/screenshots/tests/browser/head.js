@@ -1094,29 +1094,52 @@ async function safeSynthesizeTouchEventInContentPage(
   await BrowserTestUtils.synthesizeTouch(selector, x, y, options, context);
 }
 
-add_setup(async () => {
+// Should the test include a setup step to ensure the screenshots button is placed on the
+// nav-bar toolbar? A lot of our tests use this as the entry point, so default true.
+var gPlaceButtonOnToolbar = true;
+
+function ensureButtonOnToolbar() {
   CustomizableUI.addWidgetToArea(
     "screenshot-button",
     CustomizableUI.AREA_NAVBAR,
     0
   );
   let screenshotBtn = document.getElementById("screenshot-button");
-  Assert.ok(screenshotBtn, "The screenshots button was added to the nav bar");
+  Assert.ok(screenshotBtn, "The screenshots button exists in the document");
+  Assert.equal(
+    CustomizableUI.getPlacementOfWidget("screenshot-button")?.area,
+    "nav-bar",
+    "The screenshots button is on the nav-bar"
+  );
+}
 
-  registerCleanupFunction(async () => {
-    info(`downloads panel should be visible: ${DownloadsPanel.isPanelShowing}`);
-    if (DownloadsPanel.isPanelShowing) {
-      let hiddenPromise = BrowserTestUtils.waitForEvent(
-        DownloadsPanel.panel,
-        "popuphidden"
-      );
-      DownloadsPanel.hidePanel();
-      await hiddenPromise;
-      info(
-        `downloads panel should not be visible: ${DownloadsPanel.isPanelShowing}`
-      );
-    }
-  });
+async function cleanup() {
+  CustomizableUI.reset();
+  Services.prefs.clearUserPref(
+    "screenshots.browser.component.last-screenshot-method"
+  );
+  Services.prefs.clearUserPref(
+    "screenshots.browser.component.last-saved-method"
+  );
+
+  if (DownloadsPanel.isPanelShowing) {
+    let hiddenPromise = BrowserTestUtils.waitForEvent(
+      DownloadsPanel.panel,
+      "popuphidden"
+    );
+    DownloadsPanel.hidePanel();
+    await hiddenPromise;
+    info(
+      `downloads panel should not be visible: ${DownloadsPanel.isPanelShowing}`
+    );
+  }
+}
+
+add_setup(async () => {
+  if (gPlaceButtonOnToolbar) {
+    ensureButtonOnToolbar();
+  }
+  registerCleanupFunction(cleanup);
 });
 
 function getContentDevicePixelRatio(browser) {

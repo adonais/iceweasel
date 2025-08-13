@@ -636,7 +636,7 @@ if (project.hasProperty("coverage")) {
     android {
         buildTypes {
             debug {
-                testCoverageEnabled true
+                testCoverageEnabled = true
                 applicationIdSuffix ".coverage"
             }
         }

@@ -26,7 +26,7 @@
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/layers/ISurfaceAllocator.h"
-#include "mozilla/ipc/UtilityAudioDecoderChild.h"
+#include "mozilla/ipc/UtilityMediaServiceChild.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPtr.h"

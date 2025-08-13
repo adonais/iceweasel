@@ -12,11 +12,10 @@
 #ifndef nsIAnonymousContentCreator_h___
 #define nsIAnonymousContentCreator_h___
 
+#include "X11UndefineNone.h"
 #include "mozilla/AnonymousContentKey.h"
-
 #include "nsQueryFrame.h"
 #include "nsTArrayForwardDeclare.h"
-#include "X11UndefineNone.h"
 
 class nsIContent;
 

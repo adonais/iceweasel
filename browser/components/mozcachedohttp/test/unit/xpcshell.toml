@@ -1,0 +1,17 @@
+[DEFAULT]
+head = "head.js"
+firefox-appdir = "browser"
+
+["test_cache_behavior.js"]
+
+["test_channel_creation.js"]
+
+["test_host_configuration.js"]
+
+["test_host_integration.js"]
+
+["test_protocol_handler_registration.js"]
+
+["test_security_validation.js"]
+
+["test_url_parsing.js"]

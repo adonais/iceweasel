@@ -10,10 +10,10 @@
 #include "FilterSupport.h"
 #include "gfxMatrix.h"
 #include "gfxRect.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Types.h"
 #include "nsColor.h"
-#include "mozilla/ServoStyleConsts.h"
 
 namespace mozilla {
 
@@ -98,12 +98,6 @@ class CSSFilterInstance {
    */
   void SetBounds(FilterPrimitiveDescription& aDescr,
                  const nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs);
-
-  /**
-   * Converts an nscolor to a Color, suitable for use as a
-   * FilterPrimitiveDescription attribute.
-   */
-  sRGBColor ToAttributeColor(nscolor aColor);
 
   /**
    * Converts a blur radius in frame space to filter space.

@@ -65,9 +65,9 @@ android {
 
     defaultConfig {
         applicationId "org.mozilla"
-        minSdkVersion config.minSdkVersion
-        compileSdk config.compileSdkVersion
-        targetSdkVersion config.targetSdkVersion
+        minSdkVersion = config.minSdkVersion
+        compileSdk = config.compileSdkVersion
+        targetSdkVersion = config.targetSdkVersion
         versionCode 1
         versionName Config.generateDebugVersionName()
         vectorDrawables.useSupportLibrary = true
@@ -559,6 +559,8 @@ dependencies {
 
     implementation libs.thirdparty.sentry
 
+    implementation ComponentsDependencies.mozilla_appservices_syncmanager
+
     implementation project(':components:compose-awesomebar')
     implementation project(':components:compose-base')
     implementation project(':components:compose-browser-toolbar')
@@ -666,7 +668,6 @@ dependencies {
     androidTestImplementation platform(libs.androidx.compose.bom)
     implementation libs.androidx.compose.animation
     implementation libs.androidx.compose.foundation
-    implementation libs.androidx.compose.material
     implementation libs.androidx.compose.ui
     implementation libs.androidx.compose.ui.tooling.preview
 
@@ -813,7 +814,7 @@ if (project.hasProperty("coverage")) {
     android {
         buildTypes {
             debug {
-                testCoverageEnabled true
+                testCoverageEnabled = true
             }
         }
     }

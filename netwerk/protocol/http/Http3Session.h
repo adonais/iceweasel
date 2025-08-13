@@ -125,6 +125,19 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   NS_DECL_NSAHTTPTRANSACTION
   NS_DECL_NSAHTTPCONNECTION(mConnection)
 
+  class OnQuicTimeout final : public nsITimerCallback, public nsINamed {
+   public:
+    NS_DECL_THREADSAFE_ISUPPORTS
+    NS_DECL_NSITIMERCALLBACK
+    NS_DECL_NSINAMED
+
+    explicit OnQuicTimeout(HttpConnectionUDP* aConnection);
+
+   private:
+    ~OnQuicTimeout() = default;
+    RefPtr<HttpConnectionUDP> mConnection;
+  };
+
   Http3Session();
   nsresult Init(const nsHttpConnectionInfo* aConnInfo, nsINetAddr* selfAddr,
                 nsINetAddr* peerAddr, HttpConnectionUDP* udpConn,
@@ -312,15 +325,13 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   bool mBeforeConnectedError{false};
   uint64_t mCurrentBrowserId;
 
-  // True if the mTimer is inited and waiting for firing.
-  bool mTimerActive{false};
-
   // True if this http3 session uses NSPR for UDP IO.
   bool mUseNSPRForIO{true};
 
   RefPtr<HttpConnectionUDP> mUdpConn;
 
   nsCOMPtr<nsITimer> mTimer;
+  RefPtr<OnQuicTimeout> mTimerCallback;
 
   nsTHashMap<nsCStringHashKey, bool> mJoinConnectionCache;
 
@@ -385,6 +396,7 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   // is only used in Http3Session::ProcessOutput. Using raw pointer here to
   // improve performance.
   nsIUDPSocket* mSocket;
+  uint32_t mTrrStreams = 0;
 };
 
 }  // namespace mozilla::net

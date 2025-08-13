@@ -150,6 +150,8 @@
     %2$s is the url for the learn-more link.
   -->
   <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s kontrolü size verir.</p> <p>Onu gizlilik odaklı bir tarayıcı olarak kullanabilirsiniz: <ul> <li>Doğrudan uygulamada arama yapabilir ve web’de gezinebilirsiniz</li> <li>Takip kodlarını engelleyebilirsiniz (veya belli takip kodlarına izin verebilirsiniz)</li> <li>Tek düğmeyle çerezleri, arama ve gezinti geçmişinizi silebilirsiniz</li> </ul> </p> <p>%1$s Mozilla tarafından geliştirilmiştir. Misyonumuz daha sağlıklı ve açık bir internet yaratmaktır.<br/> <a href=\"%2$s\">Daha fazla bilgi alın</a></p>]]></string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">Daha fazla bilgi alın</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">Gizlilik ve Güvenlik</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -486,8 +488,6 @@
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
   <string name="onboarding_first_screen_privacy_notice_link_2">Gizlilik Bildirimi</string>
   <!-- New Onboarding flow first screen button label -->
-  <string name="onboarding_first_screen_button_agree_and_continue" moz:removedIn="140" tools:ignore="UnusedResources">Kabul et ve devam et</string>
-  <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue_2">Devam et</string>
   <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
   <string name="a11y_link_available">Kullanılabilir bağlantı var</string>
@@ -708,18 +708,6 @@
   <string name="preference_block_autoplay_audio_only_summary">Önerilen</string>
   <!-- Preference for block autoplay audio and video -->
   <string name="preference_block_autoplay_audio_video">Ses ve videoyu engelle</string>
-  <!-- Preference for studies -->
-  <string name="preference_studies" moz:removedIn="140">Araştırmalar</string>
-  <!-- Preference for studies summary -->
-  <string name="preference_studies_summary" tools:ignore="BrandUsage" moz:removedIn="140">Firefox zaman zaman araştırmalar yükleyip çalıştırabilir.</string>
-  <!-- Learn more link for studies, links to an article for more information about studies. -->
-  <string name="studies_learn_more" moz:removedIn="140">Daha fazla bilgi al</string>
-  <!-- Title of the remove studies button -->
-  <string name="studies_remove" moz:removedIn="140">Kaldır</string>
-  <!-- Title of the active section on the studies list -->
-  <string name="studies_active" moz:removedIn="140">Etkin</string>
-  <!-- Title of the completed section on the studies list -->
-  <string name="studies_completed" moz:removedIn="140">Tamamlandı</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">USB/Wi-Fi ile uzaktan hata ayıklama</string>
   <!-- Text Button for show biometric prompt -->

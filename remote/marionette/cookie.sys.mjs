@@ -167,12 +167,16 @@ cookie.add = function (
   if (typeof newCookie.httpOnly == "undefined") {
     newCookie.httpOnly = false;
   }
+
   if (typeof newCookie.expiry == "undefined") {
     // The XPCOM interface requires the expiry field even for session cookies.
     newCookie.expiry = Number.MAX_SAFE_INTEGER;
     newCookie.session = true;
   } else {
     newCookie.session = false;
+    // Gecko expects the expiry value to be in milliseconds, WebDriver uses seconds.
+    // The maximum allowed value is capped at 400 days.
+    newCookie.expiry = Services.cookies.maybeCapExpiry(newCookie.expiry * 1000);
   }
 
   let sameSite = [...SAMESITE_MAP].find(
@@ -230,8 +234,9 @@ cookie.add = function (
   // TODO: Bug 814416
   newCookie.domain = newCookie.domain.replace(IPV4_PORT_EXPR, "");
 
+  let cv;
   try {
-    cookie.manager.add(
+    cv = cookie.manager.add(
       newCookie.domain,
       newCookie.path,
       newCookie.name,
@@ -246,6 +251,12 @@ cookie.add = function (
     );
   } catch (e) {
     throw new lazy.error.UnableToSetCookieError(e);
+  }
+
+  if (cv.result !== Ci.nsICookieValidation.eOK) {
+    throw new lazy.error.UnableToSetCookieError(
+      `Invalid cookie: ${cv.errorString}`
+    );
   }
 };
 
@@ -323,7 +334,8 @@ cookie.iter = function* (host, browsingContext = undefined, currentPath = "/") {
         };
 
         if (!cookie.isSession) {
-          data.expiry = cookie.expiry;
+          // Internally expiry is in ms, WebDriver expects seconds.
+          data.expiry = Math.round(cookie.expiry / 1000);
         }
 
         data.sameSite = SAMESITE_MAP.get(cookie.sameSite) || "None";

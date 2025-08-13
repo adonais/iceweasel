@@ -52,6 +52,10 @@ pub(crate) struct JSONEngineUrl {
     /// appended to the end of the query. This may be skipped if `{searchTerms}`
     /// is included in the base.
     pub search_term_param_name: Option<String>,
+
+    /// The display name of the URL, if any. This is useful if the URL
+    /// corresponds to a brand name distinct from the engine's brand name.
+    pub display_name: Option<String>,
 }
 
 /// Reflects `types::SearchEngineUrls`, but using `EngineUrl`.
@@ -69,6 +73,9 @@ pub(crate) struct JSONEngineUrls {
 
     /// The URL of the search engine homepage.
     pub search_form: Option<JSONEngineUrl>,
+
+    /// The URL to use for visual searches.
+    pub visual_search: Option<JSONEngineUrl>,
 }
 
 /// Represents the engine base section of the configuration.
@@ -168,6 +175,10 @@ pub(crate) struct JSONVariantEnvironment {
 pub(crate) struct JSONEngineVariant {
     /// Details of the possible user environments that this variant applies to.
     pub environment: JSONVariantEnvironment,
+
+    /// Indicates the date until which the engine variant or subvariant is considered new
+    /// (format: YYYY-MM-DD).
+    pub is_new_until: Option<String>,
 
     /// This search engine is presented as an option that the user may enable.
     /// If not specified, defaults to false.

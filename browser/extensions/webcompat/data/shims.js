@@ -272,6 +272,15 @@ const AVAILABLE_SHIMS = [
     onlyIfBlockedByETP: true,
   },
   {
+    id: "AmazonAdSystem",
+    platform: "all",
+    name: "Amazon Ad System",
+    bug: "1977375",
+    file: "empty-shim.txt",
+    matches: ["*://aax.amazon-adsystem.com/e/dtb/bid/*/prebid*"],
+    onlyIfBlockedByETP: true,
+  },
+  {
     id: "BmAuth",
     platform: "all",
     name: "BmAuth by 9c9media",
@@ -499,6 +508,7 @@ const AVAILABLE_SHIMS = [
       "cbs6albany.com",
       "okcfox.co",
       "turnto10.com",
+      "wcti12.com",
     ],
     matches: [
       "*://www.googletagservices.com/tag/js/gpt.js*",
@@ -774,7 +784,10 @@ const AVAILABLE_SHIMS = [
     contentScripts: [
       {
         js: "microsoftOfficeAuth.js",
-        matches: ["*://usc-excel.officeapps.live.com/*"],
+        matches: [
+          "*://usc-excel.officeapps.live.com/*",
+          "*://excel.officeapps.live.com/*",
+        ],
         runAt: "document_start",
         allFrames: true,
       },

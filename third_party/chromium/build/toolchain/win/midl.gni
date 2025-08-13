@@ -1,4 +1,4 @@
-# Copyright 2014 The Chromium Authors. All rights reserved.
+# Copyright 2014 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -49,6 +49,8 @@ import("//chromium/build/config/win/visual_studio_version.gni")
 #   defines (optional)
 #       Build time defines to be passed to midl.exe as /D parameter.
 #
+#   testonly (optional)
+#
 #   visibility (optional)
 
 template("midl") {
@@ -64,11 +66,12 @@ template("midl") {
   }
 
   if (defined(invoker.generated_dir)) {
-    generated_dir = rebase_path(invoker.generated_dir)
+    generated_dir = rebase_path(invoker.generated_dir, root_build_dir)
   } else {
     # midl.py expects 'gen' to be replaced with 'midl'.
-    generated_dir = rebase_path("//third_party/win_build_output") + "/midl/" +
-                    rebase_path(out_dir, root_gen_dir)
+    generated_dir =
+        rebase_path("//third_party/win_build_output", root_build_dir) +
+        "/midl/" + rebase_path(out_dir, root_gen_dir)
   }
 
   if (defined(invoker.dynamic_guids)) {
@@ -184,11 +187,19 @@ template("midl") {
       }
     }
 
-    forward_variables_from(invoker, [ "deps" ])
+    forward_variables_from(invoker,
+                           [
+                             "deps",
+                             "testonly",
+                           ])
   }
 
   source_set(target_name) {
-    forward_variables_from(invoker, [ "visibility" ])
+    forward_variables_from(invoker,
+                           [
+                             "testonly",
+                             "visibility",
+                           ])
 
     # We only compile the IID files from the IDL tool rather than all outputs.
     sources = process_file_template(invoker.sources,

@@ -23,11 +23,20 @@ ChromeUtils.defineESModuleGetters(lazy, {
 const LOGGER_NAME = "Toolkit.Telemetry";
 const LOGGER_PREFIX = "TelemetryReportingPolicy::";
 
-// Oldest year to allow in date preferences. The FHR infobar was implemented in
-// 2012 and no dates older than that should be encountered.
-const OLDEST_ALLOWED_ACCEPTANCE_YEAR = 2012;
+// Oldest year to allow in telemetry policy date preferences. The FHR infobar
+// was implemented in 2012 and no dates older than that should be encountered.
+const OLDEST_ALLOWED_TELEMETRY_POLICY_ACCEPTANCE_YEAR = 2012;
+// Oldest year to allow in terms of use date preferences.
+const OLDEST_ALLOWED_TOU_ACCEPTANCE_YEAR = 2025;
 
 const PREF_BRANCH = "datareporting.policy.";
+
+const TOU_ACCEPTED_VERSION_PREF = "termsofuse.acceptedVersion";
+const TOU_CURRENT_VERSION_PREF = "termsofuse.currentVersion";
+const TOU_MINIMUM_VERSION_PREF = "termsofuse.minimumVersion";
+const TOU_ACCEPTED_DATE_PREF = "termsofuse.acceptedDate";
+const TOU_BYPASS_NOTIFICATION_PREF = "termsofuse.bypassNotification";
+const TOU_PREF_MIGRATION_CHECK = "browser.termsofuse.prefMigrationCheck";
 
 // The following preferences are deprecated and will be purged during the preferences
 // migration process.
@@ -43,6 +52,11 @@ const NOTIFICATION_DELAY_FIRST_RUN_MSEC = 60 * 1000; // 60s
 // Same as above, for the next runs.
 const NOTIFICATION_DELAY_NEXT_RUNS_MSEC = 10 * 1000; // 10s
 
+const NOTIFICATION_TYPES = {
+  DATAREPORTING_POLICY_TAB_OR_INFOBAR: 0,
+  TERMS_OF_SERVICE_MODAL: 1,
+};
+
 /**
  * This is a policy object used to override behavior within this module.
  * Tests override properties on this object to allow for control of behavior
@@ -52,6 +66,8 @@ export var Policy = {
   now: () => new Date(),
   setShowInfobarTimeout: (callback, delayMs) => setTimeout(callback, delayMs),
   clearShowInfobarTimeout: id => clearTimeout(id),
+  // This test method fakes a session restore event which triggers
+  // `_delayedSetup` and thus kicks off the reporting flow
   fakeSessionRestoreNotification: async () => {
     TelemetryReportingPolicyImpl.observe(
       null,
@@ -112,6 +128,9 @@ export var TelemetryReportingPolicy = {
   // is smaller than this, data upload will be disabled until the user is re-notified
   // about the policy changes.
   DEFAULT_DATAREPORTING_POLICY_VERSION: 1,
+  // We set the default version as 4 to distinguish it from version numbers used
+  // in the original TOU experiments and rollouts
+  DEFAULT_TERMS_OF_USE_POLICY_VERSION: 4,
 
   /**
    * Setup the policy.
@@ -157,20 +176,29 @@ export var TelemetryReportingPolicy = {
    * Test only method, used to check if the policy should notify in tests.
    */
   testShouldNotify() {
-    return TelemetryReportingPolicyImpl._shouldNotify();
+    return TelemetryReportingPolicyImpl._shouldNotifyDataReportingPolicy();
   },
 
   /**
-   * Test only method, used to check if user is notified of the policy in tests.
+   * Test only method, used to check if user is notified of the legacy data reporting policy in tests.
    */
-  testIsUserNotified() {
+  testIsUserNotifiedOfDataReportingPolicy() {
     return TelemetryReportingPolicyImpl.isUserNotifiedOfCurrentPolicy;
+  },
+
+  /**
+   * Used to check if user has accepted the TOU.
+   */
+  userHasAcceptedTOU() {
+    return TelemetryReportingPolicyImpl.hasUserAcceptedCurrentTOU;
   },
 
   /**
    * Test only method, used to simulate the infobar being shown in xpcshell tests.
    */
   testInfobarShown() {
+    TelemetryReportingPolicyImpl._notificationType =
+      NOTIFICATION_TYPES.DATAREPORTING_POLICY_TAB_OR_INFOBAR;
     return TelemetryReportingPolicyImpl._userNotified();
   },
 
@@ -180,6 +208,13 @@ export var TelemetryReportingPolicy = {
   testUpdateFirstRun() {
     TelemetryReportingPolicyImpl._isFirstRun = undefined;
     TelemetryReportingPolicyImpl.isFirstRun();
+  },
+
+  /**
+   * Test only method, used to get TOS on-train release dates by channel.
+   */
+  get fullOnTrainReleaseDates() {
+    return TelemetryReportingPolicyImpl.fullOnTrainReleaseDates;
   },
 
   async ensureUserIsNotified() {
@@ -201,6 +236,9 @@ var TelemetryReportingPolicyImpl = {
   // Nimbus `preonboarding` feature variables.  Set in response to
   // `sessionstore-window-restored`; immutable there-after.
   _nimbusVariables: {},
+  // Record whether users were notified via the terms of use modal or the data
+  // reporting policy tab / infobar
+  _notificationType: null,
 
   get _log() {
     if (!this._logger) {
@@ -242,7 +280,7 @@ var TelemetryReportingPolicyImpl = {
 
     // Make sure the notification date is newer then the oldest allowed date.
     let date = new Date(valueInteger);
-    if (date.getFullYear() < OLDEST_ALLOWED_ACCEPTANCE_YEAR) {
+    if (date.getFullYear() < OLDEST_ALLOWED_TELEMETRY_POLICY_ACCEPTANCE_YEAR) {
       this._log.error(
         "get dataSubmissionPolicyNotifiedDate - The stored date is too old."
       );
@@ -259,7 +297,10 @@ var TelemetryReportingPolicyImpl = {
   set dataSubmissionPolicyNotifiedDate(aDate) {
     this._log.trace("set dataSubmissionPolicyNotifiedDate - aDate: " + aDate);
 
-    if (!aDate || aDate.getFullYear() < OLDEST_ALLOWED_ACCEPTANCE_YEAR) {
+    if (
+      !aDate ||
+      aDate.getFullYear() < OLDEST_ALLOWED_TELEMETRY_POLICY_ACCEPTANCE_YEAR
+    ) {
       this._log.error(
         "set dataSubmissionPolicyNotifiedDate - Invalid notification date."
       );
@@ -268,6 +309,60 @@ var TelemetryReportingPolicyImpl = {
 
     Services.prefs.setStringPref(
       TelemetryUtils.Preferences.AcceptedPolicyDate,
+      aDate.getTime().toString()
+    );
+  },
+
+  /**
+   * Get the date the terms of use were accepted.
+   * @return {Object} A date object or null on errors.
+   */
+  get termsOfUseAcceptedDate() {
+    // For consistency, we use the same method of parsing a stringified
+    // timestamp as is used in the legacy data reporting policy flow
+    let prefString = Services.prefs.getStringPref(TOU_ACCEPTED_DATE_PREF, "0");
+    let valueInteger = parseInt(prefString, 10);
+
+    // Bail out if we didn't store any value yet.
+    if (valueInteger == 0) {
+      this._log.info("get termsOfUseAcceptedDate - No date stored yet.");
+      return null;
+    }
+
+    // If an invalid value is saved in the prefs, bail out too.
+    if (Number.isNaN(valueInteger)) {
+      this._log.error("get termsOfUseAcceptedDate - Invalid date stored.");
+      return null;
+    }
+
+    // Make sure the notification date is newer then the oldest allowed date.
+    let date = new Date(valueInteger);
+    if (date.getFullYear() < OLDEST_ALLOWED_TOU_ACCEPTANCE_YEAR) {
+      this._log.error(
+        "get termsOfUseAcceptedDate - The stored date is too old."
+      );
+      return null;
+    }
+
+    return date;
+  },
+
+  /**
+   * Set the date the policy was notified.
+   * @param {Object} aDate A valid date object.
+   */
+  set termsOfUseAcceptedDate(aDate) {
+    this._log.trace("set termsOfUseAcceptedDate - aDate: " + aDate);
+
+    if (!aDate || aDate.getFullYear() < OLDEST_ALLOWED_TOU_ACCEPTANCE_YEAR) {
+      this._log.error(
+        "set termsOfUseAcceptedDate - Invalid notification date."
+      );
+      return;
+    }
+
+    Services.prefs.setStringPref(
+      TOU_ACCEPTED_DATE_PREF,
       aDate.getTime().toString()
     );
   },
@@ -290,6 +385,24 @@ var TelemetryReportingPolicyImpl = {
     return Services.prefs.getIntPref(
       TelemetryUtils.Preferences.CurrentPolicyVersion,
       TelemetryReportingPolicy.DEFAULT_DATAREPORTING_POLICY_VERSION
+    );
+  },
+
+  /**
+   * The current terms of use version.
+   *
+   * @returns {number}
+   * The integer value stored in `TOU_CURRENT_VERSION_PREF`. If that preference
+   * is unset or cannot be parsed, falls back to
+   * `TelemetryReportingPolicy.DEFAULT_TERMS_OF_USE_POLICY_VERSION`.
+   *
+   * Falling back to the default ensures we always have a valid version for
+   * comparisons.
+   */
+  get currentTermsOfUseVersion() {
+    return Services.prefs.getIntPref(
+      TOU_CURRENT_VERSION_PREF,
+      TelemetryReportingPolicy.DEFAULT_TERMS_OF_USE_POLICY_VERSION
     );
   },
 
@@ -319,6 +432,20 @@ var TelemetryReportingPolicyImpl = {
     return Services.prefs.getIntPref(channelPref, minPolicyVersion);
   },
 
+  /**
+   * The minimum terms of use version the user needs to have accepted to not be
+   * shown the terms of use modal.
+   */
+  get minimumTermsOfUseVersion() {
+    return (
+      this._nimbusVariables.minimumPolicyVersion ||
+      Services.prefs.getIntPref(
+        TOU_MINIMUM_VERSION_PREF,
+        TelemetryReportingPolicy.DEFAULT_TERMS_OF_USE_POLICY_VERSION
+      )
+    );
+  },
+
   get dataSubmissionPolicyAcceptedVersion() {
     return Services.prefs.getIntPref(
       TelemetryUtils.Preferences.AcceptedPolicyVersion,
@@ -331,6 +458,14 @@ var TelemetryReportingPolicyImpl = {
       TelemetryUtils.Preferences.AcceptedPolicyVersion,
       value
     );
+  },
+
+  get termsOfUseAcceptedVersion() {
+    return Services.prefs.getIntPref(TOU_ACCEPTED_VERSION_PREF, 0);
+  },
+
+  set termsOfUseAcceptedVersion(value) {
+    Services.prefs.setIntPref(TOU_ACCEPTED_VERSION_PREF, value);
   },
 
   /**
@@ -357,6 +492,200 @@ var TelemetryReportingPolicyImpl = {
   },
 
   /**
+   * Checks to see if the user has accepted the current terms of use
+   * @return {Bool} True if user has accepted and the acceptance is still valid,
+   *         false otherwise.
+   */
+  get hasUserAcceptedCurrentTOU() {
+    // If we don't have a sane notification date, the user was not notified yet.
+    if (!this.termsOfUseAcceptedDate) {
+      return false;
+    }
+
+    // The accepted terms of use version should not be less than the minimum
+    // terms of use version.
+    if (this.termsOfUseAcceptedVersion < this.minimumTermsOfUseVersion) {
+      return false;
+    }
+
+    // Otherwise the user has already accepted.
+    return true;
+  },
+
+  /**
+   * Reset a preference completely back to its built-in default value.
+   *
+   * Calling clearUserPref only removes the user-set override. By also clearing
+   * the default branch, we ensure all overrides, both user and runtime changes,
+   * are removed so the pref truly returns to the value declared in all.js.
+   */
+  clearPref(prefName) {
+    Services.prefs.clearUserPref(prefName);
+    Services.prefs.getDefaultBranch("").clearUserPref(prefName);
+  },
+
+  maybeMigrateLegacyTOUDatePref() {
+    const hasTOUAcceptedDate =
+      this.termsOfUseAcceptedDate && this.termsOfUseAcceptedDate.getTime() > 0;
+    if (hasTOUAcceptedDate) {
+      return;
+    }
+
+    Services.prefs.setStringPref(
+      TOU_ACCEPTED_DATE_PREF,
+      Services.prefs.getStringPref(
+        TelemetryUtils.Preferences.AcceptedPolicyDate,
+        "0"
+      )
+    );
+
+    this.clearPref(TelemetryUtils.Preferences.AcceptedPolicyDate);
+    this._log.trace(
+      "maybeMigrateLegacyTOUDatePref - migrated data reporting policy accepted date to TOU accepted date."
+    );
+  },
+
+  // If needed, migrate user's prefs from initial TOU experiments and rollouts
+  // to a set of consistent values.
+  maybeMigrateLegacyTOUVersionPref() {
+    const LEGACY_ACCEPTED_TOU_VERSION =
+      TelemetryReportingPolicy.DEFAULT_TERMS_OF_USE_POLICY_VERSION;
+    if (this.termsOfUseAcceptedVersion) {
+      return;
+    }
+
+    Services.prefs.setIntPref(
+      TOU_ACCEPTED_VERSION_PREF,
+      LEGACY_ACCEPTED_TOU_VERSION
+    );
+
+    this.clearPref(TelemetryUtils.Preferences.AcceptedPolicyVersion);
+    // Clear legacy current and minimum versions which may have been set by TOU
+    // experiments or rollouts
+    this.clearPref(TelemetryUtils.Preferences.CurrentPolicyVersion);
+    this.clearPref(TelemetryUtils.Preferences.MinimumPolicyVersion);
+    // clear the channel override for minimumPolicyVersion:
+    let channel = TelemetryUtils.getUpdateChannel();
+    let channelMin =
+      TelemetryUtils.Preferences.MinimumPolicyVersion + ".channel-" + channel;
+    Services.prefs.clearUserPref(channelMin);
+    this._log.trace(
+      "maybeMigrateLegacyTOUVersionPref - migrated data reporting policy accepted version to TOU accepted version."
+    );
+  },
+
+  // See comment in `acceptedTOUDuringExperimentationPhase` for more details.
+  fullOnTrainReleaseDates: {
+    // Note that months are expected to be zero-indexed for Date.UTC
+    // May 27, 2025, 13:00 UTC when 139.0 went live on Release
+    release: String(Date.UTC(2025, 4, 27, 13, 0, 0)),
+    // May 2, 2025, 13:00 UTC when 139.0b3 went live on Beta and Aurora
+    beta: String(Date.UTC(2025, 4, 2, 13, 0, 0)),
+    aurora: String(Date.UTC(2025, 4, 2, 13, 0, 0)),
+    // May 2, 2025, 11:45 UTC approximate timestamp for Nightly and Default
+    // roll-out
+    nightly: String(Date.UTC(2025, 4, 2, 11, 45, 0)),
+    default: String(Date.UTC(2025, 4, 2, 11, 45, 0)),
+    // "esr" channel unaffected
+  },
+
+  get acceptedTOUDuringExperimentationPhase() {
+    let channel = TelemetryUtils.getUpdateChannel();
+    let releaseDateOnChannel = this.fullOnTrainReleaseDates[channel] || "0";
+
+    const legacyAcceptedVersion = this.dataSubmissionPolicyAcceptedVersion;
+    const legacyAcceptedTime = parseInt(
+      Services.prefs.getStringPref(
+        TelemetryUtils.Preferences.AcceptedPolicyDate,
+        "0"
+      ),
+      10
+    );
+
+    // Due to a bug in the patch landed in Bug 1959542, the legacy accepted
+    // version pref for users who accepted the TOU via the preonboarding modal
+    // in after TOU was enabled by default on-train (Bug 1952000) was recorded
+    // as 2 instead of 3. "browser.preonboarding.enrolledInOnTrainRollout" always
+    // being set to true when `_configureFromNimbus` ran and a user was not
+    // enrolled in a nimbus experiment. So, we also need to check to see if the
+    // user accepted after the full rollout went live on the relevent channel to
+    // confirm that they accepted the TOU and not the legacy data reporting
+    // flow.
+    const legacyFullRolloutVersion = 2;
+    const enrolled = Services.prefs.getBoolPref(
+      "browser.preonboarding.enrolledInOnTrainRollout",
+      false
+    );
+    // TOS is current disabled for Linux users, who see the legacy data
+    // reporting flow instead (see Bug 1964180).
+    const TOSEnabled = Services.prefs.getBoolPref(
+      "browser.preonboarding.enabled",
+      true
+    );
+    const acceptedAfterTOULandedAsDefault =
+      TOSEnabled &&
+      enrolled &&
+      legacyAcceptedVersion >= legacyFullRolloutVersion &&
+      legacyAcceptedTime >= parseInt(releaseDateOnChannel, 10);
+    // Users who accepted TOU in the initial Nimbus experiments or partial
+    // on-train rollouts (Bug 1952000), have an accepted version of 3.
+    const acceptedInExperimentOrOnTrainRollout = Boolean(
+      legacyAcceptedVersion === 3
+    );
+
+    return (
+      (acceptedAfterTOULandedAsDefault ||
+        acceptedInExperimentOrOnTrainRollout) &&
+      this.dataSubmissionPolicyNotifiedDate
+    );
+  },
+
+  /**
+   *  Update terms of use prefs for users who accepted during initial Nimbus
+   *  experiments or the experimental on-train rollout
+   *
+   *  The pref migration logic can be removed when the TOU moves to the next
+   *  major version (see Bug 1971184).
+   */
+  updateTOUPrefsForLegacyUsers() {
+    if (
+      this.termsOfUseAcceptedVersion >=
+      TelemetryReportingPolicy.DEFAULT_TERMS_OF_USE_POLICY_VERSION
+    ) {
+      return;
+    }
+
+    // If a user previously opted to bypass notification, opt to do so via the
+    // new TOU bypass pref as well.
+    if (
+      Services.prefs.getBoolPref(
+        TelemetryUtils.Preferences.BypassNotification,
+        false
+      )
+    ) {
+      Services.prefs.setBoolPref(TOU_BYPASS_NOTIFICATION_PREF, true);
+    }
+
+    // The experimentation phase was the first phase of asking users to accept
+    // the TOU, the legacy data reporting flow marks users as being notified of
+    // the telemetry reporting policy. So, we do only migrate pref values for
+    // users who accepted TOU, not those who only accepted the legacy data
+    // reporting flow as the latter still need to agree to the TOU.
+    if (!this.acceptedTOUDuringExperimentationPhase) {
+      this._log.trace(
+        "updateTOUPrefsForLegacyUsers - did not accept TOU during initial experimentation phase, no action required."
+      );
+      Services.prefs.setBoolPref(TOU_PREF_MIGRATION_CHECK, true);
+      return;
+    }
+
+    this.maybeMigrateLegacyTOUDatePref();
+    this.maybeMigrateLegacyTOUVersionPref();
+
+    Services.prefs.setBoolPref(TOU_PREF_MIGRATION_CHECK, true);
+  },
+
+  /**
    * Test only method, restarts the policy.
    */
   reset() {
@@ -374,6 +703,15 @@ var TelemetryReportingPolicyImpl = {
 
     // Migrate the data choices infobar, if needed.
     this._migratePreferences();
+
+    // Update TOU metrics with current state so that its sent in the next
+    // metrics ping even if the values don't change.
+    this._recordTOUDateTelemetry();
+    this._recordTOUVersionTelemetry();
+
+    // Watch for TOU pref changes so our metrics always stay in sync.
+    Services.prefs.addObserver(TOU_ACCEPTED_DATE_PREF, this);
+    Services.prefs.addObserver(TOU_ACCEPTED_VERSION_PREF, this);
 
     // Add the event observers.
     Services.obs.addObserver(this, "sessionstore-windows-restored");
@@ -395,6 +733,8 @@ var TelemetryReportingPolicyImpl = {
    */
   _detachObservers() {
     Services.obs.removeObserver(this, "sessionstore-windows-restored");
+    Services.prefs.removeObserver(TOU_ACCEPTED_DATE_PREF, this);
+    Services.prefs.removeObserver(TOU_ACCEPTED_VERSION_PREF, this);
   },
 
   /**
@@ -442,12 +782,20 @@ var TelemetryReportingPolicyImpl = {
   },
 
   /**
-   * Determine whether the user should be notified.
+   * Determine whether the user should be notified of telemetry policy.
    */
-  _shouldNotify() {
+  _shouldNotifyDataReportingPolicy() {
     if (!this.dataSubmissionEnabled) {
       this._log.trace(
-        "_shouldNotify - Data submission disabled by the policy."
+        "_shouldNotifyDataReportingPolicy - Data submission disabled by the policy."
+      );
+      return false;
+    }
+
+    // If user already accepted the TOU, we don't need to show the data reporting policy notification.
+    if (this.hasUserAcceptedCurrentTOU) {
+      this._log.trace(
+        "_shouldNotifyDataReportingPolicy - TOU already accepted, no need to notify via legacy data reporting policy."
       );
       return false;
     }
@@ -458,14 +806,59 @@ var TelemetryReportingPolicyImpl = {
     );
     if (this.isUserNotifiedOfCurrentPolicy || bypassNotification) {
       this._log.trace(
-        "_shouldNotify - User already notified or bypassing the policy."
+        "_shouldNotifyDataReportingPolicy - User already notified or bypassing the policy."
       );
       return false;
     }
 
     if (this._notificationInProgress) {
       this._log.trace(
-        "_shouldNotify - User not notified, notification already in progress."
+        "_shouldNotifyDataReportingPolicy - User not notified, notification already in progress."
+      );
+      return false;
+    }
+
+    return true;
+  },
+
+  /**
+   * Determine whether the user should be shown the terms of use.
+   */
+  _shouldShowTOU() {
+    if (!this._nimbusVariables.enabled || !this._nimbusVariables.screens) {
+      this._log.trace(
+        "_shouldShowTOU - TOU not enabled or no screens configured."
+      );
+      return false;
+    }
+
+    // If the user was already notified via the legacy data-reporting flow, we
+    // should not show them the new user Terms of Use modal flow.
+    if (this.isUserNotifiedOfCurrentPolicy) {
+      this._log.trace(
+        "_shouldShowTOU - User already saw legacy datareporting flow."
+      );
+      return false;
+    }
+
+    const bypassNotification = Services.prefs.getBoolPref(
+      TOU_BYPASS_NOTIFICATION_PREF,
+      false
+    );
+
+    if (bypassNotification) {
+      this._log.trace("_shouldShowTOU - User bypassing the policy.");
+      return false;
+    }
+
+    if (this.hasUserAcceptedCurrentTOU) {
+      this._log.trace("_shouldShowTOU - User already accepted TOU.");
+      return false;
+    }
+
+    if (this._notificationInProgress) {
+      this._log.trace(
+        "_shouldShowTOU - User not notified, notification already in progress."
       );
       return false;
     }
@@ -480,7 +873,7 @@ var TelemetryReportingPolicyImpl = {
    * if user was not notified.
    */
   _showInfobar(resolve) {
-    if (!this._shouldNotify()) {
+    if (!this._shouldNotifyDataReportingPolicy()) {
       this._log.trace("_showInfobar - User already notified, nothing to do.");
       resolve(false);
       return;
@@ -501,13 +894,45 @@ var TelemetryReportingPolicyImpl = {
     lazy.TelemetrySend.notifyCanUpload();
   },
 
+  _recordTOUDateTelemetry() {
+    const date = this.termsOfUseAcceptedDate;
+    let formattedDate;
+    try {
+      // only set the ping if date is a real Date
+      if (date instanceof Date) {
+        //  PRTime/microseconds expected
+        formattedDate = date.getTime() * 1000;
+        Glean.termsofuse.date.set(formattedDate);
+      }
+    } catch (e) {
+      this._log.error("Failed to record TOU Glean metrics", e);
+    }
+  },
+
+  _recordTOUVersionTelemetry() {
+    const version = this.termsOfUseAcceptedVersion;
+    try {
+      Glean.termsofuse.version.set(version);
+    } catch (e) {
+      this._log.error("Failed to record TOU Version Glean metric", e);
+    }
+  },
+
   /**
    * Record date and the version of the accepted policy.
    */
   _recordNotificationData() {
     this._log.trace("_recordNotificationData");
-    this.dataSubmissionPolicyNotifiedDate = Policy.now();
-    this.dataSubmissionPolicyAcceptedVersion = this.currentPolicyVersion;
+    switch (this._notificationType) {
+      case NOTIFICATION_TYPES.DATAREPORTING_POLICY_TAB_OR_INFOBAR:
+        this.dataSubmissionPolicyNotifiedDate = Policy.now();
+        this.dataSubmissionPolicyAcceptedVersion = this.currentPolicyVersion;
+        break;
+      case NOTIFICATION_TYPES.TERMS_OF_SERVICE_MODAL:
+        this.termsOfUseAcceptedDate = Policy.now();
+        this.termsOfUseAcceptedVersion = this.currentTermsOfUseVersion;
+        break;
+    }
     // The user was notified and the notification data saved: the notification
     // is no longer in progress.
     this._notificationInProgress = false;
@@ -521,7 +946,7 @@ var TelemetryReportingPolicyImpl = {
    *                            an infobar.
    */
   async _openFirstRunPage() {
-    if (!this._shouldNotify()) {
+    if (!this._shouldNotifyDataReportingPolicy()) {
       return false;
     }
 
@@ -595,9 +1020,17 @@ var TelemetryReportingPolicyImpl = {
     });
   },
 
-  observe(aSubject, aTopic) {
+  observe(aSubject, aTopic, aData) {
     if (aTopic == "sessionstore-windows-restored") {
       this._delayedSetup();
+    }
+    if (aTopic === "nsPref:changed") {
+      if (aData === TOU_ACCEPTED_DATE_PREF) {
+        this._recordTOUDateTelemetry();
+      }
+      if (aData === TOU_ACCEPTED_VERSION_PREF) {
+        this._recordTOUVersionTelemetry();
+      }
     }
   },
 
@@ -613,6 +1046,7 @@ var TelemetryReportingPolicyImpl = {
     // makes sense because we don't have support for re-notifying a user
     // _during_ the Firefox process lifetime; right now, we only notify the user
     // at Firefox startup.
+    this.updateTOUPrefsForLegacyUsers();
     await this._configureFromNimbus();
 
     if (this.isFirstRun()) {
@@ -620,9 +1054,9 @@ var TelemetryReportingPolicyImpl = {
       Services.prefs.setBoolPref(TelemetryUtils.Preferences.FirstRun, false);
     }
 
-    if (!this._shouldNotify()) {
+    if (!this._shouldShowTOU() && !this._shouldNotifyDataReportingPolicy()) {
       this._log.trace(
-        `observe: user has already been notified, no further action required`
+        `_delayedSetup: neither TOU or legacy data reporting policy will show, no further action required`
       );
       return;
     }
@@ -634,28 +1068,40 @@ var TelemetryReportingPolicyImpl = {
   },
 
   async _waitForUserIsNotified() {
-    if (!this._shouldNotify()) {
+    // We're about to show the user the TOU modal dialog or legacy data
+    // reporting flow. Make sure Glean won't initialize on shutdown, in case the
+    // user never interacts with the modal or isn't notifed. By default
+    // `telemetry.fog.init_on_shutdown` is true, but we delay it here to avoid
+    // recording data before the user makes their choice in the TOU modal or is
+    // notified via the legacy data reporting flow (see Bug D239753).
+    //
+    // This pref will be reset to true only after the notification flow
+    // completes (see TelemetryReportingPolicyImpl.ensureUserIsNotified).
+    Services.prefs.setBoolPref("telemetry.fog.init_on_shutdown", false);
+
+    if (!this._shouldShowTOU()) {
+      this._log.trace(`_waitForUserIsNotified: will not showing TOU`);
+    } else if (await this._requestAndAwaitUserResponseViaFxMS()) {
       this._log.trace(
-        `_waitForUserIsNotified: user has already been notified, no further action required`
+        `_waitForUserIsNotified: user notified via Messaging System`
+      );
+      this._notificationType = NOTIFICATION_TYPES.TERMS_OF_SERVICE_MODAL;
+      return;
+    }
+    this._log.trace(
+      `_waitForUserIsNotified: user not shown TOU modal, falling back to legacy notification`
+    );
+
+    if (!this._shouldNotifyDataReportingPolicy()) {
+      this._log.trace(
+        `_waitForUserIsNotified: will not show data reporting policy flow, no further action required`
       );
       return;
     }
 
-    // We're about to show the user the modal dialog.
-    // Make sure Glean won't initialize on shutdown, in case the user never interacts with the modal
-    Services.prefs.setBoolPref("telemetry.fog.init_on_shutdown", false);
-
-    if (this._nimbusVariables.enabled && this._nimbusVariables.screens) {
-      if (await this._notifyUserViaMessagingSystem()) {
-        this._log.trace(
-          `_waitForUserIsNotified: user notified via Messaging System`
-        );
-        return;
-      }
-      `_waitForUserIsNotified: user not notified via Messaging System, falling back to legacy notification`;
-    }
-
     await this._notifyUserViaTabOrInfobar();
+    this._notificationType =
+      NOTIFICATION_TYPES.DATAREPORTING_POLICY_TAB_OR_INFOBAR;
   },
 
   /**
@@ -732,8 +1178,6 @@ var TelemetryReportingPolicyImpl = {
     this._nimbusVariables = lazy.NimbusFeatures.preonboarding.getAllVariables();
 
     if (this._nimbusVariables.enabled === null) {
-      const PREF_TOS_ROLLOUT_ENROLLED =
-        "browser.preonboarding.enrolledInOnTrainRollout";
       const preonboardingMessage =
         lazy.OnboardingMessageProvider.getPreonboardingMessages().find(
           m => m.id === "NEW_USER_TOU_ONBOARDING"
@@ -748,29 +1192,28 @@ var TelemetryReportingPolicyImpl = {
           )
         ),
       };
-      Services.prefs.setBoolPref(PREF_TOS_ROLLOUT_ENROLLED, true);
       this._log.trace(
         `_configureFromNimbus: using default preonboarding message`
       );
     }
 
     if (this._nimbusVariables.enabled) {
-      if ("currentPolicyVersion" in this._nimbusVariables) {
+      if ("currentVersion" in this._nimbusVariables) {
         this._log.trace(
-          `_configureFromNimbus: setting currentPolicyVersion from Nimbus feature (${this._nimbusVariables.currentPolicyVersion})`
+          `_configureFromNimbus: setting currentPolicyVersion from Nimbus feature (${this._nimbusVariables.currentVersion})`
         );
         Services.prefs.setIntPref(
-          TelemetryUtils.Preferences.CurrentPolicyVersion,
-          this._nimbusVariables.currentPolicyVersion
+          TOU_CURRENT_VERSION_PREF,
+          this._nimbusVariables.currentVersion
         );
       }
-      if ("minimumPolicyVersion" in this._nimbusVariables) {
+      if ("minimumVersion" in this._nimbusVariables) {
         this._log.trace(
-          `_configureFromNimbus: setting minimumPolicyVersion from Nimbus feature (${this._nimbusVariables.minimumPolicyVersion})`
+          `_configureFromNimbus: setting minimumPolicyVersion from Nimbus feature (${this._nimbusVariables.minimumVersion})`
         );
         Services.prefs.setIntPref(
-          TelemetryUtils.Preferences.MinimumPolicyVersion,
-          this._nimbusVariables.minimumPolicyVersion
+          TOU_MINIMUM_VERSION_PREF,
+          this._nimbusVariables.minimumVersion
         );
       }
       if ("firstRunURL" in this._nimbusVariables) {
@@ -825,15 +1268,13 @@ var TelemetryReportingPolicyImpl = {
    * wait for user interaction.
    *
    * User interaction is signaled by the
-   * `datareporting:notify-data-policy:interacted` observer notification.
+   * `termsofuse:interacted` observer notification.
    *
    * @return {Promise<boolean>} `true` if user was notified, `false` to fallback
    * to legacy tab/infobar notification.
    */
-  async _notifyUserViaMessagingSystem() {
-    let p = lazy.BrowserUtils.promiseObserved(
-      "datareporting:notify-data-policy:interacted"
-    );
+  async _requestAndAwaitUserResponseViaFxMS() {
+    let p = lazy.BrowserUtils.promiseObserved("termsofuse:interacted");
 
     if (!(await Policy.showModal(this._nimbusVariables))) {
       this._log.trace(

@@ -8,6 +8,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRunnable.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/ErrorResult.h"
 #include "nsGlobalWindowInner.h"
 #include "nsContentSecurityUtils.h"
@@ -124,7 +125,8 @@ nsresult CSPEvalChecker::CheckForWindow(JSContext* aCx,
   nsresult rv = NS_OK;
 
   auto location = JSCallingLocation::Get(aCx);
-  nsCOMPtr<nsIContentSecurityPolicy> csp = doc->GetCsp();
+  nsCOMPtr<nsIContentSecurityPolicy> csp =
+      PolicyContainer::GetCSP(doc->GetPolicyContainer());
   rv = CheckInternal(csp, nullptr /* no CSPEventListener for window */,
                      doc->NodePrincipal(), aExpression, location, aAllowEval);
   if (NS_WARN_IF(NS_FAILED(rv))) {

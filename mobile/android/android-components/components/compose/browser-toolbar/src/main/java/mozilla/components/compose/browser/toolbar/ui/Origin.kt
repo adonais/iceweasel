@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Arrangement.Center
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -54,6 +55,7 @@ import mozilla.components.compose.browser.toolbar.concept.PageOrigin.Companion.T
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.utils.PageOriginContextualMenuBuilder
+import mozilla.components.support.ktx.kotlin.getRegistrableDomainIndexRange
 import mozilla.components.support.utils.ClipboardHandler
 
 private const val URL_TEXT_SIZE_ALONE = 15
@@ -67,8 +69,9 @@ private const val FADE_LENGTH = 66
  * @param modifier [Modifier] to apply to this composable for further customisation.
  * @param url the URL of the webpage. Can be `null` or empty, in which vase the [hint] will be shown.
  * @param title the title of the webpage. Can be `null` or empty, in which case only [url] or [hint] will be shown.
- * @param onClick [BrowserToolbarEvent] to be dispatched when this layout is clicked.
+ * @param onClick Optional [BrowserToolbarEvent] to be dispatched when this layout is clicked.
  * @param onLongClick Optional [BrowserToolbarInteraction] describing how to handle this layout being long clicked.
+ * To ensure long clicks handling the normal click behavior should also be set.
  * @param onInteraction [BrowserToolbarInteraction] to be dispatched when this layout is interacted with.
  * @param onInteraction Callback for handling [BrowserToolbarEvent]s on user interactions.
  */
@@ -78,11 +81,11 @@ private const val FADE_LENGTH = 66
 internal fun Origin(
     @StringRes hint: Int,
     modifier: Modifier = Modifier,
-    url: String? = null,
+    url: CharSequence? = null,
     title: String? = null,
     textGravity: TextGravity = TEXT_GRAVITY_START,
     contextualMenuOptions: List<ContextualMenuOption> = emptyList(),
-    onClick: BrowserToolbarEvent,
+    onClick: BrowserToolbarEvent?,
     onLongClick: BrowserToolbarEvent?,
     onInteraction: (BrowserToolbarEvent) -> Unit,
 ) {
@@ -103,7 +106,7 @@ internal fun Origin(
     }
 
     val hint = stringResource(hint)
-    val urlToShow: String = remember(url) {
+    val urlToShow: CharSequence = remember(url) {
         when (url == null || url.isBlank()) {
             true -> hint
             else -> url
@@ -118,17 +121,17 @@ internal fun Origin(
                     this.contentDescription = "${title ?: ""} $urlToShow. $hint"
                 }
                 .clickable(
-                    enabled = !shouldReactToLongClicks,
+                    enabled = onClick != null && !shouldReactToLongClicks,
                 ) {
                     view.playSoundEffect(SoundEffectConstants.CLICK)
-                    onInteraction(onClick)
+                    onInteraction(requireNotNull(onClick))
                 }
                 .thenConditional(
                     Modifier.combinedClickable(
                         role = Button,
                         onClick = {
                             view.playSoundEffect(SoundEffectConstants.CLICK)
-                            onInteraction(onClick)
+                            onInteraction(requireNotNull(onClick))
                         },
                         onLongClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -136,14 +139,14 @@ internal fun Origin(
                             onLongClick?.let { onInteraction(it) }
                         },
                     ),
-                ) { shouldReactToLongClicks },
+                ) { onClick != null && shouldReactToLongClicks },
         ) {
             Column(
                 verticalArrangement = Center,
             ) {
                 Title(title, textGravity)
 
-                Url(urlToShow, urlTextSize, textGravity)
+                Url(urlToShow, urlTextSize)
             }
 
             LongPressMenu(showMenu, contextualMenuOptions, clipboardHandler, onInteraction) {
@@ -158,7 +161,7 @@ private fun Title(
     title: String?,
     textGravity: TextGravity,
 ) {
-    if (title != null) {
+    if (title != null && title.isNotBlank()) {
         FadedText(
             text = title,
             style = TextStyle(
@@ -173,18 +176,27 @@ private fun Title(
 
 @Composable
 private fun Url(
-    url: String,
+    url: CharSequence,
     fontSize: Int,
-    textGravity: TextGravity,
 ) {
-    FadedText(
-        text = url,
-        style = TextStyle(
+    // Ensure compatibility with MaterialTheme attributes. See bug 1936346 for more context.
+    val materialTextStyle = LocalTextStyle.current
+    val urlString = remember(url) { url.toString() }
+    val registrableDomainIndexRange = remember(url) {
+        url.getRegistrableDomainIndexRange()
+    }
+
+    HighlightedDomainUrl(
+        url = urlString,
+        registrableDomainIndexRange = registrableDomainIndexRange,
+        fadedTextStyle = materialTextStyle.merge(
+            fontSize = fontSize.sp,
+            color = AcornTheme.colors.textSecondary,
+        ),
+        boldedTextStyle = materialTextStyle.merge(
             fontSize = fontSize.sp,
             color = AcornTheme.colors.textPrimary,
         ),
-        truncationDirection = textGravity.toTextTruncationDirection(),
-        fadeLength = FADE_LENGTH.dp,
     )
 }
 

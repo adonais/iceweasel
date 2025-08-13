@@ -3130,6 +3130,26 @@ impl ClipMaskInstanceList {
             image_mask_instances_with_scissor: FastHashMap::default(),
         }
     }
+
+    pub fn is_empty(&self) -> bool {
+        // Destructure self to make sure we don't forget to update this method if
+        // a new member is added.
+        let ClipMaskInstanceList {
+            mask_instances_fast,
+            mask_instances_slow,
+            mask_instances_fast_with_scissor,
+            mask_instances_slow_with_scissor,
+            image_mask_instances,
+            image_mask_instances_with_scissor,
+        } = self;
+
+        mask_instances_fast.is_empty()
+            && mask_instances_slow.is_empty()
+            && mask_instances_fast_with_scissor.is_empty()
+            && mask_instances_slow_with_scissor.is_empty()
+            && image_mask_instances.is_empty()
+            && image_mask_instances_with_scissor.is_empty()
+    }
 }
 
 /// A list of clip instances to be drawn into a target.

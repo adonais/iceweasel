@@ -5,17 +5,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "HTMLSelectEventListener.h"
 
-#include "nsListControlFrame.h"
-#include "mozilla/dom/Event.h"
-#include "mozilla/dom/MouseEvent.h"
 #include "mozilla/Casting.h"
-#include "mozilla/MouseEvents.h"
-#include "mozilla/TextEvents.h"
-#include "mozilla/PresShell.h"
-#include "mozilla/dom/HTMLSelectElement.h"
-#include "mozilla/dom/HTMLOptionElement.h"
-#include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/MouseEvents.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_ui.h"
+#include "mozilla/TextEvents.h"
+#include "mozilla/dom/Event.h"
+#include "mozilla/dom/HTMLOptionElement.h"
+#include "mozilla/dom/HTMLSelectElement.h"
+#include "mozilla/dom/MouseEvent.h"
+#include "nsListControlFrame.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -339,21 +339,23 @@ void HTMLSelectEventListener::CharacterDataChanged(
 }
 
 void HTMLSelectEventListener::ContentWillBeRemoved(nsIContent* aChild,
-                                                   const BatchRemovalState*) {
+                                                   const ContentRemoveInfo&) {
   if (nsContentUtils::IsInSameAnonymousTree(mElement, aChild)) {
     OptionValueMightHaveChanged(aChild);
     ComboboxMightHaveChanged();
   }
 }
 
-void HTMLSelectEventListener::ContentAppended(nsIContent* aFirstNewContent) {
+void HTMLSelectEventListener::ContentAppended(nsIContent* aFirstNewContent,
+                                              const ContentAppendInfo&) {
   if (nsContentUtils::IsInSameAnonymousTree(mElement, aFirstNewContent)) {
     OptionValueMightHaveChanged(aFirstNewContent);
     ComboboxMightHaveChanged();
   }
 }
 
-void HTMLSelectEventListener::ContentInserted(nsIContent* aChild) {
+void HTMLSelectEventListener::ContentInserted(nsIContent* aChild,
+                                              const ContentInsertInfo&) {
   if (nsContentUtils::IsInSameAnonymousTree(mElement, aChild)) {
     OptionValueMightHaveChanged(aChild);
     ComboboxMightHaveChanged();

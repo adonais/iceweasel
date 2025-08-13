@@ -5,6 +5,11 @@ const { CustomizableUITestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/CustomizableUITestUtils.sys.mjs"
 );
 
+const { EnterprisePolicyTesting, PoliciesPrefTracker } =
+  ChromeUtils.importESModule(
+    "resource://testing-common/EnterprisePolicyTesting.sys.mjs"
+  );
+
 const { UrlClassifierTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/UrlClassifierTestUtils.sys.mjs"
 );
@@ -146,6 +151,35 @@ function isSelectedTab(win, tab) {
   is(selectedTab, tab);
 }
 
+async function setupPolicyEngineWithJson(json, customSchema) {
+  PoliciesPrefTracker.restoreDefaultValues();
+  if (typeof json != "object") {
+    let filePath = getTestFilePath(json ? json : "non-existing-file.json");
+    return EnterprisePolicyTesting.setupPolicyEngineWithJson(
+      filePath,
+      customSchema
+    );
+  }
+  return EnterprisePolicyTesting.setupPolicyEngineWithJson(json, customSchema);
+}
+
+async function ensureReportBrokenSiteDisabledByPolicy() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      DisableFeedbackCommands: true,
+    },
+  });
+}
+
+registerCleanupFunction(async function resetPolicies() {
+  if (Services.policies.status != Ci.nsIEnterprisePolicies.INACTIVE) {
+    await setupPolicyEngineWithJson("");
+  }
+  EnterprisePolicyTesting.resetRunOnceState();
+  PoliciesPrefTracker.restoreDefaultValues();
+  PoliciesPrefTracker.stop();
+});
+
 function ensureReportBrokenSitePreffedOn() {
   Services.prefs.setBoolPref(PREFS.DATAREPORTING_ENABLED, true);
   Services.prefs.setBoolPref(PREFS.REPORTER_ENABLED, true);
@@ -240,6 +274,9 @@ class ReportBrokenSiteHelper {
     await this.click(triggerMenuItem);
     await shownPromise;
     await focusPromise;
+    await BrowserTestUtils.waitForCondition(
+      () => this.URLInput.selectionStart === 0
+    );
   }
 
   async #assertClickAndViewChanges(button, view, newView, newFocus) {

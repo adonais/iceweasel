@@ -10,16 +10,16 @@
 #include "gfxUtils.h"
 #include "mozilla/Likely.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/dom/MathMLElement.h"
 #include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/gfx/2D.h"
-#include "nsLayoutUtils.h"
-#include "nsPresContext.h"
-#include "nsNameSpaceManager.h"
-#include "nsGkAtoms.h"
-#include "nsDisplayList.h"
-#include "nsIScriptError.h"
 #include "nsContentUtils.h"
-#include "mozilla/dom/MathMLElement.h"
+#include "nsDisplayList.h"
+#include "nsGkAtoms.h"
+#include "nsIScriptError.h"
+#include "nsLayoutUtils.h"
+#include "nsNameSpaceManager.h"
+#include "nsPresContext.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;

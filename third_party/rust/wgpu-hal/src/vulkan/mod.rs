@@ -36,7 +36,7 @@ mod semaphore_list;
 pub use adapter::PhysicalDeviceFeatures;
 
 use alloc::{boxed::Box, ffi::CString, sync::Arc, vec::Vec};
-use core::{borrow::Borrow, ffi::CStr, fmt, mem, num::NonZeroU32};
+use core::{borrow::Borrow, ffi::CStr, fmt, marker::PhantomData, mem, num::NonZeroU32};
 
 use arrayvec::ArrayVec;
 use ash::{ext, khr, vk};
@@ -776,11 +776,70 @@ impl Drop for Queue {
         unsafe { self.relay_semaphores.lock().destroy(&self.device.raw) };
     }
 }
-
+#[derive(Debug)]
+enum BufferMemoryBacking {
+    Managed(gpu_alloc::MemoryBlock<vk::DeviceMemory>),
+    VulkanMemory {
+        memory: vk::DeviceMemory,
+        offset: u64,
+        size: u64,
+    },
+}
+impl BufferMemoryBacking {
+    fn memory(&self) -> &vk::DeviceMemory {
+        match self {
+            Self::Managed(m) => m.memory(),
+            Self::VulkanMemory { memory, .. } => memory,
+        }
+    }
+    fn offset(&self) -> u64 {
+        match self {
+            Self::Managed(m) => m.offset(),
+            Self::VulkanMemory { offset, .. } => *offset,
+        }
+    }
+    fn size(&self) -> u64 {
+        match self {
+            Self::Managed(m) => m.size(),
+            Self::VulkanMemory { size, .. } => *size,
+        }
+    }
+}
 #[derive(Debug)]
 pub struct Buffer {
     raw: vk::Buffer,
-    block: Option<Mutex<gpu_alloc::MemoryBlock<vk::DeviceMemory>>>,
+    block: Option<Mutex<BufferMemoryBacking>>,
+}
+impl Buffer {
+    /// # Safety
+    ///
+    /// - `vk_buffer`'s memory must be managed by the caller
+    /// - Externally imported buffers can't be mapped by `wgpu`
+    pub unsafe fn from_raw(vk_buffer: vk::Buffer) -> Self {
+        Self {
+            raw: vk_buffer,
+            block: None,
+        }
+    }
+    /// # Safety
+    /// - We will use this buffer and the buffer's backing memory range as if we have exclusive ownership over it, until the wgpu resource is dropped and the wgpu-hal object is cleaned up
+    /// - Externally imported buffers can't be mapped by `wgpu`
+    /// - `offset` and `size` must be valid with the allocation of `memory`
+    pub unsafe fn from_raw_managed(
+        vk_buffer: vk::Buffer,
+        memory: vk::DeviceMemory,
+        offset: u64,
+        size: u64,
+    ) -> Self {
+        Self {
+            raw: vk_buffer,
+            block: Some(Mutex::new(BufferMemoryBacking::VulkanMemory {
+                memory,
+                offset,
+                size,
+            })),
+        }
+    }
 }
 
 impl crate::DynBuffer for Buffer {}
@@ -1500,3 +1559,65 @@ struct RawTlasInstance {
     shader_binding_table_record_offset_and_flags: u32,
     acceleration_structure_reference: u64,
 }
+
+/// Arguments to the [`CreateDeviceCallback`].
+pub struct CreateDeviceCallbackArgs<'arg, 'pnext, 'this>
+where
+    'this: 'pnext,
+{
+    /// The extensions to enable for the device. You must not remove anything from this list,
+    /// but you may add to it.
+    pub extensions: &'arg mut Vec<&'static CStr>,
+    /// The physical device features to enable. You may enable features, but must not disable any.
+    pub device_features: &'arg mut PhysicalDeviceFeatures,
+    /// The queue create infos for the device. You may add or modify queue create infos as needed.
+    pub queue_create_infos: &'arg mut Vec<vk::DeviceQueueCreateInfo<'pnext>>,
+    /// The create info for the device. You may add or modify things in the pnext chain, but
+    /// do not turn features off. Additionally, do not add things to the list of extensions,
+    /// or to the feature set, as all changes to that member will be overwritten.
+    pub create_info: &'arg mut vk::DeviceCreateInfo<'pnext>,
+    /// We need to have `'this` in the struct, so we can declare that all lifetimes coming from
+    /// captures in the closure will live longer (and hence satisfy) `'pnext`. However, we
+    /// don't actually directly use `'this`
+    _phantom: PhantomData<&'this ()>,
+}
+
+/// Callback to allow changing the vulkan device creation parameters.
+///
+/// # Safety:
+/// - If you want to add extensions, add the to the `Vec<'static CStr>` not the create info,
+///   as the create info value will be overwritten.
+/// - Callback must not remove features.
+/// - Callback must not change anything to what the instance does not support.
+pub type CreateDeviceCallback<'this> =
+    dyn for<'arg, 'pnext> FnOnce(CreateDeviceCallbackArgs<'arg, 'pnext, 'this>) + 'this;
+
+/// Arguments to the [`CreateInstanceCallback`].
+pub struct CreateInstanceCallbackArgs<'arg, 'pnext, 'this>
+where
+    'this: 'pnext,
+{
+    /// The extensions to enable for the instance. You must not remove anything from this list,
+    /// but you may add to it.
+    pub extensions: &'arg mut Vec<&'static CStr>,
+    /// The create info for the instance. You may add or modify things in the pnext chain, but
+    /// do not turn features off. Additionally, do not add things to the list of extensions,
+    /// all changes to that member will be overwritten.
+    pub create_info: &'arg mut vk::InstanceCreateInfo<'pnext>,
+    /// Vulkan entry point.
+    pub entry: &'arg ash::Entry,
+    /// We need to have `'this` in the struct, so we can declare that all lifetimes coming from
+    /// captures in the closure will live longer (and hence satisfy) `'pnext`. However, we
+    /// don't actually directly use `'this`
+    _phantom: PhantomData<&'this ()>,
+}
+
+/// Callback to allow changing the vulkan instance creation parameters.
+///
+/// # Safety:
+/// - If you want to add extensions, add the to the `Vec<'static CStr>` not the create info,
+///   as the create info value will be overwritten.
+/// - Callback must not remove features.
+/// - Callback must not change anything to what the instance does not support.
+pub type CreateInstanceCallback<'this> =
+    dyn for<'arg, 'pnext> FnOnce(CreateInstanceCallbackArgs<'arg, 'pnext, 'this>) + 'this;

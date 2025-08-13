@@ -150,6 +150,8 @@
     %2$s is the url for the learn-more link.
   -->
   <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s를 여러 기능으로 사용할 수 있습니다.</p> <p>개인 정보 보호 브라우저로 사용: <ul> <li>앱에서 바로 검색과 브라우징 하기</li> <li>추적기 차단(설정을 변경해서 허용할 수 있음)</li> <li>쿠키나 검색어, 브라우징 기록을 삭제</li> </ul> </p> <p>%1$s는 Mozilla의 제품입니다. Mozilla의 사명은 건강하고 개방적인 인터넷을 조성하는 것입니다.<br/> <a href=\"%2$s\">더 알아보기</a></p>]]></string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">더 알아보기</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">개인정보 보호 및 보안</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -486,8 +488,6 @@
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
   <string name="onboarding_first_screen_privacy_notice_link_2">개인 정보 보호 정책</string>
   <!-- New Onboarding flow first screen button label -->
-  <string name="onboarding_first_screen_button_agree_and_continue" moz:removedIn="140" tools:ignore="UnusedResources">동의 및 계속</string>
-  <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue_2">계속</string>
   <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
   <string name="a11y_link_available">링크 사용 가능</string>
@@ -708,18 +708,6 @@
   <string name="preference_block_autoplay_audio_only_summary">추천</string>
   <!-- Preference for block autoplay audio and video -->
   <string name="preference_block_autoplay_audio_video">오디오 및 비디오 차단</string>
-  <!-- Preference for studies -->
-  <string name="preference_studies" moz:removedIn="140">연구</string>
-  <!-- Preference for studies summary -->
-  <string name="preference_studies_summary" tools:ignore="BrandUsage" moz:removedIn="140">Firefox가 때때로 연구를 설치하고 실행할 수 있습니다.</string>
-  <!-- Learn more link for studies, links to an article for more information about studies. -->
-  <string name="studies_learn_more" moz:removedIn="140">자세히 알아보기</string>
-  <!-- Title of the remove studies button -->
-  <string name="studies_remove" moz:removedIn="140">삭제</string>
-  <!-- Title of the active section on the studies list -->
-  <string name="studies_active" moz:removedIn="140">활성화</string>
-  <!-- Title of the completed section on the studies list -->
-  <string name="studies_completed" moz:removedIn="140">완료</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">USB/Wi-Fi 원격 디버깅</string>
   <!-- Text Button for show biometric prompt -->

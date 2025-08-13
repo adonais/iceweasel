@@ -487,45 +487,6 @@ ServiceWorkerRegistrationProxy::GetNavigationPreloadState() {
   return promise;
 }
 
-// TODO(krosylight): Ideally this callback shouldn't be needed, see bug 1950116.
-class NotificationsCallback : public nsINotificationStorageCallback {
- public:
-  NS_DECL_ISUPPORTS
-
-  already_AddRefed<NotificationsPromise> Promise() {
-    return mPromiseHolder.Ensure(__func__);
-  }
-
-  NS_IMETHOD Done(
-      const nsTArray<RefPtr<nsINotificationStorageEntry>>& aEntries) final {
-    AssertIsOnMainThread();
-
-    nsTArray<IPCNotification> notifications(aEntries.Length());
-    for (const auto& entry : aEntries) {
-      auto result = NotificationStorageEntry::ToIPC(*entry);
-      if (result.isErr()) {
-        continue;
-      }
-      MOZ_ASSERT(!result.inspect().id().IsEmpty());
-      notifications.AppendElement(result.unwrap());
-    }
-
-    mPromiseHolder.Resolve(std::move(notifications), __func__);
-    return NS_OK;
-  }
-
- protected:
-  virtual ~NotificationsCallback() {
-    // We may be shutting down prematurely without getting the result, so make
-    // sure to settle the promise.
-    mPromiseHolder.RejectIfExists(NS_ERROR_DOM_INVALID_STATE_ERR, __func__);
-  };
-
-  MozPromiseHolder<NotificationsPromise> mPromiseHolder;
-};
-
-NS_IMPL_ISUPPORTS(NotificationsCallback, nsINotificationStorageCallback)
-
 RefPtr<NotificationsPromise> ServiceWorkerRegistrationProxy::GetNotifications(
     const nsAString& aTag) {
   AssertIsOnBackgroundThread();
@@ -545,18 +506,8 @@ RefPtr<NotificationsPromise> ServiceWorkerRegistrationProxy::GetNotifications(
         nsString origin;
         GetOrigin(principal, origin);
 
-        RefPtr<NotificationsCallback> callback = new NotificationsCallback();
-        RefPtr<NotificationsPromise> promise = callback->Promise();
-
-        nsCOMPtr<nsINotificationStorage> notificationStorage =
-            GetNotificationStorage(
-                self->mListeningClientInfo.IsPrivateBrowsing());
-
-        nsString scope;
-        self->GetScope(scope);
-
-        notificationStorage->Get(origin, scope, tag, callback);
-
+        RefPtr<NotificationsPromise> promise = GetStoredNotificationsForScope(
+            principal, self->mDescriptor.Scope(), tag);
         return promise;
       });
 }

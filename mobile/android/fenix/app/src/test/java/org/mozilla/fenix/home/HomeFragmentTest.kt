@@ -8,6 +8,9 @@ import android.content.Context
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -17,8 +20,12 @@ import org.junit.Test
 import org.mozilla.fenix.FenixApplication
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.components.Core
+import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.ext.application
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.reviewprompt.ReviewPromptState
+import org.mozilla.fenix.reviewprompt.ReviewPromptState.Eligible.Type
 import org.mozilla.fenix.utils.Settings
 
 class HomeFragmentTest {
@@ -27,14 +34,12 @@ class HomeFragmentTest {
     private lateinit var context: Context
     private lateinit var core: Core
     private lateinit var homeFragment: HomeFragment
-    private lateinit var activity: HomeActivity
 
     @Before
     fun setup() {
         settings = mockk(relaxed = true)
         context = mockk(relaxed = true)
         core = mockk(relaxed = true)
-        activity = mockk(relaxed = true)
 
         val fenixApplication: FenixApplication = mockk(relaxed = true)
 
@@ -84,5 +89,81 @@ class HomeFragmentTest {
         homeFragment.initializeMicrosurveyFeature(isMicrosurveyEnabled = false)
 
         assertNull(homeFragment.messagingFeatureMicrosurvey.get())
+    }
+
+    @Test
+    fun `GIVEN observing review prompt state WHEN eligible for custom prompt THEN custom prompt shown`() {
+        runTest {
+            val actions = mutableListOf<AppAction>()
+            var playStorePromptShown = false
+            var customPromptShown = false
+
+            homeFragment.observeReviewPromptState(
+                appStates = flowOf(AppState(reviewPrompt = ReviewPromptState.Eligible(Type.Custom))),
+                dispatchAction = { actions += it },
+                tryShowPlayStorePrompt = { playStorePromptShown = true },
+                showCustomPrompt = { customPromptShown = true },
+            )
+
+            assertTrue(customPromptShown)
+            assertFalse(playStorePromptShown)
+            assertTrue(actions.contains(AppAction.ReviewPromptAction.ReviewPromptShown))
+        }
+    }
+
+    @Test
+    fun `GIVEN observing review prompt state WHEN eligible for Play Store prompt THEN Play Store prompt shown`() {
+        runTest {
+            val actions = mutableListOf<AppAction>()
+            var playStorePromptShown = false
+            var customPromptShown = false
+
+            homeFragment.observeReviewPromptState(
+                appStates = flowOf(AppState(reviewPrompt = ReviewPromptState.Eligible(Type.PlayStore))),
+                dispatchAction = { actions += it },
+                tryShowPlayStorePrompt = { playStorePromptShown = true },
+                showCustomPrompt = { customPromptShown = true },
+            )
+
+            assertTrue(playStorePromptShown)
+            assertFalse(customPromptShown)
+            assertTrue(actions.contains(AppAction.ReviewPromptAction.ReviewPromptShown))
+        }
+    }
+
+    @Test
+    fun `GIVEN observing review prompt state WHEN state is unknown THEN does nothing`() {
+        runTest {
+            val actions = mutableListOf<AppAction>()
+            var promptShown = false
+
+            homeFragment.observeReviewPromptState(
+                appStates = flowOf(AppState(reviewPrompt = ReviewPromptState.Unknown)),
+                dispatchAction = { actions += it },
+                tryShowPlayStorePrompt = { promptShown = true },
+                showCustomPrompt = { promptShown = true },
+            )
+
+            assertFalse(promptShown)
+            assertEquals(emptyList<AppAction>(), actions)
+        }
+    }
+
+    @Test
+    fun `GIVEN observing review prompt state WHEN not eligible THEN does nothing`() {
+        runTest {
+            val actions = mutableListOf<AppAction>()
+            var promptShown = false
+
+            homeFragment.observeReviewPromptState(
+                appStates = flowOf(AppState(reviewPrompt = ReviewPromptState.NotEligible)),
+                dispatchAction = { actions += it },
+                tryShowPlayStorePrompt = { promptShown = true },
+                showCustomPrompt = { promptShown = true },
+            )
+
+            assertFalse(promptShown)
+            assertEquals(emptyList<AppAction>(), actions)
+        }
     }
 }

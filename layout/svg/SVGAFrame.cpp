@@ -5,12 +5,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 // Keep in (case-insensitive) order:
+#include "SVGLengthList.h"
 #include "gfxMatrix.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SVGContainerFrame.h"
-#include "mozilla/dom/SVGAElement.h"
 #include "mozilla/dom/MutationEventBinding.h"
-#include "SVGLengthList.h"
+#include "mozilla/dom/SVGAElement.h"
 
 nsIFrame* NS_NewSVGAFrame(mozilla::PresShell* aPresShell,
                           mozilla::ComputedStyle* aStyle);

@@ -121,6 +121,24 @@ add_task(async function () {
   gBrowser.removeTab(tab4);
 
   newButton.remove();
+
+  // Accesskey on input label in shadow host should work
+  const gPageURL5 = `data:text/html,
+    <body>
+      <div id="host">
+        <template shadowrootmode="open">
+          <label for="tab5Checkbox" accesskey="y">Label accesskey is "y":</label>
+          <input id="tab5Checkbox" type="checkbox">
+        </template>
+      </div>
+    </body>`;
+  let tab5 = await BrowserTestUtils.openNewForegroundTab(gBrowser, gPageURL5);
+  Services.focus.clearFocus(window);
+  focusedId = await performAccessKey(tab5.linkedBrowser, "y");
+
+  is(focusedId, "host", "the shadow host in tab5 should be focused");
+
+  gBrowser.removeTab(tab5);
 });
 
 function performAccessKey(browser, key) {

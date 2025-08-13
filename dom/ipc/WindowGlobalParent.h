@@ -162,6 +162,11 @@ class WindowGlobalParent final : public WindowContext,
 
   void PermitUnload(std::function<void(bool)>&& aResolver);
 
+  void PermitUnloadTraversable(const SessionHistoryInfo& aInfo,
+                               std::function<void(bool)>&& aResolver);
+
+  void PermitUnloadChildNavigables(std::function<void(bool)>&& aResolver);
+
   already_AddRefed<mozilla::dom::Promise> DrawSnapshot(
       const DOMRect* aRect, double aScale, const nsACString& aBackgroundColor,
       bool aResetScrollPosition, mozilla::ErrorResult& aRv);
@@ -344,7 +349,13 @@ class WindowGlobalParent final : public WindowContext,
   ~WindowGlobalParent();
 
   bool ShouldTrackSiteOriginTelemetry();
-  void FinishAccumulatingPageUseCounters();
+  enum class PageUseCounterResultBits : uint8_t {
+    WAITING,
+    DATA_RECEIVED,
+    EMPTY_DATA,
+  };
+  using PageUseCounterResult = EnumSet<PageUseCounterResultBits>;
+  PageUseCounterResult FinishAccumulatingPageUseCounters();
 
   // Returns failure if the new storage principal cannot be validated
   // against the current document principle.

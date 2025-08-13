@@ -19,50 +19,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
 });
 
-ChromeUtils.defineLazyGetter(lazy, "domParser", () => {
-  const parser = new DOMParser();
-  parser.forceEnableDTD();
-  return parser;
-});
-
 /** @namespace */
 export const l10n = {};
-
-/**
- * Retrieve the localized string for the specified entity id.
- *
- * Example:
- *     localizeEntity(["chrome://branding/locale/brand.dtd"], "brandShortName")
- *
- * @param {Array.<string>} urls
- *     Array of .dtd URLs.
- * @param {string} id
- *     The ID of the entity to retrieve the localized string for.
- *
- * @returns {string}
- *     The localized string for the requested entity.
- */
-l10n.localizeEntity = function (urls, id) {
-  // Build a string which contains all possible entity locations
-  let locations = [];
-  urls.forEach((url, index) => {
-    locations.push(`<!ENTITY % dtd_${index} SYSTEM "${url}">%dtd_${index};`);
-  });
-
-  // Use the DOM parser to resolve the entity and extract its real value
-  let header = `<?xml version="1.0"?><!DOCTYPE elem [${locations.join("")}]>`;
-  let elem = `<elem id="elementID">&${id};</elem>`;
-  let doc = lazy.domParser.parseFromString(header + elem, "text/xml");
-  let element = doc.querySelector("elem[id='elementID']");
-
-  if (element === null) {
-    throw new lazy.error.NoSuchElementError(
-      `Entity with id='${id}' hasn't been found`
-    );
-  }
-
-  return element.textContent;
-};
 
 /**
  * Retrieve the localized string for the specified property id.

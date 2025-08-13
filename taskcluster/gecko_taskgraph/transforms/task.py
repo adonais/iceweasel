@@ -1365,6 +1365,7 @@ def build_push_addons_payload(config, task, task_def):
                 ],
             }
         ],
+        Optional("actions"): object,
         Optional("merge-info"): object,
         Optional("android-l10n-import-info"): {
             Required("from-repo-url"): str,
@@ -2106,7 +2107,7 @@ def try_task_config_chemspill_prio(config, tasks):
         return
 
     for task in tasks:
-        if task["priority"] in ("lowest", "very-low"):
+        if task.get("priority") in (None, "lowest", "very-low"):
             task["priority"] = "low"
         yield task
 

@@ -147,9 +147,7 @@ support-files = ["early_hint_preload_test_helper.sys.mjs",]
 ["browser_NetUtil.js"]
 
 ["browser_about_cache.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1970244
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'"] # Bug 1970244
 
 ["browser_backgroundtask_purgeHTTPCache.js"]
 
@@ -220,7 +218,6 @@ skip-if = ["socketprocess_networking"] # Bug 1772209
 ["browser_test_data_channel_observer.js"]
 
 ["browser_test_favicon.js"]
-skip-if = ["verify && (os == 'linux' || os == 'mac')"]
 support-files = [
   "damonbowling.jpg",
   "damonbowling.jpg^headers^",

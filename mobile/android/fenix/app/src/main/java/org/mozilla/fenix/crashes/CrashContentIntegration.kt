@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.crashes
 
-import android.content.Context
 import android.view.ViewGroup.MarginLayoutParams
 import androidx.annotation.VisibleForTesting
 import androidx.navigation.NavController
@@ -24,7 +23,6 @@ import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.concept.toolbar.ScrollableToolbar
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.base.feature.LifecycleAwareFeature
-import org.mozilla.fenix.browser.tabstrip.isTabStripEnabled
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.utils.Settings
@@ -34,7 +32,6 @@ import org.mozilla.fenix.utils.Settings
  *
  * Note that you have to call `integration.viewProvider` to set the provider that will provide
  *
- * @param context [Context] of the host fragment that is used for accessing settings and for using extension functions.
  * @param browserStore [BrowserStore] observed for any changes related to [EngineState.crashed].
  * @param appStore [AppStore] that tracks all content crashes in the current app session until the user
  * decides to either send or dismiss all crash reports.
@@ -64,7 +61,6 @@ import org.mozilla.fenix.utils.Settings
 
 @Suppress("LongParameterList")
 class CrashContentIntegration(
-    private val context: Context,
     private val browserStore: BrowserStore,
     private val appStore: AppStore,
     private val toolbar: ScrollableToolbar,
@@ -138,7 +134,7 @@ class CrashContentIntegration(
     @VisibleForTesting
     internal fun updateVerticalMargins() = crashReporterView?.apply {
         with(layoutParams as MarginLayoutParams) {
-            val includeTabStrip = sessionId == null && context.isTabStripEnabled()
+            val includeTabStrip = sessionId == null && settings.isTabStripEnabled
             topMargin = settings.getTopToolbarHeight(includeTabStrip)
             bottomMargin = settings.getBottomToolbarHeight()
         }

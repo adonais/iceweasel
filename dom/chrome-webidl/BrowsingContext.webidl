@@ -220,6 +220,8 @@ interface BrowsingContext {
   // Enable media query medium override, for DevTools.
   [SetterThrows] attribute DOMString mediumOverride;
 
+  [SetterThrows] attribute DOMString languageOverride;
+
   // Color-scheme simulation, for DevTools.
   [SetterThrows] attribute PrefersColorSchemeOverride prefersColorSchemeOverride;
 

@@ -179,7 +179,6 @@ support-files = ["test_offsets.js"]
 
 ["test_performance_timeline.html"]
 skip-if = [
-  "verify",
   "http3",
   "http2",
 ]
@@ -204,7 +203,6 @@ skip-if = [
 
 ["test_resource_timing.html"]
 skip-if = [
-  "verify",
   "http3",
   "http2",
 ]

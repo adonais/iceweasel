@@ -75,9 +75,9 @@ class nsBaseDragSession : public nsIDragSession {
   // from a child process.
   MOZ_CAN_RUN_SCRIPT nsresult InitWithRemoteImage(
       nsIWidget* aWidget, nsINode* aDOMNode, nsIPrincipal* aPrincipal,
-      nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings,
-      nsIArray* aTransferableArray, uint32_t aActionType,
-      mozilla::dom::RemoteDragStartData* aDragStartData,
+      nsIPolicyContainer* aPolicyContainer,
+      nsICookieJarSettings* aCookieJarSettings, nsIArray* aTransferableArray,
+      uint32_t aActionType, mozilla::dom::RemoteDragStartData* aDragStartData,
       mozilla::dom::DragEvent* aDragEvent,
       mozilla::dom::DataTransfer* aDataTransfer, bool aIsSynthesizedForTests);
 
@@ -85,7 +85,7 @@ class nsBaseDragSession : public nsIDragSession {
   // a selected region from a Gecko window.
   MOZ_CAN_RUN_SCRIPT nsresult InitWithSelection(
       nsIWidget* aWidget, mozilla::dom::Selection* aSelection,
-      nsIPrincipal* aPrincipal, nsIContentSecurityPolicy* aCsp,
+      nsIPrincipal* aPrincipal, nsIPolicyContainer* aPolicyContainer,
       nsICookieJarSettings* aCookieJarSettings, nsIArray* aTransferableArray,
       uint32_t aActionType, mozilla::dom::DragEvent* aDragEvent,
       mozilla::dom::DataTransfer* aDataTransfer, nsINode* aTargetContent,
@@ -95,9 +95,10 @@ class nsBaseDragSession : public nsIDragSession {
   // from anywhere else.
   MOZ_CAN_RUN_SCRIPT nsresult InitWithImage(
       nsIWidget* aWidget, nsINode* aDOMNode, nsIPrincipal* aPrincipal,
-      nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings,
-      nsIArray* aTransferableArray, uint32_t aActionType, nsINode* aImage,
-      int32_t aImageX, int32_t aImageY, mozilla::dom::DragEvent* aDragEvent,
+      nsIPolicyContainer* aPolicyContainer,
+      nsICookieJarSettings* aCookieJarSettings, nsIArray* aTransferableArray,
+      uint32_t aActionType, nsINode* aImage, int32_t aImageX, int32_t aImageY,
+      mozilla::dom::DragEvent* aDragEvent,
       mozilla::dom::DataTransfer* aDataTransfer, bool aIsSynthesizedForTests);
 
  protected:
@@ -109,7 +110,7 @@ class nsBaseDragSession : public nsIDragSession {
    *
    * @param  aPrincipal - the triggering principal of the drag, or null if
    *                      it's from browser chrome or OS
-   * @param  aCsp - The csp of the triggering Document
+   * @param  aPolicyContainer - The policyContainer of the triggering Document
    * @param  aTransferables - an array of transferables to be dragged
    * @param  aActionType - specified which of copy/move/link are allowed
    * @param  aContentPolicyType - the contentPolicyType that will be
@@ -118,8 +119,9 @@ class nsBaseDragSession : public nsIDragSession {
    */
   MOZ_CAN_RUN_SCRIPT virtual nsresult InvokeDragSession(
       nsIWidget* aWidget, nsINode* aDOMNode, nsIPrincipal* aPrincipal,
-      nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings,
-      nsIArray* aTransferableArray, uint32_t aActionType,
+      nsIPolicyContainer* aPolicyContainer,
+      nsICookieJarSettings* aCookieJarSettings, nsIArray* aTransferableArray,
+      uint32_t aActionType,
       nsContentPolicyType aContentPolicyType = nsIContentPolicy::TYPE_OTHER);
 
   /**
@@ -227,7 +229,7 @@ class nsBaseDragSession : public nsIDragSession {
   RefPtr<mozilla::dom::Selection> mSelection;
 
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-  nsCOMPtr<nsIContentSecurityPolicy> mCsp;
+  nsCOMPtr<nsIPolicyContainer> mPolicyContainer;
   RefPtr<mozilla::dom::DataTransfer> mDataTransfer;
 
   // used to determine the image to appear on the cursor while dragging

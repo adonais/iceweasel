@@ -6,7 +6,6 @@ package mozilla.components.browser.toolbar
 
 import android.content.Context
 import android.graphics.drawable.Drawable
-import android.util.AttributeSet
 import android.view.View
 import android.view.ViewParent
 import android.view.accessibility.AccessibilityEvent
@@ -50,7 +49,6 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoMoreInteractions
 import org.mockito.Mockito.`when`
-import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
 
 @RunWith(AndroidJUnit4::class)
@@ -759,9 +757,7 @@ class BrowserToolbarTest {
 
     @Test
     fun `titleView fading is set properly with non-null attrs`() {
-        val attributeSet: AttributeSet = Robolectric.buildAttributeSet().build()
-
-        val toolbar = BrowserToolbar(testContext, attributeSet)
+        val toolbar = BrowserToolbar(testContext, null)
         val titleView = toolbar.display.views.origin.titleView
         val edgeLength = testContext.resources.getDimensionPixelSize(R.dimen.mozac_browser_toolbar_url_fading_edge_size)
 

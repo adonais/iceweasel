@@ -168,6 +168,71 @@ nsCOMPtr<nsINotificationStorage> GetNotificationStorage(bool isPrivate) {
                                  : NS_NOTIFICATION_STORAGE_CONTRACTID);
 }
 
+class NotificationsCallback : public nsINotificationStorageCallback {
+ public:
+  NS_DECL_ISUPPORTS
+
+  already_AddRefed<NotificationsPromise> Promise() {
+    return mPromiseHolder.Ensure(__func__);
+  }
+
+  NS_IMETHOD Done(
+      const nsTArray<RefPtr<nsINotificationStorageEntry>>& aEntries) final {
+    AssertIsOnMainThread();
+
+    nsTArray<IPCNotification> notifications(aEntries.Length());
+    for (const auto& entry : aEntries) {
+      auto result = NotificationStorageEntry::ToIPC(*entry);
+      if (result.isErr()) {
+        continue;
+      }
+      MOZ_ASSERT(!result.inspect().id().IsEmpty());
+      notifications.AppendElement(result.unwrap());
+    }
+
+    mPromiseHolder.Resolve(std::move(notifications), __func__);
+    return NS_OK;
+  }
+
+ protected:
+  virtual ~NotificationsCallback() {
+    // We may be shutting down prematurely without getting the result, so make
+    // sure to settle the promise.
+    mPromiseHolder.RejectIfExists(NS_ERROR_DOM_INVALID_STATE_ERR, __func__);
+  };
+
+  MozPromiseHolder<NotificationsPromise> mPromiseHolder;
+};
+
+NS_IMPL_ISUPPORTS(NotificationsCallback, nsINotificationStorageCallback)
+
+already_AddRefed<NotificationsPromise> GetStoredNotificationsForScope(
+    nsIPrincipal* aPrincipal, const nsACString& aScope, const nsAString& aTag) {
+  nsString origin;
+  nsresult rv = GetOrigin(aPrincipal, origin);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return NotificationsPromise::CreateAndReject(rv, __func__).forget();
+  }
+
+  RefPtr<NotificationsCallback> callback = new NotificationsCallback();
+  RefPtr<NotificationsPromise> promise = callback->Promise();
+
+  nsCOMPtr<nsINotificationStorage> notificationStorage =
+      GetNotificationStorage(aPrincipal->GetIsInPrivateBrowsing());
+  if (!notificationStorage) {
+    return NotificationsPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE,
+                                                 __func__)
+        .forget();
+  }
+
+  rv = notificationStorage->Get(origin, NS_ConvertUTF8toUTF16(aScope), aTag,
+                                callback);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return NotificationsPromise::CreateAndReject(rv, __func__).forget();
+  }
+  return promise.forget();
+}
+
 nsresult PersistNotification(nsIPrincipal* aPrincipal,
                              const IPCNotification& aNotification,
                              const nsString& aScope) {
@@ -374,6 +439,15 @@ NS_IMETHODIMP NotificationStorageEntry::GetActions(
 
   aRetVal = std::move(actions);
 
+  return NS_OK;
+}
+
+NS_IMETHODIMP NotificationStorageEntry::GetServiceWorkerRegistrationScope(
+    nsAString& aScope) {
+  // Scope is only provided from JS, for now
+  // TODO(krosylight): Change nsINotificationStorage::Put to provide scope via
+  // storage entry?
+  aScope.SetIsVoid(true);
   return NS_OK;
 }
 

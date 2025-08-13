@@ -31,13 +31,13 @@ bool ConvolutionFilter::GetFilterOffsetAndLength(int32_t aRowIndex,
 }
 
 void ConvolutionFilter::ConvolveHorizontally(const uint8_t* aSrc, uint8_t* aDst,
-                                             bool aHasAlpha) {
-  skia::convolve_horizontally(aSrc, *mFilter, aDst, aHasAlpha);
+                                             SurfaceFormat aFormat) {
+  skia::convolve_horizontally(aSrc, *mFilter, aDst, aFormat);
 }
 
 void ConvolutionFilter::ConvolveVertically(uint8_t* const* aSrc, uint8_t* aDst,
                                            int32_t aRowIndex, int32_t aRowSize,
-                                           bool aHasAlpha) {
+                                           SurfaceFormat aFormat) {
   MOZ_ASSERT(aRowIndex < mFilter->numValues());
 
   int32_t filterOffset;
@@ -45,7 +45,7 @@ void ConvolutionFilter::ConvolveVertically(uint8_t* const* aSrc, uint8_t* aDst,
   auto filterValues =
       mFilter->FilterForValue(aRowIndex, &filterOffset, &filterLength);
   skia::convolve_vertically(filterValues, filterLength, aSrc, aRowSize, aDst,
-                            aHasAlpha);
+                            aFormat);
 }
 
 bool ConvolutionFilter::ComputeResizeFilter(ResizeMethod aResizeMethod,
@@ -75,19 +75,22 @@ bool Scale(uint8_t* srcData, int32_t srcWidth, int32_t srcHeight,
     return false;
   }
 
+  switch (format) {
+    case SurfaceFormat::B8G8R8A8:
+    case SurfaceFormat::B8G8R8X8:
+    case SurfaceFormat::R8G8B8A8:
+    case SurfaceFormat::R8G8B8X8:
+      // 4 byte formats with alpha at last byte are supported.
+      break;
+    case SurfaceFormat::A8:
+      // 1 byte formats are supported.
+      break;
+    default:
+      return false;
+  }
+
   SkPixmap srcPixmap(MakeSkiaImageInfo(IntSize(srcWidth, srcHeight), format),
                      srcData, srcStride);
-
-  // Rescaler is compatible with N32 only. Convert to N32 if needed.
-  SkBitmap tmpBitmap;
-  if (srcPixmap.colorType() != kN32_SkColorType) {
-    if (!tmpBitmap.tryAllocPixels(
-            SkImageInfo::MakeN32Premul(srcWidth, srcHeight)) ||
-        !tmpBitmap.writePixels(srcPixmap) ||
-        !tmpBitmap.peekPixels(&srcPixmap)) {
-      return false;
-    }
-  }
 
   ConvolutionFilter xFilter;
   ConvolutionFilter yFilter;
@@ -107,8 +110,8 @@ bool Scale(uint8_t* srcData, int32_t srcWidth, int32_t srcHeight,
 
   return skia::BGRAConvolve2D(
       static_cast<const uint8_t*>(srcPixmap.addr()), int(srcPixmap.rowBytes()),
-      !srcPixmap.isOpaque(), xFilter.GetSkiaFilter(),
-      xOrYFilter->GetSkiaFilter(), int(dstStride), dstData);
+      format, xFilter.GetSkiaFilter(), xOrYFilter->GetSkiaFilter(),
+      int(dstStride), dstData);
 }
 
 }  // namespace mozilla::gfx

@@ -14,6 +14,7 @@ use std::convert::TryInto;
 use std::ffi::{c_void, CStr, CString};
 use std::ops::Deref;
 use std::slice;
+use std::time::{Duration, Instant};
 use winapi::shared::bcrypt::*;
 use winapi::shared::minwindef::{DWORD, PBYTE};
 use winapi::um::errhandlingapi::GetLastError;
@@ -626,11 +627,19 @@ impl Drop for ThreadSpecificHandles {
         let cert = self.cert.take();
         let key = self.key.take();
         let thread = self.thread.clone();
-        let task = moz_task::spawn_onto("drop", &thread, async move {
+        // It is possible that we're already on the appropriate thread (e.g. if an error was
+        // encountered in `find_objects` and these handles are being released shortly after being
+        // created).
+        if moz_task::is_on_current_thread(&thread) {
             drop(cert);
             drop(key);
-        });
-        futures_executor::block_on(task)
+        } else {
+            let task = moz_task::spawn_onto("drop", &thread, async move {
+                drop(cert);
+                drop(key);
+            });
+            futures_executor::block_on(task)
+        }
     }
 }
 
@@ -895,6 +904,9 @@ pub struct Backend {
     /// A background thread that all OS API calls will be done on. This is to prevent issues with
     /// modules or implementations using thread-local state.
     thread: RefPtr<nsIEventTarget>,
+    /// The last time a call to `find_objects` finished, to avoid searching for objects more than
+    /// once every 3 seconds.
+    last_scan_finished: Option<Instant>,
 }
 
 impl Backend {
@@ -906,6 +918,7 @@ impl Backend {
             thread: thread
                 .query_interface::<nsIEventTarget>()
                 .ok_or(error_here!(ErrorType::LibraryFailure))?,
+            last_scan_finished: None,
         })
     }
 }
@@ -914,12 +927,23 @@ impl ClientCertsBackend for Backend {
     type Cert = Cert;
     type Key = Key;
 
-    fn find_objects(&self) -> Result<(Vec<Cert>, Vec<Key>), Error> {
+    fn find_objects(&mut self) -> Result<(Vec<Cert>, Vec<Key>), Error> {
+        match self.last_scan_finished {
+            Some(last_scan_finished) => {
+                if Instant::now().duration_since(last_scan_finished) < Duration::new(3, 0) {
+                    return Ok((Vec::new(), Vec::new()));
+                }
+            }
+            None => {}
+        }
+
         let thread = self.thread.clone();
         let task = moz_task::spawn_onto("find_objects", &self.thread, async move {
             find_objects(&thread)
         });
-        futures_executor::block_on(task)
+        let result = futures_executor::block_on(task);
+        self.last_scan_finished = Some(Instant::now());
+        result
     }
 }
 

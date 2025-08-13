@@ -8,6 +8,9 @@
 newtab-page-title = Nueva pestaña
 newtab-settings-button =
     .title = Personalizar la página nueva pestaña
+newtab-customize-panel-icon-button =
+    .title = Personalizar esta página
+newtab-customize-panel-icon-button-label = Personalizar
 newtab-personalize-settings-icon-label =
     .title = Personalizar nueva pestaña
     .aria-label = Configuración
@@ -500,6 +503,9 @@ newtab-topic-selection-button-pick-interests = Elegí tus intereses
 newtab-section-follow-button = Seguir
 newtab-section-following-button = Siguiendo
 newtab-section-unfollow-button = Dejar de seguir
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Ajuste su canal
+newtab-section-follow-highlight-subtitle = Siga sus intereses para ver más de lo que le guste.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -542,6 +548,11 @@ newtab-download-mobile-highlight-body-variant-c = ¿Sabía que puede llevar { -b
 newtab-download-mobile-highlight-image =
     .aria-label = Código QR para descargar { -brand-product-name } para móviles
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Sus favoritos en la punta de sus dedos
+newtab-shortcuts-highlight-subtitle = Agregue un acceso directo para mantener a sus favoritos a un clic de distancia.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -575,3 +586,5 @@ newtab-trending-searches-hide-trending =
     .title = Ocultar búsquedas más populares
 newtab-trending-searches-learn-more = Conocer más
 newtab-trending-searches-dismiss = Ocultar búsquedas más populares
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Búsquedas más populares

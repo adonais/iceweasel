@@ -605,3 +605,91 @@ addAccessibleTask(
     is(evt.caretOffset, 0, "Caret event is for offset 0");
   }
 );
+
+/**
+ * Test the caret when clicking in an empty area of a container immediately
+ * before/after a text input.
+ */
+addAccessibleTask(
+  `
+<div id="inputThenEmpty" style="padding-bottom: 10vh;">
+  <input id="inputBeforeEmpty" value="ab">
+</div>
+<div id="emptyThenInput" style="padding-top: 10vh;">
+  <input id="inputAfterEmpty" value="cd">
+</div>
+  `,
+  async function testEmptyNearInput(browser, docAcc) {
+    info("Focusing inputBeforeEmpty");
+    let input = findAccessibleChildByID(docAcc, "inputBeforeEmpty", [
+      nsIAccessibleText,
+    ]);
+    let moved = waitForEvents([
+      [EVENT_FOCUS, input],
+      [EVENT_TEXT_CARET_MOVED, input],
+    ]);
+    input.takeFocus();
+    await moved;
+    is(input.caretOffset, 0, "caretOffset 0");
+
+    info("Clicking at bottom of inputThenEmpty");
+    // BrowserTestUtils.synthesizeMouseAtPoint takes coordinates relative to the
+    // document.
+    const docX = {};
+    const docY = {};
+    docAcc.getBounds(docX, docY, {}, {});
+    let container = findAccessibleChildByID(docAcc, "inputThenEmpty", [
+      nsIAccessibleText,
+    ]);
+    const containerX = {};
+    const containerY = {};
+    const containerH = {};
+    container.getBounds(containerX, containerY, {}, containerH);
+    moved = waitForEvents([
+      [EVENT_FOCUS, docAcc],
+      [EVENT_TEXT_CARET_MOVED, container],
+    ]);
+    await BrowserTestUtils.synthesizeMouseAtPoint(
+      containerX.value - docX.value,
+      containerY.value + containerH.value - 1 - docY.value,
+      {},
+      docAcc.browsingContext
+    );
+    await moved;
+    docAcc.QueryInterface(nsIAccessibleText);
+    is(input.caretOffset, -1, "No caret in inputBeforeEmpty");
+
+    info("Focusing inputAfterEmpty");
+    input = findAccessibleChildByID(docAcc, "inputAfterEmpty", [
+      nsIAccessibleText,
+    ]);
+    moved = waitForEvents([
+      [EVENT_FOCUS, input],
+      [EVENT_TEXT_CARET_MOVED, input],
+    ]);
+    input.takeFocus();
+    await moved;
+    is(input.caretOffset, 0, "caretOffset 0");
+
+    info("Clicking at top of emptyThenInput");
+    container = findAccessibleChildByID(docAcc, "emptyThenInput", [
+      nsIAccessibleText,
+    ]);
+    container.getBounds(containerX, containerY, {}, {});
+    // The caret event fires in the input instead of the container, but this
+    // isn't really important.
+    moved = waitForEvents([
+      [EVENT_FOCUS, docAcc],
+      [EVENT_TEXT_CARET_MOVED, input],
+    ]);
+    await BrowserTestUtils.synthesizeMouseAtPoint(
+      containerX.value - docX.value,
+      containerY.value - docY.value + 1,
+      {},
+      docAcc.browsingContext
+    );
+    await moved;
+    is(input.caretOffset, -1, "No caret in inputAfterEmpty");
+  },
+  { chrome: true, topLevel: true }
+);

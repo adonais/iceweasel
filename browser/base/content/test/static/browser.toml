@@ -6,15 +6,11 @@ skip-if = [
   "asan",
   "tsan",
   "debug",
-  "verify && os == 'mac'",
 ]
 support-files = ["head.js"]
 
 ["browser_all_files_referenced.js"]
-skip-if = [
-  "verify && bits == 32", # Causes OOMs when run repeatedly
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # TODO: this probably needs to be fixed, why not skipped from default?
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'"] # TODO: this probably needs to be fixed, why not skipped from default?
 
 ["browser_glean_metrics_exist.js"]
 

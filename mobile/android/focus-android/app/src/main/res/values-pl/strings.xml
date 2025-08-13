@@ -150,6 +150,8 @@
     %2$s is the url for the learn-more link.
   -->
   <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s daje większą kontrolę.</p> <p>Jako prywatna przeglądarka umożliwia: <ul> <li>wyszukiwanie i przeglądanie prosto z aplikacji</li> <li>blokowanie elementów śledzących (można to zmienić w ustawieniach)</li> <li>usuwanie ciasteczek oraz całej historii wyszukiwania i przeglądania</li> </ul> </p> <p>%1$s jest tworzony przez Mozillę. Naszym celem jest wspieranie zdrowego i otwartego Internetu.<br/> <a href=\"%2$s\">Więcej informacji</a></p>]]></string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">Dowiedz się więcej</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">Prywatność i bezpieczeństwo</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -486,8 +488,6 @@
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
   <string name="onboarding_first_screen_privacy_notice_link_2">zasadach ochrony prywatności</string>
   <!-- New Onboarding flow first screen button label -->
-  <string name="onboarding_first_screen_button_agree_and_continue" moz:removedIn="140" tools:ignore="UnusedResources">Zgadzam się, kontynuuj</string>
-  <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue_2">Kontynuuj</string>
   <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
   <string name="a11y_link_available">Odnośnik jest dostępny</string>
@@ -550,7 +550,7 @@
     * To understand what notification channels are, see: https://www.androidcentral.com/notification-channels
     * To see how this string will look like in Android's UI, see: https://github.com/mozilla-mobile/focus-android/issues/863#issuecomment-324105723
   -->
-  <string name="notification_browsing_session_channel_name">Sesja przeglądania prywatnego</string>
+  <string name="notification_browsing_session_channel_name">Sesja trybu prywatnego</string>
   <!--
     The user visible description of the "notification channel" (Android 8+ feature) for the ongoing notification shown while a browsing session is active.
     The recommended maximum length is 300 characters; the value may be truncated if it is too long. %1$s will be replaced with the name of the app (e.g. Firefox Focus).
@@ -708,18 +708,6 @@
   <string name="preference_block_autoplay_audio_only_summary">Zalecane</string>
   <!-- Preference for block autoplay audio and video -->
   <string name="preference_block_autoplay_audio_video">Blokuj dźwięk i wideo</string>
-  <!-- Preference for studies -->
-  <string name="preference_studies" moz:removedIn="140">Badania</string>
-  <!-- Preference for studies summary -->
-  <string name="preference_studies_summary" tools:ignore="BrandUsage" moz:removedIn="140">Firefox może od czasu do czasu instalować i przeprowadzać badania.</string>
-  <!-- Learn more link for studies, links to an article for more information about studies. -->
-  <string name="studies_learn_more" moz:removedIn="140">Więcej informacji</string>
-  <!-- Title of the remove studies button -->
-  <string name="studies_remove" moz:removedIn="140">Usuń</string>
-  <!-- Title of the active section on the studies list -->
-  <string name="studies_active" moz:removedIn="140">Aktywne</string>
-  <!-- Title of the completed section on the studies list -->
-  <string name="studies_completed" moz:removedIn="140">Ukończone</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">Zdalne debugowanie przez USB/Wi-Fi</string>
   <!-- Text Button for show biometric prompt -->

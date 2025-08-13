@@ -26,22 +26,22 @@
 //   ValueForCache() and ExpirationTime() members. For style, this is the
 //   SheetLoadData.
 
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/PrincipalHashKey.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/WeakPtr.h"
-#include "nsTHashMap.h"
-#include "nsIMemoryReporter.h"
-#include "nsRefPtrHashtable.h"
-#include "mozilla/MemoryReporting.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/StoragePrincipalHelper.h"
-#include "mozilla/dom/CacheExpirationTime.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/WeakPtr.h"
+#include "mozilla/dom/CacheExpirationTime.h"
+#include "mozilla/dom/CacheablePerformanceTimingData.h"
 #include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
 #include "nsHttpResponseHead.h"
+#include "nsIMemoryReporter.h"
 #include "nsISupportsImpl.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/dom/CacheablePerformanceTimingData.h"
+#include "nsRefPtrHashtable.h"
+#include "nsTHashMap.h"
 
 namespace mozilla {
 

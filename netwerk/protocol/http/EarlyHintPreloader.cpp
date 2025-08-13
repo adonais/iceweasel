@@ -363,7 +363,11 @@ void EarlyHintPreloader::MaybeCreateAndInsertPreload(
     ipc::CSPInfo cspInfo;
     rv = CSPToCSPInfo(csp, &cspInfo);
     NS_ENSURE_SUCCESS_VOID(rv);
-    clientInfo.SetCspInfo(cspInfo);
+
+    ipc::PolicyContainerArgs policyContainerArgs;
+    policyContainerArgs.csp() = Some(cspInfo);
+
+    clientInfo.SetPolicyContainerArgs(policyContainerArgs);
 
     // This ClientInfo is then set on the new loadInfo.
     // It can now be used to test the resource against the policy

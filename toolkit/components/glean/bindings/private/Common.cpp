@@ -30,4 +30,28 @@ void LogToBrowserConsole(uint32_t aLogLevel, const nsAString& aMsg) {
   console->LogMessage(error);
 }
 
+bool IsCamelCase(const nsAString& aStr) {
+  const char16_t* cur = aStr.BeginReading();
+  const char16_t* end = aStr.EndReading();
+
+  if (cur == end) {
+    return false;
+  }
+
+  char16_t wc = *cur;
+  if ((wc < u'a' || wc > u'z')) {
+    return false;
+  }
+  cur++;
+
+  for (; cur < end; ++cur) {
+    wc = *cur;
+    if ((wc < u'A' || wc > u'Z') && (wc < u'a' || wc > u'z') &&
+        (wc < u'0' || wc > u'9')) {
+      return false;
+    }
+  }
+  return true;
+}
+
 }  // namespace mozilla::glean

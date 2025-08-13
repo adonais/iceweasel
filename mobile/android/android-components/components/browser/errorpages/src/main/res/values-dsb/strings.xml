@@ -104,7 +104,7 @@
   <string name="mozac_browser_errorpages_file_not_found_title">Dataja njejo se namakała</string>
   <string name="mozac_browser_errorpages_file_not_found_message"><![CDATA[<ul> <li>Jo móžno, až objekt jo se pśemjenił, wótpórał abo pśesunuł?</li> <li>Jo zmólka pšawopisa, wjelikopisanja, abo hynakša typografiska zmólka w adresy?</li> <li>Maśo dosěgajuce pśistupne pšawa za pominany objekt?</li> </ul>]]></string>
   <!-- The document title and heading of an error page. -->
-  <string name="mozac_browser_errorpages_file_access_denied_title">Pśistup na dataju jo se wótpokazał</string>
+  <string name="mozac_browser_errorpages_file_access_denied_title">Pśistup k dataji jo se wótpokazał</string>
   <string name="mozac_browser_errorpages_file_access_denied_message"><![CDATA[<ul> <li>Snaź jo se wótpórała, pśesunuła, abo datajowe pšawa zajźuju pśistupoju.</li> </ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_proxy_connection_refused_title">Proksyjowy serwer jo zwisk wótpokazał</string>

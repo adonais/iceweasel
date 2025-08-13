@@ -14,6 +14,7 @@
 #include "mozilla/SMILTypes.h"
 #include "mozilla/SMILValue.h"
 #include "nsAttrValue.h"
+#include "nsContentUtils.h"
 #include "nsGkAtoms.h"
 #include "nsString.h"
 #include "nsTArray.h"
@@ -136,12 +137,12 @@ class SMILAnimationFunction {
    * sandwich -- higher priority animations are applied on top of lower
    * priority animations.
    *
-   * @return  -1 if this animation has lower priority or 1 if this animation has
-   *          higher priority
-   *
-   * This method should never return any other value, including 0.
+   * @return a value < 0 if this animation has lower priority or > 0 if this
+   *         animation has higher priority. Returns 0 if the elements are the
+   *         same.
    */
-  int8_t CompareTo(const SMILAnimationFunction* aOther) const;
+  int32_t CompareTo(const SMILAnimationFunction* aOther,
+                    nsContentUtils::NodeIndexCache& aCache) const;
 
   /*
    * The following methods are provided so that the compositor can optimize its
@@ -162,7 +163,7 @@ class SMILAnimationFunction {
      * - This function does not assume that our SMILValues (by/from/to/values)
      * have already been parsed.
      */
-    return (mIsActive || mIsFrozen);
+    return mIsActive || mIsFrozen;
   }
 
   /**
@@ -248,16 +249,19 @@ class SMILAnimationFunction {
   }
 
   // Comparator utility class, used for sorting SMILAnimationFunctions
-  class Comparator {
+  class MOZ_STACK_CLASS Comparator final {
    public:
     bool Equals(const SMILAnimationFunction* aElem1,
                 const SMILAnimationFunction* aElem2) const {
-      return (aElem1->CompareTo(aElem2) == 0);
+      return aElem1->CompareTo(aElem2, mCache) == 0;
     }
     bool LessThan(const SMILAnimationFunction* aElem1,
                   const SMILAnimationFunction* aElem2) const {
-      return (aElem1->CompareTo(aElem2) < 0);
+      return aElem1->CompareTo(aElem2, mCache) < 0;
     }
+
+   private:
+    mutable nsContentUtils::NodeIndexCache mCache;
   };
 
  protected:

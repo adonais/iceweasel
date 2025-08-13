@@ -41,6 +41,11 @@ interface nsIINIParserWriter : nsISupports
   void setString(in AUTF8String aSection, in AUTF8String aKey, in AUTF8String aValue);
 
   /**
+   * Deletes a string within a particular section.
+   */
+  void deleteString(in AUTF8String aSection, in AUTF8String aKey);
+
+  /**
    * Write to the INI file.
    */
   void writeFile(in nsIFile aINIFile);

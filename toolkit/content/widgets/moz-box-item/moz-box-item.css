@@ -14,13 +14,30 @@
 
 .box-container {
   padding: var(--box-padding);
-  display: flex;
-  align-items: center;
-  gap: var(--space-small);
   font-size: inherit;
   text-align: start;
 }
 
+.box-container,
+slot[name="actions"],
+slot[name="actions-start"] {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+}
+
 .box-content {
   flex: 1 1 auto;
+}
+
+.handle {
+  width: var(--button-size-icon);
+  height: var(--button-size-icon);
+  cursor: grab;
+  background-image: url("chrome://global/skin/icons/move-16.svg");
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: var(--button-border-radius);
+  -moz-context-properties: fill;
+  fill: currentColor;
 }

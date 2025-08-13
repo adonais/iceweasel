@@ -127,8 +127,6 @@ class HomeScreenRobot {
     }
 
     fun verifyHomeWordmark() {
-        Log.i(TAG, "verifyHomeWordmark: Trying to scroll 3x to the beginning of the home screen")
-        homeScreenList().scrollToBeginning(3)
         Log.i(TAG, "verifyHomeWordmark: Scrolled 3x to the beginning of the home screen")
         assertUIObjectExists(homepageWordmarkLogo(), homepageWordmarkText())
     }
@@ -419,6 +417,7 @@ class HomeScreenRobot {
             composeTestRule.onNodeWithText(title).assertIsDisplayed()
             Log.i(TAG, "verifyCollectionIsDisplayed: Verified that collection with title: $title is displayed")
         } else {
+            composeTestRule.waitUntilDoesNotExist(hasText(title), waitingTime)
             Log.i(TAG, "verifyCollectionIsDisplayed: Trying to verify that collection with title: $title is not displayed")
             composeTestRule.onNodeWithText(title).assertIsNotDisplayed()
             Log.i(TAG, "verifyCollectionIsDisplayed: Verified that collection with title: $title is not displayed")
@@ -439,19 +438,11 @@ class HomeScreenRobot {
         }
     }
 
-    fun scrollToPocketProvokingStories() {
-        Log.i(TAG, "scrollToPocketProvokingStories: Trying to scroll into view the featured pocket stories")
-        homeScreenList().scrollIntoView(
-            mDevice.findObject(UiSelector().resourceId(HOMEPAGE_STORY).index(2)),
-        )
-        Log.i(TAG, "scrollToPocketProvokingStories: Scrolled into view the featured pocket stories")
-    }
-
     fun verifyPocketRecommendedStoriesItems(composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyPocketRecommendedStoriesItems: Trying to scroll into view the \"Stories\" pocket section")
         composeTestRule.onNodeWithTag("homepage.view").performScrollToNode(hasTestTag("pocket.stories"))
         Log.i(TAG, "verifyPocketRecommendedStoriesItems: Scrolled into view the \"Stories\" pocket section")
-        for (position in 0..8) {
+        for (position in 0..7) {
             Log.i(TAG, "verifyPocketRecommendedStoriesItems: Trying to scroll into view the featured pocket story from position: $position")
             pocketStoriesList().scrollIntoView(UiSelector().index(position))
             Log.i(TAG, "verifyPocketRecommendedStoriesItems: Scrolled into view the featured pocket story from position: $position")
@@ -473,20 +464,6 @@ class HomeScreenRobot {
 //            )
 //        }
 //    }
-
-    fun getProvokingStoryPublisher(position: Int): String {
-        val publisher = mDevice.findObject(
-            UiSelector()
-                .resourceId(HOMEPAGE_STORY)
-                .index(position - 1),
-        ).getChild(
-            UiSelector()
-                .className("android.widget.TextView")
-                .index(1),
-        ).text
-
-        return publisher
-    }
 
     fun verifyAddressBarPosition(bottomPosition: Boolean) {
         Log.i(TAG, "verifyAddressBarPosition: Trying to verify toolbar is set to top: $bottomPosition")
@@ -832,6 +809,9 @@ class HomeScreenRobot {
             Log.i(TAG, "expandCollection: Trying to click collection with title: $title")
             composeTestRule.onNodeWithText(title).performClick()
             Log.i(TAG, "expandCollection: Clicked collection with title: $title")
+            Log.i(TAG, "expandCollection: Waiting for compose test rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "expandCollection: Waited for compose test rule to be idle")
 
             CollectionRobot().interact()
             return CollectionRobot.Transition()
@@ -859,19 +839,14 @@ class HomeScreenRobot {
             return TabDrawerRobot.Transition(composeTestRule)
         }
 
-        fun clickPocketStoryItem(publisher: String, position: Int, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            Log.i(TAG, "clickPocketStoryItem: Trying to click pocket story item published by: $publisher at position: $position and wait for $waitingTime ms for a new window")
+        fun clickPocketStoryItem(position: Int, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+            Log.i(TAG, "clickPocketStoryItem: Trying to click pocket story item at position: $position and wait for $waitingTime ms for a new window")
             mDevice.findObject(
                 UiSelector()
-                    .className("android.view.View")
+                    .resourceId(HOMEPAGE_STORY)
                     .index(position - 1),
-            ).getChild(
-                UiSelector()
-                    .className("android.widget.TextView")
-                    .index(1)
-                    .textContains(publisher),
             ).clickAndWaitForNewWindow(waitingTime)
-            Log.i(TAG, "clickPocketStoryItem: Clicked pocket story item published by: $publisher at position: $position and wait for $waitingTime ms for a new window")
+            Log.i(TAG, "clickPocketStoryItem: Clicked pocket story item published at position: $position and wait for $waitingTime ms for a new window")
 
             BrowserRobot().interact()
             return BrowserRobot.Transition()

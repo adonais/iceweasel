@@ -3,6 +3,7 @@ run-if = ["!release_or_beta"]
 
 prefs = [
   "sidebar.revamp=true",
+  "signon.management.page.os-auth.locked.enabled=true",
 ]
 
 support-files = [
@@ -21,10 +22,15 @@ support-files = [
 
 ["browser_passwords_list_alerts.js"]
 
-["browser_passwords_primary_password.js"]
+["browser_passwords_multiple_windows.js"]
 skip-if = [
-	"tsan" # Bug 1949014
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && opt", # Bug 1974557
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1974557
+  "os == 'win' && os_version == '11.26100' && opt", # Bug 1974557
 ]
+
+["browser_passwords_primary_password.js"]
+skip-if = ["tsan"] # Bug 1949014
 
 ["browser_passwords_remove_all_notification.js"]
 
@@ -34,8 +40,8 @@ skip-if = [
 
 ["browser_passwords_update_login.js"]
 skip-if = [
-	"os == 'win' && debug", # Can not test OsAuth on debug builds
-	"os == 'mac' && debug", # Can not test OsAuth on debug builds
+  "os == 'win' && debug", # Can not test OsAuth on debug builds
+  "os == 'mac' && debug", # Can not test OsAuth on debug builds
 ]
 
 ["browser_viewmodel.js"]

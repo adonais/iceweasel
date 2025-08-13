@@ -7,10 +7,9 @@
 #ifndef mozilla_StyleSheetInfo_h
 #define mozilla_StyleSheetInfo_h
 
+#include "mozilla/CORSMode.h"
 #include "mozilla/css/SheetParsingMode.h"
 #include "mozilla/dom/SRIMetadata.h"
-#include "mozilla/CORSMode.h"
-
 #include "nsIReferrerInfo.h"
 
 class nsIPrincipal;
@@ -18,7 +17,6 @@ class nsIURI;
 
 namespace mozilla {
 class StyleSheet;
-struct StyleUseCounters;
 struct StyleStylesheetContents;
 struct URLExtraData;
 
@@ -70,8 +68,6 @@ struct StyleSheetInfo final {
   nsCString mSourceMapURL;
 
   RefPtr<const StyleStylesheetContents> mContents;
-
-  UniquePtr<StyleUseCounters> mUseCounters;
 
   // XXX We already have mSheetURI, mBaseURI, and mPrincipal.
   //

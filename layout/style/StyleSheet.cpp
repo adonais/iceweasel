@@ -5,11 +5,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/StyleSheet.h"
+
+#include "mozAutoDocUpdate.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ComputedStyleInlines.h"
+#include "mozilla/NullPrincipal.h"
+#include "mozilla/ServoBindings.h"
+#include "mozilla/ServoCSSRuleList.h"
+#include "mozilla/ServoStyleSet.h"
+#include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/StyleSheetInlines.h"
 #include "mozilla/css/ErrorReporter.h"
 #include "mozilla/css/GroupRule.h"
+#include "mozilla/css/SheetLoadData.h"
 #include "mozilla/dom/CSSImportRule.h"
 #include "mozilla/dom/CSSRuleList.h"
 #include "mozilla/dom/Element.h"
@@ -19,15 +28,6 @@
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/ShadowRootBinding.h"
-#include "mozilla/NullPrincipal.h"
-#include "mozilla/ServoBindings.h"
-#include "mozilla/ServoCSSRuleList.h"
-#include "mozilla/ServoStyleSet.h"
-#include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/StyleSheetInlines.h"
-#include "mozilla/css/SheetLoadData.h"
-
-#include "mozAutoDocUpdate.h"
 
 namespace mozilla {
 
@@ -777,14 +777,14 @@ void StyleSheet::ReplaceSync(const nsACString& aText, ErrorResult& aRv) {
           loader, this,
           /* load_data = */ nullptr, &aText, mParsingMode, URLData(),
           mConstructorDocument->GetCompatibilityMode(),
-          /* reusable_sheets = */ nullptr,
-          mConstructorDocument->GetStyleUseCounters(),
-          StyleAllowImportRules::No, StyleSanitizationKind::None,
+          /* reusable_sheets = */ nullptr, StyleAllowImportRules::No,
+          StyleSanitizationKind::None,
           /* sanitized_output = */ nullptr)
           .Consume();
 
   // 5. Set sheet's rules to the new rules.
   Inner().mContents = std::move(rawContent);
+  PropagateUseCountersTo(mConstructorDocument);
   FixUpRuleListAfterContentsChangeIfNeeded();
   RuleChanged(nullptr, StyleRuleChangeKind::Generic);
 }
@@ -1225,43 +1225,60 @@ RefPtr<StyleSheetParsePromise> StyleSheet::ParseSheet(
                               ? StyleAllowImportRules::No
                               : StyleAllowImportRules::Yes;
   URLExtraData* urlData = URLData();
-  const bool shouldRecordCounters =
-      aLoader.GetDocument() && aLoader.GetDocument()->GetStyleUseCounters() &&
-      !urlData->ChromeRulesEnabled();
-
   if (aLoadData->get()->mRecordErrors) {
     MOZ_ASSERT(NS_IsMainThread());
-    UniquePtr<StyleUseCounters> counters;
-    if (shouldRecordCounters) {
-      counters.reset(Servo_UseCounters_Create());
-    }
     RefPtr<StyleStylesheetContents> contents =
         Servo_StyleSheet_FromUTF8Bytes(
             &aLoader, this, aLoadData->get(), &aBytes, mParsingMode, urlData,
             aLoadData->get()->mCompatMode,
-            /* reusable_sheets = */ nullptr, counters.get(), allowImportRules,
+            /* reusable_sheets = */ nullptr, allowImportRules,
             StyleSanitizationKind::None,
             /* sanitized_output = */ nullptr)
             .Consume();
-    FinishAsyncParse(contents.forget(), std::move(counters));
+    FinishAsyncParse(contents.forget());
   } else {
     Servo_StyleSheet_FromUTF8BytesAsync(
         aLoadData, urlData, &aBytes, mParsingMode,
-        aLoadData->get()->mCompatMode, shouldRecordCounters, allowImportRules);
+        aLoadData->get()->mCompatMode, allowImportRules);
   }
 
   return p;
 }
 
 void StyleSheet::FinishAsyncParse(
-    already_AddRefed<StyleStylesheetContents> aSheetContents,
-    UniquePtr<StyleUseCounters> aUseCounters) {
+    already_AddRefed<StyleStylesheetContents> aSheetContents) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!mParsePromise.IsEmpty());
   Inner().mContents = aSheetContents;
-  Inner().mUseCounters = std::move(aUseCounters);
   FixUpRuleListAfterContentsChangeIfNeeded();
   UnblockParsePromise();
+}
+
+StyleLikelyBaseUriDependency StyleSheet::OriginalContentsBaseUriDependency()
+    const {
+  const auto* counters = UseCounters();
+  if (Servo_IsCustomUseCounterRecorded(
+          counters, StyleCustomUseCounter::MaybeHasFullBaseUriDependency)) {
+    return StyleLikelyBaseUriDependency::Full;
+  }
+  if (Servo_IsCustomUseCounterRecorded(
+          counters, StyleCustomUseCounter::MaybeHasPathBaseUriDependency)) {
+    return StyleLikelyBaseUriDependency::Path;
+  }
+  return StyleLikelyBaseUriDependency::No;
+}
+
+const StyleUseCounters* StyleSheet::UseCounters() const {
+  return Servo_StyleSheet_UseCounters(RawContents());
+}
+
+void StyleSheet::PropagateUseCountersTo(Document* aDoc) const {
+  if (!aDoc || URLData()->ChromeRulesEnabled()) {
+    return;
+  }
+  if (auto* counters = aDoc->GetStyleUseCounters()) {
+    Servo_UseCounters_Merge(counters, UseCounters());
+  }
 }
 
 void StyleSheet::ParseSheetSync(
@@ -1281,21 +1298,17 @@ void StyleSheet::ParseSheetSync(
   SetURLExtraData();
 
   URLExtraData* urlData = URLData();
-  const StyleUseCounters* useCounters =
-      aLoader && aLoader->GetDocument() && !urlData->ChromeRulesEnabled()
-          ? aLoader->GetDocument()->GetStyleUseCounters()
-          : nullptr;
-
   auto allowImportRules = SelfOrAncestorIsConstructed()
                               ? StyleAllowImportRules::No
                               : StyleAllowImportRules::Yes;
 
-  Inner().mContents = Servo_StyleSheet_FromUTF8Bytes(
-                          aLoader, this, aLoadData, &aBytes, mParsingMode,
-                          urlData, compatMode, aReusableSheets, useCounters,
-                          allowImportRules, StyleSanitizationKind::None,
-                          /* sanitized_output = */ nullptr)
-                          .Consume();
+  Inner().mContents =
+      Servo_StyleSheet_FromUTF8Bytes(
+          aLoader, this, aLoadData, &aBytes, mParsingMode, urlData, compatMode,
+          aReusableSheets, allowImportRules, StyleSanitizationKind::None,
+          /* sanitized_output = */ nullptr)
+          .Consume();
+  PropagateUseCountersTo(aLoader ? aLoader->GetDocument() : nullptr);
 }
 
 void StyleSheet::ReparseSheet(const nsACString& aInput, ErrorResult& aRv) {

@@ -6,12 +6,12 @@
 #ifndef nsILineIterator_h___
 #define nsILineIterator_h___
 
-#include "nscore.h"
-#include "nsINode.h"
-#include "nsRect.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Result.h"
 #include "mozilla/WritingModes.h"
+#include "nsINode.h"
+#include "nsRect.h"
+#include "nscore.h"
 
 class nsIFrame;
 

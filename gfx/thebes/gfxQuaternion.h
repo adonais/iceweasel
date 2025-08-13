@@ -6,6 +6,7 @@
 #ifndef GFX_QUATERNION_H
 #define GFX_QUATERNION_H
 
+#include "gfxTypes.h"
 #include "mozilla/gfx/BasePoint4D.h"
 #include "mozilla/gfx/Matrix.h"
 #include <algorithm>

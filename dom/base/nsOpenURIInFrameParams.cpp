@@ -6,6 +6,7 @@
 
 #include "nsOpenURIInFrameParams.h"
 #include "nsIContentSecurityPolicy.h"
+#include "nsIPolicyContainer.h"
 #include "nsIOpenWindowInfo.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/Element.h"
@@ -68,15 +69,17 @@ nsOpenURIInFrameParams::SetTriggeringPrincipal(
 }
 
 NS_IMETHODIMP
-nsOpenURIInFrameParams::GetCsp(nsIContentSecurityPolicy** aCsp) {
-  NS_IF_ADDREF(*aCsp = mCsp);
+nsOpenURIInFrameParams::GetPolicyContainer(
+    nsIPolicyContainer** aPolicyContainer) {
+  NS_IF_ADDREF(*aPolicyContainer = mPolicyContainer);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsOpenURIInFrameParams::SetCsp(nsIContentSecurityPolicy* aCsp) {
-  NS_ENSURE_TRUE(aCsp, NS_ERROR_INVALID_ARG);
-  mCsp = aCsp;
+nsOpenURIInFrameParams::SetPolicyContainer(
+    nsIPolicyContainer* aPolicyContainer) {
+  NS_ENSURE_TRUE(aPolicyContainer, NS_ERROR_INVALID_ARG);
+  mPolicyContainer = aPolicyContainer;
   return NS_OK;
 }
 

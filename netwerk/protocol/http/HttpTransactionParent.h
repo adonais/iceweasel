@@ -53,7 +53,8 @@ class HttpTransactionParent final : public PHttpTransactionParent,
       const uint32_t& aHTTPSSVCReceivedStage, const bool& aSupportsHttp3,
       const nsIRequest::TRRMode& aMode, const TRRSkippedReason& aSkipReason,
       const uint32_t& aCaps, const TimeStamp& aOnStartRequestStartTime,
-      const HttpConnectionInfoCloneArgs& aArgs);
+      const HttpConnectionInfoCloneArgs& aArgs,
+      const nsILoadInfo::IPAddressSpace& aTargetIPAddressSpace);
   mozilla::ipc::IPCResult RecvOnTransportStatus(
       const nsresult& aStatus, const int64_t& aProgress,
       const int64_t& aProgressMax,
@@ -111,7 +112,8 @@ class HttpTransactionParent final : public PHttpTransactionParent,
       const uint32_t& aHTTPSSVCReceivedStage, const bool& aSupportsHttp3,
       const nsIRequest::TRRMode& aMode, const TRRSkippedReason& aSkipReason,
       const uint32_t& aCaps, const TimeStamp& aOnStartRequestStartTime,
-      nsHttpConnectionInfo* aConnInfo);
+      nsHttpConnectionInfo* aConnInfo,
+      const nsILoadInfo::IPAddressSpace& aTargetIPAddressSpace);
   void DoOnDataAvailable(const nsCString& aData, const uint64_t& aOffset,
                          const uint32_t& aCount,
                          const TimeStamp& aOnDataAvailableStartTime);
@@ -166,6 +168,8 @@ class HttpTransactionParent final : public PHttpTransactionParent,
 
   NetAddr mSelfAddr;
   NetAddr mPeerAddr;
+  nsILoadInfo::IPAddressSpace mTargetIPAddressSpace{
+      nsILoadInfo::IPAddressSpace::Unknown};
   TimingStruct mTimings;
   TimeStamp mDomainLookupStart;
   TimeStamp mDomainLookupEnd;

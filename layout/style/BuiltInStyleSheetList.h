@@ -31,5 +31,6 @@ STYLE_SHEET(Scrollbars, "resource://gre-resources/scrollbars.css", UA)
 STYLE_SHEET(SVG, "resource://gre/res/svg.css", UA)
 STYLE_SHEET(UA, "resource://gre-resources/ua.css", UA)
 STYLE_SHEET(XUL, "chrome://global/content/xul.css", UAUnshared)
-STYLE_SHEET(AccessibleCaret, "resource://gre-resources/accessiblecaret.css", Author)
+STYLE_SHEET(AccessibleCaret, "resource://gre-resources/accessiblecaret.css",
+            Author)
 STYLE_SHEET(Details, "resource://gre-resources/details.css", Author)

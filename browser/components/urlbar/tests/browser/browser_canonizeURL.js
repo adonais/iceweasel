@@ -48,7 +48,7 @@ add_task(async function checkCanonizeWorks() {
     ["ftp.example.bar", "http://ftp.example.bar/", CANONIZE_MODIFIERS],
     [
       "ex ample",
-      defaultEngine.getSubmission("ex ample", null, "keyword").uri.spec,
+      defaultEngine.getSubmission("ex ample", null).uri.spec,
       CANONIZE_MODIFIERS,
     ],
   ];

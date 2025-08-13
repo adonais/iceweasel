@@ -5,6 +5,8 @@ prefs = [
   "telemetry.number_of_site_origin.min_interval=0",
 ]
 
+["browser_BrowserDOMWindow_openURI.js"]
+
 ["browser_BrowserWindowTracker.js"]
 
 ["browser_EveryWindow.js"]
@@ -63,7 +65,6 @@ https_first_disabled = true
 
 ["browser_UsageTelemetry_private_and_restore.js"]
 https_first_disabled = true
-skip-if = ["verify && debug"]
 
 ["browser_UsageTelemetry_toolbars.js"]
 
@@ -76,6 +77,4 @@ https_first_disabled = true
 run-if = ["os == 'win'"]
 
 ["browser_urlBar_zoom.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && swgl", # Bug 1775794
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && swgl"] # Bug 1775794

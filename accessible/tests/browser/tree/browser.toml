@@ -14,10 +14,7 @@ prefs = [
 ]
 
 ["browser_aria_owns.js"]
-skip-if = [
-  "true", #Bug 1445513
-  "verify && !debug && os == 'linux'",
-]
+skip-if = ["true"] # Bug 1445513
 
 ["browser_browser_element.js"]
 
@@ -31,18 +28,20 @@ skip-if = [
 
 ["browser_link.js"]
 
-["browser_test_aria_hidden.js"]
-
-["browser_test_aria_hidden_iframe.js"]
-
-["browser_test_aria_hidden_svg.js"]
-
 ["browser_searchbar.js"]
 
 ["browser_select.js"]
 
 ["browser_shadowdom.js"]
 
+["browser_test_aria_hidden.js"]
+
+["browser_test_aria_hidden_iframe.js"]
+
+["browser_test_aria_hidden_svg.js"]
+
 ["browser_test_nsIAccessibleDocument_URL.js"]
 
 ["browser_view_transition.js"]
+
+["browser_root_element.js"]

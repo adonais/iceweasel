@@ -10,6 +10,7 @@
 #include "LayoutConstants.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/MouseEvents.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "nsCOMPtr.h"
@@ -17,7 +18,6 @@
 #include "nsIReflowObserver.h"
 #include "nsIScrollObserver.h"
 #include "nsPoint.h"
-#include "mozilla/RefPtr.h"
 #include "nsWeakReference.h"
 
 class nsITimer;

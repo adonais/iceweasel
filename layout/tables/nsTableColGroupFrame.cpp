@@ -7,14 +7,14 @@
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "nsTableColFrame.h"
-#include "nsTableFrame.h"
-#include "nsStyleConsts.h"
-#include "nsPresContext.h"
-#include "nsHTMLParts.h"
-#include "nsGkAtoms.h"
 #include "nsCOMPtr.h"
 #include "nsCSSRendering.h"
+#include "nsGkAtoms.h"
+#include "nsHTMLParts.h"
+#include "nsPresContext.h"
+#include "nsStyleConsts.h"
+#include "nsTableColFrame.h"
+#include "nsTableFrame.h"
 
 using namespace mozilla;
 

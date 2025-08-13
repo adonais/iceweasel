@@ -11,9 +11,9 @@
     <!-- Content description (not visible, for screen readers etc.): "Three dot" menu button. -->
     <string name="content_description_menu">More options</string>
     <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-    <string name="content_description_private_browsing_button">Enable private browsing</string>
+    <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Enable private browsing</string>
     <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-    <string name="content_description_disable_private_browsing_button">Disable private browsing</string>
+    <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Disable private browsing</string>
     <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
     <string name="content_description_private_browsing">Private browsing</string>
     <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
@@ -34,6 +34,8 @@
     <string name="no_private_tabs_description">Your private tabs will be shown here.</string>
     <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
     <string name="tab_tray_multi_select_title">%1$d selected</string>
+    <!-- Tab tray multi select title in app bar when no tabs are selected -->
+    <string name="tab_tray_multi_select_title_empty">Select tabs</string>
     <!-- Label of button in create collection dialog for creating a new collection  -->
     <string name="tab_tray_add_new_collection">Add new collection</string>
     <!-- Label of editable text in create collection dialog for naming a new collection  -->
@@ -64,6 +66,8 @@
     <string name="private_browsing_common_myths">
        Common myths about private browsing
     </string>
+    <!-- Text to be announced by the accessibility service to inform the user that the private browsing mode is currently active. -->
+    <string name="private_browsing_a11y_session_announcement">Private browsing session</string>
 
     <!-- True Private Browsing Mode -->
     <!-- Title for info card on private homescreen in True Private Browsing Mode. -->
@@ -99,10 +103,6 @@
     <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Tap and hold the arrows to jump between pages in this tab’s history.</string>
 
     <!-- Address bar swipe "contextual feature recommendation" (CFR) -->
-    <!-- Text for the title displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
-    <string name="address_bar_swipe_cfr_title" tools:ignore="UnusedResources" moz:removedIn="139">Swipe the toolbar to switch tabs</string>
-    <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
-    <string name="address_bar_swipe_cfr_message" tools:ignore="UnusedResources" moz:removedIn="139">Swipe left or right to switch. Swipe left on your last tab to open a new tab.</string>
     <!-- Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar. -->
     <string name="address_bar_swipe_cfr_message_2">Swipe the toolbar left or right to switch tabs.</string>
 
@@ -197,7 +197,7 @@
     <!-- Browser menu button that opens the extensions manager -->
     <string name="browser_menu_manage_extensions">Manage extensions</string>
     <!-- Browser menu group that contains additional settings in collapsed state-->
-    <string name="browser_menu_more_settings">More</string>"
+    <string name="browser_menu_more_settings">More</string>
     <!-- Browser menu group that contains additional settings in expanded state-->
     <string name="browser_menu_less_settings">Less</string>
     <!-- Content description (not visible, for screen readers etc.): Section heading for recommended extensions.-->
@@ -296,17 +296,21 @@
     <string name="browser_menu_passwords">Passwords</string>
     <!-- Browser menu label that navigates to the SUMO page for the Firefox for Android release notes.
          %1$s is the name of the app (for example "Firefox"). -->
-    <string name="browser_menu_new_in_firefox">New in %1$s</string>
+    <string name="browser_menu_new_in_firefox" moz:removedIn="141" tools:ignore="UnusedResources">New in %1$s</string>
     <!-- Browser menu label that toggles the request for the desktop site of the currently visited page -->
     <string name="browser_menu_switch_to_desktop_site"  moz:removedIn="141" tools:ignore="UnusedResources">Switch to desktop site</string>
     <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-    <string name="browser_menu_switch_to_mobile_site">Switch to mobile site</string>
+    <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Switch to mobile site</string>
     <!-- Browser menu label that navigates to the page tools sub-menu -->
     <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">Tools</string>
     <!-- Content description (not visible, for screen readers etc.): Back button for all menu redesign sub-menu -->
     <string name="browser_menu_back_button_content_description" moz:removedIn="141" tools:ignore="UnusedResources">Back to main menu</string>
     <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
-    <string name="browser_main_menu_handlebar_content_description">Close main menu sheet</string>
+    <string name="browser_main_menu_handlebar_content_description" moz:removedIn="142" tools:ignore="UnusedResources">Close main menu sheet</string>
+    <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
+    <string name="browser_close_main_menu_handlebar_content_description">Close menu</string>
+    <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
+    <string name="browser_main_menu_content_description_navigation_header">Navigation</string>
     <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
     <string name="browser_main_menu_content_description_help_button">Help</string>
     <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
@@ -372,9 +376,15 @@
 %1$s is the name of the app (for example "Firefox"). -->
     <string name="browser_menu_default_banner_title">Make %1$s your default</string>
     <!-- Label text within the set as default banner  -->
-    <string name="browser_menu_default_banner_subtitle">Takes seconds. Change anytime.</string>
+    <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">Takes seconds. Change anytime.</string>
+    <!-- Label text within the set as default banner  -->
+    <string name="browser_menu_default_banner_subtitle_2">Fast, private, and made for you.</string>
     <!-- Content description for the button that dismisses the set as default banner in the menu -->
-    <string name="browser_menu_default_banner_dismiss">Dismiss</string>
+    <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">Dismiss</string>
+    <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
+    <string name="browser_menu_default_banner_dismiss_promotion">Dismiss promotion</string>
+    <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
+    <string name="browser_menu_recommended_extensions_content_description">More info</string>
 
     <!-- Menu "contextual feature recommendation" (CFR) -->
     <!-- Text for the title in the contextual feature recommendation popup promoting the menu feature. -->
@@ -454,7 +464,7 @@
     <!-- Text for the button to skip the onboarding on the home onboarding dialog. -->
     <string name="onboarding_home_skip_button" moz:removedIn="141" tools:ignore="UnusedResources">Skip</string>
     <!-- Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section. -->
-    <string name="sync_cfr_message">Your tabs are syncing! Pick up where you left off on your other device.</string>
+    <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">Your tabs are syncing! Pick up where you left off on your other device.</string>
     <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
     <string name="onboarding_home_content_description_close_button">Close</string>
 
@@ -774,10 +784,16 @@
     <string name="preferences_category_account">Account</string>
     <!-- Preference for changing where the AddressBar is positioned -->
     <string name="preferences_toolbar_2">Address bar location</string>
+    <!-- Preference for changing toolbar layout -->
+    <string name="preferences_toolbar_layout">Toolbar layout</string>
     <!-- Preference for changing default theme to dark or light mode -->
     <string name="preferences_theme">Theme</string>
     <!-- Preference for customizing the home screen -->
     <string name="preferences_home_2">Homepage</string>
+    <!-- Preference for customizing the app icon-->
+    <string name="preferences_app_icon">App icon</string>
+    <!-- Preference for showing the tab strip -->
+    <string name="preferences_tab_strip">Tab bar display</string>
     <!-- Preference for gestures based actions -->
     <string name="preferences_gestures">Gestures</string>
     <!-- Preference for settings related to visual options -->
@@ -793,7 +809,7 @@
     <!-- Preference for translations -->
     <string name="preferences_translations">Translations</string>
     <!-- Preference for data choices -->
-    <string name="preferences_data_choices">Data choices</string>
+    <string name="preferences_data_choices" tools:ignore="UnusedResources" moz:removedIn="141">Data choices</string>
     <!-- Preference for data collection -->
     <string name="preferences_data_collection">Data collection</string>
     <!-- Preference for developers -->
@@ -851,7 +867,15 @@
     <!-- Preference for open links in third party apps never open in apps option -->
     <string name="preferences_open_links_in_apps_never">Never</string>
     <!-- Preference for open download with an external download manager app -->
-    <string name="preferences_external_download_manager">External download manager</string>
+    <string name="preferences_external_download_manager" tools:ignore="UnusedResources" moz:removedIn="141">External download manager</string>
+    <!-- Preference title for choosing an app to handle downloads -->
+    <string name="preferences_choose_app_for_downloads">Manage downloads with another app</string>
+    <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
+    <string name="preferences_downloads_settings_clean_up_files_title">Delete from %s and device</string>
+    <!-- Summary for the setting to automatically clean up downloaded files -->
+    <string name="preferences_downloads_settings_clean_up_files_summary">Removing files from your download manager also removes them from your device</string>
+    <!-- Preference for downloads -->
+    <string name="preferences_downloads">Downloads</string>
     <!-- Preference for enabling gecko engine logs -->
     <string name="preferences_enable_gecko_logs">Enable Gecko logs</string>
     <!-- Message to indicate users that we are quitting the application to apply the changes -->
@@ -1006,6 +1030,12 @@
     <string name="alternative_app_icon_option_momo">Momo</string>
     <!-- Subtitle for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
     <string name="alternative_app_icon_option_momo_subtitle">Created by @heyheymomodraws</string>
+    <!-- Title for the "Solid colors" group of alternative app icon variants in the icon picker screen. This group contains icons with flat, uniform color backgrounds. -->
+    <string name="alternative_app_icon_group_solid_colors">Solid colors</string>
+    <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
+    <string name="alternative_app_icon_group_gradients">Gradients</string>
+    <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
+    <string name="alternative_app_icon_group_other">Other</string>
 
     <!-- Add-ons general availability nimbus message-->
     <!-- Title of the Nimbus message for extension general availability-->
@@ -1098,29 +1128,45 @@
     <string name="exceptions_empty_message_learn_more_link">Learn more</string>
     <!-- Preference switch for usage and technical data collection -->
     <string name="preference_usage_data_2">Send technical and interaction data</string>
+    <!-- Preference switch for usage and technical learn more link in new compose -->
+    <string name="preference_usage_data_learn_more_2">Learn more about technical data</string>
     <!-- Preference switch for usage and technical learn more link -->
-    <string name="preference_usage_data_learn_more">Learn more</string>
+    <string name="preference_usage_data_learn_more" tools:ignore="UnusedResources" moz:removedIn="141">Learn more</string>
     <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
     <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage">Data about your device, hardware configuration, and usage helps us improve Firefox features, performance, and stability.</string>
-    <!-- Preference switch for campaign measurement data (marketing data) collection -->
-    <string name="preferences_marketing_data_2">Campaign measurement data</string>
-    <!-- Preference description for marketing data collection.
-    Note: The words "Firefox" and "Mozilla" should NOT be translated. “That you use it” is to mean that the user is opting in to sharing that they are continuing to use Firefox after installing it; not that Firefox is tracking their “usage” or what they’re using it for. -->
-    <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Share how you discovered Firefox and that you use it with Mozilla’s marketing technology partners.</string>
-    <!-- Learn more link for marketing data preference -->
-    <string name="preferences_marketing_data_learn_more">Learn more about marketing data</string>
     <!-- Preference switch for daily usage ping data collection -->
     <string name="preferences_daily_usage_ping_title">Daily usage ping</string>
     <string name="preferences_daily_usage_ping_description">This helps Mozilla to estimate active users.</string>
     <string name="preferences_daily_usage_ping_learn_more">Learn more about daily usage ping</string>
     <!-- Preference switch title for automatically submitting crash reports -->
-    <string name="preferences_automatically_send_crashes_title">Automatically send crash reports</string>
+    <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">Automatically send crash reports</string>
 
     <!-- Preference switch description for automatically submitting crash reports -->
-    <string name="preferences_automatically_send_crashes_description">This helps us diagnose and fix issues with the browser. Reports may include personal or sensitive data.</string>
+    <string name="preferences_automatically_send_crashes_description" tools:ignore="UnusedResources" moz:removedIn="142">This helps us diagnose and fix issues with the browser. Reports may include personal or sensitive data.</string>
+    <!-- Text for sumo link to learn more about crash reports in data collection screen -->
+    <string name="preferences_crashes_learn_more">Learn more about crash reports</string>
+
+    <!-- Title Headers for data collection settings screen -->
+    <string name="crash_reports_data_category">Crash Reports</string>
+    <string name="usage_data_category">Usage data</string>
+    <string name="studies_data_category">Studies</string>
+    <string name="technical_data_category">Technical Data</string>
+
+
+    <string name="crash_reporting_description">Crash reports allow us to diagnose and fix issues with the browser. Reports may include personal or sensitive data.</string>
+
+    <!-- Section title for campaign measurement in data collections screen -->
+    <string name="preferences_marketing_data_title">Campaign measurement</string>
+    <!-- Preference switch for campaign measurement data (marketing data) collection -->
+    <string name="preferences_marketing_data_2">Campaign measurement data</string>
+    <!-- Preference description for marketing data collection.
+        Note: The words "Firefox" and "Mozilla" should NOT be translated. “That you use it” is to mean that the user is opting in to sharing that they are continuing to use Firefox after installing it; not that Firefox is tracking their “usage” or what they’re using it for. -->
+    <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Share how you discovered Firefox and that you use it with Mozilla’s marketing technology partners.</string>
+    <!-- Learn more link for marketing data preference -->
+    <string name="preferences_marketing_data_learn_more">Learn more about marketing data</string>
 
     <!-- Learn more link for crash reporting preference -->
-    <string name="onboarding_preferences_dialog_crash_reporting_learn_more">Learn more about crash reports</string>
+    <string name="onboarding_preferences_dialog_crash_reporting_learn_more" tools:ignore="UnusedResources" moz:removedIn="142">Learn more about crash reports</string>
 
     <!-- Title for studies preferences -->
     <string name="preference_experiments_2">Studies</string>
@@ -1144,6 +1190,16 @@
     <string name="preference_top_toolbar">Top</string>
     <!-- Preference for using bottom toolbar -->
     <string name="preference_bottom_toolbar">Bottom</string>
+    <!-- Preference for using simple toolbar -->
+    <string name="preference_simple_toolbar">Simple</string>
+    <!-- Preference for using expanded toolbar -->
+    <string name="preference_expanded_toolbar">Expanded</string>
+    <!-- Preference description indicating the toolbar location preference is disabled when the tab strip is enabled -->
+    <string name="preference_toolbar_pref_disabled_explanation">Address bar must be on top when tab bar is shown.</string>
+
+    <!-- App icon Preferences -->
+    <!-- Title for the preference that lets the user pick a new app icon -->
+    <string name="preference_select_app_icon_title">Select App Icon</string>
 
     <!-- Theme Preferences -->
     <!-- Preference for using light theme -->
@@ -1154,6 +1210,10 @@
     <string name="preference_auto_battery_theme">Set by Battery Saver</string>
     <!-- Preference for using following device theme -->
     <string name="preference_follow_device_theme">Follow device theme</string>
+
+    <!-- Tab Strip Preferences-->
+    <!-- Preferences for showing tab strip -->
+    <string name="preference_tab_strip_show">Show tab bar</string>
 
     <!-- Gestures Preferences-->
     <!-- Preferences for using pull to refresh in a webpage -->
@@ -1285,12 +1345,21 @@
     <string name="studies_learn_more">Learn more</string>
 
     <!-- Sessions -->
+    <!-- Title for the list of tabs in the current normal session used by a11y services
+    The %1$s will be replaced by the number of opened normal tabs -->
+    <string name="tabs_header_normal_tabs_counter_title">Normal Tabs Open: %1$s. Tap to switch tabs.</string>
     <!-- Title for the list of tabs in the current private session used by a11y services
     The %1$s will be replaced by the number of opened private tabs -->
     <string name="tabs_header_private_tabs_counter_title">Private Tabs Open: %1$s. Tap to switch tabs.</string>
     <!-- Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs -->
     <string name="tabs_header_synced_tabs_counter_title">Synced Tabs Open: %1$s. Tap to switch tabs.</string>
+    <!-- Text for the tabs header private tabs -->
+    <string name="tabs_header_private_tabs_title">Private</string>
+    <!-- Text for the tabs header normal tabs -->
+    <string name="tabs_header_normal_tabs_title">Tabs</string>
+    <!-- Text for the tabs header synced tabs -->
+    <string name="tabs_header_synced_tabs_title">Sync</string>
     <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
     <string name="add_tab">Add tab</string>
     <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
@@ -1416,8 +1485,6 @@
     <string name="download_delete_item">Delete</string>
     <!-- Content description for the toolbar "Navigate back" button -->
     <string name="download_navigate_back_description">Navigate back</string>
-    <!-- Content description for the toolbar "Navigate up" button -->
-    <string name="download_navigate_up_description" moz:removedIn="139" tools:ignore="UnusedResources">Navigate up</string>
     <!-- Content description for the toolbar back button while searching the downloads -->
     <string name="download_close_search_description">Back and close search</string>
     <!-- Content description for the search bar clear text button on the downloads screen -->
@@ -1463,14 +1530,20 @@
                 %2$s is the total size of the downloaded file.
                 %3$s is the amount of time remaining to complete the download. -->
     <string name="download_item_in_progress_description_2">%1$s / %2$s • in %3$s.</string>
-    <!-- Description of an in progress download item, displayed in the downloads list when the download time remaining is unknown.
+    <!-- Description of an in progress download item, displayed in the downloads list when the estimated download time remaining is still being calculated.
                 %1$s is the current file size that has been downloaded.
                 %2$s is the total size of the downloaded file. -->
     <string name="download_item_in_progress_description_pending">%1$s / %2$s • pending</string>
+    <!-- Description of an in progress download item, displayed in the downloads list when the total download size is unknown. This results in the estimated download time remaining to be unknown also.
+                %1$s is the current file size that has been downloaded. -->
+    <string name="download_item_in_progress_description_unknown_total_size">%1$s • unknown time</string>
     <!-- Description of a paused download item, displayed in the downloads list.
                 %1$s is the current file size that has been downloaded.
                 %2$s is the total size of the downloaded file. -->
     <string name="download_item_paused_description">%1$s / %2$s • paused</string>
+    <!-- Description of a paused download item, displayed in the downloads list when the total download size is unknown.
+                %1$s is the current file size that has been downloaded. -->
+    <string name="download_item_paused_description_unknown_total_size">%1$s • paused</string>
     <!-- Text to indicate that an in progress download is paused. -->
     <string name="download_item_status_paused" moz:removedIn="141" tools:ignore="UnusedResources">paused</string>
     <!-- Text to indicate that the download speed of an in progress download is being calculated. -->
@@ -1503,7 +1576,13 @@
     <!-- The title of the Web Compat Reporter feature. This is displayed in the top app bar. -->
     <string name="webcompat_reporter_screen_title">Report broken site</string>
     <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
-    <string name="webcompat_reporter_description">Help make %1$s better for everyone. Mozilla employees use the info you send to fix website problems.</string>
+    <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">Help make %1$s better for everyone. Mozilla employees use the info you send to fix website problems.</string>
+    <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
+    <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">Your report helps us understand and fix issues in %1$s to make it better for everyone. Learn more</string>
+    <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox") and %2$s is the learn more button. -->
+    <string name="webcompat_reporter_description_3">Your report helps us understand and fix issues in %1$s to make it better for everyone. %2$s</string>
+    <!-- The button text for navigating to the SUMO link to learn more about reporting a broken site. -->
+    <string name="webcompat_reporter_learn_more">Learn more</string>
     <!-- The text field label of the URL text field. This is displayed above the user-inputted URL. -->
     <string name="webcompat_reporter_label_url">URL</string>
     <!-- The error message of the URL text field when an invalid URL has been entered. -->
@@ -1511,7 +1590,9 @@
     <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_label_whats_broken_2">What’s broken?</string>
     <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-    <string name="webcompat_reporter_choose_reason">Choose reason</string>
+    <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">Choose reason</string>
+    <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
+    <string name="webcompat_reporter_choose_reason_2">Choose a reason</string>
     <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_choose_reason_error">Please choose a reason</string>
     <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
@@ -1526,6 +1607,8 @@
     <string name="webcompat_reporter_success_snackbar_text">Your report was sent</string>
     <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
     <string name="webcompat_reporter_dismiss_success_snackbar_text">Close</string>
+    <!-- Placeholder text for the description field to prompt the user on what they should type. -->
+    <string name="webcompat_reporter_problem_description_placeholder_text">What happened? What should have happened?</string>
 
     <!-- These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site. -->
     <!-- Broken site reason text for site slow or not working -->
@@ -1568,12 +1651,20 @@
     <string name="tab_crash_restore">Restore tab</string>
     <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox").  -->
     <string name="unsubmitted_crash_dialog_title">%s had to restart</string>
+    <!-- Single unsubmitted crash matching remote settings. %1$s is the name of the app (for example "Firefox"). -->
+    <string name="unsubmitted_crash_requested_by_devs_dialog_title">You have an unsent crash report related to crashes being investigated. Sending it will help us improve %1$s. Closing this notification will ignore this report.</string>
+    <!-- Multiple unsubmitted crashes matching remote settings. %1$d is the number of unsent crash reports, %2$s is the name of the app (for example "Firefox"). -->
+    <string name="unsubmitted_crashes_requested_by_devs_dialog_title">You have unsent crash reports (%1$d) related to crashes being investigated. Sending them will help us improve %2$s. Closing this notification will ignore these reports.</string>
     <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
     <string name="unsubmitted_crash_dialog_checkbox_label">Automatically send crash reports</string>
     <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
     <string name="unsubmitted_crash_dialog_negative_button">Close</string>
+    <!-- Unsubmitted crash dialog negative button to never be asked for the submission -->
+    <string name="unsubmitted_crash_requested_by_devs_dialog_never_button">Never show again</string>
     <!-- Unsubmitted crash dialog positive button to submit crash report -->
     <string name="unsubmitted_crash_dialog_positive_button">Send crash report</string>
+    <!-- Unsubmitted crash dialog button to open a web page with more details on the feature and privacy policy -->
+    <string name="unsubmitted_crash_requested_by_devs_learn_more">Learn More</string>
 
     <!-- Bookmarks -->
     <!-- Confirmation message for a dialog confirming if the user wants to delete the selected folder -->
@@ -1811,7 +1902,7 @@
     %d is a placeholder for the number of tabs selected. -->
     <string name="create_collection_save_to_collection_tab_selected">%d tab selected</string>
     <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-    <string name="create_collection_tabs_saved">Tabs saved!</string>
+    <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Tabs saved!</string>
     <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
     <string name="create_collection_tabs_saved_new_collection">Collection saved!</string>
     <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -1931,7 +2022,7 @@
     <!-- Text shown in snackbar when user deletes a collection -->
     <string name="snackbar_collection_deleted">Collection deleted</string>
     <!-- Text shown in snackbar when user renames a collection -->
-    <string name="snackbar_collection_renamed">Collection renamed</string>
+    <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Collection renamed</string>
     <!-- Text shown in snackbar when user closes a tab -->
     <string name="snackbar_tab_closed">Tab closed</string>
     <!-- Text shown in snackbar when user closes all tabs -->
@@ -1968,13 +2059,15 @@
     <!-- Tab collection deletion prompt dialog option to delete the collection -->
     <string name="tab_collection_dialog_positive">Delete</string>
     <!-- Message for copying the URL via long press on the toolbar -->
-    <string name="url_copied">URL copied</string>
+    <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL copied</string>
     <!-- Sample text for accessibility font size -->
     <string name="accessibility_text_size_sample_text_1">This is sample text. It is here to show how text will appear when you increase or decrease the size with this setting.</string>
     <!-- Summary for Accessibility Text Size Scaling Preference -->
     <string name="preference_accessibility_text_size_summary">Make text on websites larger or smaller</string>
     <!-- Title for Accessibility Text Size Scaling Preference -->
     <string name="preference_accessibility_font_size_title">Font Size</string>
+    <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
+    <string name="a11y_preference_accessibility_font_size_percentage">%d %%.</string>
 
     <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
     <string name="preference_accessibility_auto_size_2">Automatic font sizing</string>
@@ -2100,6 +2193,10 @@
     <string name="preference_enhanced_tracking_protection_strict">Strict</string>
     <!-- Preference description for enhanced tracking protection for the strict protection settings -->
     <string name="preference_enhanced_tracking_protection_strict_description_4">Stronger tracking protection and faster performance, but some sites may not work properly.</string>
+    <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
+    <string name="preference_enhanced_tracking_protection_allow_list_baseline">Allow %1$s to automatically apply exceptions required to avoid major website breakage.</string>
+    <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
+    <string name="preference_enhanced_tracking_protection_allow_list_convenience">Also apply exceptions automatically that are only required to fix minor issues and make convenience features available.</string>
     <!--  Accessibility text for the Strict protection information icon  -->
     <string name="preference_enhanced_tracking_protection_strict_info_button">What’s blocked by strict tracking protection</string>
     <!-- Preference for enhanced tracking protection for the custom protection settings -->
@@ -2388,6 +2485,23 @@
     <string name="saved_login_clear_username">Clear username</string>
     <!-- Content Description (for screenreaders etc) read for the button to clear the hostname field while creating a login -->
     <string name="saved_login_clear_hostname">Clear hostname</string>
+    <!-- Content description, used by tools like screenreaders, for the 3 dots button that shows commands related to the currently displayed login (edit, delete). -->
+    <string name="login_detail_menu_button_content_description">Login detail menu</string>
+    <!-- Content description, used by tools like screenreaders, to go back and exit the login detail view. -->
+    <string name="login_details_navigate_back_button_content_description">Navigate back</string>
+    <!-- Edit text for the login detail menu edit button -->
+    <string name="login_detail_menu_edit_button">Edit</string>
+    <!-- Delete text for the login detail menu delete button -->
+    <string name="login_detail_menu_delete_button">Delete</string>
+    <!-- Content description, used by tools like screenreaders, to go back and exit the add login view. -->
+    <string name="add_login_navigate_back_button_content_description">Navigate back</string>
+    <!-- Content description, used by tools like screenreaders, to press on the save new login button. -->
+    <string name="add_login_save_new_login_button_content_description">Save new login</string>
+    <!-- Content description, used by tools like screenreaders, to go back and exit the edit login view. -->
+    <string name="edit_login_navigate_back_button_content_description">Navigate back</string>
+    <!-- Content description, used by tools like screenreaders, to press on the edit login button. -->
+    <string name="edit_login_button_content_description">Edit login</string>
+
     <!-- Content Description (for screenreaders etc) read for the button to open a site in logins -->
     <string name="saved_login_open_site">Open site in browser</string>
     <!-- Content Description (for screenreaders etc) read for the button to reveal a password in logins -->
@@ -2444,6 +2558,10 @@
     <string name="preferences_addresses_save_and_autofill_addresses_2">Save and fill addresses</string>
     <!-- Preference summary for saving and filling address data -->
     <string name="preferences_addresses_save_and_autofill_addresses_summary_2">Includes phone numbers and email addresses</string>
+    <!-- Preference option for syncing addresses across devices. This is displayed when the user is not signed into sync -->
+    <string name="preferences_addresses_sync_addresses_across_devices">Sync addresses across devices</string>
+    <!-- Preference option for syncing addresses across devices. This is displayed when the user is signed into sync -->
+    <string name="preferences_addresses_sync_addresses">Sync addresses</string>
 
     <!-- Title of the "Add card" screen -->
     <string name="credit_cards_add_card">Add card</string>
@@ -2575,9 +2693,9 @@
     <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
     <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">Error connecting to “%s”</string>
     <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-    <string name="search_add_custom_engine_success_message">Created %s</string>
+    <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Created %s</string>
     <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-    <string name="search_edit_custom_engine_success_message">Saved %s</string>
+    <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Saved %s</string>
     <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
     <string name="search_delete_search_engine_success_message">Deleted %s</string>
 
@@ -2683,6 +2801,8 @@
     <string name="synced_tabs_collapse_group">Collapse group of synced tabs</string>
 
     <!-- Top Sites -->
+    <!-- Title text displayed for the shortcuts home screen section. -->
+    <string name="homepage_shortcuts_title">Shortcuts</string>
     <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
     <string name="shortcut_max_limit_title">Shortcut limit reached</string>
     <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3029,9 +3149,9 @@
 
     <!-- Unified Trust Panel -->
     <!-- Text for the protection panel header when the site is secure. -->
-    <string name="protection_panel_header_secure">Secure</string>
+    <string name="protection_panel_header_secure" moz:removedIn="142" tools:ignore="UnusedResources">Secure</string>
     <!-- Text for the protection panel header when the site is not secure. -->
-    <string name="protection_panel_header_not_secure">Not secure</string>
+    <string name="protection_panel_header_not_secure" moz:removedIn="142" tools:ignore="UnusedResources">Not secure</string>
     <!-- Title text for the protection panel banner when the site is not secure. -->
     <string name="protection_panel_banner_not_secure_title">Be careful on this site</string>
     <!-- Description text for the protection panel banner when the site is not secure. -->
@@ -3048,17 +3168,27 @@
     <string name="protection_panel_banner_protected_description">You’re protected. If we spot something, we’ll let you know.</string>
     <!-- Label text for the Enhanced Tracking Protection toggle. -->
     <string name="protection_panel_etp_toggle_label">Enhanced Tracking Protection</string>
+    <!-- Toggle if Enhanced Tracking Protection is turned on -->
+    <string name="protection_panel_etp_toggle_on">On</string>
+    <!-- Toggle if Enhanced Tracking Protection is turned off -->
+    <string name="protection_panel_etp_toggle_off">Off</string>
     <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
-    <string name="protection_panel_etp_toggle_enabled_description">If something looks broken on this site, try turning off protections.</string>
+    <string name="protection_panel_etp_toggle_enabled_description" moz:removedIn="142" tools:ignore="UnusedResources">If something looks broken on this site, try turning off protections.</string>
+    <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
+    <string name="protection_panel_etp_toggle_enabled_description_2">If something looks broken on this site, try turning it off.</string>
     <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
-    <string name="protection_panel_etp_toggle_disabled_description">Protections are OFF. We suggest turning them back on.</string>
+    <string name="protection_panel_etp_toggle_disabled_description" moz:removedIn="142" tools:ignore="UnusedResources">Protections are OFF. We suggest turning them back on.</string>
+    <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
+    <string name="protection_panel_etp_toggle_disabled_description_2">Turning on tracking protection is recommended.</string>
     <!-- Text for displaying the total number of trackers blocked in the protection panel.
         %d is a placeholder for the number of trackers blocked. -->
     <string name="protection_panel_num_trackers_blocked">Trackers blocked: %d</string>
     <!-- Text for when no trackers have been blocked. -->
     <string name="protection_panel_no_trackers_blocked">No trackers found</string>
     <!-- Link text to navigate to privacy and security settings from the protection panel. -->
-    <string name="protection_panel_privacy_and_security_settings">Privacy and security settings</string>
+    <string name="protection_panel_privacy_and_security_settings" moz:removedIn="142" tools:ignore="UnusedResources">Privacy and security settings</string>
+    <!-- Link text to navigate to privacy and security settings from the protection panel. -->
+    <string name="protection_panel_privacy_and_security_settings_2">Privacy Settings</string>
     <!-- Title text for the protection panel permissions section. -->
     <string name="protection_panel_permissions_title">Permissions</string>
     <!-- Text for displaying the total number of trackers blocked in the trackers blocked panel.
@@ -3082,7 +3212,7 @@
     <!-- Text for the connection security panel when the site is not secure. -->
     <string name="connection_security_panel_not_secure">Connection not secure</string>
     <!-- Text for the connection security panel to indicate who the certificate was verified by.
-    %s is a placeholder for the name of the certificate authority that verified the ticket -->
+        %s is a placeholder for the name of the certificate authority that issued the certificate. -->
     <string name="connection_security_panel_verified_by">Verified by %s</string>
 
     <!-- Debug drawer -->
@@ -3236,6 +3366,12 @@
     <!-- The title of the button for overriding home region permanently. -->
     <string name="debug_drawer_override_home_region_permanently">Override home region permanently</string>
 
+    <!-- Add-ons debug tools -->
+    <!-- The description of the Add-ons Tools in the Debug Drawer -->
+    <string name="debug_drawer_addons_tools_title">Add-ons Tools</string>
+    <!-- The title of the button used to check for add-on updates. -->
+    <string name="addons_debug_tools_check_for_updates_button">Check for updates</string>
+
     <!-- Messages explaining how to exit fullscreen mode -->
     <!-- Message shown to explain how to exit fullscreen mode when gesture navigation is enabled. -->
     <!-- Localisation note: this text should be as short as possible, max 68 chars -->
@@ -3280,10 +3416,6 @@
     <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Some features will stop working tomorrow.</string>
 
     <!-- TextField Design System Component -->
-    <!-- The default content description for the eye trailing icon button in TextField -->
-    <string name="text_field_eye_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">Show hidden text</string>
-    <!-- The default content description for the cross trailing icon button in TextField -->
-    <string name="text_field_cross_trailing_icon_default_content_description" moz:removedIn="139" tools:ignore="UnusedResources">Clear text</string>
 
     <!-- Setup checklist feature -->
     <!-- ===== Setup checklist feature: Title ===== -->
@@ -3344,7 +3476,9 @@
     <!-- The title of the explore extensions task for the setup checklist -->
     <string name="setup_checklist_task_explore_extensions">Explore extensions</string>
     <!-- The title of the search widget task for the setup checklist -->
-    <string name="setup_checklist_task_search_widget">Install search widget</string>
+    <string name="setup_checklist_task_search_widget" moz:removedIn="143" tools:ignore="UnusedResources">Install search widget</string>
+    <!-- The title of the search widget task for the setup checklist -->
+    <string name="setup_checklist_task_search_widget_2">Explore search widget</string>
 
     <!-- ===== Setup checklist feature: Group titles ===== -->
     <!-- The title of the 'essentials' group in the setup checklist. %1$s is the name of the app (for example "Firefox"). -->

@@ -31,6 +31,7 @@ profiles.default:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_Default_Updated
 
 profiles.delete:
@@ -50,6 +51,7 @@ profiles.delete:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_Delete_Cancel
   confirm:
     type: event
@@ -66,6 +68,7 @@ profiles.delete:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_Delete_Confirm
   displayed:
     type: event
@@ -80,6 +83,7 @@ profiles.delete:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_Delete_Displayed
 
 profiles.existing:
@@ -107,6 +111,7 @@ profiles.existing:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_Existing_Alert
   avatar:
     type: event
@@ -127,6 +132,7 @@ profiles.existing:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_Existing_Avatar
   closed:
     type: event
@@ -149,6 +155,7 @@ profiles.existing:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_Existing_Closed
   deleted:
     type: event
@@ -163,6 +170,7 @@ profiles.existing:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_Existing_Deleted
   displayed:
     type: event
@@ -177,6 +185,7 @@ profiles.existing:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_Existing_Displayed
   learn_more:
     type: event
@@ -191,6 +200,7 @@ profiles.existing:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_Existing_LearnMore
   name:
     type: event
@@ -208,6 +218,7 @@ profiles.existing:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_Existing_Name
   theme:
     type: event
@@ -230,6 +241,7 @@ profiles.existing:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_Existing_Theme
 
 profiles.new:
@@ -257,6 +269,7 @@ profiles.new:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_New_Alert
   avatar:
     type: event
@@ -277,6 +290,7 @@ profiles.new:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_New_Avatar
   closed:
     type: event
@@ -299,6 +313,7 @@ profiles.new:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_New_Closed
   deleted:
     type: event
@@ -313,6 +328,7 @@ profiles.new:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_New_Deleted
   displayed:
     type: event
@@ -327,6 +343,7 @@ profiles.new:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_New_Displayed
   learn_more:
     type: event
@@ -341,6 +358,7 @@ profiles.new:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_New_LearnMore
   name:
     type: event
@@ -358,6 +376,7 @@ profiles.new:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_New_Name
   theme:
     type: event
@@ -380,6 +399,7 @@ profiles.new:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_New_Theme
 
 profiles.selector_window:
@@ -398,6 +418,7 @@ profiles.selector_window:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_SelectorWindow_Launch
   show_at_startup:
     type: event
@@ -422,4 +443,5 @@ profiles.selector_window:
       - jhirsch@mozilla.com
       - nbaumgardner@mozilla.com
     expires: never
+    send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_SelectorWindow_ShowAtStartup

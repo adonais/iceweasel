@@ -255,6 +255,9 @@ pref("extensions.webextOptionalPermissionPrompts", true);
 // GeckoView can trigger requests without opening geckoview.xhtml.
 pref("extensions.webextensions.early_background_wakeup_on_request", true);
 
+// Enable data collection permissions.
+pref("extensions.dataCollectionPermissions.enabled", true);
+
 // Scroll and zoom into editable form fields (bug 834613)
 pref("formhelper.autozoom", true);
 

@@ -7,9 +7,9 @@
 #ifndef mozilla_dom_CSSNamespaceRule_h
 #define mozilla_dom_CSSNamespaceRule_h
 
+#include "mozilla/ServoBindingTypes.h"
 #include "mozilla/css/Rule.h"
 #include "mozilla/dom/CSSNamespaceRuleBinding.h"
-#include "mozilla/ServoBindingTypes.h"
 
 class nsAtom;
 

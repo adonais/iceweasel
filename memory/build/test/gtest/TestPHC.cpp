@@ -7,6 +7,7 @@
 #include "mozmemory.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/mozalloc.h"
+#include "mozilla/StaticPrefs_memory.h"
 #include "PHC.h"
 
 using namespace mozilla;
@@ -369,47 +370,54 @@ TEST(PHC, TestPHCDisablingGlobal)
   free(s);
 }
 
-// This test is disabled for now, see Bug 1845017 and Bug 1845655.
-// TEST(PHC, TestPHCExhaustion)
-// {
-void DisabledPHCExhaustionTest() {
-  // PHC hardcodes the amount of allocations to track.
-#if defined(XP_DARWIN) && defined(__aarch64__)
-  const unsigned NUM_ALLOCATIONS = 1024;
-#else
-  const unsigned NUM_ALLOCATIONS = 4096;
-#endif
-  uint8_t* allocations[NUM_ALLOCATIONS];
-  const unsigned REQUIRED_ALLOCATIONS = NUM_ALLOCATIONS - 50;
+size_t GetNumAvailable() {
+  mozilla::phc::PHCStats stats;
+  GetPHCStats(stats);
+  return stats.mSlotsFreed + stats.mSlotsUnused;
+}
 
-  unsigned last_allocation;
-  for (unsigned i = 0; i < NUM_ALLOCATIONS; i++) {
-    allocations[i] = GetPHCAllocation(128);
-    last_allocation = i;
-    if (i < REQUIRED_ALLOCATIONS) {
-      // Assert that the first REQUIRED_ALLOCATIONS work.  We require only
-      // REQUIRED_ALLOCATIONS rather than NUM_ALLOCATIONS because sometimes
-      // some PHC slots are used before the test begins.
-      ASSERT_TRUE(allocations[i]);
-    } else if (!allocations[i]) {
-      // Break the loop if an allocation fails to move to the next phase.
-      last_allocation--;
-      break;
-    }
-    TestInUseAllocation(allocations[i], 128);
+TEST(PHC, TestPHCExhaustion)
+{
+  // PHC hardcodes the amount of allocations to track.
+  size_t num_allocations = GetNumAvailable();
+
+  mozilla::phc::DisablePHCOnCurrentThread();
+  std::vector<uint8_t*> allocations(num_allocations);
+  mozilla::phc::ReenablePHCOnCurrentThread();
+
+  // Disable the reuse delay to make the test more reliable.  At the same
+  // time lower the other probabilities to speed up this test, but much
+  // lower and the test runs more slowly maybe because of how PHC
+  // optimises for multithreading.
+  mozilla::phc::SetPHCProbabilities(64, 64, 0);
+
+  for (auto& a : allocations) {
+    a = GetPHCAllocation(128);
+    ASSERT_TRUE(a);
+    TestInUseAllocation(a, 128);
   }
 
+  // No more PHC slots are available.
+  ASSERT_EQ(0ul, GetNumAvailable());
   // We should now fail to get an allocation.
   ASSERT_FALSE(GetPHCAllocation(128));
 
-  for (unsigned i = 0; i <= last_allocation; i++) {
-    free(allocations[i]);
-    TestFreedAllocation(allocations[i], 128);
+  for (auto& a : allocations) {
+    free(a);
+    TestFreedAllocation(a, 128);
   }
 
-  // And now that we've released those allocations we should be able to get
-  // new allocations again.
+  // And now that we've released those allocations the number of available
+  // slots will be non-zero.
+  ASSERT_TRUE(GetNumAvailable() != 0);
+  // And we should be able to get new allocations again.
   uint8_t* r = GetPHCAllocation(128);
   ASSERT_TRUE(!!r);
   free(r);
+
+  // Restore defaults.
+  mozilla::phc::SetPHCProbabilities(
+      StaticPrefs::memory_phc_avg_delay_first(),
+      StaticPrefs::memory_phc_avg_delay_normal(),
+      StaticPrefs::memory_phc_avg_delay_page_reuse());
 }

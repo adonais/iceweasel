@@ -9,8 +9,8 @@
 #ifndef nsTransitionManager_h_
 #define nsTransitionManager_h_
 
-#include "mozilla/dom/CSSTransition.h"
 #include "AnimationCommon.h"
+#include "mozilla/dom/CSSTransition.h"
 #include "nsISupportsImpl.h"
 
 class nsPresContext;

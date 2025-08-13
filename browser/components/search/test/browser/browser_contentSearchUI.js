@@ -840,7 +840,6 @@ add_task(async function search() {
     engineName: TEST_ENGINE1.name,
     searchString: "x",
     healthReportKey: "test",
-    searchPurpose: "test",
     originalEvent: modifiers,
   };
   SimpleTest.isDeeply(eventData, mesg, "Search event data");

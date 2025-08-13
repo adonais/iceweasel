@@ -62,22 +62,28 @@ class HTMLPreview extends Component {
       "data:text/html;charset=UTF-8," + encodeURIComponent(htmlBody)
     );
 
-    let csp = null;
+    let policyContainer;
     const cspHeaders = responseHeaders?.headers.filter(
       e => e.name.toLowerCase() === "content-security-policy"
     );
     if (cspHeaders?.length) {
       // Merge multiple CSP headers with a comma.
       const merged = cspHeaders.map(e => e.value).join(",");
-      csp = ChromeUtils.createCSPFromHeader(
+      const csp = ChromeUtils.createCSPFromHeader(
         merged,
         new URL(url).URI,
         Services.scriptSecurityManager.createNullPrincipal({})
       );
+      const PolicyContainer = Components.Constructor(
+        "@mozilla.org/policycontainer;1",
+        "nsIPolicyContainer",
+        "initFromCSP"
+      );
+      policyContainer = new PolicyContainer(csp);
     }
 
     const options = {
-      csp,
+      policyContainer,
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     };
     this.browser.loadURI(uri, options);

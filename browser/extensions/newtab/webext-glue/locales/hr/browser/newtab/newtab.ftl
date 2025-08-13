@@ -8,6 +8,9 @@
 newtab-page-title = Nova kartica
 newtab-settings-button =
     .title = Prilagodi stranicu za nove kartice
+newtab-customize-panel-icon-button =
+    .title = Prilagodi ovu stranicu
+newtab-customize-panel-icon-button-label = Prilagodi
 newtab-personalize-settings-icon-label =
     .title = Personaliziraj novu karticu
     .aria-label = Postavke
@@ -207,7 +210,7 @@ newtab-section-menu-add-topsite = Dodaj najbolju stranicu
 newtab-section-menu-add-search-engine = Dodaj tražilicu
 newtab-section-menu-move-up = Pomakni gore
 newtab-section-menu-move-down = Pomakni dolje
-newtab-section-menu-privacy-notice = Politika privatnosti
+newtab-section-menu-privacy-notice = Napomena o privatnosti
 
 ## Section aria-labels
 
@@ -502,6 +505,9 @@ newtab-topic-selection-button-pick-interests = Odaberi tvoje interese
 newtab-section-follow-button = Prati
 newtab-section-following-button = Praćenje
 newtab-section-unfollow-button = Prestani pratiti
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Podesi svoj feed
+newtab-section-follow-highlight-subtitle = Prati svoje interese i vidi više onoga što ti se sviđa.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -538,11 +544,14 @@ newtab-custom-wallpaper-cta = Isprobaj
 
 newtab-download-mobile-highlight-title = Preuzmi { -brand-product-name } za mobilne uređaje
 # "Scan the code" refers to scanning the QR code that appears above the body text that leads to Firefox for mobile download.
-newtab-download-mobile-highlight-body-variant-a = Skeniraj kod za sigurno pregledavanje na putu.
+newtab-download-mobile-highlight-body-variant-a = Snimi kod za sigurno pregledavanje na putu.
 newtab-download-mobile-highlight-body-variant-b = Nastavi tamo gdje si stao/la prilikom sinkronizacije kartica, lozinki i više.
 newtab-download-mobile-highlight-body-variant-c = Znaš li da { -brand-product-name } možeš ponijeti sa sobom? Isti preglednik. U tvom džepu.
 newtab-download-mobile-highlight-image =
     .aria-label = QR kod za preuzimanje { -brand-product-name }a za mobilne uređaje
+
+## Strings for shortcuts highlight
+
 
 ## Strings for reporting ads and content
 
@@ -577,3 +586,5 @@ newtab-trending-searches-hide-trending =
     .title = Sakrij popularne pretrage
 newtab-trending-searches-learn-more = Saznaj više
 newtab-trending-searches-dismiss = Sakrij popularne pretrage
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Popularne pretrage

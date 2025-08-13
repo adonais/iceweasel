@@ -354,8 +354,8 @@ export var SearchUIUtils = {
    *   Defaults to `false`.
    * @param {nsIPrincipal} triggeringPrincipal
    *   The principal to use for a new window or tab.
-   * @param {nsIContentSecurityPolicy} csp
-   *   The content security policy to use for a new window or tab.
+   * @param {nsIPolicyContainer} policyContainer
+   *   The policyContainer to use for a new window or tab.
    * @param {boolean} [inBackground=false]
    *   Set to true for the tab to be loaded in the background.
    * @param {?nsISearchEngine} [engine=null]
@@ -373,7 +373,7 @@ export var SearchUIUtils = {
     where,
     usePrivate,
     triggeringPrincipal,
-    csp,
+    policyContainer,
     inBackground = false,
     engine = null,
     tab = null
@@ -406,7 +406,7 @@ export var SearchUIUtils = {
       inBackground,
       relatedToCurrent: true,
       triggeringPrincipal,
-      csp,
+      policyContainer,
       targetBrowser: tab?.linkedBrowser,
       globalHistoryOptions: {
         triggeringSearchEngine: engine.name,
@@ -429,8 +429,8 @@ export var SearchUIUtils = {
    *   Defaults to `false`.
    * @param {nsIPrincipal} triggeringPrincipal
    *   The principal of the document whose context menu was clicked.
-   * @param {nsIContentSecurityPolicy} csp
-   *   The content security policy to use for a new window or tab.
+   * @param {nsIPolicyContainer} policyContainer
+   *   The policyContainer to use for a new window or tab.
    * @param {XULCommandEvent|PointerEvent} event
    *   The event triggering the search.
    */
@@ -439,7 +439,7 @@ export var SearchUIUtils = {
     searchText,
     usePrivate,
     triggeringPrincipal,
-    csp,
+    policyContainer,
     event
   ) {
     event = lazy.BrowserUtils.getRootEvent(event);
@@ -466,7 +466,7 @@ export var SearchUIUtils = {
       Services.scriptSecurityManager.createNullPrincipal(
         triggeringPrincipal.originAttributes
       ),
-      csp,
+      policyContainer,
       inBackground
     );
 
@@ -491,15 +491,15 @@ export var SearchUIUtils = {
    *   Defaults to `false`.
    * @param {nsIPrincipal} triggeringPrincipal
    *   The principal to use for a new window or tab.
-   * @param {nsIContentSecurityPolicy} csp
-   *   The content security policy to use for a new window or tab.
+   * @param {nsIPolicyContainer} policyContainer
+   *   The policyContainer to use for a new window or tab.
    */
   async loadSearchFromCommandLine(
     window,
     searchText,
     usePrivate,
     triggeringPrincipal,
-    csp
+    policyContainer
   ) {
     let searchInfo = await SearchUIUtils._loadSearch(
       window,
@@ -507,7 +507,7 @@ export var SearchUIUtils = {
       "current",
       usePrivate,
       triggeringPrincipal,
-      csp
+      policyContainer
     );
     if (searchInfo) {
       lazy.BrowserSearchTelemetry.recordSearch(

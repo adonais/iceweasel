@@ -12,19 +12,20 @@
 //
 
 #include "nsScrollbarButtonFrame.h"
-#include "nsPresContext.h"
-#include "nsIContent.h"
-#include "nsCOMPtr.h"
-#include "nsNameSpaceManager.h"
-#include "nsGkAtoms.h"
-#include "nsLayoutUtils.h"
-#include "nsSliderFrame.h"
-#include "nsScrollbarFrame.h"
-#include "nsIScrollbarMediator.h"
-#include "nsRepeatService.h"
+
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
+#include "nsCOMPtr.h"
+#include "nsGkAtoms.h"
+#include "nsIContent.h"
+#include "nsIScrollbarMediator.h"
+#include "nsLayoutUtils.h"
+#include "nsNameSpaceManager.h"
+#include "nsPresContext.h"
+#include "nsRepeatService.h"
+#include "nsScrollbarFrame.h"
+#include "nsSliderFrame.h"
 
 using namespace mozilla;
 

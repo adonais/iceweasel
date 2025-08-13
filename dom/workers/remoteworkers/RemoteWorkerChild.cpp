@@ -32,6 +32,7 @@
 #include "mozilla/dom/FetchEventOpProxyChild.h"
 #include "mozilla/dom/IndexedDatabaseManager.h"
 #include "mozilla/dom/MessagePort.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/RemoteWorkerTypes.h"
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
 #include "mozilla/dom/ServiceWorkerInterceptController.h"
@@ -302,9 +303,10 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
     info.mSourceInfo = clientInfo;
   } else {
     if (clientInfo.isSome()) {
-      Maybe<mozilla::ipc::CSPInfo> cspInfo = clientInfo.ref().GetCspInfo();
-      if (cspInfo.isSome()) {
-        info.mCSP = CSPInfoToCSP(cspInfo.ref(), nullptr);
+      Maybe<mozilla::ipc::PolicyContainerArgs> policyContainerArgs =
+          clientInfo.ref().GetPolicyContainerArgs();
+      if (policyContainerArgs.isSome() && policyContainerArgs->csp().isSome()) {
+        info.mCSP = CSPInfoToCSP(*policyContainerArgs->csp(), nullptr);
         mozilla::Result<UniquePtr<WorkerCSPContext>, nsresult> ctx =
             WorkerCSPContext::CreateFromCSP(info.mCSP);
         if (ctx.isErr()) {

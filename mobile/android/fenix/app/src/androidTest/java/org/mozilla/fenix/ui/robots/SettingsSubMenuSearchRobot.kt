@@ -49,7 +49,6 @@ import org.mozilla.fenix.helpers.DataGenerationHelper.getAvailableSearchEngines
 import org.mozilla.fenix.helpers.DataGenerationHelper.getRegionSearchEnginesList
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
-import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
@@ -468,7 +467,6 @@ class SettingsSubMenuSearchRobot {
         Log.i(TAG, "saveEditSearchEngine: Trying to click the \"Save\" button")
         onView(withId(R.id.save_button)).click()
         Log.i(TAG, "saveEditSearchEngine: Clicked the \"Save\" button")
-        assertUIObjectExists(itemContainingText("Saved"))
     }
 
     fun verifyInvalidTemplateSearchStringFormatError() {

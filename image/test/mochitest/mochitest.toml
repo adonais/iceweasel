@@ -111,9 +111,7 @@ support-files = [
 support-files = [
   "../animated_image_test_list.js"
 ]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && ccov && xorigin",
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && ccov && xorigin"]
 
 ["test_animated_gif.html"]
 support-files = ["child.html"]
@@ -149,7 +147,6 @@ skip-if = ["true"] # disabled - See bug 579139
 ["test_bug490949.html"]
 
 ["test_bug496292.html"]
-skip-if = ["verify"]
 
 ["test_bug497665.html"]
 
@@ -173,7 +170,6 @@ skip-if = [
 
 ["test_bug733553.html"]
 skip-if = [
-  "verify",
   "http3",
   "http2",
 ]
@@ -226,7 +222,6 @@ skip-if = [
 ["test_mq_dynamic_svg.html"]
 
 ["test_net_failedtoprocess.html"]
-skip-if = ["verify"]
 
 ["test_removal_ondecode.html"]
 

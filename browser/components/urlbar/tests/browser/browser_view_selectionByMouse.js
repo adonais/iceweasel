@@ -378,7 +378,7 @@ add_task(async function buttons() {
   let testData = [
     {
       description: "Menu button to menu button",
-      mousedown: ".urlbarView-row:nth-child(1) .urlbarView-button-menu",
+      mousedown: ".urlbarView-row:nth-child(1) .urlbarView-button-result-menu",
       afterMouseupCallback: assertResultMenuOpen,
       expected: {
         mousedownSelected: false,
@@ -395,7 +395,7 @@ add_task(async function buttons() {
     {
       description: "Row-inner to menu button",
       mousedown: ".urlbarView-row:nth-child(1) > .urlbarView-row-inner",
-      mouseup: ".urlbarView-row:nth-child(1) .urlbarView-button-menu",
+      mouseup: ".urlbarView-row:nth-child(1) .urlbarView-button-result-menu",
       afterMouseupCallback: assertResultMenuOpen,
       expected: {
         mousedownSelected: true,
@@ -411,7 +411,7 @@ add_task(async function buttons() {
     },
     {
       description: "Menu button to row-inner",
-      mousedown: ".urlbarView-row:nth-child(1) .urlbarView-button-menu",
+      mousedown: ".urlbarView-row:nth-child(1) .urlbarView-button-result-menu",
       mouseup: ".urlbarView-row:nth-child(1) > .urlbarView-row-inner",
       expected: {
         mousedownSelected: false,

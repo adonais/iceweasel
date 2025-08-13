@@ -2,16 +2,18 @@ use alloc::boxed::Box;
 
 use thiserror::Error;
 
+use wgt::error::{ErrorType, WebGpuError};
+
+use super::bind::BinderError;
+use crate::command::pass;
 use crate::{
-    binding_model::{LateMinBufferBindingSizeMismatch, PushConstantUploadError},
+    binding_model::{BindingError, LateMinBufferBindingSizeMismatch, PushConstantUploadError},
     resource::{
         DestroyedResourceError, MissingBufferUsageError, MissingTextureUsageError,
         ResourceErrorIdent,
     },
     track::ResourceUsageCompatibilityError,
 };
-
-use super::bind::BinderError;
 
 /// Error validating a draw call.
 #[derive(Clone, Debug, Error)]
@@ -20,7 +22,7 @@ pub enum DrawError {
     #[error("Blend constant needs to be set")]
     MissingBlendConstant,
     #[error("Render pipeline must be set")]
-    MissingPipeline,
+    MissingPipeline(#[from] pass::MissingPipeline),
     #[error("Currently set {pipeline} requires vertex buffer {index} to be set")]
     MissingVertexBuffer {
         pipeline: ResourceErrorIdent,
@@ -56,13 +58,19 @@ pub enum DrawError {
     BindingSizeTooSmall(#[from] LateMinBufferBindingSizeMismatch),
 }
 
+impl WebGpuError for DrawError {
+    fn webgpu_error_type(&self) -> ErrorType {
+        ErrorType::Validation
+    }
+}
+
 /// Error encountered when encoding a render command.
 /// This is the shared error set between render bundles and passes.
 #[derive(Clone, Debug, Error)]
 #[non_exhaustive]
 pub enum RenderCommandError {
-    #[error("Bind group index {index} is greater than the device's requested `max_bind_group` limit {max}")]
-    BindGroupIndexOutOfRange { index: u32, max: u32 },
+    #[error(transparent)]
+    BindGroupIndexOutOfRange(#[from] pass::BindGroupIndexOutOfRange),
     #[error("Vertex buffer index {index} is greater than the device's requested `max_vertex_buffers` limit {max}")]
     VertexBufferIndexOutOfRange { index: u32, max: u32 },
     #[error("Render pipeline targets are incompatible with render pass")]
@@ -81,6 +89,8 @@ pub enum RenderCommandError {
     MissingTextureUsage(#[from] MissingTextureUsageError),
     #[error(transparent)]
     PushConstants(#[from] PushConstantUploadError),
+    #[error(transparent)]
+    BindingError(#[from] BindingError),
     #[error("Viewport size {{ w: {w}, h: {h} }} greater than device's requested `max_texture_dimension_2d` limit {max}, or less than zero")]
     InvalidViewportRectSize { w: f32, h: f32, max: u32 },
     #[error("Viewport has invalid rect {rect:?} for device's requested `max_texture_dimension_2d` limit; Origin less than -2 * `max_texture_dimension_2d` ({min}), or rect extends past 2 * `max_texture_dimension_2d` - 1 ({max})")]
@@ -91,6 +101,31 @@ pub enum RenderCommandError {
     InvalidScissorRect(Rect<u32>, wgt::Extent3d),
     #[error("Support for {0} is not implemented yet")]
     Unimplemented(&'static str),
+}
+
+impl WebGpuError for RenderCommandError {
+    fn webgpu_error_type(&self) -> ErrorType {
+        let e: &dyn WebGpuError = match self {
+            Self::IncompatiblePipelineTargets(e) => e,
+            Self::ResourceUsageCompatibility(e) => e,
+            Self::DestroyedResource(e) => e,
+            Self::MissingBufferUsage(e) => e,
+            Self::MissingTextureUsage(e) => e,
+            Self::PushConstants(e) => e,
+            Self::BindingError(e) => e,
+
+            Self::BindGroupIndexOutOfRange { .. }
+            | Self::VertexBufferIndexOutOfRange { .. }
+            | Self::IncompatibleDepthAccess(..)
+            | Self::IncompatibleStencilAccess(..)
+            | Self::InvalidViewportRectSize { .. }
+            | Self::InvalidViewportRectPosition { .. }
+            | Self::InvalidViewportDepth(..)
+            | Self::InvalidScissorRect(..)
+            | Self::Unimplemented(..) => return ErrorType::Validation,
+        };
+        e.webgpu_error_type()
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default)]

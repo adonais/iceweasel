@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright 2018 The Chromium Authors. All rights reserved.
+# Copyright 2018 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -9,6 +9,8 @@ import shutil
 import sys
 
 from util import build_utils
+import action_helpers  # build_utils adds //build to sys.path.
+import zip_helpers
 
 
 def CreatePathTransform(exclude_globs, include_globs):
@@ -50,13 +52,14 @@ def main():
   argv = build_utils.ExpandFileArgs(sys.argv[1:])
   args = parser.parse_args(argv)
 
-  args.exclude_globs = build_utils.ParseGnList(args.exclude_globs)
-  args.include_globs = build_utils.ParseGnList(args.include_globs)
+  args.exclude_globs = action_helpers.parse_gn_list(args.exclude_globs)
+  args.include_globs = action_helpers.parse_gn_list(args.include_globs)
 
   path_transform = CreatePathTransform(args.exclude_globs, args.include_globs)
-  with build_utils.AtomicOutput(args.output) as f:
+  with action_helpers.atomic_output(args.output) as f:
     if path_transform:
-      build_utils.MergeZips(f.name, [args.input], path_transform=path_transform)
+      zip_helpers.merge_zips(f.name, [args.input],
+                             path_transform=path_transform)
     else:
       shutil.copy(args.input, f.name)
 

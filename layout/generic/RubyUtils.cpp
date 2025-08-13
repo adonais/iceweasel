@@ -5,11 +5,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "RubyUtils.h"
-#include "nsRubyFrame.h"
-#include "nsRubyBaseFrame.h"
-#include "nsRubyTextFrame.h"
+
 #include "nsRubyBaseContainerFrame.h"
+#include "nsRubyBaseFrame.h"
+#include "nsRubyFrame.h"
 #include "nsRubyTextContainerFrame.h"
+#include "nsRubyTextFrame.h"
 
 using namespace mozilla;
 

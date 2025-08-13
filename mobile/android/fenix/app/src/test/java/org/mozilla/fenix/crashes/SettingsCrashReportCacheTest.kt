@@ -62,4 +62,15 @@ class SettingsCrashReportCacheTest {
 
         verify(settings).crashReportDeferredUntil = 0
     }
+
+    @Test
+    fun `WHEN retrieving CrashPullDeferUntil with never show again set THEN returns a future timestamp`() = runTestOnMain {
+        `when`(settings.crashPullNeverShowAgain).thenReturn(true)
+        `when`(settings.crashPullDontShowBefore).thenReturn(0)
+
+        val cache = SettingsCrashReportCache(settings)
+        val result: TimeInMillis? = cache.getCrashPullDeferUntil()
+
+        assertEquals(Long.MAX_VALUE, result)
+    }
 }

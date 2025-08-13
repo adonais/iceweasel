@@ -503,6 +503,9 @@ newtab-topic-selection-button-pick-interests = Eiporavo eipotáva
 newtab-section-follow-button = Tapykueho
 newtab-section-following-button = Ahapykueho
 newtab-section-unfollow-button = Ndahapykuehovéima
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Eiporuporã nde feed
+newtab-section-follow-highlight-subtitle = Ehapykueho ndegustáva ehecha hag̃ua hetave mbaʼe.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -545,6 +548,11 @@ newtab-download-mobile-highlight-body-variant-c = ¿Eikuaápa ikatuha eraha { -b
 newtab-download-mobile-highlight-image =
     .aria-label = QR ayvu emboguejy hag̃ua { -brand-product-name } pumbyrýpe
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Eguerohoryvéva ne kuã ykerete
+newtab-shortcuts-highlight-subtitle = Embojuaju jeike pya’eha ereko hag̃ua erohoryvéva nde ykére.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -578,3 +586,5 @@ newtab-trending-searches-hide-trending =
     .title = Eñomi jeheka ojejapovéva
 newtab-trending-searches-learn-more = Eikuaave
 newtab-trending-searches-dismiss = Eñomi jeheka ojejapovéva
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Jeheka ojejapovéva

@@ -77,6 +77,10 @@ body {
     }
   }
 
+  &[taskbartab]:not([chromehidden~="toolbar"]) {
+    min-width: 732px;
+  }
+
   /* z-indices that fight on the browser stack */
   --browser-stack-z-index-devtools-splitter: 1;
   --browser-stack-z-index-dialog-stack: 2;

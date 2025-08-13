@@ -7,6 +7,7 @@ package org.mozilla.fenix.onboarding.store
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
+import mozilla.components.lib.crash.store.CrashReportOption
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -19,13 +20,13 @@ class DefaultPrivacyPreferencesRepositoryTest {
     fun `GIVEN crash reporting flag is updated in settings WHEN getPreference is called THEN updated value is returned `() {
         val settings = Settings(testContext)
         val repository = DefaultPrivacyPreferencesRepository(settings)
-        assertFalse(settings.crashReportAlwaysSend)
+        assertTrue(CrashReportOption.fromLabel(settings.crashReportChoice) == CrashReportOption.Ask)
         assertFalse(repository.getPreference(PreferenceType.CrashReporting))
 
-        settings.crashReportAlwaysSend = true
+        settings.crashReportChoice = CrashReportOption.Auto.label
         assertTrue(repository.getPreference(PreferenceType.CrashReporting))
 
-        settings.crashReportAlwaysSend = false
+        settings.crashReportChoice = CrashReportOption.Never.label
         assertFalse(repository.getPreference(PreferenceType.CrashReporting))
     }
 
@@ -41,5 +42,22 @@ class DefaultPrivacyPreferencesRepositoryTest {
 
         settings.isTelemetryEnabled = true
         assertTrue(repository.getPreference(PreferenceType.UsageData))
+    }
+
+    @Test
+    fun `WHEN setPreference is called THEN the preference value is updated`() {
+        val settings = Settings(testContext)
+        val repository = DefaultPrivacyPreferencesRepository(settings)
+        assertTrue(settings.isTelemetryEnabled)
+        assertTrue(settings.isExperimentationEnabled)
+
+        repository.setPreference(PreferenceType.UsageData, false)
+
+        assertFalse(settings.isTelemetryEnabled)
+        assertFalse(settings.isExperimentationEnabled)
+
+        repository.setPreference(PreferenceType.UsageData, true)
+        assertTrue(settings.isTelemetryEnabled)
+        assertTrue(settings.isExperimentationEnabled)
     }
 }

@@ -7,8 +7,8 @@
 #ifndef mozilla_StyleSheetInlines_h
 #define mozilla_StyleSheetInlines_h
 
-#include "mozilla/dom/Document.h"
 #include "mozilla/StyleSheet.h"
+#include "mozilla/dom/Document.h"
 #include "nsIGlobalObject.h"
 #include "nsINode.h"
 

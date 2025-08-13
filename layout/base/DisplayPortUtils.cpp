@@ -6,7 +6,15 @@
 
 #include "DisplayPortUtils.h"
 
+#include <ostream>
+
 #include "FrameMetrics.h"
+#include "RetainedDisplayListBuilder.h"
+#include "WindowRenderer.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/StaticPrefs_layers.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/gfx/Point.h"
@@ -14,17 +22,9 @@
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/LayersMessageUtils.h"
 #include "mozilla/layers/PAPZ.h"
-#include "mozilla/PresShell.h"
-#include "mozilla/ScrollContainerFrame.h"
-#include "mozilla/StaticPrefs_layers.h"
-#include "mozilla/StaticPrefs_layout.h"
 #include "nsLayoutUtils.h"
 #include "nsPlaceholderFrame.h"
 #include "nsSubDocumentFrame.h"
-#include "RetainedDisplayListBuilder.h"
-#include "WindowRenderer.h"
-
-#include <ostream>
 
 namespace mozilla {
 

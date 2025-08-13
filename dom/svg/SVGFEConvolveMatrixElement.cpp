@@ -161,17 +161,18 @@ FilterPrimitiveDescription SVGFEConvolveMatrixElement::GetPrimitiveDescription(
     targetY = orderY / 2;
   }
 
-  if (orderX > NS_SVG_OFFSCREEN_MAX_DIMENSION ||
-      orderY > NS_SVG_OFFSCREEN_MAX_DIMENSION)
+  if (orderX > kReasonableSurfaceSize || orderY > kReasonableSurfaceSize)
     return failureDescription;
 
   float divisor;
   if (mNumberAttributes[DIVISOR].IsExplicitlySet()) {
     divisor = mNumberAttributes[DIVISOR].GetAnimValue();
-    if (divisor == 0) return failureDescription;
-  } else {
+  }
+  if (!mNumberAttributes[DIVISOR].IsExplicitlySet() || divisor == 0) {
     divisor = std::accumulate(kernelMatrix.begin(), kernelMatrix.end(), 0.0f);
-    if (divisor == 0) divisor = 1;
+    if (divisor == 0) {
+      divisor = 1;
+    }
   }
 
   uint32_t edgeMode = mEnumAttributes[EDGEMODE].GetAnimValue();
@@ -181,12 +182,8 @@ FilterPrimitiveDescription SVGFEConvolveMatrixElement::GetPrimitiveDescription(
   Size kernelUnitLength = GetKernelUnitLength(
       aInstance, &mNumberPairAttributes[KERNEL_UNIT_LENGTH]);
 
-  if (kernelUnitLength.width <= 0 || kernelUnitLength.height <= 0) {
-    // According to spec, A negative or zero value is an error. See link below
-    // for details.
-    // https://www.w3.org/TR/SVG/filters.html#feConvolveMatrixElementKernelUnitLengthAttribute
-    return failureDescription;
-  }
+  MOZ_ASSERT(kernelUnitLength.width > 0.0f && kernelUnitLength.height > 0.0f,
+             "Expecting positive kernelUnitLength values");
 
   ConvolveMatrixAttributes atts;
   atts.mKernelSize = IntSize(orderX, orderY);

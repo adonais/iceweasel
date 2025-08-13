@@ -705,16 +705,6 @@ skip script test262/intl402/PluralRules/prototype/resolvedOptions/order.js
 skip script test262/intl402/PluralRules/prototype/constructor/notation.js
 skip script test262/intl402/PluralRules/notation.js
 
-# https://github.com/tc39/proposal-temporal/pull/3107
-skip script test262/intl402/Temporal/ZonedDateTime/from/zoneddatetime-sub-minute-offset.js
-skip script test262/intl402/Temporal/ZonedDateTime/compare/sub-minute-offset.js
-skip script test262/intl402/Temporal/ZonedDateTime/prototype/equals/sub-minute-offset.js
-skip script test262/intl402/Temporal/ZonedDateTime/prototype/since/sub-minute-offset.js
-skip script test262/intl402/Temporal/ZonedDateTime/prototype/until/sub-minute-offset.js
-skip script test262/intl402/Temporal/Duration/compare/relativeto-sub-minute-offset.js
-skip script test262/intl402/Temporal/Duration/prototype/round/relativeto-sub-minute-offset.js
-skip script test262/intl402/Temporal/Duration/prototype/total/relativeto-sub-minute-offset.js
-
 
 ###########################################################
 # Tests disabled due to issues in test262 importer script #
@@ -949,3 +939,21 @@ skip-if(release_or_beta) script test262/intl402/Temporal/PlainMonthDay/from/cons
 # Try re-enabling when Bug 1954138 or Bug 1955545 are fixed.
 skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-islamic.js
 skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-islamic-rgsa.js
+
+# https://github.com/tc39/proposal-intl-era-monthcode/issues/23. ICU4X 2.0 doesn't have inverse type
+skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-coptic.js
+
+# https://github.com/tc39/proposal-intl-era-monthcode/issues/4. ICU4X 2.0 doesn't have inverse type
+skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-ethiopic.js
+
+# https://github.com/tc39/proposal-intl-era-monthcode/issues/23 and https://github.com/tc39/proposal-intl-era-monthcode/issues/4
+skip script test262/staging/sm/Temporal/PlainDate/non-positive-era-year.js
+
+# Canonical era names have changed.
+skip script test262/intl402/Temporal/ZonedDateTime/from/canonicalize-era-codes.js 
+skip script test262/staging/Intl402/Temporal/old/japanese-before-era.js
+skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-gregory.js
+skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-islamicc.js
+skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-islamic-civil.js
+skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-islamic-tbla.js
+skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-islamic-umalqura.js

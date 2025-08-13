@@ -8,12 +8,15 @@
 #define mozilla_widget_gtk_ScreenHelperGTK_h
 
 #include "mozilla/widget/ScreenManager.h"
-
 #include "gdk/gdk.h"
+#ifdef MOZ_WAYLAND
+#  include "nsWaylandDisplay.h"
+#endif
 
 class nsWindow;
 
 namespace mozilla::widget {
+class ScreenGetterGtk;
 
 class ScreenHelperGTK final : public ScreenManager::Helper {
  public:
@@ -23,6 +26,14 @@ class ScreenHelperGTK final : public ScreenManager::Helper {
   static int GetMonitorCount();
   static gint GetGTKMonitorScaleFactor(gint aMonitorNum = 0);
   static RefPtr<widget::Screen> GetScreenForWindow(nsWindow* aWindow);
+
+  static void RequestRefreshScreens(bool aInitialRefresh = false);
+  static int GetLastSerial() { return gLastSerial; }
+
+ private:
+  static GdkWindow* sRootWindow;
+  static StaticRefPtr<ScreenGetterGtk> gLastScreenGetter;
+  static int gLastSerial;
 };
 
 }  // namespace mozilla::widget

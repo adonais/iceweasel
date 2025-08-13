@@ -642,7 +642,7 @@ bool Channel::ChannelImpl::AcceptHandles(Message& msg) {
       }
       if (!DuplicateRealHandle(
               other_process_, ipc_handle, GetCurrentProcess(),
-              getter_Transfers(local_handle), 0, FALSE,
+              mozilla::getter_Transfers(local_handle), 0, FALSE,
               DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE)) {
         DWORD err = GetLastError();
         // Don't log out a scary looking error if this failed due to the target

@@ -2,27 +2,45 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import json
+import io
 import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from datetime import datetime, timedelta, timezone
+from enum import Enum
 from pathlib import Path
 
 import requests
+import yaml
 from colorama import Fore, Style
 from mach.decorators import (
     Command,
     CommandArgument,
     SubCommand,
 )
+from mozfile import json
+
+# The glean parser module dependency is in a different folder, so we add it to our path.
+sys.path.append(
+    str(
+        Path(
+            "toolkit", "components", "glean", "build_scripts", "glean_parser_ext"
+        ).absolute()
+    )
+)
+WEBEXT_METRICS_PATH = Path("browser", "extensions", "newtab", "webext-glue", "metrics")
+sys.path.append(str(WEBEXT_METRICS_PATH.absolute()))
+import glean_utils
+from run_glean_parser import parse_with_options
 
 FIREFOX_L10N_REPO = "https://github.com/mozilla-l10n/firefox-l10n.git"
 FLUENT_FILE = "newtab.ftl"
 WEBEXT_LOCALES_PATH = Path("browser", "extensions", "newtab", "webext-glue", "locales")
+
 LOCAL_EN_US_PATH = Path("browser", "locales", "en-US", "browser", "newtab", FLUENT_FILE)
 COMPARE_TOOL_PATH = Path(
     "third_party", "python", "moz.l10n", "moz", "l10n", "bin", "compare.py"
@@ -41,6 +59,11 @@ RELEASE_SCHEDULE_QUERY = (
     "https://whattrainisitnow.com/api/release/schedule/?version=release"
 )
 BETA_FALLBACK_THRESHOLD = timedelta(weeks=3)
+
+
+class YamlType(Enum):
+    METRICS = "metrics"
+    PINGS = "pings"
 
 
 @Command(
@@ -210,7 +233,7 @@ def update_locales(command_context):
             "message_dates": message_dates,
         }
         with open(REPORT_PATH, "w") as file:
-            json.dump(report, file, indent=4)
+            json.dump(report, file, indent=2, sort_keys=True)
         display_report(report)
         print("Wrote report to %s" % REPORT_PATH)
 
@@ -222,7 +245,7 @@ def update_locales(command_context):
 
     print("Writing supported locales to %s" % SUPPORTED_LOCALES_PATH)
     with open(SUPPORTED_LOCALES_PATH, "w") as file:
-        json.dump(supported_locales, file, indent=4)
+        json.dump(supported_locales, file, indent=2)
 
     print("Done")
 
@@ -252,6 +275,7 @@ def get_message_dates(fluent_file_path):
         ["git", "blame", "--line-porcelain", fluent_file_path],
         stdout=subprocess.PIPE,
         text=True,
+        check=False,
     )
 
     pattern = re.compile(r"^([a-z-]+[^\s]+) ")
@@ -269,10 +293,9 @@ def get_message_dates(fluent_file_path):
                 # Only store the first time it was introduced (which blame gives us)
                 entries[key] = commit_time.isoformat()
             entry = {}
-        else:
-            if " " in line:
-                key, val = line.split(" ", 1)
-                entry[key] = val
+        elif " " in line:
+            key, val = line.split(" ", 1)
+            entry[key] = val
 
     return entries
 
@@ -433,3 +456,297 @@ def display_report(report, details=None):
                 + f"{locale.ljust(REPORT_LEFT_JUSTIFY_CHARS)}0 missing translations"
             )
     print(Style.RESET_ALL, end="")
+
+
+@SubCommand(
+    "newtab",
+    "channel-metrics-diff",
+    description="Compares and produces a JSON diff between NewTab Nightly metrics and pings, using the specified channel.",
+    virtualenv_name="newtab",
+)
+@CommandArgument(
+    "--channel",
+    default="local",
+    choices=["beta", "release", "local"],
+    help="Which channel should be used to compare NewTab metrics and pings YAML",
+)
+def channel_metrics_diff(command_context, channel):
+    """
+    Fetch main and a comparison branch (beta or release) metrics.yaml, compute only the new metrics,
+    and process as before. To run use: ./mach newtab channel-metrics-diff --channel [beta|release|local]
+    This will print YAML-formatted output to stdout, showing the differences in newtab metrics and pings.
+    """
+    METRICS_LOCAL_YAML_PATH = Path("browser", "components", "newtab", "metrics.yaml")
+    PINGS_LOCAL_YAML_PATH = Path("browser", "components", "newtab", "pings.yaml")
+
+    try:
+        # Get Firefox version from version.txt
+        version_file = Path("browser", "config", "version.txt")
+        if not version_file.exists():
+            print("Error: version.txt not found")
+            return 1
+
+        with open(version_file) as f:
+            # Extract just the major version number (e.g., "141" from "141.0a1")
+            firefox_version = int(f.read().strip().split(".")[0])
+
+        # Adjust version number based on channel
+        if channel == "beta":
+            firefox_version -= 1
+        elif channel == "release":
+            firefox_version -= 2
+
+        output_filename = f"runtime-metrics-{firefox_version}.json"
+
+        # Base URL for fetching YAML files from GitHub
+        GITHUB_URL_TEMPLATE = "https://raw.githubusercontent.com/mozilla-firefox/firefox/refs/heads/{branch}/browser/components/newtab/{yaml}"
+
+        # 1. Fetch both main and comparison metrics and pings YAMLs and determine which branch to compare against
+        if channel == "local":
+            main_metrics_yaml = yaml.safe_load(open(METRICS_LOCAL_YAML_PATH))
+            compare_metrics_yaml = fetch_yaml(
+                GITHUB_URL_TEMPLATE.format(branch="main", yaml="metrics.yaml")
+            )
+            main_pings_yaml = yaml.safe_load(open(PINGS_LOCAL_YAML_PATH))
+            compare_pings_yaml = fetch_yaml(
+                GITHUB_URL_TEMPLATE.format(branch="main", yaml="pings.yaml")
+            )
+        else:
+            main_metrics_yaml = fetch_yaml(
+                GITHUB_URL_TEMPLATE.format(branch="main", yaml="metrics.yaml")
+            )
+            compare_metrics_yaml = fetch_yaml(
+                GITHUB_URL_TEMPLATE.format(branch=channel, yaml="metrics.yaml")
+            )
+            main_pings_yaml = fetch_yaml(
+                GITHUB_URL_TEMPLATE.format(branch="main", yaml="pings.yaml")
+            )
+            compare_pings_yaml = fetch_yaml(
+                GITHUB_URL_TEMPLATE.format(branch=channel, yaml="pings.yaml")
+            )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir_path = Path(temp_dir)
+
+            # 2. Process metrics and pings file
+            metrics_path = process_yaml_file(
+                main_metrics_yaml, compare_metrics_yaml, YamlType.METRICS, temp_dir_path
+            )
+            pings_path = process_yaml_file(
+                main_pings_yaml, compare_pings_yaml, YamlType.PINGS, temp_dir_path
+            )
+
+            # 3. Set up the input files
+            input_files = [metrics_path, pings_path]
+
+            # 4. Parse the YAML file
+            options = {"allow_reserved": False}
+            all_objs, options = parse_with_options(input_files, options)
+
+            # 5. Create output directory and file
+            WEBEXT_METRICS_PATH.mkdir(parents=True, exist_ok=True)
+            output_file_path = WEBEXT_METRICS_PATH / output_filename
+
+            # 6. Write to the output file
+            output_fd = io.StringIO()
+            glean_utils.output_file_with_key(all_objs, output_fd, options)
+            Path(output_file_path).write_text(output_fd.getvalue())
+
+            # 7. Print warnings for any metrics with changed types or new extra_keys
+            changed_metrics = check_existing_metrics(
+                main_metrics_yaml, compare_metrics_yaml
+            )
+            if changed_metrics:
+                print("\nWARNING: Found existing metrics with updated properties:")
+                for category, metrics in changed_metrics.items():
+                    print(f"\nCategory: {category}")
+                    for metric, changes in metrics.items():
+                        print(f"  Metric: {metric}")
+                        if "type_change" in changes:
+                            print(
+                                f"      Old type: {changes['type_change']['old_type']}"
+                            )
+                            print(
+                                f"      New type: {changes['type_change']['new_type']}"
+                            )
+                        if "new_extra_keys" in changes:
+                            print(
+                                f"    New extra keys: {', '.join(changes['new_extra_keys'])}"
+                            )
+                print(
+                    "\nPlease review above warning carefully as existing metrics update cannot be dynamically registered"
+                )
+
+    except requests.RequestException as e:
+        print(f"Network error while fetching YAML files: {e}\nPlease try again.")
+        return 1
+    except yaml.YAMLError as e:
+        print(f"YAML parsing error: {e}\nPlease check that the YAML files are valid.")
+        return 1
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return 1
+
+
+def fetch_yaml(url):
+    response = requests.get(url)
+    response.raise_for_status()
+    return yaml.safe_load(response.text)
+
+
+def process_yaml_file(main_yaml, compare_yaml, yaml_type: YamlType, temp_dir_path):
+    """Helper function to process YAML content and write to temporary file.
+
+    Args:
+        main_yaml: The main branch YAML content
+        compare_yaml: The comparison branch YAML content
+        yaml_type: YamlType Enum value to determine which comparison function to use
+        temp_dir_path: Path object for the temporary directory
+
+    Returns:
+        Path object for the created temporary file
+    """
+    if yaml_type == YamlType.METRICS:
+        new_yaml = get_new_metrics(main_yaml, compare_yaml)
+        filename = "newtab_metrics_only_new.yaml"
+    else:
+        new_yaml = get_new_pings(main_yaml, compare_yaml)
+        filename = "newtab_pings_only_new.yaml"
+
+    # Remove $tags if present to avoid invalid tag lint error
+    if "$tags" in new_yaml:
+        del new_yaml["$tags"]
+    new_yaml["no_lint"] = ["COMMON_PREFIX"]
+
+    yaml_content = yaml.dump(new_yaml, sort_keys=False)
+    print(yaml_content)
+
+    # Write to temporary file
+    file_path = temp_dir_path / filename
+    with open(file_path, "w") as f:
+        f.write(yaml_content)
+
+    return file_path
+
+
+def get_new_metrics(main_yaml, compare_yaml):
+    """Compare main and comparison YAML files to find new metrics.
+
+    This function compares the metrics defined in the main branch against those in the comparison branch
+    (beta or release) and returns only the metrics that are new in the main branch.
+
+    Args:
+        main_yaml: The YAML content from the main branch containing metric definitions
+        compare_yaml: The YAML content from the comparison branch (beta/release) containing metric definitions
+
+    Returns:
+        dict: A dictionary containing only the metrics that are new in the main branch
+    """
+    new_metrics_yaml = {}
+    for category in main_yaml:
+        if category.startswith("$"):
+            new_metrics_yaml[category] = main_yaml[category]
+            continue
+        if category not in compare_yaml:
+            new_metrics_yaml[category] = main_yaml[category]
+            continue
+        new_metrics = {}
+        for metric in main_yaml[category]:
+            if metric not in compare_yaml[category]:
+                new_metrics[metric] = main_yaml[category][metric]
+        if new_metrics:
+            new_metrics_yaml[category] = new_metrics
+    return new_metrics_yaml
+
+
+def get_new_pings(main_yaml, compare_yaml):
+    """Compare main and comparison YAML files to find new pings.
+
+    This function compares the pings defined in the main branch against those in the comparison branch
+    (beta or release) and returns only the pings that are new in the main branch.
+
+    Args:
+        main_yaml: The YAML content from the main branch containing ping definitions
+        compare_yaml: The YAML content from the comparison branch (beta/release) containing ping definitions
+
+    Returns:
+        dict: A dictionary containing only the pings that are new in the main branch
+    """
+    new_pings_yaml = {}
+    for ping in main_yaml:
+        if ping.startswith("$"):
+            new_pings_yaml[ping] = main_yaml[ping]
+            continue
+        if ping not in compare_yaml:
+            new_pings_yaml[ping] = main_yaml[ping]
+            continue
+    return new_pings_yaml
+
+
+def check_existing_metrics(main_yaml, compare_yaml):
+    """Compare metrics that exist in both YAML files for:
+    1. Changes in type property values
+    2. New extra_keys added to event type metrics
+
+    Args:
+        main_yaml: The main YAML file containing metrics
+        compare_yaml: The comparison YAML file containing metrics
+
+    Returns:
+        A dictionary containing metrics with changes, organized by category.
+            Each entry contains either:
+            - type_change: old and new type values
+            - new_extra_keys: list of newly added extra keys for event metrics
+    """
+    changed_metrics = {}
+
+    for category in main_yaml:
+        # Skip metadata categories that start with $
+        if category.startswith("$"):
+            continue
+
+        # Skip categories that don't exist in compare_yaml
+        if category not in compare_yaml:
+            continue
+
+        category_changes = {}
+        for metric in main_yaml[category]:
+            # Only check metrics that exist in both YAMLs
+            if metric in compare_yaml[category]:
+                main_metric = main_yaml[category][metric]
+                compare_metric = compare_yaml[category][metric]
+
+                # Check for type changes
+                main_type = main_metric.get("type")
+                compare_type = compare_metric.get("type")
+
+                changes = {}
+
+                # If types are different, record the change
+                if main_type != compare_type:
+                    changes["type_change"] = {
+                        "old_type": compare_type,
+                        "new_type": main_type,
+                    }
+
+                # Check for changes in extra_keys for event metrics
+                if main_type == "event" and "extra_keys" in main_metric:
+                    main_extra_keys = set(main_metric["extra_keys"].keys())
+                    compare_extra_keys = set(
+                        compare_metric.get("extra_keys", {}).keys()
+                    )
+
+                    # Find new extra keys
+                    new_extra_keys = main_extra_keys - compare_extra_keys
+                    if new_extra_keys:
+                        changes["new_extra_keys"] = list(new_extra_keys)
+
+                # Only add the metric if there were any changes
+                if changes:
+                    category_changes[metric] = changes
+
+        # Only add the category if there were changes
+        if category_changes:
+            changed_metrics[category] = category_changes
+
+    return changed_metrics

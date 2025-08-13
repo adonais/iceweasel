@@ -10,12 +10,13 @@
 #define mozilla_ScrollContainerFrame_h_
 
 #include "FrameMetrics.h"
+#include "ScrollVelocityQueue.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/WindowBinding.h"  // for mozilla::dom::ScrollBehavior
-#include "mozilla/layout/ScrollAnchorContainer.h"
 #include "mozilla/ScrollOrigin.h"
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/TypedEnumBits.h"
+#include "mozilla/dom/WindowBinding.h"  // for mozilla::dom::ScrollBehavior
+#include "mozilla/layout/ScrollAnchorContainer.h"
 #include "nsContainerFrame.h"
 #include "nsExpirationTracker.h"
 #include "nsIAnonymousContentCreator.h"
@@ -24,7 +25,6 @@
 #include "nsIStatefulFrame.h"
 #include "nsQueryFrame.h"
 #include "nsThreadUtils.h"
-#include "ScrollVelocityQueue.h"
 
 class nsPresContext;
 class nsIContent;
@@ -1108,6 +1108,7 @@ class ScrollContainerFrame : public nsContainerFrame,
   // top-layer items handle setting up their own ASRs.
   void MaybeCreateTopLayerAndWrapRootItems(
       nsDisplayListBuilder*, nsDisplayListCollection&, bool aCreateAsyncZoom,
+      bool aCapturedByViewTransition,
       AutoContainsBlendModeCapturer* aAsyncZoomBlendCapture,
       const nsRect& aAsyncZoomClipRect, nscoord* aRadii);
 

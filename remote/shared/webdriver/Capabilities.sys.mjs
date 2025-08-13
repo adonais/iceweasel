@@ -157,7 +157,7 @@ export const ProxyTypes = {
 };
 
 /** Proxy configuration object representation. */
-export class Proxy {
+export class ProxyConfiguration {
   #previousValuesForPreferences;
 
   /** @class */
@@ -338,7 +338,7 @@ export class Proxy {
       return [hostname, port];
     }
 
-    let p = new Proxy();
+    let p = new ProxyConfiguration();
     if (typeof json == "undefined" || json === null) {
       return p;
     }
@@ -373,11 +373,6 @@ export class Proxy {
         break;
 
       case "manual":
-        if (typeof json.ftpProxy != "undefined") {
-          throw new lazy.error.InvalidArgumentError(
-            "Since Firefox 90 'ftpProxy' is no longer supported"
-          );
-        }
         if (typeof json.httpProxy != "undefined") {
           [p.httpProxy, p.httpProxyPort] = fromHost("http", json.httpProxy);
         }
@@ -504,7 +499,7 @@ export class Capabilities extends Map {
       ["browserName", getWebDriverBrowserName()],
       ["browserVersion", lazy.AppInfo.version],
       ["platformName", getWebDriverPlatformName()],
-      ["proxy", new Proxy()],
+      ["proxy", new ProxyConfiguration()],
       ["unhandledPromptBehavior", new lazy.UserPromptHandler()],
       ["userAgent", lazy.userAgent],
 
@@ -543,7 +538,7 @@ export class Capabilities extends Map {
   set(key, value) {
     if (key === "timeouts" && !(value instanceof Timeouts)) {
       throw new TypeError();
-    } else if (key === "proxy" && !(value instanceof Proxy)) {
+    } else if (key === "proxy" && !(value instanceof ProxyConfiguration)) {
       throw new TypeError();
     }
 
@@ -624,7 +619,7 @@ export class Capabilities extends Map {
           break;
 
         case "proxy":
-          v = Proxy.fromJSON(v);
+          v = ProxyConfiguration.fromJSON(v);
           break;
 
         case "setWindowRect":
@@ -788,7 +783,7 @@ export class Capabilities extends Map {
         return value;
 
       case "proxy":
-        return Proxy.fromJSON(value);
+        return ProxyConfiguration.fromJSON(value);
 
       case "strictFileInteractability":
         return lazy.assert.boolean(

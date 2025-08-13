@@ -27,18 +27,42 @@
 /* Wrapper and filter styles */
 
 .page-wrapper {
-  margin: 3rem;
+  padding: 3rem;
+}
+
+.filters-wrapper,
+.top-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-large);
 }
 
 .filters-wrapper {
   position: sticky;
   top: 0;
   z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--space-large);
   background: var(--background-color-canvas);
   padding: var(--space-small);
+  flex-direction: column;
+}
+
+.top-filters {
+  width: 100%;
+}
+
+.table-filter {
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: var(--border-width) solid var(--border-color);
+
+  moz-button {
+    --button-border-radius: 0;
+    --button-border-color: var(--border-color);
+
+    min-width: fit-content;
+    flex: 1;
+    outline: 0.5px solid var(--border-color);
+  }
 }
 
 fieldset {

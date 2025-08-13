@@ -167,13 +167,15 @@ static bool SendCacheDomainRequestToAllContentProcesses(
  */
 static bool MustBeGenericAccessible(nsIContent* aContent,
                                     DocAccessible* aDocument) {
-  if (aContent->IsInNativeAnonymousSubtree() || aContent->IsSVGElement()) {
+  if (aContent->IsInNativeAnonymousSubtree() || aContent->IsSVGElement() ||
+      aContent == aDocument->DocumentNode()->GetRootElement()) {
     // We should not force create accs for anonymous content.
     // This is an issue for inputs, which have an intermediate
     // container with relevant overflow styling between the input
     // and its internal input content.
     // We should also avoid this for SVG elements (ie. `<foreignobject>`s
     // which have default overflow:hidden styling).
+    // We should avoid this for the document root.
     return false;
   }
   nsIFrame* frame = aContent->GetPrimaryFrame();
@@ -562,27 +564,15 @@ void nsAccessibilityService::NotifyOfAnchorJumpTo(nsIContent* aTargetNode) {
   if (!document) {
     return;
   }
-  // If the document has focus when we get this notification, ensure that
-  // we fire a start scrolling event.
-  const Accessible* focusedAcc = FocusedAccessible();
-  if (focusedAcc &&
-      (focusedAcc == document || focusedAcc->IsNonInteractive())) {
-    LocalAccessible* targetAcc =
-        document->GetAccessibleOrContainer(aTargetNode);
-    // If targetAcc is the document, this isn't useful. It's possible we just
-    // haven't built the initial tree yet. Regardless, we don't want to fire an
-    // event for the document here.
-    if (targetAcc && !targetAcc->IsDoc()) {
-      nsEventShell::FireEvent(nsIAccessibleEvent::EVENT_SCROLLING_START,
-                              targetAcc);
-      document->SetAnchorJump(nullptr);
-    } else {
-      // We can't find the target accessible in the document yet. Set the
-      // anchor jump so that we can fire the scrolling start event later.
-      document->SetAnchorJump(aTargetNode);
-    }
-  } else {
-    document->SetAnchorJump(aTargetNode);
+  document->SetAnchorJump(aTargetNode);
+  // If there is a pending update, the target node might not have been added to
+  // the accessibility tree yet, so do not process the anchor jump here. It will
+  // be processed in NotificationController::WillRefresh after the tree is up to
+  // date. On the other hand, if there is no pending update, process the anchor
+  // jump here because the tree is already up to date and there might not be an
+  // update in the near future.
+  if (!document->Controller()->IsUpdatePending()) {
+    document->ProcessAnchorJump();
   }
 }
 

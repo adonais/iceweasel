@@ -6,9 +6,9 @@
 
 #include "mozilla/dom/CSSMediaRule.h"
 
+#include "mozilla/ServoBindings.h"
 #include "mozilla/dom/CSSMediaRuleBinding.h"
 #include "mozilla/dom/MediaList.h"
-#include "mozilla/ServoBindings.h"
 
 namespace mozilla::dom {
 

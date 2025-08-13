@@ -1,6 +1,7 @@
-"use strict";
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
-/** Test for Bug 545812 **/
+"use strict";
 
 // List of key codes which should exit full-screen mode.
 const kKeyList = [
@@ -50,64 +51,86 @@ function receiveExpectedKeyEvents(aBrowser, aKeyCode, aTrusted) {
   );
 }
 
+async function requestFullscreenAndWait(aBrowser) {
+  await SimpleTest.promiseFocus(aBrowser);
+  await SpecialPowers.spawn(aBrowser, [], async () => {
+    // Wait for the document being activated, so that
+    // fullscreen request won't be denied.
+    await ContentTaskUtils.waitForCondition(
+      () => content.browsingContext.isActive && content.document.hasFocus(),
+      "document is active"
+    );
+
+    await new Promise(resolve => {
+      content.document.addEventListener("fullscreenchange", resolve, {
+        once: true,
+      });
+      content.document.body.requestFullscreen();
+    });
+  });
+}
+
 const kPage =
   "https://example.org/browser/" +
   "dom/base/test/fullscreen/file_fullscreen-api-keys.html";
 
-add_task(async function () {
+add_setup(async function init() {
   await pushPrefs(
     ["full-screen-api.transition-duration.enter", "0 0"],
     ["full-screen-api.transition-duration.leave", "0 0"]
   );
+});
 
-  let tab = BrowserTestUtils.addTab(gBrowser, kPage);
-  let browser = tab.linkedBrowser;
-  gBrowser.selectedTab = tab;
-  registerCleanupFunction(() => gBrowser.removeTab(tab));
-  await waitForDocLoadComplete();
-
-  // Wait for the document being activated, so that
-  // fullscreen request won't be denied.
-  await SpecialPowers.spawn(browser, [], () => {
-    return ContentTaskUtils.waitForCondition(
-      () => content.browsingContext.isActive && content.document.hasFocus(),
-      "document is active"
-    );
-  });
-
-  // Register listener to capture unexpected events
-  let keyEventsCount = 0;
-  let fullScreenEventsCount = 0;
-  let removeFullScreenListener = BrowserTestUtils.addContentEventListener(
-    browser,
-    "fullscreenchange",
-    () => fullScreenEventsCount++
-  );
-  let removeKeyDownListener = BrowserTestUtils.addContentEventListener(
-    browser,
-    "keydown",
-    () => keyEventsCount++,
-    { wantUntrusted: true }
-  );
-  let removeKeyPressListener = BrowserTestUtils.addContentEventListener(
-    browser,
-    "keypress",
-    () => keyEventsCount++,
-    { wantUntrusted: true }
-  );
-  let removeKeyUpListener = BrowserTestUtils.addContentEventListener(
-    browser,
-    "keyup",
-    () => keyEventsCount++,
-    { wantUntrusted: true }
-  );
-
-  let expectedFullScreenEventsCount = 0;
-  let expectedKeyEventsCount = 0;
-
-  for (let { key, keyCode, suppressed } of kKeyList) {
+for (let { key, keyCode, suppressed } of kKeyList) {
+  /** Test for Bug 545812 **/
+  add_task(async function testExitFullscreenByKeyboard() {
     let keyCodeValue = KeyEvent["DOM_" + keyCode];
     info(`Test keycode ${key} (${keyCodeValue})`);
+
+    let tab = BrowserTestUtils.addTab(gBrowser, kPage);
+    let browser = tab.linkedBrowser;
+    gBrowser.selectedTab = tab;
+    await waitForDocLoadComplete();
+
+    // Wait for the document being activated, so that
+    // fullscreen request won't be denied.
+    await SimpleTest.promiseFocus(browser);
+    await SpecialPowers.spawn(browser, [], () => {
+      return ContentTaskUtils.waitForCondition(
+        () => content.browsingContext.isActive && content.document.hasFocus(),
+        "document is active"
+      );
+    });
+
+    // Register listener to capture unexpected events
+    let keyEventsCount = 0;
+    let fullScreenEventsCount = 0;
+    let removeFullScreenListener = BrowserTestUtils.addContentEventListener(
+      browser,
+      "fullscreenchange",
+      () => fullScreenEventsCount++
+    );
+    let removeKeyDownListener = BrowserTestUtils.addContentEventListener(
+      browser,
+      "keydown",
+      () => keyEventsCount++,
+      { wantUntrusted: true }
+    );
+    let removeKeyPressListener = BrowserTestUtils.addContentEventListener(
+      browser,
+      "keypress",
+      () => keyEventsCount++,
+      { wantUntrusted: true }
+    );
+    let removeKeyUpListener = BrowserTestUtils.addContentEventListener(
+      browser,
+      "keyup",
+      () => keyEventsCount++,
+      { wantUntrusted: true }
+    );
+
+    let expectedFullScreenEventsCount = 0;
+    let expectedKeyEventsCount = 0;
 
     info("Enter fullscreen");
     let state = new Promise(resolve => {
@@ -203,10 +226,82 @@ add_task(async function () {
       expectedKeyEventsCount,
       "correct number of key events occurred"
     );
-  }
 
-  removeFullScreenListener();
-  removeKeyDownListener();
-  removeKeyPressListener();
-  removeKeyUpListener();
-});
+    info("Cleanup");
+    removeFullScreenListener();
+    removeKeyDownListener();
+    removeKeyPressListener();
+    removeKeyUpListener();
+    gBrowser.removeTab(tab);
+  });
+
+  /** Test for Bug 1621736 **/
+  // macOS places fullscreen windows in their own virtual desktop, and it is not
+  // possible to programmatically move focus to another chrome window in a different
+  // virtual desktop, so this test doesn't work on macOS.
+  if (AppConstants.platform != "macosx") {
+    add_task(async function testMultipleFullscreenExitByKeyboard() {
+      let keyCodeValue = KeyEvent["DOM_" + keyCode];
+      info(`Test keycode ${key} (${keyCodeValue})`);
+
+      await BrowserTestUtils.withNewTab(
+        {
+          gBrowser,
+          url: kPage,
+        },
+        async function (browser) {
+          info("Enter fullscreen");
+          await requestFullscreenAndWait(browser);
+
+          info("Open new browser window");
+          const win = await BrowserTestUtils.openNewBrowserWindow();
+          const tab = await BrowserTestUtils.openNewForegroundTab(
+            win.gBrowser,
+            kPage
+          );
+
+          info("Enter fullscreen on new browser window");
+          const newBrowser = tab.linkedBrowser;
+          await requestFullscreenAndWait(newBrowser);
+
+          let removeFullScreenListener;
+          let promiseFullscreenExit = new Promise(resolve => {
+            removeFullScreenListener = BrowserTestUtils.addContentEventListener(
+              newBrowser,
+              "fullscreenchange",
+              resolve,
+              {},
+              event => {
+                return !event.target.fullscreenElement;
+              }
+            );
+          });
+
+          info("Send key event to new browser window");
+          EventUtils.synthesizeKey("KEY_" + key, {}, win);
+          await promiseFullscreenExit;
+
+          ok(
+            await SpecialPowers.spawn(browser, [], () => {
+              return (
+                content.document.fullscreenElement == content.document.body
+              );
+            }),
+            "First browser window should still in fullscreen mode"
+          );
+
+          info("Cleanup");
+          removeFullScreenListener();
+
+          // Close opened tab
+          let tabClosed = BrowserTestUtils.waitForTabClosing(tab);
+          await BrowserTestUtils.removeTab(tab);
+          await tabClosed;
+
+          // Close opened window
+          await BrowserTestUtils.closeWindow(win);
+        }
+      );
+    });
+  }
+}

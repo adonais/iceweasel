@@ -1448,6 +1448,13 @@ export class AddonWrapper {
     return [...new Set(origins)];
   }
 
+  get hasDataCollectionPermissions() {
+    return !!(
+      this.installPermissions?.data_collection?.length ||
+      this.optionalPermissions?.data_collection?.length
+    );
+  }
+
   isCompatibleWith(aAppVersion, aPlatformVersion) {
     return addonFor(this).isCompatibleWith(aAppVersion, aPlatformVersion);
   }

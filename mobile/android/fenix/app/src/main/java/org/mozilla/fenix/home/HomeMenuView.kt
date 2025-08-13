@@ -11,8 +11,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
-import mozilla.appservices.fxaclient.FxaServer
-import mozilla.appservices.fxaclient.contentUrl
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.menu.view.MenuButton
 import mozilla.components.concept.sync.FxAEntryPoint
@@ -41,7 +39,6 @@ import org.mozilla.fenix.GleanMetrics.HomeMenu as HomeMenuMetrics
  * @param lifecycleOwner [LifecycleOwner] for the view.
  * @param homeActivity [HomeActivity] used to open URLs in a new tab.
  * @param navController [NavController] used for navigation.
- * @param homeFragment [HomeFragment] used to attach the biometric prompt.
  * @param menuButton The [MenuButton] that will be used to create a menu when the button is
  * clicked.
  * @param fxaEntrypoint The source entry point to FxA.
@@ -52,7 +49,6 @@ class HomeMenuView(
     private val lifecycleOwner: LifecycleOwner,
     private val homeActivity: HomeActivity,
     private val navController: NavController,
-    private val homeFragment: HomeFragment,
     private val menuButton: WeakReference<MenuButton>,
     private val fxaEntrypoint: FxAEntryPoint = FenixFxAEntryPoint.HomeMenu,
 ) {
@@ -146,13 +142,6 @@ class HomeMenuView(
                                 entrypoint = fxaEntrypoint as FenixFxAEntryPoint,
                             )
                     },
-                )
-            }
-            HomeMenu.Item.ManageAccountAndDevices -> {
-                homeActivity.openToBrowserAndLoad(
-                    searchTermOrURL = FxaServer.Release.contentUrl() + "/settings",
-                    newTab = true,
-                    from = BrowserDirection.FromHome,
                 )
             }
             HomeMenu.Item.Bookmarks -> {

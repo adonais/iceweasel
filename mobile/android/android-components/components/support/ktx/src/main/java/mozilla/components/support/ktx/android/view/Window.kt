@@ -12,7 +12,7 @@ import android.view.WindowManager
 import androidx.annotation.ColorInt
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsCompat.Type.displayCutout
 import androidx.core.view.WindowInsetsCompat.Type.systemBars
 import androidx.core.view.WindowInsetsControllerCompat
@@ -100,34 +100,36 @@ fun Window.setNavigationBarDividerColorCompat(@ColorInt color: Int?) {
  * This results in keeping the same behavior for such insets while allowing to separately control the behavior
  * for other dynamic insets.
  *
- * This only works on Android 13 and above. On older versions calling this will result in no-op.
+ * @param consumeInsets if true, returns [WindowInsetsCompat.CONSUMED] to notify so other listeners do not
+ * consume them as well.
  */
-fun Window.setupPersistentInsets() {
-    if (SDK_INT >= VERSION_CODES.TIRAMISU) {
-        WindowCompat.setDecorFitsSystemWindows(this, false)
+fun Window.setupPersistentInsets(consumeInsets: Boolean = false) {
+    val rootView = decorView.findViewById<View>(android.R.id.content)
+    val persistentInsetsTypes = systemBars() or displayCutout()
 
-        val rootView = decorView.findViewById<View>(android.R.id.content)
-        val persistentInsetsTypes = systemBars() or displayCutout()
-
-        ViewCompat.setOnApplyWindowInsetsListener(rootView) { _, windowInsets ->
-            val isInImmersiveMode = attributes.flags and WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS != 0
-            val persistentInsets = when (isInImmersiveMode) {
-                true -> {
-                    // If we are in immersive mode we need to reset current paddings and avoid setting others.
-                    Insets.of(0, 0, 0, 0)
-                }
-                false -> windowInsets.getInsets(persistentInsetsTypes)
+    ViewCompat.setOnApplyWindowInsetsListener(rootView) { _, windowInsets ->
+        val isInImmersiveMode = attributes.flags and WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS != 0
+        val persistentInsets = when (isInImmersiveMode) {
+            true -> {
+                // If we are in immersive mode we need to reset current paddings and avoid setting others.
+                Insets.of(0, 0, 0, 0)
             }
 
-            rootView.setPadding(
-                persistentInsets.left,
-                persistentInsets.top,
-                persistentInsets.right,
-                persistentInsets.bottom,
-            )
+            false -> windowInsets.getInsets(persistentInsetsTypes)
+        }
 
-            // Pass window insets further to allow below listeners also know when there is a change.
-            return@setOnApplyWindowInsetsListener windowInsets
+        rootView.setPadding(
+            persistentInsets.left,
+            persistentInsets.top,
+            persistentInsets.right,
+            persistentInsets.bottom,
+        )
+
+        // Pass window insets further to allow below listeners also know when there is a change.
+        if (consumeInsets) {
+            WindowInsetsCompat.CONSUMED
+        } else {
+            windowInsets
         }
     }
 }

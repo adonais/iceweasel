@@ -21,10 +21,11 @@ function TrendingSearches() {
   const { suggestions, collapsed } = TrendingSearch;
   const variant = prefs[PREF_TRENDING_VARIANT];
   let resultRef = useRef([]);
+  let contextMenuHost = useRef(null);
 
   const TRENDING_SEARCH_CONTEXT_MENU_OPTIONS = [
-    "TrendingSearchLearnMore",
     "TrendingSearchDismiss",
+    "TrendingSearchLearnMore",
   ];
 
   function onArrowClick() {
@@ -50,9 +51,42 @@ function TrendingSearches() {
     );
   }
 
+  // If the window is small, the context menu in variant B will move closer to the card
+  // so that it doesn't cut off
+  const handleContextMenuShow = () => {
+    const host = contextMenuHost.current;
+    const isRTL = document.dir === "rtl"; // returns true if page language is right-to-left
+    const checkRect = host.getBoundingClientRect();
+    const maxBounds = 200;
+
+    // Adds the class of "last-item" if the card is near the edge of the window
+    const checkBounds = isRTL
+      ? checkRect.left <= maxBounds
+      : window.innerWidth - checkRect.right <= maxBounds;
+
+    if (checkBounds) {
+      host.classList.add("last-item");
+    }
+  };
+
+  const handleContextMenuUpdate = () => {
+    const host = contextMenuHost.current;
+    if (!host) {
+      return;
+    }
+
+    host.classList.remove("last-item");
+  };
+
   const toggleContextMenu = isKeyBoard => {
     setShowContextMenu(!showContextMenu);
     setIsKeyboardAccess(isKeyBoard);
+
+    if (!showContextMenu) {
+      handleContextMenuShow();
+    } else {
+      handleContextMenuUpdate();
+    }
   };
 
   function onContextMenuClick(e) {
@@ -95,6 +129,7 @@ function TrendingSearches() {
     resultRef.current[nextIndex].tabIndex = 0;
     resultRef.current[nextIndex].focus();
   }
+
   const handleIntersection = useCallback(() => {
     dispatch(
       ac.AlsoToMain({
@@ -123,7 +158,7 @@ function TrendingSearches() {
           <span className="trending-searches-icon icon icon-arrow-trending"></span>
           <h2
             className="trending-searches-title"
-            data-l10n-id="newtab-trending-searches-trending-on-google"
+            data-l10n-id="newtab-trending-searches-title"
           ></h2>
           <div className="close-open-trending-searches">
             <moz-button
@@ -131,7 +166,7 @@ function TrendingSearches() {
               onClick={onArrowClick}
               className={`icon icon-arrowhead-up`}
               type="icon ghost"
-              data-l10n-id={`newtab-trending-searches-${collapsed ? "hide" : "show"}-trending`}
+              data-l10n-id={`newtab-trending-searches-${collapsed ? "show" : "hide"}-trending`}
             ></moz-button>
           </div>
         </div>
@@ -165,11 +200,12 @@ function TrendingSearches() {
       <div
         ref={el => {
           ref.current = [el];
+          contextMenuHost.current = el;
         }}
         className="trending-searches-list-view"
       >
         <div className="trending-searches-list-view-header">
-          <h3 data-l10n-id="newtab-trending-searches-trending-on-google"></h3>
+          <h3 data-l10n-id="newtab-trending-searches-title"></h3>
           <div className="trending-searches-context-menu-wrapper">
             <div
               className={`trending-searches-context-menu ${showContextMenu ? "context-menu-open" : ""}`}

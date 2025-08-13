@@ -1100,6 +1100,7 @@
     obj: ObjId
     index: Int32Id
     rhs: ValId
+    expectPackedElements: BoolImm
 
 - name: StoreDenseElementHole
   shared: true
@@ -2231,6 +2232,7 @@
   args:
     obj: ObjId
     index: Int32Id
+    expectPackedElements: BoolImm
 
 - name: LoadDenseElementHoleResult
   shared: true

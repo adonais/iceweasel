@@ -5,6 +5,8 @@
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   SyncedTabsController: "resource:///modules/SyncedTabsController.sys.mjs",
+  SidebarTreeView:
+    "moz-src:///browser/components/sidebar/SidebarTreeView.sys.mjs",
 });
 
 import {
@@ -24,6 +26,7 @@ class SyncedTabsInSidebar extends SidebarPage {
 
   static queries = {
     cards: { all: "moz-card" },
+    lists: { all: "sidebar-tab-list" },
     searchTextbox: "moz-input-search",
   };
 
@@ -31,6 +34,7 @@ class SyncedTabsInSidebar extends SidebarPage {
     super();
     this.onSearchQuery = this.onSearchQuery.bind(this);
     this.onSecondaryAction = this.onSecondaryAction.bind(this);
+    this.treeView = new lazy.SidebarTreeView(this, { multiSelect: false });
   }
 
   connectedCallback() {
@@ -170,11 +174,13 @@ class SyncedTabsInSidebar extends SidebarPage {
       .heading=${deviceName}
       icon
       class=${deviceType}
+      @keydown=${e => this.treeView.handleCardKeydown(e)}
     >
       <sidebar-tab-list
         compactRows
         maxTabsLength="-1"
         .tabItems=${tabItems}
+        .multiSelect=${false}
         .updatesPaused=${false}
         .searchQuery=${this.controller.searchQuery}
         @fxview-tab-list-primary-action=${navigateToLink}

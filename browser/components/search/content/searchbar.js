@@ -378,7 +378,7 @@
         );
       }
 
-      let submission = engine.getSubmission(aData, null, "searchbar");
+      let submission = engine.getSubmission(aData, null);
 
       // If we hit here, we come either from a one-off, a plain search or a suggestion.
       const details = {

@@ -317,14 +317,14 @@ void DataTransfer::GetMozTriggeringPrincipalURISpec(
   CopyUTF8toUTF16(spec, aPrincipalURISpec);
 }
 
-nsIContentSecurityPolicy* DataTransfer::GetMozCSP() {
+nsIPolicyContainer* DataTransfer::GetPolicyContainer() {
   auto* dragSession = GetOwnerDragSession();
   if (!dragSession) {
     return nullptr;
   }
-  nsCOMPtr<nsIContentSecurityPolicy> csp;
-  dragSession->GetCsp(getter_AddRefs(csp));
-  return csp;
+  nsCOMPtr<nsIPolicyContainer> policyContainer;
+  dragSession->GetPolicyContainer(getter_AddRefs(policyContainer));
+  return policyContainer;
 }
 
 already_AddRefed<FileList> DataTransfer::GetFiles(

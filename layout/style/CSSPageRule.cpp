@@ -5,11 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/CSSPageRule.h"
-#include "mozilla/dom/CSSPageRuleBinding.h"
-#include "mozilla/dom/CSSPageDescriptorsBinding.h"
 
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/CSSPageDescriptorsBinding.h"
+#include "mozilla/dom/CSSPageRuleBinding.h"
 
 namespace mozilla::dom {
 

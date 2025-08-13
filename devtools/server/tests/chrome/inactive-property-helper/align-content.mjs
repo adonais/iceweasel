@@ -6,7 +6,7 @@
 
 export default [
   {
-    info: "align-content is active on block elements when layout.css.align-content.blocks.enabled is true",
+    info: "align-content is active on block elements",
     property: "align-content",
     tagName: "div",
     rules: ["div { align-content: center; }"],

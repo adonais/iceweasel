@@ -1,0 +1,21 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+---
+$schema: moz://mozilla.org/schemas/glean/pings/2-0-0
+
+profiles:
+  description: |
+    Instrumentation for the multiple profiles feature in desktop Firefox.
+    This separate ping is used to ensure we send all recorded profiles events
+    before deleting a profile.
+  include_client_id: true
+  bugs:
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=1954674
+  data_reviews:
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=1954674
+  notification_emails:
+    - chutten@mozilla.com
+    - dtownsend@mozilla.com
+    - jhirsch@mozilla.com

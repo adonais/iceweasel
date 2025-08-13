@@ -9,10 +9,10 @@
 #ifndef mozilla_MediaFeatureChange_h__
 #define mozilla_MediaFeatureChange_h__
 
-#include "nsChangeHint.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/TypedEnumBits.h"
 #include "mozilla/ServoStyleConsts.h"
+#include "mozilla/TypedEnumBits.h"
+#include "nsChangeHint.h"
 
 namespace mozilla {
 

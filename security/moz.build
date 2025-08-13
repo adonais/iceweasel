@@ -110,6 +110,13 @@ gyp_vars["enable_draft_hpke"] = 1
 # doesn't actually matter because it's for xcode settings, which the
 # build system ignores.
 gyp_vars["iphone_deployment_target"] = "doesntmatter"
+# The definition of CK_PKCS5_PBKD2_PARAMS in PKCS#11 v2.4 has a bug which was
+# fixed, by the introduction of CK_PKCS5_PBKD2_PARAMS2, in v3.0. Starting in
+# NSS 3.114 (Bug 1836559), softoken uses an unsafe heuristic to choose which of
+# the two structs is intended. We don't need our copy of softoken to support
+# CK_PKCS5_PBKD2_PARAMS at all, so we avoid the unsafe heuristic by disabling
+# it.
+gyp_vars["use_pkcs5_pbkd2_params2_only"] = 1
 
 # Clang can build NSS with its integrated assembler since version 9.
 if (

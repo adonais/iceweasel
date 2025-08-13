@@ -12,9 +12,9 @@
 #ifndef nsStyleStructInlines_h_
 #define nsStyleStructInlines_h_
 
+#include "nsIContent.h"  // for GetParent()
 #include "nsIFrame.h"
 #include "nsStyleStruct.h"
-#include "nsIContent.h"   // for GetParent()
 #include "nsTextFrame.h"  // for nsTextFrame::ShouldSuppressLineBreak
 
 bool nsStyleText::NewlineIsSignificant(const nsTextFrame* aContextFrame) const {

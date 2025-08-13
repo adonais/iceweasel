@@ -26,7 +26,6 @@ import mozilla.components.ui.tabcounter.TabCounterMenu
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.AddressToolbar
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.tabstrip.isTabStripEnabled
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 import org.mozilla.fenix.components.toolbar.interactor.BrowserToolbarInteractor
 import org.mozilla.fenix.components.toolbar.ui.createShareBrowserAction
@@ -161,7 +160,7 @@ class DefaultToolbarIntegration(
             DisplayToolbar.Indicators.HIGHLIGHT,
         )
 
-        if (context.isTabStripEnabled()) {
+        if (context.settings().isTabStripEnabled) {
             addShareBrowserAction()
         } else {
             addNewTabBrowserAction()

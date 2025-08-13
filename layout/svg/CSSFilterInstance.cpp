@@ -179,7 +179,7 @@ nsresult CSSFilterInstance::SetAttributesForDropShadow(
 
   // Set color. If unspecified, use the CSS color property.
   nscolor shadowColor = shadow.color.CalcColor(mShadowFallbackColor);
-  atts.mColor = ToAttributeColor(shadowColor);
+  atts.mColor = sRGBColor::FromABGR(shadowColor);
 
   aDescr.Attributes() = AsVariant(std::move(atts));
   return NS_OK;
@@ -313,11 +313,6 @@ IntPoint CSSFilterInstance::OffsetToFilterSpace(nscoord aXOffsetInFrameSpace,
 
   return IntPoint(int32_t(offsetInFilterSpace.x),
                   int32_t(offsetInFilterSpace.y));
-}
-
-sRGBColor CSSFilterInstance::ToAttributeColor(nscolor aColor) {
-  return sRGBColor(NS_GET_R(aColor) / 255.0, NS_GET_G(aColor) / 255.0,
-                   NS_GET_B(aColor) / 255.0, NS_GET_A(aColor) / 255.0);
 }
 
 int32_t CSSFilterInstance::GetLastResultIndex(

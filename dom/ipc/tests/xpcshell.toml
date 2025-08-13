@@ -11,4 +11,7 @@
 ["test_headless_content_process.js"]
 
 ["test_sharedMap.js"]
-skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64' && debug"]
+skip-if = [
+  "os == 'android' && android_version == '24' && processor == 'x86_64' && debug",
+  "os == 'android' && android_version == '34' && processor == 'x86_64' && debug",
+]

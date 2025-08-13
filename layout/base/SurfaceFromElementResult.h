@@ -7,11 +7,12 @@
 #ifndef mozilla_SurfaceFromElementResult_h
 #define mozilla_SurfaceFromElementResult_h
 
+#include <cstdint>
+
 #include "ImageContainer.h"
 #include "gfxTypes.h"
 #include "mozilla/gfx/Point.h"
 #include "nsCOMPtr.h"
-#include <cstdint>
 
 class imgIContainer;
 class imgIRequest;

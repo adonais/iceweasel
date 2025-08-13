@@ -19,6 +19,41 @@ public:
   virtual ~MemMoveAnnotation() {}
 
 protected:
+  static bool is_trivially_relocatable(const TagDecl *D) {
+    if (auto RD = dyn_cast<CXXRecordDecl>(D)) {
+      // Trivially relocatable trait
+      if (RD->isCompleteDefinition() &&
+          (RD->hasTrivialMoveConstructor() ||
+           (!RD->hasMoveConstructor() && RD->hasTrivialCopyConstructor())) &&
+          RD->hasTrivialDestructor()) {
+        return true;
+      }
+      // Extension for std::unique_ptr
+      if (auto *Spec = dyn_cast<ClassTemplateSpecializationDecl>(RD)) {
+        if (getDeclarationNamespace(D) == "std" &&
+            (getNameChecked(D) == "unique_ptr")) {
+          unsigned ParameterIndex = 0;
+          const auto &TArgs = Spec->getTemplateArgs();
+          if (TArgs.size() != 2) {
+            return false; // should not happen
+          }
+          // Skip the first parameter, it's used to store the pointer and
+          // doesn't force any requirement on the unique_ptr
+          const auto &Deleter = TArgs[1];
+          if (Deleter.getKind() != TemplateArgument::Type)
+            return false;
+          QualType DeleterTy = Deleter.getAsType();
+          if (const auto *TD = DeleterTy->getAsTagDecl()) {
+            return is_trivially_relocatable(TD);
+          } else {
+            return false; // should not happen
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   std::string getImplicitReason(const TagDecl *D,
                                 VisitFlags &ToVisit) const override {
     // Annotate everything in ::std, with a few exceptions; see bug
@@ -31,11 +66,7 @@ protected:
 
     // If the type has a trivial move constructor and destructor, it is safe to
     // memmove, and we don't need to visit any fields.
-    auto RD = dyn_cast<CXXRecordDecl>(D);
-    if (RD && RD->isCompleteDefinition() &&
-        (RD->hasTrivialMoveConstructor() ||
-         (!RD->hasMoveConstructor() && RD->hasTrivialCopyConstructor())) &&
-        RD->hasTrivialDestructor()) {
+    if (is_trivially_relocatable(D)) {
       ToVisit = VISIT_NONE;
       return "";
     }

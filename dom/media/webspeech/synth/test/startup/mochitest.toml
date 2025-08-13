@@ -4,4 +4,3 @@ subsuite = "media"
 support-files = ["file_voiceschanged.html"]
 
 ["test_voiceschanged.html"]
-skip-if = ["verify"]

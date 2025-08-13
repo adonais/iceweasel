@@ -5,14 +5,18 @@
 package org.mozilla.fenix.settings.trustpanel
 
 import androidx.navigation.NavController
+import androidx.navigation.NavDirections
+import androidx.navigation.NavOptions
+import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.trustpanel.middleware.TrustPanelNavigationMiddleware
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelAction
@@ -25,7 +29,10 @@ class TrustPanelNavigationMiddlewareTest {
     val coroutinesTestRule = MainCoroutineRule()
     private val scope = coroutinesTestRule.scope
 
-    private val navController: NavController = mockk(relaxed = true)
+    private val navController: NavController = mockk(relaxed = true) {
+        every { navigate(any<NavDirections>(), any<NavOptions>()) } just runs
+        every { currentDestination?.id } returns R.id.trustPanelFragment
+    }
 
     @Test
     fun `WHEN navigate to privacy security settings action is dispatched THEN navigate to privacy and security settings`() = runTest {
@@ -34,11 +41,11 @@ class TrustPanelNavigationMiddlewareTest {
         store.dispatch(TrustPanelAction.Navigate.PrivacySecuritySettings).join()
 
         verify {
-            navController.nav(
-                R.id.trustPanelFragment,
+            navController.navigate(
                 TrustPanelFragmentDirections.actionGlobalSettingsFragment(
                     preferenceToScrollTo = privacySecurityPrefKey,
                 ),
+                null,
             )
         }
     }
@@ -49,9 +56,9 @@ class TrustPanelNavigationMiddlewareTest {
         store.dispatch(TrustPanelAction.Navigate.ManagePhoneFeature(PhoneFeature.CAMERA)).join()
 
         verify {
-            navController.nav(
-                R.id.trustPanelFragment,
+            navController.navigate(
                 TrustPanelFragmentDirections.actionGlobalSitePermissionsManagePhoneFeature(PhoneFeature.CAMERA),
+                null,
             )
         }
     }

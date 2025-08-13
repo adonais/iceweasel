@@ -359,15 +359,11 @@ pub enum SystemColor {
     #[css(skip)]
     ThemedScrollbar,
     #[css(skip)]
-    ThemedScrollbarInactive,
-    #[css(skip)]
     ThemedScrollbarThumb,
     #[css(skip)]
     ThemedScrollbarThumbHover,
     #[css(skip)]
     ThemedScrollbarThumbActive,
-    #[css(skip)]
-    ThemedScrollbarThumbInactive,
 
     #[css(skip)]
     End, // Just for array-indexing purposes.
@@ -533,7 +529,7 @@ impl ToCss for Color {
             #[cfg(feature = "gecko")]
             Color::System(system) => system.to_css(dest),
             #[cfg(feature = "gecko")]
-            Color::InheritFromBodyQuirk => Ok(()),
+            Color::InheritFromBodyQuirk => dest.write_str("-moz-inherit-from-body-quirk"),
         }
     }
 }

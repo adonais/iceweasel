@@ -17,7 +17,6 @@ class L10n:
         from marionette_driver.localization import L10n
         l10n = L10n(marionette)
 
-        l10n.localize_entity(["chrome://branding/locale/brand.dtd"], "brandShortName")
         l10n.localize_property(["chrome://global/locale/findbar.properties"], "FastFind"))
 
     .. _localization: https://mzl.la/2eUMjyF
@@ -25,18 +24,6 @@ class L10n:
 
     def __init__(self, marionette):
         self._marionette = marionette
-
-    def localize_entity(self, dtd_urls, entity_id):
-        """Retrieve the localized string for the specified entity id.
-
-        :param dtd_urls: List of .dtd URLs which will be used to search for the entity.
-        :param entity_id: ID of the entity to retrieve the localized string for.
-
-        :returns: The localized string for the requested entity.
-        :raises: :exc:`NoSuchElementException`
-        """
-        body = {"urls": dtd_urls, "id": entity_id}
-        return self._marionette._send_message("L10n:LocalizeEntity", body, key="value")
 
     def localize_property(self, properties_urls, property_id):
         """Retrieve the localized string for the specified property id.

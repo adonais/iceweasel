@@ -197,13 +197,14 @@ class nsFrameLoader final : public nsStubMutationObserver,
    * @param aTriggeringPrincipal The triggering principal for the load. May be
    *        null, in which case the node principal of the owner content will be
    *        used.
-   * @param aCsp The CSP to be used for the load. That is not the CSP to be
-   *        applied to subresources within the frame, but to the iframe load
-   *        itself. E.g. if the CSP holds upgrade-insecure-requests the the
-   *        frame load is upgraded from http to https.
+   * @param aPolicyContainer The policyContainer to be used for the load. That
+   * is not the policyContainer to be applied to subresources within the frame,
+   * but to the iframe load itself. E.g. if the policyContainer's CSP holds
+   * upgrade-insecure-requests the the frame load is upgraded from http to
+   * https.
    */
   nsresult LoadURI(nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal,
-                   nsIContentSecurityPolicy* aCsp, bool aOriginalSrc,
+                   nsIPolicyContainer* aPolicyContainer, bool aOriginalSrc,
                    bool aShouldCheckForRecursion);
 
   /**
@@ -384,7 +385,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   void ApplySandboxFlags(uint32_t sandboxFlags);
 
   void GetURL(nsString& aURL, nsIPrincipal** aTriggeringPrincipal,
-              nsIContentSecurityPolicy** aCsp);
+              nsIPolicyContainer** aPolicyContainer);
 
   // Properly retrieves documentSize of any subdocument type.
   nsresult GetWindowDimensions(mozilla::LayoutDeviceIntRect& aRect);
@@ -497,7 +498,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
   RefPtr<mozilla::dom::BrowsingContext> mPendingBrowsingContext;
   nsCOMPtr<nsIURI> mURIToLoad;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-  nsCOMPtr<nsIContentSecurityPolicy> mCsp;
+  nsCOMPtr<nsIPolicyContainer> mPolicyContainer;
   nsCOMPtr<nsIOpenWindowInfo> mOpenWindowInfo;
   mozilla::dom::Element* mOwnerContent;  // WEAK
 

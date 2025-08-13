@@ -1283,6 +1283,7 @@ extern "C" {
         id: NativeSurfaceId,
         size: DeviceIntSize,
         is_opaque: bool,
+        needs_sync_dcomp_commit: bool,
     );
     fn wr_compositor_resize_swapchain(compositor: *mut c_void, id: NativeSurfaceId, size: DeviceIntSize);
     fn wr_compositor_create_external_surface(compositor: *mut c_void, id: NativeSurfaceId, is_opaque: bool);
@@ -1538,6 +1539,7 @@ pub struct WrLayerCompositor {
     surface_pool: Vec<NativeLayer>,
     visual_tree: Vec<NativeLayer>,
     enable_screenshot: bool,
+    frames_since_using_multiple_layers: Option<u32>,
 }
 
 impl WrLayerCompositor {
@@ -1547,7 +1549,8 @@ impl WrLayerCompositor {
             next_layer_id: 0,
             surface_pool: Vec::new(),
             visual_tree: Vec::new(),
-            enable_screenshot: true,
+            enable_screenshot: false,
+            frames_since_using_multiple_layers: None,
         }
     }
 
@@ -1596,6 +1599,31 @@ impl WrLayerCompositor {
 
         true
     }
+
+    fn use_multiple_layers_except_debug_layer(
+        &mut self,
+        input: &CompositorInputConfig,
+        ) -> bool {
+
+        let is_debug_layer = |usage: &CompositorSurfaceUsage| -> bool {
+            match usage {
+                CompositorSurfaceUsage::DebugOverlay => {
+                    true
+                },
+                CompositorSurfaceUsage::Content |
+                CompositorSurfaceUsage::External { .. } => {
+                    false
+                },
+            }
+        };
+
+        let count = input.layers
+            .iter()
+            .filter(|layer| !is_debug_layer(&layer.usage))
+            .count();
+
+        count > 1
+    }
 }
 
 impl LayerCompositor for WrLayerCompositor {
@@ -1604,15 +1632,62 @@ impl LayerCompositor for WrLayerCompositor {
         &mut self,
         input: &CompositorInputConfig,
     ) -> bool {
+        const FRAME_COUNT_BEFORE_DISABLING_SYNC_DCOMP_COMMIT: u32  = 60;
+
+        let mut destroy_all_layers = false;
         if self.enable_screenshot != input.enable_screenshot {
+            if input.enable_screenshot {
+                // Screenshot should not use multiple layers.
+                assert!(!self.use_multiple_layers_except_debug_layer(input));
+                // Force to disable requesting sync dcomp commit.
+                self.frames_since_using_multiple_layers = None;
+            } else {
+                assert!(self.frames_since_using_multiple_layers.is_none());
+            }
+            self.enable_screenshot = input.enable_screenshot;
+            destroy_all_layers = true;
+        }
+
+        if self.use_multiple_layers_except_debug_layer(input) {
+            assert!(!self.enable_screenshot);
+
+            if self.frames_since_using_multiple_layers.is_none() {
+                destroy_all_layers = true;
+            }
+            // Use of multiple layers requests sync dcomp commit.
+            self.frames_since_using_multiple_layers = Some(0);
+        } else {
+            match self.frames_since_using_multiple_layers {
+                None => {
+                    // Do not request sync dcomp commit.
+                }
+                Some(count) => {
+                    if count < FRAME_COUNT_BEFORE_DISABLING_SYNC_DCOMP_COMMIT {
+                        // Keep to requet sync dcomp commit to avoid frequent layers creation.
+                        self.frames_since_using_multiple_layers = Some(count + 1);
+                    } else {
+                        destroy_all_layers = true;
+                        // Stop to requet sync dcomp commit.
+                        self.frames_since_using_multiple_layers = None;
+                    }
+                }
+            }
+        };
+
+        // Request sync dcomp commit if multiple layers are using/used.
+        let needs_sync_dcomp_commit = self.frames_since_using_multiple_layers.is_some();
+
+        // Discard all layers to recreate them
+        if destroy_all_layers {
             let mut layers_to_destroy = Vec::new();
+            self.surface_pool.append(&mut self.visual_tree);
+            assert!(self.visual_tree.is_empty());
             mem::swap(&mut self.surface_pool, &mut layers_to_destroy);
             for layer in layers_to_destroy {
                 unsafe {
                     wr_compositor_destroy_surface(self.compositor, layer.id);
                 }
             }
-            self.enable_screenshot = input.enable_screenshot;
         }
 
         unsafe {
@@ -1626,7 +1701,6 @@ impl LayerCompositor for WrLayerCompositor {
         }
 
         self.surface_pool.append(&mut self.visual_tree);
-
         assert!(self.visual_tree.is_empty());
 
         for request in input.layers {
@@ -1655,7 +1729,12 @@ impl LayerCompositor for WrLayerCompositor {
                     unsafe {
                         match request.usage {
                             CompositorSurfaceUsage::Content | CompositorSurfaceUsage::DebugOverlay => {
-                                wr_compositor_create_swapchain_surface(self.compositor, id, size, request.is_opaque);
+                                wr_compositor_create_swapchain_surface(
+                                    self.compositor,
+                                    id,
+                                    size,
+                                    request.is_opaque,
+                                    needs_sync_dcomp_commit);
                             },
                             CompositorSurfaceUsage::External { .. } => {
                                 wr_compositor_create_external_surface(self.compositor, id, request.is_opaque);
@@ -2064,6 +2143,12 @@ pub extern "C" fn wr_window_new(
         }
     };
 
+    let enable_dithering = if !software && static_prefs::pref!("gfx.webrender.dithering") {
+        true
+    } else {
+        false
+    };
+
     let opts = WebRenderOptions {
         enable_aa: true,
         enable_subpixel_aa,
@@ -2118,6 +2203,7 @@ pub extern "C" fn wr_window_new(
         reject_software_rasterizer,
         low_quality_pinch_zoom,
         max_shared_surface_size,
+        enable_dithering,
         ..Default::default()
     };
 
@@ -2347,8 +2433,8 @@ pub extern "C" fn wr_transaction_set_document_view(txn: &mut Transaction, doc_re
 }
 
 #[no_mangle]
-pub extern "C" fn wr_transaction_generate_frame(txn: &mut Transaction, id: u64, present: bool, reasons: RenderReasons) {
-    txn.generate_frame(id, present, reasons);
+pub extern "C" fn wr_transaction_generate_frame(txn: &mut Transaction, id: u64, present: bool, tracked: bool, reasons: RenderReasons) {
+    txn.generate_frame(id, present, tracked, reasons);
 }
 
 #[no_mangle]
@@ -2690,7 +2776,7 @@ pub extern "C" fn wr_resource_updates_add_raw_font(
     txn.add_raw_font(key, bytes.flush_into_vec(), index);
 }
 
-fn generate_capture_path(path: *const c_char) -> Option<PathBuf> {
+fn generate_capture_path(path: *const c_char, moz_revision: *const c_char) -> Option<PathBuf> {
     use std::fs::{create_dir_all, File};
     use std::io::Write;
 
@@ -2731,8 +2817,10 @@ fn generate_capture_path(path: *const c_char) -> Option<PathBuf> {
     match File::create(path.join("wr.txt")) {
         Ok(mut file) => {
             // The Gecko HG revision is available at compile time
-            if let Some(moz_revision) = option_env!("GECKO_HEAD_REV") {
-                writeln!(file, "mozilla-central {}", moz_revision).unwrap();
+            if ! moz_revision.is_null() {
+                if let Ok(moz_revision) = unsafe { CStr::from_ptr(moz_revision) }.to_str() {
+                    writeln!(file, "mozilla-central {}", moz_revision).unwrap()
+                }
             }
             Some(path)
         },
@@ -2744,16 +2832,16 @@ fn generate_capture_path(path: *const c_char) -> Option<PathBuf> {
 }
 
 #[no_mangle]
-pub extern "C" fn wr_api_capture(dh: &mut DocumentHandle, path: *const c_char, bits_raw: u32) {
-    if let Some(path) = generate_capture_path(path) {
+pub extern "C" fn wr_api_capture(dh: &mut DocumentHandle, path: *const c_char, moz_revision: *const c_char, bits_raw: u32) {
+    if let Some(path) = generate_capture_path(path, moz_revision) {
         let bits = CaptureBits::from_bits(bits_raw as _).unwrap();
         dh.api.save_capture(path, bits);
     }
 }
 
 #[no_mangle]
-pub extern "C" fn wr_api_start_capture_sequence(dh: &mut DocumentHandle, path: *const c_char, bits_raw: u32) {
-    if let Some(path) = generate_capture_path(path) {
+pub extern "C" fn wr_api_start_capture_sequence(dh: &mut DocumentHandle, path: *const c_char, moz_revision: *const c_char, bits_raw: u32) {
+    if let Some(path) = generate_capture_path(path, moz_revision) {
         let bits = CaptureBits::from_bits(bits_raw as _).unwrap();
         dh.api.start_capture_sequence(path, bits);
     }
@@ -4526,8 +4614,11 @@ pub extern "C" fn wr_shaders_new(
 
     device.begin_frame();
 
+    let mut options = WebRenderOptions::default();
+    options.enable_dithering = static_prefs::pref!("gfx.webrender.dithering");
+
     let gl_type = device.gl().get_type();
-    let mut shaders = match Shaders::new(&mut device, gl_type, &WebRenderOptions::default()) {
+    let mut shaders = match Shaders::new(&mut device, gl_type, &options) {
         Ok(shaders) => shaders,
         Err(e) => {
             warn!(" Failed to create a Shaders: {:?}", e);

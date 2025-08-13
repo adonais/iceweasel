@@ -5,12 +5,19 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 
 const BASE_URL = "https://example.com/";
 
+// Use a different origin so HTTP doesn't upgrade to HTTPS.
+// eslint-disable-next-line @microsoft/sdl/no-insecure-url
+const BASE_URL_HTTP = "http://mochi.test:8888/";
+const HIDDEN_URI = "about:about";
+
 ChromeUtils.defineESModuleGetters(this, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   FileTestUtils: "resource://testing-common/FileTestUtils.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
   TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
   TaskbarTabsPin: "resource:///modules/taskbartabs/TaskbarTabsPin.sys.mjs",
+  TaskbarTabsPageAction:
+    "resource:///modules/taskbartabs/TaskbarTabsPageAction.sys.mjs",
 });
 
 sinon.stub(TaskbarTabsPin, "pinTaskbarTab");
@@ -144,6 +151,34 @@ add_task(async function test_taskbar_tabs_page_action() {
   BrowserTestUtils.removeTab(tab2);
 });
 
+add_task(async function testRightClick() {
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser: window.gBrowser,
+    url: BASE_URL,
+  });
+  // Don't synthesize a event with e.g. TestUtils, since testing whether it
+  // does nothing means there aren't really any great synchronization options.
+  // TaskbarTabsPageAction.handleEvent is async but handling the event drops the
+  // promise, so we don't know when it's finished. Also, there are barely any
+  // observable results: the whole point is that it does nothing.
+  await TaskbarTabsPageAction.handleEvent({
+    type: "click",
+    button: 2,
+    target: document.getElementById("taskbar-tabs-button"),
+  });
+
+  const uri = Services.io.newURI(BASE_URL);
+  const taskbarTab = await TaskbarTabs.findOrCreateTaskbarTab(uri, 0);
+  is(
+    await TaskbarTabs.getCountForId(taskbarTab.id),
+    0,
+    "right-click did nothing"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  await TaskbarTabs.removeTaskbarTab(taskbarTab.id);
+});
+
 // Browser tests start with a window1. Convert a tab in this window into a web
 // app. Then open another window, window2. Click "revert" on the web app, the
 // tab should be back to window1.
@@ -194,4 +229,94 @@ add_task(async function revertToMostRecent() {
     BrowserTestUtils.closeWindow(secondWin),
     BrowserTestUtils.closeWindow(thirdWin),
   ]);
+});
+
+add_task(async function testVariousVisibilityChanges() {
+  const argsList = [
+    [BASE_URL, HIDDEN_URI, true, false],
+    [BASE_URL_HTTP, HIDDEN_URI, true, false],
+    [BASE_URL, BASE_URL_HTTP, true, true],
+    [HIDDEN_URI, BASE_URL, false, true],
+    [HIDDEN_URI, BASE_URL_HTTP, false, true],
+  ];
+
+  for (const args of argsList) {
+    await testVisibilityChange(...args);
+  }
+});
+
+async function testVisibilityChange(aFrom, aTo, aFirstVisible, aSecondVisible) {
+  const element = document.getElementById("taskbar-tabs-button");
+  let locationChange;
+
+  locationChange = BrowserTestUtils.waitForLocationChange(gBrowser, aFrom);
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    aFrom,
+    false
+  );
+
+  await locationChange;
+  is(
+    element.hidden,
+    !aFirstVisible,
+    `Page action is ${aFirstVisible ? "" : "not "}hidden on ${getURIScheme(aFrom)} new tab`
+  );
+
+  locationChange = BrowserTestUtils.waitForLocationChange(gBrowser, aTo);
+  BrowserTestUtils.startLoadingURIString(gBrowser, aTo);
+
+  await locationChange;
+  is(
+    element.hidden,
+    !aSecondVisible,
+    `Page action is ${aSecondVisible ? "" : "not "}hidden on ${getURIScheme(aTo)} reused tab`
+  );
+
+  BrowserTestUtils.removeTab(tab);
+}
+
+add_task(async function testIframeNavigationIsIgnored() {
+  // Navigation within an iframe issues events very similar to top-level navigation.
+  // We only want top-level, so test that nothing happens.
+  const element = document.getElementById("taskbar-tabs-button");
+
+  await BrowserTestUtils.withNewTab("data:text/plain,", async browser => {
+    ok(element.hidden, "Page action is hidden on about: scheme");
+
+    await SpecialPowers.spawn(browser, [], async () => {
+      content.document.body.innerHTML =
+        "<iframe id='iframe' src='https://example.com'></iframe><p>taskbartabs!</p>";
+      await new Promise(resolve => {
+        content.document
+          .getElementById("iframe")
+          .addEventListener("load", _e => resolve(), { once: true });
+      });
+    });
+
+    ok(element.hidden, "Page action is still hidden despite iframe change");
+  });
+});
+
+function getURIScheme(uri) {
+  return Services.io.newURI(uri).scheme;
+}
+
+add_task(async function testPrefIsMonitored() {
+  const element = document.getElementById("taskbar-tabs-button");
+
+  await BrowserTestUtils.withNewTab(BASE_URL, async () => {
+    ok(!element.hidden, "Page action starts as visible");
+    await testVisibilityChange(BASE_URL, HIDDEN_URI, true, false);
+
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.taskbarTabs.enabled", false]],
+    });
+    ok(element.hidden, "Page action becomes invisible");
+    await testVisibilityChange(BASE_URL, HIDDEN_URI, false, false);
+
+    await SpecialPowers.popPrefEnv();
+    ok(!element.hidden, "Page action becomes visible again");
+    await testVisibilityChange(BASE_URL, HIDDEN_URI, true, false);
+  });
 });

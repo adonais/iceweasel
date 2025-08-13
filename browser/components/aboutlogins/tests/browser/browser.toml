@@ -58,6 +58,10 @@ run-if = [
 ]
 
 ["browser_openImportCSV.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && asan && swgl", # Bug 1775754
+  "os == 'mac' && os_version == '15.00' && arch == 'aarch64'", # Bug 1775754
+]
 
 ["browser_openPreferences.js"]
 

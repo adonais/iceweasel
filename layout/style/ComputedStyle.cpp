@@ -7,32 +7,29 @@
 /* the interface (to internal code) for retrieving computed style data */
 
 #include "mozilla/ComputedStyle.h"
+
+#include "RubyUtils.h"
+#include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/ToString.h"
-
+#include "mozilla/dom/Document.h"
+#include "nsCOMPtr.h"
 #include "nsCSSAnonBoxes.h"
 #include "nsCSSPseudoElements.h"
+#include "nsCoord.h"
 #include "nsFontMetrics.h"
+#include "nsLayoutUtils.h"
+#include "nsPresContext.h"
+#include "nsPrintfCString.h"
+#include "nsString.h"
 #include "nsStyleConsts.h"
 #include "nsStyleStruct.h"
 #include "nsStyleStructInlines.h"
-#include "nsString.h"
-#include "nsPresContext.h"
 #include "nsWindowSizes.h"
-
-#include "nsCOMPtr.h"
-
-#include "mozilla/dom/Document.h"
-#include "nsPrintfCString.h"
-#include "RubyUtils.h"
-#include "mozilla/ComputedStyleInlines.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/ProfilerLabels.h"
-
-#include "mozilla/ReflowInput.h"
-#include "nsLayoutUtils.h"
-#include "nsCoord.h"
 
 // Ensure the binding function declarations in ComputedStyle.h matches
 // those in ServoBindings.h.
@@ -429,5 +426,30 @@ void ComputedStyle::DumpMatchedRules() const {
   Servo_ComputedValues_DumpMatchedRules(this);
 }
 #endif
+
+bool ComputedStyle::HasAnchorPosReference() const {
+  const auto* pos = StylePosition();
+  if (pos->mPositionAnchor.IsIdent()) {
+    // Short circuit if there's a default anchor defined, even if
+    // it may not end up being referenced.
+    return true;
+  }
+
+  // Now check if any property that can use anchor() or anchor-size()
+  // does use any. Note that it's valid to specify e.g. left: anchor(left);
+  // but without specifying position-anchor, in which case the function
+  // makes no anchor reference.
+  return pos->mOffset.Any([](const StyleInset& aInset) {
+    return aInset.HasAnchorPositioningFunction();
+  }) || pos->mWidth.HasAnchorPositioningFunction() ||
+         pos->mHeight.HasAnchorPositioningFunction() ||
+         pos->mMinHeight.HasAnchorPositioningFunction() ||
+         pos->mMinHeight.HasAnchorPositioningFunction() ||
+         pos->mMaxHeight.HasAnchorPositioningFunction() ||
+         pos->mMaxHeight.HasAnchorPositioningFunction() ||
+         StyleMargin()->mMargin.Any([](const ::mozilla::StyleMargin& aMargin) {
+           return aMargin.HasAnchorPositioningFunction();
+         });
+}
 
 }  // namespace mozilla

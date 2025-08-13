@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.awesomebar.provider
 
-import android.content.Context
 import android.graphics.Bitmap
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.store.BrowserStore
@@ -86,7 +85,6 @@ class SearchSuggestionProvider private constructor(
      * Creates a [SearchSuggestionProvider] using the default engine as provided by the given
      * [BrowserStore].
      *
-     * @param context the activity or application context, required to load search engines.
      * @param store The [BrowserStore] to look up search engines.
      * @param searchUseCase The use case to invoke for searches.
      * @param fetchClient The HTTP client for requesting suggestions from the search engine.
@@ -102,7 +100,6 @@ class SearchSuggestionProvider private constructor(
      * @param suggestionsHeader Optional suggestions header to display.
      */
     constructor(
-        context: Context,
         store: BrowserStore,
         searchUseCase: SearchUseCases.SearchUseCase,
         fetchClient: Client,
@@ -115,7 +112,7 @@ class SearchSuggestionProvider private constructor(
         private: Boolean = false,
         suggestionsHeader: String? = null,
     ) : this (
-        SearchSuggestionClient(context, store) { url -> fetch(fetchClient, url, private) },
+        SearchSuggestionClient(store) { url -> fetch(fetchClient, url, private) },
         searchUseCase,
         limit,
         mode,

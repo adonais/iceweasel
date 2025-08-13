@@ -770,9 +770,10 @@ tags = "cloneelementvisually"
 
 ["test_cloneElementVisually_resource_change.html"]
 skip-if = [
-  "os == 'linux' && !(debug || asan || tsan)",  # Bug 1559308 - lower frequency intermittent
-  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'",  # Bug 1909908
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",  # Bug 1909908
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt", # Bug 1559308 - lower frequency intermittent
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && ccov", # Bug 1559308 - lower frequency intermittent
+  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1909908
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1909908
 ]
 tags = "cloneelementvisually os_integration"
 
@@ -799,12 +800,7 @@ run-if = [
 ]
 scheme = "https"
 tags = "os_integration"
-skip-if = [
-  "!mda_gpu",
-  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && opt", # Bug 1862181
-  "os == 'mac' && os_version == '15.00' && processor == 'aarch64' && opt && socketprocess_networking", # Bug 1862181
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && opt", # Bug 1862181
-]
+skip-if = ["!mda_gpu"]
 
 ["test_imagecapture.html"]
 scheme = "https"
@@ -839,6 +835,8 @@ skip-if = [
 ["test_multiple_mediastreamtracks.html"]
 skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64'"] # TIMEOUT
 scheme = "https"
+
+["test_networkconnection_spoofing.html"]
 
 ["test_play_events_2.html"]
 
@@ -880,9 +878,7 @@ tags = "capturestream"
 skip-if = ["true"] # bug 1021673
 
 ["test_seamless_looping.html"]
-skip-if = [
-  "apple_catalina && debug", # Bug 1796318
-]
+skip-if = ["apple_catalina && debug"] # Bug 1796318
 
 ["test_seamless_looping_cancel_looping_future_frames.html"]
 
@@ -911,7 +907,11 @@ skip-if = [
 ]
 
 ["test_temporary_file_blob_video_plays.html"]
-skip-if = ["os == 'android'"] # bug 1533534 # android(bug 1232305)
+skip-if = [
+  "os == 'android'", # bug 1533534 # android(bug 1232305)
+  "os == 'linux' && mda_gpu",
+]
+
 
 ["test_videoPlaybackQuality_totalFrames.html"]
 skip-if = ["os == 'win'"] # bug 1374189

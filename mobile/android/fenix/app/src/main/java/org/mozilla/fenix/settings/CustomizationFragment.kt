@@ -11,19 +11,19 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.PreferenceScreen
 import androidx.preference.SwitchPreference
+import org.mozilla.fenix.Config
 import org.mozilla.fenix.FeatureFlags
 import org.mozilla.fenix.GleanMetrics.AppTheme
 import org.mozilla.fenix.GleanMetrics.CustomizationSettings
 import org.mozilla.fenix.GleanMetrics.PullToRefreshInBrowser
 import org.mozilla.fenix.GleanMetrics.ToolbarSettings
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.tabstrip.isTabStripEnabled
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.view.addToRadioGroup
 
 /**
@@ -54,20 +54,34 @@ class CustomizationFragment : PreferenceFragmentCompat() {
         bindLightTheme()
         bindAutoBatteryTheme()
         setupRadioGroups()
-        val tabletAndTabStripEnabled = requireContext().isTabStripEnabled()
-        if (tabletAndTabStripEnabled) {
-            val preferenceScreen: PreferenceScreen =
-                requirePreference(R.string.pref_key_customization_preference_screen)
-            val toolbarPrefCategory: PreferenceCategory =
-                requirePreference(R.string.pref_key_customization_category_toolbar)
-            preferenceScreen.removePreference(toolbarPrefCategory)
-        } else {
-            setupToolbarCategory()
-        }
+        val tabletAndTabStripEnabled = Settings(requireContext()).isTabStripEnabled
+        updateToolbarCategoryBasedOnTabStrip(tabletAndTabStripEnabled)
+        setupTabStripCategory()
+        setupToolbarLayout()
 
         // if tab strip is enabled, swipe toolbar to switch tabs should not be enabled so the
         // preference is not shown
         setupGesturesCategory(isSwipeToolbarToSwitchTabsVisible = !tabletAndTabStripEnabled)
+        setupAppIconCategory()
+    }
+
+    private fun updateToolbarCategoryBasedOnTabStrip(
+        tabStripEnabled: Boolean,
+    ) {
+        val topPreference = requirePreference<RadioButtonPreference>(R.string.pref_key_toolbar_top)
+        val bottomPreference = requirePreference<RadioButtonPreference>(R.string.pref_key_toolbar_bottom)
+        val tabStripMessagePref = findPreference<Preference>(getString(R.string.pref_key_tab_strip_message))
+
+        topPreference.isEnabled = !tabStripEnabled
+        bottomPreference.isEnabled = !tabStripEnabled
+        tabStripMessagePref?.isVisible = tabStripEnabled
+
+        if (tabStripEnabled && !topPreference.isChecked) {
+            topPreference.setCheckedWithoutClickListener(true)
+            bottomPreference.setCheckedWithoutClickListener(false)
+        } else {
+            setupToolbarCategory()
+        }
     }
 
     private fun setupRadioGroups() {
@@ -153,6 +167,29 @@ class CustomizationFragment : PreferenceFragmentCompat() {
         addToRadioGroup(topPreference, bottomPreference)
     }
 
+    private fun setupTabStripCategory() {
+        val tabStripSwitch = requirePreference<SwitchPreference>(R.string.pref_key_tab_strip_show)
+        val context = requireContext()
+
+        tabStripSwitch.isChecked = Settings(requireContext()).isTabStripEnabled
+
+        tabStripSwitch.setOnPreferenceChangeListener { _, newValue ->
+            val enabled = newValue as Boolean
+            context.settings().isTabStripEnabled = enabled
+            updateToolbarCategoryBasedOnTabStrip(enabled)
+            setupToolbarLayout()
+            true
+        }
+    }
+
+    private fun setupToolbarLayout() {
+        val settings = requireContext().settings()
+        (requirePreference(R.string.pref_key_customization_category_toolbar_layout) as PreferenceCategory).apply {
+            isVisible = Config.channel.isDebug && settings.shouldUseComposableToolbar && settings.toolbarRedesignEnabled
+            isEnabled = !settings.isTabStripEnabled
+        }
+    }
+
     private fun setupGesturesCategory(isSwipeToolbarToSwitchTabsVisible: Boolean) {
         requirePreference<SwitchPreference>(R.string.pref_key_website_pull_to_refresh).apply {
             isVisible = FeatureFlags.PULL_TO_REFRESH_ENABLED
@@ -167,6 +204,12 @@ class CustomizationFragment : PreferenceFragmentCompat() {
             isChecked = context.settings().isSwipeToolbarToSwitchTabsEnabled
             isVisible = isSwipeToolbarToSwitchTabsVisible
             onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+    }
+
+    private fun setupAppIconCategory() {
+        requirePreference<PreferenceCategory>(R.string.pref_key_customization_category_app_icon).apply {
+           isVisible = FeatureFlags.alternativeAppIconFeatureEnabled
         }
     }
 

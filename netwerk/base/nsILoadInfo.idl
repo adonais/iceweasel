@@ -11,6 +11,7 @@
 
 interface nsIChannel;
 interface nsIContentSecurityPolicy;
+interface nsIPolicyContainer;
 interface nsICookieJarSettings;
 interface nsICSPEventListener;
 interface nsINode;
@@ -59,6 +60,7 @@ native OriginAttributes(mozilla::OriginAttributes);
 [ptr] native PerformanceStoragePtr(mozilla::dom::PerformanceStorage);
       native LoadTainting(mozilla::LoadTainting);
       native CSPRef(already_AddRefed<nsIContentSecurityPolicy>);
+      native PolicyContainerRef(already_AddRefed<nsIPolicyContainer>);
       native MaybeFeaturePolicyInfo(mozilla::Maybe<mozilla::dom::FeaturePolicyInfo>);
 [ref] native const_FeaturePolicyInfoRef(const mozilla::dom::FeaturePolicyInfo);
       native MaybeRequestMode(mozilla::Maybe<mozilla::dom::RequestMode>);
@@ -1425,9 +1427,10 @@ interface nsILoadInfo : nsISupports
    * After evaluating what CSP to use for frame navigations we should
    * update the above documentation to match the outcome of Bug 1557114.
    */
-  [notxpcom,nostdcall] CSPRef GetCsp();
   [notxpcom,nostdcall] CSPRef GetPreloadCsp();
-  [notxpcom,nostdcall] CSPRef GetCspToInherit();
+
+  [notxpcom,nostdcall] PolicyContainerRef GetPolicyContainer();
+  [notxpcom,nostdcall] PolicyContainerRef GetPolicyContainerToInherit();
 
   /**
     * The possibly cross-origin container feature policy required to

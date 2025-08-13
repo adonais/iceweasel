@@ -784,19 +784,6 @@ impl<'le> GeckoElement<'le> {
     }
 
     #[inline]
-    fn before_or_after_pseudo(&self, is_before: bool) -> Option<Self> {
-        if !self.has_properties() {
-            return None;
-        }
-
-        unsafe {
-            bindings::Gecko_GetBeforeOrAfterPseudo(self.0, is_before)
-                .as_ref()
-                .map(GeckoElement)
-        }
-    }
-
-    #[inline]
     fn may_have_style_attribute(&self) -> bool {
         self.as_node()
             .get_bool_flag(nsINode_BooleanFlag::ElementMayHaveStyle)
@@ -1019,7 +1006,7 @@ fn get_animation_rule(
 pub unsafe fn namespace_id_to_atom(id: i32) -> *mut nsAtom {
     unsafe {
         let namespace_manager = structs::nsNameSpaceManager_sInstance.mRawPtr;
-        (*namespace_manager).mURIArray[id as usize].mRawPtr
+        (&(*namespace_manager).mURIArray)[id as usize].mRawPtr
     }
 }
 
@@ -1079,26 +1066,6 @@ impl<'le> TElement for GeckoElement<'le> {
         }
 
         LayoutIterator(GeckoChildrenIterator::Current(self.as_node().first_child()))
-    }
-
-    fn before_pseudo_element(&self) -> Option<Self> {
-        self.before_or_after_pseudo(/* is_before = */ true)
-    }
-
-    fn after_pseudo_element(&self) -> Option<Self> {
-        self.before_or_after_pseudo(/* is_before = */ false)
-    }
-
-    fn marker_pseudo_element(&self) -> Option<Self> {
-        if !self.has_properties() {
-            return None;
-        }
-
-        unsafe {
-            bindings::Gecko_GetMarkerPseudo(self.0)
-                .as_ref()
-                .map(GeckoElement)
-        }
     }
 
     #[inline]
@@ -1218,24 +1185,31 @@ impl<'le> TElement for GeckoElement<'le> {
             return;
         }
 
-        let array: *mut structs::nsTArray<*mut nsIContent> =
-            unsafe { bindings::Gecko_GetAnonymousContentForElement(self.0) };
-
-        if array.is_null() {
-            return;
+        unsafe {
+            const STACK_BUFFER_CAP: usize = 8;
+            // We should virtually never have more than 8 NAC roots for a single element.
+            let mut stack_buffer = [mem::MaybeUninit::<*mut nsIContent>::uninit(); STACK_BUFFER_CAP];
+            let stack_buffer_ptr = stack_buffer.as_mut_ptr() as *mut *mut nsIContent;
+            let mut stack_buffer_len = 0;
+            // If we end up with more, they will end up on the heap, here.
+            let mut array = thin_vec::ThinVec::<*mut nsIContent>::new();
+            bindings::Gecko_GetAnonymousContentForElement(
+                self.0,
+                stack_buffer_ptr,
+                STACK_BUFFER_CAP,
+                &mut stack_buffer_len,
+                &mut array
+            );
+            let stack_els = std::slice::from_raw_parts(stack_buffer_ptr, stack_buffer_len);
+            for content in stack_els.iter().chain(array.iter()) {
+                let node = GeckoNode::from_content(&**content);
+                let element = match node.as_element() {
+                    Some(e) => e,
+                    None => continue,
+                };
+                f(element);
+            }
         }
-
-        for content in unsafe { &**array } {
-            let node = GeckoNode::from_content(unsafe { &**content });
-            let element = match node.as_element() {
-                Some(e) => e,
-                None => continue,
-            };
-
-            f(element);
-        }
-
-        unsafe { bindings::Gecko_DestroyAnonymousContentList(array) };
     }
 
     #[inline]
@@ -2099,7 +2073,8 @@ impl<'le> ::selectors::Element for GeckoElement<'le> {
             NonTSPseudoClass::MozAutofillPreview |
             NonTSPseudoClass::MozRevealed |
             NonTSPseudoClass::ActiveViewTransition |
-            NonTSPseudoClass::MozValueEmpty => self.state().intersects(pseudo_class.state_flag()),
+            NonTSPseudoClass::MozValueEmpty |
+            NonTSPseudoClass::MozSuppressForPrintSelection => self.state().intersects(pseudo_class.state_flag()),
             NonTSPseudoClass::Dir(ref dir) => self.state().intersects(dir.element_state()),
             NonTSPseudoClass::AnyLink => self.is_link(),
             NonTSPseudoClass::Link => {
@@ -2177,6 +2152,7 @@ impl<'le> ::selectors::Element for GeckoElement<'le> {
             },
             NonTSPseudoClass::MozPlaceholder => false,
             NonTSPseudoClass::Lang(ref lang_arg) => self.match_element_lang(None, lang_arg),
+            NonTSPseudoClass::Heading(ref levels) => levels.matches_state(self.state()),
         }
     }
 

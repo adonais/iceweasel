@@ -7,9 +7,9 @@
 #ifndef mozilla_DottedCornerFinder_h_
 #define mozilla_DottedCornerFinder_h_
 
+#include "gfxRect.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/BezierUtils.h"
-#include "gfxRect.h"
 
 namespace mozilla {
 

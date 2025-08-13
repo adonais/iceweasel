@@ -2197,18 +2197,6 @@
     "n_buckets": 100,
     "description": "The delay caused by the e10s back pressure suspension(ms)"
   },
-  "NETWORK_HTTP_REDIRECT_TO_SCHEME": {
-    "record_in_processes": ["main"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1413512, 1567462],
-    "expires_in_version": "never",
-    "kind": "categorical",
-    "releaseChannelCollection": "opt-out",
-    "keyed": true,
-    "description": "Count of the HTTP redirection that triggered by top-level document or by subresource, keyed by the URL scheme redirected to.",
-    "labels": ["topLevel", "subresource"]
-  },
   "NETWORK_ASYNC_OPEN_CHILD_TO_TRANSACTION_PENDING_EXP_MS": {
     "record_in_processes": ["content"],
     "products": ["firefox", "fennec"],
@@ -7416,6 +7404,29 @@
     "bug_numbers": [1907945],
     "description": "a testing histogram; not meant to be touched"
   },
+  "TELEMETRY_TEST_MIRROR_FOR_DUAL_LABELED_COUNTER": {
+    "record_in_processes": ["all"],
+    "products": ["firefox", "thunderbird"],
+    "releaseChannelCollection": "opt-out",
+    "alert_emails": ["telemetry-client-dev@mozilla.com"],
+    "expires_in_version": "never",
+    "kind": "categorical",
+    "keyed": true,
+    "labels": ["CommonLabel", "Label2", "Label3"],
+    "bug_numbers": [1973102],
+    "description": "a testing histogram; not meant to be touched"
+  },
+  "TELEMETRY_TEST_ANOTHER_MIRROR_FOR_DUAL_LABELED_COUNTER": {
+    "record_in_processes": ["all"],
+    "products": ["firefox", "thunderbird"],
+    "releaseChannelCollection": "opt-out",
+    "alert_emails": ["telemetry-client-dev@mozilla.com"],
+    "expires_in_version": "never",
+    "kind": "boolean",
+    "keyed": true,
+    "bug_numbers": [1973102],
+    "description": "a testing histogram; not meant to be touched"
+  },
   "SAFE_MODE_USAGE": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -8823,16 +8834,6 @@
     "n_buckets": 10000,
     "description": "The number of edges serialized into a heap snapshot."
   },
-  "DEVTOOLS_JAVASCRIPT_ERROR_DISPLAYED": {
-    "alert_emails": ["nicolas.b.pierron@mozilla.com"],
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "bug_numbers": [1255133, 1378449],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "keyed": true,
-    "description": "Records the key-identifiers of error messages when they are displayed in the webconsole of the debugger. Nothing should be recorded unless they are visible on the user screen."
-  },
   "DEVTOOLS_TOOLBOX_HOST": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -9069,29 +9070,6 @@
     "kind": "enumerated",
     "n_values": 20,
     "description": "What was the result of the content signature verification? 0=valid, 1=invalid, 2=noCertChain, 3=createContextFailedWithOtherError, 4=expiredCert, 5=certNotValidYet, 6=buildCertChainFailed, 7=eeCertForWrongHost, 8=extractKeyError, 9=vfyContextError"
-  },
-  "CONTENT_SIGNATURE_VERIFICATION_ERRORS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["seceng-telemetry@mozilla.com"],
-    "bug_numbers": [1435713, 1862062],
-    "releaseChannelCollection": "opt-out",
-    "expires_in_version": "never",
-    "kind": "categorical",
-    "keyed": true,
-    "labels": [
-      "err0",
-      "err1",
-      "err2",
-      "err3",
-      "err4",
-      "err5",
-      "err6",
-      "err7",
-      "err8",
-      "err9"
-    ],
-    "description": "Result of the content signature verification keyed by application (certificate fingerprint). 0=valid, 1=invalid, 2=noCertChain, 3=createContextFailedWithOtherError, 4=expiredCert, 5=certNotValidYet, 6=buildCertChainFailed, 7=eeCertForWrongHost, 8=extractKeyError, 9=vfyContextError"
   },
   "NTLM_MODULE_USED_2": {
     "record_in_processes": ["main", "content"],
@@ -9496,17 +9474,6 @@
     "releaseChannelCollection": "opt-out",
     "description": "If certificate verification failed in a TLS handshake, what was the error? (see MapCertErrorToProbeValue in security/manager/ssl/SSLServerCertVerification.cpp and the values in security/pkix/include/pkix/Result.h)"
   },
-  "SSL_CT_POLICY_NON_COMPLIANT_CONNECTIONS_BY_CA_2": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["seceng-telemetry@mozilla.com", "dkeeler@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "n_values": 256,
-    "bug_numbers": [1320567, 1909978],
-    "releaseChannelCollection": "opt-out",
-    "description": "Number of successfully established TLS connections NOT compliant with the Certificate Transparency Policy, by CA. See https://searchfox.org/mozilla-central/source/security/manager/ssl/RootHashes.inc for names of CAs. Bucket zero holds CAs not present in the list."
-  },
   "SSL_PERMANENT_CERT_ERROR_OVERRIDES": {
     "record_in_processes": ["main"],
     "products": ["firefox"],
@@ -9541,17 +9508,6 @@
     "releaseChannelCollection": "opt-out",
     "description": "Histogram of Signed Certificate Timestamps per SSL connection, from all sources (embedded / OCSP Stapling / TLS handshake). Bucket 0 counts the cases when no SCTs were received, or none were extracted due to parsing errors."
   },
-  "SSL_SCTS_VERIFICATION_STATUS": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["seceng-telemetry@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "n_values": 10,
-    "bug_numbers": [1293231],
-    "releaseChannelCollection": "opt-out",
-    "description": "Verification status of Signed Certificate Timestamps received (0=Decoding error, 1=Valid SCT, 2=SCT from unknown log, 3=Invalid SCT signature, 4=SCT timestamp is in the future, 5=Valid SCT from a disqualified log)"
-  },
   "CERT_EV_STATUS": {
     "record_in_processes": ["main"],
     "products": ["firefox"],
@@ -9562,28 +9518,6 @@
     "kind": "enumerated",
     "n_values": 10,
     "description": "EV status of a certificate, recorded on each TLS connection. 0=invalid, 1=DV, 2=EV"
-  },
-  "CERT_VALIDATION_SUCCESS_BY_CA_2": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "expires_in_version": "never",
-    "alert_emails": ["seceng-telemetry@mozilla.com", "dkeeler@mozilla.com"],
-    "releaseChannelCollection": "opt-out",
-    "bug_numbers": [1364159, 1369747, 1441550, 1909978],
-    "kind": "enumerated",
-    "n_values": 256,
-    "description": "Successful SSL server cert validations by CA (see RootHashes.inc for names of CAs)"
-  },
-  "CERT_PINNING_FAILURES_BY_CA_2": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": ["pinning@mozilla.org", "dkeeler@mozilla.com"],
-    "bug_numbers": [1862062, 1909978],
-    "releaseChannelCollection": "opt-out",
-    "expires_in_version": "never",
-    "kind": "enumerated",
-    "n_values": 256,
-    "description": "Pinning failures by CA (see RootHashes.inc for names of CAs)"
   },
   "CERT_PINNING_RESULTS": {
     "record_in_processes": ["main"],
@@ -11838,7 +11772,7 @@
     "high": 180000,
     "n_buckets": 60,
     "releaseChannelCollection": "opt-out",
-    "alert_emails": ["ttung@mozilla.com", "storage-telemetry@mozilla.com"],
+    "alert_emails": ["jan.varga@gmail.com", "storage-telemetry@mozilla.com"],
     "description": "Time (ms) for the QuotaManager to load quota information. Keyed by conditions during quota info loading, see RecordTimeDeltaHelper::Run in https://searchfox.org/mozilla-central/source/dom/quota/ActorsParent.cpp"
   },
   "QM_FIRST_INITIALIZATION_ATTEMPT": {
@@ -11849,7 +11783,7 @@
     "kind": "boolean",
     "keyed": true,
     "releaseChannelCollection": "opt-out",
-    "alert_emails": ["ttung@mozilla.com", "storage-telemetry@mozilla.com"],
+    "alert_emails": ["jan.varga@gmail.com", "storage-telemetry@mozilla.com"],
     "description": "True if the first initialization attempt succeeded, keyed by the initialization type."
   },
   "QM_SHUTDOWN_TIME_V0": {
@@ -11862,7 +11796,7 @@
     "high": 60000,
     "n_buckets": 60,
     "releaseChannelCollection": "opt-out",
-    "alert_emails": ["jvarga@mozilla.com", "storage-telemetry@mozilla.com"],
+    "alert_emails": ["jan.varga@gmail.com", "storage-telemetry@mozilla.com"],
     "description": "Time (ms) for the QuotaManager to shutdown. Keyed by conditions during shutdown, see RecordTimeDeltaHelper::Run in https://searchfox.org/mozilla-central/source/dom/quota/ActorsParent.cpp"
   },
   "GV_PAGE_LOAD_PROGRESS_MS": {
@@ -12078,10 +12012,9 @@
     "kind": "categorical",
     "keyed": true,
     "releaseChannelCollection": "opt-out",
-    "bug_numbers": [1635489],
+    "bug_numbers": [1635489, 1977614],
     "description": "The result of attempting to open a sqlite file.",
     "labels": [
-      "success",
       "failure",
       "access",
       "diskio",
@@ -12099,10 +12032,9 @@
     "kind": "categorical",
     "keyed": true,
     "releaseChannelCollection": "opt-out",
-    "bug_numbers": [1635489],
+    "bug_numbers": [1635489, 1977614],
     "description": "The result of attempting to query a sqlite file.",
     "labels": [
-      "success",
       "failure",
       "access",
       "diskio",

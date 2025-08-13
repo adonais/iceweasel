@@ -523,9 +523,6 @@ export const LinkMenuOptions = {
         data: {
           card_type: site.card_type,
           corpus_item_id: site.corpus_item_id,
-          is_section_followed: site.is_section_followed,
-          received_rank: site.received_rank,
-          recommended_at: site.recommended_at,
           scheduled_corpus_item_id: site.scheduled_corpus_item_id,
           section_position: site.section_position,
           section: site.section,

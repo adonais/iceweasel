@@ -69,7 +69,7 @@
 
     Title for info card on private homescreen in True Private Browsing Mode.
   -->
-  <string name="felt_privacy_desc_card_title">Nun dexa rastru nesti preséu</string>
+  <string name="felt_privacy_desc_card_title">Nun dexes rastru nesti preséu</string>
   <!--
     Explanation for private browsing displayed to users on home view when they first enable
     private mode in our new Total Private Browsing mode.
@@ -99,16 +99,6 @@
     Text for the message displayed in the contextual feature recommendation popup promoting the erase private browsing feature.
   -->
   <string name="erase_action_cfr_message" moz:removedIn="141" tools:ignore="UnusedResources">Toca equí p\'aniciar una sesión privada nueva. Desanicia l\'historial, les cookies… Too.</string>
-  <!--
-    Toolbar "contextual feature recommendation" (CFR)
-
-    Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
-  -->
-  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Restola más rápido cola navegación nueva</string>
-  <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Nun sitiu web, esta barra escuéndese a midida que te desplaces p\'abaxo pa consiguir más espaciu.</string>
-  <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Ten primíes les fleches pa saltar de páxina nel historial d\'esta llingüeta.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">Dir a Configuración</string>
   <!-- Text for the negative action button to dismiss the dialog. -->
@@ -180,6 +170,8 @@
   <string name="browser_menu_discover_more_extensions">Descubrir más estensiones</string>
   <!-- The description of the browser menu appears when the user hasn't installed any extensions. -->
   <string name="browser_menu_no_extensions_installed_description">Nun hai nenguna estensión activada</string>
+  <!-- The description of the browser menu appears when the user hasn't installed any extensions and there are recommended extensions. -->
+  <string name="browser_menu_try_a_recommended_extension_description">Prueba una estensión aconseyada</string>
   <!-- Browser menu button that sends a user to help articles -->
   <string name="browser_menu_help">Ayuda</string>
   <!-- Browser menu button that sends a to a the what's new article -->
@@ -241,8 +233,17 @@
   <string name="browser_menu_edit">Editar</string>
   <!-- Button shown on the home page that opens the Customize home settings -->
   <string name="browser_menu_customize_home_1">Personalizar la páxina d\'aniciu</string>
+  <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
+  <string name="browser_menu_sign_in_caption" moz:removedIn="141" tools:ignore="UnusedResources">Sincroniza les contraseñes, les llingüetes ya más coses</string>
+  <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
+  <string name="browser_menu_sign_in_caption_3">Sincroniza les contraseñes, los marcadores ya más coses</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Contraseñes</string>
+  <!--
+    Browser menu label that navigates to the SUMO page for the Firefox for Android release notes.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="browser_menu_new_in_firefox" moz:removedIn="141" tools:ignore="UnusedResources">Novedaes de %1$s</string>
   <!-- Browser menu label that toggles the request for the desktop site of the currently visited page -->
   <string name="browser_menu_switch_to_desktop_site" moz:removedIn="141" tools:ignore="UnusedResources">Cambiar al sitiu pa ordenadores</string>
   <!-- Browser menu label that navigates to the page tools sub-menu -->
@@ -251,6 +252,11 @@
   <string name="browser_main_menu_content_description_help_button">Ayuda</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
   <string name="browser_main_menu_content_description_settings_button">Configuración</string>
+  <!--
+    Browser menu label that navigates to the save sub-menu, which contains various save related menu items such as
+    bookmarking a page, saving to collection, shortcut or as a PDF, and adding to home screen
+  -->
+  <string name="browser_menu_save" moz:removedIn="141" tools:ignore="UnusedResources">Guardar</string>
   <!-- Browser menu label that the saves the currently visited page as a PDF -->
   <string name="browser_menu_save_as_pdf" moz:removedIn="141" tools:ignore="UnusedResources">Guardar como PDF…</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
@@ -322,8 +328,6 @@
   <string name="juno_onboarding_enable_notifications_negative_button" tools:ignore="UnusedResources">Agora non</string>
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">Agora non</string>
-  <!-- Ublock name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Ublock Origin" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_ublock_name" moz:removedIn="140" tools:ignore="UnusedResources">uBlock Origin</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">Fecho</string>
   <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here -->
@@ -346,10 +350,28 @@
   <string name="preferences_category_general">Xeneral</string>
   <!-- Preference category for all links about Fenix -->
   <string name="preferences_category_about">Tocante a</string>
+  <!-- Preference category for settings related to changing the default search engine -->
+  <string name="preferences_category_select_default_search_engine">Seleiciona unu</string>
+  <!-- Preference for settings related to managing search shortcuts for the quick search menu -->
+  <string name="preferences_manage_search_shortcuts_2">Xestionar los motores de busca alternativos</string>
+  <!-- Summary for preference for settings related to managing search shortcuts for the quick search menu -->
+  <string name="preferences_manage_search_shortcuts_summary">Edita los motores visibles nel menú de busca</string>
+  <!-- Preference category for settings related to managing search shortcuts for the quick search menu -->
+  <string name="preferences_category_engines_in_search_menu">Motores visibles nel menú de busca</string>
   <!-- Preference for settings related to changing the default search engine -->
   <string name="preferences_default_search_engine">Motor de busca predetermináu</string>
   <!-- Preference for settings related to Search -->
   <string name="preferences_search">Busca</string>
+  <!-- Preference for settings related to Search engines -->
+  <string name="preferences_search_engines">Motores de busca</string>
+  <!-- Preference for settings related to Search engines suggestions -->
+  <string name="preferences_search_engines_suggestions">Suxerencies de los motores de busca</string>
+  <!-- Preference Category for settings related to Search address bar -->
+  <string name="preferences_settings_address_bar">Preferencies de la barra de direiciones</string>
+  <!-- Preference Category for settings to Firefox Suggest -->
+  <string name="preference_search_address_bar_fx_suggest" tools:ignore="BrandUsage">Barra de direiciones - Firefox Suggest</string>
+  <!-- Preference link to Learn more about Firefox Suggest -->
+  <string name="preference_search_learn_about_fx_suggest" tools:ignore="BrandUsage">Saber más tocante a Firefox Suggest</string>
   <!-- Preference link to rating Fenix on the Play Store -->
   <string name="preferences_rate">Valorar en Google Play</string>
   <!--
@@ -395,10 +417,14 @@
   <string name="preferences_category_account">Cuenta</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Llocalización de la barra de direiciones</string>
+  <!-- Preference for changing toolbar layout -->
+  <string name="preferences_toolbar_layout">Distribución de la barra de ferramientes</string>
   <!-- Preference for changing default theme to dark or light mode -->
   <string name="preferences_theme">Estilu</string>
   <!-- Preference for customizing the home screen -->
   <string name="preferences_home_2">Páxina d\'aniciu</string>
+  <!-- Preference for showing the tab strip -->
+  <string name="preferences_tab_strip">Apaición de la barra de llingüetes</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_gestures">Xestos</string>
   <!-- Preference for settings related to visual options -->
@@ -433,8 +459,22 @@
   <string name="preferences_account_settings">Configuración de la cuenta</string>
   <!-- Preference for enabling url autocomplete -->
   <string name="preferences_enable_autocomplete_urls">Autocompletar les URLs</string>
+  <!-- Preference title for switch preference to show sponsored Firefox Suggest search suggestions -->
+  <string name="preferences_show_sponsored_suggestions">Suxerencies de los patrocinadores</string>
+  <!--
+    Summary for preference to show sponsored Firefox Suggest search suggestions.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="preferences_show_sponsored_suggestions_summary">Sofita «%1$s» con suxerencies periódiques de los patrocinadores</string>
+  <!--
+    Preference title for switch preference to show Firefox Suggest search suggestions for web content.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="preferences_show_nonsponsored_suggestions">Suxerencies de: %1$s</string>
   <!-- Preference for open links in third party apps -->
   <string name="preferences_open_links_in_apps">Abrir los enllaces nes aplicaciones</string>
+  <!-- Preference for open links in third party apps always open in apps option -->
+  <string name="preferences_open_links_in_apps_always">Siempre</string>
   <!-- Preference for open download with an external download manager app -->
   <string name="preferences_external_download_manager" tools:ignore="UnusedResources" moz:removedIn="141">Xestor de descargues esternu</string>
   <!-- Preference for extensions -->
@@ -493,6 +533,8 @@
     and %3$s is the device model.
   -->
   <string name="default_device_name_2">%1$s en %2$s %3$s</string>
+  <!-- Preference for syncing payment methods -->
+  <string name="preferences_sync_credit_cards_2">Métodos de pagu</string>
   <!-- Preference for syncing addresses -->
   <string name="preferences_sync_address">Señes</string>
   <!--
@@ -545,6 +587,10 @@
   <string name="preference_top_toolbar">Arriba</string>
   <!-- Preference for using bottom toolbar -->
   <string name="preference_bottom_toolbar">Abaxo</string>
+  <!-- Preference for using simple toolbar -->
+  <string name="preference_simple_toolbar">Simple</string>
+  <!-- Preference for using expanded toolbar -->
+  <string name="preference_expanded_toolbar">Espandida</string>
   <!--
     Theme Preferences
 
@@ -556,6 +602,12 @@
   <!-- Preference for using following device theme -->
   <string name="preference_follow_device_theme">Siguir l\'estilu del preséu</string>
   <!--
+    Tab Strip Preferences
+
+    Preferences for showing tab strip
+  -->
+  <string name="preference_tab_strip_show">Amosar la barra de llingüetes</string>
+  <!--
     Gestures Preferences
 
     Preferences for using pull to refresh in a webpage
@@ -563,6 +615,8 @@
   <string name="preference_gestures_website_pull_to_refresh">Arrastrar p\'abaxo p\'anovar</string>
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Desplazase pa esconder la barra de ferramientes</string>
+  <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
+  <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Eslizar la barra de ferramientes a los llaos pa cambiar de llingüeta</string>
   <!--
     Library
 
@@ -736,9 +790,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Desaniciar l\'historial</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">Desanicióse l\'historial</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Desanicióse l\'historial</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">Desanicióse «%1$s»</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Desanicióse «%1$s»</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Desaniciar</string>
   <!--
@@ -782,9 +836,9 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">¿De xuru que quies desaniciar esta carpeta?</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">¿De xuru que quies desaniciar esta carpeta?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog">%s va desaniciar los elementos seleicionaos.</string>
+  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s va desaniciar los elementos seleicionaos.</string>
   <!-- Screen title for adding a bookmarks folder -->
   <string name="bookmark_add_folder">Creación d\'una carpeta</string>
   <!-- Snackbar title that confirms a bookmark was saved into a folder. %s is the name of the folder the bookmark was saved into. -->
@@ -804,7 +858,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">Desaniciar</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">Guardar</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">Guardar</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -815,7 +869,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">Edición d\'una carpeta</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">Aniciar la sesión pa ver los marcadores sincronizaos</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">Aniciar la sesión pa ver los marcadores sincronizaos</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -823,24 +877,24 @@
   <!-- Bookmark NAME editing field label -->
   <string name="bookmark_name_label">NOME</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">Creación d\'una carpeta</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">Creación d\'una carpeta</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">Seleición d\'una carpeta</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">Ha tener un títulu</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">Ha tener un títulu</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">La URL ye inválida</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">Equí nun hai nengún marcador</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">Equí nun hai nengún marcador</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">Desanicióse «%1$s»</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">Desaniciáronse los marcadores</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">Desaniciáronse los marcadores</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3">Desaniciando les carpetes seleicionaes</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">Desaniciando les carpetes seleicionaes</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">DESFACER</string>
   <!--
@@ -946,7 +1000,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">Seleicionóse %d llingüeta</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">¡Guardáronse les llingüetes!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">¡Guardáronse les llingüetes!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection">¡Guardóse la coleición!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -1015,9 +1069,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">Desanicióse la coleición</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Desanicióse la coleición</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">Renomóse la coleición</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Renomóse la coleición</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Zarróse la llingüeta</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -1046,9 +1100,9 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">¿De xuru que quies desaniciar «%1$s»?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">Desaniciar</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Desaniciar</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">Copióse la URL</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">Copióse la URL</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Esto ye un testu d\'exemplu. Ta equí p\'amosar cómo va apaecer cuando aumentes o amenorgues el so tamañu con esta opción.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -1226,6 +1280,8 @@
   <string name="etp_redirect_trackers_title">Rastrexadores de redireición</string>
   <!-- Description of redirect tracker cookies that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_redirect_trackers_description">Borra les cookies creaes poles redireiciones a sitios web conocíos que rastrexen.</string>
+  <!-- Text displayed on the button within the input field for adding exceptions to "DNS over HTTPS" -->
+  <string name="preference_doh_exceptions_add_save">Guardar</string>
   <!-- About page link text to open support link -->
   <string name="about_support">Sofitu</string>
   <!-- About page link text to list of past crashes (like about:crashes on desktop) -->
@@ -1334,6 +1390,10 @@
   <string name="saved_logins_sort_strategy_alphabetically">Nome (A-Z)</string>
   <!-- Saved logins sorting strategy menu item -by last used- (if selected, it will sort saved logins by last used) -->
   <string name="saved_logins_sort_strategy_last_used">Últimu usu</string>
+  <!-- Preference and title for managing the settings for payment methods -->
+  <string name="preferences_credit_cards_2">Métodos de pagu</string>
+  <!-- Preference summary for saving and autofilling payment method data. %s is the name of the app (for example "Firefox"). -->
+  <string name="preferences_credit_cards_save_and_autofill_cards_summary_2">«%s» cifra tolos métodos de pagu que guardes</string>
   <!-- Preference option for syncing credit cards across devices. This is displayed when the user is not signed into sync -->
   <string name="preferences_credit_cards_sync_cards_across_devices">Sincronizar les tarxetes ente preseos</string>
   <!-- Preference option for syncing credit cards across devices. This is displayed when the user is signed into sync -->
@@ -1366,6 +1426,10 @@
   <string name="credit_cards_warning_dialog_later">Dempués</string>
   <!-- Title of PIN verification dialog to direct users to re-enter their device credentials to access their credit cards -->
   <string name="credit_cards_biometric_prompt_message_pin">Desbloquéu del preséu</string>
+  <!-- The header for the name of an address. Name represents a person's full name, typically made up of a first, middle and last name, e.g. John Joe Doe. -->
+  <string name="addresses_name">Nome</string>
+  <!-- The text for the "Save" button for saving an address -->
+  <string name="addresses_save_button">Guardar</string>
   <!-- Title of the Add search engine screen -->
   <string name="search_engine_add_custom_search_engine_title">Amestar un motor de busca</string>
   <!-- Title of the Edit search engine screen -->
@@ -1374,22 +1438,36 @@
   <string name="search_engine_edit">Editar</string>
   <!-- Text for the menu button to delete a search engine -->
   <string name="search_engine_delete">Desaniciar</string>
+  <!-- Label for the TextField in which user enters custom search engine name -->
+  <string name="search_add_custom_engine_name_label">Nome</string>
+  <!-- Placeholder text shown in the Search Engine Name text field before a user enters text -->
+  <string name="search_add_custom_engine_name_hint_2">Nome del motor de busca</string>
+  <!-- Label for the TextField in which user enters custom search engine URL -->
+  <string name="search_add_custom_engine_url_label">URL de la cadena de busca</string>
+  <!-- Placeholder text shown in the Search String TextField before a user enters text -->
+  <string name="search_add_custom_engine_search_string_hint_2">URL que s\'usa pa buscar</string>
   <!-- Description text for the Search String TextField. The %s is part of the string -->
   <string name="search_add_custom_engine_search_string_example" formatted="false">Sustitúi la consulta por «%s». Exemplu:\nhttps://www.duckduckgo.com/?q=%s</string>
+  <!-- Label for the TextField in which user enters custom search engine suggestion URL -->
+  <string name="search_add_custom_engine_suggest_url_label">API de les suxerencies de busca (opcional)</string>
+  <!-- Placeholder text shown in the Search Suggestion String TextField before a user enters text -->
+  <string name="search_add_custom_engine_suggest_string_hint">URL de l\'API de suxerencies de busca</string>
+  <!-- Description text for the Search Suggestion String TextField. The %s is part of the string -->
+  <string name="search_add_custom_engine_suggest_string_example_2" formatted="false">Sustitúi la consulta por «%s». Exemplu:\nhttps://suggestqueries.google.com/complete/search?client=firefox&amp;q=%s</string>
+  <!-- The text for the "Save" button for saving a custom search engine -->
+  <string name="search_custom_engine_save_button">Guardar</string>
   <!-- Text shown when a user leaves the name field empty -->
   <string name="search_add_custom_engine_error_empty_name">Introduz el nome d\'un motor de busca</string>
   <!-- Text shown when a user leaves the search string field empty -->
   <string name="search_add_custom_engine_error_empty_search_string">Introduz una cadena de busca</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Comprueba que la cadena de busca concase col formatu del exemplu</string>
-  <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">Prodúxose un error al conectase a «%s»</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">Creóse «%s»</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Creóse «%s»</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">Guardóse «%s»</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Guardóse «%s»</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">Desanicióse «%s»</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Desanicióse «%s»</string>
   <!-- First step for the allowing a permission -->
   <string name="phone_feature_blocked_step_settings">1. Ve a Configuración d\'Android</string>
   <!-- Second step for the allowing a permission -->
@@ -1409,7 +1487,7 @@
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">Nun hai nenguna</string>
   <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation">¿De xuru que quies desaniciar esti marcador?</string>
+  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">¿De xuru que quies desaniciar esti marcador?</string>
   <!-- Browser menu button that adds a shortcut to the home fragment -->
   <string name="browser_menu_add_to_shortcuts">Amestar a los atayos</string>
   <!-- Browser menu button that removes a shortcut from the home fragment -->
@@ -1457,6 +1535,8 @@
   <string name="top_sites_toggle_top_recent_sites_4">Atayos</string>
   <!-- Title text displayed in the rename top site dialog. -->
   <string name="top_sites_rename_dialog_title">Nome</string>
+  <!-- Hint for renaming title of a shortcut -->
+  <string name="shortcut_name_hint">Nome del atayu</string>
   <!-- Dialog button text for canceling the rename top site prompt. -->
   <string name="top_sites_rename_dialog_cancel">Encaboxar</string>
   <!-- Text for the menu button to open the homepage settings. -->
@@ -1465,6 +1545,8 @@
   <string name="top_sites_edit_top_site">Editar</string>
   <!-- Text for the dialog title to edit a top site. -->
   <string name="top_sites_edit_dialog_title">Edición del atayu</string>
+  <!-- Button caption to confirm the edit of the top site. -->
+  <string name="top_sites_edit_dialog_save">Guardar</string>
   <!--
     Inactive tabs in the tabs tray
 
@@ -1473,6 +1555,12 @@
   <string name="inactive_tabs_title">Llingüetes inactives</string>
   <!-- A description below the header to notify the user what the inactive tabs auto-close feature is. -->
   <string name="inactive_tabs_auto_close_message_description" tools:ignore="BrandUsage,UnusedResources">Firefox pue zarrar les llingüetes que nun visitesti demientres el mes pasáu.</string>
+  <!--
+    Awesome bar suggestion's headers
+
+    Search suggestions title for Firefox Suggest.
+  -->
+  <string name="firefox_suggest_header" tools:ignore="BrandUsage">Firefox Suggest</string>
   <!-- Title for search suggestions when the default search suggestion engine is anything other than Google. %s is default search engine name. -->
   <string name="other_default_search_engine_suggestion_header">Busca nel motor «%s»</string>
   <!-- Content description for close button in collection placeholder. -->
@@ -1480,13 +1568,9 @@
   <!-- Content description radio buttons with a link to more information -->
   <string name="radio_preference_info_content_description">Calca pa consiguir más detalles</string>
   <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description">Zarrar</string>
-  <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-  <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">Cola teunoloxía de: %s.</string>
-  <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Parte de la familia Firefox. %s</string>
-  <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">Saber más</string>
+  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">Zarrar</string>
+  <!-- Current state for elements that can be expanded if interacting with them. Talkback will dictate this after a state change. -->
+  <string name="a11y_state_label_expanded">espandida</string>
   <!-- Translations feature -->
 
   <!--

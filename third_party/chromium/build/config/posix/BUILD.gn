@@ -1,4 +1,4 @@
-# Copyright 2015 The Chromium Authors. All rights reserved.
+# Copyright 2015 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -25,7 +25,7 @@ config("runtime_library") {
   defines = []
   ldflags = []
 
-  if (!is_apple && sysroot != "") {
+  if (!is_apple && sysroot != "" && current_os != "zos") {
     # Pass the sysroot to all C compiler variants, the assembler, and linker.
     sysroot_flags = [ "--sysroot=" + rebase_path(sysroot, root_build_dir) ]
     if (is_linux || is_chromeos) {
@@ -33,12 +33,8 @@ config("runtime_library") {
       # when turning the sysroot on or off. (defines are passed via the command
       # line, and build system rebuilds things when their commandline
       # changes). Nothing should ever read this define.
-      sysroot_hash =
-          exec_script("//chromium/build/linux/sysroot_scripts/install-sysroot.py",
-                      [ "--print-hash=$target_cpu" ],
-                      "trim string",
-                      [ "//chromium/build/linux/sysroot_scripts/sysroots.json" ])
-      defines += [ "CR_SYSROOT_HASH=$sysroot_hash" ]
+      import("//chromium/build/linux/sysroot_scripts/sysroot.gni")
+      defines += [ "CR_SYSROOT_KEY=$cr_sysroot_key" ]
     }
     asmflags += sysroot_flags
     ldflags += sysroot_flags

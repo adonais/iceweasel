@@ -11,7 +11,7 @@ origin:
   url: "https://chromium.googlesource.com/webm/libwebp"
   license: BSD-3-Clause
 
-  release: v1.5.0 (2024-12-19T17:17:50-08:00).
+  release: v1.6.0 (2025-07-07T17:20:00-07:00).
 
   revision: "v1.3.0"
 

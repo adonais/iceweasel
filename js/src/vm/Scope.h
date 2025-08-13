@@ -1093,7 +1093,8 @@ class WasmInstanceScope : public Scope {
       typename std::conditional_t<std::is_same<NameT, JSAtom>::value,
                                   RuntimeData, ParserData>;
 
-  static WasmInstanceScope* create(JSContext* cx, WasmInstanceObject* instance);
+  static WasmInstanceScope* create(JSContext* cx,
+                                   Handle<WasmInstanceObject*> instance);
 
  private:
   RuntimeData& data() { return *static_cast<RuntimeData*>(rawData()); }

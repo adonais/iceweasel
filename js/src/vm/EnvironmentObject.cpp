@@ -1553,15 +1553,54 @@ bool EnvironmentIter::hasNonSyntacticEnvironmentObject() const {
   return false;
 }
 
+bool MissingEnvironmentKey::initFromEnvironmentIter(JSContext* cx,
+                                                    const EnvironmentIter& ei) {
+  frame_ = ei.maybeInitialFrame();
+  scope_ = ei.maybeScope();
+  if (frame_) {
+    nearestEnvId_ = 0;
+    return true;
+  }
+
+  EnvironmentObject* env = nullptr;
+  EnvironmentIter copy(cx, ei);
+  while (copy) {
+    if (copy.hasAnyEnvironmentObject()) {
+      env = &copy.environment();
+      break;
+    }
+    ++copy;
+  }
+
+  // In general, we should find an environment object for the global etc even
+  // if we don't find anything else.
+  //
+  // In certain situation where OOM and too much recursion happens and the
+  // debugger is trying to recover from it, we might not find anything, and in
+  // that case, there's nothing we can do. (see bug 1976630).
+  if (!env) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  if (!gc::GetOrCreateUniqueId(env, &nearestEnvId_)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  return true;
+}
+
 /* static */
 HashNumber MissingEnvironmentKey::hash(MissingEnvironmentKey ek) {
-  return size_t(ek.frame_.raw()) ^ size_t(ek.scope_);
+  return mozilla::HashGeneric(ek.frame_.raw(), ek.nearestEnvId_, ek.scope_);
 }
 
 /* static */
 bool MissingEnvironmentKey::match(MissingEnvironmentKey ek1,
                                   MissingEnvironmentKey ek2) {
-  return ek1.frame_ == ek2.frame_ && ek1.scope_ == ek2.scope_;
+  return ek1.frame_ == ek2.frame_ && ek1.nearestEnvId_ == ek2.nearestEnvId_ &&
+         ek1.scope_ == ek2.scope_;
 }
 
 bool LiveEnvironmentVal::traceWeak(JSTracer* trc) {
@@ -2789,21 +2828,29 @@ bool DebugEnvironments::addDebugEnvironment(
 }
 
 /* static */
-DebugEnvironmentProxy* DebugEnvironments::hasDebugEnvironment(
-    JSContext* cx, const EnvironmentIter& ei) {
+bool DebugEnvironments::getExistingDebugEnvironment(
+    JSContext* cx, const EnvironmentIter& ei, DebugEnvironmentProxy** out) {
   MOZ_ASSERT(!ei.hasSyntacticEnvironment());
 
   DebugEnvironments* envs = cx->realm()->debugEnvs();
   if (!envs) {
-    return nullptr;
+    *out = nullptr;
+    return true;
   }
 
-  if (MissingEnvironmentMap::Ptr p =
-          envs->missingEnvs.lookup(MissingEnvironmentKey(ei))) {
-    MOZ_ASSERT(CanUseDebugEnvironmentMaps(cx));
-    return p->value();
+  MissingEnvironmentKey key;
+  if (!key.initFromEnvironmentIter(cx, ei)) {
+    return false;
   }
-  return nullptr;
+
+  if (MissingEnvironmentMap::Ptr p = envs->missingEnvs.lookup(key)) {
+    MOZ_ASSERT(CanUseDebugEnvironmentMaps(cx));
+    *out = p->value();
+    return true;
+  }
+
+  *out = nullptr;
+  return true;
 }
 
 /* static */
@@ -2822,7 +2869,10 @@ bool DebugEnvironments::addDebugEnvironment(
     return false;
   }
 
-  MissingEnvironmentKey key(ei);
+  MissingEnvironmentKey key;
+  if (!key.initFromEnvironmentIter(cx, ei)) {
+    return false;
+  }
   MOZ_ASSERT(!envs->missingEnvs.has(key));
   if (!envs->missingEnvs.put(key,
                              WeakHeapPtr<DebugEnvironmentProxy*>(debugEnv))) {
@@ -3029,9 +3079,16 @@ void DebugEnvironments::onPopGeneric(JSContext* cx, const EnvironmentIter& ei) {
   MOZ_ASSERT(ei.withinInitialFrame());
   MOZ_ASSERT(ei.scope().is<Scope>());
 
+  MissingEnvironmentKey key;
+  {
+    js::AutoEnterOOMUnsafeRegion oomUnsafe;
+    if (!key.initFromEnvironmentIter(cx, ei)) {
+      oomUnsafe.crash("OOM during onPopGeneric");
+      return;
+    }
+  }
   Rooted<Environment*> env(cx);
-  if (MissingEnvironmentMap::Ptr p =
-          envs->missingEnvs.lookup(MissingEnvironmentKey(ei))) {
+  if (MissingEnvironmentMap::Ptr p = envs->missingEnvs.lookup(key)) {
     env = &p->value()->environment().as<Environment>();
     envs->missingEnvs.remove(p);
   } else if (ei.hasSyntacticEnvironment()) {
@@ -3264,9 +3321,12 @@ static DebugEnvironmentProxy* GetDebugEnvironmentForMissing(
               ei.scope().is<WasmFunctionScope>() || ei.scope().is<VarScope>() ||
               ei.scope().kind() == ScopeKind::StrictEval));
 
-  if (DebugEnvironmentProxy* debugEnv =
-          DebugEnvironments::hasDebugEnvironment(cx, ei)) {
-    return debugEnv;
+  DebugEnvironmentProxy* maybeDebugEnv;
+  if (!DebugEnvironments::getExistingDebugEnvironment(cx, ei, &maybeDebugEnv)) {
+    return nullptr;
+  }
+  if (maybeDebugEnv) {
+    return maybeDebugEnv;
   }
 
   EnvironmentIter copy(cx, ei);
@@ -4501,7 +4561,7 @@ static void DumpEnvironmentObject(JSObject* unrootedEnvObj) {
       break;
     }
 
-    fprintf(stderr, "%s", env->typeString());
+    fprintf(stderr, "%s (%p)", env->typeString(), env.get());
 
     Rooted<Scope*> scope(cx);
     if (env->is<VarEnvironmentObject>()) {
@@ -4515,20 +4575,118 @@ static void DumpEnvironmentObject(JSObject* unrootedEnvObj) {
       scope = &env->as<ScopedLexicalEnvironmentObject>().scope();
     }
 
+    bool hadProp = false;
+
+    // Set of names in the scope.
+    // This is used for filtering out those names from properties bwlow.
+    Rooted<GCHashSet<JSAtom*>> names(cx, GCHashSet<JSAtom*>(cx, 0));
+
     if (scope) {
-      fprintf(stderr, " {\n");
+      if (!hadProp) {
+        fprintf(stderr, " {\n");
+      }
+      hadProp = true;
       for (Rooted<BindingIter> bi(cx, BindingIter(scope)); bi; bi++) {
-        if (bi.location().kind() == BindingLocation::Kind::Environment) {
-          UniqueChars bytes = AtomToPrintableString(cx, bi.name());
-          if (!bytes) {
+        fprintf(stderr, "  ");
+
+        switch (bi.location().kind()) {
+          case BindingLocation::Kind::Global:
+            if (bi.isTopLevelFunction()) {
+              fprintf(stderr, "global function: ");
+            } else {
+              fprintf(stderr, "global: ");
+            }
+            break;
+          case BindingLocation::Kind::Argument:
+            fprintf(stderr, "arg slot %u: ", bi.location().argumentSlot());
+            break;
+          case BindingLocation::Kind::Frame:
+            fprintf(stderr, "frame slot %u: ", bi.location().slot());
+            break;
+          case BindingLocation::Kind::Environment:
+            fprintf(stderr, "env slot %u: %s ", bi.location().slot(),
+                    BindingKindString(bi.kind()));
+            break;
+          case BindingLocation::Kind::NamedLambdaCallee:
+            fprintf(stderr, "named lambda callee: ");
+            break;
+          case BindingLocation::Kind::Import:
+            fprintf(stderr, "import: ");
+            break;
+        }
+
+        JSAtom* name = bi.name();
+        if (!names.put(name)) {
+          fprintf(stderr, "  *** out of memory\n");
+          return;
+        }
+
+        UniqueChars bytes = AtomToPrintableString(cx, name);
+        if (!bytes) {
+          fprintf(stderr, "  *** out of memory\n");
+          return;
+        }
+        fprintf(stderr, "%s\n", bytes.get());
+      }
+    }
+
+    // The environment object can have random properties that can be found in
+    // the name lookup.  Show them as well, excluding the properties which
+    // are already shown above for the scope.
+    if (PropMap* map = env->shape()->propMap()) {
+      Vector<PropMap*, 8, SystemAllocPolicy> maps;
+      while (true) {
+        if (!maps.append(map)) {
+          fprintf(stderr, "  *** out of memory\n");
+          return;
+        }
+        if (!map->hasPrevious()) {
+          break;
+        }
+        map = map->asLinked()->previous();
+      }
+
+      for (size_t i = maps.length(); i > 0; i--) {
+        size_t index = i - 1;
+        PropMap* map = maps[index];
+        uint32_t len = (index == 0) ? env->shape()->asNative().propMapLength()
+                                    : PropMap::Capacity;
+        for (uint32_t j = 0; j < len; j++) {
+          if (!map->hasKey(j)) {
+            MOZ_ASSERT(map->isDictionary());
+            continue;
+          }
+
+          PropertyKey propKey = map->getKey(j);
+          if (propKey.isAtom()) {
+            JSAtom* name = propKey.toAtom();
+            if (names.has(name)) {
+              continue;
+            }
+          }
+
+          JS::UniqueChars propChars = map->getPropertyNameAt(j);
+          if (!propChars) {
             fprintf(stderr, "  *** out of memory\n");
             return;
           }
 
-          fprintf(stderr, "  %u: %s %s\n", bi.location().slot(),
-                  BindingKindString(bi.kind()), bytes.get());
+          if (!hadProp) {
+            fprintf(stderr, " {\n");
+          }
+          hadProp = true;
+
+          PropertyInfo prop = map->getPropertyInfo(j);
+          if (prop.hasSlot()) {
+            fprintf(stderr, "  prop %u: %s\n", prop.slot(), propChars.get());
+          } else {
+            fprintf(stderr, "  prop: %s\n", propChars.get());
+          }
         }
       }
+    }
+
+    if (hadProp) {
       fprintf(stderr, "}");
     }
 

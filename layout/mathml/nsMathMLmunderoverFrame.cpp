@@ -5,17 +5,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsMathMLmunderoverFrame.h"
-#include "nsLayoutUtils.h"
-#include "nsPresContext.h"
-#include "nsMathMLmmultiscriptsFrame.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/MathMLElement.h"
+
 #include <algorithm>
+
 #include "gfxContext.h"
 #include "gfxMathTable.h"
 #include "gfxTextRun.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_mathml.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/MathMLElement.h"
+#include "nsLayoutUtils.h"
+#include "nsMathMLmmultiscriptsFrame.h"
+#include "nsPresContext.h"
 
 using namespace mozilla;
 

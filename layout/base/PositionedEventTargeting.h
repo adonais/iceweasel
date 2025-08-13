@@ -8,8 +8,9 @@
 #define mozilla_PositionedEventTargeting_h
 
 #include <stdint.h>
-#include "mozilla/EventForwards.h"
+
 #include "RelativeTo.h"
+#include "mozilla/EventForwards.h"
 
 class nsIFrame;
 struct nsPoint;

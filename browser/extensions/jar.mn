@@ -1,0 +1,11 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# NOTE: this jar manifest is meant to only create the resource url mapping
+# each of the built-in add-ons will then have its own manifest file to
+# add their own resources in their own builtin-addons/ subdirectory.
+# (e.g. browser/extensions/webcompat/builtin-addons.mn etc.).
+
+browser.jar:
+%   resource builtin-addons %builtin-addons/  contentaccessible=yes

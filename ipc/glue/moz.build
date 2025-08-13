@@ -66,9 +66,9 @@ EXPORTS.mozilla.ipc += [
     "ToplevelActorHolder.h",
     "TransportSecurityInfoUtils.h",
     "URIUtils.h",
-    "UtilityAudioDecoder.h",
-    "UtilityAudioDecoderChild.h",
-    "UtilityAudioDecoderParent.h",
+    "UtilityMediaService.h",
+    "UtilityMediaServiceChild.h",
+    "UtilityMediaServiceParent.h",
     "UtilityProcessChild.h",
     "UtilityProcessHost.h",
     "UtilityProcessImpl.h",
@@ -196,9 +196,9 @@ UNIFIED_SOURCES += [
     "StringUtil.cpp",
     "TransportSecurityInfoUtils.cpp",
     "URIUtils.cpp",
-    "UtilityAudioDecoder.cpp",
-    "UtilityAudioDecoderChild.cpp",
-    "UtilityAudioDecoderParent.cpp",
+    "UtilityMediaService.cpp",
+    "UtilityMediaServiceChild.cpp",
+    "UtilityMediaServiceParent.cpp",
     "UtilityProcessChild.cpp",
     "UtilityProcessHost.cpp",
     "UtilityProcessImpl.cpp",
@@ -243,7 +243,7 @@ LOCAL_INCLUDES += [
 ]
 
 PREPROCESSED_IPDL_SOURCES = [
-    "PUtilityAudioDecoder.ipdl",
+    "PUtilityMediaService.ipdl",
     "PUtilityProcess.ipdl",
 ]
 

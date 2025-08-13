@@ -25,8 +25,7 @@ class FilterChecker {
 };
 
 void testBitBloomFilter() {
-  const mozilla::UniquePtr filter =
-      mozilla::MakeUnique<BitBloomFilter<12, FilterChecker>>();
+  const auto filter = mozilla::MakeUnique<BitBloomFilter<12, FilterChecker>>();
   MOZ_RELEASE_ASSERT(filter);
 
   FilterChecker one(1);
@@ -53,7 +52,7 @@ void testBitBloomFilter() {
 }
 
 void testCountingBloomFilter() {
-  const mozilla::UniquePtr filter =
+  const auto filter =
       mozilla::MakeUnique<CountingBloomFilter<12, FilterChecker>>();
   MOZ_RELEASE_ASSERT(filter);
 

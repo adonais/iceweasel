@@ -50,7 +50,7 @@ skip-if = [
 
 ["test_postMessage_closed.html"]
 skip-if = [
-  "os == 'android'", #bug 894914 - wrong data - got FAIL, expected message
+  "os == 'android'", # bug 894914 - wrong data - got FAIL, expected message
   "http3",
   "http2",
 ]

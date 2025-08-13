@@ -141,8 +141,7 @@ bool ForOfLoopControl::emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce) {
 }
 
 bool ForOfLoopControl::emitIteratorCloseInInnermostScopeWithTryNote(
-    BytecodeEmitter* bce,
-    CompletionKind completionKind /* = CompletionKind::Normal */) {
+    BytecodeEmitter* bce, CompletionKind completionKind) {
   BytecodeOffset start = bce->bytecodeSection().offset();
   if (!emitIteratorCloseInScope(bce, *bce->innermostEmitterScope(),
                                 completionKind)) {
@@ -152,9 +151,9 @@ bool ForOfLoopControl::emitIteratorCloseInInnermostScopeWithTryNote(
   return bce->addTryNote(TryNoteKind::ForOfIterClose, 0, start, end);
 }
 
-bool ForOfLoopControl::emitIteratorCloseInScope(
-    BytecodeEmitter* bce, EmitterScope& currentScope,
-    CompletionKind completionKind /* = CompletionKind::Normal */) {
+bool ForOfLoopControl::emitIteratorCloseInScope(BytecodeEmitter* bce,
+                                                EmitterScope& currentScope,
+                                                CompletionKind completionKind) {
   return bce->emitIteratorCloseInScope(currentScope, iterKind_, completionKind,
                                        selfHostedIter_);
 }

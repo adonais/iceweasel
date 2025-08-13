@@ -10,7 +10,5 @@ support-files = [
 
 
 ["browser_popup_mouseover.js"]
-skip-if = ["verify"]
 
 ["browser_privbrowsing_perwindowpb.js"]
-skip-if = ["verify"]

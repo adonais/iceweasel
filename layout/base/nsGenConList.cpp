@@ -7,6 +7,7 @@
 /* base class for nsCounterList and nsQuoteList */
 
 #include "nsGenConList.h"
+
 #include "nsContentUtils.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"

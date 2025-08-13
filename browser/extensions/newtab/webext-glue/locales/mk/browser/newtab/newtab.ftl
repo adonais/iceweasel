@@ -220,6 +220,9 @@ newtab-error-fallback-refresh-link = Освежете ја страницата 
 ## Strings for download mobile highlight
 
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
 

@@ -2,42 +2,59 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+:host {
+  /* These z-indexes are used to correctly layer elements in the profiles
+   * avatar selection ui */
+  --profiles-low-layer: 1;
+  --profiles-high-layer: 2;
+
+  --mover-size: 24px;
+  --mover-offset: -8px;
+
+  --avatar-selection-width: 100%;
+}
+
 .button-group {
   display: flex;
   justify-content: center;
-  gap: var(--space-xxsmall);
+
+  moz-button::part(button) {
+    border-radius: 0;
+  }
 
   moz-button:first-child::part(button) {
     border-end-end-radius: 0;
     border-start-end-radius: 0;
+    border-start-start-radius: var(--button-border-radius);
+    border-end-start-radius: var(--button-border-radius);
   }
 
   moz-button:last-child::part(button) {
     border-end-start-radius: 0;
     border-start-start-radius: 0;
+    border-end-end-radius: var(--button-border-radius);
+    border-start-end-radius: var(--button-border-radius);
   }
 }
 
 #avatars::part(inputs) {
   flex-direction: row;
   flex-wrap: wrap;
-  gap: var(--space-xsmall);
-  width: 253px;
+  gap: var(--space-xxsmall);
+  width: 100%;
+  justify-content: center;
 }
 
 .avatar-button::part(button) {
   --button-icon-fill: transparent;
   --button-icon-stroke: currentColor;
+
+  /* Scale up 16x16 icon (12x12 + 4x4 padding) to 24px for normal display size */
+  --icon-size-default: 24px;
 }
 
-.custom-avatar-area {
-  width: 230px;
-  height: 194px;
-  position: relative;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+#avatar-selector {
+  width: 317px;
 }
 
 #upload-text {
@@ -45,24 +62,57 @@
   text-decoration: underline;
 }
 
-#drag-text {
-  font-size: var(--font-size-small);
+#content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-large);
 }
 
-#custom-avatar-image {
-  max-width: 100%;
-  max-height: 100%;
-}
-
-.custom-avatar-actions {
+.custom-avatar-add-image-header,
+.custom-avatar-crop-header {
+  display: flex;
   justify-content: center;
+  align-items: center;
+  padding-bottom: var(--space-large);
+  border-bottom: var(--card-border);
+  font-weight: var(--font-weight-bold);
+
+  #back-button {
+    margin-inline-end: auto;
+  }
+
+  #spacer {
+    margin-inline-start: auto;
+    width: var(--button-size-icon);
+  }
 }
 
-#custom-image {
+.custom-avatar-upload-area,
+.custom-avatar-crop-area {
+  position: relative;
+  width: var(--avatar-selection-width);
+  aspect-ratio: 1 / 1;
+}
+
+.custom-avatar-upload-area {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  &:focus-within {
+    outline: 1px auto;
+  }
+}
+
+.custom-avatar-crop-area {
+  overflow: scroll;
+}
+
+#custom-image-input {
   width: 100%;
   height: 100%;
   position: absolute;
-  z-index: 1;
+  z-index: var(--profiles-low-layer);
   opacity: 0;
   cursor: pointer;
 }
@@ -76,4 +126,128 @@
   justify-content: center;
   align-items: center;
   gap: var(--space-small);
+
+  > img {
+    -moz-context-properties: fill;
+    fill: currentColor;
+  }
+}
+
+#upload-text {
+  color: var(--link-color);
+  text-decoration: underline;
+}
+
+#drag-text {
+  font-size: var(--font-size-small);
+}
+
+#avatar-selection-container {
+  position: sticky;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: var(--profiles-low-layer);
+  overflow: clip;
+}
+
+#highlight {
+  box-sizing: border-box;
+  cursor: move;
+  position: relative;
+  pointer-events: auto;
+  z-index: var(--profiles-high-layer);
+  inset: 0;
+
+  border-radius: var(--border-radius-circle);
+  outline-offset: var(--focus-outline-offset);
+}
+
+#highlight-background {
+  width: 100%;
+  height: 100%;
+  outline: 355px solid rgba(0, 0, 0, 0.7);
+  border-radius: var(--border-radius-circle);
+
+  border: 2px dashed rgba(255, 255, 255, 0.8);
+  box-sizing: border-box;
+
+  position: relative;
+  z-index: -1;
+
+  pointer-events: none;
+}
+
+.mover-target {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  width: var(--mover-size);
+  height: var(--mover-size);
+  z-index: var(--profiles-high-layer);
+
+  &.direction-topLeft {
+    cursor: nwse-resize;
+    top: var(--mover-offset);
+    left: var(--mover-offset);
+  }
+
+  &.direction-topRight {
+    cursor: nesw-resize;
+    top: var(--mover-offset);
+    right: var(--mover-offset);
+  }
+
+  &.direction-bottomLeft {
+    cursor: nesw-resize;
+    bottom: var(--mover-offset);
+    left: var(--mover-offset);
+  }
+
+  &.direction-bottomRight {
+    cursor: nwse-resize;
+    bottom: var(--mover-offset);
+    right: var(--mover-offset);
+  }
+
+  &:hover .mover {
+    transform: scale(1.05);
+  }
+
+  .mover {
+    background-color: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+    transition: transform 125ms cubic-bezier(0.07, 0.95, 0, 1);
+    position: relative;
+    height: 8px;
+    width: 8px;
+    pointer-events: none;
+
+    @media (forced-colors) {
+      background-color: ButtonText;
+    }
+  }
+}
+
+#custom-avatar-image {
+  position: absolute;
+  inset: 0;
+
+  &.width-full {
+    width: 100%;
+  }
+
+  &.height-full {
+    height: 100%;
+  }
+}
+
+.custom-avatar-actions {
+  justify-content: center;
+}
+
+moz-visual-picker-item {
+  --visual-picker-item-border-color: transparent;
 }

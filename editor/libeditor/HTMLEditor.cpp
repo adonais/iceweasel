@@ -2808,7 +2808,7 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(
           *blockElement, HTMLEditUtils::ClosestBlockElement,
           BlockInlineCheck::UseComputedDisplayOutsideStyle);
       DebugOnly<nsresult> rvIgnored = CSSEditUtils::GetComputedProperty(
-          *blockElement, *nsGkAtoms::backgroundColor, aOutColor);
+          *blockElement, *nsGkAtoms::background_color, aOutColor);
       if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
@@ -2821,7 +2821,7 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(
       }
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                            "CSSEditUtils::GetComputedProperty(nsGkAtoms::"
-                           "backgroundColor) failed, but ignored");
+                           "background_color) failed, but ignored");
       // look at parent if the queried color is transparent and if the node to
       // examine is not the root of the document
       if (!HTMLEditUtils::IsTransparentCSSColor(aOutColor)) {
@@ -2870,7 +2870,7 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(
     // for the node to examine
     nsCOMPtr<nsINode> parentNode = element->GetParentNode();
     DebugOnly<nsresult> rvIgnored = CSSEditUtils::GetComputedProperty(
-        *element, *nsGkAtoms::backgroundColor, aOutColor);
+        *element, *nsGkAtoms::background_color, aOutColor);
     if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
@@ -2879,7 +2879,7 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(
     }
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                          "CSSEditUtils::GetComputedProperty(nsGkAtoms::"
-                         "backgroundColor) failed, but ignored");
+                         "background_color) failed, but ignored");
     if (!HTMLEditUtils::IsTransparentCSSColor(aOutColor)) {
       HTMLEditUtils::GetNormalizedCSSColorValue(
           aOutColor, HTMLEditUtils::ZeroAlphaColor::RGBAValue, aOutColor);
@@ -5058,12 +5058,12 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveContainerWithTransaction(
 }
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY void HTMLEditor::ContentAppended(
-    nsIContent* aFirstNewContent) {
+    nsIContent* aFirstNewContent, const ContentAppendInfo&) {
   DoContentInserted(aFirstNewContent, ContentNodeIs::Appended);
 }
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY void HTMLEditor::ContentInserted(
-    nsIContent* aChild) {
+    nsIContent* aChild, const ContentInsertInfo&) {
   DoContentInserted(aChild, ContentNodeIs::Inserted);
 }
 
@@ -5170,7 +5170,7 @@ void HTMLEditor::DoContentInserted(nsIContent* aChild,
 }
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY void HTMLEditor::ContentWillBeRemoved(
-    nsIContent* aChild, const BatchRemovalState*) {
+    nsIContent* aChild, const ContentRemoveInfo&) {
   if (mLastCollapsibleWhiteSpaceAppendedTextNode == aChild) {
     mLastCollapsibleWhiteSpaceAppendedTextNode = nullptr;
   }

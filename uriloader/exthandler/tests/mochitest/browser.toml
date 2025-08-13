@@ -9,9 +9,7 @@ support-files = [
   "download.bin",
   "download.sjs",
 ]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && socketprocess_networking", # Bug 1776014
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && socketprocess_networking"] # Bug 1776014
 
 ["browser_auto_close_window_nodialog.js"]
 support-files = [
@@ -113,8 +111,8 @@ support-files = ["file_pdf_binary_octet_stream.pdf"]
 
 ["browser_open_internal_choice_persistence.js"]
 skip-if = [
-   "os == 'mac' && os_version == '11.20' && arch == 'aarch64'", #bug 1752482
-   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", #Bug 1776017
+  "os == 'mac' && os_version == '11.20' && arch == 'aarch64'", # bug 1752482
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", # Bug 1776017
 ]
 support-files = [
   "file_pdf_application_pdf.pdf",
@@ -175,9 +173,7 @@ support-files = [
   "FTPprotocolHandler.html",
   "blank.html",
 ]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1968569
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'"] # Bug 1968569
 
 ["browser_txt_download_save_as.js"]
 support-files = [

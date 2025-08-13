@@ -8,8 +8,8 @@
 
 #include "nsICSSDeclaration.h"
 
-#include "nsINode.h"
 #include "mozilla/css/Rule.h"
+#include "nsINode.h"
 
 using mozilla::dom::DocGroup;
 

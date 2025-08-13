@@ -14,6 +14,7 @@ import org.mozilla.fenix.browser.StandardSnackbarError
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.appstate.readerview.ReaderViewState
 import org.mozilla.fenix.components.appstate.recommendations.ContentRecommendationsState
+import org.mozilla.fenix.components.appstate.search.SearchState
 import org.mozilla.fenix.components.appstate.setup.checklist.SetupChecklistState
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
 import org.mozilla.fenix.components.appstate.webcompat.WebCompatState
@@ -26,7 +27,6 @@ import org.mozilla.fenix.library.history.PendingDeletionHistory
 import org.mozilla.fenix.messaging.MessagingState
 import org.mozilla.fenix.reviewprompt.ReviewPromptState
 import org.mozilla.fenix.reviewprompt.ReviewPromptState.Unknown
-import org.mozilla.fenix.search.SearchDialogFragment
 import org.mozilla.fenix.wallpapers.WallpaperState
 
 /**
@@ -36,7 +36,6 @@ import org.mozilla.fenix.wallpapers.WallpaperState
  * @property inactiveTabsExpanded A flag to know if the Inactive Tabs section of the Tabs Tray
  * should be expanded when the tray is opened.
  * @property firstFrameDrawn Flag indicating whether the first frame of the homescreen has been drawn.
- * @property isSearchDialogVisible Flag indicating whether the user is interacting with the [SearchDialogFragment].
  * @property openInFirefoxRequested Flag indicating whether a custom tab should be opened in the browser.
  * @property nonFatalCrashes List of non-fatal crashes that allow the app to continue being used.
  * @property collections The list of [TabCollection] to display in the [HomeFragment].
@@ -66,6 +65,7 @@ import org.mozilla.fenix.wallpapers.WallpaperState
  * @property wasNativeDefaultBrowserPromptShown Whether the native default browser prompt was shown to the user.
  * @property webCompatState The [WebCompatState] when the feature was last used.
  * @property setupChecklistState Optional [SetupChecklistState] for the Setup Checklist feature.
+ * @property searchState The current search state.
  * @property isPrivateScreenLocked Whether the private browsing mode is currently locked behind
  * authentication.
  * @property reviewPrompt Whether we should show a review prompt and whether we ran the eligibility check at all
@@ -74,7 +74,6 @@ data class AppState(
     val isForeground: Boolean = true,
     val inactiveTabsExpanded: Boolean = false,
     val firstFrameDrawn: Boolean = false,
-    val isSearchDialogVisible: Boolean = false,
     val openInFirefoxRequested: Boolean = false,
     val nonFatalCrashes: List<NativeCodeCrash> = emptyList(),
     val collections: List<TabCollection> = emptyList(),
@@ -93,13 +92,14 @@ data class AppState(
     val wallpaperState: WallpaperState = WallpaperState.default,
     val standardSnackbarError: StandardSnackbarError? = null,
     val readerViewState: ReaderViewState = ReaderViewState.None,
-    val snackbarState: SnackbarState = SnackbarState.None,
+    val snackbarState: SnackbarState = SnackbarState.None(),
     val showFindInPage: Boolean = false,
     val crashState: CrashState = CrashState.Idle,
     val wasLastTabClosedPrivate: Boolean? = null,
     val wasNativeDefaultBrowserPromptShown: Boolean = false,
     val webCompatState: WebCompatState? = null,
     val setupChecklistState: SetupChecklistState? = null,
+    val searchState: SearchState = SearchState.EMPTY,
     val isPrivateScreenLocked: Boolean = false,
     val reviewPrompt: ReviewPromptState = Unknown,
 ) : State

@@ -300,7 +300,7 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">ઇતિહાસ કાઢી નાખો</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">%1$s કાઢી નાખ્યું</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s કાઢી નાખ્યું</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">કાઢો</string>
   <!--
@@ -333,7 +333,7 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">શું તમે ખરેખર આ ફોલ્ડરને કાઢવા માંગો છો?</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">શું તમે ખરેખર આ ફોલ્ડરને કાઢવા માંગો છો?</string>
   <!-- Screen title for adding a bookmarks folder -->
   <string name="bookmark_add_folder">ફોલ્ડર ઉમેરો</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
@@ -351,7 +351,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">કાઢી નાખો</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">સાચવો</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">સાચવો</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -362,7 +362,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">ફોલ્ડર સંપાદિત કરો</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">સમન્વયિત બુકમાર્ક્સ જોવા માટે સાઇન ઇન કરો</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">સમન્વયિત બુકમાર્ક્સ જોવા માટે સાઇન ઇન કરો</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -370,15 +370,15 @@
   <!-- Bookmark NAME editing field label -->
   <string name="bookmark_name_label">નામ</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">ફોલ્ડર ઉમેરો</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">ફોલ્ડર ઉમેરો</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">ફોલ્ડર પસંદ કરો</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">શીર્ષક હોવું આવશ્યક છે</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">શીર્ષક હોવું આવશ્યક છે</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">અમાન્ય URL</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">અહીં કોઈ બુકમાર્ક્સ નથી</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">અહીં કોઈ બુકમાર્ક્સ નથી</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
@@ -465,7 +465,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ટેબ્સ પસંદ કરેલ</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">ટેબ્સ સાચવ્યા!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">ટેબ્સ સાચવ્યા!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
   <string name="create_collection_tab_saved">ટેબ સાચવી!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
@@ -528,9 +528,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">સંગ્રહ કાઢી નાખ્યા</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">સંગ્રહ કાઢી નાખ્યા</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">સંગ્રહનું નામ બદલ્યું</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">સંગ્રહનું નામ બદલ્યું</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">ટેબ બંધ કર્યું</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -555,9 +555,9 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">શું તમે ખરેખર %1$s ને કાઢી નાખવા માંગો છો?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">કાઢી નાખો</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">કાઢી નાખો</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">URL નકલ કરી</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL નકલ કરી</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_text_size_summary">વેબસાઇટ્સ પર ટેક્સ્ટ મોટા અથવા નાનાં બનાવો</string>
   <!-- Title for Accessibility Text Size Scaling Preference -->
@@ -782,14 +782,12 @@
   <string name="search_add_custom_engine_error_empty_search_string">શોધ શબ્દમાળા દાખલ કરો</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">તે તપાસણી કરો કે શોધ શબ્દમાળા ઉદાહરણ ફોર્મેટ સાથે મેળ ખાય છે</string>
-  <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">“%s” થી કનેક્ટ કરવામાં ભૂલ</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">%s બનાવ્યું</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s બનાવ્યું</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">%s સાચવ્યું</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s સાચવ્યું</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">%s કાઢી નાખ્યું</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s કાઢી નાખ્યું</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">તેને મંજૂરી આપવા માટે:</string>
   <!--

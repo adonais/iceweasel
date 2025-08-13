@@ -14,6 +14,7 @@
 
 #include "js/Result.h"
 #include "js/RootingAPI.h"
+#include "js/Utility.h"
 
 struct JS_PUBLIC_API JSContext;
 class JSLinearString;
@@ -91,6 +92,10 @@ class UnicodeExtensionKeyword final {
 
 [[nodiscard]] extern bool ApplyUnicodeExtensionToTag(
     JSContext* cx, mozilla::intl::Locale& tag,
+    JS::HandleVector<UnicodeExtensionKeyword> keywords);
+
+JS::UniqueChars FormatLocale(
+    JSContext* cx, JS::Handle<JSObject*> internals,
     JS::HandleVector<UnicodeExtensionKeyword> keywords);
 
 }  // namespace intl

@@ -1,0 +1,222 @@
+diff --git a/toolkit/components/url-classifier/chromium/safebrowsing_v5.proto b/toolkit/components/url-classifier/chromium/safebrowsing_v5.proto
+index 0d5947d99a10..764b185d18ee 100644
+--- a/toolkit/components/url-classifier/chromium/safebrowsing_v5.proto
++++ b/toolkit/components/url-classifier/chromium/safebrowsing_v5.proto
+@@ -14,77 +14,9 @@
+ 
+ syntax = "proto3";
+ 
+-package google.security.safebrowsing.v5;
++option optimize_for = LITE_RUNTIME;
+ 
+-import "google/api/annotations.proto";
+-import "google/api/client.proto";
+-import "google/api/field_behavior.proto";
+-import "google/api/resource.proto";
+-import "google/protobuf/duration.proto";
+-
+-option go_package = "google.golang.org/genproto/googleapis/security/safebrowsing/v5;safebrowsing";
+-option java_multiple_files = true;
+-option java_outer_classname = "SafeBrowsingProto";
+-option java_package = "com.google.security.safebrowsing.v5";
+-
+-// The Safe Browsing APIs enable clients to check web resources (most commonly
+-// URLs) against Google's constantly updated lists of unsafe web resources.
+-service SafeBrowsing {
+-  option (google.api.default_host) = "safebrowsing.googleapis.com";
+-
+-  // Search for full hashes matching the specified prefixes.
+-  //
+-  // This is a custom method as defined by https://google.aip.dev/136 (the
+-  // custom method refers to this method having a custom name within Google's
+-  // general API development nomenclature; it does not refer to using a custom
+-  // HTTP method).
+-  rpc SearchHashes(SearchHashesRequest) returns (SearchHashesResponse) {
+-    option (google.api.http) = {
+-      get: "/v5/hashes:search"
+-    };
+-  }
+-
+-  // Get the latest contents of a hash list. A hash list may either by a threat
+-  // list or a non-threat list such as the Global Cache.
+-  //
+-  // This is a standard Get method as defined by https://google.aip.dev/131 and
+-  // the HTTP method is also GET.
+-  rpc GetHashList(GetHashListRequest) returns (HashList) {
+-    option (google.api.http) = {
+-      get: "/v5/hashList/{name}"
+-    };
+-    option (google.api.method_signature) = "name";
+-  }
+-
+-  // List hash lists.
+-  //
+-  // In the V5 API, Google will never remove a hash list that has ever been
+-  // returned by this method. This enables clients to skip using this method and
+-  // simply hard-code all hash lists they need.
+-  //
+-  // This is a standard List method as defined by https://google.aip.dev/132 and
+-  // the HTTP method is GET.
+-  rpc ListHashLists(ListHashListsRequest) returns (ListHashListsResponse) {
+-    option (google.api.http) = {
+-      get: "/v5/hashLists"
+-    };
+-    option (google.api.method_signature) = "";
+-  }
+-
+-  // Get multiple hash lists at once.
+-  //
+-  // It is very common for a client to need to get multiple hash lists. Using
+-  // this method is preferred over using the regular Get method multiple times.
+-  //
+-  // This is a standard batch Get method as defined by
+-  // https://google.aip.dev/231 and the HTTP method is also GET.
+-  rpc BatchGetHashLists(BatchGetHashListsRequest)
+-      returns (BatchGetHashListsResponse) {
+-    option (google.api.http) = {
+-      get: "/v5/hashLists:batchGet"
+-    };
+-  }
+-}
++package mozilla.safebrowsing.v5;
+ 
+ // Types of threats.
+ enum ThreatType {
+@@ -179,7 +111,25 @@ message SearchHashesRequest {
+   //
+   // Currently each hash prefix is required to be exactly 4 bytes long. This MAY
+   // be relaxed in the future.
+-  repeated bytes hash_prefixes = 1 [(google.api.field_behavior) = REQUIRED];
++  repeated bytes hash_prefixes = 1;
++}
++
++// A message that copy from the duration.proto. This is used for replacing the
++// reducing the google.protobuf.Duration. So we can decrease the number of
++// needed compiled protobuf files.
++message Duration {
++  // Signed seconds of the span of time. Must be from -315,576,000,000
++  // to +315,576,000,000 inclusive. Note: these bounds are computed from:
++  // 60 sec/min * 60 min/hr * 24 hr/day * 365.25 days/year * 10000 years
++  int64 seconds = 1;
++
++  // Signed fractions of a second at nanosecond resolution of the span
++  // of time. Durations less than one second are represented with a 0
++  // `seconds` field and a positive or negative `nanos` field. For durations
++  // of one second or more, a non-zero value for the `nanos` field must be
++  // of the same sign as the `seconds` field. Must be from -999,999,999
++  // to +999,999,999 inclusive.
++  int32 nanos = 2;
+ }
+ 
+ // The response returned after searching threat hashes.
+@@ -195,8 +145,7 @@ message SearchHashesRequest {
+ // simplified into a single `cache_duration` field.
+ message SearchHashesResponse {
+   // Unordered list. The unordered list of full hashes found.
+-  repeated FullHash full_hashes = 1
+-      [(google.api.field_behavior) = UNORDERED_LIST];
++  repeated FullHash full_hashes = 1;
+ 
+   // The client-side cache duration. The client MUST add this duration to the
+   // current time to determine the expiration time. The expiration time then
+@@ -213,7 +162,7 @@ message SearchHashesResponse {
+   // Important: the client MUST NOT assume that the server will return the same
+   // cache duration for all responses. The server MAY choose different cache
+   // durations for different responses depending on the situation.
+-  google.protobuf.Duration cache_duration = 2;
++  Duration cache_duration = 2;
+ }
+ 
+ // The full hash identified with one or more matches.
+@@ -237,8 +186,7 @@ message FullHash {
+ 
+     // Unordered list. Additional attributes about those full hashes. This may
+     // be empty.
+-    repeated ThreatAttribute attributes = 2
+-        [(google.api.field_behavior) = UNORDERED_LIST];
++    repeated ThreatAttribute attributes = 2;
+   }
+ 
+   // The matching full hash. This is the SHA256 hash. The length will be exactly
+@@ -247,8 +195,7 @@ message FullHash {
+ 
+   // Unordered list. A repeated field identifying the details relevant to this
+   // full hash.
+-  repeated FullHashDetail full_hash_details = 2
+-      [(google.api.field_behavior) = UNORDERED_LIST];
++  repeated FullHashDetail full_hash_details = 2;
+ }
+ 
+ // A request to obtain a hash list, which may be a threat list or a non-threat
+@@ -265,12 +212,7 @@ message FullHash {
+ message GetHashListRequest {
+   // Required. The name of this particular hash list. It may be a threat list,
+   // or it may be the Global Cache.
+-  string name = 1 [
+-    (google.api.field_behavior) = REQUIRED,
+-    (google.api.resource_reference) = {
+-      type: "safebrowsing.googleapis.com/HashList"
+-    }
+-  ];
++  string name = 1;
+ 
+   // The version of the hash list that the client already has. If this is the
+   // first time the client is fetching the hash list, this field MUST be
+@@ -437,15 +379,13 @@ message HashListMetadata {
+   // hashes or hash prefixes in this hash list. May be empty if the entry does
+   // not represent a threat, i.e. in the case that it represents a likely safe
+   // type.
+-  repeated ThreatType threat_types = 1
+-      [(google.api.field_behavior) = UNORDERED_LIST];
++  repeated ThreatType threat_types = 1;
+ 
+   // Unordered list. If not empty, this specifies that the hash list represents
+   // a list of likely safe hashes, and this enumerates the ways they are
+   // considered likely safe. This field is mutually exclusive with the
+   // threat_types field.
+-  repeated LikelySafeType likely_safe_types = 2
+-      [(google.api.field_behavior) = UNORDERED_LIST];
++  repeated LikelySafeType likely_safe_types = 2;
+ 
+   // A human-readable description about this list. Written in English.
+   string description = 4;
+@@ -459,11 +399,6 @@ message HashListMetadata {
+ 
+ // A list of hashes identified by its name.
+ message HashList {
+-  option (google.api.resource) = {
+-    type: "safebrowsing.googleapis.com/HashList"
+-    pattern: "hashLists/{hash_list}"
+-  };
+-
+   // The Rice-delta encoded version of additions. The hash prefix lengths of
+   // additions are uniform across all additions in the list.
+   oneof compressed_additions {
+@@ -509,7 +444,7 @@ message HashList {
+   // omitted or zero, clients SHOULD fetch immediately because it indicates that
+   // the server has an additional update to be sent to the client, but could not
+   // due to the client-specified constraints.
+-  google.protobuf.Duration minimum_wait_duration = 6;
++  Duration minimum_wait_duration = 6;
+ 
+   // The sorted list of all hashes, hashed again with SHA256.
+   // This is the checksum for the sorted list of all hashes present in the
+@@ -529,12 +464,7 @@ message BatchGetHashListsRequest {
+   // Required. The names of the particular hash lists. The list MAY be a threat
+   // list, or it may be the Global Cache. The names MUST NOT contain duplicates;
+   // if they did, the client will get an error.
+-  repeated string names = 1 [
+-    (google.api.field_behavior) = REQUIRED,
+-    (google.api.resource_reference) = {
+-      type: "safebrowsing.googleapis.com/HashList"
+-    }
+-  ];
++  repeated string names = 1;
+ 
+   // The versions of the hash list that the client already has. If this is the
+   // first time the client is fetching the hash lists, the field should be
+@@ -586,4 +516,3 @@ message ListHashListsResponse {
+   // If this field is omitted, there are no subsequent pages.
+   string next_page_token = 2;
+ }
+-

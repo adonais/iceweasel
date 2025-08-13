@@ -248,12 +248,6 @@ class TabDrawerRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyFab: Verified that the new tab FAB button exists")
     }
 
-    fun verifyNormalTabCounter() {
-        Log.i(TAG, "verifyNormalTabCounter: Trying to verify that the normal tabs list counter exists")
-        composeTestRule.normalTabsCounter().assertExists()
-        Log.i(TAG, "verifyNormalTabCounter: Verified that the normal tabs list counter exists")
-    }
-
     /**
      * Verifies a tab's thumbnail when there is only one tab open.
      */

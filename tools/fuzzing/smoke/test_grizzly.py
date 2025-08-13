@@ -1,6 +1,6 @@
 import os
-import os.path
 import sys
+from pathlib import Path
 from subprocess import check_call
 
 import mozinstall
@@ -9,29 +9,35 @@ import pytest
 from moztest.selftest import fixtures
 
 MOZ_AUTOMATION = bool(os.getenv("MOZ_AUTOMATION", "0") == "1")
+MOZ_FETCHES_DIR = os.getenv("MOZ_FETCHES_DIR", "")
 
 
 # skip tsan while ubuntu 18.04 is the test image, for intermittent startup crashes
 @pytest.mark.skip_mozinfo("tsan")
-def test_grizzly_smoke():
+@pytest.mark.parametrize("relaunch", [1, 5])
+def test_grizzly_smoke(relaunch):
     ffbin = fixtures.binary()
+    ffbin = ffbin.replace("$MOZ_FETCHES_DIR", MOZ_FETCHES_DIR).strip('"')
 
-    ffbin = ffbin.replace("$MOZ_FETCHES_DIR", os.getenv("MOZ_FETCHES_DIR", "")).strip(
-        '"'
-    )
+    # add minidump-stackwalk to path so grizzly will find it
+    mdsw_path = Path(MOZ_FETCHES_DIR) / "minidump-stackwalk"
+    if MOZ_FETCHES_DIR and mdsw_path.is_dir():
+        path = os.getenv("PATH", "").split(os.pathsep)
+        path.append(str(mdsw_path))
+        os.environ["PATH"] = os.pathsep.join(path)
 
     if "Contents/MacOS/firefox" in ffbin and MOZ_AUTOMATION:
         mozinstall.install(
-            os.path.join(os.getenv("MOZ_FETCHES_DIR", ""), "target.dmg"),
-            os.getenv("MOZ_FETCHES_DIR", ""),
+            str(Path(MOZ_FETCHES_DIR) / "target.dmg"),
+            MOZ_FETCHES_DIR,
         )
 
     if MOZ_AUTOMATION:
-        assert os.path.exists(
+        assert Path(
             ffbin
-        ), "Missing Firefox build. Build it, or set GECKO_BINARY_PATH"
+        ).exists(), "Missing Firefox build. Build it, or set GECKO_BINARY_PATH"
 
-    elif not os.path.exists(ffbin):
+    elif not Path(ffbin).exists():
         pytest.skip("Missing Firefox build. Build it, or set GECKO_BINARY_PATH")
 
     check_call(
@@ -47,7 +53,7 @@ def test_grizzly_smoke():
             "--limit",
             "10",
             "--relaunch",
-            "5",
+            str(relaunch),
         ],
     )
 

@@ -9,6 +9,7 @@
 #include "CommandEncoder.h"
 #include "RenderBundle.h"
 #include "RenderPipeline.h"
+#include "TextureView.h"
 #include "Utility.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
 #include "ipc/WebGPUChild.h"
@@ -86,7 +87,8 @@ ffi::WGPURecordedRenderPass* BeginRenderPass(
   ffi::WGPURenderPassDepthStencilAttachment dsDesc = {};
   if (aDesc.mDepthStencilAttachment.WasPassed()) {
     const auto& dsa = aDesc.mDepthStencilAttachment.Value();
-    dsDesc.view = dsa.mView->mId;
+    // NOTE: We're assuming callers reified this to be a view.
+    dsDesc.view = dsa.mView.GetAsGPUTextureView()->mId;
 
     // -
 
@@ -168,7 +170,8 @@ ffi::WGPURecordedRenderPass* BeginRenderPass(
 
   for (const auto& ca : aDesc.mColorAttachments) {
     ffi::WGPUFfiRenderPassColorAttachment cd = {};
-    cd.view = ca.mView->mId;
+    // NOTE: We're assuming callers reified this to be a view.
+    cd.view = ca.mView.GetAsGPUTextureView()->mId;
     cd.store_op = ConvertStoreOp(ca.mStoreOp);
 
     if (ca.mDepthSlice.WasPassed()) {
@@ -178,7 +181,8 @@ ffi::WGPURecordedRenderPass* BeginRenderPass(
       cd.depth_slice.tag = ffi::WGPUFfiOption_u32_None_u32;
     }
     if (ca.mResolveTarget.WasPassed()) {
-      cd.resolve_target = ca.mResolveTarget.Value().mId;
+      // NOTE: We're assuming callers reified this to be a view.
+      cd.resolve_target = ca.mResolveTarget.Value().GetAsGPUTextureView()->mId;
     }
 
     switch (ca.mLoadOp) {
@@ -222,12 +226,15 @@ RenderPassEncoder::RenderPassEncoder(CommandEncoder* const aParent,
     return;
   }
 
+  // NOTE: We depend on callers ensuring that texture-or-view fields are reified
+  // to views.
+
   for (const auto& at : aDesc.mColorAttachments) {
-    mUsedTextureViews.AppendElement(at.mView);
+    mUsedTextureViews.AppendElement(at.mView.GetAsGPUTextureView());
   }
   if (aDesc.mDepthStencilAttachment.WasPassed()) {
     mUsedTextureViews.AppendElement(
-        aDesc.mDepthStencilAttachment.Value().mView);
+        aDesc.mDepthStencilAttachment.Value().mView.GetAsGPUTextureView());
   }
 }
 
@@ -451,11 +458,10 @@ void RenderPassEncoder::InsertDebugMarker(const nsAString& aString) {
 }
 
 void RenderPassEncoder::End() {
-  if (mParent->GetState() != CommandEncoderState::Locked &&
-      mParent->GetBridge()->CanSend()) {
-    mParent->GetBridge()->SendReportError(mParent->GetDevice()->mId,
-                                          dom::GPUErrorFilter::Validation,
-                                          "Encoding must not have ended"_ns);
+  if (mParent->GetState() != CommandEncoderState::Locked) {
+    const auto* message = "Encoding must not have ended";
+    ffi::wgpu_report_validation_error(mParent->GetBridge()->GetClient(),
+                                      mParent->GetDevice()->mId, message);
   }
   if (!mValid) {
     return;

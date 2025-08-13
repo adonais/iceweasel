@@ -76,7 +76,8 @@ Touch::Touch(int32_t aIdentifier, LayoutDeviceIntPoint aPoint,
 }
 
 Touch::Touch(const Touch& aOther)
-    : mOriginalTarget(aOther.mOriginalTarget),
+    : WidgetPointerHelper(aOther),
+      mOriginalTarget(aOther.mOriginalTarget),
       mTarget(aOther.mTarget),
       mRefPoint(aOther.mRefPoint),
       mChanged(aOther.mChanged),

@@ -465,7 +465,6 @@ JS_PUBLIC_API JSObject* JS_GetArrayBufferViewBuffer(JSContext* cx,
                                                     bool* isSharedMemory) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
-  cx->check(obj);
 
   Rooted<ArrayBufferViewObject*> unwrappedView(
       cx, obj->maybeUnwrapAs<ArrayBufferViewObject>());

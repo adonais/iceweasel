@@ -9,9 +9,9 @@
 
 #include "mozilla/Decimal.h"
 #include "mozilla/EventForwards.h"
+#include "nsCOMPtr.h"
 #include "nsContainerFrame.h"
 #include "nsIAnonymousContentCreator.h"
-#include "nsCOMPtr.h"
 #include "nsTArray.h"
 
 class nsDisplayRangeFocusRing;

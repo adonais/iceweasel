@@ -10,6 +10,7 @@ add_setup(async function () {
       ["signon.rememberSignons", true],
     ],
   });
+  LoginTestUtils.clearData();
   registerCleanupFunction(LoginTestUtils.clearData);
 });
 

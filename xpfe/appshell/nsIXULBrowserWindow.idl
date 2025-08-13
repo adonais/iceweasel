@@ -14,7 +14,6 @@ interface nsIDocShell;
 interface nsIRemoteTab;
 interface nsIPrincipal;
 interface mozIDOMWindowProxy;
-interface nsIContentSecurityPolicy;
 interface nsIReferrerInfo;
 
 webidl Element;

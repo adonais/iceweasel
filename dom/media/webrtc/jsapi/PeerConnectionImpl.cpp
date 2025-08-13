@@ -39,7 +39,7 @@
 #include "PeerConnectionCtx.h"
 #include "PeerConnectionImpl.h"
 #include "RemoteTrackSource.h"
-#include "nsDOMDataChannelDeclarations.h"
+#include "RTCDataChannelDeclarations.h"
 #include "transport/dtlsidentity.h"
 #include "sdp/SdpAttribute.h"
 
@@ -67,7 +67,7 @@
 
 #include "mozilla/dom/Document.h"
 #include "nsGlobalWindowInner.h"
-#include "nsDOMDataChannel.h"
+#include "RTCDataChannel.h"
 #include "mozilla/dom/Location.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/NullPrincipal.h"
@@ -809,6 +809,39 @@ already_AddRefed<RTCRtpTransceiver> PeerConnectionImpl::AddTransceiver(
 
   auto& sendEncodings = init.mSendEncodings;
 
+  // See https://www.w3.org/TR/webrtc/#dom-rtcrtpsender-setparameters step 11
+  // Also see https://bugzilla.mozilla.org/show_bug.cgi?id=1968828
+  auto getCapabilitiesResult = dom::Nullable<dom::RTCRtpCapabilities>();
+  GetCapabilities(aKind, getCapabilitiesResult, sdp::Direction::kSend);
+  MOZ_ASSERT(!getCapabilitiesResult.IsNull());
+  if (NS_WARN_IF(getCapabilitiesResult.IsNull())) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+  const auto& codecs = getCapabilitiesResult.Value().mCodecs;
+  for (const auto& encoding : sendEncodings) {
+    bool found = false;
+    if (encoding.mCodec.WasPassed()) {
+      for (const auto& codec : codecs) {
+        if (DoesCodecParameterMatchCodec(encoding.mCodec.Value(), codec)) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        const auto mime =
+            NS_LossyConvertUTF16toASCII(encoding.mCodec.Value().mMimeType);
+        std::stringstream ss;
+        ss << "Codec " << mime
+           << " does not match any codec "
+              "in GetCapabilities";
+        nsCString errorStr(ss.str().c_str());
+        aRv.ThrowOperationError(errorStr);
+        return nullptr;
+      }
+    }
+  }
+
   // CheckAndRectifyEncodings covers these six:
   // If any encoding contains a rid member whose value does not conform to the
   // grammar requirements specified in Section 10 of [RFC8851], throw a
@@ -828,8 +861,12 @@ already_AddRefed<RTCRtpTransceiver> PeerConnectionImpl::AddTransceiver(
   // Verify that the value of each maxFramerate member in sendEncodings that is
   // defined is greater than 0.0. If one of the maxFramerate values does not
   // meet this requirement, throw a RangeError.
-  RTCRtpSender::CheckAndRectifyEncodings(sendEncodings,
-                                         *type == SdpMediaSection::kVideo, aRv);
+
+  RTCRtpSender::CheckAndRectifyEncodings(
+      sendEncodings, *type == SdpMediaSection::kVideo,
+      // No codecs until after negotiation
+      Optional<Sequence<RTCRtpCodecParameters>>(), false, false,
+      MatchGetCapabilities::NO, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
@@ -955,11 +992,11 @@ nsresult PeerConnectionImpl::MaybeInitializeDataChannel() {
   return NS_ERROR_FAILURE;
 }
 
-already_AddRefed<nsDOMDataChannel> PeerConnectionImpl::CreateDataChannel(
-    const nsAString& aLabel, const nsAString& aProtocol, uint16_t aType,
+already_AddRefed<RTCDataChannel> PeerConnectionImpl::CreateDataChannel(
+    const nsACString& aLabel, const nsACString& aProtocol, uint16_t aType,
     bool ordered, uint16_t aMaxTime, uint16_t aMaxNum, bool aExternalNegotiated,
     uint16_t aStream, ErrorResult& rv) {
-  RefPtr<nsDOMDataChannel> result;
+  RefPtr<RTCDataChannel> result;
   rv = CreateDataChannel(aLabel, aProtocol, aType, ordered, aMaxTime, aMaxNum,
                          aExternalNegotiated, aStream, getter_AddRefs(result));
   return result.forget();
@@ -967,23 +1004,27 @@ already_AddRefed<nsDOMDataChannel> PeerConnectionImpl::CreateDataChannel(
 
 NS_IMETHODIMP
 PeerConnectionImpl::CreateDataChannel(
-    const nsAString& aLabel, const nsAString& aProtocol, uint16_t aType,
+    const nsACString& aLabel, const nsACString& aProtocol, uint16_t aType,
     bool ordered, uint16_t aMaxTime, uint16_t aMaxNum, bool aExternalNegotiated,
-    uint16_t aStream, nsDOMDataChannel** aRetval) {
+    uint16_t aStream, RTCDataChannel** aRetval) {
   PC_AUTO_ENTER_API_CALL(false);
   MOZ_ASSERT(aRetval);
 
   RefPtr<DataChannel> dataChannel;
   DataChannelReliabilityPolicy prPolicy;
+  Nullable<uint16_t> maxLifeTime;
+  Nullable<uint16_t> maxRetransmits;
   switch (aType) {
     case IPeerConnection::kDataChannelReliable:
       prPolicy = DataChannelReliabilityPolicy::Reliable;
       break;
     case IPeerConnection::kDataChannelPartialReliableRexmit:
       prPolicy = DataChannelReliabilityPolicy::LimitedRetransmissions;
+      maxRetransmits.SetValue(aMaxNum);
       break;
     case IPeerConnection::kDataChannelPartialReliableTimed:
       prPolicy = DataChannelReliabilityPolicy::LimitedLifetime;
+      maxLifeTime.SetValue(aMaxTime);
       break;
     default:
       MOZ_ASSERT(false);
@@ -1002,8 +1043,7 @@ PeerConnectionImpl::CreateDataChannel(
     return rv;
   }
   dataChannel = mDataConnection->Open(
-      NS_ConvertUTF16toUTF8(aLabel), NS_ConvertUTF16toUTF8(aProtocol), prPolicy,
-      ordered,
+      aLabel, aProtocol, prPolicy, ordered,
       prPolicy == DataChannelReliabilityPolicy::LimitedRetransmissions
           ? aMaxNum
           : (prPolicy == DataChannelReliabilityPolicy::LimitedLifetime
@@ -1027,9 +1067,10 @@ PeerConnectionImpl::CreateDataChannel(
         JsepTransceiver(SdpMediaSection::MediaType::kApplication, *mUuidGen));
   }
 
-  RefPtr<nsDOMDataChannel> retval;
-  rv = NS_NewDOMDataChannel(dataChannel.forget(), mWindow,
-                            getter_AddRefs(retval));
+  RefPtr<RTCDataChannel> retval;
+  rv = NS_NewDOMDataChannel(dataChannel.forget(), aLabel, ordered, maxLifeTime,
+                            maxRetransmits, aProtocol, aExternalNegotiated,
+                            mWindow, getter_AddRefs(retval));
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -1313,16 +1354,20 @@ RefPtr<dom::RTCRtpTransceiver> PeerConnectionImpl::GetTransceiver(
 }
 
 void PeerConnectionImpl::NotifyDataChannel(
-    already_AddRefed<DataChannel> aChannel) {
+    already_AddRefed<DataChannel> aChannel, const nsACString& aLabel,
+    bool aOrdered, mozilla::dom::Nullable<uint16_t> aMaxLifeTime,
+    mozilla::dom::Nullable<uint16_t> aMaxRetransmits,
+    const nsACString& aProtocol, bool aNegotiated) {
   PC_AUTO_ENTER_API_CALL_NO_CHECK();
 
   RefPtr<DataChannel> channel(aChannel);
   MOZ_ASSERT(channel);
   CSFLogDebug(LOGTAG, "%s: channel: %p", __FUNCTION__, channel.get());
 
-  RefPtr<nsDOMDataChannel> domchannel;
-  nsresult rv = NS_NewDOMDataChannel(channel.forget(), mWindow,
-                                     getter_AddRefs(domchannel));
+  RefPtr<RTCDataChannel> domchannel;
+  nsresult rv = NS_NewDOMDataChannel(
+      channel.forget(), aLabel, aOrdered, aMaxLifeTime, aMaxRetransmits,
+      aProtocol, aNegotiated, mWindow, getter_AddRefs(domchannel));
   NS_ENSURE_SUCCESS_VOID(rv);
 
   JSErrorResult jrv;

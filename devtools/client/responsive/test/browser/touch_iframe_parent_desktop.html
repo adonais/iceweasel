@@ -1,0 +1,48 @@
+<!-- This is the same as touch_iframe_parent.html without the viewport tag -->
+<!doctype html>
+<style>
+  iframe {
+    position: absolute;
+    top: 0px;
+    width: 100px;
+    height: 100px;
+    &#local-iframe {
+      left: 100px;
+    }
+    &#remote-iframe {
+      left: 200px;
+    }
+  }
+</style>
+<iframe id="local-iframe" src="./touch_iframe_child.html"></iframe>
+<iframe id="remote-iframe"></iframe>
+
+<script>
+  "use strict";
+
+  function recordEvent(frameName, type) {
+    const events = document.body.dataset[frameName];
+    document.body.dataset[frameName] = (events ? (events + " ") : "") + type;
+  }
+
+  for (const type of ["mousedown", "mousemove", "mouseup",
+                      "touchstart", "touchmove", "touchend",
+                      "pointerdown", "pointermove", "pointerup",
+                      "click", "dblclick", "contextmenu"]) {
+    document.addEventListener(type, ev => {
+      recordEvent("topFrame", ev.type);
+      // Workaround for Bug 1976659: First click after contextmenu event is ignored with touch simulation
+      if (ev.type === "contextmenu") {
+        ev.preventDefault();
+      }
+    });
+  }
+
+  window.addEventListener("message", ev => {
+    if (ev.data.from === location.origin) {
+      recordEvent("localIFrame", ev.data.type);
+    } else {
+      recordEvent("remoteIFrame", ev.data.type);
+    }
+  });
+</script>

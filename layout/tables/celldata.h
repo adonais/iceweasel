@@ -5,12 +5,13 @@
 #ifndef CellData_h__
 #define CellData_h__
 
+#include <stdint.h>
+
+#include "mozilla/WritingModes.h"
+#include "mozilla/gfx/Types.h"
+#include "nsCoord.h"
 #include "nsISupports.h"
 #include "nsITableCellLayout.h"  // for MAX_COLSPAN / MAX_ROWSPAN
-#include "nsCoord.h"
-#include "mozilla/gfx/Types.h"
-#include "mozilla/WritingModes.h"
-#include <stdint.h>
 
 class nsTableCellFrame;
 class nsCellMap;

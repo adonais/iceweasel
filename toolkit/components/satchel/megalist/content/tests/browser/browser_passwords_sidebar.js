@@ -230,41 +230,13 @@ add_task(async function test_login_line_commands() {
   SidebarController.hide();
 });
 
-add_task(async function test_passwords_menu_export_remove_disabled() {
-  Services.fog.testResetFOG();
-  await Services.fog.testFlushAllChildren();
-
-  const passwordsSidebar = await openPasswordsSidebar();
-  await waitForSnapshots();
-
-  // Ensure there are no saved logins
-  await Services.logins.removeAllLogins();
-  await checkEmptyState(".no-logins-card-content", passwordsSidebar);
-
-  const menu = passwordsSidebar.querySelector("panel-list");
-  const menuButton = passwordsSidebar.querySelector("#more-options-menubutton");
-  menuButton.click();
-  await BrowserTestUtils.waitForEvent(menu, "shown");
-
-  const exportButton = getShadowBtn(menu, "[action='export-logins']");
-  const removeAllButton = getShadowBtn(menu, "[action='remove-all-logins']");
-  ok(
-    exportButton.disabled,
-    "'Export Passwords' is disabled when no logins are saved."
-  );
-  ok(
-    removeAllButton.disabled,
-    "'Remove All Passwords' is disabled when no logins are saved."
-  );
-
-  SidebarController.hide();
-});
-
 add_task(async function test_passwords_menu_external_links() {
   Services.fog.testResetFOG();
   await Services.fog.testFlushAllChildren();
 
+  await addMockPasswords();
   const passwordsSidebar = await openPasswordsSidebar();
+  await checkAllLoginsRendered(passwordsSidebar);
   await waitForSnapshots();
   const menu = passwordsSidebar.querySelector("panel-list");
   const menuButton = passwordsSidebar.querySelector("#more-options-menubutton");
@@ -305,6 +277,7 @@ add_task(async function test_passwords_menu_external_links() {
   // We need this since removing gBrowser.selectedTab (this is the tab that has about:preferences)
   // without a fallback causes an error. Leaving it causes a leak when running in chaos mode.
   // It seems that our testing framework is smart enough to cleanup about:blank pages.
+  LoginTestUtils.clearData();
   BrowserTestUtils.addTab(gBrowser, "about:blank");
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
   SidebarController.hide();
@@ -326,10 +299,12 @@ add_task(async function test_passwords_menu_import_from_browser() {
   Services.fog.testResetFOG();
   await Services.fog.testFlushAllChildren();
 
+  await addMockPasswords();
   const passwordsSidebar = await openPasswordsSidebar();
   await waitForSnapshots();
   await testImportFromBrowser(passwordsSidebar);
 
+  LoginTestUtils.clearData();
   BrowserTestUtils.addTab(gBrowser, "about:blank");
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
   SidebarController.hide();

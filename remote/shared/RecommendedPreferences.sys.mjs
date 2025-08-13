@@ -374,6 +374,9 @@ const COMMON_PREFERENCES = new Map([
   ["startup.homepage_welcome_url", "about:blank"],
   ["startup.homepage_welcome_url.additional", ""],
 
+  // Do not show TOU new user modal which can interfere with tests
+  ["termsofuse.bypassNotification", true],
+
   // Prevent starting into safe mode after application crashes
   ["toolkit.startup.max_resumed_crashes", -1],
 

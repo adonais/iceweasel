@@ -7,8 +7,8 @@
 #ifndef RETAINEDDISPLAYLISTHELPERS_H_
 #define RETAINEDDISPLAYLISTHELPERS_H_
 
-#include "mozilla/Span.h"
 #include "PLDHashTable.h"
+#include "mozilla/Span.h"
 
 class nsIFrame;
 

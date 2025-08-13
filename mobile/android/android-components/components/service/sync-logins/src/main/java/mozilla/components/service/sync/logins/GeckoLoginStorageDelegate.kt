@@ -10,10 +10,12 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import mozilla.appservices.logins.LoginsApiException
 import mozilla.components.concept.storage.Login
 import mozilla.components.concept.storage.LoginEntry
 import mozilla.components.concept.storage.LoginStorageDelegate
 import mozilla.components.concept.storage.LoginsStorage
+import mozilla.components.support.base.log.logger.Logger
 
 /**
  * [LoginStorageDelegate] implementation.
@@ -52,6 +54,7 @@ class GeckoLoginStorageDelegate(
     private val loginStorage: Lazy<LoginsStorage>,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
     private val isLoginAutofillEnabled: () -> Boolean = { false },
+    private val logger: Logger = Logger("GeckoLoginStorageDelegate"),
 ) : LoginStorageDelegate {
 
     override fun onLoginUsed(login: Login) {
@@ -72,7 +75,11 @@ class GeckoLoginStorageDelegate(
     @Synchronized
     override fun onLoginSave(login: LoginEntry) {
         scope.launch {
-            loginStorage.value.addOrUpdate(login)
+            try {
+                loginStorage.value.addOrUpdate(login)
+            } catch (e: LoginsApiException) {
+                logger.error("Error saving login: ", e)
+            }
         }
     }
 }

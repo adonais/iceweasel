@@ -63,7 +63,7 @@ exports.openContentLink = async function (url, options = {}) {
     const tab = top.gBrowser.selectedTab;
     if (gDevTools.hasToolboxForTab(tab)) {
       options.triggeringPrincipal = tab.linkedBrowser.contentPrincipal;
-      options.csp = tab.linkedBrowser.csp;
+      options.policyContainer = tab.linkedBrowser.policyContainer;
     }
   }
   top.openWebLinkIn(url, "tab", options);

@@ -60,7 +60,7 @@ add_task(async function test_one_time_tool_migration() {
   const customizeComponent =
     customizeDocument.querySelector("sidebar-customize");
   let bookmarksInput = Array.from(customizeComponent.toolInputs).find(
-    input => input.name === "viewBookmarksSidebar"
+    input => input.id === "viewBookmarksSidebar"
   );
   ok(
     bookmarksInput.checked,
@@ -112,7 +112,7 @@ add_task(async function test_check_visibility_enabled() {
     customizeDocument.querySelector("sidebar-customize");
 
   let aichatInput = Array.from(customizeComponent.toolInputs).find(
-    input => input.name === "viewGenaiChatSidebar"
+    input => input.id === "viewGenaiChatSidebar"
   );
 
   await BrowserTestUtils.waitForMutationCondition(
@@ -122,7 +122,7 @@ add_task(async function test_check_visibility_enabled() {
   );
 
   let bookmarksInput = Array.from(customizeComponent.toolInputs).find(
-    input => input.name === "viewBookmarksSidebar"
+    input => input.id === "viewBookmarksSidebar"
   );
   ok(
     !bookmarksInput.checked,

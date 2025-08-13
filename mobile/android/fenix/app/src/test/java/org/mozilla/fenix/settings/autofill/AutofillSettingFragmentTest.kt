@@ -29,6 +29,7 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getPreferenceKey
+import org.mozilla.fenix.settings.requirePreference
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
@@ -48,6 +49,7 @@ class AutofillSettingFragmentTest {
         every { testContext.components.settings.addressFeature } returns true
         every { testContext.components.settings.shouldAutofillCreditCardDetails } returns true
         every { testContext.components.settings.shouldAutofillAddressDetails } returns true
+        every { testContext.components.settings.isAddressSyncEnabled } returns true
 
         autofillSettingFragment = AutofillSettingFragment()
 
@@ -181,6 +183,42 @@ class AutofillSettingFragmentTest {
 
         assertNotNull(autofillAddressesPreference)
         assertTrue(autofillAddressesPreference?.isChecked!!)
+    }
+
+    @Test
+    fun `GIVEN the autofill addresses feature & sync are enabled THEN the sync addresses preference is visible`() = runTestOnMain {
+        every { testContext.components.settings.isAddressSyncEnabled } returns true
+
+        autofillSettingFragment.updateAddressPreference(
+            hasAddresses = false,
+            navController = navController,
+        )
+        val addressSyncPreference = autofillSettingFragment.requirePreference<Preference>(
+            R.string.pref_key_addresses_sync_cards_across_devices,
+        )
+
+        assertTrue(
+            "Address sync preference should be visible when address sync is enabled",
+            addressSyncPreference.isVisible,
+        )
+    }
+
+    @Test
+    fun `GIVEN the autofill addresses feature AND sync is not enabled THEN the sync addresses preference is hidden`() = runTestOnMain {
+        every { testContext.components.settings.isAddressSyncEnabled } returns false
+
+        autofillSettingFragment.updateAddressPreference(
+            hasAddresses = false,
+            navController = navController,
+        )
+        val addressSyncPreference = autofillSettingFragment.requirePreference<Preference>(
+            R.string.pref_key_addresses_sync_cards_across_devices,
+        )
+
+        assertFalse(
+            "Address sync preference should not be visible when address sync is disabled",
+            addressSyncPreference.isVisible,
+        )
     }
 
     @Test

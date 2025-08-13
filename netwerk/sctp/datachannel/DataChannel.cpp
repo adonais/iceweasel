@@ -394,6 +394,9 @@ void DataChannelConnection::TransportStateChange(
 void DataChannelConnection::ProcessQueuedOpens() {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   std::set<RefPtr<DataChannel>> temp(std::move(mPending));
+  // Technically in an unspecified state, although no reasonable impl will leave
+  // anything in here.
+  mPending.clear();
   for (auto channel : temp) {
     DC_DEBUG(("Processing queued open for %p (%u)", channel.get(),
               channel->mStream));
@@ -537,7 +540,6 @@ void DataChannelConnection::HandleOpenRequestMessage(
     const struct rtcweb_datachannel_open_request* req, uint32_t length,
     uint16_t stream) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
-  uint32_t prValue;
   DataChannelReliabilityPolicy prPolicy;
 
   const size_t requiredLength = (sizeof(*req) - 1) + ntohs(req->label_length) +
@@ -581,7 +583,7 @@ void DataChannelConnection::HandleOpenRequestMessage(
     return;
   }
 
-  prValue = ntohl(req->reliability_param);
+  const uint32_t prValue = ntohl(req->reliability_param);
   const bool ordered = !(req->channel_type & 0x80);
   const nsCString label(&req->label[0], ntohs(req->label_length));
   const nsCString protocol(&req->label[ntohs(req->label_length)],
@@ -622,9 +624,29 @@ void DataChannelConnection::HandleOpenRequestMessage(
 
         DC_DEBUG(("%s: sending ON_CHANNEL_CREATED for %s/%s: %u", __FUNCTION__,
                   channel->mLabel.get(), channel->mProtocol.get(), stream));
+
+        // Awkward. If we convert over to using Maybe for this in DataChannel,
+        // we won't need to have this extra conversion, since Nullable converts
+        // easily to Maybe.
+        dom::Nullable<uint16_t> maxLifeTime;
+        dom::Nullable<uint16_t> maxRetransmits;
+        if (prPolicy == DataChannelReliabilityPolicy::LimitedLifetime) {
+          maxLifeTime.SetValue(std::min(std::numeric_limits<uint16_t>::max(),
+                                        (uint16_t)prValue));
+        } else if (prPolicy ==
+                   DataChannelReliabilityPolicy::LimitedRetransmissions) {
+          maxRetransmits.SetValue(std::min(std::numeric_limits<uint16_t>::max(),
+                                           (uint16_t)prValue));
+        }
+
         if (mListener) {
           // important to give it an already_AddRefed pointer!
-          mListener->NotifyDataChannel(do_AddRef(channel));
+          // TODO(bug 1974443): Have nsDOMDataChannel create the DataChannel
+          // object, or have DataChannel take an nsDOMDataChannel, to avoid
+          // passing this param list more than once?
+          mListener->NotifyDataChannel(do_AddRef(channel), label, ordered,
+                                       maxLifeTime, maxRetransmits, protocol,
+                                       false);
           // Spec says to queue this in the queued task for ondatachannel
           channel->AnnounceOpen();
         }
@@ -1348,7 +1370,6 @@ void DataChannelConnection::CloseAll() {
   MOZ_ASSERT(NS_IsMainThread());
   DC_DEBUG(("Closing all channels (connection %p)", (void*)this));
 
-  // Make sure no more channels will be opened
   // Close current channels
   // If there are runnables, they hold a strong ref and keep the channel
   // and/or connection alive (even if in a CLOSED state)
@@ -1370,7 +1391,11 @@ void DataChannelConnection::CloseAll() {
         }
 
         // Clean up any pending opens for channels
-        for (const auto& channel : mPending) {
+        std::set<RefPtr<DataChannel>> temp(std::move(mPending));
+        // Technically in an unspecified state, although no reasonable impl will
+        // leave anything in here.
+        mPending.clear();
+        for (const auto& channel : temp) {
           DC_DEBUG(("closing pending channel %p, stream %u", channel.get(),
                     channel->mStream));
           FinishClose_s(
@@ -1494,10 +1519,8 @@ void DataChannel::ReleaseConnection() {
   mConnection = nullptr;
 }
 
-void DataChannel::SetListener(DataChannelListener* aListener,
-                              nsISupports* aContext) {
+void DataChannel::SetListener(DataChannelListener* aListener) {
   MOZ_ASSERT(NS_IsMainThread());
-  mContext = aContext;
   mListener = aListener;
 }
 
@@ -1538,12 +1561,12 @@ void DataChannel::DecrementBufferedAmount(uint32_t aSize) {
         if (!wasLow && mBufferedAmount <= mBufferedThreshold) {
           DC_DEBUG(("%s: sending BUFFER_LOW_THRESHOLD for %s/%s: %u",
                     __FUNCTION__, mLabel.get(), mProtocol.get(), mStream));
-          mListener->OnBufferLow(mContext);
+          mListener->OnBufferLow();
         }
         if (mBufferedAmount == 0) {
           DC_DEBUG(("%s: sending NO_LONGER_BUFFERED for %s/%s: %u",
                     __FUNCTION__, mLabel.get(), mProtocol.get(), mStream));
-          mListener->NotBuffered(mContext);
+          mListener->NotBuffered();
           if (mReadyState == DataChannelState::Closing) {
             if (mConnection) {
               // We're done sending
@@ -1571,7 +1594,7 @@ void DataChannel::AnnounceOpen() {
           DC_DEBUG(("%s: sending ON_CHANNEL_OPEN for %s/%s: %u", __FUNCTION__,
                     mLabel.get(), mProtocol.get(), mStream));
           if (mListener) {
-            mListener->OnChannelConnected(mContext);
+            mListener->OnChannelConnected();
           }
         }
       }));
@@ -1607,7 +1630,7 @@ void DataChannel::AnnounceClosed() {
         if (mListener) {
           DC_DEBUG(("%s: sending ON_CHANNEL_CLOSED for %s/%s: %u", __FUNCTION__,
                     mLabel.get(), mProtocol.get(), mStream));
-          mListener->OnChannelClosed(mContext);
+          mListener->OnChannelClosed();
         }
 
         // Stats stuff
@@ -1690,20 +1713,6 @@ void DataChannel::SendBinaryBlob(dom::Blob& aBlob, ErrorResult& aRv) {
   }
 }
 
-dom::Nullable<uint16_t> DataChannel::GetMaxPacketLifeTime() const {
-  if (mPrPolicy == DataChannelReliabilityPolicy::LimitedLifetime) {
-    return dom::Nullable<uint16_t>(mPrValue);
-  }
-  return dom::Nullable<uint16_t>();
-}
-
-dom::Nullable<uint16_t> DataChannel::GetMaxRetransmits() const {
-  if (mPrPolicy == DataChannelReliabilityPolicy::LimitedRetransmissions) {
-    return dom::Nullable<uint16_t>(mPrValue);
-  }
-  return dom::Nullable<uint16_t>();
-}
-
 uint32_t DataChannel::GetBufferedAmountLowThreshold() const {
   return mBufferedThreshold;
 }
@@ -1756,10 +1765,9 @@ nsresult DataChannelOnMessageAvailable::Run() {
       }
 
       if (mType == EventType::OnDataString) {
-        mChannel->mListener->OnMessageAvailable(mChannel->mContext, mData);
+        mChannel->mListener->OnMessageAvailable(mData);
       } else {
-        mChannel->mListener->OnBinaryMessageAvailable(mChannel->mContext,
-                                                      mData);
+        mChannel->mListener->OnBinaryMessageAvailable(mData);
       }
       break;
     case EventType::OnDisconnected:

@@ -1,4 +1,4 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2016 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -13,8 +13,12 @@ pkg_config("system_libwebp") {
   ]
 }
 
+pkg_config("system_libsharpyuv") {
+  packages = [ "libsharpyuv" ]
+}
+
 shim_headers("libwebp_shim") {
-  root_path = "src"
+  root_path = "src/src"
   headers = [
     "webp/decode.h",
     "webp/demux.h",
@@ -25,9 +29,22 @@ shim_headers("libwebp_shim") {
   ]
 }
 
+shim_headers("libsharpyuv_shim") {
+  root_path = "src"
+  headers = [
+    "sharpyuv/sharpyuv.h",
+    "sharpyuv/sharpyuv_csp.h",
+  ]
+}
+
 source_set("libwebp_webp") {
   deps = [ ":libwebp_shim" ]
   public_configs = [ ":system_libwebp" ]
+}
+
+source_set("libwebp_sharpyuv") {
+  deps = [ ":libsharpyuv_shim" ]
+  public_configs = [ ":system_libsharpyuv" ]
 }
 
 group("libwebp") {

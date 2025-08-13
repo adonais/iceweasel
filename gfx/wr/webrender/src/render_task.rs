@@ -14,7 +14,7 @@ use crate::spatial_tree::SpatialNodeIndex;
 use crate::filterdata::SFilterData;
 use crate::frame_builder::FrameBuilderConfig;
 use crate::gpu_cache::{GpuCache, GpuCacheAddress, GpuCacheHandle};
-use crate::gpu_types::{BorderInstance, ImageSource, UvRectKind, TransformPaletteId};
+use crate::gpu_types::{BorderInstance, ImageSource, UvRectKind, TransformPaletteId, BlurEdgeMode};
 use crate::internal_types::{CacheTextureId, FastHashMap, FilterGraphNode, FilterGraphOp, FilterGraphPictureReference, SVGFE_CONVOLVE_VALUES_LIMIT, TextureSource, Swizzle};
 use crate::picture::{ResolvedSurfaceTexture, MAX_SURFACE_SIZE};
 use crate::prim_store::ClipData;
@@ -223,7 +223,7 @@ pub struct PictureTask {
     pub valid_rect: Option<DeviceIntRect>,
     pub cmd_buffer_index: CommandBufferIndex,
     pub resolve_op: Option<ResolveOp>,
-
+    pub content_size: DeviceIntSize,
     pub can_use_shared_surface: bool,
 }
 
@@ -255,13 +255,14 @@ pub struct BlurTask {
     pub blur_std_deviation: f32,
     pub target_kind: RenderTargetKind,
     pub blur_region: DeviceIntSize,
+    pub edge_mode: BlurEdgeMode,
 }
 
 impl BlurTask {
     // In order to do the blur down-scaling passes without introducing errors, we need the
     // source of each down-scale pass to be a multuple of two. If need be, this inflates
     // the source size so that each down-scale pass will sample correctly.
-    pub fn adjusted_blur_source_size(original_size: DeviceSize, mut std_dev: DeviceSize) -> DeviceIntSize {
+    pub fn adjusted_blur_source_size(original_size: DeviceSize, mut std_dev: DeviceSize) -> DeviceSize {
         let mut adjusted_size = original_size;
         let mut scale_factor = 1.0;
         while std_dev.width > MAX_BLUR_STD_DEVIATION && std_dev.height > MAX_BLUR_STD_DEVIATION {
@@ -274,7 +275,7 @@ impl BlurTask {
             adjusted_size = (original_size.to_f32() / scale_factor).ceil();
         }
 
-        (adjusted_size * scale_factor).round().to_i32()
+        (adjusted_size * scale_factor).round()
     }
 }
 
@@ -518,6 +519,7 @@ impl RenderTaskKind {
         clear_color: Option<ColorF>,
         cmd_buffer_index: CommandBufferIndex,
         can_use_shared_surface: bool,
+        content_size: Option<DeviceIntSize>,
     ) -> Self {
         render_task_sanity_check(&size);
 
@@ -533,6 +535,7 @@ impl RenderTaskKind {
             cmd_buffer_index,
             resolve_op: None,
             can_use_shared_surface,
+            content_size: content_size.unwrap_or(size),
         })
     }
 
@@ -703,6 +706,7 @@ impl RenderTaskKind {
                                 RenderTargetKind::Alpha,
                                 None,
                                 cache_size,
+                                BlurEdgeMode::Duplicate,
                             )
                         }
                     ));
@@ -1171,6 +1175,7 @@ impl RenderTask {
         target_kind: RenderTargetKind,
         mut blur_cache: Option<&mut BlurTaskCache>,
         blur_region: DeviceIntSize,
+        edge_mode: BlurEdgeMode,
     ) -> RenderTaskId {
         // Adjust large std deviation value.
         let mut adjusted_blur_std_deviation = blur_std_deviation;
@@ -1230,6 +1235,7 @@ impl RenderTask {
                     blur_std_deviation: adjusted_blur_std_deviation.height,
                     target_kind,
                     blur_region,
+                    edge_mode,
                 }),
             ).with_uv_rect_kind(uv_rect_kind));
             rg_builder.add_dependency(blur_task_v, downscaling_src_task_id);
@@ -1240,6 +1246,7 @@ impl RenderTask {
                     blur_std_deviation: adjusted_blur_std_deviation.width,
                     target_kind,
                     blur_region,
+                    edge_mode,
                 }),
             ).with_uv_rect_kind(uv_rect_kind));
             rg_builder.add_dependency(task_id, blur_task_v);
@@ -1429,6 +1436,7 @@ impl RenderTask {
                         RenderTargetKind::Color,
                         None,
                         content_size,
+                        BlurEdgeMode::Duplicate,
                     )
                 }
                 FilterPrimitiveKind::Opacity(ref opacity) => {
@@ -1498,6 +1506,7 @@ impl RenderTask {
                         RenderTargetKind::Color,
                         None,
                         content_size,
+                        BlurEdgeMode::Duplicate,
                     );
 
                     RenderTask::new_svg_filter_primitive(
@@ -1968,6 +1977,7 @@ impl RenderTask {
             //
             // Also look up the child tasks while we are here.
             let mut used_subregion = LayoutRect::zero();
+            let mut combined_input_subregion = LayoutRect::zero();
             let node_inputs: Vec<(FilterGraphPictureReference, RenderTaskId)> = node.inputs.iter().map(|input| {
                 let (subregion, task) =
                     match input.buffer_id {
@@ -2005,6 +2015,7 @@ impl RenderTask {
                         ),
                     );
                 used_subregion = used_subregion.union(&target_subregion);
+                combined_input_subregion = combined_input_subregion.union(&subregion);
                 (FilterGraphPictureReference{
                     buffer_id: input.buffer_id,
                     // Apply offset to the placement of the input subregion.
@@ -2218,7 +2229,7 @@ impl RenderTask {
                         std_deviation_y.ceil() * BLUR_SAMPLE_SCALE)
                 }
                 _ => used_subregion,
-            };
+            }.union(&combined_input_subregion);
             while
                 padded_subregion.scale(device_to_render_scale, device_to_render_scale).round().width() + node_inflate as f32 * 2.0 > MAX_SURFACE_SIZE as f32 ||
                 padded_subregion.scale(device_to_render_scale, device_to_render_scale).round().height() + node_inflate as f32 * 2.0 > MAX_SURFACE_SIZE as f32 {
@@ -2303,7 +2314,7 @@ impl RenderTask {
                         BlurTask::adjusted_blur_source_size(
                             blur_task_size,
                             adjusted_blur_std_deviation,
-                        ).to_f32().max(DeviceSize::new(1.0, 1.0));
+                        ).max(DeviceSize::new(1.0, 1.0));
                     // Now change the subregion to match the revised task size,
                     // keeping it centered should keep animated radius smooth.
                     let corner = LayoutPoint::new(
@@ -2360,6 +2371,7 @@ impl RenderTask {
                             RenderTargetKind::Color,
                             None,
                             adjusted_blur_task_size.to_i32(),
+                            BlurEdgeMode::Duplicate,
                         );
 
                     task_id = rg_builder.add().init(RenderTask::new_dynamic(
@@ -2424,7 +2436,7 @@ impl RenderTask {
                         BlurTask::adjusted_blur_source_size(
                             blur_task_size,
                             adjusted_blur_std_deviation,
-                        ).to_f32().max(DeviceSize::new(1.0, 1.0));
+                        ).max(DeviceSize::new(1.0, 1.0));
                     // Now change the subregion to match the revised task size,
                     // keeping it centered should keep animated radius smooth.
                     let corner = LayoutPoint::new(
@@ -2488,6 +2500,7 @@ impl RenderTask {
                             RenderTargetKind::Color,
                             None,
                             adjusted_blur_task_size.to_i32(),
+                            BlurEdgeMode::Duplicate,
                         );
 
                     // Now we make the compositing task, for this we need to put

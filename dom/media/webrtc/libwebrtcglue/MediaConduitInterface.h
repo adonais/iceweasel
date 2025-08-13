@@ -47,10 +47,6 @@ namespace dom {
 struct RTCRtpSourceEntry;
 }
 
-namespace dom {
-struct RTCRtpSourceEntry;
-}
-
 enum class MediaSessionConduitLocalDirection : int { kSend, kRecv };
 
 class VideoSessionConduit;
@@ -71,13 +67,6 @@ class VideoRenderer {
   virtual ~VideoRenderer() {}
 
  public:
-  /**
-   * Callback Function reportng any change in the video-frame dimensions
-   * @param width:  current width of the video @ decoder
-   * @param height: current height of the video @ decoder
-   */
-  virtual void FrameSizeChange(unsigned int width, unsigned int height) = 0;
-
   /**
    * Callback Function reporting decoded frame for processing.
    * @param video_frame: reference to decoded video frame
@@ -170,6 +159,8 @@ class MediaSessionConduit {
                              PacketType type) = 0;
 
   virtual RefPtr<GenericPromise> Shutdown() = 0;
+  // Call thread only. Is set at the end of Shutdown()
+  virtual bool IsShutdown() const = 0;
 
   virtual Maybe<RefPtr<AudioSessionConduit>> AsAudioSessionConduit() = 0;
   virtual Maybe<RefPtr<VideoSessionConduit>> AsVideoSessionConduit() = 0;
@@ -191,7 +182,8 @@ class MediaSessionConduit {
                                              const uint8_t aAudioLevel);
 
  protected:
-  virtual std::vector<webrtc::RtpSource> GetUpstreamRtpSources() const = 0;
+  virtual const std::vector<webrtc::RtpSource>& GetUpstreamRtpSources()
+      const = 0;
 
  private:
   void UpdateRtpSources(const std::vector<webrtc::RtpSource>& aSources) const;
@@ -398,6 +390,7 @@ class VideoSessionConduit : public MediaSessionConduit {
   virtual Maybe<Ssrc> GetAssociatedLocalRtxSSRC(Ssrc aSsrc) const = 0;
 
   virtual Maybe<gfx::IntSize> GetLastResolution() const = 0;
+  virtual AbstractCanonical<Maybe<gfx::IntSize>>* CanonicalReceivingSize() = 0;
 
   virtual void RequestKeyFrame(FrameTransformerProxy* aProxy) = 0;
   virtual void GenerateKeyFrame(const Maybe<std::string>& aRid,

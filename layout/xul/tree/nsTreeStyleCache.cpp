@@ -5,9 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsTreeStyleCache.h"
+
 #include "mozilla/ComputedStyleInlines.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/ServoStyleSet.h"
+#include "mozilla/dom/Element.h"
 #include "nsPresContextInlines.h"
 
 using namespace mozilla;

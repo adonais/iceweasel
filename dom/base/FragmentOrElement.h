@@ -44,6 +44,8 @@ namespace dom {
 struct CustomElementData;
 class Element;
 class PopoverData;
+class StylePropertyMap;
+class StylePropertyMapReadOnly;
 }  // namespace dom
 }  // namespace mozilla
 
@@ -316,6 +318,16 @@ class FragmentOrElement : public nsIContent {
      * An object implementing the .classList property for this element.
      */
     RefPtr<nsDOMTokenList> mClassList;
+
+    /**
+     * An object implementing the .computedStyleMap() method for this element.
+     */
+    RefPtr<StylePropertyMapReadOnly> mComputedStyleMap;
+
+    /**
+     * An object implementing the .attributeStyleMap property for this element.
+     */
+    RefPtr<StylePropertyMap> mAttributeStyleMap;
   };
 
   /**

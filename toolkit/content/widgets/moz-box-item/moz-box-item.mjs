@@ -4,6 +4,21 @@
 
 import { html } from "../vendor/lit.all.mjs";
 import { MozBoxBase } from "../lit-utils.mjs";
+import { GROUP_TYPES } from "chrome://global/content/elements/moz-box-group.mjs";
+
+const DIRECTION_RIGHT = "Right";
+const DIRECTION_LEFT = "Left";
+
+const NAVIGATION_DIRECTIONS = {
+  LTR: {
+    FORWARD: DIRECTION_RIGHT,
+    BACKWARD: DIRECTION_LEFT,
+  },
+  RTL: {
+    FORWARD: DIRECTION_LEFT,
+    BACKWARD: DIRECTION_RIGHT,
+  },
+};
 
 /**
  * A custom element used for highlighting important information and/or providing
@@ -19,6 +34,8 @@ import { MozBoxBase } from "../lit-utils.mjs";
  * @slot actions-start - Slot for the actions positioned at the start of the component container.
  */
 export default class MozBoxItem extends MozBoxBase {
+  #actionEls = [];
+
   static properties = {
     layout: { type: String, reflect: true },
   };
@@ -27,11 +44,95 @@ export default class MozBoxItem extends MozBoxBase {
     defaultSlotEl: "slot:not([name])",
     actionsStartSlotEl: "slot[name=actions-start]",
     actionsSlotEl: "slot[name=actions]",
+    handleEl: ".handle",
   };
 
   constructor() {
     super();
     this.layout = "default";
+    this.addEventListener("keydown", e => this.handleKeydown(e));
+  }
+
+  firstUpdated() {
+    this.getActionEls();
+  }
+
+  handleKeydown(event) {
+    let isHandleEvent = event.originalTarget === this.handleEl;
+
+    if (
+      !isHandleEvent &&
+      event.target?.slot !== "actions" &&
+      event.target?.slot !== "actions-start"
+    ) {
+      return;
+    }
+
+    let target = isHandleEvent ? event.originalTarget : event.target;
+
+    let directions = this.getNavigationDirections();
+    switch (event.key) {
+      case directions.FORWARD:
+      case `Arrow${directions.FORWARD}`: {
+        let nextIndex = this.#actionEls.indexOf(target) + 1;
+        let nextEl = this.#actionEls[nextIndex];
+        nextEl?.focus();
+        break;
+      }
+      case directions.BACKWARD:
+      case `Arrow${directions.BACKWARD}`: {
+        let prevIndex = this.#actionEls.indexOf(target) - 1;
+        let prevEl = this.#actionEls[prevIndex];
+        prevEl?.focus();
+        break;
+      }
+    }
+  }
+
+  getNavigationDirections() {
+    if (this.isDocumentRTL) {
+      return NAVIGATION_DIRECTIONS.RTL;
+    }
+    return NAVIGATION_DIRECTIONS.LTR;
+  }
+
+  get isDocumentRTL() {
+    if (typeof Services !== "undefined") {
+      return Services.locale.isAppLocaleRTL;
+    }
+    return document.dir === "rtl";
+  }
+
+  get isDraggable() {
+    return (
+      this.parentElement?.type == GROUP_TYPES.reorderable &&
+      this.slot != "header" &&
+      this.slot != "footer"
+    );
+  }
+
+  focus(event) {
+    if (event?.key == "Up" || event?.key == "ArrowUp") {
+      let actionEls = this.actionsSlotEl.assignedElements();
+      let lastActions = actionEls.length
+        ? actionEls
+        : this.actionsStartSlotEl?.assignedElements();
+      let lastAction = lastActions?.[lastActions.length - 1] ?? this.handleEl;
+      lastAction?.focus();
+    } else {
+      let firstAction =
+        this.handleEl ??
+        this.actionsStartSlotEl?.assignedElements()?.[0] ??
+        this.actionsSlotEl.assignedElements()?.[0];
+      firstAction?.focus();
+    }
+  }
+
+  getActionEls() {
+    let handleEl = this.handleEl ? [this.handleEl] : [];
+    let startActions = this.actionsStartSlotEl?.assignedElements() ?? [];
+    let endActions = this.actionsSlotEl.assignedElements();
+    this.#actionEls = [...handleEl, ...startActions, ...endActions];
   }
 
   stylesTemplate() {
@@ -42,15 +143,32 @@ export default class MozBoxItem extends MozBoxBase {
       />`;
   }
 
+  slotTemplate(name) {
+    return html`
+      <span
+        role="group"
+        aria-labelledby="label"
+        aria-describedby="description"
+        class="actions"
+        @slotchange=${this.getActionEls}
+      >
+        <slot name=${name}></slot>
+      </span>
+    `;
+  }
+
   render() {
     return html`
       ${this.stylesTemplate()}
       <div class="box-container">
-        <slot name="actions-start"></slot>
+        ${this.isDraggable
+          ? html`<span tabindex="0" class="handle"></span>`
+          : ""}
+        ${this.slotTemplate("actions-start")}
         <div class="box-content">
           ${this.label ? super.textTemplate() : html`<slot></slot>`}
         </div>
-        <slot name="actions"></slot>
+        ${this.slotTemplate("actions")}
       </div>
     `;
   }

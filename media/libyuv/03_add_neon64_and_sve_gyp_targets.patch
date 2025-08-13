@@ -170,7 +170,7 @@ index 74fa0fe63b57b..1fd1be71e3414 100644
      'libyuv_sources': [
        # includes.
        'include/libyuv.h',
-@@ -40,8 +63,6 @@
+@@ -41,8 +64,6 @@
        'source/compare_common.cc',
        'source/compare_gcc.cc',
        'source/compare_msa.cc',
@@ -179,25 +179,27 @@ index 74fa0fe63b57b..1fd1be71e3414 100644
        'source/compare_win.cc',
        'source/convert.cc',
        'source/convert_argb.cc',
-@@ -60,15 +81,11 @@
-       'source/rotate_common.cc',
+@@ -62,8 +83,6 @@
        'source/rotate_gcc.cc',
+       'source/rotate_lsx.cc',
        'source/rotate_msa.cc',
 -      'source/rotate_neon.cc',
 -      'source/rotate_neon64.cc',
        'source/rotate_win.cc',
        'source/row_any.cc',
        'source/row_common.cc',
-       'source/row_gcc.cc',
+@@ -71,8 +90,6 @@
        'source/row_msa.cc',
+       'source/row_lasx.cc',
+       'source/row_lsx.cc',
 -      'source/row_neon.cc',
 -      'source/row_neon64.cc',
        'source/row_win.cc',
        'source/scale.cc',
        'source/scale_any.cc',
-@@ -76,8 +93,6 @@
-       'source/scale_common.cc',
+@@ -81,8 +98,6 @@
        'source/scale_gcc.cc',
+       'source/scale_lsx.cc',
        'source/scale_msa.cc',
 -      'source/scale_neon.cc',
 -      'source/scale_neon64.cc',

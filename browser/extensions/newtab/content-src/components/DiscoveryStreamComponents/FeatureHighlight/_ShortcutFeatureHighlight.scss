@@ -1,0 +1,45 @@
+// Default overrides from Feature Highlight
+.shortcut-feature-highlight {
+  .feature-highlight-modal {
+    padding: var(--space-large);
+
+    p {
+      margin: 0;
+      padding-block-start: 0;
+    }
+
+    // Make sure the text is legible with dark wallpaper + light mode combo
+    p, p:hover {
+      color: inherit;
+    }
+
+    .message-icon {
+      display: none;
+    }
+
+    &.inset-block-end {
+      margin-block-start: var(--space-large);
+      inset-inline-end: var(--space-xlarge);
+    }
+
+    img {
+      -moz-context-properties: fill;
+      fill: currentColor;
+    }
+  }
+
+  .shortcut-feature-highlight-content {
+    display: flex;
+    gap: var(--space-medium);
+  }
+
+  .shortcut-feature-highlight-copy {
+    font-size: var(--font-size-small);
+
+    .title {
+      font-weight: var(--font-weight-bold);
+      margin-block-end: var(--space-xsmall);
+      text-align: inherit;
+    }
+  }
+}

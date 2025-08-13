@@ -9,7 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -212,8 +212,8 @@ private fun CFRBottomSheetHandle(
  */
 data class MenuCFRState(
     val showCFR: Boolean,
-    @StringRes val titleRes: Int,
-    @StringRes val messageRes: Int,
+    @param:StringRes val titleRes: Int,
+    @param:StringRes val messageRes: Int,
     val orientation: OrientationMode,
     val onShown: () -> Unit,
     val onDismiss: (Boolean) -> Unit,

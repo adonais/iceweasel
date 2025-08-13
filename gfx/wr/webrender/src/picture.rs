@@ -117,7 +117,7 @@ use crate::internal_types::{FastHashMap, FastHashSet, PlaneSplitter, FilterGraph
 use crate::internal_types::{PlaneSplitterIndex, PlaneSplitAnchor, TextureSource};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureState, PictureContext};
 use crate::gpu_cache::{GpuCache, GpuCacheAddress, GpuCacheHandle};
-use crate::gpu_types::{UvRectKind, ZBufferId};
+use crate::gpu_types::{UvRectKind, ZBufferId, BlurEdgeMode};
 use peek_poke::{PeekPoke, poke_into_vec, peek_from_slice, ensure_red_zone};
 use plane_split::{Clipper, Polygon};
 use crate::prim_store::{PrimitiveTemplateKind, PictureIndex, PrimitiveInstance, PrimitiveInstanceKind};
@@ -597,6 +597,7 @@ impl PrimitiveDependencyInfo {
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, Ord, Eq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Hash)]
 pub struct TileId(pub usize);
 
 /// Uniquely identifies a tile within a picture cache slice
@@ -4232,6 +4233,47 @@ impl SurfaceInfo {
         }
     }
 
+    pub fn update_culling_rect(
+        &mut self,
+        parent_culling_rect: VisRect,
+        composite_mode: &PictureCompositeMode,
+        frame_context: &FrameVisibilityContext,
+    ) {
+        // Set the default culling rect to be the parent, in case we fail
+        // any mappings below due to weird perspective or invalid transforms.
+        self.culling_rect = parent_culling_rect;
+
+        if let PictureCompositeMode::Filter(Filter::Blur { width, height, should_inflate, .. }) = composite_mode {
+            if *should_inflate {
+                // Space mapping vis <-> picture space
+                let map_surface_to_vis = SpaceMapper::new_with_target(
+                    // TODO: switch from root to raster space.
+                    frame_context.root_spatial_node_index,
+                    self.surface_spatial_node_index,
+                    parent_culling_rect,
+                    frame_context.spatial_tree,
+                );
+
+                // Unmap the parent culling rect to surface space. Note that this may be
+                // quite conservative in the case of a complex transform, especially perspective.
+                if let Some(local_parent_culling_rect) = map_surface_to_vis.unmap(&parent_culling_rect) {
+                    let (width_factor, height_factor) = self.clamp_blur_radius(*width, *height);
+
+                    // Inflate by the local-space amount this surface extends.
+                    let expanded_rect: PictureBox2D = local_parent_culling_rect.inflate(
+                        width_factor.ceil() * BLUR_SAMPLE_SCALE,
+                        height_factor.ceil() * BLUR_SAMPLE_SCALE,
+                    );
+
+                    // Map back to the expected vis-space culling rect
+                    if let Some(rect) = map_surface_to_vis.map(&expanded_rect) {
+                        self.culling_rect = rect;
+                    }
+                }
+            }
+        }
+    }
+
     pub fn map_to_device_rect(
         &self,
         picture_rect: &PictureRect,
@@ -4336,15 +4378,15 @@ bitflags! {
     #[derive(Debug, Copy, PartialEq, Eq, Clone, PartialOrd, Ord, Hash)]
     pub struct BlitReason: u32 {
         /// Mix-blend-mode on a child that requires isolation.
-        const ISOLATE = 1;
+        const ISOLATE = 1 << 0;
         /// Clip node that _might_ require a surface.
-        const CLIP = 2;
+        const CLIP = 1 << 1;
         /// Preserve-3D requires a surface for plane-splitting.
-        const PRESERVE3D = 4;
+        const PRESERVE3D = 1 << 2;
         /// A backdrop that is reused which requires a surface.
-        const BACKDROP = 8;
+        const BACKDROP = 1 << 3;
         /// We may need to render the picture into an image and cache it.
-        const SNAPSHOT = 16;
+        const SNAPSHOT = 1 << 4;
     }
 }
 
@@ -4387,7 +4429,7 @@ impl PictureCompositeMode {
         };
 
         match self {
-            PictureCompositeMode::Filter(Filter::Blur { width, height, should_inflate }) => {
+            PictureCompositeMode::Filter(Filter::Blur { width, height, should_inflate, .. }) => {
                 if *should_inflate {
                     let (width_factor, height_factor) = surface.clamp_blur_radius(*width, *height);
 
@@ -4483,7 +4525,7 @@ impl PictureCompositeMode {
         };
 
         match self {
-            PictureCompositeMode::Filter(Filter::Blur { width, height, should_inflate }) => {
+            PictureCompositeMode::Filter(Filter::Blur { width, height, should_inflate, .. }) => {
                 if *should_inflate {
                     let (width_factor, height_factor) = surface.clamp_blur_radius(*width, *height);
 
@@ -5723,6 +5765,7 @@ impl PicturePrimitive {
                                                 Some(clear_color),
                                                 cmd_buffer_index,
                                                 false,
+                                                None,
                                             )
                                         ),
                                     );
@@ -5774,6 +5817,7 @@ impl PicturePrimitive {
                                                 Some(clear_color),
                                                 cmd_buffer_index,
                                                 false,
+                                                None,
                                             )
                                         ),
                                     );
@@ -5840,6 +5884,7 @@ impl PicturePrimitive {
                             z_id: tile.z_id,
                             transform_index: tile_cache.transform_index,
                             clip_index: tile_cache.compositor_clip,
+                            tile_id: Some(tile.id),
                         };
 
                         sub_slice.composite_tiles.push(composite_tile);
@@ -6018,7 +6063,7 @@ impl PicturePrimitive {
                     PictureCompositeMode::TileCache { .. } => {
                         unreachable!("handled above");
                     }
-                    PictureCompositeMode::Filter(Filter::Blur { width, height, .. }) => {
+                    PictureCompositeMode::Filter(Filter::Blur { width, height, edge_mode, .. }) => {
                         let surface = &frame_state.surfaces[raster_config.surface_index.0];
                         let (width, height) = surface.clamp_blur_radius(width, height);
 
@@ -6039,7 +6084,18 @@ impl PicturePrimitive {
                             blur_std_deviation,
                         );
 
+                        // If we have extended the size of the picture for blurring downscaling
+                        // accuracy, ensure we clear it so that any stray pixels don't affect the
+                        // downscaling passes. If not, the picture / resolve consumes the full
+                        // task size anyway, so we will clamp as usual to the task rect.
+                        let clear_color = if adjusted_size == original_size {
+                            None
+                        } else {
+                            Some(ColorF::TRANSPARENT)
+                        };
+
                         let cmd_buffer_index = frame_state.cmd_buffers.create_cmd_buffer();
+                        let adjusted_size = adjusted_size.to_i32();
 
                         // Since we (may have) adjusted the render task size for downscaling accuracy
                         // above, recalculate the uv rect for tasks that may sample from this blur output
@@ -6060,9 +6116,10 @@ impl PicturePrimitive {
                                     device_pixel_scale,
                                     None,
                                     None,
-                                    None,
+                                    clear_color,
                                     cmd_buffer_index,
                                     can_use_shared_surface,
+                                    Some(original_size.round().to_i32()),
                                 )
                             ).with_uv_rect_kind(uv_rect_kind)
                         );
@@ -6081,6 +6138,7 @@ impl PicturePrimitive {
                                     RenderTargetKind::Color,
                                     None,
                                     original_size.to_i32(),
+                                    edge_mode,
                                 )
                             }
                         );
@@ -6114,6 +6172,7 @@ impl PicturePrimitive {
                                     None,
                                     cmd_buffer_index,
                                     can_use_shared_surface,
+                                    None,
                                 ),
                             ).with_uv_rect_kind(surface_rects.uv_rect_kind)
                         );
@@ -6139,6 +6198,7 @@ impl PicturePrimitive {
                                 RenderTargetKind::Color,
                                 Some(&mut blur_tasks),
                                 device_rect.size().to_i32(),
+                                BlurEdgeMode::Duplicate,
                             );
                         }
 
@@ -6263,6 +6323,7 @@ impl PicturePrimitive {
                                             None,
                                             cmd_buffer_index,
                                             can_use_shared_surface,
+                                            None,
                                         )
                                     ).with_uv_rect_kind(surface_rects.uv_rect_kind)
                                 )
@@ -6301,6 +6362,7 @@ impl PicturePrimitive {
                                             None,
                                             cmd_buffer_index,
                                             can_use_shared_surface,
+                                            None,
                                         )
                                     ).with_uv_rect_kind(surface_rects.uv_rect_kind)
                                 )
@@ -6339,6 +6401,7 @@ impl PicturePrimitive {
                                             None,
                                             cmd_buffer_index,
                                             can_use_shared_surface,
+                                            None,
                                         )
                                     ).with_uv_rect_kind(surface_rects.uv_rect_kind)
                                 )
@@ -6378,6 +6441,7 @@ impl PicturePrimitive {
                                             None,
                                             cmd_buffer_index,
                                             can_use_shared_surface,
+                                            None,
                                         )
                                     ).with_uv_rect_kind(surface_rects.uv_rect_kind)
                                 )
@@ -6422,6 +6486,7 @@ impl PicturePrimitive {
                                             None,
                                             cmd_buffer_index,
                                             can_use_shared_surface,
+                                            None,
                                         )
                                     ).with_uv_rect_kind(surface_rects.uv_rect_kind)
                                 )
@@ -6453,6 +6518,7 @@ impl PicturePrimitive {
                                     None,
                                     cmd_buffer_index,
                                     can_use_shared_surface,
+                                    None,
                                 )
                             ).with_uv_rect_kind(surface_rects.uv_rect_kind)
                         );
@@ -6518,6 +6584,7 @@ impl PicturePrimitive {
                                     None,
                                     cmd_buffer_index,
                                     can_use_shared_surface,
+                                    None,
                                 )
                             )
                         );

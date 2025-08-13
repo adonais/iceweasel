@@ -77,7 +77,6 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
                 searchUseCase = components.searchUseCases.defaultSearch,
             )
             .addSearchProvider(
-                requireContext(),
                 components.store,
                 components.searchUseCases.defaultSearch,
                 fetchClient = components.client,

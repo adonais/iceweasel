@@ -28,9 +28,7 @@ support-files = [
 
 ["test_event_listener_leaks.html"]
 support-files = ["file_websocket_bigBlob_wsh.py"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug", # Bug 1879751
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug"] # Bug 1879751
 
 ["test_websocket1.html"]
 
@@ -39,14 +37,10 @@ skip-if = [
 ["test_websocket3.html"]
 
 ["test_websocket4.html"]
-skip-if = [
-  "os == 'android'", # ssltunnel can't handle WSS scheme
-]
+skip-if = ["os == 'android'"] # ssltunnel can't handle WSS scheme
 
 ["test_websocket5.html"]
-skip-if = [
-  "os == 'android'", # ssltunnel can't handle WSS scheme
-]
+skip-if = ["os == 'android'"] # ssltunnel can't handle WSS scheme
 
 ["test_websocket_basic.html"]
 
@@ -63,28 +57,20 @@ support-files = [
   "iframe_websocket_wss.html",
   "iframe_webworker_wss.html",
 ]
-skip-if = [
-  "os == 'android'", # ssltunnel can't handle WSS scheme
-]
+skip-if = ["os == 'android'"] # ssltunnel can't handle WSS scheme
 
 ["test_websocket_mixed_content_blob.html"]
 scheme = "https"
 support-files = ["window_websocket_wss.html"]
-skip-if = [
-  "os == 'android'", # ssltunnel can't handle WSS scheme
-]
+skip-if = ["os == 'android'"] # ssltunnel can't handle WSS scheme
 
 ["test_websocket_mixed_content_opener.html"]
 scheme = "https"
-skip-if = [
-  "os == 'android'", # ssltunnel can't handle WSS scheme
-]
+skip-if = ["os == 'android'"] # ssltunnel can't handle WSS scheme
 
 ["test_websocket_no_duplicate_packet.html"]
 scheme = "https"
-skip-if = [
-  "os == 'android'", # ssltunnel can't handle WSS scheme
-]
+skip-if = ["os == 'android'"] # ssltunnel can't handle WSS scheme
 
 ["test_websocket_permessage_deflate.html"]
 
@@ -106,9 +92,7 @@ support-files = ["websocket3.worker.js"]
 
 ["test_worker_websocket4.html"]
 support-files = ["websocket4.worker.js"]
-skip-if = [
-  "os == 'android'", # ssltunnel can't handle WSS scheme
-]
+skip-if = ["os == 'android'"] # ssltunnel can't handle WSS scheme
 
 ["test_worker_websocket5.html"]
 support-files = ["websocket5.worker.js"]

@@ -221,7 +221,11 @@ RemoteAccessible* DocAccessibleParent::CreateAcc(
   RemoteAccessible* newProxy;
   if ((newProxy = GetAccessible(aAccData.ID()))) {
     // This is a move. Reuse the Accessible; don't destroy it.
-    MOZ_ASSERT(!newProxy->RemoteParent());
+    if (newProxy->RemoteParent()) {
+      MOZ_ASSERT_UNREACHABLE(
+          "Attempt to move RemoteAccessible which still has a parent!");
+      return nullptr;
+    }
     return newProxy;
   }
 
@@ -487,6 +491,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvCaretMoveEvent(
   mCaretId = aID;
   mCaretOffset = aOffset;
   mIsCaretAtEndOfLine = aIsAtEndOfLine;
+  mCaretRect = aCaretRect;
   if (aIsSelectionCollapsed) {
     // We don't fire selection events for collapsed selections, but we need to
     // ensure we don't have a stale cached selection; e.g. when selecting
@@ -1158,6 +1163,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvFocusEvent(
 #endif
 
   mFocus = aID;
+  mCaretRect = aCaretRect;
   PlatformFocusEvent(proxy, aCaretRect);
 
   if (!nsCoreUtils::AccEventObserversExist()) {
@@ -1175,6 +1181,17 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvFocusEvent(
   return IPC_OK();
 }
 
+LayoutDeviceIntRect DocAccessibleParent::GetCachedCaretRect() {
+  LayoutDeviceIntRect caretRect = mCaretRect;
+  if (!caretRect.IsEmpty()) {
+    // Reapply doc offset to the caret rect.
+    LayoutDeviceIntRect docRect = Bounds();
+    caretRect.MoveBy(docRect.X(), docRect.Y());
+  }
+
+  return caretRect;
+}
+
 void DocAccessibleParent::SelectionRanges(nsTArray<TextRange>* aRanges) const {
   aRanges->SetCapacity(mTextSelections.Length());
   for (const auto& data : mTextSelections) {
@@ -1188,14 +1205,18 @@ void DocAccessibleParent::SelectionRanges(nsTArray<TextRange>* aRanges) const {
     if (!startAcc || !endAcc) {
       continue;
     }
-    uint32_t startCount = startAcc->CharacterCount();
-    if (startCount == 0 ||
-        data.StartOffset() > static_cast<int32_t>(startCount)) {
-      continue;
+    // Offset 0 is always valid, even if the container is empty.
+    if (data.StartOffset() > 0) {
+      uint32_t startCount = startAcc->CharacterCount();
+      if (data.StartOffset() > static_cast<int32_t>(startCount)) {
+        continue;
+      }
     }
-    uint32_t endCount = endAcc->CharacterCount();
-    if (endCount == 0 || data.EndOffset() > static_cast<int32_t>(endCount)) {
-      continue;
+    if (data.EndOffset() > 0) {
+      uint32_t endCount = endAcc->CharacterCount();
+      if (data.EndOffset() > static_cast<int32_t>(endCount)) {
+        continue;
+      }
     }
     aRanges->AppendElement(TextRange(const_cast<DocAccessibleParent*>(this),
                                      startAcc, data.StartOffset(), endAcc,

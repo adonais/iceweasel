@@ -7,15 +7,14 @@
 #include "ScrollSnap.h"
 
 #include "FrameMetrics.h"
-
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ScrollSnapInfo.h"
 #include "mozilla/ServoStyleConsts.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsTArray.h"
-#include "mozilla/StaticPrefs_layout.h"
 
 namespace mozilla {
 

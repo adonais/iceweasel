@@ -42,7 +42,7 @@ class MFMediaEngineStream
   virtual nsCString GetCodecName() const = 0;
 
   HRESULT RuntimeClassInitialize(uint64_t aStreamId, const TrackInfo& aInfo,
-                                 bool aIsEncrytpedCustomInit,
+                                 bool aIsEncryptedCustomInit,
                                  MFMediaSource* aParentSource);
 
   // Called by MFMediaSource.
@@ -191,7 +191,7 @@ class MFMediaEngineStream
   bool mReceivedEOS;
 
   // https://github.com/w3c/encrypted-media/issues/251#issuecomment-819783073
-  bool mIsEncrytpedCustomInit;
+  bool mIsEncryptedCustomInit;
 };
 
 /**

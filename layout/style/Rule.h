@@ -9,11 +9,11 @@
 #ifndef mozilla_css_Rule_h___
 #define mozilla_css_Rule_h___
 
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/StyleSheet.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/CSSRuleBinding.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
-#include "mozilla/StyleSheet.h"
-#include "mozilla/MemoryReporting.h"
-#include "mozilla/WeakPtr.h"
 #include "nsISupports.h"
 #include "nsWrapperCache.h"
 

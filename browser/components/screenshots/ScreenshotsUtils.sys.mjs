@@ -18,6 +18,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Downloads: "resource://gre/modules/Downloads.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
@@ -1333,10 +1334,12 @@ export var ScreenshotsUtils = {
   },
 };
 
-const ScreenshotsCustomizableWidget = {
+export const ScreenshotsCustomizableWidget = {
   init() {
+    // In testing, we might call init more than once
+    const widgetId = "screenshot-button";
     lazy.CustomizableUI.createWidget({
-      id: "screenshot-button",
+      id: widgetId,
       shortcutId: "key_screenshot",
       l10nId: "screenshot-toolbar-button",
       onCommand(aEvent) {
@@ -1346,6 +1349,53 @@ const ScreenshotsCustomizableWidget = {
           "ToolbarButton"
         );
       },
+    });
+    const maybePlaceToolbarButton = () => {
+      // If Nimbus tells us the widget should be placed and visible by default, first check we
+      // didn't already handle this
+      const buttonPlacedByNimbus = Services.prefs.getBoolPref(
+        "screenshots.browser.component.buttonOnToolbarByDefault.handled",
+        false
+      );
+      if (
+        !buttonPlacedByNimbus &&
+        !lazy.CustomizableUI.getPlacementOfWidget(widgetId)?.area &&
+        lazy.NimbusFeatures.screenshots.getVariable("buttonOnToolbarByDefault")
+      ) {
+        // We'll place the button after the urlbar if its in the nav-bar
+        let buttonPosition = 0;
+        const AREA_NAVBAR = lazy.CustomizableUI.AREA_NAVBAR;
+        const urlbarPlacement =
+          lazy.CustomizableUI.getPlacementOfWidget("urlbar-container");
+        if (urlbarPlacement?.area == AREA_NAVBAR) {
+          buttonPosition = urlbarPlacement.position + 1;
+          const widgetIds = lazy.CustomizableUI.getWidgetIdsInArea(AREA_NAVBAR);
+          // we want to go after the spring widget when there's one directly after the urlbar
+          if (widgetIds[buttonPosition].includes("special-spring")) {
+            buttonPosition++;
+          }
+        }
+        lazy.CustomizableUI.addWidgetToArea(
+          widgetId,
+          AREA_NAVBAR,
+          buttonPosition
+        );
+        Services.prefs.setBoolPref(
+          "screenshots.browser.component.buttonOnToolbarByDefault.handled",
+          true
+        );
+      }
+    };
+    // Check now and handle future Nimbus updates
+    maybePlaceToolbarButton();
+
+    lazy.NimbusFeatures.screenshots.onUpdate(() => {
+      const enrollment =
+        lazy.NimbusFeatures.screenshots.getEnrollmentMetadata();
+      if (!enrollment) {
+        return;
+      }
+      maybePlaceToolbarButton();
     });
   },
 

@@ -15,22 +15,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.Divider
 import mozilla.components.support.ktx.kotlin.tryGetHostFromUrl
-import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.settings.trustpanel.store.WebsiteInfoState
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -45,23 +39,19 @@ private val INNER_ICON_SHAPE = RoundedCornerShape(0.dp)
 internal fun ProtectionPanelHeader(
     icon: Bitmap?,
     websiteInfoState: WebsiteInfoState,
-    onConnectionSecurityClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 12.dp, end = 6.dp),
+            .padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Spacer(modifier = Modifier.width(4.dp))
-
         ProtectionPanelIcon(url = websiteInfoState.websiteUrl, icon = icon)
 
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(16.dp))
 
         Column(
             modifier = Modifier
-                .padding(horizontal = 8.dp)
                 .weight(1f),
         ) {
             Text(
@@ -75,51 +65,8 @@ internal fun ProtectionPanelHeader(
             Text(
                 text = websiteInfoState.websiteUrl.tryGetHostFromUrl(),
                 color = FirefoxTheme.colors.textSecondary,
-                maxLines = 1,
-                style = FirefoxTheme.typography.caption,
+                style = FirefoxTheme.typography.body2,
             )
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Divider(modifier = Modifier.size(width = 2.dp, height = 32.dp))
-
-        IconButton(
-            modifier = Modifier.padding(horizontal = 10.dp),
-            onClick = onConnectionSecurityClick,
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    painter = if (websiteInfoState.isSecured) {
-                        painterResource(id = R.drawable.mozac_ic_lock_20)
-                    } else {
-                        painterResource(id = R.drawable.mozac_ic_lock_slash_20)
-                    },
-                    contentDescription = null,
-                    tint = FirefoxTheme.colors.iconSecondary,
-                )
-
-                Text(
-                    text = if (websiteInfoState.isSecured) {
-                        stringResource(id = R.string.protection_panel_header_secure)
-                    } else {
-                        stringResource(id = R.string.protection_panel_header_not_secure)
-                    },
-                    color = FirefoxTheme.colors.textSecondary,
-                    maxLines = 1,
-                    style = FirefoxTheme.typography.caption,
-                )
-
-                Spacer(modifier = Modifier.width(10.dp))
-
-                Icon(
-                    painter = painterResource(id = R.drawable.mozac_ic_chevron_right_24),
-                    contentDescription = null,
-                    tint = FirefoxTheme.colors.iconSecondary,
-                )
-            }
         }
     }
 }
@@ -162,7 +109,7 @@ private fun ProtectionPanelHeaderPreview() {
     FirefoxTheme {
         Column(
             modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer3),
+                .background(color = FirefoxTheme.colors.layer1),
         ) {
             ProtectionPanelHeader(
                 icon = null,
@@ -172,7 +119,6 @@ private fun ProtectionPanelHeaderPreview() {
                     websiteTitle = "Mozilla",
                     certificateName = "",
                 ),
-                onConnectionSecurityClick = {},
             )
         }
     }
@@ -194,7 +140,6 @@ private fun ProtectionPanelHeaderPrivatePreview() {
                     websiteTitle = "Mozilla",
                     certificateName = "",
                 ),
-                onConnectionSecurityClick = {},
             )
         }
     }

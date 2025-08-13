@@ -9,7 +9,7 @@ import android.util.AttributeSet
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.widget.AppCompatImageView
 
-class TabThumbnailView(context: Context, attrs: AttributeSet) : AppCompatImageView(context, attrs) {
+class TabThumbnailView(context: Context, attrs: AttributeSet?) : AppCompatImageView(context, attrs) {
 
     init {
         scaleType = ScaleType.MATRIX

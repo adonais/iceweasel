@@ -6,17 +6,17 @@
 
 #include "nsNumberControlFrame.h"
 
+#include "HTMLInputElement.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/PresShell.h"
-#include "HTMLInputElement.h"
+#include "nsCSSPseudoElements.h"
+#include "nsContentCreatorFunctions.h"
+#include "nsContentUtils.h"
 #include "nsGkAtoms.h"
+#include "nsLayoutUtils.h"
 #include "nsNameSpaceManager.h"
 #include "nsStyleConsts.h"
-#include "nsContentUtils.h"
-#include "nsContentCreatorFunctions.h"
-#include "nsCSSPseudoElements.h"
-#include "nsLayoutUtils.h"
 
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/AccTypes.h"

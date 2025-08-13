@@ -444,6 +444,9 @@ newtab-custom-wallpaper-cta = ഉപയോഗിച്ചു് നോക്ക�
 ## Strings for download mobile highlight
 
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
 newtab-report-ads-reason-not-interested =

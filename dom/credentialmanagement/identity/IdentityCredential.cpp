@@ -35,6 +35,8 @@ void IdentityCredential::CopyValuesFrom(const IPCIdentityCredential& aOther) {
   if (aOther.token().isSome()) {
     this->mToken = aOther.token().value();
   }
+  this->mIsAutoSelected = aOther.isAutoSelected();
+  this->mConfigURL = aOther.configURL();
 }
 
 IPCIdentityCredential IdentityCredential::MakeIPCIdentityCredential() const {
@@ -43,14 +45,23 @@ IPCIdentityCredential IdentityCredential::MakeIPCIdentityCredential() const {
   if (!this->mToken.IsEmpty()) {
     result.token() = Some(this->mToken);
   }
+  result.isAutoSelected() = mIsAutoSelected;
+  result.configURL() = mConfigURL;
   return result;
 }
 
-void IdentityCredential::GetToken(nsAString& aToken) const {
+void IdentityCredential::GetToken(nsACString& aToken) const {
   aToken.Assign(mToken);
 }
-void IdentityCredential::SetToken(const nsAString& aToken) {
+void IdentityCredential::SetToken(const nsACString& aToken) {
   mToken.Assign(aToken);
+}
+bool IdentityCredential::IsAutoSelected() const { return mIsAutoSelected; }
+void IdentityCredential::GetConfigURL(nsACString& aConfigURL) const {
+  aConfigURL.Assign(mConfigURL);
+}
+void IdentityCredential::SetConfigURL(const nsACString& aConfigURL) {
+  mConfigURL.Assign(aConfigURL);
 }
 
 // static

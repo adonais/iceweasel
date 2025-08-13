@@ -1682,6 +1682,12 @@ VARIABLES = {
         current locale is ``en-US``.
         """,
     ),
+    "WINCONSOLE": (
+        bool,
+        bool,
+        """Whether the current binary requires a console.
+        """,
+    ),
     "MOZ_SRC_FILES": (
         ContextDerivedTypedList(SourcePath),
         list,
@@ -2265,6 +2271,14 @@ VARIABLES = {
 
         When this variable is present, the results of this directory will end up
         being packaged into an extension instead of the main dist/bin results.
+        """,
+    ),
+    "XPI_PKGNAME": (
+        str,
+        str,
+        """The name of the package associated to an extension XPI to generate.
+
+        Override the name of the package generated for an XPI extension.
         """,
     ),
     "DIST_SUBDIR": (

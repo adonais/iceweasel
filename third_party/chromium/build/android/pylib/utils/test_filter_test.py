@@ -1,9 +1,10 @@
 #!/usr/bin/env vpython3
-# Copyright 2018 The Chromium Authors. All rights reserved.
+# Copyright 2018 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 import argparse
+import os
 import sys
 import tempfile
 import unittest
@@ -62,8 +63,8 @@ class InitializeFilterFromArgsTest(unittest.TestCase):
     args = parser.parse_args([
         '--test-filter',
         'FooTest.testFoo:BarTest.testBar'])
-    expected = 'FooTest.testFoo:BarTest.testBar'
-    actual = test_filter.InitializeFilterFromArgs(args)
+    expected = ['FooTest.testFoo:BarTest.testBar']
+    actual = test_filter.InitializeFiltersFromArgs(args)
     self.assertEqual(actual, expected)
 
   def testInitializeJavaStyleFilter(self):
@@ -72,8 +73,8 @@ class InitializeFilterFromArgsTest(unittest.TestCase):
     args = parser.parse_args([
         '--test-filter',
         'FooTest#testFoo:BarTest#testBar'])
-    expected = 'FooTest.testFoo:BarTest.testBar'
-    actual = test_filter.InitializeFilterFromArgs(args)
+    expected = ['FooTest.testFoo:BarTest.testBar']
+    actual = test_filter.InitializeFiltersFromArgs(args)
     self.assertEqual(actual, expected)
 
   def testInitializeBasicIsolatedScript(self):
@@ -82,10 +83,12 @@ class InitializeFilterFromArgsTest(unittest.TestCase):
     args = parser.parse_args([
         '--isolated-script-test-filter',
         'FooTest.testFoo::BarTest.testBar'])
-    expected = 'FooTest.testFoo:BarTest.testBar'
-    actual = test_filter.InitializeFilterFromArgs(args)
+    expected = ['FooTest.testFoo:BarTest.testBar']
+    actual = test_filter.InitializeFiltersFromArgs(args)
     self.assertEqual(actual, expected)
 
+  @unittest.skipIf(os.name == "nt", "Opening NamedTemporaryFile by name "
+                   "doesn't work in Windows.")
   def testFilterArgWithPositiveFilterInFilterFile(self):
     parser = argparse.ArgumentParser()
     test_filter.AddFilterOptions(parser)
@@ -96,10 +99,12 @@ class InitializeFilterFromArgsTest(unittest.TestCase):
           '--test-filter=-negative1',
           '--test-launcher-filter-file',
           tmp_file.name])
-      expected = 'positive1:positive2-negative1:negative2:negative3'
-      actual = test_filter.InitializeFilterFromArgs(args)
+      expected = ['-negative1', 'positive1:positive2-negative2:negative3']
+      actual = test_filter.InitializeFiltersFromArgs(args)
       self.assertEqual(actual, expected)
 
+  @unittest.skipIf(os.name == "nt", "Opening NamedTemporaryFile by name "
+                   "doesn't work in Windows.")
   def testFilterFileWithPositiveFilterInFilterArg(self):
     parser = argparse.ArgumentParser()
     test_filter.AddFilterOptions(parser)
@@ -111,24 +116,28 @@ class InitializeFilterFromArgsTest(unittest.TestCase):
           'positive1:positive2-negative1',
           '--test-launcher-filter-file',
           tmp_file.name])
-      expected = 'positive1:positive2-negative1:negative2:negative3'
-      actual = test_filter.InitializeFilterFromArgs(args)
+      expected = ['positive1:positive2-negative1', '-negative2:negative3']
+      actual = test_filter.InitializeFiltersFromArgs(args)
       self.assertEqual(actual, expected)
 
+  @unittest.skipIf(os.name == "nt", "Opening NamedTemporaryFile by name "
+                   "doesn't work in Windows.")
   def testPositiveFilterInBothFileAndArg(self):
     parser = argparse.ArgumentParser()
     test_filter.AddFilterOptions(parser)
     with tempfile.NamedTemporaryFile(mode='w') as tmp_file:
-      tmp_file.write('positive1\n')
+      tmp_file.write('positive2-negative2\n')
       tmp_file.seek(0)
       args = parser.parse_args([
-          '--test-filter',
-          'positive2',
-          '--test-launcher-filter-file',
-          tmp_file.name])
-      with self.assertRaises(test_filter.ConflictingPositiveFiltersException):
-        test_filter.InitializeFilterFromArgs(args)
+          '--test-filter', 'positive1-negative1', '--test-launcher-filter-file',
+          tmp_file.name
+      ])
+      expected = ['positive1-negative1', 'positive2-negative2']
+      actual = test_filter.InitializeFiltersFromArgs(args)
+      self.assertEqual(actual, expected)
 
+  @unittest.skipIf(os.name == "nt", "Opening NamedTemporaryFile by name "
+                   "doesn't work in Windows.")
   def testFilterArgWithFilterFileAllNegative(self):
     parser = argparse.ArgumentParser()
     test_filter.AddFilterOptions(parser)
@@ -139,8 +148,8 @@ class InitializeFilterFromArgsTest(unittest.TestCase):
           '--test-filter=-negative1:negative2',
           '--test-launcher-filter-file',
           tmp_file.name])
-      expected = '-negative1:negative2:negative3:negative4'
-      actual = test_filter.InitializeFilterFromArgs(args)
+      expected = ['-negative1:negative2', '-negative3:negative4']
+      actual = test_filter.InitializeFiltersFromArgs(args)
       self.assertEqual(actual, expected)
 
 

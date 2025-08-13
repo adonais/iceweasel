@@ -721,11 +721,6 @@ workers:
             implementation: docker-worker
             os: linux
             worker-type: '{alias}'
-        t-linux-(large-noscratch|xlarge-source):
-            provisioner: '{trust-domain}-t'
-            implementation: docker-worker
-            os: linux
-            worker-type: '{alias}-gcp'
         t-linux-kvm:
             provisioner: '{trust-domain}-t'
             implementation: docker-worker

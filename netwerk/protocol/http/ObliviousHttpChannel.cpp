@@ -802,7 +802,7 @@ NS_IMETHODIMP ObliviousHttpChannel::ExplicitSetUploadStream(
   if (mStreamListener) {
     return NS_ERROR_IN_PROGRESS;
   }
-  if (aMethod != "POST"_ns && aMethod != "PUT") {
+  if (aMethod != "POST"_ns && aMethod != "PUT" && aMethod != "DELETE") {
     return NS_ERROR_INVALID_ARG;
   }
   if (aStreamHasHeaders) {

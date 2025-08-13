@@ -327,6 +327,25 @@ class BasePythonSupport:
                 ).setdefault("replicates", []).extend(vals)
         return wallclock_measurements
 
+    def _gather_perfstats_measurements(self, raw_result):
+        """Gathers the PerfStats measurements from a result.
+
+        :param dict raw_result: The results of the test.
+
+        :return dict: A dict containing the perfstats data found.
+        """
+        perfstats_measurements = {}
+        for res in raw_result["extras"]:
+            for metric, vals in res.items():
+                if metric != "perfstats":
+                    continue
+                for counterName, counterVal in vals.items():
+                    perfstats_measurements.setdefault(
+                        "perfstats-" + counterName,
+                        {"unit": "ms", "lower_is_better": True},
+                    ).setdefault("replicates", []).extend([counterVal])
+        return perfstats_measurements
+
     def _gather_additional_measurements(self, raw_result, bt_result):
         """Gathers all possible measurements from a result.
 
@@ -340,6 +359,7 @@ class BasePythonSupport:
         measurements.update(self._gather_power_usage_measurements(raw_result))
         measurements.update(self._gather_cputime_measurements(raw_result))
         measurements.update(self._gather_wallclock_measurements(raw_result))
+        measurements.update(self._gather_perfstats_measurements(raw_result))
 
         return measurements
 

@@ -2,16 +2,22 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import os
+import sys
+
 from marionette_driver.by import By
 from marionette_harness import MarionetteTestCase, WindowManagerMixin
 
+# add this directory to the path
+sys.path.append(os.path.dirname(__file__))
 
-class TestTextChrome(WindowManagerMixin, MarionetteTestCase):
+from chrome_handler_mixin import ChromeHandlerMixin
+
+
+class TestTextChrome(ChromeHandlerMixin, WindowManagerMixin, MarionetteTestCase):
     def setUp(self):
         super(TestTextChrome, self).setUp()
-        win = self.open_chrome_window(
-            "chrome://remote/content/marionette/test_xul.xhtml"
-        )
+        win = self.open_chrome_window(self.chrome_base_url + "test_xul.xhtml")
         self.marionette.switch_to_window(win)
 
         self.marionette.set_context("chrome")

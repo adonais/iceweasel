@@ -390,37 +390,34 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvInternalLoad(
 IPCResult WindowGlobalParent::RecvUpdateDocumentURI(NotNull<nsIURI*> aURI) {
   // XXX(nika): Assert that the URI change was one which makes sense (either
   // about:blank -> a real URI, or a legal push/popstate URI change):
-  if (StaticPrefs::dom_security_setdocumenturi()) {
-    nsAutoCString scheme;
-    if (NS_FAILED(aURI->GetScheme(scheme))) {
-      return IPC_FAIL(this, "Setting DocumentURI without scheme.");
-    }
+  nsAutoCString scheme;
+  if (NS_FAILED(aURI->GetScheme(scheme))) {
+    return IPC_FAIL(this, "Setting DocumentURI without scheme.");
+  }
 
-    nsCOMPtr<nsIIOService> ios = do_GetIOService();
-    if (!ios) {
-      return IPC_FAIL(this, "Cannot get IOService");
-    }
-    nsCOMPtr<nsIProtocolHandler> handler;
-    ios->GetProtocolHandler(scheme.get(), getter_AddRefs(handler));
-    if (!handler) {
-      return IPC_FAIL(this, "Setting DocumentURI with unknown protocol.");
-    }
+  nsCOMPtr<nsIIOService> ios = do_GetIOService();
+  if (!ios) {
+    return IPC_FAIL(this, "Cannot get IOService");
+  }
+  nsCOMPtr<nsIProtocolHandler> handler;
+  ios->GetProtocolHandler(scheme.get(), getter_AddRefs(handler));
+  if (!handler) {
+    return IPC_FAIL(this, "Setting DocumentURI with unknown protocol.");
+  }
 
-    nsCOMPtr<nsIURI> principalURI = mDocumentPrincipal->GetURI();
-    if (mDocumentPrincipal->GetIsNullPrincipal()) {
-      nsCOMPtr<nsIPrincipal> precursor =
-          mDocumentPrincipal->GetPrecursorPrincipal();
-      if (precursor) {
-        principalURI = precursor->GetURI();
-      }
+  nsCOMPtr<nsIURI> principalURI = mDocumentPrincipal->GetURI();
+  if (mDocumentPrincipal->GetIsNullPrincipal()) {
+    if (nsCOMPtr<nsIPrincipal> precursor =
+            mDocumentPrincipal->GetPrecursorPrincipal()) {
+      principalURI = precursor->GetURI();
     }
+  }
 
-    if (nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(principalURI,
-                                                             aURI)) {
-      return IPC_FAIL(this,
-                      "Setting DocumentURI with a different Origin than "
-                      "principal URI");
-    }
+  if (nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(principalURI,
+                                                           aURI)) {
+    return IPC_FAIL(this,
+                    "Setting DocumentURI with a different Origin than "
+                    "principal URI");
   }
 
   mDocumentURI = aURI;
@@ -797,7 +794,28 @@ class CheckPermitUnloadRequest final : public PromiseNativeHandler,
         mAction(aAction),
         mFoundBlocker(aHasInProcessBlocker) {}
 
-  void Run(ContentParent* aIgnoreProcess = nullptr, uint32_t aTimeout = 0) {
+  // Special case for when we also want to dispatch a "navigate" event to the
+  // top level window's navigation object. The target session history entry that
+  // we dispatch is what we use when we #fire-a-traverse-navigate-event. This
+  // will _only_ run `DispatchBeforeUnloadToSubtree` for the content process of
+  // the top level window. See further comments below in `Run` and in
+  // `DispatchBeforeUnloadToSubtree`.
+  void RunTraversable(const SessionHistoryInfo& aInfo) {
+    MOZ_DIAGNOSTIC_ASSERT(mWGP->BrowsingContext()->IsTop());
+    Run(nullptr, 0, Some(aInfo));
+  }
+
+  // The complementing special case for `RunTraversable`, which is short hand
+  // for running `DispatchBeforeUnloadToSubtree` for all content processes
+  // except for the content process of the top level window. See further
+  // comments below in `Run` and in `DispatchBeforeUnloadToSubtree`.
+  void RunChildNavigables() {
+    MOZ_DIAGNOSTIC_ASSERT(mWGP->BrowsingContext()->IsTop());
+    Run(mWGP->BrowsingContext()->GetContentParent(), 0);
+  }
+
+  void Run(ContentParent* aIgnoreProcess = nullptr, uint32_t aTimeout = 0,
+           const Maybe<SessionHistoryInfo>& aInfo = Nothing()) {
     MOZ_ASSERT(mState == State::UNINITIALIZED);
     mState = State::WAITING;
 
@@ -809,28 +827,41 @@ class CheckPermitUnloadRequest final : public PromiseNativeHandler,
     }
 
     BrowsingContext* bc = mWGP->GetBrowsingContext();
-    bc->PreOrderWalk([&](dom::BrowsingContext* aBC) {
-      if (WindowGlobalParent* wgp =
-              aBC->Canonical()->GetCurrentWindowGlobal()) {
-        ContentParent* cp = wgp->GetContentParent();
-        if (wgp->HasBeforeUnload() && !seen.ContainsSorted(cp)) {
-          seen.InsertElementSorted(cp);
-          mPendingRequests++;
-          auto resolve = [self](bool blockNavigation) {
-            if (blockNavigation) {
-              self->mFoundBlocker = true;
+    auto resolve = [self](bool blockNavigation) {
+      if (blockNavigation) {
+        self->mFoundBlocker = true;
+      }
+      self->ResolveRequest();
+    };
+    auto reject = [self](auto) { self->ResolveRequest(); };
+    // If `aInfo` is passed, only dispatch to the content process of the top
+    // level window.
+    if (aInfo) {
+      ContentParent* cp = mWGP->GetContentParent();
+      mPendingRequests++;
+      cp->SendDispatchBeforeUnloadToSubtree(bc, aInfo, resolve, reject);
+    } else {
+      bc->PreOrderWalk([&](dom::BrowsingContext* aBC) {
+        if (WindowGlobalParent* wgp =
+                aBC->Canonical()->GetCurrentWindowGlobal()) {
+          ContentParent* cp = wgp->GetContentParent();
+          // `seen` contains processes that we've already dispatched
+          // "beforeunload" to.
+          if (wgp->NeedsBeforeUnload() && !seen.ContainsSorted(cp)) {
+            seen.InsertElementSorted(cp);
+            mPendingRequests++;
+
+            if (cp) {
+              cp->SendDispatchBeforeUnloadToSubtree(bc, Nothing(), resolve,
+                                                    reject);
+            } else {
+              ContentChild::DispatchBeforeUnloadToSubtree(bc, Nothing(),
+                                                          resolve);
             }
-            self->ResolveRequest();
-          };
-          if (cp) {
-            cp->SendDispatchBeforeUnloadToSubtree(
-                bc, resolve, [self](auto) { self->ResolveRequest(); });
-          } else {
-            ContentChild::DispatchBeforeUnloadToSubtree(bc, resolve);
           }
         }
-      }
-    });
+      });
+    }
 
     if (mPendingRequests && aTimeout) {
       Unused << NS_NewTimerWithCallback(getter_AddRefs(mTimer), this, aTimeout,
@@ -992,10 +1023,30 @@ already_AddRefed<Promise> WindowGlobalParent::PermitUnload(
 }
 
 void WindowGlobalParent::PermitUnload(std::function<void(bool)>&& aResolver) {
-  RefPtr<CheckPermitUnloadRequest> request = new CheckPermitUnloadRequest(
-      this, /* aHasInProcessBlocker */ false,
-      nsIDocumentViewer::PermitUnloadAction::ePrompt, std::move(aResolver));
+  RefPtr<CheckPermitUnloadRequest> request =
+      MakeRefPtr<CheckPermitUnloadRequest>(
+          this, /* aHasInProcessBlocker */ false,
+          nsIDocumentViewer::PermitUnloadAction::ePrompt, std::move(aResolver));
   request->Run();
+}
+
+void WindowGlobalParent::PermitUnloadTraversable(
+    const SessionHistoryInfo& aInfo, std::function<void(bool)>&& aResolver) {
+  MOZ_DIAGNOSTIC_ASSERT(BrowsingContext()->IsTop());
+  RefPtr<CheckPermitUnloadRequest> request =
+      MakeRefPtr<CheckPermitUnloadRequest>(
+          this, /* aHasInProcessBlocker */ false,
+          nsIDocumentViewer::PermitUnloadAction::ePrompt, std::move(aResolver));
+  request->RunTraversable(aInfo);
+}
+
+void WindowGlobalParent::PermitUnloadChildNavigables(
+    std::function<void(bool)>&& aResolver) {
+  RefPtr<CheckPermitUnloadRequest> request =
+      MakeRefPtr<CheckPermitUnloadRequest>(
+          this, /* aHasInProcessBlocker */ false,
+          nsIDocumentViewer::PermitUnloadAction::ePrompt, std::move(aResolver));
+  request->RunChildNavigables();
 }
 
 already_AddRefed<mozilla::dom::Promise> WindowGlobalParent::DrawSnapshot(
@@ -1144,7 +1195,8 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvAccumulatePageUseCounters(
 // This is called on the top-level WindowGlobal, i.e. the one that is
 // accumulating the page use counters, not the (potentially descendant) window
 // that has finished providing use counter data.
-void WindowGlobalParent::FinishAccumulatingPageUseCounters() {
+WindowGlobalParent::PageUseCounterResult
+WindowGlobalParent::FinishAccumulatingPageUseCounters() {
   MOZ_LOG(gUseCountersLog, LogLevel::Debug,
           ("Stop expecting page use counters: -> WindowContext %" PRIu64,
            InnerWindowId()));
@@ -1153,7 +1205,7 @@ void WindowGlobalParent::FinishAccumulatingPageUseCounters() {
     MOZ_ASSERT_UNREACHABLE("Not expecting page use counter data");
     MOZ_LOG(gUseCountersLog, LogLevel::Debug,
             (" > not expecting page use counter data"));
-    return;
+    return WindowGlobalParent::PageUseCounterResult();
   }
 
   MOZ_ASSERT(mPageUseCounters->mWaiting > 0);
@@ -1162,14 +1214,16 @@ void WindowGlobalParent::FinishAccumulatingPageUseCounters() {
   if (mPageUseCounters->mWaiting > 0) {
     MOZ_LOG(gUseCountersLog, LogLevel::Debug,
             (" > now waiting on %d", mPageUseCounters->mWaiting));
-    return;
+    return PageUseCounterResultBits::WAITING;
   }
 
+  PageUseCounterResult result;
   if (mPageUseCounters->mReceivedAny) {
     MOZ_LOG(gUseCountersLog, LogLevel::Debug,
             (" > reporting [%s]",
              nsContentUtils::TruncatedURLForDisplay(mDocumentURI).get()));
 
+    result += PageUseCounterResultBits::DATA_RECEIVED;
     Maybe<nsCString> urlForLogging;
     const bool dumpCounters = StaticPrefs::dom_use_counters_dump_page();
     if (dumpCounters) {
@@ -1203,6 +1257,7 @@ void WindowGlobalParent::FinishAccumulatingPageUseCounters() {
     if (!any) {
       MOZ_LOG(gUseCountersLog, LogLevel::Debug,
               (" > page use counter data was received, but was empty"));
+      result += PageUseCounterResultBits::EMPTY_DATA;
     }
   } else {
     MOZ_LOG(gUseCountersLog, LogLevel::Debug,
@@ -1211,6 +1266,7 @@ void WindowGlobalParent::FinishAccumulatingPageUseCounters() {
 
   mSentPageUseCounters = true;
   mPageUseCounters = nullptr;
+  return result;
 }
 
 Element* WindowGlobalParent::GetRootOwnerElement() {
@@ -1495,11 +1551,11 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
         .Add();
   }
 
-  bool finishedPageUseCounters = false;
+  PageUseCounterResult pageUseCounterResult;
   if (mPageUseCountersWindow) {
-    mPageUseCountersWindow->FinishAccumulatingPageUseCounters();
+    pageUseCounterResult =
+        mPageUseCountersWindow->FinishAccumulatingPageUseCounters();
     mPageUseCountersWindow = nullptr;
-    finishedPageUseCounters = true;
   }
 
   if (GetBrowsingContext()->IsTopContent() &&
@@ -1558,9 +1614,6 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
     otherContent->SendDiscardWindowContext(InnerWindowId(), callback, callback);
   });
 
-  // Note that our WindowContext has become discarded.
-  WindowContext::Discard();
-
   // Report content blocking log when destroyed.
   // There shouldn't have any content blocking log when a document is loaded in
   // the parent process(See NotifyContentBlockingEvent), so we could skip
@@ -1575,8 +1628,12 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
         GetContentBlockingLog()->ReportLog();
 
         if (mDocumentURI && net::SchemeIsHttpOrHttps(mDocumentURI)) {
+          bool incrementedTopLevelContentDocumentsDestroyed =
+              pageUseCounterResult.contains(
+                  PageUseCounterResultBits::DATA_RECEIVED);
           GetContentBlockingLog()->ReportCanvasFingerprintingLog(
-              DocumentPrincipal(), finishedPageUseCounters);
+              DocumentPrincipal(),
+              incrementedTopLevelContentDocumentsDestroyed);
           GetContentBlockingLog()->ReportFontFingerprintingLog(
               DocumentPrincipal());
           GetContentBlockingLog()->ReportEmailTrackingLog(DocumentPrincipal());
@@ -1584,6 +1641,9 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
       }
     }
   }
+
+  // Note that our WindowContext has become discarded.
+  WindowContext::Discard();
 
   // Destroy our JSWindowActors, and reject any pending queries.
   JSActorDidDestroy();

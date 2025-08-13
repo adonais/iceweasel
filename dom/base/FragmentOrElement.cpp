@@ -41,6 +41,8 @@
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/StylePropertyMap.h"
+#include "mozilla/dom/StylePropertyMapReadOnly.h"
 #include "nsIControllers.h"
 #include "nsIDocumentEncoder.h"
 #include "nsFocusManager.h"
@@ -140,8 +142,7 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE_WITH_LAST_RELEASE_AND_DESTROY(nsIContent,
                                                                LastRelease(),
                                                                Destroy())
 
-nsIContent*
-nsIContent::FindFirstNonChromeOnlyAccessContent() const {
+nsIContent* nsIContent::FindFirstNonChromeOnlyAccessContent() const {
   // This handles also nested native anonymous content.
   // Oops, this function signature allows casting const to non-const.  (Then
   // again, so does GetFirstChild()->GetParent().)
@@ -574,6 +575,12 @@ void FragmentOrElement::nsDOMSlots::Traverse(
 
   NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(aCb, "mSlots->mClassList");
   aCb.NoteXPCOMChild(mClassList.get());
+
+  NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(aCb, "mSlots->mComputedStyleMap");
+  aCb.NoteXPCOMChild(mComputedStyleMap.get());
+
+  NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(aCb, "mSlots->mAttributeStyleMap");
+  aCb.NoteXPCOMChild(mAttributeStyleMap.get());
 }
 
 void FragmentOrElement::nsDOMSlots::Unlink(nsINode& aNode) {
@@ -585,6 +592,8 @@ void FragmentOrElement::nsDOMSlots::Unlink(nsINode& aNode) {
   }
   mChildrenList = nullptr;
   mClassList = nullptr;
+  mComputedStyleMap = nullptr;
+  mAttributeStyleMap = nullptr;
 }
 
 size_t FragmentOrElement::nsDOMSlots::SizeOfIncludingThis(
@@ -606,6 +615,14 @@ size_t FragmentOrElement::nsDOMSlots::SizeOfIncludingThis(
 
   if (mChildrenList) {
     n += mChildrenList->SizeOfIncludingThis(aMallocSizeOf);
+  }
+
+  if (mComputedStyleMap) {
+    n += mComputedStyleMap->SizeOfIncludingThis(aMallocSizeOf);
+  }
+
+  if (mAttributeStyleMap) {
+    n += mAttributeStyleMap->SizeOfIncludingThis(aMallocSizeOf);
   }
 
   // Measurement of the following members may be added later if DMD finds it is
@@ -2011,7 +2028,8 @@ void FragmentOrElement::SetInnerHTMLInternal(const nsAString& aInnerHTML,
         doc->GetCompatibilityMode() == eCompatibility_NavQuirks, true);
     doc->ResumeDOMNotifications();
     if (target->GetFirstChild()) {
-      MutationObservers::NotifyContentAppended(target, target->GetFirstChild());
+      MutationObservers::NotifyContentAppended(target, target->GetFirstChild(),
+                                               {});
     }
     mb.NodesAdded();
     // HTML5 parser has notified, but not fired mutation events.

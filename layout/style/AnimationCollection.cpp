@@ -5,13 +5,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/AnimationCollection.h"
+
 #include <type_traits>
 
 #include "mozilla/ElementAnimationData.h"
 #include "mozilla/RestyleManager.h"
-#include "nsDOMMutationObserver.h"      // For nsAutoAnimationMutationBatch
 #include "mozilla/dom/CSSAnimation.h"   // For dom::CSSAnimation
 #include "mozilla/dom/CSSTransition.h"  // For dom::CSSTransition
+#include "nsDOMMutationObserver.h"      // For nsAutoAnimationMutationBatch
 
 namespace mozilla {
 

@@ -6,9 +6,9 @@
 
 #include "MappedDeclarationsBuilder.h"
 
+#include "mozilla/dom/Document.h"
 #include "nsAttrValue.h"
 #include "nsAttrValueInlines.h"
-#include "mozilla/dom/Document.h"
 #include "nsPresContext.h"
 
 namespace mozilla {

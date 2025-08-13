@@ -737,19 +737,16 @@ void DocAccessible::HandleScroll(nsINode* aTarget) {
   });
 
   // If timer callback is still pending, push it 100ms into the future.
-  // When scrolling ends and we don't fire this callback anymore, the
+  // When scrolling ends and we don't fire HandleScroll anymore, the
   // timer callback will fire and dispatch an EVENT_SCROLLING_END.
-  if (mScrollWatchTimer) {
-    mScrollWatchTimer->SetDelay(kScrollEventInterval);
-  } else {
-    NS_NewTimerWithFuncCallback(getter_AddRefs(mScrollWatchTimer),
-                                ScrollTimerCallback, this, kScrollEventInterval,
-                                nsITimer::TYPE_ONE_SHOT,
-                                "a11y::DocAccessible::ScrollPositionDidChange");
-    if (mScrollWatchTimer) {
-      NS_ADDREF_THIS();  // Kung fu death grip
-    }
+  if (!mScrollWatchTimer) {
+    // Can only fail on OOM and in that case we'd crash.
+    mScrollWatchTimer = NS_NewTimer();
+    NS_ADDREF_THIS();  // Kung fu death grip
   }
+  mScrollWatchTimer->InitWithNamedFuncCallback(
+      ScrollTimerCallback, this, kScrollEventInterval, nsITimer::TYPE_ONE_SHOT,
+      "a11y::DocAccessible::ScrollPositionDidChange");
 }
 
 std::pair<nsPoint, nsRect> DocAccessible::ComputeScrollData(
@@ -999,7 +996,8 @@ void DocAccessible::ARIAActiveDescendantChanged(LocalAccessible* aAccessible) {
   }
 }
 
-void DocAccessible::ContentAppended(nsIContent* aFirstNewContent) {
+void DocAccessible::ContentAppended(nsIContent* aFirstNewContent,
+                                    const ContentAppendInfo&) {
   MaybeHandleChangeToHiddenNameOrDescription(aFirstNewContent);
 }
 
@@ -1118,12 +1116,13 @@ void DocAccessible::CharacterDataChanged(nsIContent* aContent,
   MaybeHandleChangeToHiddenNameOrDescription(aContent);
 }
 
-void DocAccessible::ContentInserted(nsIContent* aChild) {
+void DocAccessible::ContentInserted(nsIContent* aChild,
+                                    const ContentInsertInfo&) {
   MaybeHandleChangeToHiddenNameOrDescription(aChild);
 }
 
 void DocAccessible::ContentWillBeRemoved(nsIContent* aChildNode,
-                                         const BatchRemovalState*) {
+                                         const ContentRemoveInfo&) {
 #ifdef A11Y_LOG
   if (logging::IsEnabled(logging::eTree)) {
     logging::MsgBegin("TREE", "DOM content removed; doc: %p", this);
@@ -3130,4 +3129,26 @@ void DocAccessible::AttrElementChanged(dom::Element* aElement, nsAtom* aAttr) {
   sIsAttrElementChanging = false;
   AttributeChanged(aElement, kNameSpaceID_None, aAttr,
                    dom::MutationEvent_Binding::MODIFICATION, nullptr);
+}
+
+bool DocAccessible::ProcessAnchorJump() {
+  if (!mAnchorJumpElm) {
+    return true;
+  }
+  LocalAccessible* target = GetAccessibleOrContainer(mAnchorJumpElm);
+  if (!target) {
+    // This node isn't in the tree.
+    mAnchorJumpElm = nullptr;
+    return true;
+  }
+  const Accessible* focusedAcc = FocusMgr()->FocusedAccessible();
+  if (!focusedAcc || (focusedAcc != this && !focusedAcc->IsNonInteractive())) {
+    // Focus is nowhere or on an interactive element. Ignore the anchor jump for
+    // now.
+    return false;
+  }
+  nsEventShell::FireEvent(nsIAccessibleEvent::EVENT_SCROLLING_START, target);
+  // We've processed this anchor jump now. Clear it so it isn't processed again.
+  mAnchorJumpElm = nullptr;
+  return true;
 }

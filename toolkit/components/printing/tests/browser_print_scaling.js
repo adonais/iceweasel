@@ -44,3 +44,37 @@ add_task(async function testInvalidScaleResetAfterDestinationChange() {
     await helper.closeDialog();
   });
 });
+
+add_task(async function testScaleUIUpdateAfterExit() {
+  const mockPrinterName = "Scale";
+  await PrintHelper.withTestPage(async helper => {
+    helper.addMockPrinter(mockPrinterName);
+    //push changes to mock printer before opening printer dialog
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["print.printer_Scale.print_scaling", "2"],
+        ["print.printer_Scale.print_shrink_to_fit", false],
+      ],
+    });
+
+    await helper.startPrint();
+    await helper.openMoreSettings();
+
+    let scaleRadio = helper.get("percent-scale-choice");
+    let percentScale = helper.get("percent-scale");
+    is(scaleRadio.checked, false, "Fit to page is set");
+    is(percentScale.value, "100", "Default scale is set");
+
+    percentScale = helper.get("percent-scale");
+    await helper.openMoreSettings();
+
+    // Switch to the mock printer
+    await helper.dispatchSettingsChange({ printerName: mockPrinterName });
+    await helper.waitForSettingsEvent();
+
+    is(scaleRadio.checked, true, "Scale is set");
+    is(percentScale.value, "200", "200% scaling is set");
+
+    await helper.closeDialog();
+  });
+});

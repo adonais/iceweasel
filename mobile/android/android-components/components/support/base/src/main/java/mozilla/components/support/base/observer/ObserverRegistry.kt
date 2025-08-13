@@ -221,6 +221,10 @@ open class ObserverRegistry<T> : Observable<T> {
         override fun onPause(owner: LifecycleOwner) {
             registry.pauseObserver(observer)
         }
+
+        override fun onDestroy(owner: LifecycleOwner) {
+            registry.unregister(observer)
+        }
     }
 
     /**

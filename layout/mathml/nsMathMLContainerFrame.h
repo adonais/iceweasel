@@ -8,12 +8,12 @@
 #define nsMathMLContainerFrame_h___
 
 #include "mozilla/Attributes.h"
-#include "nsContainerFrame.h"
-#include "nsBlockFrame.h"
-#include "nsInlineFrame.h"
-#include "nsMathMLOperators.h"
-#include "nsMathMLFrame.h"
 #include "mozilla/Likely.h"
+#include "nsBlockFrame.h"
+#include "nsContainerFrame.h"
+#include "nsInlineFrame.h"
+#include "nsMathMLFrame.h"
+#include "nsMathMLOperators.h"
 
 namespace mozilla {
 class PresShell;

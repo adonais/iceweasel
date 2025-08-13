@@ -50,8 +50,6 @@ inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm) {
     Register scratch2 = temps.Acquire();
     masm.Pop(scratch2);
   }
-
-  masm.checkStackAlignment();
 }
 
 inline void EmitStubGuardFailure(MacroAssembler& masm) {

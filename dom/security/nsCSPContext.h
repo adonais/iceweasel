@@ -43,6 +43,8 @@ class nsCSPContext : public nsIContentSecurityPolicy {
   NS_DECL_NSICONTENTSECURITYPOLICY
   NS_DECL_NSISERIALIZABLE
 
+  NS_DEFINE_STATIC_CID_ACCESSOR(NS_CSPCONTEXT_CID)
+
  protected:
   virtual ~nsCSPContext();
 
@@ -158,6 +160,13 @@ class nsCSPContext : public nsIContentSecurityPolicy {
   void SerializePolicies(
       nsTArray<mozilla::ipc::ContentSecurityPolicy>& aPolicies);
 
+  static nsCSPContext* Cast(nsIContentSecurityPolicy* aCSP) {
+    return static_cast<nsCSPContext*>(aCSP);
+  }
+
+  [[nodiscard]] nsresult PolicyContainerRead(
+      nsIObjectInputStream* aInputStream);
+
  private:
   enum class ForceReportSample { Yes, No };
 
@@ -203,8 +212,11 @@ class nsCSPContext : public nsIContentSecurityPolicy {
   };
 
   nsresult TryReadPolicies(PolicyDataVersion aVersion,
-                           mozilla::Span<const uint8_t> aData,
-                           uint32_t aNumPolicies);
+                           nsIObjectInputStream* aStream, uint32_t aNumPolicies,
+                           bool aForPolicyContainer);
+
+  [[nodiscard]] nsresult ReadImpl(nsIObjectInputStream* aStream,
+                                  bool aForPolicyContainer);
 
   nsCString mReferrer;
   uint64_t mInnerWindowID;          // See `nsPIDOMWindowInner::mWindowID`.

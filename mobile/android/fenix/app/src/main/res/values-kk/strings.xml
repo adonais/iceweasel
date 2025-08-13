@@ -34,6 +34,8 @@
   <string name="no_private_tabs_description">Сіздің жекелік беттеріңіз осында көрсетілетін болады.</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d таңдалды</string>
+  <!-- Tab tray multi select title in app bar when no tabs are selected -->
+  <string name="tab_tray_multi_select_title_empty">Беттерді таңдау</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
   <string name="tab_tray_add_new_collection">Жаңа жинақты қосу</string>
   <!-- Label of editable text in create collection dialog for naming a new collection -->
@@ -64,6 +66,8 @@
   -->
   <string name="private_browsing_placeholder_description_2" moz:removedIn="141" tools:ignore="UnusedResources">%1$s қолданба немесе барлық жекелік шолу беттері жабылғанда іздеулер және шолу тарихын өшіреді. Бұл сізді веб-сайттар немесе интернет қызметін ұсынушысына анонимды етпесе де, бұл компьютерді қолданатын басқа адамдардан сіздің интернеттегі белсенділікті жасырын сақтауға жол береді.</string>
   <string name="private_browsing_common_myths">Жекелік шолу туралы кең тараған аңыздар</string>
+  <!-- Text to be announced by the accessibility service to inform the user that the private browsing mode is currently active. -->
+  <string name="private_browsing_a11y_session_announcement">Жекелік шолу сессиясы</string>
   <!--
     True Private Browsing Mode
 
@@ -99,16 +103,6 @@
     Text for the message displayed in the contextual feature recommendation popup promoting the erase private browsing feature.
   -->
   <string name="erase_action_cfr_message" moz:removedIn="141" tools:ignore="UnusedResources">Жаңа жекелік шолуды бастау үшін осы жерді шертіңіз. Тарихыңызды, cookie файлдарын - барлығын өшіріңіз.</string>
-  <!--
-    Toolbar "contextual feature recommendation" (CFR)
-
-    Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
-  -->
-  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Жаңа навигация арқылы жылдамырақ шолыңыз</string>
-  <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Веб-сайтта болған кезде, қосымша шолу кеңістігі үшін төмен айналдырған кезде бұл панель жасырылады.</string>
-  <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Осы бет тарихындағы беттер арасында өту үшін бағдарша пернесін басып, ұстап тұрыңыз.</string>
   <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
@@ -318,10 +312,14 @@
   <string name="browser_menu_sign_in_caption" moz:removedIn="141" tools:ignore="UnusedResources">Парольдер, беттер және т.б. синхрондау</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
   <string name="browser_menu_sign_in_caption_2" moz:removedIn="141" tools:ignore="UnusedResources">Бетбелгілер, парольдер, беттер және т.б. синхрондау</string>
+  <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
+  <string name="browser_menu_sign_in_caption_3">Парольдер, бетбелгілер және т.б. синхрондау</string>
   <!-- Browser menu label to sign back in to sync on the device when the user's account needs to be reauthenticated -->
   <string name="browser_menu_sign_back_in_to_sync">Синхрондау ішіне қайта кіру</string>
   <!-- Browser menu caption label for the "Sign back in to sync" browser menu item described in `browser_menu_sign_back_in_to_sync` when there is an error in syncing -->
   <string name="browser_menu_syncing_paused_caption">Синхрондау аялдатылды</string>
+  <!-- Browser menu caption label for an authenticated user -->
+  <string name="browser_menu_signed_in_caption">Сақтық көшірмесін жасап, синхрондайтын нәрселерді басқару</string>
   <!-- Browser menu label that creates a private tab -->
   <string name="browser_menu_new_private_tab">Жаңа жекелік беті</string>
   <!-- Browser menu label that navigates to the Password screen -->
@@ -334,13 +332,17 @@
   <!-- Browser menu label that toggles the request for the desktop site of the currently visited page -->
   <string name="browser_menu_switch_to_desktop_site" moz:removedIn="141" tools:ignore="UnusedResources">Жұмыс үстелі сайтына ауысу</string>
   <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site">Мобильді сайтқа ауысу</string>
+  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Мобильді сайтқа ауысу</string>
   <!-- Browser menu label that navigates to the page tools sub-menu -->
   <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">Құралдар</string>
   <!-- Content description (not visible, for screen readers etc.): Back button for all menu redesign sub-menu -->
   <string name="browser_menu_back_button_content_description" moz:removedIn="141" tools:ignore="UnusedResources">Негізгі мәзірге оралу</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
   <string name="browser_main_menu_handlebar_content_description" moz:removedIn="142" tools:ignore="UnusedResources">Басты мәзір парағын жабу</string>
+  <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
+  <string name="browser_close_main_menu_handlebar_content_description">Мәзірді жабу</string>
+  <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
+  <string name="browser_main_menu_content_description_navigation_header">Навигация</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
   <string name="browser_main_menu_content_description_help_button">Көмек</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
@@ -414,9 +416,15 @@
   -->
   <string name="browser_menu_default_banner_title">%1$s негізгі браузер қылу</string>
   <!-- Label text within the set as default banner -->
-  <string name="browser_menu_default_banner_subtitle">Бірнеше секундты алады. Кез келген уақытта өзгертуге болады.</string>
+  <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">Бірнеше секундты алады. Кез келген уақытта өзгертуге болады.</string>
+  <!-- Label text within the set as default banner -->
+  <string name="browser_menu_default_banner_subtitle_2">Жылдам, жеке және сіз үшін жасалған.</string>
   <!-- Content description for the button that dismisses the set as default banner in the menu -->
   <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">Елемеу</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
+  <string name="browser_menu_default_banner_dismiss_promotion">Жарнаманы жасыру</string>
+  <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
+  <string name="browser_menu_recommended_extensions_content_description">Көбірек ақпарат</string>
   <!--
     Menu "contextual feature recommendation" (CFR)
 
@@ -586,45 +594,6 @@
   <string name="juno_onboarding_add_search_widget_positive_button" tools:ignore="BrandUsage,UnusedResources">Firefox виджетін қосу</string>
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">Қазір емес</string>
-  <!--
-    Onboarding header for the add-ons card used by Nimbus experiments. Nimbus experiments do not support string placeholders.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="onboarding_add_on_header" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Firefox-ты кеңейтулермен баптаңыз</string>
-  <!-- Onboarding sub header for the add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_sub_header" moz:removedIn="140" tools:ignore="UnusedResources">Қауіпсіздікті, өнімділікті және т.б. жақсарту үшін үшінші тарап кеңейтулерін қосыңыз.</string>
-  <!-- Onboarding add-ons card, for checking more add-ons on, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_explore_more_extensions_2" moz:removedIn="140" tools:ignore="UnusedResources">Көбірек кеңейтулерді шолу</string>
-  <!-- Onboarding add-ons card, button for start browsing, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_start_browsing_button_2" moz:removedIn="140" tools:ignore="UnusedResources">Шолуды бастау</string>
-  <!-- Ublock name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Ublock Origin" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_ublock_name" moz:removedIn="140" tools:ignore="UnusedResources">uBlock Origin</string>
-  <!-- Ublock description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_ublock_description" moz:removedIn="140" tools:ignore="UnusedResources">Жарнамаларды тиімді және өнімді түрде блоктаңыз.</string>
-  <!-- Privacy Badger name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Privacy Badger" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_privacy_badger_name" moz:removedIn="140" tools:ignore="UnusedResources">Privacy Badger</string>
-  <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_privacy_badger_description" moz:removedIn="140" tools:ignore="UnusedResources">Бақылауға қарсы асыл тас. Жасырын трекерлер мен тыңшылық жарнамаларды тоқтатыңыз.</string>
-  <!-- Search by Image name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Search by Image" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_search_by_image_name" moz:removedIn="140" tools:ignore="UnusedResources">Сурет бойынша іздеу</string>
-  <!-- Search by Image description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_search_by_image_description" moz:removedIn="140" tools:ignore="UnusedResources">Қызықты суретті қараңыз және ол туралы көбірек біліңіз.</string>
-  <!-- Dark Reader name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Dark Reader" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_dark_reader_name" moz:removedIn="140" tools:ignore="UnusedResources">Dark Reader</string>
-  <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_dark_reader_description" moz:removedIn="140" tools:ignore="UnusedResources">Мобильді веб үшін реттелетін қараңғы режим.</string>
-  <!-- Label for the number of reviews for an add-on. %1$s is the formatted number of reviews e.g. "1,234", "12,345", "123,456". -->
-  <string name="onboarding_add_on_reviews_label" moz:removedIn="140" tools:ignore="UnusedResources">Пікірлер: %1$s</string>
-  <!-- Content description for the add-on icon. -->
-  <string name="onboarding_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Қосымша таңбашасы</string>
-  <!-- Content description for the an installed add-on icon. -->
-  <string name="onboarding_installed_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Орнатылған қосымша таңбашасы</string>
-  <!-- Content description for the an installing add-on icon. -->
-  <string name="onboarding_installing_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Орнатылып жатқан қосымша таңбашасы</string>
-  <!-- Content description for the add add-on button. -->
-  <string name="onboarding_add_on_add_button_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Қосымша батырмасын қосу</string>
-  <!-- Content description for the star rating group. %1$s is the rating. -->
-  <string name="onboarding_add_on_star_rating_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Бағаланды: 5 ішінен %1$s</string>
   <!-- Title for the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_title" tools:ignore="BrandUsage">Firefox-ты жақсартуға көмектесіңіз</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
@@ -644,8 +613,6 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Интернетті жылдам және қауіпсіз шолу</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Келісу және жалғастыру</string>
-  <!-- Terms of service onboarding page continue button label. -->
   <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Жалғастыру</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Жалғастыру арқылы сіз %1$s шарттарымен келісесіз.</string>
@@ -664,7 +631,9 @@
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Firefox-ты өзіңіз үшін қалай ашқаныңызды және оны пайдалану жолыңызды бөліссеңіз, браузерімізді көбірек адамдарға таныстыруға көмектесесіз.</string>
   <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Mozilla маркетингтік технологиялар серіктестерімен ең аз деректерді бөлісіңіз. Бұл деректер ешқашан сатылмайды немесе сізге жарнама көрсету үшін пайдаланылмайды.</string>
+  <string name="onboarding_marketing_opt_in_checkbox" moz:removedIn="143" tools:ignore="UnusedResources">Mozilla маркетингтік технологиялар серіктестерімен ең аз деректерді бөлісіңіз. Бұл деректер ешқашан сатылмайды немесе сізге жарнама көрсету үшін пайдаланылмайды.</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_opt_out_checkbox">Mozilla маркетингтік технологиялар серіктестерімен деректерді бөлісіңіз. Бұл деректер ешқашан сатылмайды немесе сізге жарнама көрсету үшін пайдаланылмайды.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
   <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Біз деректерді қалай қолданамыз</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
@@ -790,8 +759,6 @@
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">Жекелік шолуда беттерді жасыру үшін экран құлпын пайдаланыңыз</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary" moz:removedIn="140" tools:ignore="UnusedResources">Беттерді саусақ ізімен, бетті тану немесе PIN көмегімен қарау.</string>
-  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_2">Браузер беттерін саусақ ізіңізбен, PIN кодыңызбен немесе бетіңізді тану арқылы көріңіз.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Cookie баннерлерін бұғаттаушы</string>
@@ -857,10 +824,16 @@
   <string name="preferences_category_account">Тіркелгі</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Алрестік жолақтың орны</string>
+  <!-- Preference for changing toolbar layout -->
+  <string name="preferences_toolbar_layout">Құралдар панелінің жаймасы</string>
   <!-- Preference for changing default theme to dark or light mode -->
   <string name="preferences_theme">Тема</string>
   <!-- Preference for customizing the home screen -->
   <string name="preferences_home_2">Үй парағы</string>
+  <!-- Preference for customizing the app icon -->
+  <string name="preferences_app_icon">Қолданба таңбашасы</string>
+  <!-- Preference for showing the tab strip -->
+  <string name="preferences_tab_strip">Беттер жолағының түрі</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_gestures">Ым қимылдар</string>
   <!-- Preference for settings related to visual options -->
@@ -939,6 +912,12 @@
   <string name="preferences_open_links_in_apps_never">Ешқашан</string>
   <!-- Preference for open download with an external download manager app -->
   <string name="preferences_external_download_manager" tools:ignore="UnusedResources" moz:removedIn="141">Сыртқы жүктеу менеджері</string>
+  <!-- Preference title for choosing an app to handle downloads -->
+  <string name="preferences_choose_app_for_downloads">Жүктемелерді басқа қолданбамен басқару</string>
+  <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
+  <string name="preferences_downloads_settings_clean_up_files_title">%s ішінен және құрылғыдан өшіру</string>
+  <!-- Summary for the setting to automatically clean up downloaded files -->
+  <string name="preferences_downloads_settings_clean_up_files_summary">Жүктемелер басқарушысынан файлдарды өшіру оларды құрылғыдан да өшіреді</string>
   <!-- Preference for downloads -->
   <string name="preferences_downloads">Жүктемелер</string>
   <!-- Preference for enabling gecko engine logs -->
@@ -1013,11 +992,7 @@
   -->
   <string name="customize_toggle_recently_visited">Жуырда қаралған</string>
   <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">Ойландыратын әңгімелер</string>
-  <!-- Title for the customize home screen section with Pocket. -->
   <string name="customize_toggle_pocket_3">Әңгімелер</string>
-  <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-  <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">%s ұсынған мақалалар</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">Демеушілер мақалалары</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -1111,7 +1086,15 @@
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">Градиенттер</string>
   <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other">Басқа</string>
+  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources">Басқа</string>
+  <!-- Title to show in alert when user selects an alternative app icon -->
+  <string name="restart_warning_dialog_title">Қолданба таңбашасын өзгерту керек пе?</string>
+  <!-- Message to warn users that applying an alternative app icon requires an app restart -->
+  <string name="restart_warning_dialog_body">Таңбашаны өзгерту қолданбаны қайта іске қосуды талап етеді.</string>
+  <!-- Dialog button text for confirming the app restart to apply the selected icon -->
+  <string name="restart_warning_dialog_button_positive">Қазір қайта іске қосу</string>
+  <!-- Dialog button text for cancelling app icon change -->
+  <string name="restart_warning_dialog_button_negative">Бас тарту</string>
   <!--
     Add-ons general availability nimbus message
 
@@ -1220,6 +1203,8 @@
   <string name="exceptions_empty_message_learn_more_link">Көбірек білу</string>
   <!-- Preference switch for usage and technical data collection -->
   <string name="preference_usage_data_2">Техникалық және өзара әрекеттесу деректерін жіберу</string>
+  <!-- Preference switch for usage and technical learn more link in new compose -->
+  <string name="preference_usage_data_learn_more_2">Техникалық ақпарат туралы көбірек білу</string>
   <!-- Preference switch for usage and technical learn more link -->
   <string name="preference_usage_data_learn_more" tools:ignore="UnusedResources" moz:removedIn="141">Көбірек білу</string>
   <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
@@ -1230,8 +1215,12 @@
   <string name="preferences_daily_usage_ping_learn_more">Күнделікті пайдалану пингі туралы көбірек білу</string>
   <!-- Preference switch title for automatically submitting crash reports -->
   <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">Құлау хабарламаларын автоматты түрде жіберу</string>
+  <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
+  <string name="crash_reporting_snack_bar_message">Есептеме жіберілді</string>
   <!-- Preference switch description for automatically submitting crash reports -->
   <string name="preferences_automatically_send_crashes_description" tools:ignore="UnusedResources" moz:removedIn="142">Бұл бізге браузердегі ақауларды диагностикалауға және түзетуге мүмкіндік береді. Есептемелер жеке немесе сезімтал деректерді қамтуы мүмкін.</string>
+  <!-- Text for sumo link to learn more about crash reports in data collection screen -->
+  <string name="preferences_crashes_learn_more">Құлау есептемелері туралы көбірек білу</string>
   <!-- Title Headers for data collection settings screen -->
   <string name="crash_reports_data_category">Құлау туралы хабарлар</string>
   <string name="usage_data_category">Қолдану деректері</string>
@@ -1283,6 +1272,14 @@
   <string name="preference_simple_toolbar">Қарапайым</string>
   <!-- Preference for using expanded toolbar -->
   <string name="preference_expanded_toolbar">Кеңейтілген</string>
+  <!-- Preference description indicating the toolbar location preference is disabled when the tab strip is enabled -->
+  <string name="preference_toolbar_pref_disabled_explanation">Беттер жолағы көрсетілген кезде адрес жолағы жоғарғы жағында болуы керек.</string>
+  <!--
+    App icon Preferences
+
+    Title for the preference that lets the user pick a new app icon
+  -->
+  <string name="preference_select_app_icon_title">Қолданба таңбашасын таңдау</string>
   <!--
     Theme Preferences
 
@@ -1296,6 +1293,12 @@
   <!-- Preference for using following device theme -->
   <string name="preference_follow_device_theme">Құрылғы темасына сүйену</string>
   <!--
+    Tab Strip Preferences
+
+    Preferences for showing tab strip
+  -->
+  <string name="preference_tab_strip_show">Беттер жолағын көрсету</string>
+  <!--
     Gestures Preferences
 
     Preferences for using pull to refresh in a webpage
@@ -1305,8 +1308,6 @@
   <string name="preference_gestures_dynamic_toolbar">Құралдар тақтасын жасыру үшін айналдырыңыз</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Беттерді ашу үшін құралдар тақтасын жоғары қарай сырғытыңыз</string>
-  <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Адрестік жолақ және саймандар панелін жасыру үшін айналдыру</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Беттерді ауыстыру үшін адрестік жолақты сырғытыңыз</string>
   <!--
@@ -1446,6 +1447,13 @@
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Көбірек білу</string>
   <!--
+    Sessions
+
+    Title for the list of tabs in the current normal session used by a11y services
+    The %1$s will be replaced by the number of opened normal tabs
+  -->
+  <string name="tabs_header_normal_tabs_counter_title">Ашық қалыпты беттер: %1$s. Беттерді ауыстыру үшін шертіңіз.</string>
+  <!--
     Title for the list of tabs in the current private session used by a11y services
     The %1$s will be replaced by the number of opened private tabs
   -->
@@ -1455,6 +1463,12 @@
     The %1$s will be replaced by the number of opened synced tabs
   -->
   <string name="tabs_header_synced_tabs_counter_title">Синхрондалған ашық беттер: %1$s. Беттерді ауыстыру үшін шертіңіз.</string>
+  <!-- Text for the tabs header private tabs -->
+  <string name="tabs_header_private_tabs_title">Жеке</string>
+  <!-- Text for the tabs header normal tabs -->
+  <string name="tabs_header_normal_tabs_title">Беттер</string>
+  <!-- Text for the tabs header synced tabs -->
+  <string name="tabs_header_synced_tabs_title">Синхрондау</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_tab">Жаңа бетті қосу</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
@@ -1520,9 +1534,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Тарихты өшіру</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">Тарих өшірілді</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Тарих өшірілді</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">%1$s өшірілді</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s өшірілді</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Өшіру</string>
   <!--
@@ -1706,6 +1720,10 @@
   <string name="webcompat_reporter_screen_title">Сынған сайт туралы хабарлау</string>
   <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
   <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">%1$s өнімін әркім үшін де жақсартуға көмектесіңіз. Mozilla қызметкерлері сіз жіберген ақпаратты веб-сайт мәселелерін шешу үшін пайдаланады.</string>
+  <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">Есептеме жіберу %1$s жүйесіндегі мәселелерді түсінуге және оны барлығы үшін жақсартуға көмектеседі. Көбірек білу</string>
+  <!-- The button text for navigating to the SUMO link to learn more about reporting a broken site. -->
+  <string name="webcompat_reporter_learn_more">Көбірек білу</string>
   <!-- The text field label of the URL text field. This is displayed above the user-inputted URL. -->
   <string name="webcompat_reporter_label_url">URL</string>
   <!-- The error message of the URL text field when an invalid URL has been entered. -->
@@ -1714,6 +1732,8 @@
   <string name="webcompat_reporter_label_whats_broken_2">Не сынған?</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">Себебін таңдау</string>
+  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
+  <string name="webcompat_reporter_choose_reason_2">Себебін таңдау</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_error">Себебін таңдаңыз</string>
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
@@ -1728,22 +1748,16 @@
   <string name="webcompat_reporter_success_snackbar_text">Сіздің хабарламаңыз жіберілді</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
   <string name="webcompat_reporter_dismiss_success_snackbar_text">Жабу</string>
+  <!-- Placeholder text for the description field to prompt the user on what they should type. -->
+  <string name="webcompat_reporter_problem_description_placeholder_text">Не болды? Не болуы керек еді?</string>
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
-    Broken site reason text for site slow or not working
+    Broken site reason text for site doesn’t load
   -->
-  <string name="webcompat_reporter_reason_slow" moz:removedIn="140" tools:ignore="UnusedResources">Сайт баяу немесе жұмыс істемейді</string>
-  <!-- Broken site reason text for site doesn’t load -->
   <string name="webcompat_reporter_reason_load">Сайт жүктелмейді</string>
   <!-- Broken site reason text for can’t pay, check out or shop -->
   <string name="webcompat_reporter_reason_checkout">Төлеу, рәсімдеу немесе сатып алу мүмкін емес</string>
-  <!-- Broken site reason text for images or videos -->
-  <string name="webcompat_reporter_reason_media" moz:removedIn="140" tools:ignore="UnusedResources">Суреттер немесе видеолар</string>
-  <!-- Broken site reason text for buttons, links, and other content -->
-  <string name="webcompat_reporter_reason_content" moz:removedIn="140" tools:ignore="UnusedResources">Батырмалар, сілтемелер және басқа мазмұн</string>
-  <!-- Broken site reason text for sign in or sign out -->
-  <string name="webcompat_reporter_reason_account" moz:removedIn="140" tools:ignore="UnusedResources">Жүйеге кіру немесе шығу</string>
   <!-- Broken site reason text for site is slow -->
   <string name="webcompat_reporter_reason_slow2">Сайт баяу</string>
   <!-- Broken site reason text for video isn’t playing or loading -->
@@ -1752,8 +1766,6 @@
   <string name="webcompat_reporter_reason_content2">Мазмұн жоқ</string>
   <!-- Broken site reason text for can’t sign in or register -->
   <string name="webcompat_reporter_reason_account2">Жүйеге кіру немесе тіркелу мүмкін емес</string>
-  <!-- Broken site reason text for ad blocker -->
-  <string name="webcompat_reporter_reason_ad_blocker" moz:removedIn="140" tools:ignore="UnusedResources">Жарнама бұғаттаушысы</string>
   <!-- Broken site reason text for site asked to turn off ad blocker -->
   <string name="webcompat_reporter_reason_turn_off_adblocker">Сайт жарнама бұғаттаушысын өшіруді сұрады</string>
   <!-- Broken site reason text for browser isn’t supported or blocked -->
@@ -1773,15 +1785,28 @@
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">Бетті қалпына келтіру</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title">%s қайта іске қосылуы керек болды</string>
+  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s қайта іске қосылуы керек болды</string>
+  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
+  <string name="unsubmitted_crash_dialog_title_2">%s құлап түсті. Есептеме жіберу керек пе?</string>
+  <!-- Single unsubmitted crash matching remote settings. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="unsubmitted_crash_requested_by_devs_dialog_title">Сізде тексеріліп жатқан құлауларға қатысты жіберілмеген қате туралы есептеме бар. Оны жіберу %1$s өнімін жақсартуға көмектеседі. Бұл хабарландыруды жабу бұл есептемені елемейді.</string>
+  <!-- Multiple unsubmitted crashes matching remote settings. %1$d is the number of unsent crash reports, %2$s is the name of the app (for example "Firefox"). -->
+  <string name="unsubmitted_crashes_requested_by_devs_dialog_title">Сізде тексеріліп жатқан құлауларға қатысты жіберілмеген қате туралы есептемелер (%1$d) бар. Оларды жіберу %2$s өнімін жақсартуға көмектеседі. Бұл хабарландыруды жабу бұл есептемелерді елемейді.</string>
   <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
   <string name="unsubmitted_crash_dialog_checkbox_label">Құлау хабарламаларын автоматты түрде жіберу</string>
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
   <string name="unsubmitted_crash_dialog_negative_button">Жабу</string>
+  <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
+  <string name="unsubmitted_crash_dialog_negative_button_2">ЖАБУ</string>
   <!-- Unsubmitted crash dialog negative button to never be asked for the submission -->
   <string name="unsubmitted_crash_requested_by_devs_dialog_never_button">Қайта көрсетпеу</string>
   <!-- Unsubmitted crash dialog positive button to submit crash report -->
+  <string name="unsubmitted_crash_dialog_positive_button_2">ЖІБЕРУ</string>
+  <!-- Unsubmitted crash dialog positive button to submit crash report -->
   <string name="unsubmitted_crash_dialog_positive_button">Құлау жөнінде хабарламаны жіберу</string>
+  <!-- Body text for crash report dialog. %s is the link text in the annotated string (ie. "Learn More") -->
+  <string name="unsubmitted_crash_dialog_body">Құлау есептемелері браузердегі ақауларды диагностикалауға және түзетуге көмектеседі. Есептемелер жеке немесе сезімтал деректерді қамтуы мүмкін. %s</string>
+  <string name="unsubmitted_crash_dialog_learn_more">Көбірек білу</string>
   <!-- Unsubmitted crash dialog button to open a web page with more details on the feature and privacy policy -->
   <string name="unsubmitted_crash_requested_by_devs_learn_more">Көбірек білу</string>
   <!--
@@ -1789,11 +1814,11 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">Бұл буманы өшіруді шынымен қалайсыз ба?</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">Бұл буманы өшіруді шынымен қалайсыз ба?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items. -->
   <string name="bookmark_delete_folders_confirmation_dialog">Таңдалған нәрселерді өшіруді шынымен қалайсыз ба?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog">%s таңдалған элементтерді өшіреді.</string>
+  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s таңдалған элементтерді өшіреді.</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">Бас тарту</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -1823,7 +1848,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">Өшіру</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">Сақтау</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">Сақтау</string>
   <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_custom">Таңдауыңызша реті бойынша сұрыптау</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
@@ -1844,7 +1869,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">Буманы түзету</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">Синхрондалған бетбелгілерді көру үшін жүйеге кіріңіз</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">Синхрондалған бетбелгілерді көру үшін жүйеге кіріңіз</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -1856,24 +1881,24 @@
   <!-- Label for a text input field for a bookmark or folder name -->
   <string name="bookmark_name_label_normal_case">Аты</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">Буманы қосу</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">Буманы қосу</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">Буманы таңдау</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">Атауы болуы тиіс</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">Атауы болуы тиіс</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">Жарамсыз URL</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">Осында бетбелгілер жоқ</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">Осында бетбелгілер жоқ</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s өшірілді</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">Бетбелгілер өшірілді</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">Бетбелгілер өшірілді</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3">Таңдалған бумаларды өшіру</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">Таңдалған бумаларды өшіру</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">БОЛДЫРМАУ</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
@@ -1881,7 +1906,7 @@
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
   <string name="bookmark_delete_multiple_items">Өшірілетін нәрселер: %s</string>
   <!-- Text for the button to search all bookmarks -->
-  <string name="bookmark_search">Іздеу жолын енгізіңіз</string>
+  <string name="bookmark_search" tools:ignore="UnusedResources" moz:removedIn="143">Іздеу жолын енгізіңіз</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Артқа өту</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2037,7 +2062,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d бет таңдалды</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">Беттер сақталды!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Беттер сақталды!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection">Жинақ сақталды!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -2170,9 +2195,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">Жинақ өшірілді</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Жинақ өшірілді</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">Жинақ атауы өзгертілді</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Жинақ атауы өзгертілді</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Бет жабылды</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -2209,15 +2234,17 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">%1$s өшіруді шынымен қалайсыз ба?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">Өшіру</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Өшіру</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">URL көшірілді</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL көшірілді</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Бұл мәтіндік үлгі. Осы параметрмен өлшемді ұлғайту немесе кішірейту кезінде мәтіннің қалай көрінетінін көруге болады.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_text_size_summary">Веб-сайттардағы мәтінді үлкенірек немесе кішірек ету</string>
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">Қаріп өлшемі</string>
+  <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
+  <string name="a11y_preference_accessibility_font_size_percentage">%d %%.</string>
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
   <string name="preference_accessibility_auto_size_2">Автоматты қаріп өлшемі</string>
   <!-- Summary for Accessibility Text Automatic Size Scaling Preference -->
@@ -2349,6 +2376,10 @@
   <string name="preference_enhanced_tracking_protection_strict">Қатаң</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Бақылаудан күшейтілген қорғаныс және жылдамырақ жұмыс істеу, бірақ кейбір сайттар дұрыс жұмыс істемеуі мүмкін.</string>
+  <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
+  <string name="preference_enhanced_tracking_protection_allow_list_baseline">Веб-сайттың қатаң бұзылуларын болдырмау мақсатында %1$s үшін қажет ережеден тыс жағдайларды автоматты түрде іске асыруды рұқсат ету.</string>
+  <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience">Шағын мәселелерді шешу және ыңғайлылық мүмкіндіктерін қолжетімді ету үшін ғана қажет болатын ережеден тыс жағдайларды автоматты түрде іске асыру.</string>
   <!-- Accessibility text for the Strict protection information icon -->
   <string name="preference_enhanced_tracking_protection_strict_info_button">Бақылаудан қатаң қорғаныс нені бұғаттайды</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
@@ -2643,6 +2674,8 @@
   <string name="saved_login_clear_username">Пайдаланушы атын тазарту</string>
   <!-- Content Description (for screenreaders etc) read for the button to clear the hostname field while creating a login -->
   <string name="saved_login_clear_hostname">Хост атауын өшіру</string>
+  <!-- Content description, used by tools like screenreaders, for the 3 dots button that shows commands related to the currently displayed login (edit, delete). -->
+  <string name="login_detail_menu_button_content_description">Логин ақпаратының мәзірі</string>
   <!-- Content description, used by tools like screenreaders, to go back and exit the login detail view. -->
   <string name="login_details_navigate_back_button_content_description">Артқа өту</string>
   <!-- Edit text for the login detail menu edit button -->
@@ -2715,6 +2748,10 @@
   <string name="preferences_addresses_save_and_autofill_addresses_2">Адрестерді сақтау және толтыру</string>
   <!-- Preference summary for saving and filling address data -->
   <string name="preferences_addresses_save_and_autofill_addresses_summary_2">Телефон нөмірлері мен электрондық пошта адрестерін қамтиды</string>
+  <!-- Preference option for syncing addresses across devices. This is displayed when the user is not signed into sync -->
+  <string name="preferences_addresses_sync_addresses_across_devices">Адрестерді құрылғылар арасында синхрондау</string>
+  <!-- Preference option for syncing addresses across devices. This is displayed when the user is signed into sync -->
+  <string name="preferences_addresses_sync_addresses">Адрестерді синхрондау</string>
   <!-- Title of the "Add card" screen -->
   <string name="credit_cards_add_card">Картаны қосу</string>
   <!-- Title of the "Edit card" screen -->
@@ -2839,14 +2876,12 @@
   <string name="search_add_custom_engine_error_empty_search_string">Іздеу жолын енгізіңіз</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Іздеу жолы мысал пішіміне сай келетінін тексеріңіз</string>
-  <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">\"%s\" адресіне байланысу қатесі</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">%s қосылды</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s қосылды</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">%s сақталды</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s сақталды</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">%s өшірілді</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s өшірілді</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Рұқсат ету үшін:</string>
   <!-- First step for the allowing a permission -->
@@ -2874,7 +2909,7 @@
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">Сайт үшін ережеден тыс жағдайлар жоқ</string>
   <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation">Бұл бетбелгіні өшіруді шынымен қалайсыз ба?</string>
+  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">Бұл бетбелгіні өшіруді шынымен қалайсыз ба?</string>
   <!-- Browser menu button that adds a shortcut to the home fragment -->
   <string name="browser_menu_add_to_shortcuts">Жарлықтарға қосу</string>
   <!-- Browser menu button that removes a shortcut from the home fragment -->
@@ -2950,6 +2985,12 @@
   <string name="synced_tabs_expand_group">Синхрондалған беттер тобын жазық қылу</string>
   <!-- Content description for collapsing a group of synced tabs. -->
   <string name="synced_tabs_collapse_group">Синхрондалған беттер тобын бүктеу</string>
+  <!--
+    Top Sites
+
+    Title text displayed for the shortcuts home screen section.
+  -->
+  <string name="homepage_shortcuts_title">Жарлықтар</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Жарлықтар саны шегіне жетті</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3038,25 +3079,17 @@
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">Жоғары жылжу</string>
   <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description">Жабу</string>
+  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">Жабу</string>
   <!--
     Pocket recommended stories
 
     Header text for a section on the home screen.
   -->
-  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">Ойландыратын әңгімелер</string>
-  <!-- Header text for a section on the home screen. -->
   <string name="pocket_stories_header_2">Әңгімелер</string>
   <!-- Header text for a section on the home screen. -->
   <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">Тақырып бойынша әңгімелер</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
   <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">Көбірек шолу</string>
-  <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-  <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">%s негізінде.</string>
-  <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Firefox отбасының бөлігі. %s</string>
-  <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">Көбірек білу</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Демеуленген</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -3089,8 +3122,6 @@
   <string name="a11y_action_label_wallpaper_collection_learn_more">осы жинақ туралы көбірек білу үшін сілтемені ашыңыз</string>
   <!-- Action label for links that point to an article. Talkback will append this to say "Double tap to read the article". -->
   <string name="a11y_action_label_read_article" moz:removedIn="141" tools:ignore="UnusedResources">мақаланы оқу</string>
-  <!-- Action label for links to the Firefox Pocket website. Talkback will append this to say "Double tap to open link to learn more". -->
-  <string name="a11y_action_label_pocket_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">көбірек білу үшін сілтемені ашыңыз</string>
   <!-- Content description for headings announced by accessibility service. %s is the text of the heading. Talkback will announce the text and then speak the word "Heading" indicating to the user that this text is a heading for a section. -->
   <string name="a11y_heading">%s, Тақырыптама</string>
   <!-- Title for dialog displayed when trying to access links present in a text. -->
@@ -3365,10 +3396,18 @@
   <string name="protection_panel_banner_protected_description">Сіз қорғалғансыз. Бірдеңені байқасақ, сізге хабарлаймыз.</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->
   <string name="protection_panel_etp_toggle_label">Бақылаудан кеңейтілген қорғаныс</string>
+  <!-- Toggle if Enhanced Tracking Protection is turned on -->
+  <string name="protection_panel_etp_toggle_on">Іске қосулы</string>
+  <!-- Toggle if Enhanced Tracking Protection is turned off -->
+  <string name="protection_panel_etp_toggle_off">Сөндірулі</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
   <string name="protection_panel_etp_toggle_enabled_description" moz:removedIn="142" tools:ignore="UnusedResources">Бұл сайтта бірдеңе бұзылған болып көрінсе, қорғанысты сөндіріп көріңіз.</string>
+  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
+  <string name="protection_panel_etp_toggle_enabled_description_2">Бұл сайтта бірдеңе бұзылған болып көрінсе, оны сөндіріп көріңіз.</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
   <string name="protection_panel_etp_toggle_disabled_description" moz:removedIn="142" tools:ignore="UnusedResources">Қорғаныстар СӨНДІРІЛГЕН. Біз оларды қайта іске қосуды ұсынамыз.</string>
+  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
+  <string name="protection_panel_etp_toggle_disabled_description_2">Бақылаудан қорғанысты іске қосу ұсынылады.</string>
   <!--
     Text for displaying the total number of trackers blocked in the protection panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3378,6 +3417,8 @@
   <string name="protection_panel_no_trackers_blocked">Трекерлер табылмады</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings" moz:removedIn="142" tools:ignore="UnusedResources">Жекелік және қауіпсіздік баптаулары</string>
+  <!-- Link text to navigate to privacy and security settings from the protection panel. -->
+  <string name="protection_panel_privacy_and_security_settings_2">Жекелік баптаулары</string>
   <!-- Title text for the protection panel permissions section. -->
   <string name="protection_panel_permissions_title">Рұқсаттар</string>
   <!--
@@ -3588,6 +3629,14 @@
   <!-- The title of the button for overriding home region permanently. -->
   <string name="debug_drawer_override_home_region_permanently">Үй аймағын біржола қайта анықтау</string>
   <!--
+    Add-ons debug tools
+
+    The description of the Add-ons Tools in the Debug Drawer
+  -->
+  <string name="debug_drawer_addons_tools_title">Қосымшалар құралдары</string>
+  <!-- The title of the button used to check for add-on updates. -->
+  <string name="addons_debug_tools_check_for_updates_button">Жаңартуларды тексеру</string>
+  <!--
     Messages explaining how to exit fullscreen mode
 
     Message shown to explain how to exit fullscreen mode when gesture navigation is enabled.
@@ -3714,7 +3763,7 @@
   <!-- The title of the explore extensions task for the setup checklist -->
   <string name="setup_checklist_task_explore_extensions">Кеңейтулерді шолу</string>
   <!-- The title of the search widget task for the setup checklist -->
-  <string name="setup_checklist_task_search_widget">Іздеу виджетін орнату</string>
+  <string name="setup_checklist_task_search_widget" moz:removedIn="143" tools:ignore="UnusedResources">Іздеу виджетін орнату</string>
   <!--
     ===== Setup checklist feature: Group titles =====
 

@@ -8,18 +8,18 @@
 #include "RetainedDisplayListBuilder.h"
 
 #include "mozilla/Attributes.h"
+#include "mozilla/AutoRestore.h"
+#include "mozilla/DisplayPortUtils.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "nsCanvasFrame.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
 #include "nsPlaceholderFrame.h"
 #include "nsSubDocumentFrame.h"
 #include "nsViewManager.h"
-#include "nsCanvasFrame.h"
-#include "mozilla/AutoRestore.h"
-#include "mozilla/DisplayPortUtils.h"
-#include "mozilla/PresShell.h"
-#include "mozilla/ProfilerLabels.h"
 
 /**
  * Code for doing display list building for a modified subset of the window,

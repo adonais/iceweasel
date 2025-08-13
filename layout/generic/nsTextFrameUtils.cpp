@@ -6,6 +6,8 @@
 
 #include "nsTextFrameUtils.h"
 
+#include <algorithm>
+
 #include "mozilla/dom/Text.h"
 #include "nsBidiUtils.h"
 #include "nsCharTraits.h"
@@ -14,7 +16,6 @@
 #include "nsTextFragment.h"
 #include "nsUnicharUtils.h"
 #include "nsUnicodeProperties.h"
-#include <algorithm>
 
 using namespace mozilla;
 using namespace mozilla::dom;

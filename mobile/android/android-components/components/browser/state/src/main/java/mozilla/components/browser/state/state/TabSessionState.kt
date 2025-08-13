@@ -8,6 +8,7 @@ import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineSession.CookieBannerHandlingStatus
 import mozilla.components.concept.engine.EngineSessionState
 import mozilla.components.concept.engine.manifest.WebAppManifest
+import mozilla.components.concept.storage.BookmarkInfo
 import mozilla.components.concept.storage.HistoryMetadataKey
 import java.util.UUID
 
@@ -54,6 +55,7 @@ data class TabSessionState(
     val lastMediaAccessState: LastMediaAccessState = LastMediaAccessState(),
     val readerState: ReaderState = ReaderState(),
     val historyMetadata: HistoryMetadataKey? = null,
+    val bookmarkInfo: BookmarkInfo? = null,
 ) : SessionState {
 
     override fun createCopy(
@@ -97,7 +99,6 @@ fun createTab(
     lastMediaAccessState: LastMediaAccessState = LastMediaAccessState(),
     source: SessionState.Source = SessionState.Source.Internal.None,
     restored: Boolean = false,
-    isProductUrl: Boolean = false,
     engineSession: EngineSession? = null,
     engineSessionState: EngineSessionState? = null,
     crashed: Boolean = false,
@@ -124,7 +125,6 @@ fun createTab(
             desktopMode = desktopMode,
             previewImageUrl = previewImageUrl,
             hasFormData = hasFormData,
-            isProductUrl = isProductUrl,
         ),
         parentId = parentId ?: parent?.id,
         extensionState = extensions,

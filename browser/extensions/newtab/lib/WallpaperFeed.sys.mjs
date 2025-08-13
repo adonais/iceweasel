@@ -31,6 +31,8 @@ const PREF_SELECTED_WALLPAPER =
   "browser.newtabpage.activity-stream.newtabWallpapers.wallpaper";
 
 export class WallpaperFeed {
+  #customBackgroundObjectURL = null;
+
   constructor() {
     this.loaded = false;
     this.wallpaperClient = null;
@@ -95,6 +97,11 @@ export class WallpaperFeed {
       ""
     );
 
+    if (this.#customBackgroundObjectURL) {
+      URL.revokeObjectURL(this.#customBackgroundObjectURL);
+      this.#customBackgroundObjectURL = null;
+    }
+
     if (uuid && selectedWallpaper === "custom") {
       const wallpaperDir = PathUtils.join(PathUtils.profileDir, "wallpaper");
       const filePath = PathUtils.join(wallpaperDir, uuid);
@@ -106,12 +113,13 @@ export class WallpaperFeed {
           throw new Error("File does not exist");
         }
 
-        let passableFile = await File.createFromNsIFile(testFile);
+        let imageFile = await File.createFromNsIFile(testFile);
+        this.#customBackgroundObjectURL = URL.createObjectURL(imageFile);
 
         this.store.dispatch(
           ac.BroadcastToContent({
             type: at.WALLPAPERS_CUSTOM_SET,
-            data: passableFile,
+            data: this.#customBackgroundObjectURL,
           })
         );
       } catch (error) {
@@ -242,10 +250,17 @@ export class WallpaperFeed {
 
       await IOUtils.write(filePath, uint8Array, { tmpPath: `${filePath}.tmp` });
 
+      if (this.#customBackgroundObjectURL) {
+        URL.revokeObjectURL(this.#customBackgroundObjectURL);
+        this.#customBackgroundObjectURL = null;
+      }
+
+      this.#customBackgroundObjectURL = URL.createObjectURL(file);
+
       this.store.dispatch(
         ac.BroadcastToContent({
           type: at.WALLPAPERS_CUSTOM_SET,
-          data: file,
+          data: this.#customBackgroundObjectURL,
         })
       );
 

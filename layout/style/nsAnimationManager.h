@@ -6,11 +6,11 @@
 #ifndef nsAnimationManager_h_
 #define nsAnimationManager_h_
 
-#include "mozilla/Attributes.h"
 #include "AnimationCommon.h"
-#include "mozilla/dom/CSSAnimation.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/Keyframe.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/dom/CSSAnimation.h"
 #include "nsISupportsImpl.h"
 #include "nsTHashSet.h"
 

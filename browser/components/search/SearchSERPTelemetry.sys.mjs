@@ -128,14 +128,43 @@ const AD_COMPONENTS = [
  */
 
 /**
+ * @typedef {object} PageTypeConfig
+ *
+ * @property {string} name
+ *   The name of the page type.
+ * @property {string[]} values
+ *   The possible page types (ex: 'web', 'shopping' or 'images').
+ * @property {string} target
+ *   The target to be recorded in telemetry.
+ * @property {boolean} enabled
+ *   Whether we should track this page type.
+ * @property {boolean} [isDefault=false]
+ *   Whether this page type represents a default SERP. We fall back to this
+ *   property in case, upon a page load, there is a delay in adding the page
+ *   type param to the URL.
+ */
+
+/**
+ * @typedef {object} PageTypeParam
+ *
+ * @property {boolean} enableSPAHandling
+ *   If true, process the SERP using the logic for single page apps.
+ * @property {string[]} keys
+ *   A list of possible keys that may indicate the page type.
+ * @property {PageTypeConfig[]} pageTypes
+ *   An array of potential page type configurations to match against.
+ */
+
+/**
  * @typedef {object} ProviderInfo
  *
  * @property {string} codeParamName
  *   The name of the query parameter for the partner code.
  * @property {object[]} components
  *   An array of components that could be on the SERP.
- * @property {{key:string, value: string}} defaultPageQueryParam
- *   Default page query parameter.
+ * @property {{key: string, value: string}} defaultPageQueryParam
+ *   Default page query parameter. This was deprecated in Fx 142 and should no
+ *   longer be used.
  * @property {string[]} expectedOrganicCodes
  *   An array of partner codes to match against the parameters in the url.
  *   Matching these codes will report the SERP as organic:none which means the
@@ -149,11 +178,14 @@ const AD_COMPONENTS = [
  *   An array of query parameter names that are used when a follow-on search
  *   occurs.
  * @property {boolean} isSPA
- *   Whether the provider is a single page app.
+ *   Whether the provider is a single page app. This was deprecated in Fx 142
+ *   and should no longer be used.
  * @property {string[]} organicCodes
  *   An array of partner codes to match against the parameters in the url.
  *   Matching these codes will report the SERP as organic:<partner code>, which
  *   means the search was performed organically rather than through a SAP.
+ * @property {PageTypeParam} pageTypeParam
+ *   The configuration for possible page type parameters.
  * @property {string[]} queryParamNames
  *   An array of query parameters that may be used for the user's search string.
  * @property {SignedInCookies[]} signedInCookies
@@ -578,6 +610,7 @@ class TelemetryHandler {
         impressionId,
         urlToComponentMap: null,
         impressionInfo,
+        impressionRecorded: false,
         searchBoxSubmitted: false,
         categorizationInfo: null,
         adsClicked: 0,
@@ -585,6 +618,7 @@ class TelemetryHandler {
         adsLoaded: 0,
         adsVisible: 0,
         searchQuery: info.searchQuery,
+        currentPageType: info.pageType,
       });
       item.count++;
       item.source = source;
@@ -597,6 +631,7 @@ class TelemetryHandler {
           impressionId,
           urlToComponentMap: null,
           impressionInfo,
+          impressionRecorded: false,
           searchBoxSubmitted: false,
           categorizationInfo: null,
           adsClicked: 0,
@@ -604,6 +639,7 @@ class TelemetryHandler {
           adsLoaded: 0,
           adsVisible: 0,
           searchQuery: info.searchQuery,
+          currentPageType: info.pageType,
         }),
         info,
         count: 1,
@@ -642,7 +678,7 @@ class TelemetryHandler {
    */
   async updateTrackingSinglePageApp(browser, url, loadType) {
     let providerInfo = this._getProviderInfoForURL(url);
-    if (!providerInfo?.isSPA) {
+    if (!providerInfo?.pageTypeParam?.enableSPAHandling) {
       return;
     }
 
@@ -653,28 +689,55 @@ class TelemetryHandler {
     let searchTerm = this.urlSearchTerms(url, providerInfo);
     let searchTermChanged = previousSearchTerm !== searchTerm;
 
-    let isSerp = !!this._checkURLForSerpMatch(url);
+    // Get the current and previous page types.
+    let pageType = this._getPageTypeFromUrl(url, providerInfo);
+    let previousPageType = telemetryState?.currentPageType ?? "";
+    // If both previous and current page types are empty, they are untracked
+    // and we should do nothing.
+    if (previousPageType === "" && pageType === "") {
+      return;
+    }
+    let pageTypeChanged = previousPageType != pageType;
+
     let browserIsTracked = !!telemetryState;
     let isTabHistory = loadType & Ci.nsIDocShell.LOAD_CMD_HISTORY;
 
-    // Step 2: Maybe record engagement.
-    if (browserIsTracked && !isTabHistory && (searchTermChanged || !isSerp)) {
-      // If we've established we've changed to another SERP, the cause could be
-      // from a submission event inside the content process. The event is
-      // sent to the parent and stored as `telemetryState.searchBoxSubmitted`
-      // but if we check now, it may be too early. Instead, we check with the
-      // content process directly to see if it recorded a submit event.
-      let actor = browser.browsingContext.currentWindowGlobal.getActor(
-        "SearchSERPTelemetry"
-      );
-      let didSubmit = await actor.sendQuery("SearchSERPTelemetry:DidSubmit");
+    // Step 1: Maybe record engagement.
+    if (
+      browserIsTracked &&
+      !isTabHistory &&
+      (pageTypeChanged || searchTermChanged)
+    ) {
+      let shouldRecordEngagement = false;
+      if (pageTypeChanged) {
+        shouldRecordEngagement = true;
+      } else if (searchTermChanged) {
+        // User did a new search or navigated away from the SERP. Check if it
+        // was a submission event.
+        let actor = browser.browsingContext.currentWindowGlobal.getActor(
+          "SearchSERPTelemetry"
+        );
+        // If we've changed to another SERP, it could have been caused by a
+        // submission event inside the content process. The event is sent to
+        // the parent and stored as `telemetryState.searchBoxSubmitted`, but if
+        // we check now, it may be too early. Instead we check with the content
+        // process directly to see if it recorded a submission event.
+        let didSubmit = await actor.sendQuery("SearchSERPTelemetry:DidSubmit");
+        if (!telemetryState.searchBoxSubmitted && !didSubmit) {
+          shouldRecordEngagement = true;
+        }
+      }
 
-      if (telemetryState && !telemetryState.searchBoxSubmitted && !didSubmit) {
+      if (shouldRecordEngagement) {
         impressionIdsWithoutEngagementsSet.delete(telemetryState.impressionId);
+        let target =
+          providerInfo.pageTypeParam.pageTypes.find(p => p.name == pageType)
+            ?.target ?? SearchSERPTelemetryUtils.COMPONENTS.NON_ADS_LINK;
+
         Glean.serp.engagement.record({
           impression_id: telemetryState.impressionId,
           action: SearchSERPTelemetryUtils.ACTIONS.CLICKED,
-          target: SearchSERPTelemetryUtils.COMPONENTS.NON_ADS_LINK,
+          target,
         });
         lazy.logConsole.debug("Counting click:", {
           impressionId: telemetryState.impressionId,
@@ -684,30 +747,102 @@ class TelemetryHandler {
       }
     }
 
-    // Step 3: Maybe untrack the browser.
-    if (browserIsTracked && (searchTermChanged || !isSerp)) {
-      let reason = "";
+    // Step 2: Maybe untrack the browser.
+    let shouldUntrack = false;
+    let abandonmentReason = "";
+
+    if (browserIsTracked) {
       // If we have to untrack it, it might be due to the user using the
       // back/forward button.
       if (isTabHistory) {
-        reason = SearchSERPTelemetryUtils.ABANDONMENTS.NAVIGATION;
+        shouldUntrack = true;
+        abandonmentReason = SearchSERPTelemetryUtils.ABANDONMENTS.NAVIGATION;
+      } else if (searchTermChanged || pageTypeChanged) {
+        shouldUntrack = true;
       }
+    }
+
+    if (shouldUntrack) {
       let actor = browser.browsingContext.currentWindowGlobal.getActor(
         "SearchSERPTelemetry"
       );
       actor.sendAsyncMessage("SearchSERPTelemetry:StopTrackingDocument");
-      this.stopTrackingBrowser(browser, reason);
+      this.stopTrackingBrowser(browser, abandonmentReason);
       browserIsTracked = false;
     }
 
-    // Step 4: Maybe track the browser.
-    if (isSerp && !browserIsTracked) {
+    // Step 3: Maybe track the browser.
+    if (
+      this._isTrackablePageType(pageType, providerInfo) &&
+      !browserIsTracked
+    ) {
       this.updateTrackingStatus(browser, url, loadType);
       let actor = browser.browsingContext.currentWindowGlobal.getActor(
         "SearchSERPTelemetry"
       );
       actor.sendAsyncMessage("SearchSERPTelemetry:WaitForSPAPageLoad");
     }
+  }
+
+  /**
+   * Determines the page type (ex: 'web', 'shopping' or 'images') by extracting
+   * a param from the url.
+   *
+   * @param {string} url
+   *   The url for the request.
+   * @param {object} providerInfo
+   *  The providerInfo associated with the url.
+   * @returns {string}
+   *   The page type or if none is found, an empty string.
+   */
+  _getPageTypeFromUrl(url, providerInfo) {
+    let pageTypeParam = providerInfo?.pageTypeParam;
+    if (!pageTypeParam) {
+      return "";
+    }
+
+    let parsedUrl = new URL(url);
+    let paramValue;
+    for (let key of pageTypeParam.keys) {
+      paramValue = parsedUrl.searchParams.get(key);
+      if (paramValue) {
+        for (let pageType of pageTypeParam.pageTypes) {
+          if (pageType.values.includes(paramValue)) {
+            return pageType.name;
+          }
+        }
+      }
+    }
+
+    let defaultConfig = pageTypeParam.pageTypes.find(
+      pageType => pageType.isDefault
+    );
+    if (defaultConfig) {
+      return defaultConfig.name;
+    }
+
+    return "";
+  }
+
+  /**
+   * Determines whether we need to track a given page type.
+   *
+   * @param {string} pageType
+   *   The page type associated with a url (ex: 'web', 'shopping' or 'images').
+   * @param {object} providerInfo
+   *   The providerInfo associated with the url.
+   * @returns {boolean}
+   *   Whether we should track the given page type.
+   */
+  _isTrackablePageType(pageType, providerInfo) {
+    if (!providerInfo?.pageTypeParam || !pageType) {
+      return false;
+    }
+
+    let config = providerInfo.pageTypeParam.pageTypes.find(
+      pageTypeConfig => pageTypeConfig.name == pageType
+    );
+    return config?.enabled ?? false;
   }
 
   /**
@@ -726,6 +861,14 @@ class TelemetryHandler {
       if (item.browserTelemetryStateMap.has(browser)) {
         let telemetryState = item.browserTelemetryStateMap.get(browser);
         let impressionId = telemetryState.impressionId;
+
+        if (
+          telemetryState.impressionInfo &&
+          !telemetryState.impressionRecorded
+        ) {
+          this._contentHandler._recordFallbackPageImpression(telemetryState);
+        }
+
         if (impressionIdsWithoutEngagementsSet.has(impressionId)) {
           this.recordAbandonmentTelemetry(impressionId, abandonmentReason);
         }
@@ -1020,15 +1163,16 @@ class TelemetryHandler {
       queries.set(k.toLowerCase(), v);
     });
 
-    let isSPA = !!searchProviderInfo.isSPA;
+    let isSPA = !!searchProviderInfo.pageTypeParam?.enableSPAHandling;
+    let pageType;
     if (isSPA) {
-      // A URL may have a specific query parameter denoting a search page.
-      // If the key was expected but doesn't currently exist, it could be due to
-      // the initial url containing it until after a page load.
-      // In that case, ignore this check since most SERPs missing the query
-      // param will go to the default search page.
-      let { key, value } = searchProviderInfo.defaultPageQueryParam;
-      if (key && queries.has(key) && queries.get(key) != value) {
+      pageType = this._getPageTypeFromUrl(url, searchProviderInfo);
+      let isValidPageType = this._isTrackablePageType(
+        pageType,
+        searchProviderInfo
+      );
+
+      if (!isValidPageType) {
         return null;
       }
     }
@@ -1122,6 +1266,7 @@ class TelemetryHandler {
       code,
       searchQuery,
       isSPA,
+      pageType,
     };
   }
 
@@ -1874,7 +2019,7 @@ class ContentHandler {
 
   _reportPageImpression(info, browser) {
     let item = this._findItemForBrowser(browser);
-    let telemetryState = item.browserTelemetryStateMap.get(browser);
+    let telemetryState = item?.browserTelemetryStateMap.get(browser);
     if (!telemetryState?.impressionInfo) {
       lazy.logConsole.debug(
         "Could not find telemetry state or impression info."
@@ -1882,7 +2027,7 @@ class ContentHandler {
       return;
     }
     let impressionId = telemetryState.impressionId;
-    if (impressionId) {
+    if (impressionId && !telemetryState.impressionRecorded) {
       let impressionInfo = telemetryState.impressionInfo;
       Glean.serp.impression.record({
         impression_id: impressionId,
@@ -1895,15 +2040,47 @@ class ContentHandler {
         is_private: impressionInfo.isPrivate,
         is_signed_in: impressionInfo.isSignedIn,
       });
+
+      telemetryState.impressionRecorded = true;
+
       lazy.logConsole.debug(`Reported Impression:`, {
         impressionId,
         ...impressionInfo,
         shoppingTabDisplayed: info.shoppingTabDisplayed,
       });
       Services.obs.notifyObservers(null, "reported-page-with-impression");
+    } else if (telemetryState.impressionRecorded) {
+      lazy.logConsole.debug("Impression already recorded for browser.");
     } else {
       lazy.logConsole.debug("Could not find an impression id.");
     }
+  }
+
+  _recordFallbackPageImpression(telemetryState) {
+    if (!telemetryState?.impressionInfo) {
+      return;
+    }
+    let impressionInfo = telemetryState.impressionInfo;
+    Glean.serp.impression.record({
+      impression_id: telemetryState.impressionId,
+      provider: impressionInfo.provider,
+      tagged: impressionInfo.tagged,
+      partner_code: impressionInfo.partnerCode,
+      source: impressionInfo.source,
+      shopping_tab_displayed: false,
+      is_shopping_page: impressionInfo.isShoppingPage,
+      is_private: impressionInfo.isPrivate,
+      is_signed_in: impressionInfo.isSignedIn,
+    });
+
+    telemetryState.impressionRecorded = true;
+
+    lazy.logConsole.debug(`Reported Impression:`, {
+      impressionId: telemetryState.impressionId,
+      ...impressionInfo,
+      shoppingTabDisplayed: false,
+    });
+    Services.obs.notifyObservers(null, "reported-page-with-impression");
   }
 
   /**

@@ -7,8 +7,8 @@
 #ifndef DISPLAYITEMCLIPCHAIN_H_
 #define DISPLAYITEMCLIPCHAIN_H_
 
-#include "mozilla/Assertions.h"
 #include "DisplayItemClip.h"
+#include "mozilla/Assertions.h"
 #include "nsString.h"
 
 namespace mozilla {

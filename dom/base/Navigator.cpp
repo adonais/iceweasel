@@ -582,6 +582,11 @@ bool Navigator::CookieEnabled() {
 }
 
 bool Navigator::OnLine() {
+  if (nsContentUtils::ShouldResistFingerprinting(
+          GetDocShell(), RFPTarget::NetworkConnection)) {
+    return true;
+  }
+
   if (mWindow) {
     // Check if this tab is set to be offline.
     BrowsingContext* bc = mWindow->GetBrowsingContext();
@@ -882,7 +887,7 @@ uint32_t Navigator::MaxTouchPoints(CallerType aCallerType) {
   // we will spoof it into 0 if fingerprinting resistance is on.
   if (aCallerType != CallerType::System &&
       nsContentUtils::ShouldResistFingerprinting(GetDocShell(),
-                                                 RFPTarget::PointerEvents)) {
+                                                 RFPTarget::MaxTouchPoints)) {
     return SPOOFED_MAX_TOUCH_POINTS;
   }
 
@@ -890,7 +895,14 @@ uint32_t Navigator::MaxTouchPoints(CallerType aCallerType) {
       widget::WidgetUtils::DOMWindowToWidget(mWindow->GetOuterWindow());
 
   NS_ENSURE_TRUE(widget, 0);
-  return widget->GetMaxTouchPoints();
+  uint32_t maxTouchPoints = widget->GetMaxTouchPoints();
+
+  if (aCallerType != CallerType::System &&
+      nsContentUtils::ShouldResistFingerprinting(
+          GetDocShell(), RFPTarget::MaxTouchPointsCollapse)) {
+    return nsRFPService::CollapseMaxTouchPoints(maxTouchPoints);
+  }
+  return maxTouchPoints;
 }
 
 //*****************************************************************************
@@ -1868,7 +1880,7 @@ network::Connection* Navigator::GetConnection(ErrorResult& aRv) {
     }
     mConnection = network::Connection::CreateForWindow(
         mWindow, nsGlobalWindowInner::Cast(mWindow)->ShouldResistFingerprinting(
-                     RFPTarget::NavigatorConnection));
+                     RFPTarget::NetworkConnection));
   }
 
   return mConnection;

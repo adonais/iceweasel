@@ -1,22 +1,139 @@
-# Copyright 2021 The Chromium Authors. All rights reserved.
+# Copyright 2021 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 import("//chromium/build/config/rust.gni")
+import("//chromium/build/rust/rust_unit_tests_group.gni")
 
+# Build some minimal binaries to exercise the Rust toolchain
+# only if that toolchain is enabled in gn args.
 group("tests") {
-  # Build some minimal binaries to exercise the Rust toolchain
-  # only if that toolchain is enabled in gn args.
+  testonly = true
+
+  deps = [ ":deps" ]
+  if (can_build_rust_unit_tests) {
+    deps += [ ":build_rust_tests" ]
+  }
+}
+
+group("deps") {
+  testonly = true
+  deps = []
+
+  # All the rest require Rust.
   if (toolchain_has_rust) {
-    deps = [
-      "test_cpp_exe_including_rust",
-      "test_rust_source_set",
+    deps += [
+      "//chromium/build/rust/tests/bindgen_cpp_test_with_cpp_linkage",
+      "//chromium/build/rust/tests/bindgen_static_fns_test",
+      "//chromium/build/rust/tests/bindgen_test",
+      "//chromium/build/rust/tests/test_aliased_deps",
+      "//chromium/build/rust/tests/test_aliased_deps:test_aliased_deps_exe",
+      "//chromium/build/rust/tests/test_bin_crate",
+      "//chromium/build/rust/tests/test_rlib_crate:target1",
+      "//chromium/build/rust/tests/test_rlib_crate:target2",
+      "//chromium/build/rust/tests/test_rlib_crate:test_rlib_crate_associated_bin",
+      "//chromium/build/rust/tests/test_rlib_crate_testonly:testonly_target",
+      "//chromium/build/rust/tests/test_rust_exe_2",
+      "//chromium/build/rust/tests/test_rust_metadata:test_rust_metadata_cc_exe",
+      "//chromium/build/rust/tests/test_rust_metadata:test_rust_metadata_exe",
+      "//chromium/build/rust/tests/test_rust_multiple_dep_versions_exe",
+      "//chromium/build/rust/tests/test_simple_rust_exe",
+
+      # TODO(crbug.com/40226863): Enable the additional target below
+      # once `rs_bindings_from_cc` is distributed via `gclient sync`.  In the
+      # meantime see the instructions in
+      # `//build/rust/run_rs_bindings_from_cc.py`.
+      #"test_rs_bindings_from_cc:test_rs_bindings_from_cc",
     ]
-    if (build_rust_unit_tests) {
-      deps += [ "test_rust_source_set:test_rust_source_set_unittests" ]
+
+    if (target_cpu == "x86") {
+      # Some `target_os`s do not support 32-bit platforms anymore.  The
+      # selection below is _loosely_ based on `is_valid_x86_target` from
+      # the top-level `//BUILD.gn`.
+      if (is_win || is_android) {
+        deps += [ "//chromium/build/rust/tests/test_build_rs_target_arch_x86" ]
+      }
     }
-    if (rustc_can_link) {
-      deps += [ "test_rust_exe" ]
+
+    if (!(is_apple && is_official_build)) {
+      # TODO: crbug.com/372055517 - Apple lld has an ordering dependency bug
+      # when LTO is enabled, and this particular build target runs into that.
+      deps += [ "//chromium/build/rust/tests/bindgen_cpp_test" ]
     }
+
+    if (enable_chromium_prelude) {
+      deps += [ "//chromium/build/rust/chromium_prelude:import_test" ]
+    }
+    if (enable_rust_cxx) {
+      deps += [
+        "//chromium/build/rust/tests/test_cpp_including_rust",
+        "//chromium/build/rust/tests/test_rust_calling_cpp",
+        "//chromium/build/rust/tests/test_rust_exe",
+        "//chromium/build/rust/tests/test_rust_static_library",
+      ]
+    }
+    if (build_with_chromium) {
+      # This tests integration with a 3p library that downstream projects
+      # don't need to have.
+      deps += [ "//chromium/build/rust/tests/test_serde_json_lenient" ]
+    }
+
+    if (can_build_rust_unit_tests) {
+      deps += [
+        "//chromium/build/rust/tests/bindgen_static_fns_test:bindgen_static_fns_test_lib_unittests",
+        "//chromium/build/rust/tests/bindgen_test:bindgen_test_lib_unittests",
+        "//chromium/build/rust/tests/test_aliased_deps:test_aliased_deps_unittests",
+        "//chromium/build/rust/tests/test_rlib_crate:target1_test_rlib_crate_v0_2_unittests",
+        "//chromium/build/rust/tests/test_rlib_crate:target2_test_rlib_crate_v0_2_unittests",
+        "//chromium/build/rust/tests/test_rust_metadata:test_rust_metadata_unittests",
+        "//chromium/build/rust/tests/test_rust_multiple_dep_versions_exe/v1:test_lib_v1_unittests",
+        "//chromium/build/rust/tests/test_rust_multiple_dep_versions_exe/v2:test_lib_v2_unittests",
+        "//chromium/build/rust/tests/test_rust_static_library_non_standard_arrangement:foo_tests",
+
+        # TODO(crbug.com/40226863): Enable the additional target below
+        # once `rs_bindings_from_cc` is distributed via `gclient sync`.  In the
+        # meantime see the instructions in
+        # `//build/rust/run_rs_bindings_from_cc.py`.
+        #"test_rs_bindings_from_cc:test_rs_bindings_from_cc_unittests",
+      ]
+
+      if (enable_rust_cxx) {
+        deps += [
+          "//chromium/build/rust/tests/test_cpp_including_rust:test_cpp_including_rust_unittests",
+          "//chromium/build/rust/tests/test_rust_exe:test_rust_exe_unittests",
+          "//chromium/build/rust/tests/test_rust_static_library:test_rust_static_library_unittests",
+          "//chromium/build/rust/tests/test_rust_unittests",
+        ]
+      }
+    }
+
+    # Dylibs should only be built in component builds. We turn on flags which
+    # are incompatible with shared library compilation in non-component builds
+    # (such as code coverage https://crbug.com/1457533).
+    if (is_component_build && enable_rust_cxx) {
+      deps += [ "//chromium/build/rust/tests/test_rust_shared_library" ]
+      if (can_build_rust_unit_tests) {
+        deps += [ "//chromium/build/rust/tests/test_cpp_including_rust:test_cpp_including_rust_dylib_unittests" ]
+
+        # TODO(crbug.com/40266882): The shared library unittest EXE ends up
+        # requiring the DLL to run, even though it does not use the DLL.
+        if (!is_win && !is_mac) {
+          deps += [ "//chromium/build/rust/tests/test_rust_shared_library:test_rust_shared_library_unittests" ]
+        }
+      }
+    }
+
+    if (is_win) {
+      deps += [ "//chromium/build/rust/tests/windows_sys_test" ]
+      deps += [ "//chromium/build/rust/tests/test_control_flow_guard" ]
+    }
+  }
+}
+
+if (can_build_rust_unit_tests) {
+  # Generates a script that will run all the native Rust unit tests, in order
+  # to have them all part of a single test step on infra bots.
+  rust_unit_tests_group("build_rust_tests") {
+    deps = [ ":deps" ]
   }
 }

@@ -139,6 +139,7 @@ class MouseEvent : public UIEvent {
                         float aPressure, uint16_t aInputSource);
   void PreventClickEvent();
   bool ClickEventPrevented();
+  already_AddRefed<Event> GetTriggerEvent() const;
 
  protected:
   ~MouseEvent() = default;

@@ -25,7 +25,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -111,6 +111,8 @@ class SwipeToDismissState2(
     /**
      * [AnchoredDraggableState] for the underlying [Modifier.anchoredHorizontalDraggable].
      */
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1957790
+    @Suppress("DEPRECATION")
     val anchoredDraggableState: AnchoredDraggableState<SwipeToDismissDirections> = AnchoredDraggableState(
         initialValue = SwipeToDismissDirections.Settled,
         positionalThreshold = with(density) { { DISMISS_THRESHOLD_DP.toPx() } },
@@ -158,6 +160,8 @@ class SwipeToDismissState2(
 }
 
 @OptIn(ExperimentalFoundationApi::class)
+// https://bugzilla.mozilla.org/show_bug.cgi?id=1957790
+@Suppress("DEPRECATION")
 private fun Modifier.anchoredHorizontalDraggable(
     state: SwipeToDismissState2,
     scope: CoroutineScope,
@@ -237,8 +241,8 @@ fun SwipeToDismissBox2(
         }
     }
 
-    LaunchedEffect(state.anchoredDraggableState.currentValue) {
-        val value = state.anchoredDraggableState.currentValue
+    LaunchedEffect(state.anchoredDraggableState.settledValue) {
+        val value = state.anchoredDraggableState.settledValue
         when (value) {
             SwipeToDismissDirections.StartToEnd, SwipeToDismissDirections.EndToStart -> {
                 onItemDismiss()

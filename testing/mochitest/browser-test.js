@@ -665,6 +665,12 @@ Tester.prototype = {
         continue;
       }
 
+      // Same as ScrollFrameActivityTracker and the other expiration trackers
+      // ignored above.
+      if (name == "PopupExpirationTracker") {
+        continue;
+      }
+
       // Ignore nsHttpConnectionMgr timers which show up on browser mochitests
       // running with http3. See Bug 1829841.
       if (name == "nsHttpConnectionMgr") {
@@ -715,6 +721,59 @@ Tester.prototype = {
       // this._repeatingTimers to avoid reporting them again for the next
       // tests of the manifest.
       this._repeatingTimers.push(...newTimers);
+    }
+  },
+
+  async checkPreferencesAfterTest() {
+    if (!this._ignorePrefs) {
+      const ignorePrefsFile = `chrome://mochikit/content/${gConfig.ignorePrefsFile}`;
+      try {
+        const res = await fetch(ignorePrefsFile);
+        this._ignorePrefs = await res.json();
+      } catch (e) {
+        this.Assert.ok(
+          false,
+          `Failed to load ignorePrefsFile (${ignorePrefsFile}): ${e}`
+        );
+      }
+    }
+    // This comparison relies on a snapshot of the prefs having been saved by
+    // a call to getBaselinePrefs in SpecialPowersParent's init().
+    const failures = await window.SpecialPowers.comparePrefsToBaseline(
+      this._ignorePrefs
+    );
+
+    let testPath = this.currentTest.path;
+    if (testPath.startsWith("chrome://mochitests/content/browser/")) {
+      testPath = testPath.replace("chrome://mochitests/content/browser/", "");
+    }
+    let changedPrefs = [];
+    for (let p of failures) {
+      this.structuredLogger.error(
+        // We only report unexpected failures when --compare-preferences is set.
+        `TEST-${gConfig.comparePrefs ? "UN" : ""}EXPECTED-FAIL | ${testPath} | changed preference: ${p}`
+      );
+      changedPrefs.push(p);
+    }
+
+    if (changedPrefs.length && Services.env.exists("MOZ_UPLOAD_DIR")) {
+      let modifiedPrefsPath = PathUtils.join(
+        Services.env.get("MOZ_UPLOAD_DIR"),
+        "modifiedPrefs.json"
+      );
+
+      if (!this._modifiedPrefs) {
+        try {
+          this._modifiedPrefs = JSON.parse(
+            await IOUtils.readUTF8(modifiedPrefsPath)
+          );
+        } catch (e) {
+          this._modifiedPrefs = {};
+        }
+      }
+
+      this._modifiedPrefs[testPath] = changedPrefs;
+      await IOUtils.writeJSON(modifiedPrefsPath, this._modifiedPrefs);
     }
   },
 
@@ -827,8 +886,9 @@ Tester.prototype = {
 
       await this.ensureNoNewRepeatingTimers();
 
-      // eslint-disable-next-line no-undef
-      await new Promise(resolve => SpecialPowers.flushPrefEnv(resolve));
+      await new Promise(resolve => window.SpecialPowers.flushPrefEnv(resolve));
+
+      await this.checkPreferencesAfterTest();
 
       window.SpecialPowers.cleanupAllClipboard();
 
@@ -970,6 +1030,8 @@ Tester.prototype = {
           gConfig.dumpDMDAfterTest
         );
       }
+
+      this.PromiseTestUtils.assertNoUncaughtRejections();
 
       // Note the test run time
       let name = this.currentTest.path;
@@ -1166,6 +1228,13 @@ Tester.prototype = {
     let desc = isSetup ? "setup" : "test";
     currentScope.SimpleTest.info(`Entering ${desc} ${task.name}`);
     let startTimestamp = performance.now();
+    let controller = new AbortController();
+    currentScope.__signal = controller.signal;
+    if (isSetup) {
+      currentScope.registerCleanupFunction(() => {
+        controller.abort();
+      });
+    }
     try {
       let result = await task();
       if (isGenerator(result)) {
@@ -1194,6 +1263,10 @@ Tester.prototype = {
           allowFailure: currentTest.allowFailure,
         })
       );
+    } finally {
+      if (!isSetup) {
+        controller.abort();
+      }
     }
     PromiseTestUtils.assertNoUncaughtRejections();
     ChromeUtils.addProfilerMarker(
@@ -1870,6 +1943,8 @@ testScope.prototype = {
   __timeoutFactor: 1,
   __expectedMinAsserts: 0,
   __expectedMaxAsserts: 0,
+  /** @type {AbortSignal} */
+  __signal: null,
 
   EventUtils: {},
   AccessibilityUtils: {},
@@ -1934,6 +2009,10 @@ testScope.prototype = {
     for (let prop in this) {
       delete this[prop];
     }
+  },
+
+  get testSignal() {
+    return this.__signal;
   },
 };
 

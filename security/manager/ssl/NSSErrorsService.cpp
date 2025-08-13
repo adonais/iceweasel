@@ -171,7 +171,6 @@ bool ErrorIsOverridable(PRErrorCode code) {
     case SEC_ERROR_INVALID_TIME:
     case SEC_ERROR_UNKNOWN_ISSUER:
     case SSL_ERROR_BAD_CERT_DOMAIN:
-    case mozilla::pkix::MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED:
     case mozilla::pkix::MOZILLA_PKIX_ERROR_CA_CERT_USED_AS_END_ENTITY:
     case mozilla::pkix::MOZILLA_PKIX_ERROR_EMPTY_ISSUER_NAME:
     case mozilla::pkix::MOZILLA_PKIX_ERROR_INADEQUATE_KEY_SIZE:

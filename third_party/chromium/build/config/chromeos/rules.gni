@@ -1,15 +1,16 @@
-# Copyright 2018 The Chromium Authors. All rights reserved.
+# Copyright 2018 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
 import("//chromium/build/config/chrome_build.gni")
 import("//chromium/build/config/chromeos/args.gni")
-import("//chromium/build/config/chromeos/ui_mode.gni")
+import("//chromium/build/config/dcheck_always_on.gni")
 import("//chromium/build/config/gclient_args.gni")
 import("//chromium/build/config/python.gni")
 import("//chromium/build/util/generate_wrapper.gni")
 
-assert((is_chromeos_ash || is_chromeos_lacros) && is_chromeos_device)
+assert(is_chromeos)
+assert(is_chromeos_device)
 
 # Determine the real paths for various items in the SDK, which may be used
 # in the 'generate_runner_script' template below. We do so outside the template
@@ -30,18 +31,7 @@ if (cros_sdk_version != "") {
   #
   _symlink_map = []
   _symlink_targets_map = []
-
-  if (is_chromeos_ash) {
-    _potential_test_boards = [ cros_board ]
-  } else {
-    _potential_test_boards = []
-    if (cros_boards != "") {
-      _potential_test_boards += string_split(cros_boards, ":")
-    }
-    if (cros_boards_with_qemu_images != "") {
-      _potential_test_boards += string_split(cros_boards_with_qemu_images, ":")
-    }
-  }
+  _potential_test_boards = [ cros_board ]
 
   foreach(b, _potential_test_boards) {
     _cache_path_prefix =
@@ -57,8 +47,7 @@ if (cros_sdk_version != "") {
     _symlinks = []
     _symlinks = [
       # Tast harness & test data.
-      rebase_path("${_cache_path_prefix}+chromeos-base/tast-cmd"),
-      rebase_path("${_cache_path_prefix}+chromeos-base/tast-remote-tests-cros"),
+      rebase_path("${_cache_path_prefix}+autotest_server_package.tar.bz2"),
 
       # Binutils (and other toolchain tools) used to deploy Chrome to the device.
       rebase_path(
@@ -67,11 +56,8 @@ if (cros_sdk_version != "") {
     ]
     if (_cros_is_vm) {
       # VM-related tools.
-      _symlinks += [
-        rebase_path("${_cache_path_prefix}+sys-firmware/seabios"),
-        rebase_path("${_cache_path_prefix}+chromiumos_test_image.tar.xz"),
-        rebase_path("${_cache_path_prefix}+app-emulation/qemu"),
-      ]
+      _symlinks +=
+          [ rebase_path("${_cache_path_prefix}+chromiumos_test_image.tar.xz") ]
     }
     _symlink_map += [ [
           b,
@@ -100,6 +86,160 @@ if (cros_sdk_version != "") {
   }
 }
 
+template("generate_chromeos_sdk_deps") {
+  forward_variables_from(invoker,
+                         [
+                           "deploy_chrome",
+                           "is_tast",
+                         ])
+  if (!defined(deploy_chrome)) {
+    deploy_chrome = false
+  }
+  if (!defined(is_tast)) {
+    is_tast = false
+  }
+
+  _sdk_data = []
+  assert(cros_sdk_version != "", "cros sdk version is not defined")
+  foreach(b, _potential_test_boards) {
+    _cros_is_vm = false
+    foreach(b1, string_split(cros_boards_with_qemu_images, ":")) {
+      if (b == b1) {
+        _cros_is_vm = true
+      }
+    }
+
+    # Determine the real paths for various items in the SDK, which may be used
+    # in the 'generate_runner_script' template below.
+    if (is_tast || _cros_is_vm || deploy_chrome) {
+      _symlink_targets = []
+      foreach(m, _symlink_targets_map) {
+        if (b == m[0]) {
+          _symlink_targets = []
+          _symlink_targets = m[1]
+        }
+      }
+
+      if (is_tast) {
+        # Add tast sdk items.
+        _sdk_data += [ _symlink_targets[0] ]
+      }
+      if (deploy_chrome) {
+        # To deploy chrome to the VM, it needs to be stripped down to fit into
+        # the VM. This is done by using binutils in the toolchain. So add the
+        # toolchain to the data.
+        _sdk_data += [
+          _symlink_targets[1],
+          _symlink_targets[2],
+        ]
+      }
+      if (_cros_is_vm) {
+        # Add vm sdk items.
+        _sdk_data += [ _symlink_targets[3] ]
+      }
+    }
+  }
+  group(target_name) {
+    data = _sdk_data
+    data += [
+      # Needed for various SDK components used below.
+      "//chromium/build/cros_cache/chrome-sdk/misc/",
+      "//chromium/build/cros_cache/chrome-sdk/symlinks/",
+      "//chromium/build/cros_cache/common/",
+      "//chrome/VERSION",
+
+      # The LKGM file controls what version of the VM image to download. Add it
+      # as data here so that changes to it will trigger analyze.
+      "//chromeos/CHROMEOS_LKGM",
+    ]
+    if (cros_boards_with_qemu_images != "") {
+      data += [ "//chromium/build/cros_cache/cipd/" ]
+    }
+  }
+}
+
+# Creates tast filter files for skylab tast tests.
+# Args:
+#   tast_attr_expr: Tast expression to determine tests to run. This creates the
+#       initial set of tests that can be further filtered..
+#   tast_tests: Names of tests to enable in tast. All other tests will be
+#       disabled that are not listed.
+#   tast_disabled_tests: Names of tests to disable in tast. All other tests that
+#       match the tast expression will still run.
+#   tast_control: gni file with collections of tests to be used for specific
+#       filters (e.g. "//chromeos/tast_control.gni"). Any lists of strings in
+#       this file will be used to generate additional tast expressions with
+#       those strings expanded into tests to disable (i.e. as && !"name:test").
+#       The name of those lists are then intended to be used to specify in
+#       test_suites.pyl which collection to be used on specific test suites.
+template("generate_skylab_tast_filter") {
+  forward_variables_from(invoker,
+                         [
+                           "tast_attr_expr",
+                           "tast_tests",
+                           "tast_disabled_tests",
+                           "tast_control",
+                         ])
+
+  if (defined(tast_disabled_tests)) {
+    assert(defined(tast_attr_expr),
+           "tast_attr_expr must be used when specifying tast_disabled_tests.")
+  }
+  _generated_filter = "$root_build_dir/bin/${target_name}.filter"
+  _skylab_args = [
+    "generate-filter",
+    "--output",
+    rebase_path(_generated_filter),
+  ]
+  if (defined(tast_control)) {
+    _skylab_args += [
+      "--tast-control",
+      rebase_path(tast_control),
+    ]
+  }
+  if (defined(tast_attr_expr)) {
+    _skylab_args += [
+      "--tast-expr",
+      tast_attr_expr,
+    ]
+  }
+  if (defined(tast_tests)) {
+    foreach(_test, tast_tests) {
+      _skylab_args += [
+        "--enabled-tests",
+        _test,
+      ]
+    }
+  }
+  if (defined(tast_disabled_tests)) {
+    foreach(_test_name, tast_disabled_tests) {
+      _skylab_args += [
+        "--disabled-tests",
+        _test_name,
+      ]
+    }
+  }
+  action(target_name) {
+    testonly = true
+    script = "//chromium/build/chromeos/generate_skylab_tast_filter.py"
+    if (defined(tast_control)) {
+      sources = [ tast_control ]
+    }
+    outputs = [ _generated_filter ]
+    args = _skylab_args
+    if (defined(invoker.data_deps)) {
+      data_deps = invoker.data_deps
+    }
+    data = [ _generated_filter ]
+    if (defined(invoker.data)) {
+      data += invoker.data
+    }
+    if (defined(invoker.deps)) {
+      deps = invoker.deps
+    }
+  }
+}
+
 # Creates a script at $generated_script that can be used to launch a cros VM
 # and optionally run a test within it.
 # Args:
@@ -113,8 +253,6 @@ if (cros_sdk_version != "") {
 #   generated_script: Path to place the generated script.
 #   deploy_chrome: If true, deploys a locally built chrome located in the root
 #       build dir to the VM or DUT after launching it.
-#   deploy_lacros: If true, deploys a locally built Lacros located in the root
-#       build dir to the VM or DUT after launching it.
 #   runtime_deps_file: Path to file listing runtime deps for the test. If set,
 #       all files listed will be copied to the VM before testing.
 #   skip_generating_board_args: By default, this template generates an '--board'
@@ -123,16 +261,17 @@ if (cros_sdk_version != "") {
 #       them, and it's designed for use cases where one builds for one board
 #       (e.g. amd64-generic), but tests on a different board (e.g. eve).
 #   tast_vars: A list of "key=value" runtime variable pairs to pass to invoke
+#   strip_chrome: If true, strips Chrome before deploying it for non-Tast tests.
 #       the Tast tests. For more details, please see:
 #       https://chromium.googlesource.com/chromiumos/platform/tast/+/HEAD/docs/writing_tests.md#Runtime-variables
 template("generate_runner_script") {
   forward_variables_from(invoker,
                          [
                            "deploy_chrome",
-                           "deploy_lacros",
                            "generated_script",
                            "runtime_deps_file",
                            "skip_generating_board_args",
+                           "strip_chrome",
                            "tast_attr_expr",
                            "tast_tests",
                            "tast_vars",
@@ -141,7 +280,8 @@ template("generate_runner_script") {
                          ])
 
   if (!defined(skip_generating_board_args)) {
-    skip_generating_board_args = false
+    # --board should be assigned by the autotest wrapper on skylab builders
+    skip_generating_board_args = is_skylab
   }
 
   if (skip_generating_board_args) {
@@ -154,12 +294,9 @@ template("generate_runner_script") {
   if (!defined(deploy_chrome)) {
     deploy_chrome = false
   }
-  if (!defined(deploy_lacros)) {
-    deploy_lacros = false
+  if (!defined(strip_chrome)) {
+    strip_chrome = false
   }
-  assert(!(deploy_chrome && deploy_lacros),
-         "deploy_chrome and deploy_lacros are exclusive.")
-
   is_tast = defined(tast_attr_expr) || defined(tast_tests)
   assert(!(is_tast && defined(test_exe)),
          "Tast tests are invoked from binaries shipped with the VM image. " +
@@ -167,64 +304,25 @@ template("generate_runner_script") {
   assert(is_tast || !defined(tast_vars),
          "tast_vars is only support for Tast tests")
 
+  if (is_tast) {
+    not_needed([ "strip_chrome" ])
+  }
+
   # If we're in the cros chrome-sdk (and not the raw ebuild), the test will
   # need some additional runtime data located in the SDK cache.
-  _sdk_data = []
   if (cros_sdk_version != "") {
     assert(defined(generated_script),
            "Must specify where to place generated test launcher script via " +
                "'generated_script'")
 
-    foreach(b, _potential_test_boards) {
-      _cros_is_vm = false
-      foreach(b1, string_split(cros_boards_with_qemu_images, ":")) {
-        if (b == b1) {
-          _cros_is_vm = true
-        }
-      }
-
-      # Determine the real paths for various items in the SDK, which may be used
-      # in the 'generate_runner_script' template below.
-      if (is_tast || _cros_is_vm || deploy_chrome) {
-        _symlink_targets = []
-        foreach(m, _symlink_targets_map) {
-          if (b == m[0]) {
-            _symlink_targets = []
-            _symlink_targets = m[1]
-          }
-        }
-
-        if (is_tast) {
-          # Add tast sdk items.
-          _sdk_data += [
-            _symlink_targets[0],
-            _symlink_targets[1],
-          ]
-        }
-        if (deploy_chrome) {
-          # To deploy chrome to the VM, it needs to be stripped down to fit into
-          # the VM. This is done by using binutils in the toolchain. So add the
-          # toolchain to the data.
-          _sdk_data += [
-            _symlink_targets[2],
-            _symlink_targets[3],
-          ]
-        }
-        if (_cros_is_vm) {
-          # Add vm sdk items.
-          _sdk_data += [
-            _symlink_targets[4],
-            _symlink_targets[5],
-            _symlink_targets[6],
-          ]
-        }
-      }
+    generate_chromeos_sdk_deps(target_name + "_cros_deps__helper") {
+      is_tast = is_tast
+      deploy_chrome = deploy_chrome
     }
   }
 
   generate_wrapper(target_name) {
     executable = "//chromium/build/chromeos/test_runner.py"
-    use_vpython3 = true
     wrapper_script = generated_script
     executable_args = []
 
@@ -240,6 +338,25 @@ template("generate_runner_script") {
         "--test-exe",
         test_exe,
       ]
+
+      # This target is not a gtest unit test, but an integration test suite.
+      # Similar to interactive ui tests, it would start a full browser and
+      # then do testing.
+      # See more at //docs/testing/chromeos_integration.
+      if (test_exe == "chromeos_integration_tests") {
+        # Run the test sudo helper.
+        executable_args += [ "--run-test-sudo-helper" ]
+
+        # It need to first stop the existing chromeos-chrome.
+        executable_args += [ "--stop-ui" ]
+
+        # Use the deployed dbus configs.
+        executable_args += [ "--use-deployed-dbus-configs" ]
+
+        # Make the tests match the browser's selinux tags so it gets the same
+        # security context as the browser would.
+        executable_args += [ "--set-selinux-label=chromeos_integration_tests=u:object_r:chrome_browser_exec:s0" ]
+      }
       if (defined(runtime_deps_file)) {
         executable_args += [
           "--runtime-deps-path",
@@ -275,6 +392,12 @@ template("generate_runner_script") {
           ]
         }
       }
+      if (dcheck_always_on) {
+        executable_args += [
+          "--tast-extra-use-flags",
+          "chrome_dcheck",
+        ]
+      }
     } else {
       executable_args += [ "host-cmd" ]
     }
@@ -285,6 +408,10 @@ template("generate_runner_script") {
       rebase_path(root_out_dir, "//"),
       "-v",
     ]
+
+    if (!is_tast && strip_chrome) {
+      executable_args += [ "--strip-chrome" ]
+    }
 
     if (!skip_generating_board_args) {
       executable_args += [
@@ -311,11 +438,7 @@ template("generate_runner_script") {
       executable_args += [ "--public-image" ]
     }
 
-    if (deploy_lacros) {
-      executable_args += [ "--deploy-lacros" ]
-    }
-
-    if (deploy_chrome && !defined(test_exe) && !is_tast) {
+    if (deploy_chrome && !defined(test_exe)) {
       executable_args += [ "--deploy-chrome" ]
     }
 
@@ -325,7 +448,6 @@ template("generate_runner_script") {
       deps += invoker.deps
     }
     data = [
-      "//.vpython",
       "//.vpython3",
 
       # We use android test-runner's results libs to construct gtest output
@@ -335,24 +457,44 @@ template("generate_runner_script") {
       "//chromium/build/android/pylib/results/",
       "//chromium/build/chromeos/",
       "//chromium/build/util/",
-
-      # Needed for various SDK components used below.
-      "//chromium/build/cros_cache/chrome-sdk/misc/",
-      "//chromium/build/cros_cache/chrome-sdk/symlinks/",
-
-      # The LKGM file controls what version of the VM image to download. Add it
-      # as data here so that changes to it will trigger analyze.
-      "//chromeos/CHROMEOS_LKGM",
       "//third_party/chromite/",
     ]
-
-    data += _sdk_data
 
     if (defined(invoker.data)) {
       data += invoker.data
     }
 
     data_deps = [ "//testing:test_scripts_shared" ]
+    if (cros_sdk_version != "") {
+      data_deps += [ ":" + target_name + "_cros_deps__helper" ]
+    }
+    if (defined(invoker.data_deps)) {
+      data_deps += invoker.data_deps
+    }
+  }
+}
+
+# Handy template to define a generated_script test prepended with the
+# cros_test_wrapper, which will automatically handle spinning up a CrOS VM
+# and/or deploying the browser to the DUT prior to test execution.
+template("cros_test_wrapper_script_test") {
+  generate_wrapper("${target_name}") {
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "args",
+                             "data_deps",
+                           ])
+    executable = "$root_out_dir/bin/cros_test_wrapper"
+    wrapper_script = "$root_out_dir/bin/run_${target_name}"
+    testonly = true
+
+    executable_args = []
+    if (defined(invoker.args)) {
+      executable_args += invoker.args
+    }
+
+    data_deps = [ "//chromeos:cros_test_wrapper" ]
     if (defined(invoker.data_deps)) {
       data_deps += invoker.data_deps
     }
@@ -383,128 +525,48 @@ template("tast_test") {
            "Specify one of tast_tests or tast_attr_expr.")
   }
 
-  # Append any disabled tests to the expression.
-  if (defined(tast_disabled_tests)) {
-    assert(defined(tast_attr_expr),
-           "tast_attr_expr must be used when specifying tast_disabled_tests.")
-    foreach(test, tast_disabled_tests) {
-      tast_attr_expr += " && !\"name:${test}\""
+  _data_deps = [
+    "//:chromiumos_preflight",  # Builds the browser.
+    "//chromeos:cros_chrome_deploy",  # Adds additional browser run-time deps.
+
+    # Tools used to symbolize Chrome crash dumps.
+    # TODO(crbug.com/40160552): Remove these if/when all tests pick them up by
+    # default.
+    "//third_party/breakpad:dump_syms",
+    "//third_party/breakpad:minidump_dump",
+    "//third_party/breakpad:minidump_stackwalk",
+  ]
+  _data = [ "//components/crash/content/tools/generate_breakpad_symbols.py" ]
+
+  if (is_skylab) {
+    generate_skylab_tast_filter(target_name) {
+      # chromite.deploy_chrome is needed for sideloading Chrome.
+      data = _data + [ "//third_party/chromite/" ]
+      data_deps = _data_deps
+
+      # To disable a test on specific milestones, add it to the appropriate
+      # collection in the following file
+      tast_control = "//chromeos/tast_control.gni"
     }
-  }
-  if (defined(tast_attr_expr)) {
-    tast_attr_expr = "( " + tast_attr_expr + " )"
-  }
-  generate_runner_script(target_name) {
-    testonly = true
-    generated_script = "$root_build_dir/bin/run_${target_name}"
-    runtime_deps_file = "$root_out_dir/${target_name}.runtime_deps"
-    deploy_chrome = true
-    data_deps = [
-      "//:chromiumos_preflight",  # Builds the browser.
-      "//chromeos:cros_chrome_deploy",  # Adds additional browser run-time deps.
-
-      # Tools used to symbolize Chrome crash dumps.
-      # TODO(crbug.com/1156772): Remove these if/when all tests pick them up by
-      # default.
-      "//third_party/breakpad:dump_syms",
-      "//third_party/breakpad:minidump_dump",
-      "//third_party/breakpad:minidump_stackwalk",
-    ]
-
-    data = [ "//components/crash/content/tools/generate_breakpad_symbols.py" ]
-  }
-}
-
-template("lacros_tast_tests") {
-  forward_variables_from(invoker,
-                         [
-                           "tast_attr_expr",
-                           "tast_disabled_tests",
-                           "tast_tests",
-                         ])
-  assert(defined(tast_attr_expr) != defined(tast_tests),
-         "Specify one of tast_tests or tast_attr_expr.")
-
-  # Append any disabled tests to the expression.
-  if (defined(tast_disabled_tests)) {
-    assert(defined(tast_attr_expr),
-           "tast_attr_expr must be used when specifying tast_disabled_tests.")
-    foreach(test, tast_disabled_tests) {
-      tast_attr_expr += " && !\"name:${test}\""
+  } else {
+    # Append any disabled tests to the expression.
+    if (defined(tast_disabled_tests)) {
+      assert(defined(tast_attr_expr),
+             "tast_attr_expr must be used when specifying tast_disabled_tests.")
+      foreach(_test_name, tast_disabled_tests) {
+        tast_attr_expr += " && !\"name:${_test_name}\""
+      }
     }
-  }
-  if (defined(tast_attr_expr)) {
-    tast_attr_expr = "( " + tast_attr_expr + " )"
-  }
-
-  generate_runner_script(target_name) {
-    testonly = true
-    deploy_lacros = true
-    generated_script = "$root_build_dir/bin/run_${target_name}"
-    runtime_deps_file = "$root_out_dir/${target_name}.runtime_deps"
-
-    # At build time, Lacros tests don't know whether they'll run on VM or HW,
-    # and instead, these flags are specified at runtime when invoking the
-    # generated runner script.
-    skip_generating_board_args = true
-
-    # By default, tast tests download a lacros-chrome from a gcs location and
-    # use it for testing. To support running lacros tast tests from Chromium CI,
-    # a Var is added to support pointing the tast tests to use a specified
-    # pre-deployed lacros-chrome. The location is decided by:
-    # https://source.chromium.org/chromium/chromium/src/+/main:third_party/chromite/scripts/deploy_chrome.py;l=80;drc=86f1234a4be8e9574442e076cdc835897f7bea61
-    tast_vars = [ "lacrosDeployedBinary=/usr/local/lacros-chrome" ]
-
-    data_deps = [
-      "//chrome",  # Builds the browser.
-
-      # Tools used to symbolize Chrome crash dumps.
-      # TODO(crbug.com/1156772): Remove these if/when all tests pick them up by
-      # default.
-      "//third_party/breakpad:dump_syms",
-      "//third_party/breakpad:minidump_dump",
-      "//third_party/breakpad:minidump_stackwalk",
-    ]
-
-    data = [
-      "//components/crash/content/tools/generate_breakpad_symbols.py",
-
-      # A script needed to launch Lacros in Lacros Tast tests.
-      "//chromium/build/lacros/mojo_connection_lacros_launcher.py",
-    ]
-  }
-}
-
-template("generate_skylab_runner_script") {
-  forward_variables_from(invoker,
-                         [
-                           "generated_script",
-                           "test_exe",
-                         ])
-
-  action(target_name) {
-    script = "//chromium/build/chromeos/gen_skylab_runner.py"
-    outputs = [ generated_script ]
-    args = [
-      "--test-exe",
-      test_exe,
-      "--output",
-      rebase_path(generated_script, root_build_dir),
-    ]
-
-    deps = [ "//testing/buildbot/filters:chromeos_filters" ]
-    if (defined(invoker.deps)) {
-      deps += invoker.deps
+    if (defined(tast_attr_expr)) {
+      tast_attr_expr = "( " + tast_attr_expr + " )"
     }
-
-    data = [ generated_script ]
-    if (defined(invoker.data)) {
-      data += invoker.data
-    }
-
-    data_deps = [ "//testing:test_scripts_shared" ]
-    if (defined(invoker.data_deps)) {
-      data_deps += invoker.data_deps
+    generate_runner_script(target_name) {
+      testonly = true
+      generated_script = "$root_build_dir/bin/run_${target_name}"
+      runtime_deps_file = "$root_out_dir/${target_name}.runtime_deps"
+      deploy_chrome = true
+      data_deps = _data_deps
+      data = _data
     }
   }
 }

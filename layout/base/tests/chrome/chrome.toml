@@ -149,6 +149,7 @@ tags = "openwindow"
 ["test_printer_default_settings.html"]
 
 ["test_printpreview.xhtml"]
+tags = "os_integration"
 
 ["test_printpreview_bug396024.xhtml"]
 

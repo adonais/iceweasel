@@ -7,19 +7,27 @@ const { FormAutofillUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/shared/FormAutofillUtils.sys.mjs"
 );
 
-// Check whether os auth is disabled by default on a new profile in Beta and Release.
+// Check whether os auth is disabled by default for new profiles
 add_task(async function test_creditCards_os_auth_disabled_for_new_profile() {
-  Assert.equal(
-    FormAutofillUtils.getOSAuthEnabled(
-      FormAutofillUtils.AUTOFILL_CREDITCARDS_REAUTH_PREF
-    ),
-    AppConstants.NIGHTLY_BUILD,
+  Assert.ok(
+    !FormAutofillUtils.getOSAuthEnabled(),
     "OS Auth should be disabled for credit cards by default for a new profile."
   );
 
-  Assert.equal(
-    LoginHelper.getOSAuthEnabled(LoginHelper.OS_AUTH_FOR_PASSWORDS_PREF),
-    AppConstants.NIGHTLY_BUILD,
-    "OS Auth should be disabled for passwords by default for a new profile."
+  Assert.ok(
+    Services.prefs.prefIsLocked(
+      FormAutofillUtils.AUTOFILL_CREDITCARDS_OS_AUTH_LOCKED_PREF
+    ),
+    "Pref should be locked"
+  );
+
+  Assert.ok(
+    !LoginHelper.getOSAuthEnabled(),
+    "OS Auth should be disabled for passwords by default."
+  );
+
+  Assert.ok(
+    Services.prefs.prefIsLocked(LoginHelper.OS_AUTH_FOR_PASSWORDS_BOOL_PREF),
+    "Pref should be locked"
   );
 });

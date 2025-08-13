@@ -213,11 +213,10 @@ void PuppetWidget::Invalidate(const LayoutDeviceIntRect& aRect) {
 
 mozilla::LayoutDeviceToLayoutDeviceMatrix4x4
 PuppetWidget::WidgetToTopLevelWidgetTransform() {
-  if (!GetOwningBrowserChild()) {
-    NS_WARNING("PuppetWidget without Tab does not have transform information.");
-    return mozilla::LayoutDeviceToLayoutDeviceMatrix4x4();
+  if (auto* bc = GetOwningBrowserChild()) {
+    return bc->GetChildToParentConversionMatrix();
   }
-  return GetOwningBrowserChild()->GetChildToParentConversionMatrix();
+  return mozilla::LayoutDeviceToLayoutDeviceMatrix4x4();
 }
 
 void PuppetWidget::InitEvent(WidgetGUIEvent& aEvent,

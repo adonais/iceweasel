@@ -1,0 +1,95 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+@import "chrome://global/skin/global.css";
+
+:host {
+  --status-card-connected-background-color: var(--color-violet-90);
+}
+
+#ipprotection-content-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+#status-card {
+  padding: var(--space-large);
+  margin: var(--space-large);
+  background-color: initial;
+  color: initial;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-medium);
+
+  &.is-enabled {
+    background-color: var(--status-card-connected-background-color);
+    color: #fff;
+  }
+}
+
+#connection-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-large);
+}
+
+/* TODO: add animations for the icon (Bug 1976388) */
+#connection-icon {
+  width: 48px;
+  height: 48px;
+  background-image: url("chrome://browser/content/ipprotection/assets/ipprotection-connection-off.svg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  -moz-context-properties: fill;
+  fill: currentColor;
+
+  &.is-enabled {
+    background-image: url("chrome://browser/content/ipprotection/assets/ipprotection-connection-on.svg");
+  }
+}
+
+#connection-details-and-toggle {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  justify-content: space-between;
+}
+
+#connection-title,
+#connection-time {
+  margin: 0;
+}
+
+#connection-title {
+  margin-block-end: var(--space-small);
+}
+
+#upgrade-vpn-content {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-small) var(--space-large);
+}
+
+#upgrade-vpn-title {
+  margin: 0;
+}
+
+#upgrade-vpn-button {
+  align-self: end;
+}
+
+#signed-out-vpn-content {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-medium) var(--space-large) var(--space-small);
+}
+
+#sign-in-vpn {
+  align-self: end;
+}
+
+@media (prefers-color-scheme: dark) {
+  #signed-out-vpn-img {
+    content: url("chrome://browser/content/ipprotection/assets/ipprotection-darkmode.svg");
+  }
+}

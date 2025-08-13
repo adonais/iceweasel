@@ -51,7 +51,6 @@ support-files = [
 ["browser_print_disabled.js"]
 
 ["browser_print_duplex.js"]
-skip-if = ["verify && os == 'mac'"] # bug 1675609
 
 ["browser_print_frame.js"]
 
@@ -60,6 +59,7 @@ skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan && swgl", # Bug 1683730
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan && swgl", # Bug 1683730
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && ccov",
+  "os == 'win' && os_version == '11.26100' && debug && verify",
 ]
 
 ["browser_print_margins.js"]

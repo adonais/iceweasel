@@ -12,9 +12,9 @@
  */
 
 #include "PLDHashTable.h"
+#include "StackArena.h"
 #include "nsDebug.h"
 #include "nsTArray.h"
-#include "StackArena.h"
 
 /**
  * The SpanningCellSorter is responsible for accumulating lists of cells

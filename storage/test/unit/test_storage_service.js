@@ -19,43 +19,21 @@ function test_openDatabase_null_file() {
 
 function test_openDatabase_file_DNE() {
   // the file should be created after calling
-
-  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(OPEN_HISTOGRAM);
-
   var db = getTestDB();
   Assert.ok(!db.exists());
   Services.storage.openDatabase(db);
   Assert.ok(db.exists());
-
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    db.leafName,
-    TELEMETRY_VALUES.success,
-    1
-  );
 }
 
 function test_openDatabase_file_exists() {
   // it should already exist from our last test
-
-  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(OPEN_HISTOGRAM);
-
   var db = getTestDB();
   Assert.ok(db.exists());
   Services.storage.openDatabase(db);
   Assert.ok(db.exists());
-
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    db.leafName,
-    TELEMETRY_VALUES.success,
-    1
-  );
 }
 
 function test_corrupt_db_throws_with_openDatabase() {
-  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(OPEN_HISTOGRAM);
-
   let db = getCorruptDB();
 
   try {
@@ -65,17 +43,13 @@ function test_corrupt_db_throws_with_openDatabase() {
     Assert.equal(Cr.NS_ERROR_FILE_CORRUPTED, e.result);
   }
 
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    db.leafName,
-    TELEMETRY_VALUES.corrupt,
+  Assert.equal(
+    Glean.sqliteStore.query.get(db.leafName, "corrupt").testGetValue(),
     1
   );
 }
 
 function test_fake_db_throws_with_openDatabase() {
-  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(OPEN_HISTOGRAM);
-
   let db = getFakeDB();
 
   try {
@@ -85,10 +59,8 @@ function test_fake_db_throws_with_openDatabase() {
     Assert.equal(Cr.NS_ERROR_FILE_CORRUPTED, e.result);
   }
 
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    db.leafName,
-    TELEMETRY_VALUES.corrupt,
+  Assert.equal(
+    Glean.sqliteStore.query.get(db.leafName, "corrupt").testGetValue(),
     1
   );
 }
@@ -102,8 +74,6 @@ function test_openDatabase_directory() {
   dir.create(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
   Assert.ok(dir.exists());
 
-  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(OPEN_HISTOGRAM);
-
   try {
     getDatabase(dir);
     do_throw("should not be here");
@@ -111,10 +81,8 @@ function test_openDatabase_directory() {
     Assert.equal(Cr.NS_ERROR_FILE_ACCESS_DENIED, e.result);
   }
 
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    dir.leafName,
-    TELEMETRY_VALUES.access,
+  Assert.equal(
+    Glean.sqliteStore.open.get("test_storage_temp", "access").testGetValue(),
     1
   );
 
@@ -125,18 +93,12 @@ function test_read_gooddb() {
   let file = do_get_file("goodDB.sqlite");
   let db = getDatabase(file);
 
-  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(QUERY_HISTOGRAM);
-
   db.executeSimpleSQL("SELECT * FROM Foo;");
 
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    file.leafName,
-    TELEMETRY_VALUES.success,
-    1
+  Assert.equal(
+    Glean.sqliteStore.query.get(file.leafName, "failure").testGetValue(),
+    null
   );
-
-  histogram.clear();
 
   let stmt = db.createStatement("SELECT id from Foo");
 
@@ -148,25 +110,18 @@ function test_read_gooddb() {
 
   stmt.finalize();
 
-  // A single statement should count as a single access.
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    file.leafName,
-    TELEMETRY_VALUES.success,
-    1
+  Assert.equal(
+    Glean.sqliteStore.query.get(file.leafName, "failure").testGetValue(),
+    null
   );
-
-  histogram.clear();
 
   Assert.throws(
     () => db.executeSimpleSQL("INSERT INTO Foo (rowid) VALUES ('test');"),
     /NS_ERROR_FAILURE/,
     "Executing sql should fail."
   );
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    file.leafName,
-    TELEMETRY_VALUES.misuse,
+  Assert.equal(
+    Glean.sqliteStore.query.get(file.leafName, "misuse").testGetValue(),
     1
   );
 }
@@ -175,22 +130,16 @@ function test_read_baddb() {
   let file = do_get_file("baddataDB.sqlite");
   let db = getDatabase(file);
 
-  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(QUERY_HISTOGRAM);
-
   Assert.throws(
     () => db.executeSimpleSQL("SELECT * FROM Foo"),
     /NS_ERROR_FILE_CORRUPTED/,
     "Executing sql should fail."
   );
 
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    file.leafName,
-    TELEMETRY_VALUES.corrupt,
+  Assert.equal(
+    Glean.sqliteStore.query.get(file.leafName, "corrupt").testGetValue(),
     1
   );
-
-  histogram.clear();
 
   let stmt = db.createStatement("SELECT * FROM Foo");
   Assert.throws(
@@ -199,11 +148,9 @@ function test_read_baddb() {
     "Executing a statement should fail."
   );
 
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    file.leafName,
-    TELEMETRY_VALUES.corrupt,
-    1
+  Assert.equal(
+    Glean.sqliteStore.query.get(file.leafName, "corrupt").testGetValue(),
+    2
   );
 }
 
@@ -222,17 +169,14 @@ function test_busy_telemetry() {
   conn1.beginTransaction();
   conn1.executeSimpleSQL("CREATE TABLE test (id INTEGER PRIMARY KEY)");
 
-  let histogram = TelemetryTestUtils.getAndClearKeyedHistogram(QUERY_HISTOGRAM);
   Assert.throws(
     () =>
       conn2.executeSimpleSQL("CREATE TABLE test_busy (id INTEGER PRIMARY KEY)"),
     /NS_ERROR_STORAGE_BUSY/,
     "Nested transaction on second connection should fail"
   );
-  TelemetryTestUtils.assertKeyedHistogramValue(
-    histogram,
-    file.leafName,
-    TELEMETRY_VALUES.busy,
+  Assert.equal(
+    Glean.sqliteStore.query.get(file.leafName, "busy").testGetValue(),
     1
   );
 
@@ -261,6 +205,7 @@ function run_test() {
 
   for (var i = 0; i < tests.length; i++) {
     tests[i]();
+    Services.fog.testResetFOG();
   }
 
   cleanup();

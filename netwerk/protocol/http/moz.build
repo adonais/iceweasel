@@ -53,6 +53,7 @@ EXPORTS.mozilla.net += [
     "BackgroundChannelRegistrar.h",
     "BackgroundDataBridgeChild.h",
     "BackgroundDataBridgeParent.h",
+    "CacheControlParser.h",
     "ClassOfService.h",
     "EarlyHintPreloader.h",
     "EarlyHintRegistrar.h",

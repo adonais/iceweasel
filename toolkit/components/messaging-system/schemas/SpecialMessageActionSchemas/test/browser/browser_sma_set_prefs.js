@@ -6,7 +6,7 @@
 const HOMEPAGE_PREF = "browser.startup.homepage";
 const PRIVACY_SEGMENTATION_PREF = "browser.dataFeatureRecommendations.enabled";
 const MESSAGING_ACTION_PREF = "special-message-testpref";
-const TIMESTAMP_PREF = "datareporting.policy.dataSubmissionPolicyNotifiedTime";
+const TIMESTAMP_PREF = "termsofuse.acceptedDate";
 
 const PREFS_TO_CLEAR = [
   HOMEPAGE_PREF,

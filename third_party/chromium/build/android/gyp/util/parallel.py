@@ -1,4 +1,4 @@
-# Copyright 2020 The Chromium Authors. All rights reserved.
+# Copyright 2020 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 """Helpers related to multiprocessing.
@@ -26,8 +26,12 @@ _silence_exceptions = False
 _fork_params = None
 _fork_kwargs = None
 
+# Ensure fork is used on MacOS for multiprocessing compatibility.
+# Starting from Python 3.8, the "spawn" method is the default on MacOS.
+# On Linux hosts this line will be a no-op.
+multiprocessing.set_start_method('fork')
 
-class _ImmediateResult(object):
+class _ImmediateResult:
   def __init__(self, value):
     self._value = value
 
@@ -44,7 +48,7 @@ class _ImmediateResult(object):
     return True
 
 
-class _ExceptionWrapper(object):
+class _ExceptionWrapper:
   """Used to marshal exception messages back to main process."""
 
   def __init__(self, msg, exception_type=None):
@@ -57,7 +61,7 @@ class _ExceptionWrapper(object):
                     self.exception_type)('Originally caused by: ' + self.msg)
 
 
-class _FuncWrapper(object):
+class _FuncWrapper:
   """Runs on the fork()'ed side to catch exceptions and spread *args."""
 
   def __init__(self, func):
@@ -66,7 +70,10 @@ class _FuncWrapper(object):
     self._func = func
 
   def __call__(self, index, _=None):
+    global _fork_kwargs
     try:
+      if _fork_kwargs is None:  # Clarifies _fork_kwargs is map for pylint.
+        _fork_kwargs = {}
       return self._func(*_fork_params[index], **_fork_kwargs)
     except Exception as e:
       # Only keep the exception type for builtin exception types or else risk
@@ -81,7 +88,7 @@ class _FuncWrapper(object):
       return _ExceptionWrapper(traceback.format_exc())
 
 
-class _WrappedResult(object):
+class _WrappedResult:
   """Allows for host-side logic to be run after child process has terminated.
 
   * Unregisters associated pool _all_pools.

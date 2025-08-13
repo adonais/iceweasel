@@ -310,7 +310,7 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
 
 #ifdef MOZ_APPLEMEDIA
       case ipc::SandboxingKind::UTILITY_AUDIO_DECODING_APPLE_MEDIA: {
-        profile.append(SandboxPolicyUtilityAudioDecoderAppleMediaAddend);
+        profile.append(SandboxPolicyUtilityMediaServiceAppleMediaAddend);
         params.push_back("MAC_OS_VERSION");
         params.push_back(combinedVersion.c_str());
       } break;

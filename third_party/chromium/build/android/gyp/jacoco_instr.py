@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 #
-# Copyright 2013 The Chromium Authors. All rights reserved.
+# Copyright 2013 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-
 """Instruments classes and jar files.
 
 This script corresponds to the 'jacoco_instr' action in the Java build process.
@@ -13,17 +12,20 @@ jacococli.jar.
 
 """
 
-from __future__ import print_function
-
 import argparse
 import json
 import os
 import shutil
 import sys
-import tempfile
 import zipfile
 
 from util import build_utils
+import action_helpers
+import zip_helpers
+
+
+# This should be same as recipe side token. See bit.ly/3STSPcE.
+INSTRUMENT_ALL_JACOCO_OVERRIDE_TOKEN = 'INSTRUMENT_ALL_JACOCO'
 
 
 def _AddArguments(parser):
@@ -33,25 +35,26 @@ def _AddArguments(parser):
     parser: ArgumentParser object.
   """
   parser.add_argument(
-      '--input-path',
+      '--root-build-dir',
       required=True,
-      help='Path to input file(s). Either the classes '
-      'directory, or the path to a jar.')
+      help='Path to build directory rooted at checkout dir e.g. //out/Release')
+  parser.add_argument('--input-path',
+                      required=True,
+                      help='Path to input file(s). Either the classes '
+                      'directory, or the path to a jar.')
+  parser.add_argument('--output-path',
+                      required=True,
+                      help='Path to output final file(s) to. Either the '
+                      'final classes directory, or the directory in '
+                      'which to place the instrumented/copied jar.')
+  parser.add_argument('--sources-json-file',
+                      required=True,
+                      help='File to create with the list of source directories '
+                      'and input path.')
   parser.add_argument(
-      '--output-path',
+      '--target-sources-file',
       required=True,
-      help='Path to output final file(s) to. Either the '
-      'final classes directory, or the directory in '
-      'which to place the instrumented/copied jar.')
-  parser.add_argument(
-      '--sources-json-file',
-      required=True,
-      help='File to create with the list of source directories '
-      'and input path.')
-  parser.add_argument(
-      '--java-sources-file',
-      required=True,
-      help='File containing newline-separated .java paths')
+      help='File containing newline-separated .java and .kt paths')
   parser.add_argument(
       '--jacococli-jar', required=True, help='Path to jacococli.jar.')
   parser.add_argument(
@@ -71,8 +74,8 @@ def _GetSourceDirsFromSourceFiles(source_files):
   return list(set(os.path.dirname(source_file) for source_file in source_files))
 
 
-def _CreateSourcesJsonFile(source_dirs, input_path, sources_json_file,
-                           src_root):
+def _CreateSourcesJsonFile(source_dirs, input_path, sources_json_file, src_root,
+                           root_build_dir):
   """Adds all normalized source directories and input path to
   |sources_json_file|.
 
@@ -80,8 +83,10 @@ def _CreateSourcesJsonFile(source_dirs, input_path, sources_json_file,
     source_dirs: List of source directories.
     input_path: The input path to non-instrumented class files.
     sources_json_file: File into which to write the list of source directories
-    and input path.
+      and input path.
     src_root: Root which sources added to the file should be relative to.
+    root_build_dir: Build directory path rooted at checkout where
+      sources_json_file is generated e.g. //out/Release
 
   Returns:
     An exit code.
@@ -101,10 +106,13 @@ def _CreateSourcesJsonFile(source_dirs, input_path, sources_json_file,
   data = {}
   data['source_dirs'] = relative_sources
   data['input_path'] = []
+  build_dir = os.path.join(src_root, root_build_dir[2:])
+  data['output_dir'] = build_dir
   if input_path:
     data['input_path'].append(os.path.abspath(input_path))
   with open(sources_json_file, 'w') as f:
     json.dump(data, f)
+  return 0
 
 
 def _GetAffectedClasses(jar_file, source_files):
@@ -133,7 +141,8 @@ def _GetAffectedClasses(jar_file, source_files):
     if index == -1:
       index = member.find('.class')
     for source_file in source_files:
-      if source_file.endswith(member[:index] + '.java'):
+      if source_file.endswith(
+          (member[:index] + '.java', member[:index] + '.kt')):
         affected_classes.append(member)
         is_affected = True
         break
@@ -180,7 +189,8 @@ def _InstrumentClassFiles(instrument_cmd,
       f.extractall(instrumented_dir, unaffected_members)
 
   # Zip all files to output_path
-  build_utils.ZipDir(output_path, instrumented_dir)
+  with action_helpers.atomic_output(output_path) as f:
+    zip_helpers.zip_directory(f, instrumented_dir)
 
 
 def _RunInstrumentCommand(parser):
@@ -195,8 +205,8 @@ def _RunInstrumentCommand(parser):
   args = parser.parse_args()
 
   source_files = []
-  if args.java_sources_file:
-    source_files.extend(build_utils.ReadSourcesList(args.java_sources_file))
+  if args.target_sources_file:
+    source_files.extend(build_utils.ReadSourcesList(args.target_sources_file))
 
   with build_utils.TempDir() as temp_dir:
     instrument_cmd = build_utils.JavaCmd() + [
@@ -204,30 +214,40 @@ def _RunInstrumentCommand(parser):
     ]
 
     if not args.files_to_instrument:
-      _InstrumentClassFiles(instrument_cmd, args.input_path, args.output_path,
-                            temp_dir)
+      affected_source_files = None
     else:
       affected_files = build_utils.ReadSourcesList(args.files_to_instrument)
-      source_set = set(source_files)
-      affected_source_files = [f for f in affected_files if f in source_set]
+      # Check if coverage recipe decided to instrument everything by overriding
+      # the try builder default setting(selective instrumentation). This can
+      # happen in cases like a DEPS roll of jacoco library
 
-      # Copy input_path to output_path and return if no source file affected.
-      if not affected_source_files:
-        shutil.copyfile(args.input_path, args.output_path)
-        # Create a dummy sources_json_file.
-        _CreateSourcesJsonFile([], None, args.sources_json_file,
-                               build_utils.DIR_SOURCE_ROOT)
-        return 0
+      # Note: This token is preceded by ../../ because the paths to be
+      # instrumented are expected to be relative to the build directory.
+      # See _rebase_paths() at https://bit.ly/40oiixX
+      token = '../../' + INSTRUMENT_ALL_JACOCO_OVERRIDE_TOKEN
+      if token in affected_files:
+        affected_source_files = None
       else:
-        _InstrumentClassFiles(instrument_cmd, args.input_path, args.output_path,
-                              temp_dir, affected_source_files)
+        source_set = set(source_files)
+        affected_source_files = [f for f in affected_files if f in source_set]
+
+        # Copy input_path to output_path and return if no source file affected.
+        if not affected_source_files:
+          shutil.copyfile(args.input_path, args.output_path)
+          # Create a dummy sources_json_file.
+          _CreateSourcesJsonFile([], None, args.sources_json_file,
+                                 build_utils.DIR_SOURCE_ROOT,
+                                 args.root_build_dir)
+          return 0
+    _InstrumentClassFiles(instrument_cmd, args.input_path, args.output_path,
+                          temp_dir, affected_source_files)
 
   source_dirs = _GetSourceDirsFromSourceFiles(source_files)
   # TODO(GYP): In GN, we are passed the list of sources, detecting source
   # directories, then walking them to re-establish the list of sources.
   # This can obviously be simplified!
   _CreateSourcesJsonFile(source_dirs, args.input_path, args.sources_json_file,
-                         build_utils.DIR_SOURCE_ROOT)
+                         build_utils.DIR_SOURCE_ROOT, args.root_build_dir)
 
   return 0
 

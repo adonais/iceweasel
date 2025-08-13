@@ -503,6 +503,9 @@ newtab-topic-selection-button-pick-interests = Chọn sở thích của bạn
 newtab-section-follow-button = Theo dõi
 newtab-section-following-button = Đang theo dõi
 newtab-section-unfollow-button = Huỷ theo dõi
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Tinh chỉnh nguồn cấp dữ liệu của bạn
+newtab-section-follow-highlight-subtitle = Theo dõi sở thích của bạn để xem thêm những gì bạn thích.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -545,6 +548,11 @@ newtab-download-mobile-highlight-body-variant-c = Bạn có biết bạn có th�
 newtab-download-mobile-highlight-image =
     .aria-label = Mã QR để tải xuống { -brand-product-name } dành cho di động
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Những mục yêu thích của bạn trong tầm tay bạn
+newtab-shortcuts-highlight-subtitle = Thêm lối tắt để truy cập các trang web yêu thích chỉ bằng một cú nhấp chuột.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -578,3 +586,5 @@ newtab-trending-searches-hide-trending =
     .title = Ẩn tìm kiếm thịnh hành
 newtab-trending-searches-learn-more = Tìm hiểu thêm
 newtab-trending-searches-dismiss = Ẩn tìm kiếm thịnh hành
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Tìm kiếm thịnh hành

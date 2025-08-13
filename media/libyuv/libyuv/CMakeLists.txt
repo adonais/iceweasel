@@ -2,11 +2,11 @@
 # Originally created for "roxlu build system" to compile libyuv on windows
 # Run with -DUNIT_TEST=ON to build unit tests
 
-include(CheckCSourceCompiles)
-
+cmake_minimum_required( VERSION 3.16 )
 project ( YUV C CXX )	# "C" is required even for C++ projects
-cmake_minimum_required( VERSION 2.8.12 )
 option( UNIT_TEST "Built unit tests" OFF )
+
+include(CheckCSourceCompiles)
 
 set ( ly_base_dir	${PROJECT_SOURCE_DIR} )
 set ( ly_src_dir	${ly_base_dir}/source )
@@ -112,18 +112,18 @@ if(NOT MSVC)
       ${ly_src_dir}/rotate_neon64.cc
       ${ly_src_dir}/row_neon64.cc
       ${ly_src_dir}/scale_neon64.cc)
-    target_compile_options(${ly_lib_name}_neon64 PRIVATE -march=armv8-a+dotprod+i8mm)
+    target_compile_options(${ly_lib_name}_neon64 PRIVATE -march=armv8.2-a+dotprod+i8mm)
     list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_neon64>)
 
     # Enable AArch64 SVE kernels.
     add_library(${ly_lib_name}_sve OBJECT
       ${ly_src_dir}/row_sve.cc)
-    target_compile_options(${ly_lib_name}_sve PRIVATE -march=armv9-a+sve2)
+    target_compile_options(${ly_lib_name}_sve PRIVATE -march=armv8.5-a+i8mm+sve2)
     list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sve>)
 
     set(OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
     set(OLD_CMAKE_TRY_COMPILE_TARGET_TYPE ${CMAKE_TRY_COMPILE_TARGET_TYPE})
-    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -march=armv9-a+sme")
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -march=armv9-a+i8mm+sme")
     set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
     # Check whether the compiler can compile SME functions; this fails
     # with Clang for Windows.
@@ -140,7 +140,7 @@ int main(void) { return 0; }
         ${ly_src_dir}/rotate_sme.cc
         ${ly_src_dir}/row_sme.cc
         ${ly_src_dir}/scale_sme.cc)
-      target_compile_options(${ly_lib_name}_sme PRIVATE -march=armv9-a+sme)
+      target_compile_options(${ly_lib_name}_sme PRIVATE -march=armv9-a+i8mm+sme)
       list(APPEND ly_lib_parts $<TARGET_OBJECTS:${ly_lib_name}_sme>)
     else()
       add_definitions(-DLIBYUV_DISABLE_SME)

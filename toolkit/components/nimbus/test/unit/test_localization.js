@@ -252,17 +252,17 @@ add_task(async function test_getLocalizedValue_unenroll_missingEntry() {
     "Experiment should be unenrolled"
   );
 
-  const gleanEvents = Glean.nimbusEvents.unenrollment.testGetValue("events");
-  Assert.equal(gleanEvents.length, 1, "Should be one unenrollment event");
-  Assert.equal(
-    gleanEvents[0].extra.reason,
-    "l10n-missing-entry",
-    "Reason should match"
-  );
-  Assert.equal(
-    gleanEvents[0].extra.experiment,
-    "experiment",
-    "Slug should match"
+  Assert.deepEqual(
+    Glean.nimbusEvents.unenrollment.testGetValue("events")?.map(ev => ev.extra),
+    [
+      {
+        reason: "l10n-missing-entry",
+        branch: "control",
+        experiment: "experiment",
+        locale: "en-US",
+      },
+    ],
+    "Event should match"
   );
 
   TelemetryTestUtils.assertEvents(
@@ -323,17 +323,17 @@ add_task(async function test_getLocalizedValue_unenroll_missingEntry() {
     "Experiment should be unenrolled"
   );
 
-  const gleanEvents = Glean.nimbusEvents.unenrollment.testGetValue("events");
-  Assert.equal(gleanEvents.length, 1, "Should be one unenrollment event");
-  Assert.equal(
-    gleanEvents[0].extra.reason,
-    "l10n-missing-locale",
-    "Reason should match"
-  );
-  Assert.equal(
-    gleanEvents[0].extra.experiment,
-    "experiment",
-    "Slug should match"
+  Assert.deepEqual(
+    Glean.nimbusEvents.unenrollment.testGetValue("events")?.map(ev => ev.extra),
+    [
+      {
+        reason: "l10n-missing-locale",
+        experiment: "experiment",
+        branch: "control",
+        locale: "en-US",
+      },
+    ],
+    "Glean events should match"
   );
 
   TelemetryTestUtils.assertEvents(
@@ -661,24 +661,24 @@ add_task(async function test_getVariables_fallback_unenroll() {
     "Rollout should be unenrolled"
   );
 
-  const gleanEvents = Glean.nimbusEvents.unenrollment.testGetValue("events");
-  Assert.equal(gleanEvents.length, 2, "Should be two unenrollment events");
-  Assert.equal(
-    gleanEvents[0].extra.reason,
-    "l10n-missing-locale",
-    "Reason should match"
+  Assert.deepEqual(
+    Glean.nimbusEvents.unenrollment.testGetValue("events")?.map(ev => ev.extra),
+    [
+      {
+        reason: "l10n-missing-locale",
+        experiment: "experiment",
+        branch: "control",
+        locale: "en-US",
+      },
+      {
+        reason: "l10n-missing-entry",
+        experiment: "rollout",
+        branch: "control",
+        locale: "en-US",
+      },
+    ],
+    "Glean events should match"
   );
-  Assert.equal(
-    gleanEvents[0].extra.experiment,
-    "experiment",
-    "Slug should match"
-  );
-  Assert.equal(
-    gleanEvents[1].extra.reason,
-    "l10n-missing-entry",
-    "Reason should match"
-  );
-  Assert.equal(gleanEvents[1].extra.experiment, "rollout", "Slug should match");
 
   TelemetryTestUtils.assertEvents(
     [
@@ -758,20 +758,19 @@ async function test_updateRecipes_missingLocale({
   );
   Assert.ok(manager.enroll.notCalled, "Did not enroll");
 
-  const gleanEvents =
-    Glean.nimbusEvents.validationFailed.testGetValue("events");
-  Assert.equal(gleanEvents.length, 1, "Should be one validationFailed event");
-  Assert.equal(
-    gleanEvents[0].extra.experiment,
-    "foo",
-    "Experiment slug should match"
+  Assert.deepEqual(
+    Glean.nimbusEvents.validationFailed
+      .testGetValue("events")
+      ?.map(ev => ev.extra),
+    [
+      {
+        experiment: "foo",
+        reason: "l10n-missing-locale",
+        locale: "en-US",
+      },
+    ],
+    "Glean events should match"
   );
-  Assert.equal(
-    gleanEvents[0].extra.reason,
-    "l10n-missing-locale",
-    "Reason should match"
-  );
-  Assert.equal(gleanEvents[0].extra.locale, "en-US", "Locale should match");
 
   TelemetryTestUtils.assertEvents(
     [
@@ -826,25 +825,20 @@ add_task(async function test_updateRecipes_missingEntry() {
   );
   Assert.ok(manager.enroll.notCalled, "Did not enroll");
 
-  const gleanEvents =
-    Glean.nimbusEvents.validationFailed.testGetValue("events");
-  Assert.equal(gleanEvents.length, 1, "Should be one validationFailed event");
-  Assert.equal(
-    gleanEvents[0].extra.experiment,
-    "foo",
-    "Experiment slug should match"
+  Assert.deepEqual(
+    Glean.nimbusEvents.validationFailed
+      .testGetValue("events")
+      ?.map(ev => ev.extra),
+    [
+      {
+        experiment: "foo",
+        reason: "l10n-missing-entry",
+        l10n_ids: "foo,qux,grault,waldo",
+        locale: "en-US",
+      },
+    ],
+    "Glean events should match"
   );
-  Assert.equal(
-    gleanEvents[0].extra.reason,
-    "l10n-missing-entry",
-    "Reason should match"
-  );
-  Assert.equal(
-    gleanEvents[0].extra.l10n_ids,
-    "foo,qux,grault,waldo",
-    "Missing IDs should match"
-  );
-  Assert.equal(gleanEvents[0].extra.locale, "en-US", "Locale should match");
 
   TelemetryTestUtils.assertEvents(
     [
@@ -925,6 +919,7 @@ add_task(async function test_updateRecipes_unenroll_missingEntry() {
   Assert.ok(
     manager._unenroll.calledOnceWith(sinon.match({ slug: recipe.slug }), {
       reason: "l10n-missing-entry",
+      locale: "en-US",
     })
   );
 
@@ -934,17 +929,16 @@ add_task(async function test_updateRecipes_unenroll_missingEntry() {
     "Should no longer be enrolled in the experiment"
   );
 
-  const unenrollEvents = Glean.nimbusEvents.unenrollment.testGetValue("events");
-  Assert.equal(unenrollEvents.length, 1, "Should be one unenroll event");
-  Assert.equal(
-    unenrollEvents[0].extra.experiment,
-    "foo",
-    "Experiment slug should match"
-  );
-  Assert.equal(
-    unenrollEvents[0].extra.reason,
-    "l10n-missing-entry",
-    "Reason should match"
+  Assert.deepEqual(
+    Glean.nimbusEvents.unenrollment.testGetValue("events")?.map(ev => ev.extra),
+    [
+      {
+        experiment: "foo",
+        branch: "control",
+        reason: "l10n-missing-entry",
+        locale: "en-US",
+      },
+    ]
   );
 
   const validationFailedEvents =
@@ -1058,6 +1052,7 @@ add_task(async function test_updateRecipes_unenroll_missingLocale() {
   Assert.ok(
     manager._unenroll.calledWith(sinon.match({ slug: recipe.slug }), {
       reason: "l10n-missing-locale",
+      locale: "en-US",
     })
   );
 

@@ -10,7 +10,24 @@ use alloc::sync::Arc;
 
 use super::TimestampQuerySupport;
 
-const MAX_COMMAND_BUFFERS: u64 = 2048;
+/// Maximum number of command buffers for `MTLCommandQueue`s that we create.
+///
+/// If a [new command buffer] is requested when Metal has run out of command
+/// buffers, it waits indefinitely for one to become available. If the
+/// outstanding command buffers are actively executing on the GPU, this will
+/// happen relatively quickly. But if the outstanding command buffers will only
+/// be recovered upon GC, and attempting to get a new command buffer prevents
+/// forward progress towards that GC, there is a deadlock.
+///
+/// This is mostly a problem for the CTS, which frequently creates command
+/// buffers that it does not submit. It is unclear how likely command buffer
+/// exhaustion is in real applications.
+///
+/// This limit was increased from a previous value of 2048 for
+/// <https://bugzilla.mozilla.org/show_bug.cgi?id=1971452>.
+///
+/// [new command buffer]: https://developer.apple.com/documentation/metal/mtlcommandqueue/makecommandbuffer()?language=objc
+const MAX_COMMAND_BUFFERS: u64 = 4096;
 
 unsafe impl Send for super::Adapter {}
 unsafe impl Sync for super::Adapter {}
@@ -1060,6 +1077,16 @@ impl super::PrivateCapabilities {
                 max_compute_workgroups_per_dimension: 0xFFFF,
                 max_buffer_size: self.max_buffer_size,
                 max_non_sampler_bindings: u32::MAX,
+                max_blas_primitive_count: 0, // When added: 2^28 from https://developer.apple.com/documentation/metal/mtlaccelerationstructureusage/extendedlimits
+                max_blas_geometry_count: 0,  // When added: 2^24
+                max_tlas_instance_count: 0,  // When added: 2^24
+                // Unsure what this will be when added: acceleration structures count as a buffer so
+                // it may be worth using argument buffers for this all acceleration structures, then
+                // there will be no limit.
+                // From 2.17.7 in https://developer.apple.com/metal/Metal-Shading-Language-Specification.pdf
+                // > [Acceleration structures] are opaque objects that can be bound directly using
+                // buffer binding points or via argument buffers
+                max_acceleration_structures_per_shader_stage: 0,
             },
             alignments: crate::Alignments {
                 buffer_copy_offset: wgt::BufferSize::new(self.buffer_alignment).unwrap(),

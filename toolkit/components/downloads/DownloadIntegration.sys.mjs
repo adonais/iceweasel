@@ -21,6 +21,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   DownloadSpamProtection: "resource:///modules/DownloadSpamProtection.sys.mjs",
   DownloadStore: "resource://gre/modules/DownloadStore.sys.mjs",
   DownloadUIHelper: "resource://gre/modules/DownloadUIHelper.sys.mjs",
+  DownloadsCommon: "resource:///modules/DownloadsCommon.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
 });
@@ -549,6 +550,7 @@ export var DownloadIntegration = {
       // oh well
     }
     const requestToken = Services.uuid.generateUUID().toString();
+    const userActionId = Services.uuid.generateUUID().toString();
     let warnResponseObserver = undefined;
     // Set up a separate promise to wait specifically for a WARN
     // response (if it comes) while we also wait for a final response.
@@ -576,6 +578,11 @@ export var DownloadIntegration = {
       };
       Services.obs.addObserver(warnResponseObserver, "dlp-response");
     });
+    let cancelPromiseWithResolvers = Promise.withResolvers();
+    DownloadObserver._contentAnalysisInProgressDownloads.set(
+      download,
+      cancelPromiseWithResolvers
+    );
     let finalResultPromise = contentAnalysis
       .analyzeContentRequests(
         [
@@ -591,6 +598,7 @@ export var DownloadIntegration = {
             resources,
             requestToken,
             url,
+            userActionId,
             filePath: download.target.path,
             // When doing a download analysis, the Content Analysis code won't
             // display dialogs in the window, but the code still wants a
@@ -605,11 +613,16 @@ export var DownloadIntegration = {
         /* autoAcknowledge*/ true
       )
       .then(response => {
+        let cancelError;
+        if (response?.action === Ci.nsIContentAnalysisResponse.eCanceled) {
+          cancelError = response.cancelError;
+        }
         return {
           verdict: response.shouldAllowContent
             ? Ci.nsIApplicationReputationService.VERDICT_SAFE
             : Ci.nsIApplicationReputationService.VERDICT_DANGEROUS,
           shouldBlock: !response.shouldAllowContent,
+          contentAnalysisCancelError: cancelError,
           contentAnalysisWarnRequestToken: undefined,
         };
       });
@@ -617,7 +630,16 @@ export var DownloadIntegration = {
       let finalOrWarnResult = await Promise.race([
         finalResultPromise,
         warnResultPromise,
+        cancelPromiseWithResolvers.promise,
       ]);
+      if (finalOrWarnResult.canceled) {
+        contentAnalysis.cancelRequestsByUserAction(userActionId);
+        // The cancel will override this, so just return something
+        return {
+          verdict: Ci.nsIApplicationReputationService.VERDICT_SAFE,
+          shouldBlock: false,
+        };
+      }
       return finalOrWarnResult;
     } catch (e) {
       console.error(e);
@@ -627,6 +649,7 @@ export var DownloadIntegration = {
       };
     } finally {
       Services.obs.removeObserver(warnResponseObserver, "dlp-response");
+      DownloadObserver._contentAnalysisInProgressDownloads.delete(download);
     }
   },
 
@@ -1189,6 +1212,7 @@ var DownloadObserver = {
    * download.
    */
   _contentAnalysisWarnInProgressDownloads: new Set(),
+  _contentAnalysisInProgressDownloads: new Map(),
 
   /**
    * Set that contains the downloads that have been canceled when going offline
@@ -1219,11 +1243,19 @@ var DownloadObserver = {
         }
       },
       onDownloadChanged: aDownload => {
+        if (aDownload.canceled) {
+          let deferred =
+            this._contentAnalysisInProgressDownloads.get(aDownload);
+          if (deferred) {
+            deferred.resolve({ canceled: true });
+          }
+        }
         if (aDownload.stopped) {
           if (aDownload.error?.contentAnalysisWarnRequestToken) {
             this._contentAnalysisWarnInProgressDownloads.add(aDownload);
           } else {
             this._contentAnalysisWarnInProgressDownloads.delete(aDownload);
+            this._contentAnalysisInProgressDownloads.delete(aDownload);
           }
           downloadsSet.delete(aDownload);
         } else {
@@ -1233,6 +1265,7 @@ var DownloadObserver = {
       onDownloadRemoved: aDownload => {
         downloadsSet.delete(aDownload);
         this._contentAnalysisWarnInProgressDownloads.delete(aDownload);
+        this._contentAnalysisInProgressDownloads.delete(aDownload);
         // The download must also be removed from the canceled when offline set.
         this._canceledOfflineDownloads.delete(aDownload);
       },
@@ -1313,8 +1346,11 @@ var DownloadObserver = {
         for (let download of this._contentAnalysisWarnInProgressDownloads) {
           blockPromises.push(
             (async () => {
-              await download.respondToContentAnalysisWarnWithBlock();
-              await download.finalize(true);
+              // Since the user is blocking this download and we're about to
+              // quit, delete the download from the list. (this will also
+              // delete the file on disk and report to the DLP agent that
+              // we have blocked it)
+              await lazy.DownloadsCommon.deleteDownload(download);
             })()
           );
         }
@@ -1333,6 +1369,7 @@ var DownloadObserver = {
           );
         }
         this._contentAnalysisWarnInProgressDownloads.clear();
+        this._contentAnalysisInProgressDownloads.clear();
         break;
       }
       case "offline-requested":

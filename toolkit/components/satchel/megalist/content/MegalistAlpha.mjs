@@ -51,13 +51,18 @@ export class MegalistAlpha extends MozLitElement {
     this.inputChangeTimeout = null;
     this.viewMode = VIEW_MODES.LIST;
     this.selectedRecord = null;
+    this.sidebarHiding = false;
 
     window.addEventListener("MessageFromViewModel", ev =>
       this.#onMessageFromViewModel(ev)
     );
-    window.addEventListener("SidebarWillHide", ev =>
-      this.#onSidebarWillHide(ev)
-    );
+    window.addEventListener("SidebarWillShow", () => {
+      this.sidebarHiding = false;
+    });
+    window.addEventListener("SidebarWillHide", ev => {
+      this.sidebarHiding = true;
+      this.#onSidebarWillHide(ev);
+    });
   }
 
   static get properties() {
@@ -70,6 +75,24 @@ export class MegalistAlpha extends MozLitElement {
       displayMode: { type: String },
       viewMode: { type: String },
     };
+  }
+
+  updated(changedProperties) {
+    if (changedProperties.has("viewMode")) {
+      const oldViewMode = changedProperties.get("viewMode");
+      if (oldViewMode == VIEW_MODES.EDIT && this.viewMode === VIEW_MODES.LIST) {
+        // If we are switching from EDIT to LIST mode when `sidebarHiding` is true,
+        // we need to hide the sidebar because we blocked it from hiding
+        // previously when the user was editing a password.
+        if (this.sidebarHiding) {
+          const { BrowserWindowTracker } = ChromeUtils.importESModule(
+            "resource:///modules/BrowserWindowTracker.sys.mjs"
+          );
+          const window = BrowserWindowTracker.getTopWindow();
+          window.SidebarController.hide();
+        }
+      }
+    }
   }
 
   connectedCallback() {
@@ -136,34 +159,36 @@ export class MegalistAlpha extends MozLitElement {
     this.#recordToolbarAction(gleanAction, "toolbar");
   }
 
-  #hasPendingChange(loginForm) {
+  #hasPendingEditChange(loginFromForm) {
     return !lazy.LoginHelper.doLoginsMatch(
       {
         username: this.selectedRecord.username.value,
         password: this.selectedRecord.password.value,
         origin: this.selectedRecord.origin.href,
       },
-      loginForm,
+      loginFromForm,
       {}
     );
   }
 
-  #onCancelLoginForm(loginForm) {
-    if (this.viewMode == VIEW_MODES.EDIT && this.#hasPendingChange(loginForm)) {
-      this.#sendCommand("DiscardChanges", {
-        value: { passwordIndex: this.selectedRecord.password.lineIndex },
-      });
+  #onCancelLoginForm(loginFromForm) {
+    if (
+      this.viewMode == VIEW_MODES.EDIT &&
+      this.#hasPendingEditChange(loginFromForm)
+    ) {
+      this.#sendCommand("DiscardChanges");
       return;
     }
 
     this.viewMode = VIEW_MODES.LIST;
+    this.notification = null;
   }
 
   #onSaveLoginForm(loginForm) {
     if (this.viewMode == VIEW_MODES.ADD) {
       this.#sendCommand("AddLogin", { value: loginForm });
     } else if (this.viewMode == VIEW_MODES.EDIT) {
-      if (!this.#hasPendingChange(loginForm)) {
+      if (!this.#hasPendingEditChange(loginForm)) {
         this.viewMode = VIEW_MODES.LIST;
         return;
       }
@@ -241,12 +266,7 @@ export class MegalistAlpha extends MozLitElement {
   }
 
   receiveSetDisplayMode(displayMode) {
-    if (this.displayMode !== displayMode) {
-      this.displayMode = displayMode;
-      const radioBtnId =
-        displayMode === DISPLAY_MODES.ALL ? "allLogins" : "alerts";
-      this.shadowRoot.querySelector(`#${radioBtnId}`).checked = true;
-    }
+    this.displayMode = displayMode;
   }
 
   receiveReauthResponse(isAuthorized) {
@@ -293,16 +313,18 @@ export class MegalistAlpha extends MozLitElement {
   #onSidebarWillHide(e) {
     // Prevent hiding the sidebar if a password is being edited and show a
     // message asking to confirm if the user wants to discard their changes.
-    const shouldShowDiscardChangesPrompt =
-      this.viewMode === VIEW_MODES.EDIT &&
-      (!this.notification || this.notification?.id === "discard-changes") &&
-      !this.notification?.fromSidebar;
+    if (this.viewMode != VIEW_MODES.EDIT) {
+      return;
+    }
 
-    if (shouldShowDiscardChangesPrompt) {
-      const passwordIndex = this.selectedRecord.password.lineIndex;
-      this.#sendCommand("DiscardChanges", {
-        value: { fromSidebar: true, passwordIndex },
-      });
+    const loginForm = this.shadowRoot.querySelector("login-form");
+    const loginFromForm = {
+      origin: loginForm.originValue || loginForm.originField.input.value,
+      username: loginForm.usernameField.input.value.trim(),
+      password: loginForm.passwordField.value,
+    };
+    if (this.#hasPendingEditChange(loginFromForm)) {
+      this.#sendCommand("DiscardChanges");
       e.preventDefault();
     }
   }
@@ -401,6 +423,14 @@ export class MegalistAlpha extends MozLitElement {
       this.viewMode = VIEW_MODES.EDIT;
     };
 
+    const getIconSrc = () => {
+      return document.dir === "rtl"
+        ? // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+          "chrome://browser/skin/forward.svg"
+        : // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+          "chrome://browser/skin/back.svg";
+    };
+
     return html`
       <moz-card
         class="alert-card"
@@ -408,7 +438,7 @@ export class MegalistAlpha extends MozLitElement {
       >
         <moz-button
           type="icon ghost"
-          iconSrc="chrome://browser/skin/back.svg"
+          iconSrc=${getIconSrc()}
           data-l10n-id="contextual-manager-passwords-alert-back-button"
           @click=${() => (this.viewMode = VIEW_MODES.LIST)}
         >
@@ -516,14 +546,14 @@ export class MegalistAlpha extends MozLitElement {
     </moz-card>`;
   }
 
-  renderLastRow() {
+  renderContent() {
     switch (this.viewMode) {
       case VIEW_MODES.LIST:
         return this.renderList();
       case VIEW_MODES.ADD:
         return html` <login-form
           .onClose=${() => this.#onCancelLoginForm()}
-          .onSaveClick=${loginForm => this.#onSaveLoginForm(loginForm)}
+          .onSaveClick=${loginFromForm => this.#onSaveLoginForm(loginFromForm)}
         >
         </login-form>`;
       case VIEW_MODES.EDIT:
@@ -538,8 +568,8 @@ export class MegalistAlpha extends MozLitElement {
               this.selectedRecord.password.concealed,
               this.selectedRecord.password.lineIndex
             )}
-          .onClose=${loginForm => this.#onCancelLoginForm(loginForm)}
-          .onSaveClick=${loginForm => this.#onSaveLoginForm(loginForm)}
+          .onClose=${loginFromForm => this.#onCancelLoginForm(loginFromForm)}
+          .onSaveClick=${loginFromForm => this.#onSaveLoginForm(loginFromForm)}
           .onDeleteClick=${() => {
             const login = {
               origin: this.selectedRecord.origin,
@@ -585,12 +615,6 @@ export class MegalistAlpha extends MozLitElement {
     `;
   }
 
-  renderFirstRow() {
-    return html`<div class="first-row">
-      ${this.renderSearch()} ${this.renderMenu()}
-    </div>`;
-  }
-
   renderRadioButtons() {
     return html`
       <div
@@ -599,7 +623,7 @@ export class MegalistAlpha extends MozLitElement {
       >
         <input
           @change=${this.#onRadioButtonChange}
-          checked
+          .checked=${this.displayMode === DISPLAY_MODES.ALL}
           type="radio"
           id="allLogins"
           name="logins"
@@ -613,6 +637,7 @@ export class MegalistAlpha extends MozLitElement {
 
         <input
           @change=${this.#onRadioButtonChange}
+          .checked=${this.displayMode === DISPLAY_MODES.ALERTS}
           type="radio"
           id="alerts"
           name="logins"
@@ -631,6 +656,9 @@ export class MegalistAlpha extends MozLitElement {
     return html`
       <moz-button
         @click=${this.#openMenu}
+        @mousedown=${e => {
+          e.stopPropagation();
+        }}
         type="icon ghost"
         iconSrc="chrome://global/skin/icons/more.svg"
         aria-expanded="false"
@@ -709,12 +737,13 @@ export class MegalistAlpha extends MozLitElement {
     `;
   }
 
-  renderSecondRow() {
-    if (!this.header) {
-      return "";
-    }
-
-    return html`<div class="second-row">${this.renderRadioButtons()}</div>`;
+  renderToolbar() {
+    return html`
+      <div class="first-row">${this.renderSearch()} ${this.renderMenu()}</div>
+      ${this.header
+        ? html` <div class="second-row">${this.renderRadioButtons()}</div> `
+        : ""}
+    `;
   }
 
   async #scrollPasswordCardIntoView(guid) {
@@ -750,6 +779,10 @@ export class MegalistAlpha extends MozLitElement {
   }
 
   render() {
+    const showToolbar =
+      this.viewMode === VIEW_MODES.ALERTS ||
+      (this.viewMode === VIEW_MODES.LIST && this.header?.value?.total > 0);
+
     return html`
       <link
         rel="stylesheet"
@@ -761,8 +794,8 @@ export class MegalistAlpha extends MozLitElement {
           data-l10n-attrs="heading"
           view="viewCPMSidebar"
         ></sidebar-panel-header>
-        ${this.renderFirstRow()} ${this.renderSecondRow()}
-        ${this.renderNotification()} ${this.renderLastRow()}
+        ${when(showToolbar, () => html` ${this.renderToolbar()} `)}
+        ${this.renderNotification()} ${this.renderContent()}
       </div>
     `;
   }

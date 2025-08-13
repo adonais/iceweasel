@@ -2152,6 +2152,15 @@ void CSPReportRedirectSink::SetInterceptController(
 
 NS_IMETHODIMP
 nsCSPContext::Read(nsIObjectInputStream* aStream) {
+  return ReadImpl(aStream, false);
+}
+
+nsresult nsCSPContext::PolicyContainerRead(nsIObjectInputStream* aInputStream) {
+  return ReadImpl(aInputStream, true);
+}
+
+nsresult nsCSPContext::ReadImpl(nsIObjectInputStream* aStream,
+                                bool aForPolicyContainer) {
   CSPCONTEXTLOG(("nsCSPContext::Read"));
 
   nsresult rv;
@@ -2179,29 +2188,57 @@ nsCSPContext::Read(nsIObjectInputStream* aStream) {
     return NS_OK;
   }
 
+  if (aForPolicyContainer) {
+    return TryReadPolicies(PolicyDataVersion::Post136, aStream, numPolicies,
+                           true);
+  }
+
   // Note: This assume that there is no other data following the CSP!
   // E10SUtils.deserializeCSP is the only user of this logic.
   nsTArray<uint8_t> data;
   rv = NS_ConsumeStream(aStream, UINT32_MAX, data);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  auto createStreamFromData =
+      [&data]() -> already_AddRefed<nsIObjectInputStream> {
+    nsCOMPtr<nsIInputStream> binaryStream;
+    nsresult rv = NS_NewByteInputStream(
+        getter_AddRefs(binaryStream),
+        Span(reinterpret_cast<const char*>(data.Elements()), data.Length()),
+        NS_ASSIGNMENT_DEPEND);
+    NS_ENSURE_SUCCESS(rv, nullptr);
+
+    nsCOMPtr<nsIObjectInputStream> stream =
+        NS_NewObjectInputStream(binaryStream);
+
+    return stream.forget();
+  };
+
   // Because of accidental backwards incompatible changes we have to try and
   // parse multiple different versions of the CSP data. Starting with the
   // current data format.
-  if (NS_SUCCEEDED(TryReadPolicies(PolicyDataVersion::Post136, Span(data),
-                                   numPolicies))) {
+
+  nsCOMPtr<nsIObjectInputStream> stream = createStreamFromData();
+  NS_ENSURE_TRUE(stream, NS_ERROR_FAILURE);
+
+  if (NS_SUCCEEDED(TryReadPolicies(PolicyDataVersion::Post136, stream,
+                                   numPolicies, false))) {
     CSPCONTEXTLOG(("nsCSPContext::Read: Data was in version ::Post136."));
     return NS_OK;
   }
 
-  if (NS_SUCCEEDED(TryReadPolicies(PolicyDataVersion::Pre136, Span(data),
-                                   numPolicies))) {
+  stream = createStreamFromData();
+  NS_ENSURE_TRUE(stream, NS_ERROR_FAILURE);
+  if (NS_SUCCEEDED(TryReadPolicies(PolicyDataVersion::Pre136, stream,
+                                   numPolicies, false))) {
     CSPCONTEXTLOG(("nsCSPContext::Read: Data was in version ::Pre136."));
     return NS_OK;
   }
 
-  if (NS_SUCCEEDED(TryReadPolicies(PolicyDataVersion::V138_9PreRelease,
-                                   Span(data), numPolicies))) {
+  stream = createStreamFromData();
+  NS_ENSURE_TRUE(stream, NS_ERROR_FAILURE);
+  if (NS_SUCCEEDED(TryReadPolicies(PolicyDataVersion::V138_9PreRelease, stream,
+                                   numPolicies, false))) {
     CSPCONTEXTLOG(
         ("nsCSPContext::Read: Data was in version ::V138_9PreRelease."));
     return NS_OK;
@@ -2212,21 +2249,13 @@ nsCSPContext::Read(nsIObjectInputStream* aStream) {
 }
 
 nsresult nsCSPContext::TryReadPolicies(PolicyDataVersion aVersion,
-                                       Span<const uint8_t> aData,
-                                       uint32_t aNumPolicies) {
-  nsCOMPtr<nsIInputStream> binaryStream;
-  nsresult rv = NS_NewByteInputStream(
-      getter_AddRefs(binaryStream),
-      Span(reinterpret_cast<const char*>(aData.Elements()), aData.Length()),
-      NS_ASSIGNMENT_DEPEND);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<nsIObjectInputStream> stream = NS_NewObjectInputStream(binaryStream);
-
+                                       nsIObjectInputStream* aStream,
+                                       uint32_t aNumPolicies,
+                                       bool aForPolicyContainer) {
   // Like ReadBoolean, but ensures the byte is actually 0 or 1.
-  auto ReadBooleanSafe = [stream](bool* aBoolean) {
+  auto ReadBooleanSafe = [aStream](bool* aBoolean) {
     uint8_t raw = 0;
-    nsresult rv = stream->Read8(&raw);
+    nsresult rv = aStream->Read8(&raw);
     NS_ENSURE_SUCCESS(rv, rv);
     if (!(raw == 0 || raw == 1)) {
       CSPCONTEXTLOG(("nsCSPContext::TryReadPolicies: Bad boolean value"));
@@ -2242,7 +2271,7 @@ nsresult nsCSPContext::TryReadPolicies(PolicyDataVersion aVersion,
   while (aNumPolicies > 0) {
     aNumPolicies--;
 
-    rv = stream->ReadString(policyString);
+    nsresult rv = aStream->ReadString(policyString);
     NS_ENSURE_SUCCESS(rv, rv);
 
     // nsCSPParser::policy removed all non-ASCII tokens while parsing the CSP
@@ -2276,7 +2305,7 @@ nsresult nsCSPContext::TryReadPolicies(PolicyDataVersion aVersion,
       // This was added in bug 1942306, but wasn't really necessary.
       // Removed again in bug 1958259.
       uint32_t numExpressions;
-      rv = stream->Read32(&numExpressions);
+      rv = aStream->Read32(&numExpressions);
       NS_ENSURE_SUCCESS(rv, rv);
       // We assume that because Trusted Types was disabled by default
       // that no "trusted type expressions" were written during that time.
@@ -2290,12 +2319,15 @@ nsresult nsCSPContext::TryReadPolicies(PolicyDataVersion aVersion,
                               hasRequireTrustedTypesForDirective));
   }
 
-  // Make sure all data was consumed.
-  uint64_t available = 0;
-  rv = stream->Available(&available);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (available) {
-    return NS_ERROR_FAILURE;
+  // PolicyContainer may contain extra stuff.
+  if (!aForPolicyContainer) {
+    // Make sure all data was consumed.
+    uint64_t available = 0;
+    nsresult rv = aStream->Available(&available);
+    NS_ENSURE_SUCCESS(rv, rv);
+    if (available) {
+      return NS_ERROR_FAILURE;
+    }
   }
 
   // Success! Add the policies now.

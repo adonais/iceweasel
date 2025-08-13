@@ -411,7 +411,7 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
         else:
             cmd += ["--binary=%s" % self.binary_path, "--product=firefox"]
 
-        cmd += ["--install-fonts"]
+        cmd += ["--no-install-fonts"]
 
         for test_type in test_types:
             cmd.append("--test-type=%s" % test_type)

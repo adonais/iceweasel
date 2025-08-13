@@ -24,7 +24,7 @@ pub unsafe extern "C" fn get_attribute_ptr(
     index: u32,
     ret: *mut *const SdpAttribute,
 ) -> nsresult {
-    match (*session).attribute.get(index as usize) {
+    match (&(*session).attribute).get(index as usize) {
         Some(attribute) => {
             *ret = attribute as *const SdpAttribute;
             NS_OK

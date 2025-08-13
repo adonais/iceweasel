@@ -10,34 +10,34 @@
 
 #include <algorithm>
 
+#include "SelectionMovementUtils.h"
 #include "gfxUtils.h"
 #include "mozilla/CaretAssociationHint.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/intl/BidiEmbeddingLevel.h"
-#include "mozilla/ScrollContainerFrame.h"
-#include "mozilla/StaticPrefs_bidi.h"
-#include "nsCOMPtr.h"
-#include "nsFontMetrics.h"
-#include "nsITimer.h"
-#include "nsFrameSelection.h"
-#include "nsIFrame.h"
-#include "nsIContent.h"
-#include "nsIFrameInlines.h"
-#include "nsLayoutUtils.h"
-#include "nsPresContext.h"
-#include "nsBlockFrame.h"
-#include "nsISelectionController.h"
-#include "nsTextFrame.h"
-#include "nsXULPopupManager.h"
-#include "nsMenuPopupFrame.h"
-#include "nsTextFragment.h"
+#include "mozilla/LookAndFeel.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/LookAndFeel.h"
+#include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/StaticPrefs_bidi.h"
 #include "mozilla/dom/Selection.h"
-#include "nsIBidiKeyboard.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/intl/BidiEmbeddingLevel.h"
+#include "nsBlockFrame.h"
+#include "nsCOMPtr.h"
 #include "nsContentUtils.h"
-#include "SelectionMovementUtils.h"
+#include "nsFontMetrics.h"
+#include "nsFrameSelection.h"
+#include "nsIBidiKeyboard.h"
+#include "nsIContent.h"
+#include "nsIFrame.h"
+#include "nsIFrameInlines.h"
+#include "nsISelectionController.h"
+#include "nsITimer.h"
+#include "nsLayoutUtils.h"
+#include "nsMenuPopupFrame.h"
+#include "nsPresContext.h"
+#include "nsTextFragment.h"
+#include "nsTextFrame.h"
+#include "nsXULPopupManager.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -605,7 +605,7 @@ void nsCaret::ResetBlinking() {
   // blinking too often. 50 is not likely to be user observable in practice,
   // it's ~4 animation frames at 60fps.
   static const auto kBlinkTimerSlack = TimeDuration::FromMilliseconds(50);
-
+  const bool wasBlinkOn = mIsBlinkOn;
   mIsBlinkOn = true;
 
   if (mReadOnly || !IsVisible()) {
@@ -618,6 +618,10 @@ void nsCaret::ResetBlinking() {
   if (mBlinkTime <= 0) {
     StopBlinking();
     return;
+  }
+
+  if (!wasBlinkOn) {
+    SchedulePaint();
   }
 
   mBlinkCount = LookAndFeel::CaretBlinkCount();

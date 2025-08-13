@@ -9,12 +9,13 @@
 #ifndef nsGenConList_h___
 #define nsGenConList_h___
 
+#include <functional>
+
 #include "mozilla/FunctionRef.h"
 #include "mozilla/LinkedList.h"
-#include "nsStyleStruct.h"
 #include "nsCSSPseudoElements.h"
+#include "nsStyleStruct.h"
 #include "nsTextNode.h"
-#include <functional>
 
 class nsGenConList;
 class nsIFrame;

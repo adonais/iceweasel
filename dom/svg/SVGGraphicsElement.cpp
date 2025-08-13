@@ -39,14 +39,6 @@ SVGGraphicsElement::SVGGraphicsElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
     : SVGGraphicsElementBase(std::move(aNodeInfo)) {}
 
-SVGElement* SVGGraphicsElement::GetNearestViewportElement() {
-  return SVGContentUtils::GetNearestViewportElement(this);
-}
-
-SVGElement* SVGGraphicsElement::GetFarthestViewportElement() {
-  return SVGContentUtils::GetOuterSVGElement(this);
-}
-
 static already_AddRefed<SVGRect> ZeroBBox(SVGGraphicsElement& aOwner) {
   return MakeAndAddRef<SVGRect>(&aOwner, gfx::Rect{0, 0, 0, 0});
 }

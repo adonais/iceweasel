@@ -14,9 +14,12 @@ from packaging.version import Version
 
 from mozbuild.util import memoize
 
-STDCXX_MAX_VERSION = Version("3.4.19")
-CXXABI_MAX_VERSION = Version("1.3.7")
-GLIBC_MAX_VERSION = Version("2.17")
+IS_ARM64 = buildconfig.substs.get("TARGET_CPU") == "aarch64"
+# libstdc++ 4.8.1 of higher (6.0 or higher on arm64)
+STDCXX_MAX_VERSION = Version("3.4.22" if IS_ARM64 else "3.4.19")
+CXXABI_MAX_VERSION = Version("1.3.10" if IS_ARM64 else "1.3.7")
+# glibc 2.17 or higher (2.28 or higher on arm64)
+GLIBC_MAX_VERSION = Version("2.28" if IS_ARM64 else "2.17")
 LIBGCC_MAX_VERSION = Version("4.8")
 
 PLATFORM = buildconfig.substs["OS_TARGET"]

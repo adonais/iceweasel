@@ -53,7 +53,6 @@ skip-if = ["true"] # browser_bug321000.js is disabled because newline handling i
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_bug356571.js"]
-skip-if = ["verify && !debug && os == 'win'"]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_bug380960.js"]
@@ -64,9 +63,8 @@ skip-if = ["verify && !debug && os == 'win'"]
 
 ["browser_bug417483.js"]
 skip-if = [
-  "verify && debug && os == 'mac'",
   "os == 'mac'",
-  "os == 'linux'", #Bug 1444703
+  "os == 'linux'", # Bug 1444703
 ]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
@@ -152,7 +150,6 @@ https_first_disabled = true
 
 ["browser_bug579872.js"]
 skip-if = [
-  "verify && debug && os == 'linux'",
   "os == 'mac'",
   "os == 'linux' && !debug",
 ] #Bug 1448915
@@ -168,7 +165,6 @@ skip-if = [
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_bug594131.js"]
-skip-if = ["verify && debug && os == 'linux'"]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_bug596687.js"]
@@ -206,7 +202,6 @@ support-files = [
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_bug734076.js"]
-skip-if = ["verify && debug && os == 'linux'"]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_bug749738.js"]
@@ -259,11 +254,9 @@ skip-if = ["true"] # Clicks in content don't go through contentAreaClick.
 
 ["browser_datachoices_notification.js"]
 run-if = ["datareporting"]
-skip-if = ["verify && !debug && os == 'win'"]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_documentnavigation.js"]
-skip-if = ["verify && !debug && os == 'linux'"]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_domFullscreen_fullscreenMode.js"]
@@ -307,9 +300,7 @@ skip-if = ["os == 'mac' && os_version == '10.15' && processor == 'x86_64' && soc
 
 ["browser_menuButtonFitts.js"]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1968565
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'"] # Bug 1968565
 
 ["browser_middleMouse_noJSPaste.js"]
 https_first_disabled = true
@@ -379,10 +370,7 @@ support-files = ["test_remoteTroubleshoot.html"]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_save_link-perwindowpb.js"]
-skip-if = [
-  "debug && os == 'win'",
-  "verify", # Bug 1280505
-]
+skip-if = ["debug && os == 'win'"]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_save_link_when_window_navigates.js"]
@@ -394,9 +382,8 @@ skip-if = [
 ["browser_save_video.js"]
 skip-if = [
   "os == 'mac'",
- "verify && os == 'mac'",
- "os == 'win' && debug",
- "os =='linux'", #Bug 1212419
+  "os == 'win' && debug",
+  "os =='linux'", # Bug 1212419
 ]
 support-files = [
   "web_video.html",
@@ -417,7 +404,6 @@ support-files = [
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_storagePressure_notification.js"]
-skip-if = ["verify"]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_typeAheadFind.js"]
@@ -434,10 +420,7 @@ skip-if = ["true"] # Bug 1409184 disabled because interactive find next is not a
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 
 ["browser_windowactivation.js"]
-skip-if = [
-  "verify",
-  "os == 'linux' && debug", # Bug 1678774
-]
+skip-if = ["os == 'linux' && debug"] # Bug 1678774
 support-files = [
   "file_window_activation.html",
   "file_window_activation2.html",

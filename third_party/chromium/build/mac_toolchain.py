@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# Copyright 2018 The Chromium Authors. All rights reserved.
+# Copyright 2018 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -18,11 +18,8 @@ The toolchain version can be overridden by setting MAC_TOOLCHAIN_REVISION with
 the full revision, e.g. 9A235.
 """
 
-from __future__ import print_function
-
 import argparse
 import os
-import pkg_resources
 import platform
 import plistlib
 import shutil
@@ -32,20 +29,27 @@ import sys
 
 def LoadPList(path):
   """Loads Plist at |path| and returns it as a dictionary."""
-  if sys.version_info.major == 2:
-    return plistlib.readPlist(path)
   with open(path, 'rb') as f:
     return plistlib.load(f)
 
 
-# This contains binaries from Xcode 12.5 12E262, along with the macOS 11 SDK.
-# To build these packages, see comments in build/xcode_binaries.yaml
+# This contains binaries from Xcode 16.2 (16C5032) along with
+# the macOS SDK 15.2 (24C94). To build these packages, see comments in
+# build/xcode_binaries.yaml.
+# To update the version numbers, open Xcode's "About Xcode" or run
+# `xcodebuild -version` for the Xcode version, and run
+# `xcrun --show-sdk-version` and `xcrun --show-sdk-build-version`for
+# the SDK version. To update the _TAG, use the output of the
+# `cipd create` command mentioned in xcode_binaries.yaml;
+# it's the part after the colon.
+
 MAC_BINARIES_LABEL = 'infra_internal/ios/xcode/xcode_binaries/mac-amd64'
-MAC_BINARIES_TAG = 'pBipKbKSkYGXpuOBm4-8zuvfIGeFtpGbQ4IHM9YW0xMC'
+MAC_BINARIES_TAG = 'o5KxJtacGXzkEoORkVUIOEPgGnL2okJzM4Km91eod9EC'
 
 # The toolchain will not be downloaded if the minimum OS version is not met. 19
-# is the major version number for macOS 10.15. 12B5044c (Xcode 12.2rc) only runs
-# on 10.15.4 and newer.
+# is the major version number for macOS 10.15. Xcode 15.0 only runs on macOS
+# 13.5 and newer, but some bots are still running older OS versions. macOS
+# 10.15.4, the OS minimum through Xcode 12.4, still seems to work.
 MAC_MINIMUM_OS_VERSION = [19, 4]
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -153,19 +157,18 @@ def InstallXcodeBinaries():
     current_license_plist = LoadPList(current_license_path)
     xcode_version = current_license_plist.get(
         'IDEXcodeVersionForAgreedToGMLicense')
-    if (xcode_version is not None and pkg_resources.parse_version(xcode_version)
-        >= pkg_resources.parse_version(cipd_xcode_version)):
+    if (xcode_version is not None
+        and xcode_version.split('.') >= cipd_xcode_version.split('.')):
       should_overwrite_license = False
 
   if not should_overwrite_license:
     return 0
 
   # Use puppet's sudoers script to accept the license if its available.
-  license_accept_script = '/usr/local/bin/xcode_accept_license.py'
+  license_accept_script = '/usr/local/bin/xcode_accept_license.sh'
   if os.path.exists(license_accept_script):
     args = [
-        'sudo', license_accept_script, '--xcode-version', cipd_xcode_version,
-        '--license-version', cipd_license_version
+        'sudo', license_accept_script, cipd_xcode_version, cipd_license_version
     ]
     subprocess.check_call(args)
     return 0

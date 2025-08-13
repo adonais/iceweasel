@@ -499,6 +499,9 @@ newtab-topic-selection-button-pick-interests = 选择您感兴趣的主题
 newtab-section-follow-button = 关注
 newtab-section-following-button = 正在关注
 newtab-section-unfollow-button = 取消关注
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = 优化推荐内容
+newtab-section-follow-highlight-subtitle = 随心所好，悦见更多。
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -541,6 +544,11 @@ newtab-download-mobile-highlight-body-variant-c = 您还可以将 { -brand-produ
 newtab-download-mobile-highlight-image =
     .aria-label = 移动版 { -brand-product-name } 的下载二维码
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = 顺手就能打开常用网站
+newtab-shortcuts-highlight-subtitle = 添加快捷方式，一键打开常用网站。
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -574,3 +582,5 @@ newtab-trending-searches-hide-trending =
     .title = 隐藏热门搜索
 newtab-trending-searches-learn-more = 详细了解
 newtab-trending-searches-dismiss = 隐藏热门搜索
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = 热门搜索

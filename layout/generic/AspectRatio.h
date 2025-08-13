@@ -9,11 +9,12 @@
 
 /* The aspect ratio of a box, in a "width / height" format. */
 
+#include <algorithm>
+#include <limits>
+
 #include "mozilla/Attributes.h"
 #include "mozilla/gfx/BaseSize.h"
 #include "nsCoord.h"
-#include <algorithm>
-#include <limits>
 
 namespace IPC {
 template <typename T>

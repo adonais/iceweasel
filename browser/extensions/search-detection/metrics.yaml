@@ -65,3 +65,30 @@ addons.search_detection:
     telemetry_mirror: Addonssearchdetection_EtldChange_Other
     no_lint:
       - COMMON_PREFIX
+
+  same_site_redirect:
+    type: event
+    description: |
+      Recorded when a request for a search query is redirected
+      within the same eTLD site via the `webRequest` API.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972849
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972849
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    extra_keys:
+      addonId:
+        description: The id of the addon
+        type: string
+      addonVersion:
+        description: The version of the addon
+        type: string
+      paramChanged:
+        description: Whether the paramName was changed in the redirect.
+        type: string
+    expires: never
+    no_lint:
+      - COMMON_PREFIX

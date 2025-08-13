@@ -4,6 +4,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_security.h"
@@ -181,7 +182,10 @@ static bool SubjectToCSP(nsILoadInfo* aLoadInfo, nsIURI* aURI,
   // the csp should be overruled (e.g. by an ExpandedPrincipal)
   // then loadinfo->GetCsp() returns that CSP instead of the
   // document's CSP.
-  nsCOMPtr<nsIContentSecurityPolicy> csp = aLoadInfo->GetCsp();
+  nsCOMPtr<nsIPolicyContainer> policyContainer =
+      aLoadInfo->GetPolicyContainer();
+  nsCOMPtr<nsIContentSecurityPolicy> csp =
+      PolicyContainer::GetCSP(policyContainer);
 
   if (csp) {
     // Generally aOriginalURI denotes the URI before a redirect and hence
@@ -374,7 +378,10 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
   }
 
   // 2) Apply actual CSP to all loads
-  nsCOMPtr<nsIContentSecurityPolicy> csp = aLoadInfo->GetCsp();
+  nsCOMPtr<nsIPolicyContainer> policyContainer =
+      aLoadInfo->GetPolicyContainer();
+  nsCOMPtr<nsIContentSecurityPolicy> csp =
+      PolicyContainer::GetCSP(policyContainer);
   if (csp) {
     // Pass  originalURI to indicate the redirect
     csp->ShouldLoad(policyType,  // load type per nsIContentPolicy (uint32_t)

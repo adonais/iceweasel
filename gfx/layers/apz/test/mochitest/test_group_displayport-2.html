@@ -1,0 +1,40 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Tests for DisplayPorts (involving http server)</title>
+    <script src="/tests/SimpleTest/SimpleTest.js"></script>
+    <script type="application/javascript" src="apz_test_native_event_utils.js"></script>
+    <script type="application/javascript" src="apz_test_utils.js"></script>
+    <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
+    <script type="application/javascript">
+
+    let subtests = [
+        { "file": "helper_displayport_suppression_during_page_load.html",
+          "prefs": [["apz.test.logging_enabled", true],
+                    ["apz.wr.activate_all_scroll_frames", true],
+          ]},
+    ];
+
+    if (getPlatform() != "android") {
+        // Native wheel is not supported on Android.
+        subtests.push(
+            { "file": "helper_displayport_suppression_stop_by_wheel_scroll.html",
+              "prefs": [["apz.test.logging_enabled", true],
+                        ["apz.wr.activate_all_scroll_frames", true],
+          ]},
+        );
+    }
+
+    if (isApzEnabled()) {
+        SimpleTest.waitForExplicitFinish();
+        window.onload = function() {
+            runSubtestsSeriallyInFreshWindows(subtests)
+                .then(SimpleTest.finish, SimpleTest.finishWithFailure);
+        };
+    }
+    </script>
+</head>
+<body>
+</body>
+</html>

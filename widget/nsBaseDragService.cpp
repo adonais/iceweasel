@@ -239,14 +239,14 @@ nsBaseDragSession::SetTriggeringPrincipal(nsIPrincipal* aPrincipal) {
 }
 
 NS_IMETHODIMP
-nsBaseDragSession::GetCsp(nsIContentSecurityPolicy** aCsp) {
-  NS_IF_ADDREF(*aCsp = mCsp);
+nsBaseDragSession::GetPolicyContainer(nsIPolicyContainer** aPolicyContainer) {
+  NS_IF_ADDREF(*aPolicyContainer = mPolicyContainer);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsBaseDragSession::SetCsp(nsIContentSecurityPolicy* aCsp) {
-  mCsp = aCsp;
+nsBaseDragSession::SetPolicyContainer(nsIPolicyContainer* aPolicyContainer) {
+  mPolicyContainer = aPolicyContainer;
   return NS_OK;
 }
 
@@ -325,15 +325,16 @@ NS_IMETHODIMP nsBaseDragSession::SetDragEndPointForTests(float aScreenX,
 //-------------------------------------------------------------------------
 nsresult nsBaseDragSession::InvokeDragSession(
     nsIWidget* aWidget, nsINode* aDOMNode, nsIPrincipal* aPrincipal,
-    nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings,
-    nsIArray* aTransferableArray, uint32_t aActionType,
-    nsContentPolicyType aContentPolicyType) {
+    nsIPolicyContainer* aPolicyContainer,
+    nsICookieJarSettings* aCookieJarSettings, nsIArray* aTransferableArray,
+    uint32_t aActionType, nsContentPolicyType aContentPolicyType) {
   AUTO_PROFILER_LABEL("nsBaseDragService::InvokeDragSession", OTHER);
   LOGD(
-      "[%p] %s | aWidget: %p | aDOMNode: %p | aPrincipal: %p | aCsp: %p | "
+      "[%p] %s | aWidget: %p | aDOMNode: %p | aPrincipal: %p | "
+      "aPolicyContainer: %p | "
       "aCookieJarSettings: %p | aTransferableArray: %p | aActiontype: %u | "
       "aContentPolicyType: %u",
-      this, __FUNCTION__, aWidget, aDOMNode, aPrincipal, aCsp,
+      this, __FUNCTION__, aWidget, aDOMNode, aPrincipal, aPolicyContainer,
       aCookieJarSettings, aTransferableArray, aActionType, aContentPolicyType);
 
   NS_ENSURE_TRUE(aDOMNode, NS_ERROR_INVALID_ARG);
@@ -341,7 +342,7 @@ nsresult nsBaseDragSession::InvokeDragSession(
   // stash the document of the dom node
   mSourceDocument = aDOMNode->OwnerDoc();
   mTriggeringPrincipal = aPrincipal;
-  mCsp = aCsp;
+  mPolicyContainer = aPolicyContainer;
   mSourceNode = aDOMNode;
   mIsDraggingTextInTextControl =
       mSourceNode->IsInNativeAnonymousSubtree() &&
@@ -410,6 +411,25 @@ nsresult nsBaseDragSession::InvokeDragSession(
     }
   }
 
+  if (MOZ_DRAGSERVICE_LOG_ENABLED()) {
+    uint32_t len = 0;
+    aTransferableArray->GetLength(&len);
+    LOGD("[%p] %s | num of nsITransferable: %d", this, __FUNCTION__, len);
+
+    for (uint32_t i = 0; i < len; ++i) {
+      LOGD("    nsITransferable %d:", i);
+
+      if (nsCOMPtr<nsITransferable> trans =
+              do_QueryElementAt(aTransferableArray, i)) {
+        nsTArray<nsCString> flavors;
+        trans->FlavorsTransferableCanExport(flavors);
+        for (const auto& flavor : flavors) {
+          LOGD("        MIME %s", flavor.get());
+        }
+      }
+    }
+  }
+
   nsresult rv =
       InvokeDragSessionImpl(aWidget, aTransferableArray, mRegion, aActionType);
 
@@ -429,7 +449,8 @@ nsresult nsBaseDragSession::InvokeDragSession(
 
 NS_IMETHODIMP
 nsBaseDragService::InvokeDragSessionWithImage(
-    nsINode* aDOMNode, nsIPrincipal* aPrincipal, nsIContentSecurityPolicy* aCsp,
+    nsINode* aDOMNode, nsIPrincipal* aPrincipal,
+    nsIPolicyContainer* aPolicyContainer,
     nsICookieJarSettings* aCookieJarSettings, nsIArray* aTransferableArray,
     uint32_t aActionType, nsINode* aImage, int32_t aImageX, int32_t aImageY,
     DragEvent* aDragEvent, DataTransfer* aDataTransfer) {
@@ -451,7 +472,7 @@ nsBaseDragService::InvokeDragSessionWithImage(
   bool isSynthesized =
       aDragEvent->WidgetEventPtr()->mFlags.mIsSynthesizedForTests &&
       !GetNeverAllowSessionIsSynthesizedForTests();
-  return session->InitWithImage(widget, aDOMNode, aPrincipal, aCsp,
+  return session->InitWithImage(widget, aDOMNode, aPrincipal, aPolicyContainer,
                                 aCookieJarSettings, aTransferableArray,
                                 aActionType, aImage, aImageX, aImageY,
                                 aDragEvent, aDataTransfer, isSynthesized);
@@ -459,10 +480,11 @@ nsBaseDragService::InvokeDragSessionWithImage(
 
 nsresult nsBaseDragSession::InitWithImage(
     nsIWidget* aWidget, nsINode* aDOMNode, nsIPrincipal* aPrincipal,
-    nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings,
-    nsIArray* aTransferableArray, uint32_t aActionType, nsINode* aImage,
-    int32_t aImageX, int32_t aImageY, DragEvent* aDragEvent,
-    DataTransfer* aDataTransfer, bool aIsSynthesizedForTests) {
+    nsIPolicyContainer* aPolicyContainer,
+    nsICookieJarSettings* aCookieJarSettings, nsIArray* aTransferableArray,
+    uint32_t aActionType, nsINode* aImage, int32_t aImageX, int32_t aImageY,
+    DragEvent* aDragEvent, DataTransfer* aDataTransfer,
+    bool aIsSynthesizedForTests) {
   mSessionIsSynthesizedForTests = aIsSynthesizedForTests;
   mDataTransfer = aDataTransfer;
   mSelection = nullptr;
@@ -497,7 +519,7 @@ nsresult nsBaseDragSession::InitWithImage(
   }
 
   nsresult rv = InvokeDragSession(
-      aWidget, aDOMNode, aPrincipal, aCsp, aCookieJarSettings,
+      aWidget, aDOMNode, aPrincipal, aPolicyContainer, aCookieJarSettings,
       aTransferableArray, aActionType, nsIContentPolicy::TYPE_INTERNAL_IMAGE);
   mRegion = Nothing();
   return rv;
@@ -505,7 +527,8 @@ nsresult nsBaseDragSession::InitWithImage(
 
 NS_IMETHODIMP
 nsBaseDragService::InvokeDragSessionWithRemoteImage(
-    nsINode* aDOMNode, nsIPrincipal* aPrincipal, nsIContentSecurityPolicy* aCsp,
+    nsINode* aDOMNode, nsIPrincipal* aPrincipal,
+    nsIPolicyContainer* aPolicyContainer,
     nsICookieJarSettings* aCookieJarSettings, nsIArray* aTransferableArray,
     uint32_t aActionType, RemoteDragStartData* aDragStartData,
     DragEvent* aDragEvent, DataTransfer* aDataTransfer) {
@@ -527,18 +550,19 @@ nsBaseDragService::InvokeDragSessionWithRemoteImage(
   bool isSynthesized =
       aDragEvent->WidgetEventPtr()->mFlags.mIsSynthesizedForTests &&
       !GetNeverAllowSessionIsSynthesizedForTests();
-  return session->InitWithRemoteImage(widget, aDOMNode, aPrincipal, aCsp,
-                                      aCookieJarSettings, aTransferableArray,
-                                      aActionType, aDragStartData, aDragEvent,
-                                      aDataTransfer, isSynthesized);
+  return session->InitWithRemoteImage(
+      widget, aDOMNode, aPrincipal, aPolicyContainer, aCookieJarSettings,
+      aTransferableArray, aActionType, aDragStartData, aDragEvent,
+      aDataTransfer, isSynthesized);
 }
 
 nsresult nsBaseDragSession::InitWithRemoteImage(
     nsIWidget* aWidget, nsINode* aDOMNode, nsIPrincipal* aPrincipal,
-    nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings,
-    nsIArray* aTransferableArray, uint32_t aActionType,
-    RemoteDragStartData* aDragStartData, DragEvent* aDragEvent,
-    DataTransfer* aDataTransfer, bool aIsSynthesizedForTests) {
+    nsIPolicyContainer* aPolicyContainer,
+    nsICookieJarSettings* aCookieJarSettings, nsIArray* aTransferableArray,
+    uint32_t aActionType, RemoteDragStartData* aDragStartData,
+    DragEvent* aDragEvent, DataTransfer* aDataTransfer,
+    bool aIsSynthesizedForTests) {
   mSessionIsSynthesizedForTests = aIsSynthesizedForTests;
   mDataTransfer = aDataTransfer;
   mSelection = nullptr;
@@ -554,7 +578,7 @@ nsresult nsBaseDragSession::InitWithRemoteImage(
   mInputSource = aDragEvent->InputSource(CallerType::System);
 
   nsresult rv = InvokeDragSession(
-      aWidget, aDOMNode, aPrincipal, aCsp, aCookieJarSettings,
+      aWidget, aDOMNode, aPrincipal, aPolicyContainer, aCookieJarSettings,
       aTransferableArray, aActionType, nsIContentPolicy::TYPE_INTERNAL_IMAGE);
   mRegion = Nothing();
   return rv;
@@ -563,9 +587,10 @@ nsresult nsBaseDragSession::InitWithRemoteImage(
 NS_IMETHODIMP
 nsBaseDragService::InvokeDragSessionWithSelection(
     Selection* aSelection, nsIPrincipal* aPrincipal,
-    nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings,
-    nsIArray* aTransferableArray, uint32_t aActionType, DragEvent* aDragEvent,
-    DataTransfer* aDataTransfer, nsINode* aTargetContent) {
+    nsIPolicyContainer* aPolicyContainer,
+    nsICookieJarSettings* aCookieJarSettings, nsIArray* aTransferableArray,
+    uint32_t aActionType, DragEvent* aDragEvent, DataTransfer* aDataTransfer,
+    nsINode* aTargetContent) {
   LOGI(
       "[%p] %s | aSelection: %p | aDragEvent: %p | aTargetContent: %p | "
       "mSuppressLevel: %u",
@@ -588,18 +613,18 @@ nsBaseDragService::InvokeDragSessionWithSelection(
   bool isSynthesized =
       aDragEvent->WidgetEventPtr()->mFlags.mIsSynthesizedForTests &&
       !GetNeverAllowSessionIsSynthesizedForTests();
-  return session->InitWithSelection(widget, aSelection, aPrincipal, aCsp,
-                                    aCookieJarSettings, aTransferableArray,
-                                    aActionType, aDragEvent, aDataTransfer,
-                                    aTargetContent, isSynthesized);
+  return session->InitWithSelection(
+      widget, aSelection, aPrincipal, aPolicyContainer, aCookieJarSettings,
+      aTransferableArray, aActionType, aDragEvent, aDataTransfer,
+      aTargetContent, isSynthesized);
 }
 
 nsresult nsBaseDragSession::InitWithSelection(
     nsIWidget* aWidget, Selection* aSelection, nsIPrincipal* aPrincipal,
-    nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings,
-    nsIArray* aTransferableArray, uint32_t aActionType, DragEvent* aDragEvent,
-    DataTransfer* aDataTransfer, nsINode* aTargetContent,
-    bool aIsSynthesizedForTests) {
+    nsIPolicyContainer* aPolicyContainer,
+    nsICookieJarSettings* aCookieJarSettings, nsIArray* aTransferableArray,
+    uint32_t aActionType, DragEvent* aDragEvent, DataTransfer* aDataTransfer,
+    nsINode* aTargetContent, bool aIsSynthesizedForTests) {
   mSessionIsSynthesizedForTests = aIsSynthesizedForTests;
   mDataTransfer = aDataTransfer;
   mSelection = aSelection;
@@ -620,8 +645,8 @@ nsresult nsBaseDragSession::InitWithSelection(
   mSourceTopWindowContext =
       mSourceWindowContext ? mSourceWindowContext->TopWindowContext() : nullptr;
 
-  return InvokeDragSession(aWidget, node, aPrincipal, aCsp, aCookieJarSettings,
-                           aTransferableArray, aActionType,
+  return InvokeDragSession(aWidget, node, aPrincipal, aPolicyContainer,
+                           aCookieJarSettings, aTransferableArray, aActionType,
                            nsIContentPolicy::TYPE_OTHER);
 }
 
@@ -801,7 +826,7 @@ nsresult nsBaseDragSession::EndDragSessionImpl(bool aDoneDrag,
   mSourceWindowContext = nullptr;
   mSourceTopWindowContext = nullptr;
   mTriggeringPrincipal = nullptr;
-  mCsp = nullptr;
+  mPolicyContainer = nullptr;
   mSelection = nullptr;
   mDataTransfer = nullptr;
   mHasImage = false;
@@ -1369,7 +1394,7 @@ nsBaseDragSession::SendStoreDropTargetAndDelayEndDragSession(
   Unused
       << mDelayedDropBrowserParent->SendStoreDropTargetAndDelayEndDragSession(
              aEvent->WidgetEventPtr()->mRefPoint, dropEffect, mDragAction,
-             mTriggeringPrincipal, mCsp);
+             mTriggeringPrincipal, mPolicyContainer);
   return NS_OK;
 }
 

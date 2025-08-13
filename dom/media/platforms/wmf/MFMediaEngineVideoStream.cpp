@@ -25,12 +25,12 @@ using Microsoft::WRL::MakeAndInitialize;
 
 /* static */
 MFMediaEngineVideoStream* MFMediaEngineVideoStream::Create(
-    uint64_t aStreamId, const TrackInfo& aInfo, bool aIsEncrytpedCustomInit,
+    uint64_t aStreamId, const TrackInfo& aInfo, bool aIsEncryptedCustomInit,
     MFMediaSource* aParentSource) {
   MFMediaEngineVideoStream* stream;
   MOZ_ASSERT(aInfo.IsVideo());
   if (FAILED(MakeAndInitialize<MFMediaEngineVideoStream>(
-          &stream, aStreamId, aInfo, aIsEncrytpedCustomInit, aParentSource))) {
+          &stream, aStreamId, aInfo, aIsEncryptedCustomInit, aParentSource))) {
     return nullptr;
   }
   stream->mStreamType =
@@ -426,7 +426,7 @@ bool MFMediaEngineVideoStream::IsEnded() const {
 }
 
 bool MFMediaEngineVideoStream::IsEncrypted() const {
-  return mIsEncrypted || mIsEncrytpedCustomInit;
+  return mIsEncrypted || mIsEncryptedCustomInit;
 }
 
 bool MFMediaEngineVideoStream::ShouldDelayVideoDecodeBeforeDcompReady() {

@@ -12,14 +12,14 @@
 #ifndef mozilla_AttributeStyles_h_
 #define mozilla_AttributeStyles_h_
 
-#include "nsColor.h"
-#include "nsCOMPtr.h"
-#include "nsAtom.h"
 #include "PLDHashTable.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
-#include "nsTHashMap.h"
+#include "nsAtom.h"
+#include "nsCOMPtr.h"
+#include "nsColor.h"
 #include "nsString.h"
+#include "nsTHashMap.h"
 
 struct MiscContainer;
 namespace mozilla {

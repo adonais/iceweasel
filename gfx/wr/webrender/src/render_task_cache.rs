@@ -204,6 +204,7 @@ impl RenderTaskCache {
             render_task.uv_rect_kind(),
             Eviction::Auto,
             TargetShader::Default,
+            false,
         );
 
         // Get the allocation details in the texture cache, and store

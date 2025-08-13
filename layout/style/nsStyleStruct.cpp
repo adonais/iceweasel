@@ -10,43 +10,40 @@
  */
 
 #include "nsStyleStruct.h"
-#include "nsStyleStructInlines.h"
-#include "nsStyleConsts.h"
-#include "nsString.h"
-#include "nsPresContext.h"
-#include "nsIWidget.h"
-#include "nsCRTGlue.h"
-#include "nsCSSProps.h"
-#include "nsDeviceContext.h"
-#include "nsStyleUtil.h"
-#include "nsIURIMutator.h"
 
-#include "nsCOMPtr.h"
+#include <algorithm>
 
-#include "nsBidiUtils.h"
-#include "nsLayoutUtils.h"
-
-#include "imgIRequest.h"
-#include "imgIContainer.h"
 #include "CounterStyleManager.h"
-
-#include "mozilla/dom/AnimationEffectBinding.h"    // for PlaybackDirection
-#include "mozilla/dom/BaseKeyframeTypesBinding.h"  // for CompositeOperation
-#include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/ImageTracker.h"
+#include "ImageLoader.h"
+#include "imgIContainer.h"
+#include "imgIRequest.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/GeckoBindings.h"
+#include "mozilla/Likely.h"
 #include "mozilla/PreferenceSheet.h"
 #include "mozilla/SchedulerGroup.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StaticPresData.h"
-#include "mozilla/Likely.h"
-#include "nsIURI.h"
+#include "mozilla/dom/AnimationEffectBinding.h"    // for PlaybackDirection
+#include "mozilla/dom/BaseKeyframeTypesBinding.h"  // for CompositeOperation
+#include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
-#include <algorithm>
-#include "ImageLoader.h"
-#include "mozilla/StaticPrefs_layout.h"
+#include "nsBidiUtils.h"
+#include "nsCOMPtr.h"
+#include "nsCRTGlue.h"
+#include "nsCSSProps.h"
+#include "nsDeviceContext.h"
+#include "nsIURI.h"
+#include "nsIURIMutator.h"
+#include "nsIWidget.h"
+#include "nsLayoutUtils.h"
+#include "nsPresContext.h"
+#include "nsString.h"
+#include "nsStyleConsts.h"
+#include "nsStyleStructInlines.h"
+#include "nsStyleUtil.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -133,9 +130,8 @@ void StyleComputedUrl::ResolveImage(Document& aDocument,
 }
 
 /**
- * Runnable to release the image request's mRequestProxy
- * and mImageTracker on the main thread, and to perform
- * any necessary unlocking and untracking of the image.
+ * Runnable to release the image request's mRequestProxy on the main thread, and
+ * to perform any necessary unlocking and untracking of the image.
  */
 class StyleImageRequestCleanupTask final : public mozilla::Runnable {
  public:
@@ -287,13 +283,14 @@ static StyleRect<T> StyleRectWithAllSides(const T& aSide) {
 }
 
 AnchorResolvedMargin AnchorResolvedMarginHelper::ResolveAnchor(
-    const StyleMargin& aValue, StylePositionProperty aPosition) {
+    const StyleMargin& aValue, StylePhysicalAxis aAxis,
+    const AnchorPosResolutionParams& aParams) {
   MOZ_ASSERT(aValue.HasAnchorPositioningFunction(),
              "Calling anchor resolution without using it?");
   if (aValue.IsAnchorSizeFunction()) {
     auto resolved = StyleAnchorPositioningFunctionResolution::Invalid();
-    Servo_ResolveAnchorSizeFunction(&*aValue.AsAnchorSizeFunction(), aPosition,
-                                    &resolved);
+    Servo_ResolveAnchorSizeFunction(&*aValue.AsAnchorSizeFunction(), &aParams,
+                                    aAxis, &resolved);
     if (resolved.IsInvalid()) {
       return Zero();
     }
@@ -308,10 +305,11 @@ AnchorResolvedMargin AnchorResolvedMarginHelper::ResolveAnchor(
   const auto& lp = aValue.AsAnchorContainingCalcFunction();
   const auto& c = lp.AsCalc();
   auto result = StyleCalcAnchorPositioningFunctionResolution::Invalid();
-  // TODO(dshin, bug 1969305)
   AnchorPosOffsetResolutionParams params =
-      AnchorPosOffsetResolutionParams::UseCBFrameSize({nullptr, aPosition});
-  Servo_ResolveAnchorFunctionsInCalcPercentage(&c, nullptr, &params, &result);
+      AnchorPosOffsetResolutionParams::UseCBFrameSize(aParams);
+  const auto allowed =
+      StyleAllowAnchorPosResolutionInCalcPercentage::AnchorSizeOnly(aAxis);
+  Servo_ResolveAnchorFunctionsInCalcPercentage(&c, &allowed, &params, &result);
   if (result.IsInvalid()) {
     return Zero();
   }
@@ -1377,7 +1375,9 @@ AnchorResolvedInset AnchorResolvedInsetHelper::ResolveAnchor(
       const auto& lp = aValue.AsAnchorContainingCalcFunction();
       const auto& c = lp.AsCalc();
       auto result = StyleCalcAnchorPositioningFunctionResolution::Invalid();
-      Servo_ResolveAnchorFunctionsInCalcPercentage(&c, &aSide, &aParams,
+      const auto allowed =
+          StyleAllowAnchorPosResolutionInCalcPercentage::Both(aSide);
+      Servo_ResolveAnchorFunctionsInCalcPercentage(&c, &allowed, &aParams,
                                                    &result);
       if (result.IsInvalid()) {
         return Auto();
@@ -1402,7 +1402,8 @@ AnchorResolvedInset AnchorResolvedInsetHelper::ResolveAnchor(
     case StyleInset::Tag::AnchorSizeFunction: {
       auto resolved = StyleAnchorPositioningFunctionResolution::Invalid();
       Servo_ResolveAnchorSizeFunction(&*aValue.AsAnchorSizeFunction(),
-                                      aParams.mBaseParams.mPosition, &resolved);
+                                      &aParams.mBaseParams,
+                                      ToStylePhysicalAxis(aSide), &resolved);
       if (resolved.IsInvalid()) {
         return Auto();
       }
@@ -1420,14 +1421,14 @@ AnchorResolvedInset AnchorResolvedInsetHelper::ResolveAnchor(
 }
 
 AnchorResolvedSize AnchorResolvedSizeHelper::ResolveAnchor(
-    const mozilla::StyleSize& aValue,
-    mozilla::StylePositionProperty aPosition) {
+    const mozilla::StyleSize& aValue, StylePhysicalAxis aAxis,
+    const AnchorPosResolutionParams& aParams) {
   MOZ_ASSERT(aValue.HasAnchorPositioningFunction(),
              "Calling anchor resolution without using it?");
   if (aValue.IsAnchorSizeFunction()) {
     auto resolved = StyleAnchorPositioningFunctionResolution::Invalid();
-    Servo_ResolveAnchorSizeFunction(&*aValue.AsAnchorSizeFunction(), aPosition,
-                                    &resolved);
+    Servo_ResolveAnchorSizeFunction(&*aValue.AsAnchorSizeFunction(), &aParams,
+                                    aAxis, &resolved);
     if (resolved.IsInvalid()) {
       return Auto();
     }
@@ -1443,10 +1444,11 @@ AnchorResolvedSize AnchorResolvedSizeHelper::ResolveAnchor(
   // Follows the same reasoning as anchor resolved insets.
   const auto& c = lp.AsCalc();
   auto result = StyleCalcAnchorPositioningFunctionResolution::Invalid();
-  // TODO(dshin, bug 1969305)
   AnchorPosOffsetResolutionParams params =
-      AnchorPosOffsetResolutionParams::UseCBFrameSize({nullptr, aPosition});
-  Servo_ResolveAnchorFunctionsInCalcPercentage(&c, nullptr, &params, &result);
+      AnchorPosOffsetResolutionParams::UseCBFrameSize(aParams);
+  const auto allowed =
+      StyleAllowAnchorPosResolutionInCalcPercentage::AnchorSizeOnly(aAxis);
+  Servo_ResolveAnchorFunctionsInCalcPercentage(&c, &allowed, &params, &result);
   if (result.IsInvalid()) {
     return Auto();
   }
@@ -1454,14 +1456,14 @@ AnchorResolvedSize AnchorResolvedSizeHelper::ResolveAnchor(
 }
 
 AnchorResolvedMaxSize AnchorResolvedMaxSizeHelper::ResolveAnchor(
-    const mozilla::StyleMaxSize& aValue,
-    mozilla::StylePositionProperty aPosition) {
+    const mozilla::StyleMaxSize& aValue, StylePhysicalAxis aAxis,
+    const AnchorPosResolutionParams& aParams) {
   MOZ_ASSERT(aValue.HasAnchorPositioningFunction(),
              "Calling anchor resolution without using it?");
   if (aValue.IsAnchorSizeFunction()) {
     auto resolved = StyleAnchorPositioningFunctionResolution::Invalid();
-    Servo_ResolveAnchorSizeFunction(&*aValue.AsAnchorSizeFunction(), aPosition,
-                                    &resolved);
+    Servo_ResolveAnchorSizeFunction(&*aValue.AsAnchorSizeFunction(), &aParams,
+                                    aAxis, &resolved);
     if (resolved.IsInvalid()) {
       return None();
     }
@@ -1477,10 +1479,11 @@ AnchorResolvedMaxSize AnchorResolvedMaxSizeHelper::ResolveAnchor(
   // Follows the same reasoning as anchor resolved insets.
   const auto& c = lp.AsCalc();
   auto result = StyleCalcAnchorPositioningFunctionResolution::Invalid();
-  // TODO(dshin, bug 1969305)
   AnchorPosOffsetResolutionParams params =
-      AnchorPosOffsetResolutionParams::UseCBFrameSize({nullptr, aPosition});
-  Servo_ResolveAnchorFunctionsInCalcPercentage(&c, nullptr, &params, &result);
+      AnchorPosOffsetResolutionParams::UseCBFrameSize(aParams);
+  const auto allowed =
+      StyleAllowAnchorPosResolutionInCalcPercentage::AnchorSizeOnly(aAxis);
+  Servo_ResolveAnchorFunctionsInCalcPercentage(&c, &allowed, &params, &result);
   if (result.IsInvalid()) {
     return None();
   }
@@ -3262,7 +3265,8 @@ nsStyleUIReset::nsStyleUIReset()
       mViewTimelineNameCount(1),
       mViewTimelineAxisCount(1),
       mViewTimelineInsetCount(1),
-      mFieldSizing(StyleFieldSizing::Fixed) {
+      mFieldSizing(StyleFieldSizing::Fixed),
+      mViewTransitionName(StyleViewTransitionName::None()) {
   MOZ_COUNT_CTOR(nsStyleUIReset);
 }
 

@@ -6,33 +6,33 @@
 
 #include "nsPageSequenceFrame.h"
 
-#include "mozilla/intl/AppDateTimeFormat.h"
+#include <algorithm>
+#include <limits>
+
+#include "gfxContext.h"
 #include "mozilla/Logging.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PrintedSheetFrame.h"
+#include "mozilla/StaticPresData.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/gfx/Point.h"
-#include "mozilla/StaticPresData.h"
-
+#include "mozilla/intl/AppDateTimeFormat.h"
 #include "nsCOMPtr.h"
+#include "nsCSSFrameConstructor.h"
+#include "nsContentUtils.h"
 #include "nsDeviceContext.h"
-#include "nsPresContext.h"
-#include "gfxContext.h"
+#include "nsDisplayList.h"
 #include "nsGkAtoms.h"
+#include "nsHTMLCanvasFrame.h"
+#include "nsICanvasRenderingContextInternal.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
 #include "nsIPrintSettings.h"
 #include "nsPageFrame.h"
-#include "nsSubDocumentFrame.h"
+#include "nsPresContext.h"
 #include "nsRegion.h"
-#include "nsCSSFrameConstructor.h"
-#include "nsContentUtils.h"
-#include "nsDisplayList.h"
-#include "nsHTMLCanvasFrame.h"
-#include "nsICanvasRenderingContextInternal.h"
 #include "nsServiceManagerUtils.h"
-#include <algorithm>
-#include <limits>
+#include "nsSubDocumentFrame.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

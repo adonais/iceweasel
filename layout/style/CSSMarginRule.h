@@ -7,9 +7,8 @@
 #ifndef mozilla_dom_CSSMarginRule_h
 #define mozilla_dom_CSSMarginRule_h
 
-#include "mozilla/css/Rule.h"
 #include "mozilla/ServoBindingTypes.h"
-
+#include "mozilla/css/Rule.h"
 #include "nsDOMCSSDeclaration.h"
 #include "nsICSSDeclaration.h"
 

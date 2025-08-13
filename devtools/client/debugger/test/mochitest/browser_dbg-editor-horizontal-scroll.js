@@ -109,36 +109,36 @@ add_task(async function testHorizontalScrolling() {
   await waitForPaused(dbg);
 
   const lastColumn = getLastVisibleColumn();
-  is(lastColumn, 54);
+  is(lastColumn, 55);
   ok(
     isScrolledPositionVisible(dbg, 2, 1),
     "The 2nd line, first column is visible"
   );
   ok(
-    isScrolledPositionVisible(dbg, 2, lastColumn),
-    "The 2nd line, last column is visible"
+    isScrolledPositionVisible(dbg, 2, lastColumn - 1),
+    "The 2nd line, column before the last is visible"
   );
   ok(
-    !isScrolledPositionVisible(dbg, 2, lastColumn + 1),
-    "The column after the last column is hidden"
+    !isScrolledPositionVisible(dbg, 2, lastColumn),
+    "The last column is hidden"
   );
 
   info("Step to the last visible column, the editor shouldn't scroll");
   // There is one breakable position every two column.
   // We can see the column breakpoint for the column after the last visible one.
   // Setting a breakpoint on that column and pausing shouldn't cause to scroll the viewport.
-  await addBreakpoint(dbg, "horizontal-scroll.js", 2, lastColumn + 1);
+  await addBreakpoint(dbg, "horizontal-scroll.js", 2, lastColumn);
   await resume(dbg);
   await waitForPaused(dbg);
 
   is(getLastVisibleColumn(), lastColumn, "We did not scroll horizontaly");
   ok(
-    isScrolledPositionVisible(dbg, 2, lastColumn),
-    "The last column is still visible"
+    isScrolledPositionVisible(dbg, 2, lastColumn - 1),
+    "The column before the last column is still visible"
   );
   ok(
-    !isScrolledPositionVisible(dbg, 2, lastColumn + 1),
-    "The column after the last colunm is still hidden"
+    !isScrolledPositionVisible(dbg, 2, lastColumn),
+    "The last colunm is still hidden"
   );
 
   info(
@@ -148,7 +148,7 @@ add_task(async function testHorizontalScrolling() {
   info("Step into the next breakable column, the editor should now scroll");
   // Set a breakpoint on the first column that would cause a scroll
   // (there is one breakable position every two column)
-  await addBreakpoint(dbg, "horizontal-scroll.js", 2, lastColumn + 3);
+  await addBreakpoint(dbg, "horizontal-scroll.js", 2, lastColumn + 2);
   await resume(dbg);
   await waitForPaused(dbg);
 

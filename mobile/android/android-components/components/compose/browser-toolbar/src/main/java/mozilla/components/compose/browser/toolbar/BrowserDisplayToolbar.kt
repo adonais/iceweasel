@@ -21,8 +21,10 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.progressbar.AnimatedProgressBar
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.toolbar.concept.Action
-import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
-import mozilla.components.compose.browser.toolbar.concept.Action.DropdownAction
+import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
+import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction
+import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.ContentDescription.StringResContentDescription
+import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction.Icon.DrawableResIcon
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.ProgressBarConfig
@@ -208,30 +210,30 @@ private data class DisplayToolbarPreviewModel(
 )
 private class DisplayToolbarDataProvider : PreviewParameterProvider<DisplayToolbarPreviewModel> {
     val browserStartActions = listOf(
-        ActionButton(
-            icon = iconsR.drawable.mozac_ic_home_24,
+        ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_home_24,
             contentDescription = android.R.string.untitled,
             onClick = object : BrowserToolbarEvent {},
         ),
     )
     val pageActionsStart = listOf(
-        DropdownAction(
-            icon = null,
-            iconResource = iconsR.drawable.mozac_ic_search_24,
-            contentDescription = android.R.string.untitled,
+        SearchSelectorAction(
+            icon = DrawableResIcon(iconsR.drawable.mozac_ic_search_24),
+            contentDescription = StringResContentDescription(resourceId = android.R.string.untitled),
             menu = { emptyList() },
+            onClick = null,
         ),
     )
     val pageActionsEnd = listOf(
-        ActionButton(
-            icon = iconsR.drawable.mozac_ic_arrow_clockwise_24,
+        ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_arrow_clockwise_24,
             contentDescription = android.R.string.untitled,
             onClick = object : BrowserToolbarEvent {},
         ),
     )
     val browserActionsEnd = listOf(
-        ActionButton(
-            icon = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+        ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
             contentDescription = android.R.string.untitled,
             onClick = object : BrowserToolbarEvent {},
         ),

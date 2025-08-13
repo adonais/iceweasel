@@ -133,7 +133,7 @@ support-files = ["bug633762_iframe.html"]
 ["test_bug748961.html"]
 
 ["test_bug756984.html"]
-fail-if = ["os == 'linux' && os_version == '18.04'"]  # Bug 1600208 permafail on ubuntu1804
+fail-if = ["os == 'linux' && os_version == '18.04'"] # Bug 1600208 permafail on ubuntu1804
 
 ["test_bug784410.html"]
 
@@ -238,20 +238,25 @@ support-files = ["file_reframe_for_lazy_load_image.html"]
 ["test_scroll_animation_restore.html"]
 
 ["test_scroll_behavior.html"]
-skip-if = ["os == 'android'"]
+skip-if = [
+  "os == 'android'",
+]
 
 ["test_scroll_on_display_contents.html"]
 support-files = ["!/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js"]
 skip-if = [
   "os == 'android'",
-  "display == 'wayland' && os_version == '22.04'",  # Bug 1857078
+  "display == 'wayland' && os_version == '22.04'", # Bug 1857078
 ]
 
 ["test_scroll_position_iframe.html"]
+skip-if = [
+  "os == 'android' && android_version == '24' && processor == 'x86_64'", # Bug 1971645
+]
 
 ["test_scroll_position_restore.html"]
 support-files = ["file_scroll_position_restore.html"]
-skip-if = ["display == 'wayland' && os_version == '22.04'"]  # Bug 1857246
+skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857246
 
 ["test_scroll_position_restore_after_stop.html"]
 skip-if = ["os == 'android'"]
@@ -311,9 +316,7 @@ skip-if = ["release_or_beta"] # requires Selection.getComposedRanges to be enabl
 ["test_selection_doubleclick.html"]
 
 ["test_selection_expanding.html"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1968678
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'"] # Bug 1968678
 
 ["test_selection_multiclick_drag.html"]
 

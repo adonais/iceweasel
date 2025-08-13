@@ -62,10 +62,6 @@ run-if = ["os == 'win'"] # Windows-specific handler application selection dialog
 ["browser_connection_bug1445991.js"]
 
 ["browser_connection_bug1505330.js"]
-skip-if = [
-  "verify && debug && os == 'linux'",
-  "verify && debug && os == 'mac'",
-]
 
 ["browser_connection_system_wpad.js"]
 run-if = ["os == 'win'"]
@@ -106,9 +102,9 @@ run-if = ["os == 'win'"]
 
 ["browser_extension_controlled.js"]
 skip-if = [
-  "tsan",
   "ccov && os == 'linux'", # Linux: bug 1613530
   "ccov && os == 'win'", # Windows: bug 1437051
+  "tsan",
 ]
 
 ["browser_filetype_dialog.js"]
@@ -177,6 +173,10 @@ skip-if = ["true"]
 ["browser_pip_settings.js"]
 
 ["browser_primaryPassword.js"]
+
+["browser_privacy_allowListPreference.js"]
+
+["browser_privacy_allowListPreference_telemetry.js"]
 
 ["browser_privacy_cookieBannerHandling.js"]
 

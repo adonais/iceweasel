@@ -254,9 +254,9 @@ add_task(async function test_enroll_setPref_rolloutsAndExperiments() {
    * @param {(string|null)[]} options.expectedValues
    *        The expected values of the preft on the given branch at each point:
    *
-   *        * before enrollment;
-   *        * one entry each each after enrolling in `options.enrollOrder[i]`; and
-   *        * one entry each each after unenrolling in `options.unenrollOrder[i]`.
+   *        before enrollment;
+   *        one entry each each after enrolling in `options.enrollOrder[i]`; and
+   *        one entry each each after unenrolling in `options.unenrollOrder[i]`.
    *
    *        A value of null indicates that the pref should not be set on that
    *        branch.
@@ -1219,6 +1219,8 @@ add_task(async function test_restorePrefs_experimentAndRollout() {
    * ExperimentManager to restore the saved enrollments.
    *
    * @param {object} options
+   * @param {string} options.featureId
+   *        The featureId that will be enrolling.
    * @param {string} options.pref
    *        The name of the pref.
    *
@@ -1243,9 +1245,9 @@ add_task(async function test_restorePrefs_experimentAndRollout() {
    * @param {(string|null)[]} options.expectedValues
    *        The expected values of the preft on the given branch at each point:
    *
-   *        * before enrollment;
-   *        * one entry each each after enrolling in `options.enrollOrder[i]`; and
-   *        * one entry each each after unenrolling in `options.unenrollOrder[i]`.
+   *        before enrollment;
+   *        one entry each each after enrolling in `options.enrollOrder[i]`; and
+   *        one entry each each after unenrolling in `options.unenrollOrder[i]`.
    *
    *        A value of null indicates that the pref should not be set on that
    *        branch.
@@ -1781,8 +1783,9 @@ add_task(async function test_prefChange() {
     for (const enrollmentKind of expectedEnrollments) {
       const enrollment = manager.store.get(slugs[enrollmentKind]);
 
-      Assert.ok(
-        enrollment !== null,
+      Assert.notStrictEqual(
+        enrollment,
+        null,
         `An enrollment of kind ${enrollmentKind} should exist`
       );
       Assert.ok(enrollment.active, "It should still be active");
@@ -1797,8 +1800,9 @@ add_task(async function test_prefChange() {
 
         const enrollment = manager.store.get(slug);
 
-        Assert.ok(
-          enrollment !== null,
+        Assert.notStrictEqual(
+          enrollment,
+          null,
           `An enrollment of kind ${enrollmentKind} should exist`
         );
         Assert.ok(!enrollment.active, "It should not be active");
@@ -2424,8 +2428,9 @@ add_task(async function test_clearUserPref() {
       }
 
       const enrollment = manager.store.get(slug);
-      Assert.ok(
-        enrollment !== null,
+      Assert.notStrictEqual(
+        enrollment,
+        null,
         `An enrollment of kind ${enrollmentKind} should exist`
       );
 
@@ -2915,8 +2920,9 @@ async function test_restorePrefs_manifestChanged() {
     for (const enrollmentKind of expectedEnrollments) {
       const enrollment = manager.store.get(slugs[enrollmentKind]);
 
-      Assert.ok(
-        enrollment !== null,
+      Assert.notStrictEqual(
+        enrollment,
+        null,
         `An experiment of kind ${enrollmentKind} should exist`
       );
       Assert.ok(enrollment.active, "It should still be active");
@@ -2970,8 +2976,9 @@ async function test_restorePrefs_manifestChanged() {
         const slug = slugs[enrollmentKind];
         const enrollment = manager.store.get(slug);
 
-        Assert.ok(
-          enrollment !== null,
+        Assert.notStrictEqual(
+          enrollment,
+          null,
           `An enrollment of kind ${enrollmentKind} should exist`
         );
         Assert.ok(!enrollment.active, "It should not be active");
@@ -3552,15 +3559,15 @@ add_task(async function testDb() {
     }
   );
 
-  const setPrefs = JSON.parse(result.getResultByName("setPrefs"));
+  const enrollmentPrefs = JSON.parse(result.getResultByName("setPrefs"));
   const enrollment = manager.store.get("slug");
 
   Assert.deepEqual(
-    setPrefs,
+    enrollmentPrefs,
     enrollment.prefs,
     "setPrefs stored in the database"
   );
-  Assert.deepEqual(setPrefs, [
+  Assert.deepEqual(enrollmentPrefs, [
     {
       name: "nimbus.qa.pref-1",
       branch: "default",

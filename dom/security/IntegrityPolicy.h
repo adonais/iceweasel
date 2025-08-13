@@ -12,18 +12,25 @@
 #include "nsIContentPolicy.h"
 
 #include "mozilla/EnumSet.h"
+#include "mozilla/EnumTypeTraits.h"
 #include "mozilla/Maybe.h"
+#include "nsTArray.h"
 
 #define NS_INTEGRITYPOLICY_CONTRACTID "@mozilla.org/integritypolicy;1"
 
 class nsISFVDictionary;
 class nsILoadInfo;
 
-namespace mozilla::dom {
+namespace mozilla {
+namespace ipc {
+class IntegrityPolicyArgs;
+}  // namespace ipc
+namespace dom {
 
 class IntegrityPolicy : public nsIIntegrityPolicy {
  public:
   NS_DECL_ISUPPORTS
+  NS_DECL_NSISERIALIZABLE
   NS_DECL_NSIINTEGRITYPOLICY
 
   IntegrityPolicy() = default;
@@ -35,7 +42,7 @@ class IntegrityPolicy : public nsIIntegrityPolicy {
   enum class SourceType : uint8_t { Inline };
 
   // Trimmed down version of dom::RequestDestination
-  enum class DestinationType : uint8_t { Script };
+  enum class DestinationType : uint8_t { Script, Style };
 
   using Sources = EnumSet<SourceType>;
   using Destinations = EnumSet<DestinationType>;
@@ -46,24 +53,65 @@ class IntegrityPolicy : public nsIIntegrityPolicy {
   static Maybe<DestinationType> ContentTypeToDestinationType(
       nsContentPolicyType aType);
 
+  static void ToArgs(const IntegrityPolicy* aPolicy,
+                     mozilla::ipc::IntegrityPolicyArgs& aArgs);
+
+  static void FromArgs(const mozilla::ipc::IntegrityPolicyArgs& aArgs,
+                       IntegrityPolicy** aPolicy);
+
+  void InitFromOther(IntegrityPolicy* aOther);
+
+  static IntegrityPolicy* Cast(nsIIntegrityPolicy* aPolicy) {
+    return static_cast<IntegrityPolicy*>(aPolicy);
+  }
+
+  static bool Equals(const IntegrityPolicy* aPolicy,
+                     const IntegrityPolicy* aOtherPolicy);
+
  protected:
   virtual ~IntegrityPolicy();
 
  private:
   class Entry final {
    public:
-    Entry(Sources aSources, Destinations aDestinations)
-        : mSources(aSources), mDestinations(aDestinations) {}
+    Entry(Sources aSources, Destinations aDestinations,
+          nsTArray<nsCString>&& aEndpoints)
+        : mSources(aSources),
+          mDestinations(aDestinations),
+          mEndpoints(std::move(aEndpoints)) {}
+
+    Entry(const Entry& aOther)
+        : mSources(aOther.mSources),
+          mDestinations(aOther.mDestinations),
+          mEndpoints(aOther.mEndpoints.Clone()) {}
 
     ~Entry() = default;
 
+    static bool Equals(const Maybe<Entry>& aPolicy,
+                       const Maybe<Entry>& aOtherPolicy);
+
     const Sources mSources;
     const Destinations mDestinations;
+    const nsTArray<nsCString> mEndpoints;
   };
 
   Maybe<Entry> mEnforcement;
   Maybe<Entry> mReportOnly;
 };
-}  // namespace mozilla::dom
+}  // namespace dom
+
+template <>
+struct MaxEnumValue<dom::IntegrityPolicy::SourceType> {
+  static constexpr unsigned int value =
+      static_cast<unsigned int>(dom::IntegrityPolicy::SourceType::Inline);
+};
+
+template <>
+struct MaxEnumValue<dom::IntegrityPolicy::DestinationType> {
+  static constexpr unsigned int value =
+      static_cast<unsigned int>(dom::IntegrityPolicy::DestinationType::Script);
+};
+
+}  // namespace mozilla
 
 #endif /* IntegrityPolicy_h___ */

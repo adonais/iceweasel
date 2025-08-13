@@ -504,6 +504,9 @@ newtab-topic-selection-button-pick-interests = Kies uw interesses
 newtab-section-follow-button = Volgen
 newtab-section-following-button = Volgend
 newtab-section-unfollow-button = Ontvolgen
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Uw feed verfijnen
+newtab-section-follow-highlight-subtitle = Volg uw interesses om meer te zien van wat u leuk vindt.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -546,6 +549,11 @@ newtab-download-mobile-highlight-body-variant-c = Wist u dat u { -brand-product-
 newtab-download-mobile-highlight-image =
     .aria-label = QR-code om { -brand-product-name } voor mobiel te downloaden
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Uw favorieten binnen handbereik
+newtab-shortcuts-highlight-subtitle = Voeg een snelkoppeling toe om uw favoriete websites op één klik afstand te houden.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -579,3 +587,5 @@ newtab-trending-searches-hide-trending =
     .title = Trending zoekopdrachten verbergen
 newtab-trending-searches-learn-more = Meer info
 newtab-trending-searches-dismiss = Trending zoekopdrachten verbergen
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Trending zoekopdrachten

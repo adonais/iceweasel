@@ -7,12 +7,10 @@
 #define nsPrintJob_h
 
 #include "mozilla/Attributes.h"
-#include "mozilla/layout/RemotePrintJobChild.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
-
+#include "mozilla/layout/RemotePrintJobChild.h"
 #include "nsCOMPtr.h"
-
 #include "nsHashKeys.h"
 #include "nsIFrame.h"  // For WeakFrame
 #include "nsSize.h"

@@ -221,15 +221,6 @@ class InstalledAddonDetailsFragment : Fragment() {
                                 it.incognito != Addon.Incognito.NOT_ALLOWED && it.isAllowedInPrivateBrowsing()
                             binding.settings.isVisible = shouldSettingsBeVisible()
                             enableButtons()
-                            context?.let {
-                                showSnackBar(
-                                    binding.root,
-                                    getString(
-                                        R.string.mozac_feature_addons_successfully_enabled,
-                                        addon.translateName(it),
-                                    ),
-                                )
-                            }
                         }
                     },
                     onError = {
@@ -259,15 +250,6 @@ class InstalledAddonDetailsFragment : Fragment() {
                             switch.isClickable = true
                             privateBrowsingSwitch.isVisible = it.isEnabled()
                             enableButtons()
-                            context?.let {
-                                showSnackBar(
-                                    binding.root,
-                                    getString(
-                                        R.string.mozac_feature_addons_successfully_disabled,
-                                        addon.translateName(it),
-                                    ),
-                                )
-                            }
                         }
                     },
                     onError = {
@@ -424,15 +406,6 @@ class InstalledAddonDetailsFragment : Fragment() {
                 onSuccess = {
                     runIfFragmentIsAttached {
                         setAllInteractiveViewsClickable(binding, true)
-                        context?.let {
-                            showSnackBar(
-                                binding.root,
-                                getString(
-                                    R.string.mozac_feature_addons_successfully_uninstalled,
-                                    addon.translateName(it),
-                                ),
-                            )
-                        }
                         binding.root.findNavController().popBackStack()
                     }
                 },

@@ -4,21 +4,26 @@
 
 "use strict";
 
-// Check that search label updated correctcly based on the search result.
+// Check that search label updated correctly based on the search result.
 
 const TEST_URL = URL_ROOT + "doc_inspector_search.html";
 
 add_task(async function () {
   const { inspector } = await openInspectorForURL(TEST_URL);
-  const { panelWin, searchResultsLabel } = inspector;
+  const { searchResultsLabel } = inspector;
 
   info("Searching for test node #d1");
-  // Expect the label shows 1 result
-  await focusSearchBoxUsingShortcut(panelWin);
-  synthesizeKeys("#d1", panelWin);
-  EventUtils.synthesizeKey("VK_RETURN", {}, panelWin);
+  await searchInMarkupView(inspector, "#d1");
+  is(searchResultsLabel.textContent, "1 of 1");
 
-  await inspector.search.once("search-result");
+  info(`Searching for word visible in element attribute and in text node`);
+  await searchInMarkupView(inspector, "blah");
+  is(searchResultsLabel.textContent, "1 of 2");
+
+  info(
+    `Searching for word visible in element attribute and its inlined text node`
+  );
+  await searchInMarkupView(inspector, "yo");
   is(searchResultsLabel.textContent, "1 of 1");
 
   info("Click the clear button");

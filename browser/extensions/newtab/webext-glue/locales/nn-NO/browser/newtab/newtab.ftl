@@ -317,6 +317,9 @@ newtab-custom-recent-toggle =
 newtab-custom-weather-toggle =
     .label = Vêr
     .description = Dagens vêrmelding i korte trekk
+newtab-custom-trending-search-toggle =
+    .label = Populære søk
+    .description = Populære og ofte søkte emne
 newtab-custom-close-button = Lat att
 newtab-custom-settings = Handsam fleire innstillingar
 
@@ -500,6 +503,9 @@ newtab-topic-selection-button-pick-interests = Vel interessene dine
 newtab-section-follow-button = Følg
 newtab-section-following-button = Følgjer
 newtab-section-unfollow-button = Slutt å følgje
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Finjuster kjelda di
+newtab-section-follow-highlight-subtitle = Følg interessene dine for å sjå meir av det du likar.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -542,6 +548,11 @@ newtab-download-mobile-highlight-body-variant-c = Visste du at du kan ta med { -
 newtab-download-mobile-highlight-image =
     .aria-label = QR-kode for å laste ned { -brand-product-name } for mobil
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Dine favorittar lett tilgjengelege
+newtab-shortcuts-highlight-subtitle = Legg til ein snarveg for å ha favorittnettstadane dine eitt klikk unna.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -567,4 +578,13 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
+# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
+newtab-trending-searches-trending-on-google = Populært på Google
+newtab-trending-searches-show-trending =
+    .title = Vis populære søk
+newtab-trending-searches-hide-trending =
+    .title = Skjul populære søk
 newtab-trending-searches-learn-more = Les meir
+newtab-trending-searches-dismiss = Skjul populære søk
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Populære søk

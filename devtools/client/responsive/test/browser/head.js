@@ -72,33 +72,7 @@ SimpleTest.waitForExplicitFinish();
 // should be enough.
 requestLongerTimeout(2);
 
-// The appearance of this notification causes intermittent behavior in some tests that
-// send mouse events, since it causes the content to shift when it appears.
-Services.prefs.setBoolPref(
-  "devtools.responsive.reloadNotification.enabled",
-  false
-);
-// Don't show the setting onboarding tooltip in the test suites.
-Services.prefs.setBoolPref("devtools.responsive.show-setting-tooltip", false);
-
 registerCleanupFunction(async () => {
-  Services.prefs.clearUserPref(
-    "devtools.responsive.reloadNotification.enabled"
-  );
-  Services.prefs.clearUserPref("devtools.responsive.html.displayedDeviceList");
-  Services.prefs.clearUserPref(
-    "devtools.responsive.reloadConditions.touchSimulation"
-  );
-  Services.prefs.clearUserPref(
-    "devtools.responsive.reloadConditions.userAgent"
-  );
-  Services.prefs.clearUserPref("devtools.responsive.show-setting-tooltip");
-  Services.prefs.clearUserPref("devtools.responsive.showUserAgentInput");
-  Services.prefs.clearUserPref("devtools.responsive.touchSimulation.enabled");
-  Services.prefs.clearUserPref("devtools.responsive.userAgent");
-  Services.prefs.clearUserPref("devtools.responsive.viewport.height");
-  Services.prefs.clearUserPref("devtools.responsive.viewport.pixelRatio");
-  Services.prefs.clearUserPref("devtools.responsive.viewport.width");
   await asyncStorage.removeItem("devtools.responsive.deviceState");
   await removeLocalDevices();
 
@@ -179,7 +153,12 @@ function addRDMTaskWithPreAndPost(url, preTask, task, postTask, options) {
     }
 
     if (!onlyPrefAndTask) {
+      // Close the toolbox first, as closing RDM might trigger a reload if
+      // touch simulation was enabled, which will trigger RDP requests.
+      await closeToolboxIfOpen();
+
       await closeRDM(tab);
+
       if (postTask) {
         await postTask({
           message,
@@ -218,7 +197,11 @@ function addRDMTask(rdmURL, rdmTask, options) {
 
 async function spawnViewportTask(ui, args, task) {
   // Await a reflow after the task.
-  const result = await ContentTask.spawn(ui.getViewportBrowser(), args, task);
+  const result = await SpecialPowers.spawn(
+    ui.getViewportBrowser(),
+    [args],
+    task
+  );
   await promiseContentReflow(ui);
   return result;
 }

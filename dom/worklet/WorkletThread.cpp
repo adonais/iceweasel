@@ -15,6 +15,7 @@
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
+#include "mozilla/FlowMarkers.h"
 #include "mozilla/EventQueue.h"
 #include "mozilla/ThreadEventQueue.h"
 #include "js/ContextOptions.h"
@@ -161,6 +162,9 @@ class WorkletJSContext final : public CycleCollectedJSContext {
 #endif
 
     JS::JobQueueMayNotBeEmpty(cx);
+    PROFILER_MARKER_FLOW_ONLY("WorkletJSContext::DispatchToMicroTask", OTHER,
+                              {}, FlowMarker,
+                              Flow::FromPointer(runnable.get()));
     GetMicroTaskQueue().push_back(std::move(runnable));
   }
 

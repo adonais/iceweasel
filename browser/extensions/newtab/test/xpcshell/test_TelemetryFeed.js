@@ -2310,6 +2310,7 @@ add_task(
         corpus_item_id: "decaf-beef",
         scheduled_corpus_item_id: "dead-beef",
         tile_id: 314623757745896,
+        content_redacted: true,
       },
     });
 
@@ -2324,6 +2325,7 @@ add_task(
     Assert.equal(clicks.length, 1, "Recorded 1 content click");
     Assert.equal(clicks.length, 1, "Recorded 1 private click");
     Assert.deepEqual(clicks[0].extra, {
+      content_redacted: String(true),
       newtab_visit_id: SESSION_ID,
       is_sponsored: String(false),
       position: String(ACTION_POSITION),
@@ -2336,6 +2338,9 @@ add_task(
           newtab_visit_id: SESSION_ID,
           is_sponsored: false,
           position: ACTION_POSITION,
+          corpus_item_id: "decaf-beef",
+          scheduled_corpus_item_id: "dead-beef",
+          tile_id: 314623757745896,
         })
       ),
       "NewTabContentPing passed the expected arguments."

@@ -8,15 +8,15 @@
 #define mozilla_ServoElementSnapshot_h
 
 #include "AttrArray.h"
+#include "MainThreadUtils.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/dom/BorrowedAttrInfo.h"
 #include "mozilla/dom/RustTypes.h"
+#include "nsAtom.h"
 #include "nsAttrName.h"
 #include "nsAttrValue.h"
 #include "nsChangeHint.h"
 #include "nsGkAtoms.h"
-#include "nsAtom.h"
-#include "MainThreadUtils.h"
 
 namespace mozilla {
 namespace dom {

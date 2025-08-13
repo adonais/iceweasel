@@ -7,12 +7,20 @@
 with Files("**"):
     BUG_COMPONENT = ("Core", "DOM: Notifications")
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
+    "MemoryNotificationDB.sys.mjs",
+    "NotificationDB.sys.mjs",
     "NotificationStorage.sys.mjs",
 ]
 
 XPCOM_MANIFESTS += [
     "components.conf",
+]
+
+XPIDL_MODULE = "dom_notification"
+
+XPIDL_SOURCES += [
+    "nsINotificationHandler.idl",
 ]
 
 EXPORTS.mozilla.dom += [
@@ -22,6 +30,7 @@ EXPORTS.mozilla.dom += [
 EXPORTS.mozilla.dom.notification += [
     "IPCUtils.h",
     "NotificationChild.h",
+    "NotificationHandler.h",
     "NotificationParent.h",
     "NotificationUtils.h",
 ]
@@ -29,6 +38,7 @@ EXPORTS.mozilla.dom.notification += [
 UNIFIED_SOURCES += [
     "Notification.cpp",
     "NotificationChild.cpp",
+    "NotificationHandler.cpp",
     "NotificationParent.cpp",
     "NotificationUtils.cpp",
 ]
@@ -43,6 +53,8 @@ FINAL_LIBRARY = "xul"
 LOCAL_INCLUDES += [
     "/dom/base",
     "/dom/ipc",
+    # NotificationHandler::RespondOnClick, but see bug 1966910.
+    "/js/xpconnect/src",
 ]
 
 BROWSER_CHROME_MANIFESTS += ["test/browser/browser.toml"]
@@ -50,8 +62,3 @@ XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.toml"]
 MOCHITEST_MANIFESTS += ["test/mochitest/mochitest.toml"]
 MOCHITEST_CHROME_MANIFESTS += ["test/chrome/chrome.toml"]
 MARIONETTE_MANIFESTS += ["test/marionette/manifest.toml"]
-
-EXTRA_JS_MODULES += [
-    "MemoryNotificationDB.sys.mjs",
-    "NotificationDB.sys.mjs",
-]

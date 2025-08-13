@@ -124,8 +124,6 @@ class gfxWindowsPlatform final : public gfxPlatform {
                               FontPresentation aPresentation,
                               nsTArray<const char*>& aFontList) override;
 
-  bool CanUseHardwareVideoDecoding() override;
-
   void CompositorUpdated() override;
 
   bool DidRenderingDeviceReset(
@@ -197,6 +195,10 @@ class gfxWindowsPlatform final : public gfxPlatform {
   void Init();
   void InitAcceleration() override;
   void InitWebRenderConfig() override;
+  void InitPlatformHardwareVideoConfig() override;
+#ifdef MOZ_WMF_CDM
+  void InitPlatformHardwarDRMConfig() override;
+#endif
 
   void InitializeDevices();
   void InitializeD3D11();

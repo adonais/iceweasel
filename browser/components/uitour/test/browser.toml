@@ -11,7 +11,6 @@ support-files = [
 skip-if = [
   "os == 'linux' && os_version == '18.04'", # Intermittent failures, bug 951965
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 951965
-  "verify",
 ]
 
 ["browser_UITour2.js"]
@@ -50,22 +49,18 @@ skip-if = ["true"] # Disabled pending removal of pocket UI Tour
 ["browser_UITour_private_browsing.js"]
 
 ["browser_UITour_resetProfile.js"]
-skip-if = ["os == 'linux' && os_version == '18.04' && !debug && verify"]
 
 ["browser_UITour_showNewTab.js"]
-skip-if = ["os == 'linux' && os_version == '18.04' && !debug && verify"]
 
 ["browser_UITour_showProtectionReport.js"]
 
 ["browser_UITour_sync.js"]
 
 ["browser_UITour_toggleReaderMode.js"]
-skip-if = ["os == 'linux' && os_version == '18.04' && !debug && verify"]
 
 ["browser_backgroundTab.js"]
 
 ["browser_closeTab.js"]
-skip-if = ["os == 'linux' && os_version == '18.04' && !debug && verify"]
 
 ["browser_fxa.js"]
 tags = "os_integration"

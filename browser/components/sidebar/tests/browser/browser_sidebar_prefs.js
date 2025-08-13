@@ -30,7 +30,7 @@ add_task(async function test_tools_prefs() {
     `${toolEntrypointsCount} inputs to toggle Firefox Tools are shown in the Customize Menu.`
   );
   let bookmarksInput = Array.from(customizeComponent.toolInputs).find(
-    input => input.name === "viewBookmarksSidebar"
+    input => input.id === "viewBookmarksSidebar"
   );
   ok(
     bookmarksInput.checked,
@@ -38,14 +38,14 @@ add_task(async function test_tools_prefs() {
   );
   for (const toolInput of customizeComponent.toolInputs) {
     let toolDisabledInitialState = !toolInput.checked;
-    if (toolInput.name == "viewBookmarksSidebar") {
+    if (toolInput.id == "viewBookmarksSidebar") {
       continue;
     }
     toolInput.click();
     await BrowserTestUtils.waitForCondition(
       () => {
         let toggledTool = win.SidebarController.toolsAndExtensions.get(
-          toolInput.name
+          toolInput.id
         );
         return toggledTool.disabled === !toolDisabledInitialState;
       },
@@ -111,7 +111,7 @@ add_task(async function test_tools_prefs() {
     "The number of tool inputs checked matches that of the other window's sidebar"
   );
   let newBookmarksInput = Array.from(newCustomizeComponent.toolInputs).find(
-    input => input.name === "viewBookmarksSidebar"
+    input => input.id === "viewBookmarksSidebar"
   );
   is(
     newBookmarksInput.checked,

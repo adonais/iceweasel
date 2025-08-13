@@ -595,10 +595,9 @@ async function updateModels() {
     if (!confirmed) {
       return;
     }
-
     modelFilesView.removeModel(e.detail);
-    const { model, revision } = e.detail;
-    await hub.deleteModels({ model, revision });
+    const { name, revision } = e.detail;
+    await hub.deleteModels({ model: name, revision });
   });
 }
 

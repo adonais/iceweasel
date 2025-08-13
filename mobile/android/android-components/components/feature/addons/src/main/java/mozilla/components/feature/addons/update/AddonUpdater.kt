@@ -11,11 +11,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.IBinder
+import android.text.SpannableStringBuilder
+import android.text.Spanned
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.edit
+import androidx.core.text.HtmlCompat
+import androidx.core.text.toSpanned
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.Data
@@ -33,7 +37,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.concept.engine.webextension.WebExtension
-import mozilla.components.concept.engine.webextension.WebExtensionException
 import mozilla.components.concept.engine.webextension.isUnsupported
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.R
@@ -48,7 +51,6 @@ import mozilla.components.support.ktx.android.notification.ChannelData
 import mozilla.components.support.ktx.android.notification.ensureNotificationChannelExists
 import mozilla.components.support.utils.PendingIntentUtils
 import mozilla.components.support.webextensions.WebExtensionSupport
-import java.lang.Exception
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
@@ -82,17 +84,18 @@ interface AddonUpdater {
      * new version. This requires user interaction as the updated extension will not be installed,
      * until the user grants the new permissions.
      *
-     * @param current The current [WebExtension].
-     * @param updated The updated [WebExtension] that requires extra permissions.
-     * @param newPermissions Contains a list of all the new permissions.
-     * @param onPermissionsGranted A callback to indicate if the new permissions from the [updated] extension
-     * are granted or not.
+     * @param extension The new version of the [WebExtension] being updated.
+     * @param newPermissions Contains a list of all the new required permissions.
+     * @param newOrigins Contains a list of all the new required origins.
+     * @param newDataCollectionPermissions Contains a list of all the new required data collection permissions.
+     * @param onPermissionsGranted A callback to indicate if the new permissions are granted or not.
      */
     fun onUpdatePermissionRequest(
-        current: WebExtension,
-        updated: WebExtension,
+        extension: WebExtension,
         newPermissions: List<String>,
-        onPermissionsGranted: ((Boolean) -> Unit),
+        newOrigins: List<String>,
+        newDataCollectionPermissions: List<String>,
+        onPermissionsGranted: (Boolean) -> Unit,
     )
 
     /**
@@ -118,17 +121,17 @@ interface AddonUpdater {
         /**
          * The addon is not part of the installed list.
          */
-        object NotInstalled : Status()
+        data object NotInstalled : Status()
 
         /**
          * The addon was successfully updated.
          */
-        object SuccessfullyUpdated : Status()
+        data object SuccessfullyUpdated : Status()
 
         /**
          * The addon has not been updated since the last update.
          */
-        object NoUpdateAvailable : Status()
+        data object NoUpdateAvailable : Status()
 
         /**
          * An error has happened while trying to update.
@@ -163,7 +166,7 @@ class DefaultAddonUpdater(
 
     @VisibleForTesting
     internal val updateStatusStorage = UpdateStatusStorage()
-    internal var updateAttempStorage = UpdateAttemptStorage(applicationContext)
+    internal var updateAttemptStorage = UpdateAttemptStorage(applicationContext)
 
     /**
      * See [AddonUpdater.registerForFutureUpdates]. If an add-on is already registered nothing will happen.
@@ -185,7 +188,7 @@ class DefaultAddonUpdater(
             .cancelUniqueWork(getUniquePeriodicWorkName(addonId))
         logger.info("unregisterForFutureUpdates $addonId")
         scope.launch {
-            updateAttempStorage.remove(addonId)
+            updateAttemptStorage.remove(addonId)
         }
     }
 
@@ -203,45 +206,65 @@ class DefaultAddonUpdater(
 
     /**
      * See [AddonUpdater.onUpdatePermissionRequest]
+     *
+     * IMPORTANT: The current extension update flow is a bit special when the extension requests new permissions.
+     *
+     * Because we are using a system notification, which lets users respond to it at any time, we do not update the
+     * extension in a single flow. In fact, we trigger the "update logic" of the engine twice.
+     *
+     * First, we initiate an update that will only be used to prompt the user via the notification. This update will
+     * be cancelled (as far as the engine is concerned), and the application will store some information about the
+     * pending update.
+     *
+     * The second step only occurs when the user responds to the system notification:
+     *   - When the user denies the update, then we simply clear the notification and the information stored.
+     *   - When the user accepts the update, which means they have granted the new extensions' permissions, we
+     *     invoke the update flow again as if there was no permission to grant (since the user has already granted
+     *     them). At this point, the update is applied.
      */
     override fun onUpdatePermissionRequest(
-        current: WebExtension,
-        updated: WebExtension,
+        extension: WebExtension,
         newPermissions: List<String>,
+        newOrigins: List<String>,
+        newDataCollectionPermissions: List<String>,
         onPermissionsGranted: (Boolean) -> Unit,
     ) {
-        logger.info("onUpdatePermissionRequest $current")
+        logger.info("onUpdatePermissionRequest ${extension.id}")
 
-        val shouldGrantWithoutPrompt = Addon.localizePermissions(newPermissions, applicationContext).isEmpty()
+        // This has been added to keep backward compatibility for now. Previously, this was done in the caller.
+        val allPermissions = newPermissions + newOrigins
+        val shouldGrantWithoutPrompt =
+            Addon.localizePermissions(allPermissions, applicationContext).isEmpty() &&
+                Addon.localizeDataCollectionPermissions(newDataCollectionPermissions, applicationContext).isEmpty()
         val shouldNotPrompt =
-            updateStatusStorage.isPreviouslyAllowed(applicationContext, updated.id) || shouldGrantWithoutPrompt
-
-        // When the extension update doesn't have new permissions that the user should grant with a prompt,
-        // we allow the update to continue.
-        //
-        // Otherwise, the permission request will first be user-cancelled because we return `false` below
-        // but we create an Android notification right after, which is responsible for prompting the user.
-        // When the user allows the new permissions in the Android notification, the extension update is
-        // triggered again and - since the permissions have been previously allowed - there is no new
-        // permissions that the user should grant and so we allow the update to continue. At this point,
-        // the extension is fully updated.
-        onPermissionsGranted(shouldNotPrompt)
+            updateStatusStorage.isPreviouslyAllowed(applicationContext, extension.id) || shouldGrantWithoutPrompt
+        logger.debug("onUpdatePermissionRequest shouldNotPrompt=$shouldNotPrompt")
 
         if (shouldNotPrompt) {
-            // Update has been completed at this point.
-            updateStatusStorage.markAsUnallowed(applicationContext, updated.id)
+            // Update has been completed at this point, so we can clear the storage data for this update, and proceed
+            // with the update itself.
+            updateStatusStorage.markAsUnallowed(applicationContext, extension.id)
+            onPermissionsGranted(true)
         } else {
             // We create the Android notification here.
-            val notificationId = NotificationHandlerService.getNotificationId(applicationContext, updated.id)
-            val notification = createNotification(updated, newPermissions, notificationId)
+            val notificationId = NotificationHandlerService.getNotificationId(applicationContext, extension.id)
+            val notification = createNotification(
+                extension,
+                allPermissions,
+                newDataCollectionPermissions,
+                notificationId,
+            )
             notificationsDelegate.notify(notificationId = notificationId, notification = notification)
+            // Abort the current update flow. A new update flow might be initiated when the user grants the new
+            // permissions via the system notification.
+            onPermissionsGranted(false)
         }
     }
 
     @VisibleForTesting
     internal fun createImmediateWorkerRequest(addonId: String): OneTimeWorkRequest {
         val data = AddonUpdaterWorker.createWorkerData(addonId)
-        val constraints = getWorkerConstrains()
+        val constraints = getWorkerConstraints()
 
         return OneTimeWorkRequestBuilder<AddonUpdaterWorker>()
             .setConstraints(constraints)
@@ -254,7 +277,7 @@ class DefaultAddonUpdater(
     @VisibleForTesting
     internal fun createPeriodicWorkerRequest(addonId: String): PeriodicWorkRequest {
         val data = AddonUpdaterWorker.createWorkerData(addonId)
-        val constraints = getWorkerConstrains()
+        val constraints = getWorkerConstraints()
 
         return PeriodicWorkRequestBuilder<AddonUpdaterWorker>(
             frequency.repeatInterval,
@@ -268,7 +291,7 @@ class DefaultAddonUpdater(
     }
 
     @VisibleForTesting
-    internal fun getWorkerConstrains() = Constraints.Builder()
+    internal fun getWorkerConstraints() = Constraints.Builder()
         .setRequiresStorageNotLow(true)
         .setRequiredNetworkType(NetworkType.CONNECTED)
         .build()
@@ -285,6 +308,7 @@ class DefaultAddonUpdater(
     internal fun createNotification(
         extension: WebExtension,
         newPermissions: List<String>,
+        newDataCollectionPermissions: List<String>,
         notificationId: Int,
     ): Notification {
         val channel = ChannelData(
@@ -293,19 +317,17 @@ class DefaultAddonUpdater(
             NotificationManagerCompat.IMPORTANCE_LOW,
         )
         val channelId = ensureNotificationChannelExists(applicationContext, channel)
-        val text = createContentText(newPermissions)
 
         logger.info("Created update notification for add-on ${extension.id}")
         return NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(iconsR.drawable.mozac_ic_extension_24)
             .setContentTitle(getNotificationTitle(extension))
-            .setContentText(text)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setStyle(
-                NotificationCompat.BigTextStyle()
-                    .bigText(text),
+                NotificationCompat
+                    .BigTextStyle()
+                    .bigText(createContentText(newPermissions, newDataCollectionPermissions)),
             )
-            .setContentIntent(createContentIntent())
             .addAction(createAllowAction(extension, notificationId))
             .addAction(createDenyAction(extension, notificationId))
             .setAutoCancel(true)
@@ -314,40 +336,66 @@ class DefaultAddonUpdater(
 
     private fun getNotificationTitle(extension: WebExtension): String {
         return applicationContext.getString(
-            R.string.mozac_feature_addons_updater_notification_title,
+            R.string.mozac_feature_addons_updater_notification_title_2,
             extension.getMetadata()?.name,
         )
     }
 
     @VisibleForTesting
-    internal fun createContentText(newPermissions: List<String>): String {
-        val validNewPermissions = Addon.localizePermissions(newPermissions, applicationContext)
+    internal fun createContentText(permissions: List<String>, dataCollectionPermissions: List<String>): Spanned {
+        val hasPermissions = permissions.isNotEmpty()
+        val hasDataCollectionPermissions = dataCollectionPermissions.isNotEmpty()
 
-        val string = if (validNewPermissions.size == 1) {
-            R.string.mozac_feature_addons_updater_notification_content_singular
-        } else {
-            R.string.mozac_feature_addons_updater_notification_content
-        }
-        val contentText = applicationContext.getString(string, validNewPermissions.size)
-        var permissionIndex = 1
-        val permissionsText =
-            validNewPermissions.joinToString(separator = "\n") {
-                "${permissionIndex++}-$it"
+        val intro = applicationContext.getString(R.string.mozac_feature_addons_updater_notification_short_intro)
+        val builder = SpannableStringBuilder(HtmlCompat.fromHtml("$intro<br>", HtmlCompat.FROM_HTML_MODE_COMPACT))
+
+        if (hasPermissions) {
+            val localizedPermissions = Addon.localizePermissions(permissions, applicationContext, forUpdate = true)
+            var permissionsText = applicationContext.getString(
+                R.string.mozac_feature_addons_updater_notification_heading_permissions,
+                localizedPermissions.joinToString(" "),
+            )
+            // When we have data collection permissions, we need to truncate the content of this section
+            // so that the data collection permissions section can also be displayed in the notification.
+            permissionsText = maybeAbbreviate(permissionsText, hasDataCollectionPermissions)
+
+            builder.append(HtmlCompat.fromHtml(permissionsText, HtmlCompat.FROM_HTML_MODE_COMPACT))
+
+            if (hasDataCollectionPermissions) {
+                builder.append(HtmlCompat.fromHtml("<br>", HtmlCompat.FROM_HTML_MODE_COMPACT))
             }
-        return "$contentText:\n $permissionsText"
+        }
+
+        if (hasDataCollectionPermissions) {
+            val localizedPermissions = Addon.localizeDataCollectionPermissions(
+                dataCollectionPermissions,
+                applicationContext,
+            )
+            var permissionsText = applicationContext.getString(
+                R.string.mozac_feature_addons_updater_notification_heading_data_collection_permissions,
+                Addon.formatLocalizedDataCollectionPermissions(localizedPermissions),
+            )
+            // When we have permissions, we need to truncate the content of this section so that the
+            // permissions section can also be displayed above (along with this one).
+            permissionsText = maybeAbbreviate(permissionsText, hasPermissions)
+
+            builder.append(HtmlCompat.fromHtml(permissionsText, HtmlCompat.FROM_HTML_MODE_COMPACT))
+        }
+
+        return builder.toSpanned()
     }
 
-    private fun createContentIntent(): PendingIntent {
-        val intent =
-            applicationContext.packageManager.getLaunchIntentForPackage(applicationContext.packageName)?.apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            } ?: throw IllegalStateException("Package has no launcher intent")
-        return PendingIntent.getActivity(
-            applicationContext,
-            0,
-            intent,
-            PendingIntentUtils.defaultFlags or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
+    private fun maybeAbbreviate(text: String, saveSpaceForOtherSection: Boolean): String {
+        // We take up to NARROW_MAX_LENGTH characters when we need to save some space for the other section in the
+        // notification. Otherwise, we still truncate the text because Android system notifications cannot be too tall,
+        // and we need to account for the short intro text.
+        val maxLength = if (saveSpaceForOtherSection) { NARROW_MAX_LENGTH } else { WIDE_MAX_LENGTH }
+
+        var result = text
+        if (result.length > maxLength) {
+            result = result.take(maxLength - 1).plus(Typography.ellipsis)
+        }
+        return result
     }
 
     @VisibleForTesting
@@ -369,7 +417,7 @@ class DefaultAddonUpdater(
         )
 
         val allowText =
-            applicationContext.getString(R.string.mozac_feature_addons_updater_notification_allow_button)
+            applicationContext.getString(R.string.mozac_feature_addons_updater_notification_update_button)
 
         return NotificationCompat.Action.Builder(
             iconsR.drawable.mozac_ic_extension_24,
@@ -388,8 +436,7 @@ class DefaultAddonUpdater(
             PendingIntentUtils.defaultFlags,
         )
 
-        val denyText =
-            applicationContext.getString(R.string.mozac_feature_addons_updater_notification_deny_button)
+        val denyText = applicationContext.getString(R.string.mozac_feature_addons_updater_notification_cancel_button)
 
         return NotificationCompat.Action.Builder(
             iconsR.drawable.mozac_ic_extension_24,
@@ -431,6 +478,12 @@ class DefaultAddonUpdater(
         @VisibleForTesting
         internal const val WORK_TAG_IMMEDIATE =
             "mozilla.components.feature.addons.update.addonUpdater.immediateWork"
+
+        @VisibleForTesting
+        internal const val NARROW_MAX_LENGTH = 160
+
+        @VisibleForTesting
+        internal const val WIDE_MAX_LENGTH = 320
     }
 
     /**
@@ -510,19 +563,26 @@ class DefaultAddonUpdater(
         }
 
         fun clear(context: Context) {
-            val settings = getSharedPreferences(context)
-            settings.edit { clear() }
+            getSettings(context).edit { clear() }
+        }
+
+        @VisibleForTesting
+        internal fun getData(context: Context): MutableSet<String> {
+            val data = requireNotNull(getSettings(context).getStringSet(KEY_ALLOWED_SET, mutableSetOf()))
+            // We must return a mutable copy of the allowed set because we want to persist it on disk, and changes to
+            // this allowed set can only be detected when a new set is passed to `setData()`.
+            return data.toMutableSet()
         }
 
         private fun getSettings(context: Context) = getSharedPreferences(context)
 
         private fun setData(context: Context, allowSet: MutableSet<String>) {
-            getSettings(context).edit { putStringSet(KEY_ALLOWED_SET, allowSet) }
-        }
+            // Get rid of the old allowed set, if it still exists.
+            if (getSettings(context).contains(OLD_KEY_ALLOWED_SET)) {
+                clear(context)
+            }
 
-        private fun getData(context: Context): MutableSet<String> {
-            val settings = getSharedPreferences(context)
-            return requireNotNull(settings.getStringSet(KEY_ALLOWED_SET, mutableSetOf()))
+            getSettings(context).edit { putStringSet(KEY_ALLOWED_SET, allowSet) }
         }
 
         private fun getSharedPreferences(context: Context): SharedPreferences {
@@ -530,10 +590,10 @@ class DefaultAddonUpdater(
         }
 
         companion object {
-            private const val PREFERENCE_FILE =
+            internal const val PREFERENCE_FILE =
                 "mozilla.components.feature.addons.update.addons_updates_status_preference"
-            private const val KEY_ALLOWED_SET =
-                "mozilla.components.feature.addons.update.KEY_ALLOWED_SET"
+            internal const val OLD_KEY_ALLOWED_SET = "mozilla.components.feature.addons.update.KEY_ALLOWED_SET"
+            internal const val KEY_ALLOWED_SET = "mozilla.components.feature.addons.update.KEY_ALLOWED_SET_2"
         }
     }
 
@@ -607,7 +667,7 @@ internal class AddonUpdaterWorker(
                 manager.updateAddon(extensionId) { status ->
                     val result = when (status) {
                         AddonUpdater.Status.NotInstalled -> {
-                            logger.error("Not installed extension with id $extensionId removed from the update queue")
+                            logger.error("Extension with id $extensionId removed from the update queue")
                             Result.failure()
                         }
                         AddonUpdater.Status.NoUpdateAvailable -> {
@@ -620,10 +680,10 @@ internal class AddonUpdaterWorker(
                         }
                         is AddonUpdater.Status.Error -> {
                             logger.error(
-                                "Unable to update extension $extensionId, re-schedule ${status.message}",
+                                "Error while trying to update extension $extensionId - status=${status.message}",
                                 status.exception,
                             )
-                            retryIfRecoverable(status.exception)
+                            Result.failure()
                         }
                     }
                     saveUpdateAttempt(extensionId, status)
@@ -631,27 +691,15 @@ internal class AddonUpdaterWorker(
                 }
             } catch (exception: Exception) {
                 logger.error(
-                    "Unable to update extension $extensionId, re-schedule ${exception.message}",
+                    "Unable to update extension $extensionId - reason=${exception.message}",
                     exception,
                 )
                 saveUpdateAttempt(extensionId, AddonUpdater.Status.Error(exception.message ?: "", exception))
                 if (exception.shouldReport()) {
                     GlobalAddonDependencyProvider.onCrash?.invoke(exception)
                 }
-                continuation.resume(retryIfRecoverable(exception))
+                continuation.resume(Result.failure())
             }
-        }
-    }
-
-    @VisibleForTesting
-    // We want to ensure, we are only retrying when the throwable isRecoverable,
-    // this could cause side effects as described on:
-    // https://github.com/mozilla-mobile/android-components/issues/8681
-    internal fun retryIfRecoverable(throwable: Throwable): Result {
-        return if (throwable is WebExtensionException && throwable.isRecoverable) {
-            Result.retry()
-        } else {
-            Result.success()
         }
     }
 

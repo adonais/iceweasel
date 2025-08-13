@@ -1,4 +1,4 @@
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2016 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -59,6 +59,10 @@ source_set("icuuc") {
     ":icu_config",
     ":system_icuuc",
   ]
+}
+
+group("icuuc_public") {
+  public_deps = [ ":icuuc" ]
 }
 
 shim_headers("icui18n_shim") {

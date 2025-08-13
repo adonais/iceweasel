@@ -105,7 +105,7 @@ export class ObliviousHTTP {
       .newChannel(relayURI, requestURI, config)
       .QueryInterface(Ci.nsIHttpChannel);
 
-    if (method == "POST" || method == "PUT") {
+    if (method == "POST" || method == "PUT" || method == "DELETE") {
       let uploadChannel = obliviousHttpChannel.QueryInterface(
         Ci.nsIUploadChannel2
       );

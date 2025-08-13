@@ -145,7 +145,7 @@ export class _WallpaperCategories extends React.PureComponent {
       return; // prevents errors if wallpaper index isn't found when navigating with arrow keys
     }
 
-    const isRTL = document.dir === "rtl"; // returns true is page language is right-to-left
+    const isRTL = document.dir === "rtl"; // returns true if page language is right-to-left
     let eventKey = event.key;
 
     if (eventKey === "ArrowRight" || eventKey === "ArrowLeft") {

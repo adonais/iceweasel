@@ -7,8 +7,8 @@
 #ifndef MOZILLA_GEOMETRYUTILS_H_
 #define MOZILLA_GEOMETRYUTILS_H_
 
-#include "nsTArray.h"
 #include "nsCOMPtr.h"
+#include "nsTArray.h"
 
 /**
  * This file defines utility functions for converting between layout

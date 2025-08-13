@@ -18,7 +18,6 @@ head = "head.js"
 ["browser_AddonRollouts.js"]
 
 ["browser_AddonStudies.js"]
-skip-if = ["verify && os == 'linux'"]
 
 ["browser_BaseAction.js"]
 

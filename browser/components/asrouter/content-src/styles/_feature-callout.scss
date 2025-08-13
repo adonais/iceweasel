@@ -264,6 +264,34 @@
 
       }
 
+      #content-tiles-container {
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+
+        .content-tile {
+          .content-title-container {
+            margin-block: inherit;
+          }
+
+          .multi-select-container {
+            padding: 12px 0 0;
+          }
+        }
+
+        .content-tile:not(:last-child) {
+          margin-block: 0 20px;
+        }
+
+        .tile-title {
+          font-size: 0.813em;;
+        }
+
+        .tile-title-container {
+          margin-block: initial;
+        }
+      }
+
       .multi-select-container {
         margin: 0;
         font-size: 0.813em;
@@ -382,13 +410,33 @@
           }
 
           &.with-background {
-            background: url('chrome://global/skin/icons/close.svg') no-repeat center / 16px, var(--fc-dismiss-button-bg);
+            background: url('chrome://global/skin/icons/close.svg') no-repeat center / 16px, var(--fc-dismiss-button-background);
 
             &:hover {
-              background: url('chrome://global/skin/icons/close.svg') no-repeat center / 16px, var(--fc-dismiss-button-bg-hover);
+              background: url('chrome://global/skin/icons/close.svg') no-repeat center / 16px, var(--fc-dismiss-button-background-hover);
+              color: var(--fc-button-color-hover);
 
               &:active {
-                background: url('chrome://global/skin/icons/close.svg') no-repeat center / 16px, var(--fc-dismiss-button-bg-active);
+                background: url('chrome://global/skin/icons/close.svg') no-repeat center / 16px, var(--fc-dismiss-button-background-active);
+              }
+            }
+
+            @media (prefers-contrast) {
+              background-color: var(--fc-button-background);
+              border: 1px solid var(--fc-button-border);
+              color: var(--fc-button-color);
+
+              &:hover:not(:disabled),
+              &[open] {
+                background-color: var(--fc-button-background-hover);
+                color: var(--fc-button-color-hover);
+                border: 1px solid var(--fc-button-border-hover);
+
+                &:active {
+                  background-color: var(--fc-button-background-active);
+                  color: var(--fc-button-color-active);
+                  border: 1px solid var(--fc-button-border-active);
+                }
               }
             }
           }
@@ -466,7 +514,7 @@
             margin-inline-start: 1px;
             padding: 8px;
             min-height: var(--button-min-height);
-            min-width: 30px;
+            min-width: var(--button-min-height);
             box-sizing: border-box;
             background-image: url('chrome://global/skin/icons/arrow-down.svg');
             background-repeat: no-repeat;

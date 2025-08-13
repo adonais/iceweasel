@@ -9,8 +9,8 @@
 #ifndef LayoutConstants_h___
 #define LayoutConstants_h___
 
-#include "mozilla/EnumSet.h"
 #include "Units.h"
+#include "mozilla/EnumSet.h"
 
 /**
  * Constant used to indicate an unconstrained size.

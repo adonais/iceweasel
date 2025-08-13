@@ -1,0 +1,117 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# Adding a new metric? We have docs for that!
+# https://firefox-source-docs.mozilla.org/toolkit/components/glean/user/new_definitions_file.html
+
+---
+$schema: moz://mozilla.org/schemas/glean/metrics/2-0-0
+$tags:
+  - 'Firefox :: Shell Integration'
+
+web_app:
+  install:
+    type: event
+    description: >
+      The user installed a new web app.
+    bugs:
+      - https://bugzilla.mozilla.org/1966476
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D254733
+    notification_emails:
+      - nrishel@mozilla.com
+    expires: never
+
+  uninstall:
+    type: event
+    description: >
+      The user uninstalled a web app using the page action.
+    bugs:
+      - https://bugzilla.mozilla.org/1966476
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D254733
+    notification_emails:
+      - nrishel@mozilla.com
+    expires: never
+
+  move_to_taskbar:
+    type: event
+    description: >
+      The user moved a tab onto the taskbar.
+    bugs:
+      - https://bugzilla.mozilla.org/1966476
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D254733
+    notification_emails:
+      - nrishel@mozilla.com
+    expires: never
+
+  eject:
+    type: event
+    description: >
+      The user moved a tab from the taskbar into the browser.
+    bugs:
+      - https://bugzilla.mozilla.org/1966476
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D254733
+    notification_emails:
+      - nrishel@mozilla.com
+    expires: never
+
+  activate:
+    type: event
+    description: >
+      A new taskbar tab window was opened.
+    bugs:
+      - https://bugzilla.mozilla.org/1966476
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D254733
+    notification_emails:
+      - nrishel@mozilla.com
+    expires: never
+
+  pin:
+    type: event
+    description: >
+      The user pinned the web app to their taskbar using Firefox.
+    extra_keys:
+      result:
+        description: Error code from the pinning process.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/1966476
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D254733
+    notification_emails:
+      - nrishel@mozilla.com
+    expires: never
+
+  unpin:
+    type: event
+    description: >
+      The user unpinned the web app from their taskbar using Firefox.
+    extra_keys:
+      result:
+        description: Error code from the unpinning process.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/1966476
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D254733
+    notification_emails:
+      - nrishel@mozilla.com
+    expires: never
+
+  usage_time:
+    type: timing_distribution
+    time_unit: second
+    description: >
+      Time that the user has the Taskbar Tab focused.
+    bugs:
+      - https://bugzilla.mozilla.org/1966476
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D254733
+    notification_emails:
+      - nrishel@mozilla.com
+    expires: never

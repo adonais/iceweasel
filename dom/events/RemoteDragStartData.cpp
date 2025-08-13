@@ -23,23 +23,24 @@ RemoteDragStartData::RemoteDragStartData(
     BrowserParent* aBrowserParent,
     nsTArray<IPCTransferableData>&& aTransferableData,
     const LayoutDeviceIntRect& aRect, nsIPrincipal* aPrincipal,
-    nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings,
+    nsIPolicyContainer* aPolicyContainer,
+    nsICookieJarSettings* aCookieJarSettings,
     WindowContext* aSourceWindowContext, WindowContext* aSourceTopWindowContext)
     : mBrowserParent(aBrowserParent),
       mTransferableData(std::move(aTransferableData)),
       mRect(aRect),
       mPrincipal(aPrincipal),
-      mCsp(aCsp),
+      mPolicyContainer(aPolicyContainer),
       mCookieJarSettings(aCookieJarSettings),
       mSourceWindowContext(aSourceWindowContext),
       mSourceTopWindowContext(aSourceTopWindowContext) {}
 
 void RemoteDragStartData::AddInitialDnDDataTo(
     DataTransfer* aDataTransfer, nsIPrincipal** aPrincipal,
-    nsIContentSecurityPolicy** aCsp,
+    nsIPolicyContainer** aPolicyContainer,
     nsICookieJarSettings** aCookieJarSettings) {
   NS_IF_ADDREF(*aPrincipal = mPrincipal);
-  NS_IF_ADDREF(*aCsp = mCsp);
+  NS_IF_ADDREF(*aPolicyContainer = mPolicyContainer);
   NS_IF_ADDREF(*aCookieJarSettings = mCookieJarSettings);
 
   for (uint32_t i = 0; i < mTransferableData.Length(); ++i) {

@@ -1,0 +1,24 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+.lists {
+  grid-column: span 1;
+  width: 300px;
+  background: var(--newtab-background-card);
+  border-radius: var(--border-radius-large);
+  padding: var(--space-large);
+  max-height: 282px;
+
+  fieldset {
+    padding: var(--space-xsmall);
+  }
+
+  .task-item {
+    display: flex;
+
+    input:checked ~ span {
+      text-decoration: line-through;
+    }
+  }
+}

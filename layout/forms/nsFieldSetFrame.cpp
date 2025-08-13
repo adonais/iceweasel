@@ -5,17 +5,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsFieldSetFrame.h"
-#include "mozilla/dom/HTMLLegendElement.h"
 
 #include <algorithm>
+
 #include "gfxContext.h"
 #include "mozilla/Baseline.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/Likely.h"
-#include "mozilla/PresShell.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/webrender/WebRenderAPI.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/dom/HTMLLegendElement.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/webrender/WebRenderAPI.h"
 #include "nsBlockFrame.h"
 #include "nsCSSAnonBoxes.h"
 #include "nsCSSFrameConstructor.h"
@@ -414,7 +415,7 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
     LogicalSize legendAvailSize = availSize.ConvertTo(legendWM, wm);
     ComputeSizeFlags sizeFlags;
     if (legend->StylePosition()
-            ->ISize(wm, legend->StyleDisplay()->mPosition)
+            ->ISize(wm, AnchorPosResolutionParams::From(legend))
             ->IsAuto()) {
       sizeFlags = ComputeSizeFlag::ShrinkWrap;
     }

@@ -6,8 +6,8 @@
 
 #include "LayerAnimationInfo.h"
 
-#include "nsCSSProps.h"          // For nsCSSProps::PropHasFlags
 #include "nsCSSPropertyIDSet.h"  // For nsCSSPropertyIDSet::CompositorAnimatable
+#include "nsCSSProps.h"          // For nsCSSProps::PropHasFlags
 
 namespace mozilla {
 

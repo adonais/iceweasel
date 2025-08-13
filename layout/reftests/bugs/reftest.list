@@ -43,7 +43,7 @@
 skip-if(isDebugBuild||AddressSanitizer||ThreadSanitizer||(winWidget&&(!is64Bit))) == 256180-1.html 256180-1-ref.html
 # Debug builds have larger stack frames, so skipped.
 # 32-bit Windows doesn't have enough run-time stack to deal with the test, so skipped.
-skip-if(isDebugBuild) == 256180-2.html 256180-2-ref.html
+skip-if(isDebugBuild||(winWidget&&(!is64Bit))) == 256180-2.html 256180-2-ref.html
 # Debug builds and ASAN builds have larger stack frames, so skipped.
 # 32-bit Windows doesn't have enough run-time stack to deal with the test, so skipped.
 skip-if(isDebugBuild||AddressSanitizer||ThreadSanitizer||(winWidget&&(!is64Bit))) fails-if(geckoview) == 256180-3.html 256180-3-ref.html
@@ -320,7 +320,8 @@ random-if(winWidget) fuzzy(0-25,0-2800) fails-if(useDrawSnapshot) HTTP == 289480
 == 296904-1.html 296904-1-ref.html
 == 299136-1.html 299136-1-ref.html
 == 299837-1.html 299837-1-ref.html
-skip-if(Android) random-if(winWidget) == chrome://reftest/content/bugs/299837-3.xhtml chrome://reftest/content/bugs/299837-3-ref.xhtml # bug 587631
+pref(layout.css.grid-multi-pass-track-sizing.enabled,true) skip-if(Android) == chrome://reftest/content/bugs/299837-3.xhtml chrome://reftest/content/bugs/299837-3-ref.xhtml
+pref(layout.css.grid-multi-pass-track-sizing.enabled,false) skip-if(Android) == chrome://reftest/content/bugs/299837-3.xhtml chrome://reftest/content/bugs/299837-3-ref.xhtml # We may remove this duplicate test after enabling the pref by default in bug 1957244
 == 300691-1a.html 300691-1-ref.html
 == 300691-1b.html 300691-1-ref.html
 == 300691-1c.html 300691-1-ref.html
@@ -1451,7 +1452,6 @@ fuzzy(0-1,0-5) == 561981-5.html 561981-5-ref.html
 fuzzy(0-1,0-5) == 561981-7.html 561981-7-ref.html
 == 561981-8.html 561981-8-ref.html
 == 562835-1.html 562835-ref.html
-pref(layout.css.h1-in-section-ua-styles.enabled,true) == 562835-2.html 562835-ref.html
 fuzzy-if(Android,0-2,0-48) == 563584-1.html 563584-1-ref.html
 fuzzy-if(Android,0-2,0-48) == 563584-2.html 563584-2-ref.html
 fuzzy-if(Android,0-4,0-180) == 563584-3.html 563584-3-ref.html

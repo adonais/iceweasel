@@ -1,0 +1,74 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>FedCM is_auto_selected Test</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <script src="head.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+  <script>
+    SimpleTest.waitForExplicitFinish();
+    setupTest("is_auto_selected")
+    .then(clearIdentityCredentialStorage)
+    .then(
+      function () {
+        info("Testing manual selection - is_auto_selected should be false");
+        SpecialPowers.wrap(document).notifyUserGestureActivation();
+        return navigator.credentials.get({
+          identity: {
+            mode: "active",
+            providers: [{
+              configURL: "https://example.net/tests/dom/credentialmanagement/identity/tests/mochitest/server_manifest.sjs",
+              clientId: "mochitest",
+              nonce: "nonce"
+            }]
+          }
+        });
+      }
+    ).then((cred) => {
+      ok(true, "Successfully got a credential on first request");
+      is(cred.token,
+        "account_id=1234&client_id=mochitest&nonce=nonce&disclosure_text_shown=false&is_auto_selected=false",
+        "is_auto_selected should be false on first request");
+      is(cred.id, "1234", "Correct id on the credential");
+      is(cred.type, "identity", "Correct type on the credential");
+      is(cred.isAutoSelected, false, "Correct isAutoSelected on the credential");
+      is(cred.configURL, "https://example.net/tests/dom/credentialmanagement/identity/tests/mochitest/server_manifest.sjs", "Correct configURL on credential");
+      info("Testing auto-reauth - is_auto_selected should be true");
+      return navigator.credentials.get({
+        identity: {
+          mode: "passive",
+          providers: [{
+            configURL: "https://example.net/tests/dom/credentialmanagement/identity/tests/mochitest/server_manifest.sjs",
+            clientId: "mochitest",
+            nonce: "nonce"
+          }]
+        },
+      });
+    }).then((cred) => {
+      ok(true, "Successfully got a credential on auto-reauth request");
+      is(cred.token,
+        "account_id=1234&client_id=mochitest&nonce=nonce&disclosure_text_shown=false&is_auto_selected=true",
+        "is_auto_selected should be true on second request");
+      is(cred.id, "1234", "Correct id on the auto-reauth credential");
+      is(cred.type, "identity", "Correct type on the auto-reauth credential");
+      is(cred.isAutoSelected, true, "Correct isAutoSelected on the credential");
+      is(cred.configURL, "https://example.net/tests/dom/credentialmanagement/identity/tests/mochitest/server_manifest.sjs", "Correct configURL on the credential");
+    }).catch((err) => {
+      info("Error: " + err);
+      ok(false, "Must not have an error: " + err.message);
+    }).finally(() => {
+      SimpleTest.finish();
+    });
+  </script>
+</head>
+<body>
+<p id="display"></p>
+<div id="content" style="display: none">
+  This test verifies the is_auto_selected field behavior in FedCM:
+  1. First request - is_auto_selected=false
+  2. Second request - is_auto_selected=true
+</div>
+<pre id="test"></pre>
+</body>
+</html>

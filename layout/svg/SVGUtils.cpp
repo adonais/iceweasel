@@ -7,15 +7,44 @@
 // Main header first:
 // This is also necessary to ensure our definition of M_SQRT1_2 is picked up
 #include "SVGUtils.h"
+
 #include <algorithm>
 
 // Keep others in (case-insensitive) order:
+#include "SVGAnimatedLength.h"
+#include "SVGPaintServerFrame.h"
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxMatrix.h"
 #include "gfxPlatform.h"
 #include "gfxRect.h"
 #include "gfxUtils.h"
+#include "mozilla/CSSClipPathInstance.h"
+#include "mozilla/FilterInstance.h"
+#include "mozilla/ISVGDisplayableFrame.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/SVGClipPathFrame.h"
+#include "mozilla/SVGContainerFrame.h"
+#include "mozilla/SVGContentUtils.h"
+#include "mozilla/SVGContextPaint.h"
+#include "mozilla/SVGForeignObjectFrame.h"
+#include "mozilla/SVGGeometryFrame.h"
+#include "mozilla/SVGIntegrationUtils.h"
+#include "mozilla/SVGMaskFrame.h"
+#include "mozilla/SVGObserverUtils.h"
+#include "mozilla/SVGOuterSVGFrame.h"
+#include "mozilla/SVGTextFrame.h"
+#include "mozilla/StaticPrefs_svg.h"
+#include "mozilla/Unused.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/SVGClipPathElement.h"
+#include "mozilla/dom/SVGGeometryElement.h"
+#include "mozilla/dom/SVGPathElement.h"
+#include "mozilla/dom/SVGUnitTypesBinding.h"
+#include "mozilla/dom/SVGViewportElement.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/PatternHelpers.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsDisplayList.h"
 #include "nsFrameList.h"
@@ -27,35 +56,7 @@
 #include "nsPresContext.h"
 #include "nsStyleStruct.h"
 #include "nsStyleTransformMatrix.h"
-#include "SVGAnimatedLength.h"
-#include "SVGPaintServerFrame.h"
 #include "nsTextFrame.h"
-#include "mozilla/CSSClipPathInstance.h"
-#include "mozilla/FilterInstance.h"
-#include "mozilla/ISVGDisplayableFrame.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/PresShell.h"
-#include "mozilla/StaticPrefs_svg.h"
-#include "mozilla/SVGClipPathFrame.h"
-#include "mozilla/SVGContainerFrame.h"
-#include "mozilla/SVGContentUtils.h"
-#include "mozilla/SVGContextPaint.h"
-#include "mozilla/SVGForeignObjectFrame.h"
-#include "mozilla/SVGIntegrationUtils.h"
-#include "mozilla/SVGGeometryFrame.h"
-#include "mozilla/SVGMaskFrame.h"
-#include "mozilla/SVGObserverUtils.h"
-#include "mozilla/SVGOuterSVGFrame.h"
-#include "mozilla/SVGTextFrame.h"
-#include "mozilla/Unused.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/PatternHelpers.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/SVGClipPathElement.h"
-#include "mozilla/dom/SVGGeometryElement.h"
-#include "mozilla/dom/SVGPathElement.h"
-#include "mozilla/dom/SVGUnitTypesBinding.h"
-#include "mozilla/dom/SVGViewportElement.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::dom::SVGUnitTypes_Binding;
@@ -760,10 +761,8 @@ IntSize SVGUtils::ConvertToSurfaceSize(const gfxSize& aSize,
                       surfaceSize.height != ceil(aSize.height);
 
   if (!Factory::AllowedSurfaceSize(surfaceSize)) {
-    surfaceSize.width =
-        std::min(NS_SVG_OFFSCREEN_MAX_DIMENSION, surfaceSize.width);
-    surfaceSize.height =
-        std::min(NS_SVG_OFFSCREEN_MAX_DIMENSION, surfaceSize.height);
+    surfaceSize.width = std::min(kReasonableSurfaceSize, surfaceSize.width);
+    surfaceSize.height = std::min(kReasonableSurfaceSize, surfaceSize.height);
     *aResultOverflows = true;
   }
 
@@ -928,7 +927,7 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, uint32_t aFlags,
                    .ToThebesRect();
       }
 
-      if (hasClip) {
+      if (hasClip && !(aFlags & eDoNotClipToBBoxOfContentInsideClipPath)) {
         bbox = bbox.Intersect(clipRect);
       }
 

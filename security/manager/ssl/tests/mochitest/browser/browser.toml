@@ -18,7 +18,6 @@ https_first_disabled = true
 ["browser_bug627234_perwindowpb.js"]
 
 ["browser_certViewer.js"]
-skip-if = ["verify"]
 
 ["browser_certificateManager.js"]
 
@@ -28,10 +27,7 @@ skip-if = ["verify"]
 # Any test that has to delete certificates (e.g. as part of cleanup) is
 # fundamentally incompatible with verify due to how NSS handles deleting
 # certificates.
-skip-if = [
-  "verify",
-  "socketprocess_networking",
-]
+skip-if = ["socketprocess_networking"]
 
 ["browser_clientAuth_fetch_from_extension.js"]
 

@@ -48,6 +48,7 @@ class JS_PUBLIC_API GenericPrinter;
 class JSONPrinter;
 class PropertyName;
 class StringBuilder;
+class JSOffThreadAtom;
 
 namespace frontend {
 class ParserAtomsTable;
@@ -734,6 +735,12 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   JSAtom& asAtom() const {
     MOZ_ASSERT(isAtom());
     return *(JSAtom*)this;
+  }
+
+  MOZ_ALWAYS_INLINE
+  js::JSOffThreadAtom& asOffThreadAtom() const {
+    MOZ_ASSERT(headerFlagsFieldAtomic() & ATOM_BIT);
+    return *(js::JSOffThreadAtom*)this;
   }
 
   MOZ_ALWAYS_INLINE
@@ -1799,6 +1806,80 @@ class StringSegmentRange {
   }
 };
 
+// This class should be used in code that manipulates strings off-thread (for
+// example, Ion compilation). The key difference is that flags are loaded
+// atomically, preventing data races if flags (especially the pinned atom bit)
+// are mutated on the main thread. We use private inheritance to avoid
+// accidentally exposing anything non-thread-safe.
+class JSOffThreadAtom : private JSAtom {
+ public:
+  size_t length() const { return headerLengthFieldAtomic(); }
+  size_t flags() const { return headerFlagsFieldAtomic(); }
+
+  bool empty() const { return length() == 0; }
+
+  bool hasLatin1Chars() const { return flags() & LATIN1_CHARS_BIT; }
+  bool hasTwoByteChars() const { return !(flags() & LATIN1_CHARS_BIT); }
+
+  bool isAtom() const { return flags() & ATOM_BIT; }
+  bool isInline() const { return flags() & INLINE_CHARS_BIT; }
+  bool hasIndexValue() const { return flags() & INDEX_VALUE_BIT; }
+  bool isIndex() const { return flags() & ATOM_IS_INDEX_BIT; }
+  bool isFatInline() const {
+    return (flags() & FAT_INLINE_MASK) == FAT_INLINE_MASK;
+  }
+
+  uint32_t getIndexValue() const {
+    MOZ_ASSERT(hasIndexValue());
+    return flags() >> INDEX_VALUE_SHIFT;
+  }
+  bool isIndex(uint32_t* index) const {
+    if (!isIndex()) {
+      return false;
+    }
+    *index = hasIndexValue() ? getIndexValue() : getIndexSlow();
+    return true;
+  }
+  uint32_t getIndexSlow() const;
+
+  const JS::Latin1Char* latin1Chars(const JS::AutoRequireNoGC& nogc) const {
+    MOZ_ASSERT(hasLatin1Chars());
+    return isInline() ? d.inlineStorageLatin1 : d.s.u2.nonInlineCharsLatin1;
+  };
+  const char16_t* twoByteChars(const JS::AutoRequireNoGC& nogc) const {
+    MOZ_ASSERT(hasTwoByteChars());
+    return JSLinearString::twoByteChars(nogc);
+    return isInline() ? d.inlineStorageTwoByte : d.s.u2.nonInlineCharsTwoByte;
+  }
+  mozilla::Range<const JS::Latin1Char> latin1Range(
+      const JS::AutoRequireNoGC& nogc) const {
+    return mozilla::Range<const JS::Latin1Char>(latin1Chars(nogc), length());
+  }
+  mozilla::Range<const char16_t> twoByteRange(
+      const JS::AutoRequireNoGC& nogc) const {
+    return mozilla::Range<const char16_t>(twoByteChars(nogc), length());
+  }
+  char16_t latin1OrTwoByteChar(size_t index) const {
+    MOZ_ASSERT(index < length());
+    JS::AutoCheckCannotGC nogc;
+    return hasLatin1Chars() ? latin1Chars(nogc)[index]
+                            : twoByteChars(nogc)[index];
+  }
+
+  inline HashNumber hash() const {
+    if (isFatInline()) {
+      return reinterpret_cast<const js::FatInlineAtom*>(this)->hash();
+    }
+    return reinterpret_cast<const js::NormalAtom*>(this)->hash();
+  }
+
+  JSAtom* unwrap() { return this; }
+  const JSAtom* unwrap() const { return this; }
+
+  // Should only be used to get an opaque pointer for baking into jitcode.
+  const js::gc::Cell* raw() const { return this; }
+};
+
 }  // namespace js
 
 inline js::HashNumber JSAtom::hash() const {
@@ -2035,6 +2116,12 @@ extern bool CompareStrings(JSContext* cx, JSString* str1, JSString* str2,
  */
 extern int32_t CompareStrings(const JSLinearString* str1,
                               const JSLinearString* str2);
+
+/*
+ * Compare two strings, like CompareChars. Can be called off-thread.
+ */
+extern int32_t CompareStrings(const JSOffThreadAtom* str1,
+                              const JSOffThreadAtom* str2);
 
 /**
  * Return true if the string contains only ASCII characters.

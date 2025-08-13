@@ -6,20 +6,19 @@
 
 #include "nsPrintObject.h"
 
-#include "nsIDocumentViewer.h"
-#include "nsContentUtils.h"  // for nsAutoScriptBlocker
-#include "nsIInterfaceRequestorUtils.h"
-#include "nsPIDOMWindow.h"
-#include "nsPresContext.h"
-#include "nsGkAtoms.h"
-#include "nsComponentManagerUtils.h"
-#include "nsIBaseWindow.h"
-#include "nsDocShell.h"
-
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
+#include "nsComponentManagerUtils.h"
+#include "nsContentUtils.h"  // for nsAutoScriptBlocker
+#include "nsDocShell.h"
+#include "nsGkAtoms.h"
+#include "nsIBaseWindow.h"
+#include "nsIDocumentViewer.h"
+#include "nsIInterfaceRequestorUtils.h"
+#include "nsPIDOMWindow.h"
+#include "nsPresContext.h"
 
 using namespace mozilla;
 using mozilla::dom::BrowsingContext;

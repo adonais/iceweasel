@@ -45,7 +45,7 @@ skip-if = [
 ["browser_fullscreen_from_minimize.js"]
 skip-if = [
   "os == 'linux'", # Bug 1818795
-  "os == 'win'",   # Bug 1818796
+  "os == 'win'", # Bug 1818796
 ]
 
 ["browser_fullscreen_keydown_reservation.js"]
@@ -65,15 +65,11 @@ skip-if = [
 ]
 
 ["browser_fullscreen_ui_state.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt", # Bug 1972541
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt"] # Bug 1972541
 
 ["browser_fullscreen_warning.js"]
 support-files = ["fullscreen.html"]
-skip-if = [
-  "os == 'mac'", # Bug 1848423
-]
+skip-if = ["os == 'mac'"] # Bug 1848423
 
 ["browser_fullscreen_window_focus.js"]
 skip-if = ["os == 'mac' && debug"] # Bug 1568570

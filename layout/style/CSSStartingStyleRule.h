@@ -7,8 +7,8 @@
 #ifndef CSSStaringStyleRule_h___
 #define CSSStaringStyleRule_h___
 
-#include "mozilla/css/GroupRule.h"
 #include "mozilla/ServoBindingTypes.h"
+#include "mozilla/css/GroupRule.h"
 
 namespace mozilla::dom {
 

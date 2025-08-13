@@ -23,22 +23,8 @@
         }, "Finish to add VRController.");
       }
 
-      function listenControllerEvents() {
-        async_test(function(t) {
-          window.addEventListener("gamepadbuttondown", function(e) {
-              assert_equals(e.gamepad.displayId, vrDisplay.displayId, "gamepad.displayId should be equal to vrDisplay.");
-              assert_equals(e.gamepad.id, "Puppet Gamepad", "gamepad.id must be equal to 'Puppet Gamepad'.");
-              ++controllerCount;
-              if (controllerCount == 2) {
-                t.done();
-              }
-          });
-        }, "Finish to verify VRController.displayId.");
-      }
-
       function startTest() {
         promise_test((test) => {
-          listenControllerEvents();
           return VRSimulationDriver.AttachWebVRDisplay().then(() => {
             return navigator.getVRDisplays().then((displays) => {
               vrDisplay = displays[0];

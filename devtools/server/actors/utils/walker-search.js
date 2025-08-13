@@ -271,12 +271,7 @@ class WalkerSearch {
     // will lead the same results since it has access to tagnames anyway
     if (
       // regular tagname
-      query.match(/^[a-z]+$/i) ||
-      // custom element names
-      InspectorUtils.isCustomElementName(
-        query,
-        this.walker.targetActor.window.document.documentElement.namespaceURI
-      )
+      query.match(/^[a-z]+$/i)
     ) {
       return;
     }
@@ -355,11 +350,6 @@ class WalkerSearch {
           node,
           type,
         });
-
-        // For now, just do one result per node since the frontend
-        // doesn't have a way to highlight each result individually
-        // yet.
-        break;
       }
     }
 

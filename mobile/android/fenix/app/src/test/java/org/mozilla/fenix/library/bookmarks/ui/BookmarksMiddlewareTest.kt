@@ -19,6 +19,7 @@ import mozilla.components.concept.storage.BookmarksStorage
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.test.any
 import mozilla.components.support.test.libstate.ext.waitUntilIdle
+import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.rule.runTestOnMain
@@ -56,7 +57,6 @@ class BookmarksMiddlewareTest {
     private lateinit var navigateToSearch: () -> Unit
     private lateinit var shareBookmarks: (List<BookmarkItem.Bookmark>) -> Unit
     private lateinit var showTabsTray: (Boolean) -> Unit
-    private lateinit var showUrlCopiedSnackbar: () -> Unit
     private lateinit var getBrowsingMode: () -> BrowsingMode
     private lateinit var openTab: (String, Boolean) -> Unit
     private lateinit var lastSavedFolderCache: LastSavedFolderCache
@@ -88,7 +88,6 @@ class BookmarksMiddlewareTest {
         navigateToSearch = { }
         shareBookmarks = { }
         showTabsTray = { _ -> }
-        showUrlCopiedSnackbar = { }
         getBrowsingMode = { BrowsingMode.Normal }
         openTab = { _, _ -> }
         lastSavedFolderCache = mock()
@@ -367,6 +366,24 @@ class BookmarksMiddlewareTest {
         store.dispatch(SearchClicked)
 
         assertTrue(navigated)
+    }
+
+    @Test
+    fun `GIVEN new search UX is used WHEN search button is clicked THEN don't navigate to search`() {
+        var navigated = false
+        navigateToSearch = { navigated = true }
+        val middleware = buildMiddleware(useNewSearchUX = true)
+        val captorMiddleware = CaptureActionsMiddleware<BookmarksState, BookmarksAction>()
+        val store = BookmarksStore(
+            initialState = BookmarksState.default,
+            middleware = listOf(middleware, captorMiddleware),
+        ).also {
+            it.waitUntilIdle()
+        }
+
+        store.dispatch(SearchClicked)
+
+        assertFalse(navigated)
     }
 
     @Test
@@ -834,18 +851,15 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `WHEN copy clicked in bookmark item menu THEN copy bookmark url to clipboard and snackboard is shown`() {
+    fun `WHEN copy clicked in bookmark item menu THEN copy bookmark url to clipboard`() {
         val url = "url"
         val bookmarkItem = BookmarkItem.Bookmark(url = url, title = "title", previewImageUrl = url, guid = "guid", position = null)
-        var snackShown = false
-        showUrlCopiedSnackbar = { snackShown = true }
         val middleware = buildMiddleware()
         val store = middleware.makeStore()
 
         store.dispatch(BookmarksListMenuAction.Bookmark.CopyClicked(bookmarkItem))
 
         verify(clipboardManager).setPrimaryClip(any())
-        assertTrue(snackShown)
     }
 
     @Test
@@ -1445,19 +1459,21 @@ class BookmarksMiddlewareTest {
         assertEquals(newFolderTitle, store.state.bookmarksEditBookmarkState?.folder?.title)
     }
 
-    private fun buildMiddleware() = BookmarksMiddleware(
+    private fun buildMiddleware(
+        useNewSearchUX: Boolean = false,
+    ) = BookmarksMiddleware(
         bookmarksStorage = bookmarksStorage,
         clipboardManager = clipboardManager,
         addNewTabUseCase = addNewTabUseCase,
         getNavController = { navController },
         exitBookmarks = exitBookmarks,
         wasPreviousAppDestinationHome = wasPreviousAppDestinationHome,
+        useNewSearchUX = useNewSearchUX,
         navigateToSearch = navigateToSearch,
         navigateToSignIntoSync = navigateToSignIntoSync,
         shareBookmarks = shareBookmarks,
         showTabsTray = showTabsTray,
         resolveFolderTitle = resolveFolderTitle,
-        showUrlCopiedSnackbar = showUrlCopiedSnackbar,
         getBrowsingMode = getBrowsingMode,
         openTab = openTab,
         ioDispatcher = coroutineRule.testDispatcher,

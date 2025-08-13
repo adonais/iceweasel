@@ -782,15 +782,16 @@ TRRLoadInfo::SetCspEventListener(nsICSPEventListener* aCSPEventListener) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-already_AddRefed<nsIContentSecurityPolicy> TRRLoadInfo::GetCsp() {
-  return nullptr;
-}
-
 already_AddRefed<nsIContentSecurityPolicy> TRRLoadInfo::GetPreloadCsp() {
   return nullptr;
 }
 
-already_AddRefed<nsIContentSecurityPolicy> TRRLoadInfo::GetCspToInherit() {
+already_AddRefed<nsIPolicyContainer> TRRLoadInfo::GetPolicyContainer() {
+  return nullptr;
+}
+
+already_AddRefed<nsIPolicyContainer>
+TRRLoadInfo::GetPolicyContainerToInherit() {
   return nullptr;
 }
 

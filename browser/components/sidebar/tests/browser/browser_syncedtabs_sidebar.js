@@ -100,7 +100,7 @@ add_task(async function test_tabs() {
     .resolves(tabClients.flatMap(client => client.tabs));
 
   await SidebarController.show("viewTabsSidebar");
-  const { contentDocument } = SidebarController.browser;
+  const { contentDocument, contentWindow } = SidebarController.browser;
   const component = contentDocument.querySelector("sidebar-syncedtabs");
   Assert.ok(component, "Synced tabs panel is shown.");
   const contextMenu = SidebarController.currentContextMenu;
@@ -198,6 +198,26 @@ add_task(async function test_tabs() {
     const copiedUrl = SpecialPowers.getClipboardData("text/plain");
     return copiedUrl == tabClients[0].tabs[0].url;
   }, "The copied URL is correct.");
+
+  info("Use keyboard shortcuts to navigate downwards.");
+  const firstCardHeader = component.cards[0].summaryEl;
+  const firstCardRows = component.lists[0].rowEls;
+  const secondCardHeader = component.cards[1].summaryEl;
+  const secondCardRows = component.lists[1].rowEls;
+
+  firstCardHeader.focus();
+  await focusWithKeyboard(firstCardRows[0], "KEY_ArrowDown", contentWindow);
+  await focusWithKeyboard(firstCardRows[1], "KEY_ArrowDown", contentWindow);
+  await focusWithKeyboard(secondCardHeader, "KEY_ArrowDown", contentWindow);
+  await focusWithKeyboard(secondCardRows[0], "KEY_ArrowDown", contentWindow);
+  await focusWithKeyboard(secondCardRows[1], "KEY_ArrowDown", contentWindow);
+
+  info("Use keyboard shortcuts to navigate upwards.");
+  await focusWithKeyboard(secondCardRows[0], "KEY_ArrowUp", contentWindow);
+  await focusWithKeyboard(secondCardHeader, "KEY_ArrowUp", contentWindow);
+  await focusWithKeyboard(firstCardRows[1], "KEY_ArrowUp", contentWindow);
+  await focusWithKeyboard(firstCardRows[0], "KEY_ArrowUp", contentWindow);
+  await focusWithKeyboard(firstCardHeader, "KEY_ArrowUp", contentWindow);
 
   SidebarController.hide();
   sandbox.restore();

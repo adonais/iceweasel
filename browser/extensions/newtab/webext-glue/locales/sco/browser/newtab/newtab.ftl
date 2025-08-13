@@ -310,6 +310,9 @@ newtab-custom-settings = Manage mair settins
 ## Strings for download mobile highlight
 
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
 

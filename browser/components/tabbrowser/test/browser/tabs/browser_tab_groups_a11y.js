@@ -66,3 +66,53 @@ add_task(async function test_TabGroupA11y() {
   await removeTabGroup(tabGroup);
   BrowserTestUtils.removeTab(tab1);
 });
+
+async function flushL10n() {
+  while (document.hasPendingL10nMutations) {
+    await BrowserTestUtils.waitForEvent(document, "L10nMutationsFinished");
+  }
+}
+
+add_task(async function test_collapsedTabGroupTooltips() {
+  const tab1 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  const tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  const tab3 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+
+  const group = gBrowser.addTabGroup([tab1, tab2]);
+  await BrowserTestUtils.switchTab(gBrowser, tab2);
+  Assert.equal(
+    group.labelElement.getAttribute("tooltiptext"),
+    "Unnamed Group — Expanded",
+    "Group label tooltip indicates its expanded state"
+  );
+
+  info("Collapse the group to confirm tooltip states");
+  let collapseFinished = BrowserTestUtils.waitForEvent(
+    group,
+    "TabGroupCollapse"
+  );
+  group.collapsed = true;
+  await collapseFinished;
+  await flushL10n();
+  Assert.equal(
+    group.labelElement.getAttribute("tooltiptext"),
+    "Unnamed Group — Collapsed",
+    "Group label tooltip indicates its collapsed state"
+  );
+  Assert.equal(
+    group.overflowCountLabel.getAttribute("tooltiptext"),
+    "1 more tab",
+    "Overflow count tooltip shows singular 'tab'"
+  );
+
+  info("Add a third tab to the group to confirm overflow tooltip pluralizes");
+  group.addTabs([tab3]);
+  await flushL10n();
+  Assert.equal(
+    group.overflowCountLabel.getAttribute("tooltiptext"),
+    "2 more tabs",
+    "Overflow count tooltip indicates remaining tabs"
+  );
+
+  await removeTabGroup(group);
+});

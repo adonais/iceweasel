@@ -6,36 +6,36 @@
 
 #include "nsBidiPresUtils.h"
 
-#include "mozilla/intl/Bidi.h"
+#include <algorithm>
+
+#include "RubyUtils.h"
+#include "gfxContext.h"
 #include "mozilla/Casting.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/Text.h"
-
-#include "gfxContext.h"
-#include "nsFontMetrics.h"
-#include "nsGkAtoms.h"
-#include "nsPresContext.h"
+#include "mozilla/intl/Bidi.h"
 #include "nsBidiUtils.h"
+#include "nsBlockFrame.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsContainerFrame.h"
+#include "nsFirstLetterFrame.h"
+#include "nsFontMetrics.h"
+#include "nsGkAtoms.h"
+#include "nsIFrameInlines.h"
 #include "nsInlineFrame.h"
 #include "nsPlaceholderFrame.h"
 #include "nsPointerHashKeys.h"
-#include "nsFirstLetterFrame.h"
-#include "nsUnicodeProperties.h"
-#include "nsTextFrame.h"
-#include "nsBlockFrame.h"
-#include "nsIFrameInlines.h"
-#include "nsStyleStructInlines.h"
-#include "RubyUtils.h"
-#include "nsRubyFrame.h"
-#include "nsRubyBaseFrame.h"
-#include "nsRubyTextFrame.h"
+#include "nsPresContext.h"
 #include "nsRubyBaseContainerFrame.h"
+#include "nsRubyBaseFrame.h"
+#include "nsRubyFrame.h"
 #include "nsRubyTextContainerFrame.h"
-#include <algorithm>
+#include "nsRubyTextFrame.h"
+#include "nsStyleStructInlines.h"
+#include "nsTextFrame.h"
+#include "nsUnicodeProperties.h"
 
 #undef NOISY_BIDI
 #undef REALLY_NOISY_BIDI

@@ -13,7 +13,7 @@
 edition = "2021"
 rust-version = "1.82.0"
 name = "wgpu-hal"
-version = "25.0.0"
+version = "26.0.0"
 authors = ["gfx-rs developers"]
 build = "build.rs"
 autolib = false
@@ -83,7 +83,6 @@ gles = [
     "naga/glsl-out",
     "dep:arrayvec",
     "dep:bytemuck",
-    "dep:cfg-if",
     "dep:glow",
     "dep:glutin_wgl_sys",
     "dep:hashbrown",
@@ -117,7 +116,10 @@ metal = [
     "dep:parking_lot",
     "dep:profiling",
 ]
-portable-atomic = ["dep:portable-atomic"]
+portable-atomic = [
+    "dep:portable-atomic",
+    "dep:portable-atomic-util",
+]
 renderdoc = [
     "dep:libloading",
     "dep:renderdoc-sys",
@@ -181,7 +183,6 @@ optional = true
 
 [dependencies.cfg-if]
 version = "1"
-optional = true
 
 [dependencies.glow]
 version = "0.16"
@@ -201,13 +202,8 @@ version = "0.4.21"
 optional = true
 
 [dependencies.naga]
-version = "25.0.0"
+version = "26.0.0"
 path = "../naga"
-
-[dependencies.once_cell]
-version = "1.21"
-optional = true
-default-features = false
 
 [dependencies.ordered-float]
 version = ">=3, <=5.0"
@@ -219,7 +215,7 @@ version = "0.12.3"
 optional = true
 
 [dependencies.profiling]
-version = "1"
+version = "1.0.1"
 optional = true
 default-features = false
 
@@ -237,12 +233,9 @@ version = "2.0.3"
 default-features = false
 
 [dependencies.wgpu-types]
-version = "25.0.0"
+version = "26.0.0"
 path = "../wgpu-types"
 default-features = false
-
-[dev-dependencies.cfg-if]
-version = "1"
 
 [dev-dependencies.env_logger]
 version = "0.11"
@@ -252,7 +245,7 @@ default-features = false
 version = "0.30"
 
 [dev-dependencies.naga]
-version = "25.0.0"
+version = "26.0.0"
 path = "../naga"
 features = [
     "wgsl-in",
@@ -291,6 +284,10 @@ default-features = false
 version = "0.1.4"
 optional = true
 default-features = false
+
+[target.'cfg(any(not(target_has_atomic = "64"), not(target_has_atomic = "ptr")))'.dependencies.portable-atomic]
+version = "1.8"
+optional = true
 
 [target.'cfg(not(any(target_arch = "wasm32", target_os = "ios", target_os = "visionos")))'.dev-dependencies.glutin]
 version = "0.31"
@@ -353,8 +350,9 @@ version = "1.9"
 features = ["union"]
 optional = true
 
-[target.'cfg(not(target_has_atomic = "64"))'.dependencies.portable-atomic]
-version = "1.2"
+[target.'cfg(not(target_has_atomic = "ptr"))'.dependencies.portable-atomic-util]
+version = "0.2.4"
+features = ["alloc"]
 optional = true
 
 [target.'cfg(target_os = "android")'.dependencies.android_system_properties]

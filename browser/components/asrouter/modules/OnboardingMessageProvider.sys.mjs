@@ -1807,8 +1807,8 @@ const PREONBOARDING_MESSAGES = () => [
     id: "NEW_USER_TOU_ONBOARDING",
     enabled: true,
     requireAction: true,
-    currentPolicyVersion: 3,
-    minimumPolicyVersion: 3,
+    currentVersion: 4,
+    minimumVersion: 4,
     firstRunURL: "https://www.mozilla.org/privacy/firefox/",
     screens: [
       {
@@ -1961,7 +1961,7 @@ const PREONBOARDING_MESSAGES = () => [
                 orderedExecution: true,
                 actions: [
                   {
-                    type: "DATAREPORTING_NOTIFY_DATA_POLICY_INTERACTED",
+                    type: "SET_TERMS_OF_USE_INTERACTED",
                   },
                 ],
               },

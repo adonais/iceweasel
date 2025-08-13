@@ -650,6 +650,15 @@ iframe {
   z-index: 1001;
 }
 
+/* Highlighting search results */
+
+::highlight(devtools-search) {
+  color: var(--theme-search-results-color);
+  background-color: var(--theme-search-results-background);
+  text-decoration: 1px underline var(--theme-search-results-border-color);
+  text-decoration-skip-ink: none;
+}
+
 /* Twisty and checkbox controls */
 
 .theme-twisty {
@@ -868,4 +877,15 @@ html[dir="rtl"] .devtools-checkbox-toggle:checked {
   .devtools-checkbox-toggle::before {
     transition: none;
   }
+}
+
+.devtools-checkered-background {
+  background-color: #eee;
+  background-image:
+    linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc),
+    linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc);
+  background-size: 20px 20px;
+  background-position:
+    0 0,
+    10px 10px;
 }

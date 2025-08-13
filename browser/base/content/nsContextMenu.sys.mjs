@@ -247,7 +247,9 @@ export class nsContextMenu {
       this.ownerDoc = this.target.ownerDocument;
     }
 
-    this.csp = lazy.E10SUtils.deserializeCSP(context.csp);
+    this.policyContainer = lazy.E10SUtils.deserializePolicyContainer(
+      context.policyContainer
+    );
 
     if (this.contentData) {
       this.browser = this.contentData.browser;
@@ -442,7 +444,7 @@ export class nsContextMenu {
 
     // Only show remove option if there are text fragments on the page.
     this.showItem("context-sep-highlights", this.hasTextFragments);
-    this.showItem("context-remove-all-highlights", this.hasTextFragments);
+    this.showItem("context-remove-highlight", this.hasTextFragments);
   }
 
   async getTextDirective() {
@@ -916,10 +918,12 @@ export class nsContextMenu {
 
     this.showAndFormatSearchContextItem();
     this.showTranslateSelectionItem();
-    lazy.GenAI.buildAskChatMenu(
-      document.getElementById("context-ask-chat"),
-      this
-    );
+    lazy.GenAI.buildAskChatMenu(document.getElementById("context-ask-chat"), {
+      browser: this.browser,
+      selectionInfo: this.selectionInfo,
+      showItem: this.showItem.bind(this),
+      source: "page",
+    });
 
     // srcdoc cannot be opened separately due to concerns about web
     // content with about:srcdoc in location bar masquerading as trusted
@@ -1454,7 +1458,7 @@ export class nsContextMenu {
       originStoragePrincipal: this.storagePrincipal,
       triggeringPrincipal: this.principal,
       triggeringRemoteType: this.remoteType,
-      csp: this.csp,
+      policyContainer: this.policyContainer,
       frameID: this.contentData.frameID,
       hasValidUserGestureActivation: true,
     };
@@ -1551,7 +1555,7 @@ export class nsContextMenu {
     this.window.openLinkIn(this.contentData.docLocation, "tab", {
       charset: this.contentData.charSet,
       triggeringPrincipal: this.browser.contentPrincipal,
-      csp: this.browser.csp,
+      policyContainer: this.browser.policyContainer,
       referrerInfo: this.contentData.frameReferrerInfo,
     });
   }
@@ -1567,7 +1571,7 @@ export class nsContextMenu {
     this.window.openLinkIn(this.contentData.docLocation, "window", {
       charset: this.contentData.charSet,
       triggeringPrincipal: this.browser.contentPrincipal,
-      csp: this.browser.csp,
+      policyContainer: this.browser.policyContainer,
       referrerInfo: this.contentData.frameReferrerInfo,
     });
   }
@@ -1688,7 +1692,7 @@ export class nsContextMenu {
       referrerInfo: this.contentData.referrerInfo,
       triggeringPrincipal: this.principal,
       triggeringRemoteType: this.remoteType,
-      csp: this.csp,
+      policyContainer: this.policyContainer,
     });
   }
 
@@ -1743,7 +1747,7 @@ export class nsContextMenu {
         forceAllowDataURI: true,
         triggeringPrincipal: this.principal,
         triggeringRemoteType: this.remoteType,
-        csp: this.csp,
+        policyContainer: this.policyContainer,
       });
     }
   }
@@ -1809,7 +1813,7 @@ export class nsContextMenu {
       forceAllowDataURI: true,
       triggeringPrincipal: this.principal,
       triggeringRemoteType: this.remoteType,
-      csp: this.csp,
+      policyContainer: this.policyContainer,
     });
   }
 
@@ -2799,7 +2803,8 @@ export class nsContextMenu {
     // Store searchTerms in context menu item so we know what to search onclick
     menuItem.searchTerms = menuItemPrivate.searchTerms = selectedText;
     menuItem.principal = menuItemPrivate.principal = this.principal;
-    menuItem.csp = menuItemPrivate.csp = this.csp;
+    menuItem.policyContainer = menuItemPrivate.policyContainer =
+      this.policyContainer;
 
     // Copied to alert.js' prefillAlertInfo().
     // If the JS character after our truncation point is a trail surrogate,

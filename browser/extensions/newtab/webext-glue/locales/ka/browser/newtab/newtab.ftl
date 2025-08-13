@@ -158,7 +158,7 @@ newtab-menu-bookmark = ჩანიშვნა
 
 newtab-menu-copy-download-link = ჩამოტვირთვის ბმულის ასლი
 newtab-menu-go-to-download-page = გადასვლა ჩამოტვირთვის გვერდზე
-newtab-menu-remove-download = ისტორიიდან ამოშლა
+newtab-menu-remove-download = მოცილება ისტორიიდან
 
 ## Context Menu - Download Menu: These are platform specific strings found in the context menu of an item that has
 ## been downloaded. The intention behind "this action" is that it will show where the downloaded file exists on the file
@@ -503,6 +503,9 @@ newtab-topic-selection-button-pick-interests = აირციეთ მის�
 newtab-section-follow-button = თვალის მიდევნება
 newtab-section-following-button = გამოწერილი
 newtab-section-unfollow-button = თვალის მიდევნების შეწყვეტა
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = გააუმჯობესეთ თქვენი არხი
+newtab-section-follow-highlight-subtitle = მიჰყევით თქვენს მისწრაფებებს, რომ იხილოთ კიდევ უფრო მეტი, რაც მოგწონთ.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -545,6 +548,11 @@ newtab-download-mobile-highlight-body-variant-c = იცოდით, რომ 
 newtab-download-mobile-highlight-image =
     .aria-label = QR-კოდი, რომ ჩამოტვირთოთ { -brand-product-name } მობილურზე
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = ხელთ იქონიეთ რჩეული მასალები
+newtab-shortcuts-highlight-subtitle = დაამატეთ მალსახმობი, რომ რჩეულ საიტებთან წვდომა ერთი წკაპით შეგეძლოთ.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -578,3 +586,5 @@ newtab-trending-searches-hide-trending =
     .title = ხშირად მოძიებულის დამალვა
 newtab-trending-searches-learn-more = ვრცლად
 newtab-trending-searches-dismiss = ხშირად მოძიებულის დამალვა
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = ხშირად მოძიებული

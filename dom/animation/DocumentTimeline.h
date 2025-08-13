@@ -75,6 +75,9 @@ class DocumentTimeline final : public AnimationTimeline,
   // iframe).
   TimeStamp mLastRefreshDriverTime;
   TimeDuration mOriginTime;
+
+ private:
+  TimeStamp EnsureValidTimestamp(const TimeStamp& aTimestamp) const;
 };
 
 }  // namespace mozilla::dom

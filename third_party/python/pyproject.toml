@@ -21,7 +21,7 @@ dependencies = [
     "filelock~=3.6",
     "fluent-migrate~=0.13",
     "fluent-syntax==0.19.0",
-    "glean-parser==17.1.0",
+    "glean-parser==17.2.0",
     "importlib-metadata~=8.0",
     # Required for compatibility with Flask >= 2 in tools/tryselect/selectors/chooser
     "jinja2==3.1.6",
@@ -43,7 +43,7 @@ dependencies = [
     "pyasn1-modules~=0.2",
     "pyasn1~=0.4",
     "pylru~=1.0",
-    "python-hglib==2.4",
+    "python-hglib~=2.4",
     "pyyaml==6.0.2",
     "redo~=3.0",
     "requests-unixsocket~=0.2",

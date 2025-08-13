@@ -31,6 +31,7 @@ DEFINES["WEBRTC_LIBRARY_IMPL"] = True
 DEFINES["WEBRTC_MOZILLA_BUILD"] = True
 DEFINES["WEBRTC_NON_STATIC_TRACE_EVENT_HANDLERS"] = "0"
 DEFINES["WEBRTC_STRICT_FIELD_TRIALS"] = "0"
+DEFINES["_LIBCPP_HARDENING_MODE"] = "_LIBCPP_HARDENING_MODE_NONE"
 
 FINAL_LIBRARY = "xul"
 
@@ -87,8 +88,6 @@ if CONFIG["OS_TARGET"] == "Darwin":
 
     DEFINES["WEBRTC_MAC"] = True
     DEFINES["WEBRTC_POSIX"] = True
-    DEFINES["_LIBCPP_HAS_NO_ALIGNED_ALLOCATION"] = True
-    DEFINES["__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES"] = "0"
     DEFINES["__STDC_CONSTANT_MACROS"] = True
     DEFINES["__STDC_FORMAT_MACROS"] = True
 
@@ -103,12 +102,12 @@ if CONFIG["OS_TARGET"] == "Linux":
 
     DEFINES["USE_AURA"] = "1"
     DEFINES["USE_GLIB"] = "1"
-    DEFINES["USE_NSS_CERTS"] = "1"
     DEFINES["USE_OZONE"] = "1"
     DEFINES["USE_UDEV"] = True
     DEFINES["WEBRTC_LINUX"] = True
     DEFINES["WEBRTC_POSIX"] = True
     DEFINES["_FILE_OFFSET_BITS"] = "64"
+    DEFINES["_GLIBCXX_ASSERTIONS"] = "1"
     DEFINES["_LARGEFILE64_SOURCE"] = True
     DEFINES["_LARGEFILE_SOURCE"] = True
     DEFINES["__STDC_CONSTANT_MACROS"] = True
@@ -131,7 +130,6 @@ if CONFIG["OS_TARGET"] == "OpenBSD":
 
     DEFINES["USE_GLIB"] = "1"
     DEFINES["USE_OZONE"] = "1"
-    DEFINES["USE_X11"] = "1"
     DEFINES["WEBRTC_BSD"] = True
     DEFINES["WEBRTC_POSIX"] = True
     DEFINES["WEBRTC_USE_X11"] = True
@@ -185,6 +183,7 @@ if CONFIG["OS_TARGET"] == "WINNT":
     DEFINES["WINAPI_FAMILY"] = "WINAPI_FAMILY_DESKTOP_APP"
     DEFINES["WINVER"] = "0x0A00"
     DEFINES["_ATL_NO_OPENGL"] = True
+    DEFINES["_CRT_NONSTDC_NO_WARNINGS"] = True
     DEFINES["_CRT_RAND_S"] = True
     DEFINES["_CRT_SECURE_NO_DEPRECATE"] = True
     DEFINES["_ENABLE_EXTENDED_ALIGNED_STORAGE"] = True
@@ -195,6 +194,7 @@ if CONFIG["OS_TARGET"] == "WINNT":
     DEFINES["_UNICODE"] = True
     DEFINES["_WIN32_WINNT"] = "0x0A00"
     DEFINES["_WINDOWS"] = True
+    DEFINES["_WINSOCK_DEPRECATED_NO_WARNINGS"] = True
     DEFINES["__STD_C"] = True
 
     OS_LIBS += [
@@ -250,6 +250,7 @@ if CONFIG["TARGET_CPU"] == "aarch64":
 
     DEFINES["WEBRTC_ARCH_ARM64"] = True
     DEFINES["WEBRTC_HAS_NEON"] = True
+    DEFINES["__ARM_NEON__"] = "1"
 
 if CONFIG["TARGET_CPU"] == "arm":
 
@@ -257,6 +258,7 @@ if CONFIG["TARGET_CPU"] == "arm":
         "-mfpu=neon"
     ]
 
+    DEFINES["CR_SYSROOT_KEY"] = "20250129T203412Z-1"
     DEFINES["WEBRTC_ARCH_ARM"] = True
     DEFINES["WEBRTC_ARCH_ARM_V7"] = True
     DEFINES["WEBRTC_HAS_NEON"] = True
@@ -284,7 +286,6 @@ if CONFIG["TARGET_CPU"] == "arm":
 
 if CONFIG["TARGET_CPU"] == "loongarch64":
 
-    DEFINES["USE_X11"] = "1"
     DEFINES["WEBRTC_USE_X11"] = True
     DEFINES["_GNU_SOURCE"] = True
 
@@ -313,6 +314,7 @@ if CONFIG["TARGET_CPU"] == "loongarch64":
 
 if CONFIG["TARGET_CPU"] == "mips32":
 
+    DEFINES["CR_SYSROOT_KEY"] = "20250129T203412Z-1"
     DEFINES["MIPS32_LE"] = True
     DEFINES["MIPS_FPU_LE"] = True
     DEFINES["WEBRTC_USE_PIPEWIRE"] = True
@@ -339,6 +341,7 @@ if CONFIG["TARGET_CPU"] == "mips32":
 
 if CONFIG["TARGET_CPU"] == "mips64":
 
+    DEFINES["CR_SYSROOT_KEY"] = "20250129T203412Z-1"
     DEFINES["WEBRTC_USE_PIPEWIRE"] = True
     DEFINES["_GNU_SOURCE"] = True
 
@@ -363,7 +366,6 @@ if CONFIG["TARGET_CPU"] == "mips64":
 
 if CONFIG["TARGET_CPU"] == "ppc64":
 
-    DEFINES["USE_X11"] = "1"
     DEFINES["WEBRTC_USE_X11"] = True
 
     OS_LIBS += [
@@ -415,6 +417,7 @@ if CONFIG["MOZ_DEBUG"] == "1" and CONFIG["OS_TARGET"] == "WINNT":
 
 if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "aarch64":
 
+    DEFINES["CR_SYSROOT_KEY"] = "20250129T203412Z-1"
     DEFINES["WEBRTC_USE_PIPEWIRE"] = True
     DEFINES["_GNU_SOURCE"] = True
 
@@ -439,7 +442,6 @@ if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "aarch64":
 
 if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "riscv64":
 
-    DEFINES["USE_X11"] = "1"
     DEFINES["WEBRTC_USE_X11"] = True
 
     OS_LIBS += [
@@ -471,6 +473,7 @@ if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86":
         "-msse2"
     ]
 
+    DEFINES["CR_SYSROOT_KEY"] = "20250129T203412Z-1"
     DEFINES["WEBRTC_USE_PIPEWIRE"] = True
     DEFINES["_GNU_SOURCE"] = True
 
@@ -495,6 +498,7 @@ if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86":
 
 if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86_64":
 
+    DEFINES["CR_SYSROOT_KEY"] = "20250129T203412Z-1"
     DEFINES["WEBRTC_USE_PIPEWIRE"] = True
     DEFINES["_GNU_SOURCE"] = True
 
@@ -519,7 +523,6 @@ if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86_64":
 
 if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "aarch64":
 
-    DEFINES["USE_X11"] = "1"
     DEFINES["WEBRTC_USE_X11"] = True
 
     OS_LIBS += [
@@ -547,7 +550,6 @@ if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGE
 
 if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "arm":
 
-    DEFINES["USE_X11"] = "1"
     DEFINES["WEBRTC_USE_X11"] = True
 
     OS_LIBS += [
@@ -575,7 +577,6 @@ if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGE
 
 if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "mips32":
 
-    DEFINES["USE_X11"] = "1"
     DEFINES["WEBRTC_USE_X11"] = True
 
     OS_LIBS += [
@@ -603,7 +604,6 @@ if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGE
 
 if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "mips64":
 
-    DEFINES["USE_X11"] = "1"
     DEFINES["WEBRTC_USE_X11"] = True
 
     OS_LIBS += [
@@ -631,7 +631,6 @@ if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGE
 
 if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86":
 
-    DEFINES["USE_X11"] = "1"
     DEFINES["WEBRTC_USE_X11"] = True
 
     OS_LIBS += [
@@ -659,7 +658,6 @@ if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGE
 
 if CONFIG["MOZ_X11"] == "1" and CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86_64":
 
-    DEFINES["USE_X11"] = "1"
     DEFINES["WEBRTC_USE_X11"] = True
 
     OS_LIBS += [

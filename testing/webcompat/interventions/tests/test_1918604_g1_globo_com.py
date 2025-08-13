@@ -14,6 +14,7 @@ SELECTION_CSS = ".letter-box svg g path"
 
 
 async def are_buttons_clipped_or_selection_is_misaligned(client):
+    await client.make_preload_script("delete navigator.__proto__.webdriver")
     client.set_screen_size(300, 500)
     await client.navigate(URL, wait="none")
 

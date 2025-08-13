@@ -342,11 +342,7 @@ class WalkerActor extends Actor {
         "CSSPrefersColorScheme",
         null
       ),
-      traits: {
-        // @backward-compat { version 140 } The shape of the returned value from getSuggestionsForQuery
-        // changed in 140. This trait can be removed when 140 hits release
-        getSuggestionsForQueryWithoutCount: true,
-      },
+      traits: {},
     };
   }
 
@@ -730,9 +726,9 @@ class WalkerActor extends Actor {
    * If the given NodeActor only has a single text node as a child with a text
    * content small enough to be inlined, return that child's NodeActor.
    *
-   * @param NodeActor node
+   * @param Element rawNode
    */
-  inlineTextChild({ rawNode }) {
+  inlineTextChild(rawNode) {
     // Quick checks to prevent creating a new walker if possible.
     if (
       isMarkerPseudoElement(rawNode) ||
@@ -1176,10 +1172,23 @@ class WalkerActor extends Actor {
    */
   search(query) {
     const results = this.walkerSearch.search(query);
-    const nodeList = new NodeListActor(
-      this,
-      results.map(r => r.node)
-    );
+
+    // For now, only return each node once, since the frontend doesn't have a way to
+    // highlight each result individually (This would change if we fix Bug 1976634).
+    const seenNodes = new Set();
+    for (const { node } of results) {
+      const isInlinedTextNode =
+        node.nodeType === Node.TEXT_NODE &&
+        node.parentElement &&
+        this.inlineTextChild(node.parentElement);
+
+      // If this is a text node that will be inlined in its parent element, let's directly
+      // return the parent element already so we don't get multiple results for the same
+      // Markup view tree node.
+      seenNodes.add(isInlinedTextNode ? node.parentElement : node);
+    }
+
+    const nodeList = new NodeListActor(this, Array.from(seenNodes));
 
     return {
       list: nodeList,
@@ -2282,7 +2291,7 @@ class WalkerActor extends Actor {
         mutation.removed = removedActors;
         mutation.added = addedActors;
 
-        const inlineTextChild = this.inlineTextChild(targetActor);
+        const inlineTextChild = this.inlineTextChild(targetActor.rawNode);
         if (inlineTextChild) {
           mutation.inlineTextChild = inlineTextChild.form();
         }
@@ -2319,7 +2328,7 @@ class WalkerActor extends Actor {
       return;
     }
 
-    const inlineTextChild = this.inlineTextChild(parentActor);
+    const inlineTextChild = this.inlineTextChild(parentActor.rawNode);
     this.queueMutation({
       type: "inlineTextChild",
       target: parentActor.actorID,

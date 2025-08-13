@@ -5,25 +5,24 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "nsContentDLF.h"
 
+#include "DecoderTraits.h"
+#include "imgLoader.h"
 #include "mozilla/Encoding.h"
-
+#include "mozilla/dom/Document.h"
 #include "nsCOMPtr.h"
+#include "nsCRT.h"
+#include "nsCharsetSource.h"
+#include "nsContentUtils.h"
 #include "nsDocShell.h"
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
-#include "nsIDocumentViewer.h"
 #include "nsIDocumentLoaderFactory.h"
-#include "mozilla/dom/Document.h"
+#include "nsIDocumentViewer.h"
+#include "nsIViewSourceChannel.h"
+#include "nsMimeTypes.h"
+#include "nsNetUtil.h"
 #include "nsNodeInfoManager.h"
 #include "nsString.h"
-#include "nsNetUtil.h"
-#include "nsCRT.h"
-#include "nsIViewSourceChannel.h"
-#include "nsContentUtils.h"
-#include "imgLoader.h"
-#include "nsCharsetSource.h"
-#include "nsMimeTypes.h"
-#include "DecoderTraits.h"
 
 // Factory code for creating variations on html documents
 

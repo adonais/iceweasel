@@ -104,16 +104,6 @@
   -->
   <string name="erase_action_cfr_message" moz:removedIn="141" tools:ignore="UnusedResources">Eikutu ápe eñepyrũ hag̃ua tembiapo ñemigua. Embogue ne rembiasakue, kookie — opavave.</string>
   <!--
-    Toolbar "contextual feature recommendation" (CFR)
-
-    Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
-  -->
-  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">Eikundaha pya’eve kundahára pyahu ndive</string>
-  <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">Ñanduti rendápe, ko várra okañýta ehovévo yvy gotyo erekove rekávo pa’ũ eikundaha hag̃ua.</string>
-  <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">Ejopymeme pe hu’y epo hag̃ua tembiasakue kuatiarogue ko tendaykepegua.</string>
-  <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
     Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar.
@@ -328,6 +318,8 @@
   <string name="browser_menu_sign_back_in_to_sync">Eñepyrũjey tembiapo embojuehe hag̃ua</string>
   <!-- Browser menu caption label for the "Sign back in to sync" browser menu item described in `browser_menu_sign_back_in_to_sync` when there is an error in syncing -->
   <string name="browser_menu_syncing_paused_caption">Ñembojuehe mombytapyre</string>
+  <!-- Browser menu caption label for an authenticated user -->
+  <string name="browser_menu_signed_in_caption">Eñangareko eykeko ha embojuehéva</string>
   <!-- Browser menu label that creates a private tab -->
   <string name="browser_menu_new_private_tab">Tendayke pyahu ñemigua</string>
   <!-- Browser menu label that navigates to the Password screen -->
@@ -340,7 +332,7 @@
   <!-- Browser menu label that toggles the request for the desktop site of the currently visited page -->
   <string name="browser_menu_switch_to_desktop_site" moz:removedIn="141" tools:ignore="UnusedResources">Emoambue mohendaha mesa ariguápe</string>
   <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site">Emoambue pumbyryguávape</string>
+  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Emoambue pumbyryguávape</string>
   <!-- Browser menu label that navigates to the page tools sub-menu -->
   <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">Tembiporu</string>
   <!-- Content description (not visible, for screen readers etc.): Back button for all menu redesign sub-menu -->
@@ -424,7 +416,9 @@
   -->
   <string name="browser_menu_default_banner_title">Ejapo %1$s-gui ijypyguáva</string>
   <!-- Label text within the set as default banner -->
-  <string name="browser_menu_default_banner_subtitle">Ndahetái aravo\'i. Emoambuekuaa ejapose vove.</string>
+  <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">Ndahetái aravo\'i. Emoambuekuaa ejapose vove.</string>
+  <!-- Label text within the set as default banner -->
+  <string name="browser_menu_default_banner_subtitle_2">Ipya’e, hekoñemi ha nemba’erãva.</string>
   <!-- Content description for the button that dismisses the set as default banner in the menu -->
   <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">Mboyke</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
@@ -600,45 +594,6 @@
   <string name="juno_onboarding_add_search_widget_positive_button" tools:ignore="BrandUsage,UnusedResources">Embjuaju Firefox widget</string>
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">Ani ko’ág̃a</string>
-  <!--
-    Onboarding header for the add-ons card used by Nimbus experiments. Nimbus experiments do not support string placeholders.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="onboarding_add_on_header" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Emboavaite Firefox jepysokue ndive</string>
-  <!-- Onboarding sub header for the add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_sub_header" moz:removedIn="140" tools:ignore="UnusedResources">Embojuaju jepysokue mbohapyháva emombareteve hag̃ua ne rekorosã, mba’eapopy ha hetave.</string>
-  <!-- Onboarding add-ons card, for checking more add-ons on, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_explore_more_extensions_2" moz:removedIn="140" tools:ignore="UnusedResources">Ejeporekave jepysokuére</string>
-  <!-- Onboarding add-ons card, button for start browsing, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_start_browsing_button_2" moz:removedIn="140" tools:ignore="UnusedResources">Eñepyrũ eikundaha</string>
-  <!-- Ublock name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Ublock Origin" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_ublock_name" moz:removedIn="140" tools:ignore="UnusedResources">uBlock Origin</string>
-  <!-- Ublock description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_ublock_description" moz:removedIn="140" tools:ignore="UnusedResources">Ojoko marandu ñemurã katuete.</string>
-  <!-- Privacy Badger name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Privacy Badger" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_privacy_badger_name" moz:removedIn="140" tools:ignore="UnusedResources">Privacy Badger</string>
-  <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_privacy_badger_description" moz:removedIn="140" tools:ignore="UnusedResources">Iporãva tapykuehópe. Ejoko tapykueho jehecha’ỹva ha marandu ñemi ivaíva.</string>
-  <!-- Search by Image name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Search by Image" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_search_by_image_name" moz:removedIn="140" tools:ignore="UnusedResources">Eheka ta’ãnga rupive</string>
-  <!-- Search by Image description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_search_by_image_description" moz:removedIn="140" tools:ignore="UnusedResources">Ehecha ta’ãnga iporãva ha eikuaave hesegua.</string>
-  <!-- Dark Reader name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Dark Reader" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_dark_reader_name" moz:removedIn="140" tools:ignore="UnusedResources">Dark Reader</string>
-  <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_dark_reader_description" moz:removedIn="140" tools:ignore="UnusedResources">Ypytũ reko mba’etéva pumbyrýpe g̃uarã.</string>
-  <!-- Label for the number of reviews for an add-on. %1$s is the formatted number of reviews e.g. "1,234", "12,345", "123,456". -->
-  <string name="onboarding_add_on_reviews_label" moz:removedIn="140" tools:ignore="UnusedResources">Jehechajey: %1$s</string>
-  <!-- Content description for the add-on icon. -->
-  <string name="onboarding_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Moĩmbaha ra’ãnga’i</string>
-  <!-- Content description for the an installed add-on icon. -->
-  <string name="onboarding_installed_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Moĩmbaha ra’ãnga’i ñemohenda</string>
-  <!-- Content description for the an installing add-on icon. -->
-  <string name="onboarding_installing_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Moĩmbaha ra’ãnga’i oñemohenda</string>
-  <!-- Content description for the add add-on button. -->
-  <string name="onboarding_add_on_add_button_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Votõ embojuaju hag̃ua moĩmbaha</string>
-  <!-- Content description for the star rating group. %1$s is the rating. -->
-  <string name="onboarding_add_on_star_rating_content_description" moz:removedIn="140" tools:ignore="UnusedResources">Ñeha’ã %1$s 5-gui</string>
   <!-- Title for the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_title" tools:ignore="BrandUsage">Ore pytyvõ Firefox porãverã</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
@@ -658,8 +613,6 @@
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">Ñeikundaha pya’e ha hekorosãva</string>
   <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">Emoneĩ ha eku’ejey</string>
-  <!-- Terms of service onboarding page continue button label. -->
   <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Ku’ejey</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
   <string name="onboarding_term_of_service_line_one_2">Eku’ejeývo, emoneĩmbáma umi %1$s.</string>
@@ -678,7 +631,9 @@
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Eikuaaukávo mba’éichapa eikuaára’e Firefox ha ijeporu, orepytyvõ emoherakuã hag̃ua ore kundahára hetave tapichápe.</string>
   <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_opt_in_checkbox" tools:ignore="UnusedResources">Emoherakuã’imi mba’ekuaarã marketing Mozilla-pegua kundahára ndive. Ko’ã mba’ekuaarã noñevendemo’ãi ha ndohechaukamo’ãi ñemurã.</string>
+  <string name="onboarding_marketing_opt_in_checkbox" moz:removedIn="143" tools:ignore="UnusedResources">Emoherakuã’imi mba’ekuaarã marketing Mozilla-pegua kundahára ndive. Ko’ã mba’ekuaarã noñevendemo’ãi ha ndohechaukamo’ãi ñemurã.</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_opt_out_checkbox">Emoherakuã mba’ekuaarã Mozilla-pegua marketing ndive. Ko’ã mba’ekuaarã noñevendéi ha ndoikomo’ãi ñemurãrõ.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
   <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Mba’éichapa jaiporu umi mba’ekuaarã</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
@@ -804,8 +759,6 @@
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">Eiporu mba’erechaha jokoha eñomi hag̃ua tendayke ñeikundaha ñemiguápe</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary" moz:removedIn="140" tools:ignore="UnusedResources">Ehecha tendayke kuã hũ ndive, tovara’ãnga joko’oha térã PIN.</string>
-  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_2">Ehecha tendayke ne kuã hũ ndive, PIN térã tovara’ãnga joko’oha.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Ejoko Banner kookie rehegua</string>
@@ -879,6 +832,8 @@
   <string name="preferences_home_2">Kuatiarogue ñepyrũ</string>
   <!-- Preference for customizing the app icon -->
   <string name="preferences_app_icon">Tembiporu’i ra’ãnga’i</string>
+  <!-- Preference for showing the tab strip -->
+  <string name="preferences_tab_strip">Tendayke rupa jehacha</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_gestures">Ñeha’ãnga</string>
   <!-- Preference for settings related to visual options -->
@@ -1037,11 +992,7 @@
   -->
   <string name="customize_toggle_recently_visited">Ojeikeramohague</string>
   <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">Tembiasakue nemoakãngetáva</string>
-  <!-- Title for the customize home screen section with Pocket. -->
   <string name="customize_toggle_pocket_3">Tembiasakue</string>
-  <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-  <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">Jehaipy oykekóva %s</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">Tembiasakue jehepyme’ẽguáva</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -1135,7 +1086,15 @@
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">Sa’yguejy</string>
   <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other">Ambue</string>
+  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources">Ambue</string>
+  <!-- Title to show in alert when user selects an alternative app icon -->
+  <string name="restart_warning_dialog_title">¿Emoambue tembiporu’i ra’ãnga’i?</string>
+  <!-- Message to warn users that applying an alternative app icon requires an app restart -->
+  <string name="restart_warning_dialog_body">Ta’ãnga’i moambue oikotevẽ tembiporu’i ñepyrũjeýre.</string>
+  <!-- Dialog button text for confirming the app restart to apply the selected icon -->
+  <string name="restart_warning_dialog_button_positive">Eñepyrũjey ko’ág̃a</string>
+  <!-- Dialog button text for cancelling app icon change -->
+  <string name="restart_warning_dialog_button_negative">Heja</string>
   <!--
     Add-ons general availability nimbus message
 
@@ -1256,6 +1215,8 @@
   <string name="preferences_daily_usage_ping_learn_more">Eikuaave ñe’ẽñemi eiporuvéva rehegua</string>
   <!-- Preference switch title for automatically submitting crash reports -->
   <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">Emondo marandu jejavy rehegua</string>
+  <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
+  <string name="crash_reporting_snack_bar_message">Marandu’i mondopyre</string>
   <!-- Preference switch description for automatically submitting crash reports -->
   <string name="preferences_automatically_send_crashes_description" tools:ignore="UnusedResources" moz:removedIn="142">Kóva ore pytyvõ roikuaa ha romyatyrõvo apañuái kundahára ndive. Umi marandu’ípe oĩkuaa mba’ekuaarã nemba’ete ha ñemiguáva.</string>
   <!-- Text for sumo link to learn more about crash reports in data collection screen -->
@@ -1311,6 +1272,8 @@
   <string name="preference_simple_toolbar">Simple</string>
   <!-- Preference for using expanded toolbar -->
   <string name="preference_expanded_toolbar">Myasãimbyre</string>
+  <!-- Preference description indicating the toolbar location preference is disabled when the tab strip is enabled -->
+  <string name="preference_toolbar_pref_disabled_explanation">Kundaha rupa oĩ’arã yvate ojehechávo tendayke rupa.</string>
   <!--
     App icon Preferences
 
@@ -1330,6 +1293,12 @@
   <!-- Preference for using following device theme -->
   <string name="preference_follow_device_theme">Ehapykueho mba’e’oka téma</string>
   <!--
+    Tab Strip Preferences
+
+    Preferences for showing tab strip
+  -->
+  <string name="preference_tab_strip_show">Ehechauka tendayke rupa</string>
+  <!--
     Gestures Preferences
 
     Preferences for using pull to refresh in a webpage
@@ -1339,8 +1308,6 @@
   <string name="preference_gestures_dynamic_toolbar">Emongu’e emoñemi hag̃ua mba’erenda</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Eraha mba’erenda yvate gotyo embojuruja hag̃ua tendayke</string>
-  <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">Eku’e eñomi hag̃ua kundaharenda ha tembiporu rupa</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Eraha mba’erenda yke gotyo emoambue hag̃ua tendayke</string>
   <!--
@@ -1567,9 +1534,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Emboguete tembiasakue</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">Tembiasakue mboguepyre</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Tembiasakue mboguepyre</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">Mboguepyre %1$s</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Mboguepyre %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Mboguete</string>
   <!--
@@ -1754,7 +1721,7 @@
   <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
   <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">Eipytyvõ %1$s iporãve hag̃ua opavavépe g̃uarã. Mozilla mba’apoharakuéra oiporu marandu emondóva oñemyatyrõ hag̃ua apañuái ñanduti rendapegua.</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="webcompat_reporter_description_2">Ne marandu’i orepytyvõ roikumby ha romyatyrõ hag̃ua apañuái %1$s-pegua jeiko porãve rekávo.</string>
+  <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">Ne marandu’i orepytyvõ roikumby ha romyatyrõ hag̃ua apañuái %1$s-pegua jeiko porãve rekávo.</string>
   <!-- The button text for navigating to the SUMO link to learn more about reporting a broken site. -->
   <string name="webcompat_reporter_learn_more">Eikuaave</string>
   <!-- The text field label of the URL text field. This is displayed above the user-inputted URL. -->
@@ -1786,19 +1753,11 @@
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
-    Broken site reason text for site slow or not working
+    Broken site reason text for site doesn’t load
   -->
-  <string name="webcompat_reporter_reason_slow" moz:removedIn="140" tools:ignore="UnusedResources">Tenda imbegue térã ndoikói</string>
-  <!-- Broken site reason text for site doesn’t load -->
   <string name="webcompat_reporter_reason_load">Tenda nomyanyhẽi</string>
   <!-- Broken site reason text for can’t pay, check out or shop -->
   <string name="webcompat_reporter_reason_checkout">Nahepyme’ẽkuaái, ndajoguakuaái</string>
-  <!-- Broken site reason text for images or videos -->
-  <string name="webcompat_reporter_reason_media" moz:removedIn="140" tools:ignore="UnusedResources">Ta’ãnga térã ta’ãngamýi</string>
-  <!-- Broken site reason text for buttons, links, and other content -->
-  <string name="webcompat_reporter_reason_content" moz:removedIn="140" tools:ignore="UnusedResources">Votõnguéra, juajuha ha ambue tetepy</string>
-  <!-- Broken site reason text for sign in or sign out -->
-  <string name="webcompat_reporter_reason_account" moz:removedIn="140" tools:ignore="UnusedResources">Eike térã emboty tembiapo</string>
   <!-- Broken site reason text for site is slow -->
   <string name="webcompat_reporter_reason_slow2">Tenda imbegue</string>
   <!-- Broken site reason text for video isn’t playing or loading -->
@@ -1807,8 +1766,6 @@
   <string name="webcompat_reporter_reason_content2">Tetepy oĩ’mbaiỹva</string>
   <!-- Broken site reason text for can’t sign in or register -->
   <string name="webcompat_reporter_reason_account2">Ndaikekuaái ha ñañemboheraguapýi</string>
-  <!-- Broken site reason text for ad blocker -->
-  <string name="webcompat_reporter_reason_ad_blocker" moz:removedIn="140" tools:ignore="UnusedResources">Ñemurã jokoha</string>
   <!-- Broken site reason text for site asked to turn off ad blocker -->
   <string name="webcompat_reporter_reason_turn_off_adblocker">Tenda ojerure emboguévo pe ñemurã jokoha</string>
   <!-- Broken site reason text for browser isn’t supported or blocked -->
@@ -1828,7 +1785,9 @@
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">Embojevy tendayke</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title">%s oñemoñepyrũ jey</string>
+  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s oñemoñepyrũ jey</string>
+  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
+  <string name="unsubmitted_crash_dialog_title_2">%s ndikói. ¿Emondo marandu’i?</string>
   <!-- Single unsubmitted crash matching remote settings. %1$s is the name of the app (for example "Firefox"). -->
   <string name="unsubmitted_crash_requested_by_devs_dialog_title">Oĩ marandu’i jejavygua oñemondo’ỹva jejavy ojehapykuehóva rehegua. Emondóramo orepytyvõta iporãve hag̃ua %1$s. Embotývo ko ñemomarandu omboykéta ko marandu’i.</string>
   <!-- Multiple unsubmitted crashes matching remote settings. %1$d is the number of unsent crash reports, %2$s is the name of the app (for example "Firefox"). -->
@@ -1837,10 +1796,15 @@
   <string name="unsubmitted_crash_dialog_checkbox_label">Emondo marandu jejavy rehegua</string>
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
   <string name="unsubmitted_crash_dialog_negative_button">Mboty</string>
+  <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
+  <string name="unsubmitted_crash_dialog_negative_button_2">MBOTY</string>
   <!-- Unsubmitted crash dialog negative button to never be asked for the submission -->
   <string name="unsubmitted_crash_requested_by_devs_dialog_never_button">Anive ehechauka</string>
   <!-- Unsubmitted crash dialog positive button to submit crash report -->
+  <string name="unsubmitted_crash_dialog_positive_button_2">MONDO</string>
+  <!-- Unsubmitted crash dialog positive button to submit crash report -->
   <string name="unsubmitted_crash_dialog_positive_button">Emondo marandu javygua</string>
+  <string name="unsubmitted_crash_dialog_learn_more">Eikuaave</string>
   <!-- Unsubmitted crash dialog button to open a web page with more details on the feature and privacy policy -->
   <string name="unsubmitted_crash_requested_by_devs_learn_more">Eikuaave</string>
   <!--
@@ -1848,11 +1812,11 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">¿Añetehápepa emboguetese ko marandurenda?</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">¿Añetehápepa emboguetese ko marandurenda?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items. -->
   <string name="bookmark_delete_folders_confirmation_dialog">Emboguesépa añetehápe ko’ã mba’e jeporavopyréva</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog">%s omboguéta umi mba’eporu poravopyre.</string>
+  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s omboguéta umi mba’eporu poravopyre.</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">Heja</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -1882,7 +1846,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">Mboguete</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">Ñongatu</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">Ñongatu</string>
   <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_custom">Emoĩporã tapicha mba’etee rupive</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
@@ -1903,7 +1867,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">Embosako’i ñongatuha</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">Eñepyrũ tembiapo ehecha hag̃ua techaukaha mbojuehepyre</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">Eñepyrũ tembiapo ehecha hag̃ua techaukaha mbojuehepyre</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -1915,24 +1879,24 @@
   <!-- Label for a text input field for a bookmark or folder name -->
   <string name="bookmark_name_label_normal_case">Téra</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">Embojuaju ñongatuha</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">Embojuaju ñongatuha</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">Ñongatuha jeporavo</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">Orekova’erã teratee</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">Orekova’erã teratee</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">URL oiko’ỹva</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">Ndaipóri techaukaha ápe</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">Ndaipóri techaukaha ápe</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">Emboguete %1$s</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">Techaukaha mboguepyre</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">Techaukaha mboguepyre</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3">Embogue marandurenda poravopyre</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">Embogue marandurenda poravopyre</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">MBOGUEVI</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
@@ -1940,7 +1904,7 @@
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
   <string name="bookmark_delete_multiple_items">Mba’eporu mboguepyre: %s</string>
   <!-- Text for the button to search all bookmarks -->
-  <string name="bookmark_search">Emoinge ñe’ẽ ehekaséva</string>
+  <string name="bookmark_search" tools:ignore="UnusedResources" moz:removedIn="143">Emoinge ñe’ẽ ehekaséva</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Eikundaha tapykuévo</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2096,7 +2060,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d tendayke poravopyre</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">¡Tendayke ñongatupyre!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">¡Tendayke ñongatupyre!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection">Ñembyaty ñongatupyre</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -2229,9 +2193,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">Ñembyatyha mboguetepyre</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Ñembyatyha mboguetepyre</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">Ñembyatyha mbohérajeypyre</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Ñembyatyha mbohérajeypyre</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Tendayke mbotypyre</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -2268,9 +2232,9 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">¿Emboguetesépa añetehápe %1$s?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">Mboguete</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Mboguete</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">URL monguatiapyre</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL monguatiapyre</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Kóva moñe’ẽrã techapyrãva. Oĩ ohechauka hag̃ua mba’éichapa ojehecháta moñe’ẽrã tuicha ha michĩvévo ko ñembohekópe.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2778,6 +2742,10 @@
   <string name="preferences_addresses_save_and_autofill_addresses_2">Eñongatu ha emyanyhẽ kundaharape</string>
   <!-- Preference summary for saving and filling address data -->
   <string name="preferences_addresses_save_and_autofill_addresses_summary_2">Oike pumbyry papapy ha ñanduti veve kundaharape</string>
+  <!-- Preference option for syncing addresses across devices. This is displayed when the user is not signed into sync -->
+  <string name="preferences_addresses_sync_addresses_across_devices">Embojuehe kundaharape mba’e’oka pa’ũme</string>
+  <!-- Preference option for syncing addresses across devices. This is displayed when the user is signed into sync -->
+  <string name="preferences_addresses_sync_addresses">Embojuehe kundaharape</string>
   <!-- Title of the "Add card" screen -->
   <string name="credit_cards_add_card">Embojuaju kuatia’atã</string>
   <!-- Title of the "Edit card" screen -->
@@ -2902,14 +2870,12 @@
   <string name="search_add_custom_engine_error_empty_search_string">Emoinge pe jehekaha juajuha</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Ehechajey pe jehekaha juajuha ojokupytýpa techapyrã ohechaukáva ndive</string>
-  <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">Ojavy eikekuévo “%s” ndive</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">Moheñoipyre %s</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Moheñoipyre %s</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">Ñongatu %s</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Ñongatu %s</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">Mboguete %s</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Mboguete %s</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Emoneĩ hag̃ua:</string>
   <!-- First step for the allowing a permission -->
@@ -2937,7 +2903,7 @@
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">Ndaipóri oi’ỹva ko tendápe</string>
   <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation">¿Añetehápe emboguese ko techaukaha?</string>
+  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">¿Añetehápe emboguese ko techaukaha?</string>
   <!-- Browser menu button that adds a shortcut to the home fragment -->
   <string name="browser_menu_add_to_shortcuts">Ojuajúva mbopya’eháre</string>
   <!-- Browser menu button that removes a shortcut from the home fragment -->
@@ -3107,25 +3073,17 @@
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">Eikundaha yvate gotyo</string>
   <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description">Mboty</string>
+  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">Mboty</string>
   <!--
     Pocket recommended stories
 
     Header text for a section on the home screen.
   -->
-  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">Tembiasakue nemoakãngetáva</string>
-  <!-- Header text for a section on the home screen. -->
   <string name="pocket_stories_header_2">Tembiasakue</string>
   <!-- Header text for a section on the home screen. -->
   <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">Tembiasakue téma rehegua</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
   <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">Ejuhukuaave</string>
-  <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-  <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">Omboguatáva %s.</string>
-  <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Firefox reheguaite. %s</string>
-  <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">Kuaave</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Pytyvõpyréva</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -3158,8 +3116,6 @@
   <string name="a11y_action_label_wallpaper_collection_learn_more">embojuruja juajuha eikuaave hag̃ua ko ñembyaty</string>
   <!-- Action label for links that point to an article. Talkback will append this to say "Double tap to read the article". -->
   <string name="a11y_action_label_read_article" moz:removedIn="141" tools:ignore="UnusedResources">emoñe’ẽ jehaipy</string>
-  <!-- Action label for links to the Firefox Pocket website. Talkback will append this to say "Double tap to open link to learn more". -->
-  <string name="a11y_action_label_pocket_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">embojuruja juajuha eikuaave hag̃ua</string>
   <!-- Content description for headings announced by accessibility service. %s is the text of the heading. Talkback will announce the text and then speak the word "Heading" indicating to the user that this text is a heading for a section. -->
   <string name="a11y_heading">%s, Moakãha</string>
   <!-- Title for dialog displayed when trying to access links present in a text. -->
@@ -3801,7 +3757,9 @@
   <!-- The title of the explore extensions task for the setup checklist -->
   <string name="setup_checklist_task_explore_extensions">Ejeporekave jepysokuére</string>
   <!-- The title of the search widget task for the setup checklist -->
-  <string name="setup_checklist_task_search_widget">Emohenda widget jehekaha</string>
+  <string name="setup_checklist_task_search_widget" moz:removedIn="143" tools:ignore="UnusedResources">Emohenda widget jehekaha</string>
+  <!-- The title of the search widget task for the setup checklist -->
+  <string name="setup_checklist_task_search_widget_2">Eiporu jehekaha widget</string>
   <!--
     ===== Setup checklist feature: Group titles =====
 
@@ -3866,4 +3824,25 @@
   <string name="review_prompt_feedback_header">Rombyasy eguereko haguére apañuái. Mba’éichapa roipytyvõkuaa %1$s.</string>
   <!-- Label for a button opening a feedback forum -->
   <string name="review_prompt_feedback_button">Ehai ne remiandu</string>
+  <!--
+    Terms of use pop up prompt
+
+    Title for the pop up prompt
+  -->
+  <string name="terms_of_use_prompt_title">Roreko ñembohekopyahu</string>
+  <!--
+    Second part of the terms of use pop up prompt
+    %1$s is the string terms_of_use_prompt_link_learn_more (Learn more) that is a link to a website with more information about the terms of use
+  -->
+  <string name="terms_of_use_prompt_message_2">Eñemboaravo ehechami ha emoneĩ hag̃ua. %1$s.</string>
+  <!-- Terms of use link in the pop up prompt message that links to the terms of use -->
+  <string name="terms_of_use_prompt_link_terms_of_use">Jeporurã Reko</string>
+  <!-- Privacy notice link in the pop up prompt message that links to the privacy notice -->
+  <string name="terms_of_use_prompt_link_privacy_notice">Marandu’i ñemigua</string>
+  <!-- Learn more link in the pop up prompt message that links to a site with more information about the terms of use -->
+  <string name="terms_of_use_prompt_link_learn_more">Eikuaave</string>
+  <!-- Label for a button to accept the terms of use -->
+  <string name="terms_of_use_prompt_accept">Moneĩ</string>
+  <!-- Label for a button to postpone accepting the terms of use -->
+  <string name="terms_of_use_prompt_postpone">Chemomandu’a ag̃ave</string>
 </resources>

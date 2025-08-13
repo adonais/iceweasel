@@ -111,6 +111,7 @@ var SidebarController = {
       [
         "viewHistorySidebar",
         this.makeSidebar({
+          name: "history",
           elementId: "sidebar-switcher-history",
           url: this.sidebarRevampEnabled
             ? "chrome://browser/content/sidebar/sidebar-history.html"
@@ -132,6 +133,7 @@ var SidebarController = {
       [
         "viewTabsSidebar",
         this.makeSidebar({
+          name: "syncedtabs",
           elementId: "sidebar-switcher-tabs",
           url: this.sidebarRevampEnabled
             ? "chrome://browser/content/sidebar/sidebar-syncedtabs.html"
@@ -150,6 +152,7 @@ var SidebarController = {
       [
         "viewBookmarksSidebar",
         this.makeSidebar({
+          name: "bookmarks",
           elementId: "sidebar-switcher-bookmarks",
           url: "chrome://browser/content/places/bookmarksSidebar.xhtml",
           menuId: "menu_bookmarksSidebar",
@@ -169,6 +172,7 @@ var SidebarController = {
       "browser.ml.chat.enabled",
       "viewGenaiChatSidebar",
       {
+        name: "aichat",
         elementId: "sidebar-switcher-genai-chat",
         url: "chrome://browser/content/genai/chat.html",
         keyId: "viewGenaiChatSidebarKb",
@@ -178,6 +182,7 @@ var SidebarController = {
         revampL10nId: "sidebar-menu-genai-chat-label",
         iconUrl: "chrome://global/skin/icons/highlights.svg",
         gleanClickEvent: Glean.sidebar.chatbotIconClick,
+        toolContextMenuId: "aichat",
       }
     );
 
@@ -185,6 +190,7 @@ var SidebarController = {
       "browser.contextual-password-manager.enabled",
       "viewCPMSidebar",
       {
+        name: "passwords",
         elementId: "sidebar-switcher-megalist",
         url: "chrome://global/content/megalist/megalist.html",
         menuId: "menu_megalistSidebar",
@@ -236,8 +242,9 @@ var SidebarController = {
   },
   POSITION_START_PREF: "sidebar.position_start",
   DEFAULT_SIDEBAR_ID: "viewBookmarksSidebar",
-  TOOLS_PREF: "sidebar.main.tools",
   VISIBILITY_PREF: "sidebar.visibility",
+  TOOLS_PREF: "sidebar.main.tools",
+  INSTALLED_EXTENSIONS: "sidebar.installed.extensions",
 
   // lastOpenedId is set in show() but unlike currentID it's not cleared out on hide
   // and isn't persisted across windows
@@ -332,6 +339,14 @@ var SidebarController = {
     return this._pinnedTabsSplitter.getAttribute("state") === "dragging";
   },
 
+  get sidebarTools() {
+    return this.sidebarRevampTools ? this.sidebarRevampTools.split(",") : [];
+  },
+
+  get sidebarExtensions() {
+    return this.installedExtensions ? this.installedExtensions.split(",") : [];
+  },
+
   init() {
     // Initialize global state manager.
     this.SidebarManager;
@@ -362,7 +377,7 @@ var SidebarController = {
     this._switcherPanel = document.getElementById("sidebarMenu-popup");
     this._switcherTarget = document.getElementById("sidebar-switcher-target");
     this._switcherArrow = document.getElementById("sidebar-switcher-arrow");
-    this._openPopupsCount = 0;
+    this._hoverBlockerCount = 0;
     if (
       Services.prefs.getBoolPref(
         "browser.tabs.allow_transparent_browser",
@@ -1058,8 +1073,13 @@ var SidebarController = {
   async _animateSidebarMain() {
     let tabbox = document.getElementById("tabbrowser-tabbox");
     let animatingElements;
-    if (document.documentElement.hasAttribute("sidebar-expand-on-hover")) {
+    let expandOnHoverEnabled = document.documentElement.hasAttribute(
+      "sidebar-expand-on-hover"
+    );
+    if (expandOnHoverEnabled) {
       animatingElements = [this.sidebarContainer];
+
+      this._addHoverStateBlocker();
     } else {
       animatingElements = [
         this.sidebarContainer,
@@ -1207,6 +1227,10 @@ var SidebarController = {
       this._ongoingAnimations = [];
       resetElements();
     }
+
+    if (expandOnHoverEnabled) {
+      await this._removeHoverStateBlocker();
+    }
   },
 
   /**
@@ -1341,6 +1365,36 @@ var SidebarController = {
     }
   },
 
+  _addHoverStateBlocker() {
+    this._hoverBlockerCount++;
+    MousePosTracker.removeListener(this);
+  },
+
+  async _removeHoverStateBlocker() {
+    if (this._hoverBlockerCount == 1) {
+      // Manually check mouse position
+      let isHovered;
+      MousePosTracker._callListener({
+        onMouseEnter: () => (isHovered = true),
+        onMouseLeave: () => (isHovered = false),
+        getMouseTargetRect: () => this.getMouseTargetRect(),
+      });
+
+      // Collapse sidebar if needed
+      if (this._state.launcherExpanded && !isHovered) {
+        if (this._animationEnabled && !window.gReduceMotion) {
+          this._animateSidebarMain();
+        }
+        this._state.launcherExpanded = false;
+        await this.waitUntilStable();
+      }
+
+      // Re-add MousePosTracker listener
+      MousePosTracker.addListener(this);
+    }
+    this._hoverBlockerCount--;
+  },
+
   _showToolbarButtonBadge() {
     const badgeEl = this.toolbarButton?.querySelector(".toolbarbutton-badge");
     return badgeEl?.classList.add("feature-callout");
@@ -1404,20 +1458,13 @@ var SidebarController = {
     this._itemsWrapperResizeObserver = new ResizeObserver(async () => {
       await window.promiseDocumentFlushed(() => {
         // Adjust pinned tabs container height if needed
-        let itemsWrapperHeight = window.windowUtils.getBoundsWithoutFlushing(
-          this._pinnedTabsItemsWrapper
-        ).height;
         requestAnimationFrame(() => {
-          if (this._state.pinnedTabsHeight > itemsWrapperHeight) {
-            this._state.pinnedTabsHeight = itemsWrapperHeight;
-            if (this._state.launcherExpanded) {
-              this._state.expandedPinnedTabsHeight =
-                this._state.pinnedTabsHeight;
-            } else {
-              this._state.collapsedPinnedTabsHeight =
-                this._state.pinnedTabsHeight;
-            }
+          // If we are currently moving tabs, don't resize
+          if (this._pinnedTabsContainer.hasAttribute("dragActive")) {
+            return;
           }
+
+          this.updatePinnedTabsHeightOnResize();
         });
       });
     });
@@ -1470,20 +1517,31 @@ var SidebarController = {
     }
   },
 
+  updatePinnedTabsHeightOnResize() {
+    let itemsWrapperHeight = window.windowUtils.getBoundsWithoutFlushing(
+      this._pinnedTabsItemsWrapper
+    ).height;
+    if (this._state.pinnedTabsHeight > itemsWrapperHeight) {
+      this._state.pinnedTabsHeight = itemsWrapperHeight;
+      if (this._state.launcherExpanded) {
+        this._state.expandedPinnedTabsHeight = this._state.pinnedTabsHeight;
+      } else {
+        this._state.collapsedPinnedTabsHeight = this._state.pinnedTabsHeight;
+      }
+    }
+  },
+
   /**
    * Ensure tools reflect the current pref state
    */
   refreshTools() {
     let changed = false;
     const tools = new Set(this.sidebarRevampTools.split(","));
-    this.toolsAndExtensions.forEach((tool, commandID) => {
-      const toolID = toolsNameMap[commandID];
-      if (toolID) {
-        const expected = !tools.has(toolID);
-        if (tool.disabled != expected) {
-          tool.disabled = expected;
-          changed = true;
-        }
+    this.toolsAndExtensions.forEach(tool => {
+      const expected = !tools.has(tool.name);
+      if (tool.disabled != expected) {
+        tool.disabled = expected;
+        changed = true;
       }
     });
     if (changed) {
@@ -1497,27 +1555,21 @@ var SidebarController = {
    * @param {string} commandID
    */
   toggleTool(commandID) {
-    let toggledTool = this.toolsAndExtensions.get(commandID);
+    const toggledTool = this.toolsAndExtensions.get(commandID);
+    const toolName = toggledTool.name;
     toggledTool.disabled = !toggledTool.disabled;
+
     if (!toggledTool.disabled) {
       // If re-enabling tool, remove from the map and add it to the end
       this.toolsAndExtensions.delete(commandID);
       this.toolsAndExtensions.set(commandID, toggledTool);
     }
-    // Tools are persisted via a pref.
-    if (!Object.hasOwn(toggledTool, "extensionId")) {
-      const tools = new Set(this.sidebarRevampTools.split(","));
-      const updatedTools = tools.has(toolsNameMap[commandID])
-        ? Array.from(tools).filter(
-            tool => !!tool && tool != toolsNameMap[commandID]
-          )
-        : [
-            ...Array.from(tools).filter(tool => !!tool),
-            toolsNameMap[commandID],
-          ];
-      Services.prefs.setStringPref(this.TOOLS_PREF, updatedTools.join());
+
+    this.SidebarManager.updateToolsPref(toolName, toggledTool.disabled);
+
+    if (toggledTool.disabled) {
+      this.dismissSidebarBadge(commandID);
     }
-    this.dismissSidebarBadge(commandID);
     window.dispatchEvent(new CustomEvent("SidebarItemChanged"));
   },
 
@@ -1534,13 +1586,15 @@ var SidebarController = {
       window.dispatchEvent(new CustomEvent("SidebarItemChanged"));
     } else {
       // Add new extension
+      const name = extension.extensionId;
       this.toolsAndExtensions.set(commandID, {
         view: commandID,
         extensionId: extension.extensionId,
         icon: extension.icon,
         iconUrl: extension.iconUrl,
         tooltiptext: extension.label,
-        disabled: false,
+        disabled: !this.sidebarTools.includes(name), // name is the extensionID
+        name,
       });
       window.dispatchEvent(new CustomEvent("SidebarItemAdded"));
     }
@@ -1554,6 +1608,23 @@ var SidebarController = {
    * @param {object} props
    */
   registerExtension(commandID, props) {
+    const sidebarTools = this.sidebarTools;
+    const installedExtensions = this.sidebarExtensions;
+    const name = props.extensionId;
+
+    // An extension that is newly installed will be added to the sidebar.main.tools
+    // pref by default until a user deselects it; separately we update our list of
+    // sidebar extensions to ensure it keeps track of what's been installed.
+    if (!installedExtensions.includes(name) && !sidebarTools.includes(name)) {
+      sidebarTools.push(name);
+      installedExtensions.push(name);
+      Services.prefs.setStringPref(this.TOOLS_PREF, sidebarTools.join());
+      Services.prefs.setStringPref(
+        this.INSTALLED_EXTENSIONS,
+        installedExtensions.join()
+      );
+    }
+
     const sidebar = {
       title: props.title,
       url: "chrome://browser/content/webext-panels.xhtml",
@@ -1567,6 +1638,7 @@ var SidebarController = {
       // The following properties are specific to extensions
       extensionId: props.extensionId,
       onload: props.onload,
+      name,
     };
     this.sidebars.set(commandID, sidebar);
 
@@ -1675,16 +1747,20 @@ var SidebarController = {
     const extensions = [];
     for (const [commandID, sidebar] of this.sidebars.entries()) {
       if (Object.hasOwn(sidebar, "extensionId")) {
+        const disabled = !this.sidebarTools.includes(sidebar.name);
+
         extensions.push({
           commandID,
           view: commandID,
           extensionId: sidebar.extensionId,
           iconUrl: sidebar.iconUrl,
           tooltiptext: sidebar.label,
-          disabled: false,
+          disabled,
+          name: sidebar.name,
         });
       }
     }
+
     return extensions;
   },
 
@@ -1698,12 +1774,11 @@ var SidebarController = {
       .filter(commandID => this.sidebars.get(commandID))
       .map(commandID => {
         const sidebar = this.sidebars.get(commandID);
-        const disabled = !this.sidebarRevampTools
-          .split(",")
-          .includes(toolsNameMap[commandID]);
+        const disabled = !this.sidebarTools.includes(toolsNameMap[commandID]);
         return {
           commandID,
           view: commandID,
+          name: sidebar.name,
           iconUrl: sidebar.iconUrl,
           l10nId: sidebar.revampL10nId,
           disabled,
@@ -1714,6 +1789,7 @@ var SidebarController = {
           get attention() {
             return sidebar.attention ?? false;
           },
+          contextMenu: sidebar.toolContextMenuId,
         };
       });
   },
@@ -1738,6 +1814,7 @@ var SidebarController = {
     }
     document.getElementById(sidebar.menuId)?.remove();
     document.getElementById(sidebar.switcherMenuId)?.remove();
+
     this.sidebars.delete(commandID);
     this.toolsAndExtensions.delete(commandID);
     window.dispatchEvent(new CustomEvent("SidebarItemRemoved"));
@@ -1817,6 +1894,9 @@ var SidebarController = {
    */
   _show(commandID) {
     return new Promise(resolve => {
+      const willShowEvent = new CustomEvent("SidebarWillShow");
+      this.browser.contentWindow?.dispatchEvent(willShowEvent);
+
       this._state.panelOpen = true;
       if (this.sidebarRevampEnabled) {
         this._box.dispatchEvent(
@@ -2085,6 +2165,9 @@ var SidebarController = {
   },
 
   onMouseLeave() {
+    if (!this._state.launcherExpanded) {
+      return;
+    }
     this.mouseEnterTask.disarm();
     const contentArea = document.getElementById("tabbrowser-tabbox");
     this._box.toggleAttribute("sidebar-launcher-hovered", false);
@@ -2097,6 +2180,9 @@ var SidebarController = {
   },
 
   onMouseEnter() {
+    if (this._state.launcherExpanded) {
+      return;
+    }
     this.mouseEnterTask = new DeferredTask(
       () => {
         this.debouncedMouseEnter();
@@ -2146,30 +2232,12 @@ var SidebarController = {
       case "popupshown":
         /* Temporarily remove MousePosTracker listener when a context menu is open */
         if (e.composedTarget.id !== "tab-preview-panel") {
-          this._openPopupsCount++;
-          MousePosTracker.removeListener(this);
+          this._addHoverStateBlocker();
         }
         break;
       case "popuphidden":
         if (e.composedTarget.id !== "tab-preview-panel") {
-          if (this._openPopupsCount < 2) {
-            let isHovered;
-            MousePosTracker._callListener({
-              onMouseEnter: () => (isHovered = true),
-              onMouseLeave: () => (isHovered = false),
-              getMouseTargetRect: () => this.getMouseTargetRect(),
-            });
-            // Collapse sidebar after context menu is closed if needed
-            if (this._state.launcherExpanded && !isHovered) {
-              if (this._animationEnabled && !window.gReduceMotion) {
-                this._animateSidebarMain();
-              }
-              this._state.launcherExpanded = false;
-              await this.waitUntilStable();
-            }
-            MousePosTracker.addListener(this);
-          }
-          this._openPopupsCount--;
+          await this._removeHoverStateBlocker();
         }
         break;
       default:
@@ -2328,6 +2396,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
       SidebarController.refreshTools();
     }
   }
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  SidebarController,
+  "installedExtensions",
+  "sidebar.installed.extensions",
+  ""
 );
 
 XPCOMUtils.defineLazyPreferenceGetter(

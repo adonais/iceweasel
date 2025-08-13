@@ -12,20 +12,21 @@
 //
 
 #include "nsScrollbarFrame.h"
-#include "nsSliderFrame.h"
-#include "nsScrollbarButtonFrame.h"
-#include "nsContentCreatorFunctions.h"
-#include "nsGkAtoms.h"
-#include "nsIScrollbarMediator.h"
-#include "nsStyleConsts.h"
-#include "nsIContent.h"
-#include "nsLayoutUtils.h"
+
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_apz.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/MutationEventBinding.h"
+#include "nsContentCreatorFunctions.h"
+#include "nsGkAtoms.h"
+#include "nsIContent.h"
+#include "nsIScrollbarMediator.h"
+#include "nsLayoutUtils.h"
+#include "nsScrollbarButtonFrame.h"
+#include "nsSliderFrame.h"
+#include "nsStyleConsts.h"
 
 using namespace mozilla;
 using mozilla::dom::Element;

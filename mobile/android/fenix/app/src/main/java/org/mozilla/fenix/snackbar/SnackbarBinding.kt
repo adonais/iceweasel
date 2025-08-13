@@ -352,7 +352,7 @@ class SnackbarBinding(
                         appStore.dispatch(SnackbarAction.SnackbarShown)
                     }
 
-                    SnackbarState.None -> Unit
+                    is SnackbarState.None -> Unit
                 }
             }
     }

@@ -46,40 +46,41 @@
    At the moment we're midway through this process, so you will see inlined
    functions and member variables in this file.  -dwh */
 
-#include <algorithm>
 #include <stdio.h>
+
+#include <algorithm>
 
 #include "FrameProperties.h"
 #include "LayoutConstants.h"
+#include "Visibility.h"
 #include "mozilla/AspectRatio.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Baseline.h"
+#include "mozilla/ComputedStyle.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/RelativeTo.h"
 #include "mozilla/Result.h"
 #include "mozilla/SmallPointerArray.h"
 #include "mozilla/ToString.h"
 #include "mozilla/WritingModes.h"
-#include "nsDirection.h"
-#include "nsFrameList.h"
-#include "nsFrameState.h"
-#include "mozilla/ReflowInput.h"
-#include "nsIContent.h"
-#include "nsITheme.h"
-#include "nsQueryFrame.h"
-#include "mozilla/ComputedStyle.h"
-#include "nsStyleStruct.h"
-#include "Visibility.h"
-#include "nsChangeHint.h"
-#include "mozilla/EnumSet.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/MatrixFwd.h"
 #include "mozilla/intl/BidiEmbeddingLevel.h"
+#include "mozilla/intl/UnicodeProperties.h"
+#include "nsChangeHint.h"
+#include "nsDirection.h"
 #include "nsDisplayItemTypes.h"
+#include "nsFrameList.h"
+#include "nsFrameState.h"
+#include "nsIContent.h"
+#include "nsITheme.h"
 #include "nsPresContext.h"
+#include "nsQueryFrame.h"
+#include "nsStyleStruct.h"
 #include "nsTHashSet.h"
 
 #ifdef ACCESSIBILITY
@@ -619,7 +620,9 @@ enum class LayoutFrameClassFlags : uint16_t {
   SVG = 1 << 3,
   SVGContainer = 1 << 4,
   BidiInlineContainer = 1 << 5,
-  // The frame is for a replaced element, such as an image
+  // The frame is for a replaced element, such as an image. Note that HTML
+  // <button> elements don't have this flag but still behave as replaced, see
+  // nsIFrame::IsReplaced().
   Replaced = 1 << 6,
   // A replaced element that has replaced-element sizing characteristics (i.e.,
   // like images or iframes), as opposed to inline-block sizing characteristics
@@ -3289,8 +3292,8 @@ class nsIFrame : public nsQueryFrame {
   // Returns true iff this frame's computed block-size property is one of the
   // intrinsic-sizing keywords.
   bool HasIntrinsicKeywordForBSize() const {
-    const auto bSize =
-        StylePosition()->BSize(GetWritingMode(), StyleDisplay()->mPosition);
+    const auto bSize = StylePosition()->BSize(
+        GetWritingMode(), AnchorPosResolutionParams::From(this));
     return IsIntrinsicKeyword(*bSize);
   }
 
@@ -3564,7 +3567,6 @@ class nsIFrame : public nsQueryFrame {
   CLASS_FLAG_METHOD(IsSVGContainerFrame, SVGContainer);
   CLASS_FLAG_METHOD(IsBidiInlineContainer, BidiInlineContainer);
   CLASS_FLAG_METHOD(IsLineParticipant, LineParticipant);
-  CLASS_FLAG_METHOD(IsReplaced, Replaced);
   CLASS_FLAG_METHOD(HasReplacedSizing, ReplacedSizing);
   CLASS_FLAG_METHOD(IsTablePart, TablePart);
   CLASS_FLAG_METHOD0(CanContainOverflowContainers)
@@ -3601,6 +3603,8 @@ class nsIFrame : public nsQueryFrame {
 #ifdef __clang__
 #  pragma clang diagnostic pop
 #endif
+
+  bool IsReplaced() const;
 
   /**
    * Returns a transformation matrix that converts points in this frame's
@@ -4509,6 +4513,35 @@ class nsIFrame : public nsQueryFrame {
     mProperties.Remove(aProperty, this);
   }
 
+  /**
+   * Set the deletable property with a given value if it doesn't already exist;
+   * otherwise, allocate a copy of the passed-in value and insert that as a new
+   * value. Returns the pointer to the property, guaranteed non-null, value that
+   * then can be used to update the property value further.
+   *
+   * Note: Should consider implementing a move variant if it causes perf issues.
+   * Note: As the name suggests, this will behave properly only for properties
+   * declared with NS_DECLARE_FRAME_PROPERTY_DELETABLE!
+   */
+  template <
+      typename T,
+      std::enable_if_t<std::is_pointer<FrameProperties::PropertyType<T>>::value,
+                       bool> = true>
+  FrameProperties::PropertyType<T> SetOrUpdateDeletableProperty(
+      FrameProperties::Descriptor<T> aProperty,
+      const std::remove_pointer_t<FrameProperties::PropertyType<T>>& aValue) {
+    bool found;
+    using DataType = std::remove_pointer_t<FrameProperties::PropertyType<T>>;
+    DataType* storedValue = GetProperty(aProperty, &found);
+    if (!found) {
+      storedValue = new DataType{aValue};
+      AddProperty(aProperty, storedValue);
+    } else {
+      *storedValue = aValue;
+    }
+    return storedValue;
+  }
+
   void RemoveAllProperties() { mProperties.RemoveAll(this); }
 
   // nsIFrames themselves are in the nsPresArena, and so are not measured here.
@@ -4758,6 +4791,9 @@ class nsIFrame : public nsQueryFrame {
   // Like IsColumnSpan(), but this also checks whether the frame has a
   // multi-column ancestor or not.
   inline bool IsColumnSpanInMulticolSubtree() const;
+
+  // Returns true if this frame makes any reference to anchors.
+  inline bool HasAnchorPosReference() const;
 
   /**
    * Returns the vertical-align value to be used for layout, if it is one
@@ -5027,7 +5063,7 @@ class nsIFrame : public nsQueryFrame {
   bool HasDisplayItem(uint32_t aKey);
 
   static void PrintDisplayList(nsDisplayListBuilder* aBuilder,
-                               const nsDisplayList& aList,
+                               const nsDisplayList& aList, uint32_t aIndent = 0,
                                bool aDumpHtml = false);
   static void PrintDisplayList(nsDisplayListBuilder* aBuilder,
                                const nsDisplayList& aList,
@@ -5467,9 +5503,10 @@ class nsIFrame : public nsQueryFrame {
                 "aOptions should be changed to const reference");
 
   struct PeekWordState {
+    using Script = mozilla::intl::Script;
     // true when we're still at the start of the search, i.e., we can't return
     // this point as a valid offset!
-    bool mAtStart;
+    bool mAtStart = true;
     // true when we've encountered at least one character of the type before the
     // boundary we're looking for:
     // 1. If we're moving forward and eating whitepace, looking for a word
@@ -5478,36 +5515,37 @@ class nsIFrame : public nsQueryFrame {
     // 2. Otherwise, looking for a word beginning (i.e. a boundary between
     //    non-whitespace and whitespace), then mSawBeforeType==true means "we
     //    already saw some non-whitespace".
-    bool mSawBeforeType;
+    bool mSawBeforeType = false;
     // true when we've encountered at least one non-newline character
-    bool mSawInlineCharacter;
+    bool mSawInlineCharacter = false;
     // true when the last character encountered was punctuation
-    bool mLastCharWasPunctuation;
+    bool mLastCharWasPunctuation = false;
     // true when the last character encountered was whitespace
-    bool mLastCharWasWhitespace;
+    bool mLastCharWasWhitespace = false;
     // true when we've seen non-punctuation since the last whitespace
-    bool mSeenNonPunctuationSinceWhitespace;
+    bool mSeenNonPunctuationSinceWhitespace = false;
+    // Script code of most recent character (other than INHERITED).
+    // (Currently only HANGUL vs any-other-script is significant.)
+    Script mLastScript = Script::INVALID;
     // text that's *before* the current frame when aForward is true, *after*
     // the current frame when aForward is false. Only includes the text
     // on the current line.
     nsAutoString mContext;
 
-    PeekWordState()
-        : mAtStart(true),
-          mSawBeforeType(false),
-          mSawInlineCharacter(false),
-          mLastCharWasPunctuation(false),
-          mLastCharWasWhitespace(false),
-          mSeenNonPunctuationSinceWhitespace(false) {}
+    PeekWordState() {}
     void SetSawBeforeType() { mSawBeforeType = true; }
     void SetSawInlineCharacter() { mSawInlineCharacter = true; }
-    void Update(bool aAfterPunctuation, bool aAfterWhitespace) {
+    void Update(bool aAfterPunctuation, bool aAfterWhitespace,
+                Script aScript = Script::INVALID) {
       mLastCharWasPunctuation = aAfterPunctuation;
       mLastCharWasWhitespace = aAfterWhitespace;
       if (aAfterWhitespace) {
         mSeenNonPunctuationSinceWhitespace = false;
       } else if (!aAfterPunctuation) {
         mSeenNonPunctuationSinceWhitespace = true;
+      }
+      if (aScript != Script::INHERITED) {
+        mLastScript = aScript;
       }
       mAtStart = false;
     }

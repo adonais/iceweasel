@@ -329,7 +329,7 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
 
     this._contentPartitionedPrincipal = null;
 
-    this._csp = null;
+    this._policyContainer = null;
 
     this._referrerInfo = null;
 
@@ -677,8 +677,10 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
       : this.contentDocument.cookieJarSettings;
   }
 
-  get csp() {
-    return this.isRemoteBrowser ? this._csp : this.contentDocument.csp;
+  get policyContainer() {
+    return this.isRemoteBrowser
+      ? this._policyContainer
+      : this.contentDocument.policyContainer;
   }
 
   get contentRequestContextID() {
@@ -827,6 +829,10 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
     } else {
       fn();
     }
+  }
+
+  processCloseRequest() {
+    this.browsingContext.currentWindowContext?.processCloseRequest();
   }
 
   goBack(
@@ -1088,9 +1094,9 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
         this.loadContext
       );
       this._contentPartitionedPrincipal = this._contentPrincipal;
-      // CSP for about:blank is null; if we ever change _contentPrincipal above,
-      // we should re-evaluate the CSP here.
-      this._csp = null;
+      // policyContainer for about:blank is null; if we ever change _contentPrincipal above,
+      // we should re-evaluate the policyContainer here.
+      this._policyContainer = null;
 
       if (!this.hasAttribute("disablehistory")) {
         Services.obs.addObserver(
@@ -1215,7 +1221,7 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
     aTitle,
     aContentPrincipal,
     aContentPartitionedPrincipal,
-    aCSP,
+    aPolicyContainer,
     aReferrerInfo,
     aIsSynthetic,
     aHaveRequestContextID,
@@ -1236,7 +1242,7 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
       this._documentURI = aDocumentURI;
       this._contentPrincipal = aContentPrincipal;
       this._contentPartitionedPrincipal = aContentPartitionedPrincipal;
-      this._csp = aCSP;
+      this._policyContainer = aPolicyContainer;
       this._referrerInfo = aReferrerInfo;
       this._isSyntheticDocument = aIsSynthetic;
       this._contentRequestContextID = aHaveRequestContextID
@@ -1771,6 +1777,16 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
       return bc.children.some(hasBeforeUnload);
     }
     return hasBeforeUnload(this.browsingContext);
+  }
+
+  get hasActiveCloseWatcher() {
+    function hasActiveCloseWatcher(bc) {
+      if (bc.currentWindowContext?.hasActiveCloseWatcher) {
+        return true;
+      }
+      return bc.children.some(hasActiveCloseWatcher);
+    }
+    return hasActiveCloseWatcher(this.browsingContext);
   }
 
   permitUnload(action) {

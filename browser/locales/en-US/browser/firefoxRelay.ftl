@@ -77,6 +77,8 @@ firefox-relay-and-fxa-popup-notification-header-with-domain = Get a free email m
 
 firefox-relay-and-fxa-popup-notification-first-sentence-with-domain  = Protect your inbox from spam by using a free <label data-l10n-name="firefox-relay-learn-more-url">email mask</label> to hide your real address. Emails from <label data-l10n-name="firefox-fxa-and-relay-offer-domain">this site</label> will still come to your inbox, but with your email hidden.
 
+firefox-relay-and-fxa-popup-notification-first-sentence = Protect your inbox from spam by using a free <label data-l10n-name="firefox-relay-learn-more-url">{ -relay-brand-name } email mask</label> to hide your real address. Emails from <label data-l10n-name="firefox-fxa-and-relay-offer-domain">this site</label> will still come to your inbox, but with your email hidden.
+
 firefox-relay-and-fxa-popup-notification-second-sentence-with-domain = First, sign up or sign in to your account to use an email mask
 
 firefox-relay-and-fxa-opt-in-confirmation-enable-button-with-domain =
@@ -89,7 +91,7 @@ firefox-relay-and-fxa-popup-notification-header-with-domain-and-value-prop = Pro
 
 firefox-relay-and-fxa-popup-notification-first-sentence-with-domain-and-value-prop  = Protect against spam by hiding your real address with an <label data-l10n-name="firefox-relay-learn-more-url">email mask</label>. You’ll still receive mails from <label data-l10n-name="firefox-fxa-and-relay-offer-domain">this site</label> in your regular inbox, with your address masked.
 
-firefox-relay-and-fxa-popup-notification-second-sentence-with-domain-and-value-prop = First, sign up or sign in to your account to use an email mask
+firefox-relay-and-fxa-popup-notification-second-sentence-with-domain-and-value-prop = First, sign up or sign in to your account to use an email mask.
 
 firefox-relay-and-fxa-opt-in-confirmation-enable-button-with-domain-and-value-prop =
     .label = Next

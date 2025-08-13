@@ -8,13 +8,13 @@
 #define mozilla_css_SheetLoadData_h
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Encoding.h"
+#include "mozilla/NotNull.h"
+#include "mozilla/PreloaderBase.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/SharedSubResourceCache.h"
 #include "mozilla/css/Loader.h"
 #include "mozilla/css/SheetParsingMode.h"
-#include "mozilla/Encoding.h"
-#include "mozilla/PreloaderBase.h"
-#include "mozilla/SharedSubResourceCache.h"
-#include "mozilla/NotNull.h"
 #include "mozilla/dom/CacheExpirationTime.h"
 #include "nsProxyRelease.h"
 

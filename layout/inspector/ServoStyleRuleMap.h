@@ -7,9 +7,8 @@
 #ifndef mozilla_ServoStyleRuleMap_h
 #define mozilla_ServoStyleRuleMap_h
 
-#include "mozilla/css/Rule.h"
 #include "mozilla/StyleSheet.h"
-
+#include "mozilla/css/Rule.h"
 #include "nsTHashMap.h"
 
 struct StyleLockedStyleRule;

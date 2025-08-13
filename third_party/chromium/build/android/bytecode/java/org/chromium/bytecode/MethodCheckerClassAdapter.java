@@ -1,4 +1,4 @@
-// Copyright 2021 The Chromium Authors. All rights reserved.
+// Copyright 2021 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -7,7 +7,7 @@ package org.chromium.bytecode;
 import static org.objectweb.asm.ClassReader.EXPAND_FRAMES;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
-import static org.objectweb.asm.Opcodes.ASM7;
+import static org.objectweb.asm.Opcodes.ASM9;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -20,7 +20,7 @@ import java.util.ArrayList;
 /**
  * This ClassVisitor verifies that a class and its methods are suitable for rewriting.
  * Given a class and a list of methods it performs the following checks:
- * 1. Class is subclass of {@link android.view.View}.
+ * 1. Class is subclass of a class that we want to trace.
  * 2. Class is not abstract or an interface.
  *
  * For each method provided in {@code methodsToCheck}:
@@ -34,6 +34,10 @@ import java.util.ArrayList;
  */
 class MethodCheckerClassAdapter extends ClassVisitor {
     private static final String VIEW_CLASS_DESCRIPTOR = "android/view/View";
+    private static final String ANIMATOR_UPDATE_LISTENER_CLASS_DESCRIPTOR =
+            "android/animation/ValueAnimator$AnimatorUpdateListener";
+    private static final String ANIMATOR_LISTENER_CLASS_DESCRIPTOR =
+            "android/animation/Animator$AnimatorListener";
 
     private final ArrayList<MethodDescription> mMethodsToCheck;
     private final ClassLoader mJarClassLoader;
@@ -41,13 +45,18 @@ class MethodCheckerClassAdapter extends ClassVisitor {
 
     public MethodCheckerClassAdapter(
             ArrayList<MethodDescription> methodsToCheck, ClassLoader jarClassLoader) {
-        super(ASM7);
+        super(ASM9);
         mMethodsToCheck = methodsToCheck;
         mJarClassLoader = jarClassLoader;
     }
 
     @Override
-    public void visit(int version, int access, String name, String signature, String superName,
+    public void visit(
+            int version,
+            int access,
+            String name,
+            String signature,
+            String superName,
             String[] interfaces) {
         super.visit(version, access, name, signature, superName, interfaces);
 
@@ -56,7 +65,7 @@ class MethodCheckerClassAdapter extends ClassVisitor {
         boolean isAbstract = (access & ACC_ABSTRACT) == ACC_ABSTRACT;
         boolean isInterface = (access & ACC_INTERFACE) == ACC_INTERFACE;
 
-        if (isAbstract || isInterface || !isClassView(name)) {
+        if (isAbstract || isInterface || !shouldTraceClass(name)) {
             mMethodsToCheck.clear();
             return;
         }
@@ -101,13 +110,17 @@ class MethodCheckerClassAdapter extends ClassVisitor {
         super.visitEnd();
     }
 
-    private boolean isClassView(String desc) {
-        Class currentClass = getClass(desc);
-        Class viewClass = getClass(VIEW_CLASS_DESCRIPTOR);
-        if (currentClass != null && viewClass != null) {
-            return viewClass.isAssignableFrom(currentClass);
-        }
-        return false;
+    private boolean shouldTraceClass(String desc) {
+        Class clazz = getClass(desc);
+        return isClassDerivedFrom(clazz, VIEW_CLASS_DESCRIPTOR)
+                || isClassDerivedFrom(clazz, ANIMATOR_UPDATE_LISTENER_CLASS_DESCRIPTOR)
+                || isClassDerivedFrom(clazz, ANIMATOR_LISTENER_CLASS_DESCRIPTOR);
+    }
+
+    private boolean isClassDerivedFrom(Class clazz, String classDescriptor) {
+        Class superClass = getClass(classDescriptor);
+        if (clazz == null || superClass == null) return false;
+        return superClass.isAssignableFrom(clazz);
     }
 
     private Class getClass(String desc) {
@@ -118,7 +131,9 @@ class MethodCheckerClassAdapter extends ClassVisitor {
         }
     }
 
-    static void checkParentClass(String superClassName, ArrayList<MethodDescription> methodsToCheck,
+    static void checkParentClass(
+            String superClassName,
+            ArrayList<MethodDescription> methodsToCheck,
             ClassLoader jarClassLoader) {
         try {
             ClassReader cr = new ClassReader(getClassAsStream(jarClassLoader, superClassName));

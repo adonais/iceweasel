@@ -52,6 +52,7 @@ use.counter:
     expires: never
     send_in_pings:
       - use-counters
+      - metrics
 
   dedicated_workers_destroyed:
     type: counter
@@ -107,8 +108,8 @@ use.counter:
     send_in_pings:
       - use-counters
 
-# Total of 2413 use counter metrics (excludes denominators).
-# Total of 365 'page' use counters.
+# Total of 2395 use counter metrics (excludes denominators).
+# Total of 358 'page' use counters.
 use.counter.page:
   svgsvgelement_getelementbyid:
     type: counter
@@ -675,91 +676,6 @@ use.counter.page:
     type: counter
     description: >
       Whether a page OOMed while creating IC stub.
-      Compare against `use.counter.top_level_content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  js_errorstack_getter:
-    type: counter
-    description: >
-      Whether a page called error.stack getter.
-      Compare against `use.counter.top_level_content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  js_errorstack_getter_no_errordata:
-    type: counter
-    description: >
-      Whether a page called error.stack getter on object without ErrorData internal slot.
-      Compare against `use.counter.top_level_content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  js_errorstack_setter:
-    type: counter
-    description: >
-      Whether a page called error.stack setter.
-      Compare against `use.counter.top_level_content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  js_errorstack_setter_nonstring:
-    type: counter
-    description: >
-      Whether a page called error.stack setter with non-string input.
-      Compare against `use.counter.top_level_content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  js_errorstack_setter_no_errordata:
-    type: counter
-    description: >
-      Whether a page called error.stack setter on object without ErrorData internal slot.
       Compare against `use.counter.top_level_content_documents_destroyed`
       to calculate the rate.
     bugs:
@@ -5431,40 +5347,6 @@ use.counter.page:
     send_in_pings:
       - use-counters
 
-  animation_commitstyles:
-    type: counter
-    description: >
-      Whether a page called called Animation.commitStyles.
-      Compare against `use.counter.top_level_content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  commit_styles_non_filling_final_value:
-    type: counter
-    description: >
-      Whether a page calls commitStyles and its result differs depending on whether the endpoint-inclusive pref is enabled or not.
-      Compare against `use.counter.top_level_content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
   fe_blend:
     type: counter
     description: >
@@ -6315,7 +6197,7 @@ use.counter.page:
     send_in_pings:
       - use-counters
 
-# Total of 365 'document' use counters.
+# Total of 358 'document' use counters.
 use.counter.doc:
   svgsvgelement_getelementbyid:
     type: counter
@@ -6882,91 +6764,6 @@ use.counter.doc:
     type: counter
     description: >
       Whether a document OOMed while creating IC stub.
-      Compare against `use.counter.content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  js_errorstack_getter:
-    type: counter
-    description: >
-      Whether a document called error.stack getter.
-      Compare against `use.counter.content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  js_errorstack_getter_no_errordata:
-    type: counter
-    description: >
-      Whether a document called error.stack getter on object without ErrorData internal slot.
-      Compare against `use.counter.content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  js_errorstack_setter:
-    type: counter
-    description: >
-      Whether a document called error.stack setter.
-      Compare against `use.counter.content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  js_errorstack_setter_nonstring:
-    type: counter
-    description: >
-      Whether a document called error.stack setter with non-string input.
-      Compare against `use.counter.content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  js_errorstack_setter_no_errordata:
-    type: counter
-    description: >
-      Whether a document called error.stack setter on object without ErrorData internal slot.
       Compare against `use.counter.content_documents_destroyed`
       to calculate the rate.
     bugs:
@@ -11638,40 +11435,6 @@ use.counter.doc:
     send_in_pings:
       - use-counters
 
-  animation_commitstyles:
-    type: counter
-    description: >
-      Whether a document called called Animation.commitStyles.
-      Compare against `use.counter.content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  commit_styles_non_filling_final_value:
-    type: counter
-    description: >
-      Whether a document calls commitStyles and its result differs depending on whether the endpoint-inclusive pref is enabled or not.
-      Compare against `use.counter.content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
   fe_blend:
     type: counter
     description: >
@@ -15231,7 +14994,7 @@ use.counter.worker.service:
     send_in_pings:
       - use-counters
 
-# Total of 57 'deprecated operations (page)' use counters.
+# Total of 55 'deprecated operations (page)' use counters.
 use.counter.deprecated_ops.page:
   domsubtree_modified:
     type: counter
@@ -16117,40 +15880,6 @@ use.counter.deprecated_ops.page:
     send_in_pings:
       - use-counters
 
-  svgnearest_viewport_element:
-    type: counter
-    description: >
-      Whether a page used SVGNearestViewportElement.
-      Compare against `use.counter.top_level_content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  svgfarthest_viewport_element:
-    type: counter
-    description: >
-      Whether a page used SVGFarthestViewportElement.
-      Compare against `use.counter.top_level_content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
   idbobject_store_create_index_locale:
     type: counter
     description: >
@@ -16202,7 +15931,7 @@ use.counter.deprecated_ops.page:
     send_in_pings:
       - use-counters
 
-# Total of 57 'deprecated operations (document)' use counters.
+# Total of 55 'deprecated operations (document)' use counters.
 use.counter.deprecated_ops.doc:
   domsubtree_modified:
     type: counter
@@ -17075,40 +16804,6 @@ use.counter.deprecated_ops.doc:
     type: counter
     description: >
       Whether a document used SVGDeselectAll.
-      Compare against `use.counter.content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  svgnearest_viewport_element:
-    type: counter
-    description: >
-      Whether a document used SVGNearestViewportElement.
-      Compare against `use.counter.content_documents_destroyed`
-      to calculate the rate.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1852098
-    notification_emails:
-      - dom-core@mozilla.com
-      - emilio@mozilla.com
-    expires: never
-    send_in_pings:
-      - use-counters
-
-  svgfarthest_viewport_element:
-    type: counter
-    description: >
-      Whether a document used SVGFarthestViewportElement.
       Compare against `use.counter.content_documents_destroyed`
       to calculate the rate.
     bugs:

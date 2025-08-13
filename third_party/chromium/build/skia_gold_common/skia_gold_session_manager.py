@@ -1,18 +1,38 @@
-# Copyright 2020 The Chromium Authors. All rights reserved.
+# Copyright 2020 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 """Class for managing multiple SkiaGoldSessions."""
 
 import json
 import tempfile
+from typing import Dict, Optional, Type, Union
+
+from skia_gold_common import output_managerless_skia_gold_session
+from skia_gold_common import skia_gold_properties
+from skia_gold_common import skia_gold_session
+
+KeysInputType = Union[dict, str]
+# {
+#   instance: {
+#     corpus: {
+#       keys_string: SkiaGoldSession,
+#     },
+#   },
+# }
+SessionMapType = Dict[str, Dict[str, Dict[str,
+                                          skia_gold_session.SkiaGoldSession]]]
 
 
-class SkiaGoldSessionManager(object):
-  def __init__(self, working_dir, gold_properties):
-    """Abstract class to manage one or more skia_gold_session.SkiaGoldSessions.
+class SkiaGoldSessionManager():
+  def __init__(self, working_dir: str,
+               gold_properties: skia_gold_properties.SkiaGoldProperties):
+    """Class to manage one or more skia_gold_session.SkiaGoldSessions.
 
     A separate session is required for each instance/corpus/keys_file
     combination, so this class will lazily create them as necessary.
+
+    The base implementation is usable on its own, but is meant to be overridden
+    as necessary.
 
     Args:
       working_dir: The working directory under which each individual
@@ -22,13 +42,14 @@ class SkiaGoldSessionManager(object):
     """
     self._working_dir = working_dir
     self._gold_properties = gold_properties
-    self._sessions = {}
+    self._sessions: SessionMapType = {}
 
-  def GetSkiaGoldSession(self,
-                         keys_input,
-                         corpus=None,
-                         instance=None,
-                         bucket=None):
+  def GetSkiaGoldSession(
+      self,
+      keys_input: KeysInputType,
+      corpus: Optional[str] = None,
+      instance: Optional[str] = None,
+      bucket: Optional[str] = None) -> skia_gold_session.SkiaGoldSession:
     """Gets a SkiaGoldSession for the given arguments.
 
     Lazily creates one if necessary.
@@ -64,7 +85,7 @@ class SkiaGoldSessionManager(object):
     return session
 
   @staticmethod
-  def _GetDefaultInstance():
+  def _GetDefaultInstance() -> str:
     """Gets the default Skia Gold instance.
 
     Returns:
@@ -73,16 +94,16 @@ class SkiaGoldSessionManager(object):
     return 'chrome'
 
   @staticmethod
-  def GetSessionClass():
+  def GetSessionClass() -> Type[skia_gold_session.SkiaGoldSession]:
     """Gets the SkiaGoldSession class to use for session creation.
 
     Returns:
       A reference to a SkiaGoldSession class.
     """
-    raise NotImplementedError
+    return output_managerless_skia_gold_session.OutputManagerlessSkiaGoldSession
 
 
-def _GetKeysAsDict(keys_input):
+def _GetKeysAsDict(keys_input: KeysInputType) -> dict:
   """Converts |keys_input| into a dictionary.
 
   Args:
@@ -99,12 +120,14 @@ def _GetKeysAsDict(keys_input):
     return json.load(f)
 
 
-def _GetKeysAsJson(keys_input, session_work_dir):
+def _GetKeysAsJson(keys_input: KeysInputType, session_work_dir: str) -> str:
   """Converts |keys_input| into a JSON file on disk.
 
   Args:
     keys_input: A dictionary or a string pointing to a JSON file. The contents
         of either should be Skia Gold config data.
+    session_work_dir: The working directory under which each individual
+        SkiaGoldSessions' working directory will be created.
 
   Returns:
     A string containing a filepath to a JSON file with containing |keys_input|'s

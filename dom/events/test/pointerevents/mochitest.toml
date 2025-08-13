@@ -1,7 +1,9 @@
 [DEFAULT]
 prefs = [
   "gfx.font_loader.delay=0",
-  "dom.w3c_pointer_events.getcoalescedevents_only_in_securecontext=false"
+  "dom.w3c_pointer_events.getcoalescedevents_only_in_securecontext=false",
+  "ui.dragThresholdX=4", # Bug 1873142
+  "ui.dragThresholdY=4", # Bug 1873142
 ]
 
 support-files = [
@@ -65,9 +67,9 @@ support-files = ["!/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js
 ["test_click_pointerId_of_single_tap_in_process.html"]
 
 ["test_contextmenu_pointerId_of_long_tap.html"]
-skip-if = [ # Bug 1969768
-  "os == 'linux' && display != 'wayland' && opt && !xorigin && !verify", # Linux-opt passes only in the xorigin and verify mode
-  "os == 'linux' && display != 'wayland' && debug && headless", # Linux-debug may not pass in the headless mode
+skip-if = [
+  "os == 'linux' && display == 'x11' && opt && !xorigin && !verify", # Bug 1969768 - Linux-opt passes only in the xorigin and verify mode
+  "os == 'linux' && display == 'x11' && debug && headless", # Linux-debug may not pass in the headless mode
   "os == 'linux' && asan", # Linux-asan may not pass in the any modes except the verify mode
   "os == 'linux' && ccov && !xorigin", # Linux-ccov passes only in the xorigin mode
   "display == 'wayland' && opt && !xorigin", # Linux-Wayland-opt passes only in the xorigin mode
@@ -77,25 +79,30 @@ skip-if = [ # Bug 1969768
 ]
 
 ["test_getCoalescedEvents.html"]
-skip-if = [
-  "xorigin", # Bug 1953695, Bug 1958029
-]
+skip-if = ["xorigin"] # Bug 1953695, Bug 1958029
 
 ["test_getCoalescedEvents_during_button_press.html"]
-skip-if = [
-  "xorigin", # Bug 1953695, Bug 1958029
-]
+skip-if = ["xorigin"] # Bug 1953695, Bug 1958029
 
 ["test_getCoalescedEvents_touch.html"]
 skip-if = [
-  "os == 'android'",  # Bug 1312791
-  "verify && os == 'win'",  # Bug 1659744
+  "os == 'android'", # Bug 1312791
   "win11_2009", # Bug 1781388
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && opt", # Bug 1781388
 ]
 support-files = ["!/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js"]
 
 ["test_multiple_touches.html"]
+
+["test_pointercancel_target_at_dragstart.html"]
+
+["test_pointercancel_target_at_dragstart_with_capture.html"]
+
+["test_pointercancel_target_at_dragstart_with_moving_iframe.html"]
+
+["test_pointercancel_target_at_dragstart_with_moving_target_iframe.html"]
+
+["test_pointercancel_target_at_dragstart_with_restyle.html"]
 
 ["test_pointercapture_remove_iframe.html"]
 
@@ -105,14 +112,10 @@ support-files = [
   "file_pointercapture_xorigin_iframe_pointerlock.html",
   "file_pointercapture_xorigin_iframe_touch.html",
 ]
-skip-if = [
-  "display == 'wayland' && os_version == '22.04'",  # Bug 1856971
-]
+skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1856971
 
 ["test_pointermove_drag_scrollbar.html"]
-skip-if = [
-  "os == 'android'", # scrollbar not showed on mobile
-]
+skip-if = ["os == 'android'"] # scrollbar not showed on mobile
 
 ["test_pointermove_isPrimary_subsequent_pens.html"]
 
@@ -126,8 +129,7 @@ skip-if = [
 ["test_pointerrawupdate_event_count_touch.html"]
 scheme = "https"
 skip-if = [
-  "os == 'android'",  # Bug 1312791
-  "verify && os == 'win'",  # Bug 1659744
+  "os == 'android'", # Bug 1312791
   "win11_2009", # Bug 1781388
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && opt", # Bug 1781388
 ]

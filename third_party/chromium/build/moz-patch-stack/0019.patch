@@ -1,24 +1,2552 @@
-From: Nico Grunbaum <na-g@nostrum.com>
-Date: Wed, 18 Jan 2023 19:57:00 +0000
-Subject: Bug 1795993 - P0 - revert upstream change from SSE2 to SSE3 in
- WebRTC;r=mjf
+From: Michael Froman <mfroman@mozilla.com>
+Date: Tue, 8 Jul 2025 12:33:21 -0500
+Subject: Bug 1775143 - pt14 - (mirror) 58f47eacaf10 r=ng
 
-Differential Revision: https://phabricator.services.mozilla.com/D161201
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/66f4374c461fe27b167062a09f676c5de73e058c
+Search third_party/libwebrtc/build for current_cpu, removing
+   third_party/libwebrtc/build/config/BUILDCONFIG.gn
+   and
+   third_party/libwebrtc/build/config/v8_target_cpu.gni from the list.
+
+ack -lw current_cpu third_party/libwebrtc/build | grep -v "BUILDCONFIG\.gn" | grep -v "v8_target_cpu\.gni"
+
+That gave me this:
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/android/abi.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/android/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/android/config.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/android/rules.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/arm.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/chromecast/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/chromeos/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/clang/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/compiler/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/compiler/compiler.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/compiler/pgo/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/fuchsia/gn_configs.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/ios/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/ios/rules.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/linux/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/linux/pkg_config.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/loongarch64.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/mac/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/mips.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/nacl/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/nacl/config.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/nacl/host_toolchain.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/nacl/rules.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/riscv.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/rust.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/sanitizers/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/sanitizers/sanitizers.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/sysroot.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/config/win/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/linux/extract_symbols.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/rust/std/gnrt_config.toml
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/rust/std/rules/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/toolchain/aix/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/toolchain/android/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/toolchain/cros/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/toolchain/fuchsia/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/toolchain/gcc_toolchain.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/toolchain/ios/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/toolchain/linux/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/toolchain/linux/unbundle/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/toolchain/mac/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/toolchain/nacl/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/toolchain/wasm/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/toolchain/win/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/toolchain/win/midl.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/toolchain/win/toolchain.gni
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/toolchain/zos/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/win/BUILD.gn
+sed -i 's/current_cpu/target_cpu/g' third_party/libwebrtc/build/win/message_compiler.gni
+
+(skip-generation)
+
+Depends on D149827
+
+Differential Revision: https://phabricator.services.mozilla.com/D149828
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/ec13234e5a641a026e946425ddea2d0de86435cd
 ---
- config/compiler/BUILD.gn | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ config/BUILD.gn                   |  2 +-
+ config/android/BUILD.gn           |  8 ++--
+ config/android/abi.gni            | 22 ++++-----
+ config/android/config.gni         | 16 +++----
+ config/android/rules.gni          |  8 ++--
+ config/arm.gni                    |  6 +--
+ config/chromecast/BUILD.gn        |  4 +-
+ config/chromeos/BUILD.gn          |  8 ++--
+ config/clang/BUILD.gn             | 36 +++++++-------
+ config/compiler/BUILD.gn          | 76 ++++++++++++++---------------
+ config/compiler/compiler.gni      | 22 ++++-----
+ config/compiler/pgo/BUILD.gn      |  4 +-
+ config/fuchsia/gn_configs.gni     |  2 +-
+ config/ios/BUILD.gn               | 10 ++--
+ config/ios/rules.gni              |  2 +-
+ config/linux/BUILD.gn             |  4 +-
+ config/linux/pkg_config.gni       |  2 +-
+ config/loongarch64.gni            |  2 +-
+ config/mac/BUILD.gn               | 10 ++--
+ config/mips.gni                   | 10 ++--
+ config/nacl/BUILD.gn              |  8 ++--
+ config/nacl/config.gni            | 14 +++---
+ config/nacl/host_toolchain.gni    |  6 +--
+ config/nacl/rules.gni             | 16 +++----
+ config/riscv.gni                  |  4 +-
+ config/rust.gni                   | 52 ++++++++++----------
+ config/sanitizers/BUILD.gn        | 10 ++--
+ config/sanitizers/sanitizers.gni  |  4 +-
+ config/sysroot.gni                | 22 ++++-----
+ config/win/BUILD.gn               | 18 +++----
+ linux/extract_symbols.gni         |  2 +-
+ rust/std/gnrt_config.toml         |  2 +-
+ rust/std/rules/BUILD.gn           |  2 +-
+ toolchain/aix/BUILD.gn            |  2 +-
+ toolchain/android/BUILD.gn        | 18 +++----
+ toolchain/cros/BUILD.gn           | 16 +++----
+ toolchain/fuchsia/BUILD.gn        |  4 +-
+ toolchain/gcc_toolchain.gni       |  8 ++--
+ toolchain/ios/BUILD.gn            | 22 ++++-----
+ toolchain/linux/BUILD.gn          | 80 +++++++++++++++----------------
+ toolchain/linux/unbundle/BUILD.gn |  4 +-
+ toolchain/mac/BUILD.gn            | 32 ++++++-------
+ toolchain/nacl/BUILD.gn           | 10 ++--
+ toolchain/wasm/BUILD.gn           |  2 +-
+ toolchain/win/BUILD.gn            |  2 +-
+ toolchain/win/midl.gni            |  6 +--
+ toolchain/win/toolchain.gni       | 44 ++++++++---------
+ toolchain/zos/BUILD.gn            |  2 +-
+ win/BUILD.gn                      |  4 +-
+ win/message_compiler.gni          |  2 +-
+ 50 files changed, 336 insertions(+), 336 deletions(-)
 
+diff --git a/config/BUILD.gn b/config/BUILD.gn
+index 36c03e0dd..7cf351624 100644
+--- a/config/BUILD.gn
++++ b/config/BUILD.gn
+@@ -124,7 +124,7 @@ config("debug") {
+       # builds, and we have to tell it to turn it off.
+       defines += [ "_HAS_ITERATOR_DEBUGGING=0" ]
+     }
+-  } else if ((is_linux || is_chromeos) && current_cpu == "x64" &&
++  } else if ((is_linux || is_chromeos) && target_cpu == "x64" &&
+              enable_iterator_debugging) {
+     # Enable libstdc++ debugging facilities to help catch problems early, see
+     # http://crbug.com/65151 .
+diff --git a/config/android/BUILD.gn b/config/android/BUILD.gn
+index 2b2c64ba8..b74b92516 100644
+--- a/config/android/BUILD.gn
++++ b/config/android/BUILD.gn
+@@ -36,7 +36,7 @@ config("compiler") {
+     "ANDROID_NDK_VERSION_ROLL=${android_ndk_version}_1",
+   ]
+ 
+-  if (android_64bit_current_cpu) {
++  if (android_64bit_target_cpu) {
+     _max_page_size = 16384
+   } else {
+     _max_page_size = 4096
+@@ -54,7 +54,7 @@ config("compiler") {
+     "-Wl,-z,max-page-size=$_max_page_size",
+   ]
+ 
+-  if (current_cpu == "arm64") {
++  if (target_cpu == "arm64") {
+     if (arm_control_flow_integrity == "standard") {
+       cflags += [ "-mbranch-protection=standard" ]
+       rustflags = [ "-Zbranch-protection=pac-ret,bti" ]
+@@ -67,7 +67,7 @@ config("compiler") {
+   # Disable TLSDESC for riscv64 until the Android NDK supports it. While
+   # Chromium's clang turns it on by default for Android RISC-V devices, NDK r27
+   # currently has it disabled. This can likely be removed in NDK r28.
+-  if (current_cpu == "riscv64") {
++  if (target_cpu == "riscv64") {
+     cflags += [ "-mtls-dialect=trad" ]
+   }
+ 
+@@ -122,7 +122,7 @@ config("lld_branch_target_hardening") {
+   # Config opts a shared library into BTI linker hardening. This
+   # is an opt-in config (rather than default-enabled) to avoid
+   # interfering with the V8 CFI bots (crbug.com/1334614).
+-  if (current_cpu == "arm64") {
++  if (target_cpu == "arm64") {
+     if (arm_control_flow_integrity == "standard") {
+       # Linking objects without GNU_PROPERTY_AARCH64_FEATURE_1_BTI
+       # in their .gnu.note section implicitly results in the final
+diff --git a/config/android/abi.gni b/config/android/abi.gni
+index c300f1d6f..567c75b42 100644
+--- a/config/android/abi.gni
++++ b/config/android/abi.gni
+@@ -36,11 +36,11 @@ declare_args() {
+ assert(!devtools_instrumentation_dumping || use_order_profiling,
+        "devtools_instrumentation_dumping requires use_order_profiling")
+ 
+-if (current_cpu == "x86") {
++if (target_cpu == "x86") {
+   android_app_abi = "x86"
+   android_abi_target = "i686-linux-android"
+   sanitizer_arch = "i686"
+-} else if (current_cpu == "arm") {
++} else if (target_cpu == "arm") {
+   import("//chromium/build/config/arm.gni")
+   if (arm_version < 7) {
+     android_app_abi = "armeabi"
+@@ -49,30 +49,30 @@ if (current_cpu == "x86") {
+   }
+   android_abi_target = "arm-linux-androideabi"
+   sanitizer_arch = "arm"
+-} else if (current_cpu == "mipsel") {
++} else if (target_cpu == "mipsel") {
+   android_app_abi = "mips"
+   android_abi_target = "mipsel-linux-android"
+-} else if (current_cpu == "x64") {
++} else if (target_cpu == "x64") {
+   android_app_abi = "x86_64"
+   android_abi_target = "x86_64-linux-android"
+   sanitizer_arch = "x86_64"
+-} else if (current_cpu == "arm64") {
++} else if (target_cpu == "arm64") {
+   android_app_abi = "arm64-v8a"
+   android_abi_target = "aarch64-linux-android"
+   sanitizer_arch = "aarch64"
+-} else if (current_cpu == "mips64el") {
++} else if (target_cpu == "mips64el") {
+   android_app_abi = "mips64"
+ 
+   # Place holder for mips64 support, not tested.
+   android_abi_target = "mips64el-linux-android"
+-} else if (current_cpu == "riscv64") {
++} else if (target_cpu == "riscv64") {
+   android_app_abi = "riscv64"
+ 
+   # Place holder for riscv64 support, not tested.
+   android_abi_target = "riscv64-linux-android"
+   sanitizer_arch = "riscv64"
+ } else {
+-  assert(false, "Unknown Android ABI: " + current_cpu)
++  assert(false, "Unknown Android ABI: " + target_cpu)
+ }
+ 
+ if (target_cpu == "arm64" || target_cpu == "x64" || target_cpu == "mips64el" ||
+@@ -85,9 +85,9 @@ if (target_cpu == "arm64" || target_cpu == "x64" || target_cpu == "mips64el" ||
+   assert(false, "Unknown target CPU: $target_cpu")
+ }
+ 
+-android_64bit_current_cpu =
+-    current_cpu == "arm64" || current_cpu == "x64" ||
+-    current_cpu == "mips64el" || current_cpu == "riscv64"
++android_64bit_target_cpu =
++    target_cpu == "arm64" || target_cpu == "x64" ||
++    target_cpu == "mips64el" || target_cpu == "riscv64"
+ 
+ # Do not define android_secondary_abi_cpu or android_app_secondary_abi for
+ # target_cpu's that are 32-bit-only or 64-bit-only, as they are not used. The
+diff --git a/config/android/config.gni b/config/android/config.gni
+index 92251bb69..8a6259464 100644
+--- a/config/android/config.gni
++++ b/config/android/config.gni
+@@ -196,7 +196,7 @@ if (is_android) {
+       # Android did not support 64 bit before API 21.
+       android64_ndk_api_level = 21
+     }
+-    if (current_cpu == "riscv64" && default_min_sdk_version < 35) {
++    if (target_cpu == "riscv64" && default_min_sdk_version < 35) {
+       # Android did not support RISC-V64 before API 35.
+       android64_ndk_api_level = 35
+     }
+@@ -369,19 +369,19 @@ if (is_android) {
+   # Location of libgcc. This is only needed for the current GN toolchain, so we
+   # only need to define the current one, rather than one for every platform
+   # like the toolchain roots.
+-  if (current_cpu == "x86") {
++  if (target_cpu == "x86") {
+     android_prebuilt_arch = "android-x86"
+-  } else if (current_cpu == "arm") {
++  } else if (target_cpu == "arm") {
+     android_prebuilt_arch = "android-arm"
+-  } else if (current_cpu == "mipsel") {
++  } else if (target_cpu == "mipsel") {
+     android_prebuilt_arch = "android-mips"
+-  } else if (current_cpu == "x64") {
++  } else if (target_cpu == "x64") {
+     android_prebuilt_arch = "android-x86_64"
+-  } else if (current_cpu == "arm64") {
++  } else if (target_cpu == "arm64") {
+     android_prebuilt_arch = "android-arm64"
+-  } else if (current_cpu == "mips64el") {
++  } else if (target_cpu == "mips64el") {
+     android_prebuilt_arch = "android-mips64"
+-  } else if (current_cpu == "riscv64") {
++  } else if (target_cpu == "riscv64") {
+     # Place holder for riscv64 support, not tested.
+     android_prebuilt_arch = "android-riscv64"
+   } else {
+diff --git a/config/android/rules.gni b/config/android/rules.gni
+index 8fc2e6feb..ceea17924 100644
+--- a/config/android/rules.gni
++++ b/config/android/rules.gni
+@@ -428,13 +428,13 @@ if (!is_robolectric && enable_java_templates) {
+   #       variables must not be set.
+   template("write_native_libraries_java") {
+     _native_libraries_file = "$target_gen_dir/$target_name.srcjar"
+-    if (current_cpu == "arm" || current_cpu == "arm64") {
++    if (target_cpu == "arm" || target_cpu == "arm64") {
+       _cpu_family = "CPU_FAMILY_ARM"
+-    } else if (current_cpu == "x86" || current_cpu == "x64") {
++    } else if (target_cpu == "x86" || target_cpu == "x64") {
+       _cpu_family = "CPU_FAMILY_X86"
+-    } else if (current_cpu == "mipsel" || current_cpu == "mips64el") {
++    } else if (target_cpu == "mipsel" || target_cpu == "mips64el") {
+       _cpu_family = "CPU_FAMILY_MIPS"
+-    } else if (current_cpu == "riscv64") {
++    } else if (target_cpu == "riscv64") {
+       _cpu_family = "CPU_FAMILY_RISCV"
+     } else {
+       assert(false, "Unsupported CPU family")
+diff --git a/config/arm.gni b/config/arm.gni
+index 25e64d430..46416a57e 100644
+--- a/config/arm.gni
++++ b/config/arm.gni
+@@ -5,11 +5,11 @@
+ import("//chromium/build/config/chromeos/ui_mode.gni")
+ import("//chromium/build/config/v8_target_cpu.gni")
+ 
+-# These are primarily relevant in current_cpu == "arm" contexts, where
++# These are primarily relevant in target_cpu == "arm" contexts, where
+ # ARM code is being compiled.  But they can also be relevant in the
+ # other contexts when the code will change its behavior based on the
+ # cpu it wants to generate code for.
+-if (current_cpu == "arm" || v8_current_cpu == "arm") {
++if (target_cpu == "arm" || v8_target_cpu == "arm") {
+   declare_args() {
+     # Version of the ARM processor when compiling on ARM. Ignored on non-ARM
+     # platforms.
+@@ -118,7 +118,7 @@ if (current_cpu == "arm" || v8_current_cpu == "arm") {
+       }
+     }
+   }
+-} else if (current_cpu == "arm64" || v8_current_cpu == "arm64") {
++} else if (target_cpu == "arm64" || v8_target_cpu == "arm64") {
+   # arm64 supports only "hard".
+   arm_float_abi = "hard"
+   arm_use_neon = true
+diff --git a/config/chromecast/BUILD.gn b/config/chromecast/BUILD.gn
+index a7e085e46..43aaeb84a 100644
+--- a/config/chromecast/BUILD.gn
++++ b/config/chromecast/BUILD.gn
+@@ -56,7 +56,7 @@ config("ldconfig") {
+ config("executable_config") {
+   configs = [ ":ldconfig" ]
+ 
+-  if (!is_clang && current_cpu == "arm") {
++  if (!is_clang && target_cpu == "arm") {
+     ldflags = [
+       # Export stdlibc++ and libgcc symbols to force shlibs to refer to these
+       # symbols from the executable.
+@@ -84,7 +84,7 @@ config("executable_config") {
+ # shared libs to inherit RPATH from the parent executable that is loading
+ # the shared library. (See internal b/37514052 for more details.)
+ config("shared_library_config") {
+-  if (current_cpu == "arm") {
++  if (target_cpu == "arm") {
+     configs = [ ":static_config" ]
+   }
+ }
+diff --git a/config/chromeos/BUILD.gn b/config/chromeos/BUILD.gn
+index f850557db..2bbbd9d28 100644
+--- a/config/chromeos/BUILD.gn
++++ b/config/chromeos/BUILD.gn
+@@ -12,7 +12,7 @@ config("compiler_cpu_abi") {
+   # the cmake flags that clang was built with. Passing them redundantly
+   # is harmless and prepares for using Chromium's toolchain.
+   if (is_chromeos_device) {
+-    if (current_cpu == "x64") {
++    if (target_cpu == "x64") {
+       asmflags = [ "--target=x86_64-cros-linux-gnu" ]
+       cflags = [
+         "--target=x86_64-cros-linux-gnu",
+@@ -22,16 +22,16 @@ config("compiler_cpu_abi") {
+         "--target=x86_64-cros-linux-gnu",
+         "-mno-movbe",
+       ]
+-    } else if (current_cpu == "arm") {
++    } else if (target_cpu == "arm") {
+       asmflags = [ "--target=armv7a-cros-linux-gnueabihf" ]
+       cflags = [ "--target=armv7a-cros-linux-gnueabihf" ]
+       ldflags = [ "--target=armv7a-cros-linux-gnueabihf" ]
+-    } else if (current_cpu == "arm64") {
++    } else if (target_cpu == "arm64") {
+       asmflags = [ "--target=aarch64-cros-linux-gnu" ]
+       cflags = [ "--target=aarch64-cros-linux-gnu" ]
+       ldflags = [ "--target=aarch64-cros-linux-gnu" ]
+     } else {
+-      assert(false, "add support for $current_cpu here")
++      assert(false, "add support for $target_cpu here")
+     }
+   }
+ }
+diff --git a/config/clang/BUILD.gn b/config/clang/BUILD.gn
+index 166c55798..24a3be52e 100644
+--- a/config/clang/BUILD.gn
++++ b/config/clang/BUILD.gn
+@@ -173,11 +173,11 @@ template("clang_lib") {
+         _dir = "windows"
+         _prefix = ""
+         _ext = "lib"
+-        if (current_cpu == "x64") {
++        if (target_cpu == "x64") {
+           _suffix = "-x86_64"
+-        } else if (current_cpu == "x86") {
++        } else if (target_cpu == "x86") {
+           _suffix = "-i386"
+-        } else if (current_cpu == "arm64") {
++        } else if (target_cpu == "arm64") {
+           _suffix = "-aarch64"
+         } else {
+           assert(false)  # Unhandled cpu type
+@@ -187,48 +187,48 @@ template("clang_lib") {
+       } else if (_use_cros_sysroot_libs) {
+         _clang_lib_dir = _cros_resource_dir
+         _dir = "lib/linux"
+-        if (current_cpu == "x64") {
++        if (target_cpu == "x64") {
+           _suffix = "-x86_64"
+-        } else if (current_cpu == "x86") {
++        } else if (target_cpu == "x86") {
+           _suffix = "-i386"
+-        } else if (current_cpu == "arm") {
++        } else if (target_cpu == "arm") {
+           _suffix = "-armhf"
+-        } else if (current_cpu == "arm64") {
++        } else if (target_cpu == "arm64") {
+           _suffix = "-aarch64"
+         } else {
+           assert(false)  # Unhandled cpu type
+         }
+       } else if (is_linux || is_chromeos) {
+-        if (current_cpu == "x64") {
++        if (target_cpu == "x64") {
+           _dir = "x86_64-unknown-linux-gnu"
+-        } else if (current_cpu == "x86") {
++        } else if (target_cpu == "x86") {
+           _dir = "i386-unknown-linux-gnu"
+-        } else if (current_cpu == "arm") {
++        } else if (target_cpu == "arm") {
+           _dir = "armv7-unknown-linux-gnueabihf"
+-        } else if (current_cpu == "arm64") {
++        } else if (target_cpu == "arm64") {
+           _dir = "aarch64-unknown-linux-gnu"
+         } else {
+           assert(false)  # Unhandled cpu type
+         }
+       } else if (is_fuchsia) {
+-        if (current_cpu == "x64") {
++        if (target_cpu == "x64") {
+           _dir = "x86_64-unknown-fuchsia"
+-        } else if (current_cpu == "arm64") {
++        } else if (target_cpu == "arm64") {
+           _dir = "aarch64-unknown-fuchsia"
+         } else {
+           assert(false)  # Unhandled cpu type
+         }
+       } else if (is_android) {
+         _dir = "linux"
+-        if (current_cpu == "x64") {
++        if (target_cpu == "x64") {
+           _suffix = "-x86_64-android"
+-        } else if (current_cpu == "x86") {
++        } else if (target_cpu == "x86") {
+           _suffix = "-i686-android"
+-        } else if (current_cpu == "arm") {
++        } else if (target_cpu == "arm") {
+           _suffix = "-arm-android"
+-        } else if (current_cpu == "arm64") {
++        } else if (target_cpu == "arm64") {
+           _suffix = "-aarch64-android"
+-        } else if (current_cpu == "riscv64") {
++        } else if (target_cpu == "riscv64") {
+           _suffix = "-riscv64-android"
+         } else {
+           assert(false)  # Unhandled cpu type
 diff --git a/config/compiler/BUILD.gn b/config/compiler/BUILD.gn
-index b4a7a5efa..a1293bc43 100644
+index 7111affd1..a59a5df6e 100644
 --- a/config/compiler/BUILD.gn
 +++ b/config/compiler/BUILD.gn
-@@ -891,7 +891,7 @@ config("compiler_cpu_abi") {
+@@ -22,11 +22,11 @@ import("//chromium/build/toolchain/rbe.gni")
+ import("//chromium/build/toolchain/toolchain.gni")
+ import("//build_overrides/build.gni")
+ 
+-if (current_cpu == "arm" || current_cpu == "arm64") {
++if (target_cpu == "arm" || target_cpu == "arm64") {
+   import("//chromium/build/config/arm.gni")
+ }
+-if (current_cpu == "mipsel" || current_cpu == "mips64el" ||
+-    current_cpu == "mips" || current_cpu == "mips64") {
++if (target_cpu == "mipsel" || target_cpu == "mips64el" ||
++    target_cpu == "mips" || target_cpu == "mips64") {
+   import("//chromium/build/config/mips.gni")
+ }
+ if (is_mac) {
+@@ -217,9 +217,9 @@ if (is_android) {
+     # The orderfile is trained on PGO builds (for arm64) and AFDO builds (for
+     # arm32), so apply them only in these cases.
+     if (defined(default_chrome_orderfile)) {
+-      if (((current_cpu == "arm64" || current_cpu == "x64") &&
++      if (((target_cpu == "arm64" || target_cpu == "x64") &&
+            chrome_pgo_phase == 2) ||
+-          ((current_cpu == "arm" || current_cpu == "x86") &&
++          ((target_cpu == "arm" || target_cpu == "x86") &&
+            clang_use_default_sample_profile)) {
+         chrome_orderfile_path = default_chrome_orderfile
+       }
+@@ -473,7 +473,7 @@ config("compiler") {
+     # entries). This reduces object file size a bit and makes linking a bit
+     # faster.
+     # On arm64, this is already the default behavior.
+-    if (current_cpu == "x64") {
++    if (target_cpu == "x64") {
+       asmflags += [ "-femit-dwarf-unwind=no-compact-unwind" ]
+       cflags += [ "-femit-dwarf-unwind=no-compact-unwind" ]
+     }
+@@ -832,7 +832,7 @@ config("compiler") {
+ 
+     # TODO(crbug.com/40182783): investigate why this isn't effective on
+     # arm32.
+-    if (!is_android || current_cpu == "arm64") {
++    if (!is_android || target_cpu == "arm64") {
+       cflags += [ "-fwhole-program-vtables" ]
+ 
+       if (toolchain_supports_rust_thin_lto) {
+@@ -858,7 +858,7 @@ config("compiler") {
+     # unless the architecture revision in .ARM.attributes is sufficiently new.
+     # TODO(pcc): The contents of .ARM.attributes should be based on the
+     # -march flag passed at compile time (see llvm.org/pr36291).
+-    if (current_cpu == "arm") {
++    if (target_cpu == "arm") {
+       ldflags += [ "-march=$arm_arch" ]
+     }
+   }
+@@ -1087,7 +1087,7 @@ config("compiler") {
+   #
+   # Reduce confusion by making the __ARM_NEON__ #define always available,
+   # as NEON is a mandatory part of ARMv8 anyway.
+-  if (current_cpu == "arm64") {
++  if (target_cpu == "arm64") {
+     defines += [ "__ARM_NEON__=1" ]
+   }
+ }
+@@ -1196,13 +1196,13 @@ config("compiler_cpu_abi") {
+   if ((is_posix && !is_apple) || is_fuchsia) {
+     # CPU architecture. We may or may not be doing a cross compile now, so for
+     # simplicity we always explicitly set the architecture.
+-    if (current_cpu == "x64") {
++    if (target_cpu == "x64") {
+       cflags += [
+         "-m64",
+         "-msse3",
+       ]
+       ldflags += [ "-m64" ]
+-    } else if (current_cpu == "x86") {
++    } else if (target_cpu == "x86") {
+       cflags += [ "-m32" ]
+       ldflags += [ "-m32" ]
        if (!is_nacl) {
-         cflags += [
-           "-mfpmath=sse",
--          "-msse3",
-+          "-msse2",
+@@ -1211,7 +1211,7 @@ config("compiler_cpu_abi") {
+           "-msse2",
          ]
        }
-     } else if (target_cpu == "arm") {
+-    } else if (current_cpu == "arm") {
++    } else if (target_cpu == "arm") {
+       if (is_clang && !is_android && !is_nacl && !is_chromeos_device) {
+         cflags += [ "--target=arm-linux-gnueabihf" ]
+         ldflags += [ "--target=arm-linux-gnueabihf" ]
+@@ -1225,13 +1225,13 @@ config("compiler_cpu_abi") {
+       if (arm_tune != "") {
+         cflags += [ "-mtune=$arm_tune" ]
+       }
+-    } else if (current_cpu == "arm64") {
++    } else if (target_cpu == "arm64") {
+       if (is_clang && !is_android && !is_nacl && !is_fuchsia &&
+           !is_chromeos_device) {
+         cflags += [ "--target=aarch64-linux-gnu" ]
+         ldflags += [ "--target=aarch64-linux-gnu" ]
+       }
+-    } else if (current_cpu == "mipsel" && !is_nacl) {
++    } else if (target_cpu == "mipsel" && !is_nacl) {
+       ldflags += [ "-Wl,--hash-style=sysv" ]
+       if (custom_toolchain == "") {
+         if (is_clang) {
+@@ -1316,7 +1316,7 @@ config("compiler_cpu_abi") {
+       }
+ 
+       cflags += [ "-m${mips_float_abi}-float" ]
+-    } else if (current_cpu == "mips" && !is_nacl) {
++    } else if (target_cpu == "mips" && !is_nacl) {
+       ldflags += [ "-Wl,--hash-style=sysv" ]
+       if (custom_toolchain == "") {
+         if (is_clang) {
+@@ -1361,7 +1361,7 @@ config("compiler_cpu_abi") {
+       }
+ 
+       cflags += [ "-m${mips_float_abi}-float" ]
+-    } else if (current_cpu == "mips64el") {
++    } else if (target_cpu == "mips64el") {
+       cflags += [ "-D__SANE_USERSPACE_TYPES__" ]
+       ldflags += [ "-Wl,--hash-style=sysv" ]
+       if (custom_toolchain == "") {
+@@ -1425,7 +1425,7 @@ config("compiler_cpu_abi") {
+           "-Wa,-march=loongson3a",
+         ]
+       }
+-    } else if (current_cpu == "mips64") {
++    } else if (target_cpu == "mips64") {
+       ldflags += [ "-Wl,--hash-style=sysv" ]
+       if (custom_toolchain == "") {
+         if (is_clang) {
+@@ -1463,7 +1463,7 @@ config("compiler_cpu_abi") {
+         ]
+         ldflags += [ "-mips64r2" ]
+       }
+-    } else if (current_cpu == "ppc64") {
++    } else if (target_cpu == "ppc64") {
+       if (current_os == "aix") {
+         cflags += [ "-maix64" ]
+         ldflags += [ "-maix64" ]
+@@ -1471,13 +1471,13 @@ config("compiler_cpu_abi") {
+         cflags += [ "-m64" ]
+         ldflags += [ "-m64" ]
+       }
+-    } else if (current_cpu == "riscv64") {
++    } else if (target_cpu == "riscv64") {
+       if (is_clang && !is_android) {
+         cflags += [ "--target=riscv64-linux-gnu" ]
+         ldflags += [ "--target=riscv64-linux-gnu" ]
+       }
+       cflags += [ "-mabi=lp64d" ]
+-    } else if (current_cpu == "loong64") {
++    } else if (target_cpu == "loong64") {
+       if (is_clang) {
+         cflags += [ "--target=loongarch64-linux-gnu" ]
+         ldflags += [ "--target=loongarch64-linux-gnu" ]
+@@ -1486,7 +1486,7 @@ config("compiler_cpu_abi") {
+         "-mabi=lp64d",
+         "-mcmodel=medium",
+       ]
+-    } else if (current_cpu == "s390x") {
++    } else if (target_cpu == "s390x") {
+       cflags += [ "-m64" ]
+       ldflags += [ "-m64" ]
+     }
+@@ -1507,7 +1507,7 @@ config("compiler_codegen") {
+     configs += [ "//chromium/build/config/nacl:compiler_codegen" ]
+   }
+ 
+-  if (current_cpu == "arm64" && !is_win && is_clang) {
++  if (target_cpu == "arm64" && !is_win && is_clang) {
+     # Disable outlining everywhere on arm64 except Win. For more information see
+     # crbug.com/931297 for Android and crbug.com/1410297 for iOS.
+     # TODO(crbug.com/40890229): Enable this on Windows if possible.
+@@ -1678,7 +1678,7 @@ config("rustc_revision") {
+ }
+ 
+ config("compiler_arm_fpu") {
+-  if (current_cpu == "arm" && !is_ios && !is_nacl) {
++  if (target_cpu == "arm" && !is_ios && !is_nacl) {
+     cflags = [ "-mfpu=$arm_fpu" ]
+     if (!arm_use_thumb) {
+       cflags += [ "-marm" ]
+@@ -1688,14 +1688,14 @@ config("compiler_arm_fpu") {
+ }
+ 
+ config("compiler_arm_thumb") {
+-  if (current_cpu == "arm" && arm_use_thumb && is_posix &&
++  if (target_cpu == "arm" && arm_use_thumb && is_posix &&
+       !(is_apple || is_nacl)) {
+     cflags = [ "-mthumb" ]
+   }
+ }
+ 
+ config("compiler_arm") {
+-  if (current_cpu == "arm" && is_chromeos) {
++  if (target_cpu == "arm" && is_chromeos) {
+     # arm is normally the default mode for clang, but on chromeos a wrapper
+     # is used to pass -mthumb, and therefor change the default.
+     cflags = [ "-marm" ]
+@@ -1894,7 +1894,7 @@ config("default_warnings") {
+ 
+     # Suppress warnings about ABI changes on ARM (Clang doesn't give this
+     # warning).
+-    if (current_cpu == "arm" && !is_clang) {
++    if (target_cpu == "arm" && !is_clang) {
+       cflags += [ "-Wno-psabi" ]
+     }
+ 
+@@ -2129,10 +2129,10 @@ config("chromium_code") {
+       "__STDC_FORMAT_MACROS",
+     ]
+ 
+-    if (!is_debug && !using_sanitizer && current_cpu != "s390x" &&
+-        current_cpu != "s390" && current_cpu != "ppc64" &&
+-        current_cpu != "mips" && current_cpu != "mips64" &&
+-        current_cpu != "riscv64" && current_cpu != "loong64") {
++    if (!is_debug && !using_sanitizer && target_cpu != "s390x" &&
++        target_cpu != "s390" && target_cpu != "ppc64" &&
++        target_cpu != "mips" && target_cpu != "mips64" &&
++        target_cpu != "riscv64" && target_cpu != "loong64") {
+       # Non-chromium code is not guaranteed to compile cleanly with
+       # _FORTIFY_SOURCE. Also, fortified build may fail when optimizations are
+       # disabled, so only do that for Release build.
+@@ -2412,9 +2412,9 @@ config("no_incompatible_pointer_warnings") {
+   cflags = []
+   if (is_clang) {
+     cflags += [ "-Wno-incompatible-pointer-types" ]
+-  } else if (current_cpu == "mipsel" || current_cpu == "mips64el") {
++  } else if (target_cpu == "mipsel" || target_cpu == "mips64el") {
+     cflags += [ "-w" ]
+-  } else if (is_chromeos && current_cpu == "arm") {
++  } else if (is_chromeos && target_cpu == "arm") {
+     cflags += [ "-w" ]
+   }
+ }
+@@ -2471,7 +2471,7 @@ if (is_win) {
+   if (is_android) {
+     # TODO(jdduke) Re-enable on mips after resolving linking
+     # issues with libc++ (crbug.com/456380).
+-    if (current_cpu != "mipsel" && current_cpu != "mips64el") {
++    if (target_cpu != "mipsel" && target_cpu != "mips64el") {
+       common_optimize_on_ldflags += [
+         # Warn in case of text relocations.
+         "-Wl,--warn-shared-textrel",
+@@ -2533,7 +2533,7 @@ config("default_stack_frames") {
+       # Omit frame pointers for leaf functions on x86, otherwise building libyuv
+       # gives clang's register allocator issues, see llvm.org/PR15798 /
+       # crbug.com/233709
+-      if (is_clang && current_cpu == "x86" && !is_apple) {
++      if (is_clang && target_cpu == "x86" && !is_apple) {
+         cflags += [ "-momit-leaf-frame-pointer" ]
+       }
+     } else {
+@@ -2944,12 +2944,12 @@ config("symbols") {
+     # DWARF info may be corrupt; offsets in a range list entry are in different
+     # sections" there.  Maybe just a bug in nacl_switch_32.S.
+     _enable_gdb_index =
+-        symbol_level == 2 && !is_apple && !is_nacl && current_cpu != "x86" &&
++        symbol_level == 2 && !is_apple && !is_nacl && target_cpu != "x86" &&
+         current_os != "zos" && use_lld && !is_wasm &&
+         # Disable on non-fission 32-bit Android because it pushes
+         # libcomponents_unittests over the 4gb size limit.
+-        !(is_android && !use_debug_fission && current_cpu != "x64" &&
+-          current_cpu != "arm64")
++        !(is_android && !use_debug_fission && target_cpu != "x64" &&
++          target_cpu != "arm64")
+     if (_enable_gdb_index) {
+       if (is_clang) {
+         # This flag enables the GNU-format pubnames and pubtypes sections,
+@@ -2965,7 +2965,7 @@ config("symbols") {
+   # Compress debug on 32-bit ARM to stay under 4GB file size limit.
+   # https://b/243982712, https://crbug.com/1354616, https://crbug.com/334073642
+   if (symbol_level == 2 && !use_debug_fission && !is_nacl && !is_win &&
+-      (current_cpu == "arm" || current_cpu == "x86")) {
++      (target_cpu == "arm" || target_cpu == "x86")) {
+     configs += [ "//chromium/build/config:compress_debug_sections" ]
+   }
+ 
+diff --git a/config/compiler/compiler.gni b/config/compiler/compiler.gni
+index dd833211b..6bd4710ae 100644
+--- a/config/compiler/compiler.gni
++++ b/config/compiler/compiler.gni
+@@ -17,7 +17,7 @@ import("//build_overrides/build.gni")
+ if (is_android) {
+   import("//chromium/build/config/android/abi.gni")
+ }
+-if (current_cpu == "arm" || current_cpu == "arm64") {
++if (target_cpu == "arm" || target_cpu == "arm64") {
+   import("//chromium/build/config/arm.gni")
+ }
+ 
+@@ -89,7 +89,7 @@ declare_args() {
+   #
+   # It's currently not possible to collect AFDO profiles on anything but
+   # x86{,_64}.
+-  using_mismatched_sample_profile = current_cpu != "x64" && current_cpu != "x86"
++  using_mismatched_sample_profile = target_cpu != "x64" && target_cpu != "x86"
+ 
+   # Whether an error should be raised on attempts to make debug builds with
+   # is_component_build=false. Very large debug symbols can have unwanted side
+@@ -138,7 +138,7 @@ declare_args() {
+   # Use offsets rather than pointers in vtables in order to reduce the number of
+   # relocations. This is safe to enable only when all C++ code is built with the
+   # flag set to the same value.
+-  use_relative_vtables_abi = is_android && current_cpu == "arm64" &&
++  use_relative_vtables_abi = is_android && target_cpu == "arm64" &&
+                              use_custom_libcxx && !is_component_build
+ }
+ 
+@@ -164,14 +164,14 @@ if (is_chromeos) {
+   # However, Clang does not currently generate usable frame pointers in ARM
+   # 32-bit builds (https://bugs.llvm.org/show_bug.cgi?id=18505) so disable them
+   # there to avoid the unnecessary overhead.
+-  enable_frame_pointers = current_cpu != "arm"
++  enable_frame_pointers = target_cpu != "arm"
+ } else if (is_apple || is_linux) {
+   enable_frame_pointers = true
+ } else if (is_win) {
+   # 64-bit Windows ABI doesn't support frame pointers.
+   # NOTE: This setting is actually not used in the BUILD.gn for Windows,
+   # but it still reflects correctly that we don't emit frame pointers on x64.
+-  if (current_cpu == "x64") {
++  if (target_cpu == "x64") {
+     enable_frame_pointers = false
+   } else {
+     enable_frame_pointers = true
+@@ -180,16 +180,16 @@ if (is_chromeos) {
+   enable_frame_pointers =
+       enable_profiling ||
+       # Ensure that stacks from arm64 crash dumps are usable (crbug.com/391706).
+-      current_cpu == "arm64" ||
++      target_cpu == "arm64" ||
+       # For x86 Android, unwind tables are huge without frame pointers
+       # (crbug.com/762629). Enabling frame pointers grows the code size slightly
+       # but overall shrinks binaries considerably by avoiding huge unwind
+       # tables.
+-      (current_cpu == "x86" && !exclude_unwind_tables && optimize_for_size) ||
++      (target_cpu == "x86" && !exclude_unwind_tables && optimize_for_size) ||
+       using_sanitizer
+ } else if (is_fuchsia) {
+   # Fuchsia on arm64 could use shadow call stack for unwinding.
+-  enable_frame_pointers = current_cpu != "arm64"
++  enable_frame_pointers = target_cpu != "arm64"
+ } else {
+   # Explicitly ask for frame pointers, otherwise stacks may be missing for
+   # sanitizer and profiling builds.
+@@ -201,7 +201,7 @@ if (is_chromeos) {
+ # most translation units, that they are emitted correctly, and that the
+ # compiler or platform provides a way to access them.
+ can_unwind_with_frame_pointers = enable_frame_pointers
+-if (current_cpu == "arm" && arm_use_thumb) {
++if (target_cpu == "arm" && arm_use_thumb) {
+   # We cannot currently unwind ARM Thumb frame pointers correctly.
+   # See https://bugs.llvm.org/show_bug.cgi?id=18505
+   can_unwind_with_frame_pointers = false
+@@ -216,12 +216,12 @@ assert(!can_unwind_with_frame_pointers || enable_frame_pointers)
+ # Unwinding with CFI table is only possible on static library builds and
+ # requried only when frame pointers are not enabled.
+ can_unwind_with_cfi_table = is_android && !is_component_build &&
+-                            !enable_frame_pointers && current_cpu == "arm"
++                            !enable_frame_pointers && target_cpu == "arm"
+ 
+ # Whether or not cfi table should be enabled on arm.
+ # TODO(crbug.com/40133751): Replace can_unwind_with_cfi_table with this once
+ # sampling profiler is enabled on android.
+-enable_arm_cfi_table = is_android && !is_component_build && current_cpu == "arm"
++enable_arm_cfi_table = is_android && !is_component_build && target_cpu == "arm"
+ 
+ # Use relative paths for debug info. This is important to make the build
+ # results independent of the checkout and build directory names, which
+diff --git a/config/compiler/pgo/BUILD.gn b/config/compiler/pgo/BUILD.gn
+index c0085398b..de7b3ce0e 100644
+--- a/config/compiler/pgo/BUILD.gn
++++ b/config/compiler/pgo/BUILD.gn
+@@ -62,8 +62,8 @@ config("pgo_optimization_flags") {
+     } else if (is_linux) {
+       _pgo_target = "linux"
+     } else if (is_android) {
+-      # Use |current_cpu| and not |target_cpu|; for Android we may built both.
+-      if (current_cpu == "arm64") {
++      # Use |target_cpu| and not |target_cpu|; for Android we may built both.
++      if (target_cpu == "arm64") {
+         _pgo_target = "android-arm64"
+       } else {
+         _pgo_target = "android-arm32"
+diff --git a/config/fuchsia/gn_configs.gni b/config/fuchsia/gn_configs.gni
+index 779e908f6..a0152413e 100644
+--- a/config/fuchsia/gn_configs.gni
++++ b/config/fuchsia/gn_configs.gni
+@@ -51,7 +51,7 @@ declare_args() {
+ 
+ # Copy from third_party/fuchsia-gn-sdk/src/gn_configs.gni to avoid importing
+ # files from //third_party/ in //build/.
+-# Note, `current_cpu` should always exist in the //build/ tree, so the
++# Note, `target_cpu` should always exist in the //build/ tree, so the
+ # `target_cpu` fallback has been removed.
+ fuchsia_target_api_level = 26
+ fuchsia_arch_root =
+diff --git a/config/ios/BUILD.gn b/config/ios/BUILD.gn
+index 6296924b7..5b1a8d701 100644
+--- a/config/ios/BUILD.gn
++++ b/config/ios/BUILD.gn
+@@ -18,16 +18,16 @@ config("compiler") {
+   common_flags = []
+ 
+   # CPU architecture.
+-  if (current_cpu == "x64") {
++  if (target_cpu == "x64") {
+     triplet_cpu = "x86_64"
+-  } else if (current_cpu == "x86") {
++  } else if (target_cpu == "x86") {
+     triplet_cpu = "i386"
+-  } else if (current_cpu == "arm" || current_cpu == "armv7") {
++  } else if (target_cpu == "arm" || target_cpu == "armv7") {
+     triplet_cpu = "armv7"
+-  } else if (current_cpu == "arm64") {
++  } else if (target_cpu == "arm64") {
+     triplet_cpu = "arm64"
+   } else {
+-    assert(false, "unsupported cpu: $current_cpu")
++    assert(false, "unsupported cpu: $target_cpu")
+   }
+ 
+   # Environment.
+diff --git a/config/ios/rules.gni b/config/ios/rules.gni
+index e856096bd..af2015aa2 100644
+--- a/config/ios/rules.gni
++++ b/config/ios/rules.gni
+@@ -381,7 +381,7 @@ template("ios_app_bundle") {
+         "--deployment-target",
+         ios_deployment_target,
+         "--target-cpu",
+-        current_cpu,
++        target_cpu,
+         "--target-environment",
+         target_environment,
+         "--depfile",
+diff --git a/config/linux/BUILD.gn b/config/linux/BUILD.gn
+index 6ba0fde13..a8b6d3d09 100644
+--- a/config/linux/BUILD.gn
++++ b/config/linux/BUILD.gn
+@@ -15,7 +15,7 @@ group("linux") {
+ # is applied to all targets. It is here to separate out the logic that is
+ # Linux-only. This is not applied to Android, but is applied to ChromeOS.
+ config("compiler") {
+-  if (current_cpu == "arm64") {
++  if (target_cpu == "arm64") {
+     import("//chromium/build/config/arm.gni")
+     cflags = []
+     asmflags = []
+@@ -43,7 +43,7 @@ config("runtime_library") {
+   # Mozilla disable libatomic on linux builds
+   if (false) {
+   if ((!is_chromeos || default_toolchain != "//chromium/build/toolchain/cros:target") &&
+-      (!use_custom_libcxx || current_cpu == "mipsel")) {
++      (!use_custom_libcxx || target_cpu == "mipsel")) {
+     libs = [ "atomic" ]
+   }
+   }
+diff --git a/config/linux/pkg_config.gni b/config/linux/pkg_config.gni
+index c84606ae2..282af364c 100644
+--- a/config/linux/pkg_config.gni
++++ b/config/linux/pkg_config.gni
+@@ -61,7 +61,7 @@ if (sysroot != "") {
+     "-s",
+     rebase_path(sysroot),
+     "-a",
+-    current_cpu,
++    target_cpu,
+   ]
+ }
+ 
+diff --git a/config/loongarch64.gni b/config/loongarch64.gni
+index 76e4c9378..4196013a6 100644
+--- a/config/loongarch64.gni
++++ b/config/loongarch64.gni
+@@ -4,7 +4,7 @@
+ 
+ import("//chromium/build/config/v8_target_cpu.gni")
+ 
+-if (current_cpu == "loong64") {
++if (target_cpu == "loong64") {
+   declare_args() {
+     # LOONGARCH64 SIMD Arch compilation flag.
+     loongarch64_use_lsx = false
+diff --git a/config/mac/BUILD.gn b/config/mac/BUILD.gn
+index 4d70334d3..cd7680312 100644
+--- a/config/mac/BUILD.gn
++++ b/config/mac/BUILD.gn
+@@ -16,14 +16,14 @@ config("compiler") {
+   common_mac_flags = []
+ 
+   # CPU architecture.
+-  if (current_cpu == "x64") {
++  if (target_cpu == "x64") {
+     clang_arch = "x86_64"
+-  } else if (current_cpu == "x86") {
++  } else if (target_cpu == "x86") {
+     clang_arch = "i386"
+-  } else if (current_cpu == "arm64") {
+-    clang_arch = current_cpu
++  } else if (target_cpu == "arm64") {
++    clang_arch = target_cpu
+   } else {
+-    assert(false, "unknown current_cpu $current_cpu")
++    assert(false, "unknown target_cpu $target_cpu")
+   }
+   common_mac_flags += [ "--target=$clang_arch-apple-macos" ]
+ 
+diff --git a/config/mips.gni b/config/mips.gni
+index 2df1646a8..056856198 100644
+--- a/config/mips.gni
++++ b/config/mips.gni
+@@ -4,7 +4,7 @@
+ 
+ import("//chromium/build/config/v8_target_cpu.gni")
+ 
+-# These are primarily relevant in current_cpu == "mips*" contexts, where
++# These are primarily relevant in target_cpu == "mips*" contexts, where
+ # MIPS code is being compiled.  But they can also be relevant in the
+ # other contexts when the code will change its behavior based on the
+ # cpu it wants to generate code for.
+@@ -13,8 +13,8 @@ declare_args() {
+   mips_use_mmi = false
+ }
+ 
+-if (current_cpu == "mipsel" || v8_current_cpu == "mipsel" ||
+-    current_cpu == "mips" || v8_current_cpu == "mips") {
++if (target_cpu == "mipsel" || v8_target_cpu == "mipsel" ||
++    target_cpu == "mips" || v8_target_cpu == "mips") {
+   declare_args() {
+     # MIPS arch variant. Possible values are:
+     #   "r1"
+@@ -43,8 +43,8 @@ if (current_cpu == "mipsel" || v8_current_cpu == "mipsel" ||
+     #   "fpxx": sets the GCC -mfpxx option.
+     mips_fpu_mode = "fp32"
+   }
+-} else if (current_cpu == "mips64el" || v8_current_cpu == "mips64el" ||
+-           current_cpu == "mips64" || v8_current_cpu == "mips64") {
++} else if (target_cpu == "mips64el" || v8_target_cpu == "mips64el" ||
++           target_cpu == "mips64" || v8_target_cpu == "mips64") {
+   # MIPS arch variant. Possible values are:
+   #   "r2"
+   #   "r6"
+diff --git a/config/nacl/BUILD.gn b/config/nacl/BUILD.gn
+index 13489657f..3fcc72f0b 100644
+--- a/config/nacl/BUILD.gn
++++ b/config/nacl/BUILD.gn
+@@ -17,7 +17,7 @@ config("nacl_defines") {
+     defines = [ "__STDC_LIMIT_MACROS=1" ]
+   }
+ 
+-  if (current_cpu == "pnacl") {
++  if (target_cpu == "pnacl") {
+     # TODO: Remove the following definition once NACL_BUILD_ARCH and
+     # NACL_BUILD_SUBARCH are defined by the PNaCl toolchain.
+     defines += [ "NACL_BUILD_ARCH=pnacl" ]
+@@ -49,7 +49,7 @@ config("nacl_static_libstdc++") {
+   # libstdc++ can then lead to linking against symbols that are not found when
+   # running the executable.
+   # Therefore, link statically instead.
+-  if (is_linux && current_cpu == "x86") {
++  if (is_linux && target_cpu == "x86") {
+     ldflags = [ "-static-libstdc++" ]
+   }
+ }
+@@ -76,7 +76,7 @@ config("compiler") {
+   ldflags = []
+   libs = []
+ 
+-  if (is_clang && current_cpu != "pnacl") {
++  if (is_clang && target_cpu != "pnacl") {
+     # -no-integrated-as is the default in nacl-clang for historical
+     # compatibility with inline assembly code and so forth.  But there
+     # are no such cases in Chromium code, and -integrated-as is nicer in
+@@ -102,7 +102,7 @@ config("compiler_codegen") {
+       "-fomit-frame-pointer",
+     ]
+ 
+-    if (current_cpu == "x86") {
++    if (target_cpu == "x86") {
+       # The x86-32 IRT needs to be callable with an under-aligned
+       # stack; so we disable SSE instructions, which can fault on
+       # misaligned addresses.  See
+diff --git a/config/nacl/config.gni b/config/nacl/config.gni
+index dd774495e..103cb93d8 100644
+--- a/config/nacl/config.gni
++++ b/config/nacl/config.gni
+@@ -18,22 +18,22 @@ declare_args() {
+ nacl_toolchain_dir = "//native_client/toolchain/${host_os}_x86"
+ 
+ if (is_nacl_glibc) {
+-  if (current_cpu == "x86" || current_cpu == "x64") {
++  if (target_cpu == "x86" || target_cpu == "x64") {
+     nacl_toolchain_package = "nacl_x86_glibc"
+-  } else if (current_cpu == "arm") {
++  } else if (target_cpu == "arm") {
+     nacl_toolchain_package = "nacl_arm_glibc"
+   }
+ } else {
+   nacl_toolchain_package = "pnacl_newlib"
+ }
+ 
+-if (current_cpu == "pnacl") {
++if (target_cpu == "pnacl") {
+   _nacl_tuple = "pnacl"
+-} else if (current_cpu == "x86" || current_cpu == "x64") {
++} else if (target_cpu == "x86" || target_cpu == "x64") {
+   _nacl_tuple = "x86_64-nacl"
+-} else if (current_cpu == "arm") {
++} else if (target_cpu == "arm") {
+   _nacl_tuple = "arm-nacl"
+-} else if (current_cpu == "mipsel") {
++} else if (target_cpu == "mipsel") {
+   _nacl_tuple = "mipsel-nacl"
+ } else {
+   # In order to allow this file to be included unconditionally
+@@ -49,5 +49,5 @@ nacl_toolchain_tooldir =
+     "${nacl_toolchain_dir}/${nacl_toolchain_package}/${_nacl_tuple}"
+ nacl_toolprefix = "${nacl_toolchain_bindir}/${_nacl_tuple}-"
+ 
+-nacl_irt_toolchain = "//chromium/build/toolchain/nacl:irt_" + current_cpu
++nacl_irt_toolchain = "//chromium/build/toolchain/nacl:irt_" + target_cpu
+ is_nacl_irt = current_toolchain == nacl_irt_toolchain
+diff --git a/config/nacl/host_toolchain.gni b/config/nacl/host_toolchain.gni
+index f877fe47b..f6fabf23e 100644
+--- a/config/nacl/host_toolchain.gni
++++ b/config/nacl/host_toolchain.gni
+@@ -5,14 +5,14 @@
+ default_nacl_bootstrap_compiler = "g++"
+ if (default_toolchain == "//chromium/build/toolchain/cros:target") {
+   import("//chromium/build/toolchain/cros_toolchain.gni")
+-  if (target_cpu == "arm64" && current_cpu == "arm") {
++  if (target_cpu == "arm64" && target_cpu == "arm") {
+     default_nacl_bootstrap_compiler = cros_nacl_helper_arm32_cxx
+   } else {
+     default_nacl_bootstrap_compiler = cros_target_cxx
+   }
+-} else if (current_cpu == "arm" && !is_android) {
++} else if (target_cpu == "arm" && !is_android) {
+   default_nacl_bootstrap_compiler = "arm-linux-gnueabihf-g++"
+-} else if (current_cpu == "mipsel" && !is_android) {
++} else if (target_cpu == "mipsel" && !is_android) {
+   default_nacl_bootstrap_compiler = "mipsel-linux-gnu-g++"
+ }
+ 
+diff --git a/config/nacl/rules.gni b/config/nacl/rules.gni
+index 7d916e8f5..5a0daf061 100644
+--- a/config/nacl/rules.gni
++++ b/config/nacl/rules.gni
+@@ -40,7 +40,7 @@ template("generate_nmf") {
+     # TODO(phosek): Remove this conditional once
+     # https://bugs.chromium.org/p/nativeclient/issues/detail?id=4339 is
+     # resolved.
+-    if (current_cpu == "pnacl") {
++    if (target_cpu == "pnacl") {
+       objdump = rebase_path("${nacl_toolchain_bindir}/x86_64-nacl-objdump")
+     } else {
+       objdump = rebase_path("${nacl_toolprefix}objdump")
+@@ -75,18 +75,18 @@ template("generate_nmf") {
+       # NOTE: There is no explicit dependency for the lib directory
+       # (lib32 and lib64 for x86/x64) created in the product directory.
+       # They are created as a side-effect of nmf creation.
+-      if (current_cpu != "x86" && current_cpu != "x64") {
++      if (target_cpu != "x86" && target_cpu != "x64") {
+         nmfflags +=
+             [ "--library-path=" +
+               rebase_path("${nacl_toolchain_tooldir}/lib", root_build_dir) ]
+-        if (current_cpu == "arm") {
++        if (target_cpu == "arm") {
+           data += [ "${lib_path}/libarm/" ]
+         } else {
+           data += [ "${lib_path}/lib/" ]
+         }
+       } else {
+         # For x86-32, the lib/ directory is called lib32/ instead.
+-        if (current_cpu == "x86") {
++        if (target_cpu == "x86") {
+           nmfflags +=
+               [ "--library-path=" +
+                 rebase_path("${nacl_toolchain_tooldir}/lib32", root_build_dir) ]
+@@ -98,12 +98,12 @@ template("generate_nmf") {
+         # gets handled at a higher level (see the nacl_test_data template),
+         # so a single generate_nmf invocation gets both x86-32 and x86-64
+         # nexes listed in executables.
+-        if (current_cpu == "x64" || target_os == "win") {
++        if (target_cpu == "x64" || target_os == "win") {
+           # For x86-64, the lib/ directory is called lib64/ instead
+           # when copied by create_nmf.py.
+           glibc_tc = "//chromium/build/toolchain/nacl:glibc"
+-          assert(current_toolchain == "${glibc_tc}_${current_cpu}")
+-          if (current_cpu == "x64") {
++          assert(current_toolchain == "${glibc_tc}_${target_cpu}")
++          if (target_cpu == "x64") {
+             x64_out_dir = root_out_dir
+           } else {
+             x64_out_dir = get_label_info(":${target_name}(${glibc_tc}_x64)",
+@@ -123,7 +123,7 @@ template("generate_nmf") {
+              "--objdump=" + rebase_path(objdump, root_build_dir),
+              "--output=" + rebase_path(nmf, root_build_dir),
+            ] + nmfflags + rebase_path(sources, root_build_dir)
+-    if (is_nacl_glibc && current_cpu == "arm") {
++    if (is_nacl_glibc && target_cpu == "arm") {
+       deps += [ "//native_client/src/untrusted/elf_loader:elf_loader" ]
+     }
+   }
+diff --git a/config/riscv.gni b/config/riscv.gni
+index afe2c7aee..a0a163ab8 100644
+--- a/config/riscv.gni
++++ b/config/riscv.gni
+@@ -4,8 +4,8 @@
+ 
+ import("//chromium/build/config/v8_target_cpu.gni")
+ 
+-if (current_cpu == "riscv64" || v8_current_cpu == "riscv64" ||
+-    current_cpu == "riscv32" || v8_current_cpu == "riscv32") {
++if (target_cpu == "riscv64" || v8_target_cpu == "riscv64" ||
++    target_cpu == "riscv32" || v8_target_cpu == "riscv32") {
+   declare_args() {
+     # RISCV Vector extension compilation flag.
+     riscv_use_rvv = false
+diff --git a/config/rust.gni b/config/rust.gni
+index 0b032436a..6dd7de5fb 100644
+--- a/config/rust.gni
++++ b/config/rust.gni
+@@ -174,16 +174,16 @@ if (enable_rust) {
+ # https://issues.chromium.org/u/1/issues/372512092#comment5 for an example.
+ rust_abi_target = ""
+ if (is_linux || is_chromeos) {
+-  if (current_cpu == "arm64") {
++  if (target_cpu == "arm64") {
+     rust_abi_target = "aarch64-unknown-linux-gnu"
+     cargo_target_abi = ""
+-  } else if (current_cpu == "x86") {
++  } else if (target_cpu == "x86") {
+     rust_abi_target = "i686-unknown-linux-gnu"
+     cargo_target_abi = ""
+-  } else if (current_cpu == "x64") {
++  } else if (target_cpu == "x64") {
+     rust_abi_target = "x86_64-unknown-linux-gnu"
+     cargo_target_abi = ""
+-  } else if (current_cpu == "arm") {
++  } else if (target_cpu == "arm") {
+     if (arm_float_abi == "hard") {
+       float_suffix = "hf"
+     } else {
+@@ -210,12 +210,12 @@ if (is_linux || is_chromeos) {
+       rust_abi_target = "arm-unknown-linux-gnueabi" + float_suffix
+       cargo_target_abi = "eabi" + float_suffix
+     }
+-  } else if (current_cpu == "riscv64") {
++  } else if (target_cpu == "riscv64") {
+     rust_abi_target = "riscv64gc-unknown-linux-gnu"
+     cargo_target_abi = ""
+   } else {
+     # Best guess for other future platforms.
+-    rust_abi_target = current_cpu + "-unknown-linux-gnu"
++    rust_abi_target = target_cpu + "-unknown-linux-gnu"
+     cargo_target_abi = ""
+   }
+ } else if (is_android) {
+@@ -255,17 +255,17 @@ if (is_linux || is_chromeos) {
+     assert(false, "Unknown Android ABI: " + android_abi_target)
+   }
+ } else if (is_fuchsia) {
+-  if (current_cpu == "arm64") {
++  if (target_cpu == "arm64") {
+     rust_abi_target = "aarch64-unknown-fuchsia"
+     cargo_target_abi = ""
+-  } else if (current_cpu == "x64") {
++  } else if (target_cpu == "x64") {
+     rust_abi_target = "x86_64-unknown-fuchsia"
+     cargo_target_abi = ""
+   } else {
+     assert(false, "Architecture not supported")
+   }
+ } else if (is_ios) {
+-  if (current_cpu == "arm64") {
++  if (target_cpu == "arm64") {
+     if (target_platform == "iphoneos") {
+       if (target_environment == "simulator") {
+         rust_abi_target = "aarch64-apple-ios-sim"
+@@ -292,10 +292,10 @@ if (is_linux || is_chromeos) {
+     } else {
+       assert(false, "unsupported target_platform=$target_platform")
+     }
+-  } else if (current_cpu == "arm") {
++  } else if (target_cpu == "arm") {
+     rust_abi_target = "armv7s-apple-ios"
+     cargo_target_abi = ""
+-  } else if (current_cpu == "x64") {
++  } else if (target_cpu == "x64") {
+     if (target_platform == "iphoneos") {
+       if (target_environment == "simulator") {
+         rust_abi_target = "x86_64-apple-ios"
+@@ -316,29 +316,29 @@ if (is_linux || is_chromeos) {
+     } else {
+       assert(false, "unsupported target_platform=$target_platform")
+     }
+-  } else if (current_cpu == "x86") {
++  } else if (target_cpu == "x86") {
+     rust_abi_target = "i386-apple-ios"
+   } else {
+     assert(false, "Architecture not supported")
+   }
+ } else if (is_mac) {
+-  if (current_cpu == "arm64") {
++  if (target_cpu == "arm64") {
+     rust_abi_target = "aarch64-apple-darwin"
+     cargo_target_abi = ""
+-  } else if (current_cpu == "x64") {
++  } else if (target_cpu == "x64") {
+     rust_abi_target = "x86_64-apple-darwin"
+     cargo_target_abi = ""
+   } else {
+     assert(false, "Architecture not supported")
+   }
+ } else if (is_win) {
+-  if (current_cpu == "arm64") {
++  if (target_cpu == "arm64") {
+     rust_abi_target = "aarch64-pc-windows-msvc"
+     cargo_target_abi = ""
+-  } else if (current_cpu == "x64") {
++  } else if (target_cpu == "x64") {
+     rust_abi_target = "x86_64-pc-windows-msvc"
+     cargo_target_abi = ""
+-  } else if (current_cpu == "x86") {
++  } else if (target_cpu == "x86") {
+     rust_abi_target = "i686-pc-windows-msvc"
+     cargo_target_abi = ""
+   } else {
+@@ -350,23 +350,23 @@ assert(!toolchain_has_rust || rust_abi_target != "")
+ 
+ # This variable is passed to the Rust libstd build.
+ rust_target_arch = ""
+-if (current_cpu == "x86") {
++if (target_cpu == "x86") {
+   rust_target_arch = "x86"
+-} else if (current_cpu == "x64") {
++} else if (target_cpu == "x64") {
+   rust_target_arch = "x86_64"
+-} else if (current_cpu == "arm") {
++} else if (target_cpu == "arm") {
+   rust_target_arch = "arm"
+-} else if (current_cpu == "arm64") {
++} else if (target_cpu == "arm64") {
+   rust_target_arch = "aarch64"
+-} else if (current_cpu == "mipsel") {
++} else if (target_cpu == "mipsel") {
+   rust_target_arch = "mips"
+-} else if (current_cpu == "mips64el") {
++} else if (target_cpu == "mips64el") {
+   rust_target_arch = "mips64"
+-} else if (current_cpu == "s390x") {
++} else if (target_cpu == "s390x") {
+   rust_target_arch = "s390x"
+-} else if (current_cpu == "ppc64") {
++} else if (target_cpu == "ppc64") {
+   rust_target_arch = "powerpc64"
+-} else if (current_cpu == "riscv64") {
++} else if (target_cpu == "riscv64") {
+   rust_target_arch = "riscv64"
+ }
+ 
+diff --git a/config/sanitizers/BUILD.gn b/config/sanitizers/BUILD.gn
+index 3f1e1f285..cb36e20a2 100644
+--- a/config/sanitizers/BUILD.gn
++++ b/config/sanitizers/BUILD.gn
+@@ -82,7 +82,7 @@ group("deps") {
+   }
+ }
+ 
+-assert(!(is_win && is_asan && current_cpu == "x86"),
++assert(!(is_win && is_asan && target_cpu == "x86"),
+        "ASan is only supported in 64-bit builds on Windows.")
+ 
+ if ((is_apple || is_win) && (is_asan || is_ubsan_any)) {
+@@ -104,7 +104,7 @@ if ((is_apple || is_win) && (is_asan || is_ubsan_any)) {
+       assert(is_ubsan_any)
+       _clang_rt_dso_path = "darwin/libclang_rt.ubsan_iossim_dynamic.dylib"
+     }
+-  } else if (is_win && current_cpu == "x64") {
++  } else if (is_win && target_cpu == "x64") {
+     if (is_asan) {
+       _clang_rt_dso_path = "windows/clang_rt.asan_dynamic-x86_64.dll"
+     } else {
+@@ -288,7 +288,7 @@ config("default_sanitizer_ldflags") {
+     # or -fsanitize=fuzzer.
+     ldflags = []
+     if (is_asan) {
+-      assert(current_cpu == "x64", "WinASan unsupported architecture")
++      assert(target_cpu == "x64", "WinASan unsupported architecture")
+       libs = [ "clang_rt.asan_dynamic-x86_64.lib" ]
+       if (is_component_build) {
+         ldflags +=
+@@ -299,7 +299,7 @@ config("default_sanitizer_ldflags") {
+       }
+     }
+     if (use_libfuzzer) {
+-      assert(current_cpu == "x64", "LibFuzzer unsupported architecture")
++      assert(target_cpu == "x64", "LibFuzzer unsupported architecture")
+       assert(!is_component_build,
+              "LibFuzzer only supports non-component builds on Windows")
+ 
+@@ -457,7 +457,7 @@ config("coverage_flags") {
+         "-mllvm",
+         "-sanitizer-coverage-prune-blocks=1",
+       ]
+-      if (current_cpu == "arm") {
++      if (target_cpu == "arm") {
+         # http://crbug.com/517105
+         cflags += [
+           "-mllvm",
+diff --git a/config/sanitizers/sanitizers.gni b/config/sanitizers/sanitizers.gni
+index 105b28470..b3c4413ce 100644
+--- a/config/sanitizers/sanitizers.gni
++++ b/config/sanitizers/sanitizers.gni
+@@ -229,7 +229,7 @@ if (!is_a_target_toolchain || toolchain_for_rust_host_build_tools) {
+   use_locally_built_instrumented_libraries = false
+   use_sanitizer_coverage = false
+   enable_fuzztest_fuzz = false
+-} else if (current_cpu != "arm64") {
++} else if (target_cpu != "arm64") {
+   is_hwasan = false
+ }
+ 
+@@ -330,7 +330,7 @@ if (use_libfuzzer && (is_linux || is_chromeos)) {
+ assert(!is_debug || !(is_msan || is_ubsan || is_ubsan_vptr),
+        "Sanitizers should generally be used in release (set is_debug=false).")
+ 
+-assert(!is_msan || ((is_linux || is_chromeos) && current_cpu == "x64"),
++assert(!is_msan || ((is_linux || is_chromeos) && target_cpu == "x64"),
+        "MSan currently only works on 64-bit Linux and ChromeOS builds.")
+ 
+ assert(!is_lsan || is_asan, "is_lsan = true requires is_asan = true also.")
+diff --git a/config/sysroot.gni b/config/sysroot.gni
+index 6d96c685d..e1834c9b2 100644
+--- a/config/sysroot.gni
++++ b/config/sysroot.gni
+@@ -20,13 +20,13 @@ declare_args() {
+   # Controls default is_linux sysroot. If set to true, and sysroot
+   # is empty, default sysroot is calculated.
+   use_sysroot =
+-      current_cpu == "x86" || current_cpu == "x64" || current_cpu == "arm" ||
+-      current_cpu == "arm64" || current_cpu == "mipsel" ||
+-      current_cpu == "mips64el" || (current_cpu == "riscv64" && is_android)
++      target_cpu == "x86" || target_cpu == "x64" || target_cpu == "arm" ||
++      target_cpu == "arm64" || target_cpu == "mipsel" ||
++      target_cpu == "mips64el" || (target_cpu == "riscv64" && is_android)
+ }
+ 
+ if (sysroot == "") {
+-  if (current_os == target_os && current_cpu == target_cpu &&
++  if (current_os == target_os && target_cpu == target_cpu &&
+       target_sysroot != "") {
+     sysroot = target_sysroot
+   } else if (is_android) {
+@@ -37,24 +37,24 @@ if (sysroot == "") {
+   } else if ((is_linux || is_chromeos) && use_sysroot) {
+     # By default build against a sysroot image downloaded from Cloud Storage
+     # during gclient runhooks.
+-    if (current_cpu == "x64") {
++    if (target_cpu == "x64") {
+       sysroot = "$target_sysroot_dir/debian_bullseye_amd64-sysroot"
+-    } else if (current_cpu == "x86") {
++    } else if (target_cpu == "x86") {
+       sysroot = "$target_sysroot_dir/debian_bullseye_i386-sysroot"
+-    } else if (current_cpu == "mipsel") {
++    } else if (target_cpu == "mipsel") {
+       sysroot = "$target_sysroot_dir/debian_bullseye_mipsel-sysroot"
+-    } else if (current_cpu == "mips64el") {
++    } else if (target_cpu == "mips64el") {
+       sysroot = "$target_sysroot_dir/debian_bullseye_mips64el-sysroot"
+-    } else if (current_cpu == "arm") {
++    } else if (target_cpu == "arm") {
+       sysroot = "$target_sysroot_dir/debian_bullseye_armhf-sysroot"
+-    } else if (current_cpu == "arm64") {
++    } else if (target_cpu == "arm64") {
+       sysroot = "$target_sysroot_dir/debian_bullseye_arm64-sysroot"
+     } else {
+       assert(false, "No linux sysroot for cpu: $target_cpu")
+     }
+ 
+     if (sysroot != "") {
+-      _script_arch = current_cpu
++      _script_arch = target_cpu
+       if (_script_arch == "x86") {
+         _script_arch = "i386"
+       } else if (_script_arch == "x64") {
+diff --git a/config/win/BUILD.gn b/config/win/BUILD.gn
+index 94bf8c16c..430fb1a7a 100644
+--- a/config/win/BUILD.gn
++++ b/config/win/BUILD.gn
+@@ -48,7 +48,7 @@ declare_args() {
+ # is applied to all targets. It is here to separate out the logic that is
+ # Windows-only.
+ config("compiler") {
+-  if (current_cpu == "x86") {
++  if (target_cpu == "x86") {
+     asmflags = [
+       # When /safeseh is specified, the linker will only produce an image if it
+       # can also produce a table of the image's safe exception handlers. This
+@@ -99,28 +99,28 @@ config("compiler") {
+       ]
+     }
+ 
+-    if (current_cpu == "x86") {
++    if (target_cpu == "x86") {
+       if (host_cpu == "x86" || host_cpu == "x64") {
+         cflags += [ "-m32" ]
+       } else {
+         cflags += [ "--target=i386-windows" ]
+       }
+-    } else if (current_cpu == "x64") {
++    } else if (target_cpu == "x64") {
+       if (host_cpu == "x86" || host_cpu == "x64") {
+         cflags += [ "-m64" ]
+       } else {
+         cflags += [ "--target=x86_64-windows" ]
+       }
+-    } else if (current_cpu == "arm64") {
++    } else if (target_cpu == "arm64") {
+       cflags += [ "--target=aarch64-pc-windows" ]
+     } else {
+-      assert(false, "unknown current_cpu " + current_cpu)
++      assert(false, "unknown target_cpu " + target_cpu)
+     }
+ 
+     # Chrome currently requires SSE3. Clang supports targeting any Intel
+     # microarchitecture. MSVC only supports a subset of architectures, and the
+     # next step after SSE2 will be AVX.
+-    if (current_cpu == "x86" || current_cpu == "x64") {
++    if (target_cpu == "x86" || target_cpu == "x64") {
+       cflags += [ "-msse3" ]
+     }
+ 
+@@ -301,7 +301,7 @@ config("winver") {
+ 
+ # Linker flags for Windows SDK setup, this is applied only to EXEs and DLLs.
+ config("sdk_link") {
+-  if (current_cpu == "x86") {
++  if (target_cpu == "x86") {
+     ldflags = [
+       "/SAFESEH",  # Not compatible with x64 so use only for x86.
+       "/largeaddressaware",
+@@ -478,12 +478,12 @@ config("delayloads_not_for_child_dll") {
+ # sandboxed processes in an app container when run from the out directory.
+ group("maybe_set_appcontainer_acls") {
+   # Exclude setting ACLs when build is not happening on chromium, or with a different toolchain.
+-  if (build_with_chromium && current_cpu == target_cpu && host_os == "win") {
++  if (build_with_chromium && target_cpu == target_cpu && host_os == "win") {
+     deps = [ ":set_appcontainer_acls" ]
+   }
+ }
+ 
+-if (build_with_chromium && current_cpu == target_cpu && host_os == "win") {
++if (build_with_chromium && target_cpu == target_cpu && host_os == "win") {
+   action("set_appcontainer_acls") {
+     script = "//chromium/build/win/set_appcontainer_acls.py"
+     stamp_file = "$target_out_dir/acls.stamp"
+diff --git a/linux/extract_symbols.gni b/linux/extract_symbols.gni
+index af40a7cd8..f9ecbb094 100644
+--- a/linux/extract_symbols.gni
++++ b/linux/extract_symbols.gni
+@@ -10,7 +10,7 @@ import("//chromium/build/toolchain/toolchain.gni")
+ #   binary: Path to the binary containing symbols to extract, e.g.:
+ #       "$root_out_dir/chrome"
+ #   symbol_file: Desired output file for symbols, e.g.:
+-#       "$root_out_dir/chrome.breakpad.$current_cpu"
++#       "$root_out_dir/chrome.breakpad.$target_cpu"
+ template("extract_symbols") {
+   forward_variables_from(invoker,
+                          [
+diff --git a/rust/std/gnrt_config.toml b/rust/std/gnrt_config.toml
+index d920be21f..3fc98bdf1 100644
+--- a/rust/std/gnrt_config.toml
++++ b/rust/std/gnrt_config.toml
+@@ -45,7 +45,7 @@ extra_kv = { include_coverage = true }
+ # Dependencies of profiler_builtins must have instrumentation disabled
+ # The build script conditionally generates a file; it's simplest to just paste
+ # raw GN into the output. (crbug.com/1470653)
+-extra_kv = { include_coverage = false, raw_gn = 'if (current_cpu == "arm64") { build_script_outputs = ["outlined_atomics.rs"] }' }
++extra_kv = { include_coverage = false, raw_gn = 'if (target_cpu == "arm64") { build_script_outputs = ["outlined_atomics.rs"] }' }
+ extra_src_roots = [
+   # compiler_builtins depends on libm on windows crbug.com/1472681
+   '../libm',
+diff --git a/rust/std/rules/BUILD.gn b/rust/std/rules/BUILD.gn
+index d5f8efac4..3a31c32ff 100644
+--- a/rust/std/rules/BUILD.gn
++++ b/rust/std/rules/BUILD.gn
+@@ -555,7 +555,7 @@ cargo_crate("compiler_builtins") {
+   output_dir =
+       "$root_out_dir/local_rustc_sysroot/lib/rustlib/$rust_abi_target/lib/"
+ 
+-  if (current_cpu == "arm64") {
++  if (target_cpu == "arm64") {
+     build_script_outputs = [ "outlined_atomics.rs" ]
+   }
+ }
+diff --git a/toolchain/aix/BUILD.gn b/toolchain/aix/BUILD.gn
+index 1f8132a8d..4d1e2c1b7 100644
+--- a/toolchain/aix/BUILD.gn
++++ b/toolchain/aix/BUILD.gn
+@@ -14,7 +14,7 @@ gcc_toolchain("ppc64") {
+   ld = cxx
+ 
+   toolchain_args = {
+-    current_cpu = "ppc64"
++    target_cpu = "ppc64"
+     current_os = "aix"
+ 
+     # reclient does not support gcc.
+diff --git a/toolchain/android/BUILD.gn b/toolchain/android/BUILD.gn
+index 5bba14cad..6957bb620 100644
+--- a/toolchain/android/BUILD.gn
++++ b/toolchain/android/BUILD.gn
+@@ -52,37 +52,37 @@ template("android_clang_toolchain") {
+ 
+ android_clang_toolchain("android_clang_x86") {
+   toolchain_args = {
+-    current_cpu = "x86"
++    target_cpu = "x86"
+   }
+ }
+ 
+ android_clang_toolchain("android_clang_arm") {
+   toolchain_args = {
+-    current_cpu = "arm"
++    target_cpu = "arm"
+   }
+ }
+ 
+ android_clang_toolchain("android_clang_mipsel") {
+   toolchain_args = {
+-    current_cpu = "mipsel"
++    target_cpu = "mipsel"
+   }
+ }
+ 
+ android_clang_toolchain("android_clang_x64") {
+   toolchain_args = {
+-    current_cpu = "x64"
++    target_cpu = "x64"
+   }
+ }
+ 
+ android_clang_toolchain("android_clang_arm64") {
+   toolchain_args = {
+-    current_cpu = "arm64"
++    target_cpu = "arm64"
+   }
+ }
+ 
+ android_clang_toolchain("android_clang_arm64_hwasan") {
+   toolchain_args = {
+-    current_cpu = "arm64"
++    target_cpu = "arm64"
+     is_hwasan = true
+     android64_ndk_api_level = 29
+   }
+@@ -90,14 +90,14 @@ android_clang_toolchain("android_clang_arm64_hwasan") {
+ 
+ android_clang_toolchain("android_clang_mips64el") {
+   toolchain_args = {
+-    current_cpu = "mips64el"
++    target_cpu = "mips64el"
+   }
+ }
+ 
+ # Placeholder for riscv64 support, not tested since the toolchain is not ready.
+ android_clang_toolchain("android_clang_riscv64") {
+   toolchain_args = {
+-    current_cpu = "riscv64"
++    target_cpu = "riscv64"
+   }
+ }
+ 
+@@ -113,7 +113,7 @@ android_clang_toolchain("android_clang_riscv64") {
+ clang_toolchain("robolectric_$host_cpu") {
+   toolchain_args = {
+     current_os = host_os
+-    current_cpu = host_cpu
++    target_cpu = host_cpu
+     is_robolectric = true
+     if (build_with_chromium) {
+       # Forwarding this value from the primary toolchain to the secondary
+diff --git a/toolchain/cros/BUILD.gn b/toolchain/cros/BUILD.gn
+index a25f18b66..9be1ec133 100644
+--- a/toolchain/cros/BUILD.gn
++++ b/toolchain/cros/BUILD.gn
+@@ -57,7 +57,7 @@ template("cros_toolchain") {
+ # This is the normal toolchain for most targets.
+ cros_toolchain("target") {
+   toolchain_args = {
+-    current_cpu = target_cpu
++    target_cpu = target_cpu
+     current_os = "chromeos"
+     sysroot = target_sysroot
+   }
+@@ -90,9 +90,9 @@ cros_toolchain("target") {
+ cros_toolchain("nacl_bootstrap") {
+   toolchain_args = {
+     if (target_cpu == "arm64") {
+-      current_cpu = "arm"
++      target_cpu = "arm"
+     } else {
+-      current_cpu = target_cpu
++      target_cpu = target_cpu
+     }
+     current_os = "chromeos"
+     use_debug_fission = false
+@@ -136,7 +136,7 @@ cros_toolchain("nacl_bootstrap") {
+ # building an Arm32 nacl_helper binary on Arm64 ChromeOS targets.
+ cros_toolchain("nacl_helper_arm32") {
+   toolchain_args = {
+-    current_cpu = "arm"
++    target_cpu = "arm"
+     current_os = "chromeos"
+     use_debug_fission = false
+     sysroot = cros_nacl_helper_arm32_sysroot
+@@ -167,7 +167,7 @@ cros_toolchain("nacl_helper_arm32") {
+ 
+ cros_toolchain("host") {
+   toolchain_args = {
+-    current_cpu = host_cpu
++    target_cpu = host_cpu
+     current_os = "linux"
+     sysroot = cros_host_sysroot
+   }
+@@ -197,11 +197,11 @@ cros_toolchain("host") {
+ cros_toolchain("v8_snapshot") {
+   toolchain_args = {
+     if (target_cpu == "x86" || target_cpu == "arm" || target_cpu == "mipsel") {
+-      current_cpu = "x86"
++      target_cpu = "x86"
+     } else {
+-      current_cpu = "x64"
++      target_cpu = "x64"
+     }
+-    v8_current_cpu = v8_target_cpu
++    v8_target_cpu = v8_target_cpu
+     current_os = "linux"
+     sysroot = cros_v8_snapshot_sysroot
+   }
+diff --git a/toolchain/fuchsia/BUILD.gn b/toolchain/fuchsia/BUILD.gn
+index 4040aa762..2136148db 100644
+--- a/toolchain/fuchsia/BUILD.gn
++++ b/toolchain/fuchsia/BUILD.gn
+@@ -27,12 +27,12 @@ template("fuchsia_clang_toolchain") {
+ 
+ fuchsia_clang_toolchain("x64") {
+   toolchain_args = {
+-    current_cpu = "x64"
++    target_cpu = "x64"
+   }
+ }
+ 
+ fuchsia_clang_toolchain("arm64") {
+   toolchain_args = {
+-    current_cpu = "arm64"
++    target_cpu = "arm64"
+   }
+ }
+diff --git a/toolchain/gcc_toolchain.gni b/toolchain/gcc_toolchain.gni
+index b18f3e5cb..8c9e41963 100644
+--- a/toolchain/gcc_toolchain.gni
++++ b/toolchain/gcc_toolchain.gni
+@@ -135,8 +135,8 @@ template("single_gcc_toolchain") {
+     assert(defined(invoker.toolchain_args),
+            "Toolchains must specify toolchain_args")
+     invoker_toolchain_args = invoker.toolchain_args
+-    assert(defined(invoker_toolchain_args.current_cpu),
+-           "toolchain_args must specify a current_cpu")
++    assert(defined(invoker_toolchain_args.target_cpu),
++           "toolchain_args must specify a target_cpu")
+     assert(defined(invoker_toolchain_args.current_os),
+            "toolchain_args must specify a current_os")
+ 
+@@ -159,8 +159,8 @@ template("single_gcc_toolchain") {
+       # set on those toolchains.
+       host_toolchain = host_toolchain
+ 
+-      if (!defined(invoker_toolchain_args.v8_current_cpu)) {
+-        v8_current_cpu = invoker_toolchain_args.current_cpu
++      if (!defined(invoker_toolchain_args.v8_target_cpu)) {
++        v8_target_cpu = invoker_toolchain_args.target_cpu
+       }
+     }
+ 
+diff --git a/toolchain/ios/BUILD.gn b/toolchain/ios/BUILD.gn
+index eaed740ab..901bc90ce 100644
+--- a/toolchain/ios/BUILD.gn
++++ b/toolchain/ios/BUILD.gn
+@@ -72,73 +72,73 @@ template("ios_blink_app_ext_toolchain") {
+ 
+ ios_toolchain("ios_clang_arm64") {
+   toolchain_args = {
+-    current_cpu = "arm64"
++    target_cpu = "arm64"
+   }
+ }
+ 
+ ios_toolchain("ios_clang_arm64_16_0") {
+   toolchain_args = {
+-    current_cpu = "arm64"
++    target_cpu = "arm64"
+     ios_deployment_target = "16.0"
+   }
+ }
+ 
+ ios_toolchain("ios_clang_x64") {
+   toolchain_args = {
+-    current_cpu = "x64"
++    target_cpu = "x64"
+   }
+ }
+ 
+ ios_toolchain("ios_clang_x64_16_0") {
+   toolchain_args = {
+-    current_cpu = "x64"
++    target_cpu = "x64"
+     ios_deployment_target = "16.0"
+   }
+ }
+ 
+ ios_app_ext_toolchain("ios_clang_arm64_app_ext") {
+   toolchain_args = {
+-    current_cpu = "arm64"
++    target_cpu = "arm64"
+   }
+ }
+ 
+ ios_blink_app_ext_toolchain("ios_clang_arm64_blink_app_ext") {
+   toolchain_args = {
+-    current_cpu = "arm64"
++    target_cpu = "arm64"
+     use_blink = true
+   }
+ }
+ 
+ ios_blink_app_ext_toolchain("ios_clang_x64_blink_app_ext") {
+   toolchain_args = {
+-    current_cpu = "x64"
++    target_cpu = "x64"
+     use_blink = true
+   }
+ }
+ 
+ ios_app_ext_toolchain("ios_clang_arm64_app_ext_13_4") {
+   toolchain_args = {
+-    current_cpu = "arm64"
++    target_cpu = "arm64"
+     ios_deployment_target = "13.4"
+   }
+ }
+ 
+ ios_app_ext_toolchain("ios_clang_x64_app_ext") {
+   toolchain_args = {
+-    current_cpu = "x64"
++    target_cpu = "x64"
+   }
+ }
+ 
+ ios_app_ext_toolchain("ios_clang_x64_app_ext_13_4") {
+   toolchain_args = {
+-    current_cpu = "x64"
++    target_cpu = "x64"
+     ios_deployment_target = "13.4"
+   }
+ }
+ 
+ ios_toolchain("ios_clang_arm64_blink") {
+   toolchain_args = {
+-    current_cpu = "arm64"
++    target_cpu = "arm64"
+     use_blink = true
+   }
+ }
+diff --git a/toolchain/linux/BUILD.gn b/toolchain/linux/BUILD.gn
+index ead0a34b8..5844d7a09 100644
+--- a/toolchain/linux/BUILD.gn
++++ b/toolchain/linux/BUILD.gn
+@@ -11,21 +11,21 @@ import("//chromium/build/toolchain/gcc_toolchain.gni")
+ clang_toolchain("clang_ppc64") {
+   enable_linker_map = true
+   toolchain_args = {
+-    current_cpu = "ppc64"
++    target_cpu = "ppc64"
+     current_os = "linux"
+   }
+ }
+ 
+ clang_toolchain("clang_arm") {
+   toolchain_args = {
+-    current_cpu = "arm"
++    target_cpu = "arm"
+     current_os = "linux"
+   }
+ }
+ 
+ clang_toolchain("clang_arm64") {
+   toolchain_args = {
+-    current_cpu = "arm64"
++    target_cpu = "arm64"
+     current_os = "linux"
+   }
+ }
+@@ -42,7 +42,7 @@ gcc_toolchain("arm64") {
+   nm = "${toolprefix}nm"
+ 
+   toolchain_args = {
+-    current_cpu = "arm64"
++    target_cpu = "arm64"
+     current_os = "linux"
+ 
+     # remote execution does not support gcc.
+@@ -63,7 +63,7 @@ gcc_toolchain("arm") {
+   nm = "${toolprefix}nm"
+ 
+   toolchain_args = {
+-    current_cpu = "arm"
++    target_cpu = "arm"
+     current_os = "linux"
+ 
+     # remote execution does not support gcc.
+@@ -77,7 +77,7 @@ clang_toolchain("clang_x86") {
+   enable_linker_map = true
+ 
+   toolchain_args = {
+-    current_cpu = "x86"
++    target_cpu = "x86"
+     current_os = "linux"
+   }
+ }
+@@ -95,7 +95,7 @@ gcc_toolchain("x86") {
+   enable_linker_map = true
+ 
+   toolchain_args = {
+-    current_cpu = "x86"
++    target_cpu = "x86"
+     current_os = "linux"
+ 
+     # remote execution does not support gcc.
+@@ -109,7 +109,7 @@ clang_toolchain("clang_x64") {
+   enable_linker_map = true
+ 
+   toolchain_args = {
+-    current_cpu = "x64"
++    target_cpu = "x64"
+     current_os = "linux"
+   }
+ }
+@@ -125,57 +125,57 @@ template("clang_v8_toolchain") {
+ 
+ clang_v8_toolchain("clang_x86_v8_arm") {
+   toolchain_args = {
+-    current_cpu = "x86"
+-    v8_current_cpu = "arm"
++    target_cpu = "x86"
++    v8_target_cpu = "arm"
+   }
+ }
+ 
+ clang_v8_toolchain("clang_x86_v8_mipsel") {
+   toolchain_args = {
+-    current_cpu = "x86"
+-    v8_current_cpu = "mipsel"
++    target_cpu = "x86"
++    v8_target_cpu = "mipsel"
+   }
+ }
+ 
+ clang_v8_toolchain("clang_x86_v8_mips") {
+   toolchain_args = {
+-    current_cpu = "x86"
+-    v8_current_cpu = "mips"
++    target_cpu = "x86"
++    v8_target_cpu = "mips"
+   }
+ }
+ 
+ clang_v8_toolchain("clang_x64_v8_arm64") {
+   toolchain_args = {
+-    current_cpu = "x64"
+-    v8_current_cpu = "arm64"
++    target_cpu = "x64"
++    v8_target_cpu = "arm64"
+   }
+ }
+ 
+ clang_v8_toolchain("clang_x64_v8_mips64el") {
+   toolchain_args = {
+-    current_cpu = "x64"
+-    v8_current_cpu = "mips64el"
++    target_cpu = "x64"
++    v8_target_cpu = "mips64el"
+   }
+ }
+ 
+ clang_v8_toolchain("clang_x64_v8_mips64") {
+   toolchain_args = {
+-    current_cpu = "x64"
+-    v8_current_cpu = "mips64"
++    target_cpu = "x64"
++    v8_target_cpu = "mips64"
+   }
+ }
+ 
+ clang_v8_toolchain("clang_x64_v8_riscv64") {
+   toolchain_args = {
+-    current_cpu = "x64"
+-    v8_current_cpu = "riscv64"
++    target_cpu = "x64"
++    v8_target_cpu = "riscv64"
+   }
+ }
+ 
+ clang_v8_toolchain("clang_x64_v8_loong64") {
+   toolchain_args = {
+-    current_cpu = "x64"
+-    v8_current_cpu = "loong64"
++    target_cpu = "x64"
++    v8_target_cpu = "loong64"
+   }
+ }
+ 
+@@ -192,7 +192,7 @@ gcc_toolchain("x64") {
+   enable_linker_map = true
+ 
+   toolchain_args = {
+-    current_cpu = "x64"
++    target_cpu = "x64"
+     current_os = "linux"
+ 
+     # remote execution does not support gcc.
+@@ -203,21 +203,21 @@ gcc_toolchain("x64") {
+ 
+ clang_toolchain("clang_mipsel") {
+   toolchain_args = {
+-    current_cpu = "mipsel"
++    target_cpu = "mipsel"
+     current_os = "linux"
+   }
+ }
+ 
+ clang_toolchain("clang_mips64el") {
+   toolchain_args = {
+-    current_cpu = "mips64el"
++    target_cpu = "mips64el"
+     current_os = "linux"
+   }
+ }
+ 
+ clang_toolchain("clang_mips64") {
+   toolchain_args = {
+-    current_cpu = "mips64"
++    target_cpu = "mips64"
+     current_os = "linux"
+   }
+ }
+@@ -234,7 +234,7 @@ gcc_toolchain("mipsel") {
+ 
+   toolchain_args = {
+     cc_wrapper = ""
+-    current_cpu = "mipsel"
++    target_cpu = "mipsel"
+     current_os = "linux"
+ 
+     # remote execution does not support gcc.
+@@ -255,7 +255,7 @@ gcc_toolchain("mips64el") {
+ 
+   toolchain_args = {
+     cc_wrapper = ""
+-    current_cpu = "mips64el"
++    target_cpu = "mips64el"
+     current_os = "linux"
+ 
+     # remote execution does not support gcc.
+@@ -267,7 +267,7 @@ gcc_toolchain("mips64el") {
+ clang_toolchain("clang_riscv64") {
+   enable_linker_map = true
+   toolchain_args = {
+-    current_cpu = "riscv64"
++    target_cpu = "riscv64"
+     current_os = "linux"
+     is_clang = true
+   }
+@@ -285,7 +285,7 @@ gcc_toolchain("riscv64") {
+   ld = cxx
+ 
+   toolchain_args = {
+-    current_cpu = "riscv64"
++    target_cpu = "riscv64"
+     current_os = "linux"
+     is_clang = false
+   }
+@@ -293,7 +293,7 @@ gcc_toolchain("riscv64") {
+ 
+ clang_toolchain("clang_s390x") {
+   toolchain_args = {
+-    current_cpu = "s390x"
++    target_cpu = "s390x"
+     current_os = "linux"
+     is_clang = true
+   }
+@@ -309,7 +309,7 @@ gcc_toolchain("s390x") {
+   ld = cxx
+ 
+   toolchain_args = {
+-    current_cpu = "s390x"
++    target_cpu = "s390x"
+     current_os = "linux"
+ 
+     # remote execution does not support gcc.
+@@ -328,7 +328,7 @@ gcc_toolchain("s390x") {
+ #  ld = cxx
+ #
+ #  toolchain_args = {
+-#    current_cpu = "mips64"
++#    target_cpu = "mips64"
+ #    current_os = "linux"
+ #    is_clang = false
+ #  }
+@@ -344,7 +344,7 @@ gcc_toolchain("ppc64") {
+   ld = cxx
+ 
+   toolchain_args = {
+-    current_cpu = "ppc64"
++    target_cpu = "ppc64"
+     current_os = "linux"
+ 
+     # remote execution does not support gcc.
+@@ -365,7 +365,7 @@ gcc_toolchain("mips") {
+   ld = cxx
+ 
+   toolchain_args = {
+-    current_cpu = "mips"
++    target_cpu = "mips"
+     current_os = "linux"
+ 
+     # remote execution does not support gcc.
+@@ -386,7 +386,7 @@ gcc_toolchain("mips64") {
+   ld = cxx
+ 
+   toolchain_args = {
+-    current_cpu = "mips64"
++    target_cpu = "mips64"
+     current_os = "linux"
+ 
+     # remote execution does not support gcc.
+@@ -397,7 +397,7 @@ gcc_toolchain("mips64") {
+ 
+ clang_toolchain("clang_loong64") {
+   toolchain_args = {
+-    current_cpu = "loong64"
++    target_cpu = "loong64"
+     current_os = "linux"
+   }
+ }
+@@ -414,7 +414,7 @@ gcc_toolchain("loong64") {
+   ld = cxx
+ 
+   toolchain_args = {
+-    current_cpu = "loong64"
++    target_cpu = "loong64"
+     current_os = "linux"
+     is_clang = false
+   }
+diff --git a/toolchain/linux/unbundle/BUILD.gn b/toolchain/linux/unbundle/BUILD.gn
+index 68502471e..62317ef89 100644
+--- a/toolchain/linux/unbundle/BUILD.gn
++++ b/toolchain/linux/unbundle/BUILD.gn
+@@ -17,7 +17,7 @@ gcc_toolchain("default") {
+   extra_ldflags = getenv("LDFLAGS")
+ 
+   toolchain_args = {
+-    current_cpu = current_cpu
++    target_cpu = target_cpu
+     current_os = current_os
+   }
+ }
+@@ -35,7 +35,7 @@ gcc_toolchain("host") {
+   extra_ldflags = getenv("BUILD_LDFLAGS")
+ 
+   toolchain_args = {
+-    current_cpu = current_cpu
++    target_cpu = target_cpu
+     current_os = current_os
+   }
+ }
+diff --git a/toolchain/mac/BUILD.gn b/toolchain/mac/BUILD.gn
+index 4b99db308..0ca8dfc3b 100644
+--- a/toolchain/mac/BUILD.gn
++++ b/toolchain/mac/BUILD.gn
+@@ -54,67 +54,67 @@ template("mac_toolchain") {
+ 
+ mac_toolchain("clang_arm") {
+   toolchain_args = {
+-    current_cpu = "arm"
++    target_cpu = "arm"
+   }
+ }
+ 
+ mac_toolchain("clang_arm64") {
+   toolchain_args = {
+-    current_cpu = "arm64"
++    target_cpu = "arm64"
+   }
+ }
+ 
+ mac_toolchain("clang_x64") {
+   toolchain_args = {
+-    current_cpu = "x64"
++    target_cpu = "x64"
+   }
+ }
+ 
+ mac_toolchain("clang_x86") {
+   toolchain_args = {
+-    current_cpu = "x86"
++    target_cpu = "x86"
+   }
+ }
+ 
+ mac_toolchain("clang_x86_v8_arm") {
+   toolchain_args = {
+-    current_cpu = "x86"
+-    v8_current_cpu = "arm"
++    target_cpu = "x86"
++    v8_target_cpu = "arm"
+   }
+ }
+ 
+ mac_toolchain("clang_x86_v8_mipsel") {
+   toolchain_args = {
+-    current_cpu = "x86"
+-    v8_current_cpu = "mipsel"
++    target_cpu = "x86"
++    v8_target_cpu = "mipsel"
+   }
+ }
+ 
+ mac_toolchain("clang_x64_v8_arm64") {
+   toolchain_args = {
+-    current_cpu = "x64"
+-    v8_current_cpu = "arm64"
++    target_cpu = "x64"
++    v8_target_cpu = "arm64"
+   }
+ }
+ 
+ mac_toolchain("clang_x64_v8_mips64el") {
+   toolchain_args = {
+-    current_cpu = "x64"
+-    v8_current_cpu = "mips64el"
++    target_cpu = "x64"
++    v8_target_cpu = "mips64el"
+   }
+ }
+ 
+ mac_toolchain("clang_arm64_v8_x64") {
+   toolchain_args = {
+-    current_cpu = "arm64"
+-    v8_current_cpu = "x64"
++    target_cpu = "arm64"
++    v8_target_cpu = "x64"
+   }
+ }
+ 
+ # Needed to run v8 on the host during a arm64 -> x86_64 cross-build
+ mac_toolchain("clang_arm64_v8_arm64") {
+   toolchain_args = {
+-    current_cpu = "arm64"
+-    v8_current_cpu = "arm64"
++    target_cpu = "arm64"
++    v8_target_cpu = "arm64"
+   }
+ }
+diff --git a/toolchain/nacl/BUILD.gn b/toolchain/nacl/BUILD.gn
+index 8d70258fc..81af95759 100644
+--- a/toolchain/nacl/BUILD.gn
++++ b/toolchain/nacl/BUILD.gn
+@@ -95,7 +95,7 @@ template("pnacl_toolchain") {
+ 
+     toolchain_args = {
+       is_clang = true
+-      current_cpu = "pnacl"
++      target_cpu = "pnacl"
+       use_lld = false
+     }
+   }
+@@ -145,7 +145,7 @@ template("nacl_glibc_toolchain") {
+     strip = toolprefix + "strip" + toolsuffix
+ 
+     toolchain_args = {
+-      current_cpu = toolchain_cpu
++      target_cpu = toolchain_cpu
+ 
+       # reclient does not support gcc.
+       use_remoteexec = false
+@@ -203,7 +203,7 @@ template("nacl_clang_toolchain") {
+     strip = toolprefix + "strip" + toolsuffix
+ 
+     toolchain_args = {
+-      current_cpu = toolchain_cpu
++      target_cpu = toolchain_cpu
+       is_clang = true
+       use_lld = false
+     }
+@@ -261,7 +261,7 @@ template("nacl_irt_toolchain") {
+     }
+ 
+     toolchain_args = {
+-      current_cpu = toolchain_cpu
++      target_cpu = toolchain_cpu
+       is_clang = true
+       use_lld = false
+       is_nacl_saigo = true
+@@ -303,7 +303,7 @@ template("nacl_test_irt_toolchain") {
+     strip = toolprefix + "strip" + toolsuffix
+ 
+     toolchain_args = {
+-      current_cpu = toolchain_cpu
++      target_cpu = toolchain_cpu
+       is_clang = true
+       use_lld = false
+       is_nacl_saigo = true
+diff --git a/toolchain/wasm/BUILD.gn b/toolchain/wasm/BUILD.gn
+index 26d790b0b..44db05c13 100644
+--- a/toolchain/wasm/BUILD.gn
++++ b/toolchain/wasm/BUILD.gn
+@@ -22,7 +22,7 @@ gcc_toolchain("wasm") {
+   ld = cxx
+ 
+   toolchain_args = {
+-    current_cpu = "wasm"
++    target_cpu = "wasm"
+     current_os = "emscripten"
+ 
+     is_clang = true
+diff --git a/toolchain/win/BUILD.gn b/toolchain/win/BUILD.gn
+index 1727eb6f6..103e78534 100644
+--- a/toolchain/win/BUILD.gn
++++ b/toolchain/win/BUILD.gn
+@@ -87,7 +87,7 @@ if (target_os == "winuwp") {
+     cl = "\"${store_cpu_toolchain_data.vc_bin_dir}/cl.exe\""
+     toolchain_args = {
+       current_os = "winuwp"
+-      current_cpu = target_cpu
++      target_cpu = target_cpu
+       is_clang = false
+     }
+   }
+diff --git a/toolchain/win/midl.gni b/toolchain/win/midl.gni
+index fcab19141..611bbbe54 100644
+--- a/toolchain/win/midl.gni
++++ b/toolchain/win/midl.gni
+@@ -148,13 +148,13 @@ template("midl") {
+       outputs += [ "$out_dir/$proxy_file" ]
+     }
+ 
+-    if (current_cpu == "x86") {
++    if (target_cpu == "x86") {
+       win_tool_arch = "environment.x86"
+       idl_target_platform = "win32"
+-    } else if (current_cpu == "x64") {
++    } else if (target_cpu == "x64") {
+       win_tool_arch = "environment.x64"
+       idl_target_platform = "x64"
+-    } else if (current_cpu == "arm64") {
++    } else if (target_cpu == "arm64") {
+       win_tool_arch = "environment.arm64"
+       idl_target_platform = "arm64"
+     } else {
+diff --git a/toolchain/win/toolchain.gni b/toolchain/win/toolchain.gni
+index 96b978aad..3e62d17be 100644
+--- a/toolchain/win/toolchain.gni
++++ b/toolchain/win/toolchain.gni
+@@ -32,7 +32,7 @@ _clang_bin_path = rebase_path("$clang_base_path/bin", root_build_dir)
+ #   environment: File name of environment file.
+ #
+ # You would also define a toolchain_args variable with at least these set:
+-#   current_cpu: current_cpu to pass as a build arg
++#   target_cpu: target_cpu to pass as a build arg
+ #   current_os: current_os to pass as a build arg
+ template("msvc_toolchain") {
+   toolchain(target_name) {
+@@ -145,18 +145,18 @@ template("msvc_toolchain") {
+       sys_lib_flags = "${invoker.sys_lib_flags}"
+ 
+       # TODO(thakis): Remove once crbug.com/1300005 is fixed
+-      assert(toolchain_args.current_cpu == "x64" ||
+-                 toolchain_args.current_cpu == "x86" ||
+-                 toolchain_args.current_cpu == "arm" ||
+-                 toolchain_args.current_cpu == "arm64",
++      assert(toolchain_args.target_cpu == "x64" ||
++                 toolchain_args.target_cpu == "x86" ||
++                 toolchain_args.target_cpu == "arm" ||
++                 toolchain_args.target_cpu == "arm64",
+              "Only supports x64, x86, arm and arm64 CPUs")
+-      if (toolchain_args.current_cpu == "x64") {
++      if (toolchain_args.target_cpu == "x64") {
+         sys_lib_flags += " /MACHINE:X64"
+-      } else if (toolchain_args.current_cpu == "x86") {
++      } else if (toolchain_args.target_cpu == "x86") {
+         sys_lib_flags += " /MACHINE:X86"
+-      } else if (toolchain_args.current_cpu == "arm") {
++      } else if (toolchain_args.target_cpu == "arm") {
+         sys_lib_flags += " /MACHINE:ARM"
+-      } else if (toolchain_args.current_cpu == "arm64") {
++      } else if (toolchain_args.target_cpu == "arm64") {
+         sys_lib_flags += " /MACHINE:ARM64"
+       }
+ 
+@@ -261,7 +261,7 @@ template("msvc_toolchain") {
+     tool("asm") {
+       is_msvc_assembler = true
+ 
+-      if (toolchain_args.current_cpu == "arm64") {
++      if (toolchain_args.target_cpu == "arm64") {
+         if (toolchain_is_clang) {
+           ml = "${cl_prefix}${_clang_bin_path}/clang-cl${_exe} --target=aarch64-pc-windows"
+           if (host_os == "win") {
+@@ -280,13 +280,13 @@ template("msvc_toolchain") {
+         if (toolchain_is_clang && !disable_llvm_ml) {
+           prefix = rebase_path("$clang_base_path/bin", root_build_dir)
+           ml = "$prefix/llvm-ml${_exe}"
+-          if (toolchain_args.current_cpu == "x64") {
++          if (toolchain_args.target_cpu == "x64") {
+             ml += " -m64"
+           } else {
+             ml += " -m32"
+           }
+         } else {
+-          if (toolchain_args.current_cpu == "x64") {
++          if (toolchain_args.target_cpu == "x64") {
+             ml = "ml64.exe"
+           } else {
+             ml = "ml.exe"
+@@ -299,7 +299,7 @@ template("msvc_toolchain") {
+ 
+         # Suppress final-stage linking on x64/x86 builds. (Armasm64 does not
+         # require /c because it doesn't support linking.)
+-        if (toolchain_args.current_cpu != "arm64") {
++        if (toolchain_args.target_cpu != "arm64") {
+           ml += " /c"
+         }
+         if (use_lld && (!toolchain_is_clang || disable_llvm_ml)) {
+@@ -310,7 +310,7 @@ template("msvc_toolchain") {
+           ml = "\"$python_path\" $ml_py $ml"
+         }
+ 
+-        if (toolchain_args.current_cpu == "arm64") {
++        if (toolchain_args.target_cpu == "arm64") {
+           # armasm64.exe does not support definitions passed via the command
+           # line. (Fortunately, they're not needed for compiling the V8
+           # snapshot, which is the only time this assembler is required.)
+@@ -725,7 +725,7 @@ template("win_toolchains") {
+         is_clang = false
+         use_clang_coverage = false
+         current_os = "win"
+-        current_cpu = toolchain_arch
++        target_cpu = toolchain_arch
+       }
+     }
+     msvc_system_allocator_toolchain(
+@@ -740,7 +740,7 @@ template("win_toolchains") {
+         is_clang = false
+         use_clang_coverage = false
+         current_os = "win"
+-        current_cpu = rust_host_toolchain_arch
++        target_cpu = rust_host_toolchain_arch
+       }
+     }
+     msvc_system_allocator_toolchain(
+@@ -755,7 +755,7 @@ template("win_toolchains") {
+         is_clang = false
+         use_clang_coverage = false
+         current_os = "win"
+-        current_cpu = toolchain_arch
++        target_cpu = toolchain_arch
+       }
+     }
+     msvc_rust_host_build_tools_toolchain(
+@@ -770,7 +770,7 @@ template("win_toolchains") {
+         is_clang = false
+         use_clang_coverage = false
+         current_os = "win"
+-        current_cpu = rust_host_toolchain_arch
++        target_cpu = rust_host_toolchain_arch
+       }
+     }
+   }
+@@ -803,7 +803,7 @@ template("win_toolchains") {
+       }
+       is_clang = true
+       current_os = "win"
+-      current_cpu = toolchain_arch
++      target_cpu = toolchain_arch
+     }
+   }
+   msvc_system_allocator_toolchain(
+@@ -823,7 +823,7 @@ template("win_toolchains") {
+       }
+       is_clang = true
+       current_os = "win"
+-      current_cpu = rust_host_toolchain_arch
++      target_cpu = rust_host_toolchain_arch
+     }
+   }
+   msvc_system_allocator_toolchain(
+@@ -843,7 +843,7 @@ template("win_toolchains") {
+       }
+       is_clang = true
+       current_os = "win"
+-      current_cpu = toolchain_arch
++      target_cpu = toolchain_arch
+     }
+   }
+   msvc_rust_host_build_tools_toolchain(
+@@ -863,7 +863,7 @@ template("win_toolchains") {
+       }
+       is_clang = true
+       current_os = "win"
+-      current_cpu = rust_host_toolchain_arch
++      target_cpu = rust_host_toolchain_arch
+     }
+   }
+ }
+diff --git a/toolchain/zos/BUILD.gn b/toolchain/zos/BUILD.gn
+index 01689744c..5b30dd437 100644
+--- a/toolchain/zos/BUILD.gn
++++ b/toolchain/zos/BUILD.gn
+@@ -14,7 +14,7 @@ toolchain("s390x") {
+   ld = cxx
+ 
+   toolchain_args = {
+-    current_cpu = "s390x"
++    target_cpu = "s390x"
+     current_os = "zos"
+   }
+ 
+diff --git a/win/BUILD.gn b/win/BUILD.gn
+index 23be394aa..e920595d3 100644
+--- a/win/BUILD.gn
++++ b/win/BUILD.gn
+@@ -38,7 +38,7 @@ if (is_win) {
+     ]
+     args = [
+       rebase_path("$root_out_dir/cdb", root_out_dir),
+-      current_cpu,
++      target_cpu,
+     ]
+   }
+ 
+@@ -65,7 +65,7 @@ if (is_win) {
+         "$root_out_dir/vccorlib140${vcrt_suffix}.dll",
+         "$root_out_dir/vcruntime140${vcrt_suffix}.dll",
+       ]
+-      if (current_cpu == "x64") {
++      if (target_cpu == "x64") {
+         data += [ "$root_out_dir/vcruntime140_1${vcrt_suffix}.dll" ]
+       }
+       if (is_debug) {
+diff --git a/win/message_compiler.gni b/win/message_compiler.gni
+index ffbfbf396..afe427c23 100644
+--- a/win/message_compiler.gni
++++ b/win/message_compiler.gni
+@@ -52,7 +52,7 @@ template("message_compiler") {
+       # directory. This is required because the Windows toolchain setup saves
+       # the VC paths and such so that running "mc.exe" will work with the
+       # configured toolchain. This file is in the root build dir.
+-      "environment.$current_cpu",
++      "environment.$target_cpu",
+ 
+       # Where to put the header.
+       "-h",

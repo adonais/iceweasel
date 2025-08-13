@@ -100,7 +100,7 @@ add_task(async function test_jog_timespan_works() {
   await sleep(10);
   Glean.jogCat.jogTimespan.stop();
 
-  Assert.ok(Glean.jogCat.jogTimespan.testGetValue() > 0);
+  Assert.greater(Glean.jogCat.jogTimespan.testGetValue(), 0);
 });
 
 add_task(async function test_jog_uuid_works() {
@@ -1066,4 +1066,39 @@ add_task(async function jog_ping_works() {
   });
   GleanPings.myPing.submit("reason-1");
   Assert.ok(submitted, "Ping must have been submitted");
+});
+
+add_task(function test_jog_dual_labeled_counter_works() {
+  Services.fog.testRegisterRuntimeMetric(
+    "dual_labeled_counter",
+    "jog_cat",
+    "jog_dual_labeled_counter",
+    ["test-ping"],
+    `"ping"`,
+    false,
+    JSON.stringify({ ordered_keys: ["label1", "label2"] })
+  );
+
+  Glean.jogCat.jogDualLabeledCounter.get("label1", "somecat").add(8);
+  Glean.jogCat.jogDualLabeledCounter.get("label2", "somecat").add(16);
+  Glean.jogCat.jogDualLabeledCounter.get("unexpectedLabel", "somecat").add(24);
+
+  Assert.equal(
+    undefined,
+    Glean.jogCat.jogDualLabeledCounter.get("label1", "othercat").testGetValue()
+  );
+  Assert.equal(
+    8,
+    Glean.jogCat.jogDualLabeledCounter.get("label1", "somecat").testGetValue()
+  );
+  Assert.equal(
+    16,
+    Glean.jogCat.jogDualLabeledCounter.get("label2", "somecat").testGetValue()
+  );
+  Assert.equal(
+    24,
+    Glean.jogCat.jogDualLabeledCounter
+      .get("__other__", "somecat")
+      .testGetValue()
+  );
 });

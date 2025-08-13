@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use crate::error::ErrorBufferType;
+use crate::command::{RecordedComputePass, RecordedRenderPass};
 use wgc::id;
 
 pub mod client;
@@ -62,22 +62,30 @@ impl<'a, T> Clone for FfiSlice<'a, T> {
 
 #[repr(C)]
 pub struct ByteBuf {
-    data: *const u8,
+    data: *mut u8,
     len: usize,
     capacity: usize,
 }
 
 impl ByteBuf {
-    fn from_vec(vec: Vec<u8>) -> Self {
+    fn new() -> Self {
+        Self {
+            data: std::ptr::null_mut(),
+            len: 0,
+            capacity: 0,
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    fn from_vec(mut vec: Vec<u8>) -> Self {
         if vec.is_empty() {
-            ByteBuf {
-                data: std::ptr::null(),
-                len: 0,
-                capacity: 0,
-            }
+            ByteBuf::new()
         } else {
             let bb = ByteBuf {
-                data: vec.as_ptr(),
+                data: vec.as_mut_ptr(),
                 len: vec.len(),
                 capacity: vec.capacity(),
             };
@@ -89,6 +97,11 @@ impl ByteBuf {
     unsafe fn as_slice(&self) -> &[u8] {
         slice::from_raw_parts(self.data, self.len)
     }
+}
+
+fn make_byte_buf<T: serde::Serialize>(data: &T) -> ByteBuf {
+    let vec = bincode::serialize(data).unwrap();
+    ByteBuf::from_vec(vec)
 }
 
 #[repr(C)]
@@ -104,7 +117,7 @@ pub struct AdapterInformation<S> {
     driver: S,
     driver_info: S,
     backend: wgt::Backend,
-    support_use_external_texture_in_swap_chain: bool,
+    support_use_shared_texture_in_swap_chain: bool,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -114,7 +127,133 @@ struct ImplicitLayout<'a> {
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
+#[repr(transparent)]
+pub struct SurfaceFormat(i8);
+#[derive(serde::Serialize, serde::Deserialize)]
+#[repr(transparent)]
+pub struct RemoteTextureOwnerId(u64);
+#[derive(serde::Serialize, serde::Deserialize)]
+#[repr(transparent)]
+pub struct RemoteTextureId(u64);
+#[derive(serde::Serialize, serde::Deserialize)]
+#[repr(transparent)]
+pub struct RemoteTextureTxnType(u32);
+#[derive(serde::Serialize, serde::Deserialize)]
+#[repr(transparent)]
+pub struct RemoteTextureTxnId(u64);
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub struct FfiLUID {
+    low_part: core::ffi::c_ulong,
+    high_part: core::ffi::c_long,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub enum QueueWriteDataSource {
+    DataBuffer(usize),
+    Shmem(usize),
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+enum Message<'a> {
+    RequestAdapter {
+        adapter_id: id::AdapterId,
+        power_preference: wgt::PowerPreference,
+        force_fallback_adapter: bool,
+    },
+    RequestDevice {
+        adapter_id: id::AdapterId,
+        device_id: id::DeviceId,
+        queue_id: id::QueueId,
+        desc: wgc::device::DeviceDescriptor<'a>,
+    },
+    Device(id::DeviceId, DeviceAction<'a>),
+    Texture(id::DeviceId, id::TextureId, TextureAction<'a>),
+    CommandEncoder(id::DeviceId, id::CommandEncoderId, CommandEncoderAction),
+    CommandEncoderFinish(
+        id::DeviceId,
+        id::CommandEncoderId,
+        wgt::CommandBufferDescriptor<wgc::Label<'a>>,
+    ),
+    ReplayRenderPass(id::DeviceId, id::CommandEncoderId, RecordedRenderPass),
+    ReplayComputePass(id::DeviceId, id::CommandEncoderId, RecordedComputePass),
+    QueueWrite {
+        device_id: id::DeviceId,
+        queue_id: id::QueueId,
+        data_source: QueueWriteDataSource,
+        action: QueueWriteAction,
+    },
+    BufferMap {
+        device_id: id::DeviceId,
+        buffer_id: id::BufferId,
+        mode: u32,
+        offset: u64,
+        size: u64,
+    },
+    BufferUnmap(id::DeviceId, id::BufferId, bool),
+    QueueSubmit(
+        id::DeviceId,
+        id::QueueId,
+        Cow<'a, [id::CommandBufferId]>,
+        Cow<'a, [id::TextureId]>,
+    ),
+    QueueOnSubmittedWorkDone(id::QueueId),
+
+    CreateSwapChain {
+        device_id: id::DeviceId,
+        queue_id: id::QueueId,
+        width: i32,
+        height: i32,
+        format: SurfaceFormat,
+        buffer_ids: Cow<'a, [id::BufferId]>,
+        remote_texture_owner_id: RemoteTextureOwnerId,
+        use_shared_texture_in_swap_chain: bool,
+    },
+    SwapChainPresent {
+        texture_id: id::TextureId,
+        command_encoder_id: id::CommandEncoderId,
+        remote_texture_id: RemoteTextureId,
+        remote_texture_owner_id: RemoteTextureOwnerId,
+    },
+    SwapChainDrop {
+        remote_texture_owner_id: RemoteTextureOwnerId,
+        txn_type: RemoteTextureTxnType,
+        txn_id: RemoteTextureTxnId,
+    },
+
+    DestroyBuffer(id::BufferId),
+    DestroyTexture(id::TextureId),
+    DestroyDevice(id::DeviceId),
+
+    DropAdapter(id::AdapterId),
+    DropDevice(id::DeviceId),
+    DropQueue(id::QueueId),
+    DropBuffer(id::BufferId),
+    DropCommandBuffer(id::CommandBufferId),
+    DropRenderBundle(id::RenderBundleId),
+    DropBindGroupLayout(id::BindGroupLayoutId),
+    DropPipelineLayout(id::PipelineLayoutId),
+    DropBindGroup(id::BindGroupId),
+    DropShaderModule(id::ShaderModuleId),
+    DropComputePipeline(id::ComputePipelineId, Option<ImplicitLayout<'a>>),
+    DropRenderPipeline(id::RenderPipelineId, Option<ImplicitLayout<'a>>),
+    DropTexture(id::TextureId),
+    DropTextureView(id::TextureViewId),
+    DropSampler(id::SamplerId),
+    DropQuerySet(id::QuerySetId),
+
+    DropCommandEncoder(id::CommandEncoderId),
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
 enum DeviceAction<'a> {
+    CreateBuffer {
+        buffer_id: id::BufferId,
+        desc: wgc::resource::BufferDescriptor<'a>,
+        shmem_handle_index: usize,
+    },
     CreateTexture(
         id::TextureId,
         wgc::resource::TextureDescriptor<'a>,
@@ -132,20 +271,18 @@ enum DeviceAction<'a> {
         wgc::binding_model::PipelineLayoutDescriptor<'a>,
     ),
     CreateBindGroup(id::BindGroupId, wgc::binding_model::BindGroupDescriptor<'a>),
-    CreateShaderModule(
-        id::ShaderModuleId,
-        wgc::pipeline::ShaderModuleDescriptor<'a>,
-        Cow<'a, str>,
-    ),
+    CreateShaderModule(id::ShaderModuleId, wgc::Label<'a>, Cow<'a, str>),
     CreateComputePipeline(
         id::ComputePipelineId,
         wgc::pipeline::ComputePipelineDescriptor<'a>,
         Option<ImplicitLayout<'a>>,
+        bool,
     ),
     CreateRenderPipeline(
         id::RenderPipelineId,
         wgc::pipeline::RenderPipelineDescriptor<'a>,
         Option<ImplicitLayout<'a>>,
+        bool,
     ),
     CreateRenderBundle(
         id::RenderBundleId,
@@ -160,8 +297,10 @@ enum DeviceAction<'a> {
     ),
     Error {
         message: String,
-        r#type: ErrorBufferType,
+        r#type: wgt::error::ErrorType,
     },
+    PushErrorScope(u8 /* dom::GPUErrorFilter */),
+    PopErrorScope,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -180,6 +319,51 @@ enum QueueWriteAction {
 #[derive(serde::Serialize, serde::Deserialize)]
 enum TextureAction<'a> {
     CreateView(id::TextureViewId, wgc::resource::TextureViewDescriptor<'a>),
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct PipelineError {
+    is_validation_error: bool,
+    error: String,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct ShaderModuleCompilationMessage {
+    pub line_number: u64,
+    pub line_pos: u64,
+    pub utf16_offset: u64,
+    pub utf16_length: u64,
+    pub message: String,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub enum BufferMapResult<'a> {
+    Success {
+        is_writable: bool,
+        offset: u64,
+        size: u64,
+    },
+    Error(Cow<'a, str>),
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+enum ServerMessage<'a> {
+    RequestAdapterResponse(id::AdapterId, Option<AdapterInformation<Cow<'a, str>>>),
+    RequestDeviceResponse(id::DeviceId, id::QueueId, Option<String>),
+    PopErrorScopeResponse(u8 /* PopErrorScopeResultType */, Cow<'a, str>),
+    CreateRenderPipelineResponse {
+        pipeline_id: id::RenderPipelineId,
+        implicit_ids: Option<ImplicitLayout<'a>>,
+        error: Option<PipelineError>,
+    },
+    CreateComputePipelineResponse {
+        pipeline_id: id::ComputePipelineId,
+        implicit_ids: Option<ImplicitLayout<'a>>,
+        error: Option<PipelineError>,
+    },
+    CreateShaderModuleResponse(Vec<ShaderModuleCompilationMessage>),
+    BufferMapResponse(id::BufferId, BufferMapResult<'a>),
+    QueueOnSubmittedWorkDoneResponse,
 }
 
 #[repr(C)]

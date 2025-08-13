@@ -29,7 +29,6 @@
   *  to know the height of its content. */
   --line-container-height: 48px;
   --input-field-color: var(--button-text-color);
-  --input-field-color-hover: var(--input-field-color);
 }
 
 :host([linetype="origin"]) {
@@ -42,13 +41,25 @@
 }
 
 :host(login-line:hover),
-:host(login-line:focus) {
+:host(login-line:focus-visible) {
   > .line-container {
     background-color: var(--button-background-color-hover);
   }
 
-  .input-field {
+  .input-field,
+  .line-container {
     color: var(--input-field-color-hover);
+  }
+
+  .copy-container {
+    > .copy-icon {
+      fill: var(--input-field-color-hover);
+    }
+  }
+
+  .fav-icon,
+  .copy-icon {
+    fill: var(--input-field-color-hover);
   }
 }
 
@@ -72,7 +83,6 @@
     background-color: var(--background-color-box);
     padding: 3px;
     --button-text-color-ghost: var(--icon-color);
-    --button-text-color-ghost-hover: var(--icon-color);
 
     &:focus-visible {
       z-index: 1;
@@ -81,7 +91,6 @@
     > moz-button.reveal-button:focus-within {
       background-color: var(--button-background-color-ghost-hover);
       border-color: var(--button-border-color-ghost-hover);
-      color: var(--button-text-color-ghost-hover);
     }
 
     > moz-button.reveal-button::part(button) {
@@ -166,7 +175,6 @@
 .input-label {
   display: block;
   text-transform: uppercase;
-  color: var(--text-color);
   font-size: 0.525em;
   cursor: unset;
 

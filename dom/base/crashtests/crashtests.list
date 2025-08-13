@@ -109,7 +109,6 @@ load 637214-1.svg
 load 637214-2.svg
 pref(extensions.InstallTrigger.enabled,true) pref(extensions.InstallTriggerImpl.enabled,true) load 642022-1.html
 load 646184.html
-pref(svg.use-element.data-url-href.allowed,true) load 658845-1.svg
 load 666869.html
 load 667336-1.html
 load 675516.xhtml
@@ -285,3 +284,5 @@ load 1922153.html
 load 1965664.html
 load 1966485.html
 load 1966466.html
+load 1969289.html
+load 1975990.html

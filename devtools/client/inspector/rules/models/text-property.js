@@ -444,18 +444,6 @@ class TextProperty {
 
     return declaration.syntax;
   }
-
-  /**
-   * Returns true if the property value is a CSS variables and contains the given variable
-   * name, and false otherwise.
-   *
-   * @param {String}
-   *        CSS variable name (e.g. "--color")
-   * @return {Boolean}
-   */
-  hasCSSVariable(name) {
-    return this.usedVariables.has(name);
-  }
 }
 
 module.exports = TextProperty;

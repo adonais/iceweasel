@@ -244,6 +244,9 @@ newtab-error-fallback-refresh-link = Attualizza sta pàggina pi pruvari arrè.
 ## Strings for download mobile highlight
 
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
 

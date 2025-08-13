@@ -9,16 +9,25 @@
 
 namespace mozilla::dom {
 
-void ContentParentKeepAliveDeleter::operator()(ContentParent* aProcess) {
+// const reference to please some libstdc++ trait that requires the deleter to
+// be callable on a const pointer. We still need a reference though because of
+// the comment below.
+void ContentParentKeepAliveDeleter::operator()(ContentParent* const& aProcess) {
   AssertIsOnMainThread();
   if (RefPtr<ContentParent> process = dont_AddRef(aProcess)) {
+    // Nullify aProcess otherwise RemoveKeepAlive may end up visiting this
+    // object while it's being destroyed.
+    const_cast<ContentParent*&>(aProcess) = nullptr;
     process->RemoveKeepAlive(mBrowserId);
   }
 }
 
 void ContentParentKeepAliveDeleter::operator()(
-    ThreadsafeContentParentHandle* aHandle) {
+    ThreadsafeContentParentHandle* const& aHandle) {
   if (RefPtr<ThreadsafeContentParentHandle> handle = dont_AddRef(aHandle)) {
+    // Nullify aHandle otherwise RemoveKeepAlive may end up visiting this
+    // object while it's being destroyed.
+    const_cast<ThreadsafeContentParentHandle*&>(aHandle) = nullptr;
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "ThreadsafeContentParentKeepAliveDeleter",
         [handle = std::move(handle), browserId = mBrowserId]() {

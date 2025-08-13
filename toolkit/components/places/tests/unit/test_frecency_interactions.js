@@ -649,3 +649,81 @@ add_task(async function interaction_visit_gap() {
 
   await PlacesUtils.history.clear();
 });
+
+add_task(async function old_visits_not_null() {
+  let testCases = [
+    { daysOld: 365, description: "1 year old" },
+    { daysOld: 1825, description: "5 years old" },
+    { daysOld: 3650, description: "10 years old" },
+  ];
+
+  for (let testCase of testCases) {
+    let oldDate = new Date();
+    oldDate.setDate(oldDate.getDate() - testCase.daysOld);
+
+    let url = `https://www.example-${testCase.daysOld}.com/`;
+    await PlacesTestUtils.addVisits([
+      {
+        url,
+        visitDate: oldDate.getTime() * 1000,
+      },
+    ]);
+    await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
+
+    let page = await getPageWithUrl(url);
+    Assert.notEqual(
+      page.alt_frecency,
+      null,
+      `Frecency should not be NULL for ${testCase.description}`
+    );
+
+    Assert.greater(
+      page.alt_frecency,
+      0,
+      `Frecency should be positive for ${testCase.description}`
+    );
+  }
+
+  await PlacesUtils.history.clear();
+});
+
+add_task(async function old_visits_new_interactions() {
+  let url = "https://testdomain1.moz.org/";
+  let oldDate = new Date();
+  oldDate.setDate(oldDate.getDate() - 5000);
+
+  await PlacesTestUtils.addVisits([
+    { url, visitDate: oldDate.getTime() * 1000 },
+  ]);
+
+  await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
+  let page = await getPageWithUrl(url);
+  let baselineFrecency = page.alt_frecency;
+
+  Assert.notEqual(
+    baselineFrecency,
+    null,
+    "Baseline frecency should not be NULL."
+  );
+  Assert.greater(
+    baselineFrecency,
+    0,
+    "Baseline frecency should be greater than 0."
+  );
+
+  info("Add a recent interesting interaction.");
+  await insertIntoMozPlacesMetadata(page.id, {
+    total_view_time: VIEWTIME_THRESHOLD * 2,
+  });
+
+  await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
+  page = await getPageWithUrl(url);
+
+  Assert.greater(
+    page.alt_frecency,
+    baselineFrecency,
+    "Recent interaction should boost frecency of page with really old visit."
+  );
+
+  await PlacesUtils.history.clear();
+});

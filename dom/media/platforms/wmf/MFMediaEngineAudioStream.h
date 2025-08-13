@@ -17,7 +17,7 @@ class MFMediaEngineAudioStream final : public MFMediaEngineStream {
 
   static MFMediaEngineAudioStream* Create(uint64_t aStreamId,
                                           const TrackInfo& aInfo,
-                                          bool aIsEncrytpedCustomInit,
+                                          bool aIsEncryptedCustomInit,
                                           MFMediaSource* aParentSource);
 
   nsCString GetDescriptionName() const override {

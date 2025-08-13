@@ -150,6 +150,8 @@
     %2$s is the url for the learn-more link.
   -->
   <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s gibt Ihnen die Kontrolle.</p> <p>Verwenden Sie ihn als privaten Browser: <ul> <li>Suchen und blättern Sie in der App</li> <li>Blockieren Sie Tracker (oder aktualisieren Sie die Einstellungen, um Tracker zu erlauben)</li> <li>Entfernen Sie Cookies, um Such- und Browserverlauf zu löschen</li> </ul> </p> <p>%1$s wird von Mozilla entwickelt. Unsere Mission ist es, ein gesundes, offenes Internet zu fördern.<br/> <a href=\"%2$s\">Erfahren Sie mehr</a></p>]]></string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">Weitere Informationen</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">Datenschutz &amp; Sicherheit</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -486,8 +488,6 @@
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
   <string name="onboarding_first_screen_privacy_notice_link_2">Datenschutzhinweis</string>
   <!-- New Onboarding flow first screen button label -->
-  <string name="onboarding_first_screen_button_agree_and_continue" moz:removedIn="140" tools:ignore="UnusedResources">Zustimmen und fortfahren</string>
-  <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue_2">Weiter</string>
   <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
   <string name="a11y_link_available">Link verfügbar</string>
@@ -708,18 +708,6 @@
   <string name="preference_block_autoplay_audio_only_summary">Empfohlen</string>
   <!-- Preference for block autoplay audio and video -->
   <string name="preference_block_autoplay_audio_video">Audio und Video blockieren</string>
-  <!-- Preference for studies -->
-  <string name="preference_studies" moz:removedIn="140">Studien</string>
-  <!-- Preference for studies summary -->
-  <string name="preference_studies_summary" tools:ignore="BrandUsage" moz:removedIn="140">Firefox darf von Zeit zu Zeit Studien installieren und durchführen.</string>
-  <!-- Learn more link for studies, links to an article for more information about studies. -->
-  <string name="studies_learn_more" moz:removedIn="140">Weitere Informationen</string>
-  <!-- Title of the remove studies button -->
-  <string name="studies_remove" moz:removedIn="140">Entfernen</string>
-  <!-- Title of the active section on the studies list -->
-  <string name="studies_active" moz:removedIn="140">Aktiv</string>
-  <!-- Title of the completed section on the studies list -->
-  <string name="studies_completed" moz:removedIn="140">Abgeschlossen</string>
   <!-- Preference to enable remote debugging of the app via USB or Wi-Fi -->
   <string name="preference_remote_debugging">Externes Debugging über USB/WLAN</string>
   <!-- Text Button for show biometric prompt -->

@@ -59,7 +59,7 @@ support-files = [
 
 ["test_notification_serviceworker_openWindow.html"]
 skip-if = [
-  "xorigin",  # JavaScript error: http://mochi.xorigin-test:8888/tests/SimpleTest/TestRunner.js, line 157: SecurityError: Permission denied to access property "wrappedJSObject" on cross-origin object
+  "xorigin", # JavaScript error: http://mochi.xorigin-test:8888/tests/SimpleTest/TestRunner.js, line 157: SecurityError: Permission denied to access property "wrappedJSObject" on cross-origin object
   "http3",
   "http2",
 ]
@@ -73,7 +73,7 @@ tags = "openwindow"
 ["test_notification_serviceworker_openWindow_nested.html"]
 skip-if = [
   "xorigin", # Bug 1792790
-  "condprof",  #: timed out
+  "condprof", # timed out
   "http3",
   "http2",
 ]

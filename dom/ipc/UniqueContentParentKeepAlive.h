@@ -17,8 +17,8 @@ class ContentParent;
 class ThreadsafeContentParentHandle;
 
 struct ContentParentKeepAliveDeleter {
-  void operator()(ContentParent* aProcess);
-  void operator()(ThreadsafeContentParentHandle* aHandle);
+  void operator()(ContentParent* const& aProcess);
+  void operator()(ThreadsafeContentParentHandle* const& aHandle);
   uint64_t mBrowserId = 0;
 };
 

@@ -431,10 +431,6 @@
     a section where users see a list of tabs that they have visited in the past few days
   -->
   <string name="customize_toggle_recently_visited">Jaqında kirilgenler</string>
-  <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">Oylandıratuǵın áńgimeler</string>
-  <!-- Summary for the customize home screen section with Pocket. %s is "Pocket". -->
-  <string name="customize_toggle_pocket_summary" tools:ignore="UnusedResources" moz:removedIn="140">%s tárepinen usınılǵan maqalalar</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">Qáwenderlik maqalalar</string>
   <!-- Title for the opening wallpaper settings screen -->
@@ -770,9 +766,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Tariyxtı óshiriw</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">Tariyx óshirildi</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Tariyx óshirildi</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">%1$s óshirildi</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s óshirildi</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Óshiriw</string>
   <!--
@@ -814,9 +810,9 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">Bul papkanı óshiriwge isenimińiz kámil me?</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">Bul papkanı óshiriwge isenimińiz kámil me?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog">%s tańlanǵan elementlerdi óshiredi.</string>
+  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s tańlanǵan elementlerdi óshiredi.</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">Biykarlaw</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -840,7 +836,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">Óshiriw</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">Saqlaw</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">Saqlaw</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -851,7 +847,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">Papkaǵa ózgeris kirgiziw</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">Sáykeslestirilgen saylandılardı kóriw ushın kiriń</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">Sáykeslestirilgen saylandılardı kóriw ushın kiriń</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -859,28 +855,28 @@
   <!-- Bookmark NAME editing field label -->
   <string name="bookmark_name_label">ATAMASI</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">Papka qosıw</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">Papka qosıw</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">Papkanı tańlaw</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">Baslama bolıwı shárt</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">Baslama bolıwı shárt</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">Qáte URL</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">Bul jerde saylandılar joq</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">Bul jerde saylandılar joq</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s óshirildi</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">Saylandılar óshirildi</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">Saylandılar óshirildi</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3">Saylanǵan papkalardı óshiriw</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">Saylanǵan papkalardı óshiriw</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">BIYKARLAW</string>
   <!-- Text for the button to search all bookmarks -->
-  <string name="bookmark_search">Izlew sózlerin kirgiziń</string>
+  <string name="bookmark_search" tools:ignore="UnusedResources" moz:removedIn="143">Izlew sózlerin kirgiziń</string>
   <!--
     Site Permissions
 
@@ -1002,7 +998,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d bet tańlandı</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">Betler saqlandı!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Betler saqlandı!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection">Toplam saqlandı!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -1097,9 +1093,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">Toplam óshirildi</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Toplam óshirildi</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">Toplam ataması ózgertildi</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Toplam ataması ózgertildi</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Bet jabıldı</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -1130,9 +1126,9 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">%1$s dı óshiriwińizge isenimińiz kámil me?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">Óshiriw</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Óshiriw</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">Silteme kóshirip alındı</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">Silteme kóshirip alındı</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Bul úlgi tekst. Siz bul sazlaw járdeminde ólshemdi úlkeytkende yamasa kishireytkende, tekst qanday kórinetuǵının kóriwge boladı.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -1551,14 +1547,12 @@
   <string name="search_add_custom_engine_error_empty_search_string">Izlew qatarın kirgiziń</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Izlew qatarınıń úlgi formatına sáykes keliwin tekseriń</string>
-  <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">“%s” ǵa jalǵanıwdaǵı qátelik</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">%s jaratıldı</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s jaratıldı</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">%s saqlandı</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s saqlandı</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">%s óshirildi</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s óshirildi</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Ruqsat beriw ushın:</string>
   <!-- First step for the allowing a permission -->
@@ -1584,7 +1578,7 @@
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">Bul sayt ushın esaptan tısqarılar joq</string>
   <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation">Siz bul saylandını óshiriwge isenimińiz kámil me?</string>
+  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">Siz bul saylandını óshiriwge isenimińiz kámil me?</string>
   <!-- Browser menu button that adds a shortcut to the home fragment -->
   <string name="browser_menu_add_to_shortcuts">Operativ buyrıqlarǵa qosıw</string>
   <!-- Browser menu button that removes a shortcut from the home fragment -->
@@ -1701,23 +1695,11 @@
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">Joqarıǵa ótiw</string>
   <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description">Jabıw</string>
-  <!--
-    Pocket recommended stories
-
-    Header text for a section on the home screen.
-  -->
-  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">Oylandırıwshı áńgimeler</string>
+  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">Jabıw</string>
   <!-- Header text for a section on the home screen. -->
   <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">Temalar boyınsha áńgimeler</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
   <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">Kóbirek biliń</string>
-  <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-  <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">%s tárepinen qollap-quwatlanadı.</string>
-  <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">Firefox toparınıń bólegi. %s</string>
-  <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">Tolıǵıraq úyreniw</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Qáwenderlik etken</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -1736,8 +1718,6 @@
   <string name="a11y_action_label_wallpaper_collection_learn_more">bul toplam haqqında kóbirek biliw ushın siltemeni ashıń</string>
   <!-- Action label for links that point to an article. Talkback will append this to say "Double tap to read the article". -->
   <string name="a11y_action_label_read_article" moz:removedIn="141" tools:ignore="UnusedResources">Maqalanı oqıw</string>
-  <!-- Action label for links to the Firefox Pocket website. Talkback will append this to say "Double tap to open link to learn more". -->
-  <string name="a11y_action_label_pocket_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">kóbirek biliw ushın siltemeni ashıń</string>
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->

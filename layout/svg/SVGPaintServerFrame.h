@@ -12,7 +12,6 @@
 #include "mozilla/SVGContainerFrame.h"
 #include "nsCOMPtr.h"
 #include "nsIFrame.h"
-#include "nsIFrame.h"
 #include "nsQueryFrame.h"
 
 class gfxContext;

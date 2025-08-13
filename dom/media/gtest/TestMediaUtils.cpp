@@ -32,7 +32,7 @@ void DoCreateTicketBeforeAppShutdownOnMain() {
   bool pastAppShutdown = false;
   bool backgroundTaskFinished = false;
 
-  UniquePtr ticket = ShutdownBlockingTicket::Create(
+  auto ticket = ShutdownBlockingTicket::Create(
       u"Test"_ns, NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__);
 
   MOZ_ALWAYS_SUCCEEDS(

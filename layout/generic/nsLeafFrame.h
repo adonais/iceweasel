@@ -10,8 +10,8 @@
 #define nsLeafFrame_h___
 
 #include "mozilla/Attributes.h"
-#include "nsIFrame.h"
 #include "nsDisplayList.h"
+#include "nsIFrame.h"
 
 /**
  * Abstract class that provides simple fixed-size layout for leaf objects.

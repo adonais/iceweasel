@@ -5,7 +5,6 @@
 package org.mozilla.fenix.ui
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import androidx.core.net.toUri
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -22,7 +21,7 @@ import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
 import org.mozilla.fenix.ui.robots.translationsRobot
 
-@Ignore("Bugzilla issue: https://bugzilla.mozilla.org/show_bug.cgi?id=1970453")
+@Ignore("Bugzilla issue: https://bugzilla.mozilla.org/show_bug.cgi?id=1976470")
 class TranslationsTest : TestSetup() {
     @get:Rule
     val composeTestRule =
@@ -46,46 +45,21 @@ class TranslationsTest : TestSetup() {
         val testPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
 
         navigationToolbar {
-        }.enterURL(testPage.url) {
-        }
-        translationsRobot(composeTestRule) {
+        }.enterURLAndEnterToBrowser(testPage.url) {
+            verifyPageContent(testPage.content)
+        }.openThreeDotMenu {
+        }.clickTranslateButton(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = true)
         }.clickNotNowButton {
         }
         navigationToolbar {
+        }.openThreeDotMenu {
         }.clickTranslateButton(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = true)
         }.swipeCloseTranslationsSheet {
         }.openThreeDotMenu {
         }.clickTranslateButton(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = true)
-        }
-    }
-
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2437105
-    @SmokeTest
-    @Test
-    fun verifyTranslationFunctionalityUsingToolbarButtonTest() {
-        val testPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
-
-        navigationToolbar {
-        }.enterURL(testPage.url) {
-        }
-        translationsRobot(composeTestRule) {
-            verifyTranslationSheetIsDisplayed(isDisplayed = true)
-        }.clickNotNowButton {
-        }
-        navigationToolbar {
-        }.clickTranslateButton(composeTestRule) {
-            verifyTranslationSheetIsDisplayed(isDisplayed = true)
-        }.clickTranslateButton {
-        }
-        navigationToolbar {
-            verifyTranslationButton(
-                isPageTranslated = true,
-                originalLanguage = "French",
-                translatedLanguage = "English",
-            )
         }
     }
 
@@ -96,54 +70,19 @@ class TranslationsTest : TestSetup() {
         val testPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
 
         navigationToolbar {
-        }.enterURL(testPage.url) {
-        }
-        translationsRobot(composeTestRule) {
+        }.enterURLAndEnterToBrowser(testPage.url) {
+            verifyPageContent(testPage.content)
+        }.openThreeDotMenu {
+        }.clickTranslateButton(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = true)
         }.clickNotNowButton {
         }
         navigationToolbar {
         }.openThreeDotMenu {
         }.clickTranslateButton(composeTestRule) {
-        }
-        translationsRobot(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = true)
         }.clickTranslateButton {
-        }
-
-        navigationToolbar {
-            verifyTranslationButton(
-                isPageTranslated = true,
-                originalLanguage = "French",
-                translatedLanguage = "English",
-            )
-        }
-    }
-
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2443276
-    @SmokeTest
-    @Test
-    fun verifyTheTranslationIsDisplayedAutomaticallyTest() {
-        val firstTestPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
-        val secondTestPage = "https://mozilla-mobile.github.io/testapp/v2.0/germanForeignWebPage.html"
-
-        navigationToolbar {
-        }.enterURL(firstTestPage.url) {
-        }
-        translationsRobot(composeTestRule) {
-            verifyTranslationSheetIsDisplayed(isDisplayed = true)
-            closeTranslationsSheet()
-        }
-        browserScreen {
-        }.openTabDrawer(composeTestRule) {
-        }.openNewTab {
-        }.dismissSearchBar {
-        }
-        navigationToolbar {
-        }.enterURL(secondTestPage.toUri()) {
-        }
-        translationsRobot(composeTestRule) {
-            verifyTranslationSheetIsDisplayed(isDisplayed = true)
+            verifyPageContent("Article of the day")
         }
     }
 
@@ -154,9 +93,10 @@ class TranslationsTest : TestSetup() {
         val firstTestPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
 
         navigationToolbar {
-        }.enterURL(firstTestPage.url) {
-        }
-        translationsRobot(composeTestRule) {
+        }.enterURLAndEnterToBrowser(firstTestPage.url) {
+            verifyPageContent(firstTestPage.content)
+        }.openThreeDotMenu {
+        }.clickTranslateButton(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = true)
             clickTranslationsOptionsButton()
         }.clickTranslationSettingsButton {
@@ -174,9 +114,10 @@ class TranslationsTest : TestSetup() {
         val secondTestPage = TestAssetHelper.getSecondForeignWebPageAsset(mockWebServer)
 
         navigationToolbar {
-        }.enterURL(firstTestPage.url) {
-        }
-        translationsRobot(composeTestRule) {
+        }.enterURLAndEnterToBrowser(firstTestPage.url) {
+            verifyPageContent(firstTestPage.content)
+        }.openThreeDotMenu {
+        }.clickTranslateButton(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = true)
             clickTranslationsOptionsButton()
             clickNeverTranslateLanguageOption(languageToTranslate = "French")
@@ -197,12 +138,7 @@ class TranslationsTest : TestSetup() {
         }.openNewTab {
         }.submitQuery(secondTestPage.url.toString()) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
-        }
-        translationsRobot(composeTestRule) {
-            verifyTranslationSheetIsDisplayed(isDisplayed = false)
-        }
-        navigationToolbar {
-            verifyTranslationButton(isPageTranslated = false)
+            verifyPageContent(secondTestPage.content)
         }
     }
 
@@ -212,21 +148,13 @@ class TranslationsTest : TestSetup() {
         val testPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
 
         navigationToolbar {
-        }.enterURL(testPage.url) {
-        }
-        translationsRobot(composeTestRule) {
+        }.enterURLAndEnterToBrowser(testPage.url) {
+            verifyPageContent(testPage.content)
+        }.openThreeDotMenu {
+        }.clickTranslateButton(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = true)
         }.clickTranslateButton {
-        }
-        translationsRobot(composeTestRule) {
-            verifyTranslationSheetIsDisplayed(isDisplayed = false)
-        }
-        navigationToolbar {
-            verifyTranslationButton(
-                isPageTranslated = true,
-                originalLanguage = "French",
-                translatedLanguage = "English",
-            )
+            verifyPageContent("Article of the day")
         }
     }
 
@@ -236,19 +164,15 @@ class TranslationsTest : TestSetup() {
         val testPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
 
         navigationToolbar {
-        }.enterURL(testPage.url) {
-        }
-        translationsRobot(composeTestRule) {
+        }.enterURLAndEnterToBrowser(testPage.url) {
+            verifyPageContent(testPage.content)
+        }.openThreeDotMenu {
+        }.clickTranslateButton(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = true)
         }.clickTranslateButton {
-        }
-        navigationToolbar {
-        }.clickTranslateButton(
-            composeTestRule = composeTestRule,
-            isPageTranslated = true,
-            originalLanguage = "French",
-            translatedLanguage = "English",
-        ) {
+            verifyPageContent("Article of the day")
+        }.openThreeDotMenu {
+        }.clickTranslateButton(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = true)
         }.clickShowOriginalButton {
             verifyPageContent(testPage.content)
@@ -261,62 +185,20 @@ class TranslationsTest : TestSetup() {
         val testPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
 
         navigationToolbar {
-        }.enterURL(testPage.url) {
-        }
-        translationsRobot(composeTestRule) {
+        }.enterURLAndEnterToBrowser(testPage.url) {
+            verifyPageContent(testPage.content)
+        }.openThreeDotMenu {
+        }.clickTranslateButton(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = true)
         }.clickTranslateButton {
-        }
-        navigationToolbar {
-        }.clickTranslateButton(
-            composeTestRule = composeTestRule,
-            isPageTranslated = true,
-            originalLanguage = "French",
-            translatedLanguage = "English",
-        ) {
+            verifyPageContent("Article of the day")
+        }.openThreeDotMenu {
+        }.clickTranslateButton(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = true)
             clickTranslateToDropdown()
             clickTranslateToLanguage("Estonian")
         }.clickTranslateButton(pageWasNotPreviouslyTranslated = false) {
-        }
-        navigationToolbar {
-            verifyTranslationButton(
-                isPageTranslated = true,
-                originalLanguage = "French",
-                translatedLanguage = "Estonian",
-            )
-        }
-    }
-
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2437990
-    @Test
-    @SkipLeaks
-    fun verifyTheAlwaysOfferToTranslateOptionTest() {
-        val firstTestPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
-        val secondTestPage = TestAssetHelper.getSecondForeignWebPageAsset(mockWebServer)
-
-        navigationToolbar {
-        }.enterURL(firstTestPage.url) {
-        }
-        translationsRobot(composeTestRule) {
-            verifyTranslationSheetIsDisplayed(isDisplayed = true)
-            clickTranslationsOptionsButton()
-            verifyAlwaysOfferToTranslateOptionIsChecked(isChecked = true)
-            clickAlwaysOfferToTranslateOption()
-            verifyAlwaysOfferToTranslateOptionIsChecked(isChecked = false)
-            clickGoBackTranslationSheetButton()
-        }.swipeCloseTranslationsSheet {
-            verifyPageContent(firstTestPage.content)
-        }
-        navigationToolbar {
-            verifyTranslationButton(isPageTranslated = false)
-        }
-
-        navigationToolbar {
-        }.enterURL(secondTestPage.url) {
-        }
-        translationsRobot(composeTestRule) {
-            verifyTranslationSheetIsDisplayed(isDisplayed = false)
+            verifyPageContent("Päeva artikkel")
         }
     }
 
@@ -327,10 +209,10 @@ class TranslationsTest : TestSetup() {
         val secondTestPage = TestAssetHelper.getSecondForeignWebPageAsset(mockWebServer)
 
         navigationToolbar {
-        }.enterURL(secondTestPage.url) {
-            waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
-        }
-        translationsRobot(composeTestRule) {
+        }.enterURLAndEnterToBrowser(secondTestPage.url) {
+            verifyPageContent(secondTestPage.content)
+        }.openThreeDotMenu {
+        }.clickTranslateButton(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = true)
             clickTranslationsOptionsButton()
             verifyAlwaysTranslateOptionIsChecked(isChecked = false)
@@ -348,21 +230,11 @@ class TranslationsTest : TestSetup() {
         }
         browserScreen {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
+            verifyPageContent("Word of the day")
         }
         navigationToolbar {
-            verifyTranslationButton(
-                isPageTranslated = true,
-                originalLanguage = "French",
-                translatedLanguage = "English",
-            )
-        }.enterURL(firstTestPage.url) {
-        }
-        navigationToolbar {
-            verifyTranslationButton(
-                isPageTranslated = true,
-                originalLanguage = "French",
-                translatedLanguage = "English",
-            )
+        }.enterURLAndEnterToBrowser(firstTestPage.url) {
+            verifyPageContent("Article of the day")
         }
     }
 
@@ -372,9 +244,10 @@ class TranslationsTest : TestSetup() {
         val firstTestPage = TestAssetHelper.getFirstForeignWebPageAsset(mockWebServer)
 
         navigationToolbar {
-        }.enterURL(firstTestPage.url) {
-        }
-        translationsRobot(composeTestRule) {
+        }.enterURLAndEnterToBrowser(firstTestPage.url) {
+            verifyPageContent(firstTestPage.content)
+        }.openThreeDotMenu {
+        }.clickTranslateButton(composeTestRule) {
             verifyTranslationSheetIsDisplayed(isDisplayed = true)
             clickTranslationsOptionsButton()
             verifyTheNeverTranslateThisSiteOptionIsChecked(isChecked = false)

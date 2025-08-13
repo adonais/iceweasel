@@ -6,6 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SimpleXULLeafFrame.h"
+
 #include "mozilla/PresShell.h"
 
 nsIFrame* NS_NewSimpleXULLeafFrame(mozilla::PresShell* aPresShell,

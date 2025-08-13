@@ -1,0 +1,453 @@
+{
+  "metrics": {
+    "test": {
+      "boolean_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "lifetime": "application",
+        "pings": [
+          "metrics"
+        ],
+        "type": "boolean"
+      },
+      "counter_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "lifetime": "application",
+        "pings": [
+          "metrics"
+        ],
+        "type": "counter"
+      },
+      "custom_distribution_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "bucket_count": 100,
+          "histogram_type": "linear",
+          "range_max": 100,
+          "range_min": 0
+        },
+        "lifetime": "ping",
+        "pings": [
+          "metrics"
+        ],
+        "type": "custom_distribution"
+      },
+      "labeled_boolean_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "ordered_labels": null
+        },
+        "lifetime": "application",
+        "pings": [
+          "metrics"
+        ],
+        "type": "labeled_boolean"
+      },
+      "labeled_boolean_metric_labels": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "ordered_labels": [
+            "one_label",
+            "two_labels",
+            "three_labels",
+            "four_labels",
+            "five_labels",
+            "six_labels",
+            "seven_labels",
+            "eight_labels",
+            "nine_labels",
+            "ten_labels"
+          ]
+        },
+        "lifetime": "application",
+        "pings": [
+          "metrics"
+        ],
+        "type": "labeled_boolean"
+      },
+      "labeled_counter_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "ordered_labels": null
+        },
+        "lifetime": "application",
+        "pings": [
+          "metrics"
+        ],
+        "type": "labeled_counter"
+      },
+      "labeled_counter_metric_labels": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "ordered_labels": [
+            "one_label",
+            "two_labels"
+          ]
+        },
+        "lifetime": "application",
+        "pings": [
+          "metrics"
+        ],
+        "type": "labeled_counter"
+      },
+      "labeled_string_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "ordered_labels": null
+        },
+        "lifetime": "application",
+        "pings": [
+          "metrics"
+        ],
+        "type": "labeled_string"
+      },
+      "labeled_string_metric_labels": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "ordered_labels": [
+            "one_label",
+            "two_labels"
+          ]
+        },
+        "lifetime": "application",
+        "pings": [
+          "metrics"
+        ],
+        "type": "labeled_string"
+      },
+      "memory_distribution_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "memory_unit": "kilobyte"
+        },
+        "lifetime": "ping",
+        "pings": [
+          "metrics"
+        ],
+        "type": "memory_distribution"
+      },
+      "string_list_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "lifetime": "application",
+        "pings": [
+          "metrics"
+        ],
+        "type": "string_list"
+      },
+      "string_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "lifetime": "application",
+        "pings": [
+          "metrics"
+        ],
+        "type": "string"
+      },
+      "text_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "lifetime": "application",
+        "pings": [
+          "metrics"
+        ],
+        "type": "text"
+      },
+      "timespan_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "time_unit": "millisecond"
+        },
+        "lifetime": "application",
+        "pings": [
+          "metrics"
+        ],
+        "type": "timespan"
+      },
+      "timing_distribution_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "time_unit": "nanosecond"
+        },
+        "lifetime": "ping",
+        "pings": [
+          "metrics"
+        ],
+        "type": "timing_distribution"
+      },
+      "unordered_boolean_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "permit_non_commutative_operations_over_ipc": true
+        },
+        "lifetime": "ping",
+        "pings": [
+          "metrics"
+        ],
+        "type": "boolean"
+      },
+      "unordered_labeled_boolean_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "ordered_labels": null,
+          "permit_non_commutative_operations_over_ipc": true
+        },
+        "lifetime": "ping",
+        "pings": [
+          "metrics"
+        ],
+        "type": "labeled_boolean"
+      }
+    },
+    "test.nested": {
+      "a_dual_labeled_counter": {
+        "description": "An example DLC",
+        "disabled": false,
+        "extraArgs": {
+          "ordered_categories": [
+            "cat1",
+            "cat2",
+            "catred",
+            "catblu"
+          ],
+          "ordered_keys": null
+        },
+        "lifetime": "ping",
+        "pings": [
+          "metrics"
+        ],
+        "type": "dual_labeled_counter"
+      },
+      "an_object": {
+        "description": "An example object",
+        "disabled": false,
+        "lifetime": "ping",
+        "pings": [
+          "metrics"
+        ],
+        "type": "object"
+      },
+      "datetime_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "time_unit": "millisecond"
+        },
+        "lifetime": "application",
+        "pings": [
+          "metrics"
+        ],
+        "type": "datetime"
+      },
+      "event_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "allowed_extra_keys": []
+        },
+        "lifetime": "ping",
+        "pings": [
+          "events"
+        ],
+        "type": "event"
+      },
+      "event_metric_with_extra": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "allowed_extra_keys": [
+            "an_extra_key",
+            "another_extra_key",
+            "bool_extra",
+            "quantity_extra"
+          ]
+        },
+        "lifetime": "ping",
+        "pings": [
+          "events"
+        ],
+        "type": "event"
+      },
+      "external_denominator": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "extraArgs": {
+          "numerators": [
+            [
+              "rate_with_external_denominator",
+              "test.nested",
+              [
+                "metrics"
+              ],
+              "ping",
+              false,
+              null
+            ]
+          ]
+        },
+        "lifetime": "ping",
+        "pings": [
+          "metrics"
+        ],
+        "type": "denominator"
+      },
+      "optimizable_counter_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "lifetime": "ping",
+        "pings": [
+          "metrics"
+        ],
+        "type": "counter"
+      },
+      "optimizable_disabled_counter_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": true,
+        "lifetime": "ping",
+        "pings": [
+          "metrics"
+        ],
+        "type": "counter"
+      },
+      "quantity_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "lifetime": "ping",
+        "pings": [
+          "metrics"
+        ],
+        "type": "quantity"
+      },
+      "rate_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "lifetime": "ping",
+        "pings": [
+          "metrics"
+        ],
+        "type": "rate"
+      },
+      "rate_with_external_denominator": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "lifetime": "ping",
+        "pings": [
+          "metrics"
+        ],
+        "type": "rate"
+      },
+      "uuid_metric": {
+        "description": "A multi-line\ndescription\n",
+        "disabled": false,
+        "lifetime": "application",
+        "pings": [
+          "metrics"
+        ],
+        "type": "uuid"
+      }
+    }
+  },
+  "pings": {
+    "not-baseline": {
+      "enabled": true,
+      "follows_collection_enabled": true,
+      "include_client_id": true,
+      "include_info_sections": true,
+      "name": "not-baseline",
+      "precise_timestamps": true,
+      "reason_codes": [
+        "background",
+        "dirty_startup",
+        "foreground"
+      ],
+      "schedules_pings": [],
+      "send_if_empty": false,
+      "uploader_capabilities": []
+    },
+    "not-deletion-request": {
+      "enabled": true,
+      "follows_collection_enabled": true,
+      "include_client_id": true,
+      "include_info_sections": true,
+      "name": "not-deletion-request",
+      "precise_timestamps": true,
+      "reason_codes": [],
+      "schedules_pings": [],
+      "send_if_empty": true,
+      "uploader_capabilities": []
+    },
+    "not-events": {
+      "enabled": true,
+      "follows_collection_enabled": true,
+      "include_client_id": true,
+      "include_info_sections": true,
+      "name": "not-events",
+      "precise_timestamps": true,
+      "reason_codes": [
+        "background",
+        "max_capacity",
+        "startup"
+      ],
+      "schedules_pings": [],
+      "send_if_empty": false,
+      "uploader_capabilities": []
+    },
+    "not-metrics": {
+      "enabled": true,
+      "follows_collection_enabled": true,
+      "include_client_id": true,
+      "include_info_sections": true,
+      "name": "not-metrics",
+      "precise_timestamps": true,
+      "reason_codes": [
+        "overdue",
+        "reschedule",
+        "today",
+        "tomorrow",
+        "upgrade"
+      ],
+      "schedules_pings": [],
+      "send_if_empty": false,
+      "uploader_capabilities": []
+    },
+    "not-ohttp": {
+      "enabled": true,
+      "follows_collection_enabled": true,
+      "include_client_id": false,
+      "include_info_sections": false,
+      "name": "not-ohttp",
+      "precise_timestamps": true,
+      "reason_codes": [],
+      "schedules_pings": [],
+      "send_if_empty": true,
+      "uploader_capabilities": [
+        "ohttp"
+      ]
+    },
+    "ridealong-test": {
+      "enabled": true,
+      "follows_collection_enabled": true,
+      "include_client_id": false,
+      "include_info_sections": true,
+      "name": "ridealong-test",
+      "precise_timestamps": true,
+      "reason_codes": [],
+      "schedules_pings": [],
+      "send_if_empty": true,
+      "uploader_capabilities": []
+    }
+  }
+}

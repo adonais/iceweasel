@@ -6,14 +6,12 @@
 #ifndef mozilla_CounterStyleManager_h_
 #define mozilla_CounterStyleManager_h_
 
-#include "nsGkAtoms.h"
-#include "nsStringFwd.h"
-#include "nsTHashMap.h"
-#include "nsHashKeys.h"
-
-#include "nsStyleConsts.h"
-
 #include "mozilla/Attributes.h"
+#include "nsGkAtoms.h"
+#include "nsHashKeys.h"
+#include "nsStringFwd.h"
+#include "nsStyleConsts.h"
+#include "nsTHashMap.h"
 
 class nsPresContext;
 

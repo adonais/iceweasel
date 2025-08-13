@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://schemas.android.com/apk/res-auto">
-  <!-- Description for privacy add-on permission. -->
-  <string name="mozac_feature_addons_permissions_privacy_description">ona li ken lukin e nasin ilo len li ken ante e ona</string>
-  <!-- Description for all_urls add-on permission. -->
-  <string name="mozac_feature_addons_permissions_all_urls_description">ona li ken lukin e sona sina lon lipu ale</string>
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
   <string name="mozac_feature_addons_permissions_one_site_description">ona li ken lukin e sona sina lon lipu %1$s</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
@@ -12,67 +8,71 @@
     When an add-on requires access to more than 4 sites, for example the add-on requires access for 5 sites. We will show the first 4 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description,
     then we will show another collapsed entry saying "Access your data on 1 other site". This entry it's for the singular case, when the add-on is only accessing one extra site.
   -->
-  <string name="mozac_feature_addons_permissions_one_extra_site_description" tools:ignore="PluralsCandidate">ona li ken lukin e sona sina lon lipu ante 1</string>
+  <string name="mozac_feature_addons_permissions_one_extra_site_description" tools:ignore="PluralsCandidate,UnusedResources" moz:removedIn="142">ona li ken lukin e sona sina lon lipu ante 1</string>
   <!--
     When an add-on requires access to more than 4 sites, for example the add-on requires access for 6 sites. We will show the first 4 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description,
     then we will show another collapsed entry saying "Access your data on 2 other sites". This entry it's for the plural case, when the add-on is accessing more than one extra site.
     %1$d will be replaced by an integer indicating the number of additional hosts for which this web extension is requesting permission.
   -->
-  <string name="mozac_feature_addons_permissions_extra_sites_description" tools:ignore="PluralsCandidate">ona li ken lukin e sona sina lon lipu ante %1$d</string>
+  <string name="mozac_feature_addons_permissions_extra_sites_description" tools:ignore="PluralsCandidate,UnusedResources" moz:removedIn="142">ona li ken lukin e sona sina lon lipu ante %1$d</string>
   <!--
     When an add-on requires access to more than 4 domains, for example the add-on requires access for 5 domains. We will show the first 4 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description,
     then we will show another collapsed entry saying "Access your data on 1 other domain". This entry it's for the singular case, when the add-on is only accessing one extra domain.
   -->
-  <string name="mozac_feature_addons_permissions_one_extra_domain_description" tools:ignore="PluralsCandidate">ona li ken lukin e sona sina lon kulupu lipu ante 1</string>
+  <string name="mozac_feature_addons_permissions_one_extra_domain_description" tools:ignore="PluralsCandidate,UnusedResources" moz:removedIn="142">ona li ken lukin e sona sina lon kulupu lipu ante 1</string>
   <!--
     When an add-on requires access to more than 4 domains, for example the add-on requires access for 6 domains. We will show the first 4 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description,
     then we will show another collapsed entry saying "Access your data on 2 other domains". This entry it's for the plural case, when the add-on is accessing more than one extra domain.
     %1$d will be replaced by an integer indicating the number of additional domains for which this web extension is requesting permission.
   -->
-  <string name="mozac_feature_addons_permissions_extra_domains_description_plural" tools:ignore="PluralsCandidate">ona li ken lukin e sona sina lon kulupu lipu ante %1$d</string>
+  <string name="mozac_feature_addons_permissions_extra_domains_description_plural" tools:ignore="PluralsCandidate,UnusedResources" moz:removedIn="142">ona li ken lukin e sona sina lon kulupu lipu ante %1$d</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
   <string name="mozac_feature_addons_permissions_all_domain_count_description" tools:ignore="PluralsCandidate">ona li ken jo e sona sina lon lipu %1$d</string>
-  <!-- Description for tabs add-on permission. -->
+  <!-- Description for the "privacy" WebExtensions API permission. -->
+  <string name="mozac_feature_addons_permissions_privacy_description">ona li ken lukin e nasin ilo len li ken ante e ona</string>
+  <!-- Description for the "<all_urls>" WebExtensions API permission. -->
+  <string name="mozac_feature_addons_permissions_all_urls_description">ona li ken lukin e sona sina lon lipu ale</string>
+  <!-- Description for the "tabs" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_tabs_description">ona li ken lukin e poki lipu ale</string>
-  <!-- Description for navigation permission. -->
+  <!-- Description for the "webNavigation" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_web_navigation_description">ona li ken lukin e pali sina lon poki lipu</string>
-  <!-- Description for bookmarks permission. -->
+  <!-- Description for the "bookmarks" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_bookmarks_description">ona li lukin e lipu awen li ken ante e ona</string>
-  <!-- Description for browser_setting permission. -->
+  <!-- Description for the "browserSettings" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_browser_setting_description">ona li ken lukin e nasin ilo li ken ante e ona</string>
-  <!-- Description for browser_data permission. -->
+  <!-- Description for the "browsingData" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_browser_data_description">ona li ken weka e sona sina tan tenpo poka</string>
-  <!-- Description for clipboard_read permission. -->
+  <!-- Description for the "clipboardRead" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_clipboard_read_description">ona li ken kama e nimi tan poki ilo</string>
-  <!-- Description for clipboard_write permission. -->
+  <!-- Description for the "clipboardWrite" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_clipboard_write_description">ona li ken pana e nimi tawa poki ilo</string>
-  <!-- Description for declarativeNetRequest permission. -->
+  <!-- Description for the "declarativeNetRequest" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_declarative_net_request_description">ona li ken weka e ijo tan lipu</string>
-  <!-- Description for declarativeNetRequestFeedback permission. -->
+  <!-- Description for the "declarativeNetRequestFeedback" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_declarative_net_request_feedback_description">ona li ken lukin e lipu pi tenpo pini</string>
-  <!-- Description for downloads permission. -->
+  <!-- Description for the "downloads" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_downloads_description">ona li ken jo e lipu li ken ante e jo pi tenpo pini</string>
-  <!-- Description for downloads_open permission. -->
+  <!-- Description for the "downloads.open" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_downloads_open_description">ona li ken open e lipu jo</string>
-  <!-- Description for find permission. -->
+  <!-- Description for the "find" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_find_description">ona li ken lukin e toki lon lipu open ale</string>
-  <!-- Description for geolocation permission. -->
+  <!-- Description for the "geolocation" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_geolocation_description">ona li ken lukin e ma sina</string>
-  <!-- Description for history permission. -->
+  <!-- Description for the "history" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_history_description">ona li ken lukin e lipu sina pi tenpo pini</string>
-  <!-- Description for management permission. -->
+  <!-- Description for the "management" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_management_description">ona li ken lukin e kepeken pi ilo namako li ken ante e selo namako</string>
-  <!-- Description for native_messaging permission. -->
+  <!-- Description for the "nativeMessaging" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_native_messaging_description">ona li ken toki tawa lipu ilo ante</string>
-  <!-- Description for notifications permission. -->
+  <!-- Description for the "notifications" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_notifications_description">ona li ken mu tawa sina</string>
-  <!-- Description for pkcs11 permission. -->
+  <!-- Description for the "pkcs11" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_pkcs11_description">ona li ken len e toki sina</string>
-  <!-- Description for sessions permission. -->
+  <!-- Description for the "sessions" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_sessions_description">ona li ken lukin e lipu pi tenpo poka</string>
-  <!-- Description for tab_hide permission. -->
+  <!-- Description for the "tabHide" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_tab_hide_description">ona li ken pana e lukin e lukin ala tawa poki lipu</string>
-  <!-- Description for top_sites permission. -->
+  <!-- Description for the "topSites" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_top_sites_description">ona li ken lukin e lipu pi tenpo pini</string>
   <!-- Description for text button that expands the list of domain permissions -->
   <string name="mozac_feature_addons_permissions_show_all_sites">o lukin e lipu ale</string>
@@ -163,15 +163,15 @@
   <!-- Button in the extensions manager that opens AMO in a tab -->
   <string name="mozac_feature_addons_find_more_extensions_button_text">o alasa e ilo namako ante</string>
   <!-- The label of the allow button, this will be shown to the user when an add-on needs new permissions, with the button the user will indicate that they want to accept the new permissions and update the add-on -->
-  <string name="mozac_feature_addons_updater_notification_allow_button">o ken</string>
+  <string name="mozac_feature_addons_updater_notification_allow_button" moz:removedIn="142" tools:ignore="UnusedResources">o ken</string>
   <!-- The label of the deny button on a notification, this will be shown to the user when an add-on needs new permissions. Indicates the user denies the new permissions and prevents the add-on from be updated -->
-  <string name="mozac_feature_addons_updater_notification_deny_button">o ken ala</string>
+  <string name="mozac_feature_addons_updater_notification_deny_button" moz:removedIn="142" tools:ignore="UnusedResources">o ken ala</string>
   <!-- The tile of the notification, this will be shown to the user when an add-on needs new permissions, to be updated. %1$s is the name of the add-ons -->
-  <string name="mozac_feature_addons_updater_notification_title">%1$s li kama ante sin</string>
+  <string name="mozac_feature_addons_updater_notification_title" moz:removedIn="142" tools:ignore="UnusedResources">%1$s li kama ante sin</string>
   <!-- The content of the notification, this will be shown when an add-on needs new permissions, to be updated. %1$d is the amount of new permissions -->
-  <string name="mozac_feature_addons_updater_notification_content" tools:ignore="PluralsCandidate">ni li wile e ken sin %1$d</string>
+  <string name="mozac_feature_addons_updater_notification_content" tools:ignore="PluralsCandidate,UnusedResources" moz:removedIn="142">ni li wile e ken sin %1$d</string>
   <!-- The content of the notification displayed when an add-on needs a new permission -->
-  <string name="mozac_feature_addons_updater_notification_content_singular">ken sin li wile</string>
+  <string name="mozac_feature_addons_updater_notification_content_singular" moz:removedIn="142" tools:ignore="UnusedResources">ken sin li wile</string>
   <!-- Name of the "notification channel" used for displaying a notification for updating an extension. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_feature_addons_updater_notification_channel_2">sin pi ilo namako</string>
   <!-- The tile of the notification, this will be shown to the user when more than one newly supported add-ons are available. -->
@@ -193,15 +193,15 @@
   <!-- Text shown when attempting to install a (hard) blocked add-on. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_blocklisted_2">ilo %1$s li ike tawa lawa pi kulupu Mozilla. mi ken ala pana e ona tawa ilo %2$s.</string>
   <!-- Text shown after successfully enabled an add-on. %1$s is the add-on name. -->
-  <string name="mozac_feature_addons_successfully_enabled">mi open e ilo %1$s</string>
+  <string name="mozac_feature_addons_successfully_enabled" tools:ignore="UnusedResources" moz:removedIn="142">mi open e ilo %1$s</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">pakala la mi open ala e ilo %1$s</string>
   <!-- Text shown after successfully disabled an add-on. %1$s is the add-on name. -->
-  <string name="mozac_feature_addons_successfully_disabled">mi pini e ilo %1$s</string>
+  <string name="mozac_feature_addons_successfully_disabled" tools:ignore="UnusedResources" moz:removedIn="142">mi pini e ilo %1$s</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_disable">pakala la mi pini ala e ilo %1$s</string>
   <!-- Text shown after successfully uninstalled an add-on. %1$s is the add-on name. -->
-  <string name="mozac_feature_addons_successfully_uninstalled">mi weka e ilo %1$s</string>
+  <string name="mozac_feature_addons_successfully_uninstalled" tools:ignore="UnusedResources" moz:removedIn="142">mi weka e ilo %1$s</string>
   <!-- Text shown after failed to uninstall an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_uninstall">pakala la mi weka ala e ilo %1$s</string>
   <!-- Text shown after successfully removed an add-on. %1$s is the add-on name. -->
@@ -225,9 +225,9 @@
   <!-- Displayed in the "Status" field for the updater when an add-on has been correctly updated -->
   <string name="mozac_feature_addons_updater_dialog_status">nasin pi tenpo lon:</string>
   <!-- Text shown in the dialog when add-on installation is completed. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_installed_dialog_title">mi pana e ilo %1$s tawa ilo %2$s</string>
+  <string name="mozac_feature_addons_installed_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">mi pana e ilo %1$s tawa ilo %2$s</string>
   <!-- Text shown in the dialog when add-on installation is completed. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_installed_dialog_description_2">o lukin e ilo %1$s lon lipu %2$s</string>
+  <string name="mozac_feature_addons_installed_dialog_description_2" moz:removedIn="142" tools:ignore="UnusedResources">o lukin e ilo %1$s lon lipu %2$s</string>
   <!-- Confirmation button text for the dialog when add-on installation is completed. -->
   <string name="mozac_feature_addons_installed_dialog_okay_button_2">pona</string>
   <!-- "Learn more" link displayed below an add-on status message. -->

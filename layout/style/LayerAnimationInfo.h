@@ -7,11 +7,11 @@
 #ifndef mozilla_LayerAnimationInfo_h
 #define mozilla_LayerAnimationInfo_h
 
-#include "nsChangeHint.h"
+#include "mozilla/Array.h"
 #include "nsCSSPropertyID.h"
 #include "nsCSSPropertyIDSet.h"
+#include "nsChangeHint.h"
 #include "nsDisplayItemTypes.h"  // For nsDisplayItem::Type
-#include "mozilla/Array.h"
 
 namespace mozilla {
 

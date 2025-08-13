@@ -37,5 +37,5 @@ class nsOpenURIInFrameParams final : public nsIOpenURIInFrameParams {
   RefPtr<mozilla::dom::Element> mOpenerBrowser;
   nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-  nsCOMPtr<nsIContentSecurityPolicy> mCsp;
+  nsCOMPtr<nsIPolicyContainer> mPolicyContainer;
 };

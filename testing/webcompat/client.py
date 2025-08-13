@@ -5,7 +5,8 @@
 import asyncio
 import contextlib
 import time
-from base64 import b64decode
+import zipfile
+from base64 import b64decode, b64encode
 from io import BytesIO
 from urllib.parse import quote
 
@@ -1410,6 +1411,14 @@ class Client:
                 with_scrollbar == without_scrollbar
             ), "scrollbar does not cover any text"
 
+    async def test_nicescroll_breaks_scrolling(self, url):
+        await self.navigate(url)
+        return self.execute_script(
+            """
+              return document.querySelector("html").style.overflow == "hidden"
+          """
+        )
+
     def test_for_fastclick(self, element):
         # FastClick cancels touchend, breaking default actions on Fenix.
         # It instead fires a mousedown or click, which we can detect.
@@ -1517,3 +1526,29 @@ class Client:
                 win.EventUtils.synthesizeKey("v", { accelKey: true }, win);
             """
             )
+
+    def make_base64_xpi(self, files):
+        buf = BytesIO()
+        with zipfile.ZipFile(file=buf, mode="w") as zip:
+            for filename, src in files.items():
+                zip.writestr(filename, data=src)
+        buf.seek(0)
+        return b64encode(buf.getvalue())
+
+    def install_addon(
+        self, srcfiles, method="addon", temp=True, allow_private_browsing=True
+    ):
+        arg = {"temporary": temp, "allowPrivateBrowsing": allow_private_browsing}
+        arg[method] = self.make_base64_xpi(srcfiles).decode()
+        return self.session.transport.send(
+            "POST",
+            f"/session/{self.session.session_id}/moz/addon/install",
+            arg,
+        )
+
+    def uninstall_addon(self, addon_id):
+        return self.session.transport.send(
+            "POST",
+            f"/session/{self.session.session_id}/moz/addon/uninstall",
+            {"id": addon_id},
+        )

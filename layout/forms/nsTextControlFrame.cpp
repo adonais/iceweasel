@@ -8,50 +8,48 @@
 #include <xmmintrin.h>
 #endif
 
-#include "mozilla/DebugOnly.h"
-
-#include "gfxContext.h"
-#include "nsCOMPtr.h"
-#include "nsFontMetrics.h"
 #include "nsTextControlFrame.h"
-#include "nsIEditor.h"
-#include "nsCaret.h"
-#include "nsCSSPseudoElements.h"
-#include "nsDisplayList.h"
-#include "nsGenericHTMLElement.h"
-#include "nsTextFragment.h"
-#include "nsNameSpaceManager.h"
-
-#include "nsIContent.h"
-#include "nsPresContext.h"
-#include "nsGkAtoms.h"
-#include "nsLayoutUtils.h"
 
 #include <algorithm>
-#include "nsRange.h"  //for selection setting helper func
-#include "nsINode.h"
-#include "nsPIDOMWindow.h"  //needed for notify selection changed to update the menus ect.
-#include "nsQueryObject.h"
-#include "nsILayoutHistoryState.h"
 
-#include "nsFocusManager.h"
+#include "gfxContext.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/EventStateManager.h"
+#include "mozilla/MathAlgorithms.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresState.h"
 #include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/TextEditor.h"
-#include "nsAttrValueInlines.h"
-#include "mozilla/dom/Selection.h"
-#include "nsContentUtils.h"
-#include "nsTextNode.h"
+#include "mozilla/Try.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
-#include "mozilla/MathAlgorithms.h"
-#include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/Try.h"
+#include "nsAttrValueInlines.h"
+#include "nsCOMPtr.h"
+#include "nsCSSPseudoElements.h"
+#include "nsCaret.h"
+#include "nsContentUtils.h"
+#include "nsDisplayList.h"
+#include "nsFocusManager.h"
+#include "nsFontMetrics.h"
 #include "nsFrameSelection.h"
+#include "nsGenericHTMLElement.h"
+#include "nsGkAtoms.h"
+#include "nsIContent.h"
+#include "nsIEditor.h"
+#include "nsILayoutHistoryState.h"
+#include "nsINode.h"
+#include "nsLayoutUtils.h"
+#include "nsNameSpaceManager.h"
+#include "nsPIDOMWindow.h"  //needed for notify selection changed to update the menus ect.
+#include "nsPresContext.h"
+#include "nsQueryObject.h"
+#include "nsRange.h"  //for selection setting helper func
+#include "nsTextFragment.h"
+#include "nsTextNode.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -1228,17 +1226,17 @@ void nsTextControlFrame::nsAnonDivObserver::CharacterDataChanged(
 }
 
 void nsTextControlFrame::nsAnonDivObserver::ContentAppended(
-    nsIContent* aFirstNewContent) {
+    nsIContent* aFirstNewContent, const ContentAppendInfo&) {
   mFrame.ClearCachedValue();
 }
 
 void nsTextControlFrame::nsAnonDivObserver::ContentInserted(
-    nsIContent* aChild) {
+    nsIContent* aChild, const ContentInsertInfo&) {
   mFrame.ClearCachedValue();
 }
 
 void nsTextControlFrame::nsAnonDivObserver::ContentWillBeRemoved(
-    nsIContent* aChild, const BatchRemovalState*) {
+    nsIContent* aChild, const ContentRemoveInfo&) {
   mFrame.ClearCachedValue();
 }
 

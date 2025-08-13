@@ -42,9 +42,7 @@ support-files = [
   "popup_blocker_a.html",
   "popup_blocker_b.html",
 ]
-skip-if = [
-  "debug", # This test triggers Bug 1578794 due to opening many popups.
-]
+skip-if = ["debug"] # This test triggers Bug 1578794 due to opening many popups.
 
 ["browser_popup_close_main_window.js"]
 

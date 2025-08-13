@@ -16,11 +16,12 @@ prefs = [
 ]
 
 ["browser_addBookmarkForFrame.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && opt && socketprocess_networking", # Bug 1775655
+]
 
 ["browser_autoshow_bookmarks_toolbar.js"]
-skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && asan", # Bug 1829323
-]
+skip-if = ["os == 'linux' && os_version == '18.04' && processor == 'x86_64' && asan"] # Bug 1829323
 
 ["browser_bookmarkMenu_hiddenWindow.js"]
 run-if = ["os == 'mac'"] # Mac-only functionality
@@ -46,9 +47,7 @@ run-if = ["os == 'mac'"] # Mac-only functionality
 ["browser_bookmarkProperties_readOnlyRoot.js"]
 
 ["browser_bookmarkProperties_remember_folders.js"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && processor == 'x86_64' && debug", # Bug 1869782
-]
+skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64' && debug"] # Bug 1869782
 
 ["browser_bookmarkProperties_speculativeConnection.js"]
 
@@ -62,9 +61,7 @@ https_first_disabled = true
 ["browser_bookmark_change_location.js"]
 
 ["browser_bookmark_context_menu_contents.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && socketprocess_networking", # Bug 1775657
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && socketprocess_networking"] # Bug 1775657
 
 ["browser_bookmark_copy_folder_tree.js"]
 tags = "os_integration"
@@ -76,12 +73,9 @@ tags = "os_integration"
 ["browser_bookmark_menu_ctrl_click.js"]
 
 ["browser_bookmark_popup.js"]
-skip-if = ["verify && os == 'win'"]
 
 ["browser_bookmark_private_window.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt", # Bug 1937891
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt"] # Bug 1937891
 
 ["browser_bookmark_remove_tags.js"]
 
@@ -148,7 +142,6 @@ https_first_disabled = true
 ["browser_editBookmark_keywords.js"]
 
 ["browser_enable_toolbar_sidebar.js"]
-skip-if = ["verify && debug && os == 'win'"]
 
 ["browser_forgetthissite.js"]
 

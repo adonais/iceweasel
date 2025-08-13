@@ -1040,11 +1040,11 @@ export var BrowserTestUtils = {
    * This relies on OpenBrowserWindow in browser.js, and waits for the window
    * to be completely loaded before resolving.
    *
-   * @param {Object} options
+   * @param {Object} [options]
    *        Options to pass to OpenBrowserWindow. Additionally, supports:
-   * @param {bool} options.waitForTabURL
-   *          Forces the initial browserLoaded check to wait for the tab to
-   *          load the given URL (instead of about:blank)
+   * @param {bool} [options.waitForTabURL]
+   *        Forces the initial browserLoaded check to wait for the tab to
+   *        load the given URL (instead of about:blank)
    *
    * @return {Promise}
    *         Resolves with the new window once it is loaded.
@@ -1052,13 +1052,13 @@ export var BrowserTestUtils = {
   async openNewBrowserWindow(options = {}) {
     let startTime = Cu.now();
 
-    let currentWin = lazy.BrowserWindowTracker.getTopWindow({ private: false });
-    if (!currentWin) {
-      throw new Error(
-        "Can't open a new browser window from this helper if no non-private window is open."
-      );
-    }
-    let win = currentWin.OpenBrowserWindow(options);
+    let openerWindow = lazy.BrowserWindowTracker.getTopWindow({
+      private: false,
+    });
+    let win = lazy.BrowserWindowTracker.openWindow({
+      openerWindow,
+      ...options,
+    });
 
     let promises = [
       this.waitForEvent(win, "focus", true),
@@ -2851,6 +2851,36 @@ export var BrowserTestUtils = {
     await wizardReady;
 
     return wizardTab;
+  },
+
+  /**
+   * When calling this function, the window will be hidden from various APIs,
+   * so that they won't be able to find it.
+   *
+   * This makes it possible to hide the main window to test some behaviors when
+   * it doesn't exist, e.g. when only private or non-browser windows exist.
+   *
+   * @param {ChromeWindow} window The window to be concealed.
+   * @param {object} options
+   * @param {AbortSignal} options.signal
+   *        Unconceals the window when the signal aborts.
+   */
+  concealWindow(window, { signal }) {
+    let oldWinType = window.document.documentElement.getAttribute("windowtype");
+    // Check if we've already done this to allow calling multiple times:
+    if (oldWinType != "navigator:testrunner") {
+      // Make the main test window not count as a browser window any longer
+      window.document.documentElement.setAttribute(
+        "windowtype",
+        "navigator:testrunner"
+      );
+      lazy.BrowserWindowTracker.untrackForTestsOnly(window);
+
+      signal.addEventListener("abort", () => {
+        lazy.BrowserWindowTracker.track(window);
+        window.document.documentElement.setAttribute("windowtype", oldWinType);
+      });
+    }
   },
 };
 

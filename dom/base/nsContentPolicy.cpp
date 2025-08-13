@@ -14,6 +14,7 @@
 #include "nsXPCOM.h"
 #include "nsContentPolicyUtils.h"
 #include "mozilla/dom/nsCSPService.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "nsContentPolicy.h"
 #include "nsIURI.h"
 #include "nsIBrowserChild.h"
@@ -96,7 +97,8 @@ inline nsresult nsContentPolicy::CheckPolicy(CPMethod policyMethod,
   nsresult rv;
   const nsCOMArray<nsIContentPolicy>& entries = mPolicies.GetCachedEntries();
   if (doc) {
-    if (nsCOMPtr<nsIContentSecurityPolicy> csp = doc->GetCsp()) {
+    if (nsCOMPtr<nsIContentSecurityPolicy> csp =
+            PolicyContainer::GetCSP(doc->GetPolicyContainer())) {
       csp->EnsureEventTarget(mozilla::GetMainThreadSerialEventTarget());
     }
   }

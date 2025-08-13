@@ -1589,29 +1589,31 @@ template <typename Unit>
 static const CompilationStencil* DelazifyCanonicalScriptedFunctionImpl(
     FrontendContext* fc, js::LifoAlloc& tempLifoAlloc,
     const JS::PrefableCompileOptions& prefableOptions,
-    ScopeBindingCache* scopeCache, CompilationStencil& context,
-    ScriptIndex scriptIndex, InitialStencilAndDelazifications* stencils,
+    ScopeBindingCache* scopeCache, ScriptIndex scriptIndex,
+    InitialStencilAndDelazifications* stencils,
     DelazifyFailureReason* failureReason) {
   MOZ_ASSERT(stencils);
 
-  const CompilationStencil* cached = stencils->getDelazificationAt(scriptIndex);
+  ScriptStencilRef script{*stencils, scriptIndex};
+  const CompilationStencil* cached = script.maybeContext();
   if (cached) {
     return cached;
   }
 
-  ScriptStencilRef script{context, scriptIndex};
   const ScriptStencilExtra& extra = script.scriptExtra();
 
 #if defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)
-  const ScriptStencil& data = script.scriptData();
-  MOZ_ASSERT(!data.hasSharedData(), "Script is already compiled!");
+  MOZ_ASSERT(!script.isEagerlyCompiledInInitial(),
+             "Script is already compiled in initial stencil!");
+  const ScriptStencil& data = script.scriptDataFromEnclosing();
   MOZ_DIAGNOSTIC_ASSERT(!data.isGhost());
+  MOZ_DIAGNOSTIC_ASSERT(data.wasEmittedByEnclosingScript());
 #endif
 
   size_t sourceStart = extra.extent.sourceStart;
   size_t sourceLength = extra.extent.sourceEnd - sourceStart;
 
-  ScriptSource* ss = context.source;
+  ScriptSource* ss = stencils->getInitial()->source;
   MOZ_ASSERT(ss->hasSourceText());
 
   MOZ_ASSERT(ss->hasSourceType<Unit>());
@@ -1635,7 +1637,7 @@ static const CompilationStencil* DelazifyCanonicalScriptedFunctionImpl(
   // information from the CompilationStencil context and the ref-counted
   // ScriptSource, which are both GC-free.
   JS_HAZ_NON_GC_POINTER CompilationInput input(options);
-  input.initFromStencil(context, scriptIndex, ss);
+  input.initFromStencil(*stencils, scriptIndex, ss);
 
   const CompilationStencil* borrow;
   if (!CompileLazyFunctionToStencilMaybeInstantiate(
@@ -1651,22 +1653,22 @@ static const CompilationStencil* DelazifyCanonicalScriptedFunctionImpl(
 const CompilationStencil* frontend::DelazifyCanonicalScriptedFunction(
     FrontendContext* fc, js::LifoAlloc& tempLifoAlloc,
     const JS::PrefableCompileOptions& prefableOptions,
-    ScopeBindingCache* scopeCache, CompilationStencil& context,
-    ScriptIndex scriptIndex, InitialStencilAndDelazifications* stencils,
+    ScopeBindingCache* scopeCache, ScriptIndex scriptIndex,
+    InitialStencilAndDelazifications* stencils,
     DelazifyFailureReason* failureReason) {
-  ScriptSource* ss = context.source;
+  ScriptSource* ss = stencils->getInitial()->source;
   if (ss->hasSourceType<Utf8Unit>()) {
     // UTF-8 source text.
     return DelazifyCanonicalScriptedFunctionImpl<Utf8Unit>(
-        fc, tempLifoAlloc, prefableOptions, scopeCache, context, scriptIndex,
-        stencils, failureReason);
+        fc, tempLifoAlloc, prefableOptions, scopeCache, scriptIndex, stencils,
+        failureReason);
   }
 
   // UTF-16 source text.
   MOZ_ASSERT(ss->hasSourceType<char16_t>());
   return DelazifyCanonicalScriptedFunctionImpl<char16_t>(
-      fc, tempLifoAlloc, prefableOptions, scopeCache, context, scriptIndex,
-      stencils, failureReason);
+      fc, tempLifoAlloc, prefableOptions, scopeCache, scriptIndex, stencils,
+      failureReason);
 }
 
 static JSFunction* CompileStandaloneFunction(

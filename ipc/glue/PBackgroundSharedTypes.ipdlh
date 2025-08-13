@@ -7,6 +7,8 @@ include "mozilla/dom/DomSecurityIPCUtils.h";
 using mozilla::OriginAttributes from "mozilla/ipc/BackgroundUtils.h";
 using struct mozilla::void_t from "mozilla/ipc/IPCCore.h";
 using nsIContentSecurityPolicy::RequireTrustedTypesForDirectiveState from "nsIContentSecurityPolicy.h";
+using mozilla::dom::IntegrityPolicy::Sources from "mozilla/dom/IntegrityPolicy.h";
+using mozilla::dom::IntegrityPolicy::Destinations from "mozilla/dom/IntegrityPolicy.h";
 
 namespace mozilla {
 namespace ipc {
@@ -72,6 +74,24 @@ namespace ipc {
   uint64_t innerWindowID;
   RequireTrustedTypesForDirectiveState requireTrustedTypesForDirectiveState;
   bool skipAllowInlineStyleCheck;
+};
+
+[Comparable] struct IntegrityPolicyEntry {
+  Sources sources;
+  Destinations destinations;
+  nsCString[] endpoints;
+};
+
+[Comparable] struct IntegrityPolicyArgs
+{
+  IntegrityPolicyEntry? enforcement;
+  IntegrityPolicyEntry? reportOnly;
+};
+
+[Comparable] struct PolicyContainerArgs
+{
+  CSPInfo? csp;
+  IntegrityPolicyArgs? integrityPolicy;
 };
 
 [Comparable] struct WebTransportHash {

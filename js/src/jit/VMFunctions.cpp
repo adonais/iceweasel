@@ -947,7 +947,7 @@ void PostWriteBarrier(JSRuntime* rt, js::gc::Cell* cell) {
   rt->gc.storeBuffer().putWholeCellDontCheckLast(cell);
 }
 
-static const size_t MAX_WHOLE_CELL_BUFFER_SIZE = 4096;
+static const size_t MAX_WHOLE_CELL_BUFFER_SIZE = 256;
 
 void PostWriteElementBarrier(JSRuntime* rt, JSObject* obj, int32_t index) {
   AutoUnsafeCallWithABI unsafe;

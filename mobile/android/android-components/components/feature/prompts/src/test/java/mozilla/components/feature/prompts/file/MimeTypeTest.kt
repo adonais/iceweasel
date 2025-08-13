@@ -20,7 +20,6 @@ import android.provider.MediaStore.ACTION_IMAGE_CAPTURE
 import android.provider.MediaStore.ACTION_VIDEO_CAPTURE
 import android.provider.MediaStore.Audio.Media.RECORD_SOUND_ACTION
 import android.provider.MediaStore.EXTRA_OUTPUT
-import android.webkit.MimeTypeMap
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.concept.engine.prompt.PromptRequest
@@ -37,7 +36,6 @@ import org.mockito.ArgumentMatchers.eq
 import org.mockito.ArgumentMatchers.notNull
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
-import org.robolectric.Shadows.shadowOf
 
 @RunWith(AndroidJUnit4::class)
 class MimeTypeTest {
@@ -356,15 +354,7 @@ class MimeTypeTest {
 
     @Test
     fun `Wildcard buildIntent with file extensions`() {
-        shadowOf(MimeTypeMap.getSingleton()).apply {
-            addExtensionMimeTypeMapping(".gif", "image/gif")
-            addExtensionMimeTypeMapping(
-                "docx",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            )
-        }
-
-        val extensionsRequest = request.copy(mimeTypes = arrayOf(".gif", "image/jpeg", "docx", ".fun"))
+        val extensionsRequest = request.copy(mimeTypes = arrayOf("image/gif", "image/jpeg", "docx", ".fun"))
 
         with(MimeType.Wildcard.buildIntent(testContext, extensionsRequest)) {
             assertEquals(action, ACTION_GET_CONTENT)

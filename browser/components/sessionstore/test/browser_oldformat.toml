@@ -151,10 +151,6 @@ skip-if = [
 ["browser_491168.js"]
 
 ["browser_491577.js"]
-skip-if = [
-  "verify && debug && os == 'mac'",
-  "verify && debug && os == 'win'",
-]
 
 ["browser_495495.js"]
 
@@ -180,10 +176,6 @@ skip-if = ["true"] # Bug 1380968
 ["browser_586068-apptabs.js"]
 
 ["browser_586068-apptabs_ondemand.js"]
-skip-if = [
-  "verify && debug && os == 'win'",
-  "verify && debug && os == 'mac'",
-]
 
 ["browser_586068-browser_state_interrupted.js"]
 
@@ -222,7 +214,6 @@ skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64'"]
 ["browser_615394-SSWindowState_events_duplicateTab.js"]
 
 ["browser_615394-SSWindowState_events_setBrowserState.js"]
-skip-if = ["verify && debug && os == 'mac'"]
 
 ["browser_615394-SSWindowState_events_setTabState.js"]
 
@@ -257,7 +248,6 @@ run-if = ["os != 'mac'"] # not running on macOS where closing all windows doesn'
 ["browser_662743.js"]
 
 ["browser_662812.js"]
-skip-if = ["verify"]
 
 ["browser_665702-state_session.js"]
 
@@ -271,10 +261,6 @@ https_first_disabled = true
 ["browser_694378.js"]
 
 ["browser_701377.js"]
-skip-if = [
-  "verify && debug && os == 'win'",
-  "verify && debug && os == 'mac'",
-]
 
 ["browser_705597.js"]
 

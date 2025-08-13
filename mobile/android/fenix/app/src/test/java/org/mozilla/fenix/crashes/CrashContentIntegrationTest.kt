@@ -19,7 +19,6 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.toolbar.BrowserToolbar
-import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -70,7 +69,6 @@ class CrashContentIntegrationTest {
         }
         val components: Components = mockk()
         val integration = CrashContentIntegration(
-            context = testContext,
             browserStore = browserStore,
             appStore = appStore,
             toolbar = toolbar,
@@ -103,7 +101,6 @@ class CrashContentIntegrationTest {
             every { layoutParams } returns crashReporterLayoutParams
         }
         val integration = CrashContentIntegration(
-            context = testContext,
             browserStore = browserStore,
             appStore = appStore,
             toolbar = mockk(),
@@ -129,7 +126,6 @@ class CrashContentIntegrationTest {
         }
         val integration = spyk(
             CrashContentIntegration(
-                context = testContext,
                 browserStore = browserStore,
                 appStore = appStore,
                 toolbar = mockk(),
@@ -156,7 +152,6 @@ class CrashContentIntegrationTest {
         }
         val integration = spyk(
             CrashContentIntegration(
-                context = testContext,
                 browserStore = browserStore,
                 appStore = appStore,
                 toolbar = mockk(),
@@ -192,7 +187,6 @@ class CrashContentIntegrationTest {
         }
         val components: Components = mockk()
         val integration = CrashContentIntegration(
-            context = testContext,
             browserStore = browserStore,
             appStore = appStore,
             toolbar = toolbar,

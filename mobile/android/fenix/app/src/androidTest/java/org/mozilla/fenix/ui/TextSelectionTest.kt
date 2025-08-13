@@ -4,12 +4,13 @@
 
 package org.mozilla.fenix.ui
 
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.filters.SdkSuppress
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
-import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
+import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
@@ -29,16 +30,22 @@ import org.mozilla.fenix.ui.robots.searchScreen
 import org.mozilla.fenix.ui.robots.shareOverlay
 
 class TextSelectionTest : TestSetup() {
-    @get:Rule
-    val activityIntentTestRule = HomeActivityIntentTestRule(
-        isLocationPermissionEnabled = SitePermissionsRules.Action.BLOCKED,
-        isPageLoadTranslationsPromptEnabled = false,
-    )
+    @get:Rule(order = 0)
+    val activityIntentTestRule =
+        AndroidComposeTestRule(
+            HomeActivityTestRule(
+                isLocationPermissionEnabled = SitePermissionsRules.Action.BLOCKED,
+                isPageLoadTranslationsPromptEnabled = false,
+                // workaround for toolbar at top position by default
+                // remove with https://bugzilla.mozilla.org/show_bug.cgi?id=1917640
+                shouldUseBottomToolbar = true,
+            ),
+        ) { it.activity }
 
-    @get:Rule
+    @get:Rule(order = 1)
     val memoryLeaksRule = DetectMemoryLeaksRule()
 
-    @Rule
+    @Rule(order = 2)
     @JvmField
     val retryTestRule = RetryTestRule(3)
 

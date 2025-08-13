@@ -106,6 +106,7 @@ class CommandBar extends Component {
       topFrameSelected: PropTypes.bool.isRequired,
       setHideOrShowIgnoredSources: PropTypes.func.isRequired,
       toggleSourceMapIgnoreList: PropTypes.func.isRequired,
+      togglePausedOverlay: PropTypes.func.isRequired,
     };
   }
 
@@ -307,6 +308,15 @@ class CommandBar extends Component {
           this.props.toggleSourceMapIgnoreList(
             !prefs.sourceMapIgnoreListEnabled
           ),
+      }),
+      React.createElement(MenuItem, {
+        key: "debugger-settings-menu-item-toggle-pause-overlay",
+        className: "menu-item debugger-settings-menu-item-toggle-pause-overlay",
+        checked: prefs.pausedOverlayEnabled,
+        label: L10N.getStr("settings.showPausedOverlay.label"),
+        tooltip: L10N.getStr("settings.showPausedOverlay.tooltip"),
+        onClick: () =>
+          this.props.togglePausedOverlay(!prefs.pausedOverlayEnabled),
       })
     );
   }
@@ -358,4 +368,5 @@ export default connect(mapStateToProps, {
   toggleJavaScriptEnabled: actions.toggleJavaScriptEnabled,
   setHideOrShowIgnoredSources: actions.setHideOrShowIgnoredSources,
   toggleSourceMapIgnoreList: actions.toggleSourceMapIgnoreList,
+  togglePausedOverlay: actions.togglePausedOverlay,
 })(CommandBar);

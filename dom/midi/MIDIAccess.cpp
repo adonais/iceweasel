@@ -202,7 +202,7 @@ void MIDIAccess::MaybeCreateMIDIPort(const MIDIPortInfo& aInfo,
 // received, that will be handled by the MIDIPort object itself, and it will
 // request removal from MIDIAccess's maps.
 void MIDIAccess::Notify(const MIDIPortList& aEvent) {
-  LOG("MIDIAcess::Notify");
+  LOG("MIDIAccess::Notify");
   if (!GetOwnerWindow()) {
     // Do nothing if we've already been disconnected from the document.
     return;

@@ -49,6 +49,7 @@
 #include "mozilla/dom/DOMSecurityMonitor.h"
 #include "mozilla/dom/JSExecutionUtils.h"  // mozilla::dom::Compile, mozilla::dom::EvaluationExceptionToNSResult
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/PopupBlocker.h"
 #include "nsContentSecurityManager.h"
 #include "DefaultURI.h"
@@ -274,7 +275,10 @@ nsresult JSURLInputStream::EvaluateScript(
   // (which is the CSPToInherit of the loadinfo) and the CSP of the
   // target document.  The target document check is performed below,
   // once we have determined the target document.
-  nsCOMPtr<nsIContentSecurityPolicy> csp = loadInfo->GetCspToInherit();
+  nsCOMPtr<nsIPolicyContainer> policyContainer =
+      loadInfo->GetPolicyContainerToInherit();
+  nsCOMPtr<nsIContentSecurityPolicy> csp =
+      PolicyContainer::GetCSP(policyContainer);
 
   if (!AllowedByCSP(csp, mURL, aJSCallingLocation)) {
     return NS_ERROR_DOM_RETVAL_UNDEFINED;
@@ -325,7 +329,8 @@ nsresult JSURLInputStream::EvaluateScript(
     // principal, or the principal of the document we started the load
     // against if the triggering principal is system.
     if (targetDoc->NodePrincipal()->Subsumes(loadInfo->TriggeringPrincipal())) {
-      nsCOMPtr<nsIContentSecurityPolicy> targetCSP = targetDoc->GetCsp();
+      nsCOMPtr<nsIContentSecurityPolicy> targetCSP =
+          PolicyContainer::GetCSP(targetDoc->GetPolicyContainer());
       if (!AllowedByCSP(targetCSP, mURL, aJSCallingLocation)) {
         return NS_ERROR_DOM_RETVAL_UNDEFINED;
       }

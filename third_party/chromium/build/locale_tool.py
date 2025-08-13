@@ -1,5 +1,5 @@
-#!/usr/bin/env vpython
-# Copyright 2019 The Chromium Authors. All rights reserved.
+#!/usr/bin/env vpython3
+# Copyright 2019 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -28,7 +28,6 @@ inside its <outputs> section that breaks the script. The check will fail, and
 trying to fix it too, but at least the file will not be modified.
 """
 
-from __future__ import print_function
 
 import argparse
 import json
@@ -507,7 +506,7 @@ class _GetXmlLangAttributeTest(unittest.TestCase):
   }
 
   def test_GetXmlLangAttribute(self):
-    for test_line, expected in self.TEST_DATA.iteritems():
+    for test_line, expected in self.TEST_DATA.items():
       self.assertEquals(_GetXmlLangAttribute(test_line), expected)
 
 

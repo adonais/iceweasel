@@ -1,36 +1,67 @@
 From: Michael Froman <mfroman@mozilla.com>
 Date: Mon, 20 Jun 2022 22:34:00 +0000
-Subject: Bug 1775143 - pt10 - (mirror) a26d44969a83 r=ng
+Subject: Bug 1775143 - pt15 - (mirror) 0300b32b7de7 r=ng
 
 (skip-generation)
 
-Depends on D149823
+Depends on D149828
 
-Differential Revision: https://phabricator.services.mozilla.com/D149824
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/1cdf94de5db5e884d57939defae73a9df4c19293
+Differential Revision: https://phabricator.services.mozilla.com/D149829
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/831cdef4bf346cb9cc0092ab7e7beea0aa6677c3
 ---
- config/linux/BUILD.gn | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ config/BUILDCONFIG.gn | 7 ++++---
+ config/ui.gni         | 2 +-
+ 2 files changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/config/linux/BUILD.gn b/config/linux/BUILD.gn
-index 2bdd08fc4..863114e58 100644
---- a/config/linux/BUILD.gn
-+++ b/config/linux/BUILD.gn
-@@ -2,6 +2,8 @@
- # Use of this source code is governed by a BSD-style license that can be
- # found in the LICENSE file.
+diff --git a/config/BUILDCONFIG.gn b/config/BUILDCONFIG.gn
+index a9d2caeb1..dd6a105ee 100644
+--- a/config/BUILDCONFIG.gn
++++ b/config/BUILDCONFIG.gn
+@@ -136,7 +136,7 @@ declare_args() {
+   is_official_build = false
  
-+import("../../../webrtc.gni")
-+
- import("//build/config/c++/c++.gni")
- import("//build/config/chromeos/ui_mode.gni")
- import("//build/config/linux/pkg_config.gni")
-@@ -39,7 +41,7 @@ config("runtime_library") {
+   # Set to true when compiling with the Clang compiler.
+-  is_clang = current_os != "linux" ||
++  is_clang = current_os != "linux" || current_os == "openbsd" ||
+              (current_cpu != "s390x" && current_cpu != "s390" &&
+               current_cpu != "ppc64" && current_cpu != "ppc" &&
+               current_cpu != "mips" && current_cpu != "mips64" &&
+@@ -206,7 +206,7 @@ if (host_toolchain == "") {
+   # TODO(dpranke): Add some sort of assert here that verifies that
+   # no toolchain omitted host_toolchain from its toolchain_args().
  
-   if ((!(is_chromeos_ash || is_chromeos_lacros) ||
-        default_toolchain != "//build/toolchain/cros:target") &&
--      (!use_custom_libcxx || current_cpu == "mipsel")) {
-+      (!use_custom_libcxx || current_cpu == "mipsel") && !build_with_mozilla) {
-     libs = [ "atomic" ]
-   }
+-  if (host_os == "linux") {
++  if (host_os == "linux" || host_os == "openbsd") {
+     if (target_os != "linux") {
+       host_toolchain = "//build/toolchain/linux:clang_$host_cpu"
+     } else if (is_clang) {
+@@ -246,7 +246,7 @@ if (target_os == "android") {
+   # Targeting android on Mac is best-effort and not guaranteed to work.
+   assert(host_os == "linux", "Android builds are only supported on Linux.")
+   _default_toolchain = "//build/toolchain/android:android_clang_$target_cpu"
+-} else if (target_os == "chromeos" || target_os == "linux") {
++} else if (target_os == "chromeos" || target_os == "linux" || target_os == "openbsd") {
+   # See comments in build/toolchain/cros/BUILD.gn about board compiles.
+   if (is_clang) {
+     _default_toolchain = "//build/toolchain/linux:clang_$target_cpu"
+@@ -314,6 +314,7 @@ is_chromeos = current_os == "chromeos"
+ is_fuchsia = current_os == "fuchsia"
+ is_ios = current_os == "ios"
+ is_linux = current_os == "linux"
++is_bsd = current_os == "openbsd"
+ is_mac = current_os == "mac"
+ is_nacl = current_os == "nacl"
+ is_wasm = current_os == "emscripten"
+diff --git a/config/ui.gni b/config/ui.gni
+index 9e7f4df85..2c526a92f 100644
+--- a/config/ui.gni
++++ b/config/ui.gni
+@@ -39,7 +39,7 @@ declare_args() {
+       target_os != "android"
  }
+ 
+-assert(!use_glib || (is_linux && !is_castos))
++assert(!use_glib || ((is_linux || is_bsd) && !is_castos))
+ 
+ use_atk = use_glib && current_toolchain == default_toolchain
+ 

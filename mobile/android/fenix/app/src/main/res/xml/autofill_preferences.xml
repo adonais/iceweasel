@@ -14,6 +14,11 @@
             android:key="@string/pref_key_addresses_save_and_autofill_addresses"
             android:summary="@string/preferences_addresses_save_and_autofill_addresses_summary_2"
             android:title="@string/preferences_addresses_save_and_autofill_addresses_2" />
+        <org.mozilla.fenix.settings.SyncPreference
+            android:key="@string/pref_key_addresses_sync_cards_across_devices"
+            android:title="@string/preferences_addresses_sync_addresses_across_devices"
+            app:singleLineTitle="false"
+            app:isPreferenceVisible="false" />
         <Preference
             android:key="@string/pref_key_addresses_manage_addresses"
             android:title="@string/preferences_addresses_manage_addresses" />

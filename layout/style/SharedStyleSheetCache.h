@@ -19,10 +19,10 @@
 //  * It is conceptually a singleton, but given its cycle-collectable nature, we
 //    might re-create it.
 
-#include "mozilla/SharedSubResourceCache.h"
-#include "nsRefPtrHashtable.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/SharedSubResourceCache.h"
 #include "mozilla/css/Loader.h"
+#include "nsRefPtrHashtable.h"
 
 namespace mozilla {
 

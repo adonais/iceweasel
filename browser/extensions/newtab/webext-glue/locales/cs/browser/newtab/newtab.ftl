@@ -8,6 +8,9 @@
 newtab-page-title = Nový panel
 newtab-settings-button =
     .title = Přizpůsobení stránky nového panelu
+newtab-customize-panel-icon-button =
+    .title = Přizpůsobte si tuto stránku
+newtab-customize-panel-icon-button-label = Přizpůsobit
 newtab-personalize-settings-icon-label =
     .title = Přizpůsobení nového panelu
     .aria-label = Nastavení
@@ -508,6 +511,9 @@ newtab-topic-selection-button-pick-interests = Vyberte, co vás zajímá
 newtab-section-follow-button = Sledovat
 newtab-section-following-button = Sledované
 newtab-section-unfollow-button = Přestat sledovat
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Dolaďte si svůj kanál
+newtab-section-follow-highlight-subtitle = Sledujte své zájmy a uvidíte víc toho, co se vám líbí.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -566,6 +572,11 @@ newtab-download-mobile-highlight-image =
            *[no-cases] QR kód pro stažení aplikace { -brand-product-name } pro mobilní zařízení
         }
 
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Vaše oblíbené položky na dosah ruky
+newtab-shortcuts-highlight-subtitle = Přidejte si zkratky, abyste měli oblíbené weby dostupné na jedno klepnutí.
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -599,3 +610,5 @@ newtab-trending-searches-hide-trending =
     .title = Skrýt populární vyhledávání
 newtab-trending-searches-learn-more = Zjistit více
 newtab-trending-searches-dismiss = Skrýt populární vyhledávání
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Trendy ve vyhledávání

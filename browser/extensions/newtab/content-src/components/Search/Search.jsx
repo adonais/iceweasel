@@ -100,21 +100,13 @@ export class _Search extends React.PureComponent {
       // (See github ticket #2348 for more details)
       const healthReportKey = IS_NEWTAB ? "newtab" : "abouthome";
 
-      // The "searchSource" needs to be "newtab" or "homepage" and is sent with
-      // the search data and acts as context for the search request (See
-      // nsISearchEngine.getSubmission). It is necessary so that search engine
-      // plugins can correctly atribute referrals. (See github ticket #3321 for
-      // more details)
-      const searchSource = IS_NEWTAB ? "newtab" : "homepage";
-
       // gContentSearchController needs to exist as a global so that tests for
       // the existing about:home can find it; and so it allows these tests to pass.
       // In the future, when activity stream is default about:home, this can be renamed
       window.gContentSearchController = new ContentSearchUIController(
         input,
         input.parentNode,
-        healthReportKey,
-        searchSource
+        healthReportKey
       );
       addEventListener("ContentSearchClient", this);
     } else {

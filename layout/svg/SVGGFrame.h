@@ -7,9 +7,9 @@
 #ifndef LAYOUT_SVG_SVGGFRAME_H_
 #define LAYOUT_SVG_SVGGFRAME_H_
 
+#include "gfxMatrix.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/SVGContainerFrame.h"
-#include "gfxMatrix.h"
 
 namespace mozilla {
 class PresShell;

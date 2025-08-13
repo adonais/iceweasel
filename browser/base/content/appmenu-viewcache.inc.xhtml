@@ -451,15 +451,6 @@
     </vbox>
   </panelview>
 
-  <panelview id="PanelUI-savetopocket"
-             class="PanelUI-subView"
-             remote="true"
-             neverhidden="true"
-             closemenu="none">
-    <vbox class="PanelUI-savetopocket-container">
-    </vbox>
-  </panelview>
-
   <panelview id="PanelUI-remotetabs" class="PanelUI-subView">
     <vbox class="panel-subview-body">
       <!-- this widget has 3 boxes in the body, but only 1 is ever visible -->
@@ -832,6 +823,25 @@
                 class="learnMore"
                 support-page="data-loss-prevention"/>
       </description>
+    </vbox>
+  </panelview>
+
+  <panelview id="PanelUI-ipprotection"
+             class="PanelUI-subView"
+             mainview-with-header="true">
+    <vbox id="PanelUI-ipprotection-header-container">
+      <hbox id="PanelUI-ipprotection-header-bar"
+            class="panel-header panel-header-with-additional-element">
+        <html:div id="PanelUI-ipprotection-header">
+          <!-- Root for ipprotection-header -->
+        </html:div>
+      </hbox>
+    </vbox>
+    <toolbarseparator />
+    <vbox id="PanelUI-ipprotection-content-container" class="panel-subview-body">
+      <html:div id="PanelUI-ipprotection-content">
+        <!-- Root for ipprotection-content -->
+      </html:div>
     </vbox>
   </panelview>
 

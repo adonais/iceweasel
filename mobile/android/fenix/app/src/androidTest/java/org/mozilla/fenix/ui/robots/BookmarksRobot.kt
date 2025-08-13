@@ -51,13 +51,22 @@ class BookmarksRobot(private val composeTestRule: ComposeTestRule) {
 
     @OptIn(ExperimentalTestApi::class)
     fun verifyFolderTitle(title: String) {
+        Log.i(TAG, "verifyFolderTitle: Waiting for $waitingTime for bookmark folder with title: $title to exist.")
         composeTestRule.waitUntilAtLeastOneExists(hasText(title), waitingTime)
+        Log.i(TAG, "verifyFolderTitle: Waited for $waitingTime for bookmark folder with title: $title to exist.")
         Log.i(TAG, "verifyFolderTitle: Trying to verify bookmarks folder with title: $title is displayed")
         composeTestRule.onNodeWithText(title).assertIsDisplayed()
         Log.i(TAG, "verifyFolderTitle: Verified bookmarks folder with title: $title is displayed")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun verifyBookmarkTitle(title: String) {
+        Log.i(TAG, "verifyBookmarkTitle: Waiting for $waitingTime for bookmark with title: $title to exist.")
+        composeTestRule.waitUntilExactlyOneExists(
+            hasText(title), waitingTime,
+        )
+        Log.i(TAG, "verifyBookmarkTitle: Waited for $waitingTime for bookmark with title: $title to exist.")
+        Log.i(TAG, "verifyBookmarkTitle: Waited for bookmarks header to exist.")
         Log.i(TAG, "verifyBookmarkTitle: Trying to verify bookmark with title: $title is displayed")
         composeTestRule.onNodeWithText(title).assertIsDisplayed()
         Log.i(TAG, "verifyBookmarkTitle: Verified bookmark with title: $title is displayed")
@@ -125,7 +134,7 @@ class BookmarksRobot(private val composeTestRule: ComposeTestRule) {
     @OptIn(ExperimentalTestApi::class)
     fun clickAddFolderButton() {
         Log.i(TAG, "clickAddFolderButton: Waiting for $waitingTime for the add bookmarks folder button to exist")
-        composeTestRule.waitUntilAtLeastOneExists(hasContentDescription(getStringResource(R.string.bookmark_select_folder_new_folder_button_title)), waitingTime)
+        composeTestRule.waitUntilAtLeastOneExists(hasContentDescription(getStringResource(R.string.bookmark_add_new_folder_button_content_description)), waitingTime)
         Log.i(TAG, "clickAddFolderButton: Waited for $waitingTime for the add bookmarks folder button to exist")
         Log.i(TAG, "clickAddFolderButton: Clicked add bookmarks folder button")
         Log.i(TAG, "clickAddFolderButton: Trying to click add bookmarks folder button")
@@ -277,7 +286,7 @@ fun composeBookmarksMenu(composeTestRule: ComposeTestRule, interact: BookmarksRo
 }
 
 private fun ComposeTestRule.addFolderButton() =
-    onNodeWithContentDescription(getStringResource(R.string.bookmark_select_folder_new_folder_button_title))
+    onNodeWithContentDescription(getStringResource(R.string.bookmark_add_new_folder_button_content_description))
 
 private fun ComposeTestRule.addFolderTitleField() =
     onNodeWithTag(ADD_BOOKMARK_FOLDER_NAME_TEXT_FIELD).onChildAt(0)

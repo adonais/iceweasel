@@ -128,7 +128,7 @@ class AwesomeBarFeatureTest {
         verify(awesomeBar, never()).addProviders(any())
 
         val store: BrowserStore = mock()
-        feature.addSearchProvider(testContext, store = store, searchUseCase = mock(), fetchClient = mock())
+        feature.addSearchProvider(store = store, searchUseCase = mock(), fetchClient = mock())
 
         val provider = argumentCaptor<SearchSuggestionProvider>()
         verify(awesomeBar).addProviders(provider.capture())
@@ -142,13 +142,13 @@ class AwesomeBarFeatureTest {
         val awesomeBar: AwesomeBar = mock()
 
         val feature = AwesomeBarFeature(awesomeBar, mock())
-        feature.addSearchProvider(testContext, mock(), mock(), mock(), engine = engine)
+        feature.addSearchProvider(searchEngine = mock(), mock(), mock(), engine = engine)
 
         val provider = argumentCaptor<SearchSuggestionProvider>()
         verify(awesomeBar).addProviders(provider.capture())
         assertSame(engine, provider.value.engine)
 
-        feature.addSearchProvider(mock(), mock(), mock(), engine = engine)
+        feature.addSearchProvider(searchEngine = mock(), mock(), mock(), engine = engine)
         verify(awesomeBar, times(2)).addProviders(provider.capture())
         assertSame(engine, provider.allValues.last().engine)
     }

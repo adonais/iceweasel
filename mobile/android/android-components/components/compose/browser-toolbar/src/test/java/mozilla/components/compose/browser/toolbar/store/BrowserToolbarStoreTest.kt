@@ -6,7 +6,7 @@ package mozilla.components.compose.browser.toolbar.store
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.compose.browser.toolbar.R
-import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
+import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.BrowserActionsEndUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.BrowserActionsStartUpdated
@@ -16,7 +16,6 @@ import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAct
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,7 +37,7 @@ class BrowserToolbarStoreTest {
         store.dispatch(BrowserToolbarAction.ToggleEditMode(editMode = editMode))
 
         assertEquals(Mode.EDIT, store.state.mode)
-        assertNull(store.state.editState.editText)
+        assertEquals("", store.state.editState.query)
     }
 
     @Test
@@ -46,11 +45,11 @@ class BrowserToolbarStoreTest {
         val store = BrowserToolbarStore()
         val text = "Mozilla"
 
-        assertNull(store.state.editState.editText)
+        assertEquals("", store.state.editState.query)
 
-        store.dispatch(BrowserEditToolbarAction.UpdateEditText(text = text))
+        store.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(query = text))
 
-        assertEquals(text, store.state.editState.editText)
+        assertEquals(text, store.state.editState.query)
     }
 
     @Test
@@ -61,12 +60,12 @@ class BrowserToolbarStoreTest {
 
         assertEquals(0, store.state.editState.editActionsStart.size)
 
-        store.dispatch(BrowserEditToolbarAction.AddEditActionStart(action = action1))
+        store.dispatch(BrowserEditToolbarAction.SearchActionsStartUpdated(listOf(action1)))
 
         assertEquals(1, store.state.editState.editActionsStart.size)
         assertEquals(action1, store.state.editState.editActionsStart.first())
 
-        store.dispatch(BrowserEditToolbarAction.AddEditActionStart(action = action2))
+        store.dispatch(BrowserEditToolbarAction.SearchActionsStartUpdated(listOf(action1, action2)))
 
         assertEquals(2, store.state.editState.editActionsStart.size)
         assertEquals(action1, store.state.editState.editActionsStart.first())
@@ -81,12 +80,12 @@ class BrowserToolbarStoreTest {
 
         assertEquals(0, store.state.editState.editActionsEnd.size)
 
-        store.dispatch(BrowserEditToolbarAction.AddEditActionEnd(action = action1))
+        store.dispatch(BrowserEditToolbarAction.SearchActionsEndUpdated(listOf(action1)))
 
         assertEquals(1, store.state.editState.editActionsEnd.size)
         assertEquals(action1, store.state.editState.editActionsEnd.first())
 
-        store.dispatch(BrowserEditToolbarAction.AddEditActionEnd(action = action2))
+        store.dispatch(BrowserEditToolbarAction.SearchActionsEndUpdated(listOf(action1, action2)))
 
         assertEquals(2, store.state.editState.editActionsEnd.size)
         assertEquals(action1, store.state.editState.editActionsEnd.first())
@@ -182,8 +181,8 @@ class BrowserToolbarStoreTest {
         assertEquals(listOf(action2, action3), store.state.displayState.browserActionsEnd)
     }
 
-    private fun fakeActionButton() = ActionButton(
-        icon = Random.nextInt(),
+    private fun fakeActionButton() = ActionButtonRes(
+        drawableResId = Random.nextInt(),
         contentDescription = Random.nextInt(),
         onClick = object : BrowserToolbarEvent {},
     )

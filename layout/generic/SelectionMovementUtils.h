@@ -7,11 +7,11 @@
 #ifndef mozilla_SelectionMovementUtils_h
 #define mozilla_SelectionMovementUtils_h
 
-#include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/Result.h"
+#include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "nsIFrame.h"
 
 struct nsPrevNextBidiLevels;

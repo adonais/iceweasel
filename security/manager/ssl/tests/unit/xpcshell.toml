@@ -37,7 +37,6 @@ support-files = [
   "test_name_constraints/**",
   "test_ocsp_url/**",
   "test_onecrl/**",
-  "test_sanctions/**",
   "test_sdr_preexisting/**",
   "test_sdr_preexisting_with_password/**",
   "test_self_signed_certs/**",
@@ -65,7 +64,7 @@ tags = "remote-settings blocklist psm"
 # FIPS still works on Linux, so this test doesn't make any sense there.
 # FIPS still works on Windows, but running the test to ensure that it does not
 # break with a non-ASCII profile path.
-skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64'"]
+run-if = ["os != 'android'"]
 
 ["test_certDB_export_pkcs12.js"]
 
@@ -266,17 +265,13 @@ run-if = [
 ["test_pinning.js"]
 run-sequentially = "hardcoded ports"
 
-["test_sanctions_symantec_apple_google.js"]
-run-sequentially = "hardcoded ports"
-
 ["test_sdr.js"]
 
 ["test_sdr_preexisting.js"]
-# Not relevant to Android. See the comment in the test.
+run-if = ["os != 'android'"] # Not relevant to Android. See the comment in the test.
 
 ["test_sdr_preexisting_with_password.js"]
-# Not relevant to Android. See the comment in the test.
-skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64'"]
+run-if = ["os != 'android'"] # Not relevant to Android. See the comment in the test.
 
 ["test_self_signed_certs.js"]
 

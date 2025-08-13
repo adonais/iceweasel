@@ -5,7 +5,6 @@
 package org.mozilla.fenix.ui
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
@@ -126,7 +125,7 @@ class CollectionTest : TestSetup() {
             verifyTabSavedInCollection(composeTestRule, webPage.title, false)
             verifyShareCollectionButtonIsVisible(composeTestRule, false)
             verifyCollectionMenuIsVisible(false, composeTestRule)
-            verifyCollectionTabUrl(false, webPageUrl)
+            verifyCollectionTabUrl(composeTestRule, false, webPageUrl)
             verifyCollectionItemRemoveButtonIsVisible(webPage.title, false)
         }
 
@@ -134,7 +133,7 @@ class CollectionTest : TestSetup() {
             verifyCollectionIsDisplayed(composeTestRule, collectionName)
         }.expandCollection(composeTestRule, collectionName) {
             verifyTabSavedInCollection(composeTestRule, webPage.title)
-            verifyCollectionTabUrl(true, webPageUrl)
+            verifyCollectionTabUrl(composeTestRule, true, webPageUrl)
             verifyShareCollectionButtonIsVisible(composeTestRule, true)
             verifyCollectionMenuIsVisible(true, composeTestRule)
             verifyCollectionItemRemoveButtonIsVisible(webPage.title, true)
@@ -144,7 +143,7 @@ class CollectionTest : TestSetup() {
             verifyTabSavedInCollection(composeTestRule, webPage.title, false)
             verifyShareCollectionButtonIsVisible(composeTestRule, false)
             verifyCollectionMenuIsVisible(false, composeTestRule)
-            verifyCollectionTabUrl(false, webPageUrl)
+            verifyCollectionTabUrl(composeTestRule, false, webPageUrl)
             verifyCollectionItemRemoveButtonIsVisible(webPage.title, false)
         }
     }
@@ -368,38 +367,54 @@ class CollectionTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/343427
-    @Ignore("Failing: https://bugzilla.mozilla.org/show_bug.cgi?id=1972084")
     @Test
     fun removeTabFromCollectionUsingSwipeLeftActionTest() {
-        val testPage = getGenericAsset(mockWebServer, 1)
+        val testPage1 = getGenericAsset(mockWebServer, 1)
+        val testPage2 = getGenericAsset(mockWebServer, 2)
 
         MockBrowserDataHelper
             .createCollection(
-                Pair(testPage.url.toString(), testPage.title),
+                Pair(testPage1.url.toString(), testPage1.title),
+                Pair(testPage2.url.toString(), testPage2.title),
                 title = collectionName,
             )
 
         homeScreen {
             verifyCollectionIsDisplayed(composeTestRule, collectionName)
         }.expandCollection(composeTestRule, collectionName) {
-            swipeTabLeft(testPage.title, composeTestRule)
-            verifyTabSavedInCollection(composeTestRule, testPage.title, false)
-        }
-        homeScreen {
-            verifySnackBarText("Collection deleted")
-            clickSnackbarButton(composeTestRule, "UNDO")
-            verifyCollectionIsDisplayed(composeTestRule, collectionName)
-        }.expandCollection(composeTestRule, collectionName) {
-            verifyTabSavedInCollection(composeTestRule, testPage.title, true)
-            swipeTabLeft(testPage.title, composeTestRule)
-            verifyTabSavedInCollection(composeTestRule, testPage.title, false)
+            verifyTabSavedInCollection(composeTestRule, testPage1.title, true)
+            verifyTabSavedInCollection(composeTestRule, testPage2.title, true)
+            swipeTabLeft(testPage2.title)
+            verifyTabSavedInCollection(composeTestRule, testPage2.title, false)
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/991278
-    @Ignore("Failing: https://bugzilla.mozilla.org/show_bug.cgi?id=1972084")
     @Test
     fun removeTabFromCollectionUsingSwipeRightActionTest() {
+        val testPage1 = getGenericAsset(mockWebServer, 1)
+        val testPage2 = getGenericAsset(mockWebServer, 2)
+
+        MockBrowserDataHelper
+            .createCollection(
+                Pair(testPage1.url.toString(), testPage1.title),
+                Pair(testPage2.url.toString(), testPage2.title),
+                title = collectionName,
+            )
+
+        homeScreen {
+            verifyCollectionIsDisplayed(composeTestRule, collectionName)
+        }.expandCollection(composeTestRule, collectionName) {
+            verifyTabSavedInCollection(composeTestRule, testPage1.title, true)
+            verifyTabSavedInCollection(composeTestRule, testPage2.title, true)
+            swipeTabRight(testPage2.title)
+            verifyTabSavedInCollection(composeTestRule, testPage2.title, false)
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080080
+    @Test
+    fun removeLastTabFromCollectionUsingSwipeActionTest() {
         val testPage = getGenericAsset(mockWebServer, 1)
 
         MockBrowserDataHelper
@@ -411,17 +426,20 @@ class CollectionTest : TestSetup() {
         homeScreen {
             verifyCollectionIsDisplayed(composeTestRule, collectionName)
         }.expandCollection(composeTestRule, collectionName) {
-            swipeTabRight(testPage.title, composeTestRule)
+            verifyTabSavedInCollection(composeTestRule, testPage.title, true)
+            swipeTabLeft(testPage.title)
             verifyTabSavedInCollection(composeTestRule, testPage.title, false)
         }
         homeScreen {
-            verifySnackBarText("Collection deleted")
             clickSnackbarButton(composeTestRule, "UNDO")
             verifyCollectionIsDisplayed(composeTestRule, collectionName)
         }.expandCollection(composeTestRule, collectionName) {
             verifyTabSavedInCollection(composeTestRule, testPage.title, true)
-            swipeTabRight(testPage.title, composeTestRule)
+            swipeTabRight(testPage.title)
             verifyTabSavedInCollection(composeTestRule, testPage.title, false)
+        }
+        homeScreen {
+            verifyCollectionIsDisplayed(composeTestRule, collectionName, false)
         }
     }
 

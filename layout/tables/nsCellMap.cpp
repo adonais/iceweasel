@@ -5,14 +5,15 @@
 
 #include "nsCellMap.h"
 
+#include <algorithm>
+
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPtr.h"
 #include "nsTArray.h"
-#include "nsTableFrame.h"
 #include "nsTableCellFrame.h"
+#include "nsTableFrame.h"
 #include "nsTableRowFrame.h"
 #include "nsTableRowGroupFrame.h"
-#include <algorithm>
 
 using namespace mozilla;
 

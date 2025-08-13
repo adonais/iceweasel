@@ -43,15 +43,13 @@ internal fun ConnectionSecurityPanel(
                         stringResource(id = R.string.connection_security_panel_not_secure)
                     },
                     beforeIconPainter = if (websiteInfoState.isSecured) {
-                        painterResource(id = R.drawable.mozac_ic_lock_24)
+                        painterResource(id = R.drawable.mozac_ic_shield_checkmark_24)
                     } else {
-                        painterResource(id = R.drawable.mozac_ic_lock_slash_24)
+                        painterResource(id = R.drawable.mozac_ic_shield_slash_24)
                     },
                 )
 
                 if (websiteInfoState.certificateName.isNotEmpty()) {
-                    Divider(color = FirefoxTheme.colors.borderSecondary)
-
                     MenuTextItem(
                         label = stringResource(
                             id = R.string.connection_security_panel_verified_by,
@@ -70,7 +68,7 @@ private fun TrackersBlockedPanelPreview() {
     FirefoxTheme {
         Column(
             modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer3),
+                .background(color = FirefoxTheme.colors.layer2),
         ) {
             ConnectionSecurityPanel(
                 websiteInfoState = WebsiteInfoState(

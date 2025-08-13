@@ -82,6 +82,12 @@
   <string name="mozac_browser_errorpages_unknown_host_title">Nu s-a găsit adresa</string>
   <!-- In the example, the two URLs in markup do not need to be translated. -->
   <string name="mozac_browser_errorpages_unknown_host_message"><![CDATA[<p>Browserul nu a găsit serverul-gazdă pentru adresa furnizată.</p> <ul> <li>Verifică adresa pentru erori de tastare precum <strong>ww</strong>.exemplu.com în loc de <strong>www</strong>.exemplu.com.</li> <li>Dacă nu poți încărca nicio pagină, verifică datele dispozitivului sau conexiunea Wi-Fi.</li> </ul>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_no_internet_title_2">Se pare că există o problemă cu conexiunea ta la internet</string>
+  <!-- The main body text of this error page. It will be shown beneath the title -->
+  <string name="mozac_browser_errorpages_no_internet_message_2">Încearcă să te conectezi pe un alt dispozitiv. Verifică modemul sau routerul. Deconectează-te și reconectează-te la Wi-Fi.</string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_no_internet_error_code">Codul erorii: NS_ERROR_OFFLINE</string>
   <!-- Text that will show up on the button at the bottom of the error page -->
   <string name="mozac_browser_errorpages_no_internet_refresh_button">Reîncarcă</string>
   <!-- The document title and heading of an error page. -->
@@ -125,7 +131,7 @@
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Site securizat indisponibil</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->
-  <string name="mozac_browser_errorpages_httpsonly_message"><![CDATA[Ați activat modul HTTPS pentru o securitate sporită, iar versiunea HTTPS a <em>%1$s</em> nu este disponibilă.]]></string>
+  <string name="mozac_browser_errorpages_httpsonly_message"><![CDATA[Ai activat modul HTTPS pentru o securitate sporită, iar versiunea HTTPS a <em>%1$s</em> nu este disponibilă.]]></string>
   <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on. Clicking the button allows the user to nevertheless load the website using HTTP. -->
-  <string name="mozac_browser_errorpages_httpsonly_button">Continuați la site-ul HTTP</string>
+  <string name="mozac_browser_errorpages_httpsonly_button">Continuă la site-ul HTTP</string>
 </resources>

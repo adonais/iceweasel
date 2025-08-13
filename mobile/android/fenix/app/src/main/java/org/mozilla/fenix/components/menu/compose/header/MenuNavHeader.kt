@@ -17,11 +17,10 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +28,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.TextAlign
@@ -57,6 +59,9 @@ internal fun MenuNavHeader(
     isExtensionsExpanded: Boolean,
     isMoreMenuExpanded: Boolean,
 ) {
+    val navigationHeaderContentDescription =
+        stringResource(id = R.string.browser_main_menu_content_description_navigation_header)
+
     Spacer(
         modifier = Modifier
             .fillMaxWidth()
@@ -81,9 +86,12 @@ internal fun MenuNavHeader(
                     Color.Transparent
                 },
             )
-            .padding(horizontal = 8.dp, vertical = 12.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .padding(horizontal = 4.dp, vertical = 12.dp)
+            .verticalScroll(rememberScrollState())
+            .semantics(mergeDescendants = true) {
+                contentDescription = navigationHeaderContentDescription
+            },
+        horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.Top,
     ) {
         MenuNavItem(
@@ -139,7 +147,6 @@ private fun MenuNavItem(
 ) {
     Column(
         modifier = Modifier
-            .width(64.dp)
             .fillMaxHeight()
             .combinedClickable(
                 interactionSource = null,
@@ -147,6 +154,7 @@ private fun MenuNavItem(
                 enabled = state != MenuItemState.DISABLED,
                 onClick = onClick,
                 onLongClick = onLongClick,
+                role = Role.Button,
             ),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -189,7 +197,7 @@ private fun getIconTint(state: MenuItemState): Color {
         MenuItemState.ACTIVE -> FirefoxTheme.colors.iconAccentViolet
         MenuItemState.WARNING -> FirefoxTheme.colors.iconCritical
         MenuItemState.DISABLED -> FirefoxTheme.colors.iconDisabled
-        else -> FirefoxTheme.colors.iconSecondary
+        else -> FirefoxTheme.colors.iconPrimary
     }
 }
 

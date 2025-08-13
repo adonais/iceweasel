@@ -1,4 +1,6 @@
-This directory is used to store GN arg mapping for Chrome OS boards.
+This directory is used to store GN arg mapping for Chrome OS boards. The values
+of the args are determined by processing the [chromeos-chrome ebuild] for a
+given board and a given ChromeOS version (stored in the [CHROMEOS_LKGM] file).
 
 Files in this directory are populated by running `gclient sync` with specific
 arguments set in the .gclient file. Specifically:
@@ -39,14 +41,16 @@ import("//build/args/chromeos/${some_board}.gni")
 That will produce a Chrome OS build of Chrome very similar to what is shipped
 for that device. You can also supply additional args or even overwrite ones
 supplied in the .gni file after the `import()` line. For example, the following
-args will produce a debug build of Chrome for board=eve using goma:
+args will produce a debug build of Chrome for board=eve using rbe:
 ```
 import("//build/args/chromeos/eve.gni")
 
 is_debug = true
-use_goma = true
-goma_dir = "/path/to/goma/"
+use_remoteexec = true
 ```
 
 TODO(bpastene): Make 'cros_boards' a first class citizen in gclient and replace
 it with 'target_boards' instead.
+
+[chromeos-chrome ebuild]: https://chromium.googlesource.com/chromiumos/overlays/chromiumos-overlay/+/HEAD/chromeos-base/chromeos-chrome/chromeos-chrome-9999.ebuild
+[CHROMEOS_LKGM]: https://chromium.googlesource.com/chromium/src/+/HEAD/chromeos/CHROMEOS_LKGM

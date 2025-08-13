@@ -10,13 +10,13 @@
 // Keep others in (case-insensitive) order:
 #include "gfxUtils.h"
 #include "mozilla/LookAndFeel.h"
+#include "mozilla/ServoCSSParser.h"
 #include "mozilla/StaticPrefs_svg.h"
 #include "mozilla/dom/Document.h"
 #include "nsIFrame.h"
+#include "nsISVGPaintContext.h"
 #include "nsPresContext.h"
 #include "nsStyleStruct.h"
-#include "nsISVGPaintContext.h"
-#include "mozilla/ServoCSSParser.h"
 
 namespace mozilla {
 

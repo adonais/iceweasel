@@ -65,8 +65,10 @@ const INDENT_STR = " ".repeat(INDENT_SIZE);
  *        The CssRuleView containg the document holding this rule editor.
  * @param {Rule} rule
  *        The Rule object we're editing.
+ * @param {Object} options
+ * @param {Set} options.elementsWithPendingClicks
  */
-function RuleEditor(ruleView, rule) {
+function RuleEditor(ruleView, rule, options = {}) {
   EventEmitter.decorate(this);
 
   this.ruleView = ruleView;
@@ -74,6 +76,7 @@ function RuleEditor(ruleView, rule) {
   this.toolbox = this.ruleView.inspector.toolbox;
   this.telemetry = this.toolbox.telemetry;
   this.rule = rule;
+  this.options = options;
 
   this.isEditable = !rule.isSystem;
   // Flag that blocks updates of the selector and properties when it is
@@ -139,20 +142,18 @@ RuleEditor.prototype = {
     // span to be placed absolutely against.
     this.element.style.position = "relative";
 
-    // Add the source link.
-    this.source = createChild(this.element, "div", {
-      class: "ruleview-rule-source theme-link",
-    });
-    this.source.addEventListener("click", this._onSourceClick);
+    // Add the source link for supported rules. inline style and pres hints are not visible
+    // in the StyleEditor, so don't show anything for such rule.
+    if (this.rule.domRule.type !== ELEMENT_STYLE) {
+      this.source = createChild(this.element, "div", {
+        class: "ruleview-rule-source theme-link",
+      });
+      this.source.addEventListener("click", this._onSourceClick);
 
-    // inline style are not visible in the StyleEditor, so don't create an actual link
-    // element for their location.
-    const sourceLabel = this.doc.createElement(
-      this.rule.domRule.type === ELEMENT_STYLE ? "span" : "a"
-    );
-    sourceLabel.classList.add("ruleview-rule-source-label");
-    this.source.appendChild(sourceLabel);
-
+      const sourceLabel = this.doc.createElement("a");
+      sourceLabel.classList.add("ruleview-rule-source-label");
+      this.source.appendChild(sourceLabel);
+    }
     this.updateSourceLink();
 
     if (this.rule.domRule.ancestorData.length) {
@@ -496,13 +497,14 @@ RuleEditor.prototype = {
    * Called when a tool is registered or unregistered.
    */
   _onToolChanged() {
+    if (!this.source) {
+      return;
+    }
+
     // When the source editor is registered, update the source links
     // to be clickable; and if it is unregistered, update the links to
-    // be unclickable.  However, some links are never clickable, so
-    // filter those out first.
-    if (this.source.getAttribute("unselectable") === "permanent") {
-      // Nothing.
-    } else if (this.toolbox.isToolRegistered("styleeditor")) {
+    // be unclickable.
+    if (this.toolbox.isToolRegistered("styleeditor")) {
       this.source.removeAttribute("unselectable");
     } else {
       this.source.setAttribute("unselectable", "true");
@@ -574,38 +576,31 @@ RuleEditor.prototype = {
   },
 
   updateSourceLink() {
-    if (this.rule.isSystem) {
-      const sourceLabel = this.element.querySelector(
-        ".ruleview-rule-source-label"
-      );
-      const uaLabel = STYLE_INSPECTOR_L10N.getStr("rule.userAgentStyles");
-      sourceLabel.textContent = uaLabel + " " + this.rule.title;
-      sourceLabel.setAttribute("href", this.rule.sheet?.href);
-    } else {
-      this._updateLocation(null);
-    }
-
-    if (
-      this.rule.sheet &&
-      !this.rule.isSystem &&
-      this.rule.domRule.type !== ELEMENT_STYLE
-    ) {
-      // Only get the original source link if the rule isn't a system
-      // rule and if it isn't an inline rule.
-      if (this._unsubscribeSourceMap) {
-        this._unsubscribeSourceMap();
+    if (this.source) {
+      if (this.rule.isSystem) {
+        const sourceLabel = this.element.querySelector(
+          ".ruleview-rule-source-label"
+        );
+        const uaLabel = STYLE_INSPECTOR_L10N.getStr("rule.userAgentStyles");
+        sourceLabel.textContent = uaLabel + " " + this.rule.title;
+        sourceLabel.setAttribute("href", this.rule.sheet?.href);
+      } else {
+        this._updateLocation(null);
       }
-      this._unsubscribeSourceMap = this.sourceMapURLService.subscribeByID(
-        this.rule.sheet.resourceId,
-        this.rule.ruleLine,
-        this.rule.ruleColumn,
-        this._updateLocation
-      );
-      // Set "unselectable" appropriately.
-      this._onToolChanged();
-    } else if (this.rule.domRule.type === ELEMENT_STYLE) {
-      this.source.setAttribute("unselectable", "permanent");
-    } else {
+
+      if (this.rule.sheet && !this.rule.isSystem) {
+        // Only get the original source link if the rule isn't a system
+        // rule and if it isn't an inline rule.
+        if (this._unsubscribeSourceMap) {
+          this._unsubscribeSourceMap();
+        }
+        this._unsubscribeSourceMap = this.sourceMapURLService.subscribeByID(
+          this.rule.sheet.resourceId,
+          this.rule.ruleLine,
+          this.rule.ruleColumn,
+          this._updateLocation
+        );
+      }
       // Set "unselectable" appropriately.
       this._onToolChanged();
     }
@@ -656,7 +651,9 @@ RuleEditor.prototype = {
 
     for (const prop of this.rule.textProps) {
       if (!prop.editor && !prop.invisible) {
-        const editor = new TextPropertyEditor(this, prop);
+        const editor = new TextPropertyEditor(this, prop, {
+          elementsWithPendingClicks: this.options.elementsWithPendingClicks,
+        });
         this.propertyList.appendChild(editor.element);
       } else if (prop.editor) {
         // If an editor already existed, append it to the bottom now to make sure the
@@ -787,7 +784,9 @@ RuleEditor.prototype = {
       siblingProp
     );
     const index = this.rule.textProps.indexOf(prop);
-    const editor = new TextPropertyEditor(this, prop);
+    const editor = new TextPropertyEditor(this, prop, {
+      elementsWithPendingClicks: this.options.elementsWithPendingClicks,
+    });
 
     // Insert this node before the DOM node that is currently at its new index
     // in the property list.  There is currently one less node in the DOM than

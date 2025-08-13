@@ -308,6 +308,9 @@ newtab-custom-settings = ຈັດການການຕັ້ງຄ່າເພ�
 ## Strings for download mobile highlight
 
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
 

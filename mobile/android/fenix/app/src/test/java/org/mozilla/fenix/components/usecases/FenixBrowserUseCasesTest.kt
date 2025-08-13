@@ -18,6 +18,7 @@ import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.base.profiler.Profiler
 import mozilla.components.concept.engine.EngineSession
+import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.feature.search.SearchUseCases
 import mozilla.components.feature.search.ext.createSearchEngine
 import mozilla.components.feature.session.SessionUseCases
@@ -313,8 +314,7 @@ class FenixBrowserUseCasesTest {
 
         verify {
             addNewTabUseCase.invoke(
-                url = "about:home",
-                startLoading = false,
+                url = ABOUT_HOME_URL,
                 title = testContext.getString(R.string.tab_tray_homepage_tab),
                 private = true,
             )
@@ -324,10 +324,21 @@ class FenixBrowserUseCasesTest {
 
         verify {
             addNewTabUseCase.invoke(
-                url = "about:home",
-                startLoading = false,
+                url = ABOUT_HOME_URL,
                 title = testContext.getString(R.string.tab_tray_homepage_tab),
                 private = false,
+            )
+        }
+    }
+
+    @Test
+    fun `WHEN navigate to homepage use case is invoked THEN load the ABOUT_HOME URL`() {
+        useCases.navigateToHomepage()
+
+        verify {
+            loadUrlUseCase.invoke(
+                url = ABOUT_HOME_URL,
+                flags = EngineSession.LoadUrlFlags.none(),
             )
         }
     }

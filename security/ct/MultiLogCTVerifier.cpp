@@ -24,12 +24,10 @@ void MultiLogCTVerifier::AddLog(CTLogVerifier&& log) {
   mLogs.push_back(std::move(log));
 }
 
-pkix::Result MultiLogCTVerifier::Verify(Input cert,
-                                        Input issuerSubjectPublicKeyInfo,
-                                        Input sctListFromCert,
-                                        Input sctListFromOCSPResponse,
-                                        Input sctListFromTLSExtension,
-                                        Time time, CTVerifyResult& result) {
+pkix::Result MultiLogCTVerifier::Verify(
+    Input cert, Input issuerSubjectPublicKeyInfo, Input sctListFromCert,
+    Input sctListFromOCSPResponse, Input sctListFromTLSExtension, Time time,
+    Maybe<Time> distrustAfterTime, CTVerifyResult& result) {
   assert(cert.GetLength() > 0);
   result.Reset();
 
@@ -44,7 +42,7 @@ pkix::Result MultiLogCTVerifier::Verify(Input cert,
       return rv;
     }
     rv = VerifySCTs(sctListFromCert, precertEntry, SCTOrigin::Embedded, time,
-                    result);
+                    distrustAfterTime, result);
     if (rv != Success) {
       return rv;
     }
@@ -56,7 +54,7 @@ pkix::Result MultiLogCTVerifier::Verify(Input cert,
   // Verify SCTs from a stapled OCSP response
   if (sctListFromOCSPResponse.GetLength() > 0) {
     rv = VerifySCTs(sctListFromOCSPResponse, x509Entry, SCTOrigin::OCSPResponse,
-                    time, result);
+                    time, distrustAfterTime, result);
     if (rv != Success) {
       return rv;
     }
@@ -65,7 +63,7 @@ pkix::Result MultiLogCTVerifier::Verify(Input cert,
   // Verify SCTs from a TLS extension
   if (sctListFromTLSExtension.GetLength() > 0) {
     rv = VerifySCTs(sctListFromTLSExtension, x509Entry, SCTOrigin::TLSExtension,
-                    time, result);
+                    time, distrustAfterTime, result);
     if (rv != Success) {
       return rv;
     }
@@ -107,12 +105,13 @@ void DecodeSCTs(Input encodedSctList,
 pkix::Result MultiLogCTVerifier::VerifySCTs(Input encodedSctList,
                                             const LogEntry& expectedEntry,
                                             SCTOrigin origin, Time time,
+                                            Maybe<Time> distrustAfterTime,
                                             CTVerifyResult& result) {
   std::vector<SignedCertificateTimestamp> decodedSCTs;
   DecodeSCTs(encodedSctList, decodedSCTs, result.decodingErrors);
   for (auto sct : decodedSCTs) {
-    pkix::Result rv =
-        VerifySingleSCT(std::move(sct), expectedEntry, origin, time, result);
+    pkix::Result rv = VerifySingleSCT(std::move(sct), expectedEntry, origin,
+                                      time, distrustAfterTime, result);
     if (rv != Success) {
       return rv;
     }
@@ -122,7 +121,8 @@ pkix::Result MultiLogCTVerifier::VerifySCTs(Input encodedSctList,
 
 pkix::Result MultiLogCTVerifier::VerifySingleSCT(
     SignedCertificateTimestamp&& sct, const LogEntry& expectedEntry,
-    SCTOrigin origin, Time time, CTVerifyResult& result) {
+    SCTOrigin origin, Time time, Maybe<Time> distrustAfterTime,
+    CTVerifyResult& result) {
   switch (origin) {
     case SCTOrigin::Embedded:
       result.embeddedSCTs++;
@@ -168,17 +168,23 @@ pkix::Result MultiLogCTVerifier::VerifySingleSCT(
   // Make sure the timestamp is legitimate (not in the future).
   // SCT's |timestamp| is measured in milliseconds since the epoch,
   // ignoring leap seconds. When converting it to a second-level precision
-  // pkix::Time, we need to round it either up or down. In our case, rounding up
-  // (towards the future) is more "secure", although practically
-  // it does not matter.
-  Time sctTime = TimeFromEpochInSeconds((sct.timestamp + 999u) / 1000u);
+  // pkix::Time, we round down.
+  Time sctTime = TimeFromEpochInSeconds(sct.timestamp / 1000u);
   if (sctTime > time) {
     result.sctsWithInvalidTimestamps++;
     return Success;
   }
 
+  // If the root has a distrustAfter time, ensure that the SCT's timestamp is
+  // not after that time.
+  if (distrustAfterTime.isSome() && sctTime > distrustAfterTime.value()) {
+    result.sctsWithDistrustedTimestamps++;
+    return Success;
+  }
+
   VerifiedSCT verifiedSct(std::move(sct), origin, matchingLog->operatorId(),
-                          matchingLog->state(), matchingLog->timestamp());
+                          matchingLog->state(), matchingLog->format(),
+                          matchingLog->timestamp());
   result.verifiedScts.push_back(std::move(verifiedSct));
   return Success;
 }

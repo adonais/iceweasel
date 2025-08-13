@@ -24,7 +24,7 @@
 
 // Some platform hooks must be implemented for single-step profiling.
 #if defined(JS_SIMULATOR_ARM) || defined(JS_SIMULATOR_MIPS64) || \
-    defined(JS_SIMULATOR_ARM64)
+    defined(JS_SIMULATOR_ARM64) || defined(JS_SIMULATOR_LOONG64)
 #  define SINGLESTEP_PROFILING
 #endif
 
@@ -244,9 +244,10 @@ struct ShellContext {
   js::Monitor offThreadMonitor MOZ_UNANNOTATED;
   Vector<OffThreadJob*, 0, SystemAllocPolicy> offThreadJobs;
 
-  // Queued finalization registry cleanup jobs.
-  using FunctionVector = GCVector<JSFunction*, 0, SystemAllocPolicy>;
-  JS::PersistentRooted<FunctionVector> finalizationRegistryCleanupCallbacks;
+  // Queued task callbacks that run after the microtask queue.
+
+  using ObjectVector = GCVector<JSObject*, 0, SystemAllocPolicy>;
+  JS::PersistentRooted<ObjectVector> taskCallbacks;
 };
 
 extern ShellContext* GetShellContext(JSContext* cx);

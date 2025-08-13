@@ -8,21 +8,21 @@
 
 #include "nsHTMLCanvasFrame.h"
 
-#include "nsGkAtoms.h"
+#include <algorithm>
+
+#include "ActiveLayerTracker.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/layers/ImageDataSerializer.h"
+#include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
 #include "mozilla/layers/WebRenderCanvasRenderer.h"
-#include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/webgpu/CanvasContext.h"
 #include "nsDisplayList.h"
+#include "nsGkAtoms.h"
 #include "nsLayoutUtils.h"
 #include "nsStyleUtil.h"
-#include "ActiveLayerTracker.h"
-
-#include <algorithm>
 
 using namespace mozilla;
 using namespace mozilla::dom;

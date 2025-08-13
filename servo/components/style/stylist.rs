@@ -14,7 +14,7 @@ use crate::dom::TElement;
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::structs::{ServoStyleSetSizes, StyleRuleInclusion};
 use crate::invalidation::element::invalidation_map::{
-    note_selector_for_invalidation, InvalidationMap, RelativeSelectorInvalidationMap,
+    note_selector_for_invalidation, InvalidationMap, AdditionalRelativeSelectorInvalidationMap,
 };
 use crate::invalidation::media_queries::{
     EffectiveMediaQueryResults, MediaListKey, ToMediaListKey,
@@ -2634,7 +2634,9 @@ pub struct CascadeData {
     invalidation_map: InvalidationMap,
 
     /// The relative selector equivalent of the invalidation map.
-    relative_selector_invalidation_map: RelativeSelectorInvalidationMap,
+    relative_selector_invalidation_map: InvalidationMap,
+
+    additional_relative_selector_invalidation_map: AdditionalRelativeSelectorInvalidationMap,
 
     /// The attribute local names that appear in attribute selectors.  Used
     /// to avoid taking element snapshots when an irrelevant attribute changes.
@@ -2729,19 +2731,15 @@ pub struct CascadeData {
     num_declarations: usize,
 }
 
-fn parent_selector_for_scope(parent: Option<&SelectorList<SelectorImpl>>) -> &SelectorList<SelectorImpl> {
-    lazy_static! {
-        static ref SCOPE: SelectorList<SelectorImpl> = {
-            // Implicit scope, as per https://github.com/w3c/csswg-drafts/issues/10196
-            let list = SelectorList::implicit_scope();
-            list.mark_as_intentionally_leaked();
-            list
-        };
+lazy_static! {
+    static ref IMPLICIT_SCOPE: SelectorList<SelectorImpl> = {
+        // Implicit scope, as per https://github.com/w3c/csswg-drafts/issues/10196
+        // Also, `&` is `:where(:scope)`, as per https://github.com/w3c/csswg-drafts/issues/9740
+        // ``:where(:scope)` effectively behaves the same as the implicit scope.
+        let list = SelectorList::implicit_scope();
+        list.mark_as_intentionally_leaked();
+        list
     };
-    match parent {
-        Some(l) => l,
-        None => &SCOPE,
-    }
 }
 
 fn scope_start_matches_shadow_host(start: &SelectorList<SelectorImpl>) -> bool {
@@ -2761,7 +2759,8 @@ impl CascadeData {
             slotted_rules: None,
             part_rules: None,
             invalidation_map: InvalidationMap::new(),
-            relative_selector_invalidation_map: RelativeSelectorInvalidationMap::new(),
+            relative_selector_invalidation_map: InvalidationMap::new(),
+            additional_relative_selector_invalidation_map: AdditionalRelativeSelectorInvalidationMap::new(),
             nth_of_mapped_ids: PrecomputedHashSet::default(),
             nth_of_class_dependencies: PrecomputedHashSet::default(),
             nth_of_attribute_dependencies: PrecomputedHashSet::default(),
@@ -2837,8 +2836,13 @@ impl CascadeData {
     }
 
     /// Returns the relative selector invalidation map.
-    pub fn relative_selector_invalidation_map(&self) -> &RelativeSelectorInvalidationMap {
+    pub fn relative_selector_invalidation_map(&self) -> &InvalidationMap {
         &self.relative_selector_invalidation_map
+    }
+
+    /// Returns the relative selector invalidation map data.
+    pub fn relative_invalidation_map_attributes(&self) -> &AdditionalRelativeSelectorInvalidationMap{
+        &self.additional_relative_selector_invalidation_map
     }
 
     /// Returns whether the given ElementState bit is relied upon by a selector
@@ -3145,6 +3149,7 @@ impl CascadeData {
         self.custom_property_registrations.shrink_if_needed();
         self.invalidation_map.shrink_if_needed();
         self.relative_selector_invalidation_map.shrink_if_needed();
+        self.additional_relative_selector_invalidation_map.shrink_if_needed();
         self.attribute_dependencies.shrink_if_needed();
         self.nth_of_attribute_dependencies.shrink_if_needed();
         self.nth_of_custom_state_dependencies.shrink_if_needed();
@@ -3320,6 +3325,7 @@ impl CascadeData {
                     quirks_mode,
                     &mut self.invalidation_map,
                     &mut self.relative_selector_invalidation_map,
+                    &mut self.additional_relative_selector_invalidation_map,
                 )?;
                 let mut needs_revalidation = false;
                 let mut visitor = StylistSelectorVisitor {
@@ -3459,13 +3465,6 @@ impl CascadeData {
                     }
                 },
                 CssRule::NestedDeclarations(ref rule) => {
-                    lazy_static! {
-                        static ref IMPLICIT_SCOPE: SelectorList<SelectorImpl> = {
-                            let list = SelectorList::implicit_scope();
-                            list.mark_as_intentionally_leaked();
-                            list
-                        };
-                    };
                     if let Some(ref ancestor_selectors) = containing_rule_state.ancestor_selector_lists.last() {
                         let decls = &rule.read_with(guard).block;
                         let selectors = match containing_rule_state.nested_declarations_context {
@@ -3729,12 +3728,12 @@ impl CascadeData {
                                 None => selector.clone(),
                             }
                         });
-                        let parent = parent_selector_for_scope(start.as_ref());
+                        let implicit_scope_selector = &*IMPLICIT_SCOPE;
                         let end = rule.bounds
                             .end
                             .as_ref()
-                            .map(|selector| selector.replace_parent_selector(parent));
-                        containing_rule_state.ancestor_selector_lists.push(parent.clone());
+                            .map(|selector| selector.replace_parent_selector(implicit_scope_selector));
+                        containing_rule_state.ancestor_selector_lists.push(implicit_scope_selector.clone());
                         ScopeBoundsWithHashes::new(quirks_mode, start, end)
                     };
 
@@ -3998,6 +3997,7 @@ impl CascadeData {
         self.clear_cascade_data();
         self.invalidation_map.clear();
         self.relative_selector_invalidation_map.clear();
+        self.additional_relative_selector_invalidation_map.clear();
         self.attribute_dependencies.clear();
         self.nth_of_attribute_dependencies.clear();
         self.nth_of_custom_state_dependencies.clear();

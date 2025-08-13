@@ -8,6 +8,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.components.AppStore
@@ -19,66 +21,97 @@ import org.mozilla.fenix.utils.Settings
 @RunWith(AndroidJUnit4::class)
 class ReviewPromptMiddlewareTest {
 
-    val settings = Settings(testContext).apply {
+    private val settings = Settings(testContext).apply {
         numberOfAppLaunches = 5
         isDefaultBrowser = true
         lastReviewPromptTimeInMillis = 0L
-        isTelemetryEnabled = false
     }
 
-    val store = AppStore(
+    private lateinit var triggers: Sequence<Boolean>
+
+    private val store = AppStore(
         middlewares = listOf(
             ReviewPromptMiddleware(
                 settings = settings,
                 timeNowInMillis = { TEST_TIME_NOW },
+                triggers = { triggers },
             ),
         ),
     )
 
     @Test
-    fun `GIVEN prompt has never been shown AND other criteria satisfied WHEN check requested THEN sets eligible for Play Store prompt`() {
+    fun `GIVEN prompt has never been shown AND a trigger is satisfied WHEN check requested THEN sets eligible`() {
+        triggers = sequenceOf(true)
+
+        store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt).joinBlocking()
+
+        assertTrue(store.state.reviewPrompt is ReviewPromptState.Eligible)
+    }
+
+    @Test
+    fun `GIVEN prompt has never been shown AND the first trigger is satisfied WHEN check requested THEN sets eligible`() {
+        triggers = sequenceOf(true, false, false)
+
+        store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt).joinBlocking()
+
+        assertTrue(store.state.reviewPrompt is ReviewPromptState.Eligible)
+    }
+
+    @Test
+    fun `GIVEN prompt has never been shown AND the first trigger is satisfied WHEN check requested THEN other triggers are not checked`() {
+        var checkedOtherTriggers = false
+        triggers = sequence {
+            yield(true)
+            checkedOtherTriggers = true
+            yield(true)
+        }
+
+        store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt).joinBlocking()
+
+        assertFalse(checkedOtherTriggers)
+    }
+
+    @Test
+    fun `GIVEN prompt has never been shown AND one of the triggers is satisfied WHEN check requested THEN sets eligible`() {
+        triggers = sequenceOf(false, false, true, false, false)
+
+        store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt).joinBlocking()
+
+        assertTrue(store.state.reviewPrompt is ReviewPromptState.Eligible)
+    }
+
+    @Test
+    fun `GIVEN prompt has never been shown AND no triggers are satisfied WHEN check requested THEN sets not eligible`() {
+        triggers = sequenceOf(false)
+
         store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt).joinBlocking()
 
         assertEquals(
-            AppState(reviewPrompt = ReviewPromptState.Eligible(Type.PlayStore)),
+            AppState(reviewPrompt = ReviewPromptState.NotEligible),
             store.state,
         )
     }
 
     @Test
-    fun `GIVEN prompt has been shown more than 4 months ago AND other criteria satisfied WHEN check requested THEN sets eligible for Play Store prompt`() {
+    fun `GIVEN prompt has never been shown AND there are no triggers WHEN check requested THEN sets not eligible`() {
+        triggers = emptySequence()
+
+        store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt).joinBlocking()
+
+        assertEquals(
+            AppState(reviewPrompt = ReviewPromptState.NotEligible),
+            store.state,
+        )
+    }
+
+    @Test
+    fun `GIVEN prompt has been shown more than 4 months ago AND a trigger is satisfied WHEN check requested THEN sets eligible`() {
         settings.lastReviewPromptTimeInMillis = MORE_THAN_4_MONTHS_FROM_TEST_TIME_NOW
+        triggers = sequenceOf(true)
 
         store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt).joinBlocking()
 
-        assertEquals(
-            AppState(reviewPrompt = ReviewPromptState.Eligible(Type.PlayStore)),
-            store.state,
-        )
-    }
-
-    @Test
-    fun `GIVEN app isn't the default browser WHEN check requested THEN sets not eligible`() {
-        settings.isDefaultBrowser = false
-
-        store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt).joinBlocking()
-
-        assertEquals(
-            AppState(reviewPrompt = ReviewPromptState.NotEligible),
-            store.state,
-        )
-    }
-
-    @Test
-    fun `GIVEN app launched less than 5 times WHEN check requested THEN sets not eligible`() {
-        settings.numberOfAppLaunches = 4
-
-        store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt).joinBlocking()
-
-        assertEquals(
-            AppState(reviewPrompt = ReviewPromptState.NotEligible),
-            store.state,
-        )
+        assertTrue(store.state.reviewPrompt is ReviewPromptState.Eligible)
     }
 
     @Test
@@ -136,8 +169,9 @@ class ReviewPromptMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN telemetry enabled AND other criteria satisfied WHEN check requested THEN sets eligible for Custom prompt`() {
+    fun `GIVEN telemetry enabled AND a trigger is satisfied WHEN check requested THEN sets eligible for Custom prompt`() {
         settings.isTelemetryEnabled = true
+        triggers = sequenceOf(true)
 
         store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt).joinBlocking()
 
@@ -145,6 +179,38 @@ class ReviewPromptMiddlewareTest {
             AppState(reviewPrompt = ReviewPromptState.Eligible(Type.Custom)),
             store.state,
         )
+    }
+
+    @Test
+    fun `GIVEN telemetry disabled AND a trigger is satisfied WHEN check requested THEN sets eligible for Play Store prompt`() {
+        settings.isTelemetryEnabled = false
+        triggers = sequenceOf(true)
+
+        store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt).joinBlocking()
+
+        assertEquals(
+            AppState(reviewPrompt = ReviewPromptState.Eligible(Type.PlayStore)),
+            store.state,
+        )
+    }
+
+    @Test
+    fun `WHEN app is the default browser AND was launched at least 5 times THEN legacy trigger is satisfied`() {
+        assertTrue(legacyReviewPromptTrigger(settings))
+    }
+
+    @Test
+    fun `WHEN app isn't the default browser THEN legacy trigger is not satisfied`() {
+        settings.isDefaultBrowser = false
+
+        assertFalse(legacyReviewPromptTrigger(settings))
+    }
+
+    @Test
+    fun `WHEN app was launched less than 5 times THEN legacy trigger is not satisfied`() {
+        settings.numberOfAppLaunches = 4
+
+        assertFalse(legacyReviewPromptTrigger(settings))
     }
 
     private fun assertNoOp(action: ReviewPromptAction) {

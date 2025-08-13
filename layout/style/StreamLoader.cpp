@@ -5,18 +5,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/css/StreamLoader.h"
-#include "mozilla/StaticPrefs_network.h"
+
 #include "mozilla/Encoding.h"
-#include "mozilla/glean/NetwerkMetrics.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/TaskQueue.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/dom/CacheExpirationTime.h"
+#include "mozilla/glean/NetwerkMetrics.h"
+#include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "nsContentUtils.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIChannel.h"
 #include "nsIInputStream.h"
-#include "nsIThreadRetargetableRequest.h"
 #include "nsIStreamTransportService.h"
+#include "nsIThreadRetargetableRequest.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsProxyRelease.h"

@@ -651,6 +651,7 @@ async function assertSelectorEnginesEqualsExpected(
           telemetrySuffix: "",
           orderHint: null,
           clickUrl: null,
+          isNewUntil: null,
           ...expectedEngines[i],
         };
         expectedEngines[i].classification =
@@ -662,6 +663,7 @@ async function assertSelectorEnginesEqualsExpected(
           suggestions: null,
           trending: null,
           searchForm: null,
+          visualSearch: null,
           ...expectedEngines[i].urls,
         };
         expectedEngines[i].urls.search = {

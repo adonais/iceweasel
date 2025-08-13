@@ -17,9 +17,9 @@
 #define nsDateTimeControlFrame_h__
 
 #include "mozilla/Attributes.h"
+#include "nsCOMPtr.h"
 #include "nsContainerFrame.h"
 #include "nsIAnonymousContentCreator.h"
-#include "nsCOMPtr.h"
 
 namespace mozilla {
 class PresShell;

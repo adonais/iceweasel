@@ -4,19 +4,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "EncoderConfig.h"
-#if !defined(MFTEncoder_h_)
-#  define MFTEncoder_h_
+#ifndef DOM_MEDIA_PLATFORM_WMF_MFTENCODER_H
+#define DOM_MEDIA_PLATFORM_WMF_MFTENCODER_H
 
-#  include <functional>
-#  include <queue>
-#  include <deque>
-#  include "mozilla/RefPtr.h"
-#  include "mozilla/ResultVariant.h"
-#  include "nsISupportsImpl.h"
-#  include "nsDeque.h"
-#  include "nsTArray.h"
-#  include "WMF.h"
+#include <wrl.h>
+#include <deque>
+#include <functional>
+#include <queue>
+
+#include "EncoderConfig.h"
+#include "WMF.h"
+#include "mozilla/DefineEnum.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/ResultVariant.h"
+#include "nsDeque.h"
+#include "nsISupportsImpl.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 
@@ -26,12 +29,24 @@ class MFTEncoder final {
     RefPtr<IMFSample> mSample{};
     bool mKeyFrameRequested = false;
   };
+  using MPEGHeader = nsTArray<UINT8>;
+  struct OutputSample {
+    RefPtr<IMFSample> mSample{};
+    MPEGHeader mHeader;
+  };
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MFTEncoder)
 
-  explicit MFTEncoder(const bool aHardwareNotAllowed)
-      : mHardwareNotAllowed(aHardwareNotAllowed) {}
+  enum class HWPreference {
+    HardwareOnly,
+    SoftwareOnly,
+    PreferHardware,
+    PreferSoftware
+  };
+  explicit MFTEncoder(const HWPreference aHWPreference)
+      : mHWPreference(aHWPreference) {}
 
-  HRESULT Create(const GUID& aSubtype);
+  HRESULT Create(const GUID& aSubtype, const gfx::IntSize& aFrameSize,
+                 const EncoderConfig::CodecSpecific& aCodecSpecific);
   HRESULT Destroy();
   HRESULT SetMediaTypes(IMFMediaType* aInputType, IMFMediaType* aOutputType);
   HRESULT SetModes(const EncoderConfig& aConfig);
@@ -39,16 +54,35 @@ class MFTEncoder final {
 
   HRESULT CreateInputSample(RefPtr<IMFSample>* aSample, size_t aSize);
   HRESULT PushInput(const InputSample& aInput);
-  HRESULT TakeOutput(nsTArray<RefPtr<IMFSample>>& aOutput);
-  HRESULT Drain(nsTArray<RefPtr<IMFSample>>& aOutput);
 
-  HRESULT GetMPEGSequenceHeader(nsTArray<UINT8>& aHeader);
+  nsTArray<OutputSample> TakeOutput();
+  HRESULT Drain(nsTArray<OutputSample>& aOutput);
+
+  Result<MPEGHeader, HRESULT> GetMPEGSequenceHeader();
 
   static nsCString GetFriendlyName(const GUID& aSubtype);
 
   struct Info final {
     GUID mSubtype;
     nsCString mName;
+  };
+  struct Factory {
+    MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING_AT_CLASS_SCOPE(
+        Provider, (HW_AMD, HW_Intel, HW_NVIDIA, HW_Qualcomm, HW_Unknown, SW))
+
+    Provider mProvider;
+    Microsoft::WRL::ComPtr<IMFActivate> mActivate;
+    nsCString mName;
+
+    Factory(Provider aProvider,
+            Microsoft::WRL::ComPtr<IMFActivate>&& aActivate);
+    Factory(Factory&& aOther) = default;
+    Factory(const Factory& aOther) = delete;
+    ~Factory();
+
+    explicit operator bool() const { return mActivate; }
+
+    HRESULT Shutdown();
   };
 
  private:
@@ -95,10 +129,10 @@ class MFTEncoder final {
         // code so a pointer is introduced.
         UniquePtr<EventQueue>>
         mImpl;
-#  ifdef DEBUG
+#ifdef DEBUG
     bool IsOnCurrentThread();
     nsCOMPtr<nsISerialEventTarget> mThread;
-#  endif
+#endif
   };
 
   ~MFTEncoder() { Destroy(); };
@@ -107,7 +141,6 @@ class MFTEncoder final {
   static nsTArray<Info> Enumerate();
   static Maybe<Info> GetInfo(const GUID& aSubtype);
 
-  already_AddRefed<IMFActivate> CreateFactory(const GUID& aSubtype);
   // Return true when successfully enabled, false for MFT that doesn't support
   // async processing model, and error otherwise.
   using AsyncMFTResult = Result<bool, HRESULT>;
@@ -117,14 +150,20 @@ class MFTEncoder final {
   HRESULT SendMFTMessage(MFT_MESSAGE_TYPE aMsg, ULONG_PTR aData);
 
   HRESULT ProcessEvents();
+  HRESULT ProcessEventsInternal();
   HRESULT ProcessInput();
   HRESULT ProcessOutput();
 
-  const bool mHardwareNotAllowed;
+  MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING_AT_CLASS_SCOPE(DrainState,
+                                                     (DRAINED, DRAINABLE,
+                                                      DRAINING));
+  void SetDrainState(DrainState aState);
+
+  const HWPreference mHWPreference;
   RefPtr<IMFTransform> mEncoder;
   // For MFT object creation. See
   // https://docs.microsoft.com/en-us/windows/win32/medfound/activation-objects
-  RefPtr<IMFActivate> mFactory;
+  Maybe<Factory> mFactory;
   // For encoder configuration. See
   // https://docs.microsoft.com/en-us/windows/win32/directshow/encoder-api
   RefPtr<ICodecAPI> mConfig;
@@ -136,15 +175,17 @@ class MFTEncoder final {
   bool mOutputStreamProvidesSample;
 
   size_t mNumNeedInput;
-  enum class DrainState { DRAINED, DRAINABLE, DRAINING };
   DrainState mDrainState = DrainState::DRAINABLE;
 
   std::deque<InputSample> mPendingInputs;
-  nsTArray<RefPtr<IMFSample>> mOutputs;
+  nsTArray<OutputSample> mOutputs;
+  // Holds a temporary MPEGSequenceHeader to be attached to the first output
+  // packet after format renegotiation.
+  MPEGHeader mOutputHeader;
 
   EventSource mEventSource;
 };
 
 }  // namespace mozilla
 
-#endif
+#endif  // DOM_MEDIA_PLATFORM_WMF_MFTENCODER_H

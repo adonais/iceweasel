@@ -26,13 +26,13 @@ import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.launch
 import mozilla.components.service.nimbus.evalJexlSafe
 import mozilla.components.service.nimbus.messaging.use
+import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.BrowsersCache
 import org.mozilla.fenix.FenixApplication
 import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.tabstrip.isTabStripEnabled
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.initializeGlean
 import org.mozilla.fenix.components.lazyStore
@@ -67,6 +67,8 @@ import org.mozilla.fenix.utils.maybeShowAddSearchWidgetPrompt
  */
 class OnboardingFragment : Fragment() {
     private val logger = Logger("OnboardingFragment")
+
+    private val removeMarketingFeature = ViewBoundFeatureWrapper<MarketingPageRemovalSupport>()
 
     private val termsOfServiceEventHandler by lazy {
         DefaultOnboardingTermsOfServiceEventHandler(
@@ -150,6 +152,21 @@ class OnboardingFragment : Fragment() {
                 ScreenContent()
             }
         }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        removeMarketingFeature.set(
+            feature = MarketingPageRemovalSupport(
+                prefKey = requireContext().getString(R.string.pref_key_should_show_marketing_onboarding),
+                pagesToDisplay = pagesToDisplay,
+                distributionIdManager = requireComponents.distributionIdManager,
+                settings = requireContext().settings(),
+                lifecycleOwner = viewLifecycleOwner,
+            ),
+            owner = this,
+            view = view,
+        )
+        super.onViewCreated(view, savedInstanceState)
     }
 
     override fun onResume() {
@@ -295,6 +312,9 @@ class OnboardingFragment : Fragment() {
                 }
                 telemetryRecorder.onMarketingDataContinueClicked(allowMarketingDataCollection)
             },
+            currentIndex = { index ->
+                removeMarketingFeature.withFeature { it.currentPageIndex = index }
+            },
             onCustomizeThemeClick = {
                 telemetryRecorder.onSelectThemeClick(
                     onboardingStore.state.themeOptionSelected.id,
@@ -388,7 +408,7 @@ class OnboardingFragment : Fragment() {
                 showDefaultBrowserPage,
                 showNotificationPage,
                 showAddWidgetPage,
-                requireContext().isTabStripEnabled().not(),
+                requireContext().settings().isTabStripEnabled.not(),
                 jexlConditions,
             ) { condition -> jexlHelper.evalJexlSafe(condition) }
         }

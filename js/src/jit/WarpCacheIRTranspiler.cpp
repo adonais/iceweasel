@@ -471,10 +471,12 @@ template <auto FuseMember, CompilationDependency::Type DepType>
 struct RealmFuseDependency final : public CompilationDependency {
   RealmFuseDependency() : CompilationDependency(DepType) {}
 
-  virtual bool registerDependency(JSContext* cx, HandleScript script) override {
+  virtual bool registerDependency(JSContext* cx,
+                                  const IonScriptKey& ionScript) override {
     MOZ_ASSERT(checkDependency(cx));
 
-    return (cx->realm()->realmFuses.*FuseMember).addFuseDependency(cx, script);
+    return (cx->realm()->realmFuses.*FuseMember)
+        .addFuseDependency(cx, ionScript);
   }
 
   virtual UniquePtr<CompilationDependency> clone() const override {
@@ -1112,7 +1114,8 @@ bool WarpCacheIRTranspiler::emitGuardSpecificAtom(StringOperandId strId,
   MDefinition* str = getOperand(strId);
   JSString* expected = stringStubField(expectedOffset);
 
-  auto* ins = MGuardSpecificAtom::New(alloc(), str, &expected->asAtom());
+  auto* ins =
+      MGuardSpecificAtom::New(alloc(), str, &expected->asOffThreadAtom());
   add(ins);
 
   setOperand(strId, ins);
@@ -2029,7 +2032,8 @@ bool WarpCacheIRTranspiler::emitLoadBoundFunctionArgument(
   add(elements);
 
   auto argIndex = constant(Int32Value(index));
-  auto* load = MLoadElement::New(alloc(), elements, argIndex);
+  auto* load = MLoadElement::New(alloc(), elements, argIndex,
+                                 /* needsHoleCheck */ false);
   add(load);
 
   return defineOperand(resultId, load);
@@ -2190,8 +2194,8 @@ MInstruction* WarpCacheIRTranspiler::addBoundsCheck(MDefinition* index,
   return check;
 }
 
-bool WarpCacheIRTranspiler::emitLoadDenseElementResult(ObjOperandId objId,
-                                                       Int32OperandId indexId) {
+bool WarpCacheIRTranspiler::emitLoadDenseElementResult(
+    ObjOperandId objId, Int32OperandId indexId, bool expectPackedElements) {
   MDefinition* obj = getOperand(objId);
   MDefinition* index = getOperand(indexId);
 
@@ -2203,7 +2207,13 @@ bool WarpCacheIRTranspiler::emitLoadDenseElementResult(ObjOperandId objId,
 
   index = addBoundsCheck(index, length);
 
-  auto* load = MLoadElement::New(alloc(), elements, index);
+  if (expectPackedElements) {
+    auto* guardPacked = MGuardElementsArePacked::New(alloc(), elements);
+    add(guardPacked);
+  }
+
+  bool needsHoleCheck = !expectPackedElements;
+  auto* load = MLoadElement::New(alloc(), elements, index, needsHoleCheck);
   add(load);
 
   pushResult(load);
@@ -2939,7 +2949,8 @@ bool WarpCacheIRTranspiler::emitAddSlotAndCallAddPropHook(
 
 bool WarpCacheIRTranspiler::emitStoreDenseElement(ObjOperandId objId,
                                                   Int32OperandId indexId,
-                                                  ValOperandId rhsId) {
+                                                  ValOperandId rhsId,
+                                                  bool expectPackedElements) {
   MDefinition* obj = getOperand(objId);
   MDefinition* index = getOperand(indexId);
   MDefinition* rhs = getOperand(rhsId);
@@ -2952,10 +2963,15 @@ bool WarpCacheIRTranspiler::emitStoreDenseElement(ObjOperandId objId,
 
   index = addBoundsCheck(index, length);
 
+  if (expectPackedElements) {
+    auto* guardPacked = MGuardElementsArePacked::New(alloc(), elements);
+    add(guardPacked);
+  }
+
   auto* barrier = MPostWriteElementBarrier::New(alloc(), obj, rhs, index);
   add(barrier);
 
-  bool needsHoleCheck = true;
+  bool needsHoleCheck = !expectPackedElements;
   auto* store = MStoreElement::NewBarriered(alloc(), elements, index, rhs,
                                             needsHoleCheck);
   addEffectful(store);
@@ -6436,7 +6452,8 @@ bool WarpCacheIRTranspiler::emitCallBoundScriptedFunction(
       size_t slot = BoundFunctionObject::firstInlineBoundArgSlot() + index;
       arg = MLoadFixedSlot::New(alloc(), callee, slot);
     } else {
-      arg = MLoadElement::New(alloc(), elements, constant(Int32Value(index)));
+      arg = MLoadElement::New(alloc(), elements, constant(Int32Value(index)),
+                              /*needsHoleCheck*/ false);
     }
     add(arg);
     return arg;

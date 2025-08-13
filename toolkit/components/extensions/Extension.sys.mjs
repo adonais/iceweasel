@@ -25,7 +25,6 @@
  * reloaded by the user, we have to  ensure that the new extension pages are going
  * to run in the same process of the existing addon debugging browser element).
  */
-/* eslint-disable mozilla/valid-lazy */
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
@@ -800,7 +799,7 @@ export var ExtensionProcessCrashObserver = {
   },
 
   observe(subject, topic, data) {
-    let childID = data;
+    let childID = parseInt(data, 10);
     switch (topic) {
       case "geckoview-initial-foreground":
         this._appInForeground = true;
@@ -1283,13 +1282,13 @@ export class ExtensionData {
    * @param {object} manifest A normalized manifest (which, in this case, means
    * that `browser_specific_settings` was folded into `applications`).
    *
-   * @returns {{required:Array<string>, optional: Array<string>}} an object
-   * containing the `required` and `optional` data collection permissions
-   * listed in the manifest.
+   * @returns {{required:Array<string>, optional: Array<string>, hasPreviousConsent: boolean}} an
+   * object containing the `required` and `optional` data collection
+   * permissions listed in the manifest.
    */
   getDataCollectionPermissions(manifest = this.manifest) {
     if (this.type !== "extension") {
-      return { required: [], optional: [] };
+      return { required: [], optional: [], hasPreviousConsent: false };
     }
 
     const data_collection_permissions =
@@ -1298,6 +1297,9 @@ export class ExtensionData {
     return {
       required: Array.from(new Set(data_collection_permissions?.required)),
       optional: Array.from(new Set(data_collection_permissions?.optional)),
+      hasPreviousConsent: Boolean(
+        data_collection_permissions?.has_previous_consent
+      ),
     };
   }
 

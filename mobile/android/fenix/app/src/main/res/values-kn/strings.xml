@@ -329,9 +329,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">ಇತಿಹಾಸವನ್ನು ಅಳಿಸಿ</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">ಇತಿಹಾಸವನ್ನು ಅಳಿಸಲಾಗಿದೆ</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">ಇತಿಹಾಸವನ್ನು ಅಳಿಸಲಾಗಿದೆ</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">%1$s ಅಳಿಸಲಾಗಿದೆ</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s ಅಳಿಸಲಾಗಿದೆ</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">ಅಳಿಸು</string>
   <!--
@@ -364,7 +364,7 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">ಈ ಕಡತಕೋಶವನ್ನು ಅಳಿಸಲು ನೀವು ಖಚಿತವಾಗಿ ಬಯಸುವಿರಾ?</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">ಈ ಕಡತಕೋಶವನ್ನು ಅಳಿಸಲು ನೀವು ಖಚಿತವಾಗಿ ಬಯಸುವಿರಾ?</string>
   <!-- Screen title for adding a bookmarks folder -->
   <string name="bookmark_add_folder">ಫೋಲ್ಡರ್ ಸೇರಿಸು</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
@@ -382,7 +382,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">ಅಳಿಸು</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">ಉಳಿಸು</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">ಉಳಿಸು</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -393,7 +393,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">ಕಡತಕೋಶ ಸಂಪಾದಿಸಿ</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">ಸಿಂಕ್ ಮಾಡಿದ ಬುಕ್‌ಮಾರ್ಕ್‌ಗಳನ್ನು ನೋಡಲು ಸೈನ್ ಇನ್ ಮಾಡಿ</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">ಸಿಂಕ್ ಮಾಡಿದ ಬುಕ್‌ಮಾರ್ಕ್‌ಗಳನ್ನು ನೋಡಲು ಸೈನ್ ಇನ್ ಮಾಡಿ</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -401,22 +401,22 @@
   <!-- Bookmark NAME editing field label -->
   <string name="bookmark_name_label">ಹೆಸರು</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">ಕಡತಕೋಶ ಸೇರಿಸು</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">ಕಡತಕೋಶ ಸೇರಿಸು</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">ಕಡತ ಕೋಶ ಆಯ್ಕೆಮಾಡು</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">ಶೀರ್ಷಿಕೆ ಹೊಂದಿರಬೇಕು</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">ಶೀರ್ಷಿಕೆ ಹೊಂದಿರಬೇಕು</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">ಅಮಾನ್ಯವಾದ URL</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">ಇಲ್ಲಿ ಪುಟಗುರುತುಗಳಿಲ್ಲ</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">ಇಲ್ಲಿ ಪುಟಗುರುತುಗಳಿಲ್ಲ</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s ಅಳಿಸಲಾಗಿದೆ</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">ಬುಕ್‌ಮಾರ್ಕ್‌ಗಳನ್ನು ಅಳಿಸಲಾಗಿದೆ</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">ಬುಕ್‌ಮಾರ್ಕ್‌ಗಳನ್ನು ಅಳಿಸಲಾಗಿದೆ</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">ರದ್ದುಗೊಳಿಸಿ</string>
   <!--
@@ -508,7 +508,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ಟ್ಯಾಬ್‌ಗಳನ್ನು ಆಯ್ಕೆ ಮಾಡಲಾಗಿದೆ</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">ಟ್ಯಾಬ್‌ಗಳನ್ನು ಉಳಿಸಲಾಗಿದೆ!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">ಟ್ಯಾಬ್‌ಗಳನ್ನು ಉಳಿಸಲಾಗಿದೆ!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection">ಸಂಗ್ರಹವನ್ನು ಉಳಿಸಲಾಗಿದೆ!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -573,9 +573,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">ಸಂಗ್ರಹವನ್ನು ಅಳಿಸಲಾಗಿದೆ</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">ಸಂಗ್ರಹವನ್ನು ಅಳಿಸಲಾಗಿದೆ</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">ಸಂಗ್ರಹವನ್ನು ಮರುಹೆಸರಿಸಲಾಗಿದೆ</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">ಸಂಗ್ರಹವನ್ನು ಮರುಹೆಸರಿಸಲಾಗಿದೆ</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">ಟ್ಯಾಬ್ ಮುಚ್ಚಲಾಗಿದೆ</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -600,9 +600,9 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">%1$s ಅನ್ನು ಅಳಿಸಲು ನೀವು ಖಚಿತವಾಗಿ ಬಯಸುವಿರಾ?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">ಅಳಿಸು</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">ಅಳಿಸು</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">URL ನಕಲಿಸಲಾಗಿದೆ</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL ನಕಲಿಸಲಾಗಿದೆ</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">ಇದು ಮಾದರಿ ಪಠ್ಯ. ಈ ಸೆಟ್ಟಿಂಗ್‌ನೊಂದಿಗೆ ನೀವು ಗಾತ್ರವನ್ನು ಹೆಚ್ಚಿಸಿದಾಗ ಅಥವಾ ಕಡಿಮೆಗೊಳಿಸಿದಾಗ ಪಠ್ಯ ಹೇಗೆ ಕಾಣಿಸುತ್ತದೆ ಎಂಬುದನ್ನು ತೋರಿಸಲು ಇಲ್ಲಿದೆ.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -876,14 +876,12 @@
   <string name="search_add_custom_engine_error_empty_search_string">ಹುಡುಕಾಟ ಸ್ಟ್ರಿಂಗ್ ಅನ್ನು ನಮೂದಿಸಿ</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">ಹುಡುಕಾಟ ಸ್ಟ್ರಿಂಗ್ ಉದಾಹರಣೆ ಸ್ವರೂಪಕ್ಕೆ ಹೊಂದಿಕೆಯಾಗಿದೆಯೆ ಎಂದು ಪರಿಶೀಲಿಸಿ</string>
-  <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">“%s” ಗೆ ಸಂಪರ್ಕಿಸುವಲ್ಲಿ ದೋಷ</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">%s ರಚಿಸಲಾಗಿದೆ</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ರಚಿಸಲಾಗಿದೆ</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">%s ಉಳಿಸಲಾಗಿದೆ</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ಉಳಿಸಲಾಗಿದೆ</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">%s ಅಳಿಸಲಾಗಿದೆ</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ಅಳಿಸಲಾಗಿದೆ</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">ಅದನ್ನು ಅನುಮತಿಸಲು:</string>
   <!-- First step for the allowing a permission -->
@@ -901,7 +899,7 @@
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">ಸೈಟ್ ವಿನಾಯಿತಿಗಳಿಲ್ಲ</string>
   <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation">ಈ ಪುಟಗುರುತನ್ನು ಅಳಿಸಲು ನೀವು ಖಚಿತವಾಗಿ ಬಯಸುವಿರಾ?</string>
+  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">ಈ ಪುಟಗುರುತನ್ನು ಅಳಿಸಲು ನೀವು ಖಚಿತವಾಗಿ ಬಯಸುವಿರಾ?</string>
   <!--
     text shown before the issuer name to indicate who its verified by, %1$s is the name of
     the certificate authority that verified the ticket

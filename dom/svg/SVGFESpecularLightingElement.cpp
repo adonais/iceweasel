@@ -76,8 +76,7 @@ SVGFESpecularLightingElement::GetPrimitiveDescription(
   SpecularLightingAttributes atts;
   atts.mLightingConstant = specularConstant;
   atts.mSpecularExponent = specularExponent;
-  if (!AddLightingAttributes(static_cast<DiffuseLightingAttributes*>(&atts),
-                             aInstance)) {
+  if (!AddLightingAttributes(&atts, aInstance)) {
     return FilterPrimitiveDescription();
   }
 

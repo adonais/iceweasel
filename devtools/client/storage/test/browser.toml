@@ -76,6 +76,8 @@ https_first_disabled = true
 
 ["browser_storage_cookies_edit.js"]
 
+["browser_storage_cookies_edit_expiry.js"]
+
 ["browser_storage_cookies_edit_keyboard.js"]
 
 ["browser_storage_cookies_hostOnly.js"]
@@ -169,9 +171,7 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_storage_localstorage_tall_content.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1970057
-]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'"] # Bug 1970057
 
 ["browser_storage_overflow.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled

@@ -7,8 +7,8 @@
 #ifndef mozilla_PresShellForwards_h
 #define mozilla_PresShellForwards_h
 
-#include "mozilla/TypedEnumBits.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/TypedEnumBits.h"
 
 struct CapturingContentInfo;
 

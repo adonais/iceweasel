@@ -36,8 +36,8 @@
 #define nsPlaceholderFrame_h___
 
 #include "mozilla/Attributes.h"
-#include "nsIFrame.h"
 #include "nsGkAtoms.h"
+#include "nsIFrame.h"
 
 namespace mozilla {
 class PresShell;

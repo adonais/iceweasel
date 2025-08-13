@@ -107,18 +107,8 @@ web-platform-tests:
                     android.*: []
                     .*-wayland.*: []
                     default: built-projects
-            inc-origin-init:
-                by-test-platform:
-                    linux.*64(-shippable)?(-qr)?/.*: built-projects
-                    macosx.*64(-shippable)?/.*: built-projects
-                    windows11.*64.*(-shippable)?/.*: built-projects
-                    default: []
-            privatebrowsing-inc-origin-init:
-                by-test-platform:
-                    linux.*64(-shippable)?(-qr)?/.*: built-projects
-                    macosx.*64(-shippable)?/.*: built-projects
-                    windows11.*64.*(-shippable)?/.*: built-projects
-                    default: []
+            inc-origin-init: []
+            privatebrowsing-inc-origin-init: []
             default:
                 by-test-platform:
                     android.*: []
@@ -310,7 +300,7 @@ web-platform-tests-webgpu:
             android.*: 2  # https://bugzilla.mozilla.org/show_bug.cgi?id=1849914
             macosx.*: 2  # https://bugzilla.mozilla.org/show_bug.cgi?id=1849913
             linux2204.*-64.*: 2  # https://bugzilla.mozilla.org/show_bug.cgi?id=1849912
-            windows.*-64.*: 2  # https://bugzilla.mozilla.org/show_bug.cgi?id=1849911
+            windows.*-64.*: default
             default: 2
     # Choice of `chunks`:
     # Time-to-TEST-START on Windows is ~7m (~9m for debug).
@@ -319,10 +309,10 @@ web-platform-tests-webgpu:
     # 50% overhead, so let's aim for 15m (20m debug)
     chunks:
         by-test-platform:
-            linux2204.*/debug.*: 18
-            linux2204.*: 16
-            windows.*-64.*/opt.*: 10
-            default: 10
+            linux2204.*/debug.*: 22
+            linux2204.*: 20
+            windows.*-64.*/opt.*: 14
+            default: 14
     max-run-time:
         by-test-platform:
             .*/debug.*: 2700  # 45m
@@ -331,6 +321,7 @@ web-platform-tests-webgpu:
     run-on-projects:
         by-test-platform:
             android.*: []  # https://bugzilla.mozilla.org/show_bug.cgi?id=1836811
+            windows.*-64.*: built-projects
             default: ['trunk']
     mozharness:
         chunked: true
@@ -370,7 +361,7 @@ web-platform-tests-webgpu-long:
             - --tag=webgpu-long
             - --skip-implementation-status=backlog
             - --skip-implementation-status=not-implementing
-            - --timeout-multiplier=10.0
+            - --timeout-multiplier=5.0
 
 web-platform-tests-webgpu-backlog:
     description: "Web platform WebGPU test run (backlog)"
@@ -395,10 +386,7 @@ web-platform-tests-webgpu-backlog:
             .*/debug: 5400  # 90m
             default: 3200  # 60m
     variants: []  # We don't need sw or nofis testing.
-    run-on-projects:
-        by-test-platform:
-            android.*: []  # https://bugzilla.mozilla.org/show_bug.cgi?id=1836811
-            default: ['mozilla-central']
+    run-on-projects: []  # Only run this manually, i.e., `mach try --preset webgpu`.
     mozharness:
         chunked: true
         extra-options:
@@ -430,10 +418,7 @@ web-platform-tests-webgpu-backlog-long:
             default: 4
     max-run-time: 5400  # 90m
     variants: []  # We don't need sw or nofis testing.
-    run-on-projects:
-        by-test-platform:
-            android.*: []  # https://bugzilla.mozilla.org/show_bug.cgi?id=1836811
-            default: ['mozilla-central']
+    run-on-projects: []  # Only run this manually, i.e., `mach try --preset webgpu`.
     mozharness:
         chunked: true
         extra-options:
@@ -443,7 +428,7 @@ web-platform-tests-webgpu-backlog-long:
             - --skip-implementation-status=implementing
             - --skip-implementation-status=not-implementing
             - --backlog
-            - --timeout-multiplier=10.0
+            - --timeout-multiplier=5.0
 
 web-platform-tests-canvas:
     description: "Web platform Canvas test run"

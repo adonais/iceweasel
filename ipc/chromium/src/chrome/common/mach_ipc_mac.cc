@@ -113,7 +113,7 @@ bool MachChildProcessCheckIn(
     std::vector<mozilla::UniqueMachSendRight>& send_rights) {
   mozilla::UniqueMachSendRight task_sender;
   kern_return_t kr = bootstrap_look_up(bootstrap_port, bootstrap_service_name,
-                                       getter_Transfers(task_sender));
+                                       mozilla::getter_Transfers(task_sender));
   if (kr != KERN_SUCCESS) {
     CHROMIUM_LOG(ERROR) << "child bootstrap_look_up failed: "
                         << FormatMachError(kr);
@@ -122,7 +122,7 @@ bool MachChildProcessCheckIn(
 
   mozilla::UniqueMachReceiveRight reply_port;
   kr = mach_port_allocate(mach_task_self(), MACH_PORT_RIGHT_RECEIVE,
-                          getter_Transfers(reply_port));
+                          mozilla::getter_Transfers(reply_port));
   if (kr != KERN_SUCCESS) {
     CHROMIUM_LOG(ERROR) << "child mach_port_allocate failed: "
                         << FormatMachError(kr);

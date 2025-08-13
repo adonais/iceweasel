@@ -8,6 +8,9 @@
 newtab-page-title = Ischeda noa
 newtab-settings-button =
     .title = Personaliza sa pàgina de s'ischeda noa
+newtab-customize-panel-icon-button =
+    .title = Personaliza custa pàgina
+newtab-customize-panel-icon-button-label = Personaliza
 newtab-personalize-settings-icon-label =
     .title = Personaliza s’ischeda noa
     .aria-label = Cunfiguratziones
@@ -117,6 +120,8 @@ newtab-menu-delete-pocket = Cantzella dae { -pocket-brand-name }
 newtab-menu-archive-pocket = Archìvia in { -pocket-brand-name }
 newtab-menu-show-privacy-info = Is patrotzinadores nostros e sa riservadesa tua
 newtab-menu-about-fakespot = Informatziones in pitzus de { -fakespot-brand-name }
+# Report is a verb (i.e. report issue with the content).
+newtab-menu-report = Sinnala
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Bloca
@@ -189,6 +194,8 @@ newtab-label-sponsored-by = Patrotzinadu dae { $sponsor }
 #   $source (string) - The name of a company or their domain
 #   $timeToRead (number) - The estimated number of minutes to read this story
 newtab-label-source-read-time = { $source } · { $timeToRead } min
+# This string is used under fixed size ads to indicate sponsored content
+newtab-label-sponsored-fixed = Patrotzinadu
 
 ## Section Menu: These strings are displayed in the section context menu and are
 ## meant as a call to action for the given section.
@@ -310,6 +317,9 @@ newtab-custom-recent-toggle =
 newtab-custom-weather-toggle =
     .label = Tempus
     .description = Is previsiones de oe in curtzu
+newtab-custom-trending-search-toggle =
+    .label = Chircas populares
+    .description = Argumentos populares e chircados a s’ispissu
 newtab-custom-close-button = Serra
 newtab-custom-settings = Gesti prus cunfiguratziones
 
@@ -319,6 +329,7 @@ newtab-wallpaper-title = Isfundos de ischermu
 newtab-wallpaper-reset = Ripristina comente predefinidu
 newtab-wallpaper-upload-image = Càrriga un’immàgine
 newtab-wallpaper-custom-color = Sèbera unu colore
+newtab-wallpaper-error-file-type = Impossìbile carrigare s’archìviu. Torra·nche a proare cun un’àtera genia de archìviu.
 newtab-wallpaper-light-red-panda = Panda ruju
 newtab-wallpaper-light-mountain = Monte biancu
 newtab-wallpaper-light-sky = Chelu cun nues tanadas e colore de rosa
@@ -396,7 +407,7 @@ newtab-weather-see-forecast =
     .title = Càstia is previsiones in { $provider }
 # Variables:
 #   $provider (string) - Service provider for weather data
-newtab-weather-sponsored = { $provider } ∙ Isponsorizadu
+newtab-weather-sponsored = { $provider } ∙ Patrotzinadu
 newtab-weather-menu-change-location = Càmbia positzione
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Chirca positzione
@@ -488,6 +499,9 @@ newtab-section-mangage-topics-followed-topics = Sighidu
 newtab-section-mangage-topics-followed-topics-empty-state = Non ses ancora sighende nissunu argumentu
 newtab-section-mangage-topics-blocked-topics = Blocadu
 newtab-section-mangage-topics-blocked-topics-empty-state = No as ancora blocadu nissunu argumentu
+newtab-custom-wallpaper-title = Immoe podes impreare isfundos personalizados
+# 'Make firefox yours" means to customize or personalize
+newtab-custom-wallpaper-subtitle = Càrriga un’isfundu tuo o sèbera unu colore pro personalizare { -brand-product-name }.
 newtab-custom-wallpaper-cta = Proa immoe
 
 ## Strings for download mobile highlight
@@ -495,6 +509,9 @@ newtab-custom-wallpaper-cta = Proa immoe
 newtab-download-mobile-highlight-title = Iscàrriga { -brand-product-name } pro dispositivos mòbiles
 # "Scan the code" refers to scanning the QR code that appears above the body text that leads to Firefox for mobile download.
 newtab-download-mobile-highlight-body-variant-a = Iscansiona su còdighe pro navigare cun seguresa in ònnia logu.
+
+## Strings for shortcuts highlight
+
 
 ## Strings for reporting ads and content
 

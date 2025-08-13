@@ -2001,6 +2001,7 @@ export var DownloadError = function (aProperties) {
   } else if (aProperties.becauseBlockedByContentAnalysis) {
     this.becauseBlocked = true;
     this.becauseBlockedByContentAnalysis = true;
+    this.contentAnalysisCancelError = aProperties.contentAnalysisCancelError;
     this.contentAnalysisWarnRequestToken =
       aProperties.contentAnalysisWarnRequestToken;
     this.reputationCheckVerdict = aProperties.reputationCheckVerdict;
@@ -2067,6 +2068,12 @@ DownloadError.prototype = {
   becauseBlockedByContentAnalysis: false,
 
   /**
+   * The cancelError returned by the content analysis tool, which corresponds
+   * to the nsIContentAnalysisResponse.CancelError enum. May be undefined.
+   */
+  contentAnalysisCancelError: undefined,
+
+  /**
    * If becauseBlockedByReputationCheck is true, indicates the detailed reason
    * why the download was blocked, according to the "BLOCK_VERDICT_" constants.
    *
@@ -2128,7 +2135,8 @@ DownloadError.fromSerializable = function (aSerializable) {
       property != "becauseBlockedByParentalControls" &&
       property != "becauseBlockedByReputationCheck" &&
       property != "becauseBlockedByContentAnalysis" &&
-      property != "reputationCheckVerdict"
+      property != "reputationCheckVerdict" &&
+      property != "contentAnalysisCancelError"
   );
 
   return e;
@@ -2737,16 +2745,19 @@ DownloadCopySaver.prototype = {
       });
     };
 
-    let hasMostRestrictiveResult = ([result1, result2]) => {
+    let hasMostRestrictiveResult = ([
+      reputationResult,
+      contentAnalysisResult,
+    ]) => {
       // Verdicts are sorted from least-to-most restrictive.  However, a result that
       // shouldBlock is always more restrictive than one that does not.  Since
       // reputation allows shouldBlock to be overridden by prefs but content
       // analysis does not, we need to be careful of that.
-      if (result1.shouldBlock && !result2.shouldBlock) {
-        return result1;
+      if (reputationResult.shouldBlock && !contentAnalysisResult.shouldBlock) {
+        return reputationResult;
       }
-      if (result2.shouldBlock) {
-        return result2;
+      if (contentAnalysisResult.shouldBlock) {
+        return contentAnalysisResult;
       }
       // Verdicts are in a pre-defined order (see nsIApplicationReputationService),
       // so find the most restrictive one.
@@ -2757,10 +2768,10 @@ DownloadCopySaver.prototype = {
         [Ci.nsIApplicationReputationService.VERDICT_DANGEROUS_HOST]: 3,
         [Ci.nsIApplicationReputationService.VERDICT_DANGEROUS]: 4,
       };
-      return verdictToRestrictiveness[result1.verdict] >
-        verdictToRestrictiveness[result2.verdict]
-        ? result1
-        : result2;
+      return verdictToRestrictiveness[reputationResult.verdict] >
+        verdictToRestrictiveness[contentAnalysisResult.verdict]
+        ? reputationResult
+        : contentAnalysisResult;
     };
 
     let download = this.download;
@@ -2770,23 +2781,10 @@ DownloadCopySaver.prototype = {
     let reputationPromise = checkReputation(download);
     let caPromise = checkContentAnalysis(download);
 
-    let permissionResult = await Promise.any([
+    let permissionResult = await Promise.all([
       reputationPromise,
       caPromise,
-    ]).then(async result => {
-      // If the first result is the most restrictive one, we can return it
-      // immediately.
-      if (
-        result.shouldBlock &&
-        result.verdict == Ci.nsIApplicationReputationService.VERDICT_DANGEROUS
-      ) {
-        return result;
-      }
-      // Otherwise wait for both results and compare them.
-      return await Promise.all([reputationPromise, caPromise]).then(
-        hasMostRestrictiveResult
-      );
-    });
+    ]).then(hasMostRestrictiveResult);
 
     let downloadErrorVerdict = kVerdictMap[permissionResult.verdict] || "";
     permissionResult.verdict = downloadErrorVerdict;
@@ -2835,6 +2833,8 @@ DownloadCopySaver.prototype = {
         throw new DownloadError({
           becauseBlockedByContentAnalysis: true,
           reputationCheckVerdict: downloadErrorVerdict,
+          contentAnalysisCancelError:
+            permissionResult.contentAnalysisCancelError,
           contentAnalysisWarnRequestToken:
             permissionResult.contentAnalysisWarnRequestToken,
         });

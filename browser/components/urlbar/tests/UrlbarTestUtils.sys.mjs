@@ -271,7 +271,11 @@ export var UrlbarTestUtils = {
     } = {}
   ) {
     this.Assert?.ok(win.gURLBar.view.isOpen, "view should be open");
-    let menuButton = this.getButtonForResultIndex(win, "menu", resultIndex);
+    let menuButton = this.getButtonForResultIndex(
+      win,
+      "result-menu",
+      resultIndex
+    );
     this.Assert?.ok(
       menuButton,
       `found the menu button at result index ${resultIndex}`

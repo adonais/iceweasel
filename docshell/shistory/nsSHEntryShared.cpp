@@ -61,9 +61,10 @@ SHEntrySharedParentState::SHEntrySharedParentState() {
 SHEntrySharedParentState::SHEntrySharedParentState(
     nsIPrincipal* aTriggeringPrincipal, nsIPrincipal* aPrincipalToInherit,
     nsIPrincipal* aPartitionedPrincipalToInherit,
-    nsIContentSecurityPolicy* aCsp, const nsACString& aContentType)
+    nsIPolicyContainer* aPolicyContainer, const nsACString& aContentType)
     : SHEntrySharedState(aTriggeringPrincipal, aPrincipalToInherit,
-                         aPartitionedPrincipalToInherit, aCsp, aContentType) {
+                         aPartitionedPrincipalToInherit, aPolicyContainer,
+                         aContentType) {
   AddSHEntrySharedParentState(this);
 }
 
@@ -101,7 +102,7 @@ void SHEntrySharedParentState::CopyFrom(SHEntrySharedParentState* aEntry) {
   mTriggeringPrincipal = aEntry->mTriggeringPrincipal;
   mPrincipalToInherit = aEntry->mPrincipalToInherit;
   mPartitionedPrincipalToInherit = aEntry->mPartitionedPrincipalToInherit;
-  mCsp = aEntry->mCsp;
+  mPolicyContainer = aEntry->mPolicyContainer;
   mSaveLayoutState = aEntry->mSaveLayoutState;
   mContentType.Assign(aEntry->mContentType);
   mIsFrameNavigation = aEntry->mIsFrameNavigation;
@@ -346,20 +347,22 @@ void nsSHEntryShared::AttributeChanged(dom::Element* aElement,
   }
 }
 
-void nsSHEntryShared::ContentAppended(nsIContent* aFirstNewContent) {
+void nsSHEntryShared::ContentAppended(nsIContent* aFirstNewContent,
+                                      const ContentAppendInfo&) {
   if (!IgnoreMutationForBfCache(*aFirstNewContent)) {
     RemoveFromBFCacheAsync();
   }
 }
 
-void nsSHEntryShared::ContentInserted(nsIContent* aChild) {
+void nsSHEntryShared::ContentInserted(nsIContent* aChild,
+                                      const ContentInsertInfo&) {
   if (!IgnoreMutationForBfCache(*aChild)) {
     RemoveFromBFCacheAsync();
   }
 }
 
 void nsSHEntryShared::ContentWillBeRemoved(nsIContent* aChild,
-                                           const BatchRemovalState*) {
+                                           const ContentRemoveInfo&) {
   if (!IgnoreMutationForBfCache(*aChild)) {
     RemoveFromBFCacheAsync();
   }

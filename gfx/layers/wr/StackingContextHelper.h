@@ -66,13 +66,10 @@ class MOZ_RAII StackingContextHelper {
   bool AffectsClipPositioning() const { return mAffectsClipPositioning; }
   Maybe<wr::WrSpatialId> ReferenceFrameId() const { return mReferenceFrameId; }
 
-  const LayoutDevicePoint& GetOrigin() const { return mOrigin; }
-
  private:
   wr::DisplayListBuilder* mBuilder;
   gfx::MatrixScales mScale;
   gfx::Matrix mInheritedTransform;
-  LayoutDevicePoint mOrigin;
 
   // The "snapping surface" defines the space that we want to snap in.
   // You can think of it as the nearest physical surface.

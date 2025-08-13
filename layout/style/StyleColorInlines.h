@@ -9,8 +9,8 @@
 #ifndef mozilla_StyleColorInlines_h_
 #define mozilla_StyleColorInlines_h_
 
-#include "nsColor.h"
 #include "mozilla/ServoStyleConsts.h"
+#include "nsColor.h"
 #include "nsStyleUtil.h"
 
 namespace mozilla {

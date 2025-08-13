@@ -899,8 +899,6 @@ class GeckoEngineSession(
             notifyObservers {
                 onCookieBannerChange(CookieBannerHandlingStatus.NO_DETECTED)
             }
-            // Reset the status of current page being product or not when user navigates away.
-            notifyObservers { onProductUrlChange(false) }
             // Reset the status of the translation state for the page
             notifyObservers { onTranslatePageChange() }
             notifyObservers { onLocationChange(url, hasUserGesture) }
@@ -1016,14 +1014,17 @@ class GeckoEngineSession(
                     request.isRedirect,
                     request.isDirectNavigation,
                     isSubframeRequest,
-                )?.takeUnless {
-                    it is InterceptionResponse.AppIntent && request.isDirectNavigation
-                }?.apply {
+                )?.apply {
                     when (this) {
                         is InterceptionResponse.AppIntent -> {
                             appRedirectUrl = lastLoadRequestUri
                             notifyObservers {
-                                onLaunchIntentRequest(url = url, appIntent = appIntent)
+                                onLaunchIntentRequest(
+                                    url = url,
+                                    appIntent = appIntent,
+                                    fallbackUrl = fallbackUrl,
+                                    appName = appName,
+                                )
                             }
                         }
 
@@ -1492,7 +1493,7 @@ class GeckoEngineSession(
         ) {
             val request = GeckoPermissionRequest.App(
                 permissions?.toList() ?: emptyList(),
-                callback,
+                mutableListOf(callback),
             )
             notifyObservers { onAppPermissionRequest(request) }
         }

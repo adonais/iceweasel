@@ -8,15 +8,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://devtools/shared/network-observer/NetworkHelper.sys.mjs",
   NetworkUtils:
     "resource://devtools/shared/network-observer/NetworkUtils.sys.mjs",
-
-  Log: "chrome://remote/content/shared/Log.sys.mjs",
   NavigationState: "chrome://remote/content/shared/NavigationManager.sys.mjs",
   notifyNavigationStarted:
     "chrome://remote/content/shared/NavigationManager.sys.mjs",
   TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
 });
-
-ChromeUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());
 
 /**
  * The NetworkRequest class is a wrapper around the internal channel which
@@ -398,7 +394,6 @@ export class NetworkRequest {
   #getFetchTimings() {
     const {
       asyncOpenTime,
-      channelCreationTime,
       redirectStartTime,
       redirectEndTime,
       dispatchFetchEventStartTime,
@@ -426,25 +421,9 @@ export class NetworkRequest {
     // available in the parent process, so for now we will use 0.
     const timeOrigin = 0;
 
-    let requestTime;
-    if (asyncOpenTime == 0) {
-      lazy.logger.warn(
-        `[NetworkRequest] Invalid asyncOpenTime=0 for channel [id: ${
-          this.#channel.channelId
-        }, url: ${
-          this.#channel.URI.spec
-        }], falling back to channelCreationTime=${
-          this.#timedChannel.channelCreationTime
-        }.`
-      );
-      requestTime = channelCreationTime;
-    } else {
-      requestTime = asyncOpenTime;
-    }
-
     return {
       timeOrigin,
-      requestTime: this.#convertTimestamp(requestTime, timeOrigin),
+      requestTime: this.#convertTimestamp(asyncOpenTime, timeOrigin),
       redirectStart: this.#convertTimestamp(redirectStartTime, timeOrigin),
       redirectEnd: this.#convertTimestamp(redirectEndTime, timeOrigin),
       fetchStart: this.#convertTimestamp(fetchStartTime, timeOrigin),

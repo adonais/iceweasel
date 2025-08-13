@@ -1,32 +1,27 @@
 From: Michael Froman <mfroman@mozilla.com>
 Date: Mon, 20 Jun 2022 22:34:00 +0000
-Subject: Bug 1775143 - pt8 - (mirror) dc3478ddac7c r=ng
+Subject: Bug 1775143 - pt9 - (mirror) 8b33eb369e9e r=ng
 
 (skip-generation)
 
-Depends on D149821
+Depends on D149822
 
-Differential Revision: https://phabricator.services.mozilla.com/D149822
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/9444d12972cebe7d8f805a6e7a81308c063fd91d
+Differential Revision: https://phabricator.services.mozilla.com/D149823
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/99575d260702afb300459d1bb5c23da1175a970a
 ---
- config/BUILD.gn | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ config/win/BUILD.gn | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/config/BUILD.gn b/config/BUILD.gn
-index b51e3b9ce..9c82a4d9b 100644
---- a/config/BUILD.gn
-+++ b/config/BUILD.gn
-@@ -114,10 +114,11 @@ config("feature_flags") {
- 
- config("debug") {
+diff --git a/config/win/BUILD.gn b/config/win/BUILD.gn
+index a71603fb1..e656a35e2 100644
+--- a/config/win/BUILD.gn
++++ b/config/win/BUILD.gn
+@@ -289,7 +289,7 @@ config("runtime_library") {
+ # manually override this config for their compiles.
+ config("winver") {
    defines = [
--    "_DEBUG",
-     "DYNAMIC_ANNOTATIONS_ENABLED=1",
-   ]
--
-+  if (!is_win) {
-+   defines += [ "_DEBUG" ]
-+  }
-   if (is_nacl) {
-     defines += [ "DYNAMIC_ANNOTATIONS_PREFIX=NACL_" ]
-   }
+-    "NTDDI_VERSION=NTDDI_WIN11_GE",
++    "NTDDI_VERSION=0x0A000000",
+ 
+     # We can't say `=_WIN32_WINNT_WIN10` here because some files do
+     # `#if WINVER < 0x0600` without including windows.h before,

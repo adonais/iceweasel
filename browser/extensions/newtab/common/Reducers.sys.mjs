@@ -119,7 +119,7 @@ export const INITIAL_STATE = {
   // Messages received from ASRouter to render in newtab
   Messages: {
     // messages received from ASRouter are initially visible
-    isHidden: false,
+    isVisible: true,
     // portID for that tab that was sent the message
     portID: "",
     // READONLY Message data received from ASRouter
@@ -177,6 +177,33 @@ export const INITIAL_STATE = {
   TrendingSearch: {
     suggestions: [],
     collapsed: false,
+  },
+  // Widgets
+  ListsWidget: {
+    // value pointing to last selectled list
+    selected: "taskList",
+    // Default state of an empty task list
+    lists: {
+      taskList: {
+        label: "Task List",
+        tasks: [],
+      },
+    },
+    // Keeping this separate from `lists` so that it isnt rendered
+    // in the same way
+    completed: {
+      label: "Completed",
+      tasks: [],
+    },
+  },
+  TimerWidget: {
+    // Timer duration set by user
+    duration: 0,
+    // Time that the timer was started
+    startTime: null,
+    // Calculated when a user pauses the timer
+    remaining: 0,
+    isRunning: false,
   },
 };
 
@@ -570,7 +597,7 @@ function Messages(prevState = INITIAL_STATE.Messages, action) {
         portID: action.data.portID || "",
       };
     case at.MESSAGE_TOGGLE_VISIBILITY:
-      return { ...prevState, isHidden: action.data };
+      return { ...prevState, isVisible: action.data };
     default:
       return prevState;
   }
@@ -926,9 +953,6 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
           ...prevState.report,
           card_type: action.data?.card_type,
           corpus_item_id: action.data?.corpus_item_id,
-          is_section_followed: action.data?.is_section_followed,
-          received_rank: action.data?.received_rank,
-          recommended_at: action.data?.recommended_at,
           scheduled_corpus_item_id: action.data?.scheduled_corpus_item_id,
           section_position: action.data?.section_position,
           section: action.data?.section,
@@ -1076,6 +1100,52 @@ function TrendingSearch(prevState = INITIAL_STATE.TrendingSearch, action) {
   }
 }
 
+function TimerWidget(prevState = INITIAL_STATE.TimerWidget, action) {
+  switch (action.type) {
+    case at.WIDGETS_TIMER_SET:
+      return { ...action.data };
+    case at.WIDGETS_TIMER_SET_DURATION:
+      return {
+        ...prevState,
+        duration: action.data,
+        remaining: action.data,
+      };
+    case at.WIDGETS_TIMER_START:
+      return { ...prevState, startTime: Date.now(), isRunning: true };
+    case at.WIDGETS_TIMER_PAUSE:
+      if (prevState.isRunning) {
+        const elapsed = Date.now() - prevState.startTime;
+        return {
+          ...prevState,
+          remaining: prevState.duration - elapsed,
+          isRunning: false,
+          startTime: null,
+        };
+      }
+      break;
+    case at.WIDGETS_TIMER_RESET:
+      return {
+        ...prevState,
+        isRunning: false,
+        startTime: null,
+        remaining: prevState.duration,
+      };
+    default:
+      return prevState;
+  }
+}
+
+function ListsWidget(prevState = INITIAL_STATE.ListsWidget, action) {
+  switch (action.type) {
+    case at.WIDGETS_LISTS_SET:
+      return { ...prevState, lists: action.data };
+    case at.WIDGETS_LISTS_CHANGE_SELECTED:
+      return { ...prevState, selected: action.data };
+    default:
+      return prevState;
+  }
+}
+
 export const reducers = {
   TopSites,
   App,
@@ -1090,6 +1160,8 @@ export const reducers = {
   InferredPersonalization,
   DiscoveryStream,
   Search,
+  TimerWidget,
+  ListsWidget,
   TrendingSearch,
   Wallpapers,
   Weather,

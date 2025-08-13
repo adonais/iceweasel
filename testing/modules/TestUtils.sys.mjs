@@ -371,7 +371,7 @@ export var TestUtils = {
     if (!omniJa.exists()) {
       throw new Error(
         "This test requires a packaged build, " +
-          "run 'mach package' and then use --appname=dist"
+          "run 'mach package' and then use --app-binary=$OBJDIR/dist/firefox/firefox"
       );
     }
   },

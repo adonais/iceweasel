@@ -8,12 +8,12 @@
 #define TextDrawTarget_h
 
 #include "mozilla/gfx/2D.h"
-#include "mozilla/layers/RenderRootStateManager.h"
-#include "mozilla/layers/WebRenderLayerManager.h"
-#include "mozilla/layers/WebRenderBridgeChild.h"
-#include "mozilla/webrender/WebRenderAPI.h"
-#include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/IpcResourceUpdateQueue.h"
+#include "mozilla/layers/RenderRootStateManager.h"
+#include "mozilla/layers/StackingContextHelper.h"
+#include "mozilla/layers/WebRenderBridgeChild.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
+#include "mozilla/webrender/WebRenderAPI.h"
 
 namespace mozilla {
 namespace layout {

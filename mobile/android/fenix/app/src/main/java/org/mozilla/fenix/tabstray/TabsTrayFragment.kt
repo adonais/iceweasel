@@ -45,7 +45,7 @@ import org.mozilla.fenix.GleanMetrics.TabsTray
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.tabstrip.isTabStripEnabled
+import org.mozilla.fenix.biometricauthentication.NavigationOrigin
 import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.compose.core.Action
 import org.mozilla.fenix.compose.snackbar.Snackbar
@@ -60,6 +60,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.HomeScreenViewModel
+import org.mozilla.fenix.lifecycle.observePrivateModeLock
 import org.mozilla.fenix.lifecycle.registerForVerification
 import org.mozilla.fenix.lifecycle.verifyUser
 import org.mozilla.fenix.navigation.DefaultNavControllerProvider
@@ -282,7 +283,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
                     onTabClick = { tab ->
                         run outer@{
                             if (!requireContext().settings().hasShownTabSwipeCFR &&
-                                !requireContext().isTabStripEnabled() &&
+                                !requireContext().settings().isTabStripEnabled &&
                                 requireContext().settings().isSwipeToolbarToSwitchTabsEnabled
                             ) {
                                 val normalTabs = tabsTrayStore.state.normalTabs
@@ -514,6 +515,20 @@ class TabsTrayFragment : AppCompatDialogFragment() {
         setFragmentResultListener(ShareFragment.RESULT_KEY) { _, _ ->
             dismissTabsTray()
         }
+
+        observePrivateModeLock(
+            viewLifecycleOwner = viewLifecycleOwner,
+            scope = viewLifecycleOwner.lifecycleScope,
+            appStore = requireComponents.appStore,
+            lockNormalMode = true,
+            onPrivateModeLocked = {
+                if (tabsTrayStore.state.selectedPage == Page.PrivateTabs) {
+                    findNavController().navigate(
+                        NavGraphDirections.actionGlobalUnlockPrivateTabsFragment(NavigationOrigin.TABS_TRAY),
+                    )
+                }
+            },
+        )
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -593,7 +608,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
                 true -> getString(R.string.snackbar_private_tab_closed)
                 false -> getString(R.string.snackbar_tab_closed)
             }
-        val pagePosition = if (isPrivate) Page.PrivateTabs.ordinal else Page.NormalTabs.ordinal
+        val page = if (isPrivate) Page.PrivateTabs else Page.NormalTabs
 
         lifecycleScope.allowUndo(
             view = requireView(),
@@ -601,7 +616,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
             undoActionTitle = getString(R.string.snackbar_deleted_undo),
             onCancel = {
                 requireComponents.useCases.tabsUseCases.undo.invoke()
-                tabsTrayStore.dispatch(TabsTrayAction.PageSelected(Page.positionToPage(pagePosition)))
+                tabsTrayStore.dispatch(TabsTrayAction.PageSelected(page))
             },
             operation = { },
             elevation = ELEVATION,
@@ -622,7 +637,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
             undoActionTitle = getString(R.string.snackbar_deleted_undo),
             onCancel = {
                 requireComponents.useCases.tabsUseCases.undo.invoke()
-                tabsTrayStore.dispatch(TabsTrayAction.PageSelected(Page.positionToPage(Page.NormalTabs.ordinal)))
+                tabsTrayStore.dispatch(TabsTrayAction.PageSelected(Page.NormalTabs))
             },
             operation = { },
             elevation = ELEVATION,
@@ -682,23 +697,17 @@ class TabsTrayFragment : AppCompatDialogFragment() {
         tabSize: Int,
         isNewCollection: Boolean = false,
     ) {
+        val messageResId = when {
+            isNewCollection -> R.string.create_collection_tabs_saved_new_collection
+            tabSize == 1 -> R.string.create_collection_tab_saved
+            else -> return // Don't show snackbar for multiple tabs
+        }
+
         runIfFragmentIsAttached {
             showSnackbar(
                 snackBarParentView = requireView(),
                 snackbarState = SnackbarState(
-                    message = getString(
-                        when {
-                            isNewCollection -> {
-                                R.string.create_collection_tabs_saved_new_collection
-                            }
-                            tabSize > 1 -> {
-                                R.string.create_collection_tabs_saved
-                            }
-                            else -> {
-                                R.string.create_collection_tab_saved
-                            }
-                        },
-                    ),
+                    message = getString(messageResId),
                     duration = SnackbarState.Duration.Preset.Long,
                 ),
             )
@@ -818,12 +827,12 @@ class TabsTrayFragment : AppCompatDialogFragment() {
                 onVerified = ::openPrivateTabsPage,
             )
         } else {
-            tabsTrayInteractor.onTrayPositionSelected(page.ordinal, false)
+            tabsTrayInteractor.onTabPageClicked(page)
         }
     }
 
     private fun openPrivateTabsPage() {
-        tabsTrayInteractor.onTrayPositionSelected(Page.PrivateTabs.ordinal, false)
+        tabsTrayInteractor.onTabPageClicked(Page.PrivateTabs)
     }
 
     /**

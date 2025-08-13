@@ -50,8 +50,6 @@
        * is arbitrary, so the hardcoded brand colors from browser-colors.css
        * might not provide sufficient contrast. */
       --toolbarbutton-icon-fill: currentColor;
-      --toolbarbutton-hover-background: color-mix(in srgb, currentColor 17%, transparent);
-      --toolbarbutton-active-background: color-mix(in srgb, currentColor 30%, transparent);
       --toolbar-field-color: currentColor;
       --urlbar-box-bgcolor: var(--button-background-color-hover);
       --urlbar-box-focus-bgcolor: var(--button-background-color);
@@ -134,10 +132,10 @@
 
   @media not (prefers-contrast) {
     &:hover {
-      background-color: light-dark(hsla(0, 0%, 0%, 0.12), hsla(0, 0%, 100%, 0.22));
+      background-color: var(--toolbarbutton-hover-background);
 
       &:active {
-        background-color: light-dark(hsla(0, 0%, 0%, 0.22), hsla(0, 0%, 100%, 0.32));
+        background-color: var(--toolbarbutton-active-background);
       }
     }
 
@@ -152,8 +150,8 @@
   }
 
   @media (prefers-contrast) {
-    background-color: -moz-field;
-    color: ButtonText;
+    background-color: Field;
+    color: ButtonText; /* FIXME: shouldn't it be FieldText? */
 
     &:hover {
       background-color: SelectedItem;

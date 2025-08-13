@@ -70,7 +70,7 @@ uniffi_pipeline = "0.29.3"
 # Shared across multiple application-services consumers.
 rusqlite = "0.33.0"
 # Shared across multiple glean consumers.
-glean = "=64.4.0"
+glean = "=64.5.1"
 
 # Explicitly specify what our profiles use.  The opt-level setting here is
 # a total fiction; see the setup of MOZ_RUST_DEFAULT_FLAGS for what the
@@ -145,9 +145,6 @@ redox_syscall = { path = "build/rust/redox_syscall" }
 # Patch hermit-abi to an empty crate
 hermit-abi = { path = "build/rust/hermit-abi" }
 
-# Patch base64 0.13 to 0.22
-base64_13 = { package = "base64", path = "build/rust/base64_13" }
-
 # Patch base64 0.21 to 0.22
 base64_21 = { package = "base64", path = "build/rust/base64" }
 
@@ -187,9 +184,6 @@ hashbrown_0_13 = { package = "hashbrown", path = "build/rust/hashbrown-0.13" }
 # Patch `hashbrown` 0.14.* to depend on 0.15.*
 hashbrown_0_14 = { package = "hashbrown", path = "build/rust/hashbrown" }
 
-# Patch `socket2` 0.4 to 0.5
-socket2 = { path = "build/rust/socket2" }
-
 # Patch `thiserror` 1 to 2.
 thiserror = { path = "build/rust/thiserror" }
 
@@ -224,9 +218,6 @@ moz_asserts = { path = "mozglue/static/rust/moz_asserts" }
 # Workaround for https://github.com/rust-lang/cargo/issues/11232
 rure = { path = "third_party/rust/rure" }
 
-# Patch `plist` to work with `indexmap` 2.*
-plist = { path = "third_party/rust/plist" }
-
 # Patch `unicode-width` 0.1.* to 0.2.
 unicode-width = { path = "build/rust/unicode-width" }
 
@@ -255,16 +246,19 @@ wr_malloc_size_of = { path = "gfx/wr/wr_malloc_size_of" }
 objc = { git = "https://github.com/glandium/rust-objc", rev = "4de89f5aa9851ceca4d40e7ac1e2759410c04324" }
 
 # application-services overrides to make updating them all simpler.
-context_id = { git = "https://github.com/mozilla/application-services", rev = "4d9d334a28f61f1be84c92007aa0e76f04d165f4" }
-filter_adult = { git = "https://github.com/mozilla/application-services", rev = "4d9d334a28f61f1be84c92007aa0e76f04d165f4" }
-interrupt-support = { git = "https://github.com/mozilla/application-services", rev = "4d9d334a28f61f1be84c92007aa0e76f04d165f4" }
-relevancy = { git = "https://github.com/mozilla/application-services", rev = "4d9d334a28f61f1be84c92007aa0e76f04d165f4" }
-search = { git = "https://github.com/mozilla/application-services", rev = "4d9d334a28f61f1be84c92007aa0e76f04d165f4" }
-sql-support = { git = "https://github.com/mozilla/application-services", rev = "4d9d334a28f61f1be84c92007aa0e76f04d165f4" }
-suggest = { git = "https://github.com/mozilla/application-services", rev = "4d9d334a28f61f1be84c92007aa0e76f04d165f4" }
-sync15 = { git = "https://github.com/mozilla/application-services", rev = "4d9d334a28f61f1be84c92007aa0e76f04d165f4" }
-tabs = { git = "https://github.com/mozilla/application-services", rev = "4d9d334a28f61f1be84c92007aa0e76f04d165f4" }
-viaduct = { git = "https://github.com/mozilla/application-services", rev = "4d9d334a28f61f1be84c92007aa0e76f04d165f4" }
-webext-storage = { git = "https://github.com/mozilla/application-services", rev = "4d9d334a28f61f1be84c92007aa0e76f04d165f4" }
+context_id = { git = "https://github.com/mozilla/application-services", rev = "b5175a2a2458834c9fdc0468d851658b0657f95b" }
+filter_adult = { git = "https://github.com/mozilla/application-services", rev = "b5175a2a2458834c9fdc0468d851658b0657f95b" }
+interrupt-support = { git = "https://github.com/mozilla/application-services", rev = "b5175a2a2458834c9fdc0468d851658b0657f95b" }
+relevancy = { git = "https://github.com/mozilla/application-services", rev = "b5175a2a2458834c9fdc0468d851658b0657f95b" }
+search = { git = "https://github.com/mozilla/application-services", rev = "b5175a2a2458834c9fdc0468d851658b0657f95b" }
+sql-support = { git = "https://github.com/mozilla/application-services", rev = "b5175a2a2458834c9fdc0468d851658b0657f95b" }
+suggest = { git = "https://github.com/mozilla/application-services", rev = "b5175a2a2458834c9fdc0468d851658b0657f95b" }
+sync15 = { git = "https://github.com/mozilla/application-services", rev = "b5175a2a2458834c9fdc0468d851658b0657f95b" }
+tabs = { git = "https://github.com/mozilla/application-services", rev = "b5175a2a2458834c9fdc0468d851658b0657f95b" }
+viaduct = { git = "https://github.com/mozilla/application-services", rev = "b5175a2a2458834c9fdc0468d851658b0657f95b" }
+webext-storage = { git = "https://github.com/mozilla/application-services", rev = "b5175a2a2458834c9fdc0468d851658b0657f95b" }
 
 allocator-api2 = { path = "third_party/rust/allocator-api2" }
+
+# Patched version of zip 2.4.2 to allow for reading omnijars.
+zip = { path = "third_party/rust/zip" }

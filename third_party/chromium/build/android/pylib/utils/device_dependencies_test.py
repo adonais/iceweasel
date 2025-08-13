@@ -1,5 +1,5 @@
 #! /usr/bin/env vpython3
-# Copyright 2016 The Chromium Authors. All rights reserved.
+# Copyright 2016 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -46,6 +46,33 @@ class DevicePathComponentsForTest(unittest.TestCase):
     self.assertEqual([None, 'paks', 'foo.pak'],
                      device_dependencies.DevicePathComponentsFor(
                          test_path, output_directory))
+
+
+class SubstituteDeviceRootTest(unittest.TestCase):
+
+  def testNoneDevicePath(self):
+    self.assertEqual(
+        '/fake/device/root',
+        device_dependencies.SubstituteDeviceRootSingle(None,
+                                                       '/fake/device/root'))
+
+  def testStringDevicePath(self):
+    self.assertEqual(
+        '/another/fake/device/path',
+        device_dependencies.SubstituteDeviceRootSingle(
+            '/another/fake/device/path', '/fake/device/root'))
+
+  def testListWithNoneDevicePath(self):
+    self.assertEqual(
+        '/fake/device/root/subpath',
+        device_dependencies.SubstituteDeviceRootSingle([None, 'subpath'],
+                                                       '/fake/device/root'))
+
+  def testListWithoutNoneDevicePath(self):
+    self.assertEqual(
+        '/another/fake/device/path',
+        device_dependencies.SubstituteDeviceRootSingle(
+            ['/', 'another', 'fake', 'device', 'path'], '/fake/device/root'))
 
 
 if __name__ == '__main__':

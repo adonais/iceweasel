@@ -21,6 +21,7 @@ toolkit/components/extensions/types/ext-tabs-base.d.ts
 !toolkit/content/tests/widgets/*.xhtml
 !toolkit/content/tests/widgets/*.html
 !toolkit/content/tests/chrome/test_preferencesBindings_setting.html
+!browser/components/preferences/tests/chrome/*.html
 
 # This should be re-enabled in bug 1827456.
 js/src/builtin/**/*.*
@@ -1027,8 +1028,6 @@ browser/components/enterprisepolicies/schemas/schema.sys.mjs
 
 # Ignore newtab files
 browser/extensions/newtab/logs/
-# JS file using the #include pre-processor macro, leading to syntax errors.
-browser/extensions/newtab/webext-glue/builtin-newtab.js
 
 # Ignore about:welcome files
 browser/components/aboutwelcome/logs/
@@ -1775,7 +1774,6 @@ mobile/locales/l10n-changesets.json
 mobile/locales/l10n-onchange-changesets.json
 node_modules/
 python/mozperftest/mozperftest/tests/data/
-security/manager/tools/KnownRootHashes.json
 security/manager/tools/PreloadedHPKPins.json
 services/settings/dumps/
 toolkit/components/nimbus/schemas/ExperimentFeature.schema.json

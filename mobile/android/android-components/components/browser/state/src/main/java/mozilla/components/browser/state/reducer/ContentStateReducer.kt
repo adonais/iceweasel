@@ -207,6 +207,7 @@ internal object ContentStateReducer {
                         appPermissionRequestsList = it.appPermissionRequestsList + action.appPermissionRequest,
                     )
                 } else {
+                    it.appPermissionRequestsList.mergePermissions(action.appPermissionRequest)
                     it
                 }
             }
@@ -313,15 +314,6 @@ internal object ContentStateReducer {
             is ContentAction.CheckForFormDataExceptionAction,
             -> {
                 throw IllegalStateException("You need to add SessionPrioritizationMiddleware. ($action)")
-            }
-            is ContentAction.UpdateProductUrlStateAction -> {
-                updateContentState(state, action.tabId) {
-                    if (it.private) {
-                        it
-                    } else {
-                        it.copy(isProductUrl = action.isProductUrl)
-                    }
-                }
             }
             is ContentAction.EnteredPdfViewer -> {
                 updateContentState(state, action.tabId) {

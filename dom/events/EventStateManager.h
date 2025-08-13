@@ -1179,11 +1179,10 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
                            WidgetInputEvent* aEvent);
 
   /**
-   * When starting a dnd session, UA must fire a pointercancel event and stop
-   * firing the subsequent pointer events.
+   * Try to dispatch ePointerCancel for aSourceEvent to aTargetContent.
    */
-  MOZ_CAN_RUN_SCRIPT
-  void MaybeFirePointerCancel(WidgetInputEvent* aEvent);
+  MOZ_CAN_RUN_SCRIPT void MaybeDispatchPointerCancel(
+      const WidgetInputEvent& aSourceEvent, nsIContent& aTargetContent);
 
   /**
    * Determine which node the drag should be targeted at.
@@ -1206,7 +1205,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
       dom::DataTransfer* aDataTransfer, bool* aAllowEmptyDataTransfer,
       dom::Selection** aSelection,
       dom::RemoteDragStartData** aRemoteDragStartData, nsIContent** aTargetNode,
-      nsIPrincipal** aPrincipal, nsIContentSecurityPolicy** aCsp,
+      nsIPrincipal** aPrincipal, nsIPolicyContainer** aPolicyContainer,
       nsICookieJarSettings** aCookieJarSettings);
 
   /*
@@ -1227,12 +1226,15 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
    *                      from browser chrome or OS.
    */
   MOZ_CAN_RUN_SCRIPT
-  bool DoDefaultDragStart(
-      nsPresContext* aPresContext, WidgetDragEvent* aDragEvent,
-      dom::DataTransfer* aDataTransfer, bool aAllowEmptyDataTransfer,
-      nsIContent* aDragTarget, dom::Selection* aSelection,
-      dom::RemoteDragStartData* aDragStartData, nsIPrincipal* aPrincipal,
-      nsIContentSecurityPolicy* aCsp, nsICookieJarSettings* aCookieJarSettings);
+  bool DoDefaultDragStart(nsPresContext* aPresContext,
+                          WidgetDragEvent* aDragEvent,
+                          dom::DataTransfer* aDataTransfer,
+                          bool aAllowEmptyDataTransfer, nsIContent* aDragTarget,
+                          dom::Selection* aSelection,
+                          dom::RemoteDragStartData* aDragStartData,
+                          nsIPrincipal* aPrincipal,
+                          nsIPolicyContainer* aPolicyContainer,
+                          nsICookieJarSettings* aCookieJarSettings);
 
   /**
    * Set the fields of aEvent to reflect the mouse position and modifier keys

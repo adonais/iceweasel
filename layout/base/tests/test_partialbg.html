@@ -23,9 +23,8 @@ div {
 /* sendimagenevercomplete.sjs sends us a partial png file and keeps the
  * connection open but sends no more data. This is enough data to draw at last
  * a partial frame. We do this so that we can distinguish from drawing a
- * partial frame after we've been told all data has arrived (what we do even
- * without the pref layout.display_partial_background_images turned on), from
- * drawing a partial frame while data is still arriving (what we want to do).
+ * partial frame after we've been told all data has arrived, from drawing
+ * a partial frame while data is still arriving.
  */
 
 SimpleTest.waitForExplicitFinish();
@@ -46,8 +45,6 @@ function checkPixel(r, x, y, red, green, blue, alpha) {
 }
 
 async function runTest() {
-  await SpecialPowers.pushPrefEnv({'set': [['layout.display_partial_background_images', true]]});
-
   let theDiv = document.createElement("div");
   document.body.appendChild(theDiv);
 

@@ -7,17 +7,16 @@
 #ifndef nsTextFrame_h__
 #define nsTextFrame_h__
 
+#include "JustificationUtils.h"
+#include "gfxSkipChars.h"
+#include "gfxTextRun.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/gfx/2D.h"
-
 #include "nsIFrame.h"
 #include "nsISelectionController.h"
 #include "nsSplittableFrame.h"
-#include "gfxSkipChars.h"
-#include "gfxTextRun.h"
-#include "JustificationUtils.h"
 
 // Undo the windows.h damage
 #if defined(XP_WIN) && defined(DrawText)

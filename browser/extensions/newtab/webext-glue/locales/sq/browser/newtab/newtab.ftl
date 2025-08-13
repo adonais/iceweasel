@@ -531,6 +531,9 @@ newtab-download-mobile-highlight-body-variant-c = E dinit se mund ta merrni { -b
 newtab-download-mobile-highlight-image =
     .aria-label = Kod QR për të shkarkuar { -brand-product-name } për celular
 
+## Strings for shortcuts highlight
+
+
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =

@@ -117,10 +117,11 @@ if (AppConstants.platform == "win") {
 
 if (
   Services.prefs.getBoolPref("browser.startup.blankWindow") &&
-  Services.prefs.getCharPref(
+  (Services.prefs.getCharPref(
     "extensions.activeThemeID",
     "default-theme@mozilla.org"
-  ) == "default-theme@mozilla.org"
+  ) == "default-theme@mozilla.org" ||
+    AppConstants.MOZ_DEV_EDITION) // See bug 1979209.
 ) {
   startupPhases["before profile selection"].allowlist.modules.add(
     "resource://gre/modules/XULStore.sys.mjs"

@@ -1,4 +1,4 @@
-# Copyright (c) 2012 The Chromium Authors. All rights reserved.
+# Copyright 2012 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -17,9 +17,6 @@
 \|^    /Developer/usr/bin/|d
 \|^    /Developer/Library/PrivateFrameworks/DevToolsCore\.framework/|d
 \|^    /Developer/Library/Xcode/Plug-ins/CoreBuildTasks\.xcplugin/|d
-
-# Drop any goma command lines as well.
-\|^    .*/gomacc |d
 
 # And, if you've overridden something from your own bin directory, remove those
 # full command lines, too.

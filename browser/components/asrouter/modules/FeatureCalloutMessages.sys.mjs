@@ -500,7 +500,7 @@ const MESSAGES = () => {
                 alignment: "top",
               },
               title: {
-                string_id: "tab-groups-onboarding-saved-groups-title-2",
+                string_id: "tab-groups-onboarding-saved-groups-title-3",
               },
               primary_button: {
                 label: {
@@ -625,7 +625,7 @@ const MESSAGES = () => {
                 alignment: "top",
               },
               title: {
-                string_id: "tab-groups-onboarding-create-group-title-2",
+                string_id: "tab-groups-onboarding-create-group-title-3",
               },
               primary_button: {
                 label: {
@@ -748,7 +748,7 @@ const MESSAGES = () => {
                 alignment: "top",
               },
               title: {
-                string_id: "tab-groups-onboarding-session-restore-title",
+                string_id: "tab-groups-onboarding-session-restore-title-2",
               },
               primary_button: {
                 label: {

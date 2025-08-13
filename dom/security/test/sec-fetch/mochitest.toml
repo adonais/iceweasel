@@ -14,7 +14,7 @@ support-files = [
 
 ["test_trustworthy_loopback.html"]
 skip-if = [
-  "os == 'linux' && !fission",  # Bug 1805760
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && !fission", # Bug 1805760
   "http3",
   "http2",
 ]

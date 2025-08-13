@@ -302,14 +302,17 @@ nsresult MouseScrollHandler::SynthesizeNativeMouseScrollEvent(
     nsWindow* aWidget, const LayoutDeviceIntPoint& aPoint,
     uint32_t aNativeMessage, int32_t aDelta, uint32_t aModifierFlags,
     uint32_t aAdditionalFlags) {
-  bool useFocusedWindow = !(
+  const bool useFocusedWindow = !(
       aAdditionalFlags & nsIDOMWindowUtils::MOUSESCROLL_PREFER_WIDGET_AT_POINT);
 
   POINT pt;
   pt.x = aPoint.x;
   pt.y = aPoint.y;
 
-  HWND target = useFocusedWindow ? ::WindowFromPoint(pt) : ::GetFocus();
+  // The default behavior before Win10 1903 is, WM_MOUSEWHEEL message is always
+  // sent to the focused window.  After that, WM_MOUSEWHEEL message is sent to
+  // the window under the cursor by default (but configurable).
+  HWND const target = useFocusedWindow ? ::GetFocus() : ::WindowFromPoint(pt);
   NS_ENSURE_TRUE(target, NS_ERROR_FAILURE);
 
   WPARAM wParam = 0;

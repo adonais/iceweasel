@@ -1,5 +1,5 @@
 #!/usr/bin/env vpython3
-# Copyright 2014 The Chromium Authors. All rights reserved.
+# Copyright 2014 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
@@ -148,6 +148,39 @@ class GtestTestInstanceTests(unittest.TestCase):
     self.assertEqual('FooTest.Bar', actual[0].GetName())
     self.assertIsNone(actual[0].GetDuration())
     self.assertEqual(base_test_result.ResultType.CRASH, actual[0].GetType())
+
+  def testParseGTestOutput_crashWithoutCheckOrErrorMessage(self):
+    """Regression test for https://crbug.com/355630342."""
+    raw_output = [
+        '>>ScopedMainEntryLogger',
+        '[ RUN      ] FooTest.WillCrashSuddenly',
+        'BrowserTestBase received signal: Segmentation fault. Backtrace:',
+        '<fake backtrace line>',
+        '>>ScopedMainEntryLogger',
+        'Note: Google Test filter = FooTest.DoNotConsume',
+        '[ RUN      ] FooTest.DoNotConsume',
+        '[       OK ] FooTest.DoNotConsume (1 ms)',
+        '<<ScopedMainEntryLogger',
+    ]
+    actual = gtest_test_instance.ParseGTestOutput(raw_output, None, None)
+    self.assertEqual(2, len(actual))
+
+    self.assertEqual('FooTest.WillCrashSuddenly', actual[0].GetName())
+    self.assertIsNone(actual[0].GetDuration())
+    self.assertEqual(base_test_result.ResultType.CRASH, actual[0].GetType())
+    self.assertEqual([
+        '[ RUN      ] FooTest.WillCrashSuddenly',
+        'BrowserTestBase received signal: Segmentation fault. Backtrace:',
+        '<fake backtrace line>',
+    ], actual[0].GetLog().splitlines())
+
+    self.assertEqual('FooTest.DoNotConsume', actual[1].GetName())
+    self.assertEqual(1, actual[1].GetDuration())
+    self.assertEqual(base_test_result.ResultType.PASS, actual[1].GetType())
+    self.assertEqual([
+        '[ RUN      ] FooTest.DoNotConsume',
+        '[       OK ] FooTest.DoNotConsume (1 ms)',
+    ], actual[1].GetLog().splitlines())
 
   def testParseGTestOutput_unknown(self):
     raw_output = [

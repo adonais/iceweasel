@@ -90,8 +90,8 @@ def _do_work(
         # parameter to the Popen constructor, so we have to decode the output
         # here.
         system_encoding = "mbcs" if sys.platform == "win32" else "utf-8"
-        out = out.decode(system_encoding)
-        err = err.decode(system_encoding)
+        out = out.decode(system_encoding, errors="replace")
+        err = err.decode(system_encoding, errors="replace")
         qWatch.put(TaskFinishedMarker)
 
         # Create a result record and forward to result processing.

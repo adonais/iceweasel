@@ -12,8 +12,8 @@
 #include "nsCoord.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsQueryObject.h"
-#include "nsWrapperCache.h"
 #include "nsString.h"
+#include "nsWrapperCache.h"
 
 class nsAtom;
 class nsTreeBodyFrame;

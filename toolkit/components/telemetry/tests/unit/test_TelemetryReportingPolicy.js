@@ -8,10 +8,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
-  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
-  sinon: "resource://testing-common/Sinon.sys.mjs",
-  WinTaskbarJumpList: "resource:///modules/WindowsJumpLists.sys.mjs",
 });
 
 const { NimbusTestUtils } = ChromeUtils.importESModule(
@@ -46,14 +43,6 @@ function fakeResetAcceptedPolicy() {
   );
 }
 
-// Fake dismissing a modal dialog.
-function fakeInteractWithModal() {
-  Services.obs.notifyObservers(
-    null,
-    "datareporting:notify-data-policy:interacted"
-  );
-}
-
 function setMinimumPolicyVersion(aNewPolicyVersion) {
   const CHANNEL_NAME = UpdateUtils.getUpdateChannel(false);
   // We might have channel-dependent minimum policy versions.
@@ -75,40 +64,6 @@ function setMinimumPolicyVersion(aNewPolicyVersion) {
   );
 }
 
-function unsetMinimumPolicyVersion() {
-  const CHANNEL_NAME = UpdateUtils.getUpdateChannel(false);
-  // We might have channel-dependent minimum policy versions.
-  const CHANNEL_DEPENDENT_PREF =
-    TelemetryUtils.Preferences.MinimumPolicyVersion +
-    ".channel-" +
-    CHANNEL_NAME;
-
-  // Does the channel-dependent pref exist? If so, unset it.
-  if (Services.prefs.getIntPref(CHANNEL_DEPENDENT_PREF, undefined)) {
-    Services.prefs.clearUserPref(CHANNEL_DEPENDENT_PREF);
-  }
-
-  // And the common one.
-  Services.prefs.clearUserPref(TelemetryUtils.Preferences.MinimumPolicyVersion);
-}
-
-function enrollInPreonboardingExperiment(version) {
-  return NimbusTestUtils.enrollWithFeatureConfig(
-    {
-      featureId: NimbusFeatures.preonboarding.featureId,
-      value: {
-        enabled: true,
-        currentPolicyVersion: version,
-        minimumPolicyVersion: version,
-        firstRunURL: `http://mochi.test/v${version}`,
-        // Needed to opt into the modal flow, but not actually used in this test.
-        screens: [{ id: "test" }],
-      },
-    },
-    { isRollout: false }
-  );
-}
-
 add_setup(async function test_setup() {
   // Addon manager needs a profile directory
   do_get_profile(true);
@@ -124,7 +79,8 @@ add_setup(async function test_setup() {
   // Make sure we don't generate unexpected pings due to pref changes.
   await setEmptyPrefWatchlist();
 
-  // Don't bypass the notifications in this test, we'll fake it.
+  // Don't bypass the legacy data reporting notifications in this test, we'll
+  // fake it.
   Services.prefs.setBoolPref(
     TelemetryUtils.Preferences.BypassNotification,
     false
@@ -139,7 +95,7 @@ add_setup(skipIfNotBrowser(), async () => {
   registerCleanupFunction(cleanup);
 });
 
-add_task(skipIfNotBrowser(), async function test_firstRun() {
+async function runlegacyDataReportingFlowfirstRun(prefToSet) {
   await Services.search.init();
 
   const FIRST_RUN_TIMEOUT_MSEC = 60 * 1000; // 60s
@@ -151,7 +107,7 @@ add_task(skipIfNotBrowser(), async function test_firstRun() {
   // off via nimbus variable or its fallback pref.
   if (AppConstants.platform !== "linux") {
     // This pref is set to false on Linux by default
-    Services.prefs.setBoolPref("browser.preonboarding.enabled", false);
+    Services.prefs.setBoolPref(prefToSet.name, prefToSet.value);
   }
 
   let promiseTimeout = () =>
@@ -184,17 +140,47 @@ add_task(skipIfNotBrowser(), async function test_firstRun() {
     "The infobar display timeout should be 10s on other runs."
   );
 
-  Services.prefs.clearUserPref("browser.preonboarding.enabled");
-});
+  Services.prefs.clearUserPref(prefToSet);
+}
 
-add_task(async function test_prefs() {
+add_task(
+  skipIfNotBrowser(),
+  async function test_legacyDataReportingFlowfirstRunPreonboardingTOUNotEnabled() {
+    await runlegacyDataReportingFlowfirstRun({
+      name: "browser.preonboarding.enabled",
+      value: false,
+    });
+  }
+);
+
+add_task(
+  skipIfNotBrowser(),
+  async function test_legacyDataReportingFlowfirstRunTOUBypassEnabled() {
+    await runlegacyDataReportingFlowfirstRun({
+      name: "termsofuse.bypassNotification",
+      value: true,
+    });
+  }
+);
+
+add_task(async function test_legacyDataReportingPrefs() {
   TelemetryReportingPolicy.reset();
 
   let now = fakeNow(2009, 11, 18);
 
+  // The new user TOS modal is now enabled by default on all platforms except
+  // Linux, so the infobar will only show if preonboarding is explicitly turned
+  // off via nimbus variable or its fallback pref.
+  if (AppConstants.platform !== "linux") {
+    // This pref is set to false on Linux by default
+    Services.prefs.setBoolPref("browser.preonboarding.enabled", false);
+  }
+
   // If the date is not valid (earlier than 2012), we don't regard the policy as accepted.
   TelemetryReportingPolicy.testInfobarShown();
-  Assert.ok(!TelemetryReportingPolicy.testIsUserNotified());
+  Assert.ok(
+    !TelemetryReportingPolicy.testIsUserNotifiedOfDataReportingPolicy()
+  );
   Assert.equal(
     Services.prefs.getStringPref(
       TelemetryUtils.Preferences.AcceptedPolicyDate,
@@ -250,7 +236,7 @@ add_task(async function test_prefs() {
     ) + 1;
   setMinimumPolicyVersion(newMinimum);
   Assert.ok(
-    !TelemetryReportingPolicy.testIsUserNotified(),
+    !TelemetryReportingPolicy.testIsUserNotifiedOfDataReportingPolicy(),
     "A greater minimum policy version must invalidate the policy and disable upload."
   );
 
@@ -261,7 +247,7 @@ add_task(async function test_prefs() {
   );
   TelemetryReportingPolicy.testInfobarShown();
   Assert.ok(
-    TelemetryReportingPolicy.testIsUserNotified(),
+    TelemetryReportingPolicy.testIsUserNotifiedOfDataReportingPolicy(),
     "Accepting the policy again should show the user as notified."
   );
   Assert.ok(
@@ -269,11 +255,7 @@ add_task(async function test_prefs() {
     "Accepting the policy again should let us upload data."
   );
 
-  // macOS has the app.update.channel pref locked. Check if it needs to be
-  // unlocked before proceeding with the test.
-  if (Services.prefs.getDefaultBranch("").prefIsLocked("app.update.channel")) {
-    Services.prefs.getDefaultBranch("").unlockPref("app.update.channel");
-  }
+  maybeUnlockAppUpdateChannelPref();
 
   // Set a new, per channel, minimum policy version. Start by setting a test current channel.
   Services.prefs
@@ -284,7 +266,7 @@ add_task(async function test_prefs() {
   newMinimum++;
   Services.prefs.setIntPref(PREF_MINIMUM_CHANNEL_POLICY_VERSION, newMinimum);
   Assert.ok(
-    !TelemetryReportingPolicy.testIsUserNotified(),
+    !TelemetryReportingPolicy.testIsUserNotifiedOfDataReportingPolicy(),
     "Increasing the minimum policy version should invalidate the policy."
   );
 
@@ -295,7 +277,7 @@ add_task(async function test_prefs() {
   );
   TelemetryReportingPolicy.testInfobarShown();
   Assert.ok(
-    TelemetryReportingPolicy.testIsUserNotified(),
+    TelemetryReportingPolicy.testIsUserNotifiedOfDataReportingPolicy(),
     "Accepting the policy again should show the user as notified."
   );
   Assert.ok(
@@ -304,7 +286,7 @@ add_task(async function test_prefs() {
   );
 });
 
-add_task(async function test_migratePrefs() {
+add_task(async function test_migrateLegacyDataReportingPrefs() {
   const DEPRECATED_FHR_PREFS = {
     "datareporting.policy.dataSubmissionPolicyAccepted": true,
     "datareporting.policy.dataSubmissionPolicyBypassAcceptance": true,
@@ -338,13 +320,13 @@ add_task(async function test_migratePrefs() {
   }
 });
 
-add_task(async function test_userNotifiedOfCurrentPolicy() {
+add_task(async function test_userNotifiedOfCurrentDataReportingPolicy() {
   fakeResetAcceptedPolicy();
   TelemetryReportingPolicy.reset();
 
   // User should be reported as not notified by default.
   Assert.ok(
-    !TelemetryReportingPolicy.testIsUserNotified(),
+    !TelemetryReportingPolicy.testIsUserNotifiedOfDataReportingPolicy(),
     "The initial state should be unnotified."
   );
 
@@ -354,7 +336,7 @@ add_task(async function test_userNotifiedOfCurrentPolicy() {
     TelemetryReportingPolicy.DEFAULT_DATAREPORTING_POLICY_VERSION
   );
   Assert.ok(
-    !TelemetryReportingPolicy.testIsUserNotified(),
+    !TelemetryReportingPolicy.testIsUserNotifiedOfDataReportingPolicy(),
     "The default state of the date should have a time of 0 and it should therefore fail"
   );
 
@@ -362,7 +344,7 @@ add_task(async function test_userNotifiedOfCurrentPolicy() {
   fakeNow(2012, 11, 11);
   TelemetryReportingPolicy.testInfobarShown();
   Assert.ok(
-    TelemetryReportingPolicy.testIsUserNotified(),
+    TelemetryReportingPolicy.testIsUserNotifiedOfDataReportingPolicy(),
     "Using the proper API causes user notification to report as true."
   );
 
@@ -378,21 +360,22 @@ add_task(async function test_userNotifiedOfCurrentPolicy() {
     newVersion
   );
   Assert.ok(
-    TelemetryReportingPolicy.testIsUserNotified(),
+    TelemetryReportingPolicy.testIsUserNotifiedOfDataReportingPolicy(),
     "A future version of the policy should pass."
   );
 
   newVersion =
     Services.prefs.getIntPref(
-      TelemetryUtils.Preferences.CurrentPolicyVersion,
+      TelemetryUtils.Preferences.MinimumPolicyVersion,
       1
     ) - 1;
+
   Services.prefs.setIntPref(
     TelemetryUtils.Preferences.AcceptedPolicyVersion,
     newVersion
   );
   Assert.ok(
-    !TelemetryReportingPolicy.testIsUserNotified(),
+    !TelemetryReportingPolicy.testIsUserNotifiedOfDataReportingPolicy(),
     "A previous version of the policy should fail."
   );
 });
@@ -411,7 +394,7 @@ add_task(async function test_canSend() {
 
   // User should be reported as not notified by default.
   Assert.ok(
-    !TelemetryReportingPolicy.testIsUserNotified(),
+    !TelemetryReportingPolicy.testIsUserNotifiedOfDataReportingPolicy(),
     "The initial state should be unnotified."
   );
 
@@ -473,304 +456,3 @@ add_task(async function test_canSend() {
 
   await PingServer.stop();
 });
-
-add_task(skipIfNotBrowser(), async function test_feature_prefs() {
-  // Verify that feature values impact Gecko preferences at
-  // `sessionstore-windows-restored` time, but not afterward.
-  function assertPrefs(
-    currentPolicyVersion,
-    minimumPolicyVersion,
-    firstRunURL
-  ) {
-    Assert.equal(
-      Services.prefs.getIntPref(
-        TelemetryUtils.Preferences.CurrentPolicyVersion
-      ),
-      currentPolicyVersion,
-      "datareporting.policy.currentPolicyVersion is set"
-    );
-
-    Assert.equal(
-      Services.prefs.getIntPref(
-        TelemetryUtils.Preferences.MinimumPolicyVersion
-      ),
-      minimumPolicyVersion,
-      "datareporting.policy.minimumPolicyVersion is set"
-    );
-
-    Assert.equal(
-      Services.prefs.getCharPref(TelemetryUtils.Preferences.FirstRunURL),
-      firstRunURL,
-      "datareporting.policy.firstRunURL is set"
-    );
-  }
-
-  unsetMinimumPolicyVersion();
-  Services.prefs.clearUserPref(TelemetryUtils.Preferences.CurrentPolicyVersion);
-
-  let doCleanup = await NimbusTestUtils.enrollWithFeatureConfig(
-    {
-      featureId: NimbusFeatures.preonboarding.featureId,
-      value: {
-        enabled: true,
-        currentPolicyVersion: 900,
-        minimumPolicyVersion: 899,
-        firstRunURL: "http://mochi.test/v900",
-      },
-    },
-    { isRollout: false }
-  );
-
-  Assert.ok(NimbusFeatures.preonboarding.getVariable("enabled"));
-
-  // Before `sessionstore-windows-restored`, nothing is configured.
-  TelemetryReportingPolicy.reset();
-
-  Assert.ok(
-    !Services.prefs.prefHasUserValue(
-      TelemetryUtils.Preferences.CurrentPolicyVersion
-    ),
-    "datareporting.policy.currentPolicyVersion is not set"
-  );
-
-  Assert.ok(
-    !Services.prefs.prefHasUserValue(
-      TelemetryUtils.Preferences.MinimumPolicyVersion
-    ),
-    "datareporting.policy.minimumPolicyVersion is not set"
-  );
-
-  Assert.ok(
-    !Services.prefs.prefHasUserValue(TelemetryUtils.Preferences.FirstRunURL),
-    "datareporting.policy.firstRunURL is not set"
-  );
-
-  // After `sessionstore-windows-restored`, values are adopted.
-  await Policy.fakeSessionRestoreNotification();
-  assertPrefs(900, 899, "http://mochi.test/v900");
-
-  // Unenroll.  Values remain, for consistency while Firefox is running.
-  await doCleanup();
-  Assert.ok(!NimbusFeatures.preonboarding.getVariable("enabled"));
-  assertPrefs(900, 899, "http://mochi.test/v900");
-
-  // Updating the Nimbus feature does nothing (without `sessionstore-windows-restored`).
-  doCleanup = await NimbusTestUtils.enrollWithFeatureConfig(
-    {
-      featureId: NimbusFeatures.preonboarding.featureId,
-      value: {
-        enabled: true,
-        currentPolicyVersion: 901,
-        minimumPolicyVersion: 900,
-        firstRunURL: "http://mochi.test/v901",
-      },
-    },
-    { isRollout: false }
-  );
-  Assert.ok(NimbusFeatures.preonboarding.getVariable("enabled"));
-  assertPrefs(900, 899, "http://mochi.test/v900");
-  await doCleanup();
-});
-
-async function doOneModalFlow(version) {
-  let doCleanup = await enrollInPreonboardingExperiment(version);
-
-  let displayStub = sinon.stub(Policy, "showModal").returns(true);
-
-  // This will notify the user via a modal.
-  TelemetryReportingPolicy.reset();
-  await Policy.fakeSessionRestoreNotification();
-
-  Assert.equal(displayStub.callCount, 1, "showModal is invoked");
-
-  Assert.equal(
-    TelemetryReportingPolicy.testIsUserNotified(),
-    false,
-    "Before interaction, the user should be reported as not notified"
-  );
-
-  let completed = false;
-  let p = TelemetryReportingPolicy.ensureUserIsNotified().then(
-    () => (completed = true)
-  );
-
-  Assert.equal(
-    completed,
-    false,
-    "The notification promise should not resolve before the user interacts"
-  );
-
-  fakeInteractWithModal();
-
-  await p;
-
-  Assert.equal(
-    completed,
-    true,
-    "The notification promise should resolve after user interacts"
-  );
-
-  Assert.equal(
-    TelemetryReportingPolicy.testIsUserNotified(),
-    true,
-    "After interaction, the state should be notified."
-  );
-
-  doCleanup();
-
-  sinon.restore();
-}
-
-add_task(
-  skipIfNotBrowser(),
-  async function test_modal_flow_before_notification() {
-    // Test the `--first-startup` flow.  Suppose the user has not been notified.
-    // Verify that when the Nimbus feature is configured, the modal branch is
-    // taken, that the ensure promise waits, and that the observer notification
-    // resolves the ensure promise.
-
-    fakeResetAcceptedPolicy();
-    Services.prefs.clearUserPref(TelemetryUtils.Preferences.FirstRun);
-
-    await doOneModalFlow(900);
-
-    // The user accepted the version from the experiment/rollout.
-    Assert.equal(
-      Services.prefs.getIntPref(
-        TelemetryUtils.Preferences.AcceptedPolicyVersion
-      ),
-      900
-    );
-  }
-);
-
-add_task(
-  skipIfNotBrowser(),
-  async function test_modal_flow_after_notification() {
-    // Test the existing user flow.  Suppose the user **has** been notified, but
-    // is then enrolled into an experiment which configures the Nimbus feature.
-    // Verify that the modal branch is taken, that the ensure promise waits, and
-    // that the observer notification resolves the ensure promise.
-
-    unsetMinimumPolicyVersion();
-    Services.prefs.clearUserPref(
-      TelemetryUtils.Preferences.CurrentPolicyVersion
-    );
-
-    fakeResetAcceptedPolicy();
-    Services.prefs.setBoolPref(TelemetryUtils.Preferences.FirstRun, false);
-
-    TelemetryReportingPolicy.reset();
-
-    // Showing the notification bar should make the user notified.
-    fakeNow(2012, 11, 11);
-    TelemetryReportingPolicy.testInfobarShown();
-    Assert.ok(
-      TelemetryReportingPolicy.testIsUserNotified(),
-      "User is notified after seeing the legacy infobar"
-    );
-
-    Assert.ok(
-      Services.prefs.getIntPref(
-        TelemetryUtils.Preferences.AcceptedPolicyVersion
-      ) < 900,
-      "Before, the user has not accepted experiment/rollout version"
-    );
-
-    // This resets, witnesses `sessionstore-windows-restored`, and fakes the modal flow.
-    await doOneModalFlow(900);
-
-    Assert.ok(
-      TelemetryReportingPolicy.testIsUserNotified(),
-      "User is notified after seeing the experiment modal"
-    );
-
-    Assert.equal(
-      Services.prefs.getIntPref(
-        TelemetryUtils.Preferences.AcceptedPolicyVersion
-      ),
-      900,
-      "After, the user has accepted the experiment/rollout version."
-    );
-  }
-);
-
-add_task(
-  skipIfNotBrowser(),
-  async function test_default_modal_shows_when_not_enrolled_in_experiment() {
-    if (AppConstants.platform === "linux") {
-      info(
-        "Skipping test for Linux where preonboarding is disabled by default"
-      );
-      return;
-    }
-    let modalStub = sinon.stub(Policy, "showModal").returns(true);
-
-    fakeResetAcceptedPolicy();
-    TelemetryReportingPolicy.reset();
-    let p = Policy.delayedSetup();
-    Policy.fakeSessionRestoreNotification();
-    fakeInteractWithModal();
-    await p;
-
-    Assert.equal(
-      modalStub.callCount,
-      1,
-      "showModal is invoked once when not enrolled in an experiemnt"
-    );
-
-    Assert.equal(
-      true,
-      Services.prefs.getBoolPref(
-        "browser.preonboarding.enrolledInOnTrainRollout",
-        false
-      ),
-      "Pref recording that user is enrolled in on-train rollout is set to true"
-    );
-
-    sinon.restore();
-    fakeResetAcceptedPolicy();
-  }
-);
-
-add_task(
-  skipIfNotBrowser(),
-  async function test_jumplist_blocking_on_modal_display_and_unblocking_after_interaction() {
-    if (AppConstants.platform !== "win") {
-      info("Skipping test for Windows only behavior");
-      return;
-    }
-
-    fakeResetAcceptedPolicy();
-    Services.prefs.clearUserPref(TelemetryUtils.Preferences.FirstRun);
-    let blockSpy = sinon.spy(WinTaskbarJumpList, "blockJumpList");
-    let unblockSpy = sinon.spy(WinTaskbarJumpList, "_unblockJumpList");
-    sinon.stub(Policy, "showModal").returns(true);
-
-    let doCleanup = await enrollInPreonboardingExperiment(900);
-
-    // This will notify the user via a modal.
-    TelemetryReportingPolicy.reset();
-    await Policy.fakeSessionRestoreNotification();
-
-    Assert.ok(
-      blockSpy.calledOnce,
-      "Jump list should be blocked when modal is presented."
-    );
-
-    let p = TelemetryReportingPolicy.ensureUserIsNotified;
-
-    fakeInteractWithModal();
-
-    await p;
-
-    Assert.ok(
-      unblockSpy.callCount >= blockSpy.callCount,
-      "Jump list should be unblocked after user interacts with modal"
-    );
-
-    doCleanup();
-
-    sinon.restore();
-  }
-);

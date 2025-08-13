@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.components.appstate
 
+import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.sync.TabData
@@ -22,6 +23,7 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
 import org.mozilla.fenix.components.appstate.webcompat.WebCompatState
+import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.home.bookmarks.Bookmark
 import org.mozilla.fenix.home.pocket.PocketImpression
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
@@ -32,7 +34,6 @@ import org.mozilla.fenix.home.recenttabs.RecentTab
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem
 import org.mozilla.fenix.library.history.PendingDeletionHistory
 import org.mozilla.fenix.messaging.MessagingState
-import org.mozilla.fenix.search.SearchDialogFragment
 import org.mozilla.fenix.wallpapers.Wallpaper
 
 /**
@@ -58,11 +59,6 @@ sealed class AppAction : Action {
      * Updates whether the first frame of the homescreen has been [drawn].
      */
     data class UpdateFirstFrameDrawn(val drawn: Boolean) : AppAction()
-
-    /**
-     * Updates whether the [SearchDialogFragment] is visible.
-     */
-    data class UpdateSearchDialogVisibility(val isVisible: Boolean) : AppAction()
     data class AddNonFatalCrash(val crash: NativeCodeCrash) : AppAction()
     data class RemoveNonFatalCrash(val crash: NativeCodeCrash) : AppAction()
     object RemoveAllNonFatalCrashes : AppAction()
@@ -698,5 +694,38 @@ sealed class AppAction : Action {
          * Dispatched after a review prompt was shown.
          */
         data object ReviewPromptShown : ReviewPromptAction()
+    }
+
+    /**
+     * [AppAction]s related to the search feature.
+     */
+    sealed class SearchAction : AppAction() {
+        /**
+         * A new search has started.
+         *
+         * @property tabId The ID of the tab that triggered the search.
+         * May be `null` if search was not started from a browser tab.
+         * @property source The application feature from where a new search was started.
+         */
+        data class SearchStarted(
+            val tabId: String? = null,
+            val source: MetricsUtils.Source = MetricsUtils.Source.NONE,
+        ) : SearchAction()
+
+        /**
+         * The current in-progress search has ended.
+         */
+        data object SearchEnded : SearchAction()
+
+        /**
+         * New search engine was chosen for the in-progress search.
+         *
+         * @property searchEngine The new [SearchEngine] to use for the current in-progress browser search.
+         * @property isUserSelected Whether the search engine was selected by the user or not.
+         */
+        data class SearchEngineSelected(
+            val searchEngine: SearchEngine,
+            val isUserSelected: Boolean,
+        ) : SearchAction()
     }
 }

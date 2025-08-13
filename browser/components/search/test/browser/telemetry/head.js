@@ -310,7 +310,7 @@ function assertSERPTelemetry(expectedEvents) {
     let impressionId = expectedEvent.impression.impression_id;
     let expectedEngagements = expectedEvent.engagements;
     if (expectedEngagements) {
-      let recorded = idToEngagements.get(impressionId);
+      let recorded = idToEngagements.get(impressionId) ?? [];
       Assert.deepEqual(
         recorded,
         expectedEngagements,
@@ -468,15 +468,15 @@ function assertCategorizationValues(expectedResults) {
     let expected = expectedResults[index];
     let actual = actualResults[index].extra;
 
-    Assert.ok(
-      Number(actual?.organic_num_domains) <=
-        CATEGORIZATION_SETTINGS.MAX_DOMAINS_TO_CATEGORIZE,
+    Assert.lessOrEqual(
+      Number(actual?.organic_num_domains),
+      CATEGORIZATION_SETTINGS.MAX_DOMAINS_TO_CATEGORIZE,
       "Number of organic domains categorized should not exceed threshold."
     );
 
-    Assert.ok(
-      Number(actual?.sponsored_num_domains) <=
-        CATEGORIZATION_SETTINGS.MAX_DOMAINS_TO_CATEGORIZE,
+    Assert.lessOrEqual(
+      Number(actual?.sponsored_num_domains),
+      CATEGORIZATION_SETTINGS.MAX_DOMAINS_TO_CATEGORIZE,
       "Number of sponsored domains categorized should not exceed threshold."
     );
 
@@ -492,6 +492,10 @@ function assertCategorizationValues(expectedResults) {
 
 function waitForPageWithAction() {
   return TestUtils.topicObserved("reported-page-with-action");
+}
+
+function waitForPageWithImpression() {
+  return TestUtils.topicObserved("reported-page-with-impression");
 }
 
 function waitForPageWithAdImpressions() {
@@ -692,10 +696,14 @@ async function initSinglePageAppTest() {
         default: true,
       },
     ],
-    isSPA: true,
-    defaultPageQueryParam: {
-      key: "page",
-      value: "web",
+    pageTypeParam: {
+      enableSPAHandling: true,
+      keys: ["page"],
+      pageTypes: [
+        { name: "web", values: ["web"], enabled: true, isDefault: true },
+        { name: "shopping", values: ["shopping"], enabled: true },
+        { name: "images", values: ["images"], enabled: false },
+      ],
     },
   };
 

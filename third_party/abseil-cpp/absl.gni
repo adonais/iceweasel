@@ -38,6 +38,10 @@ template("absl_source_set") {
         "//abseil-cpp:absl_define_config",
       ]
 
+      if (moz_webrtc_build) {
+        configs -= [ "//chromium/build/config/compiler:prevent_unsafe_narrowing" ]
+      }
+
       if (!defined(defines)) {
         defines = []
       }

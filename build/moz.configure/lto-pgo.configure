@@ -407,7 +407,7 @@ def lto(
     # Tell LTO not to inline functions above a certain size, to mitigate
     # binary size growth while still getting good performance.
     # (For hot functions, PGO will put a multiplier on this limit.)
-    if target.os == "WINNT":
+    if c_compiler.type == "clang-cl":
         ldflags.append("-mllvm:-import-instr-limit=10")
     elif target.kernel == "Darwin":
         ldflags.append("-Wl,-mllvm,-import-instr-limit=10")
@@ -418,7 +418,7 @@ def lto(
     # during LTO. Further we can use the resulting size savings to increase
     # the import limit in hot functions.
     if pass_manager:
-        if target.os == "WINNT":
+        if c_compiler.type == "clang-cl":
             if c_compiler.version >= "12.0.0" and c_compiler.version < "13.0.0":
                 ldflags.append("-opt:ltonewpassmanager")
             if c_compiler.version >= "12.0.0":

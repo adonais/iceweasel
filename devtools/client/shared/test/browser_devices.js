@@ -7,7 +7,12 @@ const {
   getDevices,
   getDeviceString,
   addDevice,
+  removeLocalDevices,
 } = require("resource://devtools/client/shared/devices.js");
+
+registerCleanupFunction(async () => {
+  await removeLocalDevices();
+});
 
 add_task(async function () {
   let devices = await getDevices();

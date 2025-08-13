@@ -7,11 +7,12 @@
 #ifndef ContainStyleScopeManager_h_
 #define ContainStyleScopeManager_h_
 
-#include "nsClassHashtable.h"
-#include "nsTHashSet.h"
-#include "nsQuoteList.h"
-#include "nsCounterManager.h"
 #include <memory>
+
+#include "nsClassHashtable.h"
+#include "nsCounterManager.h"
+#include "nsQuoteList.h"
+#include "nsTHashSet.h"
 
 class nsIContent;
 class nsAtom;

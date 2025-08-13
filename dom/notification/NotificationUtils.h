@@ -69,6 +69,12 @@ NotificationPermission GetNotificationPermission(
 
 nsCOMPtr<nsINotificationStorage> GetNotificationStorage(bool isPrivate);
 
+using NotificationsPromise =
+    MozPromise<CopyableTArray<IPCNotification>, nsresult, false>;
+
+already_AddRefed<NotificationsPromise> GetStoredNotificationsForScope(
+    nsIPrincipal* aPrincipal, const nsACString& aScope, const nsAString& aTag);
+
 nsresult GetOrigin(nsIPrincipal* aPrincipal, nsString& aOrigin);
 
 nsresult PersistNotification(nsIPrincipal* aPrincipal,

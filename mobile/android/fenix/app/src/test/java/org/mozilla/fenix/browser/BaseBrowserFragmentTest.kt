@@ -32,7 +32,6 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.tabstrip.isTabStripEnabled
 import org.mozilla.fenix.components.FindInPageIntegration
 import org.mozilla.fenix.components.toolbar.BottomToolbarContainerView
 import org.mozilla.fenix.components.toolbar.BrowserToolbarView
@@ -55,7 +54,9 @@ class BaseBrowserFragmentTest {
         fragment = spyk(TestBaseBrowserFragment())
         swipeRefreshLayout = mockk(relaxed = true)
         engineView = mockk(relaxed = true)
-        settings = mockk(relaxed = true)
+        settings = mockk(relaxed = true) {
+            every { isTabStripEnabled } returns false
+        }
         testContext = mockk(relaxed = true)
 
         every {
@@ -358,10 +359,8 @@ class BaseBrowserFragmentTest {
 
         safeMockkStatic(
             View::isKeyboardVisible,
-            Context::isTabStripEnabled,
         ) {
             every { any<View>().isKeyboardVisible() } returns false
-            every { testContext.isTabStripEnabled() } returns false
 
             fragment.configureEngineViewWithDynamicToolbarsMaxHeight()
         }
@@ -386,10 +385,8 @@ class BaseBrowserFragmentTest {
 
         safeMockkStatic(
             View::isKeyboardVisible,
-            Context::isTabStripEnabled,
         ) {
             every { any<View>().isKeyboardVisible() } returns false
-            every { testContext.isTabStripEnabled() } returns false
 
             fragment.configureEngineViewWithDynamicToolbarsMaxHeight()
         }
@@ -417,10 +414,8 @@ class BaseBrowserFragmentTest {
 
         safeMockkStatic(
             View::isKeyboardVisible,
-            Context::isTabStripEnabled,
         ) {
             every { any<View>().isKeyboardVisible() } returns false
-            every { testContext.isTabStripEnabled() } returns false
 
             fragment.configureEngineViewWithDynamicToolbarsMaxHeight()
         }
@@ -450,10 +445,8 @@ class BaseBrowserFragmentTest {
 
         safeMockkStatic(
             View::isKeyboardVisible,
-            Context::isTabStripEnabled,
         ) {
             every { any<View>().isKeyboardVisible() } returns false
-            every { testContext.isTabStripEnabled() } returns false
 
             fragment.configureEngineViewWithDynamicToolbarsMaxHeight()
         }
@@ -486,10 +479,8 @@ class BaseBrowserFragmentTest {
 
         safeMockkStatic(
             View::isKeyboardVisible,
-            Context::isTabStripEnabled,
         ) {
             every { any<View>().isKeyboardVisible() } returns false
-            every { testContext.isTabStripEnabled() } returns false
 
             fragment.configureEngineViewWithDynamicToolbarsMaxHeight()
         }
@@ -514,10 +505,8 @@ class BaseBrowserFragmentTest {
 
         safeMockkStatic(
             View::isKeyboardVisible,
-            Context::isTabStripEnabled,
         ) {
             every { any<View>().isKeyboardVisible() } returns false
-            every { testContext.isTabStripEnabled() } returns false
 
             fragment.configureEngineViewWithDynamicToolbarsMaxHeight()
         }
@@ -545,10 +534,8 @@ class BaseBrowserFragmentTest {
 
         safeMockkStatic(
             View::isKeyboardVisible,
-            Context::isTabStripEnabled,
         ) {
             every { any<View>().isKeyboardVisible() } returns false
-            every { testContext.isTabStripEnabled() } returns false
 
             fragment.configureEngineViewWithDynamicToolbarsMaxHeight()
         }
@@ -573,10 +560,8 @@ class BaseBrowserFragmentTest {
 
         safeMockkStatic(
             View::isKeyboardVisible,
-            Context::isTabStripEnabled,
         ) {
             every { any<View>().isKeyboardVisible() } returns false
-            every { testContext.isTabStripEnabled() } returns false
 
             fragment.configureEngineViewWithDynamicToolbarsMaxHeight()
         }
@@ -605,10 +590,8 @@ class BaseBrowserFragmentTest {
 
         safeMockkStatic(
             View::isKeyboardVisible,
-            Context::isTabStripEnabled,
         ) {
             every { any<View>().isKeyboardVisible() } returns false
-            every { testContext.isTabStripEnabled() } returns false
 
             fragment.configureEngineViewWithDynamicToolbarsMaxHeight()
         }
@@ -634,10 +617,8 @@ class BaseBrowserFragmentTest {
 
         safeMockkStatic(
             View::isKeyboardVisible,
-            Context::isTabStripEnabled,
         ) {
             every { any<View>().isKeyboardVisible() } returns true
-            every { testContext.isTabStripEnabled() } returns false
 
             fragment.configureEngineViewWithDynamicToolbarsMaxHeight()
         }
@@ -666,10 +647,8 @@ class BaseBrowserFragmentTest {
 
         safeMockkStatic(
             View::isKeyboardVisible,
-            Context::isTabStripEnabled,
         ) {
             every { any<View>().isKeyboardVisible() } returns true
-            every { testContext.isTabStripEnabled() } returns false
 
             fragment.configureEngineViewWithDynamicToolbarsMaxHeight()
         }
@@ -745,11 +724,7 @@ class BaseBrowserFragmentTest {
         every { settings.getTopToolbarHeight(any()) } returns 11
         every { settings.getBottomToolbarHeight() } returns 5
 
-        safeMockkStatic(Context::isTabStripEnabled) {
-            every { testContext.isTabStripEnabled() } returns false
-
-            fragment.reinitializeEngineView()
-        }
+        fragment.reinitializeEngineView()
 
         verify { fragment.initializeEngineView(11, 5) }
     }
@@ -760,11 +735,7 @@ class BaseBrowserFragmentTest {
         every { settings.getTopToolbarHeight(any()) } returns 11
         every { settings.getBottomToolbarHeight() } returns 5
 
-        safeMockkStatic(Context::isTabStripEnabled) {
-            every { testContext.isTabStripEnabled() } returns false
-
-            fragment.reinitializeEngineView()
-        }
+        fragment.reinitializeEngineView()
 
         verify { fragment.initializeEngineView(0, 0) }
     }

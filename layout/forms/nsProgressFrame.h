@@ -8,9 +8,9 @@
 #define nsProgressFrame_h___
 
 #include "mozilla/Attributes.h"
+#include "nsCOMPtr.h"
 #include "nsContainerFrame.h"
 #include "nsIAnonymousContentCreator.h"
-#include "nsCOMPtr.h"
 
 namespace mozilla {
 enum class PseudoStyleType : uint8_t;

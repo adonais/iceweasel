@@ -64,21 +64,23 @@ void HTMLStyleElement::CharacterDataChanged(nsIContent* aContent,
   ContentChanged(aContent);
 }
 
-void HTMLStyleElement::ContentAppended(nsIContent* aFirstNewContent) {
+void HTMLStyleElement::ContentAppended(nsIContent* aFirstNewContent,
+                                       const ContentAppendInfo&) {
   ContentChanged(aFirstNewContent->GetParent());
 }
 
-void HTMLStyleElement::ContentInserted(nsIContent* aChild) {
+void HTMLStyleElement::ContentInserted(nsIContent* aChild,
+                                       const ContentInsertInfo&) {
   ContentChanged(aChild);
 }
 
 void HTMLStyleElement::ContentWillBeRemoved(nsIContent* aChild,
-                                            const BatchRemovalState* aState) {
+                                            const ContentRemoveInfo& aInfo) {
   mTriggeringPrincipal = nullptr;
   if (!nsContentUtils::IsInSameAnonymousTree(this, aChild)) {
     return;
   }
-  if (aState && !aState->mIsFirst) {
+  if (aInfo.mBatchRemovalState && !aInfo.mBatchRemovalState->mIsFirst) {
     return;
   }
   // Make sure to run this once the removal has taken place.
@@ -230,6 +232,13 @@ bool HTMLStyleElement::IsPotentiallyRenderBlocking() {
   // https://html.spec.whatwg.org/#implicitly-potentially-render-blocking
   // A style element is implicitly potentially render-blocking if the element
   // was created by its node document's parser.
+}
+
+nsresult HTMLStyleElement::CopyInnerTo(HTMLStyleElement* aDest) {
+  nsresult rv = Element::CopyInnerTo(aDest);
+  NS_ENSURE_SUCCESS(rv, rv);
+  MaybeStartCopyStyleSheetTo(aDest, aDest->OwnerDoc());
+  return NS_OK;
 }
 
 }  // namespace mozilla::dom

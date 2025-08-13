@@ -160,9 +160,8 @@ class BaselineCodeGen {
 
   bool emitSuspend(JSOp op);
 
-  template <typename F>
-  [[nodiscard]] bool emitAfterYieldDebugInstrumentation(const F& ifDebuggee,
-                                                        Register scratch);
+  [[nodiscard]] bool emitAfterYieldDebugInstrumentation(Register scratch);
+  [[nodiscard]] bool emitDebugAfterYield();
 
   // ifSet should be a function emitting code for when the script has |flag|
   // set. ifNotSet emits code for when the flag isn't set.

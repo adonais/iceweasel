@@ -8,10 +8,12 @@
 
 #include "nsLineLayout.h"
 
-#include "mozilla/ComputedStyle.h"
-#include "mozilla/SVGTextFrame.h"
+#include <algorithm>
 
 #include "LayoutLogging.h"
+#include "RubyUtils.h"
+#include "mozilla/ComputedStyle.h"
+#include "mozilla/SVGTextFrame.h"
 #include "nsBidiPresUtils.h"
 #include "nsBlockFrame.h"
 #include "nsContainerFrame.h"
@@ -26,8 +28,6 @@
 #include "nsStyleConsts.h"
 #include "nsStyleStructInlines.h"
 #include "nsTextFrame.h"
-#include "RubyUtils.h"
-#include <algorithm>
 
 #ifdef DEBUG
 #  undef NOISY_INLINEDIR_ALIGN
@@ -630,9 +630,9 @@ static bool HasPercentageUnitSide(const StyleRect<T>& aSides) {
 }
 
 static bool HasPercentageUnitMargin(const nsStyleMargin& aStyleMargin,
-                                    StylePositionProperty aProp) {
+                                    const AnchorPosResolutionParams& aParams) {
   for (const auto side : AllPhysicalSides()) {
-    if (aStyleMargin.GetMargin(side, aProp)->HasPercent()) {
+    if (aStyleMargin.GetMargin(side, aParams)->HasPercent()) {
       return true;
     }
   }
@@ -655,7 +655,7 @@ static bool IsPercentageAware(const nsIFrame* aFrame, WritingMode aWM) {
 
   const nsStyleMargin* margin = aFrame->StyleMargin();
   const auto anchorResolutionParams = AnchorPosResolutionParams::From(aFrame);
-  if (HasPercentageUnitMargin(*margin, anchorResolutionParams.mPosition)) {
+  if (HasPercentageUnitMargin(*margin, anchorResolutionParams)) {
     return true;
   }
 
@@ -667,14 +667,14 @@ static bool IsPercentageAware(const nsIFrame* aFrame, WritingMode aWM) {
   // Note that borders can't be aware of percentages
 
   const nsStylePosition* pos = aFrame->StylePosition();
-  const auto iSize = pos->ISize(aWM, anchorResolutionParams.mPosition);
+  const auto iSize = pos->ISize(aWM, anchorResolutionParams);
   const auto anchorOffsetResolutionParams =
       AnchorPosOffsetResolutionParams::UseCBFrameSize(anchorResolutionParams);
   if ((nsStylePosition::ISizeDependsOnContainer(iSize) && !iSize->IsAuto()) ||
       nsStylePosition::MaxISizeDependsOnContainer(
-          pos->MaxISize(aWM, anchorResolutionParams.mPosition)) ||
+          pos->MaxISize(aWM, anchorResolutionParams)) ||
       nsStylePosition::MinISizeDependsOnContainer(
-          pos->MinISize(aWM, anchorResolutionParams.mPosition)) ||
+          pos->MinISize(aWM, anchorResolutionParams)) ||
       pos->GetAnchorResolvedInset(LogicalSide::IStart, aWM,
                                   anchorOffsetResolutionParams)
           ->HasPercent() ||
@@ -691,8 +691,6 @@ static bool IsPercentageAware(const nsIFrame* aFrame, WritingMode aWM) {
     if ((disp->DisplayOutside() == StyleDisplayOutside::Inline &&
          (disp->DisplayInside() == StyleDisplayInside::FlowRoot ||
           disp->DisplayInside() == StyleDisplayInside::Table)) ||
-        fType == LayoutFrameType::HTMLButtonControl ||
-        fType == LayoutFrameType::GfxButtonControl ||
         fType == LayoutFrameType::FieldSet) {
       return true;
     }
@@ -707,8 +705,7 @@ static bool IsPercentageAware(const nsIFrame* aFrame, WritingMode aWM) {
     nsIFrame* f = const_cast<nsIFrame*>(aFrame);
     if (f->GetAspectRatio() &&
         // Some percents are treated like 'auto', so check != coord
-        !pos->BSize(aWM, anchorResolutionParams.mPosition)
-             ->ConvertsToLength()) {
+        !pos->BSize(aWM, anchorResolutionParams)->ConvertsToLength()) {
       const IntrinsicSize& intrinsicSize = f->GetIntrinsicSize();
       if (!intrinsicSize.width && !intrinsicSize.height) {
         return true;

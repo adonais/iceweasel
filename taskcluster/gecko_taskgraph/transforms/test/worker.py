@@ -10,7 +10,6 @@ LINUX_WORKER_TYPES = {
     "large-noscratch": "t-linux-docker-noscratch",
     "xlarge": "t-linux-docker",
     "xlarge-noscratch": "t-linux-docker-noscratch",
-    "large-dw": "t-linux-large-noscratch",
     "default": "t-linux-docker-noscratch",
 }
 

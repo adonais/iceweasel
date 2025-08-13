@@ -12,8 +12,8 @@
 #ifndef nsITableLayoutStrategy_h_
 #define nsITableLayoutStrategy_h_
 
-#include "nscore.h"
 #include "nsCoord.h"
+#include "nscore.h"
 
 class gfxContext;
 namespace mozilla {

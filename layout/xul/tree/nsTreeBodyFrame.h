@@ -7,24 +7,23 @@
 #ifndef nsTreeBodyFrame_h
 #define nsTreeBodyFrame_h
 
+#include "SimpleXULLeafFrame.h"
+#include "imgINotificationObserver.h"
+#include "imgIRequest.h"
 #include "mozilla/AtomArray.h"
 #include "mozilla/Attributes.h"
-
-#include "nsITreeView.h"
+#include "mozilla/LookAndFeel.h"
+#include "nsIReflowCallback.h"
 #include "nsIScrollbarMediator.h"
 #include "nsITimer.h"
-#include "nsIReflowCallback.h"
+#include "nsITreeView.h"
+#include "nsScrollbarFrame.h"
 #include "nsTArray.h"
-#include "nsTreeStyleCache.h"
-#include "nsTreeColumns.h"
 #include "nsTHashMap.h"
 #include "nsTHashSet.h"
-#include "imgIRequest.h"
-#include "imgINotificationObserver.h"
-#include "nsScrollbarFrame.h"
 #include "nsThreadUtils.h"
-#include "SimpleXULLeafFrame.h"
-#include "mozilla/LookAndFeel.h"
+#include "nsTreeColumns.h"
+#include "nsTreeStyleCache.h"
 
 class nsFontMetrics;
 class nsOverflowChecker;

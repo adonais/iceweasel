@@ -104,16 +104,6 @@
   -->
   <string name="erase_action_cfr_message" moz:removedIn="141" tools:ignore="UnusedResources">ഒരു പുതിയ സ്വകാര്യ ടാബു് കൂട്ടം തുടങ്ങാൻ ഇവിടെ തൊടുക. നാൾവഴിയും കുക്കീസും എല്ലാം മായ്ക്കുക.</string>
   <!--
-    Toolbar "contextual feature recommendation" (CFR)
-
-    Text for the title displayed in the contextual feature recommendation popup promoting the navigation bar.
-  -->
-  <string name="navbar_cfr_title" moz:removedIn="140" tools:ignore="UnusedResources">പുതിയ വഴികാട്ടല്വവസ്ഥയൊപ്പം ഇനിയും വേഗത്തിൽ പരതുക</string>
-  <!-- Text for the message displayed in the contextual feature recommendation popup promoting the navigation bar. -->
-  <string name="navbar_cfr_message_2" moz:removedIn="140" tools:ignore="UnusedResources">ഒരു വെബ്‌സൈറ്റിൽ, കൂടുതൽ തിരച്ചിൽ സ്ഥലത്തിനായി താങ്ങൾ താഴേക്ക് ഗതിമാറ്റുമ്പോൾ ഈ പട്ട അകന്നുപോകുന്നു.</string>
-  <!-- Text for the message displayed for the popup promoting the long press of navigation in the navigation bar. -->
-  <string name="navbar_navigation_buttons_cfr_message" moz:removedIn="140" tools:ignore="UnusedResources">ഈ ടാബിന്റെ നാൾവഴിത്തിലേ താളുകൾക്കിടയിൽ ചാടാൻ അമ്പടയാളങ്ങൾ പിടിച്ചുവയ്ക്കുക.</string>
-  <!--
     Address bar swipe "contextual feature recommendation" (CFR)
 
     Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar.
@@ -340,7 +330,7 @@
   <!-- Browser menu label that toggles the request for the desktop site of the currently visited page -->
   <string name="browser_menu_switch_to_desktop_site" moz:removedIn="141" tools:ignore="UnusedResources">ഉപരിഫലക സൈറ്റിലേക്ക് മാറുക</string>
   <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site">മൊപൈൽ സൈറ്റിലേക്കു് മാറുക</string>
+  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">മൊപൈൽ സൈറ്റിലേക്കു് മാറുക</string>
   <!-- Browser menu label that navigates to the page tools sub-menu -->
   <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">ഉപകരണങ്ങള്‍</string>
   <!-- Content description (not visible, for screen readers etc.): Back button for all menu redesign sub-menu -->
@@ -424,7 +414,9 @@
   -->
   <string name="browser_menu_default_banner_title">%1$s-നെ തനിമട്ടാക്കുക</string>
   <!-- Label text within the set as default banner -->
-  <string name="browser_menu_default_banner_subtitle">ഞൊടികൾ മാത്രമെടുക്കും. എപ്പോഴെങ്കിലും മാറ്റാം.</string>
+  <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">ഞൊടികൾ മാത്രമെടുക്കും. എപ്പോഴെങ്കിലും മാറ്റാം.</string>
+  <!-- Label text within the set as default banner -->
+  <string name="browser_menu_default_banner_subtitle_2">ഉടൻ, സ്വകാര്യം, താങ്ങൾക്കുവേണ്ടി\u0020</string>
   <!-- Content description for the button that dismisses the set as default banner in the menu -->
   <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">കളയുക</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
@@ -593,41 +585,6 @@
   <string name="juno_onboarding_add_search_widget_positive_button" tools:ignore="BrandUsage,UnusedResources">ഫയർഫോക്സു് വിചറ്റു് ചേർക്കുക</string>
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">ഇപ്പോഴല്ല</string>
-  <!--
-    Onboarding header for the add-ons card used by Nimbus experiments. Nimbus experiments do not support string placeholders.
-    Note: The word "Firefox" should NOT be translated
-  -->
-  <string name="onboarding_add_on_header" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">വിപുലീകരണങ്ങൾ കൊണ്ടു് താങ്ങളുടെ ഫയർഫോക്സു് സ്വന്തമാക്കുക</string>
-  <!-- Onboarding add-ons card, for checking more add-ons on, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_explore_more_extensions_2" moz:removedIn="140" tools:ignore="UnusedResources">കൂടുതൽ വിപുലീകരണങ്ങൾ കാണുക</string>
-  <!-- Onboarding add-ons card, button for start browsing, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_start_browsing_button_2" moz:removedIn="140" tools:ignore="UnusedResources">തിരയുകാൻ തുടങ്ങുക</string>
-  <!-- Ublock name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Ublock Origin" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_ublock_name" moz:removedIn="140" tools:ignore="UnusedResources">യുബ്ലോക്കു് ഓരിജിൻ</string>
-  <!-- Ublock description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_ublock_description" moz:removedIn="140" tools:ignore="UnusedResources">പരസ്യങ്ങൾ നല്ലോണം തടയുക.</string>
-  <!-- Privacy Badger name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Privacy Badger" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_privacy_badger_name" moz:removedIn="140" tools:ignore="UnusedResources">പ്രിവസി ബാജർ</string>
-  <!-- Search by Image name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Search by Image" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_search_by_image_name" moz:removedIn="140" tools:ignore="UnusedResources">ചിത്രം കൊണ്ടു് തിരയുക</string>
-  <!-- Search by Image description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_search_by_image_description" moz:removedIn="140" tools:ignore="UnusedResources">ഒരു രസകരമായ ചിത്രം കണ്ടിട്ടു് അതുനെപറ്റി കൂടുകൽ അറിയുക.</string>
-  <!-- Dark Reader name for the onboarding add-ons card, used by Nimbus experiments. Note: The word "Dark Reader" is a brand name should NOT be translated -->
-  <string name="onboarding_add_on_dark_reader_name" moz:removedIn="140" tools:ignore="UnusedResources">ഡാർക്കു് റീടർ</string>
-  <!-- Privacy Badger description for the onboarding add-ons card, used by Nimbus experiments. -->
-  <string name="onboarding_add_on_dark_reader_description" moz:removedIn="140" tools:ignore="UnusedResources">ജംഗമവലക്കുള്ള ഇഷ്ടാനുസൃത ഇരുണ്ടരീതി.</string>
-  <!-- Label for the number of reviews for an add-on. %1$s is the formatted number of reviews e.g. "1,234", "12,345", "123,456". -->
-  <string name="onboarding_add_on_reviews_label" moz:removedIn="140" tools:ignore="UnusedResources">അവലോകനങ്ങൾ: %1$s</string>
-  <!-- Content description for the add-on icon. -->
-  <string name="onboarding_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">ആഡ്-ഓൺ അടയാളം</string>
-  <!-- Content description for the an installed add-on icon. -->
-  <string name="onboarding_installed_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">സ്ഥാപിച്ച ആഡ്-ഓൺ അടയാളം</string>
-  <!-- Content description for the an installing add-on icon. -->
-  <string name="onboarding_installing_add_on_icon_content_description" moz:removedIn="140" tools:ignore="UnusedResources">ആഡ് ഓൺ അടയാളം സ്ഥാപിക്കുന്നു</string>
-  <!-- Content description for the add add-on button. -->
-  <string name="onboarding_add_on_add_button_content_description" moz:removedIn="140" tools:ignore="UnusedResources">ആഡ്-ഓൺ ബട്ടൺ ചേർക്കുക</string>
-  <!-- Content description for the star rating group. %1$s is the rating. -->
-  <string name="onboarding_add_on_star_rating_content_description" moz:removedIn="140" tools:ignore="UnusedResources">5-ൽ %1$s-ആയി സ്ഥാനക്രമിച്ചതു്</string>
   <!-- Title for the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_title" tools:ignore="BrandUsage">ഫയർഫോക്സു് മെച്ചപ്പെടുത്താൻ ഞങ്ങളെ സഹായിക്കുക</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
@@ -645,8 +602,6 @@
   <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">ഫയര്‍ഫോക്സിലേക്കു് സ്വാഗതം</string>
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">വേഗതയേറിയതും സുരക്ഷിതവുമായ വെബ് തിരയൽ</string>
-  <!-- Terms of service onboarding page continue button label. -->
-  <string name="onboarding_term_of_service_agree_and_continue_button_label" moz:removedIn="140" tools:ignore="UnusedResources">സമ്മതിച്ച് തുടരുക</string>
   <!-- Terms of service onboarding page continue button label. -->
   <string name="onboarding_term_of_service_agree_and_continue_button_label_2">തുടരുക</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
@@ -988,8 +943,6 @@
   -->
   <string name="customize_toggle_recently_visited">അടുത്തിടെ സന്ദർശിച്ചതു്</string>
   <!-- Title for the customize home screen section with Pocket. -->
-  <string name="customize_toggle_pocket_2" tools:ignore="UnusedResources" moz:removedIn="140">ചിന്തോദ്ദീപകമായ ലേഖനങ്ങൾ</string>
-  <!-- Title for the customize home screen section with Pocket. -->
   <string name="customize_toggle_pocket_3">കഥകൾ</string>
   <!-- Title for the customize home screen section with sponsored Pocket stories. -->
   <string name="customize_toggle_pocket_sponsored">പണം കൊണ്ടു് പ്രസരിപ്പിച്ച കഥകൾ</string>
@@ -1076,7 +1029,9 @@
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
   <string name="alternative_app_icon_group_gradients">നിറച്ചരുമാനം</string>
   <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
-  <string name="alternative_app_icon_group_other">മറ്റുള്ളവ</string>
+  <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources">മറ്റുള്ളവ</string>
+  <!-- Dialog button text for cancelling app icon change -->
+  <string name="restart_warning_dialog_button_negative">റദ്ദാക്കുക</string>
   <!--
     Add-ons general availability nimbus message
 
@@ -1249,7 +1204,7 @@
   <!-- Preference for using using dark or light theme automatically set by battery -->
   <string name="preference_auto_battery_theme">ബാറ്ററി സേവർ സജ്ജമാക്കിയത്</string>
   <!-- Preference for using following device theme -->
-  <string name="preference_follow_device_theme">ഉപകരണ തീം പിന്തുടരുക</string>
+  <string name="preference_follow_device_theme">ഉപകരണ അലങ്കാരം പിന്തുടരുക</string>
   <!--
     Gestures Preferences
 
@@ -1260,8 +1215,6 @@
   <string name="preference_gestures_dynamic_toolbar">ഉപകരണപ്പട്ട മറയ്ക്കാൻ ഗതിമാറ്റുക</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">ടാബുകൾ തുറക്കുന്നതിന് കരുപ്പട്ട മുകളിലേക്ക് സ്വൈപ്പുചെയ്യുക</string>
-  <!-- Preference for using the dynamic toolbars -->
-  <string name="preference_gestures_dynamic_toolbar_2" moz:removedIn="140" tools:ignore="UnusedResources">വിലാസപ്പട്ടയും കരുപ്പട്ടയും മറയ്ക്കാൻ ഗതിമാറ്റുക</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">ടാബുകൾ മാറാൻ വിലാസപ്പട്ട ഒരുവശത്തേക്കു് നീക്കുക</string>
   <!--
@@ -1488,9 +1441,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">നാള്‍വഴികൾ ഇല്ലാതാക്കുക</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar">നാൾവഴി മായച്ചു</string>
+  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">നാൾവഴി മായച്ചു</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar">%1$s നീക്കം ചെയ്തു</string>
+  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s നീക്കം ചെയ്തു</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">നീക്കം ചെയ്യുക</string>
   <!--
@@ -1674,6 +1627,8 @@
   <string name="webcompat_reporter_screen_title">പൊട്ടിയ സൈറ്റിന്റെ വിവരം അറിയിക്കുക</string>
   <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
   <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">എല്ലാവൎക്കുമായി %1$s-നെ മെച്ചപ്പെടുത്താൻ സഹായിക്കുക. മോസില്ല ഉദ്യോഗസ്ഥന്മാർ താങ്ങൾ അയയ്ക്കുന്ന വിവരങ്ങൾ വെബ്സ്ഥാനക്കുഴപ്പങ്ങളെ പരിഹരിക്കാൻ ഉപയോഗിക്കുന്നു.</string>
+  <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">%1$s-ലുള്ള കുഴപ്പങ്ങൾ നന്നാക്കാനും എല്ലാവൎക്കതു മെച്ചപ്പെടുത്താനും താങ്ങളുടെ റിപ്പോർട്ട് ഞങ്ങളെ തുണയ്ക്കുന്നു. കൂടുതലറിയുക</string>
   <!-- The button text for navigating to the SUMO link to learn more about reporting a broken site. -->
   <string name="webcompat_reporter_learn_more">കൂടുതലറിയുക</string>
   <!-- The text field label of the URL text field. This is displayed above the user-inputted URL. -->
@@ -1700,20 +1655,14 @@
   <string name="webcompat_reporter_success_snackbar_text">താങ്ങളുടെ റിപ്പോർട്ട് അയച്ചു</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
   <string name="webcompat_reporter_dismiss_success_snackbar_text">അടയ്ക്കുക</string>
+  <!-- Placeholder text for the description field to prompt the user on what they should type. -->
+  <string name="webcompat_reporter_problem_description_placeholder_text">എന്താണു പറ്റിയതു്. പറ്റേണ്ടതെന്തായിരുന്നു?</string>
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
-    Broken site reason text for site slow or not working
+    Broken site reason text for site doesn’t load
   -->
-  <string name="webcompat_reporter_reason_slow" moz:removedIn="140" tools:ignore="UnusedResources">വെബ്സ്ഥാനം തൂങ്ങുന്നു അല്ലെങ്കിൽ കോഡായിപ്പോയി</string>
-  <!-- Broken site reason text for site doesn’t load -->
   <string name="webcompat_reporter_reason_load">വെബിടം ലഭ്യമാവുന്നില്ല</string>
-  <!-- Broken site reason text for images or videos -->
-  <string name="webcompat_reporter_reason_media" moz:removedIn="140" tools:ignore="UnusedResources">ചിത്രങ്ങൾ അല്ലെങ്കിൽ ദൃശ്യങ്ങൾ</string>
-  <!-- Broken site reason text for buttons, links, and other content -->
-  <string name="webcompat_reporter_reason_content" moz:removedIn="140" tools:ignore="UnusedResources">ബട്ടണുകളും കണ്ണികളും മറ്റു് ഉള്ളടക്കം</string>
-  <!-- Broken site reason text for sign in or sign out -->
-  <string name="webcompat_reporter_reason_account" moz:removedIn="140" tools:ignore="UnusedResources">പ്രവേശിക്കൽ അല്ലെങ്കിൽ പുറത്തിറങ്ങൽ ചെയ്യുക</string>
   <!-- Broken site reason text for site is slow -->
   <string name="webcompat_reporter_reason_slow2">വെബിടത്തിന്റെ വേഗത കുറഞ്ഞിരിക്കുന്നു</string>
   <!-- Broken site reason text for video isn’t playing or loading -->
@@ -1722,8 +1671,6 @@
   <string name="webcompat_reporter_reason_content2">ഉള്ളടക്കം കാണാന്നില്ല</string>
   <!-- Broken site reason text for can’t sign in or register -->
   <string name="webcompat_reporter_reason_account2">പ്രവേശിക്കാനോ അംഗത്തമെടുക്കാനോ പറ്റുന്നില്ല</string>
-  <!-- Broken site reason text for ad blocker -->
-  <string name="webcompat_reporter_reason_ad_blocker" moz:removedIn="140" tools:ignore="UnusedResources">പരസ്യ തടയല്യന്ത്രം</string>
   <!-- Broken site reason text for site asked to turn off ad blocker -->
   <string name="webcompat_reporter_reason_turn_off_adblocker">ഈ വെബിടം പരസ്യ തടയൽയന്ത്രത്തിനെ അണയ്ക്കാൻ ചോദിയ്ക്കുന്നു.</string>
   <!-- Broken site reason text for browser isn’t supported or blocked -->
@@ -1743,7 +1690,7 @@
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">ടാബ് പുനസ്ഥാപിക്കുക</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title">%s-നു വീണ്ടും തുടങ്ങണ്ടി വന്നു</string>
+  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s-നു വീണ്ടും തുടങ്ങണ്ടി വന്നു</string>
   <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
   <string name="unsubmitted_crash_dialog_checkbox_label">തകർച്ച വിവരങ്ങൾ തന്നെതാന്നെ അയയ്ക്കുക</string>
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
@@ -1759,11 +1706,11 @@
 
     Confirmation message for a dialog confirming if the user wants to delete the selected folder
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog">ഈ അറയെ മായ്ക്കണമെന്നു് താങ്കൾക്ക് ഉറപ്പാണോ?</string>
+  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">ഈ അറയെ മായ്ക്കണമെന്നു് താങ്കൾക്ക് ഉറപ്പാണോ?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items. -->
   <string name="bookmark_delete_folders_confirmation_dialog">തിരഞ്ഞെടുക്കപ്പെട്ട ഇനങ്ങൾ മായ്ക്കണമെന്നു് ഉറപ്പുണ്ടോ?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog">%s തിരഞ്ഞെടുത്ത ഇനങ്ങൾ മായ്ക്കും.</string>
+  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s തിരഞ്ഞെടുത്ത ഇനങ്ങൾ മായ്ക്കും.</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">റദ്ദാക്കുക</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -1793,7 +1740,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">നീക്കം ചെയ്യുക</string>
   <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button">സൂക്ഷിക്കുക</string>
+  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">സൂക്ഷിക്കുക</string>
   <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_custom">ഇഷ്ടാനുസൃതക്രമത്തിലാക്കുക</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
@@ -1814,7 +1761,7 @@
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">അറ തിരുത്തുക</string>
   <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button">സമന്വയിപ്പിച്ച ബുക്ക്മാർക്കുകൾ കാണാൻ പ്രവേശിക്കുക</string>
+  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">സമന്വയിപ്പിച്ച ബുക്ക്മാർക്കുകൾ കാണാൻ പ്രവേശിക്കുക</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -1826,24 +1773,24 @@
   <!-- Label for a text input field for a bookmark or folder name -->
   <string name="bookmark_name_label_normal_case">പേരു്</string>
   <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label">അറ ചേർക്കുക</string>
+  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">അറ ചേർക്കുക</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">അറ തിരഞ്ഞെടുക്കുക</string>
   <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error">നിർബന്ധമായും ഒരു ശീർഷകം ഉണ്ടായിരിക്കണം</string>
+  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">നിർബന്ധമായും ഒരു ശീർഷകം ഉണ്ടായിരിക്കണം</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">URL അസാധുവാണ്</string>
   <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message">അടയാളക്കുറിപ്പുകളൊന്നുമില്ല</string>
+  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">അടയാളക്കുറിപ്പുകളൊന്നുമില്ല</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s നീക്കം ചെയ്തു</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2">അടയാളക്കുറിപ്പുകൾ നീക്കം ചെയ്തു</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">അടയാളക്കുറിപ്പുകൾ നീക്കം ചെയ്തു</string>
   <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3">തിരഞ്ഞെടുത്ത അറകൾ മായ്ക്കുന്നു</string>
+  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">തിരഞ്ഞെടുത്ത അറകൾ മായ്ക്കുന്നു</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">പൂർവസ്ഥിതിയാക്കുക</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
@@ -1851,7 +1798,7 @@
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
   <string name="bookmark_delete_multiple_items">മായച്ച ഇനങ്ങൾ: %s</string>
   <!-- Text for the button to search all bookmarks -->
-  <string name="bookmark_search">തിരയൽ പദങ്ങൾ പറയുക</string>
+  <string name="bookmark_search" tools:ignore="UnusedResources" moz:removedIn="143">തിരയൽ പദങ്ങൾ പറയുക</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">പുറകോട്ട് ചെല്ലുക</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2007,7 +1954,7 @@
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ടാബ് തിരഞ്ഞെടുത്തു</string>
   <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved">ടാബുകൾ സൂക്ഷിച്ചു!</string>
+  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">ടാബുകൾ സൂക്ഷിച്ചു!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
   <string name="create_collection_tabs_saved_new_collection">ശേഖരം കരുതിവച്ചു!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
@@ -2140,9 +2087,9 @@
 
     Text shown in snackbar when user deletes a collection
   -->
-  <string name="snackbar_collection_deleted">ശേഖരം ഇല്ലാതാക്കി</string>
+  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">ശേഖരം ഇല്ലാതാക്കി</string>
   <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed">ശേഖരത്തിന്റെ പേരുമാറ്റി</string>
+  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">ശേഖരത്തിന്റെ പേരുമാറ്റി</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">ടാബ് അടച്ചു</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -2179,9 +2126,9 @@
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">%1$s നീക്കം ചെയ്യണമെന്ന് താങ്കൾക്ക് ഉറപ്പാണോ?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive">നീക്കം ചെയ്യുക</string>
+  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">നീക്കം ചെയ്യുക</string>
   <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied">URL പകർത്തി</string>
+  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL പകർത്തി</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">ഇതൊരു ഉദാഹരണ വാചകമാണ്. നിങ്ങൾ അക്ഷരത്തിന്റെ വലുപ്പം കൂട്ടുകയോ കുറയ്ക്കുകയോ ചെയ്യുമ്പോൾ എങ്ങനെ ദൃശ്യമാകുമെന്ന് കാണിക്കാൻ ഇത് സഹായിക്കുന്നു.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2768,14 +2715,12 @@
   <string name="search_add_custom_engine_error_empty_search_string">തിരയുന്നതിനായി ഒരു വാചകം നൽകുക</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">തിരച്ചിൽ വാചകം ഉദാഹരണ ഘടനയുമായി പൊരുത്തപ്പെടുന്നുണ്ടോ എന്ന് പരിശോധിക്കുക</string>
-  <!-- Text shown when we aren't able to validate the custom search query. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_error_cannot_reach" moz:removedIn="140" tools:ignore="UnusedResources">“%s” ലേക്ക് ബന്ധിപ്പിക്കന്നതിൽ പിശക്</string>
   <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message">%s സൃഷ്ടിച്ചു</string>
+  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s സൃഷ്ടിച്ചു</string>
   <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message">%s സൂക്ഷിച്ചു</string>
+  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s സൂക്ഷിച്ചു</string>
   <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message">%s നീക്കം ചെയ്തു</string>
+  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s നീക്കം ചെയ്തു</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">ഇത് അനുവദിക്കുന്നതിന്:</string>
   <!-- First step for the allowing a permission -->
@@ -2803,7 +2748,7 @@
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">സൈറ്റ് ഒഴിവാക്കലുകളൊന്നുമില്ല</string>
   <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation">ഈ അടയാളക്കുറിപ്പ് നീക്കം ചെയ്യണമെന്ന് താങ്കൾക്ക് ഉറപ്പാണോ?</string>
+  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">ഈ അടയാളക്കുറിപ്പ് നീക്കം ചെയ്യണമെന്ന് താങ്കൾക്ക് ഉറപ്പാണോ?</string>
   <!-- Browser menu button that adds a shortcut to the home fragment -->
   <string name="browser_menu_add_to_shortcuts">കുറുക്കുവഴികളിലേക്കു് ചേർക്കുക</string>
   <!-- Browser menu button that removes a shortcut from the home fragment -->
@@ -2879,6 +2824,12 @@
   <string name="synced_tabs_expand_group">സമന്വയിപ്പിച്ച ടാബുക്കൂട്ടം വലുതാക്കുക</string>
   <!-- Content description for collapsing a group of synced tabs. -->
   <string name="synced_tabs_collapse_group">സമന്വയിപ്പിച്ച ടാബുക്കൂട്ടം ചുരുക്കുക</string>
+  <!--
+    Top Sites
+
+    Title text displayed for the shortcuts home screen section.
+  -->
+  <string name="homepage_shortcuts_title">കുറുക്കുവഴികൾ</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">കുറുക്കുവഴി പരിധി എത്തി</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -2962,25 +2913,17 @@
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">മുകളിലേക്ക് ചെല്ലുക</string>
   <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description">അടയ്ക്കുക</string>
+  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">അടയ്ക്കുക</string>
   <!--
     Pocket recommended stories
 
     Header text for a section on the home screen.
   -->
-  <string name="pocket_stories_header_1" tools:ignore="UnusedResources" moz:removedIn="140">ചിന്തോദ്ദീപകമായ ലേഖനങ്ങൾ</string>
-  <!-- Header text for a section on the home screen. -->
   <string name="pocket_stories_header_2">കഥകൾ</string>
   <!-- Header text for a section on the home screen. -->
   <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">ലേഖനങ്ങൾ വിഷയാനുസൃതമായി</string>
   <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
   <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">കൂടുതലായി കണ്ടെത്തൂ</string>
-  <!-- Title of an app feature. Smaller than a heading. %s is "Pocket". -->
-  <string name="pocket_stories_feature_title_2" moz:removedIn="140" tools:ignore="UnusedResources">അവതരിപ്പിക്കുന്നത്: %s</string>
-  <!-- Caption for describing a certain feature. %s is a link using pocket_stories_feature_learn_more as text, which will load an url in a new tab when clicked. -->
-  <string name="pocket_stories_feature_caption" moz:removedIn="140" tools:ignore="BrandUsage,UnusedResources">ഫയർഫോക്സ് കുടുംബത്തിന്റെ ഭാഗം. %s</string>
-  <!-- Clickable text for opening an external link for more information about Pocket. -->
-  <string name="pocket_stories_feature_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">കൂടുതലറിയുക</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">പണം കൊണ്ടു് പ്രചരിപ്പിച്ചതു്</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
@@ -3001,8 +2944,6 @@
   <string name="a11y_action_label_wallpaper_collection_learn_more">ഈ ശേഖരം കുറിച്ചു് കൂടുതലറിയാൻ ഈ കണ്ണി തുറക്കുക</string>
   <!-- Action label for links that point to an article. Talkback will append this to say "Double tap to read the article". -->
   <string name="a11y_action_label_read_article" moz:removedIn="141" tools:ignore="UnusedResources">ലേഖനം വായിക്കുക</string>
-  <!-- Action label for links to the Firefox Pocket website. Talkback will append this to say "Double tap to open link to learn more". -->
-  <string name="a11y_action_label_pocket_learn_more" moz:removedIn="140" tools:ignore="UnusedResources">കൂടുതലറിയാൻ കണ്ണി തുറക്കുക</string>
   <!-- Content description for headings announced by accessibility service. %s is the text of the heading. Talkback will announce the text and then speak the word "Heading" indicating to the user that this text is a heading for a section. -->
   <string name="a11y_heading">%s, തലക്കെട്ടു്</string>
   <!-- Title for dialog displayed when trying to access links present in a text. -->
@@ -3597,7 +3538,7 @@
   <!-- The title of the explore extensions task for the setup checklist -->
   <string name="setup_checklist_task_explore_extensions">വിപുലീകരണങ്ങൾ കാണുക</string>
   <!-- The title of the search widget task for the setup checklist -->
-  <string name="setup_checklist_task_search_widget">തിരയൽ വിജ്ജറ്റു് സ്ഥാപിക്കുക</string>
+  <string name="setup_checklist_task_search_widget" moz:removedIn="143" tools:ignore="UnusedResources">തിരയൽ വിജ്ജറ്റു് സ്ഥാപിക്കുക</string>
   <!--
     ===== Setup checklist feature: Group titles =====
 

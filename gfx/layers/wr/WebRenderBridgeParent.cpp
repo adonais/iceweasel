@@ -2030,14 +2030,6 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvClearCachedResources() {
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult WebRenderBridgeParent::RecvClearAnimationResources() {
-  if (!mDestroyed) {
-    ClearAnimationResources();
-  }
-
-  return IPC_OK();
-}
-
 wr::Epoch WebRenderBridgeParent::UpdateWebRender(
     CompositorVsyncScheduler* aScheduler, RefPtr<wr::WebRenderAPI>&& aApi,
     AsyncImagePipelineManager* aImageMgr,
@@ -2492,7 +2484,9 @@ void WebRenderBridgeParent::MaybeGenerateFrame(VsyncId aId,
   mApi->SetFrameStartTime(startTime);
 #endif
 
-  fastTxn.GenerateFrame(aId, true, aReasons);
+  const bool present = true;
+  const bool tracked = true;
+  fastTxn.GenerateFrame(aId, present, tracked, aReasons);
   wr::RenderThread::Get()->IncPendingFrameCount(mApi->GetId(), aId, start);
 
   NeedIncreasedMaxDirtyPageModifier();

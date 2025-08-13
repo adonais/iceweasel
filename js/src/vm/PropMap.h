@@ -9,6 +9,7 @@
 
 #include "gc/Barrier.h"
 #include "gc/Cell.h"
+#include "gc/Policy.h"
 #include "js/TypeDecls.h"
 #include "js/UbiNode.h"
 #include "js/Utility.h"  // JS::UniqueChars

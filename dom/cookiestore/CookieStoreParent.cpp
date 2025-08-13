@@ -14,6 +14,7 @@
 #include "mozilla/net/CookieParser.h"
 #include "mozilla/Components.h"
 #include "mozilla/net/CookieCommons.h"
+#include "mozilla/net/CookiePrefixes.h"
 #include "mozilla/net/CookieValidation.h"
 #include "mozilla/net/CookieServiceParent.h"
 #include "mozilla/net/NeckoParent.h"
@@ -257,15 +258,6 @@ mozilla::ipc::IPCResult CookieStoreParent::RecvClose() {
   return IPC_OK();
 }
 
-namespace util {
-
-bool HasHostPrefix(const nsAString& aCookieName) {
-  return StringBeginsWith(aCookieName, u"__Host-"_ns,
-                          nsCaseInsensitiveStringComparator);
-}
-
-}  // namespace util
-
 void CookieStoreParent::GetRequestOnMainThread(
     const RefPtr<nsIURI> aCookieURI, const OriginAttributes& aOriginAttributes,
     const Maybe<OriginAttributes>& aPartitionedOriginAttributes,
@@ -364,7 +356,13 @@ bool CookieStoreParent::SetRequestOnMainThread(
   NS_ConvertUTF16toUTF8 domain(aDomain);
   nsAutoCString domainWithDot;
 
-  if (util::HasHostPrefix(aName) && !domain.IsEmpty()) {
+  if (CookiePrefixes::Has(CookiePrefixes::eHttp, aName) ||
+      CookiePrefixes::Has(CookiePrefixes::eHostHttp, aName)) {
+    MOZ_DIAGNOSTIC_CRASH("This should not be allowed by CookieStore");
+    return false;
+  }
+
+  if (CookiePrefixes::Has(CookiePrefixes::eHost, aName) && !domain.IsEmpty()) {
     MOZ_DIAGNOSTIC_CRASH("This should not be allowed by CookieStore");
     return false;
   }

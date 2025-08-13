@@ -185,11 +185,7 @@ class TrialML extends ExtensionAPI {
                 throw new ExtensionError(error.message);
               }
             }
-            const runOptions = {
-              args: request.args,
-              options: request.options || {},
-            };
-            return this.#runEngine(runOptions);
+            return this.#runEngine(request);
           },
 
           /**

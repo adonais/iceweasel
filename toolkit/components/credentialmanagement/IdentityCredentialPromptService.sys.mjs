@@ -467,12 +467,26 @@ export class IdentityCredentialPromptService {
       }
 
       // Add information to the label
-      newItem.getElementsByClassName(
-        "identity-credential-list-item-label-primary"
-      )[0].textContent = account.name;
-      newItem.getElementsByClassName(
-        "identity-credential-list-item-label-secondary"
-      )[0].textContent = account.email;
+      const labels = [
+        account.name,
+        account.email,
+        account.username,
+        account.tel,
+      ].filter(label => label != undefined && label != "");
+
+      const primaryLabel = labels[0];
+      if (primaryLabel) {
+        newItem.getElementsByClassName(
+          "identity-credential-list-item-label-primary"
+        )[0].textContent = primaryLabel;
+      }
+
+      const secondaryLabel = labels[1];
+      if (secondaryLabel) {
+        newItem.getElementsByClassName(
+          "identity-credential-list-item-label-secondary"
+        )[0].textContent = secondaryLabel;
+      }
 
       // Add the item to the DOM!
       listBox.append(newItem);

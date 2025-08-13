@@ -4,6 +4,7 @@
 #include "nsISupports.idl"
 
 interface nsIContentSecurityPolicy;
+interface nsIPolicyContainer;
 interface nsIPrincipal;
 interface nsITransportSecurityInfo;
 interface nsIURI;
@@ -59,7 +60,7 @@ interface nsIBrowser : nsISupports
 
   readonly attribute nsIPrincipal contentPrincipal;
   readonly attribute nsIPrincipal contentPartitionedPrincipal;
-  readonly attribute nsIContentSecurityPolicy csp;
+  readonly attribute nsIPolicyContainer policyContainer;
   readonly attribute nsIReferrerInfo referrerInfo;
 
   /**
@@ -126,7 +127,7 @@ interface nsIBrowser : nsISupports
                                in AString aTitle,
                                in nsIPrincipal aContentPrincipal,
                                in nsIPrincipal aContentPartitionedPrincipal,
-                               in nsIContentSecurityPolicy aCSP,
+                               in nsIPolicyContainer aPolicyContainer,
                                in nsIReferrerInfo aReferrerInfo,
                                in boolean aIsSynthetic,
                                in boolean aHasRequestContextID,

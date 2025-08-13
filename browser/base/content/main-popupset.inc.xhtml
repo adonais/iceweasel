@@ -18,7 +18,14 @@
       <menupopup id="context_moveTabToGroupPopupMenu">
         <menuitem id="context_moveTabToGroupNewGroup"
                   data-lazy-l10n-id="tab-context-new-group"/>
-        <menuseparator/>
+        <menuseparator id="open-tab-groups-separator-upper" />
+        <menuseparator id="open-tab-groups-separator-lower" />
+
+        <menu id="context_moveTabToSavedGroup"
+          data-lazy-l10n-id="tab-context-move-tab-to-group-saved-groups">
+          <menupopup id="context_moveTabToSavedGroupPopupMenu">
+          </menupopup>
+        </menu>
       </menupopup>
     </menu>
     <menuitem id="context_ungroupTab"
@@ -41,6 +48,8 @@
               data-l10n-args='{"tabCount": 1}'/>
     <menuitem id="context_duplicateTab" data-lazy-l10n-id="duplicate-tab"/>
     <menuitem id="context_duplicateTabs" data-lazy-l10n-id="duplicate-tabs"/>
+    <menuseparator/>
+    <menu id="context_askChat"/>
     <menuseparator/>
     <menuitem id="context_bookmarkSelectedTabs"
               hidden="true"
@@ -307,6 +316,10 @@
               contexttype="extension-action"/>
     <menuitem data-l10n-id="sidebar-context-menu-report-extension"
               id="sidebar-context-menu-report-extension"
+              contexttype="extension-action"/>
+    <menuseparator/>
+    <menuitem data-l10n-id="sidebar-context-menu-unpin-extension"
+              id="sidebar-context-menu-unpin-extension"
               contexttype="extension-action"/>
     <menuitem id="sidebar-context-menu-hide-sidebar"
               data-l10n-id="sidebar-context-menu-hide-sidebar"/>
@@ -598,6 +611,7 @@
 #include ../../components/customizableui/content/panelUI.inc.xhtml
 #include ../../components/controlcenter/content/identityPanel.inc.xhtml
 #include ../../components/controlcenter/content/permissionPanel.inc.xhtml
+#include ../../components/controlcenter/content/trustPanel.inc.xhtml
 #include ../../components/controlcenter/content/protectionsPanel.inc.xhtml
 #include ../../components/downloads/content/downloadsPanel.inc.xhtml
 #include ../../components/translations/content/selectTranslationsPanel.inc.xhtml

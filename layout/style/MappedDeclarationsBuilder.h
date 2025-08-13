@@ -11,8 +11,8 @@
 
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/ServoBindingTypes.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/dom/Element.h"
 #include "nsCSSPropertyID.h"
 #include "nsCSSValue.h"
 #include "nsColor.h"

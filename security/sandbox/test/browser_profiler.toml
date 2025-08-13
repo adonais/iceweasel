@@ -2,7 +2,7 @@
 skip-if = [
   "ccov",
   "!gecko_profiler",
-  "os == 'linux' && (asan || tsan)" # bug 1784517 for sandbox, bug 1885381 for profiler
+  "os == 'linux' && (asan || tsan)", # bug 1784517 for sandbox, bug 1885381 for profiler
 ]
 tags = "contentsandbox"
 

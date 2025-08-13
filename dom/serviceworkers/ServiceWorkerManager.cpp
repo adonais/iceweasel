@@ -1184,8 +1184,7 @@ ServiceWorkerManager::SendNotificationClickEvent(
 
   ServiceWorkerPrivate* workerPrivate = info->WorkerPrivate();
 
-  return workerPrivate->SendNotificationClickEvent(aScope, aNotification,
-                                                   aAction);
+  return workerPrivate->SendNotificationClickEvent(aNotification, aAction);
 }
 
 NS_IMETHODIMP
@@ -1205,7 +1204,7 @@ ServiceWorkerManager::SendNotificationCloseEvent(
 
   ServiceWorkerPrivate* workerPrivate = info->WorkerPrivate();
 
-  return workerPrivate->SendNotificationCloseEvent(aScope, aNotification);
+  return workerPrivate->SendNotificationCloseEvent(aNotification);
 }
 
 RefPtr<ServiceWorkerRegistrationPromise> ServiceWorkerManager::WhenReady(

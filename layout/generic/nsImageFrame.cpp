@@ -8,96 +8,89 @@
 
 #include "nsImageFrame.h"
 
+#include <algorithm>
+
 #include "TextDrawTarget.h"
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxUtils.h"
-#include "mozilla/dom/NameSpaceConstants.h"
-#include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/HTMLEditor.h"
-#include "mozilla/dom/FetchPriority.h"
-#include "mozilla/dom/ImageTracker.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/Helpers.h"
-#include "mozilla/gfx/PathHelpers.h"
-#include "mozilla/dom/GeneratedImageContent.h"
-#include "mozilla/dom/HTMLAreaElement.h"
-#include "mozilla/dom/HTMLImageElement.h"
-#include "mozilla/dom/ReferrerInfo.h"
-#include "mozilla/dom/ResponsiveImageSelector.h"
-#include "mozilla/dom/ViewTransition.h"
-#include "mozilla/dom/LargestContentfulPaint.h"
-#include "mozilla/image/WebRenderImageProvider.h"
-#include "mozilla/layers/RenderRootStateManager.h"
-#include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
+#include "mozilla/SVGImageContext.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/SVGImageContext.h"
 #include "mozilla/Unused.h"
-
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/FetchPriority.h"
+#include "mozilla/dom/GeneratedImageContent.h"
+#include "mozilla/dom/HTMLAreaElement.h"
+#include "mozilla/dom/HTMLImageElement.h"
+#include "mozilla/dom/LargestContentfulPaint.h"
+#include "mozilla/dom/NameSpaceConstants.h"
+#include "mozilla/dom/ReferrerInfo.h"
+#include "mozilla/dom/ResponsiveImageSelector.h"
+#include "mozilla/dom/ViewTransition.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/Helpers.h"
+#include "mozilla/gfx/PathHelpers.h"
+#include "mozilla/image/WebRenderImageProvider.h"
+#include "mozilla/intl/BidiEmbeddingLevel.h"
+#include "mozilla/layers/RenderRootStateManager.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
 #include "nsCOMPtr.h"
+#include "nsCSSAnonBoxes.h"
+#include "nsCSSRendering.h"
+#include "nsContentUtils.h"
 #include "nsFontMetrics.h"
+#include "nsGkAtoms.h"
 #include "nsIFrameInlines.h"
 #include "nsIImageLoadingContent.h"
+#include "nsILoadGroup.h"
 #include "nsImageLoadingContent.h"
+#include "nsImageMap.h"
 #include "nsImageRenderer.h"
+#include "nsNameSpaceManager.h"
+#include "nsNetCID.h"
+#include "nsNetUtil.h"
 #include "nsObjectLoadingContent.h"
-#include "nsString.h"
-#include "nsPrintfCString.h"
 #include "nsPresContext.h"
-#include "nsGkAtoms.h"
-#include "mozilla/dom/Document.h"
-#include "nsContentUtils.h"
-#include "nsCSSAnonBoxes.h"
+#include "nsPrintfCString.h"
+#include "nsString.h"
 #include "nsStyleConsts.h"
 #include "nsStyleUtil.h"
 #include "nsTransform2D.h"
-#include "nsImageMap.h"
-#include "nsILoadGroup.h"
-#include "nsNetUtil.h"
-#include "nsNetCID.h"
-#include "nsCSSRendering.h"
-#include "nsNameSpaceManager.h"
-#include <algorithm>
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
 #endif
-#include "nsLayoutUtils.h"
-#include "nsDisplayList.h"
-#include "nsIContent.h"
-#include "mozilla/dom/Selection.h"
-#include "nsIURIMutator.h"
-
+#include "ImageContainer.h"
+#include "ImageRegion.h"
+#include "gfxRect.h"
 #include "imgIContainer.h"
 #include "imgLoader.h"
 #include "imgRequestProxy.h"
-
-#include "nsCSSFrameConstructor.h"
-#include "nsRange.h"
-
-#include "nsError.h"
-#include "nsBidiUtils.h"
-#include "nsBidiPresUtils.h"
-
-#include "gfxRect.h"
-#include "ImageRegion.h"
-#include "ImageContainer.h"
-#include "mozilla/ServoStyleSet.h"
-#include "nsBlockFrame.h"
-#include "nsStyleStructInlines.h"
-
 #include "mozilla/Preferences.h"
-
-#include "mozilla/dom/Link.h"
-#include "mozilla/dom/HTMLAnchorElement.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/HTMLAnchorElement.h"
+#include "mozilla/dom/Link.h"
+#include "mozilla/dom/Selection.h"
+#include "nsBidiPresUtils.h"
+#include "nsBidiUtils.h"
+#include "nsBlockFrame.h"
+#include "nsCSSFrameConstructor.h"
+#include "nsDisplayList.h"
+#include "nsError.h"
+#include "nsIContent.h"
+#include "nsIURIMutator.h"
+#include "nsLayoutUtils.h"
+#include "nsRange.h"
+#include "nsStyleStructInlines.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -324,12 +317,12 @@ void BrokenImageIcon::Notify(imgIRequest* aRequest, int32_t aType,
 // This is used by nsImageFrame::ImageFrameTypeFor and should not be used for
 // layout decisions.
 static bool HaveSpecifiedSize(const nsStylePosition* aStylePosition,
-                              StylePositionProperty aProp) {
+                              const AnchorPosResolutionParams& aParams) {
   // check the width and height values in the reflow input's style struct
   // - if width and height are specified as either coord or percentage, then
   //   the size of the image frame is constrained
-  return aStylePosition->GetWidth(aProp)->IsLengthPercentage() &&
-         aStylePosition->GetHeight(aProp)->IsLengthPercentage();
+  return aStylePosition->GetWidth(aParams)->IsLengthPercentage() &&
+         aStylePosition->GetHeight(aParams)->IsLengthPercentage();
 }
 
 template <typename SizeOrMaxSize>
@@ -368,14 +361,12 @@ static bool SizeDependsOnIntrinsicSize(const ReflowInput& aReflowInput) {
   // don't need to check them.
   //
   // Flex item's min-[width|height]:auto resolution depends on intrinsic size.
-  return !position.GetHeight(anchorResolutionParams.mPosition)
-              ->ConvertsToLength() ||
-         !position.GetWidth(anchorResolutionParams.mPosition)
-              ->ConvertsToLength() ||
+  return !position.GetHeight(anchorResolutionParams)->ConvertsToLength() ||
+         !position.GetWidth(anchorResolutionParams)->ConvertsToLength() ||
          DependsOnIntrinsicSize(
-             *position.MinISize(wm, anchorResolutionParams.mPosition)) ||
+             *position.MinISize(wm, anchorResolutionParams)) ||
          DependsOnIntrinsicSize(
-             *position.MaxISize(wm, anchorResolutionParams.mPosition)) ||
+             *position.MaxISize(wm, anchorResolutionParams)) ||
          aReflowInput.mFrame->IsFlexItem();
 }
 
@@ -565,7 +556,7 @@ void nsImageFrame::DeinitOwnedRequest() {
   if (!mOwnedRequest) {
     return;
   }
-  PresContext()->Document()->ImageTracker()->Remove(mOwnedRequest);
+  PresContext()->Document()->UntrackImage(mOwnedRequest);
   nsLayoutUtils::DeregisterImageRequest(PresContext(), mOwnedRequest,
                                         &mOwnedRequestRegistered);
   mOwnedRequest->CancelAndForgetObserver(NS_BINDING_ABORTED);
@@ -780,7 +771,8 @@ void nsImageFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
     // Increase load priority further if intrinsic size might be important for
     // layout.
-    if (!HaveSpecifiedSize(StylePosition(), StyleDisplay()->mPosition)) {
+    if (!HaveSpecifiedSize(StylePosition(),
+                           AnchorPosResolutionParams::From(this))) {
       categoryToBoostPriority |= imgIRequest::CATEGORY_SIZE_QUERY;
     }
 
@@ -798,7 +790,7 @@ void nsImageFrame::SetupOwnedRequest() {
 
   // We're not using AssociateRequestToFrame for the content property, so we
   // need to add it to the image tracker manually.
-  PresContext()->Document()->ImageTracker()->Add(mOwnedRequest);
+  PresContext()->Document()->TrackImage(mOwnedRequest);
 
   uint32_t status = 0;
   nsresult rv = mOwnedRequest->GetImageStatus(&status);
@@ -997,7 +989,7 @@ wr::ImageKey nsImageFrame::GetViewTransitionImageKey(
   }
   const auto* key =
       Style()->GetPseudoType() == PseudoStyleType::viewTransitionOld
-          ? vt->GetOldImageKey(name, aManager, aResources)
+          ? vt->ReadOldImageKey(name, aManager, aResources)
           : vt->GetNewImageKey(name);
   return key ? *key : kNoKey;
 }
@@ -1165,7 +1157,7 @@ auto nsImageFrame::ImageFrameTypeFor(const Element& aElement,
   // HaveSpecifiedSize changes...
   if (aElement.OwnerDoc()->GetCompatibilityMode() == eCompatibility_NavQuirks &&
       HaveSpecifiedSize(aStyle.StylePosition(),
-                        aStyle.StyleDisplay()->mPosition)) {
+                        {nullptr, aStyle.StyleDisplay()->mPosition})) {
     return ImageFrameType::ForElementRequest;
   }
 
@@ -2973,7 +2965,7 @@ static bool IsInAutoWidthTableCellForQuirk(nsIFrame* aFrame) {
     nsIFrame* grandAncestor = static_cast<nsIFrame*>(ancestor->GetParent());
     return grandAncestor &&
            grandAncestor->StylePosition()
-               ->GetWidth(grandAncestor->StyleDisplay()->mPosition)
+               ->GetWidth(AnchorPosResolutionParams::From(grandAncestor))
                ->IsAuto();
   }
   return false;

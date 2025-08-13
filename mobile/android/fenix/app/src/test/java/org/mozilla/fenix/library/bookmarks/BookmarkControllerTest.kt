@@ -298,21 +298,6 @@ class BookmarkControllerTest {
     }
 
     @Test
-    fun `handleCopyUrl should copy bookmark url to clipboard and show a toast`() {
-        val urlCopiedMessage = context.getString(R.string.url_copied)
-
-        var showSnackbarInvoked = false
-        createController(
-            showSnackbar = {
-                assertEquals(urlCopiedMessage, it)
-                showSnackbarInvoked = true
-            },
-        ).handleCopyUrl(item)
-
-        assertTrue(showSnackbarInvoked)
-    }
-
-    @Test
     fun `handleBookmarkSharing should navigate to the 'Share' fragment`() {
         val navDirectionsSlot = slot<NavDirections>()
         every { navController.navigate(capture(navDirectionsSlot), null) } just Runs

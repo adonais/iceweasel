@@ -22,7 +22,6 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.support.ktx.android.content.res.resolveAttribute
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.tabstrip.isTabStripEnabled
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.databinding.FragmentHomeBinding
 import org.mozilla.fenix.databinding.FragmentHomeToolbarViewLayoutBinding
@@ -95,7 +94,7 @@ internal class HomeToolbarView(
 
     override fun updateButtonVisibility(browserState: BrowserState) {
         val showMenu = true
-        val showTabCounter = !context.isTabStripEnabled()
+        val showTabCounter = !context.settings().isTabStripEnabled
         toolbarBinding.menuButton.isVisible = showMenu
         toolbarBinding.tabButton.isVisible = showTabCounter
 
@@ -158,7 +157,6 @@ internal class HomeToolbarView(
         lifecycleOwner = homeFragment.viewLifecycleOwner,
         homeActivity = homeActivity,
         navController = homeFragment.findNavController(),
-        homeFragment = homeFragment,
         menuButton = WeakReference(toolbarBinding.menuButton),
     ).also { it.build() }
 
@@ -181,7 +179,7 @@ internal class HomeToolbarView(
                     gravity = Gravity.TOP
                 }
 
-                val isTabletAndTabStripEnabled = context.isTabStripEnabled()
+                val isTabletAndTabStripEnabled = context.settings().isTabStripEnabled
                 ConstraintSet().apply {
                     clone(toolbarBinding.toolbarLayout)
                     clear(toolbarBinding.toolbar.id, ConstraintSet.BOTTOM)

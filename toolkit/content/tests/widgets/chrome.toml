@@ -18,9 +18,9 @@ prefs = ["app.support.baseURL='https://support.mozilla.org/'"]
 ["test_label_checkbox.xhtml"]
 
 ["test_menubar.xhtml"]
-skip-if = [
-  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1933983
-]
+skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64'"] # Bug 1933983
+
+["test_moz_badge.html"]
 
 ["test_moz_base_input_element.html"]
 
@@ -65,6 +65,8 @@ skip-if = [
 ["test_moz_message_bar.html"]
 
 ["test_moz_page_nav.html"]
+
+["test_moz_promo.html"]
 
 ["test_moz_radio.html"]
 

@@ -10,9 +10,9 @@
 #include "gfxMatrix.h"
 #include "gfxPoint.h"
 #include "gfxRect.h"
+#include "mozilla/gfx/MatrixFwd.h"
 #include "nsQueryFrame.h"
 #include "nsRect.h"
-#include "mozilla/gfx/MatrixFwd.h"
 
 class gfxContext;
 class nsIFrame;

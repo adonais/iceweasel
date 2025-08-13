@@ -365,6 +365,51 @@
       },
       "required": ["key", "value"]
     },
+    "pageTypeParam": {
+      "type": "object",
+      "title": "Page type param",
+      "properties": {
+        "enableSPAHandling": {
+          "type": "boolean",
+          "description": "Whether a given SERP should be processed using the logic for single-page apps."
+        },
+        "keys": {
+          "type": "array",
+          "description": "An array of strings representing the key(s) corresponding to the query parameter(s) that contains what type of search page is being shown."
+        },
+        "pageTypes": {
+          "type": "array",
+          "description": "A possible page type (ex: 'web', 'shopping' or 'images').",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "The name of the page type."
+              },
+              "values": {
+                "type": "array",
+                "description": "An array of strings representing the possible page types."
+              },
+              "target": {
+                "type": "string",
+                "description": "The target to be recorded in telemetry."
+              },
+              "enabled": {
+                "type": "boolean",
+                "description": "Whether we should track this page type."
+              },
+              "isDefault": {
+                "type": "boolean",
+                "description": "Whether this page type represents a default SERP. We fall back to this property in case, upon a page load, there is a delay in adding the page type param to the URL."
+              }
+            },
+            "required": ["name", "values", "enabled"]
+          }
+        }
+      },
+      "required": ["keys", "pageTypes"]
+    },
     "subframes": {
       "title": "Subframes",
       "description": "An array of methods for determining if a sponsored subframe exists.",

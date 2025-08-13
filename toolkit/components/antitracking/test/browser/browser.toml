@@ -68,6 +68,8 @@ support-files = [
 
 ["browser_allowListNotifications.js"]
 
+["browser_allowListPreference.js"]
+
 ["browser_allowListSeparationInPrivateAndNormalWindows.js"]
 
 ["browser_allowPermissionForTracker.js"]
@@ -222,9 +224,7 @@ support-files = [
   "!/browser/components/originattributes/test/browser/file_thirdPartyChild.worker.xhr.html",
   "!/browser/components/originattributes/test/browser/file_thirdPartyChild.xhr.html",
 ]
-skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 1775745
-]
+skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug"] # Bug 1775745
 
 ["browser_staticPartition_network.js"]
 
@@ -239,7 +239,6 @@ support-files = [
 ["browser_staticPartition_tls_session.js"]
 
 ["browser_staticPartition_websocket.js"]
-skip-if = ["os == 'mac' && verify"] # Bug 1721210
 support-files = ["file_ws_handshake_delay_wsh.py"]
 
 ["browser_storageAccessAutograntFromFedCM.js"]
@@ -373,6 +372,15 @@ support-files = ["file_stripping.html"]
 ["browser_userInteraction.js"]
 
 ["browser_viewsource_localhost_request.js"]
+
+["browser_workerFetch_trackingProtection.js"]
+support-files = [
+  "corsAllowed.html",
+  "corsAllowed.html^headers^",
+  "sharedWorkerFetch.js",
+  "serviceWorkerFetch.js",
+  "workerFetch.js",
+]
 
 ["browser_workerPropagation.js"]
 support-files = ["workerIframe.html"]
