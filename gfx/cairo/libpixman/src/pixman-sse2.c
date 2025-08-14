@@ -39,10 +39,6 @@
 #include "pixman-combine32.h"
 #include "pixman-inlines.h"
 
-#if defined(TT_MEMUTIL) && defined(_MSC_VER)
-#include <portable.h>
-#endif
-
 static __m128i mask_0080;
 static __m128i mask_00ff;
 static __m128i mask_0101;
@@ -385,13 +381,6 @@ save_128_write_combining (__m128i* dst,
                           __m128i  data)
 {
     _mm_stream_si128 (dst, data);
-}
-
-/* save 1 pixels using Write Combining memory */
-static force_inline void
-save_32_write_combining (int* dst, int data)
-{
-    _mm_stream_si32 (dst, data);
 }
 
 /* save 4 pixels on a 16-byte boundary aligned address */
@@ -4719,9 +4708,6 @@ sse2_blt (pixman_implementation_t *imp,
     uint8_t *   src_bytes;
     uint8_t *   dst_bytes;
     int byte_width;
-#ifdef TT_MEMUTIL
-    pixman_bool_t use_nontemporal_copy;
-#endif
 
     if (src_bpp != dst_bpp)
 	return FALSE;
@@ -4751,15 +4737,6 @@ sse2_blt (pixman_implementation_t *imp,
 	return FALSE;
     }
 
-#ifdef TT_MEMUTIL
-	uint32_t dwNonTemporalMemcpySizeMin = GetNonTemporalDataSizeMin_tt();
-    if (dwNonTemporalMemcpySizeMin != NON_TEMPORAL_STORES_NOT_SUPPORTED)
-    {
-        dwNonTemporalMemcpySizeMin /= 2;
-    }
-    use_nontemporal_copy = ((uint32_t)(byte_width * height) > dwNonTemporalMemcpySizeMin);
-#endif
-
     while (height--)
     {
 	int w;
@@ -4777,60 +4754,6 @@ sse2_blt (pixman_implementation_t *imp,
 	    d += 2;
 	}
 
-#ifdef TT_MEMUTIL
-if (use_nontemporal_copy)
-{
-	while (w >= 4 && ((uintptr_t)d & 15))
-	{
-	    save_32_write_combining ((int*)d, *(int*)s);
-
-	    w -= 4;
-	    s += 4;
-	    d += 4;
-	}
-
-	while (w >= 64)
-	{
-	    __m128i xmm0, xmm1, xmm2, xmm3;
-
-	    _mm_prefetch((char const *)s + (200*64/34+192), _MM_HINT_NTA);
-
-	    xmm0 = load_128_unaligned ((__m128i*)(s));
-	    xmm1 = load_128_unaligned ((__m128i*)(s + 16));
-	    xmm2 = load_128_unaligned ((__m128i*)(s + 32));
-	    xmm3 = load_128_unaligned ((__m128i*)(s + 48));
-
-	    save_128_write_combining ((__m128i*)(d),    xmm0);
-	    save_128_write_combining ((__m128i*)(d + 16), xmm1);
-	    save_128_write_combining ((__m128i*)(d + 32), xmm2);
-	    save_128_write_combining ((__m128i*)(d + 48), xmm3);
-
-	    s += 64;
-	    d += 64;
-	    w -= 64;
-	}
-
-	while (w >= 16)
-	{
-	    save_128_write_combining ((__m128i*)d, load_128_unaligned ((__m128i*)s) );
-
-	    w -= 16;
-	    d += 16;
-	    s += 16;
-	}
-
-	while (w >= 4)
-	{
-	    save_32_write_combining ((int*)d, *(int*)s);
-
-	    w -= 4;
-	    s += 4;
-	    d += 4;
-	}
-}
-else
-#endif
-{
 	while (w >= 4 && ((uintptr_t)d & 15))
 	{
             memmove(d, s, 4);
@@ -4876,7 +4799,6 @@ else
 	    s += 4;
 	    d += 4;
 	}
-}
 
 	if (w >= 2)
 	{
@@ -4886,13 +4808,6 @@ else
 	    d += 2;
 	}
     }
-
-#ifdef TT_MEMUTIL
-    if (use_nontemporal_copy)
-    {
-        _mm_sfence();
-    }
-#endif
 
     return TRUE;
 }

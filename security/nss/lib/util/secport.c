@@ -738,7 +738,7 @@ NSS_PutEnv(const char *envVarName, const char *envValue)
         SET_ERROR_CODE
         return SECFailure;
     }
-#elif defined(__GNUC__) && (__GNUC__ >= 7 || defined(__clang__))
+#elif defined(__GNUC__) && __GNUC__ >= 7
     int setEnvFailed;
     setEnvFailed = setenv(envVarName, envValue, 1);
     if (setEnvFailed) {

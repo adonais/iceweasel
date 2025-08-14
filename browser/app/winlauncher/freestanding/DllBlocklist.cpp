@@ -136,9 +136,9 @@ void NativeNtBlockSet::Write(WritableBuffer& aBuffer) {
   ::ReleaseSRWLockExclusive(&mLock);
 }
 
+#ifdef MOZ_CRASHREPORTER
 static NativeNtBlockSet gBlockSet;
 
-#ifdef MOZ_CRASHREPORTER
 extern "C" void MOZ_EXPORT
 NativeNtBlockSet_Write(CrashReporter::AnnotationWriter& aWriter) {
   WritableBuffer buffer;
@@ -400,7 +400,9 @@ static BlockAction DetermineBlockAction(
     return BlockAction::Allow;
   }
 
+#ifdef MOZ_CRASHREPORTER
   gBlockSet.Add(entry->mName, version);
+#endif
 
   if ((entry->mFlags & DllBlockInfoFlags::REDIRECT_TO_NOOP_ENTRYPOINT) &&
       aK32Exports && RedirectToNoOpEntryPoint(headers, *aK32Exports)) {

@@ -3,10 +3,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#if defined(TT_MEMUTIL)
-#include <portable.h>
-#endif /* TT_MEMUTIL */
-
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
@@ -5860,13 +5856,6 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
 
 #ifdef MOZ_INSTRUMENT_EVENT_LOOP
   mozilla::ShutdownEventTracing();
-#endif
-
-#ifdef TT_MEMUTIL
-  if (mozilla::AppShutdown::IsRestarting()) {
-    SetEnvironmentVariableW(L"LIBPORTABLE_UPCHECK_LAUNCHER_PROCESS", L"1");
-  }
-  undo_it();
 #endif
 
   gAbsoluteArgv0Path.Truncate();

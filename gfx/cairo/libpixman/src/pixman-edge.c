@@ -166,8 +166,6 @@ rasterize_edges_8 (pixman_image_t *image,
     uint32_t *buf = (image)->bits.bits;
     int stride = (image)->bits.rowstride;
     int width = (image)->bits.width;
-    pixman_fixed_t rx_old = 0;
-    int rxs_old = 0, rxi_old = 0;
 
     line = buf + pixman_fixed_to_int (y) * stride;
 
@@ -199,29 +197,12 @@ rasterize_edges_8 (pixman_image_t *image,
             int lxs, rxs;
 
             /* Find pixel bounds for span. */
-            /* Sample coverage for edge pixels */
-            if (lx == 0)
-            {
-                lxi = 0;
-                lxs = 0;
-            }
-            else
-            {
             lxi = pixman_fixed_to_int (lx);
-                lxs = RENDER_SAMPLES_X (lx, 8);
-            }
+            rxi = pixman_fixed_to_int (rx);
 
-            if (rx == rx_old)
-            {
-                rxi = rxi_old;
-                rxs = rxs_old;
-            }
-            else
-            {
-                rxi_old = rxi = pixman_fixed_to_int (rx);
-                rxs_old = rxs = RENDER_SAMPLES_X (rx, 8);
-                rx_old = rx;
-            }
+            /* Sample coverage for edge pixels */
+            lxs = RENDER_SAMPLES_X (lx, 8);
+            rxs = RENDER_SAMPLES_X (rx, 8);
 
             /* Add coverage across row */
             if (lxi == rxi)

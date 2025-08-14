@@ -11,10 +11,6 @@
 #ifndef AttrArray_h___
 #define AttrArray_h___
 
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-#include <xmmintrin.h>
-#endif
-
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/UniquePtr.h"
@@ -171,13 +167,6 @@ class AttrArray {
     nsAttrName mName;
     nsAttrValue mValue;
   };
-
-  void PrefetchImpl()
-  {
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-    _mm_prefetch((char *)&mImpl, _MM_HINT_NTA);
-#endif
-  }
 
  private:
   AttrArray(const AttrArray& aOther) = delete;

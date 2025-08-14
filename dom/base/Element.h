@@ -706,18 +706,6 @@ class Element : public FragmentOrElement {
   REFLECT_DOMSTRING_ATTR(AriaValueNow, aria_valuenow)
   REFLECT_DOMSTRING_ATTR(AriaValueText, aria_valuetext)
 
-  void PrefetchAttrs()
-  {
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-    _mm_prefetch((char *)&mAttrs, _MM_HINT_NTA);
-#endif
-  }
-
-  void PrefetchAttrsImpl()
-  {
-    mAttrs.PrefetchImpl();
-  }
-
  protected:
   /**
    * Method to get the _intrinsic_ content state of this element.  This is the

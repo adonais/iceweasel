@@ -626,7 +626,9 @@ static MOZ_NORETURN void __fastcall patched_BaseThreadInitThunk(
 static WindowsDllInterceptor NtDllIntercept;
 static WindowsDllInterceptor Kernel32Intercept;
 
+#ifdef MOZ_CRASHREPORTER
 static void GetNativeNtBlockSetWriter();
+#endif
 
 static glue::LoaderObserver gMozglueLoaderObserver;
 static nt::WinLauncherServices gWinLauncher;
