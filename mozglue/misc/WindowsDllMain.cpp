@@ -6,6 +6,16 @@
 
 #include <libloaderapi.h>
 
+#if defined(_MSC_VER) && defined(TT_MEMUTIL)
+#if defined(_M_IX86)
+#pragma comment(lib,"portable32.lib")
+#pragma comment(linker, "/include:_GetCpuFeature_tt")
+#elif defined(_M_AMD64) || defined(_M_X64)
+#pragma comment(lib,"portable64.lib")
+#pragma comment(linker, "/include:GetCpuFeature_tt")
+#endif
+#endif /* _MSC_VER && TT_MEMUTIL */
+
 BOOL WINAPI DllMain(HINSTANCE aInstDll, DWORD aReason, LPVOID) {
   if (aReason == DLL_PROCESS_ATTACH) {
     ::DisableThreadLibraryCalls(aInstDll);
