@@ -31,8 +31,6 @@ libs:: test-array$(DLL_SUFFIX) test-ctors$(DLL_SUFFIX)
 
 .PRECIOUS: test-array$(DLL_SUFFIX) test-ctors$(DLL_SUFFIX)
 
-GARBAGE += test-array$(DLL_SUFFIX) test-ctors$(DLL_SUFFIX) test-array$(DLL_SUFFIX).bak test-ctors$(DLL_SUFFIX).bak
-
 ifndef CROSS_COMPILE
 dummy: dummy.$(OBJ_SUFFIX)
 	$(CC) -o $@ $^ $(LDFLAGS)
@@ -42,6 +40,5 @@ libs:: dummy
 	LD_PRELOAD=$(CURDIR)/test-array$(DLL_SUFFIX) $(CURDIR)/dummy
 	LD_PRELOAD=$(CURDIR)/test-ctors$(DLL_SUFFIX) $(CURDIR)/dummy
 
-GARBAGE += dummy
 endif
 endif

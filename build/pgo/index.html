@@ -76,13 +76,23 @@
     "webkit/PerformanceTests/webaudio/index.html?raptor&rendering-buffer-length=30",
     "add/index-webp.html",
     "add/index-webgl-demo3.html",
-    "add/html5test.html",  
+    "add/html5test.html",
+    "add/index-youku.html",
+    "add/index-iqiyi.html",
+    "add/index-migu.html",
+    "add/index-qq.html",
+    "add/index-sohu.html",
+    "add/index-sina.html",
+    "add/index-163.html",
+    "add/index-donews.html",
+    "add/index-pinduoduo.html",
+    "add/index-douyin.html",
     "add/index-hupu.html",
     "add/index-jd.html",
     "add/index-oschina.html",
     "add/index-baidu.html",
     "add/index-kafan.html",
-    "add/index-bing.html"  
+    "add/index-bing.html"
   ];
   var defaultInterval = 4000;
   var idx = 0;
@@ -98,15 +108,15 @@
     if (testURL.includes("Speedometer")) {
       interval = 180000;
     }
- 	else if (testURL.includes("webaudio")) {
-		 interval = 60000;
-	}
- 	else if (testURL.includes("3d-thingy")) {
-		 interval = 16000;
-	}
-	else if (testURL.includes("add")) {
-		 interval = 30000;
-	}
+    else if (testURL.includes("webaudio")) {
+      interval = 30000;
+    }
+    else if (testURL.includes("3d-thingy")) {
+      interval = 16000;
+    }
+    else if (testURL.includes("add")) {
+      interval = 20000;
+    }
     w.close();
     w = window.open(testURL);
 
