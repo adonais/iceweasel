@@ -2060,7 +2060,7 @@ pref("browser.newtabpage.resource-mapping.log", false);
 pref("browser.newtabpage.trainhopAddon.xpiBaseURL", "https://archive.mozilla.org/pub/system-addons/newtab/");
 
 // Separate about welcome
-pref("browser.aboutwelcome.enabled", true);
+pref("browser.aboutwelcome.enabled", false);
 // Used to set multistage welcome UX
 pref("browser.aboutwelcome.screens", "");
 
@@ -2069,12 +2069,12 @@ pref("browser.aboutwelcome.screens", "");
 pref("messaging-system.log", "warn");
 pref("messaging-system.rsexperimentloader.collection_id", "nimbus-desktop-experiments");
 pref("nimbus.debug", false);
-pref("nimbus.validation.enabled", true);
+pref("nimbus.validation.enabled", false);
 
 // Should Nimbus write to the shared ProfilesDatastoreService? Only used by tests.
 // TODO(bug 1967779): Require the ProfileDatastoreService by default and remove
 // this pref.
-pref("nimbus.profilesdatastoreservice.enabled", true);
+pref("nimbus.profilesdatastoreservice.enabled", false);
 
 // Should Nimbus read from the shared ProfilesDatastoreService?
 // TODO(bug 1972426): Enable this behaviour by default and remove this pref.
@@ -2099,7 +2099,7 @@ pref("nimbus.profilesdatastoreservice.sync.enabled", false);
 #if defined(MOZ_ARTIFACT_BUILDS)
   pref("nimbus.telemetry.targetingContextEnabled", false);
 #else
-  pref("nimbus.telemetry.targetingContextEnabled", true);
+  pref("nimbus.telemetry.targetingContextEnabled", false);
 #endif
 
 // Nimbus QA prefs. Used to monitor pref-setting test experiments.
