@@ -5,8 +5,6 @@
 package org.mozilla.fenix.browser.browsingmode
 
 import android.content.Intent
-import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
-import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.utils.toSafeIntent
 import org.mozilla.fenix.HomeActivity.Companion.PRIVATE_BROWSING_MODE
 import org.mozilla.fenix.components.AppStore
@@ -49,13 +47,11 @@ interface BrowsingModeManager {
  * persists it to [Settings], and synchronizes it with [AppStore].
  *
  * @param intent The [Intent] that started the activity.
- * @param store The [BrowserStore] to observe the private tabs state from.
  * @param settings [Settings] used to persist the current browsing mode in storage.
  * @param onModeChange Callback invoked when the browsing mode changes.
  */
 class DefaultBrowsingModeManager(
     intent: Intent?,
-    private val store: BrowserStore,
     private val settings: Settings,
     private val onModeChange: (BrowsingMode) -> Unit,
 ) : BrowsingModeManager {
@@ -78,9 +74,7 @@ class DefaultBrowsingModeManager(
     }
 
     /**
-     * Returns the [BrowsingMode] set by the [intent] or the last known browsing mode based on
-     * whether or not the user was in private mode and has any private tabs, otherwise fallback to
-     * [BrowsingMode.Normal].
+     * Returns the [BrowsingMode] set by the [intent] or the last known [BrowsingMode].
      */
     private fun getModeFromIntentOrLastKnown(intent: Intent?): BrowsingMode {
         intent?.toSafeIntent()?.let {
@@ -90,10 +84,6 @@ class DefaultBrowsingModeManager(
             }
         }
 
-        if (settings.lastKnownMode.isPrivate && store.state.getNormalOrPrivateTabs(private = true).isNotEmpty()) {
-            return BrowsingMode.Private
-        }
-
-        return BrowsingMode.Normal
+        return settings.lastKnownMode
     }
 }

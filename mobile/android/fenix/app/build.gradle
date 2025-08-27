@@ -42,6 +42,11 @@ import static org.gradle.api.tasks.testing.TestResult.ResultType
 
 apply from: 'benchmark.gradle'
 
+ext.getAbi = { output ->
+    // Assume that if the ABI isn't set, it's an app bundle or universal APK
+    output.getFilter(FilterConfiguration.FilterType.ABI.name()) ?: "universal"
+}
+
 def isAppBundle = gradle.startParameter.taskNames.any { it.toLowerCase().contains("bundle") }
 
 // Mimic Python: open(os.path.join(buildconfig.topobjdir, 'buildid.h')).readline().split()[2]
@@ -248,6 +253,9 @@ android {
                 include "arm64-v8a"
             } else {
                 include "x86", "armeabi-v7a", "arm64-v8a", "x86_64"
+                if (gradle.mozconfig.substs.MOZILLA_OFFICIAL) {
+                    universalApk true
+                }
             }
         }
     }
@@ -326,13 +334,10 @@ android.applicationVariants.configureEach { variant ->
         project.logger.debug("versionName override: $versionName")
 
         variant.outputs.each { output ->
-            def abi = output.getFilter(FilterConfiguration.FilterType.ABI.name())
-            if (isAppBundle) {
-                abi = "AAB"
-            }
             // We use the same version code generator, that we inherited from Fennec, across all channels - even on
             // channels that never shipped a Fennec build.
-            def versionCodeOverride = Config.generateFennecVersionCode(abi, isAppBundle )
+            def abi = getAbi(output)
+            def versionCodeOverride = Config.generateFennecVersionCode(abi)
 
             project.logger.debug("versionCode for $abi = $versionCodeOverride")
 
@@ -828,7 +833,7 @@ tasks.register('printVariants') {
     def variants = project.provider {
         android.applicationVariants.collect { variant -> [
             apks: variant.outputs.collect { output -> [
-                    abi: output.getFilter(FilterConfiguration.FilterType.ABI.name()),
+                    abi: getAbi(output),
                     fileName: output.outputFile.name
             ]},
             build_type: variant.buildType.name,

@@ -246,6 +246,7 @@ void nsComboboxControlFrame::Init(nsIContent* aContent,
   ButtonControlFrame::Init(aContent, aParent, aPrevInFlow);
   mEventListener = new HTMLSelectEventListener(
       Select(), HTMLSelectEventListener::SelectType::Combobox);
+  mDisplayedIndex = Select().SelectedIndex();
 }
 
 nsresult nsComboboxControlFrame::RedisplaySelectedText() {

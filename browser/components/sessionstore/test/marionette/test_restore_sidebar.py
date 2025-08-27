@@ -227,19 +227,19 @@ class TestSessionRestore(SessionStoreTestCase):
             1,
             msg="Should have 1 window open.",
         )
-        self.assertFalse(
+        self.assertTrue(
             self.marionette.execute_script(
                 """
                 const window = BrowserWindowTracker.getTopWindow();
                 return window.SidebarController.sidebarContainer.hidden;
                 """
             ),
-            "Sidebar is visible before window is closed.",
+            "Sidebar is hidden before window is closed.",
         )
 
         self.marionette.restart()
 
-        self.assertFalse(
+        self.assertTrue(
             self.marionette.execute_script(
                 """
                 const window = BrowserWindowTracker.getTopWindow();

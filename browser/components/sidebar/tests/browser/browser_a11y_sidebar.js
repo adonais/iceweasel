@@ -9,6 +9,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
   GenAI: "resource:///modules/GenAI.sys.mjs",
 });
 
+async function focusAndActivateElement(elem, activateMethod) {
+  elem.setAttribute("tabindex", "-1");
+  elem.focus();
+  try {
+    await activateMethod(elem);
+  } finally {
+    elem.removeAttribute("tabindex");
+  }
+}
+
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -16,6 +26,27 @@ add_setup(async () => {
       ["sidebar.main.tools", "aichat,syncedtabs,history,bookmarks"],
     ],
   });
+
+  const sidebarLauncher = document.querySelector("sidebar-main");
+  const sidebarButton = document.getElementById("sidebar-button");
+
+  // This test expects the launcher and tools to be initially visible, so toggle it open
+  // if necessary
+  if (!BrowserTestUtils.isVisible(sidebarLauncher)) {
+    await SimpleTest.promiseFocus(window);
+
+    info("Focus on the button and send Space key to show the launcher.");
+    await focusAndActivateElement(sidebarButton, () =>
+      EventUtils.synthesizeKey("VK_SPACE")
+    );
+
+    Assert.ok(isActiveElement(sidebarButton), "Button has focus");
+    await sidebarLauncher.updateComplete;
+  }
+  Assert.ok(
+    BrowserTestUtils.isVisible(sidebarLauncher),
+    "Sidebar launcher is now visible"
+  );
 });
 
 function isActiveElement(el) {
@@ -30,13 +61,28 @@ add_task(async function test_keyboard_navigation() {
     { subTree: true, childList: true },
     () => !!sidebar.toolButtons.length
   );
-  const toolButtons = sidebar.toolButtons;
 
+  const toolButtons = sidebar.toolButtons;
+  await BrowserTestUtils.waitForCondition(
+    () => BrowserTestUtils.isVisible(toolButtons[0]),
+    "The first toolbutton is rendered"
+  );
+
+  // When the launcher gets shown in setUp, the last button is the activeChild.
+  // In order to focus and test keyboard navigation on the first button, we currently
+  // need to manually update the activeChild before we focus it
+  sidebar.buttonGroup.activeChild = toolButtons[0];
   toolButtons[0].focus();
+  info(
+    `activeElement view: ${toolButtons[0].getRootNode().activeElement.getAttribute("view")}`
+  );
   ok(isActiveElement(toolButtons[0]), "First tool button is focused.");
 
   info("Press Arrow Down key.");
   EventUtils.synthesizeKey("KEY_ArrowDown", {});
+  info(
+    `activeElement view: ${toolButtons[1].getRootNode().activeElement.getAttribute("view")}`
+  );
   ok(isActiveElement(toolButtons[1]), "Second tool button is focused.");
 
   info("Press Arrow Up key.");

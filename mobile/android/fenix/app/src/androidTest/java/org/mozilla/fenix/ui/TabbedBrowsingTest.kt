@@ -496,7 +496,7 @@ class TabbedBrowsingTest : TestSetup() {
 
     @Ignore("Temporarily disabled: https://bugzilla.mozilla.org/show_bug.cgi?id=1972361")
     @Test
-    fun privateModeDoNotPersistAfterRestartTest() {
+    fun privateModeStaysAsDefaultAfterRestartTest() {
         val defaultWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
 
         navigationToolbar {
@@ -508,6 +508,7 @@ class TabbedBrowsingTest : TestSetup() {
         restartApp(composeTestRule.activityRule)
 
         homeScreen {
+            verifyPrivateBrowsingHomeScreenItems()
         }.openTabDrawer(composeTestRule) {
         }.toggleToNormalTabs {
             verifyExistingOpenTabs(defaultWebPage.title)
@@ -533,6 +534,7 @@ class TabbedBrowsingTest : TestSetup() {
         closeApp(composeTestRule.activityRule)
         restartApp(composeTestRule.activityRule)
         homeScreen {
+            verifyPrivateBrowsingHomeScreenItems()
         }.openTabDrawer(composeTestRule) {
             verifyNoOpenTabsInPrivateBrowsing()
         }

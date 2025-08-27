@@ -1271,7 +1271,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     private fun createBrowsingModeManager(intent: Intent?): BrowsingModeManager {
         return DefaultBrowsingModeManager(
             intent = intent,
-            store = components.core.store,
             settings = components.settings,
             onModeChange = { newMode ->
                 updateSecureWindowFlags(newMode)

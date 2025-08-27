@@ -451,7 +451,7 @@ var PlacesOrganizer = {
     // has changed; otherwise we would have returned earlier.
 
     let input = PlacesSearchBox.searchFilter;
-    input.value = "";
+    input.clear();
     input.editor?.clearUndoRedo();
     this._setSearchScopeForNode(node);
     this.updateDetailsPane();

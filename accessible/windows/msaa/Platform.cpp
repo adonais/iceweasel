@@ -100,7 +100,7 @@ void a11y::PlatformFocusEvent(Accessible* aTarget,
     return;
   }
 
-  AccessibleWrap::UpdateSystemCaretFor(aTarget, aCaretRect);
+  AccessibleWrap::UpdateSystemCaretFor(aTarget);
   MsaaAccessible::FireWinEvent(aTarget, nsIAccessibleEvent::EVENT_FOCUS);
   uiaRawElmProvider::RaiseUiaEventForGeckoEvent(
       aTarget, nsIAccessibleEvent::EVENT_FOCUS);
@@ -111,7 +111,7 @@ void a11y::PlatformCaretMoveEvent(Accessible* aTarget, int32_t aOffset,
                                   int32_t aGranularity,
                                   const LayoutDeviceIntRect& aCaretRect,
                                   bool aFromUser) {
-  AccessibleWrap::UpdateSystemCaretFor(aTarget, aCaretRect);
+  AccessibleWrap::UpdateSystemCaretFor(aTarget);
   MsaaAccessible::FireWinEvent(aTarget,
                                nsIAccessibleEvent::EVENT_TEXT_CARET_MOVED);
   uiaRawElmProvider::RaiseUiaEventForGeckoEvent(

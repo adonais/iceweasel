@@ -747,6 +747,14 @@ var gMainPane = {
     );
 
     document
+      .getElementById("browserLayoutShowSidebar")
+      .addEventListener(
+        "command",
+        gMainPane.onShowSidebarCommand.bind(gMainPane),
+        { capture: true }
+      );
+
+    document
       .getElementById("migrationWizardDialog")
       .addEventListener("MigrationWizard:Close", function (e) {
         e.currentTarget.close();
@@ -1085,6 +1093,21 @@ var gMainPane = {
     }
 
     return false;
+  },
+
+  /**
+   * Handle toggling the "Show sidebar" checkbox to allow SidebarController to know the
+   * origin of this change.
+   */
+  onShowSidebarCommand(event) {
+    // Note: We useCapture so while the checkbox' checked property is already updated,
+    // the pref value has not yet been changed
+    const willEnable = event.target.checked;
+    if (willEnable) {
+      window.browsingContext.topChromeWindow.SidebarController?.enabledViaSettings(
+        true
+      );
+    }
   },
 
   // CONTAINERS

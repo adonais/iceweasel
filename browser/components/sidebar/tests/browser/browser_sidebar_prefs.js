@@ -76,17 +76,16 @@ add_task(async function test_tools_prefs() {
   //   Open a new window to check that it uses the pref
   const newWin = await BrowserTestUtils.openNewBrowserWindow();
   const newSidebar = newWin.document.querySelector("sidebar-main");
-  ok(newSidebar, "New Window sidebar is shown.");
-  await newSidebar.updateComplete;
+
+  // toggle open the sidebar launcher to check which tools are visible
+  newWin.document.getElementById("sidebar-button").doCommand();
+  await TestUtils.waitForTick();
+
   info("Waiting for customize button to be present");
   await BrowserTestUtils.waitForMutationCondition(
     newSidebar,
     { childList: true, subTree: true },
     () => !!newSidebar.customizeButton
-  );
-  ok(
-    BrowserTestUtils.isVisible(newSidebar.customizeButton),
-    "The sidebar-main component has fully rendered, and the customize button is present."
   );
 
   // TO DO: opening the customize category can be removed once bug 1898613 is resolved.

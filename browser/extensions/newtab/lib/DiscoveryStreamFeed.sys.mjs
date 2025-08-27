@@ -2233,8 +2233,13 @@ export class DiscoveryStreamFeed {
 
       let inferredInterests = null;
       if (inferredPersonalization && merinoOhttpEnabled) {
+        const useLaplace =
+          !prefs.inferredPersonalizationConfig?.iv_unary_dp_in_request;
         inferredInterests =
-          this.store.getState().InferredPersonalization.inferredInterests || {};
+          (useLaplace
+            ? this.store.getState().InferredPersonalization.inferredInterests
+            : this.store.getState().InferredPersonalization
+                .coarsePrivateInferredInterests) || {};
       }
       const requestMetadata = {
         utc_offset: lazy.NewTabUtils.getUtcOffset(prefs[PREF_SURFACE_ID]),

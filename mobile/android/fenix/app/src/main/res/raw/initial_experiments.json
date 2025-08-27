@@ -88,7 +88,7 @@
       "channel": "beta",
       "userFacingName": "Setup checklist (all users)",
       "userFacingDescription": "Android Setup Checklist",
-      "isEnrollmentPaused": false,
+      "isEnrollmentPaused": true,
       "isRollout": false,
       "bucketConfig": {
         "randomizationUnit": "nimbus_id",
@@ -168,7 +168,7 @@
       ],
       "targeting": "((android_sdk_version|versionCompare('26') >= 0)) && (app_version|versionCompare('139.!') >= 0)",
       "startDate": "2025-07-24",
-      "enrollmentEndDate": null,
+      "enrollmentEndDate": "2025-08-18",
       "endDate": null,
       "proposedDuration": 28,
       "proposedEnrollment": 7,

@@ -1808,15 +1808,15 @@ HeaderBarButtonLayout GetGtkHeaderBarButtonLayout() {
   size_t activeButtons = 0;
   for (const auto& part : layout.Split(':')) {
     for (const auto& button : part.Split(',')) {
+      if (activeButtons == result.mButtons.size()) {
+        break;
+      }
       if (button.EqualsLiteral("close")) {
         result.mButtons[activeButtons++] = Type::Close;
       } else if (button.EqualsLiteral("minimize")) {
         result.mButtons[activeButtons++] = Type::Minimize;
       } else if (button.EqualsLiteral("maximize")) {
         result.mButtons[activeButtons++] = Type::Maximize;
-      }
-      if (activeButtons == result.mButtons.size()) {
-        break;
       }
     }
   }

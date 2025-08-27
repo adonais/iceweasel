@@ -480,8 +480,9 @@ add_task(async function test_sidebar_button_runtime_pref_enabled() {
     "The sidebar button is not visible after being removed"
   );
 
-  // rever the pref change, this should cause the button to be placed in the nav-bar
+  // revert the pref change, this should cause the button to be placed in the nav-bar
   await SpecialPowers.popPrefEnv();
+  await SidebarController.waitUntilStable();
   button = document.getElementById("sidebar-button");
   Assert.ok(
     BrowserTestUtils.isVisible(button),
@@ -494,8 +495,23 @@ add_task(async function test_sidebar_button_runtime_pref_enabled() {
     CustomizableUI.AREA_NAVBAR,
     "The sidebar button is in the nav-bar"
   );
+  Assert.ok(
+    !BrowserTestUtils.isVisible(document.querySelector("sidebar-main")),
+    "The sidebar launcher is hidden"
+  );
+  Assert.ok(
+    !button.checked,
+    "Sidebar button should be un-checked when the launcher is hidden."
+  );
 
-  Assert.ok(button.checked, "Sidebar button should be checked when showing.");
+  button.doCommand();
+  await SidebarController.waitUntilStable();
+  Assert.ok(button.checked, "Sidebar button should be checked");
+  Assert.ok(
+    BrowserTestUtils.isVisible(document.querySelector("sidebar-main")),
+    "The sidebar launcher is visible"
+  );
+
   await SpecialPowers.pushPrefEnv({
     set: [["sidebar.revamp", false]],
   });
@@ -503,6 +519,7 @@ add_task(async function test_sidebar_button_runtime_pref_enabled() {
     !button.checked,
     "Sidebar button should not be checked when old sidebar is not showing."
   );
+
   await SpecialPowers.popPrefEnv();
   await SidebarController.waitUntilStable();
 });

@@ -560,6 +560,7 @@ add_task(function test_computeCTRInterestVectorsNoNoise() {
 
 add_task(function test_computCTRInterestVectorsWithNoise() {
   const model = FeatureModel.fromJSON(ctrModelDataWithDP);
+  model.clipZero = false;
   model.laplaceNoiseFn = () => 0.42;
 
   const clickInferredInterests2 = { parenting: 1 };
@@ -586,4 +587,39 @@ add_task(function test_computCTRInterestVectorsWithNoise() {
   );
   Assert.equal(result.coarseInferredInterests.parenting, 2);
   Assert.equal(result.coarseInferredInterests.news_reader, 0);
+});
+
+add_task(function test_applyLaplaceNoise_clampsWhenClipZero() {
+  const model = FeatureModel.fromJSON(ctrModelDataWithDP);
+  model.noiseScale = 1;
+  model.laplaceNoiseFn = () => 0.05;
+  const input = { a: 0.03, b: 0.0, c: 0.04, d: "n/a" };
+  model.applyLaplaceNoise(input); // clipzero is the default
+
+  // min(max(x + 0.05, 0), 0.04)
+  Assert.equal(input.a, 0.04, "a is capped to 0.04");
+  Assert.equal(input.b, 0.04, "b becomes 0.05 then capped to 0.04");
+  Assert.equal(input.c, 0.04, "c stays capped at 0.04");
+  Assert.equal(input.d, "n/a", "non-number unaffected");
+});
+
+add_task(function test_applyLaplaceNoise_noClampWhenClipZeroFalse() {
+  const model = FeatureModel.fromJSON(ctrModelDataWithDP);
+  model.noiseScale = 1;
+  model.laplaceNoiseFn = _scale => -0.02;
+
+  const input = { a: 0.03 };
+  model.applyLaplaceNoise(input, /* clipZero */ false);
+
+  Assert.less(Math.abs(input.a - 0.01), 1e-9, "no clamp when clipZero=false");
+});
+
+add_task(function test_applyLaplaceNoise_EarlyReturn() {
+  const model = FeatureModel.fromJSON(ctrModelDataWithDP);
+  model.noiseScale = null;
+
+  const input = { a: 0.03 };
+  model.applyLaplaceNoise(input, /* clipZero */ false);
+
+  Assert.equal(input.a, 0.03, "a is unchanged with null noiseScale");
 });

@@ -55,7 +55,7 @@ export const PersonalizedCard = ({
           <SafeAnchor
             className="personalized-card-link"
             dispatch={dispatch}
-            url="https://www.mozilla.org/en-US/privacy/firefox/#notice"
+            url={messageData.content.linkUrl || "https://support.mozilla.org/"}
             onLinkClick={() => {
               handleClick("link-click");
             }}

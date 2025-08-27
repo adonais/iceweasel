@@ -98,6 +98,18 @@ mapping:
             - ${folder_prefix}${product}-${version}-android-x86_64
         from:
             - signing-apk
+    target.universal.apk:
+        <<: *default
+        description: "Android universal package"
+        pretty_name: ${product}-${version}.${locale}.android-universal.apk
+        destinations:
+            - ${folder_prefix}${product}-${version}-android
+        from:
+            - signing-apk
+        only_for_platforms:
+            - fenix-nightly
+            - fenix-beta
+            - fenix-release
     target.aab:
         <<: *default
         description: "Android app bundle"

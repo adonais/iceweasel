@@ -148,6 +148,13 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
 #  endif
 #endif
 
+  // Check if WebGPU is blocked for this global's domain.
+  {
+    const auto prefLock = mozilla::StaticPrefs::dom_webgpu_blocked_domains();
+    rejectIf(nsContentUtils::IsURIInList(mOwner->GetBaseURI(), *prefLock),
+             "WebGPU is blocked for this domain by the `dom.webgpu.blocked-domains` pref.");
+  }
+
   if (rejectionMessage) {
     promise->MaybeRejectWithNotSupportedError(ToCString(*rejectionMessage));
     return promise.forget();

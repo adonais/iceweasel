@@ -5486,7 +5486,7 @@
   value: false
   mirror: always
 
-# Is support for the Web GPU API enabled?
+# Is support for the WebGPU API enabled?
 - name: dom.webgpu.enabled
   type: RelaxedAtomicBool
 #ifdef XP_WIN
@@ -5544,6 +5544,23 @@
   value: false
   mirror: once
   rust: true
+
+# Domains for which WebGPU is disabled.
+#
+# If `nsIGlobalObject::GetBaseURI` returns a base URI in this list,
+# then `GPU::requestAdapter` always rejects.
+#
+# This is a comma-separated list of domains to block. An entry of the
+# form `*.DOMAIN` blocks all subdomains of `DOMAIN`. It is interpreted
+# by `nsContentUtils::IsURIInList`.
+#
+# Bugs for the current default contents:
+#
+# easyeda.com: 1980392
+- name: dom.webgpu.blocked-domains
+  type: DataMutexString
+  value: "easyeda.com,*.easyeda.com"
+  mirror: always
 
 # Is support for HTMLInputElement.webkitEntries enabled?
 - name: dom.webkitBlink.filesystem.enabled

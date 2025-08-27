@@ -162,10 +162,11 @@ export const CheckRecipeResult = {
     };
   },
 
-  UnsupportedFeatures() {
+  UnsupportedFeatures(featureIds) {
     return {
       ok: false,
       reason: lazy.NimbusTelemetry.ValidationFailureReason.UNSUPPORTED_FEATURES,
+      featureIds,
     };
   },
 };
@@ -722,7 +723,7 @@ export class RemoteSettingsExperimentLoader {
     // The callbacks will be called soon after the timer is registered
     lazy.timerManager.registerTimer(
       TIMER_NAME,
-      () => this.updateRecipes("timer", { forceSync: true }),
+      () => this.updateRecipes("timer"),
       this.intervalInSeconds
     );
     lazy.log.debug("Registered update timer");
@@ -885,7 +886,7 @@ export class EnrollmentsContext {
       // the background updater encounters a recipe with features it does not
       // support, which will happen with most recipes. Reporting these errors
       // results in an inordinate amount of telemetry being submitted.
-      return CheckRecipeResult.UnsupportedFeatures();
+      return CheckRecipeResult.UnsupportedFeatures(unsupportedFeatureIds);
     }
 
     if (recipe.isEnrollmentPaused) {

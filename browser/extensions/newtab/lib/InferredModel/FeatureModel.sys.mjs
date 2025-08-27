@@ -268,6 +268,8 @@ export class FeatureModel {
     logScale = false,
     noiseScale = 0,
     laplaceNoiseFn = laplaceNoise,
+    clipZero = true,
+    maxVal = 0.04,
   }) {
     this.modelId = modelId;
     this.tileImportance = tileImportance;
@@ -278,6 +280,8 @@ export class FeatureModel {
     this.modelType = modelType;
     this.noiseScale = noiseScale;
     this.laplaceNoiseFn = laplaceNoiseFn;
+    this.clipZero = clipZero;
+    this.maxVal = maxVal;
   }
 
   static fromJSON(json) {
@@ -299,6 +303,8 @@ export class FeatureModel {
       clickScale: json.clickScale,
       modelType: json.model_type,
       noiseScale: json.noise_scale,
+      clipZero: json.clipZero ?? true,
+      maxVal: json.maxVal ?? 0.04,
     });
   }
 
@@ -470,7 +476,7 @@ export class FeatureModel {
     const inferredInterests = divideDict(clicks, impressions);
     const originalInterestValues = { ...inferredInterests };
 
-    this.applyLaplaceNoise(inferredInterests);
+    this.applyLaplaceNoise(inferredInterests, this.clipZero);
     const resultObject = {
       inferredInterests: { ...inferredInterests, model_id },
     };
@@ -515,7 +521,10 @@ export class FeatureModel {
       if (typeof inputDict[key] === "number") {
         const noise = this.laplaceNoiseFn(this.noiseScale);
         if (clipZero) {
-          inputDict[key] = Math.max(inputDict[key] + noise, 0);
+          inputDict[key] = Math.min(
+            Math.max(inputDict[key] + noise, 0),
+            this.maxVal
+          );
         } else {
           inputDict[key] += noise;
         }
@@ -556,7 +565,7 @@ export class FeatureModel {
       indexSchema,
     });
     const updatedFuzzyInterests = { ...inferredInterests };
-    this.applyLaplaceNoise(updatedFuzzyInterests);
+    this.applyLaplaceNoise(updatedFuzzyInterests, this.clipZero);
     result.inferredInterests = { ...updatedFuzzyInterests, model_id };
 
     if (this.supportsCoarseInterests()) {

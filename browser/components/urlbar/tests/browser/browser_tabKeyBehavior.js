@@ -342,6 +342,9 @@ async function waitForFocusOnNextFocusableElement(reverse = false) {
     "sidebar.revamp",
     false
   );
+  let sidebarLauncherVisible =
+    sidebarRevampEnabled &&
+    BrowserTestUtils.isVisible(document.querySelector("sidebar-main"));
   if (
     !Services.prefs.getBoolPref("browser.toolbars.keyboard_navigation", true)
   ) {
@@ -349,7 +352,7 @@ async function waitForFocusOnNextFocusableElement(reverse = false) {
     return BrowserTestUtils.waitForCondition(
       () =>
         document.activeElement ==
-        (!sidebarRevampEnabled ? gBrowser.selectedBrowser : sidebar)
+        (!sidebarLauncherVisible ? gBrowser.selectedBrowser : sidebar)
     );
   }
   let urlbar = document.getElementById("urlbar-container");

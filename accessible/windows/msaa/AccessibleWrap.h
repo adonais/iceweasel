@@ -9,7 +9,6 @@
 
 #include "nsCOMPtr.h"
 #include "LocalAccessible.h"
-#include "mozilla/a11y/RemoteAccessible.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/mscom/Utils.h"
 #include "mozilla/StaticPtr.h"
@@ -44,11 +43,7 @@ class AccessibleWrap : public LocalAccessible {
    * We will use an invisible system caret.
    * Gecko is still responsible for drawing its own caret
    */
-  static void UpdateSystemCaretFor(Accessible* aAccessible,
-                                   const LayoutDeviceIntRect& aCaretRect);
-  static void UpdateSystemCaretFor(LocalAccessible* aAccessible);
-  static void UpdateSystemCaretFor(RemoteAccessible* aProxy,
-                                   const LayoutDeviceIntRect& aCaretRect);
+  static void UpdateSystemCaretFor(Accessible* aAccessible);
 
  public:
   /**

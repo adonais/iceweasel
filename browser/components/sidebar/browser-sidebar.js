@@ -418,7 +418,10 @@ var SidebarController = {
         );
       }
       this.revampComponentsLoaded = true;
-      this._state.initializeState();
+      this._state.initializeState(this._showLauncherAfterInit);
+      // clear the flag after we've used it
+      delete this._showLauncherAfterInit;
+
       document.getElementById("sidebar-header").hidden = true;
       if (!this._mainResizeObserverAdded) {
         this._mainResizeObserver.observe(this.sidebarMain);
@@ -541,6 +544,15 @@ var SidebarController = {
     this._splitter.removeEventListener("command", this._browserResizeObserver);
     this._disableLauncherDragging();
     this._disablePinnedTabsDragging();
+  },
+
+  /**
+   * Keep track when sidebar.revamp is enabled by the user via about:preferences UI
+   *
+   * @param {boolean} isEnabled
+   */
+  enabledViaSettings(isEnabled = false) {
+    this._showLauncherAfterInit = isEnabled;
   },
 
   /**
@@ -815,14 +827,6 @@ var SidebarController = {
     if (!this.sidebarRevampEnabled) {
       this._state.launcherVisible = false;
       document.getElementById("sidebar-header").hidden = false;
-      // Disable vertical tabs if revamped sidebar is turned off
-      if (this.sidebarVerticalTabsEnabled) {
-        Services.prefs.setBoolPref("sidebar.verticalTabs", false);
-      }
-    } else {
-      // initial launcher visibleness with sidebar.revamp is is one of the
-      // default properties managed by SidebarState
-      this._state.launcherVisible = this._state.defaultLauncherVisible;
     }
     if (!this._sidebars.get(this.lastOpenedId)) {
       this.lastOpenedId = this.DEFAULT_SIDEBAR_ID;
@@ -1392,7 +1396,9 @@ var SidebarController = {
       // Re-add MousePosTracker listener
       MousePosTracker.addListener(this);
     }
-    this._hoverBlockerCount--;
+    if (this._hoverBlockerCount > 0) {
+      this._hoverBlockerCount--;
+    }
   },
 
   _showToolbarButtonBadge() {
@@ -2266,6 +2272,7 @@ var SidebarController = {
         ? ""
         : "0";
     } else {
+      this._removeHoverStateBlocker();
       MousePosTracker.removeListener(this);
       if (!this.mouseOverTask?.isFinalized) {
         this.mouseOverTask?.finalize();
@@ -2471,21 +2478,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
       }
       SidebarController._state.updatePinnedTabsHeight();
       SidebarController._state.updateToolsHeight();
-    }
-  }
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  SidebarController,
-  "revampDefaultLauncherVisible",
-  "sidebar.revamp.defaultLauncherVisible",
-  false,
-  (_aPreference, _previousValue, _newValue) => {
-    if (
-      !SidebarController.uninitializing &&
-      !SidebarController.inSingleTabWindow
-    ) {
-      SidebarController._state.updateVisibility();
     }
   }
 );

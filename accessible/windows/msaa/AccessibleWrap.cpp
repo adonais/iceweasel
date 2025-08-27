@@ -12,8 +12,7 @@
 #include "nsIAccessibleEvent.h"
 #include "nsIWidget.h"
 #include "nsWindowsHelpers.h"
-#include "mozilla/a11y/HyperTextAccessible.h"
-#include "mozilla/a11y/RemoteAccessible.h"
+#include "mozilla/a11y/HyperTextAccessibleBase.h"
 #include "ServiceProvider.h"
 #include "sdnAccessible.h"
 #include "LocalAccessible-inl.h"
@@ -77,64 +76,32 @@ bool AccessibleWrap::IsRootForHWND() {
   return thisHwnd != parentHwnd;
 }
 
-static void UpdateSystemCaretForHwnd(HWND aCaretWnd,
-                                     const LayoutDeviceIntRect& aCaretRect) {
-  if (!aCaretWnd || aCaretRect.IsEmpty()) {
-    return;
-  }
-
-  // Create invisible bitmap for caret, otherwise its appearance interferes
-  // with Gecko caret
-  nsAutoBitmap caretBitMap(CreateBitmap(1, aCaretRect.Height(), 1, 1, nullptr));
-  if (::CreateCaret(aCaretWnd, caretBitMap, 1,
-                    aCaretRect.Height())) {  // Also destroys the last caret
-    ::ShowCaret(aCaretWnd);
-    POINT clientPoint{aCaretRect.X(), aCaretRect.Y()};
-    ::ScreenToClient(aCaretWnd, &clientPoint);
-    ::SetCaretPos(clientPoint.x, clientPoint.y);
-  }
-}
-
 /* static */
-void AccessibleWrap::UpdateSystemCaretFor(
-    Accessible* aAccessible, const LayoutDeviceIntRect& aCaretRect) {
-  if (LocalAccessible* localAcc = aAccessible->AsLocal()) {
-    // XXX We need the widget for LocalAccessible, so we have to call
-    // HyperTextAccessible::GetCaretRect. We should find some way of avoiding
-    // the need for the widget.
-    UpdateSystemCaretFor(localAcc);
-  } else {
-    UpdateSystemCaretFor(aAccessible->AsRemote(), aCaretRect);
-  }
-}
-
-/* static */
-void AccessibleWrap::UpdateSystemCaretFor(LocalAccessible* aAccessible) {
+void AccessibleWrap::UpdateSystemCaretFor(Accessible* aAccessible) {
   // Move the system caret so that Windows Tablet Edition and tradional ATs with
   // off-screen model can follow the caret
   ::DestroyCaret();
-
-  HyperTextAccessible* text = aAccessible->AsHyperText();
-  if (!text) return;
-
-  auto [caretRect, widget] = text->GetCaretRect();
-
-  if (!widget) {
+  HyperTextAccessibleBase* text = aAccessible->AsHyperTextBase();
+  if (!text) {
     return;
   }
-
+  auto [caretRect, widget] = text->GetCaretRect();
+  if (caretRect.IsEmpty() || !widget) {
+    return;
+  }
   HWND caretWnd =
       reinterpret_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
-  UpdateSystemCaretForHwnd(caretWnd, caretRect);
-}
-
-/* static */
-void AccessibleWrap::UpdateSystemCaretFor(
-    RemoteAccessible* aProxy, const LayoutDeviceIntRect& aCaretRect) {
-  ::DestroyCaret();
-
-  // The HWND should be the real widget HWND, not an emulated HWND.
-  // We get the HWND from the proxy's outer doc to bypass window emulation.
-  LocalAccessible* outerDoc = aProxy->OuterDocOfRemoteBrowser();
-  UpdateSystemCaretForHwnd(MsaaAccessible::GetHWNDFor(outerDoc), aCaretRect);
+  if (!caretWnd) {
+    return;
+  }
+  // Create invisible bitmap for caret, otherwise its appearance interferes
+  // with Gecko caret
+  nsAutoBitmap caretBitMap(CreateBitmap(1, caretRect.Height(), 1, 1, nullptr));
+  if (::CreateCaret(caretWnd, caretBitMap, 1,
+                    caretRect.Height())) {  // Also destroys the last caret
+    ::ShowCaret(caretWnd);
+    POINT clientPoint{caretRect.X(), caretRect.Y()};
+    ::ScreenToClient(caretWnd, &clientPoint);
+    ::SetCaretPos(clientPoint.x, clientPoint.y);
+  }
 }

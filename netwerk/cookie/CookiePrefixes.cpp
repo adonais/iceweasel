@@ -43,10 +43,10 @@ MOZ_RUNINIT CookiePrefix gCookiePrefixes[] = {
               aCookieData.isHttpOnly();
      }},
 
-    {CookiePrefixes::eHostHttp, "__HostHttp-"_ns, u"__HostHttp-"_ns,
+    {CookiePrefixes::eHostHttp, "__Host-Http-"_ns, u"__Host-Http-"_ns,
      [](const CookieStruct& aCookieData, bool aSecureRequest) -> bool {
        // If a cookie's name begins with a case-sensitive match for the string
-       // __HostHttp-, then the cookie will have been set with a Secure
+       // __Host-Http-, then the cookie will have been set with a Secure
        // attribute, an HttpOnly attribute, a Path attribute with a value of /,
        // and no Domain attribute.
        return aSecureRequest && aCookieData.isSecure() &&
