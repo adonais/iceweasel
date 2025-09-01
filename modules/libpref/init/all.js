@@ -2002,7 +2002,7 @@ pref("mousewheel.with_win.action.override_x", -1);
 // -100 means -1.0.  If the values were negative, the direction would be
 // reverted.  The absolue value must be 100 or larger.
 pref("mousewheel.default.delta_multiplier_x", 100);
-pref("mousewheel.default.delta_multiplier_y", 100);
+pref("mousewheel.default.delta_multiplier_y", 250);
 pref("mousewheel.default.delta_multiplier_z", 100);
 pref("mousewheel.with_alt.delta_multiplier_x", 100);
 pref("mousewheel.with_alt.delta_multiplier_y", 100);

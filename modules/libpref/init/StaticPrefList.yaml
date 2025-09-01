@@ -11188,7 +11188,7 @@
 # Factor to be multiplied for constant acceleration.
 - name: mousewheel.acceleration.factor
   type: RelaxedAtomicInt32
-  value: 10
+  value: 5
   mirror: always
 
 # This affects how line scrolls from wheel events will be accelerated.
@@ -11196,7 +11196,7 @@
 # Acceleration can be turned off if pref is set to -1.
 - name: mousewheel.acceleration.start
   type: RelaxedAtomicInt32
-  value: -1
+  value: 2
   mirror: always
 
 # Auto-dir is a feature which treats any single-wheel scroll as a scroll in the
@@ -11280,7 +11280,7 @@
 # scrolls this height.
 - name: mousewheel.min_line_scroll_amount
   type: int32_t
-  value: 5
+  value: 12
   mirror: always
 
 # Timeout period (in milliseconds) when the mouse wheel event is no longer
