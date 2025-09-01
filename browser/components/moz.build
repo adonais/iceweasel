@@ -70,7 +70,8 @@ DIRS += ["build"]
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
     DIRS += ["touchbar"]
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
-    DIRS += ["installerprefs"]
+    if CONFIG["MOZ_BRANDING_DIRECTORY"] != "browser/branding/iceweasel":
+        DIRS += ["installerprefs"]
 
 XPIDL_SOURCES += [
     "nsIBrowserHandler.idl",

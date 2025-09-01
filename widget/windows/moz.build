@@ -200,9 +200,10 @@ OS_LIBS += [
 ]
 
 if CONFIG["CC_TYPE"] == "clang-cl":
-    SOURCES += [
-        "ToastNotification.cpp",
-        "ToastNotificationHandler.cpp",
-    ]
+    if CONFIG["MOZ_NOTIFICATION_SERVER"]:
+        SOURCES += [
+            "ToastNotification.cpp",
+            "ToastNotificationHandler.cpp",
+        ]
 
 SPHINX_TREES["/widget/windows"] = "docs"
