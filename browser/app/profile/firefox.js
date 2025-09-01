@@ -24,7 +24,7 @@
 #endif
 
 // Set add-ons abuse report related prefs specific to Firefox Desktop.
-pref("extensions.abuseReport.enabled", true);
+pref("extensions.abuseReport.enabled", false);
 
 // Enables some extra Extension System Logging (can reduce performance)
 pref("extensions.logging.enabled", false);
@@ -433,7 +433,7 @@ pref("browser.urlbar.suggest.history",              true);
 pref("browser.urlbar.suggest.openpage",             true);
 pref("browser.urlbar.suggest.remotetab",            true);
 pref("browser.urlbar.suggest.searches",             true);
-pref("browser.urlbar.suggest.topsites",             true);
+pref("browser.urlbar.suggest.topsites",             false);
 pref("browser.urlbar.suggest.engines",              true);
 pref("browser.urlbar.suggest.calculator",           true);
 pref("browser.urlbar.suggest.recentsearches",       true);
@@ -1741,13 +1741,13 @@ pref("prompts.defaultModalType", 3);
 // Whether to use the discrete Top Sites component.
 pref("browser.topsites.component.enabled", false);
 
-pref("browser.topsites.useRemoteSetting", true);
+pref("browser.topsites.useRemoteSetting", false);
 // Fetch sponsored Top Sites from Mozilla Tiles Service (Contile)
-pref("browser.topsites.contile.enabled", true);
+pref("browser.topsites.contile.enabled", false);
 pref("browser.topsites.contile.endpoint", "https://contile.services.mozilla.com/v1/tiles");
 
 // Whether to enable the Share-of-Voice feature for Sponsored Topsites via Contile.
-pref("browser.topsites.contile.sov.enabled", true);
+pref("browser.topsites.contile.sov.enabled", false);
 
 // The base URL for the Quick Suggest anonymizing proxy. To make a request to
 // the proxy, include a campaign ID in the path.
@@ -1793,9 +1793,9 @@ pref("browser.newtabpage.activity-stream.mobileDownloadModal.variant-c", false);
 pref("browser.newtabpage.activity-stream.discoverystream.refinedCardsLayout.enabled", false);
 
 // Mozilla Ad Routing Service (MARS) unified ads service
-pref("browser.newtabpage.activity-stream.unifiedAds.tiles.enabled", true);
-pref("browser.newtabpage.activity-stream.unifiedAds.spocs.enabled", true);
-pref("browser.newtabpage.activity-stream.unifiedAds.endpoint", "https://ads.mozilla.org/");
+pref("browser.newtabpage.activity-stream.unifiedAds.tiles.enabled", false);
+pref("browser.newtabpage.activity-stream.unifiedAds.spocs.enabled", false);
+pref("browser.newtabpage.activity-stream.unifiedAds.endpoint", "https://%.invalid");
 pref("browser.newtabpage.activity-stream.unifiedAds.adsFeed.enabled", false);
 pref("browser.newtabpage.activity-stream.unifiedAds.ohttp.enabled", false);
 
@@ -1858,9 +1858,9 @@ pref("browser.newtabpage.activity-stream.asrouter.providers.cfr", "{\"id\":\"cfr
 pref("browser.newtabpage.activity-stream.asrouter.providers.messaging-experiments", "{\"id\":\"messaging-experiments\",\"enabled\":true,\"type\":\"remote-experiments\",\"updateCycleInMs\":3600000}");
 
 // ASRouter user prefs
-pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", true);
-pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", true);
-pref("messaging-system.askForFeedback", true);
+pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", false);
+pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", false);
+pref("messaging-system.askForFeedback", false);
 
 // The pref that controls if ASRouter uses the remote fluent files.
 // It's enabled by default, but could be disabled to force ASRouter to use the local files.
@@ -2041,7 +2041,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.publisherFavicon.enable
 pref("browser.newtabpage.activity-stream.feeds.section.topstories", true);
 
 // The pref controls if search hand-off is enabled for Activity Stream.
-pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", true);
+pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", false);
 
 pref("browser.newtabpage.activity-stream.logowordmark.alwaysVisible", true);
 
@@ -2787,14 +2787,9 @@ pref("app.normandy.onsync_skew_sec", 600);
 #else
   pref("app.shield.optoutstudies.enabled", false);
 #endif
+
 // by adonais
-pref("extensions.htmlaboutaddons.discover.enabled", false);
-pref("browser.newtabpage.activity-stream.feeds.snippets", false);
 pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
-pref("browser.newtabpage.enhanced", false);
-pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr", false);
-pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", false);
-pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", false);
 
 // Multi-lingual preferences:
 //  *.enabled - Are langpacks available for the build of Firefox?
