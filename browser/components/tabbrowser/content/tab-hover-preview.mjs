@@ -58,6 +58,12 @@ export default class TabHoverPreviewPanel {
       "_prefCollectWireframes",
       "browser.history.collectWireframes"
     );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "officialtips",
+      "officialtips.show",
+      false
+    );
 
     this._panelOpener = new TabPreviewPanelTimedFunction(
       () => {
@@ -315,7 +321,7 @@ export default class TabHoverPreviewPanel {
       // issues with windows ordering on Linux (bug 1897475), plus intermittent
       // persistence of previews after session restore (bug 1888148).
       this._win != Services.focus.activeWindow ||
-      !this._prefDisplayThumbnail
+      (!this.officialtips && !this._prefDisplayThumbnail)
     );
   }
 
