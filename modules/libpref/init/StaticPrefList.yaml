@@ -5559,7 +5559,7 @@
 # easyeda.com: 1980392
 - name: dom.webgpu.blocked-domains
   type: DataMutexString
-  value: "easyeda.com,*.easyeda.com"
+  value: "easyeda.com,*.easyeda.com,baidu.com,*.baidu.com"
   mirror: always
 
 # Is support for HTMLInputElement.webkitEntries enabled?
