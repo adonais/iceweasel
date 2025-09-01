@@ -1270,7 +1270,7 @@ export const PREFS_CONFIG = new Map([
     {
       title:
         "'Support Firefox' pref on 'about:settings#home' page. Toggles all sponsored results on and off at the same time",
-      value: true,
+      value: false,
     },
   ],
 ]);
