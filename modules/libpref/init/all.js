@@ -3719,7 +3719,7 @@ pref("toolkit.aboutProcesses.profileDuration", 5);
 #if !defined(MOZ_WIDGET_ANDROID)
   pref("toolkit.aboutLogging.uploadProfileToCloud", false);
 #else
-  pref("toolkit.aboutLogging.uploadProfileToCloud", true);
+  pref("toolkit.aboutLogging.uploadProfileToCloud", false);
 #endif
 // The pref "toolkit.aboutlogging.uploadProfileUrl" can also be set to change
 // the upload endpoint. The comment below shows the default value. It's not
