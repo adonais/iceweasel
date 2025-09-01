@@ -189,6 +189,17 @@ Maybe<ModuleTrustFlags> ModuleEvaluator::GetTrust(
   }
 
   ToLowerCase(dllLeafLower);  // To facilitate case-insensitive searching
+  
+  // adonais's portable DLL
+  if (0
+#if defined(_M_X64) || defined(__x86_64__)
+      || dllLeafLower.EqualsLiteral("portable64.dll")
+#elif defined(_M_IX86) || defined(__i386__)
+      || dllLeafLower.EqualsLiteral("portable32.dll")
+#endif
+     ) {
+    return Some(ModuleTrustFlags::JitPI);
+  }
 
   // The JIT profiling module doesn't really have any other practical way to
   // match; hard-code it as being trusted.
