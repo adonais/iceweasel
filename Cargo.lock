@@ -243,14 +243,14 @@ dependencies = [
 [[package]]
 name = "audio_thread_priority"
 version = "0.26.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b7cd1bfd03dab20ad72e0c5e58d65818d62c0d199d8dec8361053d0f073dbae"
+source = "git+https://github.com/mozilla/audio_thread_priority?rev=cbaa943ea2606971f0cb026305f7338f9321e1be#cbaa943ea2606971f0cb026305f7338f9321e1be"
 dependencies = [
  "cfg-if 0.1.999",
  "dbus",
  "libc",
  "log",
  "mach",
+ "once_cell",
  "winapi",
 ]
 

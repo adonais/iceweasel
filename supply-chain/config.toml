@@ -19,6 +19,9 @@ url = "https://raw.githubusercontent.com/divviup/libprio-rs/main/supply-chain/au
 [imports.mozilla]
 url = "https://raw.githubusercontent.com/mozilla/supply-chain/main/audits.toml"
 
+[policy.audio_thread_priority]
+audit-as-crates-io = true
+
 [policy.autocfg]
 audit-as-crates-io = true
 notes = "This is the upstream code plus a few local fixes, see bug 1685697."
@@ -123,7 +126,7 @@ audit-as-crates-io = false
 audit-as-crates-io = false
 
 [policy.naga]
-audit-as-crates-io = true
+audit-as-crates-io = false
 notes = "wgpu-core pins this crate."
 
 [policy.packed_simd]

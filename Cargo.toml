@@ -195,3 +195,9 @@ neqo-crypto = { path = "third_party/rust/neqo-crypto" }
 neqo-http3 = { path = "third_party/rust/neqo-http3" }
 neqo-qpack = { path = "third_party/rust/neqo-qpack" }
 neqo-transport = { path = "third_party/rust/neqo-transport" }
+
+# Fix for bug 1984495 on esr115
+[patch.crates-io.audio_thread_priority]
+git = "https://github.com/mozilla/audio_thread_priority"
+rev = "cbaa943ea2606971f0cb026305f7338f9321e1be"
+

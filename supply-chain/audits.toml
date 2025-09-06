@@ -548,6 +548,11 @@ criteria = "safe-to-deploy"
 version = "0.1.2"
 notes = "audio-mixer is a Mozilla-developed package."
 
+[[audits.audio_thread_priority]]
+who = "Matthew Gregan <kinetik@flim.org>"
+criteria = "safe-to-deploy"
+delta = "0.26.1 -> 0.26.1@git:cbaa943ea2606971f0cb026305f7338f9321e1be"
+
 [[audits.authenticator]]
 who = "John M. Schanck <jschanck@mozilla.com>"
 criteria = "safe-to-deploy"

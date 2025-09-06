@@ -70,6 +70,11 @@ git = "https://github.com/mozilla/application-services"
 rev = "86c84c217036c12283d19368867323a66bf35883"
 replace-with = "vendored-sources"
 
+[source."git+https://github.com/mozilla/audio_thread_priority?rev=cbaa943ea2606971f0cb026305f7338f9321e1be"]
+git = "https://github.com/mozilla/audio_thread_priority"
+rev = "cbaa943ea2606971f0cb026305f7338f9321e1be"
+replace-with = "vendored-sources"
+
 [source."git+https://github.com/mozilla/audioipc?rev=0b51291d2483a17dce3e300c7784b369e02bee73"]
 git = "https://github.com/mozilla/audioipc"
 rev = "0b51291d2483a17dce3e300c7784b369e02bee73"
