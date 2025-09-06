@@ -79,6 +79,131 @@
     },
     {
       "schemaVersion": "1.12.0",
+      "slug": "search-middle",
+      "id": "search-middle",
+      "arguments": {},
+      "application": "org.mozilla.firefox",
+      "appName": "fenix",
+      "appId": "org.mozilla.firefox",
+      "channel": "release",
+      "userFacingName": "Search Middle",
+      "userFacingDescription": "Search Middle",
+      "isEnrollmentPaused": false,
+      "isRollout": false,
+      "bucketConfig": {
+        "randomizationUnit": "nimbus_id",
+        "namespace": "fenix-homepage-search-bar-homescreen-release-1",
+        "start": 0,
+        "count": 10000,
+        "total": 10000
+      },
+      "featureIds": [
+        "homepage-search-bar",
+        "homescreen"
+      ],
+      "probeSets": [],
+      "outcomes": [
+        {
+          "slug": "awesomebar",
+          "priority": "primary"
+        },
+        {
+          "slug": "sponsored_tiles",
+          "priority": "secondary"
+        }
+      ],
+      "branches": [
+        {
+          "slug": "control",
+          "ratio": 1,
+          "feature": {
+            "featureId": "this-is-included-for-mobile-pre-96-support",
+            "enabled": false,
+            "value": {}
+          },
+          "features": [
+            {
+              "featureId": "homepage-search-bar",
+              "enabled": true,
+              "value": {
+                "enabled": false
+              }
+            },
+            {
+              "featureId": "homescreen",
+              "enabled": true,
+              "value": {
+                "sections-enabled": {
+                  "header": true,
+                  "top-sites": true,
+                  "jump-back-in": true,
+                  "bookmarks": true,
+                  "recent-explorations": true,
+                  "pocket": true,
+                  "synced-tabs": true,
+                  "pocket-sponsored-stories": true,
+                  "collections": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "slug": "treatment-a",
+          "ratio": 1,
+          "feature": {
+            "featureId": "this-is-included-for-mobile-pre-96-support",
+            "enabled": false,
+            "value": {}
+          },
+          "features": [
+            {
+              "featureId": "homepage-search-bar",
+              "enabled": true,
+              "value": {
+                "enabled": true
+              }
+            },
+            {
+              "featureId": "homescreen",
+              "enabled": true,
+              "value": {
+                "sections-enabled": {
+                  "header": false,
+                  "top-sites": true,
+                  "jump-back-in": false,
+                  "bookmarks": false,
+                  "recent-explorations": false,
+                  "pocket": true,
+                  "synced-tabs": false,
+                  "pocket-sponsored-stories": true,
+                  "collections": false
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "targeting": "((is_already_enrolled) || ((isFirstRun == 'true') && (app_version|versionCompare('143.!') >= 0)))",
+      "startDate": "2025-09-03",
+      "enrollmentEndDate": null,
+      "endDate": null,
+      "proposedDuration": 28,
+      "proposedEnrollment": 14,
+      "referenceBranch": "control",
+      "featureValidationOptOut": false,
+      "localizations": null,
+      "locales": null,
+      "publishedDate": "2025-09-03T21:04:57.809501Z",
+      "isFirefoxLabsOptIn": false,
+      "firefoxLabsTitle": "",
+      "firefoxLabsDescription": "",
+      "firefoxLabsDescriptionLinks": null,
+      "firefoxLabsGroup": "",
+      "requiresRestart": false
+    },
+    {
+      "schemaVersion": "1.12.0",
       "slug": "setup-checklist-all-users",
       "id": "setup-checklist-all-users",
       "arguments": {},

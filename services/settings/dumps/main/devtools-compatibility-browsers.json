@@ -1,13 +1,40 @@
 {
   "data": [
     {
+      "name": "Opera",
+      "schema": 1756512305771,
+      "status": "nightly",
+      "version": "123",
+      "browserid": "opera",
+      "id": "847fc43b-579e-4b26-a1fa-cb978ec0438b",
+      "last_modified": 1756731463819
+    },
+    {
       "name": "Bun",
-      "schema": 1756174543714,
+      "schema": 1756512305536,
       "status": "current",
-      "version": "1.2.20",
+      "version": "1.2.21",
       "browserid": "bun",
-      "id": "76600f9b-f03e-47f1-9775-cc8d7b6b0860",
-      "last_modified": 1756362740769
+      "id": "299a9948-9b52-4c99-b40c-26f0be0353dd",
+      "last_modified": 1756731463816
+    },
+    {
+      "name": "Opera",
+      "schema": 1756512305715,
+      "status": "beta",
+      "version": "122",
+      "browserid": "opera",
+      "id": "25658331-55b6-4129-8e2d-c59ca95df3f7",
+      "last_modified": 1756731463810
+    },
+    {
+      "name": "Opera",
+      "schema": 1756512305662,
+      "status": "current",
+      "version": "121",
+      "browserid": "opera",
+      "id": "f6db5e03-957c-4d2b-a74b-d537ea26be3f",
+      "last_modified": 1756731463807
     },
     {
       "name": "Opera Android",
@@ -181,15 +208,6 @@
       "last_modified": 1754642891097
     },
     {
-      "name": "Opera",
-      "schema": 1751673903426,
-      "status": "nightly",
-      "version": "122",
-      "browserid": "opera",
-      "id": "25658331-55b6-4129-8e2d-c59ca95df3f7",
-      "last_modified": 1754642891078
-    },
-    {
       "name": "WebView Android",
       "schema": 1754438705809,
       "status": "nightly",
@@ -269,24 +287,6 @@
       "browserid": "chrome_android",
       "id": "6dc0e4cb-560c-46ad-996f-2e65cd9a78bf",
       "last_modified": 1754642891036
-    },
-    {
-      "name": "Opera",
-      "schema": 1751673903361,
-      "status": "beta",
-      "version": "121",
-      "browserid": "opera",
-      "id": "f6db5e03-957c-4d2b-a74b-d537ea26be3f",
-      "last_modified": 1754642891027
-    },
-    {
-      "name": "Opera",
-      "schema": 1751673903293,
-      "status": "current",
-      "version": "120",
-      "browserid": "opera",
-      "id": "24abaee4-eb98-4eee-8b27-209a3dedac71",
-      "last_modified": 1754642891024
     },
     {
       "name": "Firefox for Android",
@@ -379,5 +379,5 @@
       "last_modified": 1665656484764
     }
   ],
-  "timestamp": 1756362740769
+  "timestamp": 1756731463819
 }
