@@ -18,8 +18,9 @@ def handle_remove_read_only(func, path, exc):
         sys.exit(1)
 
 def make_7z(source, suffix, package):
-    ice_source = os.environ.get('PWD') + '/dist/' + source
-    ice_package = os.environ.get('PWD') + '/dist/' + package
+    topobjdir = os.environ.get('MOZ_TOPOBJDIR')
+    ice_source = topobjdir+ '/dist/' + source
+    ice_package = topobjdir + '/dist/' + package
     dist_source = ice_source + suffix
     if os.path.exists(dist_source):
         shutil.rmtree(dist_source, onerror=handle_remove_read_only)
