@@ -52,7 +52,6 @@
 #include "nsTArray.h"
 #include "nsTableCellFrame.h"
 #include "nsTableWrapperFrame.h"
-#include "nsTextFragment.h"
 #include "nsTextFrame.h"
 #include "nsThreadUtils.h"
 

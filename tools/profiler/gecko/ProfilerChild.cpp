@@ -427,8 +427,9 @@ void ProfilerChild::GatherProfileThreadFunction(
                 SharedLibraryInfo sharedLibraryInfo =
                     SharedLibraryInfo::GetInfoForSelf();
                 parameters->resolver(IPCProfileAndAdditionalInformation{
-                    shmem, Some(ProfileGenerationAdditionalInformation{
-                               std::move(sharedLibraryInfo)})});
+                    std::move(shmem),
+                    Some(ProfileGenerationAdditionalInformation{
+                        std::move(sharedLibraryInfo)})});
                 // Let's join the gather profile thread now since it's done.
                 // Note that this gets called inside the ProfilerChild thread
                 // and not inside the gather profile thread itself.

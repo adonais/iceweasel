@@ -171,10 +171,7 @@ class OutputParser {
             options.getVariableData?.(name).computedValue
           )));
 
-    // The filter property is special in that we want to show the
-    // swatch even if the value is invalid, because this way the user
-    // can easily use the editor to fix it.
-    if (options.expectFilter || this.#cssPropertySupportsValue(name, value)) {
+    if (this.#cssPropertySupportsValue(name, value, options)) {
       return this.#parse(value, options);
     }
     this.#appendTextNode(value);
@@ -1822,8 +1819,19 @@ class OutputParser {
    *         CSS Property name to check
    * @param  {String} value
    *         CSS Property value to check
+   * @param  {Object} options
+   *         Options object. For valid options and default values see #mergeOptions().
    */
-  #cssPropertySupportsValue(name, value) {
+  #cssPropertySupportsValue(name, value, options) {
+    if (
+      options.isValid ||
+      // The filter property is special in that we want to show the swatch even if the
+      // value is invalid, because this way the user can easily use the editor to fix it.
+      options.expectFilter
+    ) {
+      return true;
+    }
+
     // Checking pair as a CSS declaration string to account for "!important" in value.
     const declaration = `${name}:${value}`;
     return this.#doc.defaultView.CSS.supports(declaration);
@@ -2260,6 +2268,7 @@ class OutputParser {
    *            property data (syntax, initial value, inherits). Undefined if the variable
    *            is not a registered property.
    * @param {Boolean} overrides.isDarkColorScheme: Is the currently applied color scheme dark.
+   * @param {Boolean} overrides.isValid: Is the name+value valid.
    * @return {Object} Overridden options object
    */
   #mergeOptions(overrides) {

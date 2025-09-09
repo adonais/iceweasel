@@ -89,9 +89,10 @@ class HomeToolbarViewTest {
 
     @Test
     fun `WHEN build is called THEN layout gets updated`() {
-        toolbarView.build(mockk(relaxed = true))
+        toolbarView.build(mockk(relaxed = true), mockk(relaxed = true))
 
         verify(exactly = 1) { toolbarView.updateButtonVisibility(any()) }
+        verify(exactly = 1) { toolbarView.updateAddressBarVisibility(any()) }
     }
 
     @Test

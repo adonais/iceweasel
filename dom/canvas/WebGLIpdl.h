@@ -6,18 +6,18 @@
 #ifndef WEBGLIPDL_H_
 #define WEBGLIPDL_H_
 
+#include "WebGLTypes.h"
 #include "gfxTypes.h"
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtils.h"
 #include "mozilla/GfxMessageUtils.h"
+#include "mozilla/ParamTraits_IsEnumCase.h"
+#include "mozilla/ParamTraits_STL.h"
+#include "mozilla/ParamTraits_TiedFields.h"
 #include "mozilla/dom/BindingIPCUtils.h"
 #include "mozilla/ipc/IPDLParamTraits.h"
 #include "mozilla/ipc/Shmem.h"
 #include "mozilla/layers/LayersSurfaces.h"
-#include "mozilla/ParamTraits_IsEnumCase.h"
-#include "mozilla/ParamTraits_STL.h"
-#include "mozilla/ParamTraits_TiedFields.h"
-#include "WebGLTypes.h"
 
 namespace mozilla {
 namespace webgl {

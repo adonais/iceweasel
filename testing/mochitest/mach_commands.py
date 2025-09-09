@@ -277,7 +277,7 @@ def run_mochitest_general(
 ):
     from mochitest_options import ALL_FLAVORS
     from mozlog.commandline import setup_logging
-    from mozlog.handlers import StreamHandler
+    from mozlog.handlers import ResourceHandler, StreamHandler
     from moztest.resolve import get_suite_definition
 
     # TODO: This is only strictly necessary while mochitest is using Python
@@ -333,12 +333,15 @@ def run_mochitest_general(
             format_args["compact"] = False
 
         default_format = command_context._mach_context.settings["test"]["format"]
-        kwargs["log"] = setup_logging(
+        log = setup_logging(
             "mach-mochitest", kwargs, {default_format: sys.stdout}, format_args
         )
-        for handler in kwargs["log"].handlers:
+        kwargs["log"] = log
+        for handler in log.handlers:
             if isinstance(handler, StreamHandler):
                 handler.formatter.inner.summary_on_shutdown = True
+
+        log.add_handler(ResourceHandler(command_context))
 
     driver = command_context._spawn(BuildDriver)
     driver.install_tests()

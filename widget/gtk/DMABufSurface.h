@@ -230,6 +230,8 @@ class DMABufSurface {
 
   static void ReleaseSnapshotGLContext();
 
+  static void InitMemoryReporting();
+
   DMABufSurface(SurfaceType aSurfaceType);
 
  protected:
@@ -393,6 +395,8 @@ class DMABufSurfaceRGBA final : public DMABufSurface {
   bool OpenFileDescriptorForPlane(
       mozilla::widget::DMABufDeviceLock* aDeviceLock, int aPlane) override;
 
+  size_t GetUsedMemoryRGBA();
+
  private:
   int mWidth;
   int mHeight;
@@ -497,6 +501,9 @@ class DMABufSurfaceYUV final : public DMABufSurface {
 
   bool OpenFileDescriptorForPlane(
       mozilla::widget::DMABufDeviceLock* aDeviceLock, int aPlane) override;
+
+  static size_t GetUsedMemoryYUV(int32_t aFOURCCFormat, int aWidth,
+                                 int aHeight);
 
   int mWidth[DMABUF_BUFFER_PLANES];
   int mHeight[DMABUF_BUFFER_PLANES];

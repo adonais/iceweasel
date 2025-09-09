@@ -265,7 +265,7 @@ browser.Context = class {
    * @param {ChromeWindow=} window
    *     Switch to this window before selecting the tab.
    * @param {boolean=} focus
-   *      A boolean value which determins whether to focus
+   *      A boolean value which determines whether to focus
    *      the window. Defaults to true.
    *
    * @returns {Tab}

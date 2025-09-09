@@ -6,6 +6,8 @@
 
 #include "ContentEventHandler.h"
 
+#include <algorithm>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ContentIterator.h"
@@ -20,14 +22,16 @@
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
+#include "mozilla/ViewportUtils.h"
+#include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/HTMLUnknownElement.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/StaticRange.h"
 #include "mozilla/dom/Text.h"
-#include "nsCaret.h"
 #include "nsCOMPtr.h"
+#include "nsCaret.h"
 #include "nsContentUtils.h"
 #include "nsCopySupport.h"
 #include "nsElementTable.h"
@@ -40,12 +44,8 @@
 #include "nsPresContext.h"
 #include "nsQueryObject.h"
 #include "nsRange.h"
-#include "nsTextFragment.h"
 #include "nsTextFrame.h"
 #include "nsView.h"
-#include "mozilla/ViewportUtils.h"
-
-#include <algorithm>
 
 // Work around conflicting define in rpcndr.h
 #if defined(small)
@@ -610,7 +610,7 @@ static void ConvertToNativeNewlines(nsString& aString) {
 
 static void AppendString(nsString& aString, const Text& aTextNode) {
   const uint32_t oldXPLength = aString.Length();
-  aTextNode.TextFragment().AppendTo(aString);
+  aTextNode.DataBuffer().AppendTo(aString);
   if (aTextNode.HasFlag(NS_MAYBE_MASKED)) {
     TextEditor::MaskString(aString, aTextNode, oldXPLength, 0);
   }
@@ -619,7 +619,7 @@ static void AppendString(nsString& aString, const Text& aTextNode) {
 static void AppendSubString(nsString& aString, const Text& aTextNode,
                             uint32_t aXPOffset, uint32_t aXPLength) {
   const uint32_t oldXPLength = aString.Length();
-  aTextNode.TextFragment().AppendTo(aString, aXPOffset, aXPLength);
+  aTextNode.DataBuffer().AppendTo(aString, aXPOffset, aXPLength);
   if (aTextNode.HasFlag(NS_MAYBE_MASKED)) {
     TextEditor::MaskString(aString, aTextNode, oldXPLength, aXPOffset);
   }
@@ -640,19 +640,20 @@ static uint32_t CountNewlinesInXPLength(const StringType& aString) {
 
 static uint32_t CountNewlinesInXPLength(const Text& aTextNode,
                                         uint32_t aXPLength) {
-  const nsTextFragment& textFragment = aTextNode.TextFragment();
+  const CharacterDataBuffer& characterDataBuffer = aTextNode.DataBuffer();
   // For automated tests, we should abort on debug build.
-  MOZ_ASSERT(aXPLength == UINT32_MAX || aXPLength <= textFragment.GetLength(),
-             "aXPLength is out-of-bounds");
-  const uint32_t length = std::min(aXPLength, textFragment.GetLength());
+  MOZ_ASSERT(
+      aXPLength == UINT32_MAX || aXPLength <= characterDataBuffer.GetLength(),
+      "aXPLength is out-of-bounds");
+  const uint32_t length = std::min(aXPLength, characterDataBuffer.GetLength());
   if (!length) {
     return 0;
   }
-  if (textFragment.Is2b()) {
-    nsDependentSubstring str(textFragment.Get2b(), length);
+  if (characterDataBuffer.Is2b()) {
+    nsDependentSubstring str(characterDataBuffer.Get2b(), length);
     return CountNewlinesInXPLength(str);
   }
-  nsDependentCSubstring str(textFragment.Get1b(), length);
+  nsDependentCSubstring str(characterDataBuffer.Get1b(), length);
   return CountNewlinesInXPLength(str);
 }
 
@@ -677,16 +678,16 @@ static uint32_t CountNewlinesInNativeLength(const StringType& aString,
 
 static uint32_t CountNewlinesInNativeLength(const Text& aTextNode,
                                             uint32_t aNativeLength) {
-  const nsTextFragment& textFragment = aTextNode.TextFragment();
-  const uint32_t xpLength = textFragment.GetLength();
+  const CharacterDataBuffer& characterDataBuffer = aTextNode.DataBuffer();
+  const uint32_t xpLength = characterDataBuffer.GetLength();
   if (!xpLength) {
     return 0;
   }
-  if (textFragment.Is2b()) {
-    nsDependentSubstring str(textFragment.Get2b(), xpLength);
+  if (characterDataBuffer.Is2b()) {
+    nsDependentSubstring str(characterDataBuffer.Get2b(), xpLength);
     return CountNewlinesInNativeLength(str, aNativeLength);
   }
-  nsDependentCSubstring str(textFragment.Get1b(), xpLength);
+  nsDependentCSubstring str(characterDataBuffer.Get1b(), xpLength);
   return CountNewlinesInNativeLength(str, aNativeLength);
 }
 #endif
@@ -738,7 +739,7 @@ uint32_t ContentEventHandler::GetTextLength(const Text& aTextNode,
 #endif
 
   const uint32_t length =
-      std::min(aTextNode.TextFragment().GetLength(), aMaxLength);
+      std::min(aTextNode.DataBuffer().GetLength(), aMaxLength);
   return length + textLengthDifference;
 }
 
@@ -1158,7 +1159,7 @@ nsresult ContentEventHandler::ExpandToClusterBoundary(
   }
 
   // If the frame isn't available, we only can check surrogate pair...
-  if (aTextNode.TextFragment().IsLowSurrogateFollowingHighSurrogateAt(
+  if (aTextNode.DataBuffer().IsLowSurrogateFollowingHighSurrogateAt(
           *aXPOffset)) {
     *aXPOffset += aForward ? 1 : -1;
   }

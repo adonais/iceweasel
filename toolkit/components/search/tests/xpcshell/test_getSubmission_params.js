@@ -18,6 +18,12 @@ const TESTS = [
 
   { param: "{language}", expected: Services.locale.requestedLocale },
   { param: "{language?}", expected: Services.locale.requestedLocale },
+  {
+    param: "{acceptLanguages}",
+    expected: Services.prefs
+      .getComplexValue("intl.accept_languages", Ci.nsIPrefLocalizedString)
+      .data.replace(/\s+/g, ""),
+  },
 
   { param: "{inputEncoding}", charset: "UTF-8", expected: "UTF-8" },
   {

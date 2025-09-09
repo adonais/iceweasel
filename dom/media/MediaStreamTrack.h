@@ -7,18 +7,18 @@
 #define MEDIASTREAMTRACK_H_
 
 #include "MediaTrackConstraints.h"
+#include "PerformanceRecorder.h"
 #include "PrincipalChangeObserver.h"
 #include "PrincipalHandle.h"
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
 #include "mozilla/dom/MediaTrackCapabilitiesBinding.h"
 #include "mozilla/dom/MediaTrackSettingsBinding.h"
 #include "mozilla/media/MediaUtils.h"
-#include "mozilla/WeakPtr.h"
 #include "nsError.h"
 #include "nsID.h"
 #include "nsIPrincipal.h"
-#include "PerformanceRecorder.h"
 
 namespace mozilla {
 

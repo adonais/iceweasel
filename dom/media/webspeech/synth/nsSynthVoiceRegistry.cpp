@@ -4,29 +4,27 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsISpeechService.h"
-#include "nsServiceManagerUtils.h"
-#include "nsCategoryManagerUtils.h"
+#include "nsSynthVoiceRegistry.h"
 
+#include "AudioChannelService.h"
+#include "SpeechSynthesisChild.h"
+#include "SpeechSynthesisParent.h"
 #include "SpeechSynthesisUtterance.h"
 #include "SpeechSynthesisVoice.h"
-#include "nsContentUtils.h"
-#include "nsSynthVoiceRegistry.h"
-#include "nsSpeechTask.h"
-#include "AudioChannelService.h"
-
-#include "nsString.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/StaticPrefs_media.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/intl/LocaleService.h"
-#include "mozilla/StaticPrefs_media.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/Unused.h"
-
-#include "SpeechSynthesisChild.h"
-#include "SpeechSynthesisParent.h"
+#include "nsCategoryManagerUtils.h"
+#include "nsContentUtils.h"
+#include "nsISpeechService.h"
+#include "nsServiceManagerUtils.h"
+#include "nsSpeechTask.h"
+#include "nsString.h"
 
 using mozilla::intl::LocaleService;
 

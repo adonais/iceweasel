@@ -79,6 +79,15 @@
       }
     }
 
+    &.inset-inline-center {
+      transform: translateX(-50%);
+      inset-inline-start: 50%;
+
+      &:dir(rtl) {
+        transform: translateX(50%);
+      }
+    }
+
     &.inset-inline-end {
       inset-inline-start: calc(var(--space-xxlarge) * -1);
 
@@ -114,6 +123,17 @@
         width: 16px;
         background: var(--newtab-background-color-secondary);
         box-shadow: 4px 4px 6px -2px rgba(0, 0, 0, 15%);
+      }
+    }
+
+    // arrow is on the top of the box centered
+    &.arrow-top-center {
+      &::after {
+        inset-block-start: calc(var(--space-small) * -1);
+        inset-inline-start: 50%;
+        transform: translateX(-50%) rotate(225deg);
+        height: 16px;
+        width: 16px;
       }
     }
 

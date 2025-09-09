@@ -51,6 +51,7 @@ tags = "capturestream"
 tags = "capturestream"
 
 ["test_mediaElementAudioSourceNodeVideo.html"]
+skip-if = ["isolated_process"] # Bug 1709948
 tags = "capturestream"
 
 ["test_mediaStreamAudioDestinationNode.html"]

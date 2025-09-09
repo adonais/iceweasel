@@ -4,6 +4,7 @@
 
 package org.mozilla.geckoview.test
 
+import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import org.hamcrest.Matchers.closeTo
@@ -11,6 +12,7 @@ import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.greaterThanOrEqualTo
 import org.hamcrest.Matchers.notNullValue
 import org.junit.After
+import org.junit.Assume.assumeThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -815,6 +817,10 @@ class MediaSessionTest : BaseSessionTest() {
 
     @Test
     fun fullscreenVideoElementMetadata() {
+        // Bug 1981579
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+        }
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "media.autoplay.default" to 0,
@@ -978,6 +984,10 @@ class MediaSessionTest : BaseSessionTest() {
 
     @Test
     fun fullscreenVideoWithActivated() {
+        // Bug 1981579
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+        }
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "media.autoplay.default" to 0,
@@ -1018,6 +1028,10 @@ class MediaSessionTest : BaseSessionTest() {
 
     @Test
     fun switchingProcess() {
+        // Bug 1981579
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+        }
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "media.autoplay.default" to 0,

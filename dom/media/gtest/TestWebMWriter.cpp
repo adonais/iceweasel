@@ -3,14 +3,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
-#include "mozilla/CheckedInt.h"
-#include "mozilla/MathAlgorithms.h"
-#include "nestegg/nestegg.h"
 #include "DriftCompensation.h"
 #include "OpusTrackEncoder.h"
 #include "VP8TrackEncoder.h"
 #include "WebMWriter.h"
+#include "gtest/gtest.h"
+#include "mozilla/CheckedInt.h"
+#include "mozilla/MathAlgorithms.h"
+#include "nestegg/nestegg.h"
 
 using namespace mozilla;
 

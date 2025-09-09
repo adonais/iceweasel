@@ -7,11 +7,11 @@
 #ifndef DOM_SVG_SVGANIMATEDCLASS_H_
 #define DOM_SVG_SVGANIMATEDCLASS_H_
 
-#include "nsCycleCollectionParticipant.h"
-#include "mozilla/SVGAnimatedClassOrString.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
+#include "mozilla/SVGAnimatedClassOrString.h"
 #include "mozilla/UniquePtr.h"
+#include "nsCycleCollectionParticipant.h"
 
 namespace mozilla {
 

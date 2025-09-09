@@ -96,6 +96,30 @@ class AppRequestInterceptorTest {
     }
 
     @Test
+    fun `GIVEN onboarding is currently shown and a request to ABOUT_HOME WHEN request is intercepted THEN return a null interception response and do not navigate to the homepage`() {
+        val mockDestination: NavDestination = mockk(relaxed = true)
+        every { mockDestination.id } returns R.id.onboardingFragment
+        every { navigationController.currentDestination } returns mockDestination
+
+        val result = interceptor.onLoadRequest(
+            engineSession = mockk(),
+            uri = ABOUT_HOME_URL,
+            lastUri = ABOUT_HOME_URL,
+            hasUserGesture = true,
+            isSameDomain = true,
+            isDirectNavigation = false,
+            isRedirect = false,
+            isSubframeRequest = false,
+        )
+
+        assertNull(result)
+
+        verify(exactly = 0) {
+            navigationController.navigate(NavGraphDirections.actionGlobalHome())
+        }
+    }
+
+    @Test
     fun `onErrorRequest results in correct error page for low risk level error`() {
         setOf(
             ErrorType.UNKNOWN,

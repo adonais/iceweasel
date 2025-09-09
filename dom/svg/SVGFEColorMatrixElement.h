@@ -7,8 +7,8 @@
 #ifndef DOM_SVG_SVGFECOLORMATRIXELEMENT_H_
 #define DOM_SVG_SVGFECOLORMATRIXELEMENT_H_
 
-#include "SVGAnimatedNumberList.h"
 #include "SVGAnimatedEnumeration.h"
+#include "SVGAnimatedNumberList.h"
 #include "mozilla/dom/SVGFilters.h"
 
 nsresult NS_NewSVGFEColorMatrixElement(

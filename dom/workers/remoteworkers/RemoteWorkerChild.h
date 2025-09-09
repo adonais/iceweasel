@@ -7,19 +7,18 @@
 #ifndef mozilla_dom_RemoteWorkerChild_h
 #define mozilla_dom_RemoteWorkerChild_h
 
-#include "nsCOMPtr.h"
-#include "nsISupportsImpl.h"
-#include "nsTArray.h"
-
 #include "mozilla/DataMutex.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ThreadBound.h"
 #include "mozilla/dom/PRemoteWorkerChild.h"
-#include "mozilla/dom/RemoteWorkerOp.h"
 #include "mozilla/dom/PRemoteWorkerNonLifeCycleOpControllerChild.h"
+#include "mozilla/dom/RemoteWorkerOp.h"
 #include "mozilla/dom/ServiceWorkerOpArgs.h"
 #include "mozilla/dom/SharedWorkerOpArgs.h"
+#include "nsCOMPtr.h"
+#include "nsISupportsImpl.h"
+#include "nsTArray.h"
 
 class nsISerialEventTarget;
 class nsIConsoleReportCollector;

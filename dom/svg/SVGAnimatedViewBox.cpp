@@ -6,11 +6,11 @@
 
 #include "SVGAnimatedViewBox.h"
 
-#include "mozAutoDocUpdate.h"
-#include "mozilla/Maybe.h"
 #include <utility>
 
 #include "SVGViewBoxSMILType.h"
+#include "mozAutoDocUpdate.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/SMILValue.h"
 #include "mozilla/SVGContentUtils.h"
 #include "mozilla/dom/SVGRect.h"

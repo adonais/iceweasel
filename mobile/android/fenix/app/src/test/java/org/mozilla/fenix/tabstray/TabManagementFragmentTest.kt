@@ -6,8 +6,6 @@ package org.mozilla.fenix.tabstray
 
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
-import android.view.LayoutInflater
 import android.view.View
 import androidx.navigation.NavController
 import io.mockk.Runs
@@ -28,13 +26,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.NavGraphDirections
-import org.mozilla.fenix.databinding.FragmentTabTrayDialogBinding
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.helpers.MockkRetryTestRule
 import org.mozilla.fenix.home.HomeScreenViewModel
 import org.mozilla.fenix.navigation.NavControllerProvider
 import org.mozilla.fenix.settings.biometric.BiometricUtils
+import org.mozilla.fenix.tabstray.controller.TabManagerInteractor
 import org.mozilla.fenix.tabstray.ui.TabManagementFragment
 import org.robolectric.RobolectricTestRunner
 
@@ -42,7 +39,6 @@ import org.robolectric.RobolectricTestRunner
 class TabManagementFragmentTest {
     private lateinit var context: Context
     private lateinit var fragment: TabManagementFragment
-    private lateinit var tabsTrayDialogBinding: FragmentTabTrayDialogBinding
 
     @get:Rule
     val mockkRule = MockkRetryTestRule()
@@ -53,25 +49,11 @@ class TabManagementFragmentTest {
     @Before
     fun setup() {
         context = mockk(relaxed = true)
-        val inflater = LayoutInflater.from(testContext)
-        tabsTrayDialogBinding = FragmentTabTrayDialogBinding.inflate(inflater)
 
         fragment = spyk(TabManagementFragment())
-        fragment._tabsTrayDialogBinding = tabsTrayDialogBinding
         every { fragment.context } returns context
         every { fragment.viewLifecycleOwner } returns mockk(relaxed = true)
         every { fragment.view } returns mockk()
-    }
-
-    @Test
-    fun `WHEN dismissTabsTrayAndNavigateHome is called with a sessionId THEN it navigates to home to delete that sessions and dismisses the tray`() {
-        every { fragment.navigateToHomeAndDeleteSession(any(), any()) } just Runs
-        every { fragment.dismissTabsTray() } just Runs
-
-        fragment.dismissTabsTrayAndNavigateHome("test")
-
-        verify { fragment.navigateToHomeAndDeleteSession("test", any()) }
-        verify { fragment.dismissTabsTray() }
     }
 
     @Test
@@ -93,25 +75,13 @@ class TabManagementFragmentTest {
     }
 
     @Test
-    fun `WHEN dismissTabsTray is called THEN it dismisses the tray`() {
-        every { fragment.dismissAllowingStateLoss() } just Runs
+    fun `WHEN dismissTabManager is called THEN it dismisses the tab manager`() {
+        val navController: NavController = mockk(relaxed = true)
         every { fragment.recordBreadcrumb(any()) } just Runs
 
-        fragment.dismissTabsTray()
+        fragment.dismissTabManager(navController = navController)
 
-        verify { fragment.dismissAllowingStateLoss() }
-    }
-
-    @Test
-    fun `WHEN onConfigurationChanged is called THEN it delegates the tray behavior manager to update the tray`() {
-        val trayBehaviorManager: TabSheetBehaviorManager = mockk(relaxed = true)
-        fragment.trayBehaviorManager = trayBehaviorManager
-        val newConfiguration = Configuration()
-        every { context.settings().gridTabView } returns false
-
-        fragment.onConfigurationChanged(newConfiguration)
-
-        verify { trayBehaviorManager.updateDependingOnOrientation(newConfiguration.orientation) }
+        verify { navController.popBackStack() }
     }
 
     @Test
@@ -312,7 +282,7 @@ private fun buildTestBiometricUtils(
 
 private fun buildTestInteractor(
     onTabPageClicked: () -> Unit,
-) = object : TabsTrayInteractor {
+) = object : TabManagerInteractor {
     override fun onTabPageClicked(page: Page) {
         onTabPageClicked()
     }
@@ -326,7 +296,6 @@ private fun buildTestInteractor(
     override fun onShareSelectedTabs() {}
     override fun onTabsMove(tabId: String, targetId: String?, placeAfter: Boolean) {}
     override fun onRecentlyClosedClicked() {}
-    override fun onMediaClicked(tab: TabSessionState) {}
     override fun onTabLongClicked(tab: TabSessionState): Boolean { return false }
     override fun onBackPressed(): Boolean { return false }
     override fun onSyncedTabClicked(tab: Tab) {}

@@ -41,7 +41,10 @@ const DEFERRED_TASK_INTERVAL_MS = 3000;
 // Maximum time to wait for an idle before the task is executed anyway.
 const DEFERRED_TASK_MAX_IDLE_WAIT_MS = 2 * 60000;
 // Number of entries to update at once.
-const DEFAULT_CHUNK_SIZE = 50;
+const DEFAULT_CHUNK_SIZE = Services.prefs.getIntPref(
+  "places.semanticHistory.defaultBatchChunksize",
+  25
+);
 const ONE_MiB = 1024 * 1024;
 // minimum title length threshold; Usage len(title || description) > MIN_TITLE_LENGTH
 const MIN_TITLE_LENGTH = 4;

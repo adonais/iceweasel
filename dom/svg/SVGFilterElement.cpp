@@ -6,12 +6,12 @@
 
 #include "mozilla/dom/SVGFilterElement.h"
 
-#include "nsGkAtoms.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/SVGFilterElementBinding.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGUnitTypesBinding.h"
+#include "nsGkAtoms.h"
 #include "nsQueryObject.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(Filter)

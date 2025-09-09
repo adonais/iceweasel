@@ -12,7 +12,7 @@ interface nsIInputStream;
 namespace mozilla {
 namespace net {
 class PreferredAlternativeDataTypeParams;
-}
+} // namespace net
 } // namespace mozilla
 %}
 
@@ -118,6 +118,17 @@ interface nsICacheInfoChannel : nsISupports
     SERIALIZE = 2,
   };
 
+  cenum CacheDisposition : 8 {
+      kCacheUnresolved = 0,
+      kCacheHit = 1,
+      kCacheHitViaReval = 2,
+      kCacheMissedViaReval = 3,
+      kCacheMissed = 4,
+      kCacheUnknown = 5,
+      // Insert new values here
+      kCacheDispositionEnd
+  };
+
   /**
    * Tells the channel to be force validated during soft reload.
    */
@@ -194,6 +205,11 @@ interface nsICacheInfoChannel : nsISupports
    *        passed.
    */
   nsIAsyncOutputStream openAlternativeOutputStream(in ACString type, in long long predictedSize);
+
+  /**
+   * Returns the cache disposition for this channel.
+   */
+  nsICacheInfoChannel_CacheDisposition getCacheDisposition();
 };
 
 %{ C++

@@ -504,6 +504,72 @@ add_task(async function hideRowLabel() {
   UrlbarProvidersManager.unregisterProvider(provider);
 });
 
+add_task(async function previousRowLabelIsHidden_then_searchResults() {
+  let engineName = Services.search.defaultEngine.name;
+  const results = [
+    Object.assign(
+      new UrlbarResult(
+        UrlbarUtils.RESULT_TYPE.URL,
+        UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        { url: "http://example.com/1" }
+      ),
+      {
+        hideRowLabel: true,
+        suggestedIndex: 1,
+      }
+    ),
+    Object.assign(
+      new UrlbarResult(
+        UrlbarUtils.RESULT_TYPE.SEARCH,
+        UrlbarUtils.RESULT_SOURCE.SEARCH,
+        { suggestion: "test1", engine: engineName }
+      ),
+      {
+        suggestedIndex: 2,
+      }
+    ),
+    Object.assign(
+      new UrlbarResult(
+        UrlbarUtils.RESULT_TYPE.SEARCH,
+        UrlbarUtils.RESULT_SOURCE.SEARCH,
+        { suggestion: "test2", engine: engineName }
+      ),
+      {
+        hideRowLabel: true,
+        suggestedIndex: 3,
+      }
+    ),
+    Object.assign(
+      new UrlbarResult(
+        UrlbarUtils.RESULT_TYPE.SEARCH,
+        UrlbarUtils.RESULT_SOURCE.SEARCH,
+        { suggestion: "test3", engine: engineName }
+      ),
+      {
+        suggestedIndex: 4,
+      }
+    ),
+  ];
+  const provider = new UrlbarTestUtils.TestProvider({
+    results,
+    priority: Infinity,
+  });
+  UrlbarProvidersManager.registerProvider(provider);
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test",
+  });
+
+  await checkLabels(4, {
+    1: engineSuggestionsLabel(engineName),
+  });
+
+  await UrlbarTestUtils.promisePopupClose(window);
+
+  UrlbarProvidersManager.unregisterProvider(provider);
+});
+
 /**
  * Provider that returns a suggested-index result.
  */

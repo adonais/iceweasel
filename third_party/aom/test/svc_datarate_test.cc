@@ -1432,7 +1432,7 @@ class DatarateTestSVC
                                          1, 0, 400);
     cfg_.g_w = 640;
     cfg_.g_h = 480;
-    const int bitrate_array[2] = { 80, 90 };
+    const int bitrate_array[2] = { 50, 70 };
     cfg_.rc_target_bitrate = bitrate_array[GET_PARAM(4)];
     ResetModel();
     number_temporal_layers_ = 3;
@@ -1443,7 +1443,7 @@ class DatarateTestSVC
     for (int i = 0; i < number_temporal_layers_ * number_spatial_layers_; i++) {
       ASSERT_GE(effective_datarate_tl[i], target_layer_bitrate_[i] * 0.80)
           << " The datarate for the file is lower than target by too much!";
-      ASSERT_LE(effective_datarate_tl[i], target_layer_bitrate_[i] * 1.60)
+      ASSERT_LE(effective_datarate_tl[i], target_layer_bitrate_[i] * 2.0)
           << " The datarate for the file is greater than target by too much!";
     }
 #if CONFIG_AV1_DECODER

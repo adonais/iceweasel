@@ -7,9 +7,9 @@
 #ifndef mozilla_dom_audio_channel_agent_h__
 #define mozilla_dom_audio_channel_agent_h__
 
-#include "nsIAudioChannelAgent.h"
-#include "nsCycleCollectionParticipant.h"
 #include "nsCOMPtr.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsIAudioChannelAgent.h"
 #include "nsIWeakReferenceUtils.h"
 
 class nsPIDOMWindowInner;

@@ -47,10 +47,11 @@ internal fun MenuHeader(
             .verticalScroll(rememberScrollState()),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        MozillaAccountMenuButton(
+        MozillaAccountMenuItem(
             account = account,
             accountState = accountState,
             onClick = onMozillaAccountButtonClick,
+            isPrivate = false,
             modifier = Modifier.weight(1f),
         )
 

@@ -100,20 +100,20 @@ private fun Title(
 @Composable
 private fun BulletTextWithOptionalLink(
     text: String,
-    learnMoreUrl: String? = null,
     onLearnMoreClicked: (String) -> Unit,
-    modifier: Modifier = Modifier
-        .padding(
-            start = 72.dp,
-            top = 6.dp,
-            end = 16.dp,
-            bottom = 6.dp,
-        ),
+    modifier: Modifier = Modifier,
+    learnMoreUrl: String? = null,
     color: Color = FirefoxTheme.colors.textPrimary,
     style: TextStyle = FirefoxTheme.typography.subtitle1,
 ) {
     Row(
-        modifier = modifier,
+        modifier = modifier
+            .padding(
+                start = 72.dp,
+                top = 6.dp,
+                end = 16.dp,
+                bottom = 6.dp,
+            ),
     ) {
         Text(
             text = "•",

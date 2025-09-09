@@ -6,8 +6,9 @@
 
 #include "MP3Demuxer.h"
 
-#include <algorithm>
 #include <inttypes.h>
+
+#include <algorithm>
 #include <limits>
 
 #include "ByteWriter.h"

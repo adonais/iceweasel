@@ -22,7 +22,7 @@ class PerfFront extends FrontClassWithSpec(perfSpec) {
     this.formAttributeName = "perfActor";
   }
 
-  /* @backward-compat { version 141 }
+  /* @backward-compat { version 143 }
    * Version 140 introduced the bulk transfer of the profile date, as
    * implemented by getProfileAndStopProfilerBulk below.
    * This function uses a trait to decide between calling the old method and the

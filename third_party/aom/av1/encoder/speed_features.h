@@ -490,6 +490,13 @@ typedef struct HIGH_LEVEL_SPEED_FEATURES {
    * 2: Always disable
    */
   int ref_frame_mvs_lvl;
+
+  /*!
+   *  Decide whether to enable screen detection mode 2 fast detection.
+   *  0: Regular detection
+   *  1: Fast detection
+   */
+  int screen_detection_mode2_fast_detection;
 } HIGH_LEVEL_SPEED_FEATURES;
 
 /*!
@@ -902,6 +909,21 @@ typedef struct MV_SPEED_FEATURES {
 
   // Allow intrabc motion search
   int use_intrabc;
+
+  // Prune intrabc candidate block hash search
+  // 0: check every block hash candidate
+  // 1: check the first 64 block hash candidates only
+  int prune_intrabc_candidate_block_hash_search;
+
+  // Intrabc search level
+  // 0: top + left search
+  // 1: top search only
+  int intrabc_search_level;
+
+  // Whether the maximum intrabc block size to hash is 8x8
+  // 0: Hash from 4x4 up to superblock size
+  // 1: Hash 4x4 and 8x8 only
+  int hash_max_8x8_intrabc_blocks;
 
   // Whether to downsample the rows in sad calculation during motion search.
   // This is only active when there are at least 16 rows. When this sf is
@@ -1632,6 +1654,11 @@ typedef struct REAL_TIME_SPEED_FEATURES {
 
   // This flag controls the use of non-RD mode decision.
   int use_nonrd_pick_mode;
+
+  // Flag that controls discounting for color map cost during palette search.
+  // This saves about 5% of CPU and in non-RD speeds delivers better results
+  // across rtc_screen set (on speed 10 overall BDRate growth is 13%)
+  int discount_color_cost;
 
   // Use ALTREF frame in non-RD mode decision.
   int use_nonrd_altref_frame;

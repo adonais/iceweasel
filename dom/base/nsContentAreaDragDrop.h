@@ -8,7 +8,6 @@
 #define nsContentAreaDragDrop_h__
 
 #include "nsCOMPtr.h"
-
 #include "nsITransferable.h"
 
 class nsIPolicyContainer;

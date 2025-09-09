@@ -8,10 +8,10 @@
 
 #include <stdint.h>
 
-#include "mozilla/PodOperations.h"
-#include "nsTArrayForwardDeclare.h"
 #include "AudioSampleFormat.h"
+#include "mozilla/PodOperations.h"
 #include "nsTArray.h"
+#include "nsTArrayForwardDeclare.h"
 
 namespace mozilla {
 

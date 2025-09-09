@@ -5,15 +5,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "PerformanceMainThread.h"
+
+#include "LargestContentfulPaint.h"
+#include "PerformanceEventTiming.h"
 #include "PerformanceInteractionMetrics.h"
 #include "PerformanceNavigation.h"
 #include "PerformancePaintTiming.h"
-#include "jsapi.h"
 #include "js/GCAPI.h"
 #include "js/PropertyAndElement.h"  // JS_DefineProperty
+#include "jsapi.h"
 #include "mozilla/HoldDropJSObjects.h"
-#include "PerformanceEventTiming.h"
-#include "LargestContentfulPaint.h"
+#include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/TextEvents.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/EventCounts.h"
@@ -22,15 +26,12 @@
 #include "mozilla/dom/PerformanceNavigationTiming.h"
 #include "mozilla/dom/PerformanceResourceTiming.h"
 #include "mozilla/dom/PerformanceTiming.h"
-#include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/PresShell.h"
-#include "nsGkAtoms.h"
-#include "nsIChannel.h"
-#include "nsIHttpChannel.h"
-#include "nsIDocShell.h"
-#include "nsGlobalWindowInner.h"
 #include "nsContainerFrame.h"
-#include "mozilla/TextEvents.h"
+#include "nsGkAtoms.h"
+#include "nsGlobalWindowInner.h"
+#include "nsIChannel.h"
+#include "nsIDocShell.h"
+#include "nsIHttpChannel.h"
 
 namespace mozilla::dom {
 

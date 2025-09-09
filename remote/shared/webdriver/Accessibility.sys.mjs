@@ -31,7 +31,7 @@ export const accessibility = {
 };
 
 /**
- * Accessible states used to check element"s state from the accessiblity API
+ * Accessible states used to check element"s state from the accessibility API
  * perspective.
  *
  * Note: if gecko is built with --disable-accessibility, the interfaces

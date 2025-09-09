@@ -10,11 +10,8 @@ import android.view.View
 import androidx.annotation.IntRange
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -121,16 +118,11 @@ fun AnimatedProgressBar(
         animationSpec = progressAnimSpec,
     )
 
-    val infiniteTransition = rememberInfiniteTransition()
-    val offset by infiniteTransition.animateFloat(
-        initialValue = 0f,
+    val offset by animateFloatAsState(
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = gradientAnimationSpeed.inWholeMilliseconds.toInt(),
-                easing = LinearEasing,
-            ),
-            repeatMode = RepeatMode.Restart,
+        animationSpec = tween(
+            durationMillis = gradientAnimationSpeed.inWholeMilliseconds.toInt(),
+            easing = LinearEasing,
         ),
     )
 

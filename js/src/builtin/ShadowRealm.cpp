@@ -30,6 +30,7 @@
 #include "vm/GlobalObject.h"
 #include "vm/Interpreter.h"
 #include "vm/JSObject.h"
+#include "vm/Modules.h"
 #include "vm/ObjectOperations.h"
 
 #include "builtin/HandlerFunction-inl.h"
@@ -412,21 +413,6 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
 
   Handle<PromiseObject*> promise = promiseObject.as<PromiseObject>();
 
-  JS::ModuleDynamicImportHook importHook =
-      cx->runtime()->moduleDynamicImportHook;
-
-  if (!importHook) {
-    // Dynamic import can be disabled by a pref and is not supported in all
-    // contexts (e.g. web workers).
-    JS_ReportErrorASCII(
-        cx,
-        "Dynamic module import is disabled or not supported in this context");
-    if (!RejectPromiseWithPendingError(cx, promise)) {
-      return nullptr;
-    }
-    return promise;
-  }
-
   {
     // Step 3. Let runningContext be the running execution context. (Implicit)
     // Step 4. If runningContext is not already suspended, suspend
@@ -465,39 +451,26 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
       return promise;
     }
 
-    // Step 6. Perform ! HostImportModuleDynamically(null, specifierString,
-    // innerCapability).
-    //
-    // By specification, this is supposed to take ReferencingScriptOrModule as
-    // null, see first parameter above. However, if we do that, we don't end up
-    // with a script reference, which is used to figure out what the base-URI
-    // should be So then we end up using the default one for the module loader;
-    // which because of the way we set the parent module loader up, means we end
-    // up having the incorrect base URI, as the module loader ends up just using
-    // the document's base URI.
-    //
-    // I have filed https://github.com/tc39/proposal-shadowrealm/issues/363 to
-    // discuss this.
-    Rooted<Value> referencingPrivate(cx, script->sourceObject()->getPrivate());
-    if (!importHook(cx, referencingPrivate, moduleRequest, promise)) {
-      // If there's no exception pending then the script is terminating
-      // anyway, so just return nullptr.
-      if (!cx->isExceptionPending() ||
-          !RejectPromiseWithPendingError(cx, promise)) {
+    // Step 7. Perform ! HostLoadImportedModule(referrer, specifierString,
+    // EMPTY, innerCapability).
+    Rooted<Value> payload(cx, ObjectValue(*promise));
+    if (!js::HostLoadImportedModule(cx, script, moduleRequest,
+                                    JS::UndefinedHandleValue, payload)) {
+      if (!RejectPromiseWithPendingError(cx, promise)) {
         return nullptr;
       }
       return promise;
     }
 
-    // Step 7. Suspend evalContext and remove it from the execution context
+    // Step 8. Suspend evalContext and remove it from the execution context
     //         stack. (Implicit)
-    // Step 8. Resume the context that is now on the top of the execution
+    // Step 9. Resume the context that is now on the top of the execution
     //         context stack as the running execution context (Implicit)
   }
 
-  // Step 9.  Let steps be the steps of an ExportGetter function as described
+  // Step 10.  Let steps be the steps of an ExportGetter function as described
   //          below.
-  // Step 10. Let onFulfilled be ! CreateBuiltinFunction(steps, 1, "", «
+  // Step 11. Let onFulfilled be ! CreateBuiltinFunction(steps, 1, "", «
   //          [[ExportNameString]] », callerRealm).
 
   // The handler can only hold onto a single object, so we pack that into a new
@@ -601,9 +574,9 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
     return nullptr;
   }
 
-  // Step 11. Set onFulfilled.[[ExportNameString]] to exportNameString.
-  // Step 12. Let promiseCapability be ! NewPromiseCapability(%Promise%).
-  // Step 13. Return ! PerformPromiseThen(innerCapability.[[Promise]],
+  // Step 12. Set onFulfilled.[[ExportNameString]] to exportNameString.
+  // Step 15. Let promiseCapability be ! NewPromiseCapability(%Promise%).
+  // Step 16. Return ! PerformPromiseThen(innerCapability.[[Promise]],
   //           onFulfilled, callerRealm.[[Intrinsics]].[[%ThrowTypeError%]],
   //           promiseCapability).
   return OriginalPromiseThen(cx, promise, onFulfilled, onRejected);

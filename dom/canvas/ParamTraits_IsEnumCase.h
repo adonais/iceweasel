@@ -6,8 +6,8 @@
 #ifndef MOZILLA_PARAMTRAITS_ISENUMCASE_H
 #define MOZILLA_PARAMTRAITS_ISENUMCASE_H
 
-#include "ipc/IPCMessageUtils.h"
 #include "IsEnumCase.h"
+#include "ipc/IPCMessageUtils.h"
 #include "mozilla/ipc/IPDLParamTraits.h"
 
 namespace IPC {

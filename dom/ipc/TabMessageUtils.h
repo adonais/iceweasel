@@ -7,16 +7,16 @@
 #ifndef TABMESSAGE_UTILS_H
 #define TABMESSAGE_UTILS_H
 
-#include "ipc/EnumSerializer.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/dom/Event.h"
-#include "nsIRemoteTab.h"
-#include "nsPIDOMWindow.h"
-#include "nsCOMPtr.h"
-#include "mozilla/dom/EffectsInfo.h"
-#include "mozilla/layers/LayersMessageUtils.h"
 #include "TabMessageTypes.h"
 #include "X11UndefineNone.h"
+#include "ipc/EnumSerializer.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/dom/EffectsInfo.h"
+#include "mozilla/dom/Event.h"
+#include "mozilla/layers/LayersMessageUtils.h"
+#include "nsCOMPtr.h"
+#include "nsIRemoteTab.h"
+#include "nsPIDOMWindow.h"
 
 namespace IPC {
 

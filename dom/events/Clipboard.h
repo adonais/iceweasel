@@ -7,12 +7,12 @@
 #ifndef mozilla_dom_Clipboard_h_
 #define mozilla_dom_Clipboard_h_
 
-#include "nsString.h"
-#include "nsStringFwd.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "nsString.h"
+#include "nsStringFwd.h"
 
 class nsIClipboardDataSnapshot;
 

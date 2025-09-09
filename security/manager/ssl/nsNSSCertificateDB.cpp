@@ -9,7 +9,6 @@
 #include "ExtendedValidation.h"
 #include "NSSCertDBTrustDomain.h"
 #include "certdb.h"
-#include "mozilla/glean/SecurityCertverifierMetrics.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Base64.h"
 #include "mozilla/Casting.h"
@@ -58,24 +57,6 @@ using namespace mozilla::psm;
 extern LazyLogModule gPIPNSSLog;
 
 NS_IMPL_ISUPPORTS(nsNSSCertificateDB, nsIX509CertDB)
-
-NS_IMETHODIMP
-nsNSSCertificateDB::CountTrustObjects(uint32_t* aCount) {
-  UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
-  PK11GenericObject* objects =
-      PK11_FindGenericObjects(slot.get(), CKO_NSS_TRUST);
-  int count = 0;
-  for (PK11GenericObject* cursor = objects; cursor;
-       cursor = PK11_GetNextGenericObject(cursor)) {
-    count++;
-  }
-  PK11_DestroyGenericObjects(objects);
-
-  mozilla::glean::cert_verifier::trust_obj_count.Set(count);
-
-  *aCount = count;
-  return NS_OK;
-}
 
 NS_IMETHODIMP
 nsNSSCertificateDB::FindCertByDBKey(const nsACString& aDBKey,
@@ -1208,79 +1189,6 @@ nsNSSCertificateDB::GetCerts(nsTArray<RefPtr<nsIX509Cert>>& _retval) {
   }
   return nsNSSCertificateDB::ConstructCertArrayFromUniqueCertList(certList,
                                                                   _retval);
-}
-
-nsresult IsCertBuiltInRoot(const RefPtr<nsIX509Cert>& cert,
-                           bool& isBuiltInRoot) {
-  nsTArray<uint8_t> der;
-  nsresult rv = cert->GetRawDER(der);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  pkix::Input certInput;
-  pkix::Result result = certInput.Init(der.Elements(), der.Length());
-  if (result != pkix::Result::Success) {
-    return NS_ERROR_FAILURE;
-  }
-  result = IsCertBuiltInRoot(certInput, isBuiltInRoot);
-  if (result != pkix::Result::Success) {
-    return NS_ERROR_FAILURE;
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsNSSCertificateDB::AsyncHasThirdPartyRoots(nsIAsyncBoolCallback* aCallback) {
-  NS_ENSURE_ARG_POINTER(aCallback);
-  nsMainThreadPtrHandle<nsIAsyncBoolCallback> callback(
-      new nsMainThreadPtrHolder<nsIAsyncBoolCallback>("AsyncHasThirdPartyRoots",
-                                                      aCallback));
-
-  return NS_DispatchBackgroundTask(
-      NS_NewRunnableFunction(
-          "nsNSSCertificateDB::AsyncHasThirdPartyRoots",
-          [cb = std::move(callback), self = RefPtr{this}] {
-            bool hasThirdPartyRoots = [self]() -> bool {
-              nsTArray<RefPtr<nsIX509Cert>> certs;
-              nsresult rv = self->GetCerts(certs);
-              if (NS_FAILED(rv)) {
-                return false;
-              }
-
-              for (const auto& cert : certs) {
-                bool isTrusted = false;
-                nsresult rv =
-                    self->IsCertTrusted(cert, nsIX509Cert::CA_CERT,
-                                        nsIX509CertDB::TRUSTED_SSL, &isTrusted);
-                if (NS_FAILED(rv)) {
-                  return false;
-                }
-
-                if (!isTrusted) {
-                  continue;
-                }
-
-                bool isBuiltInRoot = false;
-                rv = IsCertBuiltInRoot(cert, isBuiltInRoot);
-                if (NS_FAILED(rv)) {
-                  return false;
-                }
-
-                if (!isBuiltInRoot) {
-                  return true;
-                }
-              }
-
-              return false;
-            }();
-
-            NS_DispatchToMainThread(NS_NewRunnableFunction(
-                "nsNSSCertificateDB::AsyncHasThirdPartyRoots callback",
-                [cb, hasThirdPartyRoots]() {
-                  cb->OnResult(hasThirdPartyRoots);
-                }));
-          }),
-      NS_DISPATCH_EVENT_MAY_BLOCK);
 }
 
 static mozilla::Result<VerifyUsage, nsresult> MapX509UsageToVerifierUsage(

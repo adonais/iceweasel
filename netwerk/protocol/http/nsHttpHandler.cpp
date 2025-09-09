@@ -2076,13 +2076,10 @@ nsresult nsHttpHandler::SetupChannelInternal(
 
   uint32_t caps = mCapabilities;
 
-  uint64_t channelId;
-  nsresult rv = NewChannelId(channelId);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = httpChannel->Init(uri, caps, proxyInfo, proxyResolveFlags, proxyURI,
-                         channelId, aLoadInfo->GetExternalContentPolicyType(),
-                         aLoadInfo);
+  uint64_t channelId = NewChannelId();
+  nsresult rv = httpChannel->Init(
+      uri, caps, proxyInfo, proxyResolveFlags, proxyURI, channelId,
+      aLoadInfo->GetExternalContentPolicyType(), aLoadInfo);
   if (NS_FAILED(rv)) return rv;
 
   httpChannel.forget(result);
@@ -2637,14 +2634,12 @@ void nsHttpHandler::ShutdownConnectionManager() {
   }
 }
 
-nsresult nsHttpHandler::NewChannelId(uint64_t& channelId) {
-  channelId =
-      // channelId is sometimes passed to JavaScript code (e.g. devtools),
-      // values should not exceed safe JavaScript integer range (2^53 – 1).
-      // Since the uniqueProcessId starts at 0, this should be safe to use
-      // unless we create more than 2^22 processes.
-      ((mUniqueProcessId << 31) & 0xFFFFFFFF80000000LL) | mNextChannelId++;
-  return NS_OK;
+uint64_t nsHttpHandler::NewChannelId() {
+  // channelId is sometimes passed to JavaScript code (e.g. devtools),
+  // values should not exceed safe JavaScript integer range (2^53 – 1).
+  // Since the uniqueProcessId starts at 0, this should be safe to use
+  // unless we create more than 2^22 processes.
+  return ((mUniqueProcessId << 31) & 0xFFFFFFFF80000000LL) | mNextChannelId++;
 }
 
 void nsHttpHandler::NotifyActiveTabLoadOptimization() {

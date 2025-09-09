@@ -7,6 +7,7 @@ package org.mozilla.fenix.components.menu.middleware
 import android.app.AlertDialog
 import android.app.PendingIntent
 import android.content.Intent
+import android.content.SharedPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -38,6 +39,7 @@ import org.mozilla.fenix.components.bookmarks.BookmarksUseCase
 import org.mozilla.fenix.components.menu.store.BookmarkState
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuState
+import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.utils.LastSavedFolderCache
 import org.mozilla.fenix.utils.Settings
 
@@ -231,6 +233,7 @@ class MenuDialogMiddleware(
             BookmarkAction.BookmarkAdded(
                 guidToEdit = guidToEdit,
                 parentNode = parentNode,
+                source = MetricsUtils.BookmarkAction.Source.MENU_DIALOG,
             ),
         )
 

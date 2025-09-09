@@ -3,20 +3,21 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "midirMIDIPlatformService.h"
+
+#include "MIDILog.h"
+#include "mozilla/Logging.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/Unused.h"
+#include "mozilla/dom/MIDIPlatformRunnables.h"
 #include "mozilla/dom/MIDIPort.h"
-#include "mozilla/dom/MIDITypes.h"
 #include "mozilla/dom/MIDIPortInterface.h"
 #include "mozilla/dom/MIDIPortParent.h"
-#include "mozilla/dom/MIDIPlatformRunnables.h"
+#include "mozilla/dom/MIDITypes.h"
 #include "mozilla/dom/MIDIUtils.h"
 #include "mozilla/dom/midi/midir_impl_ffi_generated.h"
 #include "mozilla/ipc/BackgroundParent.h"
-#include "mozilla/Unused.h"
 #include "nsIThread.h"
-#include "mozilla/Logging.h"
-#include "MIDILog.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

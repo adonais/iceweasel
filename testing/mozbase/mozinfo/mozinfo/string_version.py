@@ -52,7 +52,7 @@ class StringVersion(str):
 
     def __hash__(self):
         # pylint --py3k: W1641
-        return hash(self.version)
+        return hash("".join(self.version))
 
     # operator overloads
     def __eq__(self, other):

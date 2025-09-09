@@ -150,7 +150,7 @@ search.engine.default:
     description: |
       A path relating to where the search engine was installed/loaded from.
       For example:
-        `[app]appDefault` for an app-provided engine.
+        `[app]appDefault` for a config search engine.
         `[addon]<extension id>` for a WebExtension-based engine.
         `[https]developer.mozilla.org/mdn-web-docs.xml` for an OpenSearch-based
         engine.
@@ -394,7 +394,7 @@ search.engine.private:
     description: |
       A path relating to where the search engine was installed/loaded from.
       For example:
-        `[app]appDefault` for an app-provided engine.
+        `[app]appDefault` for a config search engine.
         `[addon]<extension id>` for a WebExtension-based engine.
         `[https]developer.mozilla.org/mdn-web-docs.xml` for an OpenSearch-based
         engine.
@@ -706,7 +706,7 @@ search.suggestions:
     type: labeled_counter
     description: >
       Counts the number of successful search suggestion fetches per search
-      engine. Only records app provided engines using their short IDs
+      engine. Only records config engines using their short IDs
       ('id', not 'identifier') as labels.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1957950
@@ -721,7 +721,7 @@ search.suggestions:
     type: labeled_counter
     description: >
       Counts the number of aborted search suggestion fetches per search
-      engine. Only records app provided engines using their short IDs
+      engine. Only records config engines using their short IDs
       ('id', not 'identifier') as labels.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1957950
@@ -736,7 +736,7 @@ search.suggestions:
     type: labeled_counter
     description: >
       Counts the number of failed search suggestion fetches per search
-      engine. Only records app provided engines using their short IDs
+      engine. Only records config engines using their short IDs
       ('id', not 'identifier') as labels.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1957950

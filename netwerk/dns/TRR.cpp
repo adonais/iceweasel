@@ -330,7 +330,10 @@ nsresult TRR::SendHTTPRequest() {
   rv = internalChannel->SetIsTRRServiceChannel(true);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (UseDefaultServer() && StaticPrefs::network_trr_async_connInfo()) {
+  // When using OHTTP, the we can't use cached connection info, since we
+  // need to connect to the relay, not the TRR server.
+  if (UseDefaultServer() && !useOHTTP &&
+      StaticPrefs::network_trr_async_connInfo()) {
     RefPtr<nsHttpConnectionInfo> trrConnInfo =
         TRRService::Get()->TRRConnectionInfo();
     if (trrConnInfo) {
@@ -341,7 +344,10 @@ nsresult TRR::SendHTTPRequest() {
         LOG(("TRR::SendHTTPRequest use conn info:%s\n",
              trrConnInfo->HashKey().get()));
       } else {
-        MOZ_DIAGNOSTIC_CRASH("host not equal to trrConnInfo origin");
+        // The connection info is inconsistent. Avoid using it and generate a
+        // new one.
+        TRRService::Get()->SetDefaultTRRConnectionInfo(nullptr);
+        TRRService::Get()->InitTRRConnectionInfo(true);
       }
     } else {
       TRRService::Get()->InitTRRConnectionInfo();

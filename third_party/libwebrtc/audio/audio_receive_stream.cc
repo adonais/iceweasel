@@ -101,7 +101,7 @@ AudioReceiveStreamImpl::AudioReceiveStreamImpl(
     PacketRouter* packet_router,
     NetEqFactory* neteq_factory,
     const webrtc::AudioReceiveStreamInterface::Config& config,
-    const rtc::scoped_refptr<webrtc::AudioState>& audio_state)
+    const scoped_refptr<webrtc::AudioState>& audio_state)
     : AudioReceiveStreamImpl(
           env,
           packet_router,
@@ -114,7 +114,7 @@ AudioReceiveStreamImpl::AudioReceiveStreamImpl(
     const Environment& /* env */,
     PacketRouter* packet_router,
     const webrtc::AudioReceiveStreamInterface::Config& config,
-    const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
+    const scoped_refptr<webrtc::AudioState>& audio_state,
     std::unique_ptr<voe::ChannelReceiveInterface> channel_receive)
     : config_(config),
       audio_state_(audio_state),
@@ -214,7 +214,7 @@ bool AudioReceiveStreamImpl::IsRunning() const {
 }
 
 void AudioReceiveStreamImpl::SetDepacketizerToDecoderFrameTransformer(
-    rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {
+    scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   channel_receive_->SetDepacketizerToDecoderFrameTransformer(
       std::move(frame_transformer));
@@ -257,7 +257,7 @@ void AudioReceiveStreamImpl::SetNonSenderRttMeasurement(bool enabled) {
 }
 
 void AudioReceiveStreamImpl::SetFrameDecryptor(
-    rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor) {
+    scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor) {
   // TODO(bugs.webrtc.org/11993): This is called via WebRtcAudioReceiveStream,
   // expect to be called on the network thread.
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
@@ -431,10 +431,7 @@ bool AudioReceiveStreamImpl::SetMinimumPlayoutDelay(int delay_ms) {
 }
 
 void AudioReceiveStreamImpl::DeliverRtcp(const uint8_t* packet, size_t length) {
-  // TODO(solenberg): Tests call this function on a network thread, libjingle
-  // calls on the worker thread. We should move towards always using a network
-  // thread. Then this check can be enabled.
-  // RTC_DCHECK(!thread_checker_.IsCurrent());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   channel_receive_->ReceivedRTCPPacket(packet, length);
 }
 
@@ -452,7 +449,6 @@ void AudioReceiveStreamImpl::SetLocalSsrc(uint32_t local_ssrc) {
 
 uint32_t AudioReceiveStreamImpl::local_ssrc() const {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
-  RTC_DCHECK_EQ(config_.rtp.local_ssrc, channel_receive_->GetLocalSsrc());
   return config_.rtp.local_ssrc;
 }
 

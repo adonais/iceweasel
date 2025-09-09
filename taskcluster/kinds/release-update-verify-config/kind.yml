@@ -13,6 +13,8 @@ task-defaults:
     name: update-verify-config
     run-on-projects: []  # to make sure this never runs as part of CI
     shipping-phase: promote
+    index:
+        product: firefox
     worker-type: b-linux-gcp
     worker:
         docker-image:

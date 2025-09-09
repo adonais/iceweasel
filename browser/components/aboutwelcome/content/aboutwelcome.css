@@ -1045,7 +1045,7 @@ html {
 .onboardingContainer {
   --grey-subtitle-1: light-dark(#696977, #FFF);
   --mr-welcome-background-color: light-dark(#F8F6F4, #333336);
-  --mr-screen-heading-color: var(--in-content-text-color);
+  --mr-screen-heading-color: var(--text-color);
   --mr-welcome-background-gradient: linear-gradient(
     0deg,
     light-dark(rgba(144, 89, 255, 20%), rgba(144, 89, 255, 30%)) 0%,
@@ -1085,7 +1085,7 @@ html {
   .onboardingContainer {
     --mr-screen-background-color: buttontext;
     --mr-screen-heading-color: buttonface;
-    background-color: var(--in-content-page-background);
+    background-color: var(--background-color-canvas);
   }
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -1124,7 +1124,7 @@ html {
   position: relative;
 }
 .onboardingContainer .main-content {
-  background-color: var(--in-content-page-background);
+  background-color: var(--background-color-canvas);
   border-radius: 20px;
   box-shadow: 0 2px 14px 0 rgba(0, 0, 0, 0.2);
   display: flex;
@@ -1137,7 +1137,7 @@ html {
 }
 @media (prefers-contrast) {
   .onboardingContainer .main-content {
-    border: 1px solid var(--in-content-page-color);
+    border: 1px solid var(--text-color);
   }
 }
 .onboardingContainer .main-content.no-steps {
@@ -1164,24 +1164,24 @@ html {
   overflow: hidden;
 }
 .onboardingContainer .screen.light-text {
-  --in-content-page-color: rgb(251, 251, 254);
-  --in-content-primary-button-text-color: rgb(43, 42, 51);
-  --in-content-primary-button-text-color-hover: rgb(43, 42, 51);
-  --in-content-primary-button-background: rgb(0, 221, 255);
-  --in-content-primary-button-background-hover: rgb(128, 235, 255);
-  --in-content-primary-button-background-active: rgb(170, 242, 255);
-  --in-content-button-text-color: var(--in-content-page-color);
+  --text-color: rgb(251, 251, 254);
+  --button-text-color-primary: rgb(43, 42, 51);
+  --button-text-color-primary-hover: rgb(43, 42, 51);
+  --button-background-color-primary: rgb(0, 221, 255);
+  --button-background-color-primary-hover: rgb(128, 235, 255);
+  --button-background-color-primary-active: rgb(170, 242, 255);
+  --button-text-color: var(--text-color);
 }
 .onboardingContainer .screen.dark-text {
-  --in-content-page-color: rgb(21, 20, 26);
-  --in-content-primary-button-text-color: rgb(251, 251, 254);
-  --in-content-primary-button-text-color-hover: rgb(251, 251, 254);
-  --in-content-primary-button-background: #0061E0;
-  --in-content-primary-button-background-hover: #0250BB;
-  --in-content-primary-button-background-active: #053E94;
-  --in-content-primary-button-border-color: transparent;
-  --in-content-primary-button-border-hover: transparent;
-  --in-content-button-text-color: var(--in-content-page-color);
+  --text-color: rgb(21, 20, 26);
+  --button-text-color-primary: rgb(251, 251, 254);
+  --button-text-color-primary-hover: rgb(251, 251, 254);
+  --button-background-color-primary: #0061E0;
+  --button-background-color-primary-hover: #0250BB;
+  --button-background-color-primary-active: #053E94;
+  --button-border-color-primary: transparent;
+  --button-border-color-primary-hover: transparent;
+  --button-text-color: var(--text-color);
 }
 .onboardingContainer .screen:dir(rtl) {
   transform: rotateY(180deg);
@@ -1248,23 +1248,23 @@ html {
   background-image: url("chrome://browser/skin/back.svg");
 }
 .onboardingContainer .screen[pos=center].with-video .main-content .secondary-cta .secondary {
-  background-color: var(--in-content-button-background);
-  border: 1px solid var(--in-content-button-border-color);
+  background-color: var(--button-background-color);
+  border: var(--button-border);
   line-height: 12px;
   font-size: 0.72em;
   font-weight: 600;
   padding: 8px 16px;
   text-decoration: none;
   cursor: default;
-  color: var(--in-content-button-text-color);
+  color: var(--button-text-color);
 }
 .onboardingContainer .screen[pos=center].with-video .main-content .secondary-cta .secondary:hover, .onboardingContainer .screen[pos=center].with-video .main-content .secondary-cta .secondary[open] {
-  background-color: var(--in-content-button-background-hover);
-  color: var(--in-content-button-text-color-hover);
+  background-color: var(--button-background-color-hover);
+  color: var(--button-text-color-hover);
 }
 .onboardingContainer .screen[pos=center].with-video .main-content .secondary-cta .secondary:hover:active, .onboardingContainer .screen[pos=center].with-video .main-content .secondary-cta .secondary[open]:active {
-  background-color: var(--in-content-button-background-active);
-  color: var(--in-content-button-text-color-active);
+  background-color: var(--button-background-color-active);
+  color: var(--button-text-color-active);
 }
 .onboardingContainer .screen[pos=center].addons-picker {
   justify-content: center;
@@ -1276,7 +1276,7 @@ html {
   height: 550px;
 }
 .onboardingContainer .screen[pos=center].addons-picker .main-content {
-  background-color: var(--in-content-page-background);
+  background-color: var(--background-color-canvas);
   border-radius: 8px;
   box-shadow: 0 2px 14px rgba(58, 57, 68, 0.2);
   overflow: hidden;
@@ -1328,7 +1328,7 @@ html {
   }
 }
 .onboardingContainer .screen[pos=center].addons-picker .main-content .additional-cta.secondary:hover {
-  background-color: var(--in-content-button-background-hover);
+  background-color: var(--button-background-color-hover);
 }
 .onboardingContainer .screen[pos=center].addons-picker .main-content .secondary-cta {
   justify-content: end;
@@ -1348,23 +1348,23 @@ html {
   background-image: url("chrome://browser/skin/back.svg");
 }
 .onboardingContainer .screen[pos=center].addons-picker .main-content .secondary-cta .secondary {
-  background-color: var(--in-content-button-background);
-  border: 1px solid var(--in-content-button-border-color);
+  background-color: var(--button-background-color);
+  border: var(--button-border);
   line-height: 12px;
   font-size: 0.72em;
   font-weight: 600;
   padding: 8px 16px;
   text-decoration: none;
   cursor: default;
-  color: var(--in-content-button-text-color);
+  color: var(--button-text-color);
 }
 .onboardingContainer .screen[pos=center].addons-picker .main-content .secondary-cta .secondary:hover, .onboardingContainer .screen[pos=center].addons-picker .main-content .secondary-cta .secondary[open] {
-  background-color: var(--in-content-button-background-hover);
-  color: var(--in-content-button-text-color-hover);
+  background-color: var(--button-background-color-hover);
+  color: var(--button-text-color-hover);
 }
 .onboardingContainer .screen[pos=center].addons-picker .main-content .secondary-cta .secondary:hover:active, .onboardingContainer .screen[pos=center].addons-picker .main-content .secondary-cta .secondary[open]:active {
-  background-color: var(--in-content-button-background-active);
-  color: var(--in-content-button-text-color-active);
+  background-color: var(--button-background-color-active);
+  color: var(--button-text-color-active);
 }
 .onboardingContainer .screen[pos=center].addons-picker .addon-container {
   display: flex;
@@ -1401,7 +1401,7 @@ html {
 .onboardingContainer .screen[pos=center].addons-picker .loader {
   width: 1em;
   height: 1em;
-  border: 3px solid var(--in-content-primary-button-text-color);
+  border: 3px solid var(--button-text-color-primary);
   border-bottom-color: transparent;
   border-radius: 50%;
   box-sizing: border-box;
@@ -1598,7 +1598,7 @@ html {
   }
 }
 .onboardingContainer .screen[pos=split] .section-main .main-content .action-buttons .additional-cta-box .additional-cta.secondary:hover, .onboardingContainer .screen[pos=split] .section-main .main-content .action-buttons .additional-cta-box .additional-cta.secondary[open] {
-  background-color: var(--in-content-button-background-hover);
+  background-color: var(--button-background-color-hover);
 }
 .onboardingContainer .screen[pos=split] .section-main .main-content .action-buttons.additional-cta-container {
   flex-wrap: nowrap;
@@ -1610,8 +1610,8 @@ html {
   inset-inline-end: 0;
 }
 .onboardingContainer .screen[pos=split] .section-main .main-content .action-buttons .secondary-cta .secondary {
-  background-color: var(--in-content-button-background);
-  border: 1px solid var(--in-content-button-border-color);
+  background-color: var(--button-background-color);
+  border: var(--button-border);
   line-height: 12px;
   font-size: 0.72em;
   font-weight: 600;
@@ -1620,12 +1620,12 @@ html {
   cursor: default;
 }
 .onboardingContainer .screen[pos=split] .section-main .main-content .action-buttons .secondary-cta .secondary:hover, .onboardingContainer .screen[pos=split] .section-main .main-content .action-buttons .secondary-cta .secondary[open] {
-  background-color: var(--in-content-button-background-hover);
-  color: var(--in-content-button-text-color-hover);
+  background-color: var(--button-background-color-hover);
+  color: var(--button-text-color-hover);
 }
 .onboardingContainer .screen[pos=split] .section-main .main-content .action-buttons .secondary-cta .secondary:hover:active, .onboardingContainer .screen[pos=split] .section-main .main-content .action-buttons .secondary-cta .secondary[open]:active {
-  background-color: var(--in-content-button-background-active);
-  color: var(--in-content-button-text-color-active);
+  background-color: var(--button-background-color-active);
+  color: var(--button-text-color-active);
 }
 .onboardingContainer .screen[pos=split] .section-main .main-content .action-buttons .secondary-cta .arrow-icon {
   -moz-context-properties: fill;
@@ -1644,7 +1644,7 @@ html {
 .onboardingContainer .screen[pos=split] .section-main .main-content .action-buttons .loader {
   width: 1em;
   height: 1em;
-  border: 3px solid var(--in-content-primary-button-text-color);
+  border: 3px solid var(--button-text-color-primary);
   border-bottom-color: transparent;
   border-radius: 50%;
   box-sizing: border-box;
@@ -1709,11 +1709,11 @@ html {
 }
 @media (prefers-contrast) {
   .onboardingContainer .screen[pos=split] .section-main .main-content {
-    border: 1px solid var(--in-content-page-color);
+    border: 1px solid var(--text-color);
   }
   .onboardingContainer .screen[pos=split] .section-main .main-content .steps.progress-bar {
-    border-top: 1px solid var(--in-content-page-color);
-    background-color: var(--in-content-page-background);
+    border-top: 1px solid var(--text-color);
+    background-color: var(--background-color-canvas);
   }
   .onboardingContainer .screen[pos=split] .section-main .main-content .steps.progress-bar .indicator {
     background-color: var(--color-accent-primary);
@@ -1979,15 +1979,15 @@ html {
   padding-inline: 16px;
   font-size: 12px;
   padding-block: 0;
-  background-color: var(--in-content-button-background);
-  color: var(--in-content-button-text-color);
+  background-color: var(--button-background-color);
+  color: var(--button-text-color);
   min-width: 0;
 }
 .onboardingContainer .screen[pos=split][fullscreen] .addons-picker-container .addon-container .addon-rows-container .addon-row .install-button-wrapper button:hover {
-  background-color: var(--in-content-button-background-hover);
+  background-color: var(--button-background-color-hover);
 }
 .onboardingContainer .screen[pos=split][fullscreen] .addons-picker-container .addon-container .addon-rows-container .addon-row .install-button-wrapper button:active {
-  background-color: var(--in-content-button-background-active);
+  background-color: var(--button-background-color-active);
 }
 .onboardingContainer .screen[pos=split][fullscreen] .addons-picker-container .addon-container .addon-rows-container .addon-row:not(:last-child) {
   margin-block: 0 12px;
@@ -2036,7 +2036,7 @@ html {
 .onboardingContainer .screen[pos=split][fullscreen] .addons-picker-container .loader {
   width: 1em;
   height: 1em;
-  border: 3px solid var(--in-content-primary-button-text-color);
+  border: 3px solid var(--button-text-color-primary);
   border-bottom-color: transparent;
   border-radius: 50%;
   box-sizing: border-box;
@@ -2573,7 +2573,7 @@ html {
 }
 .onboardingContainer .welcome-text h1,
 .onboardingContainer .welcome-text h2 {
-  color: var(--in-content-page-color);
+  color: var(--text-color);
   line-height: 1.5;
 }
 .onboardingContainer .welcome-text h1 {
@@ -2687,7 +2687,7 @@ html {
 }
 .onboardingContainer .tiles-single-select-section:hover, .onboardingContainer .tiles-single-select-section:active, .onboardingContainer .tiles-single-select-section:focus-within {
   border-radius: 8px;
-  outline: 2px solid var(--in-content-primary-button-background);
+  outline: 2px solid var(--button-background-color-primary);
 }
 .onboardingContainer .tiles-single-select-section.single-select, .onboardingContainer .tiles-single-select-section.theme {
   flex-direction: row;
@@ -2705,11 +2705,11 @@ html {
   outline: none;
 }
 .onboardingContainer .tiles-single-select-section.single-select .select-item:has(.input:focus), .onboardingContainer .tiles-single-select-section.theme .select-item:has(.input:focus) {
-  outline: 2px solid var(--in-content-primary-button-background);
+  outline: 2px solid var(--button-background-color-primary);
   outline-offset: 5px;
 }
 .onboardingContainer .tiles-single-select-section.single-select .select-item:has(.selected), .onboardingContainer .tiles-single-select-section.theme .select-item:has(.selected) {
-  border: 3px solid var(--in-content-primary-button-background);
+  border: 3px solid var(--button-background-color-primary);
   border-radius: var(--border-radius-large);
 }
 .onboardingContainer .tiles-single-select-section.single-select .select-item:hover, .onboardingContainer .tiles-single-select-section.theme .select-item:hover {
@@ -2745,7 +2745,7 @@ html {
   transition: var(--transition);
 }
 .onboardingContainer .tiles-single-select-section.single-select .select-item:has(.input:focus), .onboardingContainer .tiles-single-select-section.theme .select-item:has(.input:focus) {
-  outline: 2px solid var(--in-content-primary-button-background);
+  outline: 2px solid var(--button-background-color-primary);
   outline-offset: 2px;
 }
 .onboardingContainer .tiles-single-select-section .select-item {
@@ -2755,7 +2755,6 @@ html {
   flex: 1;
   padding: 0;
   min-width: 50px;
-  color: #000;
   box-shadow: none;
   border-radius: 4px;
   cursor: pointer;
@@ -2789,7 +2788,6 @@ html {
 }
 .onboardingContainer .tiles-single-select-section .select-item .text {
   display: flex;
-  color: var(--in-content-page-color);
   font-size: 14px;
   font-weight: normal;
   line-height: 20px;
@@ -2826,7 +2824,7 @@ html {
   text-align: initial;
   transition: var(--transition);
   z-index: 1;
-  color: var(--in-content-page-color);
+  color: var(--text-color);
 }
 @media not (prefers-contrast) {
   .onboardingContainer .multi-select-container {
@@ -2834,7 +2832,7 @@ html {
   }
 }
 .onboardingContainer .multi-select-container #multi-stage-multi-select-label {
-  color: var(--in-content-page-color);
+  color: var(--text-color);
   line-height: 1.5;
   font-size: 16px;
   font-weight: normal;
@@ -2934,7 +2932,7 @@ html {
 @media (prefers-contrast: no-preference) {
   .onboardingContainer #content-tiles-container button.tile-header,
   .onboardingContainer button.content-tiles-header {
-    background-color: var(--in-content-page-background);
+    background-color: var(--background-color-canvas);
     border-color: var(--in-content-border-color);
   }
 }
@@ -2969,7 +2967,7 @@ html {
 }
 @media (prefers-contrast) {
   .onboardingContainer button.content-tiles-header {
-    color: var(--in-content-page-color);
+    color: var(--text-color);
   }
 }
 .onboardingContainer button.content-tiles-header .arrow-icon {
@@ -3141,7 +3139,7 @@ html {
   right: auto;
 }
 .onboardingContainer .dismiss-button.with-background {
-  background-color: var(--in-content-page-background);
+  background-color: var(--background-color-canvas);
 }
 .onboardingContainer .dismiss-button.with-background:hover {
   background-color: var(--button-background-color-hover);
@@ -3225,13 +3223,13 @@ html {
   margin-inline-start: 4px;
   background: var(--grey-subtitle-1);
   border-radius: 5px;
-  border: 3px solid var(--in-content-button-text-color);
+  border: 3px solid var(--button-text-color);
   opacity: 0.35;
   box-sizing: inherit;
 }
 .onboardingContainer .steps .indicator.current {
   opacity: 1;
-  border-color: var(--in-content-primary-button-background);
+  border-color: var(--button-background-color-primary);
 }
 .onboardingContainer .steps .indicator.current:last-of-type:first-of-type {
   opacity: 0;
@@ -3240,7 +3238,7 @@ html {
   height: 6px;
   padding-block: 0;
   margin-block: 42px 0;
-  background-color: color-mix(in srgb, var(--in-content-button-text-color) 25%, transparent);
+  background-color: color-mix(in srgb, var(--button-text-color) 25%, transparent);
   justify-content: start;
   opacity: 1;
   transition: none;
@@ -3249,7 +3247,7 @@ html {
   width: 100%;
   height: 100%;
   margin-inline: -1px;
-  background-color: var(--in-content-primary-button-background);
+  background-color: var(--button-background-color-primary);
   border: 0;
   border-radius: 0;
   opacity: 1;
@@ -3290,8 +3288,8 @@ html {
   margin-top: 24px;
 }
 .onboardingContainer .secondary {
-  background-color: var(--in-content-button-background);
-  color: var(--in-content-button-text-color);
+  background-color: var(--button-background-color);
+  color: var(--button-text-color);
 }
 .onboardingContainer .split-button-container,
 .onboardingContainer .screen .action-buttons .split-button-container {
@@ -3350,7 +3348,7 @@ html {
 .onboardingContainer .solid-L {
   background-image: url("chrome://activity-stream/content/data/content/assets/noodle-solid-L.svg");
   -moz-context-properties: fill;
-  fill: var(--in-content-page-background);
+  fill: var(--background-color-canvas);
   display: none;
 }
 .onboardingContainer .purple-C {

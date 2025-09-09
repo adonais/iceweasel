@@ -73,8 +73,8 @@ pub enum UrlMetric {
 #[derive(Clone, Debug)]
 pub struct UrlMetricIpc;
 
-crate::define_metric_metadata_getter!(UrlMetric, URL_MAP);
-crate::define_metric_namer!(UrlMetric, PARENT_ONLY);
+define_metric_metadata_getter!(UrlMetric, URL_MAP);
+define_metric_namer!(UrlMetric, PARENT_ONLY);
 
 impl UrlMetric {
     /// Create a new Url metric.

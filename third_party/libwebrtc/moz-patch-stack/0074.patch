@@ -42,7 +42,7 @@ index 0ec0da3933..b802fe580c 100644
      return -1;
  
 diff --git a/modules/video_capture/linux/device_info_pipewire.h b/modules/video_capture/linux/device_info_pipewire.h
-index 4da0c7a90b..8a33d75892 100644
+index 0187e47e5f..1e75f35909 100644
 --- a/modules/video_capture/linux/device_info_pipewire.h
 +++ b/modules/video_capture/linux/device_info_pipewire.h
 @@ -29,7 +29,8 @@ class DeviceInfoPipeWire : public DeviceInfoImpl {

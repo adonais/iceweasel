@@ -6,19 +6,8 @@
 
 #include "ServiceWorkerContainer.h"
 
-#include "nsContentSecurityManager.h"
-#include "nsContentUtils.h"
-#include "nsIServiceWorkerManager.h"
-#include "nsIScriptError.h"
-#include "nsThreadUtils.h"
-#include "nsNetUtil.h"
-#include "nsPIDOMWindow.h"
-#include "mozilla/Components.h"
-
-#include "nsCycleCollectionParticipant.h"
-#include "nsGlobalWindowInner.h"
-#include "nsServiceManagerUtils.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/Components.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/StaticPrefs_privacy.h"
@@ -41,6 +30,16 @@
 #include "mozilla/dom/ipc/StructuredCloneData.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
+#include "nsContentSecurityManager.h"
+#include "nsContentUtils.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsGlobalWindowInner.h"
+#include "nsIScriptError.h"
+#include "nsIServiceWorkerManager.h"
+#include "nsNetUtil.h"
+#include "nsPIDOMWindow.h"
+#include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
 
 // This is defined to something else on Windows
 #ifdef DispatchMessage

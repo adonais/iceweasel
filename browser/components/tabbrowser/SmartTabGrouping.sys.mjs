@@ -108,6 +108,7 @@ export const SMART_TAB_GROUPING_CONFIG = {
     taskName: ML_TASK_FEATURE_EXTRACTION,
     featureId: "smart-tab-embedding",
     backend: "onnx-native",
+    fallbackBackend: "onnx",
   },
   topicGeneration: {
     dtype: "q8",
@@ -115,6 +116,7 @@ export const SMART_TAB_GROUPING_CONFIG = {
     taskName: ML_TASK_TEXT2TEXT,
     featureId: "smart-tab-topic",
     backend: "onnx-native",
+    fallbackBackend: "onnx",
   },
   dataConfig: {
     titleKey: "label",
@@ -711,6 +713,7 @@ export class SmartTabGroupingManager {
       modelId,
       modelRevision,
       backend,
+      fallbackBackend,
     } = engineConfig;
     let initData = {
       featureId,
@@ -722,9 +725,22 @@ export class SmartTabGroupingManager {
       modelRevision,
       backend,
     };
-
     initData = SmartTabGroupingManager.getUpdatedInitData(initData, featureId);
-    return await createEngine(initData, progressCallback);
+    let engine;
+    try {
+      engine = await createEngine(initData, progressCallback);
+      this.backend = backend;
+    } catch (e) {
+      engine = await createEngine(
+        {
+          ...initData,
+          backend: fallbackBackend,
+        },
+        progressCallback
+      );
+      this.backend = fallbackBackend;
+    }
+    return engine;
   }
 
   /**
@@ -1228,6 +1244,7 @@ export class SmartTabGroupingManager {
       model_revision: topicEngineConfig.modelRevision || "",
       id,
       label_reason: labelReason,
+      backend: this.backend || "onnx-native",
     });
     this.labelReason = LABEL_REASONS.DEFAULT;
   }
@@ -1264,6 +1281,7 @@ export class SmartTabGroupingManager {
       tabs_removed: numTabsRemoved,
       model_revision: embeddingEngineConfig.modelRevision || "",
       id,
+      backend: this.backend || "onnx-native",
     });
   }
 

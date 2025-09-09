@@ -8,9 +8,9 @@
 #define mozilla_dom_HTMLIFrameElement_h
 
 #include "mozilla/Attributes.h"
+#include "nsDOMTokenList.h"
 #include "nsGenericHTMLElement.h"
 #include "nsGenericHTMLFrameElement.h"
-#include "nsDOMTokenList.h"
 
 namespace mozilla::dom {
 

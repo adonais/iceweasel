@@ -5,6 +5,8 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WebIDLGlobalNameHash.h"
+
+#include "WrapperFactory.h"
 #include "js/Class.h"
 #include "js/GCAPI.h"
 #include "js/Id.h"
@@ -25,7 +27,6 @@
 #include "mozilla/dom/RegisterBindings.h"
 #include "nsGlobalWindowInner.h"
 #include "nsTHashtable.h"
-#include "WrapperFactory.h"
 
 namespace mozilla::dom {
 

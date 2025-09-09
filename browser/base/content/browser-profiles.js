@@ -106,7 +106,7 @@ var gProfiles = {
     );
     let avatarURL =
       await SelectableProfileService.currentProfile.getAvatarURL(16);
-    profilesButton.setAttribute("image", `${avatarURL}`);
+    profilesButton.setAttribute("image", avatarURL);
   },
 
   /**
@@ -114,22 +114,25 @@ var gProfiles = {
    */
   async onPopupShowing() {
     let menuPopup = document.getElementById("menu_ProfilesPopup");
-    while (menuPopup.hasChildNodes()) {
-      menuPopup.firstChild.remove();
-    }
-
     let profiles = await SelectableProfileService.getAllProfiles();
     let currentProfile = SelectableProfileService.currentProfile;
-
+    let insertionPoint = document.getElementById("menu_newProfile");
+    let existingItems = [
+      ...menuPopup.querySelectorAll(":scope > menuitem[profileid]"),
+    ];
     for (let profile of profiles) {
-      let menuitem = document.createXULElement("menuitem");
+      let menuitem = existingItems.shift();
+      let isNewItem = !menuitem;
+      if (isNewItem) {
+        menuitem = document.createXULElement("menuitem");
+        menuitem.classList.add("menuitem-iconic", "menuitem-iconic-profile");
+        menuitem.setAttribute("command", "Profiles:LaunchProfile");
+      }
       let { themeBg, themeFg } = profile.theme;
       menuitem.setAttribute("profileid", profile.id);
-      menuitem.setAttribute("command", "Profiles:LaunchProfile");
+      menuitem.setAttribute("image", await profile.getAvatarURL(48));
       menuitem.style.setProperty("--menu-profiles-theme-bg", themeBg);
       menuitem.style.setProperty("--menu-profiles-theme-fg", themeFg);
-      menuitem.style.listStyleImage = `url(${await profile.getAvatarURL(48)})`;
-      menuitem.classList.add("menuitem-iconic", "menuitem-iconic-profile");
 
       if (profile.id === currentProfile.id) {
         menuitem.classList.add("current");
@@ -139,31 +142,20 @@ var gProfiles = {
           JSON.stringify({ profileName: profile.name })
         );
       } else {
+        menuitem.classList.remove("current");
+        menuitem.removeAttribute("data-l10n-id");
+        menuitem.removeAttribute("data-l10n-args");
         menuitem.setAttribute("label", profile.name);
       }
 
-      menuPopup.appendChild(menuitem);
+      if (isNewItem) {
+        menuPopup.insertBefore(menuitem, insertionPoint);
+      }
     }
-
-    let newProfile = document.createXULElement("menuitem");
-    newProfile.id = "menu_newProfile";
-    newProfile.className = "menuitem-iconic";
-    newProfile.setAttribute("command", "Profiles:CreateProfile");
-    newProfile.setAttribute("data-l10n-id", "menu-profiles-new-profile");
-    menuPopup.appendChild(newProfile);
-
-    let separator = document.createXULElement("menuseparator");
-    separator.id = "profilesSeparator";
-    menuPopup.appendChild(separator);
-
-    let manageProfiles = document.createXULElement("menuitem");
-    manageProfiles.id = "menu_manageProfiles";
-    manageProfiles.setAttribute("command", "Profiles:ManageProfiles");
-    manageProfiles.setAttribute(
-      "data-l10n-id",
-      "menu-profiles-manage-profiles"
-    );
-    menuPopup.appendChild(manageProfiles);
+    // If there's any old item to remove, do so now.
+    for (let remaining of existingItems) {
+      remaining.remove();
+    }
   },
 
   manageProfiles() {
@@ -180,13 +172,13 @@ var gProfiles = {
     SelectableProfileService.createNewProfile();
   },
 
-  async updateView(target) {
-    await this.populateSubView();
+  updateView(target) {
+    this.populateSubView();
     PanelUI.showSubView("PanelUI-profiles", target);
   },
 
-  async updateFxAView(target) {
-    await this.populateSubView();
+  updateFxAView(target) {
+    this.populateSubView();
     PanelUI.showSubView("PanelUI-profiles", target);
   },
 
@@ -349,7 +341,7 @@ var gProfiles = {
       let { themeFg, themeBg } = profile.theme;
       button.style.setProperty("--appmenu-profiles-theme-bg", themeBg);
       button.style.setProperty("--appmenu-profiles-theme-fg", themeFg);
-      button.setAttribute("image", `${await profile.getAvatarURL(16)}`);
+      button.setAttribute("image", await profile.getAvatarURL(16));
 
       profilesList.appendChild(button);
     }

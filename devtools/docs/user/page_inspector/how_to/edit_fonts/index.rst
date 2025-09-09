@@ -5,10 +5,6 @@ Edit fonts
 
 This article provides a tour of the Font tools available in the Firefox DevTools. This tool contains several useful features for viewing and manipulating fonts applied to any document loaded in the browser including inspection of all fonts applied to the page, and precise adjustment of variable font axis values.
 
-.. note::
-
-  The updated Font tools as shown in this article are available in Firefox 63 onwards; if you are using an older version of Firefox the tools will not look or behave quite the same, but they will be similar (most notably the Font Editor will not be available).
-
 
 The Fonts tab
 *************
@@ -26,8 +22,8 @@ The Fonts tab is located on the right-hand side of the :doc:`Page Inspector <../
 The Fonts tab has three major sections:
 
 - "Fonts used" by the currently inspected element.
-- The new Fonts Editor. In Firefox 61 and 62, this section does not exist.
-- "All fonts on page" — This section lists all of the fonts in use on the page. In Firefox 61 and 62, this area is labeled "Other fonts in page" and doesn't include the fonts mentioned in the "Fonts used" section.
+- The Fonts Editor.
+- "All fonts on page" — This section lists all of the fonts in use on the page.
 
 
 Fonts used
@@ -52,7 +48,7 @@ Fonts will be included in this section for one of the following reasons:
 Fonts Editor
 ************
 
-Firefox 63 adds the Font Editor — a new area below "Fonts used" with additional controls for editing the fonts’ characteristics.
+The Font Editor has additional controls for editing the fonts’ characteristics.
 
 .. image:: fonts-editor-closeup-63-cropped.png
   :class: border
@@ -152,7 +148,7 @@ Each font listed in this section shows you:
 Variable font support in Firefox Developer Tools
 ************************************************
 
-Firefox 62 added support for variable fonts and Firefox 63 features support for editing the properties of variable fonts in the Font Editor.
+You can editing the properties of variable fonts in the Font Editor.
 
 What are variable fonts?
 ------------------------

@@ -31,10 +31,12 @@ namespace layers {
 class GpuFence;
 class NativeLayer;
 class NativeLayerCA;
+class NativeLayerRemoteMac;
 class NativeLayerWayland;
 class NativeLayerRootCA;
 class NativeLayerRootWayland;
 class NativeLayerRootSnapshotter;
+class NativeLayerWayland;
 class SurfacePoolHandle;
 
 // NativeLayerRoot and NativeLayer allow building up a flat layer "tree" of
@@ -59,6 +61,8 @@ class NativeLayerRoot {
       gfx::DeviceColor aColor) {
     return nullptr;
   }
+
+  virtual void LayerDestroyed(NativeLayer* aLayer) {}
 
   virtual void AppendLayer(NativeLayer* aLayer) = 0;
   virtual void RemoveLayer(NativeLayer* aLayer) = 0;
@@ -131,6 +135,7 @@ class NativeLayer {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NativeLayer)
 
   virtual NativeLayerCA* AsNativeLayerCA() { return nullptr; }
+  virtual NativeLayerRemoteMac* AsNativeLayerRemoteMac() { return nullptr; }
   virtual NativeLayerWayland* AsNativeLayerWayland() { return nullptr; }
 
   // The size and opaqueness of a layer are supplied during layer creation and
@@ -175,6 +180,9 @@ class NativeLayer {
   virtual bool SurfaceIsFlipped() = 0;
 
   virtual void SetSamplingFilter(gfx::SamplingFilter aSamplingFilter) = 0;
+  virtual gfx::SamplingFilter SamplingFilter() {
+    return gfx::SamplingFilter::POINT;
+  };
 
   // Returns a DrawTarget. The size of the DrawTarget will be the same as the
   // size of this layer. The caller should draw to that DrawTarget, then drop

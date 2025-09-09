@@ -5,8 +5,8 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "gtest/gtest.h"
 #include "mozilla/dom/ReportingHeader.h"
-#include "nsNetUtil.h"
 #include "nsIURI.h"
+#include "nsNetUtil.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

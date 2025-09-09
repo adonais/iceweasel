@@ -392,12 +392,6 @@ class MOZ_STACK_CLASS HTMLEditor::HTMLWithContextInserter final {
       const EditorRawDOMPoint& aStartPoint, const EditorRawDOMPoint& aEndPoint,
       nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents);
 
-  /**
-   * @return nullptr, if there's no invisible `<br>`.
-   */
-  HTMLBRElement* GetInvisibleBRElementAtPoint(
-      const EditorDOMPoint& aPointToInsert) const;
-
   EditorDOMPoint GetNewCaretPointAfterInsertingHTML(
       const EditorDOMPoint& aLastInsertedPoint) const;
 
@@ -500,18 +494,6 @@ HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator final {
       nsIContent& aNode, NodesToRemove aNodesToRemove);
 };
 
-HTMLBRElement*
-HTMLEditor::HTMLWithContextInserter::GetInvisibleBRElementAtPoint(
-    const EditorDOMPoint& aPointToInsert) const {
-  const WSRunScanner wsRunScannerAtInsertionPoint(
-      WSRunScanner::Scan::EditableNodes, aPointToInsert,
-      BlockInlineCheck::UseComputedDisplayStyle);
-  if (wsRunScannerAtInsertionPoint.EndsByInvisibleBRElement()) {
-    return wsRunScannerAtInsertionPoint.EndReasonBRElementPtr();
-  }
-  return nullptr;
-}
-
 EditorDOMPoint
 HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
     const EditorDOMPoint& aLastInsertedPoint) const {
@@ -565,33 +547,24 @@ HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
 
   // Make sure we don't end up with selection collapsed after an invisible
   // `<br>` element.
-  const WSRunScanner wsRunScannerAtCaret(
-      WSRunScanner::Scan::EditableNodes, pointToPutCaret,
-      BlockInlineCheck::UseComputedDisplayStyle);
-  if (wsRunScannerAtCaret
-          .ScanPreviousVisibleNodeOrBlockBoundaryFrom(pointToPutCaret)
-          .ReachedInvisibleBRElement()) {
-    const WSRunScanner wsRunScannerAtStartReason(
-        WSRunScanner::Scan::EditableNodes,
-        EditorDOMPoint(wsRunScannerAtCaret.GetStartReasonContent()),
-        BlockInlineCheck::UseComputedDisplayStyle);
-    const WSScanResult backwardScanFromPointToCaretResult =
-        wsRunScannerAtStartReason.ScanPreviousVisibleNodeOrBlockBoundaryFrom(
-            pointToPutCaret);
-    if (backwardScanFromPointToCaretResult.InVisibleOrCollapsibleCharacters()) {
-      pointToPutCaret = backwardScanFromPointToCaretResult
+  const WSScanResult prevVisibleThing =
+      WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+          // We want to put caret to an editable point so that we need to scan
+          // only editable nodes.
+          WSRunScanner::Scan::EditableNodes, pointToPutCaret,
+          BlockInlineCheck::UseComputedDisplayStyle);
+  if (prevVisibleThing.ReachedInvisibleBRElement()) {
+    const WSScanResult prevVisibleThingOfBRElement =
+        WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+            WSRunScanner::Scan::EditableNodes,
+            EditorRawDOMPoint(prevVisibleThing.BRElementPtr()),
+            BlockInlineCheck::UseComputedDisplayStyle);
+    if (prevVisibleThingOfBRElement.InVisibleOrCollapsibleCharacters()) {
+      pointToPutCaret = prevVisibleThingOfBRElement
                             .PointAfterReachedContent<EditorDOMPoint>();
-    } else if (backwardScanFromPointToCaretResult.ReachedSpecialContent()) {
-      // XXX In my understanding, this is odd.  The end reason may not be
-      //     same as the reached special content because the equality is
-      //     guaranteed only when ReachedCurrentBlockBoundary() returns true.
-      //     However, looks like that this code assumes that
-      //     GetStartReasonContent() returns the content.
-      NS_ASSERTION(wsRunScannerAtStartReason.GetStartReasonContent() ==
-                       backwardScanFromPointToCaretResult.GetContent(),
-                   "Start reason is not the reached special content");
-      pointToPutCaret.SetAfter(
-          wsRunScannerAtStartReason.GetStartReasonContent());
+    } else if (prevVisibleThingOfBRElement.ReachedSpecialContent()) {
+      pointToPutCaret = prevVisibleThingOfBRElement
+                            .PointAfterReachedContentNode<EditorDOMPoint>();
     }
   }
 

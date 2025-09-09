@@ -7,8 +7,8 @@
 #ifndef DOM_SMIL_SMILTIMEDELEMENT_H_
 #define DOM_SMIL_SMILTIMEDELEMENT_H_
 
-#include <utility>
 #include <limits>
+#include <utility>
 
 #include "mozilla/EventForwards.h"
 #include "mozilla/SMILInstanceTime.h"

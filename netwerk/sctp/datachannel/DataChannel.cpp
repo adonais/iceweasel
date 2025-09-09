@@ -24,6 +24,7 @@
 #include "mozilla/StaticMutex.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/RTCDataChannel.h"
 #include "mozilla/dom/RTCDataChannelBinding.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
 #ifdef MOZ_PEERCONNECTION
@@ -41,35 +42,6 @@
 namespace mozilla {
 
 LazyLogModule gDataChannelLog("DataChannel");
-
-static constexpr const char* ToString(DataChannelState state) {
-  switch (state) {
-    case DataChannelState::Connecting:
-      return "CONNECTING";
-    case DataChannelState::Open:
-      return "OPEN";
-    case DataChannelState::Closing:
-      return "CLOSING";
-    case DataChannelState::Closed:
-      return "CLOSED";
-  }
-  return "";
-};
-
-static constexpr const char* ToString(
-    DataChannelOnMessageAvailable::EventType type) {
-  switch (type) {
-    case DataChannelOnMessageAvailable::EventType::OnConnection:
-      return "ON_CONNECTION";
-    case DataChannelOnMessageAvailable::EventType::OnDisconnected:
-      return "ON_DISCONNECTED";
-    case DataChannelOnMessageAvailable::EventType::OnDataString:
-      return "ON_DATA_STRING";
-    case DataChannelOnMessageAvailable::EventType::OnDataBinary:
-      return "ON_DATA_BINARY";
-  }
-  return "";
-};
 
 OutgoingMsg::OutgoingMsg(nsACString&& aData,
                          const DataChannelMessageMetadata& aMetadata)
@@ -97,7 +69,7 @@ DataChannelConnection::~DataChannelConnection() {
       // is in the event loop already)
       nsCOMPtr<nsIRunnable> r = WrapRunnable(
           nsCOMPtr<nsIThread>(mInternalIOThread), &nsIThread::AsyncShutdown);
-      Dispatch(r.forget());
+      mSTS->Dispatch(r.forget());
     }
   } else {
     // on STS, safe to call shutdown
@@ -129,8 +101,7 @@ void DataChannelConnection::Destroy() {
 Maybe<RefPtr<DataChannelConnection>> DataChannelConnection::Create(
     DataChannelConnection::DataConnectionListener* aListener,
     nsISerialEventTarget* aTarget, MediaTransportHandler* aHandler,
-    const uint16_t aLocalPort, const uint16_t aNumStreams,
-    const Maybe<uint64_t>& aMaxMessageSize) {
+    const uint16_t aLocalPort, const uint16_t aNumStreams) {
   MOZ_ASSERT(NS_IsMainThread());
 
   RefPtr<DataChannelConnection> connection;
@@ -141,9 +112,8 @@ Maybe<RefPtr<DataChannelConnection>> DataChannelConnection::Create(
     connection = new DataChannelConnectionUsrsctp(
         aListener, aTarget, aHandler);  // Walks into a bar
   }
-  return connection->Init(aLocalPort, aNumStreams, aMaxMessageSize)
-             ? Some(connection)
-             : Nothing();
+  return connection->Init(aLocalPort, aNumStreams) ? Some(connection)
+                                                   : Nothing();
 }
 
 DataChannelConnection::DataChannelConnection(
@@ -168,16 +138,9 @@ DataChannelConnection::DataChannelConnection(
 }
 
 // Only called on MainThread, mMaxMessageSize is read on other threads
-void DataChannelConnection::SetMaxMessageSize(bool aMaxMessageSizeSet,
-                                              uint64_t aMaxMessageSize) {
+void DataChannelConnection::SetMaxMessageSize(uint64_t aMaxMessageSize) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (mMaxMessageSizeSet && !aMaxMessageSizeSet) {
-    // Don't overwrite already set MMS with default values
-    return;
-  }
-
-  mMaxMessageSizeSet = aMaxMessageSizeSet;
   mMaxMessageSize = aMaxMessageSize;
 
   nsresult rv;
@@ -190,7 +153,7 @@ void DataChannelConnection::SetMaxMessageSize(bool aMaxMessageSizeSet,
       int32_t temp;
       if (!NS_FAILED(branch->GetIntPref(
               "media.peerconnection.sctp.force_maximum_message_size", &temp))) {
-        if (temp >= 0) {
+        if (temp > 0 && (uint64_t)temp < mMaxMessageSize) {
           mMaxMessageSize = (uint64_t)temp;
         }
       }
@@ -211,65 +174,40 @@ void DataChannelConnection::SetMaxMessageSize(bool aMaxMessageSizeSet,
     mMaxMessageSize = WEBRTC_DATACHANNEL_MAX_MESSAGE_SIZE_REMOTE;
   }
 
-  DC_DEBUG(("Maximum message size (outgoing data): %" PRIu64
-            " (set=%s, enforced=%s)",
-            mMaxMessageSize, mMaxMessageSizeSet ? "yes" : "no",
+  DC_DEBUG(("Maximum message size (outgoing data): %" PRIu64 " (enforced=%s)",
+            mMaxMessageSize,
             aMaxMessageSize != mMaxMessageSize ? "yes" : "no"));
 }
 
-uint64_t DataChannelConnection::GetMaxMessageSize() {
+double DataChannelConnection::GetMaxMessageSize() {
   MOZ_ASSERT(NS_IsMainThread());
-  return mMaxMessageSize;
+  if (mMaxMessageSize) {
+    return static_cast<double>(mMaxMessageSize);
+  }
+
+  return std::numeric_limits<double>::infinity();
 }
 
 void DataChannelConnection::AppendStatsToReport(
     const UniquePtr<dom::RTCStatsCollection>& aReport,
     const DOMHighResTimeStamp aTimestamp) const {
   MOZ_ASSERT(NS_IsMainThread());
-  nsString temp;
   for (const RefPtr<DataChannel>& chan : mChannels.GetAll()) {
     // If channel is empty, ignore
     if (!chan) {
       continue;
     }
-    mozilla::dom::RTCDataChannelStats stats;
-    nsString id = u"dc"_ns;
-    id.AppendInt(chan->GetStream());
-    stats.mId.Construct(id);
-    chan->GetLabel(temp);
-    stats.mTimestamp.Construct(aTimestamp);
-    stats.mType.Construct(mozilla::dom::RTCStatsType::Data_channel);
-    stats.mLabel.Construct(temp);
-    chan->GetProtocol(temp);
-    stats.mProtocol.Construct(temp);
-    stats.mDataChannelIdentifier.Construct(chan->GetStream());
-    {
-      using State = mozilla::dom::RTCDataChannelState;
-      State state;
-      switch (chan->GetReadyState()) {
-        case DataChannelState::Connecting:
-          state = State::Connecting;
-          break;
-        case DataChannelState::Open:
-          state = State::Open;
-          break;
-        case DataChannelState::Closing:
-          state = State::Closing;
-          break;
-        case DataChannelState::Closed:
-          state = State::Closed;
-          break;
-      };
-      stats.mState.Construct(state);
-    }
-    auto counters = chan->GetTrafficCounters();
-    stats.mMessagesSent.Construct(counters.mMessagesSent);
-    stats.mBytesSent.Construct(counters.mBytesSent);
-    stats.mMessagesReceived.Construct(counters.mMessagesReceived);
-    stats.mBytesReceived.Construct(counters.mBytesReceived);
-    if (!aReport->mDataChannelStats.AppendElement(stats, fallible)) {
-      mozalloc_handle_oom(0);
-    }
+    chan->AppendStatsToReport(aReport, aTimestamp);
+  }
+}
+
+void DataChannel::AppendStatsToReport(
+    const UniquePtr<dom::RTCStatsCollection>& aReport,
+    const DOMHighResTimeStamp aTimestamp) const {
+  // TODO(bug 1209163): Once this can be on a worker, we'll need to dispatch
+  // here. There will be a MozPromise API here.
+  if (mDomDataChannel) {
+    mDomDataChannel->AppendStatsToReport(aReport, aTimestamp);
   }
 }
 
@@ -311,7 +249,7 @@ bool DataChannelConnection::ConnectToTransport(const std::string& aTransportId,
       mChannels.Remove(channel);
       auto id = FindFreeStream();
       if (id != INVALID_STREAM) {
-        channel->mStream = id;
+        channel->SetStream(id);
         mChannels.Insert(channel);
         DC_DEBUG(("%s %p: Inserting auto-selected id %u", __func__, this,
                   static_cast<unsigned>(id)));
@@ -385,7 +323,7 @@ void DataChannelConnection::TransportStateChange(
                aState == TransportLayer::TS_NONE ||
                aState == TransportLayer::TS_ERROR) {
       DC_DEBUG(("Transport is closed!"));
-      Stop();
+      CloseAll_s();
     }
   }
 }
@@ -589,6 +527,8 @@ void DataChannelConnection::HandleOpenRequestMessage(
   const nsCString protocol(&req->label[ntohs(req->label_length)],
                            ntohs(req->protocol_length));
 
+  // Always dispatch this to mainthread; this is a brand new datachannel, which
+  // has not had any opportunity to be transferred to a worker.
   Dispatch(NS_NewRunnableFunction(
       "DataChannelConnection::HandleOpenRequestMessage",
       [this, self = RefPtr<DataChannelConnection>(this), stream, prPolicy,
@@ -617,8 +557,8 @@ void DataChannelConnection::HandleOpenRequestMessage(
           }
           return;
         }
-        channel = new DataChannel(this, stream, DataChannelState::Open, label,
-                                  protocol, prPolicy, prValue, ordered, false);
+        channel = new DataChannel(this, stream, label, protocol, prPolicy,
+                                  prValue, ordered, false);
         mChannels.Insert(channel);
         mStreamIds.InsertElementSorted(stream);
 
@@ -697,9 +637,6 @@ void DataChannelConnection::HandleUnknownMessage(uint32_t ppid, uint32_t length,
 
 void DataChannelConnection::HandleDataMessage(IncomingMsg&& aMsg) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
-  DataChannelOnMessageAvailable::EventType type;
-
-  size_t data_length = aMsg.GetData().Length();
 
   RefPtr<DataChannel> channel = FindChannelByStream(aMsg.GetStreamId());
   if (!channel) {
@@ -709,9 +646,8 @@ void DataChannelConnection::HandleDataMessage(IncomingMsg&& aMsg) {
     return;
   }
 
-  // Receiving any data implies that the other end has received an OPEN
-  // request from us.
-  channel->mWaitingForAck = false;
+  const size_t data_length = aMsg.GetData().Length();
+  bool isBinary = false;
 
   switch (aMsg.GetPpid()) {
     case DATA_CHANNEL_PPID_DOMSTRING:
@@ -720,7 +656,6 @@ void DataChannelConnection::HandleDataMessage(IncomingMsg&& aMsg) {
           ("DataChannel: Received string message of length %zu on "
            "channel %u",
            data_length, channel->mStream));
-      type = DataChannelOnMessageAvailable::EventType::OnDataString;
       // WebSockets checks IsUTF8() here; we can try to deliver it
       break;
 
@@ -731,7 +666,6 @@ void DataChannelConnection::HandleDataMessage(IncomingMsg&& aMsg) {
           data_length, channel->mStream));
       // Just in case.
       aMsg.GetData().Truncate(0);
-      type = DataChannelOnMessageAvailable::EventType::OnDataString;
       break;
 
     case DATA_CHANNEL_PPID_BINARY:
@@ -740,7 +674,7 @@ void DataChannelConnection::HandleDataMessage(IncomingMsg&& aMsg) {
           ("DataChannel: Received binary message of length %zu on "
            "channel id %u",
            data_length, channel->mStream));
-      type = DataChannelOnMessageAvailable::EventType::OnDataBinary;
+      isBinary = true;
       break;
 
     case DATA_CHANNEL_PPID_BINARY_EMPTY:
@@ -750,7 +684,7 @@ void DataChannelConnection::HandleDataMessage(IncomingMsg&& aMsg) {
           data_length, channel->mStream));
       // Just in case.
       aMsg.GetData().Truncate(0);
-      type = DataChannelOnMessageAvailable::EventType::OnDataBinary;
+      isBinary = true;
       break;
 
     default:
@@ -759,17 +693,7 @@ void DataChannelConnection::HandleDataMessage(IncomingMsg&& aMsg) {
       return;
   }
 
-  Dispatch(NS_NewRunnableFunction(
-      "DataChannelConnection::HandleDataMessage", [channel, data_length]() {
-        channel->mTrafficCounters.mMessagesReceived++;
-        channel->mTrafficCounters.mBytesReceived += data_length;
-      }));
-
-  // Notify onmessage
-  DC_DEBUG(
-      ("%s: sending %s for %p", __FUNCTION__, ToString(type), channel.get()));
-  channel->SendOrQueue(new DataChannelOnMessageAvailable(
-      type, this, channel, std::move(aMsg.GetData())));
+  channel->OnMessageReceived(std::move(aMsg.GetData()), isBinary);
 }
 
 void DataChannelConnection::HandleDCEPMessage(IncomingMsg&& aMsg) {
@@ -956,9 +880,9 @@ already_AddRefed<DataChannel> DataChannelConnection::Open(
     mStreamIds.InsertElementSorted(aStream);
   }
 
-  RefPtr<DataChannel> channel(new DataChannel(
-      this, aStream, DataChannelState::Connecting, label, protocol, prPolicy,
-      prValue, inOrder, aExternalNegotiated));
+  RefPtr<DataChannel> channel(new DataChannel(this, aStream, label, protocol,
+                                              prPolicy, prValue, inOrder,
+                                              aExternalNegotiated));
   mChannels.Insert(channel);
 
   if (aStream != INVALID_STREAM) {
@@ -1076,7 +1000,6 @@ class ReadBlobRunnable : public Runnable {
 
 // Returns a POSIX error code.
 int DataChannelConnection::SendBlob(uint16_t stream, nsIInputStream* aBlob) {
-  MOZ_ASSERT(NS_IsMainThread());
   RefPtr<DataChannel> channel = mChannels.Get(stream);
   if (NS_WARN_IF(!channel)) {
     return EINVAL;  // TODO: Find a better error code
@@ -1138,7 +1061,27 @@ void DataChannelConnection::SetState(DataChannelConnectionState aState) {
        "%s",
        mTransportId.c_str(), this, ToString(mState), ToString(aState)));
 
+  if (mState == aState) {
+    return;
+  }
+
   mState = aState;
+
+  if (mState == DataChannelConnectionState::Open) {
+    Dispatch(NS_NewRunnableFunction(
+        __func__, [this, self = RefPtr<DataChannelConnection>(this)]() {
+          if (mListener) {
+            mListener->NotifySctpConnected();
+          }
+        }));
+  } else if (mState == DataChannelConnectionState::Closed) {
+    Dispatch(NS_NewRunnableFunction(
+        __func__, [this, self = RefPtr<DataChannelConnection>(this)]() {
+          if (mListener) {
+            mListener->NotifySctpClosed();
+          }
+        }));
+  }
 }
 
 void DataChannelConnection::ReadBlob(
@@ -1229,109 +1172,24 @@ int DataChannelConnection::SendDataMessage(uint16_t aStream, nsACString&& aMsg,
         // Create message instance and send
         OutgoingMsg outgoing(std::move(msg), metadata);
 
-        if (!SendMessage(*channel, std::move(outgoing))) {
-          Dispatch(
-              NS_NewRunnableFunction(__func__, [channel, len = msg.Length()]() {
-                channel->mTrafficCounters.mMessagesSent++;
-                channel->mTrafficCounters.mBytesSent += len;
-              }));
-        }
+        SendMessage(*channel, std::move(outgoing));
       }));
 
   return 0;
 }
 
-void DataChannelConnection::Stop() {
-  // Note: This will call 'CloseAll' from the main thread
-  Dispatch(do_AddRef(new DataChannelOnMessageAvailable(
-      DataChannelOnMessageAvailable::EventType::OnDisconnected, this)));
-}
-
-// Implementation of RTCDataChannel.close()
-void DataChannelConnection::Close(DataChannel* aChannel) {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aChannel);
-  RefPtr<DataChannel> channel(aChannel);
-
-  // close()
-
-  // Closes the RTCDataChannel. It may be called regardless of whether the
-  // RTCDataChannel object was created by this peer or the remote peer.
-
-  // When the close method is called, the user agent MUST run the following
-  // steps:
-
-  // Let channel be the RTCDataChannel object which is about to be closed.
-
-  // If channel.[[ReadyState]] is "closing" or "closed", then abort these
-  // steps.
-  DataChannelState channelState = channel->GetReadyState();
-  if (channelState == DataChannelState::Closed ||
-      channelState == DataChannelState::Closing) {
-    DC_DEBUG(("Channel already closing/closed (%s)", ToString(channelState)));
-    return;
-  }
-
-  // Set channel.[[ReadyState]] to "closing".
-  channel->SetReadyState(DataChannelState::Closing);
-
-  // If the closing procedure has not started yet, start it.
-  GracefulClose(channel);
-}
-
-void DataChannelConnection::GracefulClose(DataChannel* aChannel) {
-  MOZ_ASSERT(NS_IsMainThread());
-  // An RTCDataChannel object's underlying data transport may be torn down in a
-  // non-abrupt manner by running the closing procedure. When that happens the
-  // user agent MUST queue a task to run the following steps:
-
-  Dispatch(NS_NewRunnableFunction(
-      __func__, [this, self = RefPtr<DataChannelConnection>(this),
-                 channel = RefPtr<DataChannel>(aChannel)]() {
-        // Let channel be the RTCDataChannel object whose underlying data
-        // transport was closed.
-
-        // Let connection be the RTCPeerConnection object associated with
-        // channel.
-
-        // Remove channel from connection.[[DataChannels]].
-        // Note: We don't really have this slot. Reading the spec, it does not
-        // appear this serves any function other than holding a ref to the
-        // RTCDataChannel, which in our case is handled by a self ref in
-        // nsDOMDataChannel.
-
-        // Unless the procedure was initiated by channel.close, set
-        // channel.[[ReadyState]] to "closing" and fire an event named closing
-        // at channel. Note: channel.close will set [[ReadyState]] to Closing.
-        // We also check for closed, just as belt and suspenders.
-        if (channel->GetReadyState() != DataChannelState::Closing &&
-            channel->GetReadyState() != DataChannelState::Closed) {
-          channel->SetReadyState(DataChannelState::Closing);
-          // TODO(bug 1611953): Fire event
-        }
-
-        // Run the following steps in parallel:
-        // Finish sending all currently pending messages of the channel.
-        // Note: We detect when all pending messages are sent with
-        // mBufferedAmount. We do an initial check here, and subsequent checks
-        // in DecrementBufferedAmount.
-        // Caveat: mBufferedAmount is decremented when the bytes are first
-        // transmitted, _not_ when they are acked. We might need to do some
-        // work to ensure that the SCTP stack has delivered these last bytes to
-        // the other end before that channel/connection is fully closed.
-        if (!channel->mBufferedAmount &&
-            channel->GetReadyState() != DataChannelState::Closed) {
-          FinishClose(channel);
-        }
-      }));
-}
-
 void DataChannelConnection::FinishClose(DataChannel* aChannel) {
-  MOZ_ASSERT(NS_IsMainThread());
   mSTS->Dispatch(NS_NewRunnableFunction(
       __func__,
       [this, self = RefPtr<DataChannelConnection>(this),
        channel = RefPtr<DataChannel>(aChannel)]() { FinishClose_s(channel); }));
+}
+
+void DataChannel::FinishClose() {
+  MOZ_ASSERT(mDomEventTarget->IsOnCurrentThread());
+  if (mConnection) {
+    mConnection->FinishClose(this);
+  }
 }
 
 void DataChannelConnection::FinishClose_s(DataChannel* aChannel) {
@@ -1366,47 +1224,41 @@ void DataChannelConnection::FinishClose_s(DataChannel* aChannel) {
   aChannel->AnnounceClosed();
 }
 
-void DataChannelConnection::CloseAll() {
-  MOZ_ASSERT(NS_IsMainThread());
-  DC_DEBUG(("Closing all channels (connection %p)", (void*)this));
+void DataChannelConnection::CloseAll_s() {
+  // Make sure no more channels will be opened
+  SetState(DataChannelConnectionState::Closed);
 
   // Close current channels
   // If there are runnables, they hold a strong ref and keep the channel
   // and/or connection alive (even if in a CLOSED state)
   for (auto& channel : mChannels.GetAll()) {
-    channel->Close();
+    FinishClose_s(channel);
   }
+
+  // Clean up any pending opens for channels
+  std::set<RefPtr<DataChannel>> temp(std::move(mPending));
+  // Technically in an unspecified state, although no reasonable impl will leave
+  // anything in here.
+  mPending.clear();
+  for (const auto& channel : temp) {
+    DC_DEBUG(("closing pending channel %p, stream %u", channel.get(),
+              channel->mStream));
+    FinishClose_s(channel);  // also releases the ref on each iteration
+  }
+  // It's more efficient to let the Resets queue in shutdown and then
+  // ResetStreams() here.
+  if (!mStreamsResetting.IsEmpty()) {
+    ResetStreams(mStreamsResetting);
+  }
+}
+
+void DataChannelConnection::CloseAll() {
+  MOZ_ASSERT(NS_IsMainThread());
+  DC_DEBUG(("Closing all channels (connection %p)", (void*)this));
 
   mSTS->Dispatch(NS_NewRunnableFunction(
       "DataChannelConnection::CloseAll",
-      [this, self = RefPtr<DataChannelConnection>(this)]() {
-        // Make sure no more channels will be opened
-        SetState(DataChannelConnectionState::Closed);
-
-        // Close current channels
-        // If there are runnables, they hold a strong ref and keep the channel
-        // and/or connection alive (even if in a CLOSED state)
-        for (auto& channel : mChannels.GetAll()) {
-          FinishClose_s(channel.get());
-        }
-
-        // Clean up any pending opens for channels
-        std::set<RefPtr<DataChannel>> temp(std::move(mPending));
-        // Technically in an unspecified state, although no reasonable impl will
-        // leave anything in here.
-        mPending.clear();
-        for (const auto& channel : temp) {
-          DC_DEBUG(("closing pending channel %p, stream %u", channel.get(),
-                    channel->mStream));
-          FinishClose_s(
-              channel.get());  // also releases the ref on each iteration
-        }
-        // It's more efficient to let the Resets queue in shutdown and then
-        // ResetStreams() here.
-        if (!mStreamsResetting.IsEmpty()) {
-          ResetStreams(mStreamsResetting);
-        }
-      }));
+      [this, self = RefPtr<DataChannelConnection>(this)]() { CloseAll_s(); }));
 }
 
 bool DataChannelConnection::Channels::IdComparator::Equals(
@@ -1477,125 +1329,75 @@ RefPtr<DataChannel> DataChannelConnection::Channels::GetNextChannel(
 }
 
 DataChannel::DataChannel(DataChannelConnection* connection, uint16_t stream,
-                         DataChannelState state, const nsACString& label,
-                         const nsACString& protocol,
+                         const nsACString& label, const nsACString& protocol,
                          DataChannelReliabilityPolicy policy, uint32_t value,
                          bool ordered, bool negotiated)
     : mLabel(label),
       mProtocol(protocol),
-      mReadyState(state),
-      mStream(stream),
       mPrPolicy(policy),
       mPrValue(value),
-      mBufferedThreshold(0),  // default from spec
-      mBufferedAmount(0),
-      mConnection(connection),
       mNegotiated(negotiated),
       mOrdered(ordered),
-      mMainThreadEventTarget(connection->GetNeckoTarget()) {
+      mStream(stream),
+      mConnection(connection),
+      mDomEventTarget(connection->GetNeckoTarget()) {
   NS_ASSERTION(mConnection, "NULL connection");
 }
 
-DataChannel::~DataChannel() {
-  // NS_ASSERTION since this is more "I think I caught all the cases that
-  // can cause this" than a true kill-the-program assertion.  If this is
-  // wrong, nothing bad happens.  A worst it's a leak.
-  NS_ASSERTION(mReadyState == DataChannelState::Closed ||
-                   mReadyState == DataChannelState::Closing,
-               "unexpected state in ~DataChannel");
-}
-
-void DataChannel::Close() {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (mConnection) {
-    // ensure we don't get deleted
-    RefPtr<DataChannelConnection> connection(mConnection);
-    connection->Close(this);
-  }
-}
+DataChannel::~DataChannel() {}
 
 void DataChannel::ReleaseConnection() {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mDomEventTarget->IsOnCurrentThread());
   mConnection = nullptr;
 }
 
-void DataChannel::SetListener(DataChannelListener* aListener) {
+void DataChannel::SetDomDataChannel(dom::RTCDataChannel* aChannel) {
   MOZ_ASSERT(NS_IsMainThread());
-  mListener = aListener;
-}
-
-void DataChannel::SendErrnoToErrorResult(int error, size_t aMessageSize,
-                                         ErrorResult& aRv) {
-  switch (error) {
-    case 0:
-      break;
-    case EMSGSIZE: {
-      nsPrintfCString err("Message size (%zu) exceeds maxMessageSize",
-                          aMessageSize);
-      aRv.ThrowTypeError(err);
-      break;
-    }
-    default:
-      aRv.Throw(NS_ERROR_DOM_OPERATION_ERR);
-      break;
+  // This is before the RTCDataChannel can be transferred.
+  mDomDataChannel = aChannel;
+  if (mDomDataChannel && GetStream()) {
+    mDomDataChannel->SetId(*GetStream());
+    mDomDataChannel->SetMaxMessageSize(mConnection->GetMaxMessageSize());
   }
 }
 
-void DataChannel::IncrementBufferedAmount(uint32_t aSize, ErrorResult& aRv) {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (mBufferedAmount > UINT32_MAX - aSize) {
-    aRv.Throw(NS_ERROR_FILE_TOO_BIG);
-    return;
-  }
-
-  mBufferedAmount += aSize;
-}
-
-void DataChannel::DecrementBufferedAmount(uint32_t aSize) {
-  mMainThreadEventTarget->Dispatch(NS_NewRunnableFunction(
+void DataChannel::DecrementBufferedAmount(size_t aSize) {
+  mDomEventTarget->Dispatch(NS_NewRunnableFunction(
       "DataChannel::DecrementBufferedAmount",
       [this, self = RefPtr<DataChannel>(this), aSize] {
-        MOZ_ASSERT(aSize <= mBufferedAmount);
-        bool wasLow = mBufferedAmount <= mBufferedThreshold;
-        mBufferedAmount -= aSize;
-        if (!wasLow && mBufferedAmount <= mBufferedThreshold) {
-          DC_DEBUG(("%s: sending BUFFER_LOW_THRESHOLD for %s/%s: %u",
-                    __FUNCTION__, mLabel.get(), mProtocol.get(), mStream));
-          mListener->OnBufferLow();
-        }
-        if (mBufferedAmount == 0) {
-          DC_DEBUG(("%s: sending NO_LONGER_BUFFERED for %s/%s: %u",
-                    __FUNCTION__, mLabel.get(), mProtocol.get(), mStream));
-          mListener->NotBuffered();
-          if (mReadyState == DataChannelState::Closing) {
-            if (mConnection) {
-              // We're done sending
-              mConnection->FinishClose(this);
-            }
-          }
+        if (mDomDataChannel) {
+          mDomDataChannel->DecrementBufferedAmount(aSize);
         }
       }));
 }
 
 void DataChannel::AnnounceOpen() {
-  mMainThreadEventTarget->Dispatch(NS_NewRunnableFunction(
+  // When an underlying data transport is to be announced (the other peer
+  // created a channel with negotiated unset or set to false), the user agent of
+  // the peer that did not initiate the creation process MUST queue a task to
+  // run the following steps:
+
+  mDomEventTarget->Dispatch(NS_NewRunnableFunction(
       "DataChannel::AnnounceOpen", [this, self = RefPtr<DataChannel>(this)] {
-        DataChannelState state = GetReadyState();
-        // Special-case; spec says to put brand-new remote-created
-        // DataChannel in "open", but queue the firing of the "open" event.
-        if (state != DataChannelState::Closing &&
-            state != DataChannelState::Closed) {
-          // Stats stuff
-          if (!mEverOpened && mConnection && mConnection->mListener) {
-            mEverOpened = true;
-            mConnection->mListener->NotifyDataChannelOpen(this);
-          }
-          SetReadyState(DataChannelState::Open);
-          DC_DEBUG(("%s: sending ON_CHANNEL_OPEN for %s/%s: %u", __FUNCTION__,
-                    mLabel.get(), mProtocol.get(), mStream));
-          if (mListener) {
-            mListener->OnChannelConnected();
-          }
+        if (mDomDataChannel && mConnection) {
+          mDomDataChannel->SetMaxMessageSize(mConnection->GetMaxMessageSize());
+          mDomDataChannel->AnnounceOpen();
+        }
+
+        // Right now, we're already on mainthread, but this might be a worker
+        // someday.
+        if (mConnection) {
+          GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
+              "DataChannel::AnnounceOpen",
+              [this, self = RefPtr<DataChannel>(this),
+               connection = mConnection]() {
+                // Stats stuff
+                // TODO: Can we simplify this?
+                if (!mEverOpened && connection->mListener) {
+                  mEverOpened = true;
+                  connection->mListener->NotifyDataChannelOpen(this);
+                }
+              }));
         }
       }));
 }
@@ -1603,188 +1405,75 @@ void DataChannel::AnnounceOpen() {
 void DataChannel::AnnounceClosed() {
   // When an RTCDataChannel object's underlying data transport has been closed,
   // the user agent MUST queue a task to run the following steps:
-  mMainThreadEventTarget->Dispatch(NS_NewRunnableFunction(
+
+  mDomEventTarget->Dispatch(NS_NewRunnableFunction(
       "DataChannel::AnnounceClosed", [this, self = RefPtr<DataChannel>(this)] {
-        // Let channel be the RTCDataChannel object whose underlying data
-        // transport was closed.
-        // If channel.[[ReadyState]] is "closed", abort these steps.
-        if (GetReadyState() == DataChannelState::Closed) {
-          return;
+        if (mDomDataChannel) {
+          mDomDataChannel->AnnounceClosed();
         }
 
-        // Set channel.[[ReadyState]] to "closed".
-        SetReadyState(DataChannelState::Closed);
-
-        // Remove channel from connection.[[DataChannels]] if it is still there.
-        // Note: We don't really have this slot. Reading the spec, it does not
-        // appear this serves any function other than holding a ref to the
-        // RTCDataChannel, which in our case is handled by a self ref in
-        // nsDOMDataChannel.
-
-        // If the transport was closed with an error, fire an event named error
-        // using the RTCErrorEvent interface with its errorDetail attribute set
-        // to "sctp-failure" at channel.
-        // Note: We don't support this yet.
-
-        // Fire an event named close at channel.
-        if (mListener) {
-          DC_DEBUG(("%s: sending ON_CHANNEL_CLOSED for %s/%s: %u", __FUNCTION__,
-                    mLabel.get(), mProtocol.get(), mStream));
-          mListener->OnChannelClosed();
-        }
-
-        // Stats stuff
-        if (mEverOpened && mConnection && mConnection->mListener) {
-          mConnection->mListener->NotifyDataChannelClosed(this);
+        if (mConnection) {
+          GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
+              "DataChannel::AnnounceClosed",
+              [this, self = RefPtr<DataChannel>(this),
+               connection = mConnection]() {
+                // Stats stuff
+                // TODO: Can we simplify this?
+                if (mEverOpened && connection->mListener) {
+                  connection->mListener->NotifyDataChannelClosed(this);
+                }
+              }));
         }
       }));
 }
 
-// Set ready state
-void DataChannel::SetReadyState(const DataChannelState aState) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  DC_DEBUG(
-      ("DataChannelConnection labeled %s(%p) (stream %d) changing ready "
-       "state "
-       "%s -> %s",
-       mLabel.get(), this, mStream, ToString(mReadyState), ToString(aState)));
-
-  mReadyState = aState;
+int DataChannel::SendMsg(nsACString&& aMsg) {
+  MOZ_ASSERT(mDomEventTarget->IsOnCurrentThread());
+  return mConnection->SendMessage(mStream, std::move(aMsg));
 }
 
-void DataChannel::SendMsg(nsACString&& aMsg, ErrorResult& aRv) {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (!EnsureValidStream(aRv)) {
-    return;
-  }
-
-  const size_t length = aMsg.Length();
-  SendErrnoToErrorResult(mConnection->SendMessage(mStream, std::move(aMsg)),
-                         length, aRv);
-  if (!aRv.Failed()) {
-    IncrementBufferedAmount(length, aRv);
-  }
+int DataChannel::SendBinaryMsg(nsACString&& aMsg) {
+  MOZ_ASSERT(mDomEventTarget->IsOnCurrentThread());
+  return mConnection->SendBinaryMessage(mStream, std::move(aMsg));
 }
 
-void DataChannel::SendBinaryMsg(nsACString&& aMsg, ErrorResult& aRv) {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (!EnsureValidStream(aRv)) {
-    return;
-  }
-
-  const size_t length = aMsg.Length();
-  SendErrnoToErrorResult(
-      mConnection->SendBinaryMessage(mStream, std::move(aMsg)), length, aRv);
-  if (!aRv.Failed()) {
-    IncrementBufferedAmount(length, aRv);
-  }
+int DataChannel::SendBinaryBlob(nsIInputStream* aBlob) {
+  MOZ_ASSERT(mDomEventTarget->IsOnCurrentThread());
+  return mConnection->SendBlob(mStream, aBlob);
 }
 
-void DataChannel::SendBinaryBlob(dom::Blob& aBlob, ErrorResult& aRv) {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (!EnsureValidStream(aRv)) {
-    return;
-  }
+void DataChannel::SetStream(uint16_t aId) {
+  MOZ_ASSERT(mDomEventTarget->IsOnCurrentThread());
+  mStream = aId;
 
-  uint64_t msgLength = aBlob.GetSize(aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
-  if (msgLength > UINT32_MAX) {
-    aRv.Throw(NS_ERROR_FILE_TOO_BIG);
-    return;
-  }
-
-  // We convert to an nsIInputStream here, because Blob is not threadsafe,
-  // and we don't convert it earlier because we need to know how large this
-  // is so we can update bufferedAmount.
-  nsCOMPtr<nsIInputStream> msgStream;
-  aBlob.CreateInputStream(getter_AddRefs(msgStream), aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-
-  SendErrnoToErrorResult(mConnection->SendBlob(mStream, msgStream), msgLength,
-                         aRv);
-  if (!aRv.Failed()) {
-    IncrementBufferedAmount(msgLength, aRv);
-  }
+  // TODO(bug 1209163): Spec says we set all of these in a single queued task
+  // when the transport is connected. This is not possible if we allow channels
+  // to be transferred. We need to work out what the spec should require
+  // instead. Does each channel get a separate queued task? Does each
+  // worker/main get a single queued task (we'd do this with a tail dispatch
+  // using StateMirroring, probably)?
+  // Additionally, the spec says that this task is queued when the "SCTP
+  // transport is connected", which is not when we've typically done this. We
+  // have been setting this ID in the task queued when offer/answer completes.
+  // All of this will probably need to be reworked, and new tests written.
+  mDomDataChannel->SetId(aId);
 }
 
-uint32_t DataChannel::GetBufferedAmountLowThreshold() const {
-  return mBufferedThreshold;
-}
+void DataChannel::OnMessageReceived(nsCString&& aMsg, bool aIsBinary) {
+  // Receiving any data implies that the other end has received an OPEN
+  // request from us.
+  mWaitingForAck = false;
 
-// Never fire immediately, as it's defined to fire on transitions, not state
-void DataChannel::SetBufferedAmountLowThreshold(uint32_t aThreshold) {
-  mBufferedThreshold = aThreshold;
-}
+  DC_DEBUG(("%s: sending %s for %p", __FUNCTION__,
+            aIsBinary ? "binary" : "string", this));
 
-void DataChannel::SendOrQueue(DataChannelOnMessageAvailable* aMessage) {
-  nsCOMPtr<nsIRunnable> runnable = aMessage;
-  mMainThreadEventTarget->Dispatch(runnable.forget());
-}
-
-DataChannel::TrafficCounters DataChannel::GetTrafficCounters() const {
-  MOZ_ASSERT(NS_IsMainThread());
-  return mTrafficCounters;
-}
-
-bool DataChannel::EnsureValidStream(ErrorResult& aRv) {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(mConnection);
-  if (mConnection && mStream != INVALID_STREAM) {
-    return true;
-  }
-  aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-  return false;
-}
-
-nsresult DataChannelOnMessageAvailable::Run() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  // Note: calling the listeners can indirectly cause the listeners to be
-  // made available for GC (by removing event listeners), especially for
-  // OnChannelClosed().  We hold a ref to the Channel and the listener
-  // while calling this.
-  switch (mType) {
-    case EventType::OnDataString:
-    case EventType::OnDataBinary:
-      if (!mChannel->mListener) {
-        DC_ERROR(("DataChannelOnMessageAvailable (%s) with null Listener!",
-                  ToString(mType)));
-        return NS_OK;
-      }
-
-      if (mChannel->GetReadyState() == DataChannelState::Closed ||
-          mChannel->GetReadyState() == DataChannelState::Closing) {
-        // Closed by JS, probably
-        return NS_OK;
-      }
-
-      if (mType == EventType::OnDataString) {
-        mChannel->mListener->OnMessageAvailable(mData);
-      } else {
-        mChannel->mListener->OnBinaryMessageAvailable(mData);
-      }
-      break;
-    case EventType::OnDisconnected:
-      // If we've disconnected, make sure we close all the streams - from
-      // mainthread!
-      if (mConnection->mListener) {
-        mConnection->mListener->NotifySctpClosed();
-      }
-      mConnection->CloseAll();
-      break;
-    case EventType::OnConnection:
-      if (mConnection->mListener) {
-        mConnection->mListener->NotifySctpConnected();
-      }
-      break;
-  }
-  return NS_OK;
+  mDomEventTarget->Dispatch(NS_NewRunnableFunction(
+      "DataChannel::OnMessageReceived", [this, self = RefPtr<DataChannel>(this),
+                                         msg = std::move(aMsg), aIsBinary]() {
+        if (mDomDataChannel) {
+          mDomDataChannel->DoOnMessageAvailable(msg, aIsBinary);
+        }
+      }));
 }
 
 }  // namespace mozilla

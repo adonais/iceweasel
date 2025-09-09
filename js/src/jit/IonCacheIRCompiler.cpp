@@ -891,7 +891,10 @@ bool IonCacheIRCompiler::emitGuardSpecificValue(ValOperandId valId,
 }
 
 bool IonCacheIRCompiler::emitLoadValueResult(uint32_t valOffset) {
-  MOZ_CRASH("Baseline-specific op");
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+  AutoOutputRegister output(*this);
+  masm.moveValue(valueStubField(valOffset), output.valueReg());
+  return true;
 }
 
 bool IonCacheIRCompiler::emitLoadFixedSlotResult(ObjOperandId objId,

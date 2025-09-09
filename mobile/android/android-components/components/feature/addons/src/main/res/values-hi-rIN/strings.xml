@@ -63,8 +63,6 @@
   <!-- Indicates the add-on is enabled. -->
   <string name="mozac_feature_addons_settings_on">चालू</string>
   <!-- Indicates the add-on is allowed in private browsing mode. -->
-  <string name="mozac_feature_addons_settings_allow_in_private_browsing" moz:removedIn="141" tools:ignore="UnusedResources">निजी ब्राउज़िंग में चलने की अनुमति दे</string>
-  <!-- Indicates the add-on is allowed in private browsing mode. -->
   <string name="mozac_feature_addons_settings_run_in_private_browsing">निजी ब्राउज़िंग में चलाएं</string>
   <!-- Indicates the add-on is enabled. -->
   <string name="mozac_feature_addons_enabled">सक्रिय किया गया</string>
@@ -84,10 +82,6 @@
   <string name="mozac_feature_addons_permissions">अनुमति‌</string>
   <!-- This is a button to remove (i.e. uninstall) an add-on. -->
   <string name="mozac_feature_addons_remove">हटाएं</string>
-  <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
-  <string name="mozac_feature_addons_permissions_dialog_title" moz:removedIn="141" tools:ignore="UnusedResources">%1$s जोड़ना चाहते हैं?</string>
-  <!-- This is the subtitle of a dialog that asks the users if they want to install or not an add-on, the subtitle lists the permissions that this add-on requires, the permissions will dynamically be listed after the ":". -->
-  <string name="mozac_feature_addons_permissions_dialog_subtitle" moz:removedIn="141" tools:ignore="UnusedResources">इसके लिए आपकी अनुमति की आवश्यकता है:</string>
   <!-- This is a button to add (install) an add-on . -->
   <string name="mozac_feature_addons_permissions_dialog_add">जोड़ें</string>
   <!-- This is a button to cancel the add-on installation . -->

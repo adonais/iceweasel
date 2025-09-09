@@ -445,3 +445,22 @@ profiles.selector_window:
     expires: never
     send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_SelectorWindow_ShowAtStartup
+
+profile.lock:
+  failed_lock_count:
+    type: quantity
+    unit: lock attempts
+    description: |
+      The number of failed profile lock attempts that occurred prior to
+      successfully locking the profile and starting the app.
+      Previously collected in the "main" ping's `simpleMeasurements`.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    expires: never
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - dtownsend@mozilla.com
+      - jhirsch@mozilla.com

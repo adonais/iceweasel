@@ -992,9 +992,6 @@ fails-if(Android) fuzzy(63-65,1024-1024) == 421885-1.xml 421885-1-ref.xml
 random-if(gtkWidget||Android) == 423599-1.html 423599-1-ref.html # bug 1309095
 == 423676-1.html 423676-1-ref.html
 fails == 423823-1.html 423823-1-ref.html # scrolling rowgroups were removed in bug 28800
-== chrome://reftest/content/bugs/424074-1.xhtml chrome://reftest/content/bugs/424074-1-ref.xhtml
-fails-if(Android) != chrome://reftest/content/bugs/424074-1.xhtml chrome://reftest/content/bugs/424074-1-ref2.xhtml
-random-if(gtkWidget) == chrome://reftest/content/bugs/424074-1-ref2.xhtml chrome://reftest/content/bugs/424074-1-ref3.xhtml
 == 424236-1.html 424236-1-ref.html
 == 424236-2.html 424236-2-ref.html
 == 424236-3.html 424236-3-ref.html
@@ -2105,7 +2102,7 @@ fuzzy(255-255,171000-171000) skip-if(Android) HTTP == 1743533-1.html 1743533-1-n
 fuzzy(255-255,171000-171000) skip-if(Android) HTTP == 1743533-2.html 1743533-1-notref.html # do not decrease the fuzz! this is a not equal test, the high fuzz minimum is to ensure they differ by enough.
 fuzzy(0-128,0-17172) skip-if(Android) HTTP == 1743533-1.html 1743533-2.html # Fuzzy is only needed because scrollbars and fragmentation are different between fission and non-fission iframes, otherwise this should pass exactly. It's pretty close.
 
-== 1743560-1.html 1743560-1-ref.html
+pref(gfx.font_rendering.fallback.async,false) == 1743560-1.html 1743560-1-ref.html
 == 1743851-1.html 1743851-1-ref.html
 pref(image.downscale-during-decode.enabled,true) == 1744468-1.html 1744468-1-ref.html # do not increase fuzz without looking, the test should be smoothly downscaled, not pixelated
 == 1747272-1.html 1747272-1-ref.html

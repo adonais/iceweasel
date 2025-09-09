@@ -7,13 +7,13 @@
 #ifndef mozilla_RangeBoundary_h
 #define mozilla_RangeBoundary_h
 
-#include "nsCOMPtr.h"
-#include "nsIContent.h"
-#include "mozilla/dom/HTMLSlotElement.h"
-#include "mozilla/dom/ShadowRoot.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/HTMLSlotElement.h"
+#include "mozilla/dom/ShadowRoot.h"
+#include "nsCOMPtr.h"
+#include "nsIContent.h"
 
 class nsRange;
 

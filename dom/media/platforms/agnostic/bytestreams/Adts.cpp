@@ -3,13 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Adts.h"
+
+#include "ADTSDemuxer.h"
 #include "BitWriter.h"
 #include "MediaData.h"
 #include "PlatformDecoderModule.h"
 #include "mozilla/Array.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Logging.h"
-#include "ADTSDemuxer.h"
 
 extern mozilla::LazyLogModule gMediaDemuxerLog;
 #define LOG(msg, ...) \

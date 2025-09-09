@@ -29,7 +29,7 @@ import mozilla.components.feature.push.AutoPushFeature
 import mozilla.components.feature.push.AutoPushSubscription
 import mozilla.components.feature.push.PushScope
 import mozilla.components.service.fxa.manager.FxaAccountManager
-import mozilla.components.service.fxa.manager.ext.withConstellation
+import mozilla.components.service.fxa.manager.ext.withConstellationIfExists
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.utils.SharedPreferencesCache
 import org.json.JSONObject
@@ -257,7 +257,7 @@ internal class AutoPushObserver(
         // Ignore push messages that do not have data.
         val rawEvent = message ?: return
 
-        accountManager.withConstellation {
+        accountManager.withConstellationIfExists {
             CoroutineScope(Main).launch {
                 processRawEvent(String(rawEvent))
             }

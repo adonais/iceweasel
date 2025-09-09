@@ -22,7 +22,7 @@ task-defaults:
             - android-gradle-dependencies
             - linux64-jdk-repack
         build-fat-aar:
-            - target.maven.tar.xz
+            - target.maven.zip
     platform: 'lint/opt'
     treeherder:
         kind: test

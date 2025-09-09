@@ -8,12 +8,12 @@
 // TODO: Bug 1523355, implement gamepad lighindicator and touch for
 // Android.
 
-#include "mozilla/java/AndroidGamepadManagerNatives.h"
-#include "mozilla/java/GeckoAppShellWrappers.h"
+#include "mozilla/Tainting.h"
 #include "mozilla/dom/Gamepad.h"
 #include "mozilla/dom/GamepadHandle.h"
 #include "mozilla/dom/GamepadPlatformService.h"
-#include "mozilla/Tainting.h"
+#include "mozilla/java/AndroidGamepadManagerNatives.h"
+#include "mozilla/java/GeckoAppShellWrappers.h"
 #include "nsThreadUtils.h"
 
 using mozilla::dom::GamepadHandle;

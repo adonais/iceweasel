@@ -792,18 +792,11 @@ void TextureClient::Unlock() {
   }
 
   if (mBorrowedDrawTarget) {
-    if (!(mOpenMode & OpenMode::OPEN_ASYNC)) {
-      if (mOpenMode & OpenMode::OPEN_WRITE) {
-        mBorrowedDrawTarget->Flush();
-      }
-
-      mBorrowedDrawTarget->DetachAllSnapshots();
-      // If this assertion is hit, it means something is holding a strong
-      // reference to our DrawTarget externally, which is not allowed.
-      MOZ_ASSERT(mBorrowedDrawTarget->refCount() <= mExpectedDtRefs);
+    if (mOpenMode & OpenMode::OPEN_WRITE) {
+      mBorrowedDrawTarget->Flush();
     }
 
-    mBorrowedDrawTarget = nullptr;
+    mData->ReturnDrawTarget(mBorrowedDrawTarget.forget());
   }
   mBorrowedSnapshot = false;
 
@@ -977,9 +970,6 @@ gfx::DrawTarget* TextureClient::BorrowDrawTarget() {
 
   if (!mBorrowedDrawTarget) {
     mBorrowedDrawTarget = mData->BorrowDrawTarget();
-#ifdef DEBUG
-    mExpectedDtRefs = mBorrowedDrawTarget ? mBorrowedDrawTarget->refCount() : 0;
-#endif
   }
 
   return mBorrowedDrawTarget;
@@ -992,12 +982,15 @@ void TextureClient::EndDraw() {
   // end of a transaction, we need to Flush and DetachAllSnapshots to ensure any
   // dependents are updated.
   mBorrowedDrawTarget->Flush();
-  mBorrowedDrawTarget->DetachAllSnapshots();
-  MOZ_ASSERT(mBorrowedDrawTarget->refCount() <= mExpectedDtRefs);
+  mData->ReturnDrawTarget(mBorrowedDrawTarget.forget());
 
-  mBorrowedDrawTarget = nullptr;
   mBorrowedSnapshot = false;
   mData->EndDraw();
+}
+
+void TextureData::ReturnDrawTarget(already_AddRefed<gfx::DrawTarget> aDT) {
+  RefPtr<gfx::DrawTarget> dt(aDT);
+  dt->DetachAllSnapshots();
 }
 
 already_AddRefed<gfx::SourceSurface> TextureClient::BorrowSnapshot() {
@@ -1015,6 +1008,11 @@ already_AddRefed<gfx::SourceSurface> TextureClient::BorrowSnapshot() {
   }
 
   return surface.forget();
+}
+
+void TextureData::ReturnSnapshot(
+    already_AddRefed<gfx::SourceSurface> aSnapshot) {
+  RefPtr<gfx::SourceSurface> snapshot(aSnapshot);
 }
 
 void TextureClient::ReturnSnapshot(
@@ -1525,12 +1523,7 @@ TextureClient::TextureClient(TextureData* aData, TextureFlags aFlags,
       mActor(nullptr),
       mData(aData),
       mFlags(aFlags),
-      mOpenMode(OpenMode::OPEN_NONE)
-#ifdef DEBUG
-      ,
-      mExpectedDtRefs(0)
-#endif
-      ,
+      mOpenMode(OpenMode::OPEN_NONE),
       mIsLocked(false),
       mIsReadLocked(false),
       mUpdated(false),

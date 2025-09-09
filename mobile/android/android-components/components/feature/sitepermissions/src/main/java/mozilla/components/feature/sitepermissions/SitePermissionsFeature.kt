@@ -29,6 +29,8 @@ import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHig
 import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.AutoPlayInAudibleBlockingAction
 import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.AutoPlayInAudibleChangedAction
 import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.CameraChangedAction
+import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.LocalDeviceAccessChangedAction
+import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.LocalNetworkAccessChangedAction
 import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.LocationChangedAction
 import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.MediaKeySystemAccesChangedAction
 import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.MicrophoneChangedAction
@@ -49,6 +51,8 @@ import mozilla.components.concept.engine.permission.Permission.ContentAutoPlayAu
 import mozilla.components.concept.engine.permission.Permission.ContentAutoPlayInaudible
 import mozilla.components.concept.engine.permission.Permission.ContentCrossOriginStorageAccess
 import mozilla.components.concept.engine.permission.Permission.ContentGeoLocation
+import mozilla.components.concept.engine.permission.Permission.ContentLocalDeviceAccess
+import mozilla.components.concept.engine.permission.Permission.ContentLocalNetworkAccess
 import mozilla.components.concept.engine.permission.Permission.ContentMediaKeySystemAccess
 import mozilla.components.concept.engine.permission.Permission.ContentNotification
 import mozilla.components.concept.engine.permission.Permission.ContentPersistentStorage
@@ -60,7 +64,6 @@ import mozilla.components.concept.engine.permission.SitePermissions.Status.ALLOW
 import mozilla.components.concept.engine.permission.SitePermissions.Status.BLOCKED
 import mozilla.components.concept.engine.permission.SitePermissionsStorage
 import mozilla.components.feature.session.SessionUseCases
-import mozilla.components.feature.sitepermissions.SitePermissionsFeature.DialogConfig
 import mozilla.components.feature.tabs.TabsUseCases.SelectOrAddUseCase
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
@@ -613,6 +616,14 @@ class SitePermissionsFeature(
                         tab.id,
                         value != sitePermissionsRules?.mediaKeySystemAccess?.toStatus(),
                     )
+                    request.isForLocalDeviceAccess() -> LocalDeviceAccessChangedAction(
+                        tabId = tab.id,
+                        value = value != sitePermissionsRules?.localDeviceAccess?.toStatus(),
+                    )
+                    request.isForLocalNetworkAccess() -> LocalNetworkAccessChangedAction(
+                        tabId = tab.id,
+                        value = value != sitePermissionsRules?.localNetworkAccess?.toStatus(),
+                    )
                     request.isForAutoplayAudible() -> AutoPlayAudibleChangedAction(
                         tab.id,
                         value != sitePermissionsRules?.autoplayAudible?.toAutoplayStatus()
@@ -665,6 +676,12 @@ class SitePermissionsFeature(
                 }
                 is ContentCrossOriginStorageAccess -> {
                     permissionFromStore.crossOriginStorageAccess.doNotAskAgain()
+                }
+                is ContentLocalDeviceAccess -> {
+                    permissionFromStore.localDeviceAccess.doNotAskAgain()
+                }
+                is ContentLocalNetworkAccess -> {
+                    permissionFromStore.localNetworkAccess.doNotAskAgain()
                 }
                 else -> false
             }
@@ -732,6 +749,12 @@ class SitePermissionsFeature(
     private fun PermissionRequest.isForMediaKeySystemAccess() =
         this.permissions.any { it is ContentMediaKeySystemAccess }
 
+    private fun PermissionRequest.isForLocalDeviceAccess() =
+        this.permissions.any { it is ContentLocalDeviceAccess }
+
+    private fun PermissionRequest.isForLocalNetworkAccess() =
+        this.permissions.any { it is ContentLocalNetworkAccess }
+
     @VisibleForTesting
     internal fun updateSitePermissionsStatus(
         status: SitePermissions.Status,
@@ -765,6 +788,12 @@ class SitePermissionsFeature(
             }
             is ContentCrossOriginStorageAccess -> {
                 sitePermissions.copy(crossOriginStorageAccess = status)
+            }
+            is ContentLocalDeviceAccess -> {
+                sitePermissions.copy(localDeviceAccess = status)
+            }
+            is ContentLocalNetworkAccess -> {
+                sitePermissions.copy(localNetworkAccess = status)
             }
             else ->
                 throw InvalidParameterException("$permission is not a valid permission.")
@@ -884,6 +913,32 @@ class SitePermissionsFeature(
                     shouldSelectRememberChoice = true,
                 )
             }
+            is ContentLocalDeviceAccess -> {
+                createSinglePermissionPrompt(
+                    context,
+                    origin,
+                    permissionRequest,
+                    titleId = R.string.mozac_feature_sitepermissions_local_device_access_title,
+                    iconId = iconsR.drawable.mozac_ic_device_desktop_24,
+                    showDoNotAskAgainCheckBox = true,
+                    doNotAskAgainCheckBoxLabel = R.string.mozac_feature_sitepermissions_do_not_ask_again_on_this_site3,
+                    shouldSelectRememberChoice = false,
+                    negativeButtonResId = R.string.mozac_feature_sitepermissions_block,
+                )
+            }
+            is ContentLocalNetworkAccess -> {
+                createSinglePermissionPrompt(
+                    context,
+                    origin,
+                    permissionRequest,
+                    titleId = R.string.mozac_feature_sitepermissions_local_network_access_title,
+                    iconId = iconsR.drawable.mozac_ic_router_24,
+                    showDoNotAskAgainCheckBox = true,
+                    doNotAskAgainCheckBoxLabel = R.string.mozac_feature_sitepermissions_do_not_ask_again_on_this_site3,
+                    shouldSelectRememberChoice = false,
+                    negativeButtonResId = R.string.mozac_feature_sitepermissions_block,
+                )
+            }
             else ->
                 throw InvalidParameterException("$permission is not a valid permission.")
         }
@@ -909,8 +964,10 @@ class SitePermissionsFeature(
         @StringRes titleId: Int,
         @DrawableRes iconId: Int,
         showDoNotAskAgainCheckBox: Boolean,
+        @StringRes doNotAskAgainCheckBoxLabel: Int? = null,
         shouldSelectRememberChoice: Boolean,
         isNotificationRequest: Boolean = false,
+        @StringRes negativeButtonResId: Int? = null,
     ): SitePermissionsDialogFragment {
         val trimmedOrigin = trimOriginHttpsSchemeAndPort(origin)
         val title = context.getString(titleId, trimmedOrigin)
@@ -919,14 +976,20 @@ class SitePermissionsFeature(
             ?: throw IllegalStateException("Unable to find session for $sessionId or selected session")
 
         return SitePermissionsDialogFragment.newInstance(
-            currentSessionId,
-            title,
-            iconId,
-            permissionRequest.id,
-            this,
-            showDoNotAskAgainCheckBox,
+            sessionId = currentSessionId,
+            title = title,
+            titleIcon = iconId,
+            permissionRequestId = permissionRequest.id,
+            feature = this,
+            shouldShowDoNotAskAgainCheckBox = showDoNotAskAgainCheckBox,
+            doNotAskAgainCheckBoxLabel = if (doNotAskAgainCheckBoxLabel != null) {
+                context.getString(doNotAskAgainCheckBoxLabel)
+            } else {
+                null
+            },
             isNotificationRequest = isNotificationRequest,
             shouldSelectDoNotAskAgainCheckBox = shouldSelectRememberChoice,
+            negativeButtonText = if (negativeButtonResId != null) context.getString(negativeButtonResId) else null,
         )
     }
 
@@ -1083,6 +1146,12 @@ internal fun isPermissionGranted(
         is ContentAutoPlayInaudible -> {
             permissionFromStorage.autoplayInaudible.isAllowed()
         }
+        is ContentLocalDeviceAccess -> {
+            permissionFromStorage.localDeviceAccess.isAllowed()
+        }
+        is ContentLocalNetworkAccess -> {
+            permissionFromStorage.localNetworkAccess.isAllowed()
+        }
         else ->
             throw InvalidParameterException("$permission is not a valid permission.")
     }
@@ -1098,6 +1167,7 @@ private fun Permission.isSupported(): Boolean {
         is ContentVideoCamera, is ContentVideoCapture,
         is ContentAutoPlayAudible, is ContentAutoPlayInaudible,
         is ContentMediaKeySystemAccess,
+        is ContentLocalDeviceAccess, is ContentLocalNetworkAccess,
         -> true
         else -> false
     }

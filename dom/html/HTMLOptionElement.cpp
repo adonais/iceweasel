@@ -10,16 +10,16 @@
 #include "mozilla/dom/HTMLOptionElementBinding.h"
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "nsGkAtoms.h"
-#include "nsStyleConsts.h"
 #include "nsIFormControl.h"
 #include "nsISelectControlFrame.h"
+#include "nsStyleConsts.h"
 
 // Notify/query select frame for selected state
+#include "mozAutoDocUpdate.h"
 #include "mozilla/dom/Document.h"
-#include "nsNodeInfoManager.h"
 #include "nsCOMPtr.h"
 #include "nsContentCreatorFunctions.h"
-#include "mozAutoDocUpdate.h"
+#include "nsNodeInfoManager.h"
 #include "nsTextNode.h"
 
 /**

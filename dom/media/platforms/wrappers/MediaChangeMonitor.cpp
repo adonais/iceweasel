@@ -8,9 +8,9 @@
 
 #include "Adts.h"
 #include "AnnexB.h"
+#include "GeckoProfiler.h"
 #include "H264.h"
 #include "H265.h"
-#include "GeckoProfiler.h"
 #include "ImageContainer.h"
 #include "MP4Decoder.h"
 #include "MediaInfo.h"

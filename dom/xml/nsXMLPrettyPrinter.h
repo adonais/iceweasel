@@ -6,8 +6,8 @@
 #ifndef nsXMLPrettyPrinter_h__
 #define nsXMLPrettyPrinter_h__
 
-#include "nsStubDocumentObserver.h"
 #include "nsCOMPtr.h"
+#include "nsStubDocumentObserver.h"
 
 class nsXMLPrettyPrinter : public nsStubDocumentObserver {
  public:

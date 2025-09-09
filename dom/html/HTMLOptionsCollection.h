@@ -7,14 +7,13 @@
 #define mozilla_dom_HTMLOptionsCollection_h
 
 #include "mozilla/Attributes.h"
-#include "nsIHTMLCollection.h"
-#include "nsWrapperCache.h"
-
 #include "mozilla/dom/HTMLOptionElement.h"
 #include "nsCOMPtr.h"
 #include "nsError.h"
 #include "nsGenericHTMLElement.h"
+#include "nsIHTMLCollection.h"
 #include "nsTArray.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla {
 class ErrorResult;

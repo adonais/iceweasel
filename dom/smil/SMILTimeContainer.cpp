@@ -6,11 +6,12 @@
 
 #include "SMILTimeContainer.h"
 
+#include <algorithm>
+
 #include "mozilla/AutoRestore.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/SMILTimedElement.h"
 #include "mozilla/SMILTimeValue.h"
-#include <algorithm>
+#include "mozilla/SMILTimedElement.h"
 
 namespace mozilla {
 

@@ -6,10 +6,10 @@
 #ifndef GPU_TextureView_H_
 #define GPU_TextureView_H_
 
-#include "nsWrapperCache.h"
 #include "CanvasContext.h"
 #include "ObjectModel.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla::webgpu {
 

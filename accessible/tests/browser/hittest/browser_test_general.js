@@ -488,6 +488,14 @@ addAccessibleTask(
   p {
     font-family: monospace;
   }
+
+  #detailsOpen::details-content {
+    /* TODO(dholbert): In bug 1982467, remove this style-rule and fix up the
+     * test expectations instead. This is a hackaround to mimic the
+     * pre-"::details-content" setup, so that the test's expectations from
+     * that time will still hold up. */
+    display: contents;
+  }
 </style>
 <details id="detailsOpen" open>
   <summary>summary</summary>

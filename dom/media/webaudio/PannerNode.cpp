@@ -5,17 +5,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "PannerNode.h"
+
 #include "AlignmentUtils.h"
+#include "AudioBufferSourceNode.h"
 #include "AudioDestinationNode.h"
+#include "AudioListener.h"
 #include "AudioNodeEngine.h"
 #include "AudioNodeTrack.h"
-#include "AudioListener.h"
 #include "PanningUtils.h"
-#include "AudioBufferSourceNode.h"
 #include "PlayingRefChangeHandler.h"
-#include "blink/HRTFPanner.h"
-#include "blink/HRTFDatabaseLoader.h"
 #include "Tracing.h"
+#include "blink/HRTFDatabaseLoader.h"
+#include "blink/HRTFPanner.h"
 
 using WebCore::HRTFDatabaseLoader;
 using WebCore::HRTFPanner;

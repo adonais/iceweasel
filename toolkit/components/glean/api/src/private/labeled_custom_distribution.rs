@@ -28,14 +28,14 @@ pub enum LabeledCustomDistributionMetric {
     Child { id: BaseMetricId, label: String },
 }
 
-crate::define_metric_metadata_getter!(
+define_metric_metadata_getter!(
     CustomDistributionMetric,
     LabeledCustomDistributionMetric,
     CUSTOM_DISTRIBUTION_MAP,
     LABELED_CUSTOM_DISTRIBUTION_MAP
 );
 
-crate::define_metric_namer!(LabeledCustomDistributionMetric, LABELED);
+define_metric_namer!(LabeledCustomDistributionMetric, LABELED);
 
 impl LabeledCustomDistributionMetric {
     #[cfg(test)]

@@ -16,6 +16,7 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 
 const l10nMap = new Map([
   ["viewGenaiChatSidebar", "sidebar-menu-genai-chat-label"],
+  ["viewGenaiPageAssistSidebar", "sidebar-menu-genai-page-assist-label"],
   ["viewHistorySidebar", "sidebar-menu-history-label"],
   ["viewTabsSidebar", "sidebar-menu-synced-tabs-label"],
   ["viewBookmarksSidebar", "sidebar-menu-bookmarks-label"],

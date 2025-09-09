@@ -6,6 +6,7 @@
 
 #include "ServiceWorkerInterceptController.h"
 
+#include "ServiceWorkerManager.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_privacy.h"
@@ -18,7 +19,6 @@
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
 #include "nsICookieJarSettings.h"
-#include "ServiceWorkerManager.h"
 #include "nsIPrincipal.h"
 #include "nsQueryObject.h"
 

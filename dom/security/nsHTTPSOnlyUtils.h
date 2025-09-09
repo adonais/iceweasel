@@ -7,9 +7,9 @@
 #ifndef nsHTTPSOnlyUtils_h___
 #define nsHTTPSOnlyUtils_h___
 
+#include "mozilla/net/DocumentLoadListener.h"
 #include "nsIScriptError.h"
 #include "nsISupports.h"
-#include "mozilla/net/DocumentLoadListener.h"
 
 class nsHTTPSOnlyUtils {
  public:

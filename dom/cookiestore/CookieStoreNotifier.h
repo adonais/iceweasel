@@ -7,9 +7,9 @@
 #ifndef mozilla_dom_CookieStoreNotifier_h
 #define mozilla_dom_CookieStoreNotifier_h
 
-#include "nsIObserver.h"
-#include "mozilla/OriginAttributes.h"
 #include "mozilla/MoveOnlyFunction.h"
+#include "mozilla/OriginAttributes.h"
+#include "nsIObserver.h"
 
 class nsISerialEventTarget;
 

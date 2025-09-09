@@ -20,7 +20,7 @@ from dataclasses import (
     field,
 )
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 
 import requests
 from mach.util import get_state_dir
@@ -49,7 +49,7 @@ def convert_bytes_patch_to_base64(patch_bytes: bytes) -> str:
     return base64.b64encode(patch_bytes).decode("ascii")
 
 
-def load_token_from_disk() -> Optional[dict]:
+def load_token_from_disk() -> dict | None:
     """Load and validate an existing Auth0 token from disk.
 
     Return the token as a `dict` if it can be validated, or return `None`
@@ -69,7 +69,7 @@ def load_token_from_disk() -> Optional[dict]:
 
 
 def get_stack_info(
-    vcs: SupportedVcsRepository, head: Optional[str]
+    vcs: SupportedVcsRepository, head: str | None
 ) -> tuple[str, str, list[str]]:
     """Retrieve information about the current stack for submission via Lando.
 
@@ -168,7 +168,7 @@ class Auth0Config:
 
         return response.json()
 
-    def validate_token(self, user_token: dict) -> Optional[dict]:
+    def validate_token(self, user_token: dict) -> dict | None:
         """Verify the given user token is valid.
 
         Validate the ID token, and validate the access token's expiration claim.
@@ -311,7 +311,7 @@ class Auth0Config:
 class LandoAPIException(Exception):
     """Raised when Lando throws an exception."""
 
-    def __init__(self, detail: Optional[str] = None):
+    def __init__(self, detail: str | None = None):
         super().__init__(detail or "")
 
 
@@ -429,10 +429,9 @@ def push_to_lando_try(
         # Other VCS types (namely `src`) are unsupported.
         raise ValueError(f"Try push via Lando is not supported for `{vcs.name}`.")
 
-    # Use Lando Prod unless the `LANDO_TRY_USE_DEV` environment variable is defined.
-    lando_config_section = (
-        "lando-prod" if not os.getenv("LANDO_TRY_USE_DEV") else "lando-dev"
-    )
+    # Use LANDO_TRY_CONFIG so select which configuration section from .lando.ini to use.
+    # Default to using `lando-prod`.
+    lando_config_section = os.getenv("LANDO_TRY_CONFIG", "lando-prod")
 
     # Load Auth0 config from `.lando.ini`.
     lando_ini_path = Path(vcs.path) / ".lando.ini"

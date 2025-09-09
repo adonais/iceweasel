@@ -2,17 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <array>
+
 #include "FileInfo.h"
 #include "FileInfoImpl.h"
 #include "FileInfoManager.h"
-
 #include "gtest/gtest.h"
-
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/StaticMutex.h"
 #include "nsTArray.h"
-
-#include <array>
 
 using namespace mozilla;
 using namespace mozilla::dom::indexedDB;

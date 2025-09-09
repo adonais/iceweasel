@@ -8,8 +8,8 @@
 
 #include "ClientHandleParent.h"
 #include "ClientSourceParent.h"
-#include "mozilla/dom/ipc/StructuredCloneData.h"
 #include "mozilla/dom/PClientManagerParent.h"
+#include "mozilla/dom/ipc/StructuredCloneData.h"
 
 namespace mozilla::dom {
 

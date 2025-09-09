@@ -48,7 +48,6 @@
 #include "nsPresContext.h"
 #include "nsQueryObject.h"
 #include "nsRange.h"  //for selection setting helper func
-#include "nsTextFragment.h"
 #include "nsTextNode.h"
 
 using namespace mozilla;

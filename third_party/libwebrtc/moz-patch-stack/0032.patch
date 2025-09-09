@@ -15,10 +15,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d380a43d59f4f7cbc
  4 files changed, 35 insertions(+)
 
 diff --git a/audio/audio_send_stream.cc b/audio/audio_send_stream.cc
-index 6e5bd18fef..831e6c2815 100644
+index 94991f76e4..9347e8e860 100644
 --- a/audio/audio_send_stream.cc
 +++ b/audio/audio_send_stream.cc
-@@ -413,6 +413,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
+@@ -412,6 +412,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
    stats.target_bitrate_bps = channel_send_->GetTargetBitrate();
  
    webrtc::CallSendStatistics call_stats = channel_send_->GetRTCPStatistics();
@@ -27,7 +27,7 @@ index 6e5bd18fef..831e6c2815 100644
    stats.header_and_padding_bytes_sent =
        call_stats.header_and_padding_bytes_sent;
 diff --git a/audio/channel_send.cc b/audio/channel_send.cc
-index b9e0d582fe..9dcd3b29ca 100644
+index 52817f31ff..b1b18410c4 100644
 --- a/audio/channel_send.cc
 +++ b/audio/channel_send.cc
 @@ -81,6 +81,31 @@ constexpr TimeDelta kMinRetransmissionWindow = TimeDelta::Millis(30);
@@ -97,7 +97,7 @@ index b9e0d582fe..9dcd3b29ca 100644
    StreamDataCounters rtp_stats;
    StreamDataCounters rtx_stats;
 diff --git a/audio/channel_send.h b/audio/channel_send.h
-index 86d5427a00..353f808a93 100644
+index 8991fc0f44..69c1822109 100644
 --- a/audio/channel_send.h
 +++ b/audio/channel_send.h
 @@ -49,6 +49,7 @@ struct CallSendStatistics {
@@ -109,7 +109,7 @@ index 86d5427a00..353f808a93 100644
    // Within this list, the sender-source SSRC pair is unique and per-pair the
    // ReportBlockData represents the latest Report Block that was received for
 diff --git a/call/audio_send_stream.h b/call/audio_send_stream.h
-index 2d2cc89b08..b305fa8bd1 100644
+index fa465f7d89..1e5e9b8292 100644
 --- a/call/audio_send_stream.h
 +++ b/call/audio_send_stream.h
 @@ -32,6 +32,7 @@

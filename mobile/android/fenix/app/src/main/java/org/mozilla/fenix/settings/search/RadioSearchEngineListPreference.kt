@@ -19,7 +19,6 @@ import androidx.navigation.findNavController
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -34,9 +33,7 @@ import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.SearchEngineRadioButtonBinding
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.getRootView
 import org.mozilla.fenix.ext.telemetryName
-import org.mozilla.fenix.utils.allowUndo
 
 class RadioSearchEngineListPreference @JvmOverloads constructor(
     context: Context,
@@ -176,19 +173,5 @@ class RadioSearchEngineListPreference @JvmOverloads constructor(
             }
         }
         context.components.useCases.searchUseCases.removeSearchEngine(engine)
-
-        MainScope().allowUndo(
-            view = context.getRootView()!!,
-            message = context
-                .getString(R.string.search_delete_search_engine_success_message, engine.name),
-            undoActionTitle = context.getString(R.string.snackbar_deleted_undo),
-            onCancel = {
-                context.components.useCases.searchUseCases.addSearchEngine(engine)
-                if (selectedOrDefaultSearchEngine == engine) {
-                    context.components.useCases.searchUseCases.selectSearchEngine(engine)
-                }
-            },
-            operation = {},
-        )
     }
 }

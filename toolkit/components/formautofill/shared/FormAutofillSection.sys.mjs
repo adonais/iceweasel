@@ -545,22 +545,16 @@ export class FormAutofillCreditCardSection extends FormAutofillSection {
   /**
    * Determine whether a set of cc fields identified by our heuristics form a
    * valid credit card section.
-   * There are 4 different cases when a field is considered a credit card field
+   * There are 3 different cases when a field is considered a credit card field
    * 1. Identified by autocomplete attribute. ex <input autocomplete="cc-number">
-   * 2. Identified by fathom and fathom is pretty confident (when confidence
-   *    value is higher than `highConfidenceThreshold`)
-   * 3. Identified by fathom. Confidence value is between `fathom.confidenceThreshold`
-   *    and `fathom.highConfidenceThreshold`
-   * 4. Identified by regex-based heurstic. There is no confidence value in thise case.
+   * 2. Identified by fathom.
+   * 3. Identified by regex-based heurstic. There is no confidence value in thise case.
    *
    * A form is considered a valid credit card form when one of the following condition
    * is met:
-   * A. One of the cc field is identified by autocomplete (case 1)
+   * A. One of the cc field is identified by autocomplete (case 1).
    * B. One of the cc field is identified by fathom (case 2 or 3), and there is also
-   *    another cc field found by any of our heuristic (case 2, 3, or 4)
-   * C. Only one cc field is found in the section, but fathom is very confident (Case 2).
-   *    Currently we add an extra restriction to this rule to decrease the false-positive
-   *    rate. See comments below for details.
+   *    another cc field found by any of our heuristic (case 2, 3).
    *
    * @returns {boolean} True for a valid section, otherwise false
    */
@@ -609,14 +603,6 @@ export class FormAutofillCreditCardSection extends FormAutofillSection {
       if (ccNumberDetail || ccExpiryDetail) {
         return true;
       }
-    }
-
-    // Condition C.
-    if (
-      ccNumberDetail?.isOnlyVisibleFieldWithHighConfidence ||
-      ccNameDetail?.isOnlyVisibleFieldWithHighConfidence
-    ) {
-      return true;
     }
 
     return false;
@@ -705,24 +691,6 @@ export class FormAutofillCreditCardSection extends FormAutofillSection {
       this.log.debug("Reauth is disabled");
       reauth = false;
     }
-    let string;
-    let errorResult = 0;
-    try {
-      string = await lazy.OSKeyStore.decrypt(cipherText, reauth);
-    } catch (e) {
-      errorResult = e.result;
-      if (e.result != Cr.NS_ERROR_ABORT) {
-        this.log.warn(`Decryption failed with result: ${e.result}`);
-        throw e;
-      }
-      this.log.warn("User canceled encryption login");
-    } finally {
-      Glean.creditcard.osKeystoreDecrypt.record({
-        isDecryptSuccess: errorResult === 0,
-        errorResult,
-        trigger: "autofill",
-      });
-    }
-    return string;
+    return await lazy.OSKeyStore.decrypt(cipherText, "formautofill_cc", reauth);
   }
 }

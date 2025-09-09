@@ -93,8 +93,8 @@ pub enum TimespanMetric {
     Child,
 }
 
-crate::define_metric_metadata_getter!(TimespanMetric, TIMESPAN_MAP);
-crate::define_metric_namer!(TimespanMetric, PARENT_ONLY);
+define_metric_metadata_getter!(TimespanMetric, TIMESPAN_MAP);
+define_metric_namer!(TimespanMetric, PARENT_ONLY);
 
 impl TimespanMetric {
     /// Create a new timespan metric.

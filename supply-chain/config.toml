@@ -281,6 +281,9 @@ notes = "Local override of the crates.io crate that uses a non-vendored local co
 [policy.wr_malloc_size_of]
 audit-as-crates-io = false
 
+[policy.zip]
+audit-as-crates-io = true
+
 [[exemptions.alsa]]
 version = "0.4.3"
 criteria = "safe-to-deploy"
@@ -413,10 +416,6 @@ criteria = "safe-to-deploy"
 version = "0.9.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.error-chain]]
-version = "0.12.4"
-criteria = "safe-to-deploy"
-
 [[exemptions.fallible-iterator]]
 version = "0.2.0"
 criteria = "safe-to-deploy"
@@ -439,10 +438,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.fs-err]]
 version = "2.7.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.futures-macro]]
-version = "0.3.21"
 criteria = "safe-to-deploy"
 
 [[exemptions.futures-task]]
@@ -529,10 +524,6 @@ notes = "The in-gecko feature that we enable makes only pre-built bindings used,
 
 [[exemptions.libudev]]
 version = "0.2.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.mach]]
-version = "0.3.2"
 criteria = "safe-to-deploy"
 
 [[exemptions.memmap2]]

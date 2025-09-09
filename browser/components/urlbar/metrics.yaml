@@ -116,6 +116,7 @@ urlbar:
           `keyword`,
           `merino_adm_sponsored`,
           `merino_amo`,
+          `merino_market`,
           `merino_top_picks`,
           `merino_wikipedia`,
           `ml_yelp`,
@@ -129,10 +130,8 @@ urlbar:
           `rust_adm_sponsored`,
           `rust_amo`,
           `rust_exposure`,
-          `rust_fakespot_amazon`,
-          `rust_fakespot_bestbuy`,
-          `rust_fakespot_other`,
-          `rust_fakespot_walmart`,
+          `rust_important_dates`,
+          `rust_market_opt_in`,
           `rust_mdn`,
           `rust_yelp`,
           `search_engine`,
@@ -484,6 +483,7 @@ urlbar:
           `keyword`,
           `merino_adm_sponsored`,
           `merino_amo`,
+          `merino_market`,
           `merino_top_picks`,
           `merino_wikipedia`,
           `ml_yelp`,
@@ -497,10 +497,8 @@ urlbar:
           `rust_adm_sponsored`,
           `rust_amo`,
           `rust_exposure`,
-          `rust_fakespot_amazon`,
-          `rust_fakespot_bestbuy`,
-          `rust_fakespot_other`,
-          `rust_fakespot_walmart`,
+          `rust_important_dates`,
+          `rust_market_opt_in`,
           `rust_mdn`,
           `rust_yelp`,
           `search_engine`,
@@ -564,7 +562,9 @@ urlbar:
           `inaccurate_location`,
           `manage`,
           `not_interested`,
+          `not_now`,
           `not_relevant`,
+          `opt_in`,
           `paste_go`,
           `show_less_frequently`
         type: string
@@ -610,6 +610,7 @@ urlbar:
           `keyword`,
           `merino_adm_sponsored`,
           `merino_amo`,
+          `merino_market`,
           `merino_top_picks`,
           `merino_wikipedia`,
           `ml_yelp`,
@@ -623,10 +624,8 @@ urlbar:
           `rust_adm_sponsored`,
           `rust_amo`,
           `rust_exposure`,
-          `rust_fakespot_amazon`,
-          `rust_fakespot_bestbuy`,
-          `rust_fakespot_other`,
-          `rust_fakespot_walmart`,
+          `rust_important_dates`,
+          `rust_market_opt_in`,
           `rust_mdn`,
           `rust_yelp`,
           `search_engine`,
@@ -673,33 +672,6 @@ urlbar:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1797265#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1805717#c4
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1842247#c3
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-    expires: never
-
-  fakespot_engagement:
-    type: event
-    description: >
-      Recorded when the user engages with a Fakespot suggestion.
-    extra_keys:
-      grade:
-        description: >
-          The Fakespot grade: "A", "B", etc.
-        type: string
-      rating:
-        description: >
-          The Fakespot rating: "4.1", "5.0", etc.
-        type: string
-      provider:
-        description: >
-          The product provider: "amazon", "bestbuy", "walmart"
-        type: string
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1907990
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1907990
     data_sensitivity:
       - interaction
     notification_emails:
@@ -1262,7 +1234,6 @@ suggest:
       - mdn-suggestions
       - weather
       - configuration
-      - fakespot-suggestions
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1908397
     data_reviews:
@@ -1287,7 +1258,6 @@ suggest:
       - mdn-suggestions
       - weather
       - configuration
-      - fakespot-suggestions
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1908397
     data_reviews:
@@ -1310,7 +1280,6 @@ suggest:
       - yelp
       - mdn
       - weather
-      - fakespot
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1908397
     data_reviews:

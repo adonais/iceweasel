@@ -35,7 +35,7 @@ pub enum MemoryDistributionMetric {
     Child(ChildMetricMeta),
 }
 
-crate::define_metric_namer!(MemoryDistributionMetric);
+define_metric_namer!(MemoryDistributionMetric);
 
 impl MemoryDistributionMetric {
     /// Create a new memory distribution metric.

@@ -5,17 +5,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/HTMLTableElement.h"
+
+#include "jsfriendapi.h"
 #include "mozilla/AttributeStyles.h"
-#include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/DeclarationBlock.h"
-#include "nsAttrValueInlines.h"
-#include "nsWrapperCacheInlines.h"
+#include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLCollectionBinding.h"
 #include "mozilla/dom/HTMLTableElementBinding.h"
+#include "nsAttrValueInlines.h"
 #include "nsContentUtils.h"
 #include "nsLayoutUtils.h"
-#include "jsfriendapi.h"
+#include "nsWrapperCacheInlines.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(Table)
 

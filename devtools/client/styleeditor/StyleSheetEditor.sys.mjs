@@ -139,9 +139,14 @@ export function StyleSheetEditor(resource, win, styleSheetFriendlyIndex) {
   );
 
   this.atRules = [];
+  this._isPrettyPrinted = false;
 }
 
 StyleSheetEditor.prototype = {
+  get isPrettyPrinted() {
+    return this._isPrettyPrinted;
+  },
+
   get resourceId() {
     return this._resource.resourceId;
   },
@@ -327,6 +332,7 @@ StyleSheetEditor.prototype = {
 
     if (force && this.sourceEditor) {
       this.sourceEditor.setText(result);
+      this._isPrettyPrinted = true;
     }
   },
 

@@ -7,6 +7,7 @@
 #include "vm/Watchtower.h"
 
 #include "js/CallAndConstruct.h"
+#include "js/experimental/TypedData.h"
 #include "vm/Compartment.h"
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
@@ -80,7 +81,15 @@ static bool ReshapeForShadowedProp(JSContext* cx, Handle<NativeObject*> obj,
     if (!proto->is<NativeObject>()) {
       break;
     }
-    if (proto->as<NativeObject>().contains(cx, id)) {
+
+    Handle<NativeObject*> nproto = proto.as<NativeObject>();
+
+    if (mozilla::Maybe<PropertyInfo> propInfo = nproto->lookup(cx, id)) {
+      if (proto->hasObjectFuse()) {
+        if (auto* objFuse = cx->zone()->objectFuses.get(nproto)) {
+          objFuse->handleTeleportingShadowedProperty(cx, *propInfo);
+        }
+      }
       if (useDictionaryTeleporting) {
         JS_LOG(teleporting, Debug,
                "Shadowed Prop: Dictionary Reshape for Teleporting");
@@ -224,6 +233,12 @@ static bool ReshapeForProtoMutation(JSContext* cx, HandleObject obj) {
       cx->zone()->shapeZone().useDictionaryModeTeleportation();
 
   while (pobj && pobj->is<NativeObject>()) {
+    if (pobj->hasObjectFuse()) {
+      if (auto* objFuse =
+              cx->zone()->objectFuses.get(pobj.as<NativeObject>())) {
+        objFuse->handleTeleportingProtoMutation(cx);
+      }
+    }
     if (useDictionaryTeleporting) {
       MOZ_ASSERT(!pobj->hasInvalidatedTeleporting(),
                  "Once we start using invalidation shouldn't do any more "
@@ -248,6 +263,22 @@ static bool ReshapeForProtoMutation(JSContext* cx, HandleObject obj) {
   return true;
 }
 
+static constexpr bool IsTypedArrayProtoKey(JSProtoKey protoKey) {
+  switch (protoKey) {
+#define PROTO_KEY(_, T, N) \
+  case JSProto_##N##Array: \
+    return true;
+    JS_FOR_EACH_TYPED_ARRAY(PROTO_KEY)
+#undef PROTO_KEY
+    default:
+      return false;
+  }
+}
+
+static_assert(
+    !IsTypedArrayProtoKey(JSProto_TypedArray),
+    "IsTypedArrayProtoKey(JSProto_TypedArray) is expected to return false");
+
 static bool WatchProtoChangeImpl(JSContext* cx, HandleObject obj) {
   if (!obj->isUsedAsPrototype()) {
     return true;
@@ -271,6 +302,13 @@ static bool WatchProtoChangeImpl(JSContext* cx, HandleObject obj) {
 
     if (nobj == nobj->global().maybeGetPrototype(JSProto_String)) {
       nobj->realm()->realmFuses.optimizeStringPrototypeSymbolsFuse.popFuse(
+          cx, nobj->realm()->realmFuses);
+    }
+
+    auto protoKey = StandardProtoKeyOrNull(nobj);
+    if (IsTypedArrayProtoKey(protoKey) &&
+        nobj == nobj->global().maybeGetPrototype(protoKey)) {
+      nobj->realm()->realmFuses.optimizeTypedArraySpeciesFuse.popFuse(
           cx, nobj->realm()->realmFuses);
     }
   }
@@ -498,7 +536,33 @@ static void MaybePopSharedArrayBufferPrototypeFuses(JSContext* cx,
   }
 }
 
-static void MaybePopFuses(JSContext* cx, NativeObject* obj, jsid id) {
+static void MaybePopTypedArrayConstructorFuses(JSContext* cx, NativeObject* obj,
+                                               jsid id) {
+  if (obj != obj->global().maybeGetConstructor(JSProto_TypedArray)) {
+    return;
+  }
+  if (id.isWellKnownSymbol(JS::SymbolCode::species)) {
+    obj->realm()->realmFuses.optimizeTypedArraySpeciesFuse.popFuse(
+        cx, obj->realm()->realmFuses);
+  }
+}
+
+static void MaybePopTypedArrayPrototypeFuses(JSContext* cx, NativeObject* obj,
+                                             jsid id) {
+  auto protoKey = StandardProtoKeyOrNull(obj);
+  if (protoKey != JSProto_TypedArray && !IsTypedArrayProtoKey(protoKey)) {
+    return;
+  }
+  if (obj != obj->global().maybeGetPrototype(protoKey)) {
+    return;
+  }
+  if (id.isAtom(cx->names().constructor)) {
+    obj->realm()->realmFuses.optimizeTypedArraySpeciesFuse.popFuse(
+        cx, obj->realm()->realmFuses);
+  }
+}
+
+static void MaybePopRealmFuses(JSContext* cx, NativeObject* obj, jsid id) {
   // Handle writes to Array constructor fuse properties.
   MaybePopArrayConstructorFuses(cx, obj, id);
 
@@ -546,12 +610,19 @@ static void MaybePopFuses(JSContext* cx, NativeObject* obj, jsid id) {
 
   // Handle writes to SharedArrayBuffer.prototype fuse properties.
   MaybePopSharedArrayBufferPrototypeFuses(cx, obj, id);
+
+  // Handle writes to %TypedArray% constructor fuse properties.
+  MaybePopTypedArrayConstructorFuses(cx, obj, id);
+
+  // Handle writes to %TypedArray%.prototype and concrete TypedArray.prototype
+  // fuse properties.
+  MaybePopTypedArrayPrototypeFuses(cx, obj, id);
 }
 
 // static
 bool Watchtower::watchPropertyRemoveSlow(JSContext* cx,
-                                         Handle<NativeObject*> obj,
-                                         HandleId id) {
+                                         Handle<NativeObject*> obj, HandleId id,
+                                         PropertyInfo propInfo) {
   MOZ_ASSERT(watchesPropertyRemove(obj));
 
   if (obj->isUsedAsPrototype() && !id.isInt()) {
@@ -562,8 +633,13 @@ bool Watchtower::watchPropertyRemoveSlow(JSContext* cx,
     obj->as<GlobalObject>().bumpGenerationCount();
   }
 
-  if (MOZ_UNLIKELY(obj->hasFuseProperty())) {
-    MaybePopFuses(cx, obj, id);
+  if (MOZ_UNLIKELY(obj->hasRealmFuseProperty())) {
+    MaybePopRealmFuses(cx, obj, id);
+  }
+  if (obj->hasObjectFuse()) {
+    if (auto* objFuse = cx->zone()->objectFuses.get(obj)) {
+      objFuse->handlePropertyRemove(cx, propInfo);
+    }
   }
 
   if (MOZ_UNLIKELY(obj->useWatchtowerTestingLog())) {
@@ -624,13 +700,23 @@ void Watchtower::watchPropertyValueChangeSlow(
   // accessor property or when redefining a data property as an accessor
   // property and vice versa.
 
+  // Handle object fuses before the check for no-op changes below. We don't
+  // attach SetProp stubs for constant properties, so if a constant property is
+  // overwritten with the same value, we want to mark it non-constant.
+  // See Watchtower::canOptimizeSetSlotSlow.
+  if (obj->hasObjectFuse()) {
+    if (auto* objFuse = cx->zone()->objectFuses.get(obj)) {
+      objFuse->handlePropertyValueChange(cx, propInfo);
+    }
+  }
+
   if (propInfo.hasSlot() && obj->getSlot(propInfo.slot()) == value) {
     // We're not actually changing the property's value.
     return;
   }
 
-  if (MOZ_UNLIKELY(obj->hasFuseProperty())) {
-    MaybePopFuses(cx, obj, id);
+  if (MOZ_UNLIKELY(obj->hasRealmFuseProperty())) {
+    MaybePopRealmFuses(cx, obj, id);
   }
 
   // If we cannot GC, we can't manipulate the log, but we need to be able to
@@ -659,6 +745,30 @@ template void Watchtower::watchPropertyValueChangeSlow<AllowGC::NoGC>(
     typename MaybeRooted<PropertyKey, AllowGC::NoGC>::HandleType id,
     typename MaybeRooted<Value, AllowGC::NoGC>::HandleType value,
     PropertyInfo propInfo);
+
+// static
+SetSlotOptimizable Watchtower::canOptimizeSetSlotSlow(JSContext* cx,
+                                                      NativeObject* obj,
+                                                      PropertyInfo prop) {
+  MOZ_ASSERT(obj->hasObjectFuse());
+
+  ObjectFuse* objFuse = cx->zone()->objectFuses.getOrCreate(cx, obj);
+  if (!objFuse) {
+    cx->recoverFromOutOfMemory();
+    return SetSlotOptimizable::No;
+  }
+
+  if (objFuse->canOptimizeSetSlot(prop)) {
+    return SetSlotOptimizable::Yes;
+  }
+
+  // If a property is constant, there's no point in attaching a SetProp IC stub.
+  // The next time we set this property, we have to call into the VM to mark
+  // it NotConstant and potentially pop fuses. After that, we can attach a
+  // regular SetProp IC stub. If we never set this property again, there's no
+  // need to optimize this SetProp.
+  return SetSlotOptimizable::NotYet;
+}
 
 // static
 bool Watchtower::watchFreezeOrSealSlow(JSContext* cx, Handle<NativeObject*> obj,
@@ -695,6 +805,17 @@ bool Watchtower::watchObjectSwapSlow(JSContext* cx, HandleObject a,
   }
   if (!WatchProtoChangeImpl(cx, b)) {
     return false;
+  }
+
+  if (a->hasObjectFuse()) {
+    if (auto* objFuse = cx->zone()->objectFuses.get(a.as<NativeObject>())) {
+      objFuse->handleObjectSwap(cx);
+    }
+  }
+  if (b->hasObjectFuse()) {
+    if (auto* objFuse = cx->zone()->objectFuses.get(b.as<NativeObject>())) {
+      objFuse->handleObjectSwap(cx);
+    }
   }
 
   // Note: we don't invoke the testing callback for swap because the objects may

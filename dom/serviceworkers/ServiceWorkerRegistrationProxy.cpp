@@ -6,13 +6,13 @@
 
 #include "ServiceWorkerRegistrationProxy.h"
 
+#include "ServiceWorkerManager.h"
+#include "ServiceWorkerRegistrationParent.h"
+#include "ServiceWorkerUnregisterCallback.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/dom/notification/NotificationUtils.h"
 #include "mozilla/ipc/BackgroundParent.h"
-#include "ServiceWorkerManager.h"
-#include "ServiceWorkerRegistrationParent.h"
-#include "ServiceWorkerUnregisterCallback.h"
 #include "nsINotificationStorage.h"
 
 namespace mozilla::dom {

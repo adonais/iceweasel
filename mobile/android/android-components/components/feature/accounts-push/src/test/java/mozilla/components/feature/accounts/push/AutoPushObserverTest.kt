@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.accounts.push
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mozilla.components.concept.sync.ConstellationState
 import mozilla.components.concept.sync.Device
 import mozilla.components.concept.sync.DeviceConstellation
@@ -25,7 +24,6 @@ import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.Mockito.`when`
 import org.mockito.stubbing.OngoingStubbing
 
-@ExperimentalCoroutinesApi // for runTestOnMain
 class AutoPushObserverTest {
     @get:Rule
     val coroutinesTestRule = MainCoroutineRule()
@@ -35,7 +33,6 @@ class AutoPushObserverTest {
     private val constellation: DeviceConstellation = mock()
     private val pushFeature: AutoPushFeature = mock()
 
-    @ExperimentalCoroutinesApi
     @Test
     fun `messages are forwarded to account manager`() = runTestOnMain {
         val observer = AutoPushObserver(manager, mock(), "test")
@@ -70,7 +67,6 @@ class AutoPushObserverTest {
         Unit
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun `subscription changes are forwarded to account manager`() = runTestOnMain {
         val observer = AutoPushObserver(manager, pushFeature, "test")

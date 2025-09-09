@@ -130,6 +130,7 @@ class MessageNotificationWorker(
             message.text,
             onClickPendingIntent,
             onDismissPendingIntent,
+            true,
         )
     }
 

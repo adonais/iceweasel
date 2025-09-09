@@ -6,15 +6,15 @@
 
 #include "MMPrinter.h"
 
-#include "jsapi.h"
-#include "nsJSUtils.h"
 #include "Logging.h"
+#include "jsapi.h"
 #include "mozilla/Bootstrap.h"
-#include "mozilla/dom/ipc/StructuredCloneData.h"
-#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RandomNum.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/ipc/StructuredCloneData.h"
 #include "nsFrameMessageManager.h"
+#include "nsJSUtils.h"
 #include "prenv.h"
 
 namespace mozilla::dom {

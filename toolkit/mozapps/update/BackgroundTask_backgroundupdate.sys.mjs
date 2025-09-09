@@ -6,7 +6,7 @@
 import { BackgroundUpdate } from "resource://gre/modules/BackgroundUpdate.sys.mjs";
 import { DevToolsSocketStatus } from "resource://devtools/shared/security/DevToolsSocketStatus.sys.mjs";
 
-const { EXIT_CODE } = BackgroundUpdate;
+const { ACTION, EXIT_CODE } = BackgroundUpdate;
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
@@ -47,151 +47,328 @@ export const backgroundTaskTimeoutSec = Services.prefs.getIntPref(
   10 * 60
 );
 
-/**
- * Verify that pre-conditions to update this installation (both persistent and
- * transient) are fulfilled, and if they are all fulfilled, pump the update
- * loop.
- *
- * This means checking for, downloading, and potentially applying updates.
- *
- * @returns {any} - Returns AppUpdater status upon update loop exit.
- */
-async function _attemptBackgroundUpdate() {
-  let SLUG = "_attemptBackgroundUpdate";
-
-  // Most likely we will implicitly initialize update at some point, but make
-  // sure post update processing gets run, just in case.
-  await lazy.UpdateService.init();
-
-  lazy.log.debug(
-    `${SLUG}: checking for preconditions necessary to update this installation`
-  );
-  let reasons = await BackgroundUpdate._reasonsToNotUpdateInstallation();
-
-  if (BackgroundUpdate._force()) {
-    // We want to allow developers and testers to monkey with the system.
-    lazy.log.debug(
-      `${SLUG}: app.update.background.force=true, ignoring reasons: ${JSON.stringify(
-        reasons
-      )}`
-    );
-    reasons = [];
-  }
-
-  reasons.sort();
-  for (let reason of reasons) {
-    Glean.backgroundUpdate.reasons.add(reason);
-  }
-
-  let enabled = !reasons.length;
-  if (!enabled) {
-    lazy.log.info(
-      `${SLUG}: not running background update task: '${JSON.stringify(
-        reasons
-      )}'`
-    );
-
-    return lazy.AppUpdater.STATUS.NEVER_CHECKED;
-  }
-
-  let result = new Promise(resolve => {
-    let appUpdater = new lazy.AppUpdater();
-
-    let _appUpdaterListener = (status, progress, progressMax) => {
-      let stringStatus = lazy.AppUpdater.STATUS.debugStringFor(status);
-      Glean.backgroundUpdate.states.add(stringStatus);
-      Glean.backgroundUpdate.finalState.set(stringStatus);
-
-      if (lazy.AppUpdater.STATUS.isTerminalStatus(status)) {
-        lazy.log.debug(
-          `${SLUG}: background update transitioned to terminal status ${status}: ${stringStatus}`
-        );
-        appUpdater.removeListener(_appUpdaterListener);
-        appUpdater.stop();
-        resolve(status);
-      } else if (status == lazy.AppUpdater.STATUS.CHECKING) {
-        // The usual initial flow for the Background Update Task is to kick off
-        // the update download and immediately exit. For consistency, we are
-        // going to enforce this flow. So if we are just now checking for
-        // updates, we will limit the updater such that it cannot start staging,
-        // even if we immediately download the entire update.
-        lazy.log.debug(
-          `${SLUG}: This session will be limited to downloading updates only.`
-        );
-        lazy.UpdateService.onlyDownloadUpdatesThisSession = true;
-      } else if (
-        status == lazy.AppUpdater.STATUS.DOWNLOADING &&
-        (lazy.UpdateService.onlyDownloadUpdatesThisSession ||
-          (progress !== undefined && progressMax !== undefined))
-      ) {
-        // We get a DOWNLOADING callback with no progress or progressMax values
-        // when we initially switch to the DOWNLOADING state. But when we get
-        // onProgress notifications, progress and progressMax will be defined.
-        // Remember to keep in mind that progressMax is a required value that
-        // we can count on being meaningful, but it will be set to -1 for BITS
-        // transfers that haven't begun yet.
-        if (
-          lazy.UpdateService.onlyDownloadUpdatesThisSession ||
-          progressMax < 0 ||
-          progress != progressMax
-        ) {
-          lazy.log.debug(
-            `${SLUG}: Download in progress. Exiting task while download ` +
-              `transfers`
-          );
-          // If the download is still in progress, we don't want the Background
-          // Update Task to hang around waiting for it to complete.
-          lazy.UpdateService.onlyDownloadUpdatesThisSession = true;
-
-          appUpdater.removeListener(_appUpdaterListener);
-          appUpdater.stop();
-          resolve(status);
-        } else {
-          lazy.log.debug(`${SLUG}: Download has completed!`);
-        }
-      } else {
-        lazy.log.debug(
-          `${SLUG}: background update transitioned to status ${status}: ${stringStatus}`
-        );
-      }
-    };
-    appUpdater.addListener(_appUpdaterListener);
-
-    appUpdater.check();
-  });
-
-  return result;
+function automaticRestartFound(commandLine) {
+  return -1 != commandLine.findFlag("automatic-restart", false);
 }
 
 /**
- * Maybe submit a "background-update" custom Glean ping.
- *
- * If data reporting upload in general is enabled Glean will submit a ping.  To determine if
- * telemetry is enabled, Glean will look at the relevant pref, which was mirrored from the default
- * profile.  Note that the Firefox policy mechanism will manage this pref, locking it to particular
- * values as appropriate.
+ * Functions implementing the possible high level actions that the Background
+ * Update Task may be performing (depending on prefs, policies, Nimbus
+ * configuration, etc).
  */
-export async function maybeSubmitBackgroundUpdatePing() {
-  let SLUG = "maybeSubmitBackgroundUpdatePing";
+export var Actions = {
+  /**
+   * Verify that pre-conditions to update this installation (both persistent and
+   * transient) are fulfilled, and if they are all fulfilled, pump the update
+   * loop.
+   *
+   * This means checking for, downloading, and potentially applying updates.
+   *
+   * @returns {any} - Returns AppUpdater status upon update loop exit.
+   */
+  async attemptBackgroundUpdate() {
+    let SLUG = "attemptBackgroundUpdate";
 
-  // It should be possible to turn AUSTLMY data into Glean data, but mapping histograms isn't
-  // trivial, so we don't do it at this time.  Bug 1703313.
+    lazy.log.debug(
+      `${SLUG}: checking for preconditions necessary to update this installation`
+    );
+    let reasons = await BackgroundUpdate._reasonsToNotUpdateInstallation();
 
-  // Including a reason allows to differentiate pings sent as part of the task
-  // and pings queued and sent by Glean on a different schedule.
-  GleanPings.backgroundUpdate.submit("backgroundupdate_task");
+    if (BackgroundUpdate._force()) {
+      // We want to allow developers and testers to monkey with the system.
+      lazy.log.debug(
+        `${SLUG}: app.update.background.force=true, ignoring reasons: ${JSON.stringify(
+          reasons
+        )}`
+      );
+      reasons = [];
+    }
 
-  lazy.log.info(`${SLUG}: submitted "background-update" ping`);
+    reasons.sort();
+    for (let reason of reasons) {
+      Glean.backgroundUpdate.reasons.add(reason);
+    }
+
+    let enabled = !reasons.length;
+    if (!enabled) {
+      lazy.log.info(
+        `${SLUG}: not running background update task: '${JSON.stringify(
+          reasons
+        )}'`
+      );
+
+      return lazy.AppUpdater.STATUS.NEVER_CHECKED;
+    }
+
+    let result = new Promise(resolve => {
+      let appUpdater = new lazy.AppUpdater();
+
+      let _appUpdaterListener = (status, progress, progressMax) => {
+        let stringStatus = lazy.AppUpdater.STATUS.debugStringFor(status);
+        Glean.backgroundUpdate.states.add(stringStatus);
+        Glean.backgroundUpdate.finalState.set(stringStatus);
+
+        if (lazy.AppUpdater.STATUS.isTerminalStatus(status)) {
+          lazy.log.debug(
+            `${SLUG}: background update transitioned to terminal status ${status}: ${stringStatus}`
+          );
+          appUpdater.removeListener(_appUpdaterListener);
+          appUpdater.stop();
+          resolve(status);
+        } else if (status == lazy.AppUpdater.STATUS.CHECKING) {
+          // The usual initial flow for the Background Update Task is to kick off
+          // the update download and immediately exit. For consistency, we are
+          // going to enforce this flow. So if we are just now checking for
+          // updates, we will limit the updater such that it cannot start staging,
+          // even if we immediately download the entire update.
+          lazy.log.debug(
+            `${SLUG}: This session will be limited to downloading updates only.`
+          );
+          lazy.UpdateService.onlyDownloadUpdatesThisSession = true;
+        } else if (
+          status == lazy.AppUpdater.STATUS.DOWNLOADING &&
+          (lazy.UpdateService.onlyDownloadUpdatesThisSession ||
+            (progress !== undefined && progressMax !== undefined))
+        ) {
+          // We get a DOWNLOADING callback with no progress or progressMax values
+          // when we initially switch to the DOWNLOADING state. But when we get
+          // onProgress notifications, progress and progressMax will be defined.
+          // Remember to keep in mind that progressMax is a required value that
+          // we can count on being meaningful, but it will be set to -1 for BITS
+          // transfers that haven't begun yet.
+          if (
+            lazy.UpdateService.onlyDownloadUpdatesThisSession ||
+            progressMax < 0 ||
+            progress != progressMax
+          ) {
+            lazy.log.debug(
+              `${SLUG}: Download in progress. Exiting task while download ` +
+                `transfers`
+            );
+            // If the download is still in progress, we don't want the Background
+            // Update Task to hang around waiting for it to complete.
+            lazy.UpdateService.onlyDownloadUpdatesThisSession = true;
+
+            appUpdater.removeListener(_appUpdaterListener);
+            appUpdater.stop();
+            resolve(status);
+          } else {
+            lazy.log.debug(`${SLUG}: Download has completed!`);
+          }
+        } else {
+          lazy.log.debug(
+            `${SLUG}: background update transitioned to status ${status}: ${stringStatus}`
+          );
+        }
+      };
+      appUpdater.addListener(_appUpdaterListener);
+
+      appUpdater.check();
+    });
+
+    return result;
+  },
+
+  /**
+   * Maybe submit a "background-update" custom Glean ping.
+   *
+   * If data reporting upload in general is enabled Glean will submit a ping.  To determine if
+   * telemetry is enabled, Glean will look at the relevant pref, which was mirrored from the default
+   * profile.  Note that the Firefox policy mechanism will manage this pref, locking it to particular
+   * values as appropriate.
+   */
+  async maybeSubmitBackgroundUpdatePing() {
+    let SLUG = "maybeSubmitBackgroundUpdatePing";
+
+    // It should be possible to turn AUSTLMY data into Glean data, but mapping histograms isn't
+    // trivial, so we don't do it at this time.  Bug 1703313.
+
+    // Including a reason allows to differentiate pings sent as part of the task
+    // and pings queued and sent by Glean on a different schedule.
+    GleanPings.backgroundUpdate.submit("backgroundupdate_task");
+
+    lazy.log.info(`${SLUG}: submitted "background-update" ping`);
+  },
+
+  async enableNimbusAndFirefoxMessagingSystem(
+    commandLine,
+    defaultProfileTargetingSnapshot
+  ) {
+    await lazy.BackgroundTasksUtils.enableNimbus(
+      commandLine,
+      defaultProfileTargetingSnapshot.environment
+    );
+
+    await lazy.BackgroundTasksUtils.enableFirefoxMessagingSystem(
+      defaultProfileTargetingSnapshot.environment
+    );
+  },
+};
+
+/**
+ * Runs the specified Background Update actions from the `Actions` object,
+ * above. May restart the browser upon completion if an update was successfully
+ * downloaded and prepared and Nimbus configuration allows it.
+ *
+ * @param   commandLine {nsICommandLine}
+ *          The command line that the browser was launched with.
+ * @param   defaultProfileTargetingSnapshot {object}
+ *          The snapshotted Firefox Messaging System targeting out of a profile.
+ * @param   actionSet {Set<string>}
+ *          The actions to perform. The available actions are defined in
+ *          `BackgroundUpdate.ACTION`.
+ * @returns {integer}
+ *          The `EXIT_CODE` value that the Background Update Task should return.
+ */
+export async function runActions(
+  commandLine,
+  defaultProfileTargetingSnapshot,
+  actionSet
+) {
+  let SLUG = "runActions";
+
+  let result = EXIT_CODE.SUCCESS;
+
+  // In case we have old observations.  This shouldn't happen but tasks do crash
+  // or fail with exceptions, so: belt and braces.
+  Glean.backgroundUpdate.reasons.set([]);
+  Glean.backgroundUpdate.states.set([]);
+
+  let updateStatus = lazy.AppUpdater.STATUS.NEVER_CHECKED;
+  let stringStatus = lazy.AppUpdater.STATUS.debugStringFor(updateStatus);
+  Glean.backgroundUpdate.states.add(stringStatus);
+  Glean.backgroundUpdate.finalState.set(stringStatus);
+
+  if (!actionSet.size) {
+    lazy.log.warn(`${SLUG}: no actions to take, exiting immediately`);
+
+    // We're done for this time period.
+    Glean.backgroundUpdate.exitCodeSuccess.set(true);
+    return EXIT_CODE.SUCCESS;
+  }
+  // Most likely we will implicitly initialize update at some point, but make
+  // sure post update processing gets run, just in case.  We want to do this
+  // even when we're not going to check for updates; no sense leaving a pending
+  // update in indeterminate state.
+  await lazy.UpdateService.init();
+
+  let attemptAutomaticRestart = false;
+  try {
+    if (actionSet.has(ACTION.UPDATE)) {
+      // Return AppUpdater status from attemptBackgroundUpdate() to
+      // check if the status is STATUS.READY_FOR_RESTART.
+      updateStatus = await Actions.attemptBackgroundUpdate();
+
+      lazy.log.info(`${SLUG}: attempted background update`);
+
+      Glean.backgroundUpdate.exitCodeSuccess.set(true);
+
+      // Report an attempted automatic restart.  If a restart loop is occurring
+      // then `automaticRestartFound` will be true, and we don't want to restart a
+      // second time.
+      attemptAutomaticRestart =
+        lazy.NimbusFeatures.backgroundUpdateAutomaticRestart.getVariable(
+          "enabled"
+        ) &&
+        updateStatus === lazy.AppUpdater.STATUS.READY_FOR_RESTART &&
+        !automaticRestartFound(commandLine);
+
+      if (attemptAutomaticRestart) {
+        Glean.backgroundUpdate.automaticRestartAttempted.set(true);
+      }
+    } else {
+      lazy.log.info(`${SLUG}: not attempting background update`);
+    }
+
+    if (actionSet.has(ACTION.EXPERIMENTER)) {
+      try {
+        // Now that we've pumped the update loop (if we are going to pump the
+        // update loop), we can start Nimbus and the Firefox Messaging System and
+        // see if we should message the user.  This minimizes the risk of
+        // messaging impacting the function of the background update system.
+        lazy.log.info(
+          `${SLUG}: enabling Nimbus and the Firefox Messaging System`
+        );
+
+        await Actions.enableNimbusAndFirefoxMessagingSystem(
+          commandLine,
+          defaultProfileTargetingSnapshot
+        );
+      } catch (f) {
+        // Try to make it easy to witness errors in this system.  We can pass through any exception
+        // without disrupting (future) background updates.
+        //
+        // Most meaningful issues with the Nimbus/experiments system will be reported via Glean
+        // events.
+        lazy.log.warn(
+          `${SLUG}: exception raised from Nimbus/Firefox Messaging System`,
+          f
+        );
+        throw f;
+      }
+    }
+  } catch (e) {
+    // TODO: in the future, we might want to classify failures into transient and persistent and
+    // backoff the update task in the face of continuous persistent errors.
+    lazy.log.error(`${SLUG}: caught exception attempting background update`, e);
+
+    result = EXIT_CODE.EXCEPTION;
+    Glean.backgroundUpdate.exitCodeException.set(true);
+  } finally {
+    if (actionSet.has(ACTION.SUBMIT_PING)) {
+      // This is the point to report telemetry, assuming that the default profile's data reporting
+      // configuration allows it.
+      await Actions.maybeSubmitBackgroundUpdatePing();
+    } else {
+      lazy.log.info(`${SLUG}: not submitting background update ping`);
+    }
+  }
+
+  // Avoid shutdown races.  We used to have known races (Bug 1703572, Bug
+  // 1700846), so better safe than sorry.
+  await lazy.ExtensionUtils.promiseTimeout(1000);
+
+  if (actionSet.has(ACTION.UPDATE)) {
+    // If we're in a staged background update, we need to restart Firefox to complete the update.
+    lazy.log.debug(
+      `${SLUG}: Checking if staged background update is ready for restart`
+    );
+    if (attemptAutomaticRestart) {
+      lazy.log.debug(
+        `${SLUG}: Starting Firefox restart after staged background update`
+      );
+
+      // We need to restart Firefox with the same arguments to ensure
+      // the background update continues from where it was before the restart.
+      try {
+        Cc["@mozilla.org/updates/update-processor;1"]
+          .createInstance(Ci.nsIUpdateProcessor)
+          .attemptAutomaticApplicationRestartWithLaunchArgs([
+            "-automatic-restart",
+          ]);
+        lazy.log.debug(`${SLUG}: automatic application restart queued`);
+      } catch (e) {
+        lazy.log.error(
+          `${SLUG}: caught exception; failed to queue automatic application restart`,
+          e
+        );
+      }
+    }
+  } else {
+    lazy.log.debug(
+      `${SLUG}: not updating so not checking if background update is ready for restart`
+    );
+  }
+
+  return result;
 }
 
 export async function runBackgroundTask(commandLine) {
   let SLUG = "runBackgroundTask";
   lazy.log.error(`${SLUG}: backgroundupdate`);
-  let automaticRestartFound =
-    -1 != commandLine.findFlag("automatic-restart", false);
 
   // Modify Glean metrics for a successful automatic restart.
-  if (automaticRestartFound) {
+  if (automaticRestartFound(commandLine)) {
     Glean.backgroundUpdate.automaticRestartSuccess.set(true);
     lazy.log.debug(`${SLUG}: application automatic restart completed`);
   }
@@ -366,98 +543,11 @@ export async function runBackgroundTask(commandLine) {
   // active langpacks to disable background updates in more cases, maybe in per-installation prefs.
   Services.prefs.setBoolPref("app.update.langpack.enabled", false);
 
-  let result = EXIT_CODE.SUCCESS;
-
-  let stringStatus = lazy.AppUpdater.STATUS.debugStringFor(
-    lazy.AppUpdater.STATUS.NEVER_CHECKED
+  let result = await BackgroundUpdate.withActionsToPerform(
+    { defaultProfileTargetingSnapshot },
+    actionSet =>
+      runActions(commandLine, defaultProfileTargetingSnapshot, actionSet)
   );
-  Glean.backgroundUpdate.states.add(stringStatus);
-  Glean.backgroundUpdate.finalState.set(stringStatus);
-
-  let updateStatus = lazy.AppUpdater.STATUS.NEVER_CHECKED;
-  try {
-    // Return AppUpdater status from _attemptBackgroundUpdate() to
-    // check if the status is STATUS.READY_FOR_RESTART.
-    updateStatus = await _attemptBackgroundUpdate();
-
-    lazy.log.info(`${SLUG}: attempted background update`);
-    Glean.backgroundUpdate.exitCodeSuccess.set(true);
-
-    try {
-      // Now that we've pumped the update loop, we can start Nimbus and the Firefox Messaging System
-      // and see if we should message the user.  This minimizes the risk of messaging impacting the
-      // function of the background update system.
-      await lazy.BackgroundTasksUtils.enableNimbus(
-        commandLine,
-        defaultProfileTargetingSnapshot.environment
-      );
-
-      await lazy.BackgroundTasksUtils.enableFirefoxMessagingSystem(
-        defaultProfileTargetingSnapshot.environment
-      );
-    } catch (f) {
-      // Try to make it easy to witness errors in this system.  We can pass through any exception
-      // without disrupting (future) background updates.
-      //
-      // Most meaningful issues with the Nimbus/experiments system will be reported via Glean
-      // events.
-      lazy.log.warn(
-        `${SLUG}: exception raised from Nimbus/Firefox Messaging System`,
-        f
-      );
-      throw f;
-    }
-  } catch (e) {
-    // TODO: in the future, we might want to classify failures into transient and persistent and
-    // backoff the update task in the face of continuous persistent errors.
-    lazy.log.error(`${SLUG}: caught exception attempting background update`, e);
-
-    result = EXIT_CODE.EXCEPTION;
-    Glean.backgroundUpdate.exitCodeException.set(true);
-  } finally {
-    // This is the point to report telemetry, assuming that the default profile's data reporting
-    // configuration allows it.
-    await maybeSubmitBackgroundUpdatePing();
-  }
-
-  // TODO: ensure the update service has persisted its state before we exit.  Bug 1700846.
-  // TODO: ensure that Glean's upload mechanism is aware of Gecko shutdown.  Bug 1703572.
-  await lazy.ExtensionUtils.promiseTimeout(500);
-
-  // If we're in a staged background update, we need to restart Firefox to complete the update.
-  lazy.log.debug(
-    `${SLUG}: Checking if staged background update is ready for restart`
-  );
-  // If a restart loop is occurring then automaticRestartFound will be true.
-  if (
-    lazy.NimbusFeatures.backgroundUpdateAutomaticRestart.getVariable(
-      "enabled"
-    ) &&
-    updateStatus === lazy.AppUpdater.STATUS.READY_FOR_RESTART &&
-    !automaticRestartFound
-  ) {
-    lazy.log.debug(
-      `${SLUG}: Starting Firefox restart after staged background update`
-    );
-
-    // We need to restart Firefox with the same arguments to ensure
-    // the background update continues from where it was before the restart.
-    try {
-      Cc["@mozilla.org/updates/update-processor;1"]
-        .createInstance(Ci.nsIUpdateProcessor)
-        .attemptAutomaticApplicationRestartWithLaunchArgs([
-          "-automatic-restart",
-        ]);
-      // Report an attempted automatic restart.
-      Glean.backgroundUpdate.automaticRestartAttempted.set(true);
-      lazy.log.debug(`${SLUG}: automatic application restart queued`);
-    } catch (e) {
-      lazy.log.error(
-        `${SLUG}: caught exception; failed to queue automatic application restart`,
-        e
-      );
-    }
-  }
 
   return result;
 }

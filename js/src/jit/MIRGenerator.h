@@ -44,8 +44,6 @@ class MIRGenerator final {
                const OptimizationInfo* optimizationInfo,
                const wasm::CodeMetadata* wasmCodeMeta = nullptr);
 
-  void initMinWasmMemory0Length(uint64_t init) { minWasmMemory0Length_ = init; }
-
   TempAllocator& alloc() { return *alloc_; }
   MIRGraph& graph() { return *graph_; }
   [[nodiscard]] bool ensureBallast() { return alloc().ensureBallast(); }
@@ -123,7 +121,6 @@ class MIRGenerator final {
     MOZ_ASSERT(compilingWasm());
     wasmMaxStackArgBytes_ = std::max(n, wasmMaxStackArgBytes_);
   }
-  uint64_t minWasmMemory0Length() const { return minWasmMemory0Length_; }
 
   void setNeedsOverrecursedCheck() { needsOverrecursedCheck_ = true; }
   bool needsOverrecursedCheck() const { return needsOverrecursedCheck_; }
@@ -138,8 +135,9 @@ class MIRGenerator final {
  private:
   // The CompileInfo for the outermost script.
   const CompileInfo* outerInfo_;
-
   const OptimizationInfo* optimizationInfo_;
+  const wasm::CodeMetadata* wasmCodeMeta_;
+
   TempAllocator* alloc_;
   MIRGraph* graph_;
   AbortReasonOr<Ok> offThreadStatus_;
@@ -161,9 +159,12 @@ class MIRGenerator final {
   bool licmEnabled() const;
   bool branchHintingEnabled() const;
 
- private:
-  uint64_t minWasmMemory0Length_;
+  const wasm::CodeMetadata* wasmCodeMeta() const {
+    MOZ_ASSERT(wasmCodeMeta_);
+    return wasmCodeMeta_;
+  }
 
+ private:
   IonPerfSpewer wasmPerfSpewer_;
 
  public:

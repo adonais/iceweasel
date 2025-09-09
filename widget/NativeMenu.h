@@ -9,23 +9,34 @@
 #include "nsISupportsImpl.h"
 #include "Units.h"
 
+class nsIURI;
 class nsIFrame;
 class nsPresContext;
 
 namespace mozilla {
 using Modifiers = uint16_t;
 class ErrorResult;
-}  // namespace mozilla
+class ComputedStyle;
 
-namespace mozilla::dom {
+namespace dom {
 class Element;
 }
 
-namespace mozilla::widget {
+namespace widget {
+
+struct NativeMenuIcon {
+  RefPtr<nsIURI> mURI;
+  RefPtr<const ComputedStyle> mStyle;
+
+  explicit operator bool() const { return !!mURI; }
+};
 
 class NativeMenu {
  public:
   NS_INLINE_DECL_REFCOUNTING(NativeMenu)
+
+  // Given a <menu> or <menuitem> element, get the relevant icon's URI.
+  static NativeMenuIcon GetIcon(dom::Element&);
 
   // Show this menu as a context menu at the specified position.
   // This call assumes that the popupshowing event for the root popup has
@@ -96,6 +107,7 @@ class NativeMenu {
   virtual ~NativeMenu() = default;
 };
 
-}  // namespace mozilla::widget
+}  // namespace widget
+}  // namespace mozilla
 
 #endif  // mozilla_widget_NativeMenu_h

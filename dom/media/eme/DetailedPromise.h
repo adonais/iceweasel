@@ -7,8 +7,8 @@
 #ifndef __DetailedPromise_h__
 #define __DetailedPromise_h__
 
-#include "mozilla/dom/Promise.h"
 #include "EMEUtils.h"
+#include "mozilla/dom/Promise.h"
 
 namespace mozilla::dom {
 

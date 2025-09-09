@@ -4,6 +4,7 @@
 
 import asyncio
 import contextlib
+import math
 import time
 import zipfile
 from base64 import b64decode, b64encode
@@ -31,6 +32,8 @@ class Client:
             and platform_override != session.capabilities["platformName"]
         ):
             self.platform_override = platform_override
+
+        self._start_collecting_alerts()
 
     async def maybe_override_platform(self):
         if hasattr(self, "_platform_override_checked"):
@@ -683,6 +686,9 @@ class Client:
 
         return find_in([await self.top_context()], url)
 
+    def stall(self, delay):
+        return asyncio.sleep(delay)
+
     class Context:
         def __init__(self, client, id):
             self.client = client
@@ -817,7 +823,7 @@ class Client:
                 out.append({"type": "string", "value": arg})
             else:
                 if "type" in arg:
-                    out.push(arg)
+                    out.append(arg)
                     continue
                 raise ValueError(f"Unhandled argument type: {t}")
         return out
@@ -878,45 +884,128 @@ class Client:
             )
         return self.prompts_preload_script
 
-    async def await_alert(self, texts, timeout=10):
-        if type(texts) is not list:
-            texts = [texts]
-        if not hasattr(self, "alert_preload_script"):
-            self.alert_preload_script = await self.make_preload_script(
+    def _start_collecting_alerts(self):
+        # WebDriver doesn't make it easy to just wait for an alert, because while you can
+        # listen for the events, there is no guarantee that UnexpectedAlertExceptions won't
+        # be thrown while you're doing other things. So we just tell Gecko to collect the
+        # prompts as they come in, and immediately dismiss them to prevent the exceptions.
+        with self.using_context("chrome"):
+            self.execute_script(
                 """
-                    window.__alerts = [];
-                    window.wrappedJSObject.alert = function(text) {
-                        window.__alerts.push(text);
+                const lazy = {};
+
+                ChromeUtils.defineESModuleGetters(lazy, {
+                  EventPromise: "chrome://remote/content/shared/Sync.sys.mjs",
+                  modal: "chrome://remote/content/shared/Prompt.sys.mjs",
+                  PromptListener: "chrome://remote/content/shared/listeners/PromptListener.sys.mjs",
+                  TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
+                });
+
+                async function tryClosePrompt(contextId) {
+                    const context = lazy.TabManager.getBrowsingContextById(contextId);
+                    if (!context) {
+                      return;
                     }
-                """,
-                "alert_detector",
-            )
-        return self.alert_preload_script.run(
-            """(timeout, ...msgs) => new Promise(done => {
-                    const interval = 200;
-                    let count = 0;
-                    const to = setInterval(() => {
-                        for (const a of window.__alerts || []) {
-                            for (const msg of msgs) {
-                                if (a.includes(msg)) {
-                                    clearInterval(to);
-                                    done(a);
-                                    return;
-                                }
+
+                    const tab = lazy.TabManager.getTabForBrowsingContext(context);
+                    const browser = lazy.TabManager.getBrowserForTab(tab);
+                    const window = lazy.TabManager.getWindowForTab(tab);
+                    const dialog = lazy.modal.findPrompt({
+                      window,
+                      contentBrowser: browser,
+                    });
+
+                    const closePrompt = async callback => {
+                      const dialogClosed = new lazy.EventPromise(
+                        window,
+                        "DOMModalDialogClosed"
+                      );
+                      callback();
+                      await dialogClosed;
+                    };
+
+                    if (dialog && dialog.isOpen) {
+                      switch (dialog.promptType) {
+                        case "alert":
+                          await closePrompt(() => dialog.accept());
+                          return;
+
+                        case "beforeunload":
+                        case "confirm":
+                          await closePrompt(() => {
+                            if (accept) {
+                              dialog.accept();
+                            } else {
+                              dialog.dismiss();
                             }
-                        }
-                        count += interval;
-                        if (timeout && timeout * 1000 < count) {
-                            clearInterval(to);
-                            done(false);
-                        }
-                    }, interval);
-               })
-            """,
-            timeout,
-            *texts,
-            await_promise=True,
-        )
+                          });
+                          return;
+
+                        case "prompt":
+                          await closePrompt(() => {
+                            if (accept) {
+                              dialog.text = userText;
+                              dialog.accept();
+                            } else {
+                              dialog.dismiss();
+                            }
+                          });
+                          return;
+                      }
+                   }
+                }
+
+                const alerts = [];
+                const promptListener = new lazy.PromptListener();
+                promptListener.on("opened", async (eventName, data) => {
+                    const { contentBrowser, prompt } = data;
+                    const type = prompt.promptType;
+                    const context = lazy.TabManager.getIdForBrowser(contentBrowser);
+                    const message = await prompt.getText();
+                    alerts.push({type, context, message});
+                    tryClosePrompt(context);
+                    Services.ppmm.sharedData.set("WebCompatTests:Prompts", alerts);
+                    console.error(`**** Closed ${type} in context ${context} with message: ${message}`);
+                });
+                promptListener.startListening();
+            """
+            )
+
+    def _get_prompts(self):
+        with self.using_context("chrome"):
+            return self.execute_script(
+                "return Services.cpmm.sharedData.get('WebCompatTests:Prompts')"
+            )
+
+    def _check_prompts(self, specific_messages, prompts):
+        if not prompts:
+            return
+        for prompt in prompts:
+            message = prompt["message"]
+            if not specific_messages:
+                return message
+            else:
+                for specific_message in specific_messages:
+                    if specific_message in prompt["message"]:
+                        return prompt["message"]
+
+    async def find_alert(self, specific_messages=None, delay=None):
+        if delay:
+            await asyncio.sleep(delay)
+        found = self._check_prompts(specific_messages, self._get_prompts())
+        if found is not None:
+            return found
+
+    async def await_alert(
+        self, specific_messages=None, timeout=20, polling_interval=0.2
+    ):
+        with self.using_context("chrome"):
+            print(math.ceil(timeout / polling_interval))
+            for _ in range(math.ceil(timeout / polling_interval)):
+                found = self._check_prompts(specific_messages, self._get_prompts())
+                if found is not None:
+                    return found
+                await asyncio.sleep(polling_interval)
 
     async def await_popup(self, url=None):
         if not hasattr(self, "popup_preload_script"):

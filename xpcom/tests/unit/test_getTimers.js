@@ -23,27 +23,31 @@ function newTimer(name, delay, type) {
   return timer;
 }
 
+const ignoredTimers = [
+  "BackgroundHangThread_timer", // BHR is Nightly-only, just ignore it.
+  "CCGCScheduler::EnsureGCRunner", // GC runner can be scheduled anytime, randomly.
+];
+if (AppConstants.platform == "win") {
+  // On Windows there's a 3min timer added at startup to then add an
+  // idle observer that finally triggers removing leftover temp files.
+  // Ignore that too.
+  ignoredTimers.push("nsAnonTempFileRemover");
+}
+if (
+  Services.profiler.IsActive() &&
+  !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
+  Services.env.exists("MOZ_UPLOAD_DIR") &&
+  Services.env.exists("MOZ_TEST_TIMEOUT_INTERVAL")
+) {
+  // Ignore the timer used to upload profiles of test timeouts when running
+  // the tests with --env MOZ_PROFILER_STARTUP=1.
+  ignoredTimers.push("upload_test_timeout_profile");
+}
+
 function getTimers() {
-  return timerManager.getTimers().filter(t => {
-    if (t.name == "BackgroundHangThread_timer") {
-      // BHR is Nightly-only, so just ignore it.
-      return false;
-    }
-
-    if (t.name == "CCGCScheduler::EnsureGCRunner") {
-      // GC runner can be scheduled anytime, randomly.
-      return false;
-    }
-
-    if (AppConstants.platform == "win" && t.name == "nsAnonTempFileRemover") {
-      // On Windows there's a 3min timer added at startup to then add an
-      // idle observer that finally triggers removing leftover temp files.
-      // Ignore that too.
-      return false;
-    }
-
-    return true;
-  });
+  return timerManager
+    .getTimers()
+    .filter(t => !ignoredTimers.includes(t.name.replace(/\[.*/, "")));
 }
 
 function run_test() {

@@ -10,22 +10,24 @@
 #include <wayland-egl.h>
 #include "nsGtkUtils.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/ToString.h"
 #include <dlfcn.h>
 #include <fcntl.h>
 #include "ScreenHelperGTK.h"
 #include "DMABufFormats.h"
 #include "mozilla/gfx/gfxVars.h"
+#ifdef MOZ_LOGGING
+#  include "EncoderConfig.h"
+#endif
 
 #undef LOG
 #ifdef MOZ_LOGGING
 #  include "mozilla/Logging.h"
 #  include "nsTArray.h"
 #  include "Units.h"
-#  include "nsWindow.h"
 #  undef LOGWAYLAND
 #  undef LOGVERBOSE
 extern mozilla::LazyLogModule gWidgetWaylandLog;
-extern mozilla::LazyLogModule gWidgetLog;
 #  define LOGWAYLAND(str, ...)                           \
     MOZ_LOG(gWidgetWaylandLog, mozilla::LogLevel::Debug, \
             ("%s: " str, GetDebugTag().get(), ##__VA_ARGS__))
@@ -360,6 +362,12 @@ void WaylandSurface::ClearFrameCallbackLocked(
   MozClearPointer(mFrameCallback, wl_callback_destroy);
 }
 
+void WaylandSurface::ClearFrameCallbackHandlerLocked(
+    const WaylandSurfaceLock& aProofOfLock) {
+  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
+  mFrameCallbackHandler = FrameCallback{};
+}
+
 void WaylandSurface::SetFrameCallbackLocked(
     const WaylandSurfaceLock& aProofOfLock,
     const std::function<void(wl_callback*, uint32_t)>& aFrameCallbackHandler,
@@ -614,6 +622,8 @@ void WaylandSurface::UnmapLocked(WaylandSurfaceLock& aSurfaceLock) {
   MozClearPointer(mFractionalScaleListener, wp_fractional_scale_v1_destroy);
   MozClearPointer(mSubsurface, wl_subsurface_destroy);
   MozClearPointer(mColorSurface, wp_color_management_surface_v1_destroy);
+  MozClearPointer(mColorRepresentationSurface,
+                  wp_color_representation_surface_v1_destroy);
   MozClearPointer(mImageDescription, wp_image_description_v1_destroy);
   mParentSurface = nullptr;
   mFormats = nullptr;
@@ -639,13 +649,19 @@ void WaylandSurface::Commit(WaylandSurfaceLock* aProofOfLock, bool aForceCommit,
   // mSurface may be already deleted, see WaylandSurface::Unmap();
   if (mSurface && (aForceCommit || mSurfaceNeedsCommit)) {
     LOGVERBOSE(
-        "WaylandSurface::Commit() needs commit %d, force commit %d flush %d",
-        !!mSurfaceNeedsCommit, aForceCommit, aForceDisplayFlush);
-    mSurfaceNeedsCommit = false;
-    wl_surface_commit(mSurface);
+        "WaylandSurface::Commit() allowed [%d] needs commit %d, force commit "
+        "%d flush %d",
+        mCommitAllowed, !!mSurfaceNeedsCommit, aForceCommit,
+        aForceDisplayFlush);
+    if (!mCommitAllowed) {
+      return;
+    }
     if (!mSubsurfaceDesync && mParent) {
+      LOGVERBOSE("  request force commit to parent [%p]", mParent.get());
       mParent->ForceCommit();
     }
+    mSurfaceNeedsCommit = false;
+    wl_surface_commit(mSurface);
     if (aForceDisplayFlush) {
       wl_display_flush(WaylandDisplayGet()->GetDisplay());
     }
@@ -849,21 +865,26 @@ void WaylandSurface::SetSizeLocked(const WaylandSurfaceLock& aProofOfLock,
 void WaylandSurface::SetViewPortDestLocked(
     const WaylandSurfaceLock& aProofOfLock, gfx::IntSize aDestSize) {
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
-  if (mViewport) {
-    if (mViewportDestinationSize == aDestSize) {
-      return;
-    }
-    LOGWAYLAND("WaylandSurface::SetViewPortDestLocked(): Size [%d x %d]",
-               aDestSize.width, aDestSize.height);
-    if (aDestSize.width < 1 || aDestSize.height < 1) {
-      NS_WARNING("WaylandSurface::SetViewPortDestLocked(): Wrong coordinates!");
-      aDestSize.width = aDestSize.height = -1;
-    }
-    mViewportDestinationSize = aDestSize;
-    wp_viewport_set_destination(mViewport, mViewportDestinationSize.width,
-                                mViewportDestinationSize.height);
-    mSurfaceNeedsCommit = true;
+  if (!mViewport) {
+    return;
   }
+  if (mViewportDestinationSize == aDestSize) {
+    return;
+  }
+  LOGWAYLAND("WaylandSurface::SetViewPortDestLocked(): Size [%d x %d]",
+             aDestSize.width, aDestSize.height);
+  if (aDestSize.width < 1 || aDestSize.height < 1) {
+    NS_WARNING(
+        nsPrintfCString(
+            "WaylandSurface::SetViewPortDestLocked(%s): Wrong coordinates!",
+            ToString(aDestSize).c_str())
+            .get());
+    aDestSize.width = aDestSize.height = -1;
+  }
+  mViewportDestinationSize = aDestSize;
+  wp_viewport_set_destination(mViewport, mViewportDestinationSize.width,
+                              mViewportDestinationSize.height);
+  mSurfaceNeedsCommit = true;
 }
 
 void WaylandSurface::SetViewPortSourceRectLocked(
@@ -880,8 +901,10 @@ void WaylandSurface::SetViewPortSourceRectLocked(
 
   // Don't throw protocol error with bad coords
   if (aRect.x < 0 || aRect.y < 0 || aRect.width < 1 || aRect.height < 1) {
-    NS_WARNING(
-        "WaylandSurface::SetViewPortSourceRectLocked(): Wrong coordinates!");
+    NS_WARNING(nsPrintfCString("WaylandSurface::SetViewPortSourceRectLocked(%s)"
+                               ": Wrong coordinates!",
+                               ToString(aRect).c_str())
+                   .get());
     aRect.x = aRect.y = aRect.width = aRect.height = -1;
   }
 
@@ -1087,6 +1110,7 @@ void WaylandSurface::RemoveTransactionLocked(
   MOZ_DIAGNOSTIC_ASSERT(aTransaction->IsDeleted());
   [[maybe_unused]] bool removed =
       mBufferTransactions.RemoveElement(aTransaction);
+  MOZ_DIAGNOSTIC_ASSERT(!mBufferTransactions.Contains(aTransaction));
 }
 
 BufferTransaction* WaylandSurface::GetNextTransactionLocked(
@@ -1318,6 +1342,50 @@ bool WaylandSurface::EnableColorManagementLocked(
                                        &image_description_listener, this);
 
   return true;
+}
+
+static int YUVColorSpaceToWLColorCoeficients(
+    mozilla::gfx::YUVColorSpace aColorSpace) {
+  switch (aColorSpace) {
+    case gfx::YUVColorSpace::BT601:
+      return WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_BT601;
+    case gfx::YUVColorSpace::BT709:
+      return WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_BT709;
+    case gfx::YUVColorSpace::BT2020:
+      return WP_COLOR_REPRESENTATION_SURFACE_V1_COEFFICIENTS_BT2020;
+    default:
+      MOZ_DIAGNOSTIC_CRASH("Unsupported YUV color space!");
+      return 0;
+  }
+}
+
+void WaylandSurface::SetColorRepresentationLocked(
+    const WaylandSurfaceLock& aProofOfLock,
+    mozilla::gfx::YUVColorSpace aColorSpace, bool aFullRange) {
+  auto* colorRepresentation =
+      WaylandDisplayGet()->GetColorRepresentationManager();
+  if (!colorRepresentation) {
+    return;
+  }
+
+  auto coefficients = YUVColorSpaceToWLColorCoeficients(aColorSpace);
+  if (!coefficients) {
+    return;
+  }
+  auto range = WaylandDisplayGet()->GetColorRange(coefficients, aFullRange);
+  if (!range) {
+    return;
+  }
+
+  LOGWAYLAND(
+      "WaylandSurface::SetColorRepresentationLocked() colorspace %s full range "
+      "%d",
+      YUVColorSpaceToString(aColorSpace), aFullRange);
+  MOZ_DIAGNOSTIC_ASSERT(!mColorRepresentationSurface);
+  mColorRepresentationSurface = wp_color_representation_manager_v1_get_surface(
+      colorRepresentation, mSurface);
+  wp_color_representation_surface_v1_set_coefficients_and_range(
+      mColorRepresentationSurface, coefficients, range);
 }
 
 void WaylandSurface::AssertCurrentThreadOwnsMutex() {

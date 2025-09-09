@@ -78,12 +78,10 @@ add_task(async function () {
   });
 
   await waitFor(() => resources.length === 4);
-  if (isFissionEnabled()) {
-    ok(
-      resources.at(-1).targetFront.url.includes("example.org"),
-      "The reflow resource is linked to the remote target"
-    );
-  }
+  ok(
+    resources.at(-1).targetFront.url.includes("example.org"),
+    "The reflow resource is linked to the remote target"
+  );
   checkReflowResource(resources.at(-1));
 
   targetCommand.destroy();

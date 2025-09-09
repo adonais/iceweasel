@@ -4,13 +4,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/net/OpaqueResponseUtils.h"
 #include "mozilla/dom/JSValidatorParent.h"
-#include "mozilla/dom/JSValidatorUtils.h"
-#include "mozilla/dom/JSOracleParent.h"
-#include "mozilla/RefPtr.h"
-#include "nsCOMPtr.h"
+
 #include "HttpBaseChannel.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/dom/JSOracleParent.h"
+#include "mozilla/dom/JSValidatorUtils.h"
+#include "mozilla/net/OpaqueResponseUtils.h"
+#include "nsCOMPtr.h"
 
 namespace mozilla::dom {
 /* static */

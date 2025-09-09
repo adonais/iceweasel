@@ -345,7 +345,7 @@ export let ContentSearch = {
         name: engine.name,
         iconData: await this._getEngineIconURL(engine),
         hidden: engine.hideOneOffButton,
-        isAppProvided: engine.isAppProvided,
+        isConfigEngine: engine.isConfigEngine,
       });
     }
 
@@ -541,7 +541,7 @@ export let ContentSearch = {
     let obj = {
       name: engine.name,
       iconData: await this._getEngineIconURL(engine),
-      isAppProvided: engine.isAppProvided,
+      isConfigEngine: engine.isConfigEngine,
     };
     return obj;
   },

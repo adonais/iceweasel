@@ -10,6 +10,7 @@
 #include <functional>
 #include <type_traits>
 #include <utility>
+
 #include "ErrorList.h"
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
@@ -33,6 +34,10 @@ class nsIGlobalObject;
 
 namespace JS {
 class Value;
+}
+
+namespace mozilla::webgpu {
+class PipelineError;
 }
 
 namespace mozilla::dom {
@@ -120,6 +125,7 @@ class Promise : public SupportsWeakPtr, public JSHolderBase {
   }
 
   void MaybeReject(const RefPtr<MediaStreamError>& aArg);
+  void MaybeReject(const RefPtr<webgpu::PipelineError>& aArg);
 
   void MaybeRejectWithUndefined();
 

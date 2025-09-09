@@ -42,12 +42,14 @@
 #include "util/Unicode.h"
 #include "vm/ArrayBufferObject.h"
 #include "vm/BigIntType.h"
+#include "vm/BoundFunctionObject.h"
 #include "vm/Compartment.h"
 #include "vm/ErrorObject.h"
 #include "vm/Interpreter.h"
 #include "vm/Iteration.h"
 #include "vm/JitActivation.h"
 #include "vm/JSFunction.h"
+#include "vm/JSObject.h"
 #include "vm/PlainObject.h"  // js::PlainObject
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmCode.h"
@@ -248,18 +250,32 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
                           unsigned argc, uint64_t* argv) {
   AssertRealmUnchanged aru(cx);
 
-  const FuncImport& fi = code().funcImport(funcImportIndex);
+  FuncImportInstanceData& instanceFuncImport =
+      funcImportInstanceData(funcImportIndex);
   const FuncType& funcType = codeMeta().getFuncType(funcImportIndex);
-
-  ArgTypeVector argTypes(funcType);
-  InvokeArgs args(cx);
-  if (!args.init(cx, argTypes.lengthWithoutStackResults())) {
-    return false;
-  }
 
   if (funcType.hasUnexposableArgOrRet()) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                              JSMSG_WASM_BAD_VAL_TYPE);
+    return false;
+  }
+
+  ArgTypeVector argTypes(funcType);
+  size_t invokeArgsLength = argTypes.lengthWithoutStackResults();
+
+  // If we're applying the Function.prototype.call.bind optimization, the
+  // number of arguments to the target function is decreased by one to account
+  // for the 'this' parameter we're passing
+  bool isFunctionCallBind = instanceFuncImport.isFunctionCallBind;
+  if (isFunctionCallBind) {
+    // Guarded against in MaybeOptimizeFunctionCallBind.
+    MOZ_ASSERT(invokeArgsLength != 0);
+    invokeArgsLength -= 1;
+  }
+
+  RootedValue thisv(cx, UndefinedValue());
+  InvokeArgs invokeArgs(cx);
+  if (!invokeArgs.init(cx, invokeArgsLength)) {
     return false;
   }
 
@@ -270,18 +286,26 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
     JS::AutoAssertNoGC nogc;
     for (size_t i = 0; i < argc; i++) {
       const void* rawArgLoc = &argv[i];
+
       if (argTypes.isSyntheticStackResultPointerArg(i)) {
         stackResultPointer = Some(*(char**)rawArgLoc);
         continue;
       }
+
       size_t naturalIndex = argTypes.naturalIndex(i);
       ValType type = funcType.args()[naturalIndex];
-      // Avoid boxes creation not to trigger GC.
+
+      // Skip JS value conversion that may GC (as the argument array is not
+      // rooted), and do that in a follow up loop.
       if (ToJSValueMayGC(type)) {
         lastBoxIndexPlusOne = i + 1;
         continue;
       }
-      MutableHandleValue argValue = args[naturalIndex];
+
+      MutableHandleValue argValue =
+          isFunctionCallBind
+              ? ((naturalIndex == 0) ? &thisv : invokeArgs[naturalIndex - 1])
+              : invokeArgs[naturalIndex];
       if (!ToJSValue(cx, rawArgLoc, type, argValue)) {
         return false;
       }
@@ -294,29 +318,37 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
     if (argTypes.isSyntheticStackResultPointerArg(i)) {
       continue;
     }
-    const void* rawArgLoc = &argv[i];
+
     size_t naturalIndex = argTypes.naturalIndex(i);
     ValType type = funcType.args()[naturalIndex];
+
+    // Visit the arguments that could trigger a GC now.
     if (!ToJSValueMayGC(type)) {
       continue;
     }
+    // All value types that require boxing when converted to a JS value are not
+    // references.
     MOZ_ASSERT(!type.isRefRepr());
+
     // The conversions are safe here because source values are not references
-    // and will not be moved.
-    MutableHandleValue argValue = args[naturalIndex];
+    // and will not be moved. This may move the unrooted arguments in the array
+    // but that's okay because those were handled in the above loop.
+    const void* rawArgLoc = &argv[i];
+    MutableHandleValue argValue =
+        isFunctionCallBind
+            ? ((naturalIndex == 0) ? &thisv : invokeArgs[naturalIndex - 1])
+            : invokeArgs[naturalIndex];
     if (!ToJSValue(cx, rawArgLoc, type, argValue)) {
       return false;
     }
   }
 
-  FuncImportInstanceData& import = funcImportInstanceData(funcImportIndex);
-  Rooted<JSObject*> importCallable(cx, import.callable);
+  Rooted<JSObject*> importCallable(cx, instanceFuncImport.callable);
   MOZ_ASSERT(cx->realm() == importCallable->nonCCWRealm());
 
   RootedValue fval(cx, ObjectValue(*importCallable));
-  RootedValue thisv(cx, UndefinedValue());
   RootedValue rval(cx);
-  if (!Call(cx, fval, thisv, args, &rval)) {
+  if (!Call(cx, fval, thisv, invokeArgs, &rval)) {
     return false;
   }
 
@@ -328,9 +360,17 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
     return true;
   }
 
+  // JIT exits have not been updated to support the Function.prototype.call.bind
+  // optimization.
+  if (instanceFuncImport.isFunctionCallBind) {
+    return true;
+  }
+
   // The import may already have become optimized.
-  void* jitExitCode = code().sharedStubs().base() + fi.jitExitCodeOffset();
-  if (import.code == jitExitCode) {
+  const FuncImport& funcImport = code().funcImport(funcImportIndex);
+  void* jitExitCode =
+      code().sharedStubs().base() + funcImport.jitExitCodeOffset();
+  if (instanceFuncImport.code == jitExitCode) {
     return true;
   }
 
@@ -355,7 +395,7 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
 
   // Let's optimize it!
 
-  import.code = jitExitCode;
+  instanceFuncImport.code = jitExitCode;
   return true;
 }
 
@@ -1887,6 +1927,15 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   Rooted<WasmTagObject*> tagObj(cx, &tag.toJSObject().as<WasmTagObject>());
   RootedObject proto(cx, &cx->global()->getPrototype(JSProto_WasmException));
   RootedObject stack(cx, nullptr);
+
+  // We don't create the .stack property by default, unless the pref is set for
+  // debugging.
+  if (JS::Prefs::wasm_exception_force_stack_trace() &&
+      !CaptureStack(cx, &stack)) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
   // An OOM will result in null which will be caught on the wasm side.
   return AnyRef::fromJSObjectOrNull(
              WasmExceptionObject::create(cx, tagObj, stack, proto))
@@ -2251,6 +2300,67 @@ int32_t Instance::stringCompare(Instance* instance, void* firstStringArg,
   return result;
 }
 
+// [SMDOC] Wasm Function.prototype.call.bind optimization
+//
+// Check if our import is of the form `Function.prototype.call.bind(targetFunc)`
+// and optimize it so that we call `targetFunc` directly and pass the
+// first wasm function parameter as the 'this' value.
+//
+// Breaking it down:
+//   1. `Function.prototype.call` invokes the function given by `this`
+//       and passes the first argument as the `this` value, then the
+//       remaining arguments as the natural arguments.
+//   2. `Function.prototype.bind` creates a new bound function that will
+//      always pass a chosen value as the `this` value.
+//   3. Binding 'targetFunc' to `Function.prototype.call` is equivalent to
+//      `(thisValue, ...args) => targetFunc.call(thisValue, ...args)`;
+//      but in a form the VM can pattern match on easily.
+//
+// When all of these conditions match, we set the `isFunctionCallBind` flag on
+// FuncImportInstanceData and set callable to `targetFunc`. Then
+// Instance::callImport reads the flag to figure out if the first parameter
+// should be stored in invokeArgs.thisv() or in normal arguments.
+//
+// JIT exits do not support this flag yet, and so we don't use them on the
+// targetFunc. This is okay because we couldn't use them on BoundFunctionObject
+// anyways, and so this is strictly faster. Eventually we can add JIT exit
+// support here.
+JSObject* MaybeOptimizeFunctionCallBind(const wasm::FuncType& funcType,
+                                        JSObject* f) {
+  // Skip this for functions with no args. This is useless as it would result
+  // in `this` always being undefined. Skipping this simplifies the logic in
+  // Instance::callImport.
+  if (funcType.args().length() == 0) {
+    return nullptr;
+  }
+
+  if (!f->is<BoundFunctionObject>()) {
+    return nullptr;
+  }
+
+  BoundFunctionObject* boundFun = &f->as<BoundFunctionObject>();
+  JSObject* boundTarget = boundFun->getTarget();
+  Value boundThis = boundFun->getBoundThis();
+
+  // There cannot be any extra bound args in addition to the 'this'.
+  if (boundFun->numBoundArgs() != 0) {
+    return nullptr;
+  }
+
+  // The bound `target` must be the Function.prototype.call builtin
+  if (!IsNativeFunction(boundTarget, fun_call)) {
+    return nullptr;
+  }
+
+  // The bound `this` must be a callable object
+  if (!boundThis.isObject() || !boundThis.toObject().isCallable() ||
+      IsCrossCompartmentWrapper(boundThis.toObjectOrNull())) {
+    return nullptr;
+  }
+
+  return boundThis.toObjectOrNull();
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // Instance creation and related.
@@ -2275,6 +2385,7 @@ Instance::Instance(JSContext* cx, Handle<WasmInstanceObject*> object,
       debugFilter_(nullptr),
       callRefMetrics_(nullptr),
       maxInitializedGlobalsIndexPlus1_(0),
+      allocationMetadataBuilder_(nullptr),
       addressOfLastBufferedWholeCell_(
           cx->runtime()->gc.addressOfLastBufferedWholeCell()) {
   for (size_t i = 0; i < N_BASELINE_SCRATCH_WORDS; i++) {
@@ -2457,6 +2568,7 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
     const FuncType& funcType = codeMeta().getFuncType(i);
     FuncImportInstanceData& import = funcImportInstanceData(i);
     import.callable = f;
+    import.isFunctionCallBind = false;
     if (f->is<JSFunction>()) {
       JSFunction* fun = &f->as<JSFunction>();
       if (!isAsmJS() && !codeMeta().funcImportsAreJS && fun->isWasm()) {
@@ -2472,9 +2584,16 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
         import.realm = fun->realm();
         import.code = code().sharedStubs().base() + fi.interpExitCodeOffset();
       }
+    } else if (JSObject* callable =
+                   MaybeOptimizeFunctionCallBind(funcType, f)) {
+      import.instance = this;
+      import.callable = callable;
+      import.realm = import.callable->nonCCWRealm();
+      import.code = code().sharedStubs().base() + fi.interpExitCodeOffset();
+      import.isFunctionCallBind = true;
     } else {
       import.instance = this;
-      import.realm = f->nonCCWRealm();
+      import.realm = import.callable->nonCCWRealm();
       import.code = code().sharedStubs().base() + fi.interpExitCodeOffset();
     }
   }

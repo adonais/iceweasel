@@ -9,14 +9,14 @@
 
 #  include <ogg/ogg.h>
 // For MOZ_SAMPLE_TYPE_*
+#  include <nsClassHashtable.h>
+#  include <nsDeque.h>
+#  include <nsTArray.h>
+#  include <vorbis/codec.h>
+
 #  include "FlacFrameParser.h"
 #  include "OggRLBoxTypes.h"
 #  include "VideoUtils.h"
-#  include <nsDeque.h>
-#  include <nsTArray.h>
-#  include <nsClassHashtable.h>
-
-#  include <vorbis/codec.h>
 
 // Uncomment the following to validate that we're predicting the number
 // of Vorbis samples in each packet correctly.

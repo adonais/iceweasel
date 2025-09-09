@@ -6,14 +6,15 @@
 #import <UIKit/UIApplication.h>
 #import <UIKit/UIScreen.h>
 #import <UIKit/UIWindow.h>
-#import <UIKit/UIViewController.h>
 
+#include "mozilla/Components.h"
 #include "gfxPlatform.h"
 #include "nsAppShell.h"
 #include "nsCOMPtr.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsObjCExceptions.h"
 #include "nsString.h"
+#include "nsIAppStartup.h"
 #include "nsIRollupListener.h"
 #include "nsIWidget.h"
 #include "nsThreadUtils.h"
@@ -23,39 +24,16 @@
 #include "ScreenHelperUIKit.h"
 #include "mozilla/Hal.h"
 #include "HeadlessScreenHelper.h"
+#include "nsWindow.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;
 
 nsAppShell* nsAppShell::gAppShell = NULL;
-UIWindow* nsAppShell::gWindow = nil;
-MOZ_RUNINIT NSMutableArray* nsAppShell::gTopLevelViews =
-    [[NSMutableArray alloc] init];
 
 #define ALOG(args...)    \
   fprintf(stderr, args); \
   fprintf(stderr, "\n")
-
-// ViewController
-@interface ViewController : UIViewController
-@end
-
-@implementation ViewController
-
-- (void)loadView {
-  ALOG("[ViewController loadView]");
-  CGRect r = {{0, 0}, {100, 100}};
-  self.view = [[UIView alloc] initWithFrame:r];
-  [self.view setBackgroundColor:[UIColor lightGrayColor]];
-  // add all of the top level views as children
-  for (UIView* v in nsAppShell::gTopLevelViews) {
-    ALOG("[ViewController.view addSubView:%p]", v);
-    [self.view addSubview:v];
-  }
-  [nsAppShell::gTopLevelViews release];
-  nsAppShell::gTopLevelViews = nil;
-}
-@end
 
 // AppShellDelegate
 //
@@ -71,18 +49,6 @@ MOZ_RUNINIT NSMutableArray* nsAppShell::gTopLevelViews =
 - (BOOL)application:(UIApplication*)application
     didFinishLaunchingWithOptions:(NSDictionary*)launchOptions {
   ALOG("[AppShellDelegate application:didFinishLaunchingWithOptions:]");
-  // We only create one window, since we can only display one window at
-  // a time anyway. Also, iOS 4 fails to display UIWindows if you
-  // create them before calling UIApplicationMain, so this makes more sense.
-  nsAppShell::gWindow = [[[UIWindow alloc]
-      initWithFrame:[[UIScreen mainScreen] applicationFrame]] retain];
-  self.window = nsAppShell::gWindow;
-
-  self.window.rootViewController = [[ViewController alloc] init];
-
-  // just to make things more visible for now
-  nsAppShell::gWindow.backgroundColor = [UIColor blueColor];
-  [nsAppShell::gWindow makeKeyAndVisible];
 
   return YES;
 }
@@ -176,7 +142,42 @@ nsresult nsAppShell::Init() {
     }
   }
 
-  return nsBaseAppShell::Init();
+  nsresult rv = nsBaseAppShell::Init();
+
+  nsCOMPtr<nsIObserverService> obsServ =
+      mozilla::services::GetObserverService();
+  if (obsServ) {
+    obsServ->AddObserver(this, "profile-after-change", false);
+  }
+
+  return rv;
+}
+
+NS_IMETHODIMP nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
+                                  const char16_t* aData) {
+  bool removeObserver = false;
+  if (!strcmp(aTopic, "profile-after-change")) {
+    // Gecko on iOS follows the iOS app model where it never stops until it is
+    // killed by the system or told explicitly to quit. Therefore, we should
+    // *not* exit Gecko when there is no window or the last window is closed.
+    // nsIAppStartup::Quit will still force Gecko to exit.
+    nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service();
+    if (appStartup) {
+      appStartup->EnterLastWindowClosingSurvivalArea();
+    }
+    removeObserver = true;
+  } else {
+    return nsBaseAppShell::Observe(aSubject, aTopic, aData);
+  }
+
+  if (removeObserver) {
+    nsCOMPtr<nsIObserverService> obsServ =
+        mozilla::services::GetObserverService();
+    if (obsServ) {
+      obsServ->RemoveObserver(this, aTopic);
+    }
+  }
+  return NS_OK;
 }
 
 // ProcessGeckoEvents

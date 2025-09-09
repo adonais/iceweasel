@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MediaStreamError.h"
+
 #include "mozilla/dom/MediaStreamErrorBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "nsContentUtils.h"

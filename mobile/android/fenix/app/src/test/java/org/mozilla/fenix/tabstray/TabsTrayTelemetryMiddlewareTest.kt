@@ -17,6 +17,7 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.GleanMetrics.TabsTray
 import org.mozilla.fenix.helpers.FenixGleanTestRule
+import org.mozilla.fenix.nimbus.FakeNimbusEventStore
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class) // for gleanTestRule
@@ -24,13 +25,14 @@ class TabsTrayTelemetryMiddlewareTest {
 
     private lateinit var store: TabsTrayStore
     private lateinit var tabsTrayTelemetryMiddleware: TabsTrayTelemetryMiddleware
+    private val eventStore = FakeNimbusEventStore()
 
     @get:Rule
     val gleanTestRule = FenixGleanTestRule(testContext)
 
     @Before
     fun setup() {
-        tabsTrayTelemetryMiddleware = TabsTrayTelemetryMiddleware()
+        tabsTrayTelemetryMiddleware = TabsTrayTelemetryMiddleware(eventStore)
         store = TabsTrayStore(
             middlewares = listOf(tabsTrayTelemetryMiddleware),
             initialState = TabsTrayState(),
@@ -121,5 +123,37 @@ class TabsTrayTelemetryMiddlewareTest {
         store.waitUntilIdle()
 
         assertNotNull(TabsTray.closeAllTabs.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN one tab selected WHEN the bookmark selected tabs button is clicked THEN the metric is reported`() {
+        assertNull(TabsTray.bookmarkSelectedTabs.testGetValue())
+
+        store.dispatch(TabsTrayAction.BookmarkSelectedTabs(1))
+        store.waitUntilIdle()
+
+        assertNotNull(TabsTray.bookmarkSelectedTabs.testGetValue())
+        val snapshot = TabsTray.bookmarkSelectedTabs.testGetValue()!!
+        assertEquals(1, snapshot.size)
+        assertEquals("1", snapshot.single().extra?.getValue("tab_count"))
+        assertEquals(1, Metrics.bookmarksAdd["tabs_tray"].testGetValue())
+
+        eventStore.assertSingleEventEquals("bookmark_added")
+    }
+
+    @Test
+    fun `GIVEN multiple tabs selected WHEN the bookmark selected tabs button is clicked THEN the metric is reported`() {
+        assertNull(TabsTray.bookmarkSelectedTabs.testGetValue())
+
+        store.dispatch(TabsTrayAction.BookmarkSelectedTabs(2))
+        store.waitUntilIdle()
+
+        assertNotNull(TabsTray.bookmarkSelectedTabs.testGetValue())
+        val snapshot = TabsTray.bookmarkSelectedTabs.testGetValue()!!
+        assertEquals(1, snapshot.size)
+        assertEquals("2", snapshot.single().extra?.getValue("tab_count"))
+        assertEquals(2, Metrics.bookmarksAdd["tabs_tray"].testGetValue())
+
+        eventStore.assertEventsEqual(listOf("bookmark_added", "bookmark_added"))
     }
 }

@@ -7,10 +7,10 @@
 #ifndef mozilla_dom_PerformanceObserver_h__
 #define mozilla_dom_PerformanceObserver_h__
 
+#include "mozilla/RefPtr.h"
+#include "mozilla/dom/PerformanceObserverBinding.h"
 #include "nsCOMPtr.h"
 #include "nsISupports.h"
-#include "mozilla/dom/PerformanceObserverBinding.h"
-#include "mozilla/RefPtr.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsWrapperCache.h"

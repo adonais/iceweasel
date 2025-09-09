@@ -5,102 +5,100 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ScriptLoader.h"
+
+#include "GeckoProfiler.h"
+#include "ModuleLoader.h"
+#include "ReferrerInfo.h"
+#include "ScriptCompression.h"
 #include "ScriptLoadHandler.h"
 #include "ScriptTrace.h"
-#include "ModuleLoader.h"
-#include "nsGenericHTMLElement.h"
 #include "SharedScriptCache.h"
-
-#include "mozilla/Assertions.h"
-#include "mozilla/dom/FetchPriority.h"
-#include "mozilla/glean/DomMetrics.h"
-#include "mozilla/dom/RequestBinding.h"
-
-#include "prsystem.h"
 #include "js/ColumnNumber.h"  // JS::ColumnNumberOneOrigin
 #include "js/CompilationAndEvaluation.h"
 #include "js/CompileOptions.h"  // JS::CompileOptions, JS::OwningCompileOptions, JS::DecodeOptions, JS::OwningDecodeOptions, JS::DelazificationOption
 #include "js/ContextOptions.h"  // JS::ContextOptionsRef
-#include "js/experimental/JSStencil.h"  // JS::Stencil, JS::InstantiationStorage, JS::StartCollectingDelazifications, JS::FinishCollectingDelazifications, JS::AbortCollectingDelazifications, JS::IsStencilCacheable
-#include "js/experimental/CompileScript.h"  // JS::FrontendContext, JS::NewFrontendContext, JS::DestroyFrontendContext, JS::SetNativeStackQuota, JS::ThreadStackQuotaForSize, JS::CompilationStorage, JS::CompileGlobalScriptToStencil, JS::CompileModuleScriptToStencil, JS::DecodeStencil, JS::PrepareForInstantiate
-#include "js/loader/ScriptLoadRequest.h"
-#include "ScriptCompression.h"
-#include "js/loader/LoadedScript.h"
-#include "js/loader/ModuleLoadRequest.h"
 #include "js/MemoryFunctions.h"
 #include "js/Modules.h"
 #include "js/PropertyAndElement.h"  // JS_DefineProperty
 #include "js/Transcoding.h"  // JS::TranscodeRange, JS::TranscodeResult, JS::IsTranscodeFailureResult
 #include "js/Utility.h"
-#include "xpcpublic.h"
-#include "GeckoProfiler.h"
-#include "nsContentSecurityManager.h"
-#include "nsCycleCollectionParticipant.h"
-#include "nsIContent.h"
-#include "nsJSUtils.h"
-#include "mozilla/dom/AutoEntryScript.h"
-#include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/JSExecutionUtils.h"  // mozilla::dom::Compile, mozilla::dom::InstantiateStencil, mozilla::dom::EvaluationExceptionToNSResult
-#include "mozilla/dom/PolicyContainer.h"
-#include "mozilla/dom/ScriptDecoding.h"  // mozilla::dom::ScriptDecoding
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/SRILogHelper.h"
-#include "mozilla/dom/WindowContext.h"
-#include "mozilla/Mutex.h"  // mozilla::Mutex
-#include "mozilla/net/HttpBaseChannel.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
-#include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/StaticPrefs_javascript.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "nsAboutProtocolUtils.h"
-#include "nsGkAtoms.h"
-#include "nsNetUtil.h"
-#include "nsIScriptGlobalObject.h"
-#include "nsIScriptContext.h"
-#include "nsIPrincipal.h"
-#include "nsJSPrincipals.h"
-#include "nsContentPolicyUtils.h"
-#include "nsContentSecurityUtils.h"
-#include "nsIClassifiedChannel.h"
-#include "nsIHttpChannel.h"
-#include "nsIHttpChannelInternal.h"
-#include "nsIClassOfService.h"
-#include "nsICacheInfoChannel.h"
-#include "nsITimedChannel.h"
-#include "nsITimer.h"
-#include "nsIScriptElement.h"
-#include "nsISupportsPriority.h"
-#include "nsIDocShell.h"
-#include "nsContentUtils.h"
-#include "nsUnicharUtils.h"
-#include "nsError.h"
-#include "nsThreadUtils.h"
-#include "nsIContentSecurityPolicy.h"
-#include "mozilla/Logging.h"
-#include "nsCRT.h"
-#include "nsContentCreatorFunctions.h"
-#include "nsProxyRelease.h"
-#include "nsQueryObject.h"
-#include "nsINetworkPredictor.h"
+#include "js/experimental/CompileScript.h"  // JS::FrontendContext, JS::NewFrontendContext, JS::DestroyFrontendContext, JS::SetNativeStackQuota, JS::ThreadStackQuotaForSize, JS::CompilationStorage, JS::CompileGlobalScriptToStencil, JS::CompileModuleScriptToStencil, JS::DecodeStencil, JS::PrepareForInstantiate
+#include "js/experimental/JSStencil.h"  // JS::Stencil, JS::InstantiationStorage, JS::StartCollectingDelazifications, JS::FinishCollectingDelazifications, JS::AbortCollectingDelazifications, JS::IsStencilCacheable
+#include "js/loader/LoadedScript.h"
+#include "js/loader/ModuleLoadRequest.h"
+#include "js/loader/ModuleLoaderBase.h"
+#include "js/loader/ScriptLoadRequest.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/AsyncEventDispatcher.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/ConsoleReportCollector.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/EventQueue.h"
 #include "mozilla/LoadInfo.h"
-#include "ReferrerInfo.h"
-
-#include "mozilla/AsyncEventDispatcher.h"
-#include "mozilla/Attributes.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Mutex.h"  // mozilla::Mutex
 #include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_javascript.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/TaskController.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Utf8.h"  // mozilla::Utf8Unit
-#include "nsIScriptError.h"
+#include "mozilla/dom/AutoEntryScript.h"
+#include "mozilla/dom/DocGroup.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/FetchPriority.h"
+#include "mozilla/dom/JSExecutionUtils.h"  // mozilla::dom::Compile, mozilla::dom::InstantiateStencil, mozilla::dom::EvaluationExceptionToNSResult
+#include "mozilla/dom/PolicyContainer.h"
+#include "mozilla/dom/RequestBinding.h"
+#include "mozilla/dom/SRILogHelper.h"
+#include "mozilla/dom/ScriptDecoding.h"  // mozilla::dom::ScriptDecoding
+#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/WindowContext.h"
+#include "mozilla/glean/DomMetrics.h"
+#include "mozilla/net/HttpBaseChannel.h"
+#include "mozilla/net/UrlClassifierFeatureFactory.h"
+#include "nsAboutProtocolUtils.h"
+#include "nsCRT.h"
+#include "nsContentCreatorFunctions.h"
+#include "nsContentPolicyUtils.h"
+#include "nsContentSecurityManager.h"
+#include "nsContentSecurityUtils.h"
+#include "nsContentUtils.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsError.h"
+#include "nsGenericHTMLElement.h"
+#include "nsGkAtoms.h"
 #include "nsIAsyncOutputStream.h"
-#include "js/loader/ModuleLoaderBase.h"
-#include "mozilla/Maybe.h"
+#include "nsICacheInfoChannel.h"
+#include "nsIClassOfService.h"
+#include "nsIClassifiedChannel.h"
+#include "nsIContent.h"
+#include "nsIContentSecurityPolicy.h"
+#include "nsIDocShell.h"
+#include "nsIHttpChannel.h"
+#include "nsIHttpChannelInternal.h"
+#include "nsINetworkPredictor.h"
+#include "nsIPrincipal.h"
+#include "nsIScriptContext.h"
+#include "nsIScriptElement.h"
+#include "nsIScriptError.h"
+#include "nsIScriptGlobalObject.h"
+#include "nsISupportsPriority.h"
+#include "nsITimedChannel.h"
+#include "nsITimer.h"
+#include "nsJSPrincipals.h"
+#include "nsJSUtils.h"
+#include "nsNetUtil.h"
+#include "nsProxyRelease.h"
+#include "nsQueryObject.h"
+#include "nsThreadUtils.h"
+#include "nsUnicharUtils.h"
+#include "prsystem.h"
+#include "xpcpublic.h"
 
 using namespace JS::loader;
 
@@ -1378,16 +1376,32 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
     if (NS_FAILED(rv)) {
       ReportErrorToConsole(request, rv);
 
+      // If this is a script element that with an https URL scheme would block
+      // the parser, we need to block the parser.
+      bool block = !(request->GetScriptLoadContext()->IsAsyncScript() ||
+                     !aElement->GetParserCreated() ||
+                     request->GetScriptLoadContext()->IsDeferredScript());
+
       // Asynchronously report the load failure
-      nsCOMPtr<nsIRunnable> runnable =
-          NewRunnableMethod("nsIScriptElement::FireErrorEvent", aElement,
-                            &nsIScriptElement::FireErrorEvent);
+      nsCOMPtr<nsIRunnable> runnable;
+      if (block) {
+        mParserBlockingRequest = request;
+        runnable = NewRunnableMethod<RefPtr<ScriptLoadRequest>, nsresult>(
+            "ScriptLoader::HandleLoadErrorAndProcessPendingRequests", this,
+            &ScriptLoader::HandleLoadErrorAndProcessPendingRequests, request,
+            rv);
+      } else {
+        runnable =
+            NewRunnableMethod("nsIScriptElement::FireErrorEvent", aElement,
+                              &nsIScriptElement::FireErrorEvent);
+      }
+
       if (mDocument) {
         mDocument->Dispatch(runnable.forget());
       } else {
         NS_DispatchToCurrentThread(runnable.forget());
       }
-      return false;
+      return block;
     }
 
     if (request->IsStencil()) {
@@ -2393,7 +2407,8 @@ nsresult ScriptLoader::ProcessRequest(ScriptLoadRequest* aRequest) {
       return NS_OK;
     }
 
-    if (request->mModuleScript) {
+    if (request->mModuleScript &&
+        !request->mModuleScript->HasErrorToRethrow()) {
       if (!request->InstantiateModuleGraph()) {
         request->mModuleScript = nullptr;
       }
@@ -4101,8 +4116,6 @@ void ScriptLoader::ReportPreloadErrorsToConsole(ScriptLoadRequest* aRequest) {
     ReportErrorToConsole(
         aRequest, aRequest->GetScriptLoadContext()->mUnreportedPreloadError);
     aRequest->GetScriptLoadContext()->mUnreportedPreloadError = NS_OK;
-    MOZ_ASSERT_IF(aRequest->IsModuleRequest(),
-                  aRequest->AsModuleRequest()->mImports.IsEmpty());
   }
 
   // TODO:
@@ -4200,6 +4213,13 @@ void ScriptLoader::HandleLoadError(ScriptLoadRequest* aRequest,
                aRequest->GetScriptLoadContext()->IsLinkPreloadScript());
     MOZ_ASSERT(!aRequest->isInList());
   }
+}
+
+void ScriptLoader::HandleLoadErrorAndProcessPendingRequests(
+    ScriptLoadRequest* aRequest, nsresult aResult) {
+  HandleLoadError(aRequest, aResult);
+  // Process in case some other requests have finished meanwhile.
+  ProcessPendingRequests();
 }
 
 void ScriptLoader::UnblockParser(ScriptLoadRequest* aParserBlockingRequest) {
@@ -4395,7 +4415,7 @@ nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
       ReferrerPolicy policy =
           nsContentUtils::GetReferrerPolicyFromChannel(httpChannel);
       if (policy != ReferrerPolicy::_empty) {
-        aRequest->UpdateReferrerPolicy(policy);
+        aRequest->AsModuleRequest()->UpdateReferrerPolicy(policy);
       }
     }
 

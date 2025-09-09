@@ -80,9 +80,10 @@ add_task(async function () {
     "JS:1516340399466235600",
     "Big number has expected parsed value text"
   );
-  ok(
+  is(
     values[2].querySelector(".parsed-value").getAttribute("title"),
-    "Big number parsed value label has a title attribute"
+    "JavaScript parsed value",
+    "Big number parsed value label has expected title attribute"
   );
 
   info("Check numbers with higher precision than what's possible in JS");

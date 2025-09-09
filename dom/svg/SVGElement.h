@@ -12,21 +12,21 @@
   It implements all the common DOM interfaces and handles attributes.
 */
 
+#include "gfxMatrix.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SVGAnimatedClass.h"
 #include "mozilla/SVGContentUtils.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/DOMRect.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/gfx/MatrixFwd.h"
-#include "mozilla/UniquePtr.h"
 #include "nsCSSPropertyID.h"
 #include "nsChangeHint.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsError.h"
 #include "nsISupportsImpl.h"
 #include "nsStyledElement.h"
-#include "gfxMatrix.h"
 
 // {70db954d-e452-4be3-83aa-f54a51cf7890}
 #define MOZILLA_SVGELEMENT_IID \

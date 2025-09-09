@@ -5,44 +5,46 @@
 
 #include "txMozillaXMLOutput.h"
 
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/FeaturePolicy.h"
-#include "nsIDocShell.h"
-#include "nsIScriptElement.h"
-#include "nsCharsetSource.h"
-#include "nsIRefreshURI.h"
-#include "nsPIDOMWindow.h"
-#include "nsIContent.h"
-#include "nsUnicharUtils.h"
-#include "nsGkAtoms.h"
-#include "txLog.h"
-#include "nsNameSpaceManager.h"
-#include "txStringUtils.h"
-#include "txURIUtils.h"
-#include "nsIDocumentTransformer.h"
-#include "mozilla/StyleSheetInlines.h"
-#include "mozilla/css/Loader.h"
-#include "mozilla/dom/DocumentType.h"
-#include "mozilla/dom/DocumentFragment.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/ScriptLoader.h"
+#include <algorithm>
+
+#include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/Encoding.h"
+#include "mozilla/StyleSheetInlines.h"
 #include "mozilla/Try.h"
+#include "mozilla/css/Loader.h"
+#include "mozilla/dom/Comment.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentFragment.h"
+#include "mozilla/dom/DocumentType.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/FeaturePolicy.h"
+#include "mozilla/dom/ProcessingInstruction.h"
+#include "mozilla/dom/ScriptLoader.h"
+#include "nsCharsetSource.h"
+#include "nsContentCreatorFunctions.h"
+#include "nsContentSink.h"
 #include "nsContentUtils.h"
 #include "nsDocElementCreatedNotificationRunner.h"
-#include "txXMLUtils.h"
-#include "nsContentSink.h"
-#include "nsINode.h"
-#include "nsContentCreatorFunctions.h"
+#include "nsDocShell.h"
 #include "nsError.h"
+#include "nsGkAtoms.h"
+#include "nsIContent.h"
+#include "nsIDocShell.h"
+#include "nsIDocumentTransformer.h"
+#include "nsIFrame.h"
+#include "nsINode.h"
+#include "nsIRefreshURI.h"
+#include "nsIScriptElement.h"
+#include "nsNameSpaceManager.h"
+#include "nsPIDOMWindow.h"
 #include "nsStringFlags.h"
 #include "nsStyleUtil.h"
-#include "nsIFrame.h"
-#include <algorithm>
 #include "nsTextNode.h"
-#include "nsDocShell.h"
-#include "mozilla/dom/Comment.h"
-#include "mozilla/dom/ProcessingInstruction.h"
+#include "nsUnicharUtils.h"
+#include "txLog.h"
+#include "txStringUtils.h"
+#include "txURIUtils.h"
+#include "txXMLUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -261,6 +263,13 @@ nsresult txMozillaXMLOutput::endElement() {
                element->IsHTMLElement(nsGkAtoms::script)) {
       nsCOMPtr<nsIScriptElement> sele = do_QueryInterface(element);
       if (sele) {
+        // https://html.spec.whatwg.org/#parsing-xhtml-documents
+        // When the element's end tag is subsequently parsed, the user agent
+        // must perform a microtask checkpoint, and then prepare the script
+        // element.
+        {
+          nsAutoMicroTask mt;
+        }
         bool block = sele->AttemptToExecute();
         // If the act of insertion evaluated the script, we're fine.
         // Else, add this script element to the array of loading scripts.

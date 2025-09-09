@@ -18,7 +18,11 @@
 #include <vector>
 
 #include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_replace.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 #include "api/audio_codecs/audio_format.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
@@ -51,12 +55,11 @@
 #include "media/base/stream_params.h"
 #include "p2p/base/transport_description.h"
 #include "pc/peer_connection_wrapper.h"
-#include "pc/session_description.h"
 #include "pc/test/fake_audio_capture_module.h"
 #include "pc/test/fake_rtc_certificate_generator.h"
 #include "pc/test/integration_test_helpers.h"
 #include "pc/test/mock_peer_connection_observers.h"
-#include "rtc_base/string_encode.h"
+#include "rtc_base/strings/string_format.h"
 #include "rtc_base/thread.h"
 #include "system_wrappers/include/metrics.h"
 #include "test/gmock.h"
@@ -153,7 +156,7 @@ class SdpOfferAnswerTest : public ::testing::Test {
 
  protected:
   std::unique_ptr<Thread> signaling_thread_;
-  rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
+  scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
 
  private:
   AutoThread main_thread_;
@@ -659,12 +662,10 @@ TEST_F(SdpOfferAnswerTest, SimulcastOfferWithMixedCodec) {
       FieldTrials::CreateNoGlobal("WebRTC-MixedCodecSimulcast/Enabled/"));
 
   std::optional<RtpCodecCapability> vp8_codec_capability =
-      FindFirstSendCodecWithName(webrtc::MediaType::VIDEO,
-                                 cricket::kVp8CodecName);
+      FindFirstSendCodecWithName(webrtc::MediaType::VIDEO, kVp8CodecName);
   ASSERT_TRUE(vp8_codec_capability);
   std::optional<RtpCodecCapability> vp9_codec_capability =
-      FindFirstSendCodecWithName(webrtc::MediaType::VIDEO,
-                                 cricket::kVp9CodecName);
+      FindFirstSendCodecWithName(webrtc::MediaType::VIDEO, kVp9CodecName);
   ASSERT_TRUE(vp9_codec_capability);
 
   RtpTransceiverInit init;
@@ -684,8 +685,8 @@ TEST_F(SdpOfferAnswerTest, SimulcastOfferWithMixedCodec) {
   // Verify that the serialized SDP includes pt=.
   std::string sdp;
   offer->ToString(&sdp);
-  const cricket::Codec* vp8_send_codec = nullptr;
-  const cricket::Codec* vp9_send_codec = nullptr;
+  const Codec* vp8_send_codec = nullptr;
+  const Codec* vp9_send_codec = nullptr;
   for (auto& codec : send_codecs) {
     if (codec.name == vp8_codec_capability->name && !vp8_send_codec) {
       vp8_send_codec = &codec;
@@ -966,7 +967,7 @@ TEST_F(SdpOfferAnswerTest,
   ASSERT_EQ(video_stream.ssrc_groups.size(), 1u);
   video_stream.ssrcs[1] = audio_ssrc;
   video_stream.ssrc_groups[0].ssrcs[1] = audio_ssrc;
-  video_stream.ssrc_groups[0].semantics = cricket::kSimSsrcGroupSemantics;
+  video_stream.ssrc_groups[0].semantics = kSimSsrcGroupSemantics;
   std::string sdp;
   offer->ToString(&sdp);
 
@@ -976,11 +977,11 @@ TEST_F(SdpOfferAnswerTest,
   size_t end = sdp.rfind("\r\n");
   end = sdp.rfind("\r\n", end - 2);
   end = sdp.rfind("\r\n", end - 2);
-  EXPECT_EQ(sdp.substr(end + 2), "a=ssrc:" + rtc::ToString(audio_ssrc) +
+  EXPECT_EQ(sdp.substr(end + 2), "a=ssrc:" + absl::StrCat(audio_ssrc) +
                                      " cname:" + video_stream.cname +
                                      "\r\n"
                                      "a=ssrc:" +
-                                     rtc::ToString(audio_ssrc) +
+                                     absl::StrCat(audio_ssrc) +
                                      " msid:- video_track\r\n");
 
   auto modified_offer =
@@ -1007,7 +1008,7 @@ TEST_F(SdpOfferAnswerTest,
   ASSERT_EQ(video_stream.ssrc_groups.size(), 1u);
   video_stream.ssrcs.push_back(audio_ssrc);
   video_stream.ssrc_groups[0].ssrcs.push_back(audio_ssrc);
-  video_stream.ssrc_groups[0].semantics = cricket::kSimSsrcGroupSemantics;
+  video_stream.ssrc_groups[0].semantics = kSimSsrcGroupSemantics;
   std::string sdp;
   offer->ToString(&sdp);
 
@@ -1017,11 +1018,11 @@ TEST_F(SdpOfferAnswerTest,
   size_t end = sdp.rfind("\r\n");
   end = sdp.rfind("\r\n", end - 2);
   end = sdp.rfind("\r\n", end - 2);
-  EXPECT_EQ(sdp.substr(end + 2), "a=ssrc:" + rtc::ToString(audio_ssrc) +
+  EXPECT_EQ(sdp.substr(end + 2), "a=ssrc:" + absl::StrCat(audio_ssrc) +
                                      " cname:" + video_stream.cname +
                                      "\r\n"
                                      "a=ssrc:" +
-                                     rtc::ToString(audio_ssrc) +
+                                     absl::StrCat(audio_ssrc) +
                                      " msid:- video_track\r\n");
 
   auto modified_offer =
@@ -1047,7 +1048,7 @@ TEST_F(SdpOfferAnswerTest, AllowOnlyOneSsrcGroupPerSemanticAndPrimarySsrc) {
   ASSERT_EQ(video_stream.ssrc_groups.size(), 1u);
   video_stream.ssrcs.push_back(audio_ssrc);
   video_stream.ssrc_groups.push_back(
-      {cricket::kFidSsrcGroupSemantics, {video_stream.ssrcs[0], audio_ssrc}});
+      {kFidSsrcGroupSemantics, {video_stream.ssrcs[0], audio_ssrc}});
   std::string sdp;
   offer->ToString(&sdp);
 
@@ -1057,11 +1058,11 @@ TEST_F(SdpOfferAnswerTest, AllowOnlyOneSsrcGroupPerSemanticAndPrimarySsrc) {
   size_t end = sdp.rfind("\r\n");
   end = sdp.rfind("\r\n", end - 2);
   end = sdp.rfind("\r\n", end - 2);
-  EXPECT_EQ(sdp.substr(end + 2), "a=ssrc:" + rtc::ToString(audio_ssrc) +
+  EXPECT_EQ(sdp.substr(end + 2), "a=ssrc:" + absl::StrCat(audio_ssrc) +
                                      " cname:" + video_stream.cname +
                                      "\r\n"
                                      "a=ssrc:" +
-                                     rtc::ToString(audio_ssrc) +
+                                     absl::StrCat(audio_ssrc) +
                                      " msid:- video_track\r\n");
 
   auto modified_offer =
@@ -1280,7 +1281,7 @@ class SdpOfferAnswerWithPayloadTypeTest
 TEST_P(SdpOfferAnswerWithPayloadTypeTest,
        FollowUpOfferDoesNotRepurposePayloadType) {
   int payload_type = GetParam();
-  std::string payload_type_str = rtc::ToString(payload_type);
+  std::string payload_type_str = absl::StrCat(payload_type);
 
   auto pc = CreatePeerConnection();
   std::string sdp =
@@ -1361,7 +1362,7 @@ TEST_P(SdpOfferAnswerWithPayloadTypeTest,
     // The previously negotiated PT should still map to the same VP9 codec.
     auto it = std::find_if(
         codecs.begin(), codecs.end(),
-        [&](const cricket::Codec& codec) { return codec.id == payload_type; });
+        [&](const Codec& codec) { return codec.id == payload_type; });
     ASSERT_TRUE(it != codecs.end());
     const auto& vp9_codec = *it;
     EXPECT_EQ(vp9_codec.name, "VP9");
@@ -1696,10 +1697,10 @@ TEST_F(SdpOfferAnswerTest, PayloadTypeMatchingWithSubsequentOfferAnswer) {
   ASSERT_EQ(contents.size(), 1u);
   auto* media_description = contents[0].media_description();
   ASSERT_TRUE(media_description);
-  std::vector<cricket::Codec> codecs = media_description->codecs();
+  std::vector<Codec> codecs = media_description->codecs();
   ASSERT_EQ(codecs.size(), 1u);
   ASSERT_NE(codecs[0].id, 127);
-  auto av1 = cricket::CreateVideoCodec(SdpVideoFormat("AV1", {}));
+  auto av1 = CreateVideoCodec(SdpVideoFormat("AV1", {}));
   av1.id = 127;
   codecs.insert(codecs.begin(), av1);
   media_description->set_codecs(codecs);
@@ -1726,7 +1727,7 @@ TEST_F(SdpOfferAnswerTest, PayloadTypeMatchingWithSubsequentOfferAnswer) {
   codecs = media_description2->codecs();
   ASSERT_EQ(codecs.size(), 2u);
   EXPECT_EQ(codecs[1].name, av1.name);
-  EXPECT_NE(codecs[1].id, av1.id);
+  // At this point, the value 127 may or may not have been chosen.
 
   // 4. O/A triggered by remote. This "locks in" the payload type.
   auto offer3 = callee->CreateOfferAndSetAsLocal();
@@ -1861,7 +1862,7 @@ TEST_F(SdpOfferAnswerMungingTest,
   RTCError error;
   auto answer = CreateSessionDescription(SdpType::kAnswer, sdp);
   answer->description()->transport_infos()[0].description.connection_role =
-      cricket::CONNECTIONROLE_ACTIVE;
+      CONNECTIONROLE_ACTIVE;
   EXPECT_TRUE(pc->SetLocalDescription(std::move(answer), &error));
   EXPECT_THAT(
       metrics::Samples("WebRTC.PeerConnection.SdpMunging.Answer.Initial"),
@@ -1869,7 +1870,44 @@ TEST_F(SdpOfferAnswerMungingTest,
 }
 
 TEST_F(SdpOfferAnswerMungingTest, IceUfrag) {
+  auto pc = CreatePeerConnection(
+      FieldTrials::CreateNoGlobal("WebRTC-NoSdpMangleUfrag/Enabled/"));
+  pc->AddAudioTrack("audio_track", {});
+
+  auto offer = pc->CreateOffer();
+  auto& transport_infos = offer->description()->transport_infos();
+  ASSERT_EQ(transport_infos.size(), 1u);
+  transport_infos[0].description.ice_ufrag =
+      "amungediceufragthisshouldberejected";
+  RTCError error;
+  // Ufrag is rejected.
+  EXPECT_FALSE(pc->SetLocalDescription(std::move(offer), &error));
+  EXPECT_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpMunging.Offer.Initial"),
+      ElementsAre(Pair(SdpMungingType::kIceUfrag, 1)));
+}
+
+TEST_F(SdpOfferAnswerMungingTest, IceUfragCheckDisabledByFieldTrial) {
+  auto pc = CreatePeerConnection(
+      FieldTrials::CreateNoGlobal("WebRTC-NoSdpMangleUfrag/Disabled/"));
+  pc->AddAudioTrack("audio_track", {});
+
+  auto offer = pc->CreateOffer();
+  auto& transport_infos = offer->description()->transport_infos();
+  ASSERT_EQ(transport_infos.size(), 1u);
+  transport_infos[0].description.ice_ufrag =
+      "amungediceufragthisshouldberejected";
+  RTCError error;
+  // Ufrag is not rejected.
+  EXPECT_TRUE(pc->SetLocalDescription(std::move(offer), &error));
+  EXPECT_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpMunging.Offer.Initial"),
+      ElementsAre(Pair(SdpMungingType::kIceUfrag, 1)));
+}
+
+TEST_F(SdpOfferAnswerMungingTest, IceUfragWithCheckDisabledForTesting) {
   auto pc = CreatePeerConnection();
+  pc->GetInternalPeerConnection()->DisableSdpMungingChecksForTesting();
   pc->AddAudioTrack("audio_track", {});
 
   auto offer = pc->CreateOffer();
@@ -1884,8 +1922,9 @@ TEST_F(SdpOfferAnswerMungingTest, IceUfrag) {
       ElementsAre(Pair(SdpMungingType::kIceUfrag, 1)));
 }
 
-TEST_F(SdpOfferAnswerMungingTest, IcePwd) {
-  auto pc = CreatePeerConnection();
+TEST_F(SdpOfferAnswerMungingTest, IcePwdCheckDisabledByFieldTrial) {
+  auto pc = CreatePeerConnection(
+      FieldTrials::CreateNoGlobal("WebRTC-NoSdpMangleUfrag/Disabled/"));
   pc->AddAudioTrack("audio_track", {});
 
   auto offer = pc->CreateOffer();
@@ -1898,6 +1937,112 @@ TEST_F(SdpOfferAnswerMungingTest, IcePwd) {
       metrics::Samples("WebRTC.PeerConnection.SdpMunging.Offer.Initial"),
       ElementsAre(Pair(SdpMungingType::kIcePwd, 1)));
 }
+
+TEST_F(SdpOfferAnswerMungingTest, IcePwd) {
+  auto pc = CreatePeerConnection(
+      FieldTrials::CreateNoGlobal("WebRTC-NoSdpMangleUfrag/Enabled/"));
+  pc->AddAudioTrack("audio_track", {});
+
+  auto offer = pc->CreateOffer();
+  auto& transport_infos = offer->description()->transport_infos();
+  ASSERT_EQ(transport_infos.size(), 1u);
+  transport_infos[0].description.ice_pwd = "amungedicepwdthisshouldberejected";
+  RTCError error;
+  EXPECT_FALSE(pc->SetLocalDescription(std::move(offer), &error));
+  EXPECT_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpMunging.Offer.Initial"),
+      ElementsAre(Pair(SdpMungingType::kIcePwd, 1)));
+}
+
+TEST_F(SdpOfferAnswerMungingTest, IceUfragRestrictedAddresses) {
+  RTCConfiguration config;
+  config.certificates.push_back(
+      FakeRTCCertificateGenerator::GenerateCertificate());
+  auto caller = CreatePeerConnection(
+      config,
+      FieldTrials::CreateNoGlobal("WebRTC-NoSdpMangleUfragRestrictedAddresses/"
+                                  "127.0.0.1:12345|127.0.0.*:23456|*:34567/"));
+  auto callee = CreatePeerConnection();
+  caller->AddAudioTrack("audio_track", {});
+  auto offer = caller->CreateOffer();
+  auto& transport_infos = offer->description()->transport_infos();
+  ASSERT_EQ(transport_infos.size(), 1u);
+  transport_infos[0].description.ice_ufrag = "amungediceufrag";
+
+  EXPECT_TRUE(caller->SetLocalDescription(offer->Clone()));
+  EXPECT_TRUE(callee->SetRemoteDescription(std::move(offer)));
+
+  auto answer = callee->CreateAnswer();
+  EXPECT_TRUE(callee->SetLocalDescription(answer->Clone()));
+  EXPECT_TRUE(caller->SetRemoteDescription(std::move(answer)));
+
+  static constexpr const char tmpl[] =
+      "candidate:a0+B/1 1 udp 2130706432 %s typ host";
+
+  // Addresses to test. First field is the address in string format,
+  // second field is the expected outcome (success or failure).
+  const std::vector<std::pair<const char*, bool>> address_tests = {
+      {"127.0.0.1:12345", false}, {"127.0.0.2:23456", false},
+      {"8.8.8.8:34567", false},   {"127.0.0.2:12345", true},
+      {"127.0.1.1:23456", true},  {"8.8.8.8:3456", true},
+  };
+
+  int num_blocked = 0;
+  for (const auto& address_test : address_tests) {
+    std::optional<RTCError> result;
+    const std::string candidate = StringFormat(
+        tmpl, absl::StrReplaceAll(address_test.first, {{":", " "}}).c_str());
+    caller->pc()->AddIceCandidate(
+        std::unique_ptr<IceCandidateInterface>(
+            CreateIceCandidate("", 0, candidate, nullptr)),
+        [&result](RTCError error) { result = error; });
+
+    ASSERT_THAT(
+        WaitUntil([&] { return result.has_value(); }, ::testing::IsTrue()),
+        IsRtcOk());
+    if (address_test.second == true) {
+      EXPECT_TRUE(result.value().ok());
+    } else {
+      std::pair<absl::string_view, absl::string_view> host =
+          absl::StrSplit(address_test.first, ":");
+      int port;
+      ASSERT_TRUE(absl::SimpleAtoi(host.second, &port));
+      EXPECT_FALSE(result.value().ok());
+      EXPECT_EQ(result.value().type(), RTCErrorType::UNSUPPORTED_OPERATION);
+      num_blocked++;
+      EXPECT_THAT(
+          metrics::Samples(
+              "WebRTC.PeerConnection.RestrictedCandidates.SdpMungingType"),
+          ElementsAre(Pair(SdpMungingType::kIceUfrag, num_blocked)));
+      EXPECT_THAT(
+          metrics::Samples("WebRTC.PeerConnection.RestrictedCandidates.Port"),
+          Contains(Pair(port, 1)));
+    }
+  }
+}
+
+TEST_F(SdpOfferAnswerMungingTest, IceUfragSdpRejectedAndRestrictedAddresses) {
+  RTCConfiguration config;
+  config.certificates.push_back(
+      FakeRTCCertificateGenerator::GenerateCertificate());
+  auto caller = CreatePeerConnection(
+      config,
+      FieldTrials::CreateNoGlobal("WebRTC-NoSdpMangleUfragRestrictedAddresses/"
+                                  "127.0.0.1:12345|127.0.0.*:23456|*:34567/"
+                                  "WebRTC-NoSdpMangleUfrag/Enabled/"));
+  auto callee = CreatePeerConnection();
+  caller->AddAudioTrack("audio_track", {});
+  auto offer = caller->CreateOffer();
+  auto& transport_infos = offer->description()->transport_infos();
+  ASSERT_EQ(transport_infos.size(), 1u);
+  transport_infos[0].description.ice_ufrag = "amungediceufrag";
+
+  EXPECT_FALSE(caller->SetLocalDescription(offer->Clone()));
+  EXPECT_THAT(
+      metrics::Samples("WebRTC.PeerConnection.SdpMunging.Offer.Initial"),
+      ElementsAre(Pair(SdpMungingType::kIceUfrag, 1)));
+}
+
 TEST_F(SdpOfferAnswerMungingTest, IceMode) {
   auto pc = CreatePeerConnection();
   pc->AddAudioTrack("audio_track", {});
@@ -1905,7 +2050,7 @@ TEST_F(SdpOfferAnswerMungingTest, IceMode) {
   auto offer = pc->CreateOffer();
   auto& transport_infos = offer->description()->transport_infos();
   ASSERT_EQ(transport_infos.size(), 1u);
-  transport_infos[0].description.ice_mode = cricket::ICEMODE_LITE;
+  transport_infos[0].description.ice_mode = ICEMODE_LITE;
   RTCError error;
   EXPECT_TRUE(pc->SetLocalDescription(std::move(offer), &error));
   EXPECT_THAT(
@@ -1937,7 +2082,7 @@ TEST_F(SdpOfferAnswerMungingTest, IceOptionsRenomination) {
   auto& transport_infos = offer->description()->transport_infos();
   ASSERT_EQ(transport_infos.size(), 1u);
   transport_infos[0].description.transport_options.push_back(
-      cricket::ICE_OPTION_RENOMINATION);
+      ICE_OPTION_RENOMINATION);
   RTCError error;
   EXPECT_TRUE(pc->SetLocalDescription(std::move(offer), &error));
   EXPECT_THAT(
@@ -1952,8 +2097,7 @@ TEST_F(SdpOfferAnswerMungingTest, DtlsRole) {
   auto offer = pc->CreateOffer();
   auto& transport_infos = offer->description()->transport_infos();
   ASSERT_EQ(transport_infos.size(), 1u);
-  transport_infos[0].description.connection_role =
-      cricket::CONNECTIONROLE_PASSIVE;
+  transport_infos[0].description.connection_role = CONNECTIONROLE_PASSIVE;
   RTCError error;
   EXPECT_TRUE(pc->SetLocalDescription(std::move(offer), &error));
   EXPECT_THAT(
@@ -2025,14 +2169,14 @@ TEST_F(SdpOfferAnswerMungingTest, LegacySimulcast) {
 
   std::string sdp;
   offer->ToString(&sdp);
-  sdp += "a=ssrc-group:SIM " + rtc::ToString(ssrc) + " " +
-         rtc::ToString(ssrc + 1) + "\r\n" +  //
-         "a=ssrc-group:FID " + rtc::ToString(ssrc + 1) + " " +
-         rtc::ToString(ssrc + 2) + "\r\n" +                                  //
-         "a=ssrc:" + rtc::ToString(ssrc + 1) + " msid:- video_track\r\n" +   //
-         "a=ssrc:" + rtc::ToString(ssrc + 1) + " cname:" + cname + "\r\n" +  //
-         "a=ssrc:" + rtc::ToString(ssrc + 2) + " msid:- video_track\r\n" +   //
-         "a=ssrc:" + rtc::ToString(ssrc + 2) + " cname:" + cname + "\r\n";
+  sdp += "a=ssrc-group:SIM " + absl::StrCat(ssrc) + " " +
+         absl::StrCat(ssrc + 1) + "\r\n" +  //
+         "a=ssrc-group:FID " + absl::StrCat(ssrc + 1) + " " +
+         absl::StrCat(ssrc + 2) + "\r\n" +                                  //
+         "a=ssrc:" + absl::StrCat(ssrc + 1) + " msid:- video_track\r\n" +   //
+         "a=ssrc:" + absl::StrCat(ssrc + 1) + " cname:" + cname + "\r\n" +  //
+         "a=ssrc:" + absl::StrCat(ssrc + 2) + " msid:- video_track\r\n" +   //
+         "a=ssrc:" + absl::StrCat(ssrc + 2) + " cname:" + cname + "\r\n";
   auto modified_offer = CreateSessionDescription(SdpType::kOffer, sdp);
   RTCError error;
   EXPECT_TRUE(pc->SetLocalDescription(std::move(modified_offer), &error));
@@ -2051,11 +2195,11 @@ TEST_F(SdpOfferAnswerMungingTest, H264SpsPpsIdrInKeyFrame) {
   ASSERT_EQ(contents.size(), 1u);
   auto* media_description = contents[0].media_description();
   ASSERT_TRUE(media_description);
-  std::vector<cricket::Codec> codecs = media_description->codecs();
+  std::vector<Codec> codecs = media_description->codecs();
   for (auto& codec : codecs) {
-    if (codec.name == cricket::kH264CodecName) {
-      codec.SetParam(cricket::kH264FmtpSpsPpsIdrInKeyframe,
-                     cricket::kParamValueTrue);
+    if (codec.name == webrtc::kH264CodecName) {
+      codec.SetParam(webrtc::kH264FmtpSpsPpsIdrInKeyframe,
+                     webrtc::kParamValueTrue);
     }
   }
   media_description->set_codecs(codecs);
@@ -2077,10 +2221,10 @@ TEST_F(SdpOfferAnswerMungingTest, OpusStereo) {
   ASSERT_EQ(contents.size(), 1u);
   auto* media_description = contents[0].media_description();
   ASSERT_TRUE(media_description);
-  std::vector<cricket::Codec> codecs = media_description->codecs();
+  std::vector<Codec> codecs = media_description->codecs();
   for (auto& codec : codecs) {
-    if (codec.name == cricket::kOpusCodecName) {
-      codec.SetParam(cricket::kCodecParamStereo, cricket::kParamValueTrue);
+    if (codec.name == kOpusCodecName) {
+      codec.SetParam(kCodecParamStereo, kParamValueTrue);
     }
   }
   media_description->set_codecs(codecs);
@@ -2100,11 +2244,11 @@ TEST_F(SdpOfferAnswerMungingTest, OpusFec) {
   ASSERT_EQ(contents.size(), 1u);
   auto* media_description = contents[0].media_description();
   ASSERT_TRUE(media_description);
-  std::vector<cricket::Codec> codecs = media_description->codecs();
+  std::vector<Codec> codecs = media_description->codecs();
   for (auto& codec : codecs) {
-    if (codec.name == cricket::kOpusCodecName) {
+    if (codec.name == kOpusCodecName) {
       // Enabled by default so we need to remove the parameter.
-      EXPECT_TRUE(codec.RemoveParam(cricket::kCodecParamUseInbandFec));
+      EXPECT_TRUE(codec.RemoveParam(kCodecParamUseInbandFec));
     }
   }
   media_description->set_codecs(codecs);
@@ -2124,10 +2268,10 @@ TEST_F(SdpOfferAnswerMungingTest, OpusDtx) {
   ASSERT_EQ(contents.size(), 1u);
   auto* media_description = contents[0].media_description();
   ASSERT_TRUE(media_description);
-  std::vector<cricket::Codec> codecs = media_description->codecs();
+  std::vector<Codec> codecs = media_description->codecs();
   for (auto& codec : codecs) {
-    if (codec.name == cricket::kOpusCodecName) {
-      codec.SetParam(cricket::kCodecParamUseDtx, cricket::kParamValueTrue);
+    if (codec.name == kOpusCodecName) {
+      codec.SetParam(kCodecParamUseDtx, kParamValueTrue);
     }
   }
   media_description->set_codecs(codecs);
@@ -2147,10 +2291,10 @@ TEST_F(SdpOfferAnswerMungingTest, OpusCbr) {
   ASSERT_EQ(contents.size(), 1u);
   auto* media_description = contents[0].media_description();
   ASSERT_TRUE(media_description);
-  std::vector<cricket::Codec> codecs = media_description->codecs();
+  std::vector<Codec> codecs = media_description->codecs();
   for (auto& codec : codecs) {
-    if (codec.name == cricket::kOpusCodecName) {
-      codec.SetParam(cricket::kCodecParamCbr, cricket::kParamValueTrue);
+    if (codec.name == kOpusCodecName) {
+      codec.SetParam(kCodecParamCbr, kParamValueTrue);
     }
   }
   media_description->set_codecs(codecs);
@@ -2170,7 +2314,7 @@ TEST_F(SdpOfferAnswerMungingTest, AudioCodecsRemoved) {
   ASSERT_EQ(contents.size(), 1u);
   auto* media_description = contents[0].media_description();
   ASSERT_TRUE(media_description);
-  std::vector<cricket::Codec> codecs = media_description->codecs();
+  std::vector<Codec> codecs = media_description->codecs();
   codecs.pop_back();
   media_description->set_codecs(codecs);
   RTCError error;
@@ -2189,8 +2333,8 @@ TEST_F(SdpOfferAnswerMungingTest, AudioCodecsAdded) {
   ASSERT_EQ(contents.size(), 1u);
   auto* media_description = contents[0].media_description();
   ASSERT_TRUE(media_description);
-  std::vector<cricket::Codec> codecs = media_description->codecs();
-  auto codec = cricket::CreateAudioCodec(SdpAudioFormat("pcmu", 8000, 1, {}));
+  std::vector<Codec> codecs = media_description->codecs();
+  auto codec = CreateAudioCodec(SdpAudioFormat("pcmu", 8000, 1, {}));
   codec.id = 19;  // IANA reserved payload type, should not conflict.
   codecs.push_back(codec);
   media_description->set_codecs(codecs);
@@ -2210,7 +2354,7 @@ TEST_F(SdpOfferAnswerMungingTest, VideoCodecsRemoved) {
   ASSERT_EQ(contents.size(), 1u);
   auto* media_description = contents[0].media_description();
   ASSERT_TRUE(media_description);
-  std::vector<cricket::Codec> codecs = media_description->codecs();
+  std::vector<Codec> codecs = media_description->codecs();
   codecs.pop_back();
   media_description->set_codecs(codecs);
   RTCError error;
@@ -2229,8 +2373,8 @@ TEST_F(SdpOfferAnswerMungingTest, VideoCodecsAdded) {
   ASSERT_EQ(contents.size(), 1u);
   auto* media_description = contents[0].media_description();
   ASSERT_TRUE(media_description);
-  std::vector<cricket::Codec> codecs = media_description->codecs();
-  auto codec = cricket::CreateVideoCodec(SdpVideoFormat("VP8", {}));
+  std::vector<Codec> codecs = media_description->codecs();
+  auto codec = CreateVideoCodec(SdpVideoFormat("VP8", {}));
   codec.id = 19;  // IANA reserved payload type, should not conflict.
   codecs.push_back(codec);
   media_description->set_codecs(codecs);
@@ -2250,12 +2394,12 @@ TEST_F(SdpOfferAnswerMungingTest, MultiOpus) {
   ASSERT_EQ(contents.size(), 1u);
   auto* media_description = contents[0].media_description();
   ASSERT_TRUE(media_description);
-  std::vector<cricket::Codec> codecs = media_description->codecs();
+  std::vector<Codec> codecs = media_description->codecs();
   auto multiopus =
-      cricket::CreateAudioCodec(SdpAudioFormat("multiopus", 48000, 4,
-                                               {{"channel_mapping", "0,1,2,3"},
-                                                {"coupled_streams", "2"},
-                                                {"num_streams", "2"}}));
+      CreateAudioCodec(SdpAudioFormat("multiopus", 48000, 4,
+                                      {{"channel_mapping", "0,1,2,3"},
+                                       {"coupled_streams", "2"},
+                                       {"num_streams", "2"}}));
   multiopus.id = 19;  // IANA reserved payload type, should not conflict.
   codecs.push_back(multiopus);
   media_description->set_codecs(codecs);
@@ -2275,8 +2419,8 @@ TEST_F(SdpOfferAnswerMungingTest, L16) {
   ASSERT_EQ(contents.size(), 1u);
   auto* media_description = contents[0].media_description();
   ASSERT_TRUE(media_description);
-  std::vector<cricket::Codec> codecs = media_description->codecs();
-  auto l16 = cricket::CreateAudioCodec(SdpAudioFormat("L16", 48000, 2, {}));
+  std::vector<Codec> codecs = media_description->codecs();
+  auto l16 = CreateAudioCodec(SdpAudioFormat("L16", 48000, 2, {}));
   l16.id = 19;  // IANA reserved payload type, should not conflict.
   codecs.push_back(l16);
   media_description->set_codecs(codecs);
@@ -2504,7 +2648,7 @@ TEST_F(SdpOfferAnswerMungingTest, AudioCodecsRtcpFbNack) {
   ASSERT_TRUE(media_description);
   auto codecs = media_description->codecs();
   ASSERT_GT(codecs.size(), 0u);
-  codecs[0].feedback_params.Add(cricket::FeedbackParam("nack"));
+  codecs[0].feedback_params.Add(FeedbackParam("nack"));
   media_description->set_codecs(codecs);
 
   RTCError error;
@@ -2525,7 +2669,7 @@ TEST_F(SdpOfferAnswerMungingTest, AudioCodecsRtcpFbRrtr) {
   ASSERT_TRUE(media_description);
   auto codecs = media_description->codecs();
   ASSERT_GT(codecs.size(), 0u);
-  codecs[0].feedback_params.Add(cricket::FeedbackParam("rrtr"));
+  codecs[0].feedback_params.Add(FeedbackParam("rrtr"));
   media_description->set_codecs(codecs);
 
   RTCError error;

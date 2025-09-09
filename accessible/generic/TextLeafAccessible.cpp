@@ -6,6 +6,7 @@
 #include "TextLeafAccessible.h"
 
 #include "mozilla/a11y/Role.h"
+#include "nsCoreUtils.h"
 
 using namespace mozilla::a11y;
 
@@ -25,7 +26,10 @@ TextLeafAccessible::~TextLeafAccessible() {}
 
 role TextLeafAccessible::NativeRole() const {
   nsIFrame* frame = GetFrame();
-  if (frame && frame->IsGeneratedContentFrame()) return roles::STATICTEXT;
+  if ((frame && frame->IsGeneratedContentFrame()) ||
+      nsCoreUtils::IsPseudoElement(GetContent())) {
+    return roles::STATICTEXT;
+  }
 
   return roles::TEXT_LEAF;
 }

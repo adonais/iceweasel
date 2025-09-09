@@ -85,8 +85,8 @@ bool SVGFilterInstance::ComputeBounds() {
   XYWH[3] = *mFilterFrame->GetLengthValue(SVGFilterElement::ATTR_HEIGHT);
   uint16_t filterUnits =
       mFilterFrame->GetEnumValue(SVGFilterElement::FILTERUNITS);
-  gfxRect userSpaceBounds =
-      SVGUtils::GetRelativeRect(filterUnits, XYWH, mTargetBBox, mMetrics);
+  gfxRect userSpaceBounds = SVGUtils::GetRelativeRect(
+      filterUnits, XYWH, mTargetBBox, mFilterElement, mMetrics);
 
   // Transform the user space bounds to filter space, so we
   // can align them with the pixel boundaries of the offscreen surface.
@@ -124,7 +124,10 @@ float SVGFilterInstance::GetPrimitiveNumber(uint8_t aCtxType,
 
   float value;
   if (mPrimitiveUnits == SVG_UNIT_TYPE_OBJECTBOUNDINGBOX) {
-    value = SVGUtils::ObjectSpace(mTargetBBox, &val);
+    // We can pass a dummy SVGElementMetrics because we know we have
+    // SVG_LENGTHTYPE_NUMBER units so we won't need real metrics.
+    value =
+        SVGUtils::ObjectSpace(mTargetBBox, SVGElementMetrics(nullptr), &val);
   } else {
     value = SVGUtils::UserSpace(mMetrics, &val);
   }
@@ -144,8 +147,8 @@ Point3D SVGFilterInstance::ConvertLocation(const Point3D& aPoint) const {
   val[3].Init(SVGContentUtils::Y, 0xff, 0,
               SVGLength_Binding::SVG_LENGTHTYPE_NUMBER);
 
-  gfxRect feArea =
-      SVGUtils::GetRelativeRect(mPrimitiveUnits, val, mTargetBBox, mMetrics);
+  gfxRect feArea = SVGUtils::GetRelativeRect(mPrimitiveUnits, val, mTargetBBox,
+                                             nullptr, mMetrics);
   gfxRect r = UserSpaceToFilterSpace(feArea);
   return Point3D(r.x, r.y, GetPrimitiveNumber(SVGContentUtils::XY, aPoint.z));
 }
@@ -196,7 +199,7 @@ IntRect SVGFilterInstance::ComputeFilterPrimitiveSubregion(
   gfxRect feArea = SVGUtils::GetRelativeRect(
       mPrimitiveUnits,
       &fE->mLengthAttributes[SVGFilterPrimitiveElement::ATTR_X], mTargetBBox,
-      mMetrics);
+      fE, mMetrics);
   Rect region = ToRect(UserSpaceToFilterSpace(feArea));
 
   if (!fE->mLengthAttributes[SVGFilterPrimitiveElement::ATTR_X]

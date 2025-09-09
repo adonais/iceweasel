@@ -16,7 +16,6 @@ buildscript {
     }
 
     dependencies {
-        classpath libs.apilint
         classpath libs.tools.androidgradle
         classpath libs.commons.exec
         classpath libs.spotless
@@ -168,35 +167,6 @@ allprojects {
                 "-P", "plugin:semanticdb-kotlinc:sourceroot=${topsrcdir}".toString(),
                 "-P", "plugin:semanticdb-kotlinc:targetroot=${targetRoot}".toString(),
             ])
-        }
-    }
-
-    task downloadDependencies() {
-        description = 'Download all dependencies to the Gradle cache'
-        doLast {
-            configurations.each { configuration ->
-                if (configuration.canBeResolved) {
-                    configuration.allDependencies.each { dependency ->
-                        try {
-                            configuration.files(dependency)
-                        } catch(e) {
-                            println("Could not resolve ${configuration.name} -> ${dependency.name}")
-                            if (project.hasProperty('displayErrorDetails') && project.property('displayErrorDetails') == 'true') {
-                                println(" > ${e.message}")
-                                if (e.cause) {
-                                    println(" >> ${e.cause}")
-                                    if (e.cause.cause) {
-                                        println(" >> ${e.cause.cause}")
-                                    }
-                                }
-                                println("")
-                            } else {
-                                println("\t >> Re-run with -PdisplayErrorDetails=true to see more details")
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 }
@@ -489,7 +459,7 @@ subprojects { project ->
                     include '**/*.java'
                     exclude '**/thirdparty/**'
                 }
-                googleJavaFormat('1.27.0')
+                googleJavaFormat(libs.versions.google.java.format.get())
             }
             kotlin {
                 target project.fileTree(project.projectDir) {
@@ -510,6 +480,16 @@ subprojects { project ->
                         'ktlint_standard_statement-wrapping'         : 'disabled',
                 ])
             }
+        }
+
+        // Work around https://github.com/diffplug/spotless/issues/1958 by
+        // explicitly depending on Spotless plugin dependencies.
+        project.configurations {
+            googleJavaFormat
+        }
+
+        project.dependencies {
+            googleJavaFormat libs.google.java.format
         }
     }
 

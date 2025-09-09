@@ -22,11 +22,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.findNavController
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import org.mozilla.fenix.GleanMetrics.CustomizationSettings
 import org.mozilla.fenix.R
-import org.mozilla.fenix.iconpicker.SettingsAppIcon
+import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.iconpicker.AppIcon
+import org.mozilla.fenix.iconpicker.AppIconRepository
+import org.mozilla.fenix.iconpicker.DefaultAppIconRepository
+import org.mozilla.fenix.settings.CustomizationFragmentDirections
 import org.mozilla.fenix.theme.FirefoxTheme
 
 private val PreferencePadding = 16.dp
@@ -40,6 +46,10 @@ class AppIconPreference @JvmOverloads constructor(
     attrs: AttributeSet? = null,
 ) : Preference(context, attrs) {
 
+    private val appIconRepository: AppIconRepository by lazy {
+        DefaultAppIconRepository(context.settings())
+    }
+
     init {
         layoutResource = R.layout.app_icon_preference
     }
@@ -50,8 +60,15 @@ class AppIconPreference @JvmOverloads constructor(
         (holder.findViewById(R.id.compose_view) as ComposeView).setContent {
             FirefoxTheme {
                 SelectAppIcon(
-                    appIcon = SettingsAppIcon.appDefault,
-                    onClick = {},
+                    appIcon = appIconRepository.selectedAppIcon,
+                    onClick = {
+                        CustomizationSettings.appIconSelectionTapped.record()
+
+                        val navController = holder.itemView.findNavController()
+                        navController.navigate(
+                            CustomizationFragmentDirections.actionCustomizationFragmentAppIconSelectionFragment(),
+                        )
+                    },
                 )
             }
         }
@@ -60,8 +77,8 @@ class AppIconPreference @JvmOverloads constructor(
 
 @Composable
 private fun SelectAppIcon(
-    appIcon: SettingsAppIcon,
-    onClick: (SettingsAppIcon) -> Unit,
+    appIcon: AppIcon,
+    onClick: (AppIcon) -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -100,6 +117,6 @@ private fun SelectAppIcon(
 @Composable
 private fun AppIconOptionPreview() {
     FirefoxTheme {
-        SelectAppIcon(SettingsAppIcon.appDefault) {}
+        SelectAppIcon(AppIcon.AppDefault) {}
     }
 }

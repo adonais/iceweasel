@@ -6,7 +6,6 @@ package mozilla.components.browser.thumbnails.utils
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.os.Build
 import androidx.annotation.VisibleForTesting
 import com.jakewharton.disklrucache.DiskLruCache
 import mozilla.components.concept.base.images.ImageLoadRequest
@@ -17,7 +16,7 @@ import java.io.IOException
 
 private const val MAXIMUM_CACHE_THUMBNAIL_DATA_BYTES: Long = 1024L * 1024L * 100L // 100 MB
 private const val THUMBNAIL_DISK_CACHE_VERSION = 1
-private const val WEBP_QUALITY = 90
+private const val ENCODING_QUALITY = 90
 private const val BASE_DIR_NAME = "thumbnails"
 
 /**
@@ -71,20 +70,13 @@ class ThumbnailDiskCache(private val isPrivate: Boolean = false) {
      * @param bitmap the thumbnail [Bitmap] to store.
      */
     internal fun putThumbnailBitmap(context: Context, request: ImageSaveRequest, bitmap: Bitmap) {
-        val compressFormat = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Bitmap.CompressFormat.WEBP_LOSSY
-        } else {
-            @Suppress("DEPRECATION")
-            Bitmap.CompressFormat.WEBP
-        }
-
         try {
             synchronized(thumbnailCacheWriteLock) {
                 val editor = getThumbnailCache(context)
                     .edit(request.id) ?: return
 
                 editor.newOutputStream(0).use { stream ->
-                    bitmap.compress(compressFormat, WEBP_QUALITY, stream)
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, ENCODING_QUALITY, stream)
                 }
 
                 editor.commit()

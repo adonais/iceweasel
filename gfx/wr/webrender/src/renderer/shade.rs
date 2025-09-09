@@ -18,7 +18,6 @@ use crate::renderer::{
 use crate::profiler::{self, TransactionProfile, ns_to_ms};
 
 use gleam::gl::GlType;
-use time::precise_time_ns;
 
 use std::cell::RefCell;
 use std::collections::VecDeque;
@@ -136,11 +135,11 @@ impl LazilyCompiledShader {
         device: &mut Device,
         flags: ShaderPrecacheFlags,
     ) -> Result<(), ShaderError> {
-        let t0 = precise_time_ns();
+        let t0 = zeitstempel::now();
         let timer_id = Telemetry::start_shaderload_time();
         self.get_internal(device, flags, None)?;
         Telemetry::stop_and_accumulate_shaderload_time(timer_id);
-        let t1 = precise_time_ns();
+        let t1 = zeitstempel::now();
         debug!("[C: {:.1} ms ] Precache {} {:?}",
             (t1 - t0) as f64 / 1000000.0,
             self.name,
@@ -183,7 +182,7 @@ impl LazilyCompiledShader {
         mut profile: Option<&mut TransactionProfile>,
     ) -> Result<&mut Program, ShaderError> {
         if self.program.is_none() {
-            let start_time = precise_time_ns();
+            let start_time = zeitstempel::now();
             let program = match self.kind {
                 ShaderKind::Primitive | ShaderKind::Brush | ShaderKind::Text | ShaderKind::Resolve | ShaderKind::Clear | ShaderKind::Copy => {
                     create_prim_shader(
@@ -231,7 +230,7 @@ impl LazilyCompiledShader {
             self.program = Some(program?);
 
             if let Some(profile) = &mut profile {
-                let end_time = precise_time_ns();
+                let end_time = zeitstempel::now();
                 profile.add(profiler::SHADER_BUILD_TIME, ns_to_ms(end_time - start_time));
             }
         }
@@ -239,7 +238,7 @@ impl LazilyCompiledShader {
         let program = self.program.as_mut().unwrap();
 
         if precache_flags.contains(ShaderPrecacheFlags::FULL_COMPILE) && !program.is_initialized() {
-            let start_time = precise_time_ns();
+            let start_time = zeitstempel::now();
 
             let vertex_format = match self.kind {
                 ShaderKind::Primitive |
@@ -318,7 +317,7 @@ impl LazilyCompiledShader {
             }
 
             if let Some(profile) = &mut profile {
-                let end_time = precise_time_ns();
+                let end_time = zeitstempel::now();
                 profile.add(profiler::SHADER_BUILD_TIME, ns_to_ms(end_time - start_time));
             }
         }
@@ -1360,7 +1359,7 @@ impl CompositorShaders {
             yuv_fast_features.push("YUV");
             yuv_fast_features.push("FAST_PATH");
             fast_path_features.push("FAST_PATH");
-    
+
             let index = Self::get_shader_index(*image_buffer_kind);
 
             let feature_string = get_feature_string(

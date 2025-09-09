@@ -26,7 +26,7 @@ ChromeUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());
  *     The type of context
  * @property {string=} id
  *     Unique id of a given context for the provided type.
- *     For ContextDescriptorType.All, id can be ommitted.
+ *     For ContextDescriptorType.All, id can be omitted.
  *     For ContextDescriptorType.TopBrowsingContext, the id should be the
  *     browserId corresponding to a top-level browsing context.
  *     For ContextDescriptorType.UserContext, the id should be the
@@ -268,7 +268,7 @@ export class MessageHandler extends EventEmitter {
   }
 
   /**
-   * Execute the required initialization steps, inlcluding apply the initial session data items
+   * Execute the required initialization steps, including apply the initial session data items
    * provided to this MessageHandler on startup. Implementation is specific to each MessageHandler class.
    *
    * By default the implementation is a no-op.

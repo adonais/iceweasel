@@ -10,6 +10,8 @@
   <string name="tab_tray_add_new_collection_name">Isem</string>
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">Ddu ɣer tisɣal</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">Ddu ɣer tisɣal</string>
   <!--

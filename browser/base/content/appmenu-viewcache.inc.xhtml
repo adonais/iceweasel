@@ -828,21 +828,13 @@
 
   <panelview id="PanelUI-ipprotection"
              class="PanelUI-subView"
+             mainview-with-header="true"
+             has-custom-header="true">
+  </panelview>
+
+  <panelview id="PanelUI-ipprotection-settings"
+             class="PanelUI-subView"
              mainview-with-header="true">
-    <vbox id="PanelUI-ipprotection-header-container">
-      <hbox id="PanelUI-ipprotection-header-bar"
-            class="panel-header panel-header-with-additional-element">
-        <html:div id="PanelUI-ipprotection-header">
-          <!-- Root for ipprotection-header -->
-        </html:div>
-      </hbox>
-    </vbox>
-    <toolbarseparator />
-    <vbox id="PanelUI-ipprotection-content-container" class="panel-subview-body">
-      <html:div id="PanelUI-ipprotection-content">
-        <!-- Root for ipprotection-content -->
-      </html:div>
-    </vbox>
   </panelview>
 
 #include ../../components/reportbrokensite/content/reportBrokenSitePanel.inc.xhtml

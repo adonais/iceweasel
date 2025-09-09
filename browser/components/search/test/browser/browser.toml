@@ -42,6 +42,15 @@ support-files = ["test.html", "test_windows1252.html"]
 ["browser_contentContextMenu.js"]
 support-files = ["browser_contentContextMenu.xhtml"]
 
+["browser_contentContextMenu_visualSearch.js"]
+support-files = [
+  "browser_contentContextMenu.xhtml",
+  "ctxmenu-image.png",
+  "firebird.png",
+  "firebird.png^headers^",
+  "search-glass.svg",
+]
+
 ["browser_contentSearch.js"]
 support-files = [
   "contentSearchBadImage.xml",

@@ -3728,8 +3728,7 @@ static void ReportRuntimeRedeclaration(JSContext* cx,
     HandleObject varObj, Handle<PropertyName*> name) {
   const char* redeclKind = nullptr;
   RootedId id(cx, NameToId(name));
-  mozilla::Maybe<PropertyInfo> prop;
-  bool shadowsExistingProperty = false;
+  mozilla::Maybe<PropertyInfo> prop, shadowedExistingProp;
 
   if ((prop = lexicalEnv->lookup(cx, name))) {
     // ES 15.1.11 step 5.b
@@ -3741,7 +3740,7 @@ static void ReportRuntimeRedeclaration(JSContext* cx,
     if (!prop->configurable()) {
       redeclKind = "non-configurable global property";
     } else {
-      shadowsExistingProperty = true;
+      shadowedExistingProp = prop;
     }
   } else {
     // ES 15.1.11 step 5.c-d
@@ -3753,7 +3752,14 @@ static void ReportRuntimeRedeclaration(JSContext* cx,
       if (!desc->configurable()) {
         redeclKind = "non-configurable global property";
       } else {
-        shadowsExistingProperty = true;
+        // Note: we don't have to set |shadowedExistingProp| here because if
+        // |varObj| is a global object, the NativeObject::lookup call above
+        // ensures this wasn't an existing property (that might require JIT/IC
+        // invalidation) but a new property defined by a resolve hook.
+        MOZ_ASSERT_IF(varObj->is<GlobalObject>(),
+                      varObj->getClass()->getResolve());
+        MOZ_ASSERT_IF(varObj->is<GlobalObject>(),
+                      varObj->as<GlobalObject>().containsPure(name));
       }
     }
   }
@@ -3762,10 +3768,19 @@ static void ReportRuntimeRedeclaration(JSContext* cx,
     ReportRuntimeRedeclaration(cx, name, redeclKind);
     return false;
   }
-  if (shadowsExistingProperty && varObj->is<GlobalObject>()) {
+  if (shadowedExistingProp && varObj->is<GlobalObject>()) {
     // Shadowing a configurable global property with a new lexical is one
     // of the rare ways to invalidate a GetGName stub.
-    varObj->as<GlobalObject>().bumpGenerationCount();
+    auto* global = &varObj->as<GlobalObject>();
+    global->bumpGenerationCount();
+
+    // Also invalidate GetGName stubs and Ion code relying on an object fuse
+    // guard to bake in the property's value.
+    if (global->hasObjectFuse()) {
+      if (auto* objFuse = cx->zone()->objectFuses.get(global)) {
+        objFuse->handleShadowedGlobalProperty(cx, *shadowedExistingProp);
+      }
+    }
   }
 
   return true;

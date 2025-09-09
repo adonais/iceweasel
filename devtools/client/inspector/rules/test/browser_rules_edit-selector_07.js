@@ -63,5 +63,5 @@ async function testEditSelector(view, name) {
     ruleEditor.element.getAttribute("unmatched"),
     "Rule with " + name + " does not match the current element."
   );
-  ok(textPropEditor.filterProperty.hidden, "Overridden search is hidden.");
+  ok(!textPropEditor.filterProperty, "Overridden search is hidden.");
 }

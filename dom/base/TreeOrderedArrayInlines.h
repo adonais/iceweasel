@@ -7,10 +7,11 @@
 #ifndef mozilla_dom_TreeOrderedArrayInlines_h
 #define mozilla_dom_TreeOrderedArrayInlines_h
 
-#include "mozilla/dom/TreeOrderedArray.h"
-#include "mozilla/BinarySearch.h"
-#include "nsContentUtils.h"
 #include <type_traits>
+
+#include "mozilla/BinarySearch.h"
+#include "mozilla/dom/TreeOrderedArray.h"
+#include "nsContentUtils.h"
 
 namespace mozilla::dom {
 

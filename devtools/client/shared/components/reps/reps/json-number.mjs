@@ -36,7 +36,7 @@ function JsonNumber(props) {
     span(
       {
         className: "parsed-value",
-        title: "Javacript parsed value",
+        title: "JavaScript parsed value",
       },
       span({ className: "parsed-value-prefix" }, "JS:"),
       props.object.parsedValue

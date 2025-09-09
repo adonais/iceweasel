@@ -148,8 +148,6 @@ Preferences.addAll([
   { id: "accessibility.tabfocus", type: "int" },
   { id: "browser.ml.linkPreview.enabled", type: "bool" },
   { id: "browser.ml.linkPreview.optin", type: "bool" },
-  { id: "browser.ml.linkPreview.shift", type: "bool" },
-  { id: "browser.ml.linkPreview.shiftAlt", type: "bool" },
   { id: "browser.ml.linkPreview.longPress", type: "bool" },
 
   {
@@ -280,15 +278,6 @@ Preferences.addSetting({
   visible: () => LinkPreview.canShowKeyPoints,
 });
 Preferences.addSetting({
-  id: "linkPreviewShift",
-  pref: "browser.ml.linkPreview.shift",
-});
-Preferences.addSetting({
-  id: "linkPreviewShiftAlt",
-  pref: "browser.ml.linkPreview.shiftAlt",
-  visible: () => LinkPreview.canShowLegacy,
-});
-Preferences.addSetting({
   id: "linkPreviewLongPress",
   pref: "browser.ml.linkPreview.longPress",
 });
@@ -398,14 +387,6 @@ let SETTINGS_CONFIG = {
           {
             id: "linkPreviewKeyPoints",
             l10nId: "link-preview-settings-key-points",
-          },
-          {
-            id: "linkPreviewShift",
-            l10nId: "link-preview-settings-shift",
-          },
-          {
-            id: "linkPreviewShiftAlt",
-            l10nId: "link-preview-settings-shift-alt",
           },
           {
             id: "linkPreviewLongPress",
@@ -586,10 +567,9 @@ var gMainPane = {
     const tabGroupSuggestionsCheckbox = document.getElementById(
       "tabGroupSuggestions"
     );
-    const smartTabGroupFeatureEnabled = Services.prefs.getBoolPref(
-      "browser.tabs.groups.smart.enabled",
-      false
-    );
+    const smartTabGroupFeatureEnabled =
+      Services.prefs.getBoolPref("browser.tabs.groups.smart.enabled", false) &&
+      Services.locale.appLocaleAsBCP47.startsWith("en");
     tabGroupSuggestionsCheckbox.hidden = !smartTabGroupFeatureEnabled;
 
     // The "opening multiple tabs might slow down Firefox" warning provides
@@ -3168,6 +3148,7 @@ var gMainPane = {
         "action",
         Ci.nsIHandlerInfo.handleInternally
       );
+      internalMenuItem.className = "menuitem-iconic";
       document.l10n.setAttributes(internalMenuItem, "applications-open-inapp");
       internalMenuItem.setAttribute(APP_ICON_ATTR_NAME, "handleInternally");
       menuPopup.appendChild(internalMenuItem);
@@ -3175,6 +3156,7 @@ var gMainPane = {
 
     var askMenuItem = document.createXULElement("menuitem");
     askMenuItem.setAttribute("action", Ci.nsIHandlerInfo.alwaysAsk);
+    askMenuItem.className = "menuitem-iconic";
     document.l10n.setAttributes(askMenuItem, "applications-always-ask");
     askMenuItem.setAttribute(APP_ICON_ATTR_NAME, "ask");
     menuPopup.appendChild(askMenuItem);
@@ -3187,6 +3169,7 @@ var gMainPane = {
       saveMenuItem.setAttribute("action", Ci.nsIHandlerInfo.saveToDisk);
       document.l10n.setAttributes(saveMenuItem, "applications-action-save");
       saveMenuItem.setAttribute(APP_ICON_ATTR_NAME, "save");
+      saveMenuItem.className = "menuitem-iconic";
       menuPopup.appendChild(saveMenuItem);
     }
 
@@ -3219,10 +3202,10 @@ var gMainPane = {
             "app-name": handlerInfo.defaultDescription,
           }
         );
-        defaultMenuItem.setAttribute(
-          "image",
-          handlerInfo.iconURLForSystemDefault
-        );
+        let image = handlerInfo.iconURLForSystemDefault;
+        if (image) {
+          defaultMenuItem.setAttribute("image", image);
+        }
       }
 
       menuPopup.appendChild(defaultMenuItem);
@@ -3247,10 +3230,10 @@ var gMainPane = {
       document.l10n.setAttributes(menuItem, "applications-use-app", {
         "app-name": label,
       });
-      menuItem.setAttribute(
-        "image",
-        this._getIconURLForHandlerApp(possibleApp)
-      );
+      let image = this._getIconURLForHandlerApp(possibleApp);
+      if (image) {
+        menuItem.setAttribute("image", image);
+      }
 
       // Attach the handler app object to the menu item so we can use it
       // to make changes to the datastore when the user selects the item.
@@ -3284,10 +3267,11 @@ var gMainPane = {
           document.l10n.setAttributes(menuItem, "applications-use-app", {
             "app-name": handler.name,
           });
-          menuItem.setAttribute(
-            "image",
-            this._getIconURLForHandlerApp(handler)
-          );
+
+          let image = this._getIconURLForHandlerApp(handler);
+          if (image) {
+            menuItem.setAttribute("image", image);
+          }
 
           // Attach the handler app object to the menu item so we can use it
           // to make changes to the datastore when the user selects the item.

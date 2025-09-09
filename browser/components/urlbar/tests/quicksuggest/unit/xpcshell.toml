@@ -1,6 +1,10 @@
 [DEFAULT]
 head = "../../unit/head.js head.js"
 firefox-appdir = "browser"
+prefs = [
+  'browser.newtabpage.activity-stream.discoverystream.ohttp.relayURL=',
+  'browser.newtabpage.activity-stream.discoverystream.ohttp.configURL=',
+]
 
 ["test_merinoClient.js"]
 
@@ -16,10 +20,12 @@ firefox-appdir = "browser"
 
 ["test_quicksuggest_exposures_locales.js"]
 
-["test_quicksuggest_fakespot.js"]
+["test_quicksuggest_importantDatesSuggestions.js"]
 
 ["test_quicksuggest_impressionCaps.js"]
 skip-if = ["true"] # Bug 1880214
+
+["test_quicksuggest_market.js"]
 
 ["test_quicksuggest_mdn.js"]
 

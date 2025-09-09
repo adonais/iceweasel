@@ -132,7 +132,7 @@ using mozilla::dom::geolocation::GeolocationPermissionStatus from "mozilla/dom/G
 #endif  // defined(XP_WIN)
 
 using mozilla::Telemetry::DiscardedData from "mozilla/TelemetryComms.h";
-using mozilla::glean::perf::PageLoadExtra from "mozilla/glean/DomMetrics.h";
+using mozilla::performance::pageload_event::PageloadEventData from "mozilla/PageloadEvent.h";
 [MoveOnly] using mozilla::CrossProcessMutexHandle from "mozilla/ipc/CrossProcessMutex.h";
 using mozilla::dom::MaybeDiscardedBrowsingContext from "mozilla/dom/BrowsingContext.h";
 using mozilla::dom::BrowsingContextTransaction from "mozilla/dom/BrowsingContext.h";
@@ -697,7 +697,7 @@ child:
     async ThemeChanged(FullLookAndFeel lookAndFeelData, ThemeChangeKind aKind);
 
     async PreferenceUpdate(Pref pref);
-    async VarUpdate(GfxVarUpdate var);
+    async VarUpdate(GfxVarUpdate[] var);
 
     async UpdatePerfStatsCollectionMask(uint64_t aMask);
     async CollectPerfStatsJSON() returns (nsCString aStats);
@@ -1097,9 +1097,6 @@ parent:
 
     async GetLoadingSessionHistoryInfoFromParent(MaybeDiscardedBrowsingContext aContext)
         returns (LoadingSessionHistoryInfo? aLoadingInfo);
-
-    async GetContiguousSessionHistoryInfos(MaybeDiscardedBrowsingContext aContext)
-        returns (SessionHistoryInfo[] infos);
 
     async RemoveFromBFCache(MaybeDiscardedBrowsingContext aContext);
 
@@ -1584,7 +1581,7 @@ parent:
     /**
      * Messages for communicating child Glean data to the parent process
      */
-    async RecordPageLoadEvent(PageLoadExtra event);
+    async RecordPageLoadEvent(PageloadEventData event);
 
     /**
      * Messages for communicating child Telemetry to the parent process

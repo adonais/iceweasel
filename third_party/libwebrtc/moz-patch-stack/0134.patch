@@ -9,7 +9,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/f3ed04250e9ec1b22
  1 file changed, 4 insertions(+)
 
 diff --git a/call/payload_type.h b/call/payload_type.h
-index 672c489fc6..b2466f6d18 100644
+index d91da50fcc..a5e120417e 100644
 --- a/call/payload_type.h
 +++ b/call/payload_type.h
 @@ -33,7 +33,11 @@ class PayloadType : public StrongAlias<class PayloadTypeTag, uint8_t> {

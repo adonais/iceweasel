@@ -20,7 +20,8 @@ struct NetworkMarker {
       baseprofiler::SpliceableJSONWriter& aWriter, mozilla::TimeStamp aStart,
       mozilla::TimeStamp aEnd, int64_t aID, const ProfilerString8View& aURI,
       const ProfilerString8View& aRequestMethod, NetworkLoadType aType,
-      int32_t aPri, int64_t aCount, net::CacheDisposition aCacheDisposition,
+      int32_t aPri, int64_t aCount,
+      nsICacheInfoChannel::CacheDisposition aCacheDisposition,
       bool aIsPrivateBrowsing, const net::TimingStruct& aTimings,
       const ProfilerString8View& aRedirectURI,
       const ProfilerString8View& aContentType, uint32_t aRedirectFlags,
@@ -127,19 +128,19 @@ struct NetworkMarker {
   }
 
   static Span<const char> GetCacheState(
-      net::CacheDisposition aCacheDisposition) {
+      nsICacheInfoChannel::CacheDisposition aCacheDisposition) {
     switch (aCacheDisposition) {
-      case net::kCacheUnresolved:
+      case nsICacheInfoChannel::kCacheUnresolved:
         return MakeStringSpan("Unresolved");
-      case net::kCacheHit:
+      case nsICacheInfoChannel::kCacheHit:
         return MakeStringSpan("Hit");
-      case net::kCacheHitViaReval:
+      case nsICacheInfoChannel::kCacheHitViaReval:
         return MakeStringSpan("HitViaReval");
-      case net::kCacheMissedViaReval:
+      case nsICacheInfoChannel::kCacheMissedViaReval:
         return MakeStringSpan("MissedViaReval");
-      case net::kCacheMissed:
+      case nsICacheInfoChannel::kCacheMissed:
         return MakeStringSpan("Missed");
-      case net::kCacheUnknown:
+      case nsICacheInfoChannel::kCacheUnknown:
         return MakeStringSpan("");
       default:
         MOZ_ASSERT(false, "Unexpected CacheDisposition enum value.");
@@ -224,8 +225,8 @@ template <>
 void EmitPerfettoTrackEvent<mozilla::net::NetworkMarker, mozilla::TimeStamp,
                             mozilla::TimeStamp, int64_t, nsAutoCStringN<2048>,
                             nsACString, mozilla::net::NetworkLoadType, int32_t,
-                            int64_t, mozilla::net::CacheDisposition, bool,
-                            mozilla::net::TimingStruct, nsAutoCString,
+                            int64_t, nsICacheInfoChannel::CacheDisposition,
+                            bool, mozilla::net::TimingStruct, nsAutoCString,
                             mozilla::ProfilerString8View, uint32_t, uint64_t>(
     const mozilla::ProfilerString8View& aName,
     const mozilla::MarkerCategory& aCategory,
@@ -235,7 +236,7 @@ void EmitPerfettoTrackEvent<mozilla::net::NetworkMarker, mozilla::TimeStamp,
     const nsAutoCStringN<2048>& aURI, const nsACString& aRequestMethod,
     const mozilla::net::NetworkLoadType& aType, const int32_t& aPri,
     const int64_t& aCount,
-    const mozilla::net::CacheDisposition& aCacheDisposition,
+    const nsICacheInfoChannel::CacheDisposition& aCacheDisposition,
     const bool& aIsPrivateBrowsing, const mozilla::net::TimingStruct& aTimings,
     const nsAutoCString& aRedirectURI,
     const mozilla::ProfilerString8View& aContentType,
@@ -386,9 +387,10 @@ void profiler_add_network_marker(
     nsIURI* aURI, const nsACString& aRequestMethod, int32_t aPriority,
     uint64_t aChannelId, NetworkLoadType aType, mozilla::TimeStamp aStart,
     mozilla::TimeStamp aEnd, int64_t aCount,
-    mozilla::net::CacheDisposition aCacheDisposition, uint64_t aInnerWindowID,
-    bool aIsPrivateBrowsing, unsigned long aClassOfServiceFlag,
-    nsresult aRequestStatus, const mozilla::net::TimingStruct* aTimings,
+    nsICacheInfoChannel::CacheDisposition aCacheDisposition,
+    uint64_t aInnerWindowID, bool aIsPrivateBrowsing,
+    unsigned long aClassOfServiceFlag, nsresult aRequestStatus,
+    const mozilla::net::TimingStruct* aTimings,
     UniquePtr<ProfileChunkedBuffer> aSource,
     const Maybe<mozilla::net::HttpVersion> aHttpVersion,
     const Maybe<uint32_t> aResponseStatus,

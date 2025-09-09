@@ -7,14 +7,14 @@
 #ifndef mozilla_dom_timeout_h
 #define mozilla_dom_timeout_h
 
-#include "mozilla/dom/PopupBlocker.h"
-#include "mozilla/dom/TimeoutHandler.h"
+#include "GeckoProfiler.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/TimeStamp.h"
-#include "nsGlobalWindowInner.h"
+#include "mozilla/dom/PopupBlocker.h"
+#include "mozilla/dom/TimeoutHandler.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsGlobalWindowInner.h"
 #include "nsTHashMap.h"
-#include "GeckoProfiler.h"
 
 namespace mozilla::dom {
 

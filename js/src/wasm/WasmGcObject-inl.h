@@ -32,6 +32,7 @@ MOZ_ALWAYS_INLINE WasmStructObject* WasmStructObject::createStructIL(
 
   MOZ_ASSERT(IsWasmGcObjectClass(typeDefData->clasp));
   MOZ_ASSERT(!typeDefData->clasp->isNativeObject());
+  AutoSetNewObjectMetadata metadata(cx);
   debugCheckNewObject(typeDefData->shape, typeDefData->allocKind, initialHeap);
 
   mozilla::DebugOnly<const wasm::TypeDef*> typeDef = typeDefData->typeDef;
@@ -58,6 +59,9 @@ MOZ_ALWAYS_INLINE WasmStructObject* WasmStructObject::createStructIL(
     memset(structObj->inlineData(), 0, totalBytes);
   }
 
+  MOZ_ASSERT(typeDefData->clasp->shouldDelayMetadataBuilder());
+  cx->realm()->setObjectPendingMetadata(structObj);
+
   js::gc::gcprobes::CreateObject(structObj);
   probes::CreateObject(cx, structObj);
 
@@ -74,6 +78,7 @@ MOZ_ALWAYS_INLINE WasmStructObject* WasmStructObject::createStructOOL(
 
   MOZ_ASSERT(IsWasmGcObjectClass(typeDefData->clasp));
   MOZ_ASSERT(!typeDefData->clasp->isNativeObject());
+  AutoSetNewObjectMetadata metadata(cx);
   debugCheckNewObject(typeDefData->shape, typeDefData->allocKind, initialHeap);
 
   mozilla::DebugOnly<const wasm::TypeDef*> typeDef = typeDefData->typeDef;
@@ -136,6 +141,9 @@ MOZ_ALWAYS_INLINE WasmStructObject* WasmStructObject::createStructOOL(
                   MemoryUse::WasmTrailerBlock);
   }
 
+  MOZ_ASSERT(typeDefData->clasp->shouldDelayMetadataBuilder());
+  cx->realm()->setObjectPendingMetadata(structObj);
+
   js::gc::gcprobes::CreateObject(structObj);
   probes::CreateObject(cx, structObj);
 
@@ -182,6 +190,7 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
   MOZ_ASSERT(!typeDefData->clasp->isNativeObject());
   MOZ_ASSERT(typeDefData->allocKind == gc::AllocKind::INVALID);
   gc::AllocKind allocKind = allocKindForOOL();
+  AutoSetNewObjectMetadata metadata(cx);
   debugCheckNewObject(typeDefData->shape, allocKind, initialHeap);
 
   mozilla::DebugOnly<const wasm::TypeDef*> typeDef = typeDefData->typeDef;
@@ -251,6 +260,9 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
                   MemoryUse::WasmTrailerBlock);
   }
 
+  MOZ_ASSERT(typeDefData->clasp->shouldDelayMetadataBuilder());
+  cx->realm()->setObjectPendingMetadata(arrayObj);
+
   js::gc::gcprobes::CreateObject(arrayObj);
   probes::CreateObject(cx, arrayObj);
 
@@ -277,6 +289,7 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayIL(
   MOZ_ASSERT(IsWasmGcObjectClass(typeDefData->clasp));
   MOZ_ASSERT(!typeDefData->clasp->isNativeObject());
   MOZ_ASSERT(typeDefData->allocKind == gc::AllocKind::INVALID);
+  AutoSetNewObjectMetadata metadata(cx);
   gc::AllocKind allocKind = allocKindForIL(storageBytes);
   debugCheckNewObject(typeDefData->shape, allocKind, initialHeap);
 
@@ -314,6 +327,9 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayIL(
   }
 
   MOZ_ASSERT(arrayObj->isDataInline());
+
+  MOZ_ASSERT(typeDefData->clasp->shouldDelayMetadataBuilder());
+  cx->realm()->setObjectPendingMetadata(arrayObj);
 
   js::gc::gcprobes::CreateObject(arrayObj);
   probes::CreateObject(cx, arrayObj);

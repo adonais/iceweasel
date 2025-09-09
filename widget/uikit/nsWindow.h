@@ -6,6 +6,7 @@
 #ifndef NSWINDOW_H_
 #define NSWINDOW_H_
 
+#include <objc/objc.h>
 #include <CoreFoundation/CoreFoundation.h>
 
 #include "mozilla/widget/IOSView.h"
@@ -19,6 +20,10 @@
 #else
 typedef struct objc_object ChildView;
 #endif
+
+namespace mozilla::layers {
+class NativeLayerRootCA;
+}
 
 namespace mozilla::widget {
 class EventDispatcher;
@@ -66,7 +71,7 @@ class nsWindow final : public nsBaseWidget {
   void ReportSizeEvent();
   void ReportSizeModeEvent(nsSizeMode aMode);
 
-  CGFloat BackingScaleFactor();
+  double BackingScaleFactor();
   void BackingScaleFactorChanged();
   float GetDPI() override {
     // XXX: terrible
@@ -106,6 +111,27 @@ class nsWindow final : public nsBaseWidget {
                       void* aCallbackData) override;
   */
 
+  RefPtr<mozilla::layers::NativeLayerRoot> GetNativeLayerRoot() override;
+
+  void HandleMainThreadCATransaction();
+
+  // Called when the main thread enters a phase during which visual changes
+  // are imminent and any layer updates on the compositor thread would interfere
+  // with visual atomicity.
+  // "Async" CATransactions are CATransactions which happen on a thread that's
+  // not the main thread.
+  void SuspendAsyncCATransactions();
+
+  // Called when we know that the current main thread paint will be completed
+  // once the main thread goes back to the event loop.
+  void MaybeScheduleUnsuspendAsyncCATransactions();
+
+  // Called from the runnable dispatched by
+  // MaybeScheduleUnsuspendAsyncCATransactions(). At this point we know that the
+  // main thread is done handling the visual change (such as a window resize)
+  // and we can start modifying CALayers from the compositor thread again.
+  void UnsuspendAsyncCATransactions();
+
   mozilla::widget::EventDispatcher* GetEventDispatcher() const;
 
   static already_AddRefed<nsWindow> From(nsPIDOMWindowOuter* aDOMWindow);
@@ -135,6 +161,10 @@ class nsWindow final : public nsBaseWidget {
   mozilla::widget::InputContext mInputContext;
   RefPtr<mozilla::widget::TextInputHandler> mTextInputHandler;
   RefPtr<mozilla::widget::IOSView> mIOSView;
+
+  RefPtr<mozilla::layers::NativeLayerRootCA> mNativeLayerRoot;
+
+  RefPtr<mozilla::CancelableRunnable> mUnsuspendAsyncCATransactionsRunnable;
 
   void OnSizeChanged(const mozilla::gfx::IntSize& aSize);
 

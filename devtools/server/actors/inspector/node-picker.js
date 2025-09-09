@@ -400,15 +400,25 @@ class NodePicker {
   }
 
   _startPickerListeners() {
+    // All the following DOM Events will be cancelled to avoid reaching the web page.
+    const cancelledEvents = [
+      "dblclick",
+      "mouseenter",
+      "mousedown",
+      "mouseover",
+      "mouseup",
+      "mouseout",
+      "mouseleave",
+    ];
     const eventsToSuppress = [
       { type: "click", handler: this._onPick },
-      { type: "dblclick", handler: this._preventContentEvent },
       { type: "keydown", handler: this._onKeyDown },
       { type: "keyup", handler: this._onKeyUp },
-      { type: "mousedown", handler: this._preventContentEvent },
       { type: "mousemove", handler: this._onHovered },
-      { type: "mouseup", handler: this._preventContentEvent },
     ];
+    for (const type of cancelledEvents) {
+      eventsToSuppress.push({ type, handler: this._preventContentEvent });
+    }
 
     const target = this._targetActor.chromeEventHandler;
     this.#eventListenersAbortController = new AbortController();

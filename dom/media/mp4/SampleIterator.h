@@ -6,13 +6,13 @@
 #define DOM_MEDIA_MP4_SAMPLE_ITERATOR_H_
 
 #include "ByteStream.h"
+#include "MP4Interval.h"
 #include "MediaData.h"
 #include "MediaResource.h"
 #include "MoofParser.h"
-#include "mozilla/ResultVariant.h"
-#include "MP4Interval.h"
-#include "nsISupportsImpl.h"
 #include "TimeUnits.h"
+#include "mozilla/ResultVariant.h"
+#include "nsISupportsImpl.h"
 
 namespace mozilla {
 

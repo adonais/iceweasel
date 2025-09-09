@@ -6,11 +6,11 @@
 #ifndef MOZILLA_MEDIATRACKGRAPHIMPL_H_
 #define MOZILLA_MEDIATRACKGRAPHIMPL_H_
 
-#include "MediaTrackGraph.h"
-
+#include "AsyncLogger.h"
 #include "AudioMixer.h"
-#include "GraphDriver.h"
 #include "DeviceInputTrack.h"
+#include "GraphDriver.h"
+#include "MediaTrackGraph.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"
@@ -23,7 +23,6 @@
 #include "nsIRunnable.h"
 #include "nsIThreadInternal.h"
 #include "nsITimer.h"
-#include "AsyncLogger.h"
 
 namespace mozilla {
 

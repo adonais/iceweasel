@@ -12,31 +12,9 @@ const { sinon } = ChromeUtils.importESModule(
 const { DiscoveryStreamFeed } = ChromeUtils.importESModule(
   "resource://newtab/lib/DiscoveryStreamFeed.sys.mjs"
 );
-
-// Some Activity Stream preferences are JSON encoded, and quite complex.
-// Hard-coding them here or in browser.ini makes them brittle to change.
-// Instead, we pull the default prefs structures and set the values that
-// we need and write them to preferences here dynamically. We do this in
-// its own scope to avoid polluting the global scope.
-{
-  const { PREFS_CONFIG } = ChromeUtils.importESModule(
-    "resource://newtab/lib/ActivityStream.sys.mjs"
-  );
-
-  let defaultDSConfig = JSON.parse(
-    PREFS_CONFIG.get("discoverystream.config").getValue({
-      geo: "US",
-      locale: "en-US",
-    })
-  );
-
-  // Configure Activity Stream to query for the layout JSON file that points
-  // at the local top stories feed.
-  Services.prefs.setCharPref(
-    "browser.newtabpage.activity-stream.discoverystream.config",
-    JSON.stringify(defaultDSConfig)
-  );
-}
+const { PREFS_CONFIG } = ChromeUtils.importESModule(
+  "resource://newtab/lib/ActivityStream.sys.mjs"
+);
 
 /**
  * Utility function that loads about:home in the current window in a new tab, and waits
@@ -50,6 +28,17 @@ const { DiscoveryStreamFeed } = ChromeUtils.importESModule(
  * @resolves {undefined}
  */
 async function withFullyLoadedAboutHome(taskFn) {
+  // Some Activity Stream preferences are JSON encoded, and quite complex.
+  // Hard-coding them here or in browser.ini makes them brittle to change.
+  // Instead, we pull the default prefs structures and set the values that
+  // we need and write them to preferences here dynamically.
+  let defaultDSConfig = JSON.parse(
+    PREFS_CONFIG.get("discoverystream.config").getValue({
+      geo: "US",
+      locale: "en-US",
+    })
+  );
+
   const sandbox = sinon.createSandbox();
   sandbox
     .stub(DiscoveryStreamFeed.prototype, "generateFeedUrl")
@@ -60,7 +49,15 @@ async function withFullyLoadedAboutHome(taskFn) {
   // Set "prefers-reduced-motion" media to "reduce"
   // to avoid the loading animation from triggering bug 1742842
   await SpecialPowers.pushPrefEnv({
-    set: [["ui.prefersReducedMotion", 1]],
+    set: [
+      ["ui.prefersReducedMotion", 1],
+      // Configure Activity Stream to query for the layout JSON file that points
+      // at the local top stories feed.
+      [
+        "browser.newtabpage.activity-stream.discoverystream.config",
+        JSON.stringify(defaultDSConfig),
+      ],
+    ],
   });
 
   return BrowserTestUtils.withNewTab("about:home", async browser => {

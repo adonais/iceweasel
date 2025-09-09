@@ -1149,8 +1149,8 @@ class TelemetryHandler {
    *
    * @param {string} url The url to match.
    * @returns {null|object} Returns null if there is no match found. Otherwise,
-   *   returns an object of strings for provider, code, type, whether it's a
-   *   single page app, and the search query used.
+   *   returns an object of strings for provider, code, type, search query used,
+   *   whether it's a single page app, page type and search mode.
    */
   _checkURLForSerpMatch(url) {
     let searchProviderInfo = this._getProviderInfoForURL(url);
@@ -1260,6 +1260,18 @@ class TelemetryHandler {
       }
     }
 
+    /** @type {?string} */
+    let searchMode;
+    if (searchProviderInfo.searchMode) {
+      for (let [param, paramMode] of Object.entries(
+        searchProviderInfo.searchMode
+      )) {
+        if (queries.has(param)) {
+          searchMode = paramMode;
+        }
+      }
+    }
+
     return {
       provider: searchProviderInfo.telemetryId,
       type,
@@ -1267,6 +1279,7 @@ class TelemetryHandler {
       searchQuery,
       isSPA,
       pageType,
+      searchMode,
     };
   }
 
@@ -1374,6 +1387,7 @@ class TelemetryHandler {
       tagged: info.type.startsWith("tagged"),
       partnerCode,
       source,
+      searchMode: info.searchMode,
       isShoppingPage,
       isPrivate,
       isSignedIn,
@@ -2034,6 +2048,7 @@ class ContentHandler {
         provider: impressionInfo.provider,
         tagged: impressionInfo.tagged,
         partner_code: impressionInfo.partnerCode,
+        search_mode: impressionInfo.searchMode,
         source: impressionInfo.source,
         shopping_tab_displayed: info.shoppingTabDisplayed,
         is_shopping_page: impressionInfo.isShoppingPage,
@@ -2047,6 +2062,7 @@ class ContentHandler {
         impressionId,
         ...impressionInfo,
         shoppingTabDisplayed: info.shoppingTabDisplayed,
+        searchMode: impressionInfo.searchMode,
       });
       Services.obs.notifyObservers(null, "reported-page-with-impression");
     } else if (telemetryState.impressionRecorded) {
@@ -2066,6 +2082,7 @@ class ContentHandler {
       provider: impressionInfo.provider,
       tagged: impressionInfo.tagged,
       partner_code: impressionInfo.partnerCode,
+      search_mode: impressionInfo.searchMode,
       source: impressionInfo.source,
       shopping_tab_displayed: false,
       is_shopping_page: impressionInfo.isShoppingPage,
@@ -2079,6 +2096,7 @@ class ContentHandler {
       impressionId: telemetryState.impressionId,
       ...impressionInfo,
       shoppingTabDisplayed: false,
+      search_mode: impressionInfo.searchMode,
     });
     Services.obs.notifyObservers(null, "reported-page-with-impression");
   }

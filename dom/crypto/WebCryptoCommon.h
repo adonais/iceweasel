@@ -12,6 +12,8 @@
 
 #include <cstdint>
 #include <cstring>
+
+#include "ScopedNSSTypes.h"
 #include "js/StructuredClone.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
@@ -27,7 +29,6 @@
 #include "secitem.h"
 #include "secoid.h"
 #include "secoidt.h"
-#include "ScopedNSSTypes.h"
 
 struct JSStructuredCloneReader;
 struct JSStructuredCloneWriter;

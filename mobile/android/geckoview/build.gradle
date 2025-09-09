@@ -1,11 +1,11 @@
 plugins {
     alias(libs.plugins.kotlin.android)
+    id 'com.android.library'
+    id 'checkstyle'
+    id 'org.mozilla.apilint'
 }
 
 import groovy.json.JsonOutput
-
-apply plugin: 'com.android.library'
-apply plugin: 'checkstyle'
 
 // The SDK binding generation tasks depend on the JAR creation task of the
 // :annotations project.
@@ -547,8 +547,6 @@ tasks.register("generateSDKBindings", JavaExec) {
 
 preBuild.dependsOn(":verifyGleanVersion")
 
-apply plugin: 'org.mozilla.apilint'
-
 apiLint {
     // TODO: Change this to `org` after hiding org.mozilla.gecko
     packageFilter = 'org.mozilla.geckoview'
@@ -571,6 +569,7 @@ apiLint {
         'org.json',
         'org.mozilla.geckoview',
     ]
+    helpCommand = { variantName -> "\$ ./mach gradle :geckoview:apiUpdateFile${variantName}" }
 }
 
 // generateDebugLintModel and other lint tasks that depend on it check the geckoview assets folder

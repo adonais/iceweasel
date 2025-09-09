@@ -14,11 +14,11 @@
 #include "mozilla/dom/ConstraintValidation.h"
 #include "mozilla/dom/HTMLFormElement.h"
 #include "mozilla/dom/HTMLInputElementBinding.h"
-#include "nsIControllers.h"
 #include "nsCOMPtr.h"
 #include "nsGenericHTMLElement.h"
-#include "nsStubMutationObserver.h"
 #include "nsGkAtoms.h"
+#include "nsIControllers.h"
+#include "nsStubMutationObserver.h"
 
 class nsIControllers;
 class nsPresContext;

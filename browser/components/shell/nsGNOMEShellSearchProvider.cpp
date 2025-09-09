@@ -490,8 +490,8 @@ void nsGNOMEShellHistorySearchResult::ReceiveSearchResultContainer(
 
   // Getting the currently open tabs to mark them accordingly
   nsresult rv;
-  nsCOMPtr<nsIOpenTabsProvider> provider =
-      do_ImportESModule("resource:///modules/OpenTabsProvider.sys.mjs", &rv);
+  nsCOMPtr<nsIOpenTabsProvider> provider = do_ImportESModule(
+      "moz-src:///browser/components/shell/OpenTabsProvider.sys.mjs", &rv);
   if (NS_FAILED(rv)) {
     // Don't fail, just log an error message
     NS_WARNING("Failed to determine currently open tabs. Using history only.");

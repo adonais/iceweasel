@@ -8,8 +8,8 @@
 
 #include "ClientSource.h"
 #include "ClientSourceOpChild.h"
-#include "mozilla/dom/ClientIPCTypes.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/ClientIPCTypes.h"
 
 namespace mozilla::dom {
 

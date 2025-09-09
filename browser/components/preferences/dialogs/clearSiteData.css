@@ -6,7 +6,7 @@
   background-color: var(--background-color-box);
   border: 1px solid var(--in-content-box-border-color);
   border-radius: 2px;
-  color: var(--in-content-text-color);
+  color: var(--text-color);
   padding: 0.5em;
 }
 

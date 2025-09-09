@@ -5,7 +5,8 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  PanelMultiView: "resource:///modules/PanelMultiView.sys.mjs",
+  PanelMultiView:
+    "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
   TabMetrics: "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
 });
 
@@ -610,8 +611,11 @@ export class TabsPanel extends TabsListBase {
       "all-tabs-group-button",
       "subviewbutton",
       "subviewbutton-iconic",
-      group.collapsed ? "tab-group-icon-collapsed" : "tab-group-icon"
+      "tab-group-icon"
     );
+    if (group.collapsed) {
+      button.classList.add("tab-group-icon-collapsed");
+    }
     button.setAttribute("flex", "1");
     button.setAttribute("crop", "end");
 

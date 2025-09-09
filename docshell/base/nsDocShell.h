@@ -178,6 +178,8 @@ class nsDocShell final : public nsDocLoader,
   NS_DECL_NSIAUTHPROMPTPROVIDER
   NS_DECL_NSINETWORKINTERCEPTCONTROLLER
 
+  using nsIBaseWindow::GetMainWidget;
+
   // Create a new nsDocShell object.
   static already_AddRefed<nsDocShell> Create(
       mozilla::dom::BrowsingContext* aBrowsingContext,
@@ -1186,6 +1188,12 @@ class nsDocShell final : public nsDocLoader,
   void InformNavigationAPIAboutAbortingNavigation();
 
   enum class OngoingNavigation : uint8_t { NavigationID, Traversal };
+  enum class UnsetOngoingNavigation : bool { No, Yes };
+  // Implementation for `nsIWebNavigation::Stop`, extended to add a flag whether
+  // to unset the ongoing navigation or not.
+  MOZ_CAN_RUN_SCRIPT
+  nsresult StopInternal(uint32_t aStopFlags,
+                        UnsetOngoingNavigation aUnsetOngoingNavigation);
 
   MOZ_CAN_RUN_SCRIPT
   void SetOngoingNavigation(

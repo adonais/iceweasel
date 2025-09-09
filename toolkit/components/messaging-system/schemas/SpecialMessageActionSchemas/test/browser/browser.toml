@@ -21,6 +21,8 @@ support-files = [
 
 ["browser_sma_create_new_profile.js"]
 
+["browser_sma_create_taskbar_tab.js"]
+
 ["browser_sma_default_browser.js"]
 
 ["browser_sma_default_pdf_handler.js"]
@@ -34,6 +36,8 @@ support-files = [
 ["browser_sma_open_about_page.js"]
 
 ["browser_sma_open_awesome_bar.js"]
+
+["browser_sma_open_panel.js"]
 
 ["browser_sma_open_private_browser_window.js"]
 

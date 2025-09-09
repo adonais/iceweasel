@@ -4,17 +4,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
-
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
+#include "gtest/gtest.h"
+#include "mozilla/NullPrincipal.h"
+#include "mozilla/Preferences.h"
 #include "nsContentSecurityManager.h"
 #include "nsContentUtils.h"
 #include "nsIPrincipal.h"
 #include "nsScriptSecurityManager.h"
-#include "mozilla/NullPrincipal.h"
-#include "mozilla/Preferences.h"
 
 using namespace mozilla;
 

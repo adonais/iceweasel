@@ -5,11 +5,9 @@
 #ifndef DOM_MEDIA_PLATFORMS_ANDROID_ANDROIDDATAENCODER_H_
 #define DOM_MEDIA_PLATFORMS_ANDROID_ANDROIDDATAENCODER_H_
 
+#include "JavaCallbacksSupport.h"
 #include "MediaData.h"
 #include "PlatformEncoderModule.h"
-
-#include "JavaCallbacksSupport.h"
-
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 

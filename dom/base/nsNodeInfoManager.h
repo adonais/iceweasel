@@ -12,13 +12,13 @@
 #define nsNodeInfoManager_h___
 
 #include "mozilla/Attributes.h"  // for final
-#include "mozilla/dom/NodeInfo.h"
-#include "mozilla/dom/DOMArena.h"
 #include "mozilla/MruCache.h"
+#include "mozilla/dom/DOMArena.h"
+#include "mozilla/dom/NodeInfo.h"
 #include "nsCOMPtr.h"                      // for member
 #include "nsCycleCollectionParticipant.h"  // for NS_DECL_CYCLE_*
-#include "nsTHashMap.h"
 #include "nsStringFwd.h"
+#include "nsTHashMap.h"
 
 class nsAtom;
 class nsIPrincipal;

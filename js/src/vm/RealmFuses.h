@@ -178,6 +178,36 @@ struct OptimizeSharedArrayBufferSpeciesFuse final : public RealmFuse {
   virtual bool checkInvariant(JSContext* cx) override;
 };
 
+// Fuse used to optimize @@species lookups for TypedArrays. If this fuse is
+// intact, the following invariants must hold:
+//
+// - The builtin `%TypedArray%.prototype` object has a `constructor` property
+//   that's the builtin `%TypedArray%` constructor.
+// - This `%TypedArray%` constructor has a `Symbol.species` property that's the
+//   original accessor.
+// - The builtin `<TypedArray>.prototype` object has a `constructor` property
+//   that's the builtin `<TypedArray>` constructor and the prototype of
+//   `<TypedArray>.prototype` is %TypedArray%.prototype.
+//   Where `<TypedArray>` is all concrete built-in TypedArray types:
+//   - Int8Array
+//   - Uint8Array
+//   - Uint8ClampedArray
+//   - Int16Array
+//   - Uint16Array
+//   - Int32Array
+//   - Uint32Array
+//   - BigInt64Array
+//   - BigUint64Array
+//   - Float16Array
+//   - Float32Array
+//   - Float64Array
+struct OptimizeTypedArraySpeciesFuse final : public InvalidatingRealmFuse {
+  virtual const char* name() override {
+    return "OptimizeTypedArraySpeciesFuse";
+  }
+  virtual bool checkInvariant(JSContext* cx) override;
+};
+
 // Fuse used to optimize various property lookups for promises. If this fuse is
 // intact, the following invariants must hold:
 //
@@ -312,6 +342,7 @@ struct OptimizeWeakSetPrototypeAddFuse final : public RealmFuse {
   FUSE(OptimizeArrayBufferSpeciesFuse, optimizeArrayBufferSpeciesFuse)         \
   FUSE(OptimizeSharedArrayBufferSpeciesFuse,                                   \
        optimizeSharedArrayBufferSpeciesFuse)                                   \
+  FUSE(OptimizeTypedArraySpeciesFuse, optimizeTypedArraySpeciesFuse)           \
   FUSE(OptimizePromiseLookupFuse, optimizePromiseLookupFuse)                   \
   FUSE(OptimizeRegExpPrototypeFuse, optimizeRegExpPrototypeFuse)               \
   FUSE(OptimizeStringPrototypeSymbolsFuse, optimizeStringPrototypeSymbolsFuse) \

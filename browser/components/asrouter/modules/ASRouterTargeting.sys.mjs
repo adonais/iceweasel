@@ -1,7 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla PublicddonMa
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 const FXA_ENABLED_PREF = "identity.fxaccounts.enabled";
 const TOPIC_SELECTION_MODAL_LAST_DISPLAYED_PREF =
   "browser.newtabpage.activity-stream.discoverystream.topicSelection.onboarding.lastDisplayed";
@@ -31,7 +30,7 @@ const { NewTabUtils } = ChromeUtils.importESModule(
 
 // eslint-disable-next-line mozilla/use-static-import
 const { ShellService } = ChromeUtils.importESModule(
-  "resource:///modules/ShellService.sys.mjs"
+  "moz-src:///browser/components/shell/ShellService.sys.mjs"
 );
 
 // eslint-disable-next-line mozilla/use-static-import
@@ -42,15 +41,20 @@ const { ClientID } = ChromeUtils.importESModule(
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AboutNewTabResourceMapping:
+    "resource:///modules/AboutNewTabResourceMapping.sys.mjs",
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   ASRouterPreferences:
     "resource:///modules/asrouter/ASRouterPreferences.sys.mjs",
-  AttributionCode: "resource:///modules/AttributionCode.sys.mjs",
+  AttributionCode:
+    "moz-src:///browser/components/attribution/AttributionCode.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   ClientEnvironment: "resource://normandy/lib/ClientEnvironment.sys.mjs",
-  CustomizableUI: "resource:///modules/CustomizableUI.sys.mjs",
+  CustomizableUI:
+    "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
+  ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
   FeatureCalloutBroker:
     "resource:///modules/asrouter/FeatureCalloutBroker.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
@@ -264,7 +268,11 @@ function CacheUnhandledCampaignAction() {
         if (!lazy.didHandleCampaignAction) {
           const attributionData =
             lazy.AttributionCode.getCachedAttributionData();
-          const ALLOWED_CAMPAIGN_ACTIONS = ["SET_DEFAULT_BROWSER"];
+          const ALLOWED_CAMPAIGN_ACTIONS = [
+            "PIN_AND_DEFAULT",
+            "PIN_FIREFOX_TO_TASKBAR",
+            "SET_DEFAULT_BROWSER",
+          ];
           const campaign = attributionData?.campaign?.toUpperCase();
           if (campaign && ALLOWED_CAMPAIGN_ACTIONS.includes(campaign)) {
             this._value = campaign;
@@ -500,7 +508,7 @@ function parseAboutPageURL(url) {
     isCustomUrl: false,
     urls: [],
   };
-  if (url.startsWith("moz-extension://")) {
+  if (lazy.ExtensionUtils.isExtensionUrl(url)) {
     ret.isWebExt = true;
     ret.urls.push({ url, host: "" });
   } else {
@@ -1126,6 +1134,15 @@ const TargetingGetters = {
    */
   get useEmbeddedMigrationWizard() {
     return lazy.useEmbeddedMigrationWizard;
+  },
+
+  /**
+   * Returns the version number of the New Tab built-in addon being used
+   * by the build.
+   * @return {string}
+   */
+  get newtabAddonVersion() {
+    return lazy.AboutNewTabResourceMapping.addonVersion;
   },
 
   /**

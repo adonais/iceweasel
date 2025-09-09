@@ -72,7 +72,7 @@ class SettingsPrivacyTest : TestSetup() {
                 isDailyUsagePingEnabled = true,
                 studiesSummary = "On",
             )
-            clickUsageAndTechnicalDataToggle()
+            clickUsageAndTechnicalDataToggle(composeTestRule)
             verifyDataCollectionView(
                 composeTestRule,
                 isSendTechnicalDataEnabled = false,

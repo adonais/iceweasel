@@ -57,6 +57,23 @@ INSTANCE_RESERVED_SLOTS = 1
 # smaller for very large sets).
 GLOBAL_NAMES_PHF_SIZE = 256
 
+# If you have to change this list (which you shouldn't!), make sure it
+# continues to match the list in test_Object.prototype_props.html
+JS_OBJECT_PROTOTYPE_PROPERTIES = [
+    "constructor",
+    "toString",
+    "toLocaleString",
+    "valueOf",
+    "hasOwnProperty",
+    "isPrototypeOf",
+    "propertyIsEnumerable",
+    "__defineGetter__",
+    "__defineSetter__",
+    "__lookupGetter__",
+    "__lookupSetter__",
+    "__proto__",
+]
+
 
 def reservedSlot(slotIndex, forXray):
     base = "DOM_EXPANDO_RESERVED_SLOTS" if forXray else "DOM_INSTANCE_RESERVED_SLOTS"
@@ -251,9 +268,9 @@ def idlTypeNeedsCallContext(type, descriptor=None, allowTreatNonCallableAsNull=F
 
 
 # TryPreserveWrapper uses the addProperty hook to preserve the wrapper of
-# non-nsISupports cycle collected objects, so if wantsAddProperty is changed
+# non-nsISupports cycle collected objects, so if wantsPreservedWrapper is changed
 # to not cover that case then TryPreserveWrapper will need to be changed.
-def wantsAddProperty(desc):
+def wantsPreservedWrapper(desc):
     return desc.concrete and desc.wrapperCache and not desc.isGlobal()
 
 
@@ -697,6 +714,9 @@ class CGDOMJSClass(CGThing):
                 )
             classFlags += " | JSCLASS_SKIP_NURSERY_FINALIZE"
 
+        if wantsPreservedWrapper(self.descriptor):
+            classFlags += " | JSCLASS_PRESERVES_WRAPPER"
+
         if self.descriptor.interface.getExtendedAttribute("NeedResolve"):
             resolveHook = RESOLVE_HOOK_NAME
             mayResolveHook = MAY_RESOLVE_HOOK_NAME
@@ -713,7 +733,7 @@ class CGDOMJSClass(CGThing):
         return fill(
             """
             static const JSClassOps sClassOps = {
-              ${addProperty}, /* addProperty */
+              nullptr,               /* addProperty */
               nullptr,               /* delProperty */
               nullptr,               /* enumerate */
               ${newEnumerate}, /* newEnumerate */
@@ -742,11 +762,6 @@ class CGDOMJSClass(CGThing):
             """,
             name=self.descriptor.interface.getClassName(),
             flags=classFlags,
-            addProperty=(
-                "NativeTypeHelpers<%s>::AddProperty" % self.descriptor.nativeType
-                if wantsAddProperty(self.descriptor)
-                else "nullptr"
-            ),
             newEnumerate=newEnumerateHook,
             resolve=resolveHook,
             mayResolve=mayResolveHook,
@@ -2038,40 +2053,6 @@ class CGAbstractClassHook(CGAbstractStaticMethod):
 
     def generate_code(self):
         assert False  # Override me!
-
-
-class CGAddPropertyHook(CGAbstractClassHook):
-    """
-    A hook for addProperty, used to preserve our wrapper from GC.
-    """
-
-    def __init__(self, descriptor):
-        args = [
-            Argument("JSContext*", "cx"),
-            Argument("JS::Handle<JSObject*>", "obj"),
-            Argument("JS::Handle<jsid>", "id"),
-            Argument("JS::Handle<JS::Value>", "val"),
-        ]
-        CGAbstractClassHook.__init__(
-            self, descriptor, ADDPROPERTY_HOOK_NAME, "bool", args
-        )
-
-    def generate_code(self):
-        assert self.descriptor.wrapperCache
-        # This hook is also called by TryPreserveWrapper on non-nsISupports
-        # cycle collected objects, so if addProperty is ever changed to do
-        # anything more or less than preserve the wrapper, TryPreserveWrapper
-        # will need to be changed.
-        return dedent(
-            """
-            // We don't want to preserve if we don't have a wrapper, and we
-            // obviously can't preserve if we're not initialized.
-            if (self && self->GetWrapperPreserveColor()) {
-              PreserveWrapper(self);
-            }
-            return true;
-            """
-        )
 
 
 class CGGetWrapperCacheHook(CGAbstractClassHook):
@@ -15332,7 +15313,7 @@ class CGCountMaybeMissingProperty(CGAbstractPropertySwitchMethod):
         )
 
 
-class CGInterfaceHasNonEventHandlerProperty(CGAbstractPropertySwitchMethod):
+class CGInterfaceHasProperty(CGAbstractPropertySwitchMethod):
     def __init__(self, descriptor):
         """
         Returns whether the given string a property of this or any of its
@@ -15341,7 +15322,7 @@ class CGInterfaceHasNonEventHandlerProperty(CGAbstractPropertySwitchMethod):
         CGAbstractPropertySwitchMethod.__init__(
             self,
             descriptor,
-            "InterfaceHasNonEventHandlerProperty",
+            "InterfaceHasProperty",
             "bool",
             [
                 Argument("const nsAString&", "name"),
@@ -15349,22 +15330,16 @@ class CGInterfaceHasNonEventHandlerProperty(CGAbstractPropertySwitchMethod):
         )
 
     def definition_body(self):
-        # The non-function properties on Object.prototype.
-        names = {"constructor", "__proto__"}
+        # Include all properties of the Object.prototype.
+        names = set(JS_OBJECT_PROTOTYPE_PROPERTIES)
 
         iface = self.descriptor.interface
         while iface:
             for m in iface.members:
-                if not m.isAttr() or isChromeOnly(m):
+                if isChromeOnly(m):
                     continue
 
-                name = m.identifier.name
-                # Skip event handler attributes, because they are always function objects (or null)
-                # which means it's unlikely they are used in a confusable manner.
-                if name.startswith("on"):
-                    continue
-
-                names.add(name)
+                names.add(m.identifier.name)
 
             iface = iface.parent
 
@@ -17420,8 +17395,8 @@ class CGDescriptor(CGThing):
         if descriptor.needsMissingPropUseCounters:
             cgThings.append(CGCountMaybeMissingProperty(descriptor))
 
-        if descriptor.interface.identifier.name == "HTMLDocument":
-            cgThings.append(CGInterfaceHasNonEventHandlerProperty(descriptor))
+        if descriptor.interface.identifier.name in ("HTMLDocument", "HTMLFormElement"):
+            cgThings.append(CGInterfaceHasProperty(descriptor))
 
         # CGDOMProxyJSClass/CGDOMJSClass need GetProtoObjectHandle, but we don't
         # want to export it for the iterator interfaces, or if we don't need it
@@ -18514,22 +18489,7 @@ class CGDictionary(CGThing):
             # The data is inside the Optional<>
             memberData = "%s.InternalValue()" % memberLoc
 
-        # If you have to change this list (which you shouldn't!), make sure it
-        # continues to match the list in test_Object.prototype_props.html
-        if member.identifier.name in [
-            "constructor",
-            "toString",
-            "toLocaleString",
-            "valueOf",
-            "hasOwnProperty",
-            "isPrototypeOf",
-            "propertyIsEnumerable",
-            "__defineGetter__",
-            "__defineSetter__",
-            "__lookupGetter__",
-            "__lookupSetter__",
-            "__proto__",
-        ]:
+        if member.identifier.name in JS_OBJECT_PROTOTYPE_PROPERTIES:
             raise TypeError(
                 "'%s' member of %s dictionary shadows "
                 "a property of Object.prototype, and Xrays to "

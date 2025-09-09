@@ -106,7 +106,17 @@ p:first-letter {
     left:0;
 }
 
-#list::marker {
+#list::after {
+    content: "suffix";
+    display: list-item;
+}
+
+#list::after::marker {
+    content: "+";
+    color: tomato;
+}
+
+#list-item::marker {
     color: purple;
 }
 
@@ -177,8 +187,8 @@ details[open]::details-content {
         <p>Bottom Left<br />Position</p>
     </div>
 
-    <ol>
-        <li id="list" class="box">List element</li>
+    <ol id="list">
+        <li id="list-item" class="box">List element</li>
     </ol>
 
     <dialog>

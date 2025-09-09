@@ -9,6 +9,7 @@
 
 #include <cstring>
 #include <utility>
+
 #include "js/RootingAPI.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"

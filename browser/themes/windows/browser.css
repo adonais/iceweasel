@@ -215,17 +215,9 @@
   }
 }
 
-/* Bookmarks roots menu-items */
-
-#bookmarksToolbarFolderMenu,
-#BMB_bookmarksToolbar,
-#panelMenu_bookmarksToolbar {
-  list-style-image: url("chrome://browser/skin/places/bookmarksToolbar.svg");
-}
-
 /* Address bar */
 
-#urlbar,
+.urlbar,
 #searchbar {
   font-size: 1.15em;
 }
@@ -248,7 +240,7 @@
   }
 
   :root:not([lwtheme]) {
-    #urlbar:not([focused]) > #urlbar-background,
+    :not([focused]) > .urlbar-background,
     #searchbar:not(:focus-within),
     .findbar-textbox:not(:focus) {
       border-color: ThreeDShadow;

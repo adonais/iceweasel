@@ -71,15 +71,6 @@ extern mozilla::LazyLogModule gHttpLog;
 class OpaqueResponseBlocker;
 class PreferredAlternativeDataTypeParams;
 
-enum CacheDisposition : uint8_t {
-  kCacheUnresolved = 0,
-  kCacheHit = 1,
-  kCacheHitViaReval = 2,
-  kCacheMissedViaReval = 3,
-  kCacheMissed = 4,
-  kCacheUnknown = 5
-};
-
 // These need to be kept in sync with
 // "browser.opaqueResponseBlocking.filterFetchResponse"
 enum class OpaqueResponseFilterFetch { Never, AllowedByORB, BlockedByORB, All };

@@ -28,14 +28,14 @@ pub enum LabeledMemoryDistributionMetric {
     Child { id: BaseMetricId, label: String },
 }
 
-crate::define_metric_metadata_getter!(
+define_metric_metadata_getter!(
     MemoryDistributionMetric,
     LabeledMemoryDistributionMetric,
     MEMORY_DISTRIBUTION_MAP,
     LABELED_MEMORY_DISTRIBUTION_MAP
 );
 
-crate::define_metric_namer!(LabeledMemoryDistributionMetric, LABELED);
+define_metric_namer!(LabeledMemoryDistributionMetric, LABELED);
 
 impl LabeledMemoryDistributionMetric {
     #[cfg(test)]

@@ -204,9 +204,6 @@ with Files("tests/content-security-policy/**"):
 with Files("tests/cookies/**"):
     BUG_COMPONENT = ("Core", "Networking: Cookies")
 
-with Files("tests/cookie-store/**"):
-    BUG_COMPONENT = ("Core", "DOM: Core & HTML")
-
 with Files("tests/core-aam/**"):
     BUG_COMPONENT = ("Core", "Disability Access APIs")
 

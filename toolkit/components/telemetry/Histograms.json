@@ -3935,42 +3935,6 @@
     "releaseChannelCollection": "opt-out",
     "description": "Number of fully loaded (i.e., not pending from session restore) tabs opened across all windows, collected at most every 5 minutes whenever the user interacts with the browser in the following ways: open tab/window, page load, restoring a pending tab."
   },
-  "STS_POLL_AND_EVENTS_CYCLE": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 60000,
-    "n_buckets": 1000,
-    "description": "The duraion of a socketThread cycle, including polls and pending events. (ms)"
-  },
-  "STS_POLL_CYCLE": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 60000,
-    "n_buckets": 1000,
-    "description": "The duration of poll. (ms)"
-  },
-  "STS_POLL_AND_EVENT_THE_LAST_CYCLE": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 60000,
-    "n_buckets": 1000,
-    "description": "The duraion of the socketThread cycle during shutdown, including polls and pending events. (ms)"
-  },
-  "STS_POLL_BLOCK_TIME": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 60000,
-    "n_buckets": 1000,
-    "description": "Time spent blocked on poll (ms)."
-  },
   "PRCONNECT_BLOCKING_TIME_NORMAL": {
     "record_in_processes": ["main", "socket"],
     "products": ["firefox", "fennec"],
@@ -6285,9 +6249,9 @@
   "PWMGR_IMPORT_LOGINS_FROM_FILE_CATEGORICAL": {
     "record_in_processes": ["main"],
     "products": ["firefox"],
-    "bug_numbers": [1688653, 1749882, 1777397, 1850888],
+    "bug_numbers": [1688653, 1749882, 1777397, 1850888, 1978988],
     "alert_emails": ["passwords-dev@mozilla.org"],
-    "expires_in_version": "144",
+    "expires_in_version": "150",
     "kind": "categorical",
     "labels": ["added", "modified", "error", "no_change"],
     "releaseChannelCollection": "opt-out",

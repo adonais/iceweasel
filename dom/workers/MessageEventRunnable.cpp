@@ -6,11 +6,11 @@
 
 #include "MessageEventRunnable.h"
 
+#include "WorkerScope.h"
 #include "mozilla/dom/MessageEvent.h"
 #include "mozilla/dom/MessageEventBinding.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "nsQueryObject.h"
-#include "WorkerScope.h"
 
 namespace mozilla::dom {
 

@@ -7,10 +7,10 @@
 #ifndef mozilla_dom_cache_CacheOpChild_h
 #define mozilla_dom_cache_CacheOpChild_h
 
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/cache/ActorChild.h"
 #include "mozilla/dom/cache/PCacheOpChild.h"
 #include "mozilla/dom/cache/TypeUtils.h"
-#include "mozilla/RefPtr.h"
 
 class nsIGlobalObject;
 
@@ -21,7 +21,7 @@ class Promise;
 namespace cache {
 
 class CacheOpChild final : public PCacheOpChild,
-                           public ActorChild,
+                           public CacheActorChild,
                            public TypeUtils {
   friend class CacheChild;
   friend class CacheStorageChild;
@@ -53,8 +53,6 @@ class CacheOpChild final : public PCacheOpChild,
 #ifdef DEBUG
   virtual void AssertOwningThread() const override;
 #endif
-
-  virtual mozilla::ipc::PBackgroundChild* GetIPCManager() override;
 
   // Utility methods
   void HandleResponse(const Maybe<CacheResponse>& aMaybeResponse);

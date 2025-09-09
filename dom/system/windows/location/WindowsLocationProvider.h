@@ -7,9 +7,9 @@
 #ifndef mozilla_dom_WindowsLocationProvider_h__
 #define mozilla_dom_WindowsLocationProvider_h__
 
+#include "mozilla/MozPromise.h"
 #include "nsCOMPtr.h"
 #include "nsIGeolocationProvider.h"
-#include "mozilla/MozPromise.h"
 
 class MLSFallback;
 

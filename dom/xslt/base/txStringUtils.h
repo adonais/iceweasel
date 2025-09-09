@@ -8,8 +8,8 @@
 
 #include "nsAString.h"
 #include "nsAtom.h"
-#include "nsUnicharUtils.h"
 #include "nsContentUtils.h"  // For ASCIIToLower().
+#include "nsUnicharUtils.h"
 
 /**
  * Check equality between a string and an atom containing ASCII.

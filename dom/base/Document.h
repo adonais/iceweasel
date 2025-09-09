@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <new>
 #include <utility>
+
 #include "ErrorList.h"
 #include "MainThreadUtils.h"
 #include "Units.h"
@@ -23,11 +24,9 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/BitSet.h"
-#include "mozilla/RenderingPhase.h"
-#include "mozilla/OriginTrials.h"
-#include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/CallState.h"
+#include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/FlushType.h"
 #include "mozilla/FunctionRef.h"
 #include "mozilla/HashTable.h"
@@ -35,9 +34,12 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/NotNull.h"
+#include "mozilla/OriginTrials.h"
+#include "mozilla/PageloadEvent.h"
 #include "mozilla/PointerLockManager.h"
 #include "mozilla/PreloadService.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/RenderingPhase.h"
 #include "mozilla/Result.h"
 #include "mozilla/SegmentedVector.h"
 #include "mozilla/ServoStyleSet.h"
@@ -51,12 +53,12 @@
 #include "mozilla/dom/DocumentOrShadowRoot.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/EventTarget.h"
+#include "mozilla/dom/LargestContentfulPaint.h"
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/RadioGroupContainer.h"
 #include "mozilla/dom/TreeOrderedArray.h"
-#include "mozilla/dom/ViewportMetaData.h"
-#include "mozilla/dom/LargestContentfulPaint.h"
 #include "mozilla/dom/UserActivation.h"
+#include "mozilla/dom/ViewportMetaData.h"
 #include "mozilla/dom/WakeLockBinding.h"
 #include "nsAtom.h"
 #include "nsCOMArray.h"
@@ -65,7 +67,6 @@
 #include "nsCompatibility.h"
 #include "nsContentListDeclarations.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsTHashMap.h"
 #include "nsDebug.h"
 #include "nsGkAtoms.h"
 #include "nsHashKeys.h"
@@ -98,6 +99,7 @@
 #include "nsRefPtrHashtable.h"
 #include "nsString.h"
 #include "nsTArray.h"
+#include "nsTHashMap.h"
 #include "nsTHashSet.h"
 #include "nsTLiteralString.h"
 #include "nsTObserverArray.h"
@@ -169,7 +171,6 @@ class nsILayoutHistoryState;
 class nsIObjectLoadingContent;
 class nsIPermissionDelegateHandler;
 class nsIPolicyContainer;
-class nsIRadioVisitor;
 class nsIRequest;
 class nsIRunnable;
 class nsIScriptGlobalObject;
@@ -332,9 +333,6 @@ enum BFCacheStatus {
 };
 
 }  // namespace dom
-namespace glean::perf {
-struct PageLoadExtra;
-}
 }  // namespace mozilla
 
 namespace mozilla::net {
@@ -345,6 +343,8 @@ class EarlyHintConnectArgs;
 // Must be kept in sync with xpcom/rust/xpcom/src/interfaces/nonidl.rs
 #define NS_IDOCUMENT_IID \
   {0xce1f7627, 0x7109, 0x4977, {0xba, 0x77, 0x49, 0x0f, 0xfd, 0xe0, 0x7a, 0xaa}}
+
+using mozilla::performance::pageload_event::PageloadEventData;
 
 namespace mozilla::dom {
 
@@ -707,9 +707,11 @@ class Document : public nsINode,
 
   // nsINode
   void InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
-                         bool aNotify, ErrorResult& aRv) override;
+                         bool aNotify, ErrorResult& aRv,
+                         nsINode* aOldParent = nullptr) override;
   void RemoveChildNode(nsIContent* aKid, bool aNotify,
-                       const BatchRemovalState* = nullptr) final;
+                       const BatchRemovalState* = nullptr,
+                       nsINode* aNewParent = nullptr) final;
   nsresult Clone(dom::NodeInfo* aNodeInfo, nsINode** aResult) const override {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -3135,28 +3137,19 @@ class Document : public nsINode,
   void CancelVideoFrameCallbacks(HTMLVideoElement* aElement);
 
   /**
-   * Returns true if the handle refers to a callback that was canceled that
-   * we did not find in our list of callbacks (e.g. because it is one of those
-   * in the set of callbacks currently queued to be run).
-   */
-  bool IsCanceledFrameRequestCallback(uint32_t aHandle) const;
-
-  /**
    * Put this document's video frame request callbacks into the provided
    * list, and forget about them.
    */
   void TakeVideoFrameRequestCallbacks(
       nsTArray<RefPtr<HTMLVideoElement>>& aVideoCallbacks);
 
-  /**
-   * Put this document's frame request callbacks into the provided
-   * list, and forget about them.
-   */
-  void TakeFrameRequestCallbacks(nsTArray<FrameRequest>& aCallbacks);
-
   /** Whether we have any scheduled frame request */
   bool HasFrameRequestCallbacks() const {
     return !mFrameRequestManager.IsEmpty();
+  }
+
+  dom::FrameRequestManager& FrameRequestManager() {
+    return mFrameRequestManager;
   }
 
   /**
@@ -3244,8 +3237,9 @@ class Document : public nsINode,
 
   void SetNavigationTiming(nsDOMNavigationTiming* aTiming);
 
-  inline void SetPageloadEventFeature(uint32_t aFeature) {
-    mPageloadEventFeatures |= aFeature;
+  inline void SetPageloadEventFeature(
+      performance::pageload_event::DocumentFeature aFeature) {
+    mPageloadEventData.SetDocumentFeature(aFeature);
   }
 
   nsContentList* ImageMapList();
@@ -3718,10 +3712,11 @@ class Document : public nsINode,
   // effect once per document, and so is called during document destruction.
   void ReportDocumentUseCounters();
 
-  // Report the names of the HTMLDocument properties thad had been shadowed
-  // using id/name and were then accessed ("DOM clobbering"). This data is
-  // collected by nsHTMLDocument::NamedGetter and limited to 10 unique entries.
-  void ReportShadowedHTMLDocumentProperties();
+  // Report the names of the HTMLDocument/HTMLFormElement properties that had
+  // been shadowed using ID/name, and which were subsequently accessed
+  // ("DOM clobbering"). This data is collected by the corresponding NamedGetter
+  // methods and limited to 10 unique entries.
+  void ReportShadowedProperties();
 
   // Reports largest contentful paint via telemetry. We want the most up to
   // date value for LCP and so this is called during document destruction.
@@ -3756,8 +3751,15 @@ class Document : public nsINode,
   // can.
   void PropagateImageUseCounters(Document* aReferencingDocument);
 
+  void CollectShadowedHTMLFormElementProperty(const nsAString& aName);
+
   // Called to track whether this document has had any interaction.
   // This is used to track whether we should permit "beforeunload".
+  // Note: These APIs are deprecated (bug 1766214), and should not be used in
+  // new code. Please use HasBeenUserGestureActivated() or
+  // HasValidTransientUserGestureActivation() APIs which align with the spec
+  // (https://html.spec.whatwg.org/multipage/interaction.html#tracking-user-activation)
+  // more and also support fission nicer.
   void SetUserHasInteracted();
   bool UserHasInteracted() { return mUserHasInteracted; }
   void ResetUserInteractionTimer();
@@ -5277,7 +5279,7 @@ class Document : public nsINode,
 
   nsCOMPtr<nsIDocumentEncoder> mCachedEncoder;
 
-  FrameRequestManager mFrameRequestManager;
+  dom::FrameRequestManager mFrameRequestManager;
 
   // This object allows us to evict ourself from the back/forward cache.  The
   // pointer is non-null iff we're currently in the bfcache.
@@ -5607,21 +5609,21 @@ class Document : public nsINode,
   // collected shadowed HTMLDocument properties. (Limited to 10 entries)
   nsTArray<nsString> mShadowedHTMLDocumentProperties;
 
-  // Bitfield to be collected in the pageload event, recording relevant features
-  // used in the document
-  uint32_t mPageloadEventFeatures = 0;
+  // Used by the shadowed_html_form_element_property_access telemetry probe to
+  // collected shadowed HTMLFormElement properties. (Limited to 10 entries)
+  nsTArray<nsString> mShadowedHTMLFormElementProperties;
+
+  // Collection of data used by the pageload event.
+  PageloadEventData mPageloadEventData;
 
   // Record page load telemetry
-  void RecordPageLoadEventTelemetry(
-      glean::perf::PageLoadExtra& aEventTelemetryData);
+  void RecordPageLoadEventTelemetry();
 
   // Accumulate JS telemetry collected
-  void AccumulateJSTelemetry(
-      glean::perf::PageLoadExtra& aEventTelemetryDataOut);
+  void AccumulateJSTelemetry();
 
   // Accumulate page load metrics
-  void AccumulatePageLoadTelemetry(
-      glean::perf::PageLoadExtra& aEventTelemetryDataOut);
+  void AccumulatePageLoadTelemetry();
 
   // The OOP counterpart to nsDocLoader::mChildrenInOnload.
   // Not holding strong refs here since we don't actually use the BBCs.

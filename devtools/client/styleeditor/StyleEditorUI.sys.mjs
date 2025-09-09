@@ -277,7 +277,7 @@ export class StyleEditorUI extends EventEmitter {
         if (!this.selectedEditor) {
           return;
         }
-
+        this.#prettyPrintButton.classList.add("pretty");
         this.selectedEditor.prettifySourceText();
       },
       eventListenersConfig
@@ -1359,6 +1359,10 @@ export class StyleEditorUI extends EventEmitter {
     if (disable !== this.#prettyPrintButton.hasAttribute("disabled")) {
       this.#prettyPrintButton.toggleAttribute("disabled");
     }
+    this.#prettyPrintButton.classList.toggle(
+      "pretty",
+      this.selectedEditor?.isPrettyPrinted || false
+    );
     let l10nString;
     if (disable) {
       if (isReadOnly) {

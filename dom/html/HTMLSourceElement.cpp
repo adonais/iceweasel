@@ -5,20 +5,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/HTMLSourceElement.h"
-#include "mozilla/dom/HTMLSourceElementBinding.h"
 
-#include "mozilla/dom/DocumentInlines.h"
-#include "mozilla/dom/HTMLImageElement.h"
-#include "mozilla/dom/HTMLMediaElement.h"
-#include "mozilla/dom/ResponsiveImageSelector.h"
-#include "mozilla/dom/MediaList.h"
-#include "mozilla/dom/MediaSource.h"
-
-#include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/AttributeStyles.h"
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/Preferences.h"
-
+#include "mozilla/dom/BlobURLProtocolHandler.h"
+#include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/HTMLImageElement.h"
+#include "mozilla/dom/HTMLMediaElement.h"
+#include "mozilla/dom/HTMLSourceElementBinding.h"
+#include "mozilla/dom/MediaList.h"
+#include "mozilla/dom/MediaSource.h"
+#include "mozilla/dom/ResponsiveImageSelector.h"
 #include "nsGkAtoms.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(Source)

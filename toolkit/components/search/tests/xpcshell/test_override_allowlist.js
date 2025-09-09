@@ -279,7 +279,7 @@ for (const test of tests) {
 
     let result = await Services.search.maybeSetAndOverrideDefault(extension);
     Assert.equal(
-      result.canChangeToAppProvided,
+      result.canChangeToConfigEngine,
       test.expected.switchToDefaultAllowed,
       "Should have returned the correct value for allowing switch to default or not."
     );

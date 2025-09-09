@@ -83,6 +83,8 @@ class GfxInfoBase : public nsIGfxInfo,
   NS_IMETHOD GetIsHeadless(bool* aIsHeadless) override;
   NS_IMETHOD GetTargetFrameRate(uint32_t* aTargetFrameRate) override;
   NS_IMETHOD GetCodecSupportInfo(nsACString& aCodecSupportInfo) override;
+  NS_IMETHOD_(void)
+  SetCodecSupportInfo(const nsACString& aCodecSupportInfo) override;
 
 #ifdef DEBUG
   NS_IMETHOD SpoofMonitorInfo(uint32_t aScreenCount, int32_t aMinRefreshRate,
@@ -177,6 +179,7 @@ class GfxInfoBase : public nsIGfxInfo,
   size_t mScreenCount = 0;
   int32_t mMinRefreshRate = 0;
   int32_t mMaxRefreshRate = 0;
+  nsCString mCodecSupportInfo;
 
  private:
   virtual int32_t FindBlocklistedDeviceInList(

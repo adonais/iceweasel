@@ -6,6 +6,7 @@
 #define DOM_MEDIA_IPC_MFCDMCHILD_H_
 
 #include <unordered_map>
+
 #include "mozilla/Atomics.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/PMFCDMChild.h"
@@ -73,18 +74,13 @@ class MFCDMChild final : public PMFCDMChild {
       const MFCDMKeyStatusChange& aKeyStatuses);
   mozilla::ipc::IPCResult RecvOnSessionKeyExpiration(
       const MFCDMKeyExpiration& aExpiration);
+  mozilla::ipc::IPCResult RecvOnSessionClosed(
+      const MFCDMSessionClosedResult& aResult);
 
   uint64_t Id() const { return mId; }
   const nsString& KeySystem() const { return mKeySystem; }
 
-  void IPDLActorDestroyed() {
-    AssertOnManagerThread();
-    mIPDLSelfRef = nullptr;
-    if (!mShutdown) {
-      // Remote crashed!
-      mState = NS_ERROR_NOT_AVAILABLE;
-    }
-  }
+  void IPDLActorDestroyed();
 
   void EnsureRemote();
   void Shutdown();

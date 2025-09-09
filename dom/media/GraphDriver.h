@@ -6,20 +6,20 @@
 #ifndef GRAPHDRIVER_H_
 #define GRAPHDRIVER_H_
 
-#include "nsAutoRef.h"
-#include "nsIThread.h"
+#include <thread>
+
 #include "AudioBufferUtils.h"
 #include "AudioMixer.h"
 #include "AudioSegment.h"
 #include "SelfRef.h"
-#include "mozilla/Atomics.h"
-#include "mozilla/dom/AudioContext.h"
-#include "mozilla/DataMutex.h"
-#include "mozilla/TaskQueue.h"
-#include "mozilla/StaticPtr.h"
 #include "WavDumper.h"
-
-#include <thread>
+#include "mozilla/Atomics.h"
+#include "mozilla/DataMutex.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/TaskQueue.h"
+#include "mozilla/dom/AudioContext.h"
+#include "nsAutoRef.h"
+#include "nsIThread.h"
 
 struct cubeb_stream;
 

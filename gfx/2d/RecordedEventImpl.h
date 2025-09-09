@@ -2219,7 +2219,7 @@ RecordedDrawTargetCreation::RecordedDrawTargetCreation(S& aStream)
   ReadElementConstrained(aStream, mBackendType, BackendType::NONE,
                          BackendType::WEBRENDER_TEXT);
   ReadElement(aStream, mRect);
-  ReadElementConstrained(aStream, mFormat, SurfaceFormat::A8R8G8B8_UINT32,
+  ReadElementConstrained(aStream, mFormat, SurfaceFormat::B8G8R8A8,
                          SurfaceFormat::UNKNOWN);
   ReadElement(aStream, mHasExistingData);
 
@@ -2324,7 +2324,7 @@ RecordedCreateSimilarDrawTarget::RecordedCreateSimilarDrawTarget(S& aStream)
     : RecordedEventDerived(CREATESIMILARDRAWTARGET) {
   ReadElement(aStream, mRefPtr);
   ReadElement(aStream, mSize);
-  ReadElementConstrained(aStream, mFormat, SurfaceFormat::A8R8G8B8_UINT32,
+  ReadElementConstrained(aStream, mFormat, SurfaceFormat::B8G8R8A8,
                          SurfaceFormat::UNKNOWN);
 }
 
@@ -2433,7 +2433,7 @@ RecordedCreateClippedDrawTarget::RecordedCreateClippedDrawTarget(S& aStream)
     : RecordedEventDerived(CREATECLIPPEDDRAWTARGET) {
   ReadElement(aStream, mRefPtr);
   ReadElement(aStream, mBounds);
-  ReadElementConstrained(aStream, mFormat, SurfaceFormat::A8R8G8B8_UINT32,
+  ReadElementConstrained(aStream, mFormat, SurfaceFormat::B8G8R8A8,
                          SurfaceFormat::UNKNOWN);
 }
 
@@ -2458,7 +2458,7 @@ RecordedCreateDrawTargetForFilter::RecordedCreateDrawTargetForFilter(S& aStream)
     : RecordedEventDerived(CREATEDRAWTARGETFORFILTER) {
   ReadElement(aStream, mRefPtr);
   ReadElement(aStream, mMaxSize);
-  ReadElementConstrained(aStream, mFormat, SurfaceFormat::A8R8G8B8_UINT32,
+  ReadElementConstrained(aStream, mFormat, SurfaceFormat::B8G8R8A8,
                          SurfaceFormat::UNKNOWN);
   ReadElement(aStream, mFilter);
   ReadElement(aStream, mSource);
@@ -3604,7 +3604,7 @@ RecordedSourceSurfaceCreation::RecordedSourceSurfaceCreation(S& aStream)
     : RecordedEventDerived(SOURCESURFACECREATION), mDataOwned(true) {
   ReadElement(aStream, mRefPtr);
   ReadElement(aStream, mSize);
-  ReadElementConstrained(aStream, mFormat, SurfaceFormat::A8R8G8B8_UINT32,
+  ReadElementConstrained(aStream, mFormat, SurfaceFormat::B8G8R8A8,
                          SurfaceFormat::UNKNOWN);
 
   if (!Factory::AllowedSurfaceSize(mSize)) {

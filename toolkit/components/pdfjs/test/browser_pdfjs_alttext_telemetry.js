@@ -352,7 +352,7 @@ add_task(async function test_telemetry_new_alt_text_dialog() {
       );
 
       // Remove the image.
-      await clickOn(browser, ".delete");
+      await clickOn(browser, ".deleteButton");
 
       await clickOn(browser, `#editorStampAddImage`);
 
@@ -458,7 +458,7 @@ add_task(async function test_telemetry_new_alt_text_count() {
       await clickOn(browser, "#newAltTextNotNow");
 
       // Delete the editor and create a new one but without AI.
-      await clickOn(browser, ".delete");
+      await clickOn(browser, ".deleteButton");
       Services.fog.testResetFOG();
 
       for (const string of ["Hello", "", "World", "", ""]) {

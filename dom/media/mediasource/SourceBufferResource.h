@@ -7,10 +7,10 @@
 #ifndef MOZILLA_SOURCEBUFFERRESOURCE_H_
 #define MOZILLA_SOURCEBUFFERRESOURCE_H_
 
-#include "mozilla/AbstractThread.h"
-#include "mozilla/Logging.h"
 #include "MediaResource.h"
 #include "ResourceQueue.h"
+#include "mozilla/AbstractThread.h"
+#include "mozilla/Logging.h"
 
 #define UNIMPLEMENTED()                               \
   { /* Logging this is too spammy to do by default */ \

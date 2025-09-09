@@ -35,10 +35,10 @@ index a869c8ad41..b6a33882d1 100644
                    uint32_t ssrc,
                    uint32_t protected_media_ssrc,
 diff --git a/modules/rtp_rtcp/source/flexfec_receiver.cc b/modules/rtp_rtcp/source/flexfec_receiver.cc
-index 7f2cc0cb3c..2ba85a2157 100644
+index c6465fbccf..5d1fd88fd1 100644
 --- a/modules/rtp_rtcp/source/flexfec_receiver.cc
 +++ b/modules/rtp_rtcp/source/flexfec_receiver.cc
-@@ -31,6 +31,7 @@ constexpr TimeDelta kPacketLogInterval = TimeDelta::Seconds(10);
+@@ -39,6 +39,7 @@ constexpr TimeDelta kPacketLogInterval = TimeDelta::Seconds(10);
  
  }  // namespace
  
@@ -46,7 +46,7 @@ index 7f2cc0cb3c..2ba85a2157 100644
  FlexfecReceiver::FlexfecReceiver(
      uint32_t ssrc,
      uint32_t protected_media_ssrc,
-@@ -39,6 +40,7 @@ FlexfecReceiver::FlexfecReceiver(
+@@ -47,6 +48,7 @@ FlexfecReceiver::FlexfecReceiver(
                        ssrc,
                        protected_media_ssrc,
                        recovered_packet_receiver) {}
@@ -55,7 +55,7 @@ index 7f2cc0cb3c..2ba85a2157 100644
  FlexfecReceiver::FlexfecReceiver(
      Clock* clock,
 diff --git a/rtc_base/task_utils/repeating_task.h b/rtc_base/task_utils/repeating_task.h
-index c45de95ecc..28c691c3de 100644
+index 5779fc1a8b..e90ac7d7a0 100644
 --- a/rtc_base/task_utils/repeating_task.h
 +++ b/rtc_base/task_utils/repeating_task.h
 @@ -57,7 +57,7 @@ class RepeatingTaskHandle {

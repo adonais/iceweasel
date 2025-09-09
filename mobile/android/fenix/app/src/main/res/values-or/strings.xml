@@ -10,6 +10,8 @@
   <string name="tab_tray_add_new_collection">ନୂଆ ସଂଗ୍ରହ ଯୋଡ଼ନ୍ତୁ</string>
   <!-- Label of editable text in create collection dialog for naming a new collection -->
   <string name="tab_tray_add_new_collection_name">ନାମ</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!-- Text for the negative action button to dismiss the Close Tabs Banner. -->
   <string name="tab_tray_close_tabs_banner_negative_button_text">ବରଖାସ୍ତ କରନ୍ତୁ</string>
   <!--

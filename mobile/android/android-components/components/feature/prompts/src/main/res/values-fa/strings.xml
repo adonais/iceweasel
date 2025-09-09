@@ -123,6 +123,10 @@
   <string name="mozac_feature_prompt_repost_positive_button_text">ارسال دوبارهٔ داده‌ها</string>
   <!-- Pressing this will dismiss the dialog and not refresh the webpage -->
   <string name="mozac_feature_prompt_repost_negative_button_text">لغو</string>
+  <!-- Pressing this will dismiss the dialog and allow to upload folder -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_positive_button_text">بارگذاری</string>
+  <!-- Pressing this will dismiss the dialog and disallow to upload folder -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_negative_button_text">انصراف</string>
   <!--
     Credit Card Autofill
 

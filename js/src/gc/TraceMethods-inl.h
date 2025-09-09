@@ -30,6 +30,7 @@
 #include "vm/SymbolType.h"
 #include "wasm/WasmJS.h"
 
+#include "gc/BufferAllocator-inl.h"
 #include "gc/Marking-inl.h"
 #include "vm/StringType-inl.h"
 
@@ -378,7 +379,11 @@ void js::GCMarker::eagerlyMarkChildren(PropMap* map) {
   } while (map && mark<opts>(map));
 }
 
-inline void JS::BigInt::traceChildren(JSTracer* trc) {}
+inline void JS::BigInt::traceChildren(JSTracer* trc) {
+  if (!hasInlineDigits()) {
+    js::TraceBufferEdge(trc, this, &heapDigits_, "BigInt::heapDigits_");
+  }
+}
 
 // JitCode::traceChildren is not defined inline due to its dependence on
 // MacroAssembler.

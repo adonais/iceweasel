@@ -9,12 +9,11 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
-
+#include "nsCOMPtr.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsINamed.h"
 #include "nsITimer.h"
-#include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nsWeakReference.h"
 

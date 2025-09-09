@@ -161,10 +161,9 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
       }
     }
 
-    // Geolocation, locale and viewport overrides apply only to top-level traversables.
+    // Geolocation and viewport overrides apply only to top-level traversables.
     if (
       (category === "geolocation-override" ||
-        category === "locale-override" ||
         category === "viewport-overrides") &&
       !this.messageHandler.context.parent
     ) {
@@ -176,10 +175,6 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
         switch (category) {
           case "geolocation-override": {
             this.#geolocationConfiguration = value;
-            break;
-          }
-          case "locale-override": {
-            this.#localeOverride = value;
             break;
           }
           case "viewport-overrides": {
@@ -196,6 +191,19 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
             break;
           }
         }
+      }
+    }
+
+    // TODO: Bug 1979026. Locale overrides apply only to top-level traversables,
+    // but we have to reapply configuration if a cross-origin iframe is created,
+    // until platform bug is fixed.
+    if (category === "locale-override") {
+      for (const { contextDescriptor, value } of sessionData) {
+        if (!this.messageHandler.matchesContext(contextDescriptor)) {
+          continue;
+        }
+
+        this.#localeOverride = value;
       }
     }
   }

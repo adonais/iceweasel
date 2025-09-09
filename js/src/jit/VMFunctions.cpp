@@ -187,7 +187,6 @@ struct TypeToRootType<Handle<T*>> {
       case TraceKind::RegExpShared:
       case TraceKind::GetterSetter:
       case TraceKind::PropMap:
-      case TraceKind::SmallBuffer:
         MOZ_CRASH("Unexpected trace kind");
     }
   }
@@ -2522,27 +2521,74 @@ void* AllocateBigIntNoGC(JSContext* cx, bool requestMinorGC) {
   return cx->newCell<JS::BigInt, NoGC>(js::gc::Heap::Tenured);
 }
 
-void AllocateAndInitTypedArrayBuffer(JSContext* cx, TypedArrayObject* obj,
-                                     int32_t count) {
+void AllocateAndInitTypedArrayBuffer(JSContext* cx,
+                                     FixedLengthTypedArrayObject* obj,
+                                     int32_t count, size_t inlineCapacity) {
   AutoUnsafeCallWithABI unsafe;
 
-  // Initialize the data slot to UndefinedValue to signal to our JIT caller that
-  // the allocation failed if the slot isn't overwritten below.
-  obj->initFixedSlot(TypedArrayObject::DATA_SLOT, UndefinedValue());
+  // Inline implementation of the last steps in
+  // `FixedLengthTypedArrayObjectTemplate::makeTypedArrayWithTemplate`.
+  //
+  // 1. Perform FixedLengthTypedArrayObjectTemplate::initTypedArraySlots:
+  //   - Initialize BUFFER_SLOT, LENGTH_SLOT, and BYTEOFFSET_SLOT.
+  //   - Mark zero-length typed arrays with `ZeroLengthArrayData`.
+  // 2. Perform FixedLengthTypedArrayObjectTemplate::initTypedArrayData:
+  //   - Initialize the DATA_SLOT.
 
-  // Negative numbers or zero will bail out to the slow path, which in turn will
-  // raise an invalid argument exception or create a correct object with zero
-  // elements.
+  // The data slot is initialized to UndefinedValue when copying slots from the
+  // template object. If the slot isn't overwritten below, this value is used as
+  // a signal to our JIT caller that the allocation failed.
+  MOZ_RELEASE_ASSERT(
+      obj->getFixedSlot(TypedArrayObject::DATA_SLOT).isUndefined(),
+      "DATA_SLOT initialized to UndefinedValue in JIT code");
+
+  // The buffer and byte-offset slots are initialized to their default values.
+  MOZ_ASSERT(obj->getFixedSlot(TypedArrayObject::BUFFER_SLOT).isFalse(),
+             "BUFFER_SLOT initialized to FalseValue in JIT code");
+  MOZ_ASSERT(obj->getFixedSlot(TypedArrayObject::BYTEOFFSET_SLOT) ==
+                 PrivateValue(size_t(0)),
+             "BUFFER_SLOT initialized to PrivateValue(0) in JIT code");
+
+  // Negative numbers will bail out to the slow path, which in turn will raise
+  // an invalid argument exception.
   constexpr size_t byteLengthLimit = TypedArrayObject::ByteLengthLimit;
-  if (count <= 0 || size_t(count) > byteLengthLimit / obj->bytesPerElement()) {
+  size_t bytesPerElement = obj->bytesPerElement();
+  if (count < 0 || size_t(count) > byteLengthLimit / bytesPerElement) {
     obj->setFixedSlot(TypedArrayObject::LENGTH_SLOT, PrivateValue(size_t(0)));
     return;
   }
 
+  size_t nbytes = size_t(count) * bytesPerElement;
+  MOZ_ASSERT(nbytes <= byteLengthLimit);
+
+  // Overwrite the slot with the length of the newly allocated typed array.
   obj->setFixedSlot(TypedArrayObject::LENGTH_SLOT, PrivateValue(count));
 
-  size_t nbytes = size_t(count) * obj->bytesPerElement();
-  MOZ_ASSERT(nbytes <= byteLengthLimit);
+  // If possible try to use the available inline space allocated through the
+  // template object's alloc-kind.
+  if (inlineCapacity > 0 && nbytes <= inlineCapacity) {
+    uint8_t* data =
+        obj->fixedData(FixedLengthTypedArrayObject::FIXED_DATA_START);
+    std::memset(data, 0, nbytes);
+
+#ifdef DEBUG
+    if (count == 0) {
+      data[0] = TypedArrayObject::ZeroLengthArrayData;
+    }
+#endif
+
+    obj->initFixedSlot(TypedArrayObject::DATA_SLOT, PrivateValue(data));
+    return;
+  }
+
+  // Zero-length typed arrays have to be tagged with |ZeroLengthArrayData|, but
+  // there's not enough space when exceeding the inline buffer limit. Fall back
+  // to the slow path.
+  if (count == 0) {
+    MOZ_ASSERT(inlineCapacity == 0);
+    return;
+  }
+
   nbytes = RoundUp(nbytes, sizeof(Value));
 
   MOZ_ASSERT(!obj->isTenured());

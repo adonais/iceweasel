@@ -10,7 +10,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/e826dfadfe1264c59
  1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/modules/video_capture/video_capture.h b/modules/video_capture/video_capture.h
-index 7279bed476..db07580921 100644
+index 9993b21b6f..70af8f3b05 100644
 --- a/modules/video_capture/video_capture.h
 +++ b/modules/video_capture/video_capture.h
 @@ -16,6 +16,8 @@

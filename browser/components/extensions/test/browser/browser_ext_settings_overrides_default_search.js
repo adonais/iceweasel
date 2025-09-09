@@ -860,7 +860,7 @@ add_task(async function test_two_addons_with_second_disabled() {
     "engine-default",
     "browser-search-engine-modified"
   );
-  // No prompt, because this is switching to an app-provided engine.
+  // No prompt, because this is switching to a config engine.
   await addon2.enable();
   await defaultPromise;
 

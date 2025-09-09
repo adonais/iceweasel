@@ -12,7 +12,10 @@ namespace widget {
 
 // Platforms with no OOP compositor process support use
 // InProcessCompositorWidget by default.
-#if !defined(MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING)
+// macOS doesn't have a platform-specific in process compositor,
+// so it uses this implementation to create a generic in process
+// compositor, when requested.
+#if !defined(MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING) || defined(XP_MACOSX)
 /* static */
 RefPtr<CompositorWidget> CompositorWidget::CreateLocal(
     const CompositorWidgetInitData& aInitData,

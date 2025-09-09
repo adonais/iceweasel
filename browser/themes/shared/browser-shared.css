@@ -78,7 +78,7 @@ body {
   }
 
   &[taskbartab]:not([chromehidden~="toolbar"]) {
-    min-width: 732px;
+    min-width: 804px;
   }
 
   /* z-indices that fight on the browser stack */
@@ -288,7 +288,7 @@ body {
     }
   }
 
-  #toolbar-menubar[autohide="true"]:not([inactive]) ~ :is(#TabsToolbar, #nav-bar) > & {
+  #toolbar-menubar[autohide]:not([inactive]) ~ :is(#TabsToolbar, #nav-bar) > & {
     visibility: hidden;
   }
 
@@ -333,8 +333,7 @@ body {
 
   /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("sidebar.verticalTabs") {
-    &[type="pre-tabs"],
-    &[type="post-tabs"] {
+    :root:not([taskbartab]) &:is([type="pre-tabs"], [type="post-tabs"]) {
       display: none;
     }
   }
@@ -344,7 +343,7 @@ body {
  * (That is, if the menu bar doesn't autohide, and we're not in a fullscreen or
  * popup window.) */
 :root:not([chromehidden~="menubar"], [inFullscreen])
-  #toolbar-menubar[autohide="false"]
+  #toolbar-menubar:not([autohide], [collapsed])
   ~ :is(#TabsToolbar, #nav-bar)
   > :is(.titlebar-buttonbox-container, .titlebar-spacer) {
   display: none;
@@ -373,7 +372,7 @@ body {
 /* Menu bar */
 
 #toolbar-menubar {
-  &[autohide="true"] {
+  &[autohide] {
     overflow: hidden;
 
     /* For linux and windows, when temporarily showing the menu bar, make it at least
@@ -396,10 +395,6 @@ body {
       appearance: none !important;
     }
   }
-
-  &:not([autohide]) {
-    visibility: collapse;
-  }
 }
 
 /* Hide menu elements intended for keyboard access support */
@@ -412,7 +407,7 @@ body {
 #menu_newProfile {
   -moz-context-properties: fill;
   fill: currentColor;
-  list-style-image: url(chrome://global/skin/icons/plus.svg);
+  --menuitem-icon: url(chrome://global/skin/icons/plus.svg);
 }
 
 .menuitem-iconic-profile {
@@ -458,6 +453,10 @@ body {
   @media not -moz-pref("sidebar.verticalTabs") {
     display: none;
   }
+
+  :root[taskbartab] & {
+    display: none;
+  }
 }
 
 /* Bookmarks toolbar */
@@ -484,7 +483,7 @@ body {
       max-height 170ms ease-out,
       var(--ext-theme-background-transition);
 
-    &[collapsed="true"] {
+    &[collapsed] {
       transition:
         min-height 170ms ease-out,
         max-height 170ms ease-out,
@@ -492,7 +491,7 @@ body {
     }
   }
 
-  &[collapsed="true"] {
+  &[collapsed] {
     max-height: 0;
 
     &.instant {
@@ -503,7 +502,7 @@ body {
   /* Bookmarks toolbar empty message */
 
   /* If the toolbar is not initialized set a zero width, but retain height. */
-  &[collapsed="false"]:not([initialized]) > #personal-toolbar-empty {
+  &:not([collapsed], [initialized]) > #personal-toolbar-empty {
     visibility: hidden;
     width: 0;
     overflow-x: hidden;
@@ -604,12 +603,12 @@ menupopup::part(drop-indicator) {
 
 .unified-nav-back[_moz-menuactive]:-moz-locale-dir(ltr),
 .unified-nav-forward[_moz-menuactive]:-moz-locale-dir(rtl) {
-  list-style-image: url("chrome://browser/skin/back.svg") !important;
+  --menuitem-icon: url("chrome://browser/skin/back.svg") !important;
 }
 
 .unified-nav-forward[_moz-menuactive]:-moz-locale-dir(ltr),
 .unified-nav-back[_moz-menuactive]:-moz-locale-dir(rtl) {
-  list-style-image: url("chrome://browser/skin/forward.svg") !important;
+  --menuitem-icon: url("chrome://browser/skin/forward.svg") !important;
 }
 
 /* Find bar */
@@ -748,7 +747,7 @@ menupopup::part(drop-indicator) {
         font-size: var(--font-size-large);
         font-weight: var(--font-weight);
         justify-content: flex-start;
-        padding-inline: calc((var(--button-size-icon) - var(--icon-size-default)) / 2 - var(--border-width));
+        padding-inline: calc((var(--button-size-icon) - var(--icon-size)) / 2 - var(--border-width));
       }
 
       &::part(moz-button-label) {
@@ -1383,16 +1382,6 @@ popupnotificationcontent {
   }
 }
 
-/* TODO: move this to toolkit */
-panel toolbarseparator {
-  appearance: none;
-  min-height: 0;
-  border-top: 1px solid var(--panel-separator-color);
-  border-bottom: none;
-  margin: var(--panel-separator-margin);
-  padding: 0;
-}
-
 /* Picture-in-Picture panel */
 
 #PictureInPicturePanel {
@@ -1407,4 +1396,11 @@ panel toolbarseparator {
 
 #PictureInPicturePanelFooter {
   margin: 8px 16px 16px;
+}
+
+/* Bookmarks roots menu-items */
+
+#BMB_bookmarksToolbar,
+#bookmarksToolbarFolderMenu {
+  --menuitem-icon: url("chrome://browser/skin/places/bookmarksToolbar.svg");
 }

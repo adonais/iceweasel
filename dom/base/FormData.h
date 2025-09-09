@@ -9,9 +9,9 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/HTMLFormSubmission.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FormDataBinding.h"
+#include "mozilla/dom/HTMLFormSubmission.h"
 #include "nsGenericHTMLElement.h"
 #include "nsTArray.h"
 #include "nsWrapperCache.h"

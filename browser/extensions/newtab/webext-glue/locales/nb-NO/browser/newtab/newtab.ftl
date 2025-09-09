@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Ny snarvei
 newtab-topsites-edit-topsites-header = Rediger toppsted
 newtab-topsites-edit-shortcut-header = Rediger snarvei
 newtab-topsites-add-shortcut-label = Legg til snarvei
+newtab-topsites-add-shortcut-title =
+    .title = Legg til snarvei
+    .aria-label = Legg til snarvei
 newtab-topsites-title-label = Tittel
 newtab-topsites-title-input =
     .placeholder = Oppgi en tittel
@@ -84,6 +87,14 @@ newtab-confirm-delete-history-p2 = Denne handlingen kan ikke angres.
 ## Top Sites - Sponsored label
 
 newtab-topsite-sponsored = Sponset
+
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (festet)
+    .title = { $title }
 
 ## Context Menu - Action Tooltips.
 
@@ -537,6 +548,12 @@ newtab-custom-wallpaper-title = Nå kan du velge din egen bakgrunn
 # 'Make firefox yours" means to customize or personalize
 newtab-custom-wallpaper-subtitle = Last opp ditt eget bakgrunnsbilde eller velg en egendefinert farge for å gjøre { -brand-product-name } til ditt eget.
 newtab-custom-wallpaper-cta = Prøv det
+
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Velg et bakgrunnsbilde for å gjøre { -brand-product-name } til din egen
+newtab-new-user-custom-wallpaper-subtitle = Få hver nye fane til å føles som hjemme med tilpassede bakgrunner og farger.
+newtab-new-user-custom-wallpaper-cta = Prøv det nå
 
 ## Strings for download mobile highlight
 

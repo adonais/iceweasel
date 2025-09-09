@@ -26,8 +26,8 @@ pub enum StringListMetric {
     Child(ChildMetricMeta),
 }
 
-crate::define_metric_metadata_getter!(StringListMetric, STRING_LIST_MAP);
-crate::define_metric_namer!(StringListMetric);
+define_metric_metadata_getter!(StringListMetric, STRING_LIST_MAP);
+define_metric_namer!(StringListMetric);
 
 impl StringListMetric {
     /// Create a new string list metric.

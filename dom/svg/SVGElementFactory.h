@@ -7,10 +7,10 @@
 #ifndef DOM_SVG_SVGELEMENTFACTORY_H_
 #define DOM_SVG_SVGELEMENTFACTORY_H_
 
-#include "nsError.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/dom/FromParser.h"
 #include "mozilla/dom/NodeInfo.h"
+#include "nsError.h"
 
 class nsAtom;
 class nsIContent;

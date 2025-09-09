@@ -8,12 +8,12 @@
 #define mozilla_dom_indexeddatabase_h__
 
 #include "DatabaseFileInfoFwd.h"
+#include "SafeRefPtr.h"
 #include "js/StructuredClone.h"
 #include "mozilla/InitializedOnce.h"
 #include "mozilla/Variant.h"
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
-#include "SafeRefPtr.h"
 
 namespace mozilla::dom {
 

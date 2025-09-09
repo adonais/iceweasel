@@ -5,7 +5,9 @@
 /* import-globals-from mochitest-e10s-utils.js */
 
 // Test timeout (seconds)
-var gTimeoutSeconds = 45;
+var gTimeoutSeconds = Services.prefs.getIntPref(
+  "testing.browserTestHarness.timeout"
+);
 var gConfig;
 
 var { AppConstants } = ChromeUtils.importESModule(
@@ -95,16 +97,10 @@ function testInit() {
 
   if (gConfig.testRoot == "browser") {
     // Make sure to launch the test harness for the first opened window only
-    var prefs = Services.prefs;
-    if (prefs.prefHasUserValue("testing.browserTestHarness.running")) {
+    if (Services.prefs.prefHasUserValue("testing.browserTestHarness.running")) {
       return;
     }
-
-    prefs.setBoolPref("testing.browserTestHarness.running", true);
-
-    if (prefs.prefHasUserValue("testing.browserTestHarness.timeout")) {
-      gTimeoutSeconds = prefs.getIntPref("testing.browserTestHarness.timeout");
-    }
+    Services.prefs.setBoolPref("testing.browserTestHarness.running", true);
 
     var sstring = Cc["@mozilla.org/supports-string;1"].createInstance(
       Ci.nsISupportsString
@@ -146,11 +142,11 @@ function testInit() {
   if (gConfig.e10s) {
     e10s_init();
 
-    let processCount = prefs.getIntPref("dom.ipc.processCount", 1);
+    let processCount = Services.prefs.getIntPref("dom.ipc.processCount", 1);
     if (processCount > 1) {
       // Currently starting a content process is slow, to aviod timeouts, let's
       // keep alive content processes.
-      prefs.setIntPref("dom.ipc.keepProcessesAlive.web", processCount);
+      Services.prefs.setIntPref("dom.ipc.keepProcessesAlive.web", processCount);
     }
 
     Services.mm.loadFrameScript(
@@ -777,6 +773,53 @@ Tester.prototype = {
     }
   },
 
+  async notifyProfilerOfTestEnd() {
+    // Note the test run time
+    let name = this.currentTest.path;
+    name = name.slice(name.lastIndexOf("/") + 1);
+    ChromeUtils.addProfilerMarker(
+      "browser-test",
+      { category: "Test", startTime: this.lastStartTimestamp },
+      name
+    );
+
+    // See if we should upload a profile of a failing test.
+    if (this.currentTest.failCount) {
+      // If MOZ_PROFILER_SHUTDOWN is set, the profiler got started from --profiler
+      // and a profile will be shown even if there's no test failure.
+      if (
+        Services.env.exists("MOZ_UPLOAD_DIR") &&
+        !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
+        Services.profiler.IsActive()
+      ) {
+        let filename = `profile_${name}.json`;
+        let path = Services.env.get("MOZ_UPLOAD_DIR");
+        let profilePath = PathUtils.join(path, filename);
+        try {
+          const { profile } =
+            await Services.profiler.getProfileDataAsGzippedArrayBuffer();
+          await IOUtils.write(profilePath, new Uint8Array(profile));
+          this.currentTest.addResult(
+            new testResult({
+              name:
+                "Found unexpected failures during the test; profile uploaded in " +
+                filename,
+            })
+          );
+        } catch (e) {
+          // If the profile is large, we may encounter out of memory errors.
+          this.currentTest.addResult(
+            new testResult({
+              name:
+                "Found unexpected failures during the test; failed to upload profile: " +
+                e,
+            })
+          );
+        }
+      }
+    }
+  },
+
   async nextTest() {
     if (this.currentTest) {
       if (this._coverageCollector) {
@@ -1033,51 +1076,7 @@ Tester.prototype = {
 
       this.PromiseTestUtils.assertNoUncaughtRejections();
 
-      // Note the test run time
-      let name = this.currentTest.path;
-      name = name.slice(name.lastIndexOf("/") + 1);
-      ChromeUtils.addProfilerMarker(
-        "browser-test",
-        { category: "Test", startTime: this.lastStartTimestamp },
-        name
-      );
-
-      // See if we should upload a profile of a failing test.
-      if (this.currentTest.failCount) {
-        // If MOZ_PROFILER_SHUTDOWN is set, the profiler got started from --profiler
-        // and a profile will be shown even if there's no test failure.
-        if (
-          Services.env.exists("MOZ_UPLOAD_DIR") &&
-          !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
-          Services.profiler.IsActive()
-        ) {
-          let filename = `profile_${name}.json`;
-          let path = Services.env.get("MOZ_UPLOAD_DIR");
-          let profilePath = PathUtils.join(path, filename);
-          try {
-            const { profile } =
-              await Services.profiler.getProfileDataAsGzippedArrayBuffer();
-            await IOUtils.write(profilePath, new Uint8Array(profile));
-            this.currentTest.addResult(
-              new testResult({
-                name:
-                  "Found unexpected failures during the test; profile uploaded in " +
-                  filename,
-              })
-            );
-          } catch (e) {
-            // If the profile is large, we may encounter out of memory errors.
-            this.currentTest.addResult(
-              new testResult({
-                name:
-                  "Found unexpected failures during the test; failed to upload profile: " +
-                  e,
-              })
-            );
-          }
-        }
-      }
-
+      await this.notifyProfilerOfTestEnd();
       let time = Date.now() - this.lastStartTime;
 
       this.structuredLogger.testEnd(
@@ -1294,22 +1293,35 @@ Tester.prototype = {
     // Allow for a task to be skipped; we need only use the structured logger
     // for this, whilst deactivating log buffering to ensure that messages
     // are always printed to stdout.
-    let skipTask = task => {
+    let skipTask = (task, reason) => {
       let logger = this.structuredLogger;
       logger.deactivateBuffering();
       logger.testStatus(this.currentTest.path, task.name, "SKIP");
-      logger.warning("Skipping test " + task.name);
+      let message = "Skipping test " + task.name;
+      if (reason) {
+        message += ` because the following conditions were met: (${reason})`;
+      }
+      logger.warning(message);
       logger.activateBuffering();
     };
 
     let task;
     while ((task = currentScope.__tasks.shift())) {
+      let reason;
+      let shouldSkip = false;
       if (
         task.__skipMe ||
         (currentScope.__runOnlyThisTask &&
           task != currentScope.__runOnlyThisTask)
       ) {
-        skipTask(task);
+        shouldSkip = true;
+      } else if (typeof task.__skip_if === "function" && task.__skip_if()) {
+        shouldSkip = true;
+        reason = task.__skip_if.toSource().replace(/\(\)\s*=>\s*/, "");
+      }
+
+      if (shouldSkip) {
+        skipTask(task, reason);
         continue;
       }
       await this.handleTask(task, currentTest, this.PromiseTestUtils);
@@ -1379,6 +1391,12 @@ Tester.prototype = {
     }, true);
 
     this.ContentTask.setTestScope(currentScope);
+
+    // Import Mochia methods in the test scope
+    Services.scriptloader.loadSubScript(
+      "resource://testing-common/Mochia.js",
+      scope
+    );
 
     // Allow Assert.sys.mjs methods to be tacked to the current scope.
     scope.export_assertions = function () {
@@ -1488,7 +1506,7 @@ Tester.prototype = {
       var waitUntilAtLeast = timeoutExpires - 1000;
       this.currentTest.scope.__waitTimer =
         this.SimpleTest._originalSetTimeout.apply(window, [
-          function timeoutFn() {
+          async function timeoutFn() {
             // We sometimes get woken up long before the gTimeoutSeconds
             // have elapsed (when running in chaos mode for example). This
             // code ensures that we don't wrongly time out in that case.
@@ -1548,6 +1566,7 @@ Tester.prototype = {
             if (gConfig.timeoutAsPass) {
               self.nextTest();
             } else {
+              await self.notifyProfilerOfTestEnd();
               self.finish();
             }
           },
@@ -1985,13 +2004,29 @@ testScope.prototype = {
    *
    *   is(result, "foo");
    * });
+   *
+   * add_task({
+   *   skip_if: () => !AppConstants.DEBUG,
+   * },
+   * async function test_debug_only() {
+   *   ok(true, "Test ran in a debug build");
+   * });
    */
-  add_task(aFunction) {
+  add_task(properties, func = properties) {
     if (!this.__tasks) {
       this.waitForExplicitFinish();
       this.__tasks = [];
     }
-    let bound = decorateTaskFn.call(this, aFunction);
+
+    let bound = decorateTaskFn.call(this, func);
+
+    if (
+      typeof properties === "object" &&
+      typeof properties.skip_if === "function"
+    ) {
+      bound.__skip_if = properties.skip_if;
+    }
+
     this.__tasks.push(bound);
     return bound;
   },
@@ -2015,11 +2050,3 @@ testScope.prototype = {
     return this.__signal;
   },
 };
-
-/* import-globals-from ../modules/Mochia.js */
-Services.scriptloader.loadSubScript(
-  "resource://testing-common/Mochia.js",
-  this
-);
-
-Mochia(testScope);

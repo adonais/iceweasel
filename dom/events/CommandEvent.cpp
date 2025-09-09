@@ -5,8 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/CommandEvent.h"
-#include "mozilla/StaticPrefs_dom.h"
+
 #include "mozilla/MiscEvents.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "nsContentUtils.h"
 #include "prtime.h"
 

@@ -11,6 +11,7 @@ support-files = [
 prefs = [
   "browser.sessionstore.closedTabsFromAllWindows=true",
   "browser.sessionstore.closedTabsFromClosedWindows=true",
+  "sidebar.verticalTabs.dragToPinPromo.dismissed=true",
 ]
 
 ["browser_1936752_lock_tab_sizing.js"]
@@ -72,6 +73,8 @@ support-files = [
 ["browser_double_close_tab.js"]
 support-files = ["file_double_close_tab.html"]
 tags = "vertical-tabs"
+
+["browser_drag_to_pin.js"]
 
 ["browser_e10s_about_page_triggeringprincipal.js"]
 https_first_disabled = true
@@ -173,7 +176,7 @@ support-files = [
 tags = "vertical-tabs"
 fail-if =  ["vertical_tab"] # Bug 1932786, fails in the "vertical-tabs" variant
 skip-if = [
-  "os == 'mac' && os_version == '15.00' && processor == 'aarch64'", # Bug 1904826
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1904826
 ]
 
 ["browser_long_data_url_label_truncation.js"]
@@ -231,7 +234,7 @@ tags = "vertical-tabs"
 ["browser_multiselect_tabs_move_to_another_window_drag.js"]
 tags = "vertical-tabs"
 skip-if = [
-  "os == 'mac' && os_version == '15.00' && arch == 'aarch64'", # Bug 1940606
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1940606
 ]
 
 ["browser_multiselect_tabs_move_to_new_window_contextmenu.js"]
@@ -376,6 +379,8 @@ tags = "vertical-tabs"
 ["browser_pinnedTabs_closeByKeyboard.js"]
 tags = "vertical-tabs"
 
+["browser_pinned_and_hidden_tabs.js"]
+
 ["browser_positional_attributes.js"]
 tags = "vertical-tabs"
 
@@ -437,6 +442,8 @@ tags = "vertical-tabs"
 
 ["browser_switch_by_scrolling.js"]
 tags = "vertical-tabs"
+
+["browser_switchtab_when_minimized.js"]
 
 ["browser_tabCloseProbes.js"]
 tags = "vertical-tabs"
@@ -525,7 +532,7 @@ skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && d
 ["browser_tab_groups_tab_interactions_telemetry.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && swgl", # Bug 1968371
-  "os == 'mac' && os_version == '15.00' && arch == 'aarch64'", # Bug 1968371
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1968371
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && ccov", # Bug 1968371
 ]
 
@@ -553,7 +560,7 @@ skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && vertical_tab && opt", # Bug 1903733
 ]
 
-["browser_tab_manger_synced_tabs.js"]
+["browser_tab_manager_synced_tabs.js"]
 tags = "vertical-tabs"
 
 ["browser_tab_move_active_tab.js"]

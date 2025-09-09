@@ -33,8 +33,8 @@ export class AmpSuggestions extends SuggestProvider {
     return ["ampFeatureGate", "suggest.amp", "suggest.quicksuggest.sponsored"];
   }
 
-  get primaryUserControlledPreference() {
-    return "suggest.amp";
+  get primaryUserControlledPreferences() {
+    return ["suggest.amp"];
   }
 
   get merinoProvider() {

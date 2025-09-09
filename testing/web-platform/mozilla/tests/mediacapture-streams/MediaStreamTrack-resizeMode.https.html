@@ -1,0 +1,177 @@
+<!doctype html>
+<title>MediaStreamTrack video resizeMode. Assumes Mozilla's fake camera source with 480p and 720p capabilities.</title>
+<meta name="timeout" content="long">
+<p class="instructions">When prompted, accept to share your video stream.</p>
+<script src=/resources/testharness.js></script>
+<script src=/resources/testharnessreport.js></script>
+<script src=/resources/testdriver.js></script>
+<script src=/resources/testdriver-vendor.js></script>
+<script>
+  "use strict"
+
+  async function test_framerate_between_exclusive(t, track, lower, upper) {
+    const video = document.createElement("video");
+    document.body.appendChild(video);
+    t.add_cleanup(async () => document.body.removeChild(video));
+
+    video.srcObject = new MediaStream([track]);
+    await video.play();
+
+    const numSeconds = 2;
+    await new Promise(r => setTimeout(r, numSeconds * 1000));
+    const totalVideoFrames = video.mozPaintedFrames;
+    assert_between_exclusive(totalVideoFrames / numSeconds, lower, upper, "totalVideoFrames");
+  }
+
+  // Native capabilities supported by the fake camera.
+  const nativeLow = {width: 640, height: 480, frameRate: 30};
+  const nativeHigh = {width: 1280, height: 720, frameRate: 10};
+
+
+  [
+    [{resizeMode: "none", width: 500}, nativeLow],
+    [{resizeMode: "none", height: 500}, nativeLow],
+    [{resizeMode: "none", width: 500, height: 500}, nativeLow],
+    [{resizeMode: "none", frameRate: 50}, nativeLow],
+    [{resizeMode: "none", width: 500, height: 500, frameRate: 50}, nativeLow],
+    [{resizeMode: "none", width: 1000}, nativeHigh],
+    [{resizeMode: "none", height: 1000}, nativeHigh],
+    [{resizeMode: "none", width: 1000, height: 1000}, nativeHigh],
+    [{resizeMode: "none", frameRate: 1}, nativeHigh, [3, 12]],
+    [{resizeMode: "none", width: 1000, height: 1000, frameRate: 1}, nativeHigh],
+  ].forEach(([video, expected, testFramerate]) => promise_test(async t => {
+      const stream = await navigator.mediaDevices.getUserMedia({video});
+      const [track] = stream.getTracks();
+      t.add_cleanup(() => track.stop());
+      const settings = track.getSettings();
+      for (const key of Object.keys(expected)) {
+        assert_equals(settings[key], expected[key], key);
+      }
+      if (testFramerate) {
+        const [low, high] = testFramerate;
+        await test_framerate_between_exclusive(t, track, low, high);
+      }
+    }, `gUM gets ${JSON.stringify(expected)} mode by ${JSON.stringify(video)}`));
+
+  promise_test(async t => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(
+          {video: {width: {min: 2000}}}
+      );
+      const [track] = stream.getTracks();
+      t.add_cleanup(() => track.stop());
+    } catch(e) {
+      assert_equals(e.name, "OverconstrainedError", `got error ${e.message}`);
+      return;
+    }
+    assert_unreached("gUM is rejected with impossible width");
+  }, "gUM is rejected by impossible width");
+
+  promise_test(async t => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(
+          {video: {frameRate: {min: 50}}}
+      );
+      const [track] = stream.getTracks();
+      t.add_cleanup(() => track.stop());
+    } catch(e) {
+      assert_equals(e.name, "OverconstrainedError", `got error ${e.message}`);
+      return;
+    }
+    assert_unreached("gUM is rejected with impossible fps");
+  }, "gUM is rejected by impossible fps");
+
+
+  [
+    [{resizeMode: "none", width: 500}, nativeLow],
+    [{resizeMode: "none", height: 500}, nativeLow],
+    [{resizeMode: "none", width: 500, height: 500}, nativeLow],
+    [{resizeMode: "none", frameRate: 50}, nativeLow],
+    [{resizeMode: "none", width: 500, height: 500, frameRate: 50}, nativeLow],
+    [{resizeMode: "none", width: 1000}, nativeHigh],
+    [{resizeMode: "none", height: 1000}, nativeHigh],
+    [{resizeMode: "none", width: 1000, height: 1000}, nativeHigh],
+    [{resizeMode: "none", frameRate: 1}, nativeHigh, [3, 12]],
+    [{resizeMode: "none", width: 1000, height: 1000, frameRate: 1}, nativeHigh],
+  ].forEach(([video, expected, testFramerate]) => promise_test(async t => {
+      const stream = await navigator.mediaDevices.getUserMedia({video: true});
+      const [track] = stream.getTracks();
+      t.add_cleanup(() => track.stop());
+      await track.applyConstraints(video);
+      const settings = track.getSettings();
+      for (const key of Object.keys(expected)) {
+        assert_equals(settings[key], expected[key], key);
+      }
+      if (testFramerate) {
+        const [low, high] = testFramerate;
+        await test_framerate_between_exclusive(t, track, low, high);
+      }
+    }, `applyConstraints gets ${JSON.stringify(expected)} mode by ${JSON.stringify(video)}`));
+
+  promise_test(async t => {
+    const stream = await navigator.mediaDevices.getUserMedia({video: true});
+    const [track] = stream.getTracks();
+    t.add_cleanup(() => track.stop());
+    try {
+      await track.applyConstraints({width: {min: 2000}})
+    } catch(e) {
+      assert_equals(e.name, "OverconstrainedError", `got error ${e.message}`);
+      return;
+    }
+    assert_unreached("applyConstraints is rejected with impossible width");
+  }, "applyConstraints is rejected by impossible width");
+
+  promise_test(async t => {
+    const stream = await navigator.mediaDevices.getUserMedia({video: true});
+    const [track] = stream.getTracks();
+    t.add_cleanup(() => track.stop());
+    try {
+      await track.applyConstraints({frameRate: {min: 50}});
+    } catch(e) {
+      assert_equals(e.name, "OverconstrainedError", `got error ${e.message}`);
+      return;
+    }
+    assert_unreached("applyConstraints is rejected with impossible fps");
+  }, "applyConstraints is rejected by impossible fps");
+
+
+  // Note these gDM tests will fail if our own window is on a screen different
+  // than the system's first screen. They're functions in case the browser
+  // window needs to be moved to the first screen during the test in order to
+  // pass.
+  function screenWidth() { return window.screen.width * window.devicePixelRatio; }
+  function screenHeight() { return window.screen.height * window.devicePixelRatio; }
+
+  // TODO: By default we shouldn't be multiplying with window.devicePixelRatio (bug 1703991).
+  function defaultScreen() { return {width: screenWidth(), height: screenHeight(), frameRate: 30}; }
+  // TODO: Should get the source's real refresh rate for frameRate (bug 1984363).
+  function nativeScreen() { return {width: screenWidth(), height: screenHeight(), frameRate: 60}; }
+
+  [
+    [true, defaultScreen],
+    [{height: 100}, () => {
+        return { width: Math.floor(screenWidth() / screenHeight() * 100), height: 100, frameRate: 30 };
+      }],
+    [{frameRate: 5}, () => {
+        const { width, height } = defaultScreen();
+        return { width, height, frameRate: 5};
+      }, [2, 7]],
+  ].forEach(([video, expectedFunc, testFramerate]) => {
+      let expected;
+      promise_test(async t => {
+          expected = expectedFunc();
+          await test_driver.bless('getDisplayMedia()');
+          const stream = await navigator.mediaDevices.getDisplayMedia({video});
+          const [track] = stream.getTracks();
+          t.add_cleanup(() => track.stop());
+          const settings = track.getSettings();
+          for (const key of Object.keys(expected)) {
+            assert_equals(settings[key], expected[key], key);
+          }
+          if (testFramerate) {
+            const [low, high] = testFramerate;
+            await test_framerate_between_exclusive(t, track, low, high);
+          }
+        }, `gDM gets expected mode by ${JSON.stringify(video)}`);
+    });
+</script>

@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <cstring>
 #include <utility>
+
 #include "MainThreadUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
@@ -31,9 +32,9 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/Variant.h"
-#include "mozilla/dom/quota/PrincipalUtils.h"
 #include "mozilla/dom/quota/PQuota.h"
 #include "mozilla/dom/quota/PersistenceType.h"
+#include "mozilla/dom/quota/PrincipalUtils.h"
 #include "mozilla/dom/quota/QuotaUsageRequestChild.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/fallible.h"

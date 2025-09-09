@@ -5,9 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "HTMLFontElement.h"
+
+#include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLFontElementBinding.h"
-#include "mozilla/MappedDeclarationsBuilder.h"
 #include "nsAttrValueInlines.h"
 #include "nsContentUtils.h"
 

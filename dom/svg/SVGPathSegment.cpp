@@ -6,8 +6,8 @@
 
 #include "mozilla/dom/SVGPathSegment.h"
 
-#include "mozilla/dom/SVGPathElementBinding.h"
 #include "SVGPathSegUtils.h"
+#include "mozilla/dom/SVGPathElementBinding.h"
 
 namespace mozilla::dom {
 

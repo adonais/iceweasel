@@ -452,22 +452,27 @@ def setup_lull_schedule(config, tasks):
 
 
 @task_transforms.add
-def setup_lambdatest_options(config, tasks):
+def setup_internal_artifacts(config, tasks):
     for task in tasks:
-        if task.get("worker", {}).get("os", "") == "linux-lambda":
-            commands = task["worker"]["command"]
-            modified = []
-            for command in commands:
-                modified.append(
-                    [
-                        c
-                        for c in command
-                        if not c.startswith("--conditioned-profile")
-                        and not c.startswith("--power-test")
-                    ]
-                )
-            task["worker"]["command"] = modified
-            task["worker"]["env"]["DISABLE_USB_POWER_METER_RESET"] = "1"
+        if (
+            task["worker"]["os"] == "linux-bitbar"
+            or task["worker"]["os"] == "linux-lambda"
+        ):
+            task["worker"].setdefault("artifacts", []).append(
+                {
+                    "name": "perftest",
+                    "path": "workspace/build/perftest",
+                    "type": "directory",
+                }
+            )
+        else:
+            task["worker"].setdefault("artifacts", []).append(
+                {
+                    "name": "perftest",
+                    "path": "build/perftest",
+                    "type": "directory",
+                }
+            )
         yield task
 
 
@@ -478,6 +483,7 @@ def select_tasks_to_lambda(config, tasks):
     unity-webgl test
     all non-power-testing youtube-playback tests
     all vpl (video-playback-latency) tests
+    all pageload tests (ideally fenix/CaR/ChR)
 
     """
     tests_to_run_at_lambdatest = [
@@ -488,11 +494,8 @@ def select_tasks_to_lambda(config, tasks):
         "youtube-playback-av1-sfr",
         "youtube-playback-hfr",
         "youtube-playback-vp9-sfr",
+        "tp6m",
     ]
-
-    tests_to_run_at_lambdatest.extend(
-        [f"{t}-nofis" for t in tests_to_run_at_lambdatest]
-    )
 
     for task in tasks:
         if "android" in task["label"] and "a55" in task["label"]:
@@ -506,6 +509,7 @@ def select_tasks_to_lambda(config, tasks):
                     ] = "t-lambda-perf-a55"
                     cmds = []
                     for cmd in task["worker"]["command"]:
+                        # Bug 1981862 - issues with condprof setup @ lambdatest
                         cmds.append(
                             [
                                 c.replace(
@@ -513,7 +517,9 @@ def select_tasks_to_lambda(config, tasks):
                                     "/home/ltuser/taskcluster/script.py",
                                 )
                                 for c in cmd
+                                if not c.startswith("--conditioned-profile")
                             ]
                         )
                     task["worker"]["command"] = cmds
+                    task["worker"]["env"]["DISABLE_USB_POWER_METER_RESET"] = "1"
         yield task

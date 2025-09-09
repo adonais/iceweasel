@@ -1,5 +1,5 @@
 [DEFAULT]
-apps = "firefox"
+apps = "firefox,fenix"
 cold = true
 gecko_profile_interval = 1
 lower_is_better = true
@@ -70,6 +70,41 @@ test_url = "None"
 custom_data = true
 
 ["trr-w-next"]
+browsertime_args = "--browsertime.test_type=trr_warm --firefox.preference network.trr.mode:3 --firefox.preference network.trr.uri:https://firefox.dns.nextdns.io/dns-query"
+browser_cycles = 3
+test_script = "trr_performance.js"
+test_url = "None"
+custom_data = true
+
+["trr-clou-m"]
+browsertime_args = "--browsertime.test_type=trr_warm --firefox.preference network.trr.mode:3 --firefox.preference network.trr.uri:https://mozilla.cloudflare-dns.com/dns-query"
+browser_cycles = 3
+test_script = "trr_performance.js"
+test_url = "None"
+custom_data = true
+
+["trr-next-m"]
+browsertime_args = "--browsertime.test_type=browser_idle --firefox.preference network.trr.mode:3 --firefox.preference network.trr.uri:https://firefox.dns.nextdns.io/dns-query"
+browser_cycles = 3
+test_script = "trr_performance.js"
+test_url = "None"
+custom_data = true
+
+["trr-natv-m"]
+browsertime_args = "--browsertime.test_type=browser_idle --firefox.preference network.trr.mode:0"
+browser_cycles = 3
+test_script = "trr_performance.js"
+test_url = "None"
+custom_data = true
+
+["trr-w-cl-m"]
+browsertime_args = "--browsertime.test_type=trr_warm --firefox.preference network.trr.mode:3 --firefox.preference network.trr.uri:https://mozilla.cloudflare-dns.com/dns-query"
+browser_cycles = 3
+test_script = "trr_performance.js"
+test_url = "None"
+custom_data = true
+
+["trr-w-ne-m"]
 browsertime_args = "--browsertime.test_type=trr_warm --firefox.preference network.trr.mode:3 --firefox.preference network.trr.uri:https://firefox.dns.nextdns.io/dns-query"
 browser_cycles = 3
 test_script = "trr_performance.js"

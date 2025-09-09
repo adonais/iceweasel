@@ -38,9 +38,9 @@ add_task(async function test_bundled_resource_mapping() {
 
 add_task(async function test_AboutNewTabResourceMapping() {
   Assert.equal(
-    AboutNewTabResourceMapping._addonVersion,
+    AboutNewTabResourceMapping.addonVersion,
     null,
-    "Expected AboutNewTabResourceMapping _addonVersion to be null"
+    "Expected AboutNewTabResourceMapping addonVersion to be null"
   );
 
   const resProto = Cc[

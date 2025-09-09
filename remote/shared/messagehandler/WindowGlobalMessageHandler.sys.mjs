@@ -183,6 +183,7 @@ export class WindowGlobalMessageHandler extends MessageHandler {
             params: {
               category,
               sessionData: Array.from(relevantSessionData),
+              initial: true,
             },
             destination,
           })
@@ -237,6 +238,15 @@ export class WindowGlobalMessageHandler extends MessageHandler {
     throw new lazy.error.NoSuchFrameError(`Realm with id ${realmId} not found`);
   }
 
+  /**
+   * Check if the context matches a provided context descriptor.
+   *
+   * @param {object} contextDescriptor
+   *     A context descriptor.
+   * @returns {boolean}
+   *     Return true if the context matches a provided context descriptor,
+   *     false otherwise.
+   */
   matchesContext(contextDescriptor) {
     return (
       contextDescriptor.type === ContextDescriptorType.All ||

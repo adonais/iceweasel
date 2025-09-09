@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -87,6 +88,7 @@ internal fun FileListItem(
         } else {
             FirefoxTheme.colors.iconPrimary
         },
+        labelOverflow = TextOverflow.MiddleEllipsis,
         afterListItemAction = {
             if (areAfterListItemIconsVisible) {
                 AfterListItemAction(
@@ -497,6 +499,21 @@ private class FileListItemParameterProvider : PreviewParameterProvider<FileListI
                     id = "15",
                     fileName = "File 15",
                     url = "https://example.com/file15",
+                    description = "Download Failed",
+                    displayedShortUrl = "example.com",
+                    contentType = "application/zip",
+                    status = FileItem.Status.Failed,
+                    filePath = "",
+                    timeCategory = TimeCategory.IN_PROGRESS,
+                ),
+                isSelected = false,
+                areAfterListItemIconsVisible = true,
+            ),
+            FileListItemPreviewState(
+                fileItem = FileItem(
+                    id = "16",
+                    fileName = "Super Super Super Super Super Super Long File.pdf",
+                    url = "https://example.com/file16",
                     description = "Download Failed",
                     displayedShortUrl = "example.com",
                     contentType = "application/zip",

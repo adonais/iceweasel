@@ -52,21 +52,21 @@ export const autocompleteUXTreatments = {
     ],
   },
   "basic-info": {
-    image: "chrome://browser/content/asrouter/assets/glyph-mail-16.svg",
+    image: "chrome://browser/content/asrouter/assets/glyph-mail-mask-16.svg",
     messageIds: [
       "firefox-relay-opt-in-title-a",
       "firefox-relay-opt-in-subtitle-a",
     ],
   },
   "with-domain": {
-    image: "chrome://browser/content/asrouter/assets/glyph-mail-16.svg",
+    image: "chrome://browser/content/asrouter/assets/glyph-mail-mask-16.svg",
     messageIds: [
       "firefox-relay-opt-in-title-b",
       "firefox-relay-opt-in-subtitle-b",
     ],
   },
   "with-domain-and-value-prop": {
-    image: "chrome://browser/content/asrouter/assets/glyph-mail-16.svg",
+    image: "chrome://browser/content/asrouter/assets/glyph-mail-mask-16.svg",
     messageIds: [
       "firefox-relay-opt-in-title-b",
       "firefox-relay-opt-in-subtitle-b",
@@ -854,7 +854,7 @@ class RelayEnabled {
       ((await hasFirefoxAccountAsync()) ||
         Services.prefs.getBoolPref(gConfig.showToAllBrowsersPref, false))
     ) {
-      const [title] = await formatMessages("firefox-relay-use-mask-title");
+      const [title] = await formatMessages("firefox-relay-use-mask-title-1");
       yield new ParentAutocompleteOption(
         "chrome://browser/content/logos/relay.svg",
         title,

@@ -35,7 +35,7 @@ class SnackbarBehavior<V : View>(
         add(R.id.suggestStrongPasswordBar)
         add(R.id.creditCardSelectBar)
         add(R.id.addressSelectBar)
-        add(R.id.toolbar_navbar_container)
+        add(R.id.navigation_bar)
         if (
             toolbarPosition == ToolbarPosition.BOTTOM ||
             (toolbarPosition == ToolbarPosition.TOP && shouldUseExpandedToolbar)

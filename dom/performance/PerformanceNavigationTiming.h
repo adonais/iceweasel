@@ -8,7 +8,9 @@
 #define mozilla_dom_PerformanceNavigationTiming_h___
 
 #include <stdint.h>
+
 #include <utility>
+
 #include "js/RootingAPI.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/PerformanceNavigationTimingBinding.h"

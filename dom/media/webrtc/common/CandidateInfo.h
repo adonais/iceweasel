@@ -5,8 +5,8 @@
 #ifndef _CANDIDATE_INFO_H__
 #define _CANDIDATE_INFO_H__
 
-#include <string>
 #include <cstdint>
+#include <string>
 
 namespace mozilla {
 

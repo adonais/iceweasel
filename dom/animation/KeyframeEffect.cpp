@@ -10,38 +10,38 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/KeyframeAnimationOptionsBinding.h"
 // For UnrestrictedDoubleOrKeyframeAnimationOptions;
-#include "mozilla/dom/KeyframeEffectBinding.h"
-#include "mozilla/dom/MutationObservers.h"
-#include "mozilla/layers/AnimationInfo.h"
+#include "WindowRenderer.h"
+#include "js/PropertyAndElement.h"  // JS_DefineProperty
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/EffectSet.h"
 #include "mozilla/FloatingPoint.h"  // For IsFinite
+#include "mozilla/KeyframeUtils.h"
 #include "mozilla/LayerAnimationInfo.h"
 #include "mozilla/LookAndFeel.h"  // For LookAndFeel::GetInt
-#include "mozilla/KeyframeUtils.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
+#include "mozilla/SVGObserverUtils.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
-#include "mozilla/SVGObserverUtils.h"
+#include "mozilla/dom/KeyframeEffectBinding.h"
+#include "mozilla/dom/MutationObservers.h"
+#include "mozilla/layers/AnimationInfo.h"
 #include "nsCSSPropertyID.h"
-#include "nsComputedDOMStyle.h"  // nsComputedDOMStyle::GetComputedStyle
-#include "nsContentUtils.h"
 #include "nsCSSPropertyIDSet.h"
-#include "nsCSSProps.h"             // For nsCSSProps::PropHasFlags
-#include "nsCSSPseudoElements.h"    // For PseudoStyleType
+#include "nsCSSProps.h"           // For nsCSSProps::PropHasFlags
+#include "nsCSSPseudoElements.h"  // For PseudoStyleType
+#include "nsComputedDOMStyle.h"   // nsComputedDOMStyle::GetComputedStyle
+#include "nsContentUtils.h"
 #include "nsDOMMutationObserver.h"  // For nsAutoAnimationMutationBatch
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
 #include "nsPresContextInlines.h"
 #include "nsRefreshDriver.h"
-#include "js/PropertyAndElement.h"  // JS_DefineProperty
-#include "WindowRenderer.h"
 
 namespace mozilla {
 

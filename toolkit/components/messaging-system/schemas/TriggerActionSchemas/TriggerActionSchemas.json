@@ -493,6 +493,18 @@
           "additionalProperties": false,
           "required": ["id"],
           "description": "Happens when a browser chrome element is clicked"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "enum": ["ipProtectionReady"]
+            }
+          },
+          "additionalProperties": false,
+          "required": ["id"],
+          "description": "Happens when the IP protection widget is loaded and the toolbar item is available"
         }
       ]
     }

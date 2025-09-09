@@ -145,6 +145,16 @@ tasks:
             max-run-time: 7200
             env:
                 PERFHERDER_EXTRA_OPTIONS: instrumented
+            artifacts:
+                - name: public/build/security/browser.xml
+                  path: checkouts/gecko/security/mac/hardenedruntime/{entitlement_directory}/{browser_entitlement}.xml
+                  type: file
+                - name: public/build/security/media-plugin-helper.xml
+                  path: checkouts/gecko/security/mac/hardenedruntime/{entitlement_directory}/media-plugin-helper.xml
+                  type: file
+                - name: public/build/security/plugin-container.xml
+                  path: checkouts/gecko/security/mac/hardenedruntime/{entitlement_directory}/plugin-container.xml
+                  type: file
         run:
             using: mozharness
             actions: [get-secrets, build]
@@ -181,6 +191,16 @@ tasks:
             max-run-time: 7200
             env:
                 PERFHERDER_EXTRA_OPTIONS: instrumented
+            artifacts:
+                - name: public/build/security/browser.xml
+                  path: checkouts/gecko/security/mac/hardenedruntime/{entitlement_directory}/{browser_entitlement}.xml
+                  type: file
+                - name: public/build/security/media-plugin-helper.xml
+                  path: checkouts/gecko/security/mac/hardenedruntime/{entitlement_directory}/media-plugin-helper.xml
+                  type: file
+                - name: public/build/security/plugin-container.xml
+                  path: checkouts/gecko/security/mac/hardenedruntime/{entitlement_directory}/plugin-container.xml
+                  type: file
         run:
             using: mozharness
             actions: [get-secrets, build]

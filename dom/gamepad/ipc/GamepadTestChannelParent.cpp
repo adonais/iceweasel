@@ -6,10 +6,10 @@
 
 #include "GamepadTestChannelParent.h"
 
-#include "mozilla/dom/GamepadPlatformService.h"
-#include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/GamepadPlatformService.h"
+#include "mozilla/ipc/BackgroundParent.h"
 
 namespace mozilla::dom {
 

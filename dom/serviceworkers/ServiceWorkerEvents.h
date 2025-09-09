@@ -17,9 +17,8 @@
 #include "mozilla/dom/Response.h"
 #include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/WorkerCommon.h"
-
-#include "nsProxyRelease.h"
 #include "nsContentUtils.h"
+#include "nsProxyRelease.h"
 
 class nsIInterceptedChannel;
 

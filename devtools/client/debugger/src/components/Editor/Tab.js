@@ -16,7 +16,6 @@ import {
   getDisplayPath,
   getFileURL,
   getTruncatedFileName,
-  isPretty,
 } from "../../utils/source";
 import { createLocation } from "../../utils/location";
 
@@ -66,7 +65,6 @@ class Tab extends PureComponent {
       isActive,
     } = this.props;
     const sourceId = source.id;
-    const isPrettyCode = isPretty(source);
 
     function onClickClose(e) {
       e.stopPropagation();
@@ -81,7 +79,7 @@ class Tab extends PureComponent {
 
     const className = classnames("source-tab", {
       active: isActive,
-      pretty: isPrettyCode,
+      pretty: source.isPrettyPrinted,
       blackboxed: this.props.isBlackBoxed,
     });
 
@@ -106,7 +104,6 @@ class Tab extends PureComponent {
           source,
           sourceActor,
         }),
-        forTab: true,
       }),
       div(
         {

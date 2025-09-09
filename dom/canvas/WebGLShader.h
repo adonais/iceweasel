@@ -12,9 +12,8 @@
 #include <vector>
 
 #include "GLDefs.h"
-#include "mozilla/MemoryReporting.h"
-
 #include "WebGLObjectModel.h"
+#include "mozilla/MemoryReporting.h"
 
 namespace mozilla {
 

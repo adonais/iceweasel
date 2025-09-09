@@ -29,8 +29,8 @@ pub enum QuantityMetric {
 #[derive(Clone, Debug)]
 pub struct QuantityMetricIpc;
 
-crate::define_metric_metadata_getter!(QuantityMetric, QUANTITY_MAP, LABELED_QUANTITY_MAP);
-crate::define_metric_namer!(QuantityMetric, PARENT_ONLY);
+define_metric_metadata_getter!(QuantityMetric, QUANTITY_MAP, LABELED_QUANTITY_MAP);
+define_metric_namer!(QuantityMetric, PARENT_ONLY);
 
 impl QuantityMetric {
     /// Create a new quantity metric.

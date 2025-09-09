@@ -2569,3 +2569,25 @@ bool RRest::recover(JSContext* cx, SnapshotIterator& iter) const {
   iter.storeInstructionResult(ObjectValue(*rest));
   return true;
 }
+
+bool MTypedArraySubarray::writeRecoverData(CompactBufferWriter& writer) const {
+  MOZ_ASSERT(canRecoverOnBailout());
+  writer.writeUnsigned(uint32_t(RInstruction::Recover_TypedArraySubarray));
+  return true;
+}
+
+RTypedArraySubarray::RTypedArraySubarray(CompactBufferReader& reader) {}
+
+bool RTypedArraySubarray::recover(JSContext* cx, SnapshotIterator& iter) const {
+  Rooted<TypedArrayObject*> obj(cx, &iter.readObject()->as<TypedArrayObject>());
+  intptr_t start = iter.readIntPtr();
+  intptr_t length = iter.readIntPtr();
+
+  auto* result = TypedArraySubarrayRecover(cx, obj, start, length);
+  if (!result) {
+    return false;
+  }
+
+  iter.storeInstructionResult(ObjectValue(*result));
+  return true;
+}

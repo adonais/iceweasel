@@ -9,8 +9,8 @@
 #include "EMEUtils.h"
 #include "GMPUtils.h"
 #include "KeySystemNames.h"
-#include "mozilla/dom/Promise.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/dom/Promise.h"
 #include "nsPrintfCString.h"
 
 #ifdef XP_WIN

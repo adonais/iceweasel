@@ -14,6 +14,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -93,6 +94,7 @@ class WallpaperOnboardingDialogFragment : BottomSheetDialogFragment() {
     ): View = ComposeView(requireContext()).apply {
         this@WallpaperOnboardingDialogFragment.dialog?.setCanceledOnTouchOutside(true)
 
+        setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         setContent {
             FirefoxTheme {
                 val wallpapers = appStore.observeAsComposableState { state ->

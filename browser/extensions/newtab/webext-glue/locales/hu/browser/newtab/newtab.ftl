@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Új gyorskereső
 newtab-topsites-edit-topsites-header = Népszerű oldal szerkesztése
 newtab-topsites-edit-shortcut-header = Gyorskereső szerkesztése
 newtab-topsites-add-shortcut-label = Indítóikon hozzáadása
+newtab-topsites-add-shortcut-title =
+    .title = Indítóikon hozzáadása
+    .aria-label = Indítóikon hozzáadása
 newtab-topsites-title-label = Cím
 newtab-topsites-title-input =
     .placeholder = Cím megadása
@@ -84,6 +87,14 @@ newtab-confirm-delete-history-p2 = Ez a művelet nem vonható vissza.
 ## Top Sites - Sponsored label
 
 newtab-topsite-sponsored = Szponzorált
+
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (rögzítve)
+    .title = { $title }
 
 ## Context Menu - Action Tooltips.
 
@@ -538,6 +549,12 @@ newtab-custom-wallpaper-title = Itt vannak az egyéni háttérképek
 # 'Make firefox yours" means to customize or personalize
 newtab-custom-wallpaper-subtitle = Töltse fel a saját háttérképét, vagy válasszon egy egyéni háttérszínt, hogy a { -brand-product-name } a sajátja legyen.
 newtab-custom-wallpaper-cta = Próbálja ki
+
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Válasszon háttérképet, hogy a { -brand-product-name }ot a sajátjává tegye
+newtab-new-user-custom-wallpaper-subtitle = Tegyen minden új lapot otthonossá az egyéni háttérképekkel és színekkel.
+newtab-new-user-custom-wallpaper-cta = Próbálja ki most
 
 ## Strings for download mobile highlight
 

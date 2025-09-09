@@ -1523,6 +1523,12 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
     MOZ_CRASH("GFX: DrawSurfaceDescriptor");
   }
 
+  virtual already_AddRefed<SourceSurface> ImportSurfaceDescriptor(
+      const layers::SurfaceDescriptor& aDesc, const gfx::IntSize& aSize,
+      SurfaceFormat aFormat) {
+    return nullptr;
+  }
+
   /**
    * Draw a surface to the draw target, when the surface will be available
    * at a later time. This is only valid for recording DrawTargets.

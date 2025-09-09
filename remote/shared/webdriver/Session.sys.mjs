@@ -424,7 +424,7 @@ export class WebDriverSession {
    *     relative to this path.
    * @param {Array<Array<string, string, string>>} entries
    *     An array of arrays, each containing a registry entry (type, namespace,
-   *     path, options) as it would appar in a chrome.manifest file. Only the
+   *     path, options) as it would appear in a chrome.manifest file. Only the
    *     following entry types are currently accepted:
    *
    *         - "content" A URL entry. Must be a 3-element array.

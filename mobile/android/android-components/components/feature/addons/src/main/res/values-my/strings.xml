@@ -87,8 +87,6 @@
   <!-- Indicates the add-on is enabled. -->
   <string name="mozac_feature_addons_settings_on">ဖွင့်ပါ</string>
   <!-- Indicates the add-on is allowed in private browsing mode. -->
-  <string name="mozac_feature_addons_settings_allow_in_private_browsing" moz:removedIn="141" tools:ignore="UnusedResources">တစ်ကိုယ်ရေသုံးချိန်တွင်ခွင့်ပြုရန်</string>
-  <!-- Indicates the add-on is allowed in private browsing mode. -->
   <string name="mozac_feature_addons_settings_run_in_private_browsing">တစ်ကိုယ်ရည်သုံးတွင်ထားရန်</string>
   <!-- Indicates the add-on is enabled. -->
   <string name="mozac_feature_addons_enabled">ဖွင့်ထားသည်</string>
@@ -108,10 +106,6 @@
   <string name="mozac_feature_addons_permissions">ခွင့်ပြုချက်များ</string>
   <!-- This is a button to remove (i.e. uninstall) an add-on. -->
   <string name="mozac_feature_addons_remove">ဖယ်ရှားပါ</string>
-  <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
-  <string name="mozac_feature_addons_permissions_dialog_title" moz:removedIn="141" tools:ignore="UnusedResources">%1$s ကို ထည့်မည်လား။</string>
-  <!-- This is the subtitle of a dialog that asks the users if they want to install or not an add-on, the subtitle lists the permissions that this add-on requires, the permissions will dynamically be listed after the ":". -->
-  <string name="mozac_feature_addons_permissions_dialog_subtitle" moz:removedIn="141" tools:ignore="UnusedResources">သင့်ခွင့်ပြုချက် လိုအပ်သည်။</string>
   <!-- This is a button to add (install) an add-on . -->
   <string name="mozac_feature_addons_permissions_dialog_add">ထည့်ရန်</string>
   <!-- This is a button to cancel the add-on installation . -->

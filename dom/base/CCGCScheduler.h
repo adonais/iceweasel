@@ -9,9 +9,9 @@
 #include "mozilla/MainThreadIdlePeriod.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/ipc/IdleSchedulerChild.h"
+#include "nsCycleCollectionParticipant.h"
 #include "nsCycleCollector.h"
 #include "nsJSEnvironment.h"
-#include "nsCycleCollectionParticipant.h"
 
 namespace mozilla {
 

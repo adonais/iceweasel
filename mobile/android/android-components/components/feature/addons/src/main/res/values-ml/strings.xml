@@ -138,10 +138,18 @@
   <string name="mozac_feature_addons_permissions_history_description_for_update">തിരയൽ നാള്‍വഴി പരിശോധിക്കുക.</string>
   <!-- Description for the "management" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_management_description_for_update">വിപുലീകരണ ഉപയോഗം നിരീക്ഷിക്കുകയും അലങ്കാരങ്ങൾ കൈകാര്യം ചെയ്യുകയും ചെയ്യുക.</string>
+  <!-- Description for the "nativeMessaging" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_native_messaging_description_for_update">ഈ പ്രയോഗമൊഴികെ മറ്റു പ്രയോഗങ്ങളുമായി സന്ദേശങ്ങൾ കൈമാറുക.</string>
   <!-- Description for the "notifications" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_notifications_description_for_update">അറിയിപ്പുകൾ കാട്ടുക.</string>
+  <!-- Description for the "sessions" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_sessions_description_for_update">അടുത്തിടെ അടച്ച ടാബുകൾ ഉപയോഗിക്കുക</string>
+  <!-- Description for the "tabHide" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_tab_hide_description_for_update">അന്വേഷിയന്ത്ര ടാബുകൾ മറയ്ക്കുകയും കാണിക്കുകയും ചെയ്യുക.</string>
   <!-- Description for the "topSites" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_top_sites_description_for_update">തിരയൽ നാള്‍വഴി പരിശോധിക്കുക.</string>
+  <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
+  <string name="mozac_feature_addons_permissions_one_site_description_for_update">%1$s--നായുള്ള താങ്ങളുടെ ഡാറ്റ ഉപയോഗിക്കുക.</string>
   <!--
     When an add-on requires access to more than 2 domains, for example the add-on requires access for 3 domains. We will show the first 2 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description_for_update,
     then we will show another collapsed entry saying "Access your data on another domain.".
@@ -162,8 +170,6 @@
     then we will show another collapsed entry saying "Access your data on other sites.".
   -->
   <string name="mozac_feature_addons_permissions_extra_sites_description_for_update">മറ്റെ വെബ്ബിടങ്ങളിൽ താങ്ങളുടെ ഡാറ്റ ഉപയോഗിക്കുക.</string>
-  <!-- The sentence used when the extension has data collection permissions. %1$s is a formatted list of permissions. -->
-  <string name="mozac_feature_addons_permissions_required_data_collection_description" moz:removedIn="141" tools:ignore="UnusedResources">ഈ വിപുലീകരണം ശേഖരിക്കുന്നത് ഇവയാണെന്ന് വികസിനാക്താവു് പറയുന്നു: %1$s.</string>
   <!-- The sentence used when the extension has data collection permissions. %1$s is a formatted list of permissions. -->
   <string name="mozac_feature_addons_permissions_required_data_collection_description_2">ഈ വിപുലീകരണം ശേഖരിക്കുന്നത് ഇവയാണെന്ന് വികസിനാക്താവു് പറയുന്നു: %1$s</string>
   <!-- The sentence used when the developer of an extension has explicitly stated that they do not collect any data collection. -->
@@ -239,8 +245,6 @@
   <!-- Indicates the add-on is enabled. -->
   <string name="mozac_feature_addons_settings_on">ഓണ്‍</string>
   <!-- Indicates the add-on is allowed in private browsing mode. -->
-  <string name="mozac_feature_addons_settings_allow_in_private_browsing" moz:removedIn="141" tools:ignore="UnusedResources">സ്വകാര്യ ബ്രൗസിംഗിൽ ലഭ്യമാക്കുക</string>
-  <!-- Indicates the add-on is allowed in private browsing mode. -->
   <string name="mozac_feature_addons_settings_allow_in_private_browsing_2">സ്വകാര്യ ജാലകങ്ങളിൽ പ്രവർത്തിക്കുന്നതിന് ഈ വിപുലീകരണത്തിനെ അനുവദിക്കുക</string>
   <!-- Indicates the add-on is allowed in private browsing mode. -->
   <string name="mozac_feature_addons_settings_run_in_private_browsing">സ്വകാര്യ ബ്രൗസിംഗിൽ തുറക്കുക</string>
@@ -267,8 +271,6 @@
   <!-- This is a button to report an add-on. -->
   <string name="mozac_feature_addons_report">വിവരം അറിയിക്കുക</string>
   <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
-  <string name="mozac_feature_addons_permissions_dialog_title" moz:removedIn="141" tools:ignore="UnusedResources">%1$s ചേര്‍ക്കണോ?</string>
-  <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_permissions_dialog_title_2">%1$s ചേൎക്കുക</string>
   <!-- This is the title of a dialog that asks the users to grant optional permissions. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_optional_permissions_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%1$s ഇനിയും അനുമതികളിനു് ചോദിക്കുന്നു.</string>
@@ -276,8 +278,6 @@
   <string name="mozac_feature_addons_optional_permissions_with_data_collection_dialog_title">%1$s ഇനിയും അനുമതികളിനു് ചോദിക്കുന്നു</string>
   <!-- This is the title of a dialog that asks the users to grant optional data collection permissions only. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_optional_permissions_with_data_collection_only_dialog_title">%1$s ഇനിയും ഡാറ്റപ്പിരിവിനു് ചോദിക്കുന്നു</string>
-  <!-- This is the subtitle of a dialog that asks the users if they want to install or not an add-on, the subtitle lists the permissions that this add-on requires, the permissions will dynamically be listed after the ":". -->
-  <string name="mozac_feature_addons_permissions_dialog_subtitle" moz:removedIn="141" tools:ignore="UnusedResources">നിങ്ങളുടെ അനുമതി ആവശ്യമാണ്:</string>
   <!-- Heading for the permissions section in the add-on install dialog. -->
   <string name="mozac_feature_addons_permissions_dialog_heading_required_permissions">ആവശ്യപ്പെട്ടവനുമതികൾ:</string>
   <!-- Heading for the data collection permissions section in the add-on install dialog. -->

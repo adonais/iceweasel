@@ -8,10 +8,10 @@
 #include <mfidl.h>
 #include <wrl.h>
 
-#include "MediaInfo.h"
-#include "MediaEventSource.h"
 #include "MFMediaEngineExtra.h"
 #include "MFMediaEngineStream.h"
+#include "MediaEventSource.h"
+#include "MediaInfo.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/TaskQueue.h"
 

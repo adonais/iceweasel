@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/BarProps.h"
+
 #include "mozilla/dom/BarPropBinding.h"
 #include "nsContentUtils.h"
 #include "nsDocShell.h"

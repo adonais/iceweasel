@@ -264,7 +264,7 @@ add_task(async function test_setDefaultEngine() {
 
   await setDefaultEngine(false, "engine1", "engine2");
 
-  let snapshot = await Glean.searchEngineDefault.changed.testGetValue();
+  let snapshot = Glean.searchEngineDefault.changed.testGetValue();
   delete snapshot[0].timestamp;
   Assert.deepEqual(
     snapshot[0],
@@ -310,7 +310,7 @@ add_task(async function test_setPrivateDefaultEngine() {
 
   await setDefaultEngine(true, "engine2", "engine1");
 
-  let snapshot = await Glean.searchEnginePrivate.changed.testGetValue();
+  let snapshot = Glean.searchEnginePrivate.changed.testGetValue();
   delete snapshot[0].timestamp;
   console.log(snapshot);
   Assert.deepEqual(

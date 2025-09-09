@@ -6,10 +6,10 @@
 #ifndef GPU_DeviceLostInfo_H_
 #define GPU_DeviceLostInfo_H_
 
-#include "mozilla/dom/WebGPUBinding.h"
-#include "mozilla/Maybe.h"
-#include "nsWrapperCache.h"
 #include "ObjectModel.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/dom/WebGPUBinding.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla::webgpu {
 class Device;

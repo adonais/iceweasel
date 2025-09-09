@@ -5,18 +5,19 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "TCPSocketParent.h"
+
+#include "TCPSocket.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
-#include "nsJSUtils.h"
+#include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/PNeckoParent.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/BrowserParent.h"
-#include "mozilla/HoldDropJSObjects.h"
 #include "nsISocketTransport.h"
+#include "nsJSUtils.h"
 #include "nsNetUtil.h"
-#include "TCPSocket.h"
 
 namespace IPC {
 

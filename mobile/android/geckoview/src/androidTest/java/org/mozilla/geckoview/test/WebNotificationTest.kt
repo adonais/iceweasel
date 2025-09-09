@@ -58,6 +58,7 @@ class WebNotificationTest : BaseSessionTest() {
                 assertThat("Silent should match", notification.silent, equalTo(true))
                 assertThat("Vibrate should match", notification.vibrate, equalTo(intArrayOf()))
                 assertThat("Source should match", notification.source, equalTo(createTestUrl(HELLO_HTML_PATH)))
+                assertThat("Origin should match", notification.origin, equalTo(GeckoSessionTestRule.TEST_ENDPOINT))
                 notificationResult.complete(null)
             }
         })
@@ -85,6 +86,13 @@ class WebNotificationTest : BaseSessionTest() {
         assertThat("Vibrate should match", notification.vibrate, equalTo(intArrayOf(1, 2, 3, 4)))
         assertThat("Silent should match", notification.silent, equalTo(false))
         assertThat("Source should match", notification.source, equalTo(createTestUrl(HELLO_HTML_PATH)))
+
+        val origin = if (notification.privateBrowsing) {
+            GeckoSessionTestRule.TEST_ENDPOINT + "^privateBrowsingId=1"
+        } else {
+            GeckoSessionTestRule.TEST_ENDPOINT
+        }
+        assertThat("Origin should match", notification.origin, equalTo(origin))
     }
 
     @GeckoSessionTestRule.Setting.List(

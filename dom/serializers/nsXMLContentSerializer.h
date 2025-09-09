@@ -14,11 +14,11 @@
 #define nsXMLContentSerializer_h__
 
 #include "mozilla/Attributes.h"
+#include "nsCOMPtr.h"
 #include "nsIContentSerializer.h"
 #include "nsISupportsUtils.h"
-#include "nsCOMPtr.h"
-#include "nsTArray.h"
 #include "nsString.h"
+#include "nsTArray.h"
 
 #define kIndentStr u"  "_ns
 #define kEndTag u"</"_ns

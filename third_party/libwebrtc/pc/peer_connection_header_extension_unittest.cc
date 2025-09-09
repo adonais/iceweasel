@@ -53,7 +53,7 @@ class PeerConnectionHeaderExtensionTest
           std::tuple<webrtc::MediaType, SdpSemantics>> {
  protected:
   PeerConnectionHeaderExtensionTest()
-      : socket_server_(rtc::CreateDefaultSocketServer()),
+      : socket_server_(CreateDefaultSocketServer()),
         main_thread_(socket_server_.get()),
         extensions_(
             {RtpHeaderExtensionCapability("uri1",
@@ -73,7 +73,7 @@ class PeerConnectionHeaderExtensionTest
   std::unique_ptr<PeerConnectionWrapper> CreatePeerConnection(
       webrtc::MediaType media_type,
       std::optional<SdpSemantics> semantics) {
-    auto media_engine = std::make_unique<cricket::FakeMediaEngine>();
+    auto media_engine = std::make_unique<FakeMediaEngine>();
     if (media_type == webrtc::MediaType::AUDIO)
       media_engine->fake_voice_engine()->SetRtpHeaderExtensions(extensions_);
     else
@@ -91,7 +91,7 @@ class PeerConnectionHeaderExtensionTest
     auto pc_factory =
         CreateModularPeerConnectionFactory(std::move(factory_dependencies));
 
-    auto fake_port_allocator = std::make_unique<cricket::FakePortAllocator>(
+    auto fake_port_allocator = std::make_unique<FakePortAllocator>(
         CreateEnvironment(), socket_server_.get());
     auto observer = std::make_unique<MockPeerConnectionObserver>();
     PeerConnectionInterface::RTCConfiguration config;
@@ -564,7 +564,7 @@ INSTANTIATE_TEST_SUITE_P(
       webrtc::MediaType media_type;
       SdpSemantics semantics;
       std::tie(media_type, semantics) = info.param;
-      return (rtc::StringBuilder("With")
+      return (StringBuilder("With")
               << (semantics == SdpSemantics::kPlanB_DEPRECATED ? "PlanB"
                                                                : "UnifiedPlan")
               << "And"

@@ -5,9 +5,11 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "sdp/SdpAttribute.h"
-#include "sdp/SdpHelper.h"
-#include <iomanip>
+
 #include <bitset>
+#include <iomanip>
+
+#include "sdp/SdpHelper.h"
 
 #ifdef CRLF
 #  undef CRLF

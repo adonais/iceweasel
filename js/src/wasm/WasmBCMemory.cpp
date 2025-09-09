@@ -151,7 +151,7 @@ RegI32 BaseCompiler::popConstMemoryAccess<RegI32>(MemoryAccessDesc* access,
                 UINT64_MAX - HugeOffsetGuardLimit);
 #endif
   uint64_t ea = uint64_t(addr) + uint64_t(access->offset32());
-  uint64_t limit = codeMeta_.memories[access->memoryIndex()].initialLength32() +
+  uint64_t limit = codeMeta_.memories[access->memoryIndex()].initialLength() +
                    offsetGuardLimit;
 
   check->omitBoundsCheck = ea < limit;
@@ -184,7 +184,7 @@ RegI64 BaseCompiler::popConstMemoryAccess<RegI64>(MemoryAccessDesc* access,
   mozilla::CheckedUint64 ea(addr);
   ea += access->offset64();
   mozilla::CheckedUint64 limit(
-      codeMeta_.memories[access->memoryIndex()].initialLength64());
+      codeMeta_.memories[access->memoryIndex()].initialLength());
   limit += offsetGuardLimit;
 
   if (ea.isValid() && limit.isValid()) {

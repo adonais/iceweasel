@@ -868,9 +868,9 @@ Maybe<IntRect> CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
 
   PrepareStaticVertexBuffer();
 
-  mBackBufferInvalid.Or(mBackBufferInvalid, invalidRegionSafe);
+  mBackBufferInvalid.OrWith(invalidRegionSafe);
   if (mIsDoubleBuffered) {
-    mFrontBufferInvalid.Or(mFrontBufferInvalid, invalidRegionSafe);
+    mFrontBufferInvalid.OrWith(invalidRegionSafe);
   }
 
   // We have to call UpdateRenderTarget after we've determined the invalid regi

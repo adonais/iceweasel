@@ -680,8 +680,8 @@ Maybe<nscoord> nsBlockFrame::GetNaturalBaselineBOffset(
       if (line.IsEmpty()) {
         continue;
       }
-      // Buttons use the end of the content as a baseline if we haven't found one
-      // yet.
+      // Buttons use the end of the content as a baseline if we haven't found
+      // one yet.
       nscoord bEnd = line.BEnd();
       offset.emplace(aBaselineGroup == BaselineSharingGroup::Last
                          ? BSize(aWM) - bEnd
@@ -1116,7 +1116,8 @@ static bool AvailableSpaceShrunk(WritingMode aWM,
 }
 
 static LogicalSize CalculateContainingBlockSizeForAbsolutes(
-    WritingMode aWM, const ReflowInput& aReflowInput, LogicalSize aFrameSize) {
+    WritingMode aWM, const ReflowInput& aReflowInput,
+    const LogicalSize& aFrameSize) {
   // The issue here is that for a 'height' of 'auto' the reflow input
   // code won't know how to calculate the containing block height
   // because it's calculated bottom up. So we use our own computed
@@ -6819,7 +6820,8 @@ static bool StyleEstablishesBFC(const ComputedStyle* aStyle) {
   // https://drafts.csswg.org/css-multicol/#columns
   const auto* disp = aStyle->StyleDisplay();
   return disp->IsContainPaint() || disp->IsContainLayout() ||
-         disp->mContainerType != StyleContainerType::Normal ||
+         disp->mContainerType &
+             (StyleContainerType::SIZE | StyleContainerType::INLINE_SIZE) ||
          disp->DisplayInside() == StyleDisplayInside::FlowRoot ||
          disp->IsAbsolutelyPositionedStyle() || disp->IsFloatingStyle() ||
          aStyle->IsRootElementStyle() || AnonymousBoxIsBFC(aStyle);
@@ -8358,6 +8360,7 @@ void nsBlockFrame::SetInitialChildList(ChildListID aListID,
     auto pseudo = Style()->GetPseudoType();
     bool haveFirstLetterStyle =
         (pseudo == PseudoStyleType::NotPseudo ||
+         PseudoStyle::IsElementBackedPseudo(pseudo) ||
          (pseudo == PseudoStyleType::cellContent &&
           !GetParent()->Style()->IsPseudoOrAnonBox()) ||
          pseudo == PseudoStyleType::fieldsetContent ||

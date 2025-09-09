@@ -10,7 +10,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
-  CustomizableUI: "resource:///modules/CustomizableUI.sys.mjs",
+  CustomizableUI:
+    "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
   GenAI: "resource:///modules/GenAI.sys.mjs",
@@ -24,6 +25,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
+  // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+  TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
   UITour: "moz-src:///browser/components/uitour/UITour.sys.mjs",
 });
@@ -195,13 +198,16 @@ export const SpecialMessageActions = {
    * @param {Object} pref - A pref to be updated.
    * @param {string} pref.name - The name of the pref to be updated
    * @param {string} [pref.value] - The value of the pref to be updated. If not included, the pref will be reset.
+   * @param {boolean} onImpression - Whether the setPref action was triggered on
+   * message impression and not by direct user interaction.
    */
-  setPref(pref) {
+  setPref(pref, onImpression = false) {
     // Array of prefs that are allowed to be edited by SET_PREF
     const allowedPrefs = [
       "browser.aboutwelcome.didSeeFinalScreen",
       "browser.crashReports.unsubmittedCheck.autoSubmit2",
       "browser.dataFeatureRecommendations.enabled",
+      "browser.ipProtection.enabled",
       "browser.migrate.content-modal.about-welcome-behavior",
       "browser.migrate.content-modal.import-all.enabled",
       "browser.migrate.preferences-entrypoint.enabled",
@@ -230,10 +236,23 @@ export const SpecialMessageActions = {
       "termsofuse.acceptedDate",
       "termsofuse.currentVersion",
       "termsofuse.minimumVersion",
+      "privacy.trackingprotection.allow_list.baseline.enabled",
+      "privacy.trackingprotection.allow_list.convenience.enabled",
     ];
 
+    // Array of prefs that are allowed to be edited when SET_PREF is called on
+    // message impression, rather than by an explicit user action. Currently,
+    // only prefs created on the fly are allowed. This is to ensure that adding
+    // the abililty to set any in-tree prefs with this feature undergoes code
+    // review.
+    const allowedSetOnImpressionPrefs = [];
+
+    const allowedPrefsList = onImpression
+      ? allowedSetOnImpressionPrefs
+      : allowedPrefs;
+
     if (
-      !allowedPrefs.includes(pref.name) &&
+      !allowedPrefsList.includes(pref.name) &&
       !pref.name.startsWith("messaging-system-action.")
     ) {
       pref.name = `messaging-system-action.${pref.name}`;
@@ -505,9 +524,17 @@ export const SpecialMessageActions = {
 
   async handleMultiAction(actions, browser, orderedExecution) {
     if (orderedExecution) {
+      let hasFailed = false;
       for (const action of actions) {
         try {
-          await this.handleAction(action, browser);
+          // If action requires previous actions to succeed, check to see if a previous action has failed
+          if (action.requiresPrevious && hasFailed) {
+            continue; // Skip this action if previous actions did not succeed
+          }
+          let result = await this.handleAction(action, browser);
+          if (result === false) {
+            hasFailed = true;
+          }
         } catch (err) {
           console.error("Error in MULTI_ACTION event:", err);
           throw err;
@@ -706,7 +733,7 @@ export const SpecialMessageActions = {
         await this.blockMessageById(action.data.id);
         break;
       case "SET_PREF":
-        this.setPref(action.data.pref);
+        this.setPref(action.data.pref, action.data.onImpression);
         break;
       case "MULTI_ACTION":
         await this.handleMultiAction(
@@ -758,6 +785,25 @@ export const SpecialMessageActions = {
       case "SUMMARIZE_PAGE":
         const entry = action.data ?? "message";
         await lazy.GenAI.summarizeCurrentPage(window, entry);
+        break;
+      case "OPEN_PANEL":
+        let { anchor_id, widget_id, panel_id, fallback_to_app_menu } =
+          action.data;
+        let anchor;
+        if (anchor_id) {
+          anchor = window.document.getElementById(anchor_id);
+        } else if (widget_id) {
+          let widget = lazy.CustomizableUI.getWidget(widget_id);
+          anchor = widget?.forWindow(window)?.anchor;
+        }
+        if (!anchor && fallback_to_app_menu) {
+          anchor = window.document.getElementById("PanelUI-menu-button");
+        }
+        await window.PanelUI.showSubView(panel_id, anchor);
+        break;
+      case "CREATE_TASKBAR_TAB":
+        let currentTab = window.gBrowser.selectedTab;
+        await lazy.TaskbarTabs.moveTabIntoTaskbarTab(currentTab);
         break;
     }
     return undefined;

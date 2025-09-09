@@ -187,7 +187,7 @@ async function find_(
  * @param {Document} document
  *     Document root.
  * @param {Element} startNode
- *     Where in the DOM hiearchy to begin searching.
+ *     Where in the DOM hierarchy to begin searching.
  * @param {string} expression
  *     XPath search expression.
  *
@@ -257,7 +257,7 @@ dom.findByLinkText = function (startNode, linkText) {
  * link text contains <var>linkText</var>.
  *
  * @param {Element} startNode
- *     Where in the DOM hierachy to begin searching.
+ *     Where in the DOM hierarchy to begin searching.
  * @param {string} linkText
  *     Link text to search for.
  *

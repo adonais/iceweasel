@@ -7,9 +7,9 @@
 #ifndef DOM_SVG_DOMSVGANGLE_H_
 #define DOM_SVG_DOMSVGANGLE_H_
 
-#include "nsWrapperCache.h"
 #include "SVGElement.h"
 #include "mozilla/Attributes.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla {
 

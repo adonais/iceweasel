@@ -6,20 +6,18 @@
 
 #include "mozilla/dom/DOMException.h"
 
+#include "js/StructuredClone.h"
+#include "js/TypeDecls.h"
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/HoldDropJSObjects.h"
-#include "mozilla/dom/Exceptions.h"
-#include "nsContentUtils.h"
-#include "nsCOMPtr.h"
+#include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/Exceptions.h"
+#include "nsCOMPtr.h"
+#include "nsContentUtils.h"
 #include "nsIException.h"
 #include "xpcprivate.h"
-
-#include "mozilla/dom/DOMExceptionBinding.h"
-#include "mozilla/ErrorResult.h"
-
-#include "js/TypeDecls.h"
-#include "js/StructuredClone.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

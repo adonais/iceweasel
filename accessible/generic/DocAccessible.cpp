@@ -12,6 +12,7 @@
 #include "DocAccessible-inl.h"
 #include "EventTree.h"
 #include "HTMLImageMapAccessible.h"
+#include "Relation.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "nsAccUtils.h"
 #include "nsEventShell.h"
@@ -65,12 +66,13 @@ static nsStaticAtom* const kRelationAttrs[] = {
     nsGkAtoms::aria_details,      nsGkAtoms::aria_owns,
     nsGkAtoms::aria_controls,     nsGkAtoms::aria_flowto,
     nsGkAtoms::aria_errormessage, nsGkAtoms::_for,
-    nsGkAtoms::control,           nsGkAtoms::popovertarget};
+    nsGkAtoms::control,           nsGkAtoms::popovertarget,
+    nsGkAtoms::commandfor};
 
 static const uint32_t kRelationAttrsLen = std::size(kRelationAttrs);
 
 static nsStaticAtom* const kSingleElementRelationIdlAttrs[] = {
-    nsGkAtoms::popovertarget};
+    nsGkAtoms::popovertarget, nsGkAtoms::commandfor};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor/desctructor
@@ -2259,9 +2261,11 @@ void DocAccessible::MaybeFireEventsForChangedPopover(LocalAccessible* aAcc) {
   }
   // A popover has just been inserted into or removed from the a11y tree, which
   // means it just appeared or disappeared. Fire expanded state changes on its
-  // invokers.
-  RelatedAccIterator invokers(mDoc, el, nsGkAtoms::popovertarget);
-  while (Accessible* invoker = invokers.Next()) {
+  // popovertarget invokers.
+  Relation invokers(new RelatedAccIterator(mDoc, el, nsGkAtoms::popovertarget));
+  // Additionally iterate over any commandfor invokers.
+  invokers.AppendIter(new RelatedAccIterator(mDoc, el, nsGkAtoms::commandfor));
+  while (Accessible* invoker = invokers.LocalNext()) {
     RefPtr<AccEvent> expandedChangeEvent =
         new AccStateChangeEvent(invoker->AsLocal(), states::EXPANDED);
     FireDelayedEvent(expandedChangeEvent);

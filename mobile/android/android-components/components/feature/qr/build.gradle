@@ -32,6 +32,7 @@ dependencies {
 
     implementation project(':components:support-ktx')
     implementation project(':components:support-base')
+    implementation project(':components:support-utils')
 
     implementation libs.thirdparty.zxing
     testImplementation libs.thirdparty.zxing

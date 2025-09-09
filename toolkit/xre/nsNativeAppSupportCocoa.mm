@@ -113,8 +113,7 @@ nsNativeAppSupportCocoa::ReOpen() {
         haveOpenWindows = true;
       }
 
-      nsCOMPtr<nsIWidget> widget = nullptr;
-      baseWindow->GetMainWidget(getter_AddRefs(widget));
+      nsCOMPtr<nsIWidget> widget = baseWindow->GetMainWidget();
       if (!widget || !widget->IsVisible()) {
         windowList->HasMoreElements(&more);
         continue;

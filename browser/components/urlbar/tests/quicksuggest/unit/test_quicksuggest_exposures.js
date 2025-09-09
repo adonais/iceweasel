@@ -575,6 +575,7 @@ function makeExpectedResult({ rsSuggestionType, telemetryType = "exposure" }) {
       source: "rust",
       dynamicType: "exposure",
       provider: "Dynamic",
+      suggestionType: rsSuggestionType,
       isSponsored: false,
     },
   };

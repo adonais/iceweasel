@@ -1,4 +1,4 @@
-// Copyright (c) 2012 The Chromium Authors. All rights reserved.
+// Copyright 2012 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
@@ -13,14 +13,16 @@
 #include <set>
 #include <string>
 
-#include "base/logging.h"
+#include "base/bits.h"
+#include "base/check_op.h"
+#include "base/notreached.h"
+#include "base/rand_util.h"
 #include "base/scoped_native_library.h"
 #include "base/win/pe_image.h"
-#include "base/win/windows_version.h"
 #include "sandbox/win/src/interception_internal.h"
 #include "sandbox/win/src/interceptors.h"
+#include "sandbox/win/src/internal_types.h"
 #include "sandbox/win/src/sandbox.h"
-#include "sandbox/win/src/sandbox_rand.h"
 #include "sandbox/win/src/service_resolver.h"
 #include "sandbox/win/src/target_interceptions.h"
 #include "sandbox/win/src/target_process.h"
@@ -34,6 +36,13 @@ namespace {
 const size_t kAllocGranularity = 65536;
 const size_t kPageSize = 4096;
 
+// Rounds up the size of a given buffer, considering alignment (padding).
+// value is the current size of the buffer, and alignment is specified in
+// bytes.
+inline size_t RoundUpToMultiple(size_t value, size_t alignment) {
+  return ((value + alignment - 1) / alignment) * alignment;
+}
+
 }  // namespace
 
 namespace internal {
@@ -41,12 +50,8 @@ namespace internal {
 // Find a random offset within 64k and aligned to ceil(log2(size)).
 size_t GetGranularAlignedRandomOffset(size_t size) {
   CHECK_LE(size, kAllocGranularity);
-  unsigned int offset;
-
-  do {
-    GetRandom(&offset);
-    offset &= (kAllocGranularity - 1);
-  } while (offset > (kAllocGranularity - size));
+  unsigned int offset = static_cast<unsigned int>(
+      base::RandInt(0, static_cast<int>(kAllocGranularity - size)));
 
   // Find an alignment between 64 and the page size (4096).
   size_t align_size = kPageSize;
@@ -73,14 +78,9 @@ InterceptionManager::InterceptionData::InterceptionData(
 
 InterceptionManager::InterceptionData::~InterceptionData() {}
 
-InterceptionManager::InterceptionManager(TargetProcess* child_process,
-                                         bool relaxed)
-    : child_(child_process), names_used_(false), relaxed_(relaxed) {
-  child_->AddRef();
-}
-InterceptionManager::~InterceptionManager() {
-  child_->Release();
-}
+InterceptionManager::InterceptionManager(TargetProcess& child_process)
+    : child_(child_process), names_used_(false) {}
+InterceptionManager::~InterceptionManager() {}
 
 bool InterceptionManager::AddToPatchedFunctions(
     const wchar_t* dll_name,
@@ -205,7 +205,7 @@ bool InterceptionManager::SetupConfigBuffer(void* buffer, size_t buffer_bytes) {
 
   SharedMemory* shared_memory = reinterpret_cast<SharedMemory*>(buffer);
   DllPatchInfo* dll_info = shared_memory->dll_list;
-  int num_dlls = 0;
+  size_t num_dlls = 0;
 
   shared_memory->interceptor_base =
       names_used_ ? child_->MainModule() : nullptr;
@@ -385,7 +385,7 @@ ResultCode InterceptionManager::PatchNtdll(bool hot_patch_needed) {
   thunk_offset &= kPageSize - 1;
 
   // Make an aligned, padded allocation, and move the pointer to our chunk.
-  size_t thunk_bytes_padded = (thunk_bytes + kPageSize - 1) & ~(kPageSize - 1);
+  size_t thunk_bytes_padded = base::bits::AlignUp(thunk_bytes, kPageSize);
   thunk_base = reinterpret_cast<BYTE*>(
       ::VirtualAllocEx(child, thunk_base, thunk_bytes_padded, MEM_COMMIT,
                        PAGE_EXECUTE_READWRITE));
@@ -444,24 +444,7 @@ ResultCode InterceptionManager::PatchClientFunctions(
   base::ScopedNativeLibrary local_interceptor(::LoadLibrary(child_->Name()));
 #endif  // defined(SANDBOX_EXPORTS)
 
-  std::unique_ptr<ServiceResolverThunk> thunk;
-#if defined(_WIN64)
-  thunk.reset(new ServiceResolverThunk(child_->Process(), relaxed_));
-#else
-  base::win::OSInfo* os_info = base::win::OSInfo::GetInstance();
-  if (os_info->wow64_status() == base::win::OSInfo::WOW64_ENABLED) {
-    if (os_info->version() >= base::win::Version::WIN10)
-      thunk.reset(new Wow64W10ResolverThunk(child_->Process(), relaxed_));
-    else if (os_info->version() >= base::win::Version::WIN8)
-      thunk.reset(new Wow64W8ResolverThunk(child_->Process(), relaxed_));
-    else
-      thunk.reset(new Wow64ResolverThunk(child_->Process(), relaxed_));
-  } else if (os_info->version() >= base::win::Version::WIN8) {
-    thunk.reset(new Win8ResolverThunk(child_->Process(), relaxed_));
-  } else {
-    thunk.reset(new ServiceResolverThunk(child_->Process(), relaxed_));
-  }
-#endif
+  ServiceResolverThunk thunk(child_->Process(), /*relaxed=*/true);
 
   for (auto interception : interceptions_) {
     const std::wstring ntdll(kNtdllName);
@@ -475,7 +458,7 @@ ResultCode InterceptionManager::PatchClientFunctions(
     // We may be trying to patch by function name.
     if (!interception.interceptor_address) {
       const char* address;
-      NTSTATUS ret = thunk->ResolveInterceptor(
+      NTSTATUS ret = thunk.ResolveInterceptor(
           local_interceptor.get(), interception.interceptor.c_str(),
           reinterpret_cast<const void**>(&address));
       if (!NT_SUCCESS(ret)) {
@@ -489,7 +472,7 @@ ResultCode InterceptionManager::PatchClientFunctions(
           (address - reinterpret_cast<char*>(local_interceptor.get()));
     }
 #endif  // defined(SANDBOX_EXPORTS)
-    NTSTATUS ret = thunk->Setup(
+    NTSTATUS ret = thunk.Setup(
         ntdll_base, interceptor_base, interception.function.c_str(),
         interception.interceptor.c_str(), interception.interceptor_address,
         &thunks->thunks[dll_data->num_thunks],

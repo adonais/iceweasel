@@ -36,10 +36,10 @@
 #include "rtc_base/socket_address.h"
 #include "system_wrappers/include/metrics.h"
 
-using rtc::ByteBufferReader;
-using rtc::ByteBufferWriter;
+using ::webrtc::ByteBufferReader;
+using ::webrtc::ByteBufferWriter;
 
-namespace cricket {
+namespace webrtc {
 
 namespace {
 
@@ -48,12 +48,12 @@ const int kMessageIntegrityAttributeLength = 20;
 const int kTheoreticalMaximumAttributeLength = 65535;
 
 uint32_t ReduceTransactionId(absl::string_view transaction_id) {
-  RTC_DCHECK(transaction_id.length() == cricket::kStunTransactionIdLength ||
-             transaction_id.length() == cricket::kStunLegacyTransactionIdLength)
+  RTC_DCHECK(transaction_id.length() == kStunTransactionIdLength ||
+             transaction_id.length() == kStunLegacyTransactionIdLength)
       << transaction_id.length();
-  ByteBufferReader reader(rtc::MakeArrayView(
-      reinterpret_cast<const uint8_t*>(transaction_id.data()),
-      transaction_id.size()));
+  ByteBufferReader reader(
+      MakeArrayView(reinterpret_cast<const uint8_t*>(transaction_id.data()),
+                    transaction_id.size()));
   uint32_t result = 0;
   uint32_t next;
   while (reader.ReadUInt32(&next)) {
@@ -439,9 +439,9 @@ bool StunMessage::ValidateMessageIntegrityOfType(int mi_attr_type,
   }
 
   char hmac[kStunMessageIntegritySize];
-  size_t ret =
-      rtc::ComputeHmac(rtc::DIGEST_SHA_1, password.c_str(), password.size(),
-                       temp_data.get(), mi_pos, hmac, sizeof(hmac));
+  size_t ret = webrtc::ComputeHmac(webrtc::DIGEST_SHA_1, password.c_str(),
+                                   password.size(), temp_data.get(), mi_pos,
+                                   hmac, sizeof(hmac));
   RTC_DCHECK(ret == sizeof(hmac));
   if (ret != sizeof(hmac)) {
     return false;
@@ -482,8 +482,8 @@ bool StunMessage::AddMessageIntegrityOfType(int attr_type,
       buf.Length() - kStunAttributeHeaderSize - msg_integrity_attr->length());
   char hmac[kStunMessageIntegritySize];
   size_t ret =
-      rtc::ComputeHmac(rtc::DIGEST_SHA_1, key.data(), key.size(), buf.Data(),
-                       msg_len_for_hmac, hmac, sizeof(hmac));
+      webrtc::ComputeHmac(webrtc::DIGEST_SHA_1, key.data(), key.size(),
+                          buf.Data(), msg_len_for_hmac, hmac, sizeof(hmac));
   RTC_DCHECK(ret == sizeof(hmac));
   if (ret != sizeof(hmac)) {
     RTC_LOG(LS_ERROR) << "HMAC computation failed. Message-Integrity "
@@ -533,7 +533,7 @@ std::string StunMessage::GenerateTransactionId() {
   return webrtc::CreateRandomString(kStunTransactionIdLength);
 }
 
-bool StunMessage::IsStunMethod(rtc::ArrayView<int> methods,
+bool StunMessage::IsStunMethod(ArrayView<int> methods,
                                const char* data,
                                size_t size) {
   // Check the message length.
@@ -757,8 +757,8 @@ bool StunMessage::EqualAttributes(
     const StunMessage* other,
     std::function<bool(int type)> attribute_type_mask) const {
   RTC_DCHECK(other != nullptr);
-  rtc::ByteBufferWriter tmp_buffer_ptr1;
-  rtc::ByteBufferWriter tmp_buffer_ptr2;
+  ByteBufferWriter tmp_buffer_ptr1;
+  ByteBufferWriter tmp_buffer_ptr2;
   for (const auto& attr : attrs_) {
     if (attribute_type_mask(attr->type())) {
       const StunAttribute* other_attr = other->GetAttribute(attr->type());
@@ -807,7 +807,7 @@ void StunAttribute::WritePadding(ByteBufferWriter* buf) const {
   int remainder = length_ % 4;
   if (remainder > 0) {
     uint8_t zeroes[4] = {0};
-    buf->Write(webrtc::ArrayView<const uint8_t>(zeroes, 4 - remainder));
+    buf->Write(ArrayView<const uint8_t>(zeroes, 4 - remainder));
   }
 }
 
@@ -877,7 +877,7 @@ StunAttribute::CreateUnknownAttributes() {
 }
 
 StunAddressAttribute::StunAddressAttribute(uint16_t type,
-                                           const webrtc::SocketAddress& addr)
+                                           const SocketAddress& addr)
     : StunAttribute(type, 0) {
   SetAddress(addr);
 }
@@ -906,23 +906,23 @@ bool StunAddressAttribute::Read(ByteBufferReader* buf) {
     if (length() != SIZE_IP4) {
       return false;
     }
-    if (!buf->ReadBytes(rtc::MakeArrayView(reinterpret_cast<uint8_t*>(&v4addr),
-                                           sizeof(v4addr)))) {
+    if (!buf->ReadBytes(MakeArrayView(reinterpret_cast<uint8_t*>(&v4addr),
+                                      sizeof(v4addr)))) {
       return false;
     }
-    webrtc::IPAddress ipaddr(v4addr);
-    SetAddress(webrtc::SocketAddress(ipaddr, port));
+    IPAddress ipaddr(v4addr);
+    SetAddress(SocketAddress(ipaddr, port));
   } else if (stun_family == STUN_ADDRESS_IPV6) {
     in6_addr v6addr;
     if (length() != SIZE_IP6) {
       return false;
     }
-    if (!buf->ReadBytes(rtc::MakeArrayView(reinterpret_cast<uint8_t*>(&v6addr),
-                                           sizeof(v6addr)))) {
+    if (!buf->ReadBytes(MakeArrayView(reinterpret_cast<uint8_t*>(&v6addr),
+                                      sizeof(v6addr)))) {
       return false;
     }
-    webrtc::IPAddress ipaddr(v6addr);
-    SetAddress(webrtc::SocketAddress(ipaddr, port));
+    IPAddress ipaddr(v6addr);
+    SetAddress(SocketAddress(ipaddr, port));
   } else {
     return false;
   }
@@ -941,23 +941,22 @@ bool StunAddressAttribute::Write(ByteBufferWriter* buf) const {
   switch (address_.family()) {
     case AF_INET: {
       in_addr v4addr = address_.ipaddr().ipv4_address();
-      buf->Write(webrtc::ArrayView<const uint8_t>(
-          reinterpret_cast<uint8_t*>(&v4addr), sizeof(v4addr)));
+      buf->Write(ArrayView<const uint8_t>(reinterpret_cast<uint8_t*>(&v4addr),
+                                          sizeof(v4addr)));
       break;
     }
     case AF_INET6: {
       in6_addr v6addr = address_.ipaddr().ipv6_address();
-      buf->Write(webrtc::ArrayView<const uint8_t>(
-          reinterpret_cast<uint8_t*>(&v6addr), sizeof(v6addr)));
+      buf->Write(ArrayView<const uint8_t>(reinterpret_cast<uint8_t*>(&v6addr),
+                                          sizeof(v6addr)));
       break;
     }
   }
   return true;
 }
 
-StunXorAddressAttribute::StunXorAddressAttribute(
-    uint16_t type,
-    const webrtc::SocketAddress& addr)
+StunXorAddressAttribute::StunXorAddressAttribute(uint16_t type,
+                                                 const SocketAddress& addr)
     : StunAddressAttribute(type, addr), owner_(NULL) {}
 
 StunXorAddressAttribute::StunXorAddressAttribute(uint16_t type,
@@ -973,15 +972,15 @@ void StunXorAddressAttribute::SetOwner(StunMessage* owner) {
   owner_ = owner;
 }
 
-webrtc::IPAddress StunXorAddressAttribute::GetXoredIP() const {
+IPAddress StunXorAddressAttribute::GetXoredIP() const {
   if (owner_) {
-    webrtc::IPAddress ip = ipaddr();
+    IPAddress ip = ipaddr();
     switch (ip.family()) {
       case AF_INET: {
         in_addr v4addr = ip.ipv4_address();
         v4addr.s_addr =
             (v4addr.s_addr ^ webrtc::HostToNetwork32(kStunMagicCookie));
-        return webrtc::IPAddress(v4addr);
+        return IPAddress(v4addr);
       }
       case AF_INET6: {
         in6_addr v6addr = ip.ipv6_address();
@@ -998,7 +997,7 @@ webrtc::IPAddress StunXorAddressAttribute::GetXoredIP() const {
           ip_as_ints[1] = (ip_as_ints[1] ^ transactionid_as_ints[0]);
           ip_as_ints[2] = (ip_as_ints[2] ^ transactionid_as_ints[1]);
           ip_as_ints[3] = (ip_as_ints[3] ^ transactionid_as_ints[2]);
-          return webrtc::IPAddress(v6addr);
+          return IPAddress(v6addr);
         }
         break;
       }
@@ -1006,15 +1005,15 @@ webrtc::IPAddress StunXorAddressAttribute::GetXoredIP() const {
   }
   // Invalid ip family or transaction ID, or missing owner.
   // Return an AF_UNSPEC address.
-  return webrtc::IPAddress();
+  return IPAddress();
 }
 
 bool StunXorAddressAttribute::Read(ByteBufferReader* buf) {
   if (!StunAddressAttribute::Read(buf))
     return false;
   uint16_t xoredport = port() ^ (kStunMagicCookie >> 16);
-  webrtc::IPAddress xored_ip = GetXoredIP();
-  SetAddress(webrtc::SocketAddress(xored_ip, xoredport));
+  IPAddress xored_ip = GetXoredIP();
+  SetAddress(SocketAddress(xored_ip, xoredport));
   return true;
 }
 
@@ -1024,7 +1023,7 @@ bool StunXorAddressAttribute::Write(ByteBufferWriter* buf) const {
     RTC_LOG(LS_ERROR) << "Error writing xor-address attribute: unknown family.";
     return false;
   }
-  webrtc::IPAddress xored_ip = GetXoredIP();
+  IPAddress xored_ip = GetXoredIP();
   if (xored_ip.family() == AF_UNSPEC) {
     return false;
   }
@@ -1034,13 +1033,13 @@ bool StunXorAddressAttribute::Write(ByteBufferWriter* buf) const {
   switch (xored_ip.family()) {
     case AF_INET: {
       in_addr v4addr = xored_ip.ipv4_address();
-      buf->Write(webrtc::ArrayView<const uint8_t>(
+      buf->Write(ArrayView<const uint8_t>(
           reinterpret_cast<const uint8_t*>(&v4addr), sizeof(v4addr)));
       break;
     }
     case AF_INET6: {
       in6_addr v6addr = xored_ip.ipv6_address();
-      buf->Write(webrtc::ArrayView<const uint8_t>(
+      buf->Write(ArrayView<const uint8_t>(
           reinterpret_cast<const uint8_t*>(&v6addr), sizeof(v6addr)));
       break;
     }
@@ -1154,7 +1153,7 @@ void StunByteStringAttribute::SetByte(size_t index, uint8_t value) {
 
 bool StunByteStringAttribute::Read(ByteBufferReader* buf) {
   bytes_ = new uint8_t[length()];
-  if (!buf->ReadBytes(rtc::ArrayView<uint8_t>(bytes_, length()))) {
+  if (!buf->ReadBytes(ArrayView<uint8_t>(bytes_, length()))) {
     return false;
   }
 
@@ -1167,7 +1166,7 @@ bool StunByteStringAttribute::Write(ByteBufferWriter* buf) const {
   if (!LengthValid(type(), length())) {
     return false;
   }
-  buf->Write(webrtc::ArrayView<const uint8_t>(bytes_, length()));
+  buf->Write(ArrayView<const uint8_t>(bytes_, length()));
   WritePadding(buf);
   return true;
 }
@@ -1388,9 +1387,9 @@ bool ComputeStunCredentialHash(const std::string& username,
   input += ':';
   input += password;
 
-  char digest[rtc::MessageDigest::kMaxSize];
-  size_t size = rtc::ComputeDigest(rtc::DIGEST_MD5, input.c_str(), input.size(),
-                                   digest, sizeof(digest));
+  char digest[MessageDigest::kMaxSize];
+  size_t size = webrtc::ComputeDigest(webrtc::DIGEST_MD5, input.c_str(),
+                                      input.size(), digest, sizeof(digest));
   if (size == 0) {
     return false;
   }
@@ -1401,7 +1400,7 @@ bool ComputeStunCredentialHash(const std::string& username,
 
 std::unique_ptr<StunAttribute> CopyStunAttribute(
     const StunAttribute& attribute,
-    rtc::ByteBufferWriter* tmp_buffer_ptr) {
+    ByteBufferWriter* tmp_buffer_ptr) {
   ByteBufferWriter tmpBuffer;
   if (tmp_buffer_ptr == nullptr) {
     tmp_buffer_ptr = &tmpBuffer;
@@ -1418,7 +1417,7 @@ std::unique_ptr<StunAttribute> CopyStunAttribute(
   if (!attribute.Write(tmp_buffer_ptr)) {
     return nullptr;
   }
-  rtc::ByteBufferReader reader(*tmp_buffer_ptr);
+  ByteBufferReader reader(*tmp_buffer_ptr);
   if (!copy->Read(&reader)) {
     return nullptr;
   }
@@ -1481,15 +1480,15 @@ std::unique_ptr<StunMessage> StunMessage::Clone() const {
   if (!copy) {
     return nullptr;
   }
-  rtc::ByteBufferWriter buf;
+  ByteBufferWriter buf;
   if (!Write(&buf)) {
     return nullptr;
   }
-  rtc::ByteBufferReader reader(buf);
+  ByteBufferReader reader(buf);
   if (!copy->Read(&reader)) {
     return nullptr;
   }
   return copy;
 }
 
-}  // namespace cricket
+}  // namespace webrtc

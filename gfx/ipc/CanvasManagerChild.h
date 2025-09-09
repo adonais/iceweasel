@@ -40,7 +40,8 @@ class CanvasManagerChild final : public PCanvasManagerChild {
   already_AddRefed<DataSourceSurface> GetSnapshot(
       uint32_t aManagerId, ActorId aProtocolId,
       const Maybe<RemoteTextureOwnerId>& aOwnerId,
-      const Maybe<RawId>& aCommandEncoderId, SurfaceFormat aFormat,
+      const Maybe<RawId>& aCommandEncoderId,
+      const Maybe<RawId>& aCommandBufferId, SurfaceFormat aFormat,
       bool aPremultiply, bool aYFlip);
   void ActorDestroy(ActorDestroyReason aReason) override;
 

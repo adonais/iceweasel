@@ -36,11 +36,6 @@ class MessageReader;
 class MessageWriter;
 
 template <>
-struct ParamTraits<Channel::Mode>
-    : ContiguousEnumSerializerInclusive<Channel::Mode, Channel::MODE_SERVER,
-                                        Channel::MODE_CLIENT> {};
-
-template <>
 struct ParamTraits<IPCMessageStart>
     : ContiguousEnumSerializer<IPCMessageStart, IPCMessageStart(0),
                                LastMsgIndex> {};

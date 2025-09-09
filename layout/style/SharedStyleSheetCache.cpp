@@ -200,7 +200,10 @@ size_t SharedStyleSheetCache::SizeOfIncludingThis(
   for (const auto& sheetMap : mInlineSheets) {
     for (const auto& entry : sheetMap.GetData()) {
       n += entry.GetKey().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
-      n += entry.GetData()->SizeOfIncludingThis(aMallocSizeOf);
+      n += entry.GetData().ShallowSizeOfExcludingThis(aMallocSizeOf);
+      for (const auto& candidate : entry.GetData()) {
+        n += candidate.mSheet->SizeOfIncludingThis(aMallocSizeOf);
+      }
     }
   }
   return n;

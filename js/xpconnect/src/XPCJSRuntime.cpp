@@ -1464,11 +1464,6 @@ static void ReportZoneStats(const JS::ZoneStats& zStats,
                  zStats.regExpSharedsMallocHeap,
                  "Shared compiled regexp data.");
 
-  // zStats.smallBuffersGCHeap is not reported as a separate item here as it's
-  // reported as part of the owning cell. We must still count it as part of the
-  // total heap size.
-  gcTotal += zStats.smallBuffersGCHeap;
-
   ZRREPORT_BYTES(pathPrefix + "zone-object"_ns, zStats.zoneObject,
                  "The JS::Zone object itself.");
 
@@ -1479,6 +1474,9 @@ static void ReportZoneStats(const JS::ZoneStats& zStats,
 
   ZRREPORT_BYTES(pathPrefix + "cacheir-stubs"_ns, zStats.cacheIRStubs,
                  "The JIT's IC stubs (excluding code).");
+
+  ZRREPORT_BYTES(pathPrefix + "object-fuses"_ns, zStats.objectFuses,
+                 "Information about constant object properties.");
 
   ZRREPORT_BYTES(pathPrefix + "script-counts-map"_ns, zStats.scriptCountsMap,
                  "Profiling-related information for scripts.");
@@ -2495,11 +2493,6 @@ void JSReporter::CollectReports(WindowPaths* windowPaths,
       KIND_OTHER, rtStats.zTotals.regExpSharedsGCHeap,
       "Used regexpshared cells.");
 
-  MREPORT_BYTES(
-      "js-main-runtime-gc-heap-committed/used/gc-things/small-buffers"_ns,
-      KIND_OTHER, rtStats.zTotals.smallBuffersGCHeap,
-      "Used small buffer cells.");
-
   MOZ_ASSERT(gcThingTotal == rtStats.gcHeapGCThings);
   (void)gcThingTotal;
 
@@ -2772,11 +2765,12 @@ static void AccumulateTelemetryCallback(JSMetric id, uint32_t sample) {
       break;
     case JSMetric::GC_REASON_2: {
       // Assert that every reason has an associated glean label.
-      static_assert(static_cast<uint8_t>(JS::GCReason::LAST_FIREFOX_REASON) ==
-                        static_cast<uint8_t>(
-                            glean::javascript_gc::ReasonLabel::e__Other__),
-                    "GC reason enum and glean::javascript_gc::reason labels do "
-                    "not match.");
+      static_assert(
+          static_cast<uint8_t>(JS::GCReason::LAST_FIREFOX_REASON) + 1 ==
+              static_cast<uint8_t>(
+                  glean::javascript_gc::ReasonLabel::e__Other__),
+          "GC reason enum and glean::javascript_gc::reason labels do "
+          "not match.");
       MOZ_ASSERT(static_cast<JS::GCReason>(sample) <=
                      JS::GCReason::LAST_FIREFOX_REASON,
                  "Invalid GC Reason.");
@@ -2805,7 +2799,7 @@ static void AccumulateTelemetryCallback(JSMetric id, uint32_t sample) {
     case JSMetric::GC_MINOR_REASON: {
       // Assert that every reason has an associated glean label.
       static_assert(
-          static_cast<uint8_t>(JS::GCReason::LAST_FIREFOX_REASON) ==
+          static_cast<uint8_t>(JS::GCReason::LAST_FIREFOX_REASON) + 1 ==
               static_cast<uint8_t>(
                   glean::javascript_gc::MinorReasonLabel::e__Other__),
           "GC reason enum and glean::javascript_gc::reason labels do not "
@@ -2821,7 +2815,7 @@ static void AccumulateTelemetryCallback(JSMetric id, uint32_t sample) {
     case JSMetric::GC_MINOR_REASON_LONG: {
       // Assert that every reason has an associated glean label.
       static_assert(
-          static_cast<uint8_t>(JS::GCReason::LAST_FIREFOX_REASON) ==
+          static_cast<uint8_t>(JS::GCReason::LAST_FIREFOX_REASON) + 1 ==
               static_cast<uint8_t>(
                   glean::javascript_gc::MinorReasonLongLabel::e__Other__),
           "GC reason enum and glean::javascript_gc::reason labels do not "
@@ -2862,6 +2856,9 @@ static void SetUseCounterCallback(JSObject* obj, JSUseCounter counter) {
       return;
     case JSUseCounter::WASM:
       SetUseCounter(obj, eUseCounter_custom_JS_wasm);
+      return;
+    case JSUseCounter::USE_ASM:
+      SetUseCounter(obj, eUseCounter_custom_JS_use_asm);
       return;
     case JSUseCounter::WASM_LEGACY_EXCEPTIONS:
       SetUseCounter(obj, eUseCounter_custom_JS_wasm_legacy_exceptions);

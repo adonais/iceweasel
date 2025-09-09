@@ -5,11 +5,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ElementAnimationData.h"
+
 #include "mozilla/AnimationCollection.h"
-#include "mozilla/TimelineCollection.h"
 #include "mozilla/EffectSet.h"
-#include "mozilla/dom/CSSTransition.h"
+#include "mozilla/TimelineCollection.h"
 #include "mozilla/dom/CSSAnimation.h"
+#include "mozilla/dom/CSSTransition.h"
 #include "mozilla/dom/ScrollTimeline.h"
 #include "mozilla/dom/ViewTimeline.h"
 

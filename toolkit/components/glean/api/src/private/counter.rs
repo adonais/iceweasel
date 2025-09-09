@@ -25,7 +25,7 @@ pub enum CounterMetric {
     Child(ChildMetricMeta),
 }
 
-crate::define_metric_namer!(CounterMetric);
+define_metric_namer!(CounterMetric);
 
 impl CounterMetric {
     /// Create a new counter metric.

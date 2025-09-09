@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Жаңа жарлық
 newtab-topsites-edit-topsites-header = Топ сайтын түзету
 newtab-topsites-edit-shortcut-header = Жарлықты түзету
 newtab-topsites-add-shortcut-label = Жарлықты қосу
+newtab-topsites-add-shortcut-title =
+    .title = Жарлықты қосу
+    .aria-label = Жарлықты қосу
 newtab-topsites-title-label = Атауы
 newtab-topsites-title-input =
     .placeholder = Атауын енгізіңіз
@@ -512,6 +515,9 @@ newtab-section-unblock-button = Бұғаттаудан шығару
 ## Confirmation modal for blocking a section
 
 newtab-section-cancel-button = Қазір емес
+# Variables:
+#   $topic (string) - Name of topic that user is blocking
+newtab-section-block-topic-button = { $topic } блоктау
 
 ## Strings for custom wallpaper highlight
 
@@ -521,14 +527,17 @@ newtab-section-manage-topics-button-v2 =
 newtab-section-mangage-topics-blocked-topics = Бұғатталған
 newtab-custom-wallpaper-cta = Қолданып көру
 
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-cta = Қазір қолданып көру
+
 ## Strings for download mobile highlight
 
 newtab-download-mobile-highlight-title = Мобильді { -brand-product-name } жүктеп алу
+newtab-download-mobile-highlight-body-variant-b = Беттерді, парольдерді және басқа да деректерді синхрондап, жұмысты үзілген жерінен жалғастырыңыз.
+newtab-download-mobile-highlight-body-variant-c = { -brand-product-name } браузерін өзіңізбен бірге алып жүре алатыныңызды білдіңіз бе? Дәл сол браузер. Қалтаңызда.
 newtab-download-mobile-highlight-image =
     .aria-label = Мобильді { -brand-product-name } жүктеп алу үшін QR коды
-
-## Strings for shortcuts highlight
-
 
 ## Strings for reporting ads and content
 
@@ -555,3 +564,4 @@ newtab-toast-thanks-for-reporting =
 
 # "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
 newtab-trending-searches-trending-on-google = Google-да әйгілі
+newtab-trending-searches-learn-more = Көбірек білу

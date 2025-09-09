@@ -21,7 +21,9 @@
 #include "mozilla/css/ImageLoader.h"
 #include "mozilla/dom/CanvasRenderingContext2D.h"
 #include "mozilla/dom/ReferrerInfo.h"
+#include "mozilla/dom/SVGFEImageElement.h"
 #include "mozilla/dom/SVGGeometryElement.h"
+#include "mozilla/dom/SVGGraphicsElement.h"
 #include "mozilla/dom/SVGMPathElement.h"
 #include "mozilla/dom/SVGTextPathElement.h"
 #include "mozilla/dom/SVGUseElement.h"
@@ -604,6 +606,39 @@ void SVGTextPathObserver::OnRenderingChange() {
       text->ScheduleReflowSVG();
     }
   }
+}
+
+static bool IsSVGGraphicsElement(const Element& aObserved) {
+  return aObserved.IsSVGGraphicsElement();
+}
+
+class SVGFEImageObserver final : public SVGIDRenderingObserver {
+ public:
+  NS_DECL_ISUPPORTS
+
+  SVGFEImageObserver(SVGReference* aReference, SVGFEImageElement* aElement)
+      : SVGIDRenderingObserver(aReference, aElement,
+                               /* aReferenceImage = */ false,
+                               kAttributeChanged | kContentAppended |
+                                   kContentInserted | kContentWillBeRemoved,
+                               IsSVGGraphicsElement) {}
+
+ protected:
+  virtual ~SVGFEImageObserver() = default;  // non-public
+
+  void OnRenderingChange() override;
+};
+
+NS_IMPL_ISUPPORTS(SVGFEImageObserver, nsIMutationObserver)
+
+void SVGFEImageObserver::OnRenderingChange() {
+  SVGIDRenderingObserver::OnRenderingChange();
+
+  if (!mTargetIsValid) {
+    return;
+  }
+  auto* element = static_cast<SVGFEImageElement*>(mObservingElement.get());
+  element->NotifyImageContentChanged();
 }
 
 class SVGMPathObserver final : public SVGIDRenderingObserver {
@@ -1611,6 +1646,38 @@ SVGGeometryElement* SVGObserverUtils::GetAndObserveTextPathsPath(
 
   return SVGGeometryElement::FromNodeOrNull(
       property->GetAndObserveReferencedElement());
+}
+
+SVGGraphicsElement* SVGObserverUtils::GetAndObserveFEImageContent(
+    SVGFEImageElement* aSVGFEImageElement) {
+  if (!aSVGFEImageElement->mImageContentObserver) {
+    nsAutoString href;
+    aSVGFEImageElement->HrefAsString(href);
+    if (href.IsEmpty()) {
+      return nullptr;  // no URL
+    }
+
+    RefPtr<SVGReference> target =
+        ResolveURLUsingLocalRef(aSVGFEImageElement, href);
+
+    aSVGFEImageElement->mImageContentObserver =
+        new SVGFEImageObserver(target, aSVGFEImageElement);
+  }
+
+  return SVGGraphicsElement::FromNodeOrNull(
+      static_cast<SVGFEImageObserver*>(
+          aSVGFEImageElement->mImageContentObserver.get())
+          ->GetAndObserveReferencedElement());
+}
+
+void SVGObserverUtils::TraverseFEImageObserver(
+    SVGFEImageElement* aSVGFEImageElement,
+    nsCycleCollectionTraversalCallback* aCB) {
+  if (aSVGFEImageElement->mImageContentObserver) {
+    static_cast<SVGFEImageObserver*>(
+        aSVGFEImageElement->mImageContentObserver.get())
+        ->Traverse(aCB);
+  }
 }
 
 SVGGeometryElement* SVGObserverUtils::GetAndObserveMPathsPath(

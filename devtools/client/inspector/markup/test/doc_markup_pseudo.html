@@ -5,7 +5,26 @@ article::before,
 article::after {
   content: "";
 }
+
+ul::before {
+  content: "Animals:";
+  display: list-item;
+}
+
+ul::before::marker {
+  content: "+";
+  color: tomato;
+}
+
+ul::after {
+  content: "-";
+}
 </style>
+
 <article>
   <div>test node</div>
 </article>
+<ul>
+  <li>Dogs</li>
+  <li>Cats</li>
+</ul>

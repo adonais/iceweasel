@@ -12,11 +12,11 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/ContentFrameMessageManager.h"
 #include "mozilla/dom/MessageManagerCallback.h"
+#include "nsCOMArray.h"
 #include "nsCOMPtr.h"
+#include "nsDocShell.h"
 #include "nsIScriptContext.h"
 #include "nsIScriptObjectPrincipal.h"
-#include "nsDocShell.h"
-#include "nsCOMArray.h"
 #include "nsWeakReference.h"
 
 class nsFrameMessageManager;

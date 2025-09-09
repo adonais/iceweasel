@@ -3,11 +3,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "AudioSegment.h"
 #include <iostream>
-#include "gtest/gtest.h"
 
 #include "AudioGenerator.h"
+#include "AudioSegment.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla;
 

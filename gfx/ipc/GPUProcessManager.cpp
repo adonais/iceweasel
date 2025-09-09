@@ -125,7 +125,9 @@ GPUProcessManager::Observer::Observer(GPUProcessManager* aManager)
 NS_IMETHODIMP
 GPUProcessManager::Observer::Observe(nsISupports* aSubject, const char* aTopic,
                                      const char16_t* aData) {
-  if (!strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)) {
+  if (!strcmp(aTopic, NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID)) {
+    mManager->StopObserving();
+  } else if (!strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)) {
     mManager->OnXPCOMShutdown();
   } else if (!strcmp(aTopic, "nsPref:changed")) {
     mManager->OnPreferenceChange(aData);
@@ -167,6 +169,7 @@ void GPUProcessManager::OnXPCOMShutdown() {
       obsServ->RemoveObserver(mObserver, "application-foreground");
       obsServ->RemoveObserver(mObserver, "application-background");
       obsServ->RemoveObserver(mObserver, "screen-information-changed");
+      obsServ->RemoveObserver(mObserver, "xpcom-will-shutdown");
     }
     mObserver = nullptr;
   }
@@ -253,6 +256,7 @@ bool GPUProcessManager::LaunchGPUProcess() {
       obsServ->AddObserver(mObserver, "application-foreground", false);
       obsServ->AddObserver(mObserver, "application-background", false);
       obsServ->AddObserver(mObserver, "screen-information-changed", false);
+      obsServ->AddObserver(mObserver, "xpcom-will-shutdown", false);
     }
   }
 
@@ -292,37 +296,44 @@ bool GPUProcessManager::MaybeDisableGPUProcess(const char* aMessage,
     return true;
   }
 
-  if (!aAllowRestart) {
-    gfxConfig::SetFailed(Feature::GPU_PROCESS, FeatureStatus::Failed, aMessage);
-    gfxVars::SetGPUProcessEnabled(false);
-  }
-
   bool wantRestart;
-  if (mLastError) {
-    wantRestart =
-        FallbackFromAcceleration(mLastError.value(), mLastErrorMsg.ref());
-    mLastError.reset();
-    mLastErrorMsg.reset();
-  } else {
-    wantRestart = gfxPlatform::FallbackFromAcceleration(
-        FeatureStatus::Unavailable, aMessage,
-        "FEATURE_FAILURE_GPU_PROCESS_ERROR"_ns);
+  {
+    // Collect the gfxVar updates into a single message.
+    gfxVarsCollectUpdates collect;
+
+    if (!aAllowRestart) {
+      gfxConfig::SetFailed(Feature::GPU_PROCESS, FeatureStatus::Failed,
+                           aMessage);
+      gfxVars::SetGPUProcessEnabled(false);
+    }
+
+    if (mLastError) {
+      wantRestart =
+          FallbackFromAcceleration(mLastError.value(), mLastErrorMsg.ref());
+      mLastError.reset();
+      mLastErrorMsg.reset();
+    } else {
+      wantRestart = gfxPlatform::FallbackFromAcceleration(
+          FeatureStatus::Unavailable, aMessage,
+          "FEATURE_FAILURE_GPU_PROCESS_ERROR"_ns);
+    }
+    if (aAllowRestart && wantRestart) {
+      // The fallback method can make use of the GPU process.
+      return false;
+    }
+
+    if (aAllowRestart) {
+      gfxConfig::SetFailed(Feature::GPU_PROCESS, FeatureStatus::Failed,
+                           aMessage);
+      gfxVars::SetGPUProcessEnabled(false);
+    }
+
+    MOZ_ASSERT(!gfxConfig::IsEnabled(Feature::GPU_PROCESS));
+
+    gfxCriticalNote << aMessage;
+
+    gfxPlatform::DisableGPUProcess();
   }
-  if (aAllowRestart && wantRestart) {
-    // The fallback method can make use of the GPU process.
-    return false;
-  }
-
-  if (aAllowRestart) {
-    gfxConfig::SetFailed(Feature::GPU_PROCESS, FeatureStatus::Failed, aMessage);
-    gfxVars::SetGPUProcessEnabled(false);
-  }
-
-  MOZ_ASSERT(!gfxConfig::IsEnabled(Feature::GPU_PROCESS));
-
-  gfxCriticalNote << aMessage;
-
-  gfxPlatform::DisableGPUProcess();
 
   mozilla::glean::gpu_process::feature_status.Set(
       gfxConfig::GetFeature(Feature::GPU_PROCESS)
@@ -716,10 +727,16 @@ bool GPUProcessManager::DisableWebRenderConfig(wr::WebRenderError aError,
   mLastError.reset();
   mLastErrorMsg.reset();
 
-  // Disable WebRender
-  bool wantRestart = FallbackFromAcceleration(aError, aMsg);
-  gfxVars::SetUseWebRenderDCompVideoHwOverlayWin(false);
-  gfxVars::SetUseWebRenderDCompVideoSwOverlayWin(false);
+  bool wantRestart;
+  {
+    // Collect the gfxVar updates into a single message.
+    gfxVarsCollectUpdates collect;
+
+    // Disable WebRender
+    wantRestart = FallbackFromAcceleration(aError, aMsg);
+    gfxVars::SetUseWebRenderDCompVideoHwOverlayWin(false);
+    gfxVars::SetUseWebRenderDCompVideoSwOverlayWin(false);
+  }
 
   // If we still have the GPU process, and we fallback to a new configuration
   // that prefers to have the GPU process, reset the counter. Because we
@@ -750,6 +767,7 @@ void GPUProcessManager::NotifyWebRenderError(wr::WebRenderError aError) {
   gfxCriticalNote << "Handling webrender error " << (unsigned int)aError;
 #ifdef XP_WIN
   if (aError == wr::WebRenderError::VIDEO_OVERLAY) {
+    gfxVarsCollectUpdates collect;
     gfxVars::SetUseWebRenderDCompVideoHwOverlayWin(false);
     gfxVars::SetUseWebRenderDCompVideoSwOverlayWin(false);
     return;
@@ -1149,13 +1167,17 @@ void GPUProcessManager::DestroyProcess(bool aUnexpectedShutdown) {
     mVsyncBridge->Close();
     mVsyncBridge = nullptr;
   }
+  StopObserving();
+
+  CrashReporter::RecordAnnotationCString(
+      CrashReporter::Annotation::GPUProcessStatus, "Destroyed");
+}
+
+void GPUProcessManager::StopObserving() {
   if (mBatteryObserver) {
     mBatteryObserver->ShutDown();
     mBatteryObserver = nullptr;
   }
-
-  CrashReporter::RecordAnnotationCString(
-      CrashReporter::Annotation::GPUProcessStatus, "Destroyed");
 }
 
 already_AddRefed<CompositorSession> GPUProcessManager::CreateTopLevelCompositor(
@@ -1248,7 +1270,7 @@ RefPtr<CompositorSession> GPUProcessManager::CreateRemoteSession(
 
   widget::CompositorWidgetChild* widget =
       new widget::CompositorWidgetChild(dispatcher, observer, initData);
-  if (!child->SendPCompositorWidgetConstructor(widget, initData)) {
+  if (!child->SendPCompositorWidgetConstructor(widget, std::move(initData))) {
     return nullptr;
   }
   if (!widget->Initialize()) {

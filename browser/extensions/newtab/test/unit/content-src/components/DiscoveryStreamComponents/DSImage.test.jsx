@@ -124,6 +124,16 @@ describe("Discovery Stream <DSImage>", () => {
     assert.propertyVal(img.state(), "isLoaded", true);
   });
 
+  it("should set proper ohttp src if secureImage is true", () => {
+    const rawSource = "https://placekitten.com/g/640/480";
+    const img = mount(<DSImage rawSource={rawSource} secureImage={true} />);
+
+    assert.equal(
+      img.find("img").prop("src"),
+      `moz-cached-ohttp://newtab-image/?url=${encodeURIComponent(rawSource)}`
+    );
+  });
+
   describe("DSImage with Idle Callback", () => {
     let wrapper;
     let windowStub = {

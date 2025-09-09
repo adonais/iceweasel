@@ -49,20 +49,19 @@ constexpr int kMaxConfigBufferSize = 8192;
 
 // Utility function to validate a correct codec type has been passed in.
 bool IsValidCodecType(const std::string& codec_name) {
-  return cricket::kVp8CodecName == codec_name ||
-         cricket::kVp9CodecName == codec_name ||
-         cricket::kH264CodecName == codec_name;
+  return kVp8CodecName == codec_name || kVp9CodecName == codec_name ||
+         kH264CodecName == codec_name;
 }
 
 // Utility function to return some base payload type for a codec_name.
 int GetDefaultTypeForPayloadName(const std::string& codec_name) {
-  if (cricket::kVp8CodecName == codec_name) {
+  if (kVp8CodecName == codec_name) {
     return kPayloadTypeVp8;
   }
-  if (cricket::kVp9CodecName == codec_name) {
+  if (kVp9CodecName == codec_name) {
     return kPayloadTypeVp9;
   }
-  if (cricket::kH264CodecName == codec_name) {
+  if (kH264CodecName == codec_name) {
     return kPayloadTypeH264;
   }
   return kFakeVideoSendPayloadType;
@@ -207,17 +206,17 @@ RtpGenerator::RtpGenerator(const RtpGeneratorOptions& options)
         VideoEncoderConfig::ContentType::kRealtimeVideo;
     encoder_config.codec_type =
         PayloadStringToCodecType(video_config.rtp.payload_name);
-    if (video_config.rtp.payload_name == cricket::kVp8CodecName) {
+    if (video_config.rtp.payload_name == kVp8CodecName) {
       VideoCodecVP8 settings = VideoEncoder::GetDefaultVp8Settings();
       encoder_config.encoder_specific_settings =
-          rtc::make_ref_counted<VideoEncoderConfig::Vp8EncoderSpecificSettings>(
+          make_ref_counted<VideoEncoderConfig::Vp8EncoderSpecificSettings>(
               settings);
-    } else if (video_config.rtp.payload_name == cricket::kVp9CodecName) {
+    } else if (video_config.rtp.payload_name == kVp9CodecName) {
       VideoCodecVP9 settings = VideoEncoder::GetDefaultVp9Settings();
       encoder_config.encoder_specific_settings =
-          rtc::make_ref_counted<VideoEncoderConfig::Vp9EncoderSpecificSettings>(
+          make_ref_counted<VideoEncoderConfig::Vp9EncoderSpecificSettings>(
               settings);
-    } else if (video_config.rtp.payload_name == cricket::kH264CodecName) {
+    } else if (video_config.rtp.payload_name == kH264CodecName) {
       encoder_config.encoder_specific_settings = nullptr;
     }
     encoder_config.video_format.name = video_config.rtp.payload_name;
@@ -281,14 +280,14 @@ void RtpGenerator::GenerateRtpDump(const std::string& rtp_dump_path) {
                                    webrtc::kNetworkDown);
 }
 
-bool RtpGenerator::SendRtp(rtc::ArrayView<const uint8_t> packet,
+bool RtpGenerator::SendRtp(ArrayView<const uint8_t> packet,
                            const webrtc::PacketOptions& options) {
   test::RtpPacket rtp_packet = DataToRtpPacket(packet.data(), packet.size());
   rtp_dump_writer_->WritePacket(&rtp_packet);
   return true;
 }
 
-bool RtpGenerator::SendRtcp(rtc::ArrayView<const uint8_t> packet) {
+bool RtpGenerator::SendRtcp(ArrayView<const uint8_t> packet) {
   test::RtpPacket rtcp_packet = DataToRtpPacket(packet.data(), packet.size());
   rtp_dump_writer_->WritePacket(&rtcp_packet);
   return true;

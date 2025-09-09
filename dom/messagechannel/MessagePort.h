@@ -9,8 +9,8 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
-#include "mozilla/dom/DOMTypes.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/DOMTypes.h"
 #include "nsTArray.h"
 
 #ifdef XP_WIN

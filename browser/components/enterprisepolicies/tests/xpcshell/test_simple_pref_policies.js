@@ -81,6 +81,8 @@ const POLICIES_TESTS = [
         Fingerprinting: true,
         EmailTracking: true,
         SuspectedFingerprinting: true,
+        BaselineExceptions: true,
+        ConvenienceExceptions: true,
         Locked: true,
       },
     },
@@ -91,6 +93,8 @@ const POLICIES_TESTS = [
       "privacy.trackingprotection.emailtracking.pbmode.enabled": true,
       "privacy.fingerprintingProtection": true,
       "privacy.fingerprintingProtection.pbmode": true,
+      "privacy.trackingprotection.allow_list.baseline.enabled": true,
+      "privacy.trackingprotection.allow_list.convenience.enabled": true,
     },
   },
 

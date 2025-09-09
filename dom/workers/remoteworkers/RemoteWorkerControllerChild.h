@@ -7,11 +7,10 @@
 #ifndef mozilla_dom_remoteworkercontrollerchild_h__
 #define mozilla_dom_remoteworkercontrollerchild_h__
 
-#include "nsISupportsImpl.h"
-
 #include "RemoteWorkerController.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/PRemoteWorkerControllerChild.h"
+#include "nsISupportsImpl.h"
 
 namespace mozilla::dom {
 

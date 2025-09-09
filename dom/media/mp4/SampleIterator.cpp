@@ -8,10 +8,10 @@
 #include <limits>
 
 #include "BufferReader.h"
-#include "mozilla/RefPtr.h"
 #include "MP4Interval.h"
 #include "MP4Metadata.h"
 #include "SinfParser.h"
+#include "mozilla/RefPtr.h"
 
 using namespace mozilla::media;
 

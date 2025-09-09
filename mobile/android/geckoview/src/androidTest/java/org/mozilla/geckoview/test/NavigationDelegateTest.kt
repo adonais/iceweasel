@@ -2666,6 +2666,7 @@ class NavigationDelegateTest : BaseSessionTest() {
                 extension: WebExtension,
                 permissions: Array<String>,
                 origins: Array<String>,
+                dataCollectionPermissions: Array<String>,
             ): GeckoResult<WebExtension.PermissionPromptResponse>? {
                 return GeckoResult.fromValue(
                     WebExtension.PermissionPromptResponse(

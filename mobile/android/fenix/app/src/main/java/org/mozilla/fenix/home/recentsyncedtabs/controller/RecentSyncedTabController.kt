@@ -16,9 +16,7 @@ import org.mozilla.fenix.home.HomeFragment
 import org.mozilla.fenix.home.HomeFragmentDirections
 import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTab
 import org.mozilla.fenix.home.recentsyncedtabs.interactor.RecentSyncedTabInteractor
-import org.mozilla.fenix.tabstray.DefaultTabManagementFeatureHelper
 import org.mozilla.fenix.tabstray.Page
-import org.mozilla.fenix.tabstray.TabManagementFeatureHelper
 import org.mozilla.fenix.tabstray.TabsTrayAccessPoint
 import org.mozilla.fenix.utils.Settings
 
@@ -53,7 +51,6 @@ interface RecentSyncedTabController {
  * @param accessPoint The action or screen that was used to navigate to the tabs tray.
  * @param appStore The [AppStore] that holds the state of the [HomeFragment].
  * @param settings [Settings] used to check the application shared preferences.
- * @param tabManagementFeatureHelper Feature flag helper for the tab management UI.
  */
 class DefaultRecentSyncedTabController(
     private val fenixBrowserUseCases: FenixBrowserUseCases,
@@ -62,7 +59,6 @@ class DefaultRecentSyncedTabController(
     private val accessPoint: TabsTrayAccessPoint,
     private val appStore: AppStore,
     private val settings: Settings,
-    private val tabManagementFeatureHelper: TabManagementFeatureHelper = DefaultTabManagementFeatureHelper,
 ) : RecentSyncedTabController {
     override fun handleRecentSyncedTabClick(tab: RecentSyncedTab) {
         RecentSyncedTabs.recentSyncedTabOpened[tab.deviceType.name.lowercase()].add()
@@ -82,7 +78,7 @@ class DefaultRecentSyncedTabController(
 
     override fun handleSyncedTabShowAllClicked() {
         RecentSyncedTabs.showAllSyncedTabsClicked.add()
-        if (tabManagementFeatureHelper.enhancementsEnabled) {
+        if (settings.tabManagerEnhancementsEnabled) {
             navController.nav(
                 R.id.homeFragment,
                 HomeFragmentDirections.actionGlobalTabManagementFragment(

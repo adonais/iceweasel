@@ -46,6 +46,8 @@ class GeckoInstance:
         "apz.content_response_timeout": 60000,
         # Make sure error page is not shown for blank pages with 4xx or 5xx response code
         "browser.http.blank_page_with_error_response.enabled": True,
+        # Disable CFR features for automated tests.
+        "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features": False,
         # Don't pull weather data from the network
         "browser.newtabpage.activity-stream.discoverystream.region-weather-config": "",
         # Don't pull wallpaper content from the network
@@ -68,6 +70,8 @@ class GeckoInstance:
         "datareporting.healthreport.service.enabled": False,
         "datareporting.healthreport.service.firstRun": False,
         "datareporting.healthreport.uploadEnabled": False,
+        "datareporting.usage.uploadEnabled": False,
+        "telemetry.fog.test.localhost_port": -1,
         # Do not show datareporting policy notifications which can interfere with tests
         "datareporting.policy.dataSubmissionEnabled": False,
         "datareporting.policy.dataSubmissionPolicyBypassNotification": True,

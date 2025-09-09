@@ -13,7 +13,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/7017edc7cfc880bb1
  4 files changed, 7 insertions(+), 7 deletions(-)
 
 diff --git a/.gn b/.gn
-index 72c42e9202..fe7020cb97 100644
+index 391eadb382..940244f9af 100644
 --- a/.gn
 +++ b/.gn
 @@ -18,7 +18,7 @@ script_executable = "python3"
@@ -28,14 +28,14 @@ index 72c42e9202..fe7020cb97 100644
 @@ -36,7 +36,7 @@ no_check_targets = [
  # to force additional review for new uses of exec_script, which is strongly
  # discouraged except for gypi_to_gn calls.
- exec_script_whitelist = build_dotfile_settings.exec_script_whitelist +
+ exec_script_allowlist = build_dotfile_settings.exec_script_allowlist +
 -                        [ "//build_overrides/build.gni" ]
 +                        [ "//libwebrtc/build_overrides/build.gni" ]
  
  # Normally, we'd use 'if (!build_with_mozilla)', but that flag isn't
  # available yet.
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index 6d58cea256..3b5bf148dc 100644
+index bebb88cfe4..585cbed768 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -7,7 +7,7 @@
@@ -48,7 +48,7 @@ index 6d58cea256..3b5bf148dc 100644
  
  group("media") {
 diff --git a/modules/video_coding/BUILD.gn b/modules/video_coding/BUILD.gn
-index b58b9c796c..096e1b87ad 100644
+index d308040153..522db89170 100644
 --- a/modules/video_coding/BUILD.gn
 +++ b/modules/video_coding/BUILD.gn
 @@ -7,7 +7,7 @@
@@ -61,7 +61,7 @@ index b58b9c796c..096e1b87ad 100644
  
  rtc_library("encoded_frame") {
 diff --git a/webrtc.gni b/webrtc.gni
-index 93fd8fc8ed..bd0af3a4c5 100644
+index 75a9f406f8..ffecd38d5a 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -11,7 +11,7 @@ import("//build/config/mips.gni")
@@ -73,7 +73,7 @@ index 93fd8fc8ed..bd0af3a4c5 100644
  
  if (!build_with_chromium && is_component_build) {
    print("The Gn argument `is_component_build` is currently " +
-@@ -493,8 +493,8 @@ all_poison_types = [
+@@ -498,8 +498,8 @@ all_poison_types = [
    "software_video_codecs",
  ]
  

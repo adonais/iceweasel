@@ -40,9 +40,6 @@ export class SettingGroup extends MozLitElement {
 
   itemTemplate(item) {
     let setting = this.getSetting(item.id);
-    if (!setting.visible) {
-      return "";
-    }
     return html`<setting-control
       .setting=${setting}
       .config=${item}

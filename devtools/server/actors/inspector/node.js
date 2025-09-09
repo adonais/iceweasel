@@ -318,16 +318,6 @@ class NodeActor extends Actor {
   // Estimate the number of children that the walker will return without making
   // a call to children() if possible.
   get numChildren() {
-    // For pseudo elements, childNodes.length returns 1, but the walker
-    // will return 0.
-    if (
-      isMarkerPseudoElement(this.rawNode) ||
-      isBeforePseudoElement(this.rawNode) ||
-      isAfterPseudoElement(this.rawNode)
-    ) {
-      return 0;
-    }
-
     const rawNode = this.rawNode;
     let numChildren = rawNode.childNodes.length;
     const hasContentDocument = rawNode.contentDocument;
@@ -339,13 +329,15 @@ class NodeActor extends Actor {
 
     // Normal counting misses ::before/::after.  Also, some anonymous children
     // may ultimately be skipped, so we have to consult with the walker.
-    //
-    // FIXME: We should be able to just check <slot> rather than
-    // containingShadowRoot.
     if (
       numChildren === 0 ||
       isShadowHost(this.rawNode) ||
-      this.rawNode.containingShadowRoot
+      // FIXME: We should be able to just check <slot> rather than
+      // containingShadowRoot.
+      this.rawNode.containingShadowRoot ||
+      isMarkerPseudoElement(this.rawNode) ||
+      isBeforePseudoElement(this.rawNode) ||
+      isAfterPseudoElement(this.rawNode)
     ) {
       numChildren = this.walker.countChildren(this);
     }

@@ -7,9 +7,9 @@
 #ifndef DOM_SVG_SVGLENGTH_H_
 #define DOM_SVG_SVGLENGTH_H_
 
-#include "nsDebug.h"
 #include "mozilla/dom/SVGAnimatedLength.h"
 #include "mozilla/dom/SVGLengthBinding.h"
+#include "nsDebug.h"
 
 enum nsCSSUnit : uint32_t;
 

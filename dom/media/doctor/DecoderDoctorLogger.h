@@ -7,9 +7,9 @@
 #ifndef DecoderDoctorLogger_h_
 #define DecoderDoctorLogger_h_
 
-#include "DDLoggedTypeTraits.h"
 #include "DDLogCategory.h"
 #include "DDLogValue.h"
+#include "DDLoggedTypeTraits.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/DefineEnum.h"
 #include "mozilla/MozPromise.h"

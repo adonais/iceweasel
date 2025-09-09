@@ -5,55 +5,55 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "TextControlState.h"
+
 #include "mozilla/Attributes.h"
+#include "mozilla/AutoRestore.h"
 #include "mozilla/CaretAssociationHint.h"
+#include "mozilla/ErrorResult.h"
+#include "mozilla/EventListenerManager.h"
 #include "mozilla/IMEContentObserver.h"
 #include "mozilla/IMEStateManager.h"
-#include "mozilla/TextComposition.h"
-#include "mozilla/TextInputListener.h"
-
-#include "nsCOMPtr.h"
-#include "nsView.h"
-#include "nsCaret.h"
-#include "nsFocusManager.h"
-#include "nsContentCreatorFunctions.h"
-#include "nsTextControlFrame.h"
-#include "nsIControllers.h"
-#include "nsIControllerContext.h"
-#include "nsAttrValue.h"
-#include "nsAttrValueInlines.h"
-#include "nsGenericHTMLElement.h"
-#include "nsIDOMEventListener.h"
-#include "nsIWidget.h"
-#include "nsIDocumentEncoder.h"
-#include "nsPIDOMWindow.h"
-#include "nsServiceManagerUtils.h"
-#include "mozilla/dom/Selection.h"
-#include "mozilla/EventListenerManager.h"
-#include "nsContentUtils.h"
-#include "mozilla/Preferences.h"
-#include "nsTextNode.h"
-#include "nsIController.h"
-#include "mozilla/AutoRestore.h"
 #include "mozilla/InputEventOptions.h"
+#include "mozilla/KeyEventHandler.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/NativeKeyBindingsType.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
-#include "mozilla/TextEvents.h"
-#include "mozilla/dom/Event.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/HTMLInputElement.h"
-#include "mozilla/dom/HTMLTextAreaElement.h"
-#include "mozilla/dom/Text.h"
+#include "mozilla/ScrollTypes.h"
+#include "mozilla/ShortcutKeys.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_ui.h"
-#include "nsFrameSelection.h"
-#include "mozilla/ErrorResult.h"
-#include "mozilla/ShortcutKeys.h"
-#include "mozilla/KeyEventHandler.h"
+#include "mozilla/TextComposition.h"
+#include "mozilla/TextEvents.h"
+#include "mozilla/TextInputListener.h"
+#include "mozilla/dom/Event.h"
+#include "mozilla/dom/HTMLInputElement.h"
+#include "mozilla/dom/HTMLTextAreaElement.h"
 #include "mozilla/dom/KeyboardEvent.h"
-#include "mozilla/ScrollTypes.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/Selection.h"
+#include "mozilla/dom/Text.h"
+#include "nsAttrValue.h"
+#include "nsAttrValueInlines.h"
+#include "nsCOMPtr.h"
+#include "nsCaret.h"
+#include "nsContentCreatorFunctions.h"
+#include "nsContentUtils.h"
+#include "nsFocusManager.h"
+#include "nsFrameSelection.h"
+#include "nsGenericHTMLElement.h"
+#include "nsIController.h"
+#include "nsIControllerContext.h"
+#include "nsIControllers.h"
+#include "nsIDOMEventListener.h"
+#include "nsIDocumentEncoder.h"
+#include "nsIWidget.h"
+#include "nsPIDOMWindow.h"
+#include "nsServiceManagerUtils.h"
+#include "nsTextControlFrame.h"
+#include "nsTextNode.h"
+#include "nsView.h"
 
 namespace mozilla {
 
@@ -3101,10 +3101,11 @@ void TextControlState::GetPreviewText(nsAString& aValue) {
   }
 
   MOZ_ASSERT(previewDiv->GetFirstChild(), "preview div has no child");
-  const nsTextFragment* text = previewDiv->GetFirstChild()->GetText();
+  const CharacterDataBuffer* characterDataBuffer =
+      previewDiv->GetFirstChild()->GetCharacterDataBuffer();
 
   aValue.Truncate();
-  text->AppendTo(aValue);
+  characterDataBuffer->AppendTo(aValue);
 }
 
 bool TextControlState::EditorHasComposition() {

@@ -68,11 +68,35 @@ function setPauseOnExceptions() {
   );
 }
 
+/**
+ * bug 1971817: When upgrading from Firefox <141 to Firefox >=142, we have to:
+ * - remove redundant tabs which used to be stored for minimized *and* pretty printed tabs,
+ * - automatically add the new `isPrettyPrinted` boolean on pretty printed tabs.
+ */
+function sanitizeTabs(tabs) {
+  // Retrieve the list of source url of minimized source which used to have a pretty printed tab opened
+  const minimizedSourceUrlsForPrettyPrintedTabs = tabs
+    .filter(t => t.url.endsWith(":formatted"))
+    .map(tab => tab.url.replace(":formatted", ""));
+
+  return tabs
+    .filter(tab => {
+      // Remove the tabs for these minimized source in order to only keep the tab of the pretty printed tab
+      return !minimizedSourceUrlsForPrettyPrintedTabs.includes(tab.url);
+    })
+    .map(tab => {
+      // Add the new `isPrettyPrinted` flag for tabs refering to pretty printed sources
+      return tab.url.endsWith(":formatted") && !tab.isPrettyPrinted
+        ? { ...tab, isPrettyPrinted: true }
+        : tab;
+    });
+}
+
 async function loadInitialState(commands) {
   const pendingBreakpoints = sanitizeBreakpoints(
     await asyncStore.pendingBreakpoints
   );
-  const tabs = { tabs: await asyncStore.tabs };
+  const tabs = { tabs: sanitizeTabs(await asyncStore.tabs) };
   const xhrBreakpoints = await asyncStore.xhrBreakpoints;
   const blackboxedRanges = await asyncStore.blackboxedRanges;
   const eventListenerBreakpoints = await asyncStore.eventListenerBreakpoints;

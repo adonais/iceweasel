@@ -6,19 +6,20 @@
 
 #include "VideoStreamFactory.h"
 
-#include "GMPUtils.h"
-#include "common/browser_logging/CSFLog.h"
-#include "VideoConduit.h"
+#include <stdint.h>
+#include <stdio.h>
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
-#include "mozilla/Assertions.h"
-#include "mozilla/gfx/Point.h"
-#include "mozilla/TemplateLib.h"
-#include <stdint.h>
-#include <stdio.h>
 #include <vector>
+
+#include "GMPUtils.h"
+#include "VideoConduit.h"
+#include "common/browser_logging/CSFLog.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/TemplateLib.h"
+#include "mozilla/gfx/Point.h"
 #include "video/config/video_encoder_config.h"
 
 template <class t>

@@ -8,7 +8,6 @@ import android.app.SearchManager
 import android.content.Intent
 import android.nfc.NfcAdapter.ACTION_NDEF_DISCOVERED
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.engine.EngineMiddleware
@@ -45,7 +44,6 @@ import org.mockito.Mockito.anyString
 import org.mockito.Mockito.doReturn
 
 @RunWith(AndroidJUnit4::class)
-@ExperimentalCoroutinesApi
 class TabIntentProcessorTest {
 
     @get:Rule

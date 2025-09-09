@@ -146,7 +146,7 @@ class CustomTabsTest : TestSetup() {
             waitUntilDownloadSnackbarGone()
         }
         mDevice.openNotification()
-        notificationShade {
+            notificationShade {
             verifySystemNotificationExists("Download completed")
         }
     }

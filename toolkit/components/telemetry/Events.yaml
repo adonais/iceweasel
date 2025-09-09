@@ -2624,24 +2624,6 @@ security:
       - all
     extra_keys:
       fileinfo: Information about the file that triggered eval
-  javascriptLoad:
-    objects: ["parentProcess"]
-    bug_numbers:
-      - 1582512
-    description: >
-      The javascript engine requested to load a filename that was not allowed.
-      Expected values, and fileinfo key, are the same possible values as above in 'evalUsage'
-    notification_emails:
-      - tom@mozilla.com
-      - gijs@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - firefox
-    expiry_version: "never"
-    record_in_processes:
-      - main
-    extra_keys:
-      fileinfo: Information about the filename that was requested to be loaded
   unexpectedload:
     objects: ["systemprincipal"]
     bug_numbers:

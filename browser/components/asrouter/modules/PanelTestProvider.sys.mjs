@@ -20,6 +20,137 @@ const isMSIX =
 
 const MESSAGES = () => [
   {
+    id: "TASKBAR_TAB_TEST_CALLOUT",
+    template: "feature_callout",
+    groups: ["cfr"],
+    content: {
+      id: "TASKBAR_TAB_TEST_CALLOUT",
+      template: "multistage",
+      backdrop: "transparent",
+      transitions: false,
+      screens: [
+        {
+          id: "TASKBAR_TAB_TEST_CALLOUT",
+          anchors: [
+            {
+              selector: "#taskbar-tabs-button",
+              panel_position: {
+                anchor_attachment: "bottomcenter",
+                callout_attachment: "topright",
+              },
+            },
+          ],
+          content: {
+            position: "callout",
+            padding: 16,
+            width: "330px",
+            title_logo: {
+              imageURL:
+                "chrome://browser/content/asrouter/assets/smiling-fox-icon.svg",
+              width: "24px",
+              height: "24px",
+              marginInline: "0 16px",
+              alignment: "top",
+            },
+            title: {
+              raw: "Taskbar tabs action test",
+            },
+            primary_button: {
+              label: {
+                raw: "Create taskbar tab",
+              },
+              action: {
+                type: "CREATE_TASKBAR_TAB",
+              },
+            },
+            dismiss_button: {
+              action: {
+                dismiss: true,
+              },
+              background: true,
+              size: "small",
+              marginInline: "0 20px",
+              marginBlock: "20px 0",
+            },
+          },
+        },
+      ],
+    },
+    targeting: "visitsCount >= 1",
+    trigger: {
+      id: "openURL",
+      params: ["wikipedia.org", "www.wikipedia.org"],
+    },
+    frequency: {
+      lifetime: 1,
+    },
+    skip_in_tests: "it's not tested in automation",
+  },
+  {
+    id: "FREQUENCY_CAP_CLEANUP_TEST",
+    profileScope: "single",
+    template: "feature_callout",
+    groups: [],
+    content: {
+      id: "FREQUENCY_CAP_CLEANUP_TEST",
+      padding: "16",
+      template: "multistage",
+      backdrop: "transparent",
+      transitions: false,
+      disableHistoryUpdates: true,
+      screens: [
+        {
+          id: "FREQUENCY_CAP_CLEANUP_TEST",
+          anchors: [
+            {
+              selector: "#fxa-toolbar-menu-button",
+              panel_position: {
+                anchor_attachment: "bottomcenter",
+                callout_attachment: "topright",
+              },
+            },
+          ],
+          content: {
+            position: "callout",
+            width: "400px",
+            padding: 16,
+            title: {
+              raw: "Frequency Cap Test",
+            },
+            subtitle: {
+              raw: "This callout has a very short frequency cap.",
+            },
+            additional_button: {
+              action: {
+                dismiss: true,
+              },
+              label: {
+                string_id: "dismiss-button-label",
+                fontWeight: "590",
+                fontSize: "11px",
+              },
+              style: "secondary",
+            },
+          },
+        },
+      ],
+    },
+    frequency: {
+      custom: [
+        {
+          cap: 1,
+          period: 120000,
+        },
+      ],
+    },
+    trigger: {
+      id: "defaultBrowserCheck",
+    },
+    targeting:
+      "(region in ['CA', 'US']) && previousSessionEnd && !willShowDefaultPrompt && !activeNotifications && userPrefs.cfrFeatures",
+    skip_in_tests: "it's not tested in automation",
+  },
+  {
     id: "CLOSE_TAB_GROUP_TEST_CALLOUT",
     template: "feature_callout",
     groups: ["cfr"],
@@ -1624,10 +1755,11 @@ const MESSAGES = () => [
     },
   },
   {
-    id: "FXA_ACCOUNTS_APPMENU_PROTECT_BROWSING_DATA",
+    id: "FXA_ACCOUNTS_PXIMENU_ROW_LAYOUT",
     template: "menu_message",
     content: {
       messageType: "fxa_cta",
+      layout: "row",
       primaryText: "Bounce between devices",
       secondaryText:
         "Sync and encrypt your bookmarks, passwords, and more on all your devices.",
@@ -1651,15 +1783,17 @@ const MESSAGES = () => [
           id: "FXA_ACCOUNTS_APPMENU_PROTECT_BROWSING_DATA",
         },
       },
-      imageURL:
-        "chrome://browser/content/asrouter/assets/fox-with-box-on-cloud.svg",
-      imageVerticalTopOffset: -20,
+      imageURL: "chrome://browser/content/asrouter/assets/fox-with-devices.svg",
+      imageVerticalBottomOffset: -32,
+      imageVerticalTopOffset: -4,
+      containerVerticalBottomOffset: 20,
+      imageWidth: 100,
     },
     skip_in_tests: "TODO",
     trigger: {
       id: "menuOpened",
     },
-    testingTriggerContext: "app_menu",
+    testingTriggerContext: "pxi_menu",
   },
   {
     id: "TEST_NEWTAB_MESSAGE",

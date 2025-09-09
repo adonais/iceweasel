@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ScriptElement.h"
+
 #include "ScriptLoader.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/CycleCollectedJSContext.h"
@@ -13,12 +14,12 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/MutationEventBinding.h"
-#include "nsContentUtils.h"
-#include "nsThreadUtils.h"
-#include "nsPresContext.h"
-#include "nsIParser.h"
-#include "nsGkAtoms.h"
 #include "nsContentSink.h"
+#include "nsContentUtils.h"
+#include "nsGkAtoms.h"
+#include "nsIParser.h"
+#include "nsPresContext.h"
+#include "nsThreadUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -139,13 +140,6 @@ bool ScriptElement::MaybeProcessScript() {
 
   NS_ASSERTION(cont->DebugGetSlots()->mMutationObservers.contains(this),
                "You forgot to add self as observer");
-
-  // https://html.spec.whatwg.org/#parsing-main-incdata
-  // An end tag whose tag name is "script"
-  //  - If the active speculative HTML parser is null and the JavaScript
-  // execution context stack is empty, then perform a microtask checkpoint.
-  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-      "ScriptElement::MaybeProcessScript", []() { nsAutoMicroTask mt; }));
 
   if (mAlreadyStarted || !mDoneAddingChildren || !cont->GetComposedDoc() ||
       mMalformed) {

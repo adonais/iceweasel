@@ -4,25 +4,26 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nsCSPParser.h"
+
+#include <cstdint>
+#include <utility>
+
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/TextUtils.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/TrustedTypesConstants.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_security.h"
+#include "mozilla/TextUtils.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/TrustedTypesConstants.h"
 #include "nsCOMPtr.h"
-#include "nsContentUtils.h"
-#include "nsCSPParser.h"
 #include "nsCSPUtils.h"
+#include "nsContentUtils.h"
 #include "nsIScriptError.h"
 #include "nsNetUtil.h"
 #include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsUnicharUtils.h"
-
-#include <cstdint>
-#include <utility>
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -1074,16 +1075,10 @@ nsCSPDirective* nsCSPParser::directiveName() {
 
   // special case handling for block-all-mixed-content
   if (directive == nsIContentSecurityPolicy::BLOCK_ALL_MIXED_CONTENT) {
-    // If mixed content upgrade is enabled for all types block-all-mixed-content
-    // is obsolete
+    // If mixed content upgrade is enabled for display content, then
+    // block-all-mixed-content is obsolete.
     if (mozilla::StaticPrefs::
-            security_mixed_content_upgrade_display_content() &&
-        mozilla::StaticPrefs::
-            security_mixed_content_upgrade_display_content_image() &&
-        mozilla::StaticPrefs::
-            security_mixed_content_upgrade_display_content_audio() &&
-        mozilla::StaticPrefs::
-            security_mixed_content_upgrade_display_content_video()) {
+            security_mixed_content_upgrade_display_content()) {
       // log to the console that if mixed content display upgrading is enabled
       // block-all-mixed-content is obsolete.
       AutoTArray<nsString, 1> params = {mCurToken};

@@ -4,16 +4,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsCOMPtr.h"
-#include "nsIBrowser.h"
-#include "nsIContent.h"
-#include "nsIOpenWindowInfo.h"
-#include "nsFrameLoader.h"
+#include "mozilla/dom/XULFrameElement.h"
+
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/WindowProxyHolder.h"
-#include "mozilla/dom/XULFrameElement.h"
 #include "mozilla/dom/XULFrameElementBinding.h"
+#include "nsCOMPtr.h"
+#include "nsFrameLoader.h"
+#include "nsIBrowser.h"
+#include "nsIContent.h"
+#include "nsIOpenWindowInfo.h"
 
 namespace mozilla::dom {
 

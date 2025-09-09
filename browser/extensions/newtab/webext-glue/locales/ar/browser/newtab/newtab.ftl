@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = اختصار جديد
 newtab-topsites-edit-topsites-header = حرّر الموقع الشائع
 newtab-topsites-edit-shortcut-header = حرّر الاختصار
 newtab-topsites-add-shortcut-label = أضِف اختصارًا
+newtab-topsites-add-shortcut-title =
+    .title = أضِف اختصارًا
+    .aria-label = أضِف اختصارًا
 newtab-topsites-title-label = العنوان
 newtab-topsites-title-input =
     .placeholder = أدخل عنوانًا
@@ -371,9 +374,6 @@ feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
 
-## Celestial
-
-
 ## New Tab Weather
 
 # Variables:
@@ -390,9 +390,6 @@ newtab-weather-menu-weather-display-option-detailed = مفصل
 newtab-weather-menu-change-weather-display-detailed = بدّل إلى العرض التفصيلي
 newtab-weather-menu-temperature-option-celsius = درجة مئوية
 newtab-weather-menu-learn-more = اطّلع على المزيد
-
-## Topic Labels
-
 
 ## Topic Selection Modal
 
@@ -428,9 +425,6 @@ newtab-custom-wallpaper-cta = جربه
 # "Scan the code" refers to scanning the QR code that appears above the body text that leads to Firefox for mobile download.
 newtab-download-mobile-highlight-body-variant-a = افحص الرمز للتصفح بشكل آمن أثناء التنقل.
 
-## Strings for shortcuts highlight
-
-
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -449,6 +443,3 @@ newtab-report-cancel = ألغِ
 newtab-report-submit = أرسِل
 newtab-toast-thanks-for-reporting =
     .message = شكرا لك على الإبلاغ عن هذا.
-
-## Strings for trending searches
-

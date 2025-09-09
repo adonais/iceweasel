@@ -229,7 +229,17 @@ support-files = [
 ["browser_test_local_network_trackers.js"]
 support-files = [
   "page_with_trackers.html",
+  "page_with_non_trackers.html",
   "fetch_from_tracker.sjs",
 ]
+
+["browser_test_local_network_access.js"]
+support-files = [
+  "page_with_non_trackers.html",
+  "page_with_non_trackers.html^headers^",
+  "fetch_from_tracker.sjs",
+]
+
+["browser_ipAddressSpace_mainpage_unaffected.js"]
 
 ["browser_test_offline_tab.js"]

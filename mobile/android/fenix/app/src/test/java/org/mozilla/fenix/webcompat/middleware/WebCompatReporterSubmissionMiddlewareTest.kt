@@ -203,6 +203,8 @@ class WebCompatReporterSubmissionMiddlewareTest {
                 BrokenSiteReport.description.testGetValue(),
             )
         }
+
+        store.dispatch(WebCompatReporterAction.SendReportClicked)
     }
 
     fun `WHEN the report is sent successfully THEN appState is updated`() {

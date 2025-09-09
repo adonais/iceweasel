@@ -287,7 +287,7 @@ function runTests() {
     is(e.button, -1, "Button must be -1 on pointer generated from mousemove when no buttons pressed");
     is(e.pointerType, "mouse", "Pointer type must be mouse");
   };
-  cwu.sendMouseEvent("mousemove", 4, 4, 0, 0, 0, false, 0, 0);
+  synthesizeMouseAtPoint(4, 4, { type: "mousemove" });
 
   d1.onpointermove = function(e) {
     is(e.buttons, 1, "Buttons must be 1 on pointermove generated from touch event");

@@ -81,8 +81,8 @@ add_task(async function () {
   // Search mode switcher icon update will trigger once.
   await BrowserTestUtils.waitForCondition(() => updateCalled == 1);
 
-  let searchModeSwitcherButton = win.document.getElementById(
-    "searchmode-switcher-icon"
+  let searchModeSwitcherButton = win.gURLBar.querySelector(
+    ".searchmode-switcher-icon"
   );
   let regex = /url\("([^"]+)"\)/;
   let searchModeSwitcherIconUrl = win

@@ -7,13 +7,12 @@
 #ifndef mozilla_dom_fetcheventopchild_h__
 #define mozilla_dom_fetcheventopchild_h__
 
-#include "nsCOMPtr.h"
-
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/FetchService.h"
 #include "mozilla/dom/PFetchEventOpChild.h"
 #include "mozilla/dom/ServiceWorkerOpArgs.h"
+#include "nsCOMPtr.h"
 
 class nsIInterceptedChannel;
 

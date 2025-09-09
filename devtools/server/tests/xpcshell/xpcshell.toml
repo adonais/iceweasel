@@ -204,6 +204,8 @@ skip-if = [
 
 ["test_framebindings-07.js"]
 
+["test_framebindings-08.js"]
+
 ["test_front_destroy.js"]
 
 ["test_functiongrips-01.js"]

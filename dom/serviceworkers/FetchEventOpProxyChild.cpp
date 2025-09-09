@@ -8,24 +8,23 @@
 
 #include <utility>
 
-#include "mozilla/dom/FetchTypes.h"
-#include "mozilla/dom/ServiceWorkerOpPromise.h"
-#include "nsCOMPtr.h"
-#include "nsDebug.h"
-#include "nsThreadUtils.h"
-
 #include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/FetchTypes.h"
 #include "mozilla/dom/InternalRequest.h"
 #include "mozilla/dom/InternalResponse.h"
 #include "mozilla/dom/RemoteWorkerChild.h"
 #include "mozilla/dom/RemoteWorkerService.h"
 #include "mozilla/dom/ServiceWorkerOp.h"
+#include "mozilla/dom/ServiceWorkerOpPromise.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
+#include "nsCOMPtr.h"
+#include "nsDebug.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 

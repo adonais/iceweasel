@@ -3,10 +3,11 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jsep/JsepTrack.h"
-#include "jsep/JsepCodecDescription.h"
-#include "jsep/JsepTrackEncoding.h"
 
 #include <algorithm>
+
+#include "jsep/JsepCodecDescription.h"
+#include "jsep/JsepTrackEncoding.h"
 
 namespace mozilla {
 void JsepTrack::GetNegotiatedPayloadTypes(

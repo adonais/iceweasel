@@ -243,13 +243,14 @@ class WarpCacheIR : public WarpOpSnapshot {
 #endif
 };
 
-// [SMDOC] Warp Nursery Object support
+// [SMDOC] Warp Nursery Object/Value support
 //
-// CacheIR stub data can contain nursery allocated objects. This can happen for
-// example for GuardSpecificObject/GuardSpecificFunction or GuardProto.
+// CacheIR stub data can contain nursery allocated objects or values. This can
+// happen for example for GuardSpecificObject/GuardSpecificFunction or
+// GuardProto.
 //
 // To support nursery GCs in parallel with off-thread compilation, we use the
-// following mechanism:
+// following mechanism for nursery objects:
 //
 // * When WarpOracle copies stub data, it builds a Vector of nursery objects.
 //   The nursery object pointers in the stub data are replaced with the
@@ -264,6 +265,9 @@ class WarpCacheIR : public WarpOpSnapshot {
 //
 // WarpObjectField is a helper class to encode/decode a stub data field that
 // either stores an object or a nursery index.
+//
+// A similar mechanism is used for boxed Values containing nursery pointers.
+// See ValueOrNurseryValueIndex.
 class WarpObjectField {
   // This is a nursery index if the low bit is set. Else it's a JSObject*.
   static constexpr uintptr_t NurseryIndexTag = 0x1;
@@ -558,6 +562,11 @@ class WarpSnapshot : public TempObject {
   using NurseryObjectVector = Vector<JSObject*, 0, JitAllocPolicy>;
   NurseryObjectVector nurseryObjects_;
 
+  // List of Values containing (originally) nursery-allocated cells. Must only
+  // be accessed on the main thread. See also the WarpObjectField SMDOC.
+  using NurseryValueVector = mozilla::Vector<Value, 0, JitAllocPolicy>;
+  NurseryValueVector nurseryValues_;
+
 #ifdef JS_CACHEIR_SPEW
   bool needsFinalWarmUpCount_ = false;
 #endif
@@ -594,6 +603,9 @@ class WarpSnapshot : public TempObject {
 
   NurseryObjectVector& nurseryObjects() { return nurseryObjects_; }
   const NurseryObjectVector& nurseryObjects() const { return nurseryObjects_; }
+
+  NurseryValueVector& nurseryValues() { return nurseryValues_; }
+  const NurseryValueVector& nurseryValues() const { return nurseryValues_; }
 
 #ifdef DEBUG
   mozilla::HashNumber icHash() const { return icHash_; }

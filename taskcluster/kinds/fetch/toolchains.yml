@@ -58,6 +58,20 @@ gcc-9.5.0:
         strip-components: 1
         add-prefix: gcc-source/
 
+gcc-10.5.0:
+    description: GCC 10.5.0 source code
+    fetch:
+        type: static-url
+        url: https://ftp.gnu.org/gnu/gcc/gcc-10.5.0/gcc-10.5.0.tar.xz
+        sha256: 25109543fdf46f397c347b5d8b7a2c7e5694a5a51cce4b9c6e1ea8a71ca307c1
+        size: 77846412
+        gpg-signature:
+            sig-url: "{url}.sig"
+            key-path: build/unix/build-gcc/7F74F97C103468EE5D750B583AB00996FC26A641.key
+        artifact-name: gcc-source.tar.zst
+        strip-components: 1
+        add-prefix: gcc-source/
+
 gcc-11.4.0:
     description: GCC 11.4.0 source code
     fetch:
@@ -303,7 +317,7 @@ gn:
     fetch:
         type: git
         repo: https://gn.googlesource.com/gn
-        revision: 7e05276308f3d49f8514ef02afe4f94487b1efb2
+        revision: f98b6d7275c2e823e0983fa7f874facfe6980778
 
 grcov:
     description: grcov source code
@@ -374,6 +388,13 @@ clang-14:
         type: git
         repo: https://github.com/llvm/llvm-project
         revision: 4bc1d0b51c8e488d78ab69c8b19cfbcd1f7db6a4
+
+clang-17:
+    description: clang 17.0.6 source code
+    fetch:
+        type: git
+        repo: https://github.com/llvm/llvm-project
+        revision: 6009708b4367171ccdbf4b5905cb6a803753fe18
 
 clang-19:
     description: clang 19.1.7 source code
@@ -540,9 +561,9 @@ jdk-8-linux64:
     description: Java 8 JDK
     fetch:
         type: static-url
-        url: https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u452-b09/OpenJDK8U-jdk_x64_linux_hotspot_8u452b09.tar.gz
-        sha256: 9448308a21841960a591b47927cf2d44fdc4c0533a5f8111a4b243a6bafb5d27
-        size: 103082903
+        url: https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u462-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u462b08.tar.gz
+        sha256: 5d64ae542b59a962b3caadadd346f4b1c3010879a28bb02d928326993de16e79
+        size: 103087414
         artifact-name: jdk-8.tar.zst
         strip-components: 1
         add-prefix: jdk-8/

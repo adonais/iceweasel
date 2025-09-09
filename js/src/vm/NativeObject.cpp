@@ -1182,6 +1182,14 @@ static MOZ_ALWAYS_INLINE bool CallAddPropertyHook(JSContext* cx,
       return false;
     }
   }
+  if (MOZ_UNLIKELY(obj->hasUnpreservedWrapper())) {
+    if (JS::GetReservedSlot(obj, JS_OBJECT_WRAPPER_SLOT).isUndefined()) {
+      return true;
+    }
+
+    MOZ_ALWAYS_TRUE(MaybePreserveDOMWrapper(cx, obj));
+    return JSObject::setFlag(cx, obj, ObjectFlag::HasPreservedWrapper);
+  }
   return true;
 }
 
@@ -1205,6 +1213,15 @@ static MOZ_ALWAYS_INLINE bool CallAddPropertyHookDense(
       obj->setDenseElementHole(index);
       return false;
     }
+  }
+
+  if (MOZ_UNLIKELY(obj->hasUnpreservedWrapper())) {
+    if (JS::GetReservedSlot(obj, JS_OBJECT_WRAPPER_SLOT).isUndefined()) {
+      return true;
+    }
+
+    MOZ_ALWAYS_TRUE(MaybePreserveDOMWrapper(cx, obj));
+    return JSObject::setFlag(cx, obj, ObjectFlag::HasPreservedWrapper);
   }
   return true;
 }
@@ -1250,7 +1267,7 @@ static bool ChangeProperty(JSContext* cx, Handle<NativeObject*> obj,
   }
 
   if (!gs) {
-    gs = GetterSetter::create(cx, getter, setter);
+    gs = GetterSetter::create(cx, obj, getter, setter);
     if (!gs) {
       return false;
     }
@@ -1341,7 +1358,7 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
   if constexpr (AddOrChange == IsAddOrChange::Add) {
     if (desc.isAccessorDescriptor()) {
       Rooted<GetterSetter*> gs(
-          cx, GetterSetter::create(cx, desc.getter(), desc.setter()));
+          cx, GetterSetter::create(cx, obj, desc.getter(), desc.setter()));
       if (!gs) {
         return false;
       }
@@ -1440,17 +1457,23 @@ static MOZ_ALWAYS_INLINE bool AddDataProperty(JSContext* cx,
 
 bool js::AddSlotAndCallAddPropHook(JSContext* cx, Handle<NativeObject*> obj,
                                    HandleValue v, Handle<Shape*> newShape) {
-  MOZ_ASSERT(obj->getClass()->getAddProperty());
   MOZ_ASSERT(newShape->asShared().lastProperty().isDataProperty());
 
   RootedId id(cx, newShape->asShared().lastProperty().key());
   MOZ_ASSERT(!id.isInt());
+
+  bool hasUnpreservedWrapper = obj->hasUnpreservedWrapper();
 
   uint32_t slot = newShape->asShared().lastProperty().slot();
   if (!obj->setShapeAndAddNewSlot(cx, &newShape->asShared(), slot)) {
     return false;
   }
   obj->initSlot(slot, v);
+
+  if (MOZ_UNLIKELY(hasUnpreservedWrapper)) {
+    MaybePreserveDOMWrapper(cx, obj);
+    MOZ_ASSERT(!obj->hasUnpreservedWrapper());
+  }
 
   return CallAddPropertyHook(cx, obj, id, v);
 }

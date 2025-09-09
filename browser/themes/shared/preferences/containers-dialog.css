@@ -25,7 +25,7 @@
 }
 
 .icon-buttons > radio > .userContext-icon {
-  fill: var(--in-content-text-color);
+  fill: var(--icon-color);
 }
 
 .radio-buttons > radio {
@@ -38,7 +38,7 @@ radio > .userContext-icon {
 }
 
 .radio-buttons > radio[selected="true"] {
-  outline-color: var(--in-content-text-color);
+  outline-color: var(--text-color);
 }
 
 .radio-buttons > radio[focused="true"] {

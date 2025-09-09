@@ -7,19 +7,18 @@
 #ifndef nsPIDOMWindow_h__
 #define nsPIDOMWindow_h__
 
-#include "nsIDOMWindow.h"
-#include "mozIDOMWindow.h"
-
-#include "nsCOMPtr.h"
-#include "nsTArray.h"
 #include "Units.h"
-#include "mozilla/dom/EventTarget.h"
+#include "js/TypeDecls.h"
+#include "mozIDOMWindow.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
-#include "js/TypeDecls.h"
-#include "nsRefPtrHashtable.h"
-#include "nsILoadInfo.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/dom/EventTarget.h"
+#include "nsCOMPtr.h"
+#include "nsIDOMWindow.h"
+#include "nsILoadInfo.h"
+#include "nsRefPtrHashtable.h"
+#include "nsTArray.h"
 
 class nsGlobalWindowInner;
 class nsGlobalWindowOuter;

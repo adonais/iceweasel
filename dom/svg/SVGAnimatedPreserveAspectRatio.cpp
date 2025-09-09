@@ -6,14 +6,14 @@
 
 #include "SVGAnimatedPreserveAspectRatio.h"
 
+#include "SMILEnumType.h"
+#include "SVGAttrTearoffTable.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/SMILValue.h"
 #include "mozilla/SVGContentUtils.h"
 #include "mozilla/dom/SVGAnimatedPreserveAspectRatioBinding.h"
-#include "SMILEnumType.h"
-#include "SVGAttrTearoffTable.h"
 
 using namespace mozilla::dom;
 

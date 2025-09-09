@@ -265,6 +265,7 @@ function makeExpectedExposureResult(rsSuggestionType) {
       source: "rust",
       dynamicType: "exposure",
       provider: "Dynamic",
+      suggestionType: rsSuggestionType,
       telemetryType: "exposure",
       isSponsored: false,
     },

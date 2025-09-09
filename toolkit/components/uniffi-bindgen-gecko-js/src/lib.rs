@@ -84,18 +84,35 @@ struct PipelineArgs {
 #[derive(Clone, Debug, Deserialize, Serialize, Node)]
 pub struct Config {
     #[serde(default)]
-    pub async_wrappers: IndexMap<String, ConcrrencyMode>,
+    pub async_wrappers: IndexMap<String, ConcurrencyMode>,
     #[serde(default)]
     custom_types: IndexMap<String, CustomTypeConfig>,
 }
 
+/// Callable sync/async configuration, from `config.toml.`
 #[derive(Clone, Debug, Deserialize, Serialize, Node, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
-pub enum ConcrrencyMode {
-    /// Function will remain synchronous, running on the main thread
+pub enum ConcurrencyMode {
+    /// Sync function that will remain synchronous, running on the main thread.
     Sync,
-    /// Function will be wrapped in an async wrapper
+    /// Async function will remain asynchronous.
+    Async,
+    /// Rust sync call that's wrapped to be async.
+    /// The C++ code schedules the call in a worker thread and returns the result to JS via a
+    /// promise.
+    ///
+    /// Used to adapt blocking Rust sync functions to be async.
+    /// This way they don't block the JS main thread.
+    ///
+    /// Only valid for Rust calls, not callback interfaces or trait interfaces with foreign support.
     AsyncWrapped,
+    /// JS sync callback method that's adapted to be "fire-and-forget".
+    /// The C++ code schedules the call, then immediately returns void.
+    ///
+    /// Used to adapt JS sync methods that we don't want to wait for (e.g. logging calls).
+    ///
+    /// Only valid for callback interface methods.
+    FireAndForget,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, Node)]

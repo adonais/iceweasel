@@ -318,7 +318,7 @@ mochitest-browser-chrome:
                     linux.*(-qr)?/debug: 16
                     linux.*64-asan(-qr)?/opt: 20
                     linux.*64-tsan(-qr)?/opt: 32
-                    windows.*-asan.*/opt: 16
+                    windows.*-asan.*/opt: 20
                     windows.*-ccov.*/.*: 14
                     macosx.*64.*/opt: 10
                     windows11.*/opt: 10
@@ -935,10 +935,6 @@ mochitest-media:
                     android-em-7.0-x86_64(-qr)?/debug-isolated-process: 3
                     android-hw.*: 1
                     default: default
-    use-caches:
-        by-test-platform:
-            .*hw-ref.*: [checkout]
-            default: [checkout, pip, uv]
     worker-type:
         by-variant:
             media-gpu:
@@ -1259,6 +1255,15 @@ mochitest-browser-newtab-trainhop-beta:
         extra-options:
             - --tag=newtab
             - --install-extension=newtab.xpi
+            # This preference is normally set via Nimbus when doing a New Tab
+            # train-hop, but when running the tests in automation like this, we
+            # install the XPI using the more traditional extension install
+            # mechanism.
+            #
+            # This is kind of a hack, but so long as this string here is not
+            # empty, we bypass the uninstall that occurs at startup, and read
+            # from the installed XPI.
+            - --setpref=browser.newtabpage.trainhopAddon.version=any
     instance-size: default
     dependencies:
         newtab-xpi-job: build-extensions-browser
@@ -1266,6 +1271,8 @@ mochitest-browser-newtab-trainhop-beta:
         newtab-xpi-job:
             - artifact: ../browser-extensions/newtab.xpi
               extract: false
+        build:
+            - artifact: target.trainhop.tests.tar.gz
     target:
         by-test-platform:
             linux.*:
@@ -1300,6 +1307,15 @@ mochitest-browser-newtab-trainhop-release:
         extra-options:
             - --tag=newtab
             - --install-extension=newtab.xpi
+            # This preference is normally set via Nimbus when doing a New Tab
+            # train-hop, but when running the tests in automation like this, we
+            # install the XPI using the more traditional extension install
+            # mechanism.
+            #
+            # This is kind of a hack, but so long as this string here is not
+            # empty, we bypass the uninstall that occurs at startup, and read
+            # from the installed XPI.
+            - --setpref=browser.newtabpage.trainhopAddon.version=any
     instance-size: default
     dependencies:
         newtab-xpi-job: build-extensions-browser
@@ -1307,6 +1323,8 @@ mochitest-browser-newtab-trainhop-release:
         newtab-xpi-job:
             - artifact: ../browser-extensions/newtab.xpi
               extract: false
+        build:
+            - artifact: target.trainhop.tests.tar.gz
     target:
         by-test-platform:
             linux.*:

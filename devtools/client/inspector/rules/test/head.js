@@ -898,10 +898,15 @@ async function checkDeclarationIsInactive(view, ruleIndex, declaration) {
   const declarations = await getPropertiesForRuleIndex(view, ruleIndex);
   const [[name, value]] = Object.entries(declaration);
   const dec = `${name}:${value}`;
-  const { used, warning } = declarations.get(dec);
+  const { used, warning, icon } = declarations.get(dec);
 
   ok(!used, `"${dec}" is inactive`);
   ok(warning, `"${dec}" has a warning`);
+  ok(
+    icon.classList.contains("ruleview-unused-warning"),
+    "Icon has expected icon"
+  );
+  is(icon.hidden, false, "Icon is visible");
 
   await checkInteractiveTooltip(
     view,
@@ -1352,4 +1357,119 @@ function getSmallIncrementKey() {
     return { alt: true };
   }
   return { ctrl: true };
+}
+
+/**
+ * Check that the rule view has the expected content
+ *
+ * @param {RuleView} view
+ * @param {Object[]} expectedElements
+ * @param {String} expectedElements[].selector - The expected selector of the rule.
+ * @param {String[]|null} expectedElements[].ancestorRulesData - An array of the parent
+ *        selectors of the rule, with their indentations and the opening brace.
+ *        e.g. for the following rule `html { body { span {} } }`, for the `span` rule,
+ *        you should pass:
+ *        [
+ *          `html {`,
+ *          `  & body {`,
+ *        ]
+ *        Pass `null` if the rule doesn't have a parent rule.
+ * @param {Object[]} expectedElements[].declarations - The expected declarations of the rule.
+ * @param {Object[]} expectedElements[].declarations[].name - The name of the declaration.
+ * @param {Object[]} expectedElements[].declarations[].value - The value of the declaration.
+ * @param {Boolean|undefined} expectedElements[].declarations[].overridden - Is the declaration
+ *        overridden by another the declaration. Defaults to false.
+ * @param {Boolean|undefined} expectedElements[].declarations[].valid - Is the declaration valid.
+ *        Defaults to true.
+ * @param {String} expectedElements[].header - If we're expecting a header (Inherited from,
+ *        Pseudo-elements, …), the text of said header.
+ */
+function checkRuleViewContent(view, expectedElements) {
+  const rulesInView = Array.from(view.element.children);
+  is(
+    rulesInView.length,
+    expectedElements.length,
+    "All expected elements are displayed"
+  );
+
+  for (let i = 0; i < expectedElements.length; i++) {
+    const expectedElement = expectedElements[i];
+    info(`Checking element #${i}: ${expectedElement.selector}`);
+
+    const elementInView = rulesInView[i];
+
+    if (expectedElement.header) {
+      is(
+        elementInView.getAttribute("role"),
+        "heading",
+        `Element #${i} is a header`
+      );
+      is(
+        elementInView.textContent,
+        expectedElement.header,
+        `Expected header text for element #${i}`
+      );
+      continue;
+    }
+
+    const selector = elementInView.querySelector(
+      ".ruleview-selectors-container"
+    ).innerText;
+    is(selector, expectedElement.selector, `Expected selector for ${selector}`);
+
+    const ancestorData = elementInView.querySelector(
+      `.ruleview-rule-ancestor-data`
+    );
+    if (expectedElement.ancestorRulesData == null) {
+      is(
+        ancestorData,
+        null,
+        `No ancestor rules data displayed for ${selector}`
+      );
+    } else {
+      is(
+        ancestorData.innerText,
+        expectedElement.ancestorRulesData.join("\n"),
+        `Expected ancestor rules data displayed for ${selector}`
+      );
+    }
+
+    const declarations = elementInView.querySelectorAll(".ruleview-property");
+    is(
+      declarations.length,
+      expectedElement.declarations.length,
+      "Got the expected number of declarations"
+    );
+    for (let j = 0; j < declarations.length; j++) {
+      const expectedDeclaration = expectedElement.declarations[j];
+      const ruleViewPropertyElement = declarations[j];
+      const [propName, propValue] = Array.from(
+        ruleViewPropertyElement.querySelectorAll(
+          ".ruleview-propertyname, .ruleview-propertyvalue"
+        )
+      );
+      is(
+        propName.innerText,
+        expectedDeclaration?.name,
+        "Got expected property name"
+      );
+      is(
+        propValue.innerText,
+        expectedDeclaration?.value,
+        "Got expected property value"
+      );
+      is(
+        ruleViewPropertyElement.classList.contains("ruleview-overridden"),
+        !!expectedDeclaration?.overridden,
+        `"${selector}" ${propName.innerText} is ${expectedDeclaration?.overridden ? "overridden" : "not overridden"} `
+      );
+      is(
+        !!ruleViewPropertyElement.querySelector(
+          ".ruleview-warning:not([hidden])"
+        ),
+        !!expectedDeclaration?.valid,
+        `"${selector}" ${propName.innerText} is ${expectedDeclaration?.valid === false ? "not valid" : "valid"}`
+      );
+    }
+  }
 }

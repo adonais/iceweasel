@@ -5,17 +5,15 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FuzzingInterface.h"
-
-#include "jsapi.h"
 #include "js/StructuredClone.h"
-#include "mozilla/dom/ipc/StructuredCloneData.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/StructuredCloneHolder.h"
-#include "mozilla/dom/SimpleGlobalObject.h"
+#include "jsapi.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/UniquePtr.h"
-
+#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/SimpleGlobalObject.h"
+#include "mozilla/dom/StructuredCloneHolder.h"
+#include "mozilla/dom/ipc/StructuredCloneData.h"
 #include "nsCycleCollector.h"
 
 using namespace mozilla;

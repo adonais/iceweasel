@@ -4,11 +4,11 @@
 
 package org.mozilla.fenix.search.awesomebar
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.isImeVisible
@@ -23,6 +23,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
+import androidx.core.graphics.toColorInt
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -38,21 +39,25 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.ktx.android.view.hideKeyboard
 import org.mozilla.fenix.HomeActivity
+import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
 import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.search.BrowserStoreToFenixSearchMapperMiddleware
 import org.mozilla.fenix.search.BrowserToolbarToFenixSearchMapperMiddleware
 import org.mozilla.fenix.search.FenixSearchMiddleware
 import org.mozilla.fenix.search.SearchFragmentAction
-import org.mozilla.fenix.search.SearchFragmentAction.SearchSuggestionsVisibilityUpdated
 import org.mozilla.fenix.search.SearchFragmentAction.SuggestionClicked
 import org.mozilla.fenix.search.SearchFragmentAction.SuggestionSelected
 import org.mozilla.fenix.search.SearchFragmentStore
 import org.mozilla.fenix.search.createInitialSearchFragmentState
+import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.theme.FirefoxTheme
+
+private const val MATERIAL_DESIGN_SCRIM = "#52000000"
 
 /**
  * Wrapper over a [Composable] to show search suggestions, responsible for its setup.
@@ -65,6 +70,8 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * @param toolbarStore [BrowserToolbarStore] for accessing the current toolbar state.
  * @param navController [NavController] for navigating to other destinations in the application.
  * @param lifecycleOwner [Fragment] for controlling the lifetime of long running operations.
+ * @param tabId [String] Id of the current tab for which a new search was started.
+ * @param showScrimWhenNoSuggestions Whether to show a scrim when no suggestions are available.
  * @param searchAccessPoint Where search was started from.
  */
 @Suppress("LongParameterList")
@@ -77,6 +84,8 @@ class AwesomeBarComposable(
     private val toolbarStore: BrowserToolbarStore,
     private val navController: NavController,
     private val lifecycleOwner: Fragment,
+    private val tabId: String? = null,
+    private val showScrimWhenNoSuggestions: Boolean = false,
     private val searchAccessPoint: MetricsUtils.Source = MetricsUtils.Source.NONE,
 ) {
     private val searchStore = initializeSearchStore()
@@ -86,7 +95,7 @@ class AwesomeBarComposable(
      * that will show search suggestions whenever the users edits the current query in the toolbar.
      */
     @OptIn(ExperimentalLayoutApi::class) // for WindowInsets.isImeVisible
-    @Suppress("LongMethod")
+    @Suppress("LongMethod", "CyclomaticComplexMethod")
     @Composable
     fun SearchSuggestions() {
         val isSearchActive = appStore.observeAsComposableState { it.searchState.isSearchActive }.value
@@ -126,13 +135,7 @@ class AwesomeBarComposable(
             }
         }
 
-        BackHandler {
-            searchStore.dispatch(SearchSuggestionsVisibilityUpdated(false))
-            appStore.dispatch(SearchEnded)
-            browserStore.dispatch(AwesomeBarAction.EngagementFinished(abandoned = true))
-        }
-
-        if (isSearchActive && shouldShowClipboardBar) {
+        if (isSearchActive && shouldShowClipboardBar && orientation == AwesomeBarOrientation.TOP) {
             val url = components.clipboardHandler.extractURL()
 
             ClipboardSuggestionBar(
@@ -140,45 +143,109 @@ class AwesomeBarComposable(
                 onClick = {
                     url?.let {
                         toolbarStore.dispatch(
-                            SearchQueryUpdated(query = url, showAsPreselected = false),
+                            SearchQueryUpdated(query = url, isQueryPrefilled = false),
                         )
                     }
                 },
             )
-        } else if (isSearchActive && state.shouldShowSearchSuggestions) {
-            Box(
-                modifier = modifier
-                    .background(AcornTheme.colors.layer1)
-                    .fillMaxSize()
-                    .pointerInput(WindowInsets.isImeVisible) {
-                        detectTapGestures(
-                            // Hide the keyboard for any touches in the empty area of the awesomebar
-                            onPress = { view.hideKeyboard() },
+        }
+
+        if (isSearchActive) {
+            if (state.showSearchSuggestionsHint) {
+                PrivateSuggestionsCard(
+                    onSearchSuggestionsInPrivateModeAllowed = {
+                        activity.settings().shouldShowSearchSuggestionsInPrivate = true
+                        activity.settings().showSearchSuggestionsInPrivateOnboardingFinished = true
+                        searchStore.dispatch(SearchFragmentAction.SetShowSearchSuggestions(true))
+                        searchStore.dispatch(SearchFragmentAction.AllowSearchSuggestionsInPrivateModePrompt(false))
+                        searchStore.dispatch(SearchFragmentAction.PrivateSuggestionsCardAccepted)
+                    },
+                    onSearchSuggestionsInPrivateModeBlocked = {
+                        activity.settings().shouldShowSearchSuggestionsInPrivate = false
+                        activity.settings().showSearchSuggestionsInPrivateOnboardingFinished = true
+                        searchStore.dispatch(
+                            SearchFragmentAction.AllowSearchSuggestionsInPrivateModePrompt(false),
                         )
                     },
-            ) {
-                AwesomeBar(
-                    text = state.query,
-                    providers = state.searchSuggestionsProviders,
-                    orientation = orientation,
-                    colors = AwesomeBarDefaults.colors(
-                        background = Color.Transparent,
-                        title = FirefoxTheme.colors.textPrimary,
-                        description = FirefoxTheme.colors.textSecondary,
-                        autocompleteIcon = FirefoxTheme.colors.textSecondary,
-                        groupTitle = FirefoxTheme.colors.textSecondary,
-                    ),
-                    onSuggestionClicked = { suggestion ->
-                        searchStore.dispatch(SuggestionClicked(suggestion))
+                    onLearnMoreClick = {
+                        components.useCases.fenixBrowserUseCases.loadUrlOrSearch(
+                            searchTermOrURL = SupportUtils.getGenericSumoURLForTopic(
+                                SupportUtils.SumoTopic.SEARCH_SUGGESTION,
+                            ),
+                            newTab = appStore.state.searchState.sourceTabId == null,
+                            private = true,
+                        )
+                        navController.navigate(R.id.browserFragment)
                     },
-                    onAutoComplete = { suggestion ->
-                        searchStore.dispatch(SuggestionSelected(suggestion))
-                    },
-                    onVisibilityStateUpdated = {},
-                    onScroll = { view.hideKeyboard() },
-                    profiler = components.core.engine.profiler,
                 )
             }
+            if (state.shouldShowSearchSuggestions) {
+                Box(
+                    modifier = modifier
+                        .background(AcornTheme.colors.layer1)
+                        .fillMaxSize()
+                        .pointerInput(WindowInsets.isImeVisible) {
+                            detectTapGestures(
+                                // Hide the keyboard for any touches in the empty area of the awesomebar
+                                onPress = { view.hideKeyboard() },
+                            )
+                        },
+                ) {
+                    AwesomeBar(
+                        text = state.query,
+                        providers = state.searchSuggestionsProviders,
+                        orientation = orientation,
+                        colors = AwesomeBarDefaults.colors(
+                            background = Color.Transparent,
+                            title = FirefoxTheme.colors.textPrimary,
+                            description = FirefoxTheme.colors.textSecondary,
+                            autocompleteIcon = FirefoxTheme.colors.textSecondary,
+                            groupTitle = FirefoxTheme.colors.textSecondary,
+                        ),
+                        onSuggestionClicked = { suggestion ->
+                            searchStore.dispatch(SuggestionClicked(suggestion))
+                        },
+                        onAutoComplete = { suggestion ->
+                            searchStore.dispatch(SuggestionSelected(suggestion))
+                        },
+                        onVisibilityStateUpdated = {
+                            browserStore.dispatch(AwesomeBarAction.VisibilityStateUpdated(it))
+                        },
+                        onScroll = { view.hideKeyboard() },
+                        profiler = components.core.engine.profiler,
+                    )
+                }
+            } else if (showScrimWhenNoSuggestions) {
+                Spacer(
+                    modifier = modifier
+                        .background(Color(MATERIAL_DESIGN_SCRIM.toColorInt()))
+                        .fillMaxSize()
+                        .pointerInput(WindowInsets.isImeVisible) {
+                            detectTapGestures(
+                                onPress = {
+                                    focusManager.clearFocus()
+                                    keyboardController?.hide()
+                                    appStore.dispatch(SearchEnded)
+                                },
+                            )
+                        },
+                )
+            }
+        }
+
+        if (isSearchActive && shouldShowClipboardBar && orientation == AwesomeBarOrientation.BOTTOM) {
+            val url = components.clipboardHandler.extractURL()
+
+            ClipboardSuggestionBar(
+                shouldUseBottomToolbar = components.settings.shouldUseBottomToolbar,
+                onClick = {
+                    url?.let {
+                        toolbarStore.dispatch(
+                            SearchQueryUpdated(query = url, isQueryPrefilled = false),
+                        )
+                    }
+                },
+            )
         }
     }
 
@@ -187,12 +254,12 @@ class AwesomeBarComposable(
             initialState = createInitialSearchFragmentState(
                 activity = activity,
                 components = components,
-                tabId = null,
+                tabId = tabId,
                 pastedText = null,
                 searchAccessPoint = searchAccessPoint,
             ),
             middleware = listOf(
-                BrowserToolbarToFenixSearchMapperMiddleware(toolbarStore),
+                BrowserToolbarToFenixSearchMapperMiddleware(toolbarStore, browserStore),
                 BrowserStoreToFenixSearchMapperMiddleware(browserStore),
                 FenixSearchMiddleware(
                     engine = components.core.engine,

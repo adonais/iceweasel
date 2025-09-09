@@ -2975,6 +2975,9 @@ void gfxPlatform::InitHardwareVideoConfig() {
     return;
   }
 
+  // Collect the gfxVar updates into a single message.
+  gfxVarsCollectUpdates collect;
+
   FeatureState& featureDec =
       gfxConfig::GetFeature(Feature::HARDWARE_VIDEO_DECODING);
   featureDec.Reset();
@@ -3098,8 +3101,8 @@ void gfxPlatform::InitHardwareVideoConfig() {
   CODEC_HW_FEATURE_SETUP(VP8)
   CODEC_HW_FEATURE_SETUP(VP9)
 
-  // H264/HEVC_HW_DECODE/ENCODE are used on Linux only right now.
-#ifdef MOZ_WIDGET_GTK
+  // H264/HEVC_HW_DECODE/ENCODE are used on Linux, Android, and Windows.
+#if defined(MOZ_WIDGET_GTK) || defined(MOZ_WIDGET_ANDROID) || defined(XP_WIN)
   CODEC_HW_FEATURE_SETUP(H264)
   CODEC_HW_FEATURE_SETUP(HEVC)
 #endif
@@ -3242,31 +3245,30 @@ void gfxPlatform::InitWebGPUConfig() {
     return;
   }
 
-  FeatureState& feature = gfxConfig::GetFeature(Feature::WEBGPU);
-  feature.EnableByDefault();
+  FeatureState& featureWebGPU = gfxConfig::GetFeature(Feature::WEBGPU);
+  featureWebGPU.EnableByDefault();
 
   nsCString message;
   nsCString failureId;
   if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_WEBGPU, &message, failureId)) {
     if (StaticPrefs::gfx_webgpu_ignore_blocklist_AtStartup()) {
-      feature.UserForceEnable(
+      featureWebGPU.UserForceEnable(
           "Ignoring blocklist entry because gfx.webgpu.ignore-blocklist is "
           "true.");
     }
-
-    feature.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
+    featureWebGPU.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
   }
 
   // When this condition changes, be sure to update the `run-if`
   // conditions in `dom/webgpu/tests/mochitest/*.toml` accordingly.
 #if !(defined(NIGHTLY_BUILD) || defined(XP_WIN))
-  feature.ForceDisable(
+  featureWebGPU.ForceDisable(
       FeatureStatus::Blocked,
       "WebGPU cannot be enabled unless in Nightly or on Windows.",
       "WEBGPU_DISABLE_RELEASE_OR_NON_WINDOWS"_ns);
 #endif
 
-  gfxVars::SetAllowWebGPU(feature.IsEnabled());
+  gfxVars::SetAllowWebGPU(featureWebGPU.IsEnabled());
 
   if (StaticPrefs::dom_webgpu_allow_present_without_readback()
 #if XP_WIN
@@ -3275,6 +3277,24 @@ void gfxPlatform::InitWebGPUConfig() {
   ) {
     gfxVars::SetAllowWebGPUPresentWithoutReadback(true);
   }
+
+  FeatureState& featureExternalTexture =
+      gfxConfig::GetFeature(Feature::WEBGPU_EXTERNAL_TEXTURE);
+  featureExternalTexture.SetDefaultFromPref(
+      StaticPrefs::GetPrefName_dom_webgpu_external_texture_enabled(), true,
+      StaticPrefs::GetPrefDefault_dom_webgpu_external_texture_enabled());
+  if (!IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_WEBGPU_EXTERNAL_TEXTURE,
+                           &message, failureId)) {
+    featureExternalTexture.Disable(FeatureStatus::Blocklisted, message.get(),
+                                   failureId);
+  }
+#if !defined(XP_WIN)
+  featureExternalTexture.ForceDisable(
+      FeatureStatus::Blocked,
+      "WebGPU external textures are only supported on Windows",
+      "WEBGPU_EXTERNAL_TEXTURE_UNSUPPORTED_OS"_ns);
+#endif
+  gfxVars::SetAllowWebGPUExternalTexture(featureExternalTexture.IsEnabled());
 }
 
 #ifdef XP_WIN

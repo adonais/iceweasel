@@ -28,6 +28,7 @@ import org.mozilla.focus.state.AppStore
 import org.mozilla.focus.state.Screen
 import org.robolectric.RobolectricTestRunner
 
+@ExperimentalCoroutinesApi // UnconfinedTestDispatcher
 @RunWith(RobolectricTestRunner::class)
 class HomeScreenTest {
     private lateinit var context: Context
@@ -44,7 +45,6 @@ class HomeScreenTest {
     @Mock
     private lateinit var shortcutManager: ShortcutManager
 
-    @ExperimentalCoroutinesApi
     private val testDispatcher = UnconfinedTestDispatcher()
 
     @Before

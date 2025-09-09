@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Nowe zwězanje
 newtab-topsites-edit-topsites-header = Nejcesćej woglědane sedło wobźěłaś
 newtab-topsites-edit-shortcut-header = Zwězanje wobźěłaś
 newtab-topsites-add-shortcut-label = Skrotconku pśidaś
+newtab-topsites-add-shortcut-title =
+    .title = Skrotconku pśidaś
+    .aria-label = Skrotconku pśidaś
 newtab-topsites-title-label = Titel
 newtab-topsites-title-input =
     .placeholder = Titel zapódaś
@@ -84,6 +87,14 @@ newtab-confirm-delete-history-p2 = Toś ta akcija njedajo se anulěrowaś.
 ## Top Sites - Sponsored label
 
 newtab-topsite-sponsored = Sponserowany
+
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (pśipěte)
+    .title = { $title }
 
 ## Context Menu - Action Tooltips.
 
@@ -540,6 +551,12 @@ newtab-custom-wallpaper-title = How su swójske slězynowe wobraze
 # 'Make firefox yours" means to customize or personalize
 newtab-custom-wallpaper-subtitle = Nagrajśo swójski slězynowy wobraz abo wubjeŕśo swójsku barwu, aby se { -brand-product-name } pśiswójł.
 newtab-custom-wallpaper-cta = Wopytajśo jen
+
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Wubjeŕśo slězynowy wobraz, aby se { -brand-product-name } pśiswójł
+newtab-new-user-custom-wallpaper-subtitle = Cujśo se na kuždem nowem rejtariku ako doma ze swójskimi slězynowymi wobrazami a barwami.
+newtab-new-user-custom-wallpaper-cta = Wopytajśo něnto
 
 ## Strings for download mobile highlight
 

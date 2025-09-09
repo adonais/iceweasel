@@ -36,6 +36,7 @@
 #include "vm/InvalidatingFuse.h"
 #include "vm/JSObject.h"
 #include "vm/JSScript.h"
+#include "vm/ObjectFuse.h"
 #include "vm/ShapeZone.h"
 
 namespace js {
@@ -422,11 +423,13 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadOrIonCompileData<bool> allocNurseryObjects_;
   js::MainThreadOrIonCompileData<bool> allocNurseryStrings_;
   js::MainThreadOrIonCompileData<bool> allocNurseryBigInts_;
+  js::MainThreadOrIonCompileData<bool> allocNurseryGetterSetters_;
 
   // Minimum Heap value which results in tenured allocation.
   js::MainThreadData<js::gc::Heap> minObjectHeapToTenure_;
   js::MainThreadData<js::gc::Heap> minStringHeapToTenure_;
   js::MainThreadData<js::gc::Heap> minBigintHeapToTenure_;
+  js::MainThreadData<js::gc::Heap> minGetterSetterHeapToTenure_;
 
  public:
   // Script side-tables. These used to be held by Realm, but are now placed
@@ -587,13 +590,16 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   bool registerObjectWithWeakPointers(JSObject* obj);
   void sweepObjectsWithWeakPointers(JSTracer* trc);
 
-  void addSizeOfIncludingThis(
-      mozilla::MallocSizeOf mallocSizeOf, size_t* zoneObject,
-      JS::CodeSizes* code, size_t* regexpZone, size_t* jitZone,
-      size_t* cacheIRStubs, size_t* uniqueIdMap, size_t* initialPropMapTable,
-      size_t* shapeTables, size_t* atomsMarkBitmaps, size_t* compartmentObjects,
-      size_t* crossCompartmentWrappersTables, size_t* compartmentsPrivateData,
-      size_t* scriptCountsMapArg);
+  void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
+                              size_t* zoneObject, JS::CodeSizes* code,
+                              size_t* regexpZone, size_t* jitZone,
+                              size_t* cacheIRStubs, size_t* objectFusesArg,
+                              size_t* uniqueIdMap, size_t* initialPropMapTable,
+                              size_t* shapeTables, size_t* atomsMarkBitmaps,
+                              size_t* compartmentObjects,
+                              size_t* crossCompartmentWrappersTables,
+                              size_t* compartmentsPrivateData,
+                              size_t* scriptCountsMapArg);
 
   // Iterate over all cells in the zone. See the definition of ZoneCellIter
   // in gc/GC-inl.h for the possible arguments and documentation.
@@ -735,7 +741,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   void fixupScriptMapsAfterMovingGC(JSTracer* trc);
 
   void setNurseryAllocFlags(bool allocObjects, bool allocStrings,
-                            bool allocBigInts);
+                            bool allocBigInts, bool allocGetterSetters);
 
   bool allocKindInNursery(JS::TraceKind kind) const {
     switch (kind) {
@@ -745,6 +751,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
         return allocNurseryStrings_;
       case JS::TraceKind::BigInt:
         return allocNurseryBigInts_;
+      case JS::TraceKind::GetterSetter:
+        return allocNurseryGetterSetters_;
       default:
         MOZ_CRASH("Unsupported kind for nursery allocation");
     }
@@ -757,6 +765,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   bool allocNurseryBigInts() const { return allocNurseryBigInts_; }
 
+  bool allocNurseryGetterSetters() const { return allocNurseryGetterSetters_; }
+
   js::gc::Heap minHeapToTenure(JS::TraceKind kind) const {
     switch (kind) {
       case JS::TraceKind::Object:
@@ -765,6 +775,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
         return minStringHeapToTenure_;
       case JS::TraceKind::BigInt:
         return minBigintHeapToTenure_;
+      case JS::TraceKind::GetterSetter:
+        return minGetterSetterHeapToTenure_;
       default:
         MOZ_CRASH("Unsupported kind for nursery allocation");
     }
@@ -895,6 +907,9 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   // Support for invalidating fuses
   js::DependentIonScriptGroup fuseDependencies;
+
+  // JSObject* => ObjectFuse* map for objects in this zone.
+  js::ObjectFuseMap objectFuses;
 
  private:
   js::jit::JitZone* createJitZone(JSContext* cx);

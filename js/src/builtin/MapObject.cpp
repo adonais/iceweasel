@@ -175,7 +175,7 @@ bool GlobalObject::initMapIteratorProto(JSContext* cx,
       !DefineToStringTag(cx, proto, cx->names().Map_Iterator_)) {
     return false;
   }
-  if (!JSObject::setHasFuseProperty(cx, proto)) {
+  if (!JSObject::setHasRealmFuseProperty(cx, proto)) {
     return false;
   }
   global->initBuiltinProto(ProtoKind::MapIteratorProto, proto);
@@ -425,7 +425,7 @@ const JSFunctionSpec MapObject::staticMethods[] = {
     return false;
   }
 
-  return JSObject::setHasFuseProperty(cx, nativeProto);
+  return JSObject::setHasRealmFuseProperty(cx, nativeProto);
 }
 
 void MapObject::trace(JSTracer* trc, JSObject* obj) {
@@ -1120,7 +1120,7 @@ bool GlobalObject::initSetIteratorProto(JSContext* cx,
       !DefineToStringTag(cx, proto, cx->names().Set_Iterator_)) {
     return false;
   }
-  if (!JSObject::setHasFuseProperty(cx, proto)) {
+  if (!JSObject::setHasRealmFuseProperty(cx, proto)) {
     return false;
   }
   global->initBuiltinProto(ProtoKind::SetIteratorProto, proto);
@@ -1331,7 +1331,7 @@ const JSPropertySpec SetObject::staticProperties[] = {
     return false;
   }
 
-  return JSObject::setHasFuseProperty(cx, nativeProto);
+  return JSObject::setHasRealmFuseProperty(cx, nativeProto);
 }
 
 bool SetObject::keys(JS::MutableHandle<GCVector<JS::Value>> keys) {

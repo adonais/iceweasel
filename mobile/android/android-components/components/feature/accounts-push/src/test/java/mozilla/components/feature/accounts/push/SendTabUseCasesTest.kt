@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.accounts.push
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mozilla.components.concept.sync.ConstellationState
 import mozilla.components.concept.sync.Device
 import mozilla.components.concept.sync.DeviceCapability
@@ -28,7 +27,6 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import java.util.UUID
 
-@ExperimentalCoroutinesApi
 class SendTabUseCasesTest {
 
     @get:Rule

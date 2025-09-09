@@ -9,11 +9,10 @@
 
 #include <functional>
 
-#include "nsISupportsImpl.h"
-
 #include "RemoteWorkerController.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/PRemoteWorkerControllerParent.h"
+#include "nsISupportsImpl.h"
 
 namespace mozilla::dom {
 

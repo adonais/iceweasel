@@ -5,9 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "PlatformEncoderModule.h"
+
 #include "H264.h"
-#include "nsPrintfCString.h"
 #include "mozilla/ToString.h"
+#include "nsPrintfCString.h"
 
 namespace mozilla {
 

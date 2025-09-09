@@ -5,9 +5,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Flatten.h"
-
 #include "gtest/gtest.h"
-
 #include "mozilla/Unused.h"
 #include "nsTArray.h"
 

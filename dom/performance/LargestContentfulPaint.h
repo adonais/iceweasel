@@ -7,12 +7,11 @@
 #ifndef mozilla_dom_LargestContentfulPaint_h___
 #define mozilla_dom_LargestContentfulPaint_h___
 
-#include "nsCycleCollectionParticipant.h"
+#include "imgRequestProxy.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/PerformanceEntry.h"
 #include "mozilla/dom/PerformanceLargestContentfulPaintBinding.h"
-
-#include "imgRequestProxy.h"
+#include "nsCycleCollectionParticipant.h"
 
 class nsTextFrame;
 namespace mozilla::dom {

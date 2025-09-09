@@ -352,8 +352,8 @@ async function doDismissOneTest({
  *   suggestion type.
  * @param {string} options.pref
  *   The name of the user-controlled pref (relative to `browser.urlbar.`) that
- *   controls the suggestion type. Should be the same as
- *   `feature.primaryUserControlledPreference`.
+ *   controls the suggestion type. Should be included in
+ *   `feature.primaryUserControlledPreferences`.
  * @param {Array} options.queries
  *   Array of objects: `{ query, expectedResults }`
  *   For each object, the test will perform a search with `query` as the search

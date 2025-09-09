@@ -7,9 +7,9 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
-#include "nsWrapperCache.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/gfx/2D.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla {
 class ErrorResult;

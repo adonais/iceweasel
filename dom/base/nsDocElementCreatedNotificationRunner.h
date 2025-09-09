@@ -8,11 +8,10 @@
 #define nsDocElementCreatedNotificationRunner_h
 
 #include "mozilla/Attributes.h"
-#include "nsThreadUtils.h" /* nsRunnable */
-
-#include "nsContentSink.h"
-#include "nsCOMPtr.h"
 #include "mozilla/dom/Document.h"
+#include "nsCOMPtr.h"
+#include "nsContentSink.h"
+#include "nsThreadUtils.h" /* nsRunnable */
 
 class nsDocElementCreatedNotificationRunner : public mozilla::Runnable {
  public:

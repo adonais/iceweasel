@@ -9,21 +9,20 @@
 
 #include <algorithm>
 #include <cctype>
-#include <vector>
-#include <ostream>
-#include <sstream>
 #include <cstring>
 #include <iomanip>
+#include <ostream>
+#include <sstream>
 #include <string>
+#include <vector>
 
-#include "mozilla/UniquePtr.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/Maybe.h"
-#include "nsString.h"
-
-#include "sdp/SdpEnum.h"
 #include "common/EncodingConstraints.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/UniquePtr.h"
+#include "nsString.h"
+#include "sdp/SdpEnum.h"
 
 namespace mozilla {
 

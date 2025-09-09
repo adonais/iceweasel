@@ -1,7 +1,7 @@
 [versions]
 # AGP
-android-gradle-plugin = "8.11.1" # Keep lint version in sync
-lint = "31.11.1"
+android-gradle-plugin = "8.12.0" # Keep lint version in sync
+lint = "31.12.0"
 
 python-envs-plugin = "0.0.31"
 maven-ant-tasks = "2.1.3"
@@ -17,9 +17,9 @@ annotation-experimental = "1.5.1"
 appcompat = "1.7.1"
 arch = "2.2.0"
 autofill = "1.3.0"
-benchmark = "1.3.4"
+benchmark = "1.4.0"
 biometric = "1.1.0"
-browser = "1.8.0"
+browser = "1.9.0"
 cardview = "1.0.0"
 collection = "1.5.0"
 compose-bom = "2025.06.01"
@@ -31,11 +31,11 @@ core = "1.16.0"
 core-splashscreen = "1.0.1"
 datastore = "1.1.7"
 drawerlayout = "1.2.0"
-fragment = "1.8.8"
+fragment = "1.8.9"
 lifecycle = "2.9.2"
 localbroadcastmanager = "1.0.0"
-media = "1.7.0"
-navigation = "2.9.2"
+media = "1.7.1"
+navigation = "2.9.3"
 paging = "3.3.6"
 palette = "1.0.0"
 preferences = "1.2.1"
@@ -46,7 +46,7 @@ savedstate = "1.3.1"
 swiperefreshlayout = "1.1.0"
 transition = "1.6.0"
 viewpager2 = "1.1.0"
-work = "2.10.2"
+work = "2.10.3"
 
 # Google versions
 accompanist = "0.37.3"
@@ -54,7 +54,7 @@ desugar-jdk-libs = "2.1.5"
 firebase-messaging = "24.1.2"
 installreferrer = "2.2"
 material = "1.12.0"
-osslicenses-plugin = "0.10.6"
+osslicenses-plugin = "0.10.7"
 play-review = "2.0.2"
 play-services-ads-id = "18.2.0"
 play-services-base = "18.7.2"
@@ -73,30 +73,30 @@ semanticdb-kotlinc = "0.6.0"
 
 # Kotlin versions
 coroutines = "1.10.2"
-kotlin = "2.2.0" # remember to change ksp-plugin
-ksp-plugin = "2.2.0-2.0.2"
+kotlin = "2.2.10" # remember to change ksp-plugin
+ksp-plugin = "2.2.10-2.0.2"
 serialization = "1.9.0"
 
 # Linter versions
 detekt = "1.23.8"
-ktlint = "1.7.0"
-spotless = "7.1.0"
+ktlint = "1.7.1"
+spotless = "7.2.1"
+google-java-format = "1.27.0"
 
 # Mozilla versions
-apilint = "0.5.4"
-mozilla-glean = "64.5.1"
+mozilla-glean = "64.5.5"
 
 # Testing versions
-androidx-test = "1.6.1"
-androidx-test-espresso = "3.6.1"
-androidx-test-ext = "1.2.1"
-androidx-test-monitor = "1.7.2"
-androidx-test-orchestrator = "1.5.1"
-androidx-test-runner = "1.6.1"
+androidx-test = "1.7.0"
+androidx-test-espresso = "3.7.0"
+androidx-test-ext = "1.3.0"
+androidx-test-monitor = "1.8.0"
+androidx-test-orchestrator = "1.6.1"
+androidx-test-runner = "1.7.0"
 androidx-test-uiautomator = "2.3.0"
 junit4 = "4.13.2"
-junit5 = "5.13.3"
-mockito = "5.18.0"
+junit5 = "5.13.4"
+mockito = "5.19.0"
 mockk = "1.14.5"
 robolectric = "4.15.1"
 
@@ -104,7 +104,7 @@ robolectric = "4.15.1"
 adjust = "5.4.1"
 okhttp = "4.12.0"
 okio = "3.15.0"
-sentry = "8.17.0"
+sentry = "8.20.0"
 
 commons-exec = "1.3"
 tomlj = "1.1.0"
@@ -166,6 +166,7 @@ androidx-compose-ui-test = { group = "androidx.compose.ui", name = "ui-test-juni
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-compose-ui-text-android = { group = "androidx.compose.ui", name = "ui-text-android"}
 androidx-concurrent = { group = "androidx.concurrent", name = "concurrent-futures-ktx", version.ref = "concurrent" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 androidx-constraintlayout-compose = { group = "androidx.constraintlayout", name = "constraintlayout-compose", version.ref = "constraintlayout-compose" }
@@ -269,10 +270,17 @@ ktlint = { group = "com.pinterest.ktlint", name = "ktlint-cli", version.ref = "k
 # Third party library versions
 adjust = { group = "com.adjust.sdk", name = "adjust-android", version.ref = "adjust" }
 
-apilint = { group = "org.mozilla.apilint", name = "apilint", version.ref = "apilint" }
 commons-exec = { group = "org.apache.commons", name = "commons-exec", version.ref = "commons-exec" }
 spotless = { group = "com.diffplug.spotless", name = "spotless-plugin-gradle", version.ref = "spotless" }
+google-java-format = { group = "com.google.googlejavaformat", name = "google-java-format", version.ref = "google-java-format" }
 tomlj = { group = "org.tomlj", name = "tomlj", version.ref = "tomlj" }
+
+ksp-symbol-processing-aa = { group = "com.google.devtools.ksp", name = "symbol-processing-aa", version.ref = "ksp-plugin" }
+ksp-symbol-processing-aa-embeddable = { group = "com.google.devtools.ksp", name = "symbol-processing-aa-embeddable", version.ref = "ksp-plugin" }
+ksp-symbol-processing-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp-plugin" }
+ksp-symbol-processing-common-deps = { group = "com.google.devtools.ksp", name = "symbol-processing-common-deps", version.ref = "ksp-plugin" }
+
+detekt-cli = { group = "io.gitlab.arturbosch.detekt", name = "detekt-cli", version.ref = "detekt" }
 
 [plugins]
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
@@ -282,3 +290,4 @@ kotlin-dsl = { id = "org.gradle.kotlin.kotlin-dsl", version.ref = "kotlin-dsl" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp-plugin" }
 python-envs-plugin = {id = "com.jetbrains.python.envs", version.ref = "python-envs-plugin"}
 protobuf-plugin = {id = "com.google.protobuf", version.ref = "protobuf-plugin"}
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

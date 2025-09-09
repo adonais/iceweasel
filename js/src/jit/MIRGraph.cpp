@@ -28,6 +28,7 @@ MIRGenerator::MIRGenerator(CompileRealm* realm,
       runtime(realm ? realm->runtime() : nullptr),
       outerInfo_(info),
       optimizationInfo_(optimizationInfo),
+      wasmCodeMeta_(wasmCodeMeta),
       alloc_(alloc),
       graph_(graph),
       offThreadStatus_(Ok()),
@@ -41,7 +42,6 @@ MIRGenerator::MIRGenerator(CompileRealm* realm,
                                    : false),
       bigIntsCanBeInNursery_(realm ? realm->zone()->canNurseryAllocateBigInts()
                                    : false),
-      minWasmMemory0Length_(0),
       options(options),
       gs_(alloc, wasmCodeMeta) {}
 
@@ -748,7 +748,7 @@ MConstant* MBasicBlock::optimizedOutConstant(TempAllocator& alloc) {
     return ins->toConstant();
   }
 
-  MConstant* constant = MConstant::New(alloc, MagicValue(JS_OPTIMIZED_OUT));
+  MConstant* constant = MConstant::NewMagic(alloc, JS_OPTIMIZED_OUT);
   insertBefore(ins, constant);
   return constant;
 }

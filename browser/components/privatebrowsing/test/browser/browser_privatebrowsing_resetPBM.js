@@ -621,7 +621,11 @@ add_task(async function test_tab_close_warning_suppressed() {
   );
   for (let i = 0; i < maxTabsUndo + 2; i++) {
     let tab = BrowserTestUtils.addTab(win.gBrowser, "about:blank");
-    loadPromises.push(BrowserTestUtils.browserLoaded(tab.linkedBrowser));
+    loadPromises.push(
+      BrowserTestUtils.browserLoaded(tab.linkedBrowser, {
+        wantLoad: "about:blank",
+      })
+    );
   }
   await Promise.all(loadPromises);
 
@@ -769,13 +773,13 @@ add_task(async function test_reset_action_closes_pinned_and_selected_tabs() {
 
   info("Load a list of tabs.");
   let loadPromises = [
-    "https://example.com",
-    "https://example.org",
-    "https://example.net",
+    "https://example.com/",
+    "https://example.org/",
+    "https://example.net/",
     "about:blank",
   ].map(async url => {
     let tab = BrowserTestUtils.addTab(win.gBrowser, url);
-    await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+    await BrowserTestUtils.browserLoaded(tab.linkedBrowser, { wantLoad: url });
     return tab;
   });
   let tabs = await Promise.all(loadPromises);

@@ -11,14 +11,14 @@
 #include "mozilla/dom/AddonManagerBinding.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Fetch.h"
+#include "mozilla/dom/MediaKeySystemAccessManager.h"
 #include "mozilla/dom/NavigatorBinding.h"
 #include "mozilla/dom/Nullable.h"
-#include "nsWrapperCache.h"
 #include "nsHashKeys.h"
 #include "nsInterfaceHashtable.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "mozilla/dom/MediaKeySystemAccessManager.h"
+#include "nsWrapperCache.h"
 
 class nsPluginArray;
 class nsMimeTypeArray;

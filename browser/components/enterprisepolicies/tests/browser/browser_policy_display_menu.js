@@ -14,11 +14,7 @@ add_task(async function test_menu_shown_boolean() {
   // we will need to open a new window to actually see the menu bar
   let newWin = await BrowserTestUtils.openNewBrowserWindow();
   let menubar = newWin.document.getElementById("toolbar-menubar");
-  is(
-    menubar.getAttribute("autohide"),
-    "false",
-    "The menu bar should not be hidden"
-  );
+  ok(!menubar.hasAttribute("autohide"), "The menu bar should not be hidden");
 
   await BrowserTestUtils.closeWindow(newWin);
 });
@@ -34,11 +30,7 @@ add_task(async function test_menu_shown_string() {
   // we will need to open a new window to actually see the menu bar
   let newWin = await BrowserTestUtils.openNewBrowserWindow();
   let menubar = newWin.document.getElementById("toolbar-menubar");
-  is(
-    menubar.getAttribute("autohide"),
-    "false",
-    "The menu bar should not be hidden"
-  );
+  ok(!menubar.hasAttribute("autohide"), "The menu bar should not be hidden");
 
   await BrowserTestUtils.closeWindow(newWin);
 });
@@ -74,7 +66,9 @@ add_task(async function test_menubar_off() {
 
   let newWin = await BrowserTestUtils.openNewBrowserWindow();
   let menubar = newWin.document.getElementById("toolbar-menubar");
-  is(menubar.hasAttribute("inactive"), true, "Menu bar should have inactive");
+  if (!Services.appinfo.nativeMenubar) {
+    is(menubar.hasAttribute("inactive"), true, "Menu bar should have inactive");
+  }
   is(
     menubar.hasAttribute("toolbarname"),
     false,

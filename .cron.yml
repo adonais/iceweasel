@@ -435,3 +435,13 @@ jobs:
           - mozilla-central
       when:
           - {weekday: 'Monday', hour: 6, minute: 0}
+
+    - name: weekly-test-info
+      job:
+          type: decision-task
+          treeherder-symbol: test-info
+          target-tasks-method: weekly-test-info
+      run-on-projects:
+          - mozilla-central
+      when:
+          - {weekday: 'Monday', hour: 3, minute: 0}

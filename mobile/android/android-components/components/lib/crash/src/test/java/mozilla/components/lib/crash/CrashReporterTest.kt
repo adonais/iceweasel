@@ -10,8 +10,6 @@ import android.content.Intent
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.withContext
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.lib.crash.db.CrashDao
@@ -49,12 +47,12 @@ import org.robolectric.annotation.Config
 import java.lang.Thread.sleep
 import java.lang.reflect.Modifier
 
-@ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class CrashReporterTest {
 
     @get:Rule
     val coroutinesTestRule = MainCoroutineRule()
+    private val dispatcher = coroutinesTestRule.testDispatcher
     private val scope = coroutinesTestRule.scope
 
     private lateinit var db: CrashDatabase
@@ -647,7 +645,7 @@ class CrashReporterTest {
             testType,
         )
         reporter.recordCrashBreadcrumb(breadcrumb)
-        advanceUntilIdle()
+        dispatcher.scheduler.advanceUntilIdle()
 
         reporter.submitCaughtException(throwable).joinBlocking()
 
@@ -704,7 +702,7 @@ class CrashReporterTest {
             testType,
         )
         reporter.recordCrashBreadcrumb(breadcrumb)
-        advanceUntilIdle()
+        dispatcher.scheduler.advanceUntilIdle()
 
         reporter.submitCaughtException(throwable).joinBlocking()
 
@@ -952,7 +950,7 @@ class CrashReporterTest {
         repeat(10) {
             crashReporter.recordCrashBreadcrumb(Breadcrumb(testMessage, testData, testCategory, testLevel, testType))
         }
-        advanceUntilIdle()
+        dispatcher.scheduler.advanceUntilIdle()
         assertEquals(crashReporter.crashBreadcrumbsCopy().size, 5)
 
         crashReporter = CrashReporter(
@@ -964,7 +962,7 @@ class CrashReporterTest {
         repeat(15) {
             crashReporter.recordCrashBreadcrumb(Breadcrumb(testMessage, testData, testCategory, testLevel, testType))
         }
-        advanceUntilIdle()
+        dispatcher.scheduler.advanceUntilIdle()
         assertEquals(crashReporter.crashBreadcrumbsCopy().size, 5)
     }
 
@@ -989,7 +987,7 @@ class CrashReporterTest {
             )
             sleep(10) // make sure time elapsed
         }
-        advanceUntilIdle()
+        dispatcher.scheduler.advanceUntilIdle()
 
         crashReporter.crashBreadcrumbsCopy().let {
             for (i in 0 until maxNum) {
@@ -1009,7 +1007,7 @@ class CrashReporterTest {
             )
             sleep(10) // make sure time elapsed
         }
-        advanceUntilIdle()
+        dispatcher.scheduler.advanceUntilIdle()
 
         crashReporter.crashBreadcrumbsCopy().let {
             for (i in 0 until maxNum) {
@@ -1248,7 +1246,7 @@ class CrashReporterTest {
             )
             sleep(10) // make sure time elapsed
         }
-        advanceUntilIdle()
+        dispatcher.scheduler.advanceUntilIdle()
 
         crashReporter.crashBreadcrumbsCopy().let {
             var time = it[0].date
@@ -1264,7 +1262,7 @@ class CrashReporterTest {
             )
             sleep(10) // make sure time elapsed
         }
-        advanceUntilIdle()
+        dispatcher.scheduler.advanceUntilIdle()
 
         crashReporter.crashBreadcrumbsCopy().let {
             var time = it[0].date

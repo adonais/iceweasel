@@ -56,8 +56,8 @@ EXTRA_JS_MODULES += [
 if CONFIG["NIGHTLY_BUILD"]:
     # Web Platform Test prototype is limited to Nightly for now.
     EXTRA_JS_MODULES += [
-        "WPTMessagesChild.sys.mjs",
-        "WPTMessagesParent.sys.mjs",
+        "WPTEventsChild.sys.mjs",
+        "WPTEventsParent.sys.mjs",
     ]
 
 EXTRA_COMPONENTS += [

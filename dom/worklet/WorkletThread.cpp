@@ -5,23 +5,24 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WorkletThread.h"
-#include "prthread.h"
+
+#include "XPCSelfHostedShmem.h"
+#include "js/ContextOptions.h"
+#include "js/Exception.h"
+#include "js/Initialization.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/CycleCollectedJSRuntime.h"
+#include "mozilla/EventQueue.h"
+#include "mozilla/FlowMarkers.h"
+#include "mozilla/ThreadEventQueue.h"
+#include "mozilla/dom/AtomList.h"
+#include "mozilla/dom/WorkletGlobalScope.h"
+#include "mozilla/ipc/BackgroundChild.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollector.h"
 #include "nsJSEnvironment.h"
 #include "nsJSPrincipals.h"
-#include "mozilla/dom/AtomList.h"
-#include "mozilla/dom/WorkletGlobalScope.h"
-#include "mozilla/ipc/BackgroundChild.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/CycleCollectedJSRuntime.h"
-#include "mozilla/FlowMarkers.h"
-#include "mozilla/EventQueue.h"
-#include "mozilla/ThreadEventQueue.h"
-#include "js/ContextOptions.h"
-#include "js/Exception.h"
-#include "js/Initialization.h"
-#include "XPCSelfHostedShmem.h"
+#include "prthread.h"
 
 namespace mozilla::dom {
 
@@ -162,6 +163,10 @@ class WorkletJSContext final : public CycleCollectedJSContext {
 #endif
 
     JS::JobQueueMayNotBeEmpty(cx);
+    if (!runnable->isInList()) {
+      // A recycled object may be in the list already.
+      mMicrotasksToTrace.insertBack(runnable);
+    }
     PROFILER_MARKER_FLOW_ONLY("WorkletJSContext::DispatchToMicroTask", OTHER,
                               {}, FlowMarker,
                               Flow::FromPointer(runnable.get()));

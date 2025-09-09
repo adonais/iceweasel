@@ -5,23 +5,23 @@
 #ifndef _JSEPTRACK_H_
 #define _JSEPTRACK_H_
 
-#include <functional>
+#include <mozilla/UniquePtr.h>
+
 #include <algorithm>
-#include <string>
+#include <functional>
 #include <map>
 #include <set>
+#include <string>
 #include <vector>
-
-#include <mozilla/UniquePtr.h>
-#include "mozilla/Preferences.h"
-#include "nsError.h"
 
 #include "jsep/JsepTrackEncoding.h"
 #include "jsep/SsrcGenerator.h"
+#include "libwebrtcglue/RtpRtcpConfig.h"
+#include "mozilla/Preferences.h"
+#include "nsError.h"
 #include "sdp/Sdp.h"
 #include "sdp/SdpAttribute.h"
 #include "sdp/SdpMediaSection.h"
-#include "libwebrtcglue/RtpRtcpConfig.h"
 namespace mozilla {
 
 class JsepTrackNegotiatedDetails {

@@ -7,13 +7,13 @@
 #ifndef nsCSPUtils_h___
 #define nsCSPUtils_h___
 
+#include "mozilla/ErrorResult.h"
 #include "nsCOMPtr.h"
 #include "nsILoadInfo.h"
 #include "nsIURI.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsUnicharUtils.h"
-#include "mozilla/ErrorResult.h"
 
 class nsIChannel;
 

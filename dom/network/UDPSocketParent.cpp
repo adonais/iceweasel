@@ -5,19 +5,20 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "UDPSocketParent.h"
+
 #include "UDPSocket.h"
-#include "nsComponentManagerUtils.h"
-#include "nsIUDPSocket.h"
-#include "nsINetAddr.h"
-#include "nsNetCID.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/ipc/InputStreamUtils.h"
+#include "mozilla/ipc/PBackgroundParent.h"
 #include "mozilla/net/DNS.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/net/PNeckoParent.h"
+#include "nsComponentManagerUtils.h"
+#include "nsINetAddr.h"
 #include "nsIPermissionManager.h"
-#include "mozilla/ipc/PBackgroundParent.h"
+#include "nsIUDPSocket.h"
+#include "nsNetCID.h"
 #include "transport/runnable_utils.h"
 
 namespace mozilla {

@@ -8,7 +8,6 @@ import androidx.concurrent.futures.await
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.ListenableWorker
 import androidx.work.testing.TestListenableWorkerBuilder
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mozilla.components.service.pocket.GlobalDependencyProvider
 import mozilla.components.service.pocket.helpers.assertClassVisibility
 import mozilla.components.service.pocket.stories.PocketStoriesUseCases
@@ -24,7 +23,6 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.doReturn
 import kotlin.reflect.KVisibility
 
-@ExperimentalCoroutinesApi // for runTestOnMain
 @RunWith(AndroidJUnit4::class)
 class RefreshPocketWorkerTest {
 

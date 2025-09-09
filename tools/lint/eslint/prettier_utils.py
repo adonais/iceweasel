@@ -51,7 +51,7 @@ def run_prettier(cmd_args, config, fix):
             # errors during tests.
             if not ("Ignored unknown option" in error)
         ]
-        if len(errors):
+        if errors:
             results.append(
                 result.from_config(
                     config,
@@ -69,7 +69,7 @@ def run_prettier(cmd_args, config, fix):
 
     if not output:
         # If we have errors, but no output, we assume something really bad happened.
-        if errors and len(errors):
+        if errors and errors:
             return {"results": results, "fixed": 0}
 
         return {"results": [], "fixed": 0}  # no output means success

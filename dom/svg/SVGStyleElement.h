@@ -7,9 +7,9 @@
 #ifndef DOM_SVG_SVGSTYLEELEMENT_H_
 #define DOM_SVG_SVGSTYLEELEMENT_H_
 
+#include "SVGElement.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/LinkStyle.h"
-#include "SVGElement.h"
 #include "nsStubMutationObserver.h"
 
 nsresult NS_NewSVGStyleElement(

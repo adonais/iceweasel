@@ -12,6 +12,8 @@
   <string name="content_description_menu">Madamo nga pilian</string>
   <!-- Label of editable text in create collection dialog for naming a new collection -->
   <string name="tab_tray_add_new_collection_name">Ngalan</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!--
     Browser Fragment
 

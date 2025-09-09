@@ -1056,3 +1056,23 @@ crash_submission:
     data_sensitivity:
       - technical
     expires: never
+  failure_event:
+    type: event
+    description: A crash report failed to be submitted.
+    notification_emails:
+      - crash-reporting-wg@mozilla.org
+      - stability@mozilla.org
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1976485
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1976485
+    data_sensitivity:
+      - technical
+    expires: never
+    extra_keys:
+      id:
+        description: A unique identifier for the crash.
+        type: string
+      reason:
+        description: The reason why the crash failed to be submitted.
+        type: string

@@ -335,6 +335,9 @@ class LookAndFeel {
     /* Whether the menubar is native / outside the application */
     NativeMenubar,
 
+    // The system's hour cycle, either 0 if unknown, 12, or 24.
+    HourCycle,
+
     /*
      * Not an ID; used to define the range of valid IDs.  Must be last.
      */

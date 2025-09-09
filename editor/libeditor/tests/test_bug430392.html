@@ -41,16 +41,16 @@ function test() {
         synthesizeKey("KEY_ArrowRight");             //  <span contenteditable=false>A</span>[] ; <span
         synthesizeKey("KEY_Enter");
         info(`1st Enter: "${edit.innerHTML}"`);
-        // " <div><span contenteditable="false">A</span><br></div><div>[]&nbsp;; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> "
+        // " <div><span contenteditable="false">A</span></div><div>[]&nbsp;; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> "
         synthesizeKey("KEY_Enter");
         info(`2nd Enter: "${edit.innerHTML}"`);
-        // " <div><span contenteditable="false">A</span><br></div><div><br></div><div>[]&nbsp;; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> "
+        // " <div><span contenteditable="false">A</span></div><div><br></div><div>[]&nbsp;; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> "
         synthesizeKey("KEY_Backspace");
         info(`1st Backspace: "${edit.innerHTML}"`);
-        // " <div><span contenteditable="false">A</span><br></div><div>&nbsp;; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> "
+        // " <div><span contenteditable="false">A</span></div><div>[]&nbsp;; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> "
         synthesizeKey("KEY_Backspace");
         info(`2nd Backspace: "${edit.innerHTML}"`);
-        // " <div><span contenteditable="false">A</span>&nbsp;; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span></div> "
+        // " &nbsp;; <span contenteditable="false">B</span> ; <span contenteditable="false">C</span><div><span contenteditable="false">A</span></div> "
       }, [
         "insertParagraph",
         "insertParagraph",
@@ -71,7 +71,7 @@ function test() {
             // NBSP when it's wrapped in a new paragraph.  Then, it'll stay
             // the start of the `Text` after `Backspace`es.  Therefore, it
             // won't be back to an ASCII white-space.
-            return " A\u00A0; B ; C ";
+            return " &nbsp;; B ; CA ";
           case "br":
             // After insertLineBreak, the first white-space should be replaced
             // with &nbsp; and it should not be reconverted at Backspace.

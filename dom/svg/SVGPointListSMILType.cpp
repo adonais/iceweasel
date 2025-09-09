@@ -6,11 +6,12 @@
 
 #include "SVGPointListSMILType.h"
 
+#include <math.h>
+
+#include "SVGPointList.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/SMILValue.h"
 #include "nsMathUtils.h"
-#include "SVGPointList.h"
-#include <math.h>
 
 namespace mozilla {
 

@@ -331,14 +331,14 @@ TEST(CmdLineAndEnvUtils, strimatch)
   using mozilla::strimatch;
   for (auto const& [result, data] : kStrMatches8) {
     auto const& [left, right] = data;
-    EXPECT_EQ(strimatch(left, right), result)
-        << '<' << left << "> !~ <" << right << '>';
+    auto match = strimatch(left, right);
+    EXPECT_EQ(match, result) << '<' << left << "> !~ <" << right << '>';
 
 #ifdef XP_WIN
     wchar_t right_wide[200];
     ::mbstowcs(right_wide, right, 200);
-    EXPECT_EQ(strimatch(left, right_wide), result)
-        << '<' << left << "> !~ L<" << right << '>';
+    auto match_wide = strimatch(left, right_wide);
+    EXPECT_EQ(match_wide, result) << '<' << left << "> !~ L<" << right << '>';
 #endif
   }
 
@@ -349,6 +349,65 @@ TEST(CmdLineAndEnvUtils, strimatch)
         << '<' << left << "> !~ L<" << right << '>';
   }
 #endif
+}
+
+TEST(CmdLineAndEnvUtils, ArgStartsWith)
+{
+  using mozilla::ArgStartsWith;
+  // Should match and point to '='
+  auto match = ArgStartsWith("flag=value", "flag");
+  ASSERT_TRUE(match);
+  // Should match and point to '\0' for exact match
+  auto match2 = ArgStartsWith("flag", "flag");
+  ASSERT_TRUE(match2);
+  // Should not match
+  auto match3 = ArgStartsWith("flog=value", "flag");
+  EXPECT_FALSE(match3);
+}
+
+TEST(CmdLineAndEnvUtils, flagValue)
+{
+  using mozilla::ARG_BAD;
+  using mozilla::ARG_FOUND;
+  using mozilla::ARG_NONE;
+  using mozilla::CheckArg;
+  int argc;
+  const char* argv1[] = {"prog", "--flag=value", nullptr};
+  argc = 2;
+  const char* param = nullptr;
+  EXPECT_EQ(CheckArg(argc, const_cast<char**>(argv1), "flag", &param),
+            ARG_FOUND);
+  ASSERT_TRUE(param);
+  EXPECT_STREQ(param, "value");
+
+  const char* argv2[] = {"prog", "-flag=foo", nullptr};
+  argc = 2;
+  param = nullptr;
+  EXPECT_EQ(CheckArg(argc, const_cast<char**>(argv2), "flag", &param),
+            ARG_FOUND);
+  ASSERT_TRUE(param);
+  EXPECT_STREQ(param, "foo");
+
+  // Should still work for --flag value
+  const char* argv3[] = {"prog", "--flag", "bar", nullptr};
+  argc = 3;
+  param = nullptr;
+  EXPECT_EQ(CheckArg(argc, const_cast<char**>(argv3), "flag", &param),
+            ARG_FOUND);
+  ASSERT_TRUE(param);
+  EXPECT_STREQ(param, "bar");
+
+  // Should not match for --flog=value
+  const char* argv4[] = {"prog", "--flog=value", nullptr};
+  argc = 2;
+  param = nullptr;
+  EXPECT_EQ(CheckArg(argc, const_cast<char**>(argv4), "flag", &param),
+            ARG_NONE);
+
+  const char* argv5[] = {"prog", "-flag=foo", nullptr};
+  argc = 2;
+  EXPECT_EQ(CheckArg(argc, const_cast<char**>(argv5), "flag", nullptr),
+            ARG_BAD);
 }
 
 TEST(CmdLineAndEnvUtils, ensureSafe)

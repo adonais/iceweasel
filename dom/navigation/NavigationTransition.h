@@ -7,13 +7,11 @@
 #ifndef mozilla_dom_NavigationTransition_h___
 #define mozilla_dom_NavigationTransition_h___
 
-#include "nsISupports.h"
-
+#include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsISupports.h"
 #include "nsWrapperCache.h"
-
-#include "mozilla/RefPtr.h"
 
 class nsIGlobalObject;
 

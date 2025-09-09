@@ -9,8 +9,8 @@
 #include "MFMediaEngineUtils.h"
 #include "TimeUnits.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/PMFMediaEngineChild.h"
 #include "mozilla/NotNull.h"
+#include "mozilla/PMFMediaEngineChild.h"
 
 namespace mozilla {
 

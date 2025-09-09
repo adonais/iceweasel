@@ -76,7 +76,7 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
   void ShutdownInternal();
   int OpenCodecContext(const AVCodec* aCodec, AVDictionary** aOptions)
       MOZ_EXCLUDES(sMutex);
-  void CloseCodecContext() MOZ_EXCLUDES(sMutex);
+  void ReleaseCodecContext() MOZ_EXCLUDES(sMutex);
   bool PrepareFrame();
   void DestroyFrame();
 #if LIBAVCODEC_VERSION_MAJOR >= 58

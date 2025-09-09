@@ -4,14 +4,18 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AddonTestUtils: "resource://testing-common/AddonTestUtils.sys.mjs",
-  AppProvidedSearchEngine:
-    "moz-src:///toolkit/components/search/AppProvidedSearchEngine.sys.mjs",
+  AppProvidedConfigEngine:
+    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   ExtensionTestUtils:
     "resource://testing-common/ExtensionXPCShellUtils.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
+
+/**
+ * @import {AppProvidedConfigEngine} from "ConfigSearchEngine.sys.mjs"
+ */
 
 /**
  * A class containing useful testing functions for Search based tests.
@@ -400,12 +404,12 @@ class _SearchTestUtils {
    *
    * @param {Array} engineConfigurations
    *   An array of engine configurations.
-   * @returns {AppProvidedSearchEngine[]}
-   *   An array of app provided search engine objects.
+   * @returns {Promise<AppProvidedConfigEngine[]>}
+   *   An array of app provided config engine objects.
    */
   async searchConfigToEngines(engineConfigurations) {
     return engineConfigurations.map(
-      config => new lazy.AppProvidedSearchEngine({ config })
+      config => new lazy.AppProvidedConfigEngine({ config })
     );
   }
 

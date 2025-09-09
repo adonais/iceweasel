@@ -108,7 +108,7 @@ pub struct SearchUrlParam {
 }
 
 /// Defines an individual search engine URL.
-#[derive(Debug, uniffi::Record, PartialEq, Deserialize, Clone, Default)]
+#[derive(Debug, uniffi::Record, PartialEq, Deserialize, Clone)]
 pub struct SearchEngineUrl {
     /// The PrePath and FilePath of the URL. May include variables for engines
     /// which have a variable FilePath, e.g. `{searchTerms}` for when a search
@@ -129,7 +129,27 @@ pub struct SearchEngineUrl {
 
     /// The display name of the URL, if any. This is useful if the URL
     /// corresponds to a brand name distinct from the engine's brand name.
+    #[uniffi(default = None)]
     pub display_name: Option<String>,
+
+    /// Indicates the date until which the URL is considered new
+    /// (format: YYYY-MM-DD).
+    #[uniffi(default = None)]
+    pub is_new_until: Option<String>,
+
+    /// Whether the engine's partner code should be excluded from telemetry when
+    /// this URL is visited.
+    #[uniffi(default = false)]
+    pub exclude_partner_code_from_telemetry: bool,
+
+    /// If this URL performs searches only for certain MIME types, they should
+    /// be listed here. If `None`, it's assumed the content type is text or not
+    /// relevant. This field is intended to be used for URLs like visual search,
+    /// which might support certain image types and not others. Consumers can
+    /// use it to determine whether search UI corresponding to the URL should be
+    /// shown to the user in a given context.
+    #[uniffi(default = None)]
+    pub accepted_content_types: Option<Vec<String>>,
 }
 
 /// The URLs associated with the search engine.

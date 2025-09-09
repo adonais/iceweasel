@@ -172,6 +172,7 @@ const DEFAULT_ACTIONS = {
   refresh: {
     l10nCommands: ["quickactions-cmd-refresh"],
     label: "quickactions-refresh",
+    isVisible: () => lazy.ResetProfile.resetSupported(),
     onPick: () => {
       lazy.ResetProfile.openConfirmationDialog(
         lazy.BrowserWindowTracker.getTopWindow()

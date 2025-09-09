@@ -7,16 +7,16 @@
 
 #include "CDMStorageIdProvider.h"
 #include "ChromiumCDMAdapter.h"
-#include "GeckoProfiler.h"
 #include "GMPContentParent.h"
 #include "GMPLog.h"
 #include "GMPTimerParent.h"
+#include "GeckoProfiler.h"
 #include "MediaResult.h"
 #include "mozIGeckoMediaPluginService.h"
 #include "mozilla/Casting.h"
+#include "mozilla/FOGIPC.h"
 #include "mozilla/dom/KeySystemNames.h"
 #include "mozilla/dom/WidevineCDMManifestBinding.h"
-#include "mozilla/FOGIPC.h"
 #include "mozilla/ipc/CrashReporterHost.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
@@ -24,34 +24,34 @@
 #  include "mozilla/SandboxInfo.h"
 #  include "mozilla/ipc/SharedMemoryHandle.h"
 #endif
-#include "mozilla/Services.h"
+#include "ProfilerParent.h"
 #include "mozilla/SSE.h"
+#include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/SyncRunnable.h"
-#include "mozilla/glean/IpcMetrics.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
+#include "mozilla/glean/IpcMetrics.h"
 #include "nsComponentManagerUtils.h"
-#include "nsIRunnable.h"
 #include "nsIObserverService.h"
+#include "nsIRunnable.h"
 #include "nsIWritablePropertyBag2.h"
 #include "nsPrintfCString.h"
 #include "nsThreadUtils.h"
-#include "ProfilerParent.h"
 #include "runnable_utils.h"
 #ifdef XP_WIN
-#  include "mozilla/FileUtilsWin.h"
-#  include "mozilla/WinDllServices.h"
 #  include "PDMFactory.h"
 #  include "WMFDecoderModule.h"
+#  include "mozilla/FileUtilsWin.h"
+#  include "mozilla/WinDllServices.h"
 #endif
 #if defined(MOZ_WIDGET_ANDROID)
 #  include "mozilla/java/GeckoProcessManagerWrappers.h"
 #  include "mozilla/java/GeckoProcessTypeWrappers.h"
 #endif  // defined(MOZ_WIDGET_ANDROID)
 #if defined(XP_MACOSX)
-#  include "nsMacUtilsImpl.h"
 #  include "base/process_util.h"
+#  include "nsMacUtilsImpl.h"
 #endif  // defined(XP_MACOSX)
 
 using mozilla::ipc::GeckoChildProcessHost;

@@ -237,6 +237,9 @@ const checkSetCookiePermissions = (extension, uri, cookie) => {
         // match, so return false. In all other cases, re-raise the error.
         return false;
       }
+      if (e.result == Cr.NS_ERROR_ILLEGAL_VALUE) {
+        throw new ExtensionError(`Invalid domain url: "${uri.prePath}"`);
+      }
       throw e;
     }
 
@@ -736,20 +739,32 @@ this.cookies = class extends ExtensionAPIPersistent {
           let fn = gCookiesRejectWhenInvalid
             ? Services.cookies.add
             : Services.cookies.addForAddOn;
-          const cv = fn(
-            cookieAttrs.host,
-            path,
-            name,
-            value,
-            secure,
-            httpOnly,
-            isSession,
-            expiry,
-            originAttributes,
-            sameSite,
-            schemeType,
-            isPartitioned
-          );
+
+          let cv;
+          try {
+            cv = fn(
+              cookieAttrs.host,
+              path,
+              name,
+              value,
+              secure,
+              httpOnly,
+              isSession,
+              expiry,
+              originAttributes,
+              sameSite,
+              schemeType,
+              isPartitioned
+            );
+          } catch (e) {
+            if (e.result == Cr.NS_ERROR_ILLEGAL_VALUE) {
+              //At this moment, the only way to have NS_ERROR_ILLEGAL_VALUE being thrown
+              // is if `cookieAttrs.host` is invalid. See: https://searchfox.org/mozilla-central/rev/f008b9aa2adf2dca6bdd49855b314cb3195f6f27/netwerk/cookie/CookieService.cpp#733-738
+              // We will have to make this error more specific if other cases arise.
+              throw new ExtensionError(`Invalid domain: "${cookieAttrs.host}"`);
+            }
+            throw e;
+          }
 
           if (cv.result !== Ci.nsICookieValidation.eOK) {
             if (gCookiesRejectWhenInvalid) {

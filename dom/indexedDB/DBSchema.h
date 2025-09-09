@@ -7,9 +7,9 @@
 #ifndef dom_indexeddb_dbschema_h__
 #define dom_indexeddb_dbschema_h__
 
-#include "ErrorList.h"
-
 #include <cstdint>
+
+#include "ErrorList.h"
 
 class mozIStorageConnection;
 

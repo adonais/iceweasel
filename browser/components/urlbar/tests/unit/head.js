@@ -940,6 +940,55 @@ function makeCalculatorResult(queryContext, { value }) {
 }
 
 /**
+ * Creates a UrlbarResult for a global action result.
+ *
+ * @param {object} options
+ * @param {Array} [options.actionsResults]
+ *   An array of action descriptors.
+ * @param {string} [options.query]
+ *  The query passed to actions when they run.
+ *  It is "" for contextual search, otherwise it is queryContext.searchString.
+ * @param {number} [options.inputLength]
+ *  Original input length.
+ * @param {boolean} [options.showOnboardingLabel]
+ *   Whether the “press Tab” hint should appear.
+ * @param {boolean} [options.providesSearchMode]
+ *   Whether selecting an action enters a search mode.
+ * @param {string | null} [options.engine]
+ *   The engine name, if providesSearchMode is true.
+ * @returns {UrlbarResult}
+ */
+function makeGlobalActionsResult({
+  actionsResults,
+  query,
+  inputLength,
+  showOnboardingLabel = false,
+  providesSearchMode = false,
+  engine,
+}) {
+  const payload = {
+    actionsResults,
+    dynamicType: "actions",
+    query,
+    input: query,
+    inputLength,
+    showOnboardingLabel,
+    providesSearchMode,
+    engine,
+  };
+
+  const result = new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.DYNAMIC,
+    UrlbarUtils.RESULT_SOURCE.ACTIONS,
+    payload
+  );
+
+  result.providerName = "UrlbarProviderGlobalActions";
+
+  return result;
+}
+
+/**
  * Checks that the results returned by a UrlbarController match those in
  * the param `matches`.
  *

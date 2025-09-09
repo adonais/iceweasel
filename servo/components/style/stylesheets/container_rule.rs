@@ -64,11 +64,7 @@ impl ContainerRule {
 }
 
 impl DeepCloneWithLock for ContainerRule {
-    fn deep_clone_with_lock(
-        &self,
-        lock: &SharedRwLock,
-        guard: &SharedRwLockReadGuard,
-    ) -> Self {
+    fn deep_clone_with_lock(&self, lock: &SharedRwLock, guard: &SharedRwLockReadGuard) -> Self {
         let rules = self.rules.read_with(guard);
         Self {
             condition: self.condition.clone(),
@@ -114,17 +110,17 @@ pub struct ContainerLookupResult<E> {
 }
 
 fn container_type_axes(ty_: ContainerType, wm: WritingMode) -> FeatureFlags {
-    match ty_ {
-        ContainerType::Size => FeatureFlags::all_container_axes(),
-        ContainerType::InlineSize => {
-            let physical_axis = if wm.is_vertical() {
-                FeatureFlags::CONTAINER_REQUIRES_HEIGHT_AXIS
-            } else {
-                FeatureFlags::CONTAINER_REQUIRES_WIDTH_AXIS
-            };
-            FeatureFlags::CONTAINER_REQUIRES_INLINE_AXIS | physical_axis
-        },
-        ContainerType::Normal => FeatureFlags::empty(),
+    if ty_.intersects(ContainerType::SIZE) {
+        FeatureFlags::all_container_axes()
+    } else if ty_.intersects(ContainerType::INLINE_SIZE) {
+        let physical_axis = if wm.is_vertical() {
+            FeatureFlags::CONTAINER_REQUIRES_HEIGHT_AXIS
+        } else {
+            FeatureFlags::CONTAINER_REQUIRES_WIDTH_AXIS
+        };
+        FeatureFlags::CONTAINER_REQUIRES_INLINE_AXIS | physical_axis
+    } else {
+        FeatureFlags::empty()
     }
 }
 
@@ -517,25 +513,25 @@ impl<'a> ContainerSizeQuery<'a> {
 
         let container_type = box_style.clone_container_type();
         let size = e.query_container_size(&box_style.clone_display());
-        match container_type {
-            ContainerType::Size => TraversalResult::Done(ContainerSizeQueryResult {
+        if container_type.intersects(ContainerType::SIZE) {
+            TraversalResult::Done(ContainerSizeQueryResult {
                 width: size.width,
                 height: size.height,
-            }),
-            ContainerType::InlineSize => {
-                if wm.is_horizontal() {
-                    TraversalResult::Done(ContainerSizeQueryResult {
-                        width: size.width,
-                        height: None,
-                    })
-                } else {
-                    TraversalResult::Done(ContainerSizeQueryResult {
-                        width: None,
-                        height: size.height,
-                    })
-                }
-            },
-            ContainerType::Normal => TraversalResult::InProgress,
+            })
+        } else if container_type.intersects(ContainerType::INLINE_SIZE) {
+            if wm.is_horizontal() {
+                TraversalResult::Done(ContainerSizeQueryResult {
+                    width: size.width,
+                    height: None,
+                })
+            } else {
+                TraversalResult::Done(ContainerSizeQueryResult {
+                    width: None,
+                    height: size.height,
+                })
+            }
+        } else {
+            TraversalResult::InProgress
         }
     }
 

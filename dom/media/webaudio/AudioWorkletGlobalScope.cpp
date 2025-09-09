@@ -9,19 +9,19 @@
 #include "AudioNodeEngine.h"
 #include "AudioNodeTrack.h"
 #include "AudioWorkletImpl.h"
-#include "jsapi.h"
+#include "Tracing.h"
 #include "js/ForOfIterator.h"
 #include "js/PropertyAndElement.h"  // JS_GetProperty
+#include "jsapi.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/dom/AudioParamDescriptorBinding.h"
 #include "mozilla/dom/AudioWorkletGlobalScopeBinding.h"
 #include "mozilla/dom/AudioWorkletProcessor.h"
 #include "mozilla/dom/BindingCallContext.h"
 #include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
-#include "mozilla/dom/AudioParamDescriptorBinding.h"
 #include "nsPrintfCString.h"
 #include "nsTHashSet.h"
-#include "Tracing.h"
 
 namespace mozilla::dom {
 

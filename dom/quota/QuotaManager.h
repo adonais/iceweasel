@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <utility>
+
 #include "Client.h"
 #include "ErrorList.h"
 #include "mozilla/AlreadyAddRefed.h"
@@ -34,12 +35,12 @@
 #include "mozilla/dom/quota/PersistenceType.h"
 #include "nsCOMPtr.h"
 #include "nsClassHashtable.h"
-#include "nsTHashMap.h"
 #include "nsDebug.h"
 #include "nsHashKeys.h"
 #include "nsISupports.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
+#include "nsTHashMap.h"
 #include "nsTStringRepr.h"
 #include "nscore.h"
 #include "prenv.h"
@@ -302,6 +303,9 @@ class QuotaManager final : public BackgroundThreadObject {
 
   Result<FullOriginMetadata, nsresult> LoadFullOriginMetadataWithRestore(
       nsIFile* aDirectory);
+
+  Result<std::pair<FullOriginMetadata, bool /* restore status */>, nsresult>
+  LoadFullOriginMetadataWithRestoreAndStatus(nsIFile* aDirectory);
 
   Result<OriginMetadata, nsresult> GetOriginMetadata(nsIFile* aDirectory);
 

@@ -8,13 +8,13 @@
 #define mozilla_dom_Console_h
 
 #include "domstubs.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/dom/ConsoleBinding.h"
 #include "mozilla/dom/ConsoleInstanceBinding.h"
-#include "mozilla/TimeStamp.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsTHashMap.h"
 #include "nsHashKeys.h"
 #include "nsIObserver.h"
+#include "nsTHashMap.h"
 #include "nsWeakReference.h"
 
 class nsIConsoleAPIStorage;

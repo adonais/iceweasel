@@ -9,7 +9,6 @@ import android.content.SharedPreferences
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mozilla.appservices.push.BridgeType
 import mozilla.appservices.push.DecryptResponse
 import mozilla.appservices.push.KeyInfo
@@ -44,7 +43,6 @@ import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoMoreInteractions
 
-@ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class AutoPushFeatureTest {
 

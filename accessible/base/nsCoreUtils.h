@@ -347,6 +347,12 @@ class nsCoreUtils {
    * will return true for the latter node.
    */
   static bool IsTrimmedWhitespaceBeforeHardLineBreak(nsIFrame* aFrame);
+
+  static bool IsPseudoElement(nsIContent* aContent) {
+    return aContent->IsGeneratedContentContainerForBefore() ||
+           aContent->IsGeneratedContentContainerForAfter() ||
+           aContent->IsGeneratedContentContainerForMarker();
+  }
 };
 
 #endif

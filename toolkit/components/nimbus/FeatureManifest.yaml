@@ -105,7 +105,10 @@ nimbusStore:
 search:
   description: Search service related features.
   owner: search-and-suggest-program@mozilla.com
-  hasExposure: false
+  hasExposure: true
+  exposureDescription: >
+    Exposure is recorded when the visual search context menu item is shown or
+    would have been shown.
   variables:
     scotchBonnetEnableOverride:
       type: boolean
@@ -138,6 +141,13 @@ search:
         Recorded in SERP telemetry, this is the slug of the experiment someone
         is requesting enrollment and branch information for. (Note that the
         featureId needs to be set to "search".)
+    visualSearchEnabled:
+      type: boolean
+      setPref:
+        branch: default
+        pref: browser.search.visualSearch.featureGate
+      description: >-
+        Feature gate for visual search.
 
 searchConfiguration:
   description: >-
@@ -261,31 +271,20 @@ urlbar:
       description: >-
         Feature gate that controls whether result deduplication in the urlbar
         is enabled.
+    # TODO Bug 1982966: Remove this after all experiments and rollouts using it
+    # finish.
     fakespotFeatureGate:
       type: boolean
       fallbackPref: browser.urlbar.fakespot.featureGate
       description: >-
         Feature gate that controls whether all aspects of the Fakespot suggestion
         feature are exposed to the user.
-    fakespotMinKeywordLength:
-      type: int
+    importantDatesFeatureGate:
+      type: boolean
+      fallbackPref: browser.urlbar.importantDates.featureGate
       description: >-
-        The minimum prefix length of a Fakespot keyword the user must type to
-        trigger the suggestion.
-    fakespotShowLessFrequentlyCap:
-      type: int
-      fallbackPref: browser.urlbar.fakespot.showLessFrequentlyCap
-      description: >-
-        If defined and non-zero, this is the maximum number of times the user
-        will be able to click the "Show less frequently" command for Fakespot
-        suggestions. If undefined or zero, the user will be able to click the
-        command without any limit.
-    fakespotSuggestedIndex:
-      type: int
-      fallbackPref: browser.urlbar.fakespot.suggestedIndex
-      description: >-
-        The index of Fakespot results within the Firefox Suggest section. A
-        negative index is relative to the end of the section.
+        Feature gate that controls whether all aspects of the important dates
+        suggestion feature are exposed to the user.
     keywordExposureResults:
       type: string
       setPref:
@@ -301,6 +300,12 @@ urlbar:
         setting the `quickSuggestExposureSuggestionTypes` variable. Keyword
         exposures are recorded in the `urlbar-keyword-exposure` ping. See that
         ping's description for more.
+    marketFeatureGate:
+      type: boolean
+      fallbackPref: browser.urlbar.market.featureGate
+      description: >-
+        Feature gate that controls whether all aspects of the stock market
+        suggestions feature are exposed to the user.
     mdnFeatureGate:
       type: boolean
       setPref:
@@ -521,6 +526,18 @@ urlbar:
         * "Sponsored" label is shown as the group label.
         * Change the suggested index to 1.
         * Handle as top pick.
+    realtimeMinKeywordLength:
+      type: int
+      description: >-
+        The minimum prefix length of a realtime keyword the user must type to
+        trigger the suggestion.
+    realtimeShowLessFrequentlyCap:
+      type: int
+      description: >-
+        If defined and non-zero, this is the maximum number of times the user
+        will be able to click the "Show less frequently" command for realtime
+        suggestions. If undefined or zero, the user will be able to click the
+        command without any limit.
     recentSearchesFeatureGate:
       type: boolean
       setPref:
@@ -547,6 +564,14 @@ urlbar:
       description: >-
         Fraction (0.0 – 1.0) of top Places rows that must have embeddings
         before semantic-history search is enabled. 0.5 = 50 %.
+    semanticHistoryDefaultBatchChunksize:
+      type: int
+      setPref:
+        branch: user
+        pref: places.semanticHistory.defaultBatchChunksize
+      description: >-
+        The batch chunk size for updates for vectorDB
+        defaulted at 25.
     semanticHistoryDistanceThreshold:
       type: string
       setPref:
@@ -985,6 +1010,18 @@ newtabAdSizingExperiment:
       description: >-
         Medium rectangle (MREC) ad size and UI.
 
+newtabPromoCard:
+  description: the promo card that appears next to the ad banner
+  owner: achurchwell@mozilla.com
+  hasExposure: false
+  variables:
+      enabled:
+        type: boolean
+        description: Turns on and off the promo card.
+        setPref:
+          branch: user
+          pref: browser.newtabpage.activity-stream.discoverystream.promoCard.enabled
+
 newtabAdsReporting:
   description: about:newtab reporting ads feature
   owner: rhamoui@mozilla.com
@@ -1128,6 +1165,20 @@ newtabMerinoOhttp:
         pref: browser.newtabpage.activity-stream.discoverystream.merino-provider.ohttp.enabled
       description: >-
         Enables using OHTTP for merino content requests
+
+newtabOhttpImages:
+  description: Sending request to MARS over OHTTP in newtab
+  owner: nbarrett@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      type: boolean
+      description: >-
+        Enables using OHTTP for images
+    includeTopStoriesSection:
+      type: boolean
+      description: >-
+        Enables using OHTTP for top stories section if enabled for images
 
 newtabMobileDownloadPromotion:
   description: Cross-sell promotion to download Firefox for mobile
@@ -1342,20 +1393,6 @@ newTabSectionsExperiment:
         pref: browser.newtabpage.activity-stream.discoverystream.placements.contextualBanners.counts
       description: CSV string of AdBanner placement counts on newtab Pocket grid. The count tells the ad server how many banners to return for this position and placement.
 
-newtabShortcutsExperiment:
-  description: >-
-    Adjusting sizes and spacing of new tab shortcuts.
-  owner: sdowne@mozilla.com
-  hasExposure: false
-  variables:
-    refresh:
-      type: boolean
-      setPref:
-        branch: user
-        pref: browser.newtabpage.activity-stream.newtabShortcuts.refresh
-      description: >-
-        Adjusting sizes and spacing of new tab shortcuts.
-
 newtabInferredPersonalization:
   description: about:newtab inferred content personalization settings
   owner: rrando@mozilla.com
@@ -1380,6 +1417,10 @@ newtabSmartShortcuts:
       type: boolean
       description: >-
         Enable personalized shortcuts
+    force_log:
+      type: boolean
+      description: >-
+        Enable logging of shortcut interactions independent of ranking
     over_sample_multiplier:
       type: int
       description: >-
@@ -1400,14 +1441,30 @@ newtabSmartShortcuts:
       type: int
       description: >-
         Percentage weight of frecency
+    hour_weight:
+      type: int
+      description: >-
+        Percentage weight of hourly seasonality
+    daily_weight:
+      type: int
+      description: >-
+        Percentage weight of daily seasonality
     bias_weight:
       type: int
       description: >-
         Percentage weight for bias for computing final ranking
+    fset:
+      type: int
+      description: >-
+        Key for smartshortcuts feature set
     eta:
       type: int
       description: >-
         Learning rate for shortcut ranking weights, will divide by 10000
+    click_bonus:
+      type: int
+      description: >-
+        bonus multiplier for clicks, will divide by 10
 
 newtabSpocsCache:
   description: The about:newtab sponsored content cache.
@@ -1619,6 +1676,10 @@ newtabWidgets:
   owner: mcrawford@mozilla.com
   hasExposure: false
   variables:
+    enabled:
+      type: boolean
+      description: >-
+        Enable all widgets
     listsEnabled:
       type: boolean
       description: >-
@@ -1687,19 +1748,6 @@ pocketNewtab:
       fallbackPref: >-
         browser.newtabpage.activity-stream.discoverystream.newFooterSection.enabled
       description: Enable an updated Pocket section topics footer
-    saveToPocketCard:
-      type: boolean
-      fallbackPref: >-
-        browser.newtabpage.activity-stream.discoverystream.saveToPocketCard.enabled
-      description: >-
-        A save to Pocket button inside the card, shown on the card thumbnail, on
-        hover.
-    saveToPocketCardRegions:
-      type: string
-      fallbackPref: >-
-        browser.newtabpage.activity-stream.discoverystream.saveToPocketCardRegions
-      description: >-
-        CSV string of regions that support the save to Pocket button inside the card.
     hideDescriptions:
       type: boolean
       fallbackPref: >-
@@ -1749,26 +1797,6 @@ pocketNewtab:
         browser.newtabpage.activity-stream.discoverystream.onboardingExperience.enabled
       description: >-
         Enables an onboarding experience for Pocket section on newtab.
-    essentialReadsHeader:
-      type: boolean
-      fallbackPref: >-
-        browser.newtabpage.activity-stream.discoverystream.essentialReadsHeader.enabled
-      description: >-
-        Updates the Pocket section header and title to say "Today’s Essential Reads",
-        moves the "Recommended by Pocket" header to the right side.
-    editorsPicksHeader:
-      type: boolean
-      fallbackPref: >-
-        browser.newtabpage.activity-stream.discoverystream.editorsPicksHeader.enabled
-      description: >-
-        Updates the Pocket section header and title to say "Editor’s Picks", if used with
-        essentialReadsHeader, creates a second section 2 rows down for editorsPicksHeader.
-    recentSavesEnabled:
-      type: boolean
-      fallbackPref: >-
-        browser.newtabpage.activity-stream.discoverystream.recentSaves.enabled
-      description: >-
-        Updates the Pocket section with a new header and 1 row of recently saved Pocket stories.
     readTime:
       type: boolean
       fallbackPref: >-
@@ -1998,12 +2026,6 @@ saveToPocket:
         branch: user
         pref: extensions.pocket.refresh.emailButton.enabled
       description: Just for the new Pocket panels, enables the email signup button.
-    hideRecentSaves:
-      type: boolean
-      setPref:
-        branch: user
-        pref: extensions.pocket.refresh.hideRecentSaves.enabled
-      description: Hides the recently saved section in the home panel.
     bffRecentSaves:
       type: boolean
       setPref:
@@ -2531,6 +2553,45 @@ backgroundUpdateAutomaticRestart:
         Generally, this will finish applying a staged update, completing the update earlier than it
         otherwise would have been completed.
 
+backgroundUpdateCheckPolicy:
+  description: >-
+    Control when to 'allow' and when to 'throttle' the background update task so
+    that the task runs but does not necessarily check for updates.  The check
+    policy allows to tell the background update task to not check for, download,
+    and apply, updates in certain situations, thereby reducing update-related
+    operational costs.  It also allows to limit the number of actions taken in
+    any given interval, thereby reducing user resource usage and Nimbus-related
+    operational costs.
+  owner: install-update@mozilla.com
+  applications:
+    - firefox-desktop-background-task
+  hasExposure: false
+  variables:
+    throttleEnabled:
+      type: boolean
+      fallbackPref: app.update.background.checkPolicy.throttleEnabled
+      description: >-
+        When true, the background update task will 'throttle' itself and not
+        necessarily check for updates.
+    throttleAfterDays:
+      type: int
+      fallbackPref: app.update.background.checkPolicy.throttleAfterDays
+      description: >-
+        When greater than or equal to 0, the number of consecutive days that the
+        background update task will run and check for updates when the task has
+        not witnessed a Firefox browsing profile running.  N.b.: when 0, this
+        will disable the background update task checking for updates entirely.
+    throttleDebouncePeriodInHours:
+      type: int
+      fallbackPref: app.update.background.checkPolicy.throttleDebouncePeriodInHours
+      description: >-
+        When greater than 0, limit the background update task, when it is
+        throttled, from taking any action at all to at most one (1) time in
+        every "period" hours.  That is, if `throttledDebouncePeriodInHours=24`
+        and the background update task executes at time `t0`, then the
+        background update task will exit without further action every invocation
+        at time `t1 < t0 + 24 hours`.
+
 pictureinpicture:
   description: Message for first time Picture-in-Picture users
   owner: nbaumgardner@mozilla.com
@@ -2921,6 +2982,18 @@ localNetworkAccess:
       setPref:
         branch: default
         pref: "network.lna.block_trackers"
+    lnaPromptsEnabled:
+      description: Whether we should prompt users for permission whenever we detect local network access.
+      type: boolean
+      setPref:
+        branch: default
+        pref: "network.lna.blocking"
+    lnaFeatureEnabled:
+      description: Blanket flag to enable/disable LNA sub-features.
+      type: boolean
+      setPref:
+        branch: default
+        pref: "network.lna.enabled"
 
 essentialFallbackDomains:
   description: "Whether to retry failing system requests with a backup domain"
@@ -3725,24 +3798,18 @@ mixedContentUpgrading:
       setPref:
         branch: default
         pref: security.mixed_content.upgrade_display_content
-    image:
-      description: True if the mixed content upgrading is enabled for images
+
+unexpectedScriptLoadNotificationBar:
+  description: Pref to control whether we show the Unexpected Script Load Notification Bar
+  owner: tritter@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      description: True if we want to disable the notification bar
       type: boolean
       setPref:
         branch: default
-        pref: security.mixed_content.upgrade_display_content.image
-    audio:
-      description: True if the mixed content upgrading is enabled for audio
-      type: boolean
-      setPref:
-        branch: default
-        pref: security.mixed_content.upgrade_display_content.audio
-    video:
-      description: True if the mixed content upgrading is enabled for videos
-      type: boolean
-      setPref:
-        branch: default
-        pref: security.mixed_content.upgrade_display_content.video
+        pref: security.hide_parent_unrestricted_js_loads_warning.temporary
 
 gc:
   description: Prefs that control gc heuristics.
@@ -4577,6 +4644,13 @@ certCompression:
         pref: security.tls.enable_certificate_compression_zlib
       description: >-
         Whether to enable Zlib for TLS certificate compression.
+    h3EnableZlib:
+      type: boolean
+      setPref:
+        branch: default
+        pref: network.http.http3.enable_certificate_compression_zlib
+      description: >-
+        Whether to enable Zlib for H3/QUIC certificate compression.
     tlsEnableBrotli:
       type: boolean
       setPref:
@@ -4584,6 +4658,13 @@ certCompression:
         pref: security.tls.enable_certificate_compression_brotli
       description: >-
         Whether to enable Brotli for TLS certificate compression.
+    h3EnableBrotli:
+      type: boolean
+      setPref:
+        branch: default
+        pref: network.http.http3.enable_certificate_compression_brotli
+      description: >-
+        Whether to enable Brotli for H3/QUIC certificate compression.
     tlsEnableZstd:
       type: boolean
       setPref:
@@ -4591,6 +4672,13 @@ certCompression:
         pref: security.tls.enable_certificate_compression_zstd
       description: >-
         Whether to enable Zstd for TLS certificate compression.
+    h3EnableZstd:
+      type: boolean
+      setPref:
+        branch: default
+        pref: network.http.http3.enable_certificate_compression_zstd
+      description: >-
+        Whether to enable Zstd for H3/QUIC certificate compression.
 
 bounceTrackingProtection:
   description: Controls the Bounce Tracking Protection feature.
@@ -5000,18 +5088,6 @@ css-masonry:
         branch: user
         pref: "layout.css.grid-template-masonry-value.enabled"
 
-contextual-password-manager:
-  description: Enabling the contextual password manager feature
-  owner: issozi@mozilla.com
-  hasExposure: false
-  variables:
-    enabled:
-      type: boolean
-      setPref:
-        branch: user
-        pref: browser.contextual-password-manager.enabled
-      description: If true, we will allow user to add the contextual password manager feature to the sidebar.
-
 windowsUIAutomation:
   description: Support for the Windows UI Automation API
   owner: jteh@mozilla.com
@@ -5088,10 +5164,17 @@ ipProtection:
     enabled:
       type: boolean
       setPref:
-        branch: default
+        branch: user
         pref: browser.ipProtection.enabled
       description: >-
         Enables the IP Protection feature.
+    variant:
+      type: string
+      setPref:
+        branch: default
+        pref: browser.ipProtection.variant
+      description: >-
+        What variant of the feature to use.
 
 webApps:
   description: Enables or disables web apps.

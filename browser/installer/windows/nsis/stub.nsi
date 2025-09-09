@@ -8,6 +8,9 @@ OutFile "setup-stub.exe"
 !macroend
 
 Icon "firefox64.ico"
+PEAddResource "firefox64.ico" "#Icon" "#0007"
+!define ICON_ID 0x0007
+
 !include "LogicLib.nsh"
 !include "FileFunc.nsh"
 !include "TextFunc.nsh"
@@ -62,7 +65,91 @@ Function CanWrite
   ${EndIf}
 FunctionEnd
 
+
+
+!define SIZEOF_TASKDIALOGCONFIG_32BIT 96
+!define TDF_ALLOW_DIALOG_CANCELLATION 0x0008
+!define TDF_USE_HICON_MAIN 0x0002
+!define TD_DW_COMMON_BUTTONS_YESNO 6
+!define TDF_RTL_LAYOUT 0x02000
+!define TD_WARNING_ICON 0x0FFFF
+!define TD_IDYES 6
+
+!insertmacro SetBrandNameVars
+
+Function PromptForInstall
+  ; Set variables that may not be set yet
+  StrCpy $BrandFullName "${BrandFullName}"
+  StrCpy $BrandShortName "${BrandShortName}"
+  StrCpy $BrandProductName "${BrandProductName}"
+
+  ; Set up flags
+  StrCpy $3 ${TDF_ALLOW_DIALOG_CANCELLATION}
+  IntOp $3 $3 | ${TDF_USE_HICON_MAIN}
+  !ifdef ${AB_CD}_rtl
+    IntOp $3 $3 | ${TDF_RTL_LAYOUT}
+  !endif
+
+  Var /global prompt_hinst
+  Var /global prompt_icon
+
+  System::Call "kernel32::GetModuleHandleW(i 0) i.s"
+  Pop $prompt_hinst
+
+  ; Load the icon
+  System::Call "user32::LoadIconW(i $prompt_hinst, p ${ICON_ID}) p.s"
+  Pop $prompt_icon
+
+  ; Build a TASKDIALOGCONFIG struct
+  System::Call "*(i ${SIZEOF_TASKDIALOGCONFIG_32BIT}, \
+                  p $HWNDPARENT, \
+                  p 0, \
+                  i $3, \
+                  i ${TD_DW_COMMON_BUTTONS_YESNO}, \
+                  w '${BrandFullName}', \
+                  p $prompt_icon, \
+                  w '$(STUB_CANCEL_PROMPT_HEADING)', \
+                  p 0, \
+                  i 0, \
+                  p 0, \
+                  i ${TD_IDYES}, \
+                  i 0, \
+                  p 0, \
+                  i 0, \
+                  p 0, \
+                  p 0, \
+                  p 0, \
+                  p 0, \
+                  p 0, \
+                  p 0, \
+                  p 0, \
+                  p 0, \
+                  i 0 \
+                  ) p.r1"
+  System::Call "comctl32::TaskDialogIndirect(p r1, *i 0 r7, p 0, p 0)"
+  System::Free $1
+
+  ${If} $7 == ${TD_IDYES}
+    Push "yes"
+  ${Else}
+    Push "no"
+  ${EndIf}
+FunctionEnd
+
 Function .onInit
+  ${GetParameters} $0
+  ; If the only parameter is "/Prompt", ask the user before anything else.
+  ; The "only parameter" requirement is needed, because when we show the user
+  ; the UAC prompt, we restart the stub installer with the same parameters,
+  ; plus a couple of extras related to elevation.
+  ${If} $0 == "/Prompt"
+    Call PromptForInstall
+    Pop $0
+    ${If} $0 != "yes"
+      StrCpy $AbortInstallation "true"
+      Quit
+    ${EndIf}
+  ${EndIf}
   Call CommonOnInit
 FunctionEnd
 

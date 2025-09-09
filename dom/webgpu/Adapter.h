@@ -8,12 +8,12 @@
 
 #include <memory>
 
+#include "ObjectModel.h"
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/webgpu/WebGPUTypes.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/webgpu/WebGPUTypes.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
-#include "ObjectModel.h"
 
 namespace mozilla {
 class ErrorResult;

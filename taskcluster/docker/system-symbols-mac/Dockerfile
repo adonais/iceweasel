@@ -23,9 +23,6 @@ COPY requirements.txt /setup/
 
 RUN /bin/sh /setup/setup.sh
 
-ADD https://github.com/marco-c/breakpad-mac-update-symbols/raw/21221733edfbcac49d40e50fc219fab7d17437a0/lipo /usr/local/bin/
-RUN chmod +x /usr/local/bin/lipo
-
 COPY topsrcdir/tools/crashreporter/system-symbols/mac /builds/worker/mac-update-symbols
 # %include python/mozbuild/mozpack/macpkg.py
 COPY topsrcdir/python/mozbuild/mozpack/macpkg.py /builds/worker/mac-update-symbols/mozpack/

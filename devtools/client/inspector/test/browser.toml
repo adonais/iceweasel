@@ -179,6 +179,8 @@ run-if = ["os != 'mac'"] # Full keyboard navigation on OSX only works if Full Ke
 
 ["browser_inspector_highlighter-eyedropper-image.js"]
 
+["browser_inspector_highlighter-eyedropper-keyboard-shortcut.js"]
+
 ["browser_inspector_highlighter-eyedropper-label.js"]
 
 ["browser_inspector_highlighter-eyedropper-show-hide.js"]
@@ -264,6 +266,8 @@ run-if = ["os != 'mac'"] # Full keyboard navigation on OSX only works if Full Ke
 ["browser_inspector_iframe-navigation.js"]
 
 ["browser_inspector_iframe-picker-bfcache-navigation.js"]
+
+["browser_inspector_picker-no-page-events.js"]
 
 ["browser_inspector_iframe-picker.js"]
 

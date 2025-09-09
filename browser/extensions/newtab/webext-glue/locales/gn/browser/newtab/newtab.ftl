@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Mbopya’eha pyahu
 newtab-topsites-edit-topsites-header = Tenda Ojeikevéva Mbosako’i
 newtab-topsites-edit-shortcut-header = Mbopya’eha mbosako’i
 newtab-topsites-add-shortcut-label = Embojuaju jeike pya’eha
+newtab-topsites-add-shortcut-title =
+    .title = Embojuaju jeike pya’eha
+    .aria-label = Embojuaju jeike pya’eha
 newtab-topsites-title-label = Teratee
 newtab-topsites-title-input =
     .placeholder = Ehai herarã
@@ -537,6 +540,10 @@ newtab-custom-wallpaper-title = Ko’ápe oĩ mba’erechaha rugua
 # 'Make firefox yours" means to customize or personalize
 newtab-custom-wallpaper-subtitle = Ehupi ne mba’erechaha teéva térã eiporavo sa’yete embohéra hag̃ua ne { -brand-product-name }.
 newtab-custom-wallpaper-cta = Eha’ãjey
+
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-cta = Eiporu ko’ág̃a
 
 ## Strings for download mobile highlight
 

@@ -5,9 +5,9 @@
 #ifndef SINF_PARSER_H_
 #define SINF_PARSER_H_
 
-#include "mozilla/ResultExtensions.h"
 #include "Atom.h"
 #include "AtomType.h"
+#include "mozilla/ResultExtensions.h"
 #include "nsTArray.h"
 
 namespace mozilla {

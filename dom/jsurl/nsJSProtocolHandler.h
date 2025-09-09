@@ -7,12 +7,12 @@
 #define nsJSProtocolHandler_h___
 
 #include "mozilla/Attributes.h"
-#include "nsIProtocolHandler.h"
-#include "nsIURI.h"
-#include "nsISerializable.h"
 #include "nsIClassInfo.h"
-#include "nsSimpleURI.h"
 #include "nsINestedURI.h"
+#include "nsIProtocolHandler.h"
+#include "nsISerializable.h"
+#include "nsIURI.h"
+#include "nsSimpleURI.h"
 
 #define NS_JSPROTOCOLHANDLER_CID              \
   {/* bfc310d2-38a0-11d3-8cd3-0060b0fc14a3 */ \

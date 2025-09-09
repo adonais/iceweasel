@@ -7,9 +7,9 @@
 #ifndef DOM_SVG_SVGRECTELEMENT_H_
 #define DOM_SVG_SVGRECTELEMENT_H_
 
-#include "nsCSSPropertyID.h"
 #include "SVGAnimatedLength.h"
 #include "SVGGeometryElement.h"
+#include "nsCSSPropertyID.h"
 
 nsresult NS_NewSVGRectElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);

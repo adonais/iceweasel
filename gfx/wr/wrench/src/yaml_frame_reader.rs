@@ -154,6 +154,7 @@ impl ExternalImageHandler for LocalExternalImageHandler {
         &mut self,
         key: ExternalImageId,
         _channel_index: u8,
+        _is_composited: bool,
     ) -> ExternalImage {
         let (id, desc) = self.texture_ids[key.0 as usize];
         ExternalImage {

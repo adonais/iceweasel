@@ -9,9 +9,7 @@ add_setup(async function setup() {
   });
   await TestUtils.waitForCondition(
     () =>
-      BrowserTestUtils.isVisible(
-        document.getElementById("urlbar-searchmode-switcher")
-      ),
+      BrowserTestUtils.isVisible(gURLBar.querySelector(".searchmode-switcher")),
     "search mode switcher button is visible"
   );
 
@@ -92,7 +90,7 @@ add_task(async function test_picked_settings() {
   let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
   let pageLoaded = BrowserTestUtils.browserLoaded(window);
   popup
-    .querySelector("#searchmode-switcher-popup-search-settings-button")
+    .querySelector(".searchmode-switcher-popup-search-settings-button")
     .click();
   await Promise.all([pageLoaded, popupHidden]);
   Assert.equal(
@@ -121,7 +119,7 @@ async function testSearchEngine(label, telemetry, expected) {
     expected
   );
 
-  document.querySelector("#searchmode-switcher-close").click();
+  gURLBar.querySelector(".searchmode-switcher-close").click();
   await UrlbarTestUtils.assertSearchMode(window, null);
 }
 

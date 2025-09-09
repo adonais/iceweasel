@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
-import sys
 import unittest
 
 import mozpack.path as mozpath
@@ -13,11 +12,6 @@ from mozbuild import schedules
 from mozbuild.frontend.context import BugzillaComponent
 from mozbuild.frontend.reader import BuildReader, BuildReaderError
 from mozbuild.test.common import MockConfig
-
-if sys.version_info.major == 2:
-    text_type = "unicode"
-else:
-    text_type = "str"
 
 data_path = mozpath.abspath(mozpath.dirname(__file__))
 data_path = mozpath.join(data_path, "data")
@@ -180,7 +174,7 @@ class TestBuildReader(unittest.TestCase):
         self.assertIn("variable whose value was rejected is:\n\n    DIRS", str(e))
 
         self.assertIn(
-            "written to it was of the following type:\n\n    %s" % text_type, str(e)
+            "written to it was of the following type:\n\n    %s" % "str", str(e)
         )
 
         self.assertIn("expects the following type(s):\n\n    list", str(e))

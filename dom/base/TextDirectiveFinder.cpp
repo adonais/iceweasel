@@ -4,14 +4,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "TextDirectiveFinder.h"
+
 #include "Document.h"
 #include "TextDirectiveUtil.h"
-#include "mozilla/glean/DomMetrics.h"
-#include "nsFind.h"
-#include "nsRange.h"
 #include "fragmentdirectives_ffi_generated.h"
 #include "mozilla/CycleCollectedUniquePtr.h"
 #include "mozilla/ResultVariant.h"
+#include "mozilla/glean/DomMetrics.h"
+#include "nsFind.h"
+#include "nsRange.h"
 
 namespace mozilla::dom {
 

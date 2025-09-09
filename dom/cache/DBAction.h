@@ -8,8 +8,8 @@
 #define mozilla_dom_cache_DBAction_h
 
 #include "CacheCipherKeyManager.h"
-#include "mozilla/dom/cache/Action.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/cache/Action.h"
 #include "nsString.h"
 
 class mozIStorageConnection;

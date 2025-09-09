@@ -19,8 +19,8 @@
 #ifndef nsAttrValueOrString_h___
 #define nsAttrValueOrString_h___
 
-#include "nsString.h"
 #include "nsAttrValue.h"
+#include "nsString.h"
 
 class MOZ_STACK_CLASS nsAttrValueOrString {
  public:

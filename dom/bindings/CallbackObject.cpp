@@ -5,21 +5,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/CallbackObject.h"
+
+#include "WorkerPrivate.h"
+#include "WorkerScope.h"
+#include "js/ContextOptions.h"
+#include "jsapi.h"
+#include "jsfriendapi.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/dom/BindingUtils.h"
-#include "jsfriendapi.h"
-#include "nsIScriptGlobalObject.h"
-#include "nsIScriptContext.h"
-#include "nsPIDOMWindow.h"
-#include "nsJSUtils.h"
-#include "xpcprivate.h"
-#include "WorkerPrivate.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
-#include "WorkerScope.h"
-#include "jsapi.h"
-#include "js/ContextOptions.h"
+#include "nsIScriptContext.h"
+#include "nsIScriptGlobalObject.h"
 #include "nsJSPrincipals.h"
+#include "nsJSUtils.h"
+#include "nsPIDOMWindow.h"
+#include "xpcprivate.h"
 
 namespace mozilla::dom {
 

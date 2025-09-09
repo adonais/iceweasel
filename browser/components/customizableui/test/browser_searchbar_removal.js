@@ -4,7 +4,7 @@
 "use strict";
 
 const { SearchWidgetTracker } = ChromeUtils.importESModule(
-  "resource:///modules/SearchWidgetTracker.sys.mjs"
+  "moz-src:///browser/components/customizableui/SearchWidgetTracker.sys.mjs"
 );
 
 const SEARCH_BAR_LAST_USED_PREF_NAME = "browser.search.widget.lastUsed";

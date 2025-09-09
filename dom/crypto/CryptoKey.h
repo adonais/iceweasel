@@ -8,6 +8,7 @@
 #define mozilla_dom_CryptoKey_h
 
 #include <cstdint>
+
 #include "ErrorList.h"
 #include "ScopedNSSTypes.h"
 #include "js/RootingAPI.h"

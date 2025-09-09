@@ -25,7 +25,7 @@ def add_common_config(config, tasks):
             "linux64-jdk",
         ]
         fetches["build-fat-aar"] = [
-            "target.maven.tar.xz",
+            "target.maven.zip",
             {"artifact": "mozconfig", "extract": False},
         ]
 

@@ -237,7 +237,7 @@
                   <image class="content-blocking-warning-image"/>
                   <label class="content-blocking-warning-title" data-l10n-id="content-blocking-warning-title"/>
                 </hbox>
-                <description class="indent">
+                <description>
                   <html:span class="content-blocking-warning-description" data-l10n-id="content-blocking-and-isolating-etp-warning-description-3"></html:span>
                   <html:a is="moz-support-link"
                           class="learnMore"
@@ -365,7 +365,7 @@
                   <image class="content-blocking-warning-image"/>
                   <label class="content-blocking-warning-title" data-l10n-id="content-blocking-warning-title"/>
                 </hbox>
-                <description class="indent">
+                <description>
                   <html:span class="content-blocking-warning-description" data-l10n-id="content-blocking-and-isolating-etp-warning-description-3"></html:span>
                   <html:a is="moz-support-link"
                           class="learnMore"
@@ -769,6 +769,48 @@
       </hbox>
     </hbox>
 
+     <hbox id="localHostSettingsRow" align="center" role="group" aria-labelledby="localHostPermissionsLabel">
+      <hbox flex="1">
+        <image class="localhost-icon permission-icon" />
+        <label id="localHostPermissionsLabel" data-l10n-id="permissions-localhost"/>
+      </hbox>
+      <hbox pack="end">
+        <button id="localHostSettingsButton"
+                is="highlightable-button"
+                class="accessory-button"
+                data-l10n-id="permissions-localhost-settings"
+                search-l10n-ids="
+                  permissions-remove.label,
+                  permissions-remove-all.label,
+                  permissions-site-localhost-window.title,
+                  permissions-site-localhost-desc,
+                  permissions-site-localhost-disable-label,
+                  permissions-site-localhost-disable-desc,
+                " />
+      </hbox>
+    </hbox>
+
+    <hbox id="localNetworkSettingsRow" align="center" role="group" aria-labelledby="localNetworkPermissionsLabel">
+      <hbox flex="1">
+        <image class="local-network-icon permission-icon" />
+        <label id="localNetworkPermissionsLabel" data-l10n-id="permissions-local-network"/>
+      </hbox>
+      <hbox pack="end">
+        <button id="localNetworkSettingsButton"
+                is="highlightable-button"
+                class="accessory-button"
+                data-l10n-id="permissions-local-network-settings"
+                search-l10n-ids="
+                  permissions-remove.label,
+                  permissions-remove-all.label,
+                  permissions-site-local-network-window.title,
+                  permissions-site-local-network-desc,
+                  permissions-site-local-network-disable-label,
+                  permissions-site-local-network-disable-desc,
+                " />
+      </hbox>
+    </hbox>
+
     <hbox id="microphoneSettingsRow" align="center" role="group" aria-labelledby="microphonePermissionsLabel">
       <hbox flex="1">
         <image class="microphone-icon permission-icon" />
@@ -1052,29 +1094,6 @@
     </radiogroup>
   </vbox>
 </groupbox>
-
-#ifdef MOZ_DATA_REPORTING
-<!-- Website Advertising Preferences -->
-<hbox id="websiteAdvertisingCategory"
-      class="subcategory"
-      hidden="true"
-      data-category="panePrivacy">
-  <html:h1 data-l10n-id="website-advertising-header"/>
-</hbox>
-
-<groupbox id="websiteAdvertisingGroup" data-category="panePrivacy" hidden="true">
-  <label class="search-header" searchkeywords="ppa" hidden="true"><html:h2 data-l10n-id="website-advertising-header"/></label>
-  <checkbox id="privateAttribution"
-            preference="dom.private-attribution.submission.enabled"
-            data-l10n-id="website-advertising-private-attribution"/>
-  <description class="indent tip-caption">
-    <html:span data-l10n-id="website-advertising-private-attribution-description"/>
-    <html:a is="moz-support-link"
-            class="learnMore"
-            support-page="privacy-preserving-attribution"/>
-  </description>
-</groupbox>
-#endif
 
 <hbox id="securityCategory"
       class="subcategory"

@@ -23,7 +23,7 @@ use sql_support::{
 ///     `clear_database()` by adding their names to `conditional_tables`, unless
 ///     they are cleared via a deletion trigger or there's some other good
 ///     reason not to do so.
-pub const VERSION: u32 = 42;
+pub const VERSION: u32 = 44;
 
 /// The current Suggest database schema.
 pub const SQL: &str = "
@@ -84,6 +84,12 @@ CREATE TABLE prefix_keywords(
 ) WITHOUT ROWID;
 
 CREATE UNIQUE INDEX keywords_suggestion_id_rank ON keywords(suggestion_id, rank);
+
+CREATE TABLE serp_categories(
+    suggestion_id INTEGER NOT NULL,
+    category INTEGER NOT NULL,
+    PRIMARY KEY (suggestion_id, category)
+) WITHOUT ROWID;
 
 CREATE TABLE suggestions(
     id INTEGER PRIMARY KEY,
@@ -254,6 +260,12 @@ CREATE TABLE geonames_metrics(
 CREATE TABLE dismissed_suggestions (
     url TEXT PRIMARY KEY
 ) WITHOUT ROWID;
+
+CREATE TABLE dismissed_dynamic_suggestions (
+    suggestion_type TEXT,
+    dismissal_key TEXT NOT NULL,
+    PRIMARY KEY(suggestion_type, dismissal_key)
+) WITHOUT ROWID;
 ";
 
 /// Initializes an SQLite connection to the Suggest database, performing
@@ -332,13 +344,12 @@ impl ConnectionInitializer for SuggestConnectionInitializer<'_> {
                 Ok(())
             }
             17 => {
-                tx.execute(
+                tx.execute_batch(
                     "
                     DROP TABLE dismissed_suggestions;
                     CREATE TABLE dismissed_suggestions (
                         url TEXT PRIMARY KEY
                     ) WITHOUT ROWID;",
-                    (),
                 )?;
                 Ok(())
             }
@@ -807,6 +818,35 @@ impl ConnectionInitializer for SuggestConnectionInitializer<'_> {
                 )?;
                 Ok(())
             }
+            42 => {
+                clear_database(tx)?;
+                tx.execute_batch(
+                    r#"
+                    CREATE TABLE serp_categories(
+                        suggestion_id INTEGER NOT NULL,
+                        category INTEGER NOT NULL,
+                        PRIMARY KEY (suggestion_id, category)
+                    ) WITHOUT ROWID;
+                    "#,
+                )?;
+                Ok(())
+            }
+            43 => {
+                clear_database(tx)?;
+                tx.execute_batch(
+                    r#"
+                    CREATE TABLE dismissed_dynamic_suggestions (
+                        suggestion_type TEXT,
+                        dismissal_key TEXT NOT NULL,
+                        PRIMARY KEY(suggestion_type, dismissal_key)
+                    ) WITHOUT ROWID;
+
+                    INSERT INTO dismissed_dynamic_suggestions
+                    SELECT "vpn", url FROM dismissed_suggestions WHERE url = "vpn-suggestions";
+                    "#,
+                )?;
+                Ok(())
+            }
 
             _ => Err(open_database::Error::IncompatibleVersion(version)),
         }
@@ -838,6 +878,7 @@ pub fn clear_database(db: &Connection) -> rusqlite::Result<()> {
         "ingested_records",
         "keywords_i18n",
         "keywords_metrics",
+        "serp_categories",
     ];
     for t in conditional_tables {
         let table_exists = db.exists("SELECT 1 FROM sqlite_master WHERE name = ?", [t])?;
@@ -1004,7 +1045,7 @@ PRAGMA user_version=16;
         // `ingested_records` should be empty.
         let conn = db_file.open();
         assert_eq!(
-            conn.query_one::<i32>("SELECT count(*) FROM ingested_records")?,
+            conn.conn_ext_query_one::<i32>("SELECT count(*) FROM ingested_records")?,
             0,
             "ingested_records should be empty"
         );
@@ -1032,6 +1073,41 @@ PRAGMA user_version=16;
         db_file.upgrade_to(VERSION);
         db_file.assert_schema_matches_new_database();
 
+        Ok(())
+    }
+
+    /// Test if dynamic vpn suggestions are migrated into the
+    /// dismissed_dynamic_suggestions table during the migration to schema 44.
+    #[test]
+    fn test_migrate_vpn_dismissal() -> anyhow::Result<()> {
+        let db_file =
+            MigratedDatabaseFile::new(SuggestConnectionInitializer::default(), V16_SCHEMA);
+
+        // Upgrade to v43 (just before the migration) and insert the suggestion that should be migrated.
+        db_file.upgrade_to(43);
+        let conn = db_file.open();
+        conn.execute(
+            "INSERT INTO dismissed_suggestions VALUES (?)",
+            ("vpn-suggestions",),
+        )?;
+        conn.close().expect("Connection should be closed");
+        // Finish upgrading to the current version.
+        db_file.upgrade_to(VERSION);
+        db_file.assert_schema_matches_new_database();
+
+        // Check if the vpn suggestion was migrated.
+        let conn = db_file.open();
+        let mut stmt = conn.prepare("SELECT * FROM dismissed_dynamic_suggestions")?;
+        let mut rows = stmt.query([])?;
+        let row = rows.next()?.expect("Should have one row");
+        let suggestion_type: String = row.get(0)?;
+        assert_eq!(suggestion_type, "vpn", "Has correct suggestion_type");
+        let dismissal_key: String = row.get(1)?;
+        assert_eq!(
+            dismissal_key, "vpn-suggestions",
+            "Has correct suggestion_type"
+        );
+        assert!(rows.next()?.is_none(), "Should not have other rows");
         Ok(())
     }
 }

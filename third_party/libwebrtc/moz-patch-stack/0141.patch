@@ -1,93 +1,42 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Tue, 13 May 2025 22:39:00 +0000
-Subject: Bug 1966238 - Cherry-pick upstream libwebrtc commit f9badd37ba
- r?pehrsons!
+From: Andreas Pehrson <apehrson@mozilla.com>
+Date: Tue, 24 Jun 2025 23:15:00 +0000
+Subject: Bug 1972995 - Tag webrtc invocables with location when wrapping them
+ as runnables. r=bwc,mjf
 
-Upstream commit: https://webrtc.googlesource.com/src/+/f9badd37bae6b2dfec7993ccd5d8443ce1b08fc2
-       In ScreenCapturerSck make it possible to reconfigure without creating a new filter
+This does mainly two things:
+- Overrides webrtc::Location with a new class declaration in libwebrtcglue,
+  that makes use of __builtin_FUNCTION et al. on supported toolchains.
+- Uses the new location info to construct a better name (through nsINamed) to
+  tag invocable-wrapped runnables with, for visibility in the profiler.
 
-       Bug: webrtc:367915807
-       Change-Id: Ib35a5cfe7187375ac70b3985d588490a6069a7b2
-       Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/365093
-       Reviewed-by: Johannes Kron <kron@webrtc.org>
-       Reviewed-by: Alexander Cooper <alcooper@chromium.org>
-       Commit-Queue: Andreas Pehrson <apehrson@mozilla.com>
-       Cr-Commit-Position: refs/heads/main@{#44355}
-
-Differential Revision: https://phabricator.services.mozilla.com/D249161
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/5769231c954c4d2c6b5daa65de06b1950b2c4ae5
+Differential Revision: https://phabricator.services.mozilla.com/D254341
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/21b860b62cd409a3d7c77f9d56a4d917d72a2434
 ---
- .../mac/screen_capturer_sck.mm                | 26 ++++++++++++++++---
- 1 file changed, 23 insertions(+), 3 deletions(-)
+ api/location.h | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/modules/desktop_capture/mac/screen_capturer_sck.mm b/modules/desktop_capture/mac/screen_capturer_sck.mm
-index 080ab23395..e77c6b1745 100644
---- a/modules/desktop_capture/mac/screen_capturer_sck.mm
-+++ b/modules/desktop_capture/mac/screen_capturer_sck.mm
-@@ -73,6 +73,10 @@ class API_AVAILABLE(macos(14.0)) ScreenCapturerSck final
-   // `content` will be nil if an error occurred. May run on an arbitrary thread.
-   void OnShareableContentCreated(SCShareableContent* content, NSError* error);
+diff --git a/api/location.h b/api/location.h
+index 81e9a15dcc..472de128e1 100644
+--- a/api/location.h
++++ b/api/location.h
+@@ -11,6 +11,7 @@
+ #ifndef API_LOCATION_H_
+ #define API_LOCATION_H_
  
-+  // Start capture with the given filter. Creates or updates stream_ as needed.
-+  void StartWithFilter(SCContentFilter* filter)
-+      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
-+
-   // Called by SckHelper to notify of a newly captured frame. May run on an
-   // arbitrary thread.
-   void OnNewIOSurface(IOSurfaceRef io_surface, NSDictionary* attachment);
-@@ -109,6 +113,9 @@ class API_AVAILABLE(macos(14.0)) ScreenCapturerSck final
-   // Provides captured desktop frames.
-   SCStream* __strong stream_ RTC_GUARDED_BY(lock_);
++#if !defined(WEBRTC_MOZILLA_BUILD)
+ #include "rtc_base/system/rtc_export.h"
  
-+  // Current filter on stream_.
-+  SCContentFilter* __strong filter_ RTC_GUARDED_BY(lock_);
-+
-   // Currently selected display, or 0 if the full desktop is selected. This
-   // capturer does not support full-desktop capture, and will fall back to the
-   // first display.
-@@ -311,12 +318,15 @@ void ScreenCapturerSck::OnShareableContentCreated(SCShareableContent* content,
-   SCContentFilter* filter =
-       [[SCContentFilter alloc] initWithDisplay:captured_display
-                               excludingWindows:@[]];
-+  StartWithFilter(filter);
-+}
-+
-+void ScreenCapturerSck::StartWithFilter(SCContentFilter* __strong filter) {
-+  lock_.AssertHeld();
-   SCStreamConfiguration* config = [[SCStreamConfiguration alloc] init];
-   config.pixelFormat = kCVPixelFormatType_32BGRA;
-   config.colorSpaceName = kCGColorSpaceSRGB;
-   config.showsCursor = capture_options_.prefer_cursor_embedded();
--  config.width = filter.contentRect.size.width * filter.pointPixelScale;
--  config.height = filter.contentRect.size.height * filter.pointPixelScale;
-   config.captureResolution = SCCaptureResolutionNominal;
-   config.minimumFrameInterval = max_frame_rate_ > 0 ?
-       CMTimeMake(1, static_cast<int32_t>(max_frame_rate_)) :
-@@ -325,9 +335,18 @@ void ScreenCapturerSck::OnShareableContentCreated(SCShareableContent* content,
-   {
-     MutexLock lock(&latest_frame_lock_);
-     latest_frame_dpi_ = filter.pointPixelScale * kStandardDPI;
--    frame_reconfigure_img_size_ = std::nullopt;
-+    if (filter_ != filter) {
-+      frame_reconfigure_img_size_ = std::nullopt;
-+    }
-+    auto sourceImgRect = frame_reconfigure_img_size_.value_or(
-+        CGSizeMake(filter.contentRect.size.width * filter.pointPixelScale,
-+                   filter.contentRect.size.height * filter.pointPixelScale));
-+    config.width = sourceImgRect.width;
-+    config.height = sourceImgRect.height;
-   }
+ namespace webrtc {
+@@ -27,5 +28,12 @@ class RTC_EXPORT Location {
+ };
  
-+  filter_ = filter;
-+
-   if (stream_) {
-     RTC_LOG(LS_INFO) << "ScreenCapturerSck " << this
-                      << " Updating stream configuration to size="
-@@ -351,6 +370,7 @@ void ScreenCapturerSck::OnShareableContentCreated(SCShareableContent* content,
-                            error:&add_stream_output_error];
-     if (!add_stream_output_result) {
-       stream_ = nil;
-+      filter_ = nil;
-       RTC_LOG(LS_ERROR) << "ScreenCapturerSck " << this
-                         << " addStreamOutput failed.";
-       permanent_error_ = true;
+ }  // namespace webrtc
++#else
++// Mozilla edit: override
++#include "mozilla/media/webrtc/WebrtcLocation.h"
++namespace webrtc {
++using Location = mozilla::WebrtcLocation;
++}  // namespace webrtc
++#endif
+ 
+ #endif  // API_LOCATION_H_

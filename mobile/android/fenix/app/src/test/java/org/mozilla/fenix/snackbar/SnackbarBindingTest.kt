@@ -6,6 +6,7 @@ package org.mozilla.fenix.snackbar
 
 import android.content.Context
 import android.view.View
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE
@@ -69,6 +70,7 @@ import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.SiteDataClea
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.TranslationInProgress
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.UserAccountAuthenticated
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.WebCompatReportSent
+import org.mozilla.fenix.components.metrics.MetricsUtils.BookmarkAction.Source
 import org.mozilla.fenix.ext.tabClosedUndoMessage
 
 @RunWith(AndroidJUnit4::class)
@@ -159,6 +161,7 @@ class SnackbarBindingTest {
             BookmarkAction.BookmarkAdded(
                 guidToEdit = "1",
                 parentNode = parent,
+                source = Source.TEST,
             ),
         )
         waitForStoreToSettle()
@@ -169,6 +172,7 @@ class SnackbarBindingTest {
         verify(snackbarDelegate).show(
             text = eq(outputMessage),
             subText = eq(null),
+            subTextOverflow = eq(null),
             duration = eq(LENGTH_LONG),
             isError = eq(false),
             action = eq("EDIT"),
@@ -186,6 +190,7 @@ class SnackbarBindingTest {
             BookmarkAction.BookmarkAdded(
                 guidToEdit = "1",
                 parentNode = parent,
+                source = Source.TEST,
             ),
         )
 
@@ -200,6 +205,7 @@ class SnackbarBindingTest {
         verify(snackbarDelegate).show(
             text = eq(outputMessage),
             subText = eq(null),
+            subTextOverflow = eq(null),
             duration = eq(LENGTH_LONG),
             isError = eq(false),
             action = eq(testContext.getString(R.string.edit_bookmark_snackbar_action)),
@@ -214,7 +220,7 @@ class SnackbarBindingTest {
         binding.start()
 
         appStore.dispatch(
-            BookmarkAction.BookmarkAdded(guidToEdit = null, parent),
+            BookmarkAction.BookmarkAdded(guidToEdit = null, parentNode = parent, source = Source.TEST),
         )
 
         // Wait for BookmarkAction.BookmarkAdded(guidToEdit = null),
@@ -235,7 +241,7 @@ class SnackbarBindingTest {
         binding.start()
 
         appStore.dispatch(
-            BookmarkAction.BookmarkAdded(guidToEdit = "guid", parentNode = null),
+            BookmarkAction.BookmarkAdded(guidToEdit = "guid", parentNode = null, source = Source.TEST),
         )
         waitForStoreToSettle()
 
@@ -521,6 +527,7 @@ class SnackbarBindingTest {
         verify(snackbarDelegate).show(
             text = eq(testContext.tabClosedUndoMessage(false)),
             subText = eq(null),
+            subTextOverflow = eq(null),
             duration = eq(LENGTH_LONG),
             isError = eq(false),
             action = eq(testContext.getString(R.string.snackbar_deleted_undo)),
@@ -544,6 +551,7 @@ class SnackbarBindingTest {
         verify(snackbarDelegate).show(
             text = eq(testContext.getString(R.string.download_item_status_failed)),
             subText = eq("fileName"),
+            subTextOverflow = eq(TextOverflow.MiddleEllipsis),
             duration = eq(DOWNLOAD_SNACKBAR_DURATION_MS),
             isError = eq(false),
             action = eq(testContext.getString(R.string.download_failed_snackbar_action_details)),
@@ -584,6 +592,7 @@ class SnackbarBindingTest {
         verify(snackbarDelegate).show(
             text = eq(testContext.getString(R.string.download_completed_snackbar)),
             subText = eq("fileName"),
+            subTextOverflow = eq(TextOverflow.MiddleEllipsis),
             duration = eq(DOWNLOAD_SNACKBAR_DURATION_MS),
             isError = eq(false),
             action = eq(testContext.getString(R.string.download_completed_snackbar_action_open)),
@@ -635,12 +644,13 @@ class SnackbarBindingTest {
         )
         binding.start()
 
-        appStore.dispatch(AppAction.DownloadAction.DownloadInProgress(sessionId = "id"))
+        appStore.dispatch(AppAction.DownloadAction.DownloadInProgress(downloadId = "id"))
         waitForStoreToSettle()
 
         verify(snackbarDelegate).show(
             text = eq(testContext.getString(R.string.download_in_progress_snackbar)),
             subText = eq(null),
+            subTextOverflow = eq(null),
             duration = eq(DOWNLOAD_SNACKBAR_DURATION_MS),
             isError = eq(false),
             action = eq(testContext.getString(R.string.download_in_progress_snackbar_action_details)),
@@ -667,6 +677,7 @@ class SnackbarBindingTest {
         verify(snackbarDelegate).show(
             text = eq(testContext.getString(R.string.webcompat_reporter_success_snackbar_text)),
             subText = eq(null),
+            subTextOverflow = eq(null),
             duration = eq(WEBCOMPAT_SNACKBAR_DURATION_MS),
             isError = eq(false),
             action = eq(testContext.getString(R.string.webcompat_reporter_dismiss_success_snackbar_text)),

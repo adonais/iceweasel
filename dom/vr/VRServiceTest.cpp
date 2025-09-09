@@ -5,12 +5,14 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/VRServiceTest.h"
-#include "mozilla/dom/VRServiceTestBinding.h"
-#include "mozilla/dom/GamepadPoseState.h"
-#include "mozilla/dom/Promise.h"
+
+#include <type_traits>
+
 #include "VRManagerChild.h"
 #include "VRPuppetCommandBuffer.h"
-#include <type_traits>
+#include "mozilla/dom/GamepadPoseState.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/VRServiceTestBinding.h"
 
 namespace mozilla {
 using namespace gfx;

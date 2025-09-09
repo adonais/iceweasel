@@ -7,10 +7,10 @@
 #ifndef _JESPTRACKENCODING_H_
 #define _JESPTRACKENCODING_H_
 
-#include "jsep/JsepCodecDescription.h"
-#include "common/EncodingConstraints.h"
-
 #include <vector>
+
+#include "common/EncodingConstraints.h"
+#include "jsep/JsepCodecDescription.h"
 
 namespace mozilla {
 // Represents a single encoding of a media track. When simulcast is used, there

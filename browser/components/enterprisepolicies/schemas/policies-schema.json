@@ -653,6 +653,12 @@
         "Category": {
           "type": "string",
           "enum": ["standard", "strict"]
+        },
+        "BaselineExceptions": {
+          "type": "boolean"
+        },
+        "ConvenienceExceptions": {
+          "type": "boolean"
         }
       }
     },

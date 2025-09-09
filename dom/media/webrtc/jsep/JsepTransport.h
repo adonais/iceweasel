@@ -5,13 +5,13 @@
 #ifndef _JSEPTRANSPORT_H_
 #define _JSEPTRANSPORT_H_
 
+#include <mozilla/RefPtr.h>
+#include <mozilla/UniquePtr.h>
+
 #include <string>
 #include <vector>
 
-#include <mozilla/RefPtr.h>
-#include <mozilla/UniquePtr.h>
 #include "nsISupportsImpl.h"
-
 #include "sdp/SdpAttribute.h"
 
 namespace mozilla {

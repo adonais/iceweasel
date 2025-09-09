@@ -112,7 +112,8 @@ endif
 
 ifeq ($(MOZ_PKG_FORMAT),XZ)
   PKG_SUFFIX = .tar.xz
-  INNER_MAKE_PACKAGE 	= cd $(1) && $(CREATE_FINAL_TAR) - $(MOZ_PKG_DIR) | xz --compress --stdout -9 --extreme > $(PACKAGE)
+  # For non-shippable builds, we would rather finish the build sooner than have optimal compression.
+  INNER_MAKE_PACKAGE 	= cd $(1) && $(CREATE_FINAL_TAR) - $(MOZ_PKG_DIR) | xz --compress --stdout $(if $(MOZ_PROFILE_USE),-9 --extreme) > $(PACKAGE)
 endif
 
 ifeq ($(MOZ_PKG_FORMAT),BZ2)

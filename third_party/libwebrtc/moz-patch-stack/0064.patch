@@ -13,7 +13,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a7362238c9e6fbe0d
  1 file changed, 3 insertions(+)
 
 diff --git a/modules/video_capture/video_capture.h b/modules/video_capture/video_capture.h
-index db07580921..43a6a7f832 100644
+index 70af8f3b05..c9d277d69d 100644
 --- a/modules/video_capture/video_capture.h
 +++ b/modules/video_capture/video_capture.h
 @@ -154,6 +154,9 @@ class VideoCaptureModule : public RefCountInterface {

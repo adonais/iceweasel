@@ -140,8 +140,7 @@ void a11y::PlatformStateChangeEvent(Accessible* aTarget, uint64_t aState,
   }
 }
 
-void a11y::PlatformFocusEvent(Accessible* aTarget,
-                              const LayoutDeviceIntRect& aCaretRect) {
+void a11y::PlatformFocusEvent(Accessible* aTarget) {
   if (RefPtr<SessionAccessibility> sessionAcc =
           SessionAccessibility::GetInstanceFor(aTarget)) {
     sessionAcc->SendFocusEvent(aTarget);
@@ -150,9 +149,7 @@ void a11y::PlatformFocusEvent(Accessible* aTarget,
 
 void a11y::PlatformCaretMoveEvent(Accessible* aTarget, int32_t aOffset,
                                   bool aIsSelectionCollapsed,
-                                  int32_t aGranularity,
-                                  const LayoutDeviceIntRect& aCaretRect,
-                                  bool aFromUser) {
+                                  int32_t aGranularity, bool aFromUser) {
   RefPtr<SessionAccessibility> sessionAcc =
       SessionAccessibility::GetInstanceFor(aTarget);
   if (!sessionAcc) {

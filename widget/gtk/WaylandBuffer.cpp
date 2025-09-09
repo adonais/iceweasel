@@ -134,6 +134,7 @@ void WaylandBuffer::RemoveTransaction(RefPtr<BufferTransaction> aTransaction) {
   [[maybe_unused]] bool removed =
       mBufferTransactions.RemoveElement(aTransaction);
   MOZ_DIAGNOSTIC_ASSERT(removed);
+  MOZ_DIAGNOSTIC_ASSERT(!mBufferTransactions.Contains(aTransaction));
 }
 
 void WaylandBuffer::SetExternalWLBuffer(wl_buffer* aWLBuffer) {

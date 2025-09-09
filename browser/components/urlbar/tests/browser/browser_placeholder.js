@@ -159,7 +159,7 @@ async function doDelayedUpdatePlaceholderTest({ defaultEngine }) {
   info("Simulate user interaction");
   let urlTab = BrowserTestUtils.addTab(newWin.gBrowser, "about:mozilla");
   await BrowserTestUtils.switchTab(newWin.gBrowser, urlTab);
-  if (defaultEngine.isAppProvided) {
+  if (defaultEngine.isConfigEngine) {
     await TestUtils.waitForCondition(
       () => newWin.gURLBar.placeholder == expectedString,
       "The placeholder should include the engine name for built-in engines."

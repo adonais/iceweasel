@@ -7,13 +7,13 @@
 #ifndef mozilla_dom_quota_DecryptingInputStream_impl_h
 #define mozilla_dom_quota_DecryptingInputStream_impl_h
 
-#include "DecryptingInputStream.h"
-
 #include <algorithm>
 #include <cstdio>
 #include <type_traits>
 #include <utility>
+
 #include "CipherStrategy.h"
+#include "DecryptingInputStream.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"

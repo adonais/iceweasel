@@ -16,49 +16,22 @@
    *  * The default value of browser.display.foreground_color.dark and
    *    browser.display.background_color.dark
    */
-  --in-content-page-color: light-dark(rgb(21, 20, 26), rgb(251, 251, 254));
-  --in-content-page-background: var(--background-color-canvas);
-  --in-content-text-color: var(--in-content-page-color);
+
   --in-content-box-border-color: color-mix(in srgb, currentColor 41%, transparent);
   --in-content-box-info-background: light-dark(#f0f0f4, rgba(249, 249, 250, 0.15));
-  --in-content-item-hover: color-mix(in srgb, var(--in-content-primary-button-background) 20%, transparent);
-  --in-content-item-hover-text: var(--in-content-page-color);
-  --in-content-item-selected: var(--in-content-primary-button-background);
-  --in-content-item-selected-text: var(--in-content-primary-button-text-color);
+
+  --in-content-item-hover: color-mix(in srgb, var(--button-background-color-primary) 20%, transparent);
+  --in-content-item-hover-text: var(--text-color);
+  --in-content-item-selected: var(--button-background-color-primary);
+  --in-content-item-selected-text: var(--button-text-color-primary);
+
   --in-content-border-invalid: light-dark(var(--red-50), rgb(255, 132, 139));
   --in-content-border-color: light-dark(#d7d7db, rgba(249, 249, 250, 0.2));
 
-  --in-content-button-text-color: var(--in-content-text-color);
-  --in-content-button-text-color-hover: var(--in-content-text-color);
-  --in-content-button-text-color-active: var(--in-content-button-text-color-hover);
-  --in-content-button-background: color-mix(in srgb, currentColor 7%, transparent);
-  --in-content-button-background-hover: color-mix(in srgb, currentColor 14%, transparent);
-  --in-content-button-background-active: color-mix(in srgb, currentColor 21%, transparent);
-  --in-content-button-border-color: transparent;
-  --in-content-button-border-color-hover: transparent;
-  --in-content-button-border-color-active: var(--in-content-button-border-color-hover);
-  --in-content-primary-button-text-color: light-dark(rgb(251, 251, 254), rgb(43, 42, 51));
-  --in-content-primary-button-text-color-hover: var(--in-content-primary-button-text-color);
-  --in-content-primary-button-text-color-active: var(--in-content-primary-button-text-color);
-  --in-content-primary-button-background: var(--button-background-color-primary);
-  --in-content-primary-button-background-hover: var(--button-background-color-primary-hover);
-  --in-content-primary-button-background-active: var(--button-background-color-primary-active);
-  --in-content-primary-button-border-color: transparent;
-  --in-content-primary-button-border-hover: transparent;
-  --in-content-primary-button-border-active: transparent;
-  --in-content-danger-button-background: var(--button-background-color-destructive);
-  --in-content-danger-button-background-hover: var(--button-background-color-destructive-hover);
-  --in-content-danger-button-background-active: var(--button-background-color-destructive-active);
-  --in-content-focus-outline-color: var(--focus-outline-color);
-  --in-content-focus-outline-width: var(--focus-outline-width);
-  --in-content-focus-outline-offset: var(--focus-outline-offset);
-  --in-content-focus-outline-inset: var(--focus-outline-inset);
-  --in-content-focus-outline: var(--focus-outline);
-
   --in-content-table-background: light-dark(#f8f8fa, rgb(35, 34, 43));
   --in-content-table-border-color: var(--in-content-box-border-color);
-  --in-content-table-header-background: var(--in-content-primary-button-background);
-  --in-content-table-header-color: var(--in-content-primary-button-text-color);
+  --in-content-table-header-background: var(--button-background-color-primary);
+  --in-content-table-header-color: var(--button-text-color-primary);
   --in-content-sidebar-width: 280px;
 
   --dialog-warning-text-color: light-dark(var(--red-60), var(--red-40));
@@ -96,15 +69,13 @@
    * this in forced colors mode, as we should be using system colours then.
    */
   :root[dialogroot] {
-    --in-content-page-background: #42414d;
+    --background-color-canvas: #42414d;
   }
 }
 
 @media (forced-colors) {
   :host(.anonymous-content-host),
   :root {
-    --in-content-page-color: CanvasText;
-
     --in-content-box-border-color: -moz-DialogText;
     --in-content-box-info-background: var(--background-color-box);
 
@@ -119,32 +90,6 @@
     --in-content-border-invalid: ThreeDShadow;
     --in-content-border-color: CanvasText;
 
-    --in-content-button-text-color: ButtonText;
-    --in-content-button-text-color-hover: SelectedItemText;
-    --in-content-button-text-color-active: SelectedItem;
-    --in-content-button-background: ButtonFace;
-    --in-content-button-background-hover: SelectedItem;
-    --in-content-button-background-active: SelectedItemText;
-    --in-content-button-border-color: ButtonText;
-    --in-content-button-border-color-hover: SelectedItemText;
-    --in-content-button-border-color-active: SelectedItem;
-
-    --in-content-primary-button-text-color: ButtonFace;
-    --in-content-primary-button-text-color-hover: SelectedItemText;
-    --in-content-primary-button-text-color-active: SelectedItem;
-    --in-content-primary-button-background: ButtonText;
-    --in-content-primary-button-background-hover: SelectedItem;
-    --in-content-primary-button-background-active: SelectedItemText;
-    --in-content-primary-button-border-color: ButtonFace;
-    --in-content-primary-button-border-hover: SelectedItemText;
-    --in-content-primary-button-border-active: SelectedItem;
-
-    --in-content-danger-button-background: var(--in-content-primary-button-background);
-    --in-content-danger-button-background-hover: var(--in-content-primary-button-background-hover);
-    --in-content-danger-button-background-active: var(--in-content-primary-button-background-active);
-
-    --in-content-focus-outline-color: -moz-DialogText;
-
     --in-content-table-border-color: ThreeDDarkShadow;
     --in-content-table-background: -moz-Dialog;
     --in-content-table-header-background: -moz-Dialog;
@@ -156,8 +101,8 @@
 
 :root {
   appearance: none;
-  background-color: var(--in-content-page-background);
-  color: var(--in-content-page-color);
+  background-color: var(--background-color-canvas);
+  color: var(--text-color);
 }
 
 :root:not(.system-font-size) {
@@ -187,7 +132,7 @@ xul|tabpanels {
 
 xul|tabs {
   margin-bottom: 10px;
-  border-bottom: 1px solid var(--in-content-border-color);
+  border-bottom: var(--button-border);
 }
 
 xul|tab {
@@ -197,38 +142,23 @@ xul|tab {
   transition: background-color 50ms ease 0s;
 
   &:where(:hover) {
+    background-color: var(--button-background-color-hover);
+    color: var(--button-text-color-hover);
     border-bottom-color: var(--in-content-border-color);
-    background-color: var(--in-content-button-background-hover);
-    color: var(--in-content-button-text-color-hover);
+
+    @media (forced-colors) {
+      border-bottom-color: currentColor;
+    }
   }
 
   &:where(:hover:active) {
-    background-color: var(--in-content-button-background-active);
-    color: var(--in-content-button-text-color-active);
+    background-color: var(--button-background-color-active);
+    color: var(--button-text-color-active);
   }
 
   &[selected] {
-    color: var(--color-accent-primary);
+    color: var(--button-background-color-primary);
     border-bottom-color: currentColor;
-    &:hover {
-      background-color: var(--in-content-button-background-hover);
-    }
-    &:hover:active {
-      background-color: var(--in-content-button-background-active);
-    }
-  }
-
-  @media (forced-colors) {
-    &:hover,
-    &:hover:active {
-      border-bottom-color: currentColor;
-    }
-    &[selected]:hover {
-      color: var(--in-content-button-text-color-hover);
-    }
-    &[selected]:hover:active {
-      color: var(--in-content-button-text-color-active);
-    }
   }
 }
 
@@ -254,10 +184,10 @@ html|input[type="color"],
 xul|menulist {
   appearance: none;
   min-height: var(--button-min-height);
-  color: var(--in-content-button-text-color);
-  border: 1px solid var(--in-content-button-border-color);
+  color: var(--button-text-color);
+  border: var(--button-border);
   border-radius: 4px;
-  background-color: var(--in-content-button-background);
+  background-color: var(--button-background-color);
   font-weight: 400;
   padding: 0.45em 1em;
   text-decoration: none;
@@ -293,10 +223,10 @@ html|input:where([type="color"]):focus-visible,
 xul|menulist:focus-visible,
 xul|tab:focus-visible > .tab-middle > .tab-text {
   box-shadow: none;
-  /* Don't set `var(--in-content-focus-outline)` here to allow more complicated UIs
+  /* Don't set `var(--focus-outline)` here to allow more complicated UIs
      to use a different color when needed */
-  outline: var(--in-content-focus-outline-width) solid var(--in-content-focus-outline-color);
-  outline-offset: var(--in-content-focus-outline-offset);
+  outline: var(--focus-outline-width) solid var(--focus-outline-color);
+  outline-offset: var(--focus-outline-offset);
 }
 
 html|select:not([size], [multiple]) {
@@ -338,7 +268,7 @@ html|select:not([size], [multiple]):dir(rtl) {
 
 html|select:not([size], [multiple]) > html|option {
   background-color: var(--background-color-box);
-  color: var(--in-content-text-color);
+  color: var(--text-color);
 }
 
 html|button:enabled:hover,
@@ -346,9 +276,9 @@ html|select:not([size], [multiple]):enabled:hover,
 html|input[type="color"]:hover,
 xul|button:not([disabled="true"]):hover,
 xul|menulist:not([disabled="true"]):hover {
-  background-color: var(--in-content-button-background-hover);
-  color: var(--in-content-button-text-color-hover);
-  border-color: var(--in-content-button-border-color-hover);
+  background-color: var(--button-background-color-hover);
+  color: var(--button-text-color-hover);
+  border-color: var(--button-border-color-hover);
 }
 
 html|button:enabled:hover:active,
@@ -358,9 +288,9 @@ xul|button:not([disabled="true"]):hover:active,
 xul|button[open],
 xul|button[open]:hover,
 xul|menulist[open="true"]:not([disabled="true"]) {
-  background-color: var(--in-content-button-background-active);
-  color: var(--in-content-button-text-color-active);
-  border-color: var(--in-content-button-border-color-active);
+  background-color: var(--button-background-color-active);
+  color: var(--button-text-color-active);
+  border-color: var(--button-border-color-active);
 }
 
 html|button:disabled,
@@ -375,9 +305,9 @@ html|button[autofocus],
 html|button[type="submit"],
 xul|button[default],
 button.primary {
-  background-color: var(--in-content-primary-button-background);
-  color: var(--in-content-primary-button-text-color);
-  border-color: var(--in-content-primary-button-border-color);
+  background-color: var(--button-background-color-primary);
+  color: var(--button-text-color-primary);
+  border-color: var(--button-border-color-primary);
 }
 
 html|button[autofocus]:enabled:hover,
@@ -385,9 +315,9 @@ html|button[type="submit"]:enabled:hover,
 html|button.primary:enabled:hover,
 xul|button[default]:not([disabled="true"]):hover,
 xul|button.primary:not([disabled="true"]):hover {
-  background-color: var(--in-content-primary-button-background-hover);
-  color: var(--in-content-primary-button-text-color-hover);
-  border-color: var(--in-content-primary-button-border-hover);
+  background-color: var(--button-background-color-primary-hover);
+  color: var(--button-text-color-primary-hover);
+  border-color: var(--button-border-color-primary-hover);
 }
 
 html|button[autofocus]:enabled:hover:active,
@@ -395,9 +325,9 @@ html|button[type="submit"]:enabled:hover:active,
 html|button.primary:enabled:hover:active,
 xul|button[default]:not([disabled="true"]):hover:active,
 xul|button.primary:not([disabled="true"]):hover:active {
-  background-color: var(--in-content-primary-button-background-active);
-  color: var(--in-content-primary-button-text-color-active);
-  border-color: var(--in-content-primary-button-border-active);
+  background-color: var(--button-background-color-primary-active);
+  color: var(--button-text-color-primary-active);
+  border-color: var(--button-border-color-primary-active);
 }
 
 @media not (forced-colors) {
@@ -415,10 +345,9 @@ xul|button.primary:not([disabled="true"]):hover:active {
 }
 
 .danger-button {
-  --in-content-primary-button-background: var(--in-content-danger-button-background);
-  --in-content-primary-button-background-hover: var(--in-content-danger-button-background-hover);
-  --in-content-primary-button-background-active: var(--in-content-danger-button-background-active);
-  --in-content-focus-outline-color: var(--in-content-danger-button-background);
+  --button-background-color-primary: var(--button-background-color-destructive);
+  --button-background-color-primary-hover: var(--button-background-color-destructive-hover);
+  --button-background-color-primary-active: var(--button-background-color-destructive-active);
 }
 
 @media not (forced-colors) {
@@ -428,13 +357,13 @@ xul|button.primary:not([disabled="true"]):hover:active {
 }
 
 html|button.ghost-button:not(.semi-transparent):enabled:hover {
-  background-color: var(--in-content-button-background-hover);
-  color: var(--in-content-button-text-color-hover);
+  background-color: var(--button-background-color-hover);
+  color: var(--button-text-color-hover);
 }
 
 html|button.ghost-button:not(.semi-transparent):enabled:hover:active {
-  background-color: var(--in-content-button-background-active);
-  color: var(--in-content-button-text-color-active);
+  background-color: var(--button-background-color-active);
+  color: var(--button-text-color-active);
 }
 
 html|button.ghost-button.icon-button {
@@ -467,7 +396,7 @@ xul|menulist > xul|menupopup {
   --panel-border-color: var(--in-content-box-border-color);
   --panel-border-radius: 2px;
   --panel-background: var(--background-color-box);
-  --panel-color: var(--in-content-text-color);
+  --panel-color: var(--text-color);
   --panel-padding: 0;
 }
 
@@ -537,7 +466,7 @@ html|textarea:focus,
 xul|tree:focus-visible,
 xul|richlistbox:focus-visible {
   border-color: transparent;
-  outline: var(--in-content-focus-outline);
+  outline: var(--focus-outline);
   outline-offset: -1px; /* Prevents antialising around the corners */
 }
 
@@ -671,7 +600,8 @@ html|*#categories {
 }
 
 #categories > .category {
-  border: 1px solid var(--in-content-primary-button-border-color);
+  border: var(--button-border);
+  border-color: var(--button-border-color-primary);
   border-radius: 4px;
   min-height: 48px;
   appearance: none;
@@ -682,7 +612,8 @@ html|*#categories {
 }
 
 html|*#categories > html|*.category {
-  border: 1px solid var(--in-content-primary-button-border-color);
+  border: var(--button-border);
+  border-color: var(--button-border-color-primary);
   background-color: initial;
   background-size: 24px;
   background-repeat: no-repeat;
@@ -701,15 +632,15 @@ html|*#categories > html|*.category:dir(rtl) {
 }
 
 #categories > .category:hover {
-  background-color: var(--in-content-button-background-hover);
-  color: var(--in-content-button-text-color-hover);
-  border-color: var(--in-content-button-border-color-hover);
+  background-color: var(--button-background-color-hover);
+  color: var(--button-text-color-hover);
+  border-color: var(--button-border-color-hover);
 }
 
 #categories > .category:hover:active {
-  background-color: var(--in-content-button-background-active);
-  color: var(--in-content-button-text-color-active);
-  border-color: var(--in-content-button-border-color-active);
+  background-color: var(--button-background-color-active);
+  color: var(--button-text-color-active);
+  border-color: var(--button-border-color-active);
 }
 
 @media not (forced-colors) {
@@ -736,21 +667,21 @@ html|*#categories > html|*.category:dir(rtl) {
     transition: none;
     /* We need a true transparent but in HCM this would compute to an actual color,
      * so select the page's background color instead: */
-    border-color: var(--in-content-page-background);
+    border-color: var(--background-color-canvas);
   }
 
   #categories > .category[selected],
   #categories > .category.selected {
-    background-color: var(--in-content-button-background-hover);
-    color: var(--in-content-button-text-color-hover);
-    border-color: var(--in-content-button-border-color-hover);
+    background-color: var(--button-background-color-hover);
+    color: var(--button-text-color-hover);
+    border-color: var(--button-border-color-hover);
   }
 }
 
 #categories[keyboard-navigation="true"]:focus-visible > .category[current],
 #categories > .category:focus-visible {
-  outline: var(--in-content-focus-outline);
-  outline-offset: var(--in-content-focus-outline-inset);
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-inset);
 }
 
 html|*#categories[last-input-type="mouse"] > html|button.category:focus-visible {
@@ -836,7 +767,7 @@ xul|richlistbox {
   background-color: var(--background-color-box);
   border: 1px solid var(--in-content-box-border-color);
   border-radius: 4px;
-  color: var(--in-content-text-color);
+  color: var(--text-color);
 }
 
 xul|listheader {
@@ -880,18 +811,18 @@ xul|treechildren::-moz-tree-row(selected) {
 @media not (forced-colors) {
   xul|richlistbox:not(#categories) > xul|richlistitem[selected] {
     /* Ensure buttons/menulists inside richlistitems (containers, applications) look OK */
-    --in-content-button-background: color-mix(in srgb, currentColor 15%, transparent);
-    --in-content-button-background-hover: color-mix(in srgb, currentColor 30%, transparent);
-    --in-content-button-background-active: color-mix(in srgb, currentColor 45%, transparent);
-    --in-content-button-text-color: var(--in-content-item-selected-text);
-    --in-content-button-text-color-hover: var(--in-content-item-selected-text);
-    --in-content-button-text-color-active: var(--in-content-button-text-color-hover);
-    --in-content-focus-outline-color: var(--in-content-item-selected-text);
+    --button-background-color: color-mix(in srgb, currentColor 15%, transparent);
+    --button-background-color-hover: color-mix(in srgb, currentColor 30%, transparent);
+    --button-background-color-active: color-mix(in srgb, currentColor 45%, transparent);
+    --button-text-color: var(--in-content-item-selected-text);
+    --button-text-color-hover: var(--in-content-item-selected-text);
+    --button-text-color-active: var(--button-text-color-hover);
+    --focus-outline-color: var(--in-content-item-selected-text);
   }
 }
 
 xul|richlistitem[selected] xul|menulist:focus-visible {
-  outline-offset: var(--in-content-focus-outline-inset);
+  outline-offset: var(--focus-outline-inset);
 }
 
 /* Use a 2px border so that selected row highlight is still visible behind
@@ -906,7 +837,7 @@ xul|richlistitem[selected] xul|menulist:focus-visible {
 xul|panel[type="autocomplete-richlistbox"] {
   background-color: var(--background-color-box);
   border: 1px solid var(--in-content-box-border-color);
-  color: var(--in-content-text-color);
+  color: var(--text-color);
 }
 
 /* Trees */
@@ -926,7 +857,7 @@ xul|treecols {
   border: none;
   border-top-left-radius: 4px;
   border-top-right-radius: 4px;
-  border-bottom: 1px solid var(--in-content-border-color);
+  border-bottom: var(--button-border);
   overflow: clip; /* Clip border-radius */
   padding: 0;
 }
@@ -936,21 +867,21 @@ xul|treecol:not([hideheader="true"]),
   appearance: none;
   border: none;
   border-radius: unset;
-  background-color: var(--in-content-button-background);
-  color: var(--in-content-button-text-color, inherit);
+  background-color: var(--button-background-color);
+  color: var(--button-text-color, inherit);
   padding: 5px 10px;
 }
 
 xul|treecol:not([hideheader="true"], [sortable="false"]):hover,
 .tree-columnpicker-button:hover {
-  background-color: var(--in-content-button-background-hover);
-  color: var(--in-content-button-text-color-hover);
+  background-color: var(--button-background-color-hover);
+  color: var(--button-text-color-hover);
 }
 
 xul|treecol:not([hideheader="true"], [sortable="false"]):hover:active,
 .tree-columnpicker-button:hover:active {
-  background-color: var(--in-content-button-background-active);
-  color: var(--in-content-button-text-color-active);
+  background-color: var(--button-background-color-active);
+  color: var(--button-text-color-active);
 }
 
 xul|treecol:not([hideheader="true"], :first-child),
@@ -971,7 +902,7 @@ xul|treecol:not([hideheader="true"], :first-child),
 @media (forced-colors) {
   xul|treecol:not([hideheader="true"], :first-child),
   xul|treecolpicker {
-    --in-content-box-border-color: var(--in-content-button-border-color);
+    --in-content-box-border-color: var(--button-border-color);
   }
 }
 
@@ -1109,7 +1040,7 @@ input[type="text"][warning]:enabled:not(:focus) {
 .sidebar-footer-link {
   height: 36px;
   cursor: default;
-  border: 1px solid var(--in-content-button-border-color);
+  border: var(--button-border);
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -1119,7 +1050,7 @@ input[type="text"][warning]:enabled:not(:focus) {
   .sidebar-footer-link {
     /* We need a true transparent but in HCM this would compute to an actual color,
      * so select the page's background color instead: */
-    border-color: var(--in-content-page-background);
+    border-color: var(--background-color-canvas);
   }
 }
 
@@ -1136,20 +1067,20 @@ xul|*.sidebar-footer-link {
 }
 
 .sidebar-footer-link:hover {
-  background-color: var(--in-content-button-background-hover);
-  color: var(--in-content-button-text-color-hover);
-  border-color: var(--in-content-button-border-color-hover);
+  background-color: var(--button-background-color-hover);
+  color: var(--button-text-color-hover);
+  border-color: var(--button-border-color-hover);
 }
 
 .sidebar-footer-link:hover:active:not([disabled]) {
-  background-color: var(--in-content-button-background-active);
-  color: var(--in-content-button-text-color-active);
-  border-color: var(--in-content-button-border-color-active);
+  background-color: var(--button-background-color-active);
+  color: var(--button-text-color-active);
+  border-color: var(--button-border-color-active);
 }
 
 .sidebar-footer-link:focus-visible {
-  outline: var(--in-content-focus-outline);
-  outline-offset: var(--in-content-focus-outline-inset);
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-inset);
 }
 
 .sidebar-footer-icon {

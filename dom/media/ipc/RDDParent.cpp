@@ -17,8 +17,8 @@
 #  include <unistd.h>
 #endif
 
-#include "gfxConfig.h"
 #include "MediaCodecsSupport.h"
+#include "gfxConfig.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/FOGIPC.h"
 #include "mozilla/Preferences.h"
@@ -140,9 +140,7 @@ mozilla::ipc::IPCResult RDDParent::RecvInit(
     nsTArray<GfxVarUpdate>&& vars, const Maybe<FileDescriptor>& aBrokerFd,
     const bool& aCanRecordReleaseTelemetry,
     const bool& aIsReadyForBackgroundProcessing) {
-  for (const auto& var : vars) {
-    gfxVars::ApplyUpdate(var);
-  }
+  gfxVars::ApplyUpdate(vars);
 
   auto supported = media::MCSInfo::GetSupportFromFactory();
   Unused << SendUpdateMediaCodecsSupported(supported);
@@ -173,8 +171,23 @@ mozilla::ipc::IPCResult RDDParent::RecvInit(
   return IPC_OK();
 }
 
-IPCResult RDDParent::RecvUpdateVar(const GfxVarUpdate& aUpdate) {
+IPCResult RDDParent::RecvUpdateVar(const nsTArray<GfxVarUpdate>& aUpdate) {
   gfxVars::ApplyUpdate(aUpdate);
+
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(
+      NS_NewRunnableFunction(
+          "RDDParent::RecvUpdateVar",
+          []() {
+            NS_DispatchToMainThread(NS_NewRunnableFunction(
+                "RDDParent::UpdateMediaCodecsSupported",
+                [supported = media::MCSInfo::GetSupportFromFactory(
+                     true /* force refresh */)]() {
+                  if (auto* rdd = RDDParent::GetSingleton()) {
+                    Unused << rdd->SendUpdateMediaCodecsSupported(supported);
+                  }
+                }));
+          }),
+      nsIEventTarget::DISPATCH_NORMAL));
   return IPC_OK();
 }
 

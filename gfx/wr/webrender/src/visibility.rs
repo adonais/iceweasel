@@ -380,6 +380,18 @@ pub fn update_prim_visibility(
         }
     }
 
+    if let Some(snapshot) = &pic.snapshot {
+        if snapshot.detached {
+            // If the snapshot is detached, then the contents of the stacking
+            // context will only be shown via the snapshot, so there is no point
+            // to rendering anything outside of the snapshot area.
+            let prim_surface_index = frame_state.surface_stack.last().unwrap().1;
+            let surface = &mut frame_state.surfaces[prim_surface_index.0];
+            let clip = snapshot.area.round_out().cast_unit();
+            surface.clipped_local_rect = surface.clipped_local_rect.intersection_unchecked(&clip);
+        }
+    }
+
     if pop_surface {
         frame_state.pop_surface();
     }

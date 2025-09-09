@@ -5,12 +5,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SharedMap.h"
-#include "SharedMapChangeEvent.h"
 
 #include "MemMapSnapshot.h"
 #include "ScriptPreloader-inl.h"
-
+#include "SharedMapChangeEvent.h"
+#include "mozilla/IOBuffers.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ScriptPreloader.h"
+#include "mozilla/Try.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/ContentParent.h"
@@ -18,9 +20,6 @@
 #include "mozilla/dom/IPCBlobUtils.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/IOBuffers.h"
-#include "mozilla/ScriptPreloader.h"
-#include "mozilla/Try.h"
 
 using namespace mozilla::loader;
 

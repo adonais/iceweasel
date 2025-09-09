@@ -4,17 +4,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "mozilla/dom/HTMLStyleElement.h"
-#include "mozilla/dom/HTMLStyleElementBinding.h"
-#include "nsGkAtoms.h"
-#include "nsStyleConsts.h"
+
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/FetchPriority.h"
+#include "mozilla/dom/HTMLStyleElementBinding.h"
 #include "mozilla/dom/ReferrerInfo.h"
-#include "nsUnicharUtils.h"
-#include "nsThreadUtils.h"
 #include "nsContentUtils.h"
-#include "nsStubMutationObserver.h"
 #include "nsDOMTokenList.h"
+#include "nsGkAtoms.h"
+#include "nsStubMutationObserver.h"
+#include "nsStyleConsts.h"
+#include "nsThreadUtils.h"
+#include "nsUnicharUtils.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(Style)
 

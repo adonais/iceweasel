@@ -32,11 +32,14 @@
   <string name="tab_tray_close_multiselect_content_description">মাল্টিলেক্ট মোড থেকে প্রস্থান করুন</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s হচ্ছে Mozilla দ্বারা তৈরি।</string>
+  <!-- Private Browsing -->
   <string name="private_browsing_common_myths">ব্যাক্তিগত ব্রাউজিং সম্পর্কে কিছু ভুল ধারণা</string>
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">সেটিং এ যাও</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">বাতিল</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">সেটিং এ যাও</string>
   <!-- Text for the negative action button to dismiss the dialog. -->
@@ -189,8 +192,6 @@
   <string name="preferences_account_sync_error">সিঙ্ক শুরু করতে পুনরায় সংযোগ দিন</string>
   <!-- Preference for language -->
   <string name="preferences_language">ভাষা</string>
-  <!-- Preference for data choices -->
-  <string name="preferences_data_choices" tools:ignore="UnusedResources" moz:removedIn="141">ডাটা পছন্দ</string>
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">তথ্য সংগ্রহ</string>
   <!-- Preference for developers -->
@@ -637,20 +638,16 @@
     Text shown in snackbar when user deletes a collection
   -->
   <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">সংগ্রহ মুছে ফেলা হয়েছে</string>
-  <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">সংগ্রহের নামকরণ</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">ট্যাব বন্ধ করা হয়েছে</string>
   <!-- Text shown in snackbar when user closes all tabs -->
   <string name="snackbar_tabs_closed">ট্যাব বন্ধ করা হয়েছে</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">ব্যক্তিগত ট্যাব বন্ধ হয়েছে</string>
-  <!-- Text shown in snackbar when user closes all private tabs -->
-  <string name="snackbar_private_tabs_closed" moz:removedIn="141" tools:ignore="UnusedResources">ব্যক্তিগত ট্যাব বন্ধ হয়েছে</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">UNDO</string>
   <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed">সাইট অপসারণ করা হয়েছে</string>
+  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">সাইট অপসারণ করা হয়েছে</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned

@@ -7,11 +7,11 @@
 #include "SerializedStackHolder.h"
 
 #include "js/SavedFrameAPI.h"
-#include "mozilla/dom/WorkerPrivate.h"
-#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/Services.h"
-#include "nsJSPrincipals.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/WorkerPrivate.h"
 #include "nsIObserverService.h"
+#include "nsJSPrincipals.h"
 #include "xpcpublic.h"
 
 namespace mozilla::dom {

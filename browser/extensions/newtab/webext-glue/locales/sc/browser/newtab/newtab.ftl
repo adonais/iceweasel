@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Incurtzadura noa
 newtab-topsites-edit-topsites-header = Modìfica su situ populare
 newtab-topsites-edit-shortcut-header = Modìfica s'incurtzadura
 newtab-topsites-add-shortcut-label = Agiunghe curtzadòrgiu
+newtab-topsites-add-shortcut-title =
+    .title = Agiunghe curtzadòrgiu
+    .aria-label = Agiunghe curtzadòrgiu
 newtab-topsites-title-label = Tìtulu
 newtab-topsites-title-input =
     .placeholder = Inserta unu tìtulu
@@ -396,9 +399,6 @@ feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
 
-## Celestial
-
-
 ## New Tab Weather
 
 # Variables:
@@ -510,9 +510,6 @@ newtab-download-mobile-highlight-title = Iscàrriga { -brand-product-name } pro 
 # "Scan the code" refers to scanning the QR code that appears above the body text that leads to Firefox for mobile download.
 newtab-download-mobile-highlight-body-variant-a = Iscansiona su còdighe pro navigare cun seguresa in ònnia logu.
 
-## Strings for shortcuts highlight
-
-
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -535,6 +532,3 @@ newtab-report-cancel = Annulla
 newtab-report-submit = Imbia
 newtab-toast-thanks-for-reporting =
     .message = Gràtzias de sa sinnalatzione.
-
-## Strings for trending searches
-

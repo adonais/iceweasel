@@ -16,25 +16,31 @@ export default {
 const Template = ({
   buttonText,
   imageURL,
+  logoURL,
   primaryText,
   secondaryText,
+  primaryButtonSize,
   imageVerticalTopOffset,
   imageVerticalBottomOffset,
   containerVerticalBottomOffset,
   layout,
-  imageHeight,
+  imageWidth,
+  logoWidth,
 }) => html`
   <moz-card style="width: 22.5rem;">
     <fxa-menu-message
       buttonText=${buttonText}
       primaryText=${primaryText}
+      primaryButtonSize=${primaryButtonSize}
       secondaryText=${secondaryText}
       imageURL=${imageURL}
+      logoURL=${logoURL}
       style="
         --illustration-margin-block-start-offset: ${imageVerticalTopOffset}px;
         --illustration-margin-block-end-offset: ${imageVerticalBottomOffset}px;
         --container-margin-block-end-offset: ${containerVerticalBottomOffset}px;
-        --image-height: ${imageHeight}px;
+        --image-width: ${imageWidth}px;
+        --logo-width: ${logoWidth}px;
       "
       layout=${layout}
     >
@@ -45,14 +51,17 @@ const Template = ({
 export const Default = Template.bind({});
 Default.args = {
   buttonText: "Sign up",
+  logoURL: "chrome://branding/content/about-logo.svg",
   imageURL:
     "chrome://browser/content/asrouter/assets/fox-with-box-on-cloud.svg",
   primaryText: "Bounce between devices",
+  primaryButtonSize: "default",
   secondaryText:
     "Sync and encrypt your bookmarks, passwords, and more on all your devices.",
   imageVerticalTopOffset: -20,
   imageVerticalBottomOffset: 0,
   containerVerticalBottomOffset: 0,
   layout: "column",
-  imageHeight: 120,
+  imageWidth: 120,
+  logoWidth: 18,
 };

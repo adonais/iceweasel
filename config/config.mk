@@ -111,11 +111,6 @@ MKDIR ?= mkdir
 SLEEP ?= sleep
 TOUCH ?= touch
 
-#
-# Build using PIC by default
-#
-_ENABLE_PIC=1
-
 # Don't build SIMPLE_PROGRAMS with PGO, since they don't need it anyway,
 # and we don't have the same build logic to re-link them in the second pass.
 ifdef SIMPLE_PROGRAMS

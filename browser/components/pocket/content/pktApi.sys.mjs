@@ -46,7 +46,6 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  IndexedDB: "resource://gre/modules/IndexedDB.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
@@ -56,31 +55,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "privacy.firstparty.isolate",
   false
 );
-
-const DB_NAME = "SaveToPocket";
-const STORE_NAME = "pktAPI";
-const DB_VERSION = 1;
-const RECENT_SAVES_UPDATE_TIME = 5 * 60 * 1000; // 30 minutes
-
-/**
- * Create a new connection to the database.
- */
-function openDatabase() {
-  return lazy.IndexedDB.open(DB_NAME, DB_VERSION, db => {
-    db.createObjectStore(STORE_NAME);
-  });
-}
-
-/**
- * Cache the database connection so that it is shared among multiple operations.
- */
-let databasePromise;
-function getDatabase() {
-  if (!databasePromise) {
-    databasePromise = openDatabase();
-  }
-  return databasePromise;
-}
 
 export var pktApi = (function () {
   /**
@@ -408,8 +382,6 @@ export var pktApi = (function () {
     setSetting("usedTags", undefined);
 
     setSetting("fsv1", undefined);
-
-    _clearRecentSavesCache();
   }
 
   /**
@@ -464,7 +436,6 @@ export var pktApi = (function () {
         }
         data.ho2 = getSetting("test.ho2");
 
-        _expireRecentSavesCache();
         if (options.success) {
           options.success.apply(options, Array.apply(null, arguments));
         }
@@ -775,108 +746,6 @@ export var pktApi = (function () {
     ); // Use BFF
   }
 
-  async function _getRecentSavesCache() {
-    const db = await getDatabase();
-    return db.objectStore(STORE_NAME, "readonly").get("recentSaves");
-  }
-  async function _setRecentSavesCache(data) {
-    const db = await getDatabase();
-    db.objectStore(STORE_NAME, "readwrite").put(data, "recentSaves");
-  }
-  // Clears the cache time, so the next get forces an update.
-  async function _expireRecentSavesCache() {
-    const cache = await _getRecentSavesCache();
-    _setRecentSavesCache({
-      ...cache,
-      lastUpdated: 0,
-    });
-  }
-  // Clears the cache, for when a new user logs in.
-  async function _clearRecentSavesCache() {
-    const db = await getDatabase();
-    db.objectStore(STORE_NAME, "readwrite").delete("recentSaves");
-  }
-
-  async function getRecentSavesCache() {
-    // Get cache
-    const cache = await _getRecentSavesCache();
-    // Check age
-    if (
-      cache?.lastUpdated &&
-      Date.now() - cache.lastUpdated < RECENT_SAVES_UPDATE_TIME
-    ) {
-      // Return cache if it's not too old.
-      return cache.list;
-    }
-    return null;
-  }
-
-  async function getRecentSaves(options = {}) {
-    pktApi.retrieve(
-      { count: 4 },
-      {
-        success(data) {
-          const useBFF = Services.prefs.getBoolPref(
-            "extensions.pocket.bffRecentSaves"
-          );
-
-          // Don't try to parse bad or missing data
-          if (
-            useBFF &&
-            (typeof data !== `object` || typeof data?.data !== `object`)
-          ) {
-            return;
-          }
-
-          try {
-            let list = useBFF ? [] : data.list;
-
-            if (useBFF) {
-              // Transform BFF list item schema to existing api schema
-              data.data.forEach((item, index) => {
-                list[index] = {
-                  item_id: item.id,
-                  id: item.id, // This can probably be deprecated when the old API is
-                  resolved_url: item.resolvedUrl,
-                  given_url: item.givenUrl,
-                  resolved_title: item.title,
-                  excerpt: item.excerpt,
-                  word_count: item.wordCount,
-                  time_to_read: item.timeToRead,
-                  top_image_url: item.topImageUrl,
-                };
-              });
-            } else {
-              // We want these to show up in the same order as they saved,
-              // so we need to do some work and sort.
-              list = Object.values(list)
-                .map(item => ({
-                  ...item,
-                  id: parseInt(item.item_id || item.resolved_id, 10),
-                  time_added: parseInt(item.time_added),
-                }))
-                .sort((a, b) => b.time_added - a.time_added);
-            }
-
-            // Cache results
-            const results = {
-              lastUpdated: Date.now(),
-              list,
-            };
-
-            _setRecentSavesCache(results);
-            options.success?.(results.list);
-          } catch {
-            // If parsing fails, just leave existing recent saves cache intact
-          }
-        },
-        error(error) {
-          options.error?.(error);
-        },
-      }
-    );
-  }
-
   /**
    * Public functions
    */
@@ -894,8 +763,6 @@ export var pktApi = (function () {
     getSuggestedTagsForItem,
     getSuggestedTagsForURL,
     retrieve,
-    getRecentSavesCache,
-    getRecentSaves,
     getArticleInfo,
     getMobileDownload,
   };

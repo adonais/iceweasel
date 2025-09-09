@@ -34,13 +34,14 @@ class TestUsageReporting(FOGTestCase):
 
     def test_deletion_request(self):
         """
-        Test the "usage-reporting" ping behaviour and usage-id cycling when disabling telemetry in general.
+        Test that the "usage-reporting" ping behaviour is independent from general telemetry.
 
         We do not expect a "usage-deletion-request" ping.  The "deletion-request" ping should not include the usage-id.
+        The `usage.profile_id` stays the same across telemetry toggling.
         """
 
         ping1 = self.wait_for_ping(
-            self.restart_browser,
+            lambda: self.marionette.restart(in_app=True),
             FOG_USAGE_REPORTING,
             ping_server=self.fog_ping_server,
         )
@@ -72,7 +73,7 @@ class TestUsageReporting(FOGTestCase):
 
         self.enable_telemetry()
         ping3 = self.wait_for_ping(
-            self.restart_browser,
+            lambda: self.marionette.restart(in_app=True),
             FOG_USAGE_REPORTING,
             ping_server=self.fog_ping_server,
         )
@@ -81,14 +82,14 @@ class TestUsageReporting(FOGTestCase):
         usage_id2 = ping3["payload"]["metrics"]["uuid"]["usage.profile_id"]
         self.assertIsValidUUID(usage_id2)
 
-        self.assertNotEqual(usage_id1, usage_id2)
+        self.assertEqual(usage_id1, usage_id2)
         self.assertNotEqual(CANARY_USAGE_PROFILE_ID, usage_id2)
 
         self.assertIn("usage.profile_group_id", ping3["payload"]["metrics"]["uuid"])
         usage_group_id2 = ping3["payload"]["metrics"]["uuid"]["usage.profile_group_id"]
         self.assertIsValidUUID(usage_group_id2)
 
-        self.assertNotEqual(usage_group_id1, usage_group_id2)
+        self.assertEqual(usage_group_id1, usage_group_id2)
         self.assertNotEqual(CANARY_USAGE_PROFILE_GROUP_ID, usage_group_id2)
 
     def test_usage_deletion_request(self):
@@ -99,7 +100,7 @@ class TestUsageReporting(FOGTestCase):
         """
 
         ping1 = self.wait_for_ping(
-            self.restart_browser,
+            lambda: self.marionette.restart(in_app=True),
             FOG_USAGE_REPORTING,
             ping_server=self.fog_ping_server,
         )
@@ -142,7 +143,7 @@ class TestUsageReporting(FOGTestCase):
 
         self.enable_usage_reporting()
         ping3 = self.wait_for_ping(
-            self.restart_browser,
+            lambda: self.marionette.restart(in_app=True),
             FOG_USAGE_REPORTING,
             ping_server=self.fog_ping_server,
         )
@@ -166,13 +167,12 @@ class TestUsageReporting(FOGTestCase):
         Test that the "usage-reporting" ping remains enabled and the usage ID and usage group ID remain fixed when restarting the browser.
         """
 
-        self.disable_usage_reporting()
         # Not guaranteed to send a "usage-reporting" ping.
         self.enable_usage_reporting()
 
         # But restarting should send a "usage-reporting ping".
         ping1 = self.wait_for_ping(
-            self.restart_browser,
+            lambda: self.marionette.restart(in_app=True),
             FOG_USAGE_REPORTING,
             ping_server=self.fog_ping_server,
         )
@@ -190,7 +190,7 @@ class TestUsageReporting(FOGTestCase):
 
         # Restarting again should maintain enabled state.
         ping2 = self.wait_for_ping(
-            self.restart_browser,
+            lambda: self.marionette.restart(in_app=True),
             FOG_USAGE_REPORTING,
             ping_server=self.fog_ping_server,
         )
@@ -236,7 +236,7 @@ class TestUsageReporting(FOGTestCase):
         # wait for a _different_ ping, then verify we didn't get any additional
         # "usage-reporting" pings.
         _ping2 = self.wait_for_ping(
-            self.restart_browser,
+            lambda: self.marionette.restart(in_app=True),
             BASELINE,
             ping_server=self.fog_ping_server,
         )

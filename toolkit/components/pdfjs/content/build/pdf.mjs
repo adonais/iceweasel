@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.4.19
- * pdfjsBuild = e0783cd07
+ * pdfjsVersion = 5.4.70
+ * pdfjsBuild = f16e0b6da
  */
 
 ;// ./src/shared/util.js
@@ -56,7 +56,8 @@ const AnnotationEditorType = {
   HIGHLIGHT: 9,
   STAMP: 13,
   INK: 15,
-  SIGNATURE: 101
+  SIGNATURE: 101,
+  COMMENT: 102
 };
 const AnnotationEditorParamsType = {
   RESIZE: 1,
@@ -68,10 +69,9 @@ const AnnotationEditorParamsType = {
   INK_THICKNESS: 22,
   INK_OPACITY: 23,
   HIGHLIGHT_COLOR: 31,
-  HIGHLIGHT_DEFAULT_COLOR: 32,
-  HIGHLIGHT_THICKNESS: 33,
-  HIGHLIGHT_FREE: 34,
-  HIGHLIGHT_SHOW_ALL: 35,
+  HIGHLIGHT_THICKNESS: 32,
+  HIGHLIGHT_FREE: 33,
+  HIGHLIGHT_SHOW_ALL: 34,
   DRAW_STEP: 41
 };
 const PermissionFlag = {
@@ -1170,6 +1170,9 @@ function deprecated(details) {
 class PDFDateString {
   static #regex;
   static toDateObject(input) {
+    if (input instanceof Date) {
+      return input;
+    }
     if (!input || typeof input !== "string") {
       return null;
     }
@@ -1349,6 +1352,7 @@ class EditorToolbar {
   #editor;
   #buttons = null;
   #altText = null;
+  #comment = null;
   #signatureDescriptionButton = null;
   static #l10nRemove = null;
   constructor(editor) {
@@ -1421,6 +1425,7 @@ class EditorToolbar {
   show() {
     this.#toolbar.classList.remove("hidden");
     this.#altText?.shown();
+    this.#comment?.shown();
   }
   addDeleteButton() {
     const {
@@ -1428,7 +1433,7 @@ class EditorToolbar {
       _uiManager
     } = this.#editor;
     const button = document.createElement("button");
-    button.className = "delete";
+    button.classList.add("basic", "deleteButton");
     button.tabIndex = 0;
     button.setAttribute("data-l10n-id", EditorToolbar.#l10nRemove[editorType]);
     this.#addListenersToElement(button);
@@ -1450,7 +1455,23 @@ class EditorToolbar {
     this.#buttons.append(button, this.#divider);
     this.#altText = altText;
   }
+  addComment(comment) {
+    if (this.#comment) {
+      return;
+    }
+    const button = comment.render();
+    if (!button) {
+      return;
+    }
+    this.#addListenersToElement(button);
+    this.#buttons.prepend(button, this.#divider);
+    this.#comment = comment;
+    comment.toolbar = this;
+  }
   addColorPicker(colorPicker) {
+    if (this.#colorPicker) {
+      return;
+    }
     this.#colorPicker = colorPicker;
     const button = colorPicker.renderButton();
     this.#addListenersToElement(button);
@@ -1475,6 +1496,9 @@ class EditorToolbar {
       case "delete":
         this.addDeleteButton();
         break;
+      case "comment":
+        this.addComment(tool);
+        break;
     }
   }
   updateEditSignatureButton(description) {
@@ -1488,7 +1512,7 @@ class EditorToolbar {
     this.#colorPicker = null;
   }
 }
-class HighlightToolbar {
+class FloatingToolbar {
   #buttons = null;
   #toolbar = null;
   #uiManager;
@@ -1505,7 +1529,14 @@ class HighlightToolbar {
     const buttons = this.#buttons = document.createElement("div");
     buttons.className = "buttons";
     editToolbar.append(buttons);
-    this.#addHighlightButton();
+    if (this.#uiManager.hasCommentManager()) {
+      this.#makeButton("commentButton", `pdfjs-comment-floating-button`, "pdfjs-comment-floating-button-label", () => {
+        this.#uiManager.commentSelection("floating_button");
+      });
+    }
+    this.#makeButton("highlightButton", `pdfjs-highlight-floating-button1`, "pdfjs-highlight-floating-button-label", () => {
+      this.#uiManager.highlightSelection("floating_button");
+    });
     return editToolbar;
   }
   #getLastPoint(boxes, isLTR) {
@@ -1544,22 +1575,20 @@ class HighlightToolbar {
   hide() {
     this.#toolbar.remove();
   }
-  #addHighlightButton() {
+  #makeButton(buttonClass, l10nId, labelL10nId, clickHandler) {
     const button = document.createElement("button");
-    button.className = "highlightButton";
+    button.classList.add("basic", buttonClass);
     button.tabIndex = 0;
-    button.setAttribute("data-l10n-id", `pdfjs-highlight-floating-button1`);
+    button.setAttribute("data-l10n-id", l10nId);
     const span = document.createElement("span");
     button.append(span);
     span.className = "visuallyHidden";
-    span.setAttribute("data-l10n-id", "pdfjs-highlight-floating-button-label");
+    span.setAttribute("data-l10n-id", labelL10nId);
     const signal = this.#uiManager._signal;
     button.addEventListener("contextmenu", noContextMenu, {
       signal
     });
-    button.addEventListener("click", () => {
-      this.#uiManager.highlightSelection("floating_button");
-    }, {
+    button.addEventListener("click", clickHandler, {
       signal
     });
     this.#buttons.append(button);
@@ -1960,6 +1989,7 @@ class AnnotationEditorUIManager {
   #annotationStorage = null;
   #changedExistingAnnotations = null;
   #commandManager = new CommandManager();
+  #commentManager = null;
   #copyPasteAC = null;
   #currentDrawingSession = null;
   #currentPageIndex = 0;
@@ -1976,7 +2006,7 @@ class AnnotationEditorUIManager {
   #focusManagerAC = null;
   #highlightColors = null;
   #highlightWhenShiftUp = false;
-  #highlightToolbar = null;
+  #floatingToolbar = null;
   #idManager = new IdManager();
   #isEnabled = false;
   #isWaiting = false;
@@ -2065,12 +2095,13 @@ class AnnotationEditorUIManager {
       checker: arrowChecker
     }]]));
   }
-  constructor(container, viewer, viewerAlert, altTextManager, signatureManager, eventBus, pdfDocument, pageColors, highlightColors, enableHighlightFloatingButton, enableUpdatedAddImage, enableNewAltTextWhenAddingImage, mlManager, editorUndoBar, supportsPinchToZoom) {
+  constructor(container, viewer, viewerAlert, altTextManager, commentManager, signatureManager, eventBus, pdfDocument, pageColors, highlightColors, enableHighlightFloatingButton, enableUpdatedAddImage, enableNewAltTextWhenAddingImage, mlManager, editorUndoBar, supportsPinchToZoom) {
     const signal = this._signal = this.#abortController.signal;
     this.#container = container;
     this.#viewer = viewer;
     this.#viewerAlert = viewerAlert;
     this.#altTextManager = altTextManager;
+    this.#commentManager = commentManager;
     this.#signatureManager = signatureManager;
     this._eventBus = eventBus;
     eventBus._on("editingaction", this.onEditingAction.bind(this), {
@@ -2127,9 +2158,10 @@ class AnnotationEditorUIManager {
     this.#selectedEditors.clear();
     this.#commandManager.destroy();
     this.#altTextManager?.destroy();
+    this.#commentManager?.destroy();
     this.#signatureManager?.destroy();
-    this.#highlightToolbar?.hide();
-    this.#highlightToolbar = null;
+    this.#floatingToolbar?.hide();
+    this.#floatingToolbar = null;
     this.#mainHighlightColorPicker?.destroy();
     this.#mainHighlightColorPicker = null;
     if (this.#focusMainContainerTimeoutId) {
@@ -2160,15 +2192,46 @@ class AnnotationEditorUIManager {
   get direction() {
     return shadow(this, "direction", getComputedStyle(this.#container).direction);
   }
-  get highlightColors() {
-    return shadow(this, "highlightColors", this.#highlightColors ? new Map(this.#highlightColors.split(",").map(pair => {
+  get _highlightColors() {
+    return shadow(this, "_highlightColors", this.#highlightColors ? new Map(this.#highlightColors.split(",").map(pair => {
       pair = pair.split("=").map(x => x.trim());
       pair[1] = pair[1].toUpperCase();
       return pair;
     })) : null);
   }
+  get highlightColors() {
+    const {
+      _highlightColors
+    } = this;
+    if (!_highlightColors) {
+      return shadow(this, "highlightColors", null);
+    }
+    const map = new Map();
+    const hasHCM = !!this.#pageColors;
+    for (const [name, color] of _highlightColors) {
+      const isNameForHCM = name.endsWith("_HCM");
+      if (hasHCM && isNameForHCM) {
+        map.set(name.replace("_HCM", ""), color);
+        continue;
+      }
+      if (!hasHCM && !isNameForHCM) {
+        map.set(name, color);
+      }
+    }
+    return shadow(this, "highlightColors", map);
+  }
   get highlightColorNames() {
     return shadow(this, "highlightColorNames", this.highlightColors ? new Map(Array.from(this.highlightColors, e => e.reverse())) : null);
+  }
+  getNonHCMColor(color) {
+    if (!this._highlightColors) {
+      return color;
+    }
+    const colorName = this.highlightColorNames.get(color);
+    return this._highlightColors.get(colorName) || color;
+  }
+  getNonHCMColorName(color) {
+    return this.highlightColorNames.get(color) || color;
   }
   setCurrentDrawingSession(layer) {
     if (layer) {
@@ -2184,6 +2247,12 @@ class AnnotationEditorUIManager {
   }
   editAltText(editor, firstTime = false) {
     this.#altTextManager?.editAltText(this, editor, firstTime);
+  }
+  hasCommentManager() {
+    return !!this.#commentManager;
+  }
+  editComment(editor, position) {
+    this.#commentManager?.open(this, editor, position);
   }
   getSignature(editor) {
     this.#signatureManager?.getSignature({
@@ -2287,7 +2356,7 @@ class AnnotationEditorUIManager {
     }
     return null;
   }
-  highlightSelection(methodOfCreation = "") {
+  highlightSelection(methodOfCreation = "", comment = false) {
     const selection = document.getSelection();
     if (!selection || selection.isCollapsed) {
       return;
@@ -2309,7 +2378,7 @@ class AnnotationEditorUIManager {
     const layer = this.#getLayerForTextLayer(textLayer);
     const isNoneMode = this.#mode === AnnotationEditorType.NONE;
     const callback = () => {
-      layer?.createAndAddNewEditor({
+      const editor = layer?.createAndAddNewEditor({
         x: 0,
         y: 0
       }, false, {
@@ -2324,6 +2393,9 @@ class AnnotationEditorUIManager {
       if (isNoneMode) {
         this.showAllEditors("highlight", true, true);
       }
+      if (comment) {
+        editor?.editComment();
+      }
     };
     if (isNoneMode) {
       this.switchToMode(AnnotationEditorType.HIGHLIGHT, callback);
@@ -2331,7 +2403,10 @@ class AnnotationEditorUIManager {
     }
     callback();
   }
-  #displayHighlightToolbar() {
+  commentSelection(methodOfCreation = "") {
+    this.highlightSelection(methodOfCreation, true);
+  }
+  #displayFloatingToolbar() {
     const selection = document.getSelection();
     if (!selection || selection.isCollapsed) {
       return;
@@ -2342,8 +2417,8 @@ class AnnotationEditorUIManager {
     if (!boxes) {
       return;
     }
-    this.#highlightToolbar ||= new HighlightToolbar(this);
-    this.#highlightToolbar.show(textLayer, boxes, this.direction === "ltr");
+    this.#floatingToolbar ||= new FloatingToolbar(this);
+    this.#floatingToolbar.show(textLayer, boxes, this.direction === "ltr");
   }
   addToAnnotationStorage(editor) {
     if (!editor.isEmpty() && this.#annotationStorage && !this.#annotationStorage.has(editor.id)) {
@@ -2366,7 +2441,7 @@ class AnnotationEditorUIManager {
     const selection = document.getSelection();
     if (!selection || selection.isCollapsed) {
       if (this.#selectedTextNode) {
-        this.#highlightToolbar?.hide();
+        this.#floatingToolbar?.hide();
         this.#selectedTextNode = null;
         this.#dispatchUpdateStates({
           hasSelectedText: false
@@ -2384,7 +2459,7 @@ class AnnotationEditorUIManager {
     const textLayer = anchorElement.closest(".textLayer");
     if (!textLayer) {
       if (this.#selectedTextNode) {
-        this.#highlightToolbar?.hide();
+        this.#floatingToolbar?.hide();
         this.#selectedTextNode = null;
         this.#dispatchUpdateStates({
           hasSelectedText: false
@@ -2392,7 +2467,7 @@ class AnnotationEditorUIManager {
       }
       return;
     }
-    this.#highlightToolbar?.hide();
+    this.#floatingToolbar?.hide();
     this.#selectedTextNode = anchorNode;
     this.#dispatchUpdateStates({
       hasSelectedText: true
@@ -2431,7 +2506,7 @@ class AnnotationEditorUIManager {
     if (this.#mode === AnnotationEditorType.HIGHLIGHT) {
       this.highlightSelection(methodOfCreation);
     } else if (this.#enableHighlightFloatingButton) {
-      this.#displayHighlightToolbar();
+      this.#displayFloatingToolbar();
     }
   }
   #addSelectionListener() {
@@ -2677,6 +2752,9 @@ class AnnotationEditorUIManager {
       case "highlightSelection":
         this.highlightSelection("context_menu");
         break;
+      case "commentSelection":
+        this.commentSelection("context_menu");
+        break;
     }
   }
   #dispatchUpdateStates(details) {
@@ -2749,7 +2827,7 @@ class AnnotationEditorUIManager {
   removeLayer(layer) {
     this.#allLayers.delete(layer.pageIndex);
   }
-  async updateMode(mode, editId = null, isFromKeyboard = false, mustEnterInEditMode = false) {
+  async updateMode(mode, editId = null, isFromKeyboard = false, mustEnterInEditMode = false, editComment = false) {
     if (this.#mode === mode) {
       return;
     }
@@ -2788,7 +2866,9 @@ class AnnotationEditorUIManager {
     for (const editor of this.#allEditors.values()) {
       if (editor.annotationElementId === editId || editor.id === editId) {
         this.setSelected(editor);
-        if (mustEnterInEditMode) {
+        if (editComment) {
+          editor.editComment();
+        } else if (mustEnterInEditMode) {
           editor.enterInEditMode();
         }
       } else {
@@ -2819,9 +2899,6 @@ class AnnotationEditorUIManager {
       case AnnotationEditorParamsType.CREATE:
         this.currentLayer.addNewEditor(value);
         return;
-      case AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR:
-        this.#mainHighlightColorPicker?.updateColor(value);
-        break;
       case AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL:
         this._eventBus.dispatch("reporttelemetry", {
           source: this,
@@ -2837,11 +2914,14 @@ class AnnotationEditorUIManager {
         this.showAllEditors("highlight", value);
         break;
     }
-    for (const editor of this.#selectedEditors) {
-      editor.updateParams(type, value);
-    }
-    for (const editorType of this.#editorTypes) {
-      editorType.updateDefaultParams(type, value);
+    if (this.hasSelection) {
+      for (const editor of this.#selectedEditors) {
+        editor.updateParams(type, value);
+      }
+    } else {
+      for (const editorType of this.#editorTypes) {
+        editorType.updateDefaultParams(type, value);
+      }
     }
   }
   showAllEditors(type, visible, updateButton = false) {
@@ -3666,6 +3746,126 @@ class AltText {
   }
 }
 
+;// ./src/display/editor/comment.js
+
+class Comment {
+  #commentButton = null;
+  #commentWasFromKeyBoard = false;
+  #editor = null;
+  #initialText = null;
+  #text = null;
+  #date = null;
+  #deleted = false;
+  constructor(editor) {
+    this.#editor = editor;
+    this.toolbar = null;
+  }
+  render() {
+    if (!this.#editor._uiManager.hasCommentManager()) {
+      return null;
+    }
+    const comment = this.#commentButton = document.createElement("button");
+    comment.className = "comment";
+    comment.tabIndex = "0";
+    comment.setAttribute("data-l10n-id", "pdfjs-editor-edit-comment-button");
+    const signal = this.#editor._uiManager._signal;
+    comment.addEventListener("contextmenu", noContextMenu, {
+      signal
+    });
+    comment.addEventListener("pointerdown", event => event.stopPropagation(), {
+      signal
+    });
+    const onClick = event => {
+      event.preventDefault();
+      this.edit();
+    };
+    comment.addEventListener("click", onClick, {
+      capture: true,
+      signal
+    });
+    comment.addEventListener("keydown", event => {
+      if (event.target === comment && event.key === "Enter") {
+        this.#commentWasFromKeyBoard = true;
+        onClick(event);
+      }
+    }, {
+      signal
+    });
+    return comment;
+  }
+  edit() {
+    const {
+      bottom,
+      left,
+      right
+    } = this.#editor.getClientDimensions();
+    const position = {
+      top: bottom
+    };
+    if (this.#editor._uiManager.direction === "ltr") {
+      position.right = right;
+    } else {
+      position.left = left;
+    }
+    this.#editor._uiManager.editComment(this.#editor, position);
+  }
+  finish() {
+    if (!this.#commentButton) {
+      return;
+    }
+    this.#commentButton.focus({
+      focusVisible: this.#commentWasFromKeyBoard
+    });
+    this.#commentWasFromKeyBoard = false;
+  }
+  isDeleted() {
+    return this.#deleted || this.#text === "";
+  }
+  hasBeenEdited() {
+    return this.isDeleted() || this.#text !== this.#initialText;
+  }
+  serialize() {
+    return this.data;
+  }
+  get data() {
+    return {
+      text: this.#text,
+      date: this.#date,
+      deleted: this.#deleted
+    };
+  }
+  set data(text) {
+    if (text === null) {
+      this.#text = "";
+      this.#deleted = true;
+      return;
+    }
+    this.#text = text;
+    this.#date = new Date();
+    this.#deleted = false;
+  }
+  setInitialText(text) {
+    this.#initialText = text;
+    this.data = text;
+  }
+  toggle(enabled = false) {
+    if (!this.#commentButton) {
+      return;
+    }
+    this.#commentButton.disabled = !enabled;
+  }
+  shown() {}
+  destroy() {
+    this.#commentButton?.remove();
+    this.#commentButton = null;
+    this.#text = "";
+    this.#date = null;
+    this.#editor = null;
+    this.#commentWasFromKeyBoard = false;
+    this.#deleted = false;
+  }
+}
+
 ;// ./src/display/touch_manager.js
 
 class TouchManager {
@@ -3849,10 +4049,12 @@ class TouchManager {
 
 
 
+
 class AnnotationEditor {
   #accessibilityData = null;
   #allResizerDivs = null;
   #altText = null;
+  #comment = null;
   #disabled = false;
   #dragPointerId = null;
   #dragPointerType = "";
@@ -4543,6 +4745,7 @@ class AnnotationEditor {
     }
     this._editToolbar = new EditorToolbar(this);
     this.div.append(this._editToolbar.render());
+    this._editToolbar.addButton("comment", this.addCommentButton());
     const {
       toolbarButtons
     } = this;
@@ -4607,6 +4810,53 @@ class AnnotationEditor {
   }
   hasAltTextData() {
     return this.#altText?.hasData() ?? false;
+  }
+  addCommentButton() {
+    if (this.#comment) {
+      return this.#comment;
+    }
+    return this.#comment = new Comment(this);
+  }
+  get commentColor() {
+    return null;
+  }
+  get comment() {
+    const comment = this.#comment;
+    return {
+      text: comment.data.text,
+      date: comment.data.date,
+      deleted: comment.isDeleted(),
+      color: this.commentColor
+    };
+  }
+  set comment(text) {
+    if (!this.#comment) {
+      this.#comment = new Comment(this);
+    }
+    this.#comment.data = text;
+  }
+  setCommentData(text) {
+    if (!this.#comment) {
+      this.#comment = new Comment(this);
+    }
+    this.#comment.setInitialText(text);
+  }
+  get hasEditedComment() {
+    return this.#comment?.hasBeenEdited();
+  }
+  async editComment() {
+    if (!this.#comment) {
+      this.#comment = new Comment(this);
+    }
+    this.#comment.edit();
+  }
+  addComment(serialized) {
+    if (this.hasEditedComment) {
+      serialized.popup = {
+        contents: this.comment.text,
+        deleted: this.comment.deleted
+      };
+    }
   }
   render() {
     const div = this.div = document.createElement("div");
@@ -7856,6 +8106,9 @@ class CanvasGraphics {
       fontSize,
       path
     } of paths) {
+      if (!path) {
+        continue;
+      }
       newPath.addPath(path, new DOMMatrix(transform).preMultiplySelf(invTransf).translate(x, y).scale(fontSize, -fontSize));
     }
     ctx.clip(newPath);
@@ -7954,10 +8207,10 @@ class CanvasGraphics {
     const patternFill = current.patternFill && !font.missingFile;
     const patternStroke = current.patternStroke && !font.missingFile;
     let path;
-    if (font.disableFontFace || isAddToPathSet || patternFill || patternStroke) {
+    if ((font.disableFontFace || isAddToPathSet || patternFill || patternStroke) && !font.missingFile) {
       path = font.getPathGenerator(this.commonObjs, character);
     }
-    if (font.disableFontFace || patternFill || patternStroke) {
+    if (path && (font.disableFontFace || patternFill || patternStroke)) {
       ctx.save();
       ctx.translate(x, y);
       ctx.scale(fontSize, -fontSize);
@@ -10030,7 +10283,7 @@ class TextLayer {
           const parent = this.#container;
           this.#container = document.createElement("span");
           this.#container.classList.add("markedContent");
-          if (item.id !== null) {
+          if (item.id) {
             this.#container.setAttribute("id", `${item.id}`);
           }
           parent.append(this.#container);
@@ -10372,7 +10625,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "5.4.19",
+    apiVersion: "5.4.70",
     data,
     password,
     disableAutoFetch,
@@ -11916,8 +12169,290 @@ class InternalRenderTask {
     }
   }
 }
-const version = "5.4.19";
-const build = "e0783cd07";
+const version = "5.4.70";
+const build = "f16e0b6da";
+
+;// ./src/display/editor/color_picker.js
+
+
+
+class ColorPicker {
+  #button = null;
+  #buttonSwatch = null;
+  #defaultColor;
+  #dropdown = null;
+  #dropdownWasFromKeyboard = false;
+  #isMainColorPicker = false;
+  #editor = null;
+  #eventBus;
+  #openDropdownAC = null;
+  #uiManager = null;
+  static #l10nColor = null;
+  static get _keyboardManager() {
+    return shadow(this, "_keyboardManager", new KeyboardManager([[["Escape", "mac+Escape"], ColorPicker.prototype._hideDropdownFromKeyboard], [[" ", "mac+ "], ColorPicker.prototype._colorSelectFromKeyboard], [["ArrowDown", "ArrowRight", "mac+ArrowDown", "mac+ArrowRight"], ColorPicker.prototype._moveToNext], [["ArrowUp", "ArrowLeft", "mac+ArrowUp", "mac+ArrowLeft"], ColorPicker.prototype._moveToPrevious], [["Home", "mac+Home"], ColorPicker.prototype._moveToBeginning], [["End", "mac+End"], ColorPicker.prototype._moveToEnd]]));
+  }
+  constructor({
+    editor = null,
+    uiManager = null
+  }) {
+    if (editor) {
+      this.#isMainColorPicker = false;
+      this.#editor = editor;
+    } else {
+      this.#isMainColorPicker = true;
+    }
+    this.#uiManager = editor?._uiManager || uiManager;
+    this.#eventBus = this.#uiManager._eventBus;
+    this.#defaultColor = editor?.color?.toUpperCase() || this.#uiManager?.highlightColors.values().next().value || "#FFFF98";
+    ColorPicker.#l10nColor ||= Object.freeze({
+      blue: "pdfjs-editor-colorpicker-blue",
+      green: "pdfjs-editor-colorpicker-green",
+      pink: "pdfjs-editor-colorpicker-pink",
+      red: "pdfjs-editor-colorpicker-red",
+      yellow: "pdfjs-editor-colorpicker-yellow"
+    });
+  }
+  renderButton() {
+    const button = this.#button = document.createElement("button");
+    button.className = "colorPicker";
+    button.tabIndex = "0";
+    button.setAttribute("data-l10n-id", "pdfjs-editor-colorpicker-button");
+    button.ariaHasPopup = "true";
+    if (this.#editor) {
+      button.ariaControls = `${this.#editor.id}_colorpicker_dropdown`;
+    }
+    const signal = this.#uiManager._signal;
+    button.addEventListener("click", this.#openDropdown.bind(this), {
+      signal
+    });
+    button.addEventListener("keydown", this.#keyDown.bind(this), {
+      signal
+    });
+    const swatch = this.#buttonSwatch = document.createElement("span");
+    swatch.className = "swatch";
+    swatch.ariaHidden = "true";
+    swatch.style.backgroundColor = this.#defaultColor;
+    button.append(swatch);
+    return button;
+  }
+  renderMainDropdown() {
+    const dropdown = this.#dropdown = this.#getDropdownRoot();
+    dropdown.ariaOrientation = "horizontal";
+    dropdown.ariaLabelledBy = "highlightColorPickerLabel";
+    return dropdown;
+  }
+  #getDropdownRoot() {
+    const div = document.createElement("div");
+    const signal = this.#uiManager._signal;
+    div.addEventListener("contextmenu", noContextMenu, {
+      signal
+    });
+    div.className = "dropdown";
+    div.role = "listbox";
+    div.ariaMultiSelectable = "false";
+    div.ariaOrientation = "vertical";
+    div.setAttribute("data-l10n-id", "pdfjs-editor-colorpicker-dropdown");
+    if (this.#editor) {
+      div.id = `${this.#editor.id}_colorpicker_dropdown`;
+    }
+    for (const [name, color] of this.#uiManager.highlightColors) {
+      const button = document.createElement("button");
+      button.tabIndex = "0";
+      button.role = "option";
+      button.setAttribute("data-color", color);
+      button.title = name;
+      button.setAttribute("data-l10n-id", ColorPicker.#l10nColor[name]);
+      const swatch = document.createElement("span");
+      button.append(swatch);
+      swatch.className = "swatch";
+      swatch.style.backgroundColor = color;
+      button.ariaSelected = color === this.#defaultColor;
+      button.addEventListener("click", this.#colorSelect.bind(this, color), {
+        signal
+      });
+      div.append(button);
+    }
+    div.addEventListener("keydown", this.#keyDown.bind(this), {
+      signal
+    });
+    return div;
+  }
+  #colorSelect(color, event) {
+    event.stopPropagation();
+    this.#eventBus.dispatch("switchannotationeditorparams", {
+      source: this,
+      type: AnnotationEditorParamsType.HIGHLIGHT_COLOR,
+      value: color
+    });
+    this.updateColor(color);
+  }
+  _colorSelectFromKeyboard(event) {
+    if (event.target === this.#button) {
+      this.#openDropdown(event);
+      return;
+    }
+    const color = event.target.getAttribute("data-color");
+    if (!color) {
+      return;
+    }
+    this.#colorSelect(color, event);
+  }
+  _moveToNext(event) {
+    if (!this.#isDropdownVisible) {
+      this.#openDropdown(event);
+      return;
+    }
+    if (event.target === this.#button) {
+      this.#dropdown.firstChild?.focus();
+      return;
+    }
+    event.target.nextSibling?.focus();
+  }
+  _moveToPrevious(event) {
+    if (event.target === this.#dropdown?.firstChild || event.target === this.#button) {
+      if (this.#isDropdownVisible) {
+        this._hideDropdownFromKeyboard();
+      }
+      return;
+    }
+    if (!this.#isDropdownVisible) {
+      this.#openDropdown(event);
+    }
+    event.target.previousSibling?.focus();
+  }
+  _moveToBeginning(event) {
+    if (!this.#isDropdownVisible) {
+      this.#openDropdown(event);
+      return;
+    }
+    this.#dropdown.firstChild?.focus();
+  }
+  _moveToEnd(event) {
+    if (!this.#isDropdownVisible) {
+      this.#openDropdown(event);
+      return;
+    }
+    this.#dropdown.lastChild?.focus();
+  }
+  #keyDown(event) {
+    ColorPicker._keyboardManager.exec(this, event);
+  }
+  #openDropdown(event) {
+    if (this.#isDropdownVisible) {
+      this.hideDropdown();
+      return;
+    }
+    this.#dropdownWasFromKeyboard = event.detail === 0;
+    if (!this.#openDropdownAC) {
+      this.#openDropdownAC = new AbortController();
+      window.addEventListener("pointerdown", this.#pointerDown.bind(this), {
+        signal: this.#uiManager.combinedSignal(this.#openDropdownAC)
+      });
+    }
+    this.#button.ariaExpanded = "true";
+    if (this.#dropdown) {
+      this.#dropdown.classList.remove("hidden");
+      return;
+    }
+    const root = this.#dropdown = this.#getDropdownRoot();
+    this.#button.append(root);
+  }
+  #pointerDown(event) {
+    if (this.#dropdown?.contains(event.target)) {
+      return;
+    }
+    this.hideDropdown();
+  }
+  hideDropdown() {
+    this.#dropdown?.classList.add("hidden");
+    this.#button.ariaExpanded = "false";
+    this.#openDropdownAC?.abort();
+    this.#openDropdownAC = null;
+  }
+  get #isDropdownVisible() {
+    return this.#dropdown && !this.#dropdown.classList.contains("hidden");
+  }
+  _hideDropdownFromKeyboard() {
+    if (this.#isMainColorPicker) {
+      return;
+    }
+    if (!this.#isDropdownVisible) {
+      this.#editor?.unselect();
+      return;
+    }
+    this.hideDropdown();
+    this.#button.focus({
+      preventScroll: true,
+      focusVisible: this.#dropdownWasFromKeyboard
+    });
+  }
+  updateColor(color) {
+    if (this.#buttonSwatch) {
+      this.#buttonSwatch.style.backgroundColor = color;
+    }
+    if (!this.#dropdown) {
+      return;
+    }
+    const i = this.#uiManager.highlightColors.values();
+    for (const child of this.#dropdown.children) {
+      child.ariaSelected = i.next().value === color.toUpperCase();
+    }
+  }
+  destroy() {
+    this.#button?.remove();
+    this.#button = null;
+    this.#buttonSwatch = null;
+    this.#dropdown?.remove();
+    this.#dropdown = null;
+  }
+}
+class BasicColorPicker {
+  #input = null;
+  #editor = null;
+  #uiManager = null;
+  static #l10nColor = null;
+  constructor(editor) {
+    this.#editor = editor;
+    this.#uiManager = editor._uiManager;
+    BasicColorPicker.#l10nColor ||= Object.freeze({
+      freetext: "pdfjs-editor-color-picker-free-text-input",
+      ink: "pdfjs-editor-color-picker-ink-input"
+    });
+  }
+  renderButton() {
+    if (this.#input) {
+      return this.#input;
+    }
+    const {
+      editorType,
+      colorType,
+      colorValue
+    } = this.#editor;
+    const input = this.#input = document.createElement("input");
+    input.type = "color";
+    input.value = colorValue || "#000000";
+    input.className = "basicColorPicker";
+    input.tabIndex = 0;
+    input.setAttribute("data-l10n-id", BasicColorPicker.#l10nColor[editorType]);
+    input.addEventListener("input", () => {
+      this.#uiManager.updateParams(colorType, input.value);
+    }, {
+      signal: this.#uiManager._signal
+    });
+    return input;
+  }
+  update(value) {
+    if (!this.#input) {
+      return;
+    }
+    this.#input.value = value;
+  }
+  destroy() {
+    this.#input?.remove();
+    this.#input = null;
+  }
+  hideDropdown() {}
+}
 
 ;// ./src/shared/scripting_utils.js
 function makeColorComp(n) {
@@ -12234,6 +12769,7 @@ class XfaLayer {
 
 const annotation_layer_DEFAULT_FONT_SIZE = 9;
 const GetElementsByNameSet = new WeakSet();
+const TIMEZONE_OFFSET = new Date().getTimezoneOffset() * 60 * 1000;
 class AnnotationElementFactory {
   static create(parameters) {
     const subtype = parameters.data.annotationType;
@@ -12340,16 +12876,32 @@ class AnnotationElement {
     if (!this.container) {
       return;
     }
-    this.#updates ||= {
-      rect: this.data.rect.slice(0)
-    };
+    if (params.rect) {
+      this.#updates ||= {
+        rect: this.data.rect.slice(0)
+      };
+    }
     const {
-      rect
+      rect,
+      popup: newPopup
     } = params;
     if (rect) {
       this.#setRectEdited(rect);
     }
-    this.#popupElement?.popup.updateEdited(params);
+    let popup = this.#popupElement?.popup || this.popup;
+    if (!popup && newPopup?.text) {
+      this._createPopup(newPopup);
+      popup = this.#popupElement.popup;
+    }
+    if (!popup) {
+      return;
+    }
+    popup.updateEdited(params);
+    if (newPopup?.deleted) {
+      popup.remove();
+      this.#popupElement = null;
+      this.popup = null;
+    }
   }
   resetEdited() {
     if (!this.#updates) {
@@ -12399,7 +12951,7 @@ class AnnotationElement {
     } = this;
     const container = document.createElement("section");
     container.setAttribute("data-annotation-id", data.id);
-    if (!(this instanceof WidgetAnnotationElement)) {
+    if (!(this instanceof WidgetAnnotationElement) && !(this instanceof LinkAnnotationElement)) {
       container.tabIndex = 0;
     }
     const {
@@ -12681,16 +13233,26 @@ class AnnotationElement {
     this.container.append(svg);
     this.container.style.clipPath = `url(#${id})`;
   }
-  _createPopup() {
+  _createPopup(popupData = null) {
     const {
       data
     } = this;
+    let contentsObj, modificationDate;
+    if (popupData) {
+      contentsObj = {
+        str: popupData.text
+      };
+      modificationDate = popupData.date;
+    } else {
+      contentsObj = data.contentsObj;
+      modificationDate = data.modificationDate;
+    }
     const popup = this.#popupElement = new PopupAnnotationElement({
       data: {
         color: data.color,
         titleObj: data.titleObj,
-        modificationDate: data.modificationDate,
-        contentsObj: data.contentsObj,
+        modificationDate,
+        contentsObj,
         richText: data.richText,
         parentRect: data.rect,
         borderStyle: 0,
@@ -12698,10 +13260,14 @@ class AnnotationElement {
         rotation: data.rotation,
         noRotate: true
       },
+      linkService: this.linkService,
       parent: this.parent,
       elements: [this]
     });
     this.parent.div.append(popup.render());
+  }
+  get hasPopupElement() {
+    return !!(this.#popupElement || this.popup || this.data.popupRef);
   }
   render() {
     unreachable("Abstract method `AnnotationElement.render` called");
@@ -12828,16 +13394,16 @@ class LinkAnnotationElement extends AnnotationElement {
       linkService.addLinkAttributes(link, data.url, data.newWindow);
       isBound = true;
     } else if (data.action) {
-      this._bindNamedAction(link, data.action);
+      this._bindNamedAction(link, data.action, data.overlaidText);
       isBound = true;
     } else if (data.attachment) {
-      this.#bindAttachment(link, data.attachment, data.attachmentDest);
+      this.#bindAttachment(link, data.attachment, data.overlaidText, data.attachmentDest);
       isBound = true;
     } else if (data.setOCGState) {
-      this.#bindSetOCGState(link, data.setOCGState);
+      this.#bindSetOCGState(link, data.setOCGState, data.overlaidText);
       isBound = true;
     } else if (data.dest) {
-      this._bindLink(link, data.dest);
+      this._bindLink(link, data.dest, data.overlaidText);
       isBound = true;
     } else {
       if (data.actions && (data.actions.Action || data.actions["Mouse Up"] || data.actions["Mouse Down"]) && this.enableScripting && this.hasJSActions) {
@@ -12861,7 +13427,7 @@ class LinkAnnotationElement extends AnnotationElement {
   #setInternalLink() {
     this.container.setAttribute("data-internal-link", "");
   }
-  _bindLink(link, destination) {
+  _bindLink(link, destination, overlaidText = "") {
     link.href = this.linkService.getDestinationHash(destination);
     link.onclick = () => {
       if (destination) {
@@ -12872,19 +13438,27 @@ class LinkAnnotationElement extends AnnotationElement {
     if (destination || destination === "") {
       this.#setInternalLink();
     }
+    if (overlaidText) {
+      link.title = overlaidText;
+    }
   }
-  _bindNamedAction(link, action) {
+  _bindNamedAction(link, action, overlaidText = "") {
     link.href = this.linkService.getAnchorUrl("");
     link.onclick = () => {
       this.linkService.executeNamedAction(action);
       return false;
     };
+    if (overlaidText) {
+      link.title = overlaidText;
+    }
     this.#setInternalLink();
   }
-  #bindAttachment(link, attachment, dest = null) {
+  #bindAttachment(link, attachment, overlaidText = "", dest = null) {
     link.href = this.linkService.getAnchorUrl("");
     if (attachment.description) {
       link.title = attachment.description;
+    } else if (overlaidText) {
+      link.title = overlaidText;
     }
     link.onclick = () => {
       this.downloadManager?.openOrDownloadData(attachment.content, attachment.filename, dest);
@@ -12892,12 +13466,15 @@ class LinkAnnotationElement extends AnnotationElement {
     };
     this.#setInternalLink();
   }
-  #bindSetOCGState(link, action) {
+  #bindSetOCGState(link, action, overlaidText = "") {
     link.href = this.linkService.getAnchorUrl("");
     link.onclick = () => {
       this.linkService.executeSetOCGState(action);
       return false;
     };
+    if (overlaidText) {
+      link.title = overlaidText;
+    }
     this.#setInternalLink();
   }
   _bindJSAction(link, data) {
@@ -12918,6 +13495,9 @@ class LinkAnnotationElement extends AnnotationElement {
         });
         return false;
       };
+    }
+    if (data.overlaidText) {
+      link.title = data.overlaidText;
     }
     if (!link.onclick) {
       link.onclick = () => false;
@@ -13226,9 +13806,14 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       element.disabled = this.data.readOnly;
       element.name = this.data.fieldName;
       element.tabIndex = 0;
-      const format = this.data.dateFormat || this.data.timeFormat;
-      if (format) {
-        element.title = format;
+      const {
+        datetimeFormat,
+        datetimeType,
+        timeStep
+      } = this.data;
+      const hasDateOrTime = !!datetimeType && this.enableScripting;
+      if (datetimeFormat) {
+        element.title = datetimeFormat;
       }
       this._setRequired(element, this.data.required);
       if (maxLen) {
@@ -13263,8 +13848,25 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           const {
             target
           } = event;
+          if (hasDateOrTime) {
+            target.type = datetimeType;
+            if (timeStep) {
+              target.step = timeStep;
+            }
+          }
           if (elementData.userValue) {
-            target.value = elementData.userValue;
+            const value = elementData.userValue;
+            if (hasDateOrTime) {
+              if (datetimeType === "time") {
+                const date = new Date(value);
+                const parts = [date.getHours(), date.getMinutes(), date.getSeconds()];
+                target.value = parts.map(v => v.toString().padStart(2, "0")).join(":");
+              } else {
+                target.value = new Date(value - TIMEZONE_OFFSET).toISOString().split(datetimeType === "date" ? "T" : ".", 1)[0];
+              }
+            } else {
+              target.value = value;
+            }
           }
           elementData.lastCommittedValue = target.value;
           elementData.commitKey = 1;
@@ -13277,9 +13879,11 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           const actions = {
             value(event) {
               elementData.userValue = event.detail.value ?? "";
-              storage.setValue(id, {
-                value: elementData.userValue.toString()
-              });
+              if (!hasDateOrTime) {
+                storage.setValue(id, {
+                  value: elementData.userValue.toString()
+                });
+              }
               event.target.value = elementData.userValue;
             },
             formattedValue(event) {
@@ -13290,9 +13894,13 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
               if (formattedValue !== null && formattedValue !== undefined && event.target !== document.activeElement) {
                 event.target.value = formattedValue;
               }
-              storage.setValue(id, {
+              const data = {
                 formattedValue
-              });
+              };
+              if (hasDateOrTime) {
+                data.value = formattedValue;
+              }
+              storage.setValue(id, data);
             },
             selRange(event) {
               event.target.setSelectionRange(...event.detail.selRange);
@@ -13378,8 +13986,21 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
             elementData.focused = false;
           }
           const {
+            target
+          } = event;
+          let {
             value
-          } = event.target;
+          } = target;
+          if (hasDateOrTime) {
+            if (value && datetimeType === "time") {
+              const parts = value.split(":").map(v => parseInt(v, 10));
+              value = new Date(2000, 0, 1, parts[0], parts[1], parts[2] || 0).valueOf();
+              target.step = "";
+            } else {
+              value = new Date(value).valueOf();
+            }
+            target.type = "text";
+          }
           elementData.userValue = value;
           if (elementData.lastCommittedValue !== value) {
             this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
@@ -14122,10 +14743,10 @@ class PopupElement {
   }
   updateEdited({
     rect,
-    popupContent,
+    popup,
     deleted
   }) {
-    if (deleted) {
+    if (deleted || popup?.deleted) {
       this.remove();
       return;
     }
@@ -14137,8 +14758,9 @@ class PopupElement {
     if (rect) {
       this.#position = null;
     }
-    if (popupContent) {
-      this.#richText = this.#makePopupContent(popupContent);
+    if (popup) {
+      this.#richText = this.#makePopupContent(popup.text);
+      this.#dateObj = PDFDateString.toDateObject(popup.date);
       this.#contentsObj = null;
     }
     this.#popup?.remove();
@@ -14979,6 +15601,7 @@ class AnnotationLayer {
 
 
 
+
 const EOL_PATTERN = /\r\n?|\n/g;
 class FreeTextEditor extends AnnotationEditor {
   #color;
@@ -14986,6 +15609,7 @@ class FreeTextEditor extends AnnotationEditor {
   #editorDivId = `${this.id}-editor`;
   #editModeAC = null;
   #fontSize;
+  _colorPicker = null;
   static _freeTextDefaultContent = "";
   static _internalPadding = 0;
   static _defaultColor = null;
@@ -15067,6 +15691,16 @@ class FreeTextEditor extends AnnotationEditor {
   get propertiesToUpdate() {
     return [[AnnotationEditorParamsType.FREETEXT_SIZE, this.#fontSize], [AnnotationEditorParamsType.FREETEXT_COLOR, this.#color]];
   }
+  get toolbarButtons() {
+    this._colorPicker ||= new BasicColorPicker(this);
+    return [["colorPicker", this._colorPicker]];
+  }
+  get colorType() {
+    return AnnotationEditorParamsType.FREETEXT_COLOR;
+  }
+  get colorValue() {
+    return this.#color;
+  }
   #updateFontSize(fontSize) {
     const setFontsize = size => {
       this.editorDiv.style.fontSize = `calc(${size}px * var(--total-scale-factor))`;
@@ -15088,6 +15722,7 @@ class FreeTextEditor extends AnnotationEditor {
   #updateColor(color) {
     const setColor = col => {
       this.#color = this.editorDiv.style.color = col;
+      this._colorPicker?.update(col);
     };
     const savedColor = this.#color;
     this.addCommands({
@@ -15488,7 +16123,8 @@ class FreeTextEditor extends AnnotationEditor {
           rect,
           rotation,
           id,
-          popupRef
+          popupRef,
+          contentsObj
         },
         textContent,
         textPosition,
@@ -15513,7 +16149,8 @@ class FreeTextEditor extends AnnotationEditor {
         annotationElementId: id,
         id,
         deleted: false,
-        popupRef
+        popupRef,
+        comment: contentsObj?.str || null
       };
     }
     const editor = await super.deserialize(data, parent, uiManager);
@@ -15521,6 +16158,9 @@ class FreeTextEditor extends AnnotationEditor {
     editor.#color = Util.makeHexColor(...data.color);
     editor.#content = FreeTextEditor.#deserializeContent(data.value);
     editor._initialData = initialData;
+    if (data.comment) {
+      editor.setCommentData(data.comment);
+    }
     return editor;
   }
   serialize(isForCopying = false) {
@@ -15543,6 +16183,7 @@ class FreeTextEditor extends AnnotationEditor {
       rotation: this.rotation,
       structTreeParentId: this._structTreeParentId
     };
+    this.addComment(serialized);
     if (isForCopying) {
       serialized.isCopy = true;
       return serialized;
@@ -15560,7 +16201,7 @@ class FreeTextEditor extends AnnotationEditor {
       color,
       pageIndex
     } = this._initialData;
-    return this._hasBeenMoved || serialized.value !== value || serialized.fontSize !== fontSize || serialized.color.some((c, i) => c !== color[i]) || serialized.pageIndex !== pageIndex;
+    return this.hasEditedComment || this._hasBeenMoved || serialized.value !== value || serialized.fontSize !== fontSize || serialized.color.some((c, i) => c !== color[i]) || serialized.pageIndex !== pageIndex;
   }
   renderAnnotationElement(annotation) {
     const content = super.renderAnnotationElement(annotation);
@@ -15576,10 +16217,13 @@ class FreeTextEditor extends AnnotationEditor {
       content.append(div);
     }
     const padding = FreeTextEditor._internalPadding * this.parentScale;
-    annotation.updateEdited({
-      rect: this.getRect(padding, padding),
-      popupContent: this.#content
-    });
+    const params = {
+      rect: this.getRect(padding, padding)
+    };
+    params.popup = this.hasEditedComment ? this.comment : {
+      text: this.#content
+    };
+    annotation.updateEdited(params);
     return content;
   }
   resetAnnotationElement(annotation) {
@@ -16247,243 +16891,6 @@ class FreeHighlightOutline extends FreeDrawOutline {
   }
 }
 
-;// ./src/display/editor/color_picker.js
-
-
-
-class ColorPicker {
-  #button = null;
-  #buttonSwatch = null;
-  #defaultColor;
-  #dropdown = null;
-  #dropdownWasFromKeyboard = false;
-  #isMainColorPicker = false;
-  #editor = null;
-  #eventBus;
-  #openDropdownAC = null;
-  #uiManager = null;
-  #type;
-  static #l10nColor = null;
-  static get _keyboardManager() {
-    return shadow(this, "_keyboardManager", new KeyboardManager([[["Escape", "mac+Escape"], ColorPicker.prototype._hideDropdownFromKeyboard], [[" ", "mac+ "], ColorPicker.prototype._colorSelectFromKeyboard], [["ArrowDown", "ArrowRight", "mac+ArrowDown", "mac+ArrowRight"], ColorPicker.prototype._moveToNext], [["ArrowUp", "ArrowLeft", "mac+ArrowUp", "mac+ArrowLeft"], ColorPicker.prototype._moveToPrevious], [["Home", "mac+Home"], ColorPicker.prototype._moveToBeginning], [["End", "mac+End"], ColorPicker.prototype._moveToEnd]]));
-  }
-  constructor({
-    editor = null,
-    uiManager = null
-  }) {
-    if (editor) {
-      this.#isMainColorPicker = false;
-      this.#type = AnnotationEditorParamsType.HIGHLIGHT_COLOR;
-      this.#editor = editor;
-    } else {
-      this.#isMainColorPicker = true;
-      this.#type = AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR;
-    }
-    this.#uiManager = editor?._uiManager || uiManager;
-    this.#eventBus = this.#uiManager._eventBus;
-    this.#defaultColor = editor?.color?.toUpperCase() || this.#uiManager?.highlightColors.values().next().value || "#FFFF98";
-    ColorPicker.#l10nColor ||= Object.freeze({
-      blue: "pdfjs-editor-colorpicker-blue",
-      green: "pdfjs-editor-colorpicker-green",
-      pink: "pdfjs-editor-colorpicker-pink",
-      red: "pdfjs-editor-colorpicker-red",
-      yellow: "pdfjs-editor-colorpicker-yellow"
-    });
-  }
-  renderButton() {
-    const button = this.#button = document.createElement("button");
-    button.className = "colorPicker";
-    button.tabIndex = "0";
-    button.setAttribute("data-l10n-id", "pdfjs-editor-colorpicker-button");
-    button.ariaHasPopup = "true";
-    if (this.#editor) {
-      button.ariaControls = `${this.#editor.id}_colorpicker_dropdown`;
-    }
-    const signal = this.#uiManager._signal;
-    button.addEventListener("click", this.#openDropdown.bind(this), {
-      signal
-    });
-    button.addEventListener("keydown", this.#keyDown.bind(this), {
-      signal
-    });
-    const swatch = this.#buttonSwatch = document.createElement("span");
-    swatch.className = "swatch";
-    swatch.ariaHidden = "true";
-    swatch.style.backgroundColor = this.#defaultColor;
-    button.append(swatch);
-    return button;
-  }
-  renderMainDropdown() {
-    const dropdown = this.#dropdown = this.#getDropdownRoot();
-    dropdown.ariaOrientation = "horizontal";
-    dropdown.ariaLabelledBy = "highlightColorPickerLabel";
-    return dropdown;
-  }
-  #getDropdownRoot() {
-    const div = document.createElement("div");
-    const signal = this.#uiManager._signal;
-    div.addEventListener("contextmenu", noContextMenu, {
-      signal
-    });
-    div.className = "dropdown";
-    div.role = "listbox";
-    div.ariaMultiSelectable = "false";
-    div.ariaOrientation = "vertical";
-    div.setAttribute("data-l10n-id", "pdfjs-editor-colorpicker-dropdown");
-    if (this.#editor) {
-      div.id = `${this.#editor.id}_colorpicker_dropdown`;
-    }
-    for (const [name, color] of this.#uiManager.highlightColors) {
-      const button = document.createElement("button");
-      button.tabIndex = "0";
-      button.role = "option";
-      button.setAttribute("data-color", color);
-      button.title = name;
-      button.setAttribute("data-l10n-id", ColorPicker.#l10nColor[name]);
-      const swatch = document.createElement("span");
-      button.append(swatch);
-      swatch.className = "swatch";
-      swatch.style.backgroundColor = color;
-      button.ariaSelected = color === this.#defaultColor;
-      button.addEventListener("click", this.#colorSelect.bind(this, color), {
-        signal
-      });
-      div.append(button);
-    }
-    div.addEventListener("keydown", this.#keyDown.bind(this), {
-      signal
-    });
-    return div;
-  }
-  #colorSelect(color, event) {
-    event.stopPropagation();
-    this.#eventBus.dispatch("switchannotationeditorparams", {
-      source: this,
-      type: this.#type,
-      value: color
-    });
-  }
-  _colorSelectFromKeyboard(event) {
-    if (event.target === this.#button) {
-      this.#openDropdown(event);
-      return;
-    }
-    const color = event.target.getAttribute("data-color");
-    if (!color) {
-      return;
-    }
-    this.#colorSelect(color, event);
-  }
-  _moveToNext(event) {
-    if (!this.#isDropdownVisible) {
-      this.#openDropdown(event);
-      return;
-    }
-    if (event.target === this.#button) {
-      this.#dropdown.firstChild?.focus();
-      return;
-    }
-    event.target.nextSibling?.focus();
-  }
-  _moveToPrevious(event) {
-    if (event.target === this.#dropdown?.firstChild || event.target === this.#button) {
-      if (this.#isDropdownVisible) {
-        this._hideDropdownFromKeyboard();
-      }
-      return;
-    }
-    if (!this.#isDropdownVisible) {
-      this.#openDropdown(event);
-    }
-    event.target.previousSibling?.focus();
-  }
-  _moveToBeginning(event) {
-    if (!this.#isDropdownVisible) {
-      this.#openDropdown(event);
-      return;
-    }
-    this.#dropdown.firstChild?.focus();
-  }
-  _moveToEnd(event) {
-    if (!this.#isDropdownVisible) {
-      this.#openDropdown(event);
-      return;
-    }
-    this.#dropdown.lastChild?.focus();
-  }
-  #keyDown(event) {
-    ColorPicker._keyboardManager.exec(this, event);
-  }
-  #openDropdown(event) {
-    if (this.#isDropdownVisible) {
-      this.hideDropdown();
-      return;
-    }
-    this.#dropdownWasFromKeyboard = event.detail === 0;
-    if (!this.#openDropdownAC) {
-      this.#openDropdownAC = new AbortController();
-      window.addEventListener("pointerdown", this.#pointerDown.bind(this), {
-        signal: this.#uiManager.combinedSignal(this.#openDropdownAC)
-      });
-    }
-    this.#button.ariaExpanded = "true";
-    if (this.#dropdown) {
-      this.#dropdown.classList.remove("hidden");
-      return;
-    }
-    const root = this.#dropdown = this.#getDropdownRoot();
-    this.#button.append(root);
-  }
-  #pointerDown(event) {
-    if (this.#dropdown?.contains(event.target)) {
-      return;
-    }
-    this.hideDropdown();
-  }
-  hideDropdown() {
-    this.#dropdown?.classList.add("hidden");
-    this.#button.ariaExpanded = "false";
-    this.#openDropdownAC?.abort();
-    this.#openDropdownAC = null;
-  }
-  get #isDropdownVisible() {
-    return this.#dropdown && !this.#dropdown.classList.contains("hidden");
-  }
-  _hideDropdownFromKeyboard() {
-    if (this.#isMainColorPicker) {
-      return;
-    }
-    if (!this.#isDropdownVisible) {
-      this.#editor?.unselect();
-      return;
-    }
-    this.hideDropdown();
-    this.#button.focus({
-      preventScroll: true,
-      focusVisible: this.#dropdownWasFromKeyboard
-    });
-  }
-  updateColor(color) {
-    if (this.#buttonSwatch) {
-      this.#buttonSwatch.style.backgroundColor = color;
-    }
-    if (!this.#dropdown) {
-      return;
-    }
-    const i = this.#uiManager.highlightColors.values();
-    for (const child of this.#dropdown.children) {
-      child.ariaSelected = i.next().value === color.toUpperCase();
-    }
-  }
-  destroy() {
-    this.#button?.remove();
-    this.#button = null;
-    this.#buttonSwatch = null;
-    this.#dropdown?.remove();
-    this.#dropdown = null;
-  }
-}
-
 ;// ./src/display/editor/highlight.js
 
 
@@ -16565,7 +16972,7 @@ class HighlightEditor extends AnnotationEditor {
     return {
       action: "added",
       type: this.#isFreeHighlight ? "free_highlight" : "highlight",
-      color: this._uiManager.highlightColorNames.get(this.color),
+      color: this._uiManager.getNonHCMColorName(this.color),
       thickness: this.#thickness,
       methodOfCreation: this.#methodOfCreation
     };
@@ -16573,8 +16980,11 @@ class HighlightEditor extends AnnotationEditor {
   get telemetryFinalData() {
     return {
       type: "highlight",
-      color: this._uiManager.highlightColorNames.get(this.color)
+      color: this._uiManager.getNonHCMColorName(this.color)
     };
+  }
+  get commentColor() {
+    return this.color;
   }
   static computeTelemetryFinalData(data) {
     return {
@@ -16678,7 +17088,7 @@ class HighlightEditor extends AnnotationEditor {
   }
   static updateDefaultParams(type, value) {
     switch (type) {
-      case AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR:
+      case AnnotationEditorParamsType.HIGHLIGHT_COLOR:
         HighlightEditor._defaultColor = value;
         break;
       case AnnotationEditorParamsType.HIGHLIGHT_THICKNESS:
@@ -16701,7 +17111,7 @@ class HighlightEditor extends AnnotationEditor {
     }
   }
   static get defaultPropertiesToUpdate() {
-    return [[AnnotationEditorParamsType.HIGHLIGHT_DEFAULT_COLOR, HighlightEditor._defaultColor], [AnnotationEditorParamsType.HIGHLIGHT_THICKNESS, HighlightEditor._defaultThickness]];
+    return [[AnnotationEditorParamsType.HIGHLIGHT_COLOR, HighlightEditor._defaultColor], [AnnotationEditorParamsType.HIGHLIGHT_THICKNESS, HighlightEditor._defaultThickness]];
   }
   get propertiesToUpdate() {
     return [[AnnotationEditorParamsType.HIGHLIGHT_COLOR, this.color || HighlightEditor._defaultColor], [AnnotationEditorParamsType.HIGHLIGHT_THICKNESS, this.#thickness || HighlightEditor._defaultThickness], [AnnotationEditorParamsType.HIGHLIGHT_FREE, this.#isFreeHighlight]];
@@ -16731,7 +17141,7 @@ class HighlightEditor extends AnnotationEditor {
     });
     this._reportTelemetry({
       action: "color_changed",
-      color: this._uiManager.highlightColorNames.get(color)
+      color: this._uiManager.getNonHCMColorName(color)
     }, true);
   }
   #updateThickness(thickness) {
@@ -17152,7 +17562,8 @@ class HighlightEditor extends AnnotationEditor {
           id,
           color,
           opacity,
-          popupRef
+          popupRef,
+          contentsObj
         },
         parent: {
           page: {
@@ -17172,7 +17583,8 @@ class HighlightEditor extends AnnotationEditor {
         annotationElementId: id,
         id,
         deleted: false,
-        popupRef
+        popupRef,
+        comment: contentsObj?.str || null
       };
     } else if (data instanceof InkAnnotationElement) {
       const {
@@ -17185,7 +17597,8 @@ class HighlightEditor extends AnnotationEditor {
           borderStyle: {
             rawWidth: thickness
           },
-          popupRef
+          popupRef,
+          contentsObj
         },
         parent: {
           page: {
@@ -17205,7 +17618,8 @@ class HighlightEditor extends AnnotationEditor {
         annotationElementId: id,
         id,
         deleted: false,
-        popupRef
+        popupRef,
+        comment: contentsObj?.str || null
       };
     }
     const {
@@ -17221,6 +17635,9 @@ class HighlightEditor extends AnnotationEditor {
       editor.#thickness = data.thickness;
     }
     editor._initialData = initialData;
+    if (data.comment) {
+      editor.setCommentData(data.comment);
+    }
     const [pageWidth, pageHeight] = editor.pageDimensions;
     const [pageX, pageY] = editor.pageTranslation;
     if (quadPoints) {
@@ -17285,7 +17702,7 @@ class HighlightEditor extends AnnotationEditor {
       return this.serializeDeleted();
     }
     const rect = this.getRect(0, 0);
-    const color = AnnotationEditor._colorManager.convert(this.color);
+    const color = AnnotationEditor._colorManager.convert(this._uiManager.getNonHCMColor(this.color));
     const serialized = {
       annotationType: AnnotationEditorType.HIGHLIGHT,
       color,
@@ -17298,6 +17715,7 @@ class HighlightEditor extends AnnotationEditor {
       rotation: this.#getRotation(),
       structTreeParentId: this._structTreeParentId
     };
+    this.addComment(serialized);
     if (this.annotationElementId && !this.#hasElementChanged(serialized)) {
       return null;
     }
@@ -17308,12 +17726,16 @@ class HighlightEditor extends AnnotationEditor {
     const {
       color
     } = this._initialData;
-    return serialized.color.some((c, i) => c !== color[i]);
+    return this.hasEditedComment || serialized.color.some((c, i) => c !== color[i]);
   }
   renderAnnotationElement(annotation) {
-    annotation.updateEdited({
+    const params = {
       rect: this.getRect(0, 0)
-    });
+    };
+    if (this.hasEditedComment) {
+      params.popup = this.comment;
+    }
+    annotation.updateEdited(params);
     return null;
   }
   static canCreateNewEmptyEditor() {
@@ -17364,6 +17786,7 @@ class DrawingOptions {
 class DrawingEditor extends AnnotationEditor {
   #drawOutlines = null;
   #mustBeCommitted;
+  _colorPicker = null;
   _drawId = null;
   static _currentDrawId = -1;
   static _currentParent = null;
@@ -17477,6 +17900,9 @@ class DrawingEditor extends AnnotationEditor {
         this.#updateBbox(bbox);
       }
       this.parent?.drawLayer.updateProperties(this._drawId, options.toSVGProperties());
+      if (type === this.colorType) {
+        this._colorPicker?.update(val);
+      }
     };
     this.addCommands({
       cmd: setter.bind(this, value),
@@ -18626,6 +19052,7 @@ class InkDrawOutline extends Outline {
 
 
 
+
 class InkDrawingOptions extends DrawingOptions {
   constructor(viewerParameters) {
     super();
@@ -18700,7 +19127,8 @@ class InkEditor extends DrawingEditor {
           borderStyle: {
             rawWidth: thickness
           },
-          popupRef
+          popupRef,
+          contentsObj
         },
         parent: {
           page: {
@@ -18723,12 +19151,26 @@ class InkEditor extends DrawingEditor {
         annotationElementId: id,
         id,
         deleted: false,
-        popupRef
+        popupRef,
+        comment: contentsObj?.str || null
       };
     }
     const editor = await super.deserialize(data, parent, uiManager);
     editor._initialData = initialData;
+    if (data.comment) {
+      editor.setCommentData(data.comment);
+    }
     return editor;
+  }
+  get toolbarButtons() {
+    this._colorPicker ||= new BasicColorPicker(this);
+    return [["colorPicker", this._colorPicker]];
+  }
+  get colorType() {
+    return AnnotationEditorParamsType.INK_COLOR;
+  }
+  get colorValue() {
+    return this._drawingOptions.stroke;
   }
   onScaleChanging() {
     if (!this.parent) {
@@ -18796,6 +19238,7 @@ class InkEditor extends DrawingEditor {
       rotation: this.rotation,
       structTreeParentId: this._structTreeParentId
     };
+    this.addComment(serialized);
     if (isForCopying) {
       serialized.isCopy = true;
       return serialized;
@@ -18813,18 +19256,22 @@ class InkEditor extends DrawingEditor {
       opacity,
       pageIndex
     } = this._initialData;
-    return this._hasBeenMoved || this._hasBeenResized || serialized.color.some((c, i) => c !== color[i]) || serialized.thickness !== thickness || serialized.opacity !== opacity || serialized.pageIndex !== pageIndex;
+    return this.hasEditedComment || this._hasBeenMoved || this._hasBeenResized || serialized.color.some((c, i) => c !== color[i]) || serialized.thickness !== thickness || serialized.opacity !== opacity || serialized.pageIndex !== pageIndex;
   }
   renderAnnotationElement(annotation) {
     const {
       points,
       rect
     } = this.serializeDraw(false);
-    annotation.updateEdited({
+    const params = {
       rect,
       thickness: this._drawingOptions["stroke-width"],
       points
-    });
+    };
+    if (this.hasEditedComment) {
+      params.popup = this.comment;
+    }
+    annotation.updateEdited(params);
     return null;
   }
 }
@@ -19104,21 +19551,12 @@ class SignatureExtractor {
     let max = -Infinity;
     let min = Infinity;
     for (let i = 0, ii = out.length; i < ii; i++) {
-      const A = buf[(i << 2) + 3];
-      if (A === 0) {
-        max = out[i] = 0xff;
-        continue;
-      }
       const pix = out[i] = buf[i << 2];
-      if (pix > max) {
-        max = pix;
-      }
-      if (pix < min) {
-        min = pix;
-      }
+      max = Math.max(max, pix);
+      min = Math.min(min, pix);
     }
     const ratio = 255 / (max - min);
-    for (let i = 0; i < N; i++) {
+    for (let i = 0, ii = out.length; i < ii; i++) {
       out[i] = (out[i] - min) * ratio;
     }
     return out;
@@ -19186,6 +19624,8 @@ class SignatureExtractor {
     const ctx = offscreen.getContext("2d", {
       willReadFrequently: true
     });
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, newWidth, newHeight);
     ctx.filter = "grayscale(1)";
     ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height, 0, 0, newWidth, newHeight);
     const grayImage = ctx.getImageData(0, 0, newWidth, newHeight).data;
@@ -19806,6 +20246,7 @@ class SignatureEditor extends DrawingEditor {
       rotation: this.rotation,
       structTreeParentId: this._structTreeParentId
     };
+    this.addComment(serialized);
     if (isForCopying) {
       serialized.paths = {
         lines,
@@ -20360,7 +20801,8 @@ class StampEditor extends AnnotationEditor {
           rotation,
           id,
           structParent,
-          popupRef
+          popupRef,
+          contentsObj
         },
         container,
         parent: {
@@ -20399,7 +20841,8 @@ class StampEditor extends AnnotationEditor {
         },
         isSvg: false,
         structParent,
-        popupRef
+        popupRef,
+        comment: contentsObj?.str || null
       };
     }
     const editor = await super.deserialize(data, parent, uiManager);
@@ -20430,6 +20873,9 @@ class StampEditor extends AnnotationEditor {
       editor.altTextData = accessibilityData;
     }
     editor._initialData = initialData;
+    if (data.comment) {
+      editor.setCommentData(data.comment);
+    }
     editor.#hasBeenAddedInUndoStack = !!initialData;
     return editor;
   }
@@ -20449,6 +20895,7 @@ class StampEditor extends AnnotationEditor {
       isSvg: this.#isSvg,
       structTreeParentId: this._structTreeParentId
     };
+    this.addComment(serialized);
     if (isForCopying) {
       serialized.bitmapUrl = this.#serializeBitmap(true);
       serialized.accessibilityData = this.serializeAltText(true);
@@ -20508,14 +20955,18 @@ class StampEditor extends AnnotationEditor {
     const isSamePageIndex = serialized.pageIndex === pageIndex;
     const isSameAltText = (serialized.accessibilityData?.alt || "") === altText;
     return {
-      isSame: !this._hasBeenMoved && !this._hasBeenResized && isSamePageIndex && isSameAltText,
+      isSame: !this.hasEditedComment && !this._hasBeenMoved && !this._hasBeenResized && isSamePageIndex && isSameAltText,
       isSameAltText
     };
   }
   renderAnnotationElement(annotation) {
-    annotation.updateEdited({
+    const params = {
       rect: this.getRect(0, 0)
-    });
+    };
+    if (this.hasEditedComment) {
+      params.popup = this.comment;
+    }
+    annotation.updateEdited(params);
     return null;
   }
 }
@@ -21488,6 +21939,7 @@ globalThis.pdfjsLib = {
   getDocument: getDocument,
   getFilenameFromUrl: getFilenameFromUrl,
   getPdfFilenameFromUrl: getPdfFilenameFromUrl,
+  getRGB: getRGB,
   getUuid: getUuid,
   getXfaPageViewport: getXfaPageViewport,
   GlobalWorkerOptions: GlobalWorkerOptions,
@@ -21523,4 +21975,4 @@ globalThis.pdfjsLib = {
   XfaLayer: XfaLayer
 };
 
-export { AbortException, AnnotationEditorLayer, AnnotationEditorParamsType, AnnotationEditorType, AnnotationEditorUIManager, AnnotationLayer, AnnotationMode, AnnotationType, ColorPicker, DOMSVGFactory, DrawLayer, util_FeatureTest as FeatureTest, GlobalWorkerOptions, util_ImageKind as ImageKind, InvalidPDFException, MathClamp, OPS, OutputScale, PDFDataRangeTransport, PDFDateString, PDFWorker, PasswordResponses, PermissionFlag, PixelsPerInch, RenderingCancelledException, ResponseException, SignatureExtractor, SupportedImageMimeTypes, TextLayer, TouchManager, Util, VerbosityLevel, XfaLayer, build, createValidAbsoluteUrl, fetchData, getDocument, getFilenameFromUrl, getPdfFilenameFromUrl, getUuid, getXfaPageViewport, isDataScheme, isPdfFile, isValidExplicitDest, noContextMenu, normalizeUnicode, setLayerDimensions, shadow, stopEvent, updateUrlHash, version };
+export { AbortException, AnnotationEditorLayer, AnnotationEditorParamsType, AnnotationEditorType, AnnotationEditorUIManager, AnnotationLayer, AnnotationMode, AnnotationType, ColorPicker, DOMSVGFactory, DrawLayer, util_FeatureTest as FeatureTest, GlobalWorkerOptions, util_ImageKind as ImageKind, InvalidPDFException, MathClamp, OPS, OutputScale, PDFDataRangeTransport, PDFDateString, PDFWorker, PasswordResponses, PermissionFlag, PixelsPerInch, RenderingCancelledException, ResponseException, SignatureExtractor, SupportedImageMimeTypes, TextLayer, TouchManager, Util, VerbosityLevel, XfaLayer, build, createValidAbsoluteUrl, fetchData, getDocument, getFilenameFromUrl, getPdfFilenameFromUrl, getRGB, getUuid, getXfaPageViewport, isDataScheme, isPdfFile, isValidExplicitDest, noContextMenu, normalizeUnicode, setLayerDimensions, shadow, stopEvent, updateUrlHash, version };

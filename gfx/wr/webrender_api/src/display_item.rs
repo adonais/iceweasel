@@ -996,9 +996,8 @@ bitflags! {
         /// a clip-mask). This is needed to allow the correct selection of a backdrop root
         /// since a clip-mask stacking context creates a parent surface.
         const WRAPS_BACKDROP_FILTER = 1 << 1;
-        /// If true, this stacking context forms a backdrop root, so it must be
-        /// isolated from parent by a surface.
-        const IS_BACKDROP_ROOT = 1 << 2;
+        /// If true, this stacking context must be isolated from parent by a surface.
+        const FORCED_ISOLATION = 1 << 2;
     }
 }
 

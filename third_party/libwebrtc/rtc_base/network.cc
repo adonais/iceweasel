@@ -34,6 +34,7 @@
 #include "rtc_base/ip_address.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/mdns_responder_interface.h"
+#include "rtc_base/net_helpers.h"
 #include "rtc_base/network_constants.h"
 #include "rtc_base/network_monitor.h"
 #include "rtc_base/network_monitor_factory.h"
@@ -43,6 +44,7 @@
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/thread.h"
 
+// IWYU pragma: begin_keep
 #if defined(WEBRTC_POSIX)
 #include <net/if.h>
 #endif  // WEBRTC_POSIX
@@ -56,8 +58,9 @@
 #elif !defined(__native_client__)
 #include "rtc_base/ifaddrs_converter.h"
 #endif
+// IWYU pragma: end_keep
 
-namespace rtc {
+namespace webrtc {
 namespace {
 using ::webrtc::Environment;
 using ::webrtc::SafeTask;
@@ -81,7 +84,7 @@ const int kHighestNetworkPreference = 127;
 
 struct AddressList {
   std::unique_ptr<Network> net;
-  std::vector<webrtc::InterfaceAddress> ips;
+  std::vector<InterfaceAddress> ips;
 };
 
 bool SortNetworks(const Network* a, const Network* b) {
@@ -93,8 +96,8 @@ bool SortNetworks(const Network* a, const Network* b) {
     return a->type() < b->type();
   }
 
-  webrtc::IPAddress ip_a = a->GetBestIP();
-  webrtc::IPAddress ip_b = b->GetBestIP();
+  IPAddress ip_a = a->GetBestIP();
+  IPAddress ip_b = b->GetBestIP();
 
   // After type, networks are sorted by IP address precedence values
   // from RFC 3484-bis
@@ -166,8 +169,7 @@ uint16_t ComputeNetworkCostByType(int type,
 }
 
 #if !defined(__native_client__)
-bool IsIgnoredIPv6(bool allow_mac_based_ipv6,
-                   const webrtc::InterfaceAddress& ip) {
+bool IsIgnoredIPv6(bool allow_mac_based_ipv6, const InterfaceAddress& ip) {
   if (ip.family() != AF_INET6) {
     return false;
   }
@@ -199,8 +201,8 @@ bool IsIgnoredIPv6(bool allow_mac_based_ipv6,
 // Note: consider changing to const Network* as arguments
 // if/when considering other changes that should not trigger
 // OnNetworksChanged.
-bool ShouldAdapterChangeTriggerNetworkChange(webrtc::AdapterType old_type,
-                                             webrtc::AdapterType new_type) {
+bool ShouldAdapterChangeTriggerNetworkChange(AdapterType old_type,
+                                             AdapterType new_type) {
   // skip triggering OnNetworksChanged if
   // changing from one cellular to another.
   if (Network::IsCellular(old_type) && Network::IsCellular(new_type))
@@ -246,9 +248,9 @@ bool CompareNetworks(const std::unique_ptr<Network>& a,
 }  // namespace webrtc_network_internal
 
 std::string MakeNetworkKey(absl::string_view name,
-                           const webrtc::IPAddress& prefix,
+                           const IPAddress& prefix,
                            int prefix_length) {
-  webrtc::StringBuilder ost;
+  StringBuilder ost;
   ost << name << "%" << prefix.ToString() << "/" << prefix_length;
   return ost.Release();
 }
@@ -268,7 +270,7 @@ bool MatchTypeNameWithIndexPattern(absl::string_view network_name,
 // result of the downstream network filtering, see e.g.
 // BasicPortAllocatorSession::GetNetworks when
 // PORTALLOCATOR_DISABLE_COSTLY_NETWORKS is turned on.
-webrtc::AdapterType GetAdapterTypeFromName(absl::string_view network_name) {
+AdapterType GetAdapterTypeFromName(absl::string_view network_name) {
   if (MatchTypeNameWithIndexPattern(network_name, "lo")) {
     // Note that we have a more robust way to determine if a network interface
     // is a loopback interface by checking the flag IFF_LOOPBACK in ifa_flags of
@@ -322,13 +324,12 @@ NetworkManager::EnumerationPermission NetworkManager::enumeration_permission()
   return ENUMERATION_ALLOWED;
 }
 
-bool NetworkManager::GetDefaultLocalAddress(
-    int /* family */,
-    webrtc::IPAddress* /* addr */) const {
+bool NetworkManager::GetDefaultLocalAddress(int /* family */,
+                                            IPAddress* /* addr */) const {
   return false;
 }
 
-webrtc::MdnsResponderInterface* NetworkManager::GetMdnsResponder() const {
+MdnsResponderInterface* NetworkManager::GetMdnsResponder() const {
   return nullptr;
 }
 
@@ -343,9 +344,9 @@ NetworkManagerBase::enumeration_permission() const {
 std::unique_ptr<Network> NetworkManagerBase::CreateNetwork(
     absl::string_view name,
     absl::string_view description,
-    const webrtc::IPAddress& prefix,
+    const IPAddress& prefix,
     int prefix_length,
-    webrtc::AdapterType type) const {
+    AdapterType type) const {
   return std::make_unique<Network>(name, description, prefix, prefix_length,
                                    type);
 }
@@ -353,7 +354,7 @@ std::unique_ptr<Network> NetworkManagerBase::CreateNetwork(
 std::vector<const Network*> NetworkManagerBase::GetAnyAddressNetworks() {
   std::vector<const Network*> networks;
   if (!ipv4_any_address_network_) {
-    const webrtc::IPAddress ipv4_any_address(INADDR_ANY);
+    const IPAddress ipv4_any_address(INADDR_ANY);
     ipv4_any_address_network_ = CreateNetwork("any", "any", ipv4_any_address, 0,
                                               webrtc::ADAPTER_TYPE_ANY);
     ipv4_any_address_network_->set_default_local_address_provider(this);
@@ -363,7 +364,7 @@ std::vector<const Network*> NetworkManagerBase::GetAnyAddressNetworks() {
   networks.push_back(ipv4_any_address_network_.get());
 
   if (!ipv6_any_address_network_) {
-    const webrtc::IPAddress ipv6_any_address(in6addr_any);
+    const IPAddress ipv6_any_address(in6addr_any);
     ipv6_any_address_network_ = CreateNetwork("any", "any", ipv6_any_address, 0,
                                               webrtc::ADAPTER_TYPE_ANY);
     ipv6_any_address_network_->set_default_local_address_provider(this);
@@ -395,13 +396,13 @@ void NetworkManagerBase::MergeNetworkList(
   // AddressList in this map will track IP addresses for all Networks
   // with the same key.
   std::map<std::string, AddressList> consolidated_address_list;
-  absl::c_sort(new_networks, rtc::webrtc_network_internal::CompareNetworks);
+  absl::c_sort(new_networks, webrtc_network_internal::CompareNetworks);
   // First, build a set of network-keys to the ipaddresses.
   for (auto& network : new_networks) {
     bool might_add_to_merged_list = false;
     std::string key = MakeNetworkKey(network->name(), network->prefix(),
                                      network->prefix_length());
-    const std::vector<webrtc::InterfaceAddress>& addresses = network->GetIPs();
+    const std::vector<InterfaceAddress>& addresses = network->GetIPs();
     if (consolidated_address_list.find(key) ==
         consolidated_address_list.end()) {
       AddressList addrlist;
@@ -502,9 +503,8 @@ void NetworkManagerBase::MergeNetworkList(
   }
 }
 
-void NetworkManagerBase::set_default_local_addresses(
-    const webrtc::IPAddress& ipv4,
-    const webrtc::IPAddress& ipv6) {
+void NetworkManagerBase::set_default_local_addresses(const IPAddress& ipv4,
+                                                     const IPAddress& ipv6) {
   if (ipv4.family() == AF_INET) {
     default_local_ipv4_address_ = ipv4;
   }
@@ -513,9 +513,8 @@ void NetworkManagerBase::set_default_local_addresses(
   }
 }
 
-bool NetworkManagerBase::GetDefaultLocalAddress(
-    int family,
-    webrtc::IPAddress* ipaddr) const {
+bool NetworkManagerBase::GetDefaultLocalAddress(int family,
+                                                IPAddress* ipaddr) const {
   if (family == AF_INET && !default_local_ipv4_address_.IsNil()) {
     *ipaddr = default_local_ipv4_address_;
     return true;
@@ -534,12 +533,11 @@ bool NetworkManagerBase::GetDefaultLocalAddress(
   return false;
 }
 
-Network* NetworkManagerBase::GetNetworkFromAddress(
-    const webrtc::IPAddress& ip) const {
+Network* NetworkManagerBase::GetNetworkFromAddress(const IPAddress& ip) const {
   for (Network* network : networks_) {
     const auto& ips = network->GetIPs();
     if (absl::c_any_of(ips, [&](const InterfaceAddress& existing_ip) {
-          return ip == static_cast<webrtc::IPAddress>(existing_ip);
+          return ip == static_cast<IPAddress>(existing_ip);
         })) {
       return network;
     }
@@ -547,8 +545,7 @@ Network* NetworkManagerBase::GetNetworkFromAddress(
   return nullptr;
 }
 
-bool NetworkManagerBase::IsVpnMacAddress(
-    rtc::ArrayView<const uint8_t> address) {
+bool NetworkManagerBase::IsVpnMacAddress(ArrayView<const uint8_t> address) {
   if (address.data() == nullptr && address.size() == 0) {
     return false;
   }
@@ -563,30 +560,15 @@ bool NetworkManagerBase::IsVpnMacAddress(
 
 BasicNetworkManager::BasicNetworkManager(
     const Environment& env,
-    absl::Nonnull<SocketFactory*> socket_factory,
-    absl::Nullable<NetworkMonitorFactory*> network_monitor_factory)
+    SocketFactory* absl_nonnull socket_factory,
+    NetworkMonitorFactory* absl_nullable network_monitor_factory)
     : env_(env),
-      field_trials_(&env_->field_trials()),
       network_monitor_factory_(network_monitor_factory),
       socket_factory_(socket_factory),
       allow_mac_based_ipv6_(
-          env_->field_trials().IsEnabled("WebRTC-AllowMACBasedIPv6")),
+          env_.field_trials().IsEnabled("WebRTC-AllowMACBasedIPv6")),
       bind_using_ifname_(
-          !env_->field_trials().IsDisabled("WebRTC-BindUsingInterfaceName")) {
-  RTC_DCHECK(socket_factory_);
-}
-
-BasicNetworkManager::BasicNetworkManager(
-    NetworkMonitorFactory* network_monitor_factory,
-    webrtc::SocketFactory* socket_factory,
-    const webrtc::FieldTrialsView* field_trials_view)
-    : field_trials_(field_trials_view),
-      network_monitor_factory_(network_monitor_factory),
-      socket_factory_(socket_factory),
-      allow_mac_based_ipv6_(
-          field_trials_->IsEnabled("WebRTC-AllowMACBasedIPv6")),
-      bind_using_ifname_(
-          !field_trials_->IsDisabled("WebRTC-BindUsingInterfaceName")) {
+          !env_.field_trials().IsDisabled("WebRTC-BindUsingInterfaceName")) {
   RTC_DCHECK(socket_factory_);
 }
 
@@ -613,13 +595,13 @@ bool BasicNetworkManager::CreateNetworks(
 }
 
 #elif defined(WEBRTC_POSIX)
-webrtc::NetworkMonitorInterface::InterfaceInfo
-BasicNetworkManager::GetInterfaceInfo(struct ifaddrs* cursor) const {
+NetworkMonitorInterface::InterfaceInfo BasicNetworkManager::GetInterfaceInfo(
+    struct ifaddrs* cursor) const {
   if (cursor->ifa_flags & IFF_LOOPBACK) {
     return {
         .adapter_type = webrtc::ADAPTER_TYPE_LOOPBACK,
         .underlying_type_for_vpn = webrtc::ADAPTER_TYPE_UNKNOWN,
-        .network_preference = webrtc::NetworkPreference::NEUTRAL,
+        .network_preference = NetworkPreference::NEUTRAL,
         .available = true,
     };
   } else if (network_monitor_) {
@@ -627,7 +609,7 @@ BasicNetworkManager::GetInterfaceInfo(struct ifaddrs* cursor) const {
   } else {
     return {.adapter_type = GetAdapterTypeFromName(cursor->ifa_name),
             .underlying_type_for_vpn = webrtc::ADAPTER_TYPE_UNKNOWN,
-            .network_preference = webrtc::NetworkPreference::NEUTRAL,
+            .network_preference = NetworkPreference::NEUTRAL,
             .available = true};
   }
 }
@@ -641,9 +623,9 @@ void BasicNetworkManager::ConvertIfAddrs(
 
   for (struct ifaddrs* cursor = interfaces; cursor != nullptr;
        cursor = cursor->ifa_next) {
-    webrtc::IPAddress prefix;
-    webrtc::IPAddress mask;
-    webrtc::InterfaceAddress ip;
+    IPAddress prefix;
+    IPAddress mask;
+    InterfaceAddress ip;
     int scope_id = 0;
 
     // Some interfaces may not have address assigned.
@@ -656,7 +638,7 @@ void BasicNetworkManager::ConvertIfAddrs(
       continue;
     }
     // Convert to InterfaceAddress.
-    // TODO(webrtc:13114): Convert ConvertIfAddrs to use rtc::Netmask.
+    // TODO(webrtc:13114): Convert ConvertIfAddrs to use webrtc::Netmask.
     if (!ifaddrs_converter->ConvertIfAddrsToIPAddress(cursor, &ip, &mask)) {
       continue;
     }
@@ -709,8 +691,7 @@ void BasicNetworkManager::ConvertIfAddrs(
     }
 
     // Create a new network.
-    webrtc::NetworkMonitorInterface::InterfaceInfo if_info =
-        GetInterfaceInfo(cursor);
+    NetworkMonitorInterface::InterfaceInfo if_info = GetInterfaceInfo(cursor);
 
     // Check manually configured VPN override.
     if (if_info.adapter_type != webrtc::ADAPTER_TYPE_VPN &&
@@ -831,7 +812,7 @@ bool BasicNetworkManager::CreateNetworks(
                                        wcslen(adapter_addrs->Description));
 
       for (; address; address = address->Next) {
-        std::string name = rtc::ToString(count);
+        std::string name = absl::StrCat(count);
 #if !defined(NDEBUG)
         name = ToUtf8(adapter_addrs->FriendlyName,
                       wcslen(adapter_addrs->FriendlyName));
@@ -857,7 +838,7 @@ bool BasicNetworkManager::CreateNetworks(
             // PrefixOrigin is equal to IpPrefixOriginRouterAdvertisement and
             // SuffixOrigin equal to IpSuffixOriginRandom.
             int ip_address_attributes = IPV6_ADDRESS_FLAG_NONE;
-            if (IpAddressAttributesEnabled(field_trials_.get())) {
+            if (IpAddressAttributesEnabled(&env_.field_trials())) {
               if (address->PrefixOrigin == IpPrefixOriginRouterAdvertisement &&
                   address->SuffixOrigin == IpSuffixOriginRandom) {
                 ip_address_attributes |= IPV6_ADDRESS_FLAG_TEMPORARY;
@@ -916,7 +897,7 @@ bool BasicNetworkManager::CreateNetworks(
             adapter_type = ADAPTER_TYPE_VPN;
           }
           if (adapter_type != ADAPTER_TYPE_VPN &&
-              IsVpnMacAddress(rtc::ArrayView<const uint8_t>(
+              IsVpnMacAddress(webrtc::ArrayView<const uint8_t>(
                   reinterpret_cast<const uint8_t*>(
                       adapter_addrs->PhysicalAddress),
                   adapter_addrs->PhysicalAddressLength))) {
@@ -988,7 +969,7 @@ bool BasicNetworkManager::IsIgnoredNetwork(const Network& network) const {
 }
 
 void BasicNetworkManager::StartUpdating() {
-  thread_ = webrtc::Thread::Current();
+  thread_ = Thread::Current();
   // Redundant but necessary for thread annotations.
   RTC_DCHECK_RUN_ON(thread_);
   if (start_count_) {
@@ -1002,7 +983,7 @@ void BasicNetworkManager::StartUpdating() {
       }));
   } else {
     RTC_DCHECK(task_safety_flag_ == nullptr);
-    task_safety_flag_ = webrtc::PendingTaskSafetyFlag::Create();
+    task_safety_flag_ = PendingTaskSafetyFlag::Create();
     thread_->PostTask(SafeTask(task_safety_flag_, [this] {
       RTC_DCHECK_RUN_ON(thread_);
       UpdateNetworksContinually();
@@ -1032,7 +1013,7 @@ void BasicNetworkManager::StartNetworkMonitor() {
   }
   if (!network_monitor_) {
     network_monitor_.reset(
-        network_monitor_factory_->CreateNetworkMonitor(*field_trials_));
+        network_monitor_factory_->CreateNetworkMonitor(env_.field_trials()));
     if (!network_monitor_) {
       return;
     }
@@ -1065,18 +1046,17 @@ void BasicNetworkManager::StopNetworkMonitor() {
   }
 }
 
-webrtc::IPAddress BasicNetworkManager::QueryDefaultLocalAddress(
-    int family) const {
+IPAddress BasicNetworkManager::QueryDefaultLocalAddress(int family) const {
   RTC_DCHECK(family == AF_INET || family == AF_INET6);
 
-  std::unique_ptr<webrtc::Socket> socket(
+  std::unique_ptr<Socket> socket(
       socket_factory_->CreateSocket(family, SOCK_DGRAM));
   if (!socket) {
     RTC_LOG_ERR(LS_ERROR) << "Socket creation failed";
-    return webrtc::IPAddress();
+    return IPAddress();
   }
 
-  if (socket->Connect(webrtc::SocketAddress(
+  if (socket->Connect(SocketAddress(
           family == AF_INET ? kPublicIPv4Host : kPublicIPv6Host, kPublicPort)) <
       0) {
     if (socket->GetError() != ENETUNREACH &&
@@ -1085,7 +1065,7 @@ webrtc::IPAddress BasicNetworkManager::QueryDefaultLocalAddress(
       // the network is V4- or V6-only.
       RTC_LOG(LS_INFO) << "Connect failed with " << socket->GetError();
     }
-    return webrtc::IPAddress();
+    return IPAddress();
   }
   return socket->GetLocalAddress().ipaddr();
 }
@@ -1131,9 +1111,9 @@ void BasicNetworkManager::DumpNetworks() {
   }
 }
 
-webrtc::NetworkBindingResult BasicNetworkManager::BindSocketToNetwork(
+NetworkBindingResult BasicNetworkManager::BindSocketToNetwork(
     int socket_fd,
-    const webrtc::IPAddress& address) {
+    const IPAddress& address) {
   RTC_DCHECK_RUN_ON(thread_);
   std::string if_name;
   if (bind_using_ifname_) {
@@ -1147,9 +1127,9 @@ webrtc::NetworkBindingResult BasicNetworkManager::BindSocketToNetwork(
 
 Network::Network(absl::string_view name,
                  absl::string_view desc,
-                 const webrtc::IPAddress& prefix,
+                 const IPAddress& prefix,
                  int prefix_length,
-                 webrtc::AdapterType type)
+                 AdapterType type)
     : name_(name),
       description_(desc),
       prefix_(prefix),
@@ -1166,8 +1146,7 @@ Network::~Network() = default;
 
 // Sets the addresses of this network. Returns true if the address set changed.
 // Change detection is short circuited if the changed argument is true.
-bool Network::SetIPs(const std::vector<webrtc::InterfaceAddress>& ips,
-                     bool changed) {
+bool Network::SetIPs(const std::vector<InterfaceAddress>& ips, bool changed) {
   // Detect changes with a nested loop; n-squared but we expect on the order
   // of 2-3 addresses per network.
   changed = changed || ips.size() != ips_.size();
@@ -1185,16 +1164,16 @@ bool Network::SetIPs(const std::vector<webrtc::InterfaceAddress>& ips,
 }
 
 // Select the best IP address to use from this Network.
-webrtc::IPAddress Network::GetBestIP() const {
+IPAddress Network::GetBestIP() const {
   if (ips_.size() == 0) {
-    return webrtc::IPAddress();
+    return IPAddress();
   }
 
   if (prefix_.family() == AF_INET) {
-    return static_cast<webrtc::IPAddress>(ips_.at(0));
+    return static_cast<IPAddress>(ips_.at(0));
   }
 
-  webrtc::InterfaceAddress selected_ip, link_local_ip, ula_ip;
+  InterfaceAddress selected_ip, link_local_ip, ula_ip;
 
   for (const InterfaceAddress& ip : ips_) {
     // Ignore any address which has been deprecated already.
@@ -1208,7 +1187,7 @@ webrtc::IPAddress Network::GetBestIP() const {
 
     // ULA address should only be returned when we have no other
     // global IP.
-    if (webrtc::IPIsULA(static_cast<const webrtc::IPAddress&>(ip))) {
+    if (webrtc::IPIsULA(static_cast<const IPAddress&>(ip))) {
       ula_ip = ip;
       continue;
     }
@@ -1229,18 +1208,18 @@ webrtc::IPAddress Network::GetBestIP() const {
     }
   }
 
-  return static_cast<webrtc::IPAddress>(selected_ip);
+  return static_cast<IPAddress>(selected_ip);
 }
 
-webrtc::MdnsResponderInterface* Network::GetMdnsResponder() const {
+MdnsResponderInterface* Network::GetMdnsResponder() const {
   if (mdns_responder_provider_ == nullptr) {
     return nullptr;
   }
   return mdns_responder_provider_->GetMdnsResponder();
 }
 
-uint16_t Network::GetCost(const webrtc::FieldTrialsView& field_trials) const {
-  webrtc::AdapterType type = IsVpn() ? underlying_type_for_vpn_ : type_;
+uint16_t Network::GetCost(const FieldTrialsView& field_trials) const {
+  AdapterType type = IsVpn() ? underlying_type_for_vpn_ : type_;
   const bool use_differentiated_cellular_costs =
       field_trials.IsEnabled("WebRTC-UseDifferentiatedCellularCosts");
   const bool add_network_cost_to_vpn =
@@ -1251,8 +1230,8 @@ uint16_t Network::GetCost(const webrtc::FieldTrialsView& field_trials) const {
 }
 
 // This is the inverse of ComputeNetworkCostByType().
-std::pair<webrtc::AdapterType, bool /* vpn */>
-Network::GuessAdapterFromNetworkCost(int network_cost) {
+std::pair<AdapterType, bool /* vpn */> Network::GuessAdapterFromNetworkCost(
+    int network_cost) {
   switch (network_cost) {
     case webrtc::kNetworkCostMin:
       return {webrtc::ADAPTER_TYPE_ETHERNET, false};
@@ -1296,7 +1275,7 @@ Network::GuessAdapterFromNetworkCost(int network_cost) {
 }
 
 std::string Network::ToString() const {
-  webrtc::StringBuilder ss;
+  StringBuilder ss;
   // Print out the first space-terminated token of the network desc, plus
   // the IP address.
   ss << "Net[" << description_.substr(0, description_.find(' ')) << ":"
@@ -1317,7 +1296,7 @@ void BasicNetworkManager::set_vpn_list(const std::vector<NetworkMask>& vpn) {
   }
 }
 
-bool BasicNetworkManager::IsConfiguredVpn(webrtc::IPAddress prefix,
+bool BasicNetworkManager::IsConfiguredVpn(IPAddress prefix,
                                           int prefix_length) const {
   RTC_DCHECK_RUN_ON(thread_);
   for (const auto& vpn : vpn_) {
@@ -1331,4 +1310,4 @@ bool BasicNetworkManager::IsConfiguredVpn(webrtc::IPAddress prefix,
   return false;
 }
 
-}  // namespace rtc
+}  // namespace webrtc

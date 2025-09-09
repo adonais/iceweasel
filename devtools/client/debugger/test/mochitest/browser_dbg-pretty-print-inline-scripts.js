@@ -23,9 +23,8 @@ add_task(async function () {
   const dbg = await initDebugger(TEST_FILENAME);
 
   await selectSource(dbg, TEST_FILENAME);
-  clickElement(dbg, "prettyPrintButton");
+  await togglePrettyPrint(dbg);
 
-  await waitForSelectedSource(dbg, PRETTY_PRINTED_FILENAME);
   const prettyPrintedSource = findSourceContent(dbg, PRETTY_PRINTED_FILENAME);
 
   ok(prettyPrintedSource, "Pretty-printed source exists");
@@ -154,10 +153,8 @@ add_task(async function prettyPrintSingleLineDataUrl() {
   const dbg = await initDebuggerWithAbsoluteURL(TEST_URL);
 
   await selectSource(dbg, TEST_URL);
-  clickElement(dbg, "prettyPrintButton");
+  await togglePrettyPrint(dbg);
 
-  const prettySource = await waitForSource(dbg, PRETTY_PRINTED_URL);
-  await waitForSelectedSource(dbg, prettySource);
   const prettyPrintedSource = findSourceContent(dbg, PRETTY_PRINTED_URL);
 
   ok(prettyPrintedSource, "Pretty-printed source exists");

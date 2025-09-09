@@ -96,7 +96,7 @@ class SettingsAddonsTest : TestSetup() {
             closeAddonInstallCompletePrompt()
         }.openDetailedMenuForAddon(addonName) {
         }.removeAddon(activityTestRule.activityRule) {
-        }.goBack {
+        }.goBackToHomeScreen {
         }.openThreeDotMenu {
         }.openAddonsManagerMenu {
             verifyAddonCanBeInstalled(addonName)
@@ -122,7 +122,7 @@ class SettingsAddonsTest : TestSetup() {
             closeAddonInstallCompletePrompt()
             installAddon(darkReaderAddon, activityTestRule.activityRule)
             closeAddonInstallCompletePrompt()
-        }.goBack {
+        }.goBackToHomeScreen {
         }.openNavigationToolbar {
         }.enterURLAndEnterToBrowser(trackingProtectionPage.url) {
             verifyUrl(trackingProtectionPage.url.toString())
@@ -148,7 +148,7 @@ class SettingsAddonsTest : TestSetup() {
         addonsMenu {
             installAddonInPrivateMode(addonName, activityTestRule.activityRule)
             closeAddonInstallCompletePrompt()
-        }.goBack {
+        }.goBackToHomeScreen {
         }
         navigationToolbar {
         }.enterURLAndEnterToBrowser(webPage.toUri()) {
@@ -169,7 +169,7 @@ class SettingsAddonsTest : TestSetup() {
         addonsMenu {
             installAddon(addonName, activityTestRule.activityRule)
             closeAddonInstallCompletePrompt()
-        }.goBack {
+        }.goBackToHomeScreen {
         }
         navigationToolbar {
         }.enterURLAndEnterToBrowser(webPage.toUri()) {

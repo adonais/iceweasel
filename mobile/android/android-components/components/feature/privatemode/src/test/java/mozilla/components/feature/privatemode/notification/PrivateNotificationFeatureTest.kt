@@ -7,9 +7,7 @@ package mozilla.components.feature.privatemode.notification
 import android.content.Context
 import android.content.Intent
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.CustomTabListAction
 import mozilla.components.browser.state.action.TabListAction
@@ -33,12 +31,12 @@ import org.mockito.Mockito.never
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 
-@ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class PrivateNotificationFeatureTest {
 
     @get:Rule
     val coroutinesTestRule = MainCoroutineRule()
+    private val dispatcher = coroutinesTestRule.testDispatcher
 
     private lateinit var context: Context
     private lateinit var store: BrowserStore
@@ -63,7 +61,7 @@ class PrivateNotificationFeatureTest {
         store.dispatch(TabListAction.AddTabAction(privateSession)).join()
 
         feature.start()
-        runCurrent()
+        dispatcher.scheduler.runCurrent()
         verify(context, times(1)).startService(intent.capture())
 
         val expected = Intent(testContext, AbstractPrivateNotificationService::class.java)

@@ -159,6 +159,15 @@
   REAL_IF_INTL(PlainTime, OCLASP(temporal::PlainTime))                       \
   REAL_IF_INTL(TemporalNow, OCLASP(temporal::TemporalNow))                   \
   REAL_IF_INTL(ZonedDateTime, OCLASP(temporal::ZonedDateTime))
+// DO NOT ADD CONDITIONAL ENTRIES TO THIS LIST! (As in, do not add entries
+// guarded by #ifdef.) It will break binary compatibility. Instead, create an
+// IF_<feature> macro and add it to the parameter list below and add a
+// corresponding parameter to JS_FOR_PROTOTYPES_ above.
+//
+// Note that entries may be freely added to or removed from this list, even in
+// the middle. The only invariant that must be upheld is that the offsets in the
+// list do not change depending on configuration settings of the same version of
+// the source.
 
 #define JS_FOR_PROTOTYPES(REAL, IMAGINARY)                      \
   JS_FOR_PROTOTYPES_(REAL, IMAGINARY, IF_INTL(REAL, IMAGINARY), \

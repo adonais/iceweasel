@@ -160,7 +160,7 @@ class CodeGenerator final : public CodeGeneratorSpecific {
 
   void emitElementPostWriteBarrier(MInstruction* mir,
                                    const LiveRegisterSet& liveVolatileRegs,
-                                   Register obj, const LAllocation* index,
+                                   Register obj, Register index,
                                    Register scratch,
                                    const ConstantOrRegister& val,
                                    int32_t indexDiff = 0);
@@ -228,6 +228,18 @@ class CodeGenerator final : public CodeGeneratorSpecific {
 
   static RegisterOrInt32 ToRegisterOrInt32(const LAllocation* allocation);
 
+  using AddressOrBaseIndex = mozilla::Variant<Address, BaseIndex>;
+
+  static AddressOrBaseIndex ToAddressOrBaseIndex(Register elements,
+                                                 const LAllocation* index,
+                                                 Scalar::Type type);
+
+  using AddressOrBaseObjectElementIndex =
+      mozilla::Variant<Address, BaseObjectElementIndex>;
+
+  static AddressOrBaseObjectElementIndex ToAddressOrBaseObjectElementIndex(
+      Register elements, const LAllocation* index);
+
 #ifdef DEBUG
   void emitAssertArgumentsSliceBounds(const RegisterOrInt32& begin,
                                       const RegisterOrInt32& count,
@@ -294,14 +306,14 @@ class CodeGenerator final : public CodeGeneratorSpecific {
 
   IonScriptCounts* maybeCreateScriptCounts();
 
-  template <typename InstructionWithMaybeTrapSite, class AddressOrBaseIndex>
+  template <typename InstructionWithMaybeTrapSite, class AddressOrBaseIndexT>
   void emitWasmValueLoad(InstructionWithMaybeTrapSite* ins, MIRType type,
-                         MWideningOp wideningOp, AddressOrBaseIndex addr,
+                         MWideningOp wideningOp, AddressOrBaseIndexT addr,
                          AnyRegister dst);
-  template <typename InstructionWithMaybeTrapSite, class AddressOrBaseIndex>
+  template <typename InstructionWithMaybeTrapSite, class AddressOrBaseIndexT>
   void emitWasmValueStore(InstructionWithMaybeTrapSite* ins, MIRType type,
                           MNarrowingOp narrowingOp, AnyRegister src,
-                          AddressOrBaseIndex addr);
+                          AddressOrBaseIndexT addr);
 
   void testValueTruthyForType(JSValueType type, ScratchTagScope& tag,
                               const ValueOperand& value, Register tempToUnbox,
@@ -347,12 +359,9 @@ class CodeGenerator final : public CodeGeneratorSpecific {
                                    Label* ifDoesntEmulateUndefined,
                                    Register scratch, OutOfLineTestObject* ool);
 
-  void emitStoreElementTyped(const LAllocation* value, MIRType valueType,
-                             Register elements, const LAllocation* index);
-
   // Bailout if an element about to be written to is a hole.
-  void emitStoreHoleCheck(Register elements, const LAllocation* index,
-                          LSnapshot* snapshot);
+  void emitStoreHoleCheck(Address dest, LSnapshot* snapshot);
+  void emitStoreHoleCheck(BaseObjectElementIndex dest, LSnapshot* snapshot);
 
   void emitAssertRangeI(MIRType type, const Range* r, Register input);
   void emitAssertRangeD(const Range* r, FloatRegister input,
@@ -374,7 +383,21 @@ class CodeGenerator final : public CodeGeneratorSpecific {
     NurseryObjectLabel(CodeOffset offset, uint32_t nurseryIndex)
         : offset(offset), nurseryIndex(nurseryIndex) {}
   };
-  Vector<NurseryObjectLabel, 0, JitAllocPolicy> ionNurseryObjectLabels_;
+  Vector<NurseryObjectLabel, 0, JitAllocPolicy> nurseryObjectLabels_;
+
+  // Like NurseryObjectLabel but for Values. The Values in the IonScript will be
+  // stored in the constants-list so this also stores the constantPoolIndex for
+  // that list.
+  struct NurseryValueLabel {
+    CodeOffset offset;
+    uint32_t nurseryIndex;
+    uint32_t constantPoolIndex = UINT32_MAX;
+    NurseryValueLabel(CodeOffset offset, uint32_t nurseryIndex)
+        : offset(offset), nurseryIndex(nurseryIndex) {}
+  };
+  Vector<NurseryValueLabel, 0, JitAllocPolicy> nurseryValueLabels_;
+
+  Address getNurseryValueAddress(ValueOrNurseryValueIndex val, Register reg);
 
   void branchIfInvalidated(Register temp, Label* invalidated);
 

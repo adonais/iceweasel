@@ -482,7 +482,10 @@ export class WelcomeScreen extends React.PureComponent {
           ...flowParams,
         };
       }
-      data = { ...data, extraParams: params };
+      data = {
+        ...data,
+        extraParams: { ...params, ...data?.extraParams },
+      };
     } else if (type === "OPEN_URL") {
       let url = new URL(data.args);
       addUtmParams(url, `${UTMTerm}-screen`);

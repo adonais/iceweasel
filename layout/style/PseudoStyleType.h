@@ -125,11 +125,16 @@ class PseudoStyle final {
     return aType == Type::viewTransition ||
            IsNamedViewTransitionPseudoElement(aType);
   }
+
+  static bool IsElementBackedPseudo(Type aType) {
+    return aType == Type::detailsContent ||
+           IsNamedViewTransitionPseudoElement(aType);
+  }
 };
 
 /*
- * The psuedo style request is used to get the pseudo style of an element. This
- * include a pseudo style type and an identidier which is used for functional
+ * The pseudo style request is used to get the pseudo style of an element. This
+ * include a pseudo style type and an identifier which is used for functional
  * pseudo style.
  */
 struct PseudoStyleRequest {

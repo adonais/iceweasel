@@ -31,8 +31,7 @@ void SetEncoderSpecific(VideoEncoderConfig* encoder_config,
     VideoCodecVP9 vp9 = VideoEncoder::GetDefaultVp9Settings();
     vp9.numberOfSpatialLayers = num_spatial_layers;
     encoder_config->encoder_specific_settings =
-        rtc::make_ref_counted<VideoEncoderConfig::Vp9EncoderSpecificSettings>(
-            vp9);
+        make_ref_counted<VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9);
   }
 }
 
@@ -136,8 +135,8 @@ class InitEncodeTest : public test::EndToEndTest,
     frame_generator_capturer->ChangeResolution(1280, 720);
   }
 
-  void OnSinkWantsChanged(rtc::VideoSinkInterface<VideoFrame>* sink,
-                          const rtc::VideoSinkWants& wants) override {}
+  void OnSinkWantsChanged(VideoSinkInterface<VideoFrame>* sink,
+                          const VideoSinkWants& wants) override {}
 
   size_t GetNumVideoStreams() const override {
     return SupportsSpatialLayers(payload_name_) ? 1 : configs_.size();

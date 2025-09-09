@@ -6,34 +6,35 @@
 #ifndef WEBGLCONTEXT_H_
 #define WEBGLCONTEXT_H_
 
+#include <stdarg.h>
+
 #include <bitset>
 #include <memory>
-#include <stdarg.h>
 
 #include "Colorspaces.h"
 #include "GLContextTypes.h"
 #include "GLDefs.h"
 #include "GLScreenBuffer.h"
+#include "ScopedGLHelpers.h"
+#include "SurfaceTypes.h"
+#include "TexUnpackBlob.h"
 #include "js/ScalarType.h"  // js::Scalar::Type
-#include "mozilla/Attributes.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/dom/ipc/IdType.h"
-#include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/HTMLCanvasElement.h"
-#include "mozilla/dom/Nullable.h"
-#include "mozilla/dom/TypedArray.h"
 #include "mozilla/EnumeratedArray.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/dom/Nullable.h"
+#include "mozilla/dom/TypedArray.h"
+#include "mozilla/dom/ipc/IdType.h"
+#include "mozilla/gfx/2D.h"
 #include "nsICanvasRenderingContextInternal.h"
 #include "nsTArray.h"
-#include "SurfaceTypes.h"
-#include "ScopedGLHelpers.h"
-#include "TexUnpackBlob.h"
 
 // Local
 #include "CacheInvalidator.h"
@@ -44,10 +45,10 @@
 #include "WebGLTypes.h"
 
 // Generated
-#include "mozilla/dom/WebGLRenderingContextBinding.h"
-#include "mozilla/dom/WebGL2RenderingContextBinding.h"
-
 #include <list>
+
+#include "mozilla/dom/WebGL2RenderingContextBinding.h"
+#include "mozilla/dom/WebGLRenderingContextBinding.h"
 
 class nsIDocShell;
 
@@ -547,6 +548,10 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
                             const Maybe<size_t> destStride = Nothing());
   already_AddRefed<gfx::SourceSurface> GetBackBufferSnapshot(
       const bool requireAlphaPremult);
+  std::shared_ptr<gl::SharedSurface> GetBackBufferSnapshotSharedSurface(
+      layers::TextureType texType, bool bgra = false, bool yFlip = false,
+      bool requireAlphaPremult = false);
+  void RecycleSnapshotSharedSurface(std::shared_ptr<gl::SharedSurface>);
   gl::SwapChain* GetSwapChain(WebGLFramebuffer*, const bool webvr);
   Maybe<layers::SurfaceDescriptor> GetFrontBuffer(WebGLFramebuffer*,
                                                   const bool webvr);
@@ -1301,6 +1306,7 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
 
   gl::SwapChain mSwapChain;
   gl::SwapChain mWebVRSwapChain;
+  gl::SwapChain mSnapshotSwapChain;
 
   RefPtr<layers::RemoteTextureOwnerClient> mRemoteTextureOwner;
 
@@ -1336,7 +1342,8 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   void BlitBackbufferToCurDriverFB(
       WebGLFramebuffer* const srcAsWebglFb = nullptr,
       const gl::MozFramebuffer* const srcAsMozFb = nullptr,
-      bool srcIsBGRA = false) const;
+      bool srcIsBGRA = false, bool yFlip = false,
+      Maybe<gfxAlphaType> convertAlpha = {}) const;
 
   struct GetDefaultFBForReadDesc {
     bool endOfFrame = false;
@@ -1359,7 +1366,9 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
 
   template <typename... Args>
   void GeneratePerfWarning(const char* const fmt, const Args&... args) const {
-    GenerateError(webgl::kErrorPerfWarning, fmt, args...);
+    if (ShouldGeneratePerfWarnings()) {
+      GenerateError(webgl::kErrorPerfWarning, fmt, args...);
+    }
   }
 
  public:
@@ -1375,7 +1384,6 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   friend class ScopedResolveTexturesForDraw;
   friend class webgl::TexUnpackBlob;
   friend class webgl::TexUnpackBytes;
-  friend class webgl::TexUnpackImage;
   friend class webgl::TexUnpackSurface;
   friend struct webgl::UniformInfo;
   friend class WebGLTexture;

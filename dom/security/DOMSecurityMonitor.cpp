@@ -5,17 +5,16 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DOMSecurityMonitor.h"
-#include "nsContentUtils.h"
 
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "nsContentUtils.h"
 #include "nsIChannel.h"
 #include "nsILoadInfo.h"
 #include "nsIPrincipal.h"
 #include "nsIURI.h"
 #include "nsJSUtils.h"
 #include "xpcpublic.h"
-
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/StaticPrefs_dom.h"
 
 /* static */
 void DOMSecurityMonitor::AuditParsingOfHTMLXMLFragments(

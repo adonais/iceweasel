@@ -66,19 +66,6 @@ class nsFaviconService final : public nsIFaviconService {
   nsresult OptimizeIconSizes(mozilla::places::IconData& aIcon);
 
   /**
-   * Obtains the favicon data asynchronously.
-   *
-   * @param aFaviconSpec
-   *        The spec of the URI representing the favicon we are looking for.
-   * @param aCallback
-   *        The callback where results or errors will be dispatch to.  In the
-   *        returned result, the favicon binary data will be at index 0, and the
-   *        mime type will be at index 1.
-   */
-  nsresult GetFaviconDataAsync(const nsCString& aFaviconSpec,
-                               mozIStorageStatementCallback* aCallback);
-
-  /**
    * Retrieves the favicon URI and data URL associated to the given page, if
    * any. If the page icon is not available, it will try to return the root
    * domain icon data, when it's known.
@@ -88,11 +75,15 @@ class nsFaviconService final : public nsIFaviconService {
    * @param [optional] aPreferredWidth
    *        The preferred icon width, skip or pass 0 for the default value,
    *        set through setDefaultIconURIPreferredSize.
+   * @param [optional] aOnConcurrentConn
+   *        Whether the icon retrieval should be done on ConcurrentConnection
+   *        rather than the main DB connection. Defaults to false.
    *
    * @return MozPromise<nsIFavicon, nsresult>
    */
   RefPtr<mozilla::places::FaviconPromise> AsyncGetFaviconForPage(
-      nsIURI* aPageURI, uint16_t aPreferredWidth = 0);
+      nsIURI* aPageURI, uint16_t aPreferredWidth = 0,
+      bool aOnConcurrentConn = false);
 
   /**
    * Try to copy the favicons associated to the aFromURI to aToURI.

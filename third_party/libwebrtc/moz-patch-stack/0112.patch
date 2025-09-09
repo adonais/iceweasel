@@ -42,7 +42,7 @@ index db2a3c7099..a0607b4aba 100644
  uint32_t DeviceInfoPipeWire::NumberOfDevices() {
    RTC_CHECK(pipewire_session_);
 diff --git a/modules/video_capture/linux/pipewire_session.cc b/modules/video_capture/linux/pipewire_session.cc
-index a5c568240b..6e7e407358 100644
+index 990bfde912..25c4dfae4e 100644
 --- a/modules/video_capture/linux/pipewire_session.cc
 +++ b/modules/video_capture/linux/pipewire_session.cc
 @@ -9,6 +9,7 @@
@@ -131,7 +131,7 @@ index a5c568240b..6e7e407358 100644
    webrtc::MutexLock lock(&callback_lock_);
  
 diff --git a/modules/video_capture/linux/pipewire_session.h b/modules/video_capture/linux/pipewire_session.h
-index 5420a7f150..aed3fbb1bf 100644
+index aec268e008..7dbba23691 100644
 --- a/modules/video_capture/linux/pipewire_session.h
 +++ b/modules/video_capture/linux/pipewire_session.h
 @@ -28,6 +28,7 @@
@@ -142,7 +142,7 @@ index 5420a7f150..aed3fbb1bf 100644
  class PipeWireSession;
  class VideoCaptureModulePipeWire;
  
-@@ -96,6 +97,21 @@ class PipeWireSession : public rtc::RefCountedNonVirtual<PipeWireSession> {
+@@ -96,6 +97,21 @@ class PipeWireSession : public webrtc::RefCountedNonVirtual<PipeWireSession> {
  
    void Init(VideoCaptureOptions::Callback* callback,
              int fd = kInvalidPipeWireFd);
@@ -164,7 +164,7 @@ index 5420a7f150..aed3fbb1bf 100644
    const std::deque<PipeWireNode::PipeWireNodePtr>& nodes() const {
      return nodes_;
    }
-@@ -110,6 +126,8 @@ class PipeWireSession : public rtc::RefCountedNonVirtual<PipeWireSession> {
+@@ -110,6 +126,8 @@ class PipeWireSession : public webrtc::RefCountedNonVirtual<PipeWireSession> {
    void StopPipeWire();
    void PipeWireSync();
  
@@ -173,7 +173,7 @@ index 5420a7f150..aed3fbb1bf 100644
    static void OnCoreError(void* data,
                            uint32_t id,
                            int seq,
-@@ -132,7 +150,13 @@ class PipeWireSession : public rtc::RefCountedNonVirtual<PipeWireSession> {
+@@ -132,7 +150,13 @@ class PipeWireSession : public webrtc::RefCountedNonVirtual<PipeWireSession> {
    VideoCaptureOptions::Callback* callback_ RTC_GUARDED_BY(&callback_lock_) =
        nullptr;
  

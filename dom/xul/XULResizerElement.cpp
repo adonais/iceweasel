@@ -5,13 +5,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/XULResizerElement.h"
-#include "mozilla/dom/XULResizerElementBinding.h"
 
 #include "mozilla/EventDispatcher.h"
+#include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
-#include "mozilla/MouseEvents.h"
+#include "mozilla/dom/XULResizerElementBinding.h"
 #include "nsContentUtils.h"
 #include "nsICSSDeclaration.h"
 #include "nsIFrame.h"

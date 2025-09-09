@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AudioSinkWrapper.h"
+
 #include "AudioDeviceInfo.h"
 #include "AudioSink.h"
 #include "VideoUtils.h"

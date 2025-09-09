@@ -48,6 +48,14 @@ var gNextRadioGroupID = 0;
 // The max length of a menu item's label.
 var gMaxLabelLength = 64;
 
+// Some extensions will use partially-urlencoded images (see bug 1986618).
+// In order to maximize compatibility with these, don't do a full encodeURI(),
+// but just encode whitespace, which is problematic for `srcset` parsing
+// otherwise.
+function encodeSrcset(url) {
+  return url.replaceAll(/[\t\n\f\r ]/g, encodeURIComponent);
+}
+
 var gMenuBuilder = {
   // When a new menu is opened, this function is called and
   // we populate the |xulMenu| with all the items from extensions
@@ -487,7 +495,7 @@ var gMenuBuilder = {
       element.setAttribute("class", "menuitem-iconic");
     }
 
-    element.setAttribute("image", resolvedURL);
+    element.setAttribute("image", encodeSrcset(resolvedURL));
   },
 
   // Undo changes from setMenuItemIcon.

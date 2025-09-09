@@ -7,10 +7,10 @@
 #ifndef MOZILLA_GFX_FILTERNODEWEBGL_H_
 #define MOZILLA_GFX_FILTERNODEWEBGL_H_
 
+#include <vector>
+
 #include "mozilla/gfx/Filters.h"
 #include "mozilla/gfx/PatternHelpers.h"
-
-#include <vector>
 
 namespace mozilla::gfx {
 

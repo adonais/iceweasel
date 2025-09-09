@@ -7,13 +7,13 @@
 #ifndef mozilla_dom_Touch_h_
 #define mozilla_dom_Touch_h_
 
+#include "Units.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/TouchBinding.h"
 #include "nsWrapperCache.h"
-#include "Units.h"
 
 class nsPresContext;
 

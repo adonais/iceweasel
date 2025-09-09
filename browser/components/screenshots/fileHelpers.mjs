@@ -35,13 +35,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   true
 );
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "screenshotsSaveLocation",
-  "browser.screenshots.folderList",
-  1
-);
-
 /**
  * macOS and Linux have a max filename of 255.
  * Windows allows 259 as the total path length so we have to calculate the max
@@ -159,7 +152,7 @@ export async function getFilename(filenameTitle, browser) {
  * @returns Path to preferred screenshots directory or null if not available
  */
 export async function getDownloadDirectory() {
-  if (lazy.useDownloadDir || lazy.screenshotsSaveLocation !== 1) {
+  if (lazy.useDownloadDir) {
     const downloadsDir =
       await lazy.Downloads.getPreferredScreenshotsDirectory();
     if (await IOUtils.exists(downloadsDir)) {

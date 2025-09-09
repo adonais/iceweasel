@@ -15,7 +15,6 @@
 #include "nsServiceManagerUtils.h"
 
 #include "mozilla/Preferences.h"
-#include "mozilla/java/GeckoAppShellWrappers.h"
 #include "mozilla/java/HardwareCodecCapabilityUtilsWrappers.h"
 
 namespace mozilla {
@@ -766,7 +765,7 @@ int32_t GfxInfo::WebRtcHwVp8EncodeSupported() {
     return status;
   }
 
-  status = java::GeckoAppShell::HasHWVP8Encoder()
+  status = java::HardwareCodecCapabilityUtils::HasHWVP8(true)
                ? nsIGfxInfo::FEATURE_STATUS_OK
                : nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
 
@@ -789,7 +788,7 @@ int32_t GfxInfo::WebRtcHwVp8DecodeSupported() {
     return status;
   }
 
-  status = java::GeckoAppShell::HasHWVP8Decoder()
+  status = java::HardwareCodecCapabilityUtils::HasHWVP8(false)
                ? nsIGfxInfo::FEATURE_STATUS_OK
                : nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
 

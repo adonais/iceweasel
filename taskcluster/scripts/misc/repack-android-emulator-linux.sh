@@ -17,13 +17,6 @@ rm -rf emulator
 unzip /tmp/emulator.zip
 cd $GECKO_PATH
 
-# Bug 1880925: override platform-tools to a known working version
-curl --fail -L https://dl.google.com/android/repository/platform-tools_r34.0.5-linux.zip > /tmp/platform-tools.zip
-cd /builds/worker/.mozbuild/android-sdk-linux
-rm -rf platform-tools
-unzip /tmp/platform-tools.zip
-cd $GECKO_PATH
-
 # Remove extra files we don't need
 rm -rfv /builds/worker/.mozbuild/android-sdk-linux/tools
 mkdir /builds/worker/.mozbuild/android-sdk-linux/system-images

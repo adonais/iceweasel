@@ -28,6 +28,7 @@ support-files = [
 ["browser_fingerprintingRemoteOverrides.js"]
 
 ["browser_fingerprintingWebCompat.js"]
+skip-if = ["true"] # Disabled temporarily, See Bug 1978414
 
 ["browser_fingerprinting_randomization_key.js"]
 

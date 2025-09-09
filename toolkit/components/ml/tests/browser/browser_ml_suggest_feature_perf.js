@@ -29,7 +29,7 @@ const perfMetadata = {
   },
 };
 
-requestLongerTimeout(120);
+requestLongerTimeout(10);
 const CUSTOM_INTENT_OPTIONS = {
   taskName: "text-classification",
   featureId: "suggest-intent-classification",

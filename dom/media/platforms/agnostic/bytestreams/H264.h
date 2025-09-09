@@ -6,6 +6,7 @@
 #define MP4_DEMUXER_H264_H_
 
 #include <stdint.h>
+
 #include "ErrorList.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Result.h"

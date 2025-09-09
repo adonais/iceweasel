@@ -1189,8 +1189,15 @@ void ParseSimpleURISchemes(const nsACString& schemeList);
 nsresult AddExtraHeaders(nsIHttpChannel* aHttpChannel,
                          const nsACString& aExtraHeaders, bool aMerge = true);
 
-bool IsLocalNetworkAccess(nsILoadInfo::IPAddressSpace aParentIPAddressSpace,
-                          nsILoadInfo::IPAddressSpace aTargetIPAddressSpace);
+bool IsLocalOrPrivateNetworkAccess(
+    nsILoadInfo::IPAddressSpace aParentIPAddressSpace,
+    nsILoadInfo::IPAddressSpace aTargetIPAddressSpace);
+bool IsPrivateNetworkAccess(
+    const nsILoadInfo::IPAddressSpace aParentIPAddressSpace,
+    const nsILoadInfo::IPAddressSpace aTargetIPAddressSpace);
+bool IsLocalHostAccess(const nsILoadInfo::IPAddressSpace aParentIPAddressSpace,
+                       const nsILoadInfo::IPAddressSpace aTargetIPAddressSpace);
+
 }  // namespace net
 }  // namespace mozilla
 

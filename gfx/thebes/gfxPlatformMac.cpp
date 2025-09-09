@@ -1060,10 +1060,3 @@ nsTArray<uint8_t> gfxPlatformMac::GetPlatformCMSOutputProfileData() {
 }
 
 bool gfxPlatformMac::CheckVariationFontSupport() { return true; }
-
-void gfxPlatformMac::InitPlatformGPUProcessPrefs() {
-  FeatureState& gpuProc = gfxConfig::GetFeature(Feature::GPU_PROCESS);
-  gpuProc.ForceDisable(FeatureStatus::Blocked,
-                       "GPU process does not work on Mac",
-                       "FEATURE_FAILURE_MAC_GPU_PROC"_ns);
-}

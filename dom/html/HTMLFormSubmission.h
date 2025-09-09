@@ -8,10 +8,10 @@
 #define mozilla_dom_HTMLFormSubmission_h
 
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/UserActivation.h"
-#include "mozilla/dom/HTMLDialogElement.h"
-#include "nsCOMPtr.h"
 #include "mozilla/Encoding.h"
+#include "mozilla/dom/HTMLDialogElement.h"
+#include "mozilla/dom/UserActivation.h"
+#include "nsCOMPtr.h"
 #include "nsString.h"
 
 class nsIURI;

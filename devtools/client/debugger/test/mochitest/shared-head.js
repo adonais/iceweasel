@@ -262,7 +262,11 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
         // or a Source object.
         if (typeof sourceOrUrl == "string") {
           const url = location.source.url;
-          if (typeof url != "string" || !url.includes(encodeURI(sourceOrUrl))) {
+          if (
+            typeof url != "string" ||
+            (!url.includes(encodeURI(sourceOrUrl)) &&
+              !url.includes(sourceOrUrl))
+          ) {
             return false;
           }
         } else if (location.source.id != sourceOrUrl.id) {
@@ -1273,9 +1277,15 @@ async function invokeWithBreakpoint(
   await invokeResult;
 }
 
-function prettyPrint(dbg) {
+async function togglePrettyPrint(dbg) {
   const source = dbg.selectors.getSelectedSource();
-  return dbg.actions.prettyPrintAndSelectSource(source);
+  clickElement(dbg, "prettyPrintButton");
+  if (source.isPrettyPrinted) {
+    await waitForSelectedSource(dbg, source.generatedSource);
+  } else {
+    const prettyURL = source.url ? source.url : source.id.split("/").at(-1);
+    await waitForSelectedSource(dbg, prettyURL + ":formatted");
+  }
 }
 
 async function expandAllScopes(dbg) {
@@ -2971,7 +2981,7 @@ async function waitForSourcesInSourceTree(
     );
   } catch (e) {
     // Craft a custom error message to help understand what's wrong with the Source Tree content
-    const displayedSources = getDisplayedSources();
+    const displayedSources = getDisplayedSources(dbg);
     let msg = "Invalid Source Tree Content.\n";
     const missingElements = [];
     for (const source of sources) {

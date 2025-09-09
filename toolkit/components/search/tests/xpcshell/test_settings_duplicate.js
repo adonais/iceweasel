@@ -34,13 +34,13 @@ const enginesSettings = {
     {
       id: "appDefault",
       _metaData: { alias: null },
-      _isAppProvided: true,
+      _isConfigEngine: true,
       _name: "appDefault",
     },
     {
       id: "other",
       _metaData: { alias: null },
-      _isAppProvided: true,
+      _isConfigEngine: true,
       _name: "other",
     },
     // This is a user-installed engine - the only one that was listed due to the

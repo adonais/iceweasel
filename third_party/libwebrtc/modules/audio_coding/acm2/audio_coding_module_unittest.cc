@@ -13,52 +13,64 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <array>
 #include <atomic>
+#include <cstdint>
 #include <memory>
+#include <optional>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "api/array_view.h"
+#include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder.h"
+#include "api/audio_codecs/audio_encoder_factory.h"
+#include "api/audio_codecs/audio_format.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/audio_codecs/opus/audio_decoder_multi_channel_opus.h"
-#include "api/audio_codecs/opus/audio_decoder_opus.h"
 #include "api/audio_codecs/opus/audio_encoder_multi_channel_opus.h"
 #include "api/audio_codecs/opus/audio_encoder_opus.h"
+#include "api/audio_codecs/opus/audio_encoder_opus_config.h"
 #include "api/environment/environment.h"
 #include "api/environment/environment_factory.h"
+#include "api/make_ref_counted.h"
 #include "api/neteq/default_neteq_factory.h"
+#include "api/neteq/neteq.h"
+#include "api/scoped_refptr.h"
+#include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "common_audio/vad/include/vad.h"
 #include "modules/audio_coding/acm2/acm_receive_test.h"
 #include "modules/audio_coding/acm2/acm_send_test.h"
 #include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
-#include "modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
 #include "modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/audio_coding/neteq/tools/audio_checksum.h"
-#include "modules/audio_coding/neteq/tools/audio_loop.h"
+#include "modules/audio_coding/neteq/tools/audio_sink.h"
 #include "modules/audio_coding/neteq/tools/constant_pcm_packet_source.h"
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "modules/audio_coding/neteq/tools/output_audio_file.h"
 #include "modules/audio_coding/neteq/tools/output_wav_file.h"
 #include "modules/audio_coding/neteq/tools/packet.h"
-#include "modules/audio_coding/neteq/tools/rtp_file_source.h"
+#include "rtc_base/buffer.h"
 #include "rtc_base/event.h"
 #include "rtc_base/message_digest.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/string_encode.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/system/arch.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
-#include "system_wrappers/include/cpu_features_wrapper.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/audio_decoder_proxy_factory.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
-#include "test/mock_audio_decoder.h"
 #include "test/mock_audio_encoder.h"
 #include "test/testsupport/file_utils.h"
-#include "test/testsupport/rtc_expect_death.h"
 
 using ::testing::_;
 using ::testing::AtLeast;
@@ -211,7 +223,7 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
     const uint8_t kPayload[kPayloadSizeBytes] = {0};
     ASSERT_EQ(0, neteq_->InsertPacket(
                      rtp_header_,
-                     rtc::ArrayView<const uint8_t>(kPayload, kPayloadSizeBytes),
+                     ArrayView<const uint8_t>(kPayload, kPayloadSizeBytes),
                      /*receive_time=*/Timestamp::MinusInfinity()));
     rtp_utility_->Forward(&rtp_header_);
   }
@@ -529,7 +541,7 @@ class AcmAbsoluteCaptureTimestamp : public ::testing::Test {
   static constexpr int kNumChannels = 2;
 
   void SetUp() {
-    rtc::scoped_refptr<AudioEncoderFactory> codec_factory =
+    scoped_refptr<AudioEncoderFactory> codec_factory =
         CreateBuiltinAudioEncoderFactory();
     acm_ = AudioCodingModule::Create();
     std::unique_ptr<AudioEncoder> encoder = codec_factory->Create(
@@ -644,7 +656,7 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
         payload_type_(0),
         last_sequence_number_(0),
         last_timestamp_(0),
-        payload_checksum_(rtc::MessageDigestFactory::Create(rtc::DIGEST_MD5)) {}
+        payload_checksum_(MessageDigestFactory::Create(DIGEST_MD5)) {}
 
   // Sets up the test::AcmSendTest object. Returns true on success, otherwise
   // false.
@@ -687,7 +699,7 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
            absl::string_view payload_checksum_ref,
            int expected_packets,
            test::AcmReceiveTestOldApi::NumOutputChannels expected_channels,
-           rtc::scoped_refptr<AudioDecoderFactory> decoder_factory = nullptr) {
+           scoped_refptr<AudioDecoderFactory> decoder_factory = nullptr) {
     if (!decoder_factory) {
       decoder_factory = CreateBuiltinAudioDecoderFactory();
     }
@@ -718,9 +730,9 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
     ExpectChecksumEq(audio_checksum_ref, checksum_string);
 
     // Extract and verify the payload checksum.
-    rtc::Buffer checksum_result(payload_checksum_->Size());
+    Buffer checksum_result(payload_checksum_->Size());
     payload_checksum_->Finish(checksum_result.data(), checksum_result.size());
-    checksum_string = rtc::hex_encode(checksum_result);
+    checksum_string = hex_encode(checksum_result);
     ExpectChecksumEq(payload_checksum_ref, checksum_string);
 
     // Verify number of packets produced.
@@ -803,7 +815,7 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
   uint8_t payload_type_;
   uint16_t last_sequence_number_;
   uint32_t last_timestamp_;
-  std::unique_ptr<rtc::MessageDigest> payload_checksum_;
+  std::unique_ptr<MessageDigest> payload_checksum_;
   const std::string kTestFileMono32kHz =
       webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
   const std::string kTestFileFakeStereo32kHz =
@@ -989,8 +1001,8 @@ TEST_F(AcmSenderBitExactnessNewApi, DISABLED_OpusManyChannels) {
   const auto opus_decoder =
       AudioDecoderMultiChannelOpus::MakeAudioDecoder(*decoder_config);
 
-  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory =
-      rtc::make_ref_counted<test::AudioDecoderProxyFactory>(opus_decoder.get());
+  scoped_refptr<AudioDecoderFactory> decoder_factory =
+      make_ref_counted<test::AudioDecoderProxyFactory>(opus_decoder.get());
 
   // Set up an EXTERNAL DECODER to parse 4 channels.
   Run("audio checksum check downstream|8051617907766bec5f4e4a4f7c6d5291",
@@ -1258,9 +1270,10 @@ TEST_F(AcmSenderBitExactnessOldApi, External_Pcmu_20ms) {
   EXPECT_CALL(*mock_encoder, EncodeImpl(_, _, _))
       .Times(AtLeast(1))
       .WillRepeatedly(Invoke(
-          &encoder, static_cast<AudioEncoder::EncodedInfo (AudioEncoder::*)(
-                        uint32_t, rtc::ArrayView<const int16_t>, rtc::Buffer*)>(
-                        &AudioEncoderPcmU::Encode)));
+          &encoder,
+          static_cast<AudioEncoder::EncodedInfo (AudioEncoder::*)(
+              uint32_t, webrtc::ArrayView<const int16_t>, webrtc::Buffer*)>(
+              &AudioEncoderPcmU::Encode)));
   ASSERT_TRUE(SetUpSender(kTestFileMono32kHz, 32000));
   ASSERT_NO_FATAL_FAILURE(
       SetUpTestExternalEncoder(std::move(mock_encoder), config.payload_type));

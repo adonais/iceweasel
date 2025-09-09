@@ -6,13 +6,14 @@
 
 #include "DOMSVGTransformList.h"
 
+#include <algorithm>
+
+#include "DOMSVGTransform.h"
+#include "SVGAnimatedTransformList.h"
 #include "mozilla/dom/SVGElement.h"
 #include "mozilla/dom/SVGMatrix.h"
 #include "mozilla/dom/SVGTransformListBinding.h"
-#include "DOMSVGTransform.h"
-#include "SVGAnimatedTransformList.h"
 #include "nsError.h"
-#include <algorithm>
 
 // local helper functions
 namespace {

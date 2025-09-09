@@ -5,9 +5,12 @@
 package org.mozilla.fenix.browser
 
 import android.content.Context
+import android.content.Intent
 import android.os.StrictMode
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.lifecycle.Observer
@@ -37,6 +40,8 @@ import org.mozilla.fenix.GleanMetrics.ReaderMode
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.store.BrowserScreenAction.ReaderModeStatusUpdated
 import org.mozilla.fenix.components.TabCollectionStorage
+import org.mozilla.fenix.components.VoiceSearchFeature
+import org.mozilla.fenix.components.appstate.qrScanner.QrScannerBinding
 import org.mozilla.fenix.components.toolbar.BrowserToolbarComposable
 import org.mozilla.fenix.components.toolbar.BrowserToolbarView
 import org.mozilla.fenix.components.toolbar.FenixBrowserToolbarView
@@ -65,6 +70,14 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     private val openInAppOnboardingObserver = ViewBoundFeatureWrapper<OpenInAppOnboardingObserver>()
     private val translationsBinding = ViewBoundFeatureWrapper<TranslationsBinding>()
 
+    private val voiceSearchFeature by lazy(LazyThreadSafetyMode.NONE) {
+        ViewBoundFeatureWrapper<VoiceSearchFeature>()
+    }
+    private val voiceSearchLauncher: ActivityResultLauncher<Intent> =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            voiceSearchFeature.get()?.handleVoiceSearchResult(result.resultCode, result.data)
+        }
+
     private var readerModeAvailable = false
     private var translationsAvailable = false
 
@@ -91,6 +104,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
                     contentLayout = binding.browserLayout,
                     tabPreview = binding.tabPreview,
                     toolbarLayout = browserToolbarView.layout,
+                    navBarLayout = browserNavigationBar?.layout,
                     store = components.core.store,
                     selectTabUseCase = components.useCases.tabsUseCases.selectTab,
                     onSwipeStarted = {
@@ -154,6 +168,8 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     private fun initBrowserToolbarComposableUpdates(rootView: View) {
         initReaderModeUpdates(rootView.context, rootView)
         initTranslationsUpdates(rootView.context, rootView)
+        QrScannerBinding.register(this)
+        initVoiceSearchSupport(rootView.context)
     }
 
     private fun initSharePageAction(context: Context) {
@@ -270,6 +286,18 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
             ),
             owner = this,
             view = view,
+        )
+    }
+
+    private fun initVoiceSearchSupport(context: Context) {
+        voiceSearchFeature.set(
+            feature = VoiceSearchFeature(
+                context = context,
+                appStore = context.components.appStore,
+                voiceSearchLauncher = voiceSearchLauncher,
+            ),
+            owner = viewLifecycleOwner,
+            view = binding.root,
         )
     }
 
@@ -519,6 +547,12 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
 
         subscribeToTabCollections()
         updateLastBrowseActivity()
+
+        if (requireComponents.termsOfUseManager.shouldShowTermsOfUsePromptOnBrowserFragment()) {
+            findNavController().navigate(
+                BrowserFragmentDirections.actionGlobalTermsOfUseDialog(),
+            )
+        }
     }
 
     override fun onStop() {

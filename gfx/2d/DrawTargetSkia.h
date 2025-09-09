@@ -11,8 +11,8 @@
 #include <sstream>
 #include <vector>
 
-#ifdef MOZ_WIDGET_COCOA
-#  include <ApplicationServices/ApplicationServices.h>
+#ifdef XP_DARWIN
+#  include <CoreGraphics/CGColorSpace.h>
 #endif
 
 class SkCanvas;
@@ -196,7 +196,7 @@ class DrawTargetSkia : public DrawTarget {
   RefPtr<SourceSurfaceSkia> mSnapshot;
   Mutex mSnapshotLock MOZ_UNANNOTATED;
 
-#ifdef MOZ_WIDGET_COCOA
+#ifdef XP_DARWIN
   friend class BorrowedCGContext;
 
   CGContextRef BorrowCGContext(const DrawOptions& aOptions);

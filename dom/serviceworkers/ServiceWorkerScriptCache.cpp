@@ -6,37 +6,36 @@
 
 #include "ServiceWorkerScriptCache.h"
 
+#include "ServiceWorkerManager.h"
 #include "js/Array.h"               // JS::GetArrayLength
 #include "js/PropertyAndElement.h"  // JS_GetElement
 #include "js/Utility.h"             // JS::FreePolicy
+#include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/TaskQueue.h"
-#include "mozilla/Unused.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/CacheBinding.h"
-#include "mozilla/dom/cache/CacheStorage.h"
-#include "mozilla/dom/cache/Cache.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseWorkerProxy.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/WorkerCommon.h"
+#include "mozilla/dom/cache/Cache.h"
+#include "mozilla/dom/cache/CacheStorage.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/net/CookieJarSettings.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/StaticPrefs_extensions.h"
+#include "nsContentUtils.h"
 #include "nsICacheInfoChannel.h"
 #include "nsIHttpChannel.h"
+#include "nsIInputStreamPump.h"
+#include "nsIPrincipal.h"
+#include "nsIScriptSecurityManager.h"
 #include "nsIStreamLoader.h"
 #include "nsIThreadRetargetableRequest.h"
 #include "nsIUUIDGenerator.h"
 #include "nsIXPConnect.h"
-
-#include "nsIInputStreamPump.h"
-#include "nsIPrincipal.h"
-#include "nsIScriptSecurityManager.h"
-#include "nsContentUtils.h"
 #include "nsNetUtil.h"
-#include "ServiceWorkerManager.h"
 #include "nsStringStream.h"
 
 using mozilla::dom::cache::Cache;

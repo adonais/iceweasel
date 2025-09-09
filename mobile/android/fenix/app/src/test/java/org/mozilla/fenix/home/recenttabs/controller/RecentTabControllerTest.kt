@@ -30,7 +30,7 @@ import org.mozilla.fenix.GleanMetrics.RecentTabs
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.helpers.FenixGleanTestRule
-import org.mozilla.fenix.tabstray.TabManagementFeatureHelper
+import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -46,6 +46,7 @@ class RecentTabControllerTest {
     private val navController: NavController = mockk(relaxed = true)
     private val selectTabUseCase: TabsUseCases = mockk(relaxed = true)
     private val appStore: AppStore = mockk()
+    private val settings: Settings = mockk(relaxed = true)
 
     private lateinit var store: BrowserStore
 
@@ -61,16 +62,7 @@ class RecentTabControllerTest {
                 selectTabUseCase = selectTabUseCase.selectTab,
                 navController = navController,
                 appStore = appStore,
-                tabManagementFeatureHelper = object : TabManagementFeatureHelper {
-                    override val enhancementsEnabledNightly: Boolean
-                        get() = false
-                    override val enhancementsEnabledBeta: Boolean
-                        get() = false
-                    override val enhancementsEnabledRelease: Boolean
-                        get() = false
-                    override val enhancementsEnabled: Boolean
-                        get() = false
-                },
+                settings = settings,
             ),
         )
     }

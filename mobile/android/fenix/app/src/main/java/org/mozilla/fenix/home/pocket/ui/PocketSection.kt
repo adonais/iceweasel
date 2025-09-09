@@ -50,7 +50,7 @@ fun PocketSection(
         }
     }
 
-    Column(modifier = Modifier.padding(top = 72.dp)) {
+    Column {
         // Simple wrapper to add horizontal padding to just the header while the stories have none.
         Box(modifier = Modifier.padding(horizontal = horizontalPadding)) {
             HomeSectionHeader(

@@ -7,13 +7,12 @@
 #ifndef ReaderProxy_h_
 #define ReaderProxy_h_
 
-#include "mozilla/AbstractThread.h"
-#include "mozilla/RefPtr.h"
-#include "nsISupportsImpl.h"
-
 #include "MediaEventSource.h"
 #include "MediaFormatReader.h"
 #include "MediaPromiseDefs.h"
+#include "mozilla/AbstractThread.h"
+#include "mozilla/RefPtr.h"
+#include "nsISupportsImpl.h"
 
 namespace mozilla {
 

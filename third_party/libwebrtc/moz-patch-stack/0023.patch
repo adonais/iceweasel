@@ -66,7 +66,7 @@ index f77d791033..a2435bcd4f 100644
  
  int DeviceInfoV4l2::HandleEvents(int fd)
 diff --git a/modules/video_capture/linux/video_capture_linux.cc b/modules/video_capture/linux/video_capture_linux.cc
-index 23a8f4f3f3..b2c206d775 100644
+index 1c635ea440..7872662fae 100644
 --- a/modules/video_capture/linux/video_capture_linux.cc
 +++ b/modules/video_capture/linux/video_capture_linux.cc
 @@ -10,6 +10,7 @@
@@ -78,7 +78,7 @@ index 23a8f4f3f3..b2c206d775 100644
  #include <string.h>
  #include <sys/ioctl.h>
 diff --git a/modules/video_capture/linux/video_capture_v4l2.cc b/modules/video_capture/linux/video_capture_v4l2.cc
-index e4c86c5d13..7f851fd7bd 100644
+index 33aa452a07..ccb6b79630 100644
 --- a/modules/video_capture/linux/video_capture_v4l2.cc
 +++ b/modules/video_capture/linux/video_capture_v4l2.cc
 @@ -12,7 +12,7 @@
@@ -105,7 +105,7 @@ index e4c86c5d13..7f851fd7bd 100644
  
  #include <new>
  #include <string>
-@@ -413,16 +421,13 @@ bool VideoCaptureModuleV4L2::CaptureProcess() {
+@@ -411,16 +419,13 @@ bool VideoCaptureModuleV4L2::CaptureProcess() {
    RTC_CHECK_RUNS_SERIALIZED(&capture_checker_);
  
    int retVal = 0;
@@ -127,7 +127,7 @@ index e4c86c5d13..7f851fd7bd 100644
  
    {
      MutexLock lock(&capture_lock_);
-@@ -432,12 +437,12 @@ bool VideoCaptureModuleV4L2::CaptureProcess() {
+@@ -430,12 +435,12 @@ bool VideoCaptureModuleV4L2::CaptureProcess() {
      }
  
      if (retVal < 0 && errno != EINTR) {  // continue if interrupted

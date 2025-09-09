@@ -170,8 +170,7 @@ inline void TraceCellHeaderEdge(JSTracer* trc,
 }
 
 template <class T>
-inline void TraceCellHeaderEdge(JSTracer* trc,
-                                gc::TenuredCellWithGCPointer<T>* thingp,
+inline void TraceCellHeaderEdge(JSTracer* trc, gc::CellWithGCPointer<T>* thingp,
                                 const char* name) {
   T* thing = thingp->headerPtr();
   gc::TraceEdgeInternal(trc, gc::ConvertToBase(&thing), name);

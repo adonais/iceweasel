@@ -31,7 +31,7 @@ const ENHANCED_TRACKING_PROTECTION_GROUP_LABEL =
 
 add_task(async function testEnhancedTrackingProtectionMessage() {
   // Enable groupWarning and persist log
-  await pushPref("devtools.webconsole.groupWarningMessages", true);
+  await pushPref("devtools.webconsole.groupSimilarMessages", true);
 
   const hud = await openNewTabAndConsole(TEST_URI);
 

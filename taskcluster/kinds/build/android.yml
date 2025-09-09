@@ -19,8 +19,8 @@ task-defaults:
             - name: public/build/maven
               path: /builds/worker/workspace/obj-build/gradle/maven/
               type: directory
-            - name: public/build/target.maven.tar.xz
-              path: /builds/worker/workspace/obj-build/gradle/target.maven.tar.xz
+            - name: public/build/target.maven.zip
+              path: /builds/worker/workspace/obj-build/gradle/target.maven.zip
               type: file
             - name: public/build/geckoview-androidTest.apk
               path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/geckoview/outputs/apk/androidTest/debug/geckoview-debug-androidTest.apk

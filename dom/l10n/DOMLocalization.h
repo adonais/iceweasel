@@ -7,15 +7,15 @@
 #ifndef mozilla_dom_l10n_DOMLocalization_h
 #define mozilla_dom_l10n_DOMLocalization_h
 
-#include "nsTHashSet.h"
-#include "nsXULPrototypeDocument.h"
-#include "mozilla/intl/Localization.h"
 #include "mozilla/dom/DOMLocalizationBinding.h"
 #include "mozilla/dom/L10nMutations.h"
 #include "mozilla/dom/L10nOverlaysBinding.h"
 #include "mozilla/dom/LocalizationBinding.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/intl/L10nRegistry.h"
+#include "mozilla/intl/Localization.h"
+#include "nsTHashSet.h"
+#include "nsXULPrototypeDocument.h"
 
 // XXX Avoid including this here by moving function bodies to the cpp file
 #include "nsINode.h"

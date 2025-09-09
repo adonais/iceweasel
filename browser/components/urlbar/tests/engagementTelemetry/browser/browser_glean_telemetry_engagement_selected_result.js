@@ -575,6 +575,33 @@ add_task(async function selected_result_dynamic_wikipedia() {
   await cleanupQuickSuggest();
 });
 
+add_task(async function selected_result_important_dates() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.quickactions.enabled", false]],
+  });
+
+  const cleanupQuickSuggest = await ensureQuickSuggestInit();
+
+  let provider = "UrlbarProviderQuickSuggest";
+  await doTest(async () => {
+    await openPopup("important dates");
+    await selectRowByProvider(provider);
+    await doEnter();
+
+    assertEngagementTelemetry([
+      {
+        selected_result: "rust_important_dates",
+        selected_position: 2,
+        provider,
+        results: "search_engine,rust_important_dates",
+      },
+    ]);
+  });
+
+  await cleanupQuickSuggest();
+  await SpecialPowers.popPrefEnv();
+});
+
 add_task(async function selected_result_search_shortcut_button() {
   await doTest(async () => {
     const oneOffSearchButtons = UrlbarTestUtils.getOneOffSearchButtons(window);

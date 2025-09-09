@@ -5,6 +5,9 @@
 package mozilla.components.service.sync.logins
 
 import android.content.Context
+import android.content.SharedPreferences
+import androidx.core.content.edit
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +32,9 @@ const val DB_NAME = "logins2.sqlite"
 
 // Name of our preferences file
 const val PREFS_NAME = "logins"
+
+// Name of key that checks if we've cleaned undecryptable keys
+const val UNDECRYPTABLE_LOGINS_CLEANED_KEY = "logins_undecryptable_cleaned"
 
 /**
  * The telemetry ping from a successful sync
@@ -85,9 +91,16 @@ typealias InvalidKey = mozilla.appservices.logins.LoginsApiException.InvalidKey
 class SyncableLoginsStorage(
     private val context: Context,
     private val securePrefs: Lazy<SecureAbove22Preferences>,
+    private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : LoginsStorage, SyncableStore, AutoCloseable {
     private val logger = Logger("SyncableLoginsStorage")
-    private val coroutineContext by lazy { Dispatchers.IO }
+    private val coroutineContext by lazy { coroutineDispatcher }
+    private val prefs: SharedPreferences by lazy {
+        context.getSharedPreferences(
+            "sync.logins.prefs",
+            Context.MODE_PRIVATE,
+        )
+    }
     val crypto by lazy { LoginsCrypto(context, securePrefs.value, this) }
 
     private val conn: Deferred<DatabaseLoginsStorage> = CoroutineScope(coroutineContext).async {
@@ -208,6 +221,9 @@ class SyncableLoginsStorage(
 
     override fun registerWithSyncManager() {
         CoroutineScope(coroutineContext).launch {
+            // before registering with the syncmanager we should delete undecryptable logins
+            // sync will do the right thing and get them from the server if any were still valid
+            runUndecryptableCleanupIfNeeded()
             tryWithStorageOr(Unit) { registerWithSyncManager() }
         }
     }
@@ -242,6 +258,26 @@ class SyncableLoginsStorage(
         } catch (e: LoginsApiException) {
             logger.error("Error during logins operation", e)
             default
+        }
+    }
+
+    /**
+     * If we've lost the encryption key or other issues that prevent us from decrypting
+     * existing logins, we run a cleanup to purge those records. We only need to do
+     * this once for existing undecryptable records and if ever user needs
+     * new keys, the new generation flow will automatically do this for us
+     * @throws [LoginsApiException] On unexpected errors (IO failure, rust panics, etc)
+     */
+    @Throws(LoginsApiException::class)
+    suspend fun runUndecryptableCleanupIfNeeded() = withContext(coroutineContext) {
+        // We use an int preference here to track if we've already ran the cleanup,
+        // and to allow us to run it again by bumping the value of the check
+        var cleanedPref = prefs.getInt(UNDECRYPTABLE_LOGINS_CLEANED_KEY, 0)
+        if (cleanedPref < 1) {
+            tryWithStorageOr(Unit) {
+                deleteUndecryptableLoginsAndRecordMetrics()
+            }
+            prefs.edit { putInt(UNDECRYPTABLE_LOGINS_CLEANED_KEY, ++cleanedPref) }
         }
     }
 }

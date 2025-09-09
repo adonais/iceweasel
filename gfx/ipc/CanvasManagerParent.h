@@ -50,14 +50,15 @@ class CanvasManagerParent final : public PCanvasManagerParent {
       const uint32_t& aManagerId, const ActorId& aProtocolId,
       const Maybe<RemoteTextureOwnerId>& aOwnerId,
       const Maybe<RawId>& aCommandEncoderId,
+      const Maybe<RawId>& aCommandBufferId,
       webgl::FrontBufferSnapshotIpc* aResult);
 
   static mozilla::ipc::IProtocol* GetCanvasActor(
       dom::ContentParentId aContentId, uint32_t aManagerId, ActorId aCanvasId);
 
-  static already_AddRefed<DataSourceSurface> GetCanvasSurface(
+  static already_AddRefed<SourceSurface> GetCanvasSurface(
       dom::ContentParentId aContentId, uint32_t aManagerId, ActorId aCanvasId,
-      uintptr_t aSurfaceId);
+      uintptr_t aSurfaceId, Maybe<layers::SurfaceDescriptor>* aDesc = nullptr);
 
  private:
   static void ShutdownInternal();

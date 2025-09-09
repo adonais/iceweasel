@@ -7,6 +7,7 @@
 #define UseCounter_h_
 
 #include <stdint.h>
+
 #include "mozilla/BitSet.h"
 
 namespace mozilla {

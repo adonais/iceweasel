@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
@@ -274,10 +275,10 @@ class CustomTabRobot {
             return ShareOverlayRobot.Transition()
         }
 
-        fun clickShareButtonFromRedesignedMenu(interact: ShareOverlayRobot.() -> Unit): ShareOverlayRobot.Transition {
-            Log.i(TAG, "clickShareButtonFromRedesignedMenu: Trying to click the main menu share button")
-            itemWithDescription(getStringResource(R.string.browser_menu_share)).click()
-            Log.i(TAG, "clickShareButtonFromRedesignedMenu: Clicked the main menu share button")
+        fun clickShareButtonFromRedesignedMenu(composeTestRule: ComposeTestRule, interact: ShareOverlayRobot.() -> Unit): ShareOverlayRobot.Transition {
+            Log.i(TAG, "clickShareButtonFromRedesignedMenu: Trying to click the redesigned main menu share button from custom tab")
+            composeTestRule.shareButton().performClick()
+            Log.i(TAG, "clickShareButtonFromRedesignedMenu: Clicked the redesigned main menu share button from custom tab")
 
             ShareOverlayRobot().interact()
             return ShareOverlayRobot.Transition()
@@ -296,6 +297,33 @@ class CustomTabRobot {
             Log.i(TAG, "clickOutsideTheMainMenu: Trying to click outside the main menu.")
             itemWithResId("$packageName:id/touch_outside").clickTopLeft()
             Log.i(TAG, "clickOutsideTheMainMenu: Clicked click outside the main menu.")
+
+            BrowserRobot().interact()
+            return BrowserRobot.Transition()
+        }
+
+        fun clickBackButtonFromMenu(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+            Log.i(TAG, "clickBackButtonFromMenu: Trying to click the \"Back\" button from custom tab main menu.")
+            composeTestRule.backButton().performClick()
+            Log.i(TAG, "clickBackButtonFromMenu: Clicked the \"Back\" button from custom tab main menu.")
+
+            BrowserRobot().interact()
+            return BrowserRobot.Transition()
+        }
+
+        fun clickForwardButtonFromMenu(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+            Log.i(TAG, "clickForwardButtonFromMenu: Trying to click the \"Forward\" button from custom tab main menu.")
+            composeTestRule.forwardButton().performClick()
+            Log.i(TAG, "clickForwardButtonFromMenu: Clicked the \"Forward\" button from custom tab main menu.")
+
+            BrowserRobot().interact()
+            return BrowserRobot.Transition()
+        }
+
+        fun clickRefreshButton(composeTestRule: ComposeTestRule, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+            Log.i(TAG, "clickRefreshButton: Trying to click the \"Refresh\" button from custom tab main menu.")
+            composeTestRule.refreshButton().performClick()
+            Log.i(TAG, "clickRefreshButton: Clicked the \"Refresh\" button from custom tab main menu.")
 
             BrowserRobot().interact()
             return BrowserRobot.Transition()
@@ -336,3 +364,11 @@ private fun ComposeTestRule.enabledDesktopSiteButton() = onNodeWithTag(DESKTOP_S
 private fun ComposeTestRule.disabledDesktopSiteButton() = onNodeWithTag(DESKTOP_SITE_OFF)
 
 private fun ComposeTestRule.findInPageButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_find_in_page))
+
+private fun ComposeTestRule.backButton() = onNodeWithText("Back")
+
+private fun ComposeTestRule.forwardButton() = onNodeWithText("Forward")
+
+private fun ComposeTestRule.refreshButton() = onNodeWithText("Refresh")
+
+private fun ComposeTestRule.shareButton() = onNodeWithText("Share")

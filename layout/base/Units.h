@@ -363,10 +363,22 @@ struct CSSPixel {
 
   // Conversions to app units
 
-  // TODO: We might want an int32_t/CSSIntCoord overload which doesn't do float
-  // math but we'd need to ensure stuff is clamped to nscoord_MIN/MAX range.
   static nscoord ToAppUnits(CSSCoord aCoord) {
     return NSFloatPixelsToAppUnits(aCoord, AppUnitsPerCSSPixel());
+  }
+
+  // TODO: We might want an int32_t/CSSIntCoord overload which doesn't do float
+  // math but we'd need to ensure stuff is clamped to nscoord_MIN/MAX range.
+  static nscoord ToAppUnits(CSSIntCoord aCoord) {
+    return ToAppUnits(CSSCoord(aCoord));
+  }
+
+  static nscoord ToAppUnits(int32_t aCoord) {
+    return ToAppUnits(CSSIntCoord(aCoord));
+  }
+
+  static nscoord ToAppUnits(float aCoord) {
+    return ToAppUnits(CSSCoord(aCoord));
   }
 
   static nsPoint ToAppUnits(const CSSPoint& aPoint) {
@@ -402,10 +414,8 @@ struct CSSPixel {
   }
 
   static nsMargin ToAppUnits(const CSSIntMargin& aMargin) {
-    return nsMargin(ToAppUnits(CSSCoord(aMargin.top)),
-                    ToAppUnits(CSSCoord(aMargin.right)),
-                    ToAppUnits(CSSCoord(aMargin.bottom)),
-                    ToAppUnits(CSSCoord(aMargin.left)));
+    return nsMargin(ToAppUnits(aMargin.top), ToAppUnits(aMargin.right),
+                    ToAppUnits(aMargin.bottom), ToAppUnits(aMargin.left));
   }
 
   // Conversion from a given CSS point value.

@@ -6,18 +6,27 @@
 
 #include "mozilla/dom/SVGElement.h"
 
-#include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/dom/MutationEventBinding.h"
-#include "mozilla/dom/MutationObservers.h"
-#include "mozilla/dom/CSSRuleBinding.h"
-#include "mozilla/dom/SVGElementBinding.h"
-#include "mozilla/dom/SVGGeometryElement.h"
-#include "mozilla/dom/SVGLengthBinding.h"
-#include "mozilla/dom/SVGSVGElement.h"
-#include "mozilla/dom/SVGTests.h"
-#include "mozilla/dom/SVGUnitTypesBinding.h"
-#include "mozilla/dom/Element.h"
+#include <stdarg.h>
 
+#include "SVGAnimatedBoolean.h"
+#include "SVGAnimatedEnumeration.h"
+#include "SVGAnimatedInteger.h"
+#include "SVGAnimatedIntegerPair.h"
+#include "SVGAnimatedLength.h"
+#include "SVGAnimatedLengthList.h"
+#include "SVGAnimatedNumber.h"
+#include "SVGAnimatedNumberList.h"
+#include "SVGAnimatedNumberPair.h"
+#include "SVGAnimatedOrient.h"
+#include "SVGAnimatedPathSegList.h"
+#include "SVGAnimatedPointList.h"
+#include "SVGAnimatedString.h"
+#include "SVGAnimatedTransformList.h"
+#include "SVGAnimatedViewBox.h"
+#include "SVGGeometryProperty.h"
+#include "SVGMotionSMILAttr.h"
+#include "mozAutoDocUpdate.h"
+#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/DeclarationBlock.h"
@@ -26,43 +35,34 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/SMILAnimationController.h"
-#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/SVGContentUtils.h"
 #include "mozilla/SVGObserverUtils.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/Unused.h"
-
-#include "mozAutoDocUpdate.h"
+#include "mozilla/dom/BindContext.h"
+#include "mozilla/dom/CSSRuleBinding.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/MutationEventBinding.h"
+#include "mozilla/dom/MutationObservers.h"
+#include "mozilla/dom/SVGElementBinding.h"
+#include "mozilla/dom/SVGGeometryElement.h"
+#include "mozilla/dom/SVGLengthBinding.h"
+#include "mozilla/dom/SVGSVGElement.h"
+#include "mozilla/dom/SVGTests.h"
+#include "mozilla/dom/SVGUnitTypesBinding.h"
 #include "nsAttrValueOrString.h"
 #include "nsCSSProps.h"
 #include "nsCSSValue.h"
 #include "nsContentUtils.h"
 #include "nsDOMCSSAttrDeclaration.h"
-#include "nsICSSDeclaration.h"
-#include "nsIContentInlines.h"
-#include "mozilla/dom/Document.h"
 #include "nsError.h"
 #include "nsGkAtoms.h"
+#include "nsICSSDeclaration.h"
+#include "nsIContentInlines.h"
 #include "nsIFrame.h"
-#include "nsQueryObject.h"
 #include "nsLayoutUtils.h"
-#include "SVGAnimatedNumberList.h"
-#include "SVGAnimatedLengthList.h"
-#include "SVGAnimatedPointList.h"
-#include "SVGAnimatedPathSegList.h"
-#include "SVGAnimatedTransformList.h"
-#include "SVGAnimatedBoolean.h"
-#include "SVGAnimatedEnumeration.h"
-#include "SVGAnimatedInteger.h"
-#include "SVGAnimatedIntegerPair.h"
-#include "SVGAnimatedLength.h"
-#include "SVGAnimatedNumber.h"
-#include "SVGAnimatedNumberPair.h"
-#include "SVGAnimatedOrient.h"
-#include "SVGAnimatedString.h"
-#include "SVGAnimatedViewBox.h"
-#include "SVGGeometryProperty.h"
-#include "SVGMotionSMILAttr.h"
-#include <stdarg.h>
+#include "nsQueryObject.h"
 
 // This is needed to ensure correct handling of calls to the
 // vararg-list methods in this file:
@@ -345,8 +345,8 @@ nsresult SVGElement::BindToTree(BindContext& aContext, nsINode& aParent) {
 
   // Hide any nonce from the DOM, but keep the internal value of the
   // nonce by copying and resetting the internal nonce value.
-  if (HasFlag(NODE_HAS_NONCE_AND_HEADER_CSP) && IsInComposedDoc() &&
-      OwnerDoc()->GetBrowsingContext()) {
+  if (!aContext.IsMove() && HasFlag(NODE_HAS_NONCE_AND_HEADER_CSP) &&
+      IsInComposedDoc() && OwnerDoc()->GetBrowsingContext()) {
     nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
         "SVGElement::ResetNonce::Runnable",
         [self = RefPtr<SVGElement>(this)]() {

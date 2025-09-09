@@ -4,9 +4,6 @@
 #ifndef _mozilla_dom_FetchService_h
 #define _mozilla_dom_FetchService_h
 
-#include "nsIChannel.h"
-#include "nsIObserver.h"
-#include "nsTHashMap.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
@@ -16,6 +13,9 @@
 #include "mozilla/dom/SafeRefPtr.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/net/NeckoChannelParams.h"
+#include "nsIChannel.h"
+#include "nsIObserver.h"
+#include "nsTHashMap.h"
 
 class nsILoadGroup;
 class nsIPrincipal;

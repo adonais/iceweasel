@@ -6,10 +6,12 @@
 #if !defined(NesteggPacketHolder_h_)
 #  define NesteggPacketHolder_h_
 
-#  include <deque>
 #  include <stdint.h>
-#  include "nsAutoRef.h"
+
+#  include <deque>
+
 #  include "nestegg/nestegg.h"
+#  include "nsAutoRef.h"
 
 namespace mozilla {
 

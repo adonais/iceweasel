@@ -87,6 +87,7 @@ StoreBuffer::StoreBuffer(StoreBuffer&& other)
     : bufferVal(std::move(other.bufferVal)),
       bufStrCell(std::move(other.bufStrCell)),
       bufBigIntCell(std::move(other.bufBigIntCell)),
+      bufGetterSetterCell(std::move(other.bufGetterSetterCell)),
       bufObjCell(std::move(other.bufObjCell)),
       bufferSlot(std::move(other.bufferSlot)),
       bufferWasmAnyRef(std::move(other.bufferWasmAnyRef)),
@@ -119,9 +120,10 @@ void StoreBuffer::checkEmpty() const { MOZ_ASSERT(isEmpty()); }
 
 bool StoreBuffer::isEmpty() const {
   return bufferVal.isEmpty() && bufStrCell.isEmpty() &&
-         bufBigIntCell.isEmpty() && bufObjCell.isEmpty() &&
-         bufferSlot.isEmpty() && bufferWasmAnyRef.isEmpty() &&
-         bufferWholeCell.isEmpty() && bufferGeneric.isEmpty();
+         bufBigIntCell.isEmpty() && bufGetterSetterCell.isEmpty() &&
+         bufObjCell.isEmpty() && bufferSlot.isEmpty() &&
+         bufferWasmAnyRef.isEmpty() && bufferWholeCell.isEmpty() &&
+         bufferGeneric.isEmpty();
 }
 
 bool StoreBuffer::enable() {
@@ -162,6 +164,7 @@ void StoreBuffer::clear() {
   bufferVal.clear();
   bufStrCell.clear();
   bufBigIntCell.clear();
+  bufGetterSetterCell.clear();
   bufObjCell.clear();
   bufferSlot.clear();
   bufferWasmAnyRef.clear();
@@ -180,9 +183,11 @@ void StoreBuffer::setAboutToOverflow(JS::GCReason reason) {
 void StoreBuffer::addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
                                          JS::GCSizes* sizes) {
   sizes->storeBufferVals += bufferVal.sizeOfExcludingThis(mallocSizeOf);
-  sizes->storeBufferCells += bufStrCell.sizeOfExcludingThis(mallocSizeOf) +
-                             bufBigIntCell.sizeOfExcludingThis(mallocSizeOf) +
-                             bufObjCell.sizeOfExcludingThis(mallocSizeOf);
+  sizes->storeBufferCells +=
+      bufStrCell.sizeOfExcludingThis(mallocSizeOf) +
+      bufBigIntCell.sizeOfExcludingThis(mallocSizeOf) +
+      bufGetterSetterCell.sizeOfExcludingThis(mallocSizeOf) +
+      bufObjCell.sizeOfExcludingThis(mallocSizeOf);
   sizes->storeBufferSlots += bufferSlot.sizeOfExcludingThis(mallocSizeOf);
   sizes->storeBufferWasmAnyRefs +=
       bufferWasmAnyRef.sizeOfExcludingThis(mallocSizeOf);

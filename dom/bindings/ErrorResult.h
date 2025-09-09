@@ -30,8 +30,8 @@
 #include <new>
 #include <utility>
 
-#include "js/GCAnnotations.h"
 #include "js/ErrorReport.h"
+#include "js/GCAnnotations.h"
 #include "js/Value.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"

@@ -30,6 +30,8 @@ using WGPUOption_BindGroupLayoutId = uint64_t;
 using WGPUOption_SamplerId = uint64_t;
 using WGPUOption_SurfaceId = uint64_t;
 using WGPUOption_TextureViewId = uint64_t;
+using WGPUOption_ExternalTextureSourceId = uint64_t;
+using WGPUOption_ExternalTextureId = uint64_t;
 using WGPUOption_QuerySetId = uint64_t;
 using WGPUOption_DeviceId = uint64_t;
 
@@ -53,6 +55,8 @@ using WGPUStagingBufferId = uint64_t;
 using WGPUSurfaceId = uint64_t;
 using WGPUTextureId = uint64_t;
 using WGPUTextureViewId = uint64_t;
+using WGPUExternalTextureId = uint64_t;
+using WGPUExternalTextureSourceId = uint64_t;
 """
 include_version = true
 braces = "SameLine"
@@ -73,6 +77,8 @@ exclude = [
 	"Option_SamplerId",
 	"Option_SurfaceId",
 	"Option_TextureViewId",
+	"Option_ExternalTextureSourceId",
+	"Option_ExternalTextureId",
 	"Option_BufferSize",
 	"Option_NonZeroU32",
 	"Option_NonZeroU8",
@@ -93,6 +99,7 @@ include = ["BufferUsages"]
 "CommandEncoderDescriptor______nsACString" = "WGPUCommandEncoderDescriptor"
 "RenderBundleDescriptor______nsACString" = "WGPURenderBundleDescriptor"
 "TextureDescriptor______nsACString__FfiSlice_TextureFormat" = "WGPUTextureDescriptor"
+"ExternalTextureDescriptor______nsACString" = "WGPUExternalTextureDescriptor"
 "SamplerDescriptor______nsACString" = "WGPUSamplerDescriptor"
 "AdapterInformation_nsString" = "WGPUAdapterInformation"
 "QuerySetDescriptor______nsACString" = "WGPUQuerySetDescriptor"

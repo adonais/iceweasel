@@ -28,6 +28,7 @@
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "nsXULElement.h"
 #include <algorithm>
 
 using namespace mozilla;
@@ -48,15 +49,16 @@ NS_IMPL_ISUPPORTS(nsNativeTheme, nsITimerCallback, nsINamed)
     return ElementState();
   }
 
-  const bool isXULElement = frameContent->IsXULElement();
-  if (isXULElement) {
-    if (aAppearance == StyleAppearance::Checkbox ||
-        aAppearance == StyleAppearance::Radio) {
+  bool isXULElement = frameContent->IsXULElement();
+  if (aAppearance == StyleAppearance::Checkbox ||
+      aAppearance == StyleAppearance::Radio) {
+    if (nsXULElement::FromNodeOrNull(frameContent->GetParent())) {
       aFrame = aFrame->GetParent();
-      frameContent = aFrame->GetContent();
+      frameContent = frameContent->GetParent();
+      isXULElement = true;
     }
-    MOZ_ASSERT(frameContent && frameContent->IsElement());
   }
+  MOZ_ASSERT(frameContent && frameContent->IsElement());
 
   ElementState flags = frameContent->AsElement()->StyleState();
   nsNumberControlFrame* numberControlFrame =
@@ -315,15 +317,6 @@ bool nsNativeTheme::IsFirstTab(nsIFrame* aFrame) {
       return (first == aFrame);
   }
   return false;
-}
-
-bool nsNativeTheme::IsHorizontal(nsIFrame* aFrame) {
-  if (!aFrame) return false;
-
-  if (!aFrame->GetContent()->IsElement()) return true;
-
-  return !aFrame->GetContent()->AsElement()->AttrValueIs(
-      kNameSpaceID_None, nsGkAtoms::orient, nsGkAtoms::vertical, eCaseMatters);
 }
 
 bool nsNativeTheme::IsNextToSelectedTab(nsIFrame* aFrame, int32_t aOffset) {

@@ -9,19 +9,21 @@
 // local includes
 #include "DatabaseFileInfo.h"
 #include "DatabaseFileManager.h"
+#include "IndexedDBCipherKeyManager.h"
+#include "IndexedDBCommon.h"
 #include "IndexedDatabase.h"  // for StructuredCloneFile...
 #include "IndexedDatabaseInlines.h"
 #include "IndexedDatabaseManager.h"
-#include "IndexedDBCipherKeyManager.h"
-#include "IndexedDBCommon.h"
 #include "ReportInternalError.h"
 
 // global includes
 #include <stdlib.h>
 #include <string.h>
+
 #include <algorithm>
 #include <numeric>
 #include <type_traits>
+
 #include "MainThreadUtils.h"
 #include "SafeRefPtr.h"
 #include "js/RootingAPI.h"

@@ -6,13 +6,12 @@
 
 #include "PolicyContainer.h"
 
-#include "nsIClassInfoImpl.h"
-#include "nsIObjectInputStream.h"
-#include "nsIObjectOutputStream.h"
-
 #include "mozilla/dom/IntegrityPolicy.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
+#include "nsIClassInfoImpl.h"
+#include "nsIObjectInputStream.h"
+#include "nsIObjectOutputStream.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

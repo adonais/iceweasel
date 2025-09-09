@@ -104,10 +104,6 @@ class SignatureParamsTrustDomain final : public TrustDomain {
     return pkix::Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
 
-  pkix::Result NetscapeStepUpMatchesServerAuth(Time, bool&) override {
-    return pkix::Result::FATAL_ERROR_LIBRARY_FAILURE;
-  }
-
   void NoteAuxiliaryExtension(AuxiliaryExtension, Input) override {}
 
   DigitallySigned::SignatureAlgorithm mSignatureAlgorithm;

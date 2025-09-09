@@ -9,9 +9,9 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
-#include "nsGenericHTMLElement.h"
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/ShadowRootBinding.h"
+#include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
 
 namespace mozilla::dom {

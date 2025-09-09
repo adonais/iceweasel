@@ -32,11 +32,19 @@ const FREQ_CAP_STORE = "freq_caps";
 const REPORT_STORE = "reports";
 
 export class Task {
-  constructor({ taskId, vdaf, bits, length, defaultMeasurement }) {
+  constructor({
+    taskId,
+    vdaf,
+    bits,
+    length,
+    timePrecision,
+    defaultMeasurement,
+  }) {
     this._taskId = taskId;
     this._vdaf = vdaf;
     this._bits = bits;
     this._length = length;
+    this._timePrecision = timePrecision;
     this._defaultMeasurement = defaultMeasurement;
   }
 }
@@ -188,7 +196,7 @@ export class DAPReportController {
         vdaf: metadata._vdaf,
         bits: metadata._bits,
         length: metadata._length,
-        time_precision: 60,
+        time_precision: metadata._timePrecision,
       };
       let measurement = metadata._defaultMeasurement;
       let report = await this.getReportToSubmit(taskId);

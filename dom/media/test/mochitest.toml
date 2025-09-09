@@ -22,6 +22,7 @@
 # do ok(true, "Type not supported") and stop the test.
 
 [DEFAULT]
+skip-if = ["isolated_process"] # Bug 1709948
 subsuite = "media"
 tags = "media-gpu"
 prefs = [
@@ -618,6 +619,9 @@ support-files = [
   "sin-1k-32bit.m4a",
   "sine.webm",
   "sine.webm^headers^",
+  # Generated with sox, encoded using https://gitlab.com/ecodis/exhale
+  "sine-3s-xhe-aac-44khz-mono.mp4",
+  "sine-3s-xhe-aac-44khz-mono.mp4^headers^",
   "sintel-short-clearkey-subsample-encrypted-audio.webm",
   "sintel-short-clearkey-subsample-encrypted-audio.webm^headers^",
   "sintel-short-clearkey-subsample-encrypted-video.webm",

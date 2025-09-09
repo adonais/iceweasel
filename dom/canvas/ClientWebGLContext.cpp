@@ -5,43 +5,44 @@
 
 #include "ClientWebGLContext.h"
 
-#include <bitset>
 #include <fmt/format.h>
 
+#include <bitset>
+
 #include "ClientWebGLExtensions.h"
-#include "gfxCrashReporterUtils.h"
 #include "HostWebGLContext.h"
+#include "TexUnpackBlob.h"
+#include "WebGLChild.h"
+#include "WebGLFormats.h"
+#include "WebGLMethodDispatcher.h"
+#include "WebGLTextureUpload.h"
+#include "WebGLValidateStrings.h"
+#include "gfxCrashReporterUtils.h"
 #include "js/PropertyAndElement.h"  // JS_DefineElement
 #include "js/ScalarType.h"          // js::Scalar::Type
+#include "mozilla/EnumeratedRange.h"
+#include "mozilla/ResultVariant.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/dom/BufferSourceBinding.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/WebGLContextEvent.h"
 #include "mozilla/dom/WorkerCommon.h"
-#include "mozilla/EnumeratedRange.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/CanvasManagerChild.h"
-#include "mozilla/ipc/Shmem.h"
 #include "mozilla/gfx/Swizzle.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/ipc/Shmem.h"
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/OOPCanvasRenderer.h"
 #include "mozilla/layers/TextureClientSharedSurface.h"
-#include "mozilla/layers/WebRenderUserData.h"
 #include "mozilla/layers/WebRenderCanvasRenderer.h"
-#include "mozilla/ResultVariant.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/StaticPrefs_webgl.h"
+#include "mozilla/layers/WebRenderUserData.h"
 #include "nsContentUtils.h"
 #include "nsDisplayList.h"
-#include "TexUnpackBlob.h"
-#include "WebGLFormats.h"
-#include "WebGLMethodDispatcher.h"
-#include "WebGLChild.h"
-#include "WebGLTextureUpload.h"
-#include "WebGLValidateStrings.h"
 
 namespace mozilla {
 
@@ -1329,6 +1330,7 @@ RefPtr<gfx::DataSourceSurface> ClientWebGLContext::BackBufferSnapshot() {
 }
 
 UniquePtr<uint8_t[]> ClientWebGLContext::GetImageBuffer(
+    mozilla::CanvasUtils::ImageExtraction aExtractionBehavior,
     int32_t* out_format, gfx::IntSize* out_imageSize) {
   *out_format = 0;
   *out_imageSize = {};
@@ -1343,7 +1345,7 @@ UniquePtr<uint8_t[]> ClientWebGLContext::GetImageBuffer(
   const auto& premultAlpha = mNotLost->info.options.premultipliedAlpha;
   *out_imageSize = dataSurface->GetSize();
 
-  if (ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
+  if (aExtractionBehavior == CanvasUtils::ImageExtraction::Randomize) {
     return gfxUtils::GetImageBufferWithRandomNoise(
         dataSurface, premultAlpha, GetCookieJarSettings(), PrincipalOrNull(),
         out_format);
@@ -1353,9 +1355,10 @@ UniquePtr<uint8_t[]> ClientWebGLContext::GetImageBuffer(
 }
 
 NS_IMETHODIMP
-ClientWebGLContext::GetInputStream(const char* mimeType,
-                                   const nsAString& encoderOptions,
-                                   nsIInputStream** out_stream) {
+ClientWebGLContext::GetInputStream(
+    const char* mimeType, const nsAString& encoderOptions,
+    mozilla::CanvasUtils::ImageExtraction spoofing,
+    nsIInputStream** out_stream) {
   // Use GetSurfaceSnapshot() to make sure that appropriate y-flip gets applied
   gfxAlphaType any;
   RefPtr<gfx::SourceSurface> snapshot = GetSurfaceSnapshot(&any);
@@ -4477,23 +4480,21 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
     bool sameColorSpace = (srcColorSpace == dstColorSpace);
 
     const auto fallbackReason = [&]() -> Maybe<std::string> {
-      const bool canUploadViaSd = contextInfo.uploadableSdTypes[sdType];
       // Canvas2D surfaces may require and depend upon conversions such as
       // unpremultiplying the source data. We allow these conversions to occur
       // because it is still a performance benefit to do the conversion in the
       // GPU process where WebGL processing happens, rather than cause excess
       // synchronization and data transfer back to the content process.
       const bool allowConversion =
-          canUploadViaSd &&
           sdType == layers::SurfaceDescriptor::TSurfaceDescriptorCanvasSurface;
-      auto fallbackReason =
-          BlitPreventReason(level, offset, respecFormat, pi, *desc,
-                            contextInfo.optionalRenderableFormatBits,
-                            sameColorSpace, allowConversion);
-      if (fallbackReason) {
-        return fallbackReason;
+      if (const char* fallbackReason =
+              BlitPreventReason(imageTarget, level, offset, respecFormat, pi,
+                                *desc, contextInfo.optionalRenderableFormatBits,
+                                sameColorSpace, allowConversion)) {
+        return Some(std::string(fallbackReason));
       }
 
+      const bool canUploadViaSd = contextInfo.uploadableSdTypes[sdType];
       if (!canUploadViaSd) {
         const nsPrintfCString msg(
             "Fast uploads for resource type %i not implemented.", int(sdType));
@@ -4565,18 +4566,6 @@ void ClientWebGLContext::TexImage(uint8_t funcDims, GLenum imageTarget,
                 "SurfaceDescriptorCanvasSurface works only in GPU process."});
           }
         } break;
-      }
-
-      switch (respecFormat) {
-        case LOCAL_GL_SRGB:
-        case LOCAL_GL_SRGB8:
-        case LOCAL_GL_SRGB_ALPHA:
-        case LOCAL_GL_SRGB8_ALPHA8: {
-          const nsPrintfCString msg(
-              "srgb-encoded formats (like %s) are not supported.",
-              EnumString(respecFormat).c_str());
-          return Some(ToString(msg));
-        }
       }
 
       if (StaticPrefs::webgl_disable_DOM_blit_uploads()) {

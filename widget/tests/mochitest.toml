@@ -31,12 +31,20 @@ support-files = ["file_test_clipboard.js"]
 support-files = ["file_test_clipboard_asyncSetData.js"]
 
 ["test_clipboard_getDataSnapshot.html"]
-skip-if = ["display == 'wayland'"] # Bug 1879835
 support-files = ["file_test_clipboard_getDataSnapshot.js"]
+skip-if = [
+  "display == 'wayland'", # Bug 1879835
+  "os == 'android' && android_version == '34' && processor == 'x86_64' && debug", # Bug 1982951
+  "os == 'android' && android_version == '34' && processor == 'x86_64' && opt", # Bug 1982951
+]
 
 ["test_clipboard_getDataSnapshotSync.html"]
-skip-if = ["display == 'wayland'"] # Bug 1879835
 support-files = "file_test_clipboard_getDataSnapshotSync.js"
+skip-if = [
+  "display == 'wayland'", # Bug 1879835
+  "os == 'android' && android_version == '34' && processor == 'x86_64' && debug", # Bug 1982951
+  "os == 'android' && android_version == '34' && processor == 'x86_64' && opt", # Bug 1982951
+]
 
 ["test_clipboard_pngPreservesTransparency.html"]
 skip-if = [
@@ -45,6 +53,8 @@ skip-if = [
 ]
 support-files = "file_test_clipboard_pngPreservesTransparency.js"
 scheme = "https" # ImageDecoder requires secure context
+
+["test_clipboard_read_paste_ignoreNuls.html"]
 
 ["test_contextmenu_by_mouse_on_unix.html"]
 run-if = [
@@ -58,6 +68,12 @@ run-if = ["os == 'win'"] # only Windows updates the mouse button state when enqu
 skip-if = [
   "headless", # headless widget doesn't dispatch contextmenu event by mouse event.
   "xorigin", # high-frequently intermittent fail
+]
+
+["test_dnd_ignoreNuls.html"]
+skip-if = [
+  "headless", # DND test requires a window!  nsDragService is not available.
+  "os == 'android'",  # Fx on android does not currently support DND
 ]
 
 ["test_keypress_event_with_alt_on_mac.html"]

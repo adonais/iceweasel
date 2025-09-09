@@ -279,7 +279,6 @@ describe("<LinkMenu>", () => {
         referrer: FAKE_SITE.referrer,
         typedBonus: FAKE_SITE.typedBonus,
         url: FAKE_SITE.url,
-        sponsored_tile_id: FAKE_SITE.sponsored_tile_id,
         event_source: "CONTEXT_MENU",
         topic: undefined,
         firstVisibleTimestamp: undefined,
@@ -292,6 +291,7 @@ describe("<LinkMenu>", () => {
         format: undefined,
         is_pocket_card: false,
         is_list_card: undefined,
+        is_sponsored: true,
       },
       "newtab-menu-open-new-private-window": {
         url: FAKE_SITE.url,

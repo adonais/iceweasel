@@ -57,6 +57,8 @@ support-files = [
 
 ["test_engine_alias.js"]
 
+["test_engine_has_been_used.js"]
+
 ["test_engine_ids.js"]
 
 ["test_engine_multiple_alias.js"]
@@ -229,6 +231,8 @@ support-files = [
   "icons/remoteIcon.ico",
 ]
 
+["test_settings_migrate_13.js"]
+
 ["test_settings_migrate_id_format.js"]
 
 ["test_settings_migration_hideOneOffs.js"]
@@ -262,7 +266,7 @@ support-files = [
 
 ["test_userEngine.js"]
 
-["test_userInstalledAppEngine.js"]
+["test_userInstalledConfigEngine.js"]
 
 ["test_validate_engines.js"]
 

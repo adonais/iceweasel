@@ -6,27 +6,26 @@
 
 #include "mozilla/dom/SVGSVGElement.h"
 
+#include "DOMSVGAngle.h"
+#include "DOMSVGLength.h"
+#include "DOMSVGNumber.h"
+#include "DOMSVGPoint.h"
+#include "ISVGSVGFrame.h"
 #include "mozilla/ContentEvents.h"
-#include "mozilla/dom/BindContext.h"
-#include "mozilla/dom/DOMMatrix.h"
-#include "mozilla/dom/SVGSVGElementBinding.h"
-#include "mozilla/dom/SVGMatrix.h"
-#include "mozilla/dom/SVGRect.h"
-#include "mozilla/dom/SVGViewElement.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/ISVGDisplayableFrame.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SMILAnimationController.h"
 #include "mozilla/SMILTimeContainer.h"
 #include "mozilla/SVGUtils.h"
-
-#include "DOMSVGAngle.h"
-#include "DOMSVGLength.h"
-#include "DOMSVGNumber.h"
-#include "DOMSVGPoint.h"
+#include "mozilla/dom/BindContext.h"
+#include "mozilla/dom/DOMMatrix.h"
+#include "mozilla/dom/SVGMatrix.h"
+#include "mozilla/dom/SVGRect.h"
+#include "mozilla/dom/SVGSVGElementBinding.h"
+#include "mozilla/dom/SVGViewElement.h"
 #include "nsFrameSelection.h"
 #include "nsIFrame.h"
-#include "ISVGSVGFrame.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT_CHECK_PARSER(SVG)
 

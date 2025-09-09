@@ -12,18 +12,19 @@
 
 #include "AllocationPolicy.h"
 #include "DecoderTraits.h"
+#include "MP4Decoder.h"
 #include "MediaInfo.h"
 #include "MediaRecorder.h"
-#include "MP4Decoder.h"
 #include "PDMFactory.h"
 #include "VPXDecoder.h"
+#include "WindowRenderer.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/EMEUtils.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/TaskQueue.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/dom/DOMMozPromiseRequestHolder.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/MediaCapabilitiesBinding.h"
 #include "mozilla/dom/MediaKeySystemAccess.h"
 #include "mozilla/dom/MediaSource.h"
@@ -34,7 +35,6 @@
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/layers/KnowsCompositor.h"
 #include "nsContentUtils.h"
-#include "WindowRenderer.h"
 
 static mozilla::LazyLogModule sMediaCapabilitiesLog("MediaCapabilities");
 

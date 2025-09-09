@@ -10,7 +10,6 @@
 #include <string>
 
 #include "mozilla/UniquePtr.h"
-
 #include "sdp/Sdp.h"
 #include "sdp/SdpParser.h"
 

@@ -6,10 +6,10 @@
 #ifndef _mozilla_dom_ClientHandle_h
 #define _mozilla_dom_ClientHandle_h
 
+#include "mozilla/MozPromise.h"
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/ClientOpPromise.h"
 #include "mozilla/dom/ClientThing.h"
-#include "mozilla/MozPromise.h"
 
 #ifdef XP_WIN
 #  undef PostMessage

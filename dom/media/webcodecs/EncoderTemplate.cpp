@@ -6,16 +6,21 @@
 
 #include "EncoderTemplate.h"
 
+#include <type_traits>
+
 #include "EncoderTypes.h"
+#include "WebCodecsUtils.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Try.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/VideoFrame.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "nsGkAtoms.h"
+#include "nsRFPService.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
 
@@ -126,6 +131,11 @@ void EncoderTemplate<EncoderType>::Configure(const ConfigType& aConfig,
     return;
   }
 
+  // Audio encoders are all software, no need to do anything.
+  if constexpr (std::is_same_v<ConfigType, VideoEncoderConfig>) {
+    ApplyResistFingerprintingIfNeeded(config, GetOwnerGlobal());
+  }
+
   mState = CodecState::Configured;
   mEncodeCounter = 0;
   mFlushCounter = 0;
@@ -154,6 +164,9 @@ void EncoderTemplate<EncoderType>::EncodeAudioData(InputType& aInput,
     return;
   }
 
+  mAsyncDurationTracker.Start(
+      aInput.Timestamp(),
+      AutoWebCodecsMarker(EncoderType::Name.get(), ".encode-duration-a"));
   mEncodeQueueSize += 1;
   // Dummy options here as a shortcut
   mControlMessageQueue.push(MakeRefPtr<EncodeMessage>(
@@ -183,6 +196,9 @@ void EncoderTemplate<EncoderType>::EncodeVideoFrame(
     return;
   }
 
+  mAsyncDurationTracker.Start(
+      aInput.Timestamp(),
+      AutoWebCodecsMarker(EncoderType::Name.get(), ".encode-duration-v"));
   mEncodeQueueSize += 1;
   mControlMessageQueue.push(MakeRefPtr<EncodeMessage>(
       mLatestConfigureId, EncoderType::CreateInputInternal(aInput, aOptions),
@@ -327,7 +343,7 @@ void EncoderTemplate<VideoEncoderTraits>::OutputEncodedVideoData(
   JSContext* cx = jsapi.cx();
 
   RefPtr<EncodedVideoChunkOutputCallback> cb(mOutputCallback);
-  for (auto& data : aData) {
+  for (const auto& data : aData) {
     // It's possible to have reset() called in between this task having been
     // dispatched, and running -- no output callback should happen when that's
     // the case.
@@ -365,6 +381,7 @@ void EncoderTemplate<VideoEncoderTraits>::OutputEncodedVideoData(
 
     LOG("EncoderTemplate:: output callback (ts: % " PRId64 ")%s",
         encodedData->Timestamp(), metadataInfo.get());
+    mAsyncDurationTracker.End(encodedData->Timestamp());
     cb->Call((EncodedVideoChunk&)(*encodedData), metadata);
   }
 }
@@ -387,7 +404,7 @@ void EncoderTemplate<AudioEncoderTraits>::OutputEncodedAudioData(
   JSContext* cx = jsapi.cx();
 
   RefPtr<EncodedAudioChunkOutputCallback> cb(mOutputCallback);
-  for (auto& data : aData) {
+  for (const auto& data : aData) {
     // It's possible to have reset() called in between this task having been
     // dispatched, and running -- no output callback should happen when that's
     // the case.
@@ -421,6 +438,7 @@ void EncoderTemplate<AudioEncoderTraits>::OutputEncodedAudioData(
             ? encodedData->GetDuration().Value()
             : 0,
         data->Size(), mPacketsOutput++);
+    mAsyncDurationTracker.End(encodedData->Timestamp());
     cb->Call((EncodedAudioChunk&)(*encodedData), metadata);
   }
 }
@@ -819,6 +837,11 @@ void EncoderTemplate<EncoderType>::Configure(
                  return;
                }
 
+               LOG("%s %p, EncoderAgent #%zu configured successfully. %u "
+                   "encode requests are pending",
+                   EncoderType::Name.get(), self.get(), id,
+                   self->mEncodeQueueSize);
+
                self->StopBlockingMessageQueue();
                self->ProcessControlMessageQueue();
              })
@@ -832,7 +855,7 @@ MessageProcessedResult EncoderTemplate<EncoderType>::ProcessEncodeMessage(
   MOZ_ASSERT(mState == CodecState::Configured);
   MOZ_ASSERT(aMessage->AsEncodeMessage());
 
-  AUTO_ENCODER_MARKER(marker, ".encode");
+  AUTO_ENCODER_MARKER(marker, ".encode-process");
 
   if (mProcessingMessage) {
     return MessageProcessedResult::NotProcessed;

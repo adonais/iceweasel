@@ -81,31 +81,31 @@ void PerfStats::RecordMeasurementEndInternal(Metric aMetric) {
 
   sSingleton->mRecordedTimes[static_cast<size_t>(aMetric)] +=
       (TimeStamp::Now() -
-       sSingleton->mRecordedStarts[static_cast<size_t>(aMetric)])
+       sSingleton->mRecordedStarts[static_cast<MetricMask>(aMetric)])
           .ToMilliseconds();
-  sSingleton->mRecordedCounts[static_cast<size_t>(aMetric)]++;
+  sSingleton->mRecordedCounts[static_cast<MetricMask>(aMetric)]++;
 }
 
 void PerfStats::RecordMeasurementInternal(Metric aMetric,
                                           TimeDuration aDuration) {
   StaticMutexAutoLock lock(sMutex);
 
-  MOZ_ASSERT(sSingleton);
+  PerfStats* singleton = GetSingleton();
 
-  sSingleton->mRecordedTimes[static_cast<size_t>(aMetric)] +=
+  singleton->mRecordedTimes[static_cast<MetricMask>(aMetric)] +=
       aDuration.ToMilliseconds();
-  sSingleton->mRecordedCounts[static_cast<size_t>(aMetric)]++;
+  singleton->mRecordedCounts[static_cast<MetricMask>(aMetric)]++;
 }
 
-void PerfStats::RecordMeasurementCounterInternal(Metric aMetric,
-                                                 uint64_t aIncrementAmount) {
+void PerfStats::RecordMeasurementCounterInternal(
+    Metric aMetric, MetricCounter aIncrementAmount) {
   StaticMutexAutoLock lock(sMutex);
 
-  MOZ_ASSERT(sSingleton);
+  PerfStats* singleton = GetSingleton();
 
-  sSingleton->mRecordedTimes[static_cast<size_t>(aMetric)] +=
+  singleton->mRecordedTimes[static_cast<MetricMask>(aMetric)] +=
       double(aIncrementAmount);
-  sSingleton->mRecordedCounts[static_cast<size_t>(aMetric)]++;
+  singleton->mRecordedCounts[static_cast<MetricMask>(aMetric)]++;
 }
 
 void AppendJSONStringAsProperty(nsCString& aDest, const char* aPropertyName,
@@ -185,7 +185,7 @@ struct PerfStatsCollector {
 };
 
 void PerfStats::ResetCollection() {
-  for (uint64_t i = 0; i < static_cast<uint64_t>(Metric::Max); i++) {
+  for (MetricMask i = 0; i < static_cast<MetricMask>(Metric::Max); i++) {
     if (!(sCollectionMask & 1 << i)) {
       continue;
     }
@@ -293,7 +293,7 @@ nsCString PerfStats::CollectLocalPerfStatsJSONInternal() {
   {
     w.StartArrayProperty("metrics");
     {
-      for (uint64_t i = 0; i < static_cast<uint64_t>(Metric::Max); i++) {
+      for (MetricMask i = 0; i < static_cast<MetricMask>(Metric::Max); i++) {
         if (!(sCollectionMask & (1 << i))) {
           continue;
         }

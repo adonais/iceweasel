@@ -15,6 +15,8 @@
 
 namespace mozilla::hal_impl {
 
+using HeterogeneousCpuInfo = hal::HeterogeneousCpuInfo;
+
 mozilla::Maybe<HeterogeneousCpuInfo> CreateHeterogeneousCpuInfo() {
   CheckedInt<size_t> cpuCount = PR_GetNumberOfProcessors();
   if (!cpuCount.isValid()) {

@@ -130,11 +130,8 @@ def lint_gkrust(path_group, config, log, fix, root, lint_results):
     This crate contains a lot of dependencies and many of them are legacy code at this point.
     Use a conservative approach to linting:
       * Filter out log messages that don't belong to the specified paths
-      * Don't support the `--fix` flag, since that could apply changes to paths that weren't
-        specified.
+      * Support the `--fix` flag with path filtering to apply changes only to specified paths.
     """
-    if fix:
-        log.warn("Clippy linting does not support --fix for the gkrust crate")
     paths = list(expand_exclusions(path_group.paths, config, root))
     paths.sort()
     # gkrust depends on things from the mach environment, so we need to run `./mach cargo` instead
@@ -147,9 +144,10 @@ def lint_gkrust(path_group, config, log, fix, root, lint_results):
         "--log-no-times",
         "cargo",
         "clippy",
-        "--",
-        "--message-format=json",
     ]
+    if fix:
+        clippy_args.append("--fix")
+    clippy_args.extend(["--", "--message-format=json"])
     log.debug("Run clippy with = {}".format(" ".join(clippy_args)))
     completed_proc = subprocess.run(
         clippy_args,
@@ -160,6 +158,9 @@ def lint_gkrust(path_group, config, log, fix, root, lint_results):
     for l in completed_proc.stdout.splitlines():
         handle_clippy_msg(config, l, log, root, paths, lint_results)
 
+    if fix and completed_proc.returncode == 0:
+        lint_results["fixed"] += 1
+
 
 def lint_crate(path_group, config, log, fix, root, cargo_bin, lint_results):
     """
@@ -167,14 +168,8 @@ def lint_crate(path_group, config, log, fix, root, cargo_bin, lint_results):
 
     These are newer and more self-contained, so we can use a more aggressive approach to linting:
       * Print out all clippy errors for the crate.
-      * Don't support the `--fix` flag, but print out the command the user can manually run.
+      * Support the `--fix` flag to automatically apply fixes.
     """
-    if fix:
-        log.warn(
-            f"Clippy linting does not support --fix for the gkrust crate, "
-            f"run `cargo clippy -p {path_group.crate_name}` manually"
-        )
-        fix = False
     clippy_args = [
         cargo_bin,
         "clippy",
@@ -194,3 +189,6 @@ def lint_crate(path_group, config, log, fix, root, cargo_bin, lint_results):
 
     for l in completed_proc.stdout.splitlines():
         handle_clippy_msg(config, l, log, root, None, lint_results)
+
+    if fix and completed_proc.returncode == 0:
+        lint_results["fixed"] += 1

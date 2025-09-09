@@ -166,7 +166,7 @@ bool WarpBuilder::startNewOsrPreHeaderBlock(BytecodeLocation loopHead) {
     } else {
       // Use an undefined value if the script does not need its environment
       // chain, to match the main entry point.
-      envv = MConstant::New(alloc(), UndefinedValue());
+      envv = MConstant::NewUndefined(alloc());
     }
     osrBlock->add(envv);
     osrBlock->initSlot(slot, envv);
@@ -178,7 +178,7 @@ bool WarpBuilder::startNewOsrPreHeaderBlock(BytecodeLocation loopHead) {
     if (!script_->noScriptRval()) {
       returnValue = MOsrReturnValue::New(alloc(), entry);
     } else {
-      returnValue = MConstant::New(alloc(), UndefinedValue());
+      returnValue = MConstant::NewUndefined(alloc());
     }
     osrBlock->add(returnValue);
     osrBlock->initSlot(info().returnValueSlot(), returnValue);
@@ -1097,8 +1097,7 @@ bool WarpBuilder::buildStrictConstantEqOp(BytecodeLocation loc,
   switch (operand.type()) {
     case ConstantCompareOperand::EncodedType::Int32: {
       if (value->type() == MIRType::Int32) {
-        MConstant* constant =
-            MConstant::New(alloc(), Int32Value(operand.toInt32()));
+        MConstant* constant = MConstant::NewInt32(alloc(), operand.toInt32());
         current->add(constant);
 
         auto* compare = MCompare::New(alloc(), value, constant, compareOp,
@@ -1117,8 +1116,7 @@ bool WarpBuilder::buildStrictConstantEqOp(BytecodeLocation loc,
 
     case ConstantCompareOperand::EncodedType::Boolean: {
       if (value->type() == MIRType::Boolean) {
-        MConstant* constant =
-            MConstant::New(alloc(), Int32Value(operand.toBoolean()));
+        MConstant* constant = MConstant::NewInt32(alloc(), operand.toBoolean());
         current->add(constant);
 
         auto* toBoolToInt32 = MBooleanToInt32::New(alloc(), value);
@@ -1139,7 +1137,7 @@ bool WarpBuilder::buildStrictConstantEqOp(BytecodeLocation loc,
     }
 
     case ConstantCompareOperand::EncodedType::Null: {
-      MConstant* constant = MConstant::New(alloc(), NullValue());
+      MConstant* constant = MConstant::NewNull(alloc());
       current->add(constant);
 
       auto* ins = MCompare::New(alloc(), value, constant, compareOp,
@@ -1150,7 +1148,7 @@ bool WarpBuilder::buildStrictConstantEqOp(BytecodeLocation loc,
     }
 
     case ConstantCompareOperand::EncodedType::Undefined: {
-      MConstant* constant = MConstant::New(alloc(), UndefinedValue());
+      MConstant* constant = MConstant::NewUndefined(alloc());
       current->add(constant);
 
       auto* ins = MCompare::New(alloc(), value, constant, compareOp,
@@ -1715,7 +1713,7 @@ bool WarpBuilder::build_TypeofEq(BytecodeLocation loc) {
     typeOf->setObservedTypes(typesSnapshot->list());
     current->add(typeOf);
 
-    auto* typeInt = MConstant::New(alloc(), Int32Value(type));
+    auto* typeInt = MConstant::NewInt32(alloc(), type);
     current->add(typeInt);
 
     auto* ins = MCompare::New(alloc(), typeOf, typeInt, compareOp,
@@ -1888,7 +1886,7 @@ bool WarpBuilder::transpileCall(BytecodeLocation loc,
                                 const WarpCacheIR* cacheIRSnapshot,
                                 CallInfo* callInfo) {
   // Synthesize the constant number of arguments for this call op.
-  auto* argc = MConstant::New(alloc(), Int32Value(callInfo->argc()));
+  auto* argc = MConstant::NewInt32(alloc(), callInfo->argc());
   current->add(argc);
 
   return TranspileCacheIRToMIR(this, loc, cacheIRSnapshot, {argc}, callInfo);
@@ -3260,7 +3258,7 @@ bool WarpBuilder::build_Rest(BytecodeLocation loc) {
         return false;
       }
 
-      index = MConstant::New(alloc(), Int32Value(i - numFormals));
+      index = MConstant::NewInt32(alloc(), i - numFormals);
       current->add(index);
 
       MDefinition* arg = inlineCallInfo()->argv()[i];
@@ -3575,7 +3573,7 @@ bool WarpBuilder::buildIC(BytecodeLocation loc, CacheKind kind,
       auto* typeOf = MTypeOf::New(alloc(), getInput(0));
       current->add(typeOf);
 
-      auto* typeInt = MConstant::New(alloc(), Int32Value(type));
+      auto* typeInt = MConstant::NewInt32(alloc(), type);
       current->add(typeInt);
 
       auto* ins = MCompare::New(alloc(), typeOf, typeInt, compareOp,

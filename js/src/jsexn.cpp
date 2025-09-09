@@ -35,6 +35,7 @@
 #include "js/experimental/TypedData.h"  // JS_IsArrayBufferViewObject
 #include "js/friend/ErrorMessages.h"  // JSErrNum, js::GetErrorMessage, JSMSG_*
 #include "js/Object.h"                // JS::GetBuiltinClass
+#include "js/Prefs.h"                 // JS::Prefs::ducktyped_errors
 #include "js/PropertyAndElement.h"    // JS_GetProperty, JS_HasProperty
 #include "js/SavedFrameAPI.h"
 #include "js/Stack.h"
@@ -484,6 +485,60 @@ JS::ErrorReportBuilder::ErrorReportBuilder(JSContext* cx)
 
 JS::ErrorReportBuilder::~ErrorReportBuilder() = default;
 
+// (DOM)Exception objects are kind of like error objects, and they actually
+// have an Error.prototype, but they aren't really JS error objects.
+// They also don't have their own JSErrorReport*.
+// To improve the error reporting for DOMExceptions and make them look more
+// like JS errors, we create a fake JSErrorReport for them.
+JSString* JS::ErrorReportBuilder::maybeCreateReportFromDOMException(
+    JS::HandleObject obj, JSContext* cx) {
+  if (!obj->getClass()->isDOMClass()) {
+    return nullptr;
+  }
+
+  bool isException;
+  Rooted<JSString*> fileNameStr(cx), messageStr(cx);
+  uint32_t lineno, column;
+  if (!cx->runtime()->DOMcallbacks->extractExceptionInfo(
+          cx, obj, &isException, &fileNameStr, &lineno, &column, &messageStr)) {
+    cx->clearPendingException();
+    return nullptr;
+  }
+
+  if (!isException) {
+    return nullptr;
+  }
+
+  filename = JS_EncodeStringToUTF8(cx, fileNameStr);
+  if (!filename) {
+    cx->clearPendingException();
+    return nullptr;
+  }
+
+  JS::UniqueChars messageUtf8 = JS_EncodeStringToUTF8(cx, messageStr);
+  if (!messageUtf8) {
+    cx->clearPendingException();
+    return nullptr;
+  }
+
+  reportp = &ownedReport;
+  new (reportp) JSErrorReport();
+  ownedReport.filename = JS::ConstUTF8CharsZ(filename.get());
+  ownedReport.lineno = lineno;
+  ownedReport.exnType = JSEXN_INTERNALERR;
+  ownedReport.column = JS::ColumnNumberOneOrigin(column);
+  // Note that using |messageStr| for |message_| here is kind of wrong,
+  // because |messageStr| is of the format
+  // |ErrorName: ErrorMessage|, and |message_| is supposed to
+  // correspond to |ErrorMessage|. But this is what we've
+  // historically done for duck-typed error objects.
+  //
+  // If only this stuff could get specced one day...
+  ownedReport.initOwnedMessage(messageUtf8.release());
+
+  return messageStr;
+}
+
 bool JS::ErrorReportBuilder::init(JSContext* cx,
                                   const JS::ExceptionStack& exnStack,
                                   SniffingBehavior sniffingBehavior) {
@@ -507,6 +562,9 @@ bool JS::ErrorReportBuilder::init(JSContext* cx,
   RootedString str(cx);
   if (reportp) {
     str = ErrorReportToString(cx, exnObject, reportp, sniffingBehavior);
+  } else if (exnObject &&
+             (str = maybeCreateReportFromDOMException(exnObject, cx))) {
+    MOZ_ASSERT(reportp, "Should have initialized report");
   } else if (exnStack.exception().isSymbol()) {
     RootedValue strVal(cx);
     if (js::SymbolDescriptiveString(cx, exnStack.exception().toSymbol(),
@@ -533,8 +591,11 @@ bool JS::ErrorReportBuilder::init(JSContext* cx,
   // have to do it in that order, because DOMExceptions have Error.prototype
   // on their proto chain, and hence also have a "fileName" property, but its
   // value is "".
+  //
+  // WARNING: This is disabled by default and planned to be removed completely.
   const char* filename_str = "filename";
-  if (!reportp && exnObject && sniffingBehavior == WithSideEffects &&
+  if (JS::Prefs::ducktyped_errors() && !reportp && exnObject &&
+      sniffingBehavior == WithSideEffects &&
       IsDuckTypedErrorObject(cx, exnObject, &filename_str)) {
     // Temporary value for pulling properties off of duck-typed objects.
     RootedValue val(cx);

@@ -7,11 +7,11 @@
 
 #include "ContainerWriter.h"
 #include "EncodedFrame.h"
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
 #include "Muxer.h"
 #include "OpusTrackEncoder.h"
 #include "WebMWriter.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla;
 using media::TimeUnit;

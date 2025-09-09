@@ -7,11 +7,11 @@
 #ifndef XULMenuBarElement_h__
 #define XULMenuBarElement_h__
 
+#include "XULMenuParentElement.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/NameSpaceConstants.h"
 #include "nsINode.h"
 #include "nsISupports.h"
-#include "XULMenuParentElement.h"
 
 namespace mozilla::dom {
 

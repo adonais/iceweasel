@@ -43,10 +43,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef nriceresolver_h__
 #define nriceresolver_h__
 
-#include "nsIDNSService.h"
-#include "nsIDNSListener.h"
-#include "nsICancelable.h"
 #include "nricectx.h"
+#include "nsICancelable.h"
+#include "nsIDNSListener.h"
+#include "nsIDNSService.h"
 
 typedef struct nr_resolver_ nr_resolver;
 typedef struct nr_resolver_vtbl_ nr_resolver_vtbl;

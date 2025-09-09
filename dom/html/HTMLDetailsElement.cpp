@@ -6,11 +6,11 @@
 
 #include "mozilla/dom/HTMLDetailsElement.h"
 
+#include "mozilla/BuiltInStyleSheets.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/HTMLDetailsElementBinding.h"
 #include "mozilla/dom/HTMLSummaryElement.h"
 #include "mozilla/dom/ShadowRoot.h"
-#include "mozilla/BuiltInStyleSheets.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "nsContentUtils.h"
 #include "nsTextNode.h"
 

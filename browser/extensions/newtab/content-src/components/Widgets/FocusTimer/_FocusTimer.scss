@@ -2,6 +2,215 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// .focus-timer {
+.focus-timer {
+  grid-column: span 1;
+  width: var(--newtab-card-width-medium);
+  background: var(--newtab-background-card);
+  border-radius: var(--border-radius-large);
+  padding-block: var(--space-large);
+  max-height: var(--newtab-card-height);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: var(--box-shadow-card);
+}
 
-// }
+.focus-timer-tabs {
+  display: flex;
+  margin-block-end: var(--space-medium);
+  position: relative;
+  width: 100%;
+  padding-inline: var(--space-large);
+}
+
+// Align the context menu button to the right while keeping the Focus/Break button centered
+.focus-timer-tabs-buttons {
+  display: flex;
+  gap: var(--space-small);
+  justify-content: center;
+  flex-grow: 1;
+  margin-inline-start: calc(var(--space-xlarge) + var(--space-small));
+}
+
+.focus-timer-context-menu {
+  margin-inline-end: auto;
+}
+
+// Make sure context menu is only visible as you hover over the Timer widget
+.focus-timer-context-menu-wrapper {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.focus-timer:hover, .focus-timer:focus-within {
+  .focus-timer-context-menu-wrapper {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.progress-circle-wrapper {
+  /* Colours for the main timer */
+  --timer-red: var(--color-red-50);
+  --timer-orange: var(--color-orange-30);
+  --timer-yellow: var(--color-yellow-20);
+
+  /* Colours for the break timer */
+  --timer-blue: var(--color-blue-20);
+  --timer-violet: var(--color-violet-20);
+  --timer-violet-light: var(--color-violet-0);
+
+  /* Complete timer */
+  --timer-green: var(--color-green-20);
+
+  min-height: 0;
+  opacity: 0;
+  position: relative;
+  width: 162px;
+  overflow: hidden;
+  transition: min-height 0.8s ease, opacity 0.8s ease;
+
+  &.visible {
+    opacity: 1;
+    min-height: 162px;
+  }
+
+  .progress-circle-background,
+  .progress-circle,
+  .progress-circle-complete {
+    --thickness: var(--space-small);
+
+    border-radius: 50%; // stylelint-disable-line declaration-property-value-disallowed-list
+    inset: 0;
+    mask: radial-gradient(farthest-side, transparent calc(100% - var(--thickness)), black calc(100% - var(--thickness)));  position: absolute;
+  }
+
+  .progress-circle-background {
+    background-color: var(--border-color-interactive);
+  }
+
+  /* main timer colours */
+  .progress-circle,
+  .progress-circle-complete {
+    background: conic-gradient(
+      rgba(232, 57, 92, 0%) 0deg,  // fade-in the progress bar
+      rgba(232, 57, 92, 100%) 30deg, // closest to the red below
+      var(--timer-red) 60deg,
+      var(--timer-orange) 180deg,
+      var(--timer-yellow) 360deg
+    );
+  }
+
+  .focus-hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .focus-visible {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  /* break timer colours */
+  .progress-circle-break {
+    clip-path: polygon(50% 50%);
+    background: conic-gradient(
+      rgba(159, 201, 255, 0%) 0deg, // fade-in the progress bar
+      rgba(159, 201, 255, 100%) 30deg, // closest to the blue below
+      var(--timer-blue) 60deg,
+      var(--timer-violet) 180deg,
+      var(--timer-violet-light) 360deg
+    );
+  }
+
+  .break-hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .break-visible {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  /* timer turns green when complete */
+  .progress-circle-complete {
+    background: var(--timer-green);
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+    z-index: 2;
+
+    &.visible {
+      opacity: 1;
+    }
+  }
+
+  .progress-circle-label {
+    align-items: center;
+    color: var(--text-color);
+    display: flex;
+    font-size: calc(2 * var(--font-size-xlarge));
+    font-weight: var(--font-weight-bold);
+    font-variant-numeric: tabular-nums;
+    height: 100%;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    justify-content: center;
+    position: absolute;
+    width: 100%;
+    z-index: 2;
+  }
+}
+
+.timer-set-minutes,
+.timer-set-seconds {
+  &:focus {
+    outline: var(--focus-outline);
+  }
+}
+
+.set-timer-controls-wrapper {
+  display: flex;
+
+  .set-timer-countdown {
+    font-size: calc(2 * var(--font-size-xlarge));
+    font-weight: var(--font-weight-bold);
+    font-variant-numeric: tabular-nums;
+    height: 100%;
+    margin-inline-end: var(--space-xlarge);
+    opacity: 1;
+    width: 125px;
+    transition: opacity 0.8s ease, width 0.8s ease;
+
+    &.hidden {
+      opacity: 0;
+      width: 0;
+      overflow: hidden;
+    }
+  }
+
+  .focus-timer-controls {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    &.timer-running {
+      margin-block-start: var(--space-medium);
+    }
+  }
+
+  .focus-timer-controls>moz-button:last-child {
+    margin-inline-start: var(--space-medium);
+  }
+
+  .focus-timer-controls>moz-button::part(button) {
+    border-radius: 50%; // stylelint-disable-line declaration-property-value-disallowed-list
+    padding: calc(var(--space-large) + 0.5 * var(--space-xxsmall)); // 17px
+  }
+}
+
+.timer-notification-status {
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-small);
+  margin-block: var(--space-xsmall) 0;
+}

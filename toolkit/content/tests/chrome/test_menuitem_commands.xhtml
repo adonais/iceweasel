@@ -62,7 +62,7 @@ function runTestSet(suffix)
     $("menu" + suffix).open = true;
   }
 
-  checkAttributes(one, "One", null, null, false, true);
+  checkAttributes(one, "One", null, null, true, true);
   checkAttributes(two, "Cat", "C", null, false, true);
   checkAttributes(three, "Dog", "D", "false", true, true);
   checkAttributes(four, "Four", "F", "true", false, true);
@@ -72,7 +72,7 @@ function runTestSet(suffix)
 ]]>
 </script>
 
-<command id="cmd_one" hidden="false"/>
+<command id="cmd_one" />
 <command id="cmd_two" label="Cat" accesskey="C"/>
 <command id="cmd_three" label="Dog" accesskey="D" disabled="false" hidden="true"/>
 <command id="cmd_four" disabled="true"/>

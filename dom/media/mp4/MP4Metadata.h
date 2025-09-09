@@ -7,14 +7,14 @@
 
 #include <type_traits>
 
-#include "mozilla/UniquePtr.h"
+#include "ByteStream.h"
 #include "DecoderData.h"
 #include "MediaData.h"
 #include "MediaInfo.h"
 #include "MediaResult.h"
-#include "ByteStream.h"
-#include "mp4parse.h"
 #include "SampleIterator.h"
+#include "mozilla/UniquePtr.h"
+#include "mp4parse.h"
 
 namespace mozilla {
 

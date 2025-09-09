@@ -5,12 +5,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SharedWorkerParent.h"
+
 #include "SharedWorkerManager.h"
 #include "SharedWorkerService.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/RemoteWorkerTypes.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/BackgroundUtils.h"
-#include "mozilla/Unused.h"
 
 namespace mozilla {
 

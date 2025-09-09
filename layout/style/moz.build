@@ -41,11 +41,19 @@ DIRS += ["typedom"]
 
 TEST_DIRS += ["test"]
 
+XPIDL_SOURCES += [
+    "nsIPreloadedStyleSheet.idl",
+    "nsIStyleSheetService.idl",
+]
+
+XPIDL_MODULE = "layout_style"
+
 EXPORTS += [
     "!nsCSSPropertyID.h",
     "AnimationCommon.h",
     "CounterStyleManager.h",
     "nsAnimationManager.h",
+    "nsChangeHint.h",
     "nsComputedDOMStyle.h",
     "nsCSSAnonBoxes.h",
     "nsCSSAnonBoxList.h",
@@ -62,7 +70,9 @@ EXPORTS += [
     "nsICSSDeclaration.h",
     "nsICSSLoaderObserver.h",
     "nsStyleAutoArray.h",
+    "nsStyleChangeList.h",
     "nsStyleConsts.h",
+    "nsStyleSheetService.h",
     "nsStyleStruct.h",
     "nsStyleStructFwd.h",
     "nsStyleStructInlines.h",
@@ -99,6 +109,7 @@ EXPORTS.mozilla += [
     "PreferenceSheet.h",
     "PreloadedStyleSheet.h",
     "PseudoStyleType.h",
+    "RestyleManager.h",
     "RustCell.h",
     "ServoBindings.h",
     "ServoBindingTypes.h",
@@ -246,6 +257,8 @@ UNIFIED_SOURCES += [
     "nsICSSDeclaration.cpp",
     "nsMediaFeatures.cpp",
     "nsROCSSPrimitiveValue.cpp",
+    "nsStyleChangeList.cpp",
+    "nsStyleSheetService.cpp",
     "nsStyleStruct.cpp",
     "nsStyleTransformMatrix.cpp",
     "nsStyleUtil.cpp",
@@ -256,6 +269,7 @@ UNIFIED_SOURCES += [
     "PreferenceSheet.cpp",
     "PreloadedStyleSheet.cpp",
     "PseudoStyleType.cpp",
+    "RestyleManager.cpp",
     "Rule.cpp",
     "ServoCSSParser.cpp",
     "ServoCSSRuleList.cpp",

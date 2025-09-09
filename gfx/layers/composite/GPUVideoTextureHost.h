@@ -12,7 +12,7 @@
 namespace mozilla {
 namespace layers {
 
-class GPUVideoTextureHost : public TextureHost {
+class GPUVideoTextureHost final : public TextureHost {
  public:
   static GPUVideoTextureHost* CreateFromDescriptor(
       const dom::ContentParentId& aContentId, TextureFlags aFlags,
@@ -32,6 +32,8 @@ class GPUVideoTextureHost : public TextureHost {
   gfx::YUVColorSpace GetYUVColorSpace() const override;
   gfx::ColorDepth GetColorDepth() const override;
   gfx::ColorRange GetColorRange() const override;
+
+  bool NeedsYFlip() const override;
 
   gfx::IntSize GetSize() const override;
 

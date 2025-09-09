@@ -7,9 +7,11 @@
 #define WidevineFileIO_h_
 
 #include <stddef.h>
+
+#include <string>
+
 #include "content_decryption_module.h"
 #include "gmp-api/gmp-storage.h"
-#include <string>
 
 namespace mozilla {
 

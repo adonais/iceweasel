@@ -174,7 +174,6 @@ function CssRuleView(inspector, document, store) {
   this._onToggleDarkColorSchemeSimulation =
     this._onToggleDarkColorSchemeSimulation.bind(this);
   this._onTogglePrintSimulation = this._onTogglePrintSimulation.bind(this);
-  this.highlightElementRule = this.highlightElementRule.bind(this);
   this.highlightProperty = this.highlightProperty.bind(this);
   this.refreshPanel = this.refreshPanel.bind(this);
 
@@ -401,7 +400,7 @@ CssRuleView.prototype = {
       this.inspector.sidebar &&
       this.inspector.toolbox.currentToolId === "inspector" &&
       (this.inspector.sidebar.getCurrentTabID() == "ruleview" ||
-        this.inspector.is3PaneModeEnabled)
+        this.inspector.isThreePaneModeEnabled)
     );
   },
 
@@ -1086,6 +1085,9 @@ CssRuleView.prototype = {
       return Promise.resolve(undefined);
     }
 
+    const isProfilerActive = Services.profiler?.IsActive();
+    const startTime = isProfilerActive ? Cu.now() : null;
+
     this.pageStyle = element.inspectorFront.pageStyle;
     this.pageStyle.on("stylesheet-updated", this.refreshPanel);
 
@@ -1131,6 +1133,17 @@ CssRuleView.prototype = {
           this._elementStyle.onChanged = () => {
             this._changed();
           };
+        }
+        if (isProfilerActive && this._elementStyle.rules) {
+          let declarations = 0;
+          for (const rule of this._elementStyle.rules) {
+            declarations += rule.textProps.length;
+          }
+          ChromeUtils.addProfilerMarker(
+            "DevTools:CssRuleView.selectElement",
+            startTime,
+            `${declarations} CSS declarations in ${this._elementStyle.rules.length} rules`
+          );
         }
       })
       .catch(e => {
@@ -2051,25 +2064,28 @@ CssRuleView.prototype = {
    *
    * @param  {Element} element
    *         The element.
+   * @returns {Promise} Promise that resolves after the element was flashed-out
    */
   _flashElement(element) {
     flashElementOn(element, {
       backgroundClass: "theme-bg-contrast",
     });
 
-    if (this._flashMutationTimer) {
-      clearTimeout(this._removeFlashOutTimer);
-      this._flashMutationTimer = null;
+    if (this._flashMutationCallback) {
+      this._flashMutationCallback();
     }
 
-    this._flashMutationTimer = setTimeout(() => {
-      flashElementOff(element, {
-        backgroundClass: "theme-bg-contrast",
-      });
+    return new Promise(resolve => {
+      this._flashMutationCallback = () => {
+        flashElementOff(element, {
+          backgroundClass: "theme-bg-contrast",
+        });
+        this._flashMutationCallback = null;
+        resolve();
+      };
 
-      // Emit "scrolled-to-property" for use by tests.
-      this.emit("scrolled-to-element");
-    }, PROPERTY_FLASHING_DURATION);
+      setTimeout(this._flashMutationCallback, PROPERTY_FLASHING_DURATION);
+    });
   },
 
   /**
@@ -2120,42 +2136,6 @@ CssRuleView.prototype = {
   },
 
   /**
-   * Finds the rule with the matching actorID and highlights it.
-   *
-   * @param  {String} ruleId
-   *         The actorID of the rule.
-   */
-  highlightElementRule(ruleId) {
-    let scrollBehavior = "smooth";
-
-    const rule = this.rules.find(r => r.domRule.actorID === ruleId);
-
-    if (!rule) {
-      return;
-    }
-
-    if (rule.domRule.actorID === ruleId) {
-      // If using 2-Pane mode, then switch to the Rules tab first.
-      if (!this.inspector.is3PaneModeEnabled) {
-        this.inspector.sidebar.select("ruleview");
-      }
-
-      if (rule.pseudoElement.length && !this.showPseudoElements) {
-        scrollBehavior = "auto";
-        this._togglePseudoElementRuleContainer();
-      }
-
-      const {
-        editor: { element },
-      } = rule;
-
-      // Scroll to the top of the rule and highlight it.
-      this._scrollToElement(element, null, scrollBehavior);
-      this._flashElement(element);
-    }
-  },
-
-  /**
    * Finds the specified TextProperty name in the rule view. If found, scroll to and
    * flash the TextProperty.
    *
@@ -2170,15 +2150,12 @@ CssRuleView.prototype = {
           continue;
         }
 
-        const {
-          editor: { selectorText },
-        } = rule;
         let scrollBehavior = "smooth";
 
         // First, search for a matching authored property.
         if (textProp.name === name) {
           // If using 2-Pane mode, then switch to the Rules tab first.
-          if (!this.inspector.is3PaneModeEnabled) {
+          if (!this.inspector.isThreePaneModeEnabled) {
             this.inspector.sidebar.select("ruleview");
           }
 
@@ -2191,15 +2168,11 @@ CssRuleView.prototype = {
             this._togglePseudoElementRuleContainer();
           }
 
-          // Scroll to the top of the property's rule so that both the property and its
-          // rule are visible.
-          this._scrollToElement(
-            selectorText,
+          this._highlightElementInRule(
+            rule,
             textProp.editor.element,
             scrollBehavior
           );
-          this._flashElement(textProp.editor.element);
-
           return true;
         }
 
@@ -2210,7 +2183,7 @@ CssRuleView.prototype = {
           }
 
           if (computed.name === name) {
-            if (!this.inspector.is3PaneModeEnabled) {
+            if (!this.inspector.isThreePaneModeEnabled) {
               this.inspector.sidebar.select("ruleview");
             }
 
@@ -2225,12 +2198,11 @@ CssRuleView.prototype = {
             // Expand the computed list.
             textProp.editor.expandForFilter();
 
-            this._scrollToElement(
-              selectorText,
+            this._highlightElementInRule(
+              rule,
               computed.element,
               scrollBehavior
             );
-            this._flashElement(computed.element);
 
             return true;
           }
@@ -2239,6 +2211,20 @@ CssRuleView.prototype = {
     }
 
     return false;
+  },
+
+  /**
+   * Highlight a given element in a rule editor
+   *
+   * @param {Rule} rule
+   * @param {Element} element
+   * @param {String} scrollBehavior
+   */
+  _highlightElementInRule(rule, element, scrollBehavior) {
+    this._scrollToElement(rule.editor.selectorText, element, scrollBehavior);
+    this._flashElement(element).then(() =>
+      this.emitForTests("element-highlighted")
+    );
   },
 
   /**

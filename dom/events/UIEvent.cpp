@@ -4,10 +4,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/dom/UIEvent.h"
+
 #include "base/basictypes.h"
 #include "ipc/IPCMessageUtils.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
-#include "mozilla/dom/UIEvent.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ContentEvents.h"
@@ -18,9 +19,9 @@
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsIContent.h"
-#include "nsIInterfaceRequestorUtils.h"
 #include "nsIDocShell.h"
 #include "nsIFrame.h"
+#include "nsIInterfaceRequestorUtils.h"
 #include "nsLayoutUtils.h"
 #include "prtime.h"
 

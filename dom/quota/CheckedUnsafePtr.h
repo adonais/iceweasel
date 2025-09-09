@@ -7,18 +7,18 @@
 #ifndef mozilla_CheckedUnsafePtr_h
 #define mozilla_CheckedUnsafePtr_h
 
+#include <cstddef>
+#include <type_traits>
+#include <utility>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/StackWalk.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "nsContentUtils.h"
-#include "nsTArray.h"
 #include "nsString.h"
-
-#include <cstddef>
-#include <type_traits>
-#include <utility>
+#include "nsTArray.h"
 
 #if defined __has_builtin
 #  if __has_builtin(__builtin_FUNCTION)

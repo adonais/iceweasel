@@ -48,14 +48,14 @@ async function testGrow(ruleView, ui, manager) {
 }
 
 async function testEscapeOpensSplitConsole(inspector) {
-  ok(!inspector._toolbox._splitConsole, "Console is not split.");
+  ok(!inspector.toolbox.splitConsole, "Console is not split.");
 
   info("Press escape");
-  const onSplit = inspector._toolbox.once("split-console");
+  const onSplit = inspector.toolbox.once("split-console");
   EventUtils.synthesizeKey("KEY_Escape");
   await onSplit;
 
-  ok(inspector._toolbox._splitConsole, "Console is split after pressing ESC.");
+  ok(inspector.toolbox.splitConsole, "Console is split after pressing ESC.");
 }
 
 function numberOfRules(ruleView) {

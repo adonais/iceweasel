@@ -188,7 +188,7 @@ RecordedTextureLock::RecordedTextureLock(S& aStream)
     : RecordedEventDerived(TEXTURE_LOCK) {
   ReadElement(aStream, mTextureOwnerId);
   ReadElementConstrained(aStream, mMode, OpenMode::OPEN_NONE,
-                         OpenMode::OPEN_READ_WRITE_ASYNC);
+                         OpenMode::OPEN_READ_WRITE);
   ReadElement(aStream, mInvalidContents);
 }
 
@@ -710,22 +710,25 @@ class RecordedResolveExternalSnapshot final
     : public RecordedEventDerived<RecordedResolveExternalSnapshot> {
  public:
   explicit RecordedResolveExternalSnapshot(uint64_t aSyncId,
-                                           ReferencePtr aRefPtr)
+                                           ReferencePtr aRefPtr,
+                                           const IntSize& aSize,
+                                           SurfaceFormat aFormat)
       : RecordedEventDerived(RESOLVE_EXTERNAL_SNAPSHOT),
         mSyncId(aSyncId),
-        mRefPtr(aRefPtr) {}
+        mRefPtr(aRefPtr),
+        mSize(aSize),
+        mFormat(aFormat) {}
 
   template <class S>
   MOZ_IMPLICIT RecordedResolveExternalSnapshot(S& aStream);
 
   bool PlayCanvasEvent(CanvasTranslator* aTranslator) const {
-    RefPtr<gfx::SourceSurface> snapshot =
-        aTranslator->LookupExternalSnapshot(mSyncId);
-    if (!snapshot) {
+    DrawTarget* drawTarget = aTranslator->GetCurrentDrawTarget();
+    if (!drawTarget) {
       return false;
     }
-    aTranslator->AddSourceSurface(mRefPtr, snapshot);
-    return true;
+    return aTranslator->ResolveExternalSnapshot(mSyncId, mRefPtr, mSize,
+                                                mFormat, drawTarget);
   }
 
   template <class S>
@@ -738,12 +741,16 @@ class RecordedResolveExternalSnapshot final
  private:
   uint64_t mSyncId = 0;
   ReferencePtr mRefPtr;
+  IntSize mSize;
+  SurfaceFormat mFormat = SurfaceFormat::UNKNOWN;
 };
 
 template <class S>
 void RecordedResolveExternalSnapshot::Record(S& aStream) const {
   WriteElement(aStream, mSyncId);
   WriteElement(aStream, mRefPtr);
+  WriteElement(aStream, mSize);
+  WriteElement(aStream, mFormat);
 }
 
 template <class S>
@@ -751,6 +758,9 @@ RecordedResolveExternalSnapshot::RecordedResolveExternalSnapshot(S& aStream)
     : RecordedEventDerived(RESOLVE_EXTERNAL_SNAPSHOT) {
   ReadElement(aStream, mSyncId);
   ReadElement(aStream, mRefPtr);
+  ReadElement(aStream, mSize);
+  ReadElementConstrained(aStream, mFormat, SurfaceFormat::B8G8R8A8,
+                         SurfaceFormat::UNKNOWN);
 }
 
 class RecordedRecycleBuffer final

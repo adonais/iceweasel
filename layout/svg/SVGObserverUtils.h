@@ -37,7 +37,9 @@ class SVGPaintServerFrame;
 namespace dom {
 class CanvasRenderingContext2D;
 class Element;
+class SVGFEImageElement;
 class SVGGeometryElement;
+class SVGGraphicsElement;
 class SVGMPathElement;
 }  // namespace dom
 }  // namespace mozilla
@@ -160,6 +162,7 @@ class SVGObserverUtils {
   using CanvasRenderingContext2D = dom::CanvasRenderingContext2D;
   using Element = dom::Element;
   using SVGGeometryElement = dom::SVGGeometryElement;
+  using SVGGraphicsElement = dom::SVGGraphicsElement;
   using HrefToTemplateCallback = const std::function<void(nsAString&)>&;
 
   /**
@@ -367,6 +370,17 @@ class SVGObserverUtils {
    * SVGGeometryElement that it references, if any.
    */
   static void RemoveTextPathObserver(nsIFrame* aTextPathFrame);
+
+  /**
+   * Get the SVGGraphicsElement that is referenced by aSVGFEImageElement, and
+   * make aSVGFEImageElement start observing rendering changes to that element.
+   */
+  static SVGGraphicsElement* GetAndObserveFEImageContent(
+      dom::SVGFEImageElement* aSVGFEImagrElement);
+
+  static void TraverseFEImageObserver(
+      dom::SVGFEImageElement* aSVGFEImageElement,
+      nsCycleCollectionTraversalCallback* aCB);
 
   /**
    * Get the SVGGeometryElement that is referenced by aSVGMPathElement, and

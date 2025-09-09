@@ -72,14 +72,14 @@ class CustomReviewPromptTelemetryMiddlewareTest {
     }
 
     @Test
-    fun `WHEN LeaveFeedbackButtonClicked is dispatched THEN openMozillaConnectClicked event is recorded`() {
-        assertNull(CustomReviewPrompt.openMozillaConnectClicked.testGetValue())
+    fun `WHEN LeaveFeedbackButtonClicked is dispatched THEN leaveFeedbackClicked event is recorded`() {
+        assertNull(CustomReviewPrompt.leaveFeedbackClicked.testGetValue())
 
         val store = createStore(CustomReviewPromptState.Feedback)
         store.dispatch(CustomReviewPromptAction.LeaveFeedbackButtonClicked).joinBlocking()
 
-        assertEventRecorded("open_mozilla_connect_clicked") {
-            CustomReviewPrompt.openMozillaConnectClicked.testGetValue()
+        assertEventRecorded("leave_feedback_clicked") {
+            CustomReviewPrompt.leaveFeedbackClicked.testGetValue()
         }
     }
 

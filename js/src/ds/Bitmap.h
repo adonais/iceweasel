@@ -47,6 +47,8 @@ class DenseBitmap {
     return data.appendN(0, numWords);
   }
 
+  size_t count() const { return numWords() * JS_BITS_PER_WORD; }
+
   size_t numWords() const { return data.length(); }
   uintptr_t word(size_t i) const { return data[i]; }
   uintptr_t& word(size_t i) { return data[i]; }

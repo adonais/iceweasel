@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/StaticRange.h"
+
 #include "mozilla/dom/StaticRangeBinding.h"
 #include "nsContentUtils.h"
 #include "nsINode.h"

@@ -84,7 +84,7 @@ const size_t ArenaBitmapWords = HowMany(ArenaBitmapBits, JS_BITS_PER_WORD);
 enum class ChunkKind : uint8_t {
   Invalid = 0,
   TenuredArenas,
-  MediumBuffers,
+  Buffers,
   NurseryToSpace,
   NurseryFromSpace
 };
@@ -137,7 +137,7 @@ class ChunkBase {
   }
 
   bool isTenuredChunk() const {
-    return kind == ChunkKind::TenuredArenas || kind == ChunkKind::MediumBuffers;
+    return kind == ChunkKind::TenuredArenas || kind == ChunkKind::Buffers;
   }
 
   // The store buffer for pointers from tenured things to things in this
@@ -271,6 +271,8 @@ class AtomicBitmap {
   inline bool isEmpty() const;
   inline void clear();
   inline void copyFrom(const AtomicBitmap& other);
+
+  class Iter;
 };
 
 /*
@@ -738,8 +740,8 @@ MOZ_ALWAYS_INLINE bool InCollectedNurseryRegion(const Cell* cell) {
          ChunkKind::NurseryFromSpace;
 }
 
-// Allow use before the compiler knows the derivation of JSObject, JSString, and
-// JS::BigInt.
+// Allow use before the compiler knows the derivation of JSObject, JSString,
+// JS::BigInt, and js::GetterSetter.
 MOZ_ALWAYS_INLINE bool IsInsideNursery(const JSObject* obj) {
   return IsInsideNursery(reinterpret_cast<const Cell*>(obj));
 }
@@ -748,6 +750,9 @@ MOZ_ALWAYS_INLINE bool IsInsideNursery(const JSString* str) {
 }
 MOZ_ALWAYS_INLINE bool IsInsideNursery(const JS::BigInt* bi) {
   return IsInsideNursery(reinterpret_cast<const Cell*>(bi));
+}
+MOZ_ALWAYS_INLINE bool IsInsideNursery(const js::GetterSetter* gs) {
+  return IsInsideNursery(reinterpret_cast<const Cell*>(gs));
 }
 MOZ_ALWAYS_INLINE bool InCollectedNurseryRegion(const JSObject* obj) {
   return InCollectedNurseryRegion(reinterpret_cast<const Cell*>(obj));

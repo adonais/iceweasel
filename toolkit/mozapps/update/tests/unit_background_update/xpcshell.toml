@@ -11,6 +11,8 @@ support-files = [
   "../data/xpcshellUtilsAUS.js",
 ]
 
+["test_backgroundupdate_actions.js"]
+
 ["test_backgroundupdate_exitcodes.js"]
 run-sequentially = "very high failure rate in parallel"
 

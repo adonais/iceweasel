@@ -5,9 +5,10 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "EncryptingOutputStream.h"
-#include "EncryptingOutputStream_impl.h"
 
 #include <type_traits>
+
+#include "EncryptingOutputStream_impl.h"
 #include "mozilla/MacroForEach.h"
 #include "nsStreamUtils.h"
 

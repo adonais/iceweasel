@@ -7,15 +7,15 @@
 #ifndef mozilla_dom_JSActorService_h
 #define mozilla_dom_JSActorService_h
 
+#include "mozilla/EventListenerManager.h"
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/JSActor.h"
+#include "nsIDOMEventListener.h"
+#include "nsIObserver.h"
 #include "nsIURI.h"
 #include "nsRefPtrHashtable.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "mozilla/dom/JSActor.h"
-#include "nsIObserver.h"
-#include "nsIDOMEventListener.h"
-#include "mozilla/EventListenerManager.h"
 
 namespace mozilla {
 class ErrorResult;

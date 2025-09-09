@@ -7,14 +7,14 @@
 #ifndef nsIContentInlines_h
 #define nsIContentInlines_h
 
-#include "nsIContent.h"
 #include "mozilla/dom/Document.h"
-#include "nsContentUtils.h"
-#include "nsAtom.h"
-#include "nsIFrame.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/ShadowRoot.h"
+#include "nsAtom.h"
+#include "nsContentUtils.h"
+#include "nsIContent.h"
+#include "nsIFrame.h"
 
 inline bool nsIContent::IsInHTMLDocument() const {
   return OwnerDoc()->IsHTMLDocument();

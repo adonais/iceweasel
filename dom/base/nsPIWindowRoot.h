@@ -7,8 +7,8 @@
 #ifndef nsPIWindowRoot_h__
 #define nsPIWindowRoot_h__
 
-#include "nsISupports.h"
 #include "mozilla/dom/EventTarget.h"
+#include "nsISupports.h"
 
 class nsPIDOMWindowOuter;
 class nsIControllers;

@@ -5,16 +5,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FFmpegDataEncoder.h"
-#include "PlatformEncoderModule.h"
 
 #include <utility>
 
 #include "FFmpegLog.h"
+#include "FFmpegUtils.h"
+#include "PlatformEncoderModule.h"
 #include "libavutil/error.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_media.h"
-
-#include "FFmpegUtils.h"
 
 namespace mozilla {
 
@@ -356,8 +355,7 @@ void FFmpegDataEncoder<LIBAV_VER>::ShutdownInternal() {
   DestroyFrame();
 
   if (mCodecContext) {
-    CloseCodecContext();
-    mLib->av_freep(&mCodecContext);
+    ReleaseCodecContext();
     mCodecContext = nullptr;
   }
 }
@@ -400,11 +398,18 @@ int FFmpegDataEncoder<LIBAV_VER>::OpenCodecContext(const AVCodec* aCodec,
   return mLib->avcodec_open2(mCodecContext, aCodec, aOptions);
 }
 
-void FFmpegDataEncoder<LIBAV_VER>::CloseCodecContext() {
-  MOZ_ASSERT(mCodecContext);
-
+void FFmpegDataEncoder<LIBAV_VER>::ReleaseCodecContext() {
   StaticMutexAutoLock mon(sMutex);
+  if (!mCodecContext) {
+    return;
+  }
+
+#if LIBAVCODEC_VERSION_MAJOR < 57
   mLib->avcodec_close(mCodecContext);
+  mLib->av_freep(&mCodecContext);
+#else
+  mLib->avcodec_free_context(&mCodecContext);
+#endif
 }
 
 bool FFmpegDataEncoder<LIBAV_VER>::PrepareFrame() {

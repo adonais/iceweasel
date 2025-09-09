@@ -502,7 +502,7 @@ Maybe<SnapDestination> ScrollSnapUtils::GetSnapPointForDestination(
             aSnapInfo.mSnapportSize.width) {
       calcSnapPoints.AddVerticalEdge(ScrollSnapInfo::SnapTarget{
           Some(clampedDestination.x), Nothing(), range.mSnapArea,
-          StyleScrollSnapStop::Normal, range.mTargetId});
+          StyleScrollSnapStop::Normal, ScrollSnapTargetId::None});
       break;
     }
   }
@@ -512,7 +512,7 @@ Maybe<SnapDestination> ScrollSnapUtils::GetSnapPointForDestination(
             aSnapInfo.mSnapportSize.height) {
       calcSnapPoints.AddHorizontalEdge(ScrollSnapInfo::SnapTarget{
           Nothing(), Some(clampedDestination.y), range.mSnapArea,
-          StyleScrollSnapStop::Normal, range.mTargetId});
+          StyleScrollSnapStop::Normal, ScrollSnapTargetId::None});
       break;
     }
   }

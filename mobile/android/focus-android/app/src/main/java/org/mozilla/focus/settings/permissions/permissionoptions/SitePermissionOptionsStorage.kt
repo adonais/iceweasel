@@ -179,6 +179,8 @@ class SitePermissionOptionsStorage(private val context: Context) {
         persistentStorage = SitePermissionsRules.Action.BLOCKED,
         mediaKeySystemAccess = getSitePermissionRules(SitePermission.MEDIA_KEY_SYSTEM_ACCESS),
         crossOriginStorageAccess = SitePermissionsRules.Action.ASK_TO_ALLOW,
+        localDeviceAccess = SitePermissionsRules.Action.ASK_TO_ALLOW,
+        localNetworkAccess = SitePermissionsRules.Action.ASK_TO_ALLOW,
     )
 
     private fun getSitePermissionRules(sitePermission: SitePermission): SitePermissionsRules.Action {

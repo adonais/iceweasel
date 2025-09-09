@@ -236,7 +236,14 @@ class VendorManifest(MozbuildObject):
                 "Downloading {local_file} from {url}...",
             )
 
-            self.source_host.download_single_file(url, destination)
+            if not self.source_host.download_single_file(url, destination):
+                self.log(
+                    logging.WARNING,
+                    "vendor",
+                    {"local_file": destination},
+                    "Remote file not found, {local_file} removed if it "
+                    "existed, please remove from moz.yaml",
+                )
 
         # Only one of these loops will have content, so just do them both
         for f in self.manifest["vendoring"].get("individual-files", []):

@@ -27,6 +27,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -312,9 +313,9 @@ internal fun Snackbar(
 
                     snackbarState.subMessage?.let {
                         Text(
-                            text = it,
+                            text = it.text,
                             color = colors.messageTextColor,
-                            overflow = TextOverflow.Ellipsis,
+                            overflow = it.textOverflow,
                             maxLines = 1,
                             style = FirefoxTheme.typography.caption,
                         )
@@ -356,14 +357,18 @@ private data class SnackbarColors(
 ) {
     companion object {
         val default: SnackbarColors
-            @Composable get() = SnackbarColors(
+            @Composable
+            @ReadOnlyComposable
+            get() = SnackbarColors(
                 messageTextColor = FirefoxTheme.colors.textActionPrimary,
                 actionTextColor = FirefoxTheme.colors.textActionPrimary,
                 backgroundColor = FirefoxTheme.colors.actionPrimary,
             )
 
         val warning: SnackbarColors
-            @Composable get() = SnackbarColors(
+            @Composable
+            @ReadOnlyComposable
+            get() = SnackbarColors(
                 messageTextColor = FirefoxTheme.colors.textCritical,
                 actionTextColor = FirefoxTheme.colors.textPrimary,
                 backgroundColor = FirefoxTheme.colors.layer3,
@@ -396,7 +401,7 @@ private fun SnackbarHostPreview() {
                         snackbarHostState.showSnackbar(
                             snackbarState = SnackbarState(
                                 message = "Default snackbar",
-                                subMessage = "Default subMessage",
+                                subMessage = SnackbarState.SubMessage("Default subMessage"),
                                 duration = SnackbarState.Duration.Preset.Short,
                                 type = Type.Default,
                                 action = Action(
@@ -421,7 +426,7 @@ private fun SnackbarHostPreview() {
                         snackbarHostState.showSnackbar(
                             snackbarState = SnackbarState(
                                 message = "Warning snackbar",
-                                subMessage = "Default subMessage",
+                                subMessage = SnackbarState.SubMessage("Default subMessage"),
                                 duration = SnackbarState.Duration.Preset.Short,
                                 type = Type.Warning,
                                 action = Action(

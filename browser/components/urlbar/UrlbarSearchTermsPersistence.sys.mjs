@@ -124,8 +124,8 @@ class _UrlbarSearchTermsPersistence {
   }
 
   /**
-   * Determines if the URIs represent an application provided search
-   * engine results page (SERP) and retrieves the search terms used.
+   * Determines if the URIs represent an config search engine
+   * results page (SERP) and retrieves the search terms used.
    *
    * @param {nsIURI} uri
    *   The primary URI that is checked to determine if it matches the expected
@@ -153,13 +153,16 @@ class _UrlbarSearchTermsPersistence {
     let provider = this.#getProviderInfoForURL(uri.spec);
     if (provider) {
       let result = Services.search.parseSubmissionURL(uri.spec);
-      if (!result.engine?.isAppProvided || !this.isDefaultPage(uri, provider)) {
+      if (
+        !result.engine?.isConfigEngine ||
+        !this.isDefaultPage(uri, provider)
+      ) {
         return "";
       }
       searchTerm = result.terms;
     } else {
       let result = Services.search.parseSubmissionURL(uri.spec);
-      if (!result.engine?.isAppProvided) {
+      if (!result.engine?.isConfigEngine) {
         return "";
       }
       searchTerm = result.engine.searchTermFromResult(uri);
@@ -395,7 +398,7 @@ class _UrlbarSearchTermsPersistence {
       return null;
     }
     let result = Services.search.parseSubmissionURL(url);
-    if (!result.engine?.isAppProvided) {
+    if (!result.engine?.isConfigEngine) {
       return null;
     }
     return {

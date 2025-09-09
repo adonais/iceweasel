@@ -4,6 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CompilationInfo.h"
+
 #include "CompilationMessage.h"
 #include "ShaderModule.h"
 #include "mozilla/dom/WebGPUBinding.h"

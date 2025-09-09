@@ -6,10 +6,10 @@
 #ifndef txXPathTreeWalker_h__
 #define txXPathTreeWalker_h__
 
-#include "txCore.h"
-#include "txXPathNode.h"
 #include "nsIContentInlines.h"
 #include "nsTArray.h"
+#include "txCore.h"
+#include "txXPathNode.h"
 
 class nsAtom;
 

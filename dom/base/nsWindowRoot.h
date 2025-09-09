@@ -11,11 +11,11 @@ class nsIGlobalObject;
 
 #include "mozilla/Attributes.h"
 #include "mozilla/EventListenerManager.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsHashKeys.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsPIWindowRoot.h"
-#include "nsCycleCollectionParticipant.h"
 #include "nsTHashSet.h"
-#include "nsHashKeys.h"
 
 class nsWindowRoot final : public nsPIWindowRoot {
  public:

@@ -19,7 +19,7 @@ Animation inspector
 
 The Page Inspector's :ref:`Animations view <page_inspector_ui_tour_animations_view>` displays animations in the page synchronized along a timeline, with a draggable widget you can use to move to any point in the timeline and see the page at that point.
 
-It displays animations created using `CSS transitions <https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Transitions>`_, `CSS @keyframes rules <https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Animations/Using_CSS_animations>`_, or the `Web Animations API <https://developer.mozilla.org/en-US/docs/Web/API/Web_Animations_API>`_. Starting in Firefox 48, it will show animations applied to the `::before <https://developer.mozilla.org/en-US/docs/Web/CSS/::before>`_ and `::after <https://developer.mozilla.org/en-US/docs/Web/CSS/::after>`_ pseudo-elements.
+It displays animations created using `CSS transitions <https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Transitions>`_, `CSS @keyframes rules <https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Animations/Using_CSS_animations>`_, or the `Web Animations API <https://developer.mozilla.org/en-US/docs/Web/API/Web_Animations_API>`_, including animations applied to the `::before <https://developer.mozilla.org/en-US/docs/Web/CSS/::before>`_ and `::after <https://developer.mozilla.org/en-US/docs/Web/CSS/::after>`_ pseudo-elements.
 
 To see how it works, we'll walk through an example. The box below contains a grayscale icon, representing `Firefox Developer Edition <https://www.mozilla.org/en-US/firefox/developer/>`_. If you click the icon, it enlarges and changes to color, and the name of the browser appears. Click the icon again to reverse the effect.
 
@@ -163,7 +163,7 @@ Finally, if you click inside the bar at the top of the timeline, you get a scrub
 Further information about animation compositing
 -----------------------------------------------
 
-If you open `animation-inspector-compositing.html <https://firefox-devtools.github.io/devtools-examples/animation-inspector/animation-inspector-compositing.html>`_ and click the red rectangle, a simple `opacity <https://developer.mozilla.org/en-US/docs/Web/CSS/opacity>`_ animation will start. If you look at this in the Animation Inspector in Firefox 49+, you'll see that:
+If you open `animation-inspector-compositing.html <https://firefox-devtools.github.io/devtools-examples/animation-inspector/animation-inspector-compositing.html>`_ and click the red rectangle, a simple `opacity <https://developer.mozilla.org/en-US/docs/Web/CSS/opacity>`_ animation will start. If you look at this in the Animation Inspector, you'll see that:
 
 
 - The white lightning bolt icon now indicates whether all the animation properties have been optimized by running them through the compositor, where possible.

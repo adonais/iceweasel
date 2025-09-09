@@ -290,6 +290,10 @@ void MacroAssembler::mulPtr(Register rhs, Register srcDest) {
   imulq(rhs, srcDest);
 }
 
+void MacroAssembler::mulPtr(ImmWord rhs, Register srcDest) {
+  mul64(Imm64(rhs.value), Register64(srcDest));
+}
+
 void MacroAssembler::mul64(Imm64 imm, const Register64& dest,
                            const Register temp) {
   MOZ_ASSERT(temp == InvalidReg);

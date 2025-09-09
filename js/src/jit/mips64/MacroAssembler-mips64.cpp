@@ -506,6 +506,34 @@ void MacroAssemblerMIPS64::ma_addPtrTestCarry(Condition cond, Register rd,
   }
 }
 
+void MacroAssemblerMIPS64::ma_addPtrTestSigned(Condition cond, Register rd,
+                                               Register rj, Register rk,
+                                               Label* taken) {
+  MOZ_ASSERT(cond == Assembler::Signed || cond == Assembler::NotSigned);
+
+  as_daddu(rd, rj, rk);
+  ma_b(rd, rd, taken, cond);
+}
+
+void MacroAssemblerMIPS64::ma_addPtrTestSigned(Condition cond, Register rd,
+                                               Register rj, Imm32 imm,
+                                               Label* taken) {
+  MOZ_ASSERT(cond == Assembler::Signed || cond == Assembler::NotSigned);
+
+  ma_daddu(rd, rj, imm);
+  ma_b(rd, rd, taken, cond);
+}
+
+void MacroAssemblerMIPS64::ma_addPtrTestSigned(Condition cond, Register rd,
+                                               Register rj, ImmWord imm,
+                                               Label* taken) {
+  MOZ_ASSERT(cond == Assembler::Signed || cond == Assembler::NotSigned);
+
+  SecondScratchRegisterScope scratch2(asMasm());
+  ma_li(scratch2, imm);
+  ma_addPtrTestSigned(cond, rd, rj, scratch2, taken);
+}
+
 // Subtract.
 void MacroAssemblerMIPS64::ma_dsubu(Register rd, Register rs, Imm32 imm) {
   if (Imm16::IsInSignedRange(-imm.value)) {
@@ -759,6 +787,25 @@ FaultingCodeOffset MacroAssemblerMIPS64::ma_store(
       MOZ_CRASH("Invalid argument for ma_store");
   }
   return fco;
+}
+
+void MacroAssemblerMIPS64Compat::computeScaledAddress32(
+    const BaseIndex& address, Register dest) {
+  Register base = address.base;
+  Register index = address.index;
+  int32_t shift = Imm32::ShiftOf(address.scale).value;
+  ScratchRegisterScope scratch(asMasm());
+  if (shift && base == zero) {
+    MOZ_ASSERT(shift <= 4);
+    ma_sll(dest, index, Imm32(shift));
+  } else if (shift) {
+    Register tmp = dest == base ? scratch : dest;
+    MOZ_ASSERT(shift <= 4);
+    ma_sll(tmp, index, Imm32(shift));
+    as_addu(dest, base, tmp);
+  } else {
+    as_addu(dest, base, index);
+  }
 }
 
 void MacroAssemblerMIPS64Compat::computeScaledAddress(const BaseIndex& address,
@@ -1113,13 +1160,23 @@ FaultingCodeOffset MacroAssemblerMIPS64::ma_ss(FloatRegister ft,
 }
 
 void MacroAssemblerMIPS64::ma_pop(FloatRegister f) {
-  as_ldc1(f, StackPointer, 0);
+  if (f.isDouble()) {
+    as_ldc1(f, StackPointer, 0);
+  } else {
+    MOZ_ASSERT(f.isSingle(), "simd128 not supported");
+    as_lwc1(f, StackPointer, 0);
+  }
   as_daddiu(StackPointer, StackPointer, sizeof(double));
 }
 
 void MacroAssemblerMIPS64::ma_push(FloatRegister f) {
   as_daddiu(StackPointer, StackPointer, -int32_t(sizeof(double)));
-  as_sdc1(f, StackPointer, 0);
+  if (f.isDouble()) {
+    as_sdc1(f, StackPointer, 0);
+  } else {
+    MOZ_ASSERT(f.isSingle(), "simd128 not supported");
+    as_swc1(f, StackPointer, 0);
+  }
 }
 
 bool MacroAssemblerMIPS64Compat::buildOOLFakeExitFrame(void* fakeReturnAddr) {
@@ -2340,27 +2397,29 @@ void MacroAssembler::PushBoxed(FloatRegister reg) {
 }
 
 void MacroAssembler::wasmBoundsCheck32(Condition cond, Register index,
-                                       Register boundsCheckLimit, Label* ok) {
-  ma_b(index, boundsCheckLimit, ok, cond);
+                                       Register boundsCheckLimit,
+                                       Label* label) {
+  ma_b(index, boundsCheckLimit, label, cond);
 }
 
 void MacroAssembler::wasmBoundsCheck32(Condition cond, Register index,
-                                       Address boundsCheckLimit, Label* ok) {
+                                       Address boundsCheckLimit, Label* label) {
   SecondScratchRegisterScope scratch2(*this);
   load32(boundsCheckLimit, scratch2);
-  ma_b(index, scratch2, ok, cond);
+  ma_b(index, scratch2, label, cond);
 }
 
 void MacroAssembler::wasmBoundsCheck64(Condition cond, Register64 index,
-                                       Register64 boundsCheckLimit, Label* ok) {
-  ma_b(index.reg, boundsCheckLimit.reg, ok, cond);
+                                       Register64 boundsCheckLimit,
+                                       Label* label) {
+  ma_b(index.reg, boundsCheckLimit.reg, label, cond);
 }
 
 void MacroAssembler::wasmBoundsCheck64(Condition cond, Register64 index,
-                                       Address boundsCheckLimit, Label* ok) {
+                                       Address boundsCheckLimit, Label* label) {
   SecondScratchRegisterScope scratch2(*this);
   loadPtr(boundsCheckLimit, scratch2);
-  ma_b(index.reg, scratch2, ok, cond);
+  ma_b(index.reg, scratch2, label, cond);
 }
 
 void MacroAssembler::widenInt32(Register r) {
@@ -2372,6 +2431,7 @@ void MacroAssembler::wasmTruncateDoubleToUInt32(FloatRegister input,
                                                 Register output,
                                                 bool isSaturating,
                                                 Label* oolEntry) {
+  branchDouble(Assembler::DoubleUnordered, input, input, oolEntry);
   as_truncld(ScratchDoubleReg, input);
   moveFromDouble(ScratchDoubleReg, output);
   ma_dsrl(ScratchRegister, output, Imm32(32));
@@ -2383,6 +2443,7 @@ void MacroAssembler::wasmTruncateFloat32ToUInt32(FloatRegister input,
                                                  Register output,
                                                  bool isSaturating,
                                                  Label* oolEntry) {
+  branchFloat(Assembler::DoubleUnordered, input, input, oolEntry);
   as_truncls(ScratchDoubleReg, input);
   moveFromDouble(ScratchDoubleReg, output);
   ma_dsrl(ScratchRegister, output, Imm32(32));
@@ -2440,6 +2501,9 @@ void MacroAssembler::wasmTruncateDoubleToUInt64(
 
   Label done;
 
+  // Guard against NaN.
+  branchDouble(Assembler::DoubleUnordered, input, input, oolEntry);
+
   as_truncld(ScratchDoubleReg, input);
   // ma_li INT64_MAX
   ma_li(SecondScratchReg, Imm32(-1));
@@ -2494,6 +2558,9 @@ void MacroAssembler::wasmTruncateFloat32ToUInt64(
   Register output = output_.reg;
 
   Label done;
+
+  // Guard against NaN.
+  branchFloat(Assembler::DoubleUnordered, input, input, oolEntry);
 
   as_truncls(ScratchDoubleReg, input);
   // ma_li INT64_MAX

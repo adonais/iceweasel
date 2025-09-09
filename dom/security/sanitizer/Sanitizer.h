@@ -12,9 +12,9 @@
 #include "mozilla/dom/SanitizerBinding.h"
 #include "mozilla/dom/SanitizerTypes.h"
 #include "mozilla/dom/StaticAtomSet.h"
-#include "nsString.h"
 #include "nsIGlobalObject.h"
 #include "nsIParserUtils.h"
+#include "nsString.h"
 
 // XXX(Bug 1673929) This is not really needed here, but the generated
 // SanitizerBinding.cpp needs it and does not include it.

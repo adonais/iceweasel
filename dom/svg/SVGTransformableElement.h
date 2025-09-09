@@ -9,10 +9,10 @@
 
 #include "gfxMatrix.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/SVGAnimatedTransformList.h"
 #include "mozilla/dom/SVGElement.h"
 #include "mozilla/gfx/Matrix.h"
-#include "mozilla/UniquePtr.h"
 
 namespace mozilla::dom {
 

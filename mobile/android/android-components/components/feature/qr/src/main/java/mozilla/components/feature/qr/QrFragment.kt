@@ -71,6 +71,7 @@ import mozilla.components.feature.qr.views.CustomViewFinder
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.content.hasCamera
 import mozilla.components.support.ktx.android.content.isPermissionGranted
+import mozilla.components.support.utils.ext.handleBackEvents
 import java.io.Serializable
 import java.util.Collections
 import java.util.concurrent.Executor
@@ -184,6 +185,11 @@ class QrFragment : Fragment() {
     }
 
     /**
+     * [Surface] used in the camera.
+     */
+    private var surface: Surface? = null
+
+    /**
      * An additional thread for running tasks that shouldn't block the UI.
      * A [Handler] for running tasks in the background.
      */
@@ -239,7 +245,24 @@ class QrFragment : Fragment() {
         }
     }
 
+    @Suppress("DEPRECATION")
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        // Release the keyboard
+        requireActivity().window.setSoftInputMode(
+            WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED or
+            WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE,
+        )
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        // Don't let the keyboard push the UI around
+        requireActivity().window.setSoftInputMode(
+            WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING or
+            WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN, // <- keep IME closed
+        )
+
         return inflater.inflate(R.layout.fragment_layout, container, false)
     }
 
@@ -250,6 +273,15 @@ class QrFragment : Fragment() {
 
         CustomViewFinder.setMessage(scanMessage)
         qrState = STATE_FIND_QRCODE
+
+        val root = getView()
+        root?.isFocusableInTouchMode = true
+        root?.requestFocus()
+
+        view.handleBackEvents {
+            stopServices()
+            scanCompleteListener?.onScanComplete("")
+        }
     }
 
     override fun onResume() {
@@ -268,9 +300,7 @@ class QrFragment : Fragment() {
     }
 
     override fun onPause() {
-        closeCamera()
-        stopBackgroundThread()
-        stopExecutorService()
+        stopServices()
         super.onPause()
     }
 
@@ -279,6 +309,12 @@ class QrFragment : Fragment() {
         qrState = STATE_FIND_QRCODE
 
         super.onStop()
+    }
+
+    private fun stopServices() {
+        closeCamera()
+        stopBackgroundThread()
+        stopExecutorService()
     }
 
     internal fun maybeStartBackgroundThread() {
@@ -485,6 +521,8 @@ class QrFragment : Fragment() {
             imageReader?.close()
             imageReader = null
 
+            surface?.release()
+
             // captureSession should be closed as a last step in case background executor terminated
             captureSession?.close()
             captureSession = null
@@ -541,16 +579,21 @@ class QrFragment : Fragment() {
         // We configure the size of default buffer to be the size of camera preview we want.
         texture?.setDefaultBufferSize(size.width, size.height)
 
-        val surface = Surface(texture)
+        surface = Surface(texture)
 
         // If image reader's surface is null, stop here.
         val imageSurface = imageReader?.surface ?: return
+
+        if (surface == null) {
+            scanCompleteListener?.onScanComplete("")
+            return
+        }
 
         handleCaptureException("Failed to create camera preview session") {
             cameraDevice?.let {
                 previewRequestBuilder = it.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
                     addTarget(imageSurface)
-                    addTarget(surface)
+                    addTarget(surface!!)
                 }
 
                 val captureCallback = object : CameraCaptureSession.CaptureCallback() {}
@@ -588,7 +631,7 @@ class QrFragment : Fragment() {
                         logger.error("Failed to configure CameraCaptureSession")
                     }
                 }
-                createCaptureSessionCompat(it, imageSurface, surface, stateCallback)
+                createCaptureSessionCompat(it, imageSurface, surface!!, stateCallback)
             }
         }
     }

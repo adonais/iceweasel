@@ -121,7 +121,7 @@ public:
       {%- for a in arguments %}
       {{ a.ty.type_name }} {{ a.name }},
       {%- endfor %}
-      {%- if let Some(async_data) = meth.async_data %}
+      {%- if let CallbackMethodKind::Async(async_data) = meth.kind %}
       {{ async_data.complete_callback_type_name }} aUniffiCompleteCallback,
       uint64_t aUniffiCallbackData,
       {%- endif %}
@@ -130,7 +130,7 @@ public:
         {%- filter remove_trailing_comma %}
         "{{ cbi.name }}.{{ meth.fn_name }}",
         aUniffiHandle,
-        {%- if meth.is_async() %}
+        {%- if let CallbackMethodKind::Async(_) = meth.kind %}
         aUniffiCompleteCallback,
         aUniffiCallbackData
         {%- endif %}
@@ -163,7 +163,7 @@ public:
     {%- endfor %}
 
     RefPtr<dom::Promise> result = aJsHandler->CallAsync(mUniffiHandle.IntoRust(), {{ method_index }}, uniffiArgs, aError);
-    {%- if meth.is_async() %}
+    {%- if let CallbackMethodKind::Async(_) = meth.kind %}
     return result.forget();
     {%- else %}
     {# Return `nullptr` for fire-and-forget callbacks, to avoid registering a promise result listener #}
@@ -172,8 +172,8 @@ public:
   }
 };
 
-{% match meth.async_data -%}
-{% when None %}
+{% match meth.kind -%}
+{% when CallbackMethodKind::FireAndForget %}
 // Sync callback methods are always wrapped to be fire-and-forget style async callbacks.  This means
 // we schedule the callback asynchronously and ignore the return value and any exceptions thrown.
 extern "C" void {{ meth.fn_name }}(
@@ -187,7 +187,7 @@ extern "C" void {{ meth.fn_name }}(
   UniquePtr<AsyncCallbackMethodHandlerBase> handler = MakeUnique<{{ meth.handler_class_name }}>(aUniffiHandle{% for a in arguments %}, {{ a.name }}{%- endfor %});
   AsyncCallbackMethodHandlerBase::ScheduleAsyncCall(std::move(handler), &{{ cbi.handler_var }});
 }
-{% when Some(async_data) -%}
+{% when CallbackMethodKind::Async(async_data) -%}
 extern "C" void {{ meth.fn_name }}(
   uint64_t aUniffiHandle,
   {%- for a in meth.arguments %}

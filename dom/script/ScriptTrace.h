@@ -7,9 +7,9 @@
 #ifndef mozilla_dom_ScriptTrace_h
 #define mozilla_dom_ScriptTrace_h
 
+#include "js/loader/ScriptLoadRequest.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "js/loader/ScriptLoadRequest.h"
 #include "mozilla/dom/ScriptLoadContext.h"
 
 // This macro is used to wrap a tracing mechanism which is scheduling events

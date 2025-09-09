@@ -281,6 +281,11 @@ class BackgroundParentImpl : public PBackgroundParent {
   mozilla::ipc::IPCResult RecvPClientManagerConstructor(
       PClientManagerParent* aActor) override;
 
+  mozilla::ipc::IPCResult RecvCreateBoundStorageKeyParent(
+      Endpoint<::mozilla::dom::cache::PBoundStorageKeyParent>&& aEndpoint,
+      const Namespace& aNamespace,
+      const PrincipalInfo& aPrincipalInfo) override;
+
   mozilla::ipc::IPCResult RecvCreateMIDIPort(
       Endpoint<PMIDIPortParent>&& aEndpoint, const MIDIPortInfo& aPortInfo,
       const bool& aSysexEnabled) override;

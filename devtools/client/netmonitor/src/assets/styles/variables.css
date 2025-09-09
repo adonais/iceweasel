@@ -7,9 +7,9 @@
   /* HTTP status codes */
   --status-code-color-1xx: var(--theme-highlight-blue);
   --status-code-color-2xx: var(--theme-highlight-green);
-  --status-code-color-3xx: transparent;
   --status-code-color-4xx: var(--theme-highlight-pink);
   --status-code-color-5xx: var(--theme-highlight-red);
+  --status-code-color-redirect-or-cache: transparent;
 
   /* Colors for timing markers */
   --timing-marker-color-opacity: 0.75;

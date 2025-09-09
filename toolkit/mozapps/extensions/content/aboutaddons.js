@@ -13,6 +13,7 @@ ChromeUtils.defineESModuleGetters(this, {
   AMBrowserExtensionsImport: "resource://gre/modules/AddonManager.sys.mjs",
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   AddonRepository: "resource://gre/modules/addons/AddonRepository.sys.mjs",
+  AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
   BuiltInThemes: "resource:///modules/BuiltInThemes.sys.mjs",
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
   ColorwayThemeMigration:
@@ -292,6 +293,14 @@ async function getAddonMessageInfo(
       messageArgs: { name, version: Services.appinfo.version },
       type: "error",
     };
+  } else if (
+    (Cu.isInAutomation || !AppConstants.MOZILLA_OFFICIAL) &&
+    Services.prefs.getBoolPref("extensions.ui.disableUnsignedWarnings", false)
+  ) {
+    // In local builds, when this pref is set, pretend the file is correctly
+    // signed even if it isn't so that the UI looks like what users would
+    // normally see.
+    return {};
   } else if (!isCorrectlySigned(addon)) {
     return {
       linkSumoPage: "unsigned-addons",

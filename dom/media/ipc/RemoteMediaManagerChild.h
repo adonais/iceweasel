@@ -14,13 +14,18 @@
 #include "ipc/EnumSerializer.h"
 #include "mozilla/EnumTypeTraits.h"
 #include "mozilla/PRemoteMediaManagerChild.h"
-#include "mozilla/layers/VideoBridgeUtils.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
+#include "mozilla/layers/VideoBridgeUtils.h"
 
 namespace mozilla {
 
+namespace dom {
+class MediaKeys;
+}
+
 class PMFCDMChild;
 class PMFMediaEngineChild;
+class RemoteCDMChild;
 class RemoteDecoderChild;
 class RemoteMediaDataEncoderChild;
 
@@ -68,6 +73,11 @@ class RemoteMediaManagerChild final
       const CreateDecoderParams& aParams, RemoteMediaIn aLocation);
   static RefPtr<PlatformDecoderModule::CreateDecoderPromise> CreateVideoDecoder(
       const CreateDecoderParams& aParams, RemoteMediaIn aLocation);
+  static RefPtr<RemoteCDMChild> CreateCDM(RemoteMediaIn aLocation,
+                                          dom::MediaKeys* aKeys,
+                                          const nsAString& aKeySystem,
+                                          bool aDistinctiveIdentifierRequired,
+                                          bool aPersistentStateRequired);
 
   static media::EncodeSupportSet Supports(RemoteMediaIn aLocation,
                                           CodecType aCodec);
@@ -93,6 +103,9 @@ class RemoteMediaManagerChild final
       gfx::ColorRange aColorRange) override;
   void DeallocateSurfaceDescriptor(
       const SurfaceDescriptorGPUVideo& aSD) override;
+
+  void OnSetCurrent(const SurfaceDescriptorGPUVideo& aSD) override;
+
   bool AllocShmem(size_t aSize, mozilla::ipc::Shmem* aShmem) override {
     return PRemoteMediaManagerChild::AllocShmem(aSize, aShmem);
   }
@@ -140,7 +153,7 @@ class RemoteMediaManagerChild final
       const CreateDecoderParams::OptionSet& aOptions,
       const Maybe<layers::TextureFactoryIdentifier>& aIdentifier,
       const Maybe<uint64_t>& aMediaEngineId,
-      const Maybe<TrackingId>& aTrackingId);
+      const Maybe<TrackingId>& aTrackingId, PRemoteCDMChild* aCDM);
   bool DeallocPRemoteDecoderChild(PRemoteDecoderChild* actor);
 
   PMFMediaEngineChild* AllocPMFMediaEngineChild();

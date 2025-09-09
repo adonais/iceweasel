@@ -9,11 +9,11 @@
 
 #import "components/capturer/RTCCameraVideoCapturer.h"
 
+#include "PerformanceRecorder.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "modules/video_capture/video_capture_impl.h"
 #include "mozilla/Maybe.h"
-#include "PerformanceRecorder.h"
 
 @class VideoCaptureAdapter;
 
@@ -29,7 +29,7 @@ class VideoCaptureAvFoundation : public VideoCaptureImpl {
   VideoCaptureAvFoundation(AVCaptureDevice* _Nonnull aDevice);
   virtual ~VideoCaptureAvFoundation();
 
-  static rtc::scoped_refptr<VideoCaptureModule> Create(
+  static webrtc::scoped_refptr<VideoCaptureModule> Create(
       const char* _Nullable aDeviceUniqueIdUTF8);
 
   // Implementation of VideoCaptureImpl. Single threaded.

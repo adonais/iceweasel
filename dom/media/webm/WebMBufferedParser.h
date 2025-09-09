@@ -6,11 +6,11 @@
 #if !defined(WebMBufferedParser_h_)
 #  define WebMBufferedParser_h_
 
-#  include "nsISupportsImpl.h"
-#  include "nsTArray.h"
-#  include "mozilla/Mutex.h"
 #  include "MediaResource.h"
 #  include "MediaResult.h"
+#  include "mozilla/Mutex.h"
+#  include "nsISupportsImpl.h"
+#  include "nsTArray.h"
 
 namespace mozilla {
 

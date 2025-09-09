@@ -23,7 +23,7 @@ import {
 import { isVisible } from "../../utils/ui";
 
 import { getHiddenTabs } from "../../utils/tabs";
-import { isPretty, getFileURL } from "../../utils/source";
+import { getFileURL } from "../../utils/source";
 import actions from "../../actions/index";
 
 import Tab from "./Tab";
@@ -133,7 +133,7 @@ class Tabs extends PureComponent {
   }
 
   getIconClass(source) {
-    if (isPretty(source)) {
+    if (source.isPrettyPrinted) {
       return "prettyPrint";
     }
     if (this.props.blackBoxRanges[source.url]) {

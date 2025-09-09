@@ -11,7 +11,9 @@ function test() {
     Math.random() + "\u2028Second line\u2029Second paragraph\u2027";
 
   let tab = BrowserTestUtils.addTab(gBrowser);
-  promiseBrowserLoaded(tab.linkedBrowser).then(() => {
+  BrowserTestUtils.browserLoaded(tab.linkedBrowser, {
+    wantLoad: "about:blank",
+  }).then(() => {
     ss.setCustomTabValue(tab, "bug485563", uniqueValue);
     let tabState = JSON.parse(ss.getTabState(tab));
     is(

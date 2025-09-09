@@ -18,6 +18,7 @@ import org.mozilla.fenix.browser.store.BrowserScreenAction.ClosingLastPrivateTab
 import org.mozilla.fenix.browser.store.BrowserScreenAction.EnvironmentCleared
 import org.mozilla.fenix.browser.store.BrowserScreenAction.EnvironmentRehydrated
 import org.mozilla.fenix.browser.store.BrowserScreenStore.Environment
+import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.theme.ThemeManager
 
 /**
@@ -88,7 +89,7 @@ class BrowserScreenMiddleware(
                     R.attr.textOnColorPrimary,
                     environment.context,
                 ),
-                positiveButtonRadius = environment.context.resources.getDimensionPixelSize(
+                positiveButtonRadius = environment.context.pixelSizeFor(
                     R.dimen.tab_corner_radius,
                 ).toFloat(),
             ),

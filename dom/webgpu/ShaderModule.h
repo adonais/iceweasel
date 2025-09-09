@@ -6,9 +6,9 @@
 #ifndef GPU_ShaderModule_H_
 #define GPU_ShaderModule_H_
 
+#include "ObjectModel.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
 #include "nsWrapperCache.h"
-#include "ObjectModel.h"
 
 namespace mozilla::webgpu {
 

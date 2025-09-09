@@ -7,15 +7,14 @@
 #ifndef dom_ipc_SharedMap_h
 #define dom_ipc_SharedMap_h
 
-#include "mozilla/dom/MozSharedMapBinding.h"
-
-#include "mozilla/dom/ipc/StructuredCloneData.h"
-#include "mozilla/ipc/SharedMemoryHandle.h"
-#include "mozilla/ipc/SharedMemoryMapping.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
+#include "mozilla/dom/MozSharedMapBinding.h"
+#include "mozilla/dom/ipc/StructuredCloneData.h"
+#include "mozilla/ipc/SharedMemoryHandle.h"
+#include "mozilla/ipc/SharedMemoryMapping.h"
 #include "nsClassHashtable.h"
 #include "nsTArray.h"
 

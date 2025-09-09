@@ -7,9 +7,9 @@
 #ifndef DOM_NOTIFICATION_NOTIFICATIONPARENT_H_
 #define DOM_NOTIFICATION_NOTIFICATIONPARENT_H_
 
+#include "mozilla/dom/DOMTypes.h"
 #include "mozilla/dom/notification/PNotificationParent.h"
 #include "mozilla/ipc/PBackgroundParent.h"
-#include "mozilla/dom/DOMTypes.h"
 
 namespace mozilla::dom::notification {
 

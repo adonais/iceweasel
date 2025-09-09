@@ -6,18 +6,17 @@
 
 #include "ServiceWorker.h"
 
-#include "mozilla/dom/Document.h"
-#include "nsGlobalWindowInner.h"
-#include "nsPIDOMWindow.h"
 #include "ServiceWorkerChild.h"
 #include "ServiceWorkerCloneData.h"
 #include "ServiceWorkerManager.h"
 #include "ServiceWorkerPrivate.h"
 #include "ServiceWorkerRegistration.h"
 #include "ServiceWorkerUtils.h"
-
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/ClientIPCTypes.h"
 #include "mozilla/dom/ClientState.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/MessagePortBinding.h"
 #include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/Promise.h"
@@ -25,8 +24,8 @@
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/StaticPrefs_dom.h"
+#include "nsGlobalWindowInner.h"
+#include "nsPIDOMWindow.h"
 
 #ifdef XP_WIN
 #  undef PostMessage

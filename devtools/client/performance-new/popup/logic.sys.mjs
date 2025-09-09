@@ -22,7 +22,9 @@ import { createLazyLoaders } from "resource://devtools/client/performance-new/sh
 
 const lazy = createLazyLoaders({
   PanelMultiView: () =>
-    ChromeUtils.importESModule("resource:///modules/PanelMultiView.sys.mjs"),
+    ChromeUtils.importESModule(
+      "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs"
+    ),
   Background: () =>
     ChromeUtils.importESModule(
       "resource://devtools/client/performance-new/shared/background.sys.mjs"

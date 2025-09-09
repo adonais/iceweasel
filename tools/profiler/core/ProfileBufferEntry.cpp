@@ -16,6 +16,7 @@
 #include "js/ProfilingFrameIterator.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
+#include "mozilla/Base64.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/Logging.h"
 #include "mozilla/JSONStringWriteFuncs.h"
@@ -653,6 +654,7 @@ struct ProfileSample {
   double mTime = 0.0;
   Maybe<double> mResponsiveness;
   RunningTimes mRunningTimes;
+  Maybe<int32_t> mArgumentValues;
 };
 
 // Write CPU measurements with "Delta" unit, which is some amount of work that
@@ -667,7 +669,8 @@ static void WriteSample(SpliceableJSONWriter& aWriter,
   enum Schema : uint32_t {
     STACK = 0,
     TIME = 1,
-    EVENT_DELAY = 2
+    EVENT_DELAY = 2,
+    ARGUMENT_VALUES = 3
 #define RUNNING_TIME_SCHEMA(index, name, unit, jsonProperty) , name
     PROFILER_FOR_EACH_RUNNING_TIME(RUNNING_TIME_SCHEMA)
 #undef RUNNING_TIME_SCHEMA
@@ -681,6 +684,10 @@ static void WriteSample(SpliceableJSONWriter& aWriter,
 
   if (aSample.mResponsiveness.isSome()) {
     writer.DoubleElement(EVENT_DELAY, *aSample.mResponsiveness);
+  }
+
+  if (aSample.mArgumentValues.isSome()) {
+    writer.IntElement(ARGUMENT_VALUES, *aSample.mArgumentValues);
   }
 
 #define RUNNING_TIME_STREAM(index, name, unit, jsonProperty) \
@@ -1024,6 +1031,7 @@ struct StreamingParametersForThread {
   UniqueStacks& mUniqueStacks;
   ThreadStreamingContext::PreviousStackState& mPreviousStackState;
   uint32_t& mPreviousStack;
+  Maybe<SpliceableJSONWriter&> mShapesWriter;
 
   StreamingParametersForThread(
       SpliceableJSONWriter& aWriter, UniqueStacks& aUniqueStacks,
@@ -1033,6 +1041,17 @@ struct StreamingParametersForThread {
         mUniqueStacks(aUniqueStacks),
         mPreviousStackState(aPreviousStackState),
         mPreviousStack(aPreviousStack) {}
+
+  StreamingParametersForThread(
+      SpliceableJSONWriter& aWriter, UniqueStacks& aUniqueStacks,
+      ThreadStreamingContext::PreviousStackState& aPreviousStackState,
+      uint32_t& aPreviousStack, SpliceableJSONWriter& aShapesWriter)
+      : mWriter(aWriter),
+        mUniqueStacks(aUniqueStacks),
+        mPreviousStackState(aPreviousStackState),
+        mPreviousStack(aPreviousStack) {
+    mShapesWriter.emplace(aShapesWriter);
+  }
 };
 
 #ifdef MOZ_EXECUTION_TRACING
@@ -1059,6 +1078,7 @@ void ProfileBuffer::MaybeStreamExecutionTraceToJSON(
 
     SpliceableJSONWriter& writer = streamingParameters->mWriter;
     UniqueStacks& uniqueStacks = streamingParameters->mUniqueStacks;
+    SpliceableJSONWriter& shapesWriter = *streamingParameters->mShapesWriter;
 
     mozilla::Vector<UniqueStacks::StackKey> frameStack;
 
@@ -1085,6 +1105,7 @@ void ProfileBuffer::MaybeStreamExecutionTraceToJSON(
         continue;
       }
 
+      Maybe<int32_t> maybeArguments;
       if (event.kind == JS::ExecutionTrace::EventKind::FunctionEnter) {
         HashMap<uint32_t, size_t>::Ptr functionName =
             context.atoms.lookup(event.functionEvent.functionNameId);
@@ -1135,6 +1156,7 @@ void ProfileBuffer::MaybeStreamExecutionTraceToJSON(
           continue;
         }
 
+        maybeArguments = Some(event.functionEvent.values);
       } else if (event.kind == JS::ExecutionTrace::EventKind::LabelEnter) {
         UniqueStacks::FrameKey newFrame(
             nsCString(&trace.stringBuffer[event.labelEvent.label]), true, false,
@@ -1181,7 +1203,40 @@ void ProfileBuffer::MaybeStreamExecutionTraceToJSON(
       }
 
       WriteSample(writer, ProfileSample{*stackIndex, event.time, Nothing{},
-                                        RunningTimes{}});
+                                        RunningTimes{}, maybeArguments});
+    }
+
+    if (mozilla::Base64Encode(
+            reinterpret_cast<const char*>(context.valueBuffer.begin()),
+            context.valueBuffer.length(),
+            uniqueStacks.TracedValues()) != NS_OK) {
+      writer.SetFailure("Failed to Base64 encode traced values buffer");
+    }
+
+    uint32_t expectedShapeId = 0;
+    for (const JS::ExecutionTrace::ShapeSummary shape :
+         context.shapeSummaries) {
+      MOZ_RELEASE_ASSERT(shape.id >= expectedShapeId);
+      if (shape.id > expectedShapeId) {
+        shapesWriter.NullElements(shape.id - expectedShapeId);
+      }
+      expectedShapeId = shape.id + 1;
+      shapesWriter.StartArrayElement();
+      size_t stringBufferOffset = shape.stringBufferOffset;
+
+      size_t classNameLength = strlen(&trace.stringBuffer[stringBufferOffset]);
+      shapesWriter.StringElement(mozilla::Span<char>(
+          &trace.stringBuffer[stringBufferOffset], classNameLength));
+      stringBufferOffset += classNameLength + 1;
+
+      for (uint32_t propertyIndex = 0; propertyIndex < shape.numProperties;
+           propertyIndex++) {
+        size_t len = strlen(&trace.stringBuffer[stringBufferOffset]);
+        shapesWriter.StringElement(
+            mozilla::Span<char>(&trace.stringBuffer[stringBufferOffset], len));
+        stringBufferOffset += len + 1;
+      }
+      shapesWriter.EndArray();
     }
   }
 }
@@ -1643,7 +1698,8 @@ void ProfileBuffer::StreamSamplesAndMarkersToJSON(
     if (threadData) {
       streamingParameters.emplace(
           threadData->mSamplesDataWriter, *threadData->mUniqueStacks,
-          threadData->mPreviousStackState, threadData->mPreviousStack);
+          threadData->mPreviousStackState, threadData->mPreviousStack,
+          threadData->mShapesDataWriter);
     }
     return streamingParameters;
   };

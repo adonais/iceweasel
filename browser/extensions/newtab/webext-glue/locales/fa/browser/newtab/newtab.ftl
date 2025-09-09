@@ -53,6 +53,9 @@ newtab-topsites-add-shortcut-header = میانبر جدید
 newtab-topsites-edit-topsites-header = ویرایش سایت برتر
 newtab-topsites-edit-shortcut-header = ویرایش میانبر
 newtab-topsites-add-shortcut-label = افزودن میان‌بر
+newtab-topsites-add-shortcut-title =
+    .title = افزودن میان‌بر
+    .aria-label = افزودن میان‌بر
 newtab-topsites-title-label = عنوان
 newtab-topsites-title-input =
     .placeholder = عنوان را وارد کنید
@@ -116,9 +119,6 @@ newtab-menu-save-to-pocket = ذخیره‌سازی در { -pocket-brand-name }
 newtab-menu-delete-pocket = حذف از { -pocket-brand-name }
 newtab-menu-archive-pocket = آرشیو در { -pocket-brand-name }
 newtab-menu-show-privacy-info = حامیان ما و حریم خصوصی شما
-
-## Context menu options for sponsored stories and new ad formats on New Tab.
-
 
 ## Message displayed in a modal window to explain privacy and provide context for sponsored content.
 
@@ -240,9 +240,6 @@ newtab-pocket-pocket-firefox-family = { -pocket-brand-name } بخشی از خا�
 newtab-pocket-save = ذخیره
 newtab-pocket-saved = ذخیره شد
 
-## Thumbs up and down buttons that shows over a newtab stories card thumbnail on hover.
-
-
 ## Pocket content onboarding experience dialog and modal for new users seeing the Pocket section for the first time, shown as the first item in the Pocket section.
 
 newtab-pocket-onboarding-discover = بهترین‌های وب را کشف کنید
@@ -310,15 +307,9 @@ newtab-wallpaper-dark-purple = بنفش تیره
 newtab-wallpaper-dark-green = سبز تیره
 newtab-wallpaper-brown = قهوه‌ای
 
-## Abstract
-
-
 ## Celestial
 
 newtab-wallpaper-white-mountains = کوه‌های سفید
-
-## Celestial
-
 
 ## New Tab Weather
 
@@ -328,39 +319,8 @@ newtab-wallpaper-white-mountains = کوه‌های سفید
 newtab-weather-menu-weather-display-option-simple = ساده
 newtab-weather-menu-learn-more = بیشتر بدانید
 
-## Topic Labels
-
-
 ## Topic Selection Modal
 
 newtab-topic-selection-save-button = ذخیره
 newtab-topic-selection-cancel-button = انصراف
 newtab-topic-selection-button-maybe-later = شاید بعداً
-
-## Content Feed Sections
-## "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
-## e.g. Following the travel section of stories.
-
-
-## Button to block/unblock listed topics
-## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
-## e.g. Blocked the politics section of stories.
-
-
-## Confirmation modal for blocking a section
-
-
-## Strings for custom wallpaper highlight
-
-
-## Strings for download mobile highlight
-
-
-## Strings for shortcuts highlight
-
-
-## Strings for reporting ads and content
-
-
-## Strings for trending searches
-

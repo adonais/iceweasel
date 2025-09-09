@@ -12,8 +12,8 @@
 #  include "MediaSource.h"
 #  include "TrackBuffersManager.h"
 #  include "mozilla/Atomics.h"
-#  include "mozilla/Maybe.h"
 #  include "mozilla/EventTargetAndLockCapability.h"
+#  include "mozilla/Maybe.h"
 #  include "mozilla/TaskQueue.h"
 #  include "mozilla/dom/MediaDebugInfoBinding.h"
 

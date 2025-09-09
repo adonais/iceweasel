@@ -276,6 +276,10 @@ support-files = [
 
 ["test_interactive_widget.html"]
 run-if = ["os == 'android'"]
+skip-if = [
+  "os == 'android' && android_version == '34' && processor == 'x86_64' && debug", # Bug 1982949
+  "os == 'android' && android_version == '34' && processor == 'x86_64' && opt", # Bug 1982949
+]
 
 ["test_mozPaintCount.html"]
 skip-if = ["os == 'android'"] # android: Requires plugin support

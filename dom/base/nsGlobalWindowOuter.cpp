@@ -4,27 +4,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Assertions.h"
-#include "mozilla/ScopeExit.h"
 #include "nsGlobalWindowOuter.h"
-#include "nsGlobalWindowInner.h"
 
 #include <algorithm>
 
+#include "mozilla/Assertions.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/ScopeExit.h"
+#include "nsGlobalWindowInner.h"
 
 // Local Includes
 #include "Navigator.h"
-#include "nsContentSecurityManager.h"
-#include "nsGlobalWindowOuter.h"
-#include "nsScreen.h"
-#include "nsHistory.h"
-#include "nsDOMNavigationTiming.h"
-#include "nsIDOMStorageManager.h"
-#include "nsISecureBrowserUI.h"
-#include "nsIWebProgressListener.h"
+#include "WindowDestroyedEvent.h"
+#include "WindowNamedPropertiesHandler.h"
 #include "mozilla/AntiTrackingUtils.h"
+#include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Result.h"
+#include "mozilla/StorageAccessAPIHelper.h"
 #include "mozilla/dom/AutoPrintEventDispatcher.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/BrowserChild.h"
@@ -35,12 +31,12 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/EventTarget.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
-#include "mozilla/dom/LocalStorage.h"
 #include "mozilla/dom/LSObject.h"
-#include "mozilla/dom/Storage.h"
+#include "mozilla/dom/LocalStorage.h"
 #include "mozilla/dom/MaybeCrossOriginObject.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/ProxyHandlerUtils.h"
+#include "mozilla/dom/Storage.h"
 #include "mozilla/dom/StorageEvent.h"
 #include "mozilla/dom/StorageEventBinding.h"
 #include "mozilla/dom/StorageNotifierService.h"
@@ -51,61 +47,61 @@
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowFeatures.h"  // WindowFeatures
+#include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/WindowProxyHolder.h"
-#include "mozilla/IntegerPrintfMacros.h"
-#include "mozilla/StorageAccessAPIHelper.h"
-#include "nsBaseCommandController.h"
-#include "nsError.h"
-#include "nsICookieService.h"
-#include "nsISizeOfEventTarget.h"
-#include "nsDOMJSUtils.h"
+#include "mozilla/intl/LocaleService.h"
 #include "nsArrayUtils.h"
+#include "nsBaseCommandController.h"
+#include "nsContentSecurityManager.h"
+#include "nsDOMJSUtils.h"
+#include "nsDOMNavigationTiming.h"
+#include "nsDocShellLoadState.h"
+#include "nsError.h"
+#include "nsFrameSelection.h"
+#include "nsGlobalWindowOuter.h"
+#include "nsHistory.h"
+#include "nsICookieService.h"
+#include "nsIDOMStorageManager.h"
 #include "nsIDocShellTreeOwner.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIPermissionManager.h"
 #include "nsIScriptContext.h"
+#include "nsISecureBrowserUI.h"
+#include "nsISizeOfEventTarget.h"
+#include "nsIWebProgressListener.h"
+#include "nsNetUtil.h"
+#include "nsPrintfCString.h"
+#include "nsScreen.h"
+#include "nsVariant.h"
 #include "nsWindowMemoryReporter.h"
 #include "nsWindowSizes.h"
 #include "nsWindowWatcher.h"
-#include "WindowNamedPropertiesHandler.h"
-#include "nsFrameSelection.h"
-#include "nsNetUtil.h"
-#include "nsVariant.h"
-#include "nsPrintfCString.h"
-#include "mozilla/intl/LocaleService.h"
-#include "WindowDestroyedEvent.h"
-#include "nsDocShellLoadState.h"
-#include "mozilla/dom/WindowGlobalChild.h"
 
 // Helper Classes
-#include "nsJSUtils.h"
-#include "jsapi.h"
-#include "jsfriendapi.h"
 #include "js/CallAndConstruct.h"    // JS::Call
-#include "js/friend/StackLimits.h"  // js::AutoCheckRecursionLimit
-#include "js/friend/WindowProxy.h"  // js::IsWindowProxy, js::SetWindowProxy
 #include "js/PropertyAndElement.h"  // JS_DefineObject, JS_GetProperty
 #include "js/PropertySpec.h"
 #include "js/RealmIterators.h"
 #include "js/Wrapper.h"
-#include "nsLayoutUtils.h"
-#include "nsReadableUtils.h"
-#include "nsJSEnvironment.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/Preferences.h"
+#include "js/friend/StackLimits.h"  // js::AutoCheckRecursionLimit
+#include "js/friend/WindowProxy.h"  // js::IsWindowProxy, js::SetWindowProxy
+#include "jsapi.h"
+#include "jsfriendapi.h"
 #include "mozilla/Likely.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "nsJSEnvironment.h"
+#include "nsJSUtils.h"
+#include "nsLayoutUtils.h"
+#include "nsReadableUtils.h"
 
 // Other Classes
-#include "mozilla/dom/BarProps.h"
-#include "nsLayoutStatics.h"
-#include "nsCCUncollectableMarker.h"
-#include "mozilla/dom/WorkerCommon.h"
-#include "mozilla/dom/ToJSValue.h"
-#include "nsJSPrincipals.h"
+#include "AudioChannelService.h"
+#include "PostMessageEvent.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Components.h"
 #include "mozilla/Debug.h"
@@ -114,66 +110,70 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/ProcessHangMonitor.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/StaticPrefs_full_screen_api.h"
 #include "mozilla/StaticPrefs_print.h"
-#include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/ThrottledEventQueue.h"
-#include "AudioChannelService.h"
-#include "nsAboutProtocolUtils.h"
-#include "nsCharTraits.h"  // NS_IS_HIGH/LOW_SURROGATE
-#include "PostMessageEvent.h"
+#include "mozilla/dom/BarProps.h"
 #include "mozilla/dom/DocGroup.h"
+#include "mozilla/dom/ToJSValue.h"
+#include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/net/CookieJarSettings.h"
+#include "nsAboutProtocolUtils.h"
+#include "nsCCUncollectableMarker.h"
+#include "nsCharTraits.h"  // NS_IS_HIGH/LOW_SURROGATE
+#include "nsJSPrincipals.h"
+#include "nsLayoutStatics.h"
 
 // Interfaces Needed
-#include "nsIFrame.h"
-#include "nsCanvasFrame.h"
-#include "nsIWidget.h"
-#include "nsIWidgetListener.h"
-#include "nsIBaseWindow.h"
-#include "nsIDeviceSensors.h"
-#include "nsIContent.h"
-#include "nsIDocShell.h"
-#include "mozilla/dom/Document.h"
 #include "Crypto.h"
-#include "nsDOMString.h"
-#include "nsThreadUtils.h"
-#include "nsILoadContext.h"
-#include "nsView.h"
-#include "nsViewManager.h"
-#include "nsIPrompt.h"
-#include "nsIPromptService.h"
-#include "nsIPromptFactory.h"
-#include "nsIWritablePropertyBag2.h"
-#include "nsIWebNavigation.h"
-#include "nsIWebBrowserChrome.h"
-#include "nsIWebBrowserFind.h"  // For window.find()
-#include "nsComputedDOMStyle.h"
-#include "nsDOMCID.h"
-#include "nsDOMWindowUtils.h"
-#include "nsIWindowWatcher.h"
-#include "nsPIWindowWatcher.h"
-#include "nsIDocumentViewer.h"
-#include "nsIScriptError.h"
-#include "nsISHistory.h"
-#include "nsIControllers.h"
-#include "nsGlobalWindowCommands.h"
-#include "nsQueryObject.h"
-#include "nsContentUtils.h"
-#include "nsCSSProps.h"
-#include "nsIURIFixup.h"
-#include "nsIURIMutator.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/ScrollContainerFrame.h"
-#include "nsIObserverService.h"
-#include "nsFocusManager.h"
-#include "nsIAppWindow.h"
-#include "nsServiceManagerUtils.h"
 #include "mozilla/dom/CustomEvent.h"
-#include "nsIScreenManager.h"
+#include "mozilla/dom/Document.h"
+#include "nsCSSProps.h"
+#include "nsCanvasFrame.h"
+#include "nsComputedDOMStyle.h"
+#include "nsContentUtils.h"
+#include "nsDOMCID.h"
+#include "nsDOMString.h"
+#include "nsDOMWindowUtils.h"
+#include "nsFocusManager.h"
+#include "nsGlobalWindowCommands.h"
+#include "nsIAppWindow.h"
+#include "nsIBaseWindow.h"
 #include "nsIClassifiedChannel.h"
+#include "nsIContent.h"
+#include "nsIControllers.h"
+#include "nsIDeviceSensors.h"
+#include "nsIDocShell.h"
+#include "nsIDocumentViewer.h"
+#include "nsIFrame.h"
+#include "nsILoadContext.h"
+#include "nsIObserverService.h"
+#include "nsIPrompt.h"
+#include "nsIPromptFactory.h"
+#include "nsIPromptService.h"
+#include "nsISHistory.h"
+#include "nsIScreenManager.h"
+#include "nsIScriptError.h"
+#include "nsIURIFixup.h"
+#include "nsIURIMutator.h"
+#include "nsIWebBrowserChrome.h"
+#include "nsIWebBrowserFind.h"  // For window.find()
+#include "nsIWebNavigation.h"
+#include "nsIWidget.h"
+#include "nsIWidgetListener.h"
+#include "nsIWindowWatcher.h"
+#include "nsIWritablePropertyBag2.h"
 #include "nsIXULRuntime.h"
+#include "nsPIWindowWatcher.h"
+#include "nsQueryObject.h"
+#include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
+#include "nsView.h"
+#include "nsViewManager.h"
 #include "xpcprivate.h"
 
 #ifdef NS_PRINTING
@@ -182,74 +182,65 @@
 #  include "nsIWebBrowserPrint.h"
 #endif
 
-#include "nsWindowRoot.h"
-#include "nsNetCID.h"
-#include "nsIArray.h"
-
-#include "nsIDOMXULCommandDispatcher.h"
-
+#include "AccessCheck.h"
+#include "FxRWindowManager.h"
+#include "VRShMem.h"
+#include "gfxVR.h"
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/GlobalKeyListener.h"
-
-#include "nsIDragService.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/Selection.h"
-#include "nsFrameLoader.h"
-#include "nsFrameLoaderOwner.h"
-#include "nsXPCOMCID.h"
 #include "mozilla/Logging.h"
 #include "mozilla/ProfilerMarkers.h"
-#include "prenv.h"
-
-#include "mozilla/dom/IDBFactory.h"
-#include "mozilla/dom/MessageChannel.h"
-#include "mozilla/dom/Promise.h"
-
+#include "mozilla/Services.h"
+#include "mozilla/dom/AudioContext.h"
+#include "mozilla/dom/BrowsingContextGroup.h"
+#include "mozilla/dom/Console.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/Fetch.h"
+#include "mozilla/dom/FunctionBinding.h"
 #include "mozilla/dom/Gamepad.h"
 #include "mozilla/dom/GamepadManager.h"
-
-#include "gfxVR.h"
-#include "VRShMem.h"
-#include "FxRWindowManager.h"
+#include "mozilla/dom/HashChangeEvent.h"
+#include "mozilla/dom/IDBFactory.h"
+#include "mozilla/dom/ImageBitmap.h"
+#include "mozilla/dom/ImageBitmapBinding.h"
+#include "mozilla/dom/IntlUtils.h"
+#include "mozilla/dom/Location.h"
+#include "mozilla/dom/MediaQueryList.h"
+#include "mozilla/dom/MessageChannel.h"
+#include "mozilla/dom/NavigatorBinding.h"
+#include "mozilla/dom/PopStateEvent.h"
+#include "mozilla/dom/PopupBlockedEvent.h"
+#include "mozilla/dom/PrimitiveConversions.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/Selection.h"
+#include "mozilla/dom/ServiceWorkerRegistration.h"
 #include "mozilla/dom/VRDisplay.h"
 #include "mozilla/dom/VRDisplayEvent.h"
 #include "mozilla/dom/VRDisplayEventBinding.h"
 #include "mozilla/dom/VREventObserver.h"
-
-#include "nsRefreshDriver.h"
-
-#include "mozilla/extensions/WebExtensionPolicy.h"
-
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/Services.h"
-#include "mozilla/glean/DomMetrics.h"
-#include "mozilla/dom/Location.h"
-#include "nsHTMLDocument.h"
-#include "nsWrapperCacheInlines.h"
-#include "mozilla/DOMEventTargetHelper.h"
-#include "prrng.h"
-#include "nsSandboxFlags.h"
-#include "nsXULControllers.h"
-#include "mozilla/dom/AudioContext.h"
-#include "mozilla/dom/BrowsingContextGroup.h"
-#include "mozilla/dom/cache/CacheStorage.h"
-#include "mozilla/dom/Console.h"
-#include "mozilla/dom/Fetch.h"
-#include "mozilla/dom/FunctionBinding.h"
-#include "mozilla/dom/HashChangeEvent.h"
-#include "mozilla/dom/IntlUtils.h"
-#include "mozilla/dom/PopStateEvent.h"
-#include "mozilla/dom/PopupBlockedEvent.h"
-#include "mozilla/dom/PrimitiveConversions.h"
-#include "mozilla/dom/WindowBinding.h"
-#include "nsIBrowserChild.h"
-#include "mozilla/dom/MediaQueryList.h"
-#include "mozilla/dom/NavigatorBinding.h"
-#include "mozilla/dom/ImageBitmap.h"
-#include "mozilla/dom/ImageBitmapBinding.h"
-#include "mozilla/dom/ServiceWorkerRegistration.h"
 #include "mozilla/dom/WebIDLGlobalNameHash.h"
+#include "mozilla/dom/WindowBinding.h"
 #include "mozilla/dom/Worklet.h"
-#include "AccessCheck.h"
+#include "mozilla/dom/cache/CacheStorage.h"
+#include "mozilla/extensions/WebExtensionPolicy.h"
+#include "mozilla/glean/DomMetrics.h"
+#include "nsFrameLoader.h"
+#include "nsFrameLoaderOwner.h"
+#include "nsHTMLDocument.h"
+#include "nsIArray.h"
+#include "nsIBrowserChild.h"
+#include "nsIDOMXULCommandDispatcher.h"
+#include "nsIDragService.h"
+#include "nsNetCID.h"
+#include "nsRefreshDriver.h"
+#include "nsSandboxFlags.h"
+#include "nsWindowRoot.h"
+#include "nsWrapperCacheInlines.h"
+#include "nsXPCOMCID.h"
+#include "nsXULControllers.h"
+#include "prenv.h"
+#include "prrng.h"
 
 #ifdef MOZ_WEBSPEECH
 #  include "mozilla/dom/SpeechSynthesis.h"
@@ -5167,23 +5158,29 @@ Nullable<WindowProxyHolder> nsGlobalWindowOuter::Print(
     }
   }
 
-  // When using window.print() with the new UI, we usually want to block until
-  // the print dialog is hidden. But we can't really do that if we have print
-  // callbacks, because we are inside a sync operation, and we want to run
-  // microtasks / etc that the print callbacks may create. It is really awkward
-  // to have this subtle behavior difference...
-  //
-  // We also want to do this for fuzzing, so that they can test window.print().
+  // Check whether we're in a case where we need to block in order for
+  // window.print() to function properly:
   const bool shouldBlock = [&] {
     if (aForWindowDotPrint == IsForWindowDotPrint::No) {
+      // We're not doing window.print; no need to block.
       return false;
     }
-    if (aIsPreview == IsPreview::Yes) {
+
+    // When window.print() spawns a print dialog (either our own tab-modal
+    // dialog or the system-print dialog), we usually want window.print() to
+    // block until the print dialog is hidden. But we can't really do that if
+    // we have print callbacks (mozPrintCallback), because we are inside a sync
+    // operation, and we want to run microtasks / etc that the print callbacks
+    // may create. It is really awkward to have this subtle behavior
+    // difference...
+    if (aIsPreview == IsPreview::Yes ||
+        StaticPrefs::print_prefer_system_dialog()) {
       return !hasPrintCallbacks;
     }
-    if (StaticPrefs::print_prefer_system_dialog()) {
-      return true;
-    }
+
+    // We also want to allow window.print() to block for fuzzing, so that
+    // fuzzers can test either behavior without needing to interact with a
+    // dialog.
     return StaticPrefs::dom_window_print_fuzzing_block_while_printing();
   }();
 
@@ -6451,31 +6448,29 @@ Location* nsGlobalWindowOuter::GetLocation() {
 }
 
 void nsGlobalWindowOuter::SetIsBackground(bool aIsBackground) {
-  bool changed = aIsBackground != IsBackground();
+  const bool changed = aIsBackground != IsBackground();
   SetIsBackgroundInternal(aIsBackground);
 
   nsGlobalWindowInner* inner = GetCurrentInnerWindowInternal(this);
-
-  if (inner && changed) {
-    inner->UpdateBackgroundState();
-  }
-
-  if (aIsBackground) {
-    // Notify gamepadManager we are at the background window,
-    // we need to stop vibrate.
-    // Stop the vr telemery time spent when it switches to
-    // the background window.
-    if (inner && changed) {
-      inner->StopGamepadHaptics();
-      inner->StopVRActivity();
-    }
+  if (!inner) {
     return;
   }
 
-  if (inner) {
-    inner->SyncGamepadState();
-    inner->StartVRActivity();
+  if (changed) {
+    inner->UpdateBackgroundState();
+    if (aIsBackground) {
+      // Notify gamepadManager we are at the background window,
+      // we need to stop vibrate.
+      // Stop the vr telemery time spent when it switches to
+      // the background window.
+      inner->StopGamepadHaptics();
+      inner->StopVRActivity();
+      return;
+    }
   }
+  // FIXME: Why doing this even if not changed?
+  inner->SyncGamepadState();
+  inner->StartVRActivity();
 }
 
 void nsGlobalWindowOuter::SetIsBackgroundInternal(bool aIsBackground) {

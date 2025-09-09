@@ -8,9 +8,9 @@
 
 #include "DOMSVGPointList.h"
 #include "gfx2DGlue.h"
-#include "nsError.h"
 #include "mozilla/dom/DOMMatrix.h"
 #include "mozilla/dom/SVGPointBinding.h"
+#include "nsError.h"
 
 // See the architecture comment in DOMSVGPointList.h.
 

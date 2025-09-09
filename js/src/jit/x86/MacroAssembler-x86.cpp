@@ -1879,21 +1879,22 @@ void MacroAssembler::patchNearAddressMove(CodeLocationLabel loc,
 }
 
 void MacroAssembler::wasmBoundsCheck64(Condition cond, Register64 index,
-                                       Register64 boundsCheckLimit, Label* ok) {
-  Label notOk;
+                                       Register64 boundsCheckLimit,
+                                       Label* label) {
+  Label ifFalse;
   cmp32(index.high, Imm32(0));
-  j(Assembler::NonZero, &notOk);
-  wasmBoundsCheck32(cond, index.low, boundsCheckLimit.low, ok);
-  bind(&notOk);
+  j(Assembler::NonZero, &ifFalse);
+  wasmBoundsCheck32(cond, index.low, boundsCheckLimit.low, label);
+  bind(&ifFalse);
 }
 
 void MacroAssembler::wasmBoundsCheck64(Condition cond, Register64 index,
-                                       Address boundsCheckLimit, Label* ok) {
-  Label notOk;
+                                       Address boundsCheckLimit, Label* label) {
+  Label ifFalse;
   cmp32(index.high, Imm32(0));
-  j(Assembler::NonZero, &notOk);
-  wasmBoundsCheck32(cond, index.low, boundsCheckLimit, ok);
-  bind(&notOk);
+  j(Assembler::NonZero, &ifFalse);
+  wasmBoundsCheck32(cond, index.low, boundsCheckLimit, label);
+  bind(&ifFalse);
 }
 
 void MacroAssembler::wasmMarkCallAsSlow() {

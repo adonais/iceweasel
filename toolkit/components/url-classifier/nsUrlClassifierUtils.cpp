@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "chromium/safebrowsing.pb.h"
+#include "chromium/safebrowsing_v5.pb.h"
 #include "nsEscape.h"
 #include "nsString.h"
 #include "nsIURI.h"
@@ -330,6 +331,23 @@ static const struct {
     {"test-unwanted-proto", UNWANTED_SOFTWARE},          // 3
 };
 
+// The table for the list naming conversion between the local list name and the
+// SafeBrowsing V5 server list name. In the SafeBrowsing V5, the list name is
+// represented as a string of the form "uws-4b", "pha-4b", etc.
+//
+// See
+// https://developers.google.com/safe-browsing/reference/Local.Database#available-lists
+// for the current available lists for SafeBrowsing V5.
+static const struct {
+  const char* mLocalListName;
+  const char* mServerListName;
+} THREAT_NAME_CONV_TABLE_V5[] = {
+    {"mw-4b", "goog-malware-proto"},
+    {"se-4b", "googpub-phish-proto"},
+    {"goog-unwanted-proto", "uws-4b"},
+    {"goog-harmful-proto", "pha-4b"},
+};
+
 NS_IMETHODIMP
 nsUrlClassifierUtils::ConvertThreatTypeToListNames(uint32_t aThreatType,
                                                    nsACString& aListNames) {
@@ -351,6 +369,34 @@ nsUrlClassifierUtils::ConvertListNameToThreatType(const nsACString& aListName,
   for (uint32_t i = 0; i < std::size(THREAT_TYPE_CONV_TABLE); i++) {
     if (aListName.EqualsASCII(THREAT_TYPE_CONV_TABLE[i].mListName)) {
       *aThreatType = THREAT_TYPE_CONV_TABLE[i].mThreatType;
+      return NS_OK;
+    }
+  }
+
+  return NS_ERROR_FAILURE;
+}
+
+NS_IMETHODIMP
+nsUrlClassifierUtils::ConvertServerListNameToLocalListNameV5(
+    const nsACString& aServerListName, nsACString& aLocalListName) {
+  for (uint32_t i = 0; i < std::size(THREAT_NAME_CONV_TABLE_V5); i++) {
+    if (aServerListName.EqualsASCII(
+            THREAT_NAME_CONV_TABLE_V5[i].mServerListName)) {
+      aLocalListName = THREAT_NAME_CONV_TABLE_V5[i].mLocalListName;
+      return NS_OK;
+    }
+  }
+
+  return NS_ERROR_FAILURE;
+}
+
+NS_IMETHODIMP
+nsUrlClassifierUtils::ConvertLocalListNameToServerListNameV5(
+    const nsACString& aLocalListName, nsACString& aServerListName) {
+  for (uint32_t i = 0; i < std::size(THREAT_NAME_CONV_TABLE_V5); i++) {
+    if (aLocalListName.EqualsASCII(
+            THREAT_NAME_CONV_TABLE_V5[i].mLocalListName)) {
+      aServerListName = THREAT_NAME_CONV_TABLE_V5[i].mServerListName;
       return NS_OK;
     }
   }
@@ -443,6 +489,59 @@ nsUrlClassifierUtils::MakeUpdateRequestV4(
   // Then serialize.
   std::string s;
   r.SerializeToString(&s);
+
+  nsCString out;
+  nsresult rv = Base64URLEncode(s.size(), (const uint8_t*)s.c_str(),
+                                Base64URLEncodePaddingPolicy::Include, out);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  aRequest = out;
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsUrlClassifierUtils::MakeUpdateRequestV5(
+    const nsTArray<nsCString>& aListNames,
+    const nsTArray<nsCString>& aStatesBase64, nsACString& aRequest) {
+  using namespace mozilla::safebrowsing::v5;
+
+  // Verify the number of list names and states are the same.
+  if (aListNames.Length() != aStatesBase64.Length()) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  BatchGetHashListsRequest req;
+
+  // Fill the request with list names and states.
+  for (uint32_t i = 0; i < aListNames.Length(); i++) {
+    nsAutoCString serverListName;
+    nsresult rv =
+        ConvertLocalListNameToServerListNameV5(aListNames[i], serverListName);
+    if (NS_FAILED(rv)) {
+      continue;
+    }
+
+    req.add_names(serverListName.get());
+
+    nsAutoCString statesBase64(aStatesBase64[i]);
+
+    // Only set non-empty state.
+    if (!statesBase64.IsEmpty()) {
+      nsAutoCString stateBinary;
+      nsresult rv = Base64Decode(statesBase64, stateBinary);
+      if (NS_SUCCEEDED(rv)) {
+        req.add_version(stateBinary.get(), stateBinary.Length());
+      }
+    }
+  }
+
+  // We omit the size_constraints to indicates that there is no size constraints
+  // for the request.
+
+  // Then serialize.
+  std::string s;
+  req.SerializeToString(&s);
 
   nsCString out;
   nsresult rv = Base64URLEncode(s.size(), (const uint8_t*)s.c_str(),

@@ -4,11 +4,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WidevineUtils.h"
-#include "GMPLog.h"
-#include "gmp-api/gmp-errors.h"
+
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <inttypes.h>
+
+#include "GMPLog.h"
+#include "gmp-api/gmp-errors.h"
 
 namespace mozilla {
 

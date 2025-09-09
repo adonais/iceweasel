@@ -9,8 +9,8 @@
 
 #include "js/loader/ModuleLoaderBase.h"
 #include "js/loader/ScriptFetchOptions.h"
-#include "mozilla/dom/SerializedStackHolder.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/SerializedStackHolder.h"
 
 namespace mozilla::dom::workerinternals::loader {
 class WorkerScriptLoader;
@@ -56,12 +56,15 @@ class WorkerModuleLoader : public JS::loader::ModuleLoaderBase {
   nsIURI* GetBaseURI() const override;
 
   already_AddRefed<ModuleLoadRequest> CreateStaticImport(
-      nsIURI* aURI, JS::ModuleType aModuleType, ModuleLoadRequest* aParent,
-      const mozilla::dom::SRIMetadata& aSriMetadata) override;
+      nsIURI* aURI, JS::ModuleType aModuleType,
+      JS::loader::ModuleScript* aReferrerScript,
+      const mozilla::dom::SRIMetadata& aSriMetadata,
+      JS::loader::LoadContextBase* aLoadContext,
+      JS::loader::ModuleLoaderBase* aLoader) override;
 
   already_AddRefed<ModuleLoadRequest> CreateDynamicImport(
-      JSContext* aCx, nsIURI* aURI, JS::ModuleType aModuleType,
-      LoadedScript* aMaybeActiveScript, JS::Handle<JSString*> aSpecifier,
+      JSContext* aCx, nsIURI* aURI, LoadedScript* aMaybeActiveScript,
+      JS::Handle<JSObject*> aModuleRequestObj,
       JS::Handle<JSObject*> aPromise) override;
 
   bool IsDynamicImportSupported() override;

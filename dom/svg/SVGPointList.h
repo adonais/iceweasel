@@ -7,16 +7,16 @@
 #ifndef DOM_SVG_SVGPOINTLIST_H_
 #define DOM_SVG_SVGPOINTLIST_H_
 
+#include <string.h>
+
+#include "SVGElement.h"
+#include "SVGPoint.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
 #include "nsIContent.h"
 #include "nsINode.h"
 #include "nsIWeakReferenceUtils.h"
-#include "SVGElement.h"
 #include "nsTArray.h"
-#include "SVGPoint.h"
-
-#include <string.h>
 
 namespace mozilla {
 

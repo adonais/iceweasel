@@ -124,6 +124,12 @@ class MacroAssemblerLOONG64 : public Assembler {
                           Label* overflow);
   void ma_addPtrTestCarry(Condition cond, Register rd, Register rj, ImmWord imm,
                           Label* overflow);
+  void ma_addPtrTestSigned(Condition cond, Register rd, Register rj,
+                           Register rk, Label* taken);
+  void ma_addPtrTestSigned(Condition cond, Register rd, Register rj, Imm32 imm,
+                           Label* taken);
+  void ma_addPtrTestSigned(Condition cond, Register rd, Register rj,
+                           ImmWord imm, Label* taken);
 
   // subtract
   void ma_sub_d(Register rd, Register rj, Imm32 imm);
@@ -439,6 +445,7 @@ class MacroAssemblerLOONG64Compat : public MacroAssemblerLOONG64 {
   void movq(Register rj, Register rd);
 
   void computeScaledAddress(const BaseIndex& address, Register dest);
+  void computeScaledAddress32(const BaseIndex& address, Register dest);
 
   void computeEffectiveAddress(const Address& address, Register dest) {
     ma_add_d(dest, address.base, Imm32(address.offset));
@@ -448,6 +455,17 @@ class MacroAssemblerLOONG64Compat : public MacroAssemblerLOONG64 {
     computeScaledAddress(address, dest);
     if (address.offset) {
       ma_add_d(dest, dest, Imm32(address.offset));
+    }
+  }
+
+  void computeEffectiveAddress32(const Address& address, Register dest) {
+    ma_add_w(dest, address.base, Imm32(address.offset));
+  }
+
+  void computeEffectiveAddress32(const BaseIndex& address, Register dest) {
+    computeScaledAddress32(address, dest);
+    if (address.offset) {
+      ma_add_w(dest, dest, Imm32(address.offset));
     }
   }
 
@@ -509,15 +527,9 @@ class MacroAssemblerLOONG64Compat : public MacroAssemblerLOONG64 {
     ma_push(scratch2);
   }
   void push(Register reg) { ma_push(reg); }
-  void push(FloatRegister reg) {
-    MOZ_ASSERT(reg.isDouble(), "float32 and simd128 not supported");
-    ma_push(reg);
-  }
+  void push(FloatRegister reg) { ma_push(reg); }
   void pop(Register reg) { ma_pop(reg); }
-  void pop(FloatRegister reg) {
-    MOZ_ASSERT(reg.isDouble(), "float32 and simd128 not supported");
-    ma_pop(reg);
-  }
+  void pop(FloatRegister reg) { ma_pop(reg); }
 
   // Emit a branch that can be toggled to a non-operation. On LOONG64 we use
   // "andi" instruction to toggle the branch.

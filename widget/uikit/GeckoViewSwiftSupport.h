@@ -54,13 +54,15 @@
 @end
 
 @protocol GeckoViewWindow <NSObject>
+- (UIView*)view;
+- (void)close;
 @end
 
 MOZ_BEGIN_EXTERN_C
 
 MOZ_EXPORT id<GeckoViewWindow> GeckoViewOpenWindow(
-    NSString* aId, id<SwiftEventDispatcher> aDispatcher, id aInitData,
-    bool aPrivateMode);
+    NSString* aId, id<SwiftEventDispatcher> aDispatcher,
+    NSDictionary* aInitData, bool aPrivateMode);
 
 MOZ_END_EXTERN_C
 

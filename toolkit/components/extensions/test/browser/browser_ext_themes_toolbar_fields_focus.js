@@ -35,8 +35,8 @@ add_task(async function test_toolbar_field_focus() {
 
   info("Checking toolbar field's focus color");
 
-  let urlBar = document.querySelector("#urlbar-background");
-  gURLBar.textbox.setAttribute("focused", "true");
+  let urlBar = gURLBar.querySelector(".urlbar-background");
+  gURLBar.textbox.setAttribute("focused", "");
   let style = window.getComputedStyle(urlBar);
 
   Assert.equal(
@@ -88,9 +88,9 @@ add_task(async function test_toolbar_field_focus_low_alpha() {
   });
 
   await extension.startup();
-  gURLBar.textbox.setAttribute("focused", "true");
+  gURLBar.textbox.setAttribute("focused", "");
 
-  let urlBar = document.querySelector("#urlbar-background");
+  let urlBar = gURLBar.querySelector(".urlbar-background");
   Assert.equal(
     window.getComputedStyle(urlBar).backgroundColor,
     `rgba(0, 0, 255, 0.9)`,

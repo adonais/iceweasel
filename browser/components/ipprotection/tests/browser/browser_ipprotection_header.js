@@ -27,7 +27,9 @@ add_task(async function test_header_content() {
   button.click();
   await panelShownPromise;
 
-  let header = panelView.querySelector(lazy.IPProtectionPanel.HEADER_TAGNAME);
+  let header = panelView.querySelector(
+    lazy.IPProtectionPanel.CONTENT_TAGNAME
+  ).headerEl;
   Assert.ok(
     BrowserTestUtils.isVisible(header),
     "ipprotection-header component should be present"
@@ -63,7 +65,9 @@ add_task(async function test_help_button() {
   button.click();
   await panelShownPromise;
 
-  let header = panelView.querySelector(lazy.IPProtectionPanel.HEADER_TAGNAME);
+  let header = panelView.querySelector(
+    lazy.IPProtectionPanel.CONTENT_TAGNAME
+  ).headerEl;
   Assert.ok(
     BrowserTestUtils.isVisible(header),
     "ipprotection-header component should be present"

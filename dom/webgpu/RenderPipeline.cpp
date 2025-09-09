@@ -14,13 +14,8 @@ namespace mozilla::webgpu {
 GPU_IMPL_CYCLE_COLLECTION(RenderPipeline, mParent)
 GPU_IMPL_JS_WRAP(RenderPipeline)
 
-RenderPipeline::RenderPipeline(Device* const aParent, RawId aId,
-                               RawId aImplicitPipelineLayoutId,
-                               nsTArray<RawId>&& aImplicitBindGroupLayoutIds)
-    : ChildOf(aParent),
-      mImplicitPipelineLayoutId(aImplicitPipelineLayoutId),
-      mImplicitBindGroupLayoutIds(std::move(aImplicitBindGroupLayoutIds)),
-      mId(aId) {
+RenderPipeline::RenderPipeline(Device* const aParent, RawId aId)
+    : ChildOf(aParent), mId(aId) {
   MOZ_RELEASE_ASSERT(aId);
 }
 
@@ -37,19 +32,7 @@ void RenderPipeline::Cleanup() {
     return;
   }
 
-  ffi::wgpu_client_drop_render_pipeline(bridge->GetClient(), mId,
-                                        mImplicitPipelineLayoutId,
-                                        mImplicitBindGroupLayoutIds.Elements(),
-                                        mImplicitBindGroupLayoutIds.Length());
-
-  if (mImplicitPipelineLayoutId) {
-    wgpu_client_free_pipeline_layout_id(bridge->GetClient(),
-                                        mImplicitPipelineLayoutId);
-  }
-
-  for (const auto& id : mImplicitBindGroupLayoutIds) {
-    wgpu_client_free_bind_group_layout_id(bridge->GetClient(), id);
-  }
+  ffi::wgpu_client_drop_render_pipeline(bridge->GetClient(), mId);
 }
 
 already_AddRefed<BindGroupLayout> RenderPipeline::GetBindGroupLayout(
@@ -59,7 +42,7 @@ already_AddRefed<BindGroupLayout> RenderPipeline::GetBindGroupLayout(
   const RawId bglId = ffi::wgpu_client_render_pipeline_get_bind_group_layout(
       bridge->GetClient(), mParent->GetId(), mId, aIndex);
 
-  RefPtr<BindGroupLayout> object = new BindGroupLayout(mParent, bglId, false);
+  RefPtr<BindGroupLayout> object = new BindGroupLayout(mParent, bglId);
   return object.forget();
 }
 

@@ -6,17 +6,16 @@
 
 #include "mozilla/dom/SVGGraphicsElement.h"
 
+#include "mozilla/ISVGDisplayableFrame.h"
+#include "mozilla/SVGContentUtils.h"
+#include "mozilla/SVGTextFrame.h"
+#include "mozilla/SVGUtils.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/SVGGraphicsElementBinding.h"
 #include "mozilla/dom/SVGMatrix.h"
 #include "mozilla/dom/SVGRect.h"
 #include "mozilla/dom/SVGSVGElement.h"
-#include "mozilla/ISVGDisplayableFrame.h"
-#include "mozilla/SVGContentUtils.h"
-#include "mozilla/SVGTextFrame.h"
-#include "mozilla/SVGUtils.h"
-
 #include "nsIContentInlines.h"
 #include "nsLayoutUtils.h"
 

@@ -7,12 +7,12 @@
 #ifndef mozilla_dom_PerformanceEventTiming_h___
 #define mozilla_dom_PerformanceEventTiming_h___
 
-#include "mozilla/dom/PerformanceEntry.h"
-#include "mozilla/EventForwards.h"
-#include "nsRFPService.h"
 #include "Performance.h"
-#include "nsIWeakReferenceUtils.h"
+#include "mozilla/EventForwards.h"
+#include "mozilla/dom/PerformanceEntry.h"
 #include "nsINode.h"
+#include "nsIWeakReferenceUtils.h"
+#include "nsRFPService.h"
 
 namespace mozilla {
 class WidgetEvent;

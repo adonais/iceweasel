@@ -8,26 +8,25 @@
 
 #include <utility>
 
-#include "mozilla/dom/FetchTypes.h"
-#include "mozilla/dom/ServiceWorkerOpArgs.h"
-#include "nsCOMPtr.h"
-#include "nsIInputStream.h"
-
 #include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/RemoteLazyInputStreamStorage.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Try.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
-#include "mozilla/dom/InternalResponse.h"
-#include "mozilla/dom/PRemoteWorkerParent.h"
-#include "mozilla/dom/PRemoteWorkerControllerParent.h"
-#include "mozilla/dom/PRemoteWorkerServiceParent.h"
 #include "mozilla/dom/FetchEventOpParent.h"
-#include "mozilla/ipc/PBackgroundParent.h"
+#include "mozilla/dom/FetchTypes.h"
+#include "mozilla/dom/InternalResponse.h"
+#include "mozilla/dom/PRemoteWorkerControllerParent.h"
+#include "mozilla/dom/PRemoteWorkerParent.h"
+#include "mozilla/dom/PRemoteWorkerServiceParent.h"
+#include "mozilla/dom/ServiceWorkerOpArgs.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
-#include "mozilla/RemoteLazyInputStreamStorage.h"
+#include "mozilla/ipc/PBackgroundParent.h"
+#include "nsCOMPtr.h"
+#include "nsIInputStream.h"
 
 namespace mozilla {
 

@@ -6,18 +6,18 @@
 
 #include "mozilla/PreallocatedProcessManager.h"
 
+#include "ProcessPriorityManager.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "nsIPropertyBag2.h"
-#include "ProcessPriorityManager.h"
-#include "nsServiceManagerUtils.h"
 #include "nsIXULRuntime.h"
+#include "nsServiceManagerUtils.h"
 #include "nsTArray.h"
 #include "prsystem.h"
 
@@ -328,7 +328,7 @@ void PreallocatedProcessManagerImpl::AllocateNow() {
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self = RefPtr{this},
-           process = RefPtr{process.get()}](UniqueContentParentKeepAlive) {
+           process = RefPtr{process.get()}](UniqueContentParentKeepAlive&&) {
             if (process->IsDead()) {
               self->Erase(process);
               // Process died in startup (before we could add it).  If it

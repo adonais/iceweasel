@@ -8,8 +8,11 @@
 
 #include "CSS.h"
 
+#include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/CSSUnitValue.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/HighlightRegistry.h"
@@ -67,5 +70,393 @@ void CSS::RegisterProperty(const GlobalObject& aGlobal,
   }
   doc->EnsureStyleSet().RegisterProperty(aDefinition, aRv);
 }
+
+// start of CSS Typed OM Web IDL implementation
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Number(const GlobalObject& aGlobal,
+                                           double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Percent(const GlobalObject& aGlobal,
+                                            double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+// <length>
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Cap(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Ch(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Em(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Ex(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Ic(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Lh(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Rcap(const GlobalObject& aGlobal,
+                                         double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Rch(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Rem(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Rex(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Ric(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Rlh(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Vw(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Vh(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Vi(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Vb(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Vmin(const GlobalObject& aGlobal,
+                                         double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Vmax(const GlobalObject& aGlobal,
+                                         double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Svw(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Svh(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Svi(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Svb(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Svmin(const GlobalObject& aGlobal,
+                                          double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Svmax(const GlobalObject& aGlobal,
+                                          double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Lvw(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Lvh(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Lvi(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Lvb(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Lvmin(const GlobalObject& aGlobal,
+                                          double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Lvmax(const GlobalObject& aGlobal,
+                                          double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Dvw(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Dvh(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Dvi(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Dvb(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Dvmin(const GlobalObject& aGlobal,
+                                          double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Dvmax(const GlobalObject& aGlobal,
+                                          double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Cqw(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Cqh(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Cqi(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Cqb(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Cqmin(const GlobalObject& aGlobal,
+                                          double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Cqmax(const GlobalObject& aGlobal,
+                                          double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Cm(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Mm(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Q(const GlobalObject& aGlobal,
+                                      double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::In(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Pt(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Pc(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Px(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+// <angle>
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Deg(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Grad(const GlobalObject& aGlobal,
+                                         double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Rad(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Turn(const GlobalObject& aGlobal,
+                                         double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+// <time>
+/* static */
+already_AddRefed<CSSUnitValue> CSS::S(const GlobalObject& aGlobal,
+                                      double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Ms(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+// <frequency>
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Hz(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::KHz(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+// <resolution>
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Dpi(const GlobalObject& aGlobal,
+                                        double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Dpcm(const GlobalObject& aGlobal,
+                                         double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Dppx(const GlobalObject& aGlobal,
+                                         double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+// <flex>
+/* static */
+already_AddRefed<CSSUnitValue> CSS::Fr(const GlobalObject& aGlobal,
+                                       double aValue) {
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+}
+
+// end of CSS Typed OM Web IDL implementation
 
 }  // namespace mozilla::dom

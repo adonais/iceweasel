@@ -9,9 +9,9 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/MediaSessionBinding.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/dom/MediaSessionBinding.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIDocumentActivity.h"
 #include "nsWrapperCache.h"

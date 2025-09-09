@@ -138,11 +138,8 @@ const INTEGRATION_TEST_PAGE_SOURCES = [
   "same-url.sjs",
   "same-url.sjs",
   "log-worker.js",
+  "same-url.sjs",
 ];
-// The iframe one is only available when fission is enabled, or EFT
-if (isFissionEnabled() || isEveryFrameTargetEnabled()) {
-  INTEGRATION_TEST_PAGE_SOURCES.push("same-url.sjs");
-}
 
 /**
  * Install a Web Extension which will run a content script against any test page

@@ -235,12 +235,12 @@ static already_AddRefed<nsHttpConnectionInfo> CreateConnInfoHelper(
   return connInfo.forget();
 }
 
-void TRRServiceBase::InitTRRConnectionInfo() {
+void TRRServiceBase::InitTRRConnectionInfo(bool aForceReinit) {
   if (!XRE_IsParentProcess()) {
     return;
   }
 
-  if (mTRRConnectionInfoInited) {
+  if (mTRRConnectionInfoInited && !aForceReinit) {
     return;
   }
 

@@ -185,7 +185,7 @@ export class InferredPersonalizationFeed {
       values?.inferredPersonalizationConfig?.iv_refresh_frequency_hours ||
       INTEREST_VECTOR_UPDATE_HOURS;
 
-    // If we have nothing in cache, or cache has expired, make a fresh fetch.
+    // If we have nothing in cache, or cache has expired, we can make a fresh fetch.
     if (
       !interest_vector?.lastUpdated ||
       !(

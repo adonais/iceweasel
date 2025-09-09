@@ -153,6 +153,7 @@ namespace jit {
   _(CreateArgumentsObject)        \
   _(CreateInlinedArgumentsObject) \
   _(Rest)                         \
+  _(TypedArraySubarray)           \
   _(AssertRecoveredOnBailout)
 
 class RResumePoint;
@@ -1098,6 +1099,14 @@ class RRest final : public RInstruction {
 
  public:
   RINSTRUCTION_HEADER_NUM_OP_(Rest, 1)
+
+  [[nodiscard]] bool recover(JSContext* cx,
+                             SnapshotIterator& iter) const override;
+};
+
+class RTypedArraySubarray final : public RInstruction {
+ public:
+  RINSTRUCTION_HEADER_NUM_OP_(TypedArraySubarray, 3)
 
   [[nodiscard]] bool recover(JSContext* cx,
                              SnapshotIterator& iter) const override;

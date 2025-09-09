@@ -7,11 +7,11 @@
 #ifndef nsCSPParser_h___
 #define nsCSPParser_h___
 
-#include "nsCSPUtils.h"
-#include "nsCSPContext.h"
-#include "nsIURI.h"
 #include "PolicyTokenizer.h"
 #include "mozilla/UniquePtr.h"
+#include "nsCSPContext.h"
+#include "nsCSPUtils.h"
+#include "nsIURI.h"
 
 bool isNumberToken(char16_t aSymbol);
 bool isValidHexDig(char16_t aHexDig);

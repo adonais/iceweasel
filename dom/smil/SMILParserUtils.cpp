@@ -14,8 +14,8 @@
 #include "mozilla/SMILValue.h"
 #include "mozilla/SVGContentUtils.h"
 #include "mozilla/TextUtils.h"
-#include "nsContentUtils.h"
 #include "nsCharSeparatedTokenizer.h"
+#include "nsContentUtils.h"
 
 using namespace mozilla::dom;
 //------------------------------------------------------------------------------

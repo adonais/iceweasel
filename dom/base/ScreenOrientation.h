@@ -8,10 +8,10 @@
 #define mozilla_dom_ScreenOrientation_h
 
 #include "mozilla/DOMEventTargetHelper.h"
-#include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/ScreenOrientationBinding.h"
 #include "mozilla/HalScreenConfiguration.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/ScreenOrientationBinding.h"
 
 class nsScreen;
 

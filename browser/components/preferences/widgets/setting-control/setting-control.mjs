@@ -8,6 +8,7 @@ import {
   directive,
   html,
   ifDefined,
+  literal,
   noChange,
   nothing,
   ref,
@@ -107,6 +108,11 @@ function getControlInstance(control = "moz-checkbox") {
   return controlInstances.get(control);
 }
 
+const KNOWN_OPTIONS = new Map([
+  ["moz-radio-group", literal`moz-radio`],
+  ["moz-select", literal`moz-option`],
+]);
+
 export class SettingControl extends MozLitElement {
   #lastSetting;
 
@@ -136,15 +142,21 @@ export class SettingControl extends MozLitElement {
     return result;
   }
 
+  onSettingChange = () => {
+    this.setValue();
+    this.requestUpdate();
+  };
+
   willUpdate(changedProperties) {
     if (changedProperties.has("setting")) {
       if (this.#lastSetting) {
-        this.#lastSetting.off("change", this.setValue);
+        this.#lastSetting.off("change", this.onSettingChange);
       }
       this.#lastSetting = this.setting;
       this.setValue();
-      this.setting.on("change", this.setValue);
+      this.setting.on("change", this.onSettingChange);
     }
+    this.hidden = !this.setting.visible;
   }
 
   /**
@@ -159,7 +171,8 @@ export class SettingControl extends MozLitElement {
       ".parentDisabled": this.parentDisabled,
       ".control": this,
       "data-subcategory": config.subcategory,
-      "?disabled": this.setting.locked,
+      "?disabled": this.setting.disabled || this.setting.locked,
+      ...config.controlAttrs,
     };
 
     if (config.l10nArgs) {
@@ -188,7 +201,7 @@ export class SettingControl extends MozLitElement {
   };
 
   controlValue(el) {
-    if (el.constructor.activatedProperty) {
+    if (el.constructor.activatedProperty && el.localName != "moz-radio") {
       return el[el.constructor.activatedProperty];
     }
     return el.value;
@@ -197,50 +210,52 @@ export class SettingControl extends MozLitElement {
   // Called by our parent when our input changed.
   onChange(el) {
     this.setting.userChange(this.controlValue(el));
-    this.setValue();
   }
 
   render() {
     // Allow the Setting to override the static config if necessary.
     this.config = this.setting.getControlConfig(this.config);
     let { config } = this;
+    let getItemArgs = items =>
+      items?.map(i => ({
+        config: i,
+        setting: this.getSetting(i.id),
+      })) || [];
 
     // Prepare nested item config and settings.
-    let itemArgs =
-      config.items
-        ?.map(i => ({
-          config: i,
-          setting: this.getSetting(i.id),
-        }))
-        .filter(i => i.setting.visible) || [];
-    let nestedSettings = itemArgs.map(
-      opts =>
-        html`<setting-control
-          .config=${opts.config}
-          .setting=${opts.setting}
-          .getSetting=${this.getSetting}
-          slot="nested"
-        ></setting-control>`
-    );
+    let itemArgs = getItemArgs(config.items);
+    let itemTemplate = opts =>
+      html`<setting-control
+        .config=${opts.config}
+        .setting=${opts.setting}
+        .getSetting=${this.getSetting}
+        slot="nested"
+      ></setting-control>`;
+    let nestedSettings = itemArgs.map(itemTemplate);
+
+    // Prepare any children that this element may need.
+    let controlChildren = nothing;
+    if (config.options) {
+      controlChildren = config.options.map(opt => {
+        let optionTag = opt.control
+          ? unsafeStatic(opt.control)
+          : KNOWN_OPTIONS.get(config.control);
+        return staticHtml`<${optionTag}
+              id=${ifDefined(opt.id)}
+              .value=${opt.value}
+              .supportPage=${opt.supportPage}
+              .control=${this}
+              data-l10n-id=${opt.l10nId}
+              data-l10n-args=${ifDefined(
+                opt.l10nArgs && JSON.stringify(opt.l10nArgs)
+              )}
+            >${opt.items ? getItemArgs(opt.items).map(itemTemplate) : ""}</${optionTag}>`;
+      });
+    }
 
     // Get the properties for this element: id, fluent, disabled, etc.
     // These will be applied to the control using the spread directive.
     let controlProps = this.getPropertyMapping(config);
-
-    // Prepare any children that this element may need.
-    let controlChildren = nothing;
-    if (config.control == "moz-select") {
-      controlChildren = config.options.map(
-        opt =>
-          html`<moz-option
-            .value=${opt.value}
-            data-l10n-id=${opt.l10nId}
-            data-l10n-args=${ifDefined(
-              opt.l10nArgs && JSON.stringify(opt.l10nArgs)
-            )}
-          ></moz-option>`
-      );
-    }
 
     let tag = unsafeStatic(config.control || "moz-checkbox");
     return staticHtml`<${tag}

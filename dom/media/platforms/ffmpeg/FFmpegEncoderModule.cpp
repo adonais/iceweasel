@@ -6,8 +6,9 @@
 
 #include "FFmpegEncoderModule.h"
 
-#include "FFmpegLog.h"
+#include "EncoderConfig.h"
 #include "FFmpegAudioEncoder.h"
+#include "FFmpegLog.h"
 #include "FFmpegUtils.h"
 #include "FFmpegVideoEncoder.h"
 
@@ -15,8 +16,9 @@
 #  include "mozilla/AppShutdown.h"
 #endif
 
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "prenv.h"
 
 // This must be the last header included
 #include "FFmpegLibs.h"
@@ -28,17 +30,20 @@ namespace mozilla {
 
 template <int V>
 /* static */ void FFmpegEncoderModule<V>::Init(FFmpegLibWrapper* aLib) {
-#if (defined(XP_WIN) || defined(MOZ_WIDGET_GTK)) && \
+#if (defined(XP_WIN) || defined(MOZ_WIDGET_GTK) || \
+     defined(MOZ_WIDGET_ANDROID)) &&               \
     defined(MOZ_USE_HWDECODE) && !defined(MOZ_FFVPX_AUDIOONLY)
 #  ifdef XP_WIN
-  if (!XRE_IsGPUProcess()) {
-    return;
-  }
+  if (!XRE_IsGPUProcess())
 #  else
-  if (!XRE_IsRDDProcess()) {
+  if (!XRE_IsRDDProcess() &&
+      !(XRE_IsParentProcess() && PR_GetEnv("MOZ_RUN_GTEST")))
+#  endif
+  {
+    MOZ_LOG(sPEMLog, LogLevel::Debug,
+            ("No support in %s process", XRE_GetProcessTypeString()));
     return;
   }
-#  endif
 
   if (!gfx::gfxVars::IsInitialized()) {
     MOZ_ASSERT(AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdown));
@@ -59,13 +64,15 @@ template <int V>
 #  if LIBAVCODEC_VERSION_MAJOR >= 55
       {AV_CODEC_ID_VP9, gfx::gfxVars::UseVP9HwEncode()},
 #  endif
-#  if defined(MOZ_WIDGET_GTK) && LIBAVCODEC_VERSION_MAJOR >= 54
+#  if (defined(MOZ_WIDGET_GTK) || defined(MOZ_WIDGET_ANDROID)) && \
+      LIBAVCODEC_VERSION_MAJOR >= 54
       {AV_CODEC_ID_VP8, gfx::gfxVars::UseVP8HwEncode()},
 #  endif
 
   // These proprietary video codecs can only be encoded via hardware by using
   // the system ffmpeg, not supported by ffvpx.
-#  if defined(MOZ_WIDGET_GTK) && !defined(FFVPX_VERSION)
+#  if (defined(MOZ_WIDGET_GTK) && !defined(FFVPX_VERSION)) || \
+      defined(MOZ_WIDGET_ANDROID)
 #    if LIBAVCODEC_VERSION_MAJOR >= 55
       {AV_CODEC_ID_HEVC, gfx::gfxVars::UseHEVCHwEncode()},
 #    endif
@@ -73,10 +80,13 @@ template <int V>
 #  endif
   };
 
+  // Reset the list of supported hardware codecs and reevaluate them.
+  auto hwCodecs = sSupportedHWCodecs.Lock();
+  hwCodecs->Clear();
   for (const auto& entry : kCodecIDs) {
     if (!entry.mHwAllowed) {
       MOZ_LOG(
-          sPDMLog, LogLevel::Debug,
+          sPEMLog, LogLevel::Debug,
           ("Hw codec disabled by gfxVars for %s", AVCodecToString(entry.mId)));
       continue;
     }
@@ -84,17 +94,17 @@ template <int V>
     const auto* codec =
         FFmpegDataEncoder<V>::FindHardwareEncoder(aLib, entry.mId);
     if (!codec) {
-      MOZ_LOG(sPDMLog, LogLevel::Debug,
+      MOZ_LOG(sPEMLog, LogLevel::Debug,
               ("No hw codec or encoder for %s", AVCodecToString(entry.mId)));
       continue;
     }
 
-    sSupportedHWCodecs.AppendElement(entry.mId);
-    MOZ_LOG(sPDMLog, LogLevel::Debug,
+    hwCodecs->AppendElement(entry.mId);
+    MOZ_LOG(sPEMLog, LogLevel::Debug,
             ("Support %s for hw encoding", AVCodecToString(entry.mId)));
   }
-#endif  // (XP_WIN || MOZ_WIDGET_GTK) && MOZ_USE_HWDECODE &&
-        // !MOZ_FFVPX_AUDIOONLY
+#endif  // (XP_WIN || MOZ_WIDGET_GTK || MOZ_WIDGET_ANDROID) && MOZ_USE_HWDECODE
+        // && !MOZ_FFVPX_AUDIOONLY
 }  // namespace mozilla
 
 template <int V>
@@ -116,7 +126,16 @@ EncodeSupportSet FFmpegEncoderModule<V>::Supports(
       return EncodeSupportSet{};
     }
   }
-  return SupportsCodec(aConfig.mCodec);
+  auto support = SupportsCodec(aConfig.mCodec);
+  if (aConfig.mHardwarePreference == HardwarePreference::RequireHardware &&
+      !support.contains(EncodeSupport::HardwareEncode)) {
+    return {};
+  }
+  if (aConfig.mHardwarePreference == HardwarePreference::RequireSoftware &&
+      !support.contains(EncodeSupport::SoftwareEncode)) {
+    return {};
+  }
+  return support;
 }
 
 template <int V>
@@ -127,10 +146,13 @@ EncodeSupportSet FFmpegEncoderModule<V>::SupportsCodec(CodecType aCodec) const {
   }
   EncodeSupportSet supports;
 #ifdef MOZ_USE_HWDECODE
-  if (StaticPrefs::media_ffvpx_hw_enabled() && gfx::gfxVars::IsInitialized() &&
-      gfx::gfxVars::CanUseHardwareVideoEncoding() &&
-      sSupportedHWCodecs.Contains(static_cast<uint32_t>(id))) {
-    supports += EncodeSupport::HardwareEncode;
+  if (StaticPrefs::media_ffvpx_hw_enabled()) {
+    // We don't need to check the gfxVars again because we check them when we
+    // populated sSupportedHWCodecs.
+    auto hwCodecs = sSupportedHWCodecs.Lock();
+    if (hwCodecs->Contains(static_cast<uint32_t>(id))) {
+      supports += EncodeSupport::HardwareEncode;
+    }
   }
 #endif
   if (FFmpegDataEncoder<V>::FindSoftwareEncoder(mLib, id)) {

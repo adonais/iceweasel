@@ -8,7 +8,6 @@ import android.content.Intent
 import android.content.Intent.ACTION_VIEW
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.CustomTabConfig
 import mozilla.components.browser.state.state.ExternalAppType
@@ -35,7 +34,6 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 
 @RunWith(AndroidJUnit4::class)
-@ExperimentalCoroutinesApi
 class WebAppIntentProcessorTest {
     @Test
     fun `process checks if intent action is not valid`() {

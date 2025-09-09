@@ -8,8 +8,8 @@
 #define VideoUtils_h
 
 #include "AudioSampleFormat.h"
-#include "MediaInfo.h"
 #include "MediaCodecsSupport.h"
+#include "MediaInfo.h"
 #include "VideoLimits.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Attributes.h"

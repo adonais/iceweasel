@@ -7,8 +7,8 @@
 #ifndef PlayingRefChangeHandler_h__
 #define PlayingRefChangeHandler_h__
 
-#include "nsThreadUtils.h"
 #include "AudioNodeTrack.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla::dom {
 

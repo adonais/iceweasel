@@ -11,10 +11,8 @@
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/dom/NotificationBinding.h"
 #include "mozilla/dom/notification/NotificationChild.h"
-
-#include "nsISupports.h"
-
 #include "nsCycleCollectionParticipant.h"
+#include "nsISupports.h"
 
 class nsIPrincipal;
 class nsIVariant;

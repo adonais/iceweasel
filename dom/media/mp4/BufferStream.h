@@ -6,8 +6,8 @@
 #define BUFFER_STREAM_H_
 
 #include "ByteStream.h"
-#include "nsTArray.h"
 #include "MediaResource.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 class MediaByteBuffer;

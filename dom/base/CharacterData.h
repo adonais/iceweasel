@@ -12,13 +12,12 @@
 #ifndef mozilla_dom_CharacterData_h
 #define mozilla_dom_CharacterData_h
 
+#include "CharacterDataBuffer.h"
 #include "mozilla/Attributes.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsError.h"
 #include "nsIContent.h"
 #include "nsIMutationObserver.h"
-
-#include "nsTextFragment.h"
-#include "nsError.h"
-#include "nsCycleCollectionParticipant.h"
 
 namespace mozilla::dom {
 class Element;
@@ -116,11 +115,13 @@ class CharacterData : public nsIContent {
 
   void UnbindFromTree(UnbindContext&) override;
 
-  const nsTextFragment* GetText() override { return &mText; }
+  const CharacterDataBuffer* GetCharacterDataBuffer() const override {
+    return &mBuffer;
+  }
   uint32_t TextLength() const final { return TextDataLength(); }
 
-  const nsTextFragment& TextFragment() const { return mText; }
-  uint32_t TextDataLength() const { return mText.GetLength(); }
+  const CharacterDataBuffer& DataBuffer() const { return mBuffer; }
+  uint32_t TextDataLength() const { return mBuffer.GetLength(); }
 
   /**
    * Set the text to the given value. If aNotify is true then
@@ -147,14 +148,14 @@ class CharacterData : public nsIContent {
   /**
    * Append the text content to aResult.
    */
-  void AppendTextTo(nsAString& aResult) const { mText.AppendTo(aResult); }
+  void AppendTextTo(nsAString& aResult) const { mBuffer.AppendTo(aResult); }
 
   /**
    * Append the text content to aResult.
    */
   [[nodiscard]] bool AppendTextTo(nsAString& aResult,
                                   const fallible_t& aFallible) const {
-    return mText.AppendTo(aResult, aFallible);
+    return mBuffer.AppendTo(aResult, aFallible);
   }
 
   void SaveSubtreeState() final {}
@@ -199,7 +200,7 @@ class CharacterData : public nsIContent {
    * Compare two CharacterData nodes for text equality.
    */
   [[nodiscard]] bool TextEquals(const CharacterData* aOther) const {
-    return mText.TextEquals(aOther->mText);
+    return mBuffer.BufferEquals(aOther->mBuffer);
   }
 
  protected:
@@ -223,7 +224,7 @@ class CharacterData : public nsIContent {
   virtual already_AddRefed<CharacterData> CloneDataNode(
       dom::NodeInfo* aNodeInfo, bool aCloneText) const = 0;
 
-  nsTextFragment mText;
+  CharacterDataBuffer mBuffer;
 
  private:
   already_AddRefed<nsAtom> GetCurrentValueAtom();

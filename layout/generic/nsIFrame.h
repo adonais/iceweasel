@@ -81,6 +81,7 @@
 #include "nsPresContext.h"
 #include "nsQueryFrame.h"
 #include "nsStyleStruct.h"
+#include "nsStyleStructList.h"
 #include "nsTHashSet.h"
 
 #ifdef ACCESSIBILITY
@@ -971,7 +972,7 @@ class nsIFrame : public nsQueryFrame {
  * Callers can use Style*WithOptionalParam if they're in a function that
  * accepts an *optional* pointer the style struct.
  */
-#define STYLE_STRUCT(name_)                                          \
+#define FRAME_STYLE_ACCESSORS(name_)                                 \
   const nsStyle##name_* Style##name_() const MOZ_NONNULL_RETURN {    \
     NS_ASSERTION(mComputedStyle, "No style found!");                 \
     return mComputedStyle->Style##name_();                           \
@@ -984,8 +985,8 @@ class nsIFrame : public nsQueryFrame {
     }                                                                \
     return Style##name_();                                           \
   }
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT
+  FOR_EACH_STYLE_STRUCT(FRAME_STYLE_ACCESSORS, FRAME_STYLE_ACCESSORS)
+#undef FRAME_STYLE_ACCESSORS
 
   /** Also forward GetVisitedDependentColor to the style */
   template <typename T, typename S>
@@ -1418,6 +1419,8 @@ class nsIFrame : public nsQueryFrame {
 
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(UsedMarginProperty, nsMargin)
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(UsedPaddingProperty, nsMargin)
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(AnchorPosReferences,
+                                      AnchorPosReferencedAnchors);
 
   // This tracks the start and end page value for a frame.
   //
@@ -2269,7 +2272,6 @@ class nsIFrame : public nsQueryFrame {
    * Search for selectable content at point and attempt to select
    * based on the start and end selection behaviours.
    *
-   * @param aPresContext Presentation context
    * @param aPoint Point at which selection will occur. Coordinates
    * should be relative to this frame.
    * @param aBeginAmountType, aEndAmountType Selection behavior, see
@@ -2278,8 +2280,7 @@ class nsIFrame : public nsQueryFrame {
    * @return success or failure at finding suitable content to select.
    */
   MOZ_CAN_RUN_SCRIPT nsresult
-  SelectByTypeAtPoint(nsPresContext* aPresContext, const nsPoint& aPoint,
-                      nsSelectionAmount aBeginAmountType,
+  SelectByTypeAtPoint(const nsPoint& aPoint, nsSelectionAmount aBeginAmountType,
                       nsSelectionAmount aEndAmountType, uint32_t aSelectFlags);
 
   MOZ_CAN_RUN_SCRIPT nsresult PeekBackwardAndForwardForSelection(
@@ -2365,10 +2366,9 @@ class nsIFrame : public nsQueryFrame {
                                     int32_t* aContentOffset,
                                     mozilla::TableSelectionMode* aTarget);
 
-  /**
-   * @return see nsISelectionController.idl's `getDisplaySelection`.
-   */
-  int16_t DetermineDisplaySelection();
+  // Whether this frame should move the selection as a response to mouse moves /
+  // presses / drags.
+  bool ShouldHandleSelectionMovementEvents();
 
  public:
   virtual nsIContent* GetContentForEvent(const mozilla::WidgetEvent*) const;
@@ -3200,6 +3200,13 @@ class nsIFrame : public nsQueryFrame {
    */
   virtual void UnionChildOverflow(mozilla::OverflowAreas& aOverflowAreas,
                                   bool aAsIfScrolled = false);
+  /**
+   * Computes the clipping rectangle for the given frame based on its 'overflow'
+   * properties. Returns true if the clip has a border radius.
+   */
+  bool ComputeOverflowClipRectRelativeToSelf(
+      const mozilla::PhysicalAxes aClipAxes, nsRect& aOutRect,
+      nscoord aOutRadii[8]) const;
 
   // Returns the applicable overflow-clip-margin values.
   nsSize OverflowClipMargin(mozilla::PhysicalAxes aClipAxes) const;
@@ -4519,25 +4526,20 @@ class nsIFrame : public nsQueryFrame {
    * value. Returns the pointer to the property, guaranteed non-null, value that
    * then can be used to update the property value further.
    *
-   * Note: Should consider implementing a move variant if it causes perf issues.
    * Note: As the name suggests, this will behave properly only for properties
    * declared with NS_DECLARE_FRAME_PROPERTY_DELETABLE!
    */
-  template <
-      typename T,
-      std::enable_if_t<std::is_pointer<FrameProperties::PropertyType<T>>::value,
-                       bool> = true>
+  template <typename T, typename... Params>
   FrameProperties::PropertyType<T> SetOrUpdateDeletableProperty(
-      FrameProperties::Descriptor<T> aProperty,
-      const std::remove_pointer_t<FrameProperties::PropertyType<T>>& aValue) {
+      FrameProperties::Descriptor<T> aProperty, Params&&... aParams) {
     bool found;
     using DataType = std::remove_pointer_t<FrameProperties::PropertyType<T>>;
     DataType* storedValue = GetProperty(aProperty, &found);
     if (!found) {
-      storedValue = new DataType{aValue};
+      storedValue = new DataType{aParams...};
       AddProperty(aProperty, storedValue);
     } else {
-      *storedValue = aValue;
+      *storedValue = DataType{aParams...};
     }
     return storedValue;
   }
@@ -5926,8 +5928,8 @@ inline nsIFrame* nsFrameList::BackwardFrameTraversal::Prev(nsIFrame* aFrame) {
 }
 
 inline AnchorPosResolutionParams AnchorPosResolutionParams::From(
-    const nsIFrame* aFrame) {
-  return {aFrame, aFrame->StyleDisplay()->mPosition};
+    const nsIFrame* aFrame, AnchorPosReferencedAnchors* aReferencedAnchors) {
+  return {aFrame, aFrame->StyleDisplay()->mPosition, aReferencedAnchors};
 }
 
 #endif /* nsIFrame_h___ */

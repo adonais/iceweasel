@@ -7,15 +7,12 @@
 #include "WebTransport.h"
 
 #include "WebTransportBidirectionalStream.h"
-#include "mozilla/RefPtr.h"
-#include "nsUTF8Utils.h"
-#include "nsIURL.h"
-#include "nsIWebTransportStream.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/dom/Document.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
-#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/PWebTransport.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/ReadableStreamDefaultController.h"
 #include "mozilla/dom/RemoteWorkerChild.h"
@@ -29,6 +26,9 @@
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/PBackgroundChild.h"
+#include "nsIURL.h"
+#include "nsIWebTransportStream.h"
+#include "nsUTF8Utils.h"
 
 using namespace mozilla::ipc;
 

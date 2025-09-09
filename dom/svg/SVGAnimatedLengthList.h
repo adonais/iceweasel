@@ -7,10 +7,10 @@
 #ifndef DOM_SVG_SVGANIMATEDLENGTHLIST_H_
 #define DOM_SVG_SVGANIMATEDLENGTHLIST_H_
 
+#include "SVGLengthList.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
-#include "SVGLengthList.h"
 
 namespace mozilla {
 

@@ -18,6 +18,7 @@ import androidx.core.content.ContextCompat.getColor
 import androidx.core.view.forEach
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -65,6 +66,7 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.robolectric.annotation.Config
 
+@ExperimentalCoroutinesApi // UnconfinedTestDispatcher
 @RunWith(AndroidJUnit4::class)
 class CustomTabsToolbarFeatureTest {
     @Test

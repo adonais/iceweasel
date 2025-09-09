@@ -73,7 +73,7 @@ const kEventConstructors = {
   CompositionEvent:                          { create (aName, aProps) {
                                                          var e = document.createEvent("compositionevent");
                                                          e.initCompositionEvent(aName, aProps.bubbles, aProps.cancelable,
-                                                                                aProps.view, aProps.data, aProps.locale);
+                                                                                aProps.view, aProps.data);
                                                          return e;
                                                        },
                                              },

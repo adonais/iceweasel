@@ -68,6 +68,7 @@ import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.content.createChooserExcludingCurrentApp
+import mozilla.components.support.ktx.android.view.ImeInsetsSynchronizer
 import mozilla.components.support.ktx.android.view.exitImmersiveMode
 import mozilla.components.support.locale.ActivityContextWrapper
 import mozilla.components.support.utils.Browsers
@@ -495,6 +496,23 @@ class BrowserFragment :
         )
 
         setSitePermissions(view)
+
+        ImeInsetsSynchronizer.setup(
+            targetView = view,
+            synchronizeViewWithIME = false,
+            onIMEAnimationStarted = { isKeyboardShowingUp, _ ->
+                if (!isKeyboardShowingUp) {
+                    (view.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin = 0
+                    view.requestLayout()
+                }
+            },
+            onIMEAnimationFinished = { isKeyboardShowingUp, keyboardHeight ->
+                if (isKeyboardShowingUp || keyboardHeight == 0) {
+                    (view.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin = keyboardHeight
+                    view.requestLayout()
+                }
+            },
+        )
     }
 
     private fun setSitePermissions(rootView: View) {
@@ -765,6 +783,7 @@ class BrowserFragment :
         snackbar.setAction(getString(R.string.download_snackbar_open)) { context ->
             val opened = AbstractFetchDownloadService.openFile(
                 applicationContext = context.applicationContext,
+                packageName = context.applicationContext.packageName,
                 downloadFileName = state.fileName,
                 downloadFilePath = state.filePath,
                 downloadContentType = state.contentType,

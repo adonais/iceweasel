@@ -95,6 +95,11 @@ export class UrlbarResult {
         this.payloadHighlights[name] = [];
       }
     }
+
+    if (this.type == lazy.UrlbarUtils.RESULT_TYPE.TIP) {
+      this.isRichSuggestion = true;
+      this.richSuggestionIconSize = 24;
+    }
   }
 
   /**
@@ -212,6 +217,9 @@ export class UrlbarResult {
 
         return [this.payload.url ?? "", this.payloadHighlights.url ?? []];
       case lazy.UrlbarUtils.RESULT_TYPE.SEARCH:
+        if (this.payload.title) {
+          return [this.payload.title, this.payloadHighlights.title];
+        }
         if (this.payload.providesSearchMode) {
           return ["", []];
         }

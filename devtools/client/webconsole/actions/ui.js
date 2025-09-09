@@ -25,7 +25,7 @@ const {
   SPLIT_CONSOLE_CLOSE_BUTTON_TOGGLE,
   SHOW_EVALUATION_NOTIFICATION,
   TIMESTAMPS_TOGGLE,
-  WARNING_GROUPS_TOGGLE,
+  GROUP_SIMILAR_MESSAGES_TOGGLE,
   FILTERBAR_DISPLAY_MODE_SET,
   EDITOR_TOGGLE,
   EDITOR_SET_WIDTH,
@@ -95,15 +95,15 @@ function autocompleteToggle() {
   };
 }
 
-function warningGroupsToggle() {
+function groupSimilarMessagesToggle() {
   return ({ dispatch, getState, prefsService }) => {
     dispatch({
-      type: WARNING_GROUPS_TOGGLE,
+      type: GROUP_SIMILAR_MESSAGES_TOGGLE,
     });
     const prefsState = getAllPrefs(getState());
     prefsService.setBoolPref(
-      PREFS.FEATURES.GROUP_WARNINGS,
-      prefsState.groupWarnings
+      PREFS.FEATURES.GROUP_SIMILAR_MESSAGES,
+      prefsState.groupSimilar
     );
   };
 }
@@ -248,7 +248,7 @@ module.exports = {
   splitConsoleCloseButtonToggle,
   timestampsToggle,
   networkMonitoringToggle,
-  warningGroupsToggle,
+  groupSimilarMessagesToggle,
   openLink,
   openSidebar,
   autocompleteToggle,

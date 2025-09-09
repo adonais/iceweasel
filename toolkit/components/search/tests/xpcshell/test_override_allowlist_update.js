@@ -80,7 +80,7 @@ add_task(async function update_allowlist_and_addon() {
   let result = await Services.search.maybeSetAndOverrideDefault(extensionInfo);
 
   Assert.equal(
-    result.canChangeToAppProvided,
+    result.canChangeToConfigEngine,
     true,
     "Should have returned the correct value for allowing switch to default or not."
   );

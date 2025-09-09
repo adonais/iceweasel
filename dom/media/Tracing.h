@@ -12,7 +12,6 @@
 #include <cstdio>
 
 #include "AsyncLogger.h"
-
 #include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 

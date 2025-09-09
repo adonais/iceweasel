@@ -31,9 +31,9 @@ const PREF_INTEREST_PICKER_ENABLED =
 const PREF_VISIBLE_SECTIONS =
   "discoverystream.sections.interestPicker.visibleSections";
 const PREF_BILLBOARD_ENABLED = "newtabAdSize.billboard";
+const PREF_BILLBOARD_POSITION = "newtabAdSize.billboard.position";
 const PREF_LEADERBOARD_ENABLED = "newtabAdSize.leaderboard";
 const PREF_LEADERBOARD_POSITION = "newtabAdSize.leaderboard.position";
-const PREF_BILLBOARD_POSITION = "newtabAdSize.billboard.position";
 const PREF_REFINED_CARDS_ENABLED = "discoverystream.refinedCardsLayout.enabled";
 const PREF_INFERRED_PERSONALIZATION_USER =
   "discoverystream.sections.personalization.inferred.user.enabled";
@@ -139,7 +139,6 @@ function CardSection({
   dispatch,
   type,
   firstVisibleTimestamp,
-  is_collection,
   spocMessageVariant,
   ctaButtonVariant,
   ctaButtonSponsors,
@@ -169,7 +168,6 @@ function CardSection({
 
   const shouldShowTrendingSearch = trendingEnabled && trendingVariant === "b";
 
-  const { saveToPocketCard } = useSelector(state => state.DiscoveryStream);
   const mayHaveSectionsPersonalization =
     prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
 
@@ -395,8 +393,6 @@ function CardSection({
               showTopics={shouldShowLabels}
               selectedTopics={selectedTopics}
               availableTopics={availableTopics}
-              is_collection={is_collection}
-              saveToPocketCard={saveToPocketCard}
               ctaButtonSponsors={ctaButtonSponsors}
               ctaButtonVariant={ctaButtonVariant}
               spocMessageVariant={spocMessageVariant}
@@ -425,7 +421,6 @@ function CardSections({
   dispatch,
   type,
   firstVisibleTimestamp,
-  is_collection,
   spocMessageVariant,
   ctaButtonVariant,
   ctaButtonSponsors,
@@ -475,7 +470,6 @@ function CardSections({
       dispatch={dispatch}
       type={type}
       firstVisibleTimestamp={firstVisibleTimestamp}
-      is_collection={is_collection}
       spocMessageVariant={spocMessageVariant}
       ctaButtonVariant={ctaButtonVariant}
       ctaButtonSponsors={ctaButtonSponsors}

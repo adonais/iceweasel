@@ -11,6 +11,7 @@
 #include <memory>
 #include <new>
 #include <utility>
+
 #include "blapit.h"
 #include "certt.h"
 #include "js/StructuredClone.h"
@@ -998,7 +999,15 @@ nsresult CryptoKey::PrivateKeyToJwk(SECKEYPrivateKey* aPrivKey,
                                  &ecPoint);
 
       if (rv != SECSuccess) {
-        return NS_ERROR_DOM_OPERATION_ERR;
+        // SECKEY_ConvertToPublicKey will try to derive public key
+        UniqueSECKEYPublicKey pubKey =
+            UniqueSECKEYPublicKey(SECKEY_ConvertToPublicKey(aPrivKey));
+        rv = PK11_ReadRawAttribute(PK11_TypePubKey, pubKey.get(), CKA_EC_POINT,
+                                   &ecPoint);
+
+        if (rv != SECSuccess) {
+          return NS_ERROR_DOM_OPERATION_ERR;
+        }
       }
 
       if (!OKPKeyToJwk(&params, &ecPoint, aRetVal)) {

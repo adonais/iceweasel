@@ -11,8 +11,8 @@
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/dom/MediaKeySession.h"
 #include "mozilla/dom/KeySystemNames.h"
+#include "mozilla/dom/MediaKeySession.h"
 
 namespace mozilla {
 

@@ -8,7 +8,6 @@
 #define mozilla_MediaParent_h
 
 #include "MediaChild.h"
-
 #include "mozilla/media/PMediaParent.h"
 
 namespace mozilla::media {

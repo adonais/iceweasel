@@ -7,10 +7,10 @@
 #ifndef DOM_SVG_SVGMOTIONSMILANIMATIONFUNCTION_H_
 #define DOM_SVG_SVGMOTIONSMILANIMATIONFUNCTION_H_
 
-#include "mozilla/gfx/2D.h"
+#include "SVGMotionSMILType.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SMILAnimationFunction.h"
-#include "SVGMotionSMILType.h"
+#include "mozilla/gfx/2D.h"
 #include "nsTArray.h"
 
 class nsAttrValue;

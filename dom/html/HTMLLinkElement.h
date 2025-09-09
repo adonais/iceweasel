@@ -8,10 +8,10 @@
 #define mozilla_dom_HTMLLinkElement_h
 
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/HTMLDNSPrefetch.h"
-#include "mozilla/dom/LinkStyle.h"
-#include "mozilla/dom/Link.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/dom/HTMLDNSPrefetch.h"
+#include "mozilla/dom/Link.h"
+#include "mozilla/dom/LinkStyle.h"
 #include "nsDOMTokenList.h"
 #include "nsGenericHTMLElement.h"
 

@@ -5,11 +5,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "AudioInputSource.h"
-
+#include "MockCubeb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include "MockCubeb.h"
 #include "mozilla/Result.h"
 #include "mozilla/gtest/WaitFor.h"
 #include "nsContentUtils.h"

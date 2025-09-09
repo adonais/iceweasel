@@ -4,11 +4,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <algorithm>
-#include <limits>
+#include "MP4Demuxer.h"
+
 #include <stdint.h>
 
-#include "MP4Demuxer.h"
+#include <algorithm>
+#include <limits>
 
 #include "AnnexB.h"
 #include "BufferStream.h"
@@ -18,12 +19,12 @@
 #include "MP4Metadata.h"
 #include "MoofParser.h"
 #include "ResourceStream.h"
+#include "SampleIterator.h"
 #include "TimeUnits.h"
 #include "VPXDecoder.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "nsPrintfCString.h"
-#include "SampleIterator.h"
 
 extern mozilla::LazyLogModule gMediaDemuxerLog;
 mozilla::LogModule* GetDemuxerLog() { return gMediaDemuxerLog; }

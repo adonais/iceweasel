@@ -5,7 +5,6 @@
 package mozilla.components.service.pocket.spocs
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import mozilla.components.service.pocket.ext.toLocalSpoc
 import mozilla.components.service.pocket.helpers.PocketTestResources
@@ -23,7 +22,6 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 
-@ExperimentalCoroutinesApi // for runTest
 @RunWith(AndroidJUnit4::class)
 class SpocsRepositoryTest {
     private val spocsRepo = spy(SpocsRepository(testContext))

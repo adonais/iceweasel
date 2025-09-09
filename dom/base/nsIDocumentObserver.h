@@ -6,9 +6,9 @@
 #ifndef nsIDocumentObserver_h___
 #define nsIDocumentObserver_h___
 
-#include "nsISupports.h"
-#include "nsIMutationObserver.h"
 #include "mozilla/dom/RustTypes.h"
+#include "nsIMutationObserver.h"
+#include "nsISupports.h"
 
 namespace mozilla {
 

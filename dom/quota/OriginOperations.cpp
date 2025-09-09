@@ -15,6 +15,12 @@
 #include "FileUtils.h"
 #include "GroupInfo.h"
 #include "MainThreadUtils.h"
+#include "NormalOriginOperationBase.h"
+#include "OriginInfo.h"
+#include "OriginOperationBase.h"
+#include "OriginParser.h"
+#include "QuotaRequestBase.h"
+#include "ResolvableNormalOriginOp.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
@@ -24,20 +30,20 @@
 #include "mozilla/Result.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/dom/Nullable.h"
-#include "mozilla/dom/quota/CommonMetadata.h"
 #include "mozilla/dom/quota/Client.h"
+#include "mozilla/dom/quota/CommonMetadata.h"
 #include "mozilla/dom/quota/Constants.h"
 #include "mozilla/dom/quota/Date.h"
 #include "mozilla/dom/quota/DirectoryLock.h"
 #include "mozilla/dom/quota/DirectoryLockInlines.h"
 #include "mozilla/dom/quota/OriginDirectoryLock.h"
-#include "mozilla/dom/quota/PersistenceType.h"
-#include "mozilla/dom/quota/PrincipalUtils.h"
+#include "mozilla/dom/quota/OriginScope.h"
 #include "mozilla/dom/quota/PQuota.h"
 #include "mozilla/dom/quota/PQuotaRequest.h"
 #include "mozilla/dom/quota/PQuotaUsageRequest.h"
-#include "mozilla/dom/quota/OriginScope.h"
 #include "mozilla/dom/quota/PersistenceScope.h"
+#include "mozilla/dom/quota/PersistenceType.h"
+#include "mozilla/dom/quota/PrincipalUtils.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
 #include "mozilla/dom/quota/QuotaManager.h"
 #include "mozilla/dom/quota/QuotaManagerImpl.h"
@@ -48,9 +54,7 @@
 #include "mozilla/fallible.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
-#include "NormalOriginOperationBase.h"
 #include "nsCOMPtr.h"
-#include "nsTHashMap.h"
 #include "nsDebug.h"
 #include "nsError.h"
 #include "nsHashKeys.h"
@@ -62,11 +66,7 @@
 #include "nsPrintfCString.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "OriginInfo.h"
-#include "OriginOperationBase.h"
-#include "OriginParser.h"
-#include "QuotaRequestBase.h"
-#include "ResolvableNormalOriginOp.h"
+#include "nsTHashMap.h"
 #include "prthread.h"
 #include "prtime.h"
 
@@ -1646,9 +1646,14 @@ void GetUsageOp::ProcessOriginInternal(QuotaManager* aQuotaManager,
 
         OriginUsageMetadata metadata;
         metadata.mOrigin = aOrigin;
+        metadata.mIsPrivate = false;
         metadata.mPersistenceType = PERSISTENCE_TYPE_DEFAULT;
-        metadata.mPersisted = false;
         metadata.mLastAccessTime = 0;
+        metadata.mLastMaintenanceDate = 0;
+        metadata.mAccessed = false;
+        metadata.mPersisted = false;
+        metadata.mOriginUsage = 0;
+        metadata.mQuotaVersion = kNoQuotaVersion;
         metadata.mUsage = 0;
 
         return mOriginUsages.EmplaceBack(std::move(metadata));

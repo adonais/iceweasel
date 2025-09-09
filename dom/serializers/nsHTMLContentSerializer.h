@@ -14,8 +14,8 @@
 #define nsHTMLContentSerializer_h__
 
 #include "mozilla/Attributes.h"
-#include "nsXHTMLContentSerializer.h"
 #include "nsString.h"
+#include "nsXHTMLContentSerializer.h"
 
 class nsAtom;
 

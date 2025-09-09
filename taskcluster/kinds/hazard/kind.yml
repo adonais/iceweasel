@@ -47,8 +47,8 @@ tasks:
         fetches:
             toolchain:
                 - linux64-clang
-                - linux64-gcc-9
-                - linux64-gcc-sixgill
+                - linux64-gcc-10
+                - linux64-gcc-10-sixgill
                 - linux64-rust
                 - linux64-cbindgen
                 - linux64-node
@@ -71,8 +71,8 @@ tasks:
         fetches:
             toolchain:
                 - linux64-clang
-                - linux64-gcc-9
-                - linux64-gcc-sixgill
+                - linux64-gcc-10
+                - linux64-gcc-10-sixgill
                 - linux64-rust
                 - linux64-cbindgen
                 - linux64-nasm

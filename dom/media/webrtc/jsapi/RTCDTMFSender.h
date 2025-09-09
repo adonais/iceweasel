@@ -6,9 +6,9 @@
 #define _RTCDTMFSender_h_
 
 #include "MediaEventSource.h"
+#include "js/RootingAPI.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/RefPtr.h"
-#include "js/RootingAPI.h"
 #include "nsITimer.h"
 
 class nsPIDOMWindowInner;

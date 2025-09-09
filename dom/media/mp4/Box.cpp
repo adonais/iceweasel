@@ -5,10 +5,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Box.h"
+
+#include <algorithm>
+
 #include "ByteStream.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Unused.h"
-#include <algorithm>
 
 namespace mozilla {
 

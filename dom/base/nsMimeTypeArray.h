@@ -7,11 +7,11 @@
 #ifndef nsMimeTypeArray_h___
 #define nsMimeTypeArray_h___
 
-#include "nsWrapperCache.h"
+#include "mozilla/dom/BindingDeclarations.h"
 #include "nsCOMPtr.h"
 #include "nsPIDOMWindow.h"
 #include "nsTArray.h"
-#include "mozilla/dom/BindingDeclarations.h"
+#include "nsWrapperCache.h"
 
 class nsMimeType;
 class nsPluginElement;

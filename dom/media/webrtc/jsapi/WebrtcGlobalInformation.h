@@ -5,11 +5,11 @@
 #ifndef _WEBRTC_GLOBAL_INFORMATION_H_
 #define _WEBRTC_GLOBAL_INFORMATION_H_
 
-#include "mozilla/Attributes.h"
-#include "mozilla/dom/WebrtcGlobalInformationBinding.h"
-#include "mozilla/dom/BindingDeclarations.h"  // for Optional
-#include "nsDOMNavigationTiming.h"
 #include "WebrtcGlobalStatsHistory.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/dom/BindingDeclarations.h"  // for Optional
+#include "mozilla/dom/WebrtcGlobalInformationBinding.h"
+#include "nsDOMNavigationTiming.h"
 
 namespace mozilla {
 class PeerConnectionImpl;

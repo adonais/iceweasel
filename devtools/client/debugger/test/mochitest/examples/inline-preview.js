@@ -70,3 +70,12 @@ function onBtnClick(event) {
   dict[key] = "world";
   debugger;
 }
+
+function protoArg(__proto__) {
+  debugger;
+}
+
+function protoVar() {
+  const __proto__ = "lemon";
+  debugger;
+}

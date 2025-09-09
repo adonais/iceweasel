@@ -7,10 +7,10 @@
 #ifndef nsCSPContext_h___
 #define nsCSPContext_h___
 
-#include "mozilla/dom/CSPViolationData.h"
-#include "mozilla/dom/nsCSPUtils.h"
-#include "mozilla/dom/SecurityPolicyViolationEvent.h"
 #include "mozilla/StaticPrefs_security.h"
+#include "mozilla/dom/CSPViolationData.h"
+#include "mozilla/dom/SecurityPolicyViolationEvent.h"
+#include "mozilla/dom/nsCSPUtils.h"
 #include "nsIChannel.h"
 #include "nsIChannelEventSink.h"
 #include "nsIContentSecurityPolicy.h"

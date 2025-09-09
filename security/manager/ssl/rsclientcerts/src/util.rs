@@ -13,6 +13,7 @@ use std::iter::zip;
 
 use crate::error::{Error, ErrorType};
 use crate::error_here;
+use crate::manager::CryptokiObject;
 
 /// Accessing fields of packed structs is unsafe (it may be undefined behavior if the field isn't
 /// aligned). Since we're implementing a PKCS#11 module, we already have to trust the caller not to
@@ -31,12 +32,9 @@ macro_rules! unsafe_packed_field_access {
 // The following ENCODED_OID_BYTES_* consist of the encoded bytes of an ASN.1
 // OBJECT IDENTIFIER specifying the indicated OID (in other words, the full
 // tag, length, and value).
-#[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
 pub const ENCODED_OID_BYTES_SECP256R1: &[u8] =
     &[0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07];
-#[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
 pub const ENCODED_OID_BYTES_SECP384R1: &[u8] = &[0x06, 0x05, 0x2b, 0x81, 0x04, 0x00, 0x22];
-#[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
 pub const ENCODED_OID_BYTES_SECP521R1: &[u8] = &[0x06, 0x05, 0x2b, 0x81, 0x04, 0x00, 0x23];
 
 // The following OID_BYTES_* consist of the contents of the bytes of an ASN.1
@@ -535,6 +533,211 @@ pub fn emsa_pss_encode(
     em.push(0xbc);
 
     Ok(em)
+}
+
+/// A `CryptokiCert` holds all relevant information for a `CryptokiObject` with class
+/// `CKO_CERTIFICATE`.
+pub struct CryptokiCert {
+    /// PKCS #11 object class. Will be `CKO_CERTIFICATE`.
+    class: Vec<u8>,
+    /// Whether or not this is on a token. Will be `CK_TRUE`.
+    token: Vec<u8>,
+    /// An identifier unique to this certificate. This must be the same as the ID for the private
+    /// key, so for simplicity, this will be the sha256 hash of the bytes of the certificate.
+    id: Vec<u8>,
+    /// The bytes of a human-readable label for this certificate.
+    label: Vec<u8>,
+    /// The DER bytes of the certificate.
+    value: Vec<u8>,
+    /// The DER bytes of the issuer distinguished name of the certificate.
+    issuer: Vec<u8>,
+    /// The DER bytes of the serial number of the certificate.
+    serial_number: Vec<u8>,
+    /// The DER bytes of the subject distinguished name of the certificate.
+    subject: Vec<u8>,
+}
+
+impl CryptokiCert {
+    pub fn new(der: Vec<u8>, label: Vec<u8>) -> Result<CryptokiCert, Error> {
+        let id = sha2::Sha256::digest(&der).to_vec();
+        let (serial_number, issuer, subject) = read_encoded_certificate_identifiers(&der)?;
+        Ok(CryptokiCert {
+            class: serialize_uint(CKO_CERTIFICATE)?,
+            token: serialize_uint(CK_TRUE)?,
+            id,
+            label,
+            value: der,
+            issuer,
+            serial_number,
+            subject,
+        })
+    }
+}
+
+impl CryptokiObject for CryptokiCert {
+    fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
+        for (attr_type, attr_value) in attrs {
+            let comparison = match *attr_type {
+                CKA_CLASS => &self.class,
+                CKA_TOKEN => &self.token,
+                CKA_LABEL => &self.label,
+                CKA_ID => &self.id,
+                CKA_VALUE => &self.value,
+                CKA_ISSUER => &self.issuer,
+                CKA_SERIAL_NUMBER => &self.serial_number,
+                CKA_SUBJECT => &self.subject,
+                _ => return false,
+            };
+            if attr_value.as_slice() != comparison {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn get_attribute(&self, attribute: CK_ATTRIBUTE_TYPE) -> Option<&[u8]> {
+        let result = match attribute {
+            CKA_CLASS => &self.class,
+            CKA_TOKEN => &self.token,
+            CKA_LABEL => &self.label,
+            CKA_ID => &self.id,
+            CKA_VALUE => &self.value,
+            CKA_ISSUER => &self.issuer,
+            CKA_SERIAL_NUMBER => &self.serial_number,
+            CKA_SUBJECT => &self.subject,
+            _ => return None,
+        };
+        Some(result)
+    }
+}
+
+#[allow(clippy::upper_case_acronyms)]
+#[derive(Clone, Copy, Debug)]
+pub enum KeyType {
+    EC(usize),
+    RSA,
+}
+
+/// A `CryptokiKey` holds all relevant information for a `CryptokiObject` with class
+/// `CKO_PRIVATE_KEY`.
+pub struct CryptokiKey {
+    /// PKCS #11 object class. Will be `CKO_PRIVATE_KEY`.
+    class: Vec<u8>,
+    /// Whether or not this is on a token. Will be `CK_TRUE`.
+    token: Vec<u8>,
+    /// An identifier unique to this key. This must be the same as the ID for a corresponding
+    /// certificate, so for simplicity, this will be the sha256 hash of the bytes of the
+    /// certificate.
+    id: Vec<u8>,
+    /// Whether or not this key is "private" (can it be exported?). Will be CK_TRUE (it can't be
+    /// exported).
+    private: Vec<u8>,
+    /// PKCS #11 key type. Will be `CKK_EC` for EC, and `CKK_RSA` for RSA.
+    key_type_attribute: Vec<u8>,
+    /// If this is an RSA key, this is the value of the modulus as an unsigned integer.
+    modulus: Option<Vec<u8>>,
+    /// If this is an EC key, this is the DER bytes of the OID identifying the curve the key is on.
+    ec_params: Option<Vec<u8>>,
+    /// An enum identifying this key's type.
+    key_type: KeyType,
+}
+
+impl CryptokiKey {
+    pub fn new(
+        modulus: Option<Vec<u8>>,
+        ec_params: Option<Vec<u8>>,
+        cert: &[u8],
+    ) -> Result<CryptokiKey, Error> {
+        let (key_type, key_type_attribute) = if modulus.is_some() {
+            (KeyType::RSA, CKK_RSA)
+        } else if let Some(ec_params) = ec_params.as_ref() {
+            // Only secp256r1, secp384r1, and secp521r1 are supported.
+            let coordinate_width = match ec_params.as_slice() {
+                ENCODED_OID_BYTES_SECP256R1 => 32,
+                ENCODED_OID_BYTES_SECP384R1 => 48,
+                ENCODED_OID_BYTES_SECP521R1 => 66,
+                _ => return Err(error_here!(ErrorType::UnsupportedInput)),
+            };
+            (KeyType::EC(coordinate_width), CKK_EC)
+        } else {
+            return Err(error_here!(ErrorType::LibraryFailure));
+        };
+        let id = sha2::Sha256::digest(cert).to_vec();
+        Ok(CryptokiKey {
+            class: serialize_uint(CKO_PRIVATE_KEY)?,
+            token: serialize_uint(CK_TRUE)?,
+            id,
+            private: serialize_uint(CK_TRUE)?,
+            key_type_attribute: serialize_uint(key_type_attribute)?,
+            modulus,
+            ec_params,
+            key_type,
+        })
+    }
+
+    pub fn modulus(&self) -> &Option<Vec<u8>> {
+        &self.modulus
+    }
+
+    pub fn ec_params(&self) -> &Option<Vec<u8>> {
+        &self.ec_params
+    }
+
+    pub fn key_type(&self) -> KeyType {
+        self.key_type
+    }
+}
+
+impl CryptokiObject for CryptokiKey {
+    fn matches(&self, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
+        for (attr_type, attr_value) in attrs {
+            let comparison = match *attr_type {
+                CKA_CLASS => &self.class,
+                CKA_TOKEN => &self.token,
+                CKA_ID => &self.id,
+                CKA_PRIVATE => &self.private,
+                CKA_KEY_TYPE => &self.key_type_attribute,
+                CKA_MODULUS => {
+                    if let Some(modulus) = &self.modulus {
+                        modulus
+                    } else {
+                        return false;
+                    }
+                }
+                CKA_EC_PARAMS => {
+                    if let Some(ec_params) = &self.ec_params {
+                        ec_params
+                    } else {
+                        return false;
+                    }
+                }
+                _ => return false,
+            };
+            if attr_value.as_slice() != comparison {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn get_attribute(&self, attribute: CK_ATTRIBUTE_TYPE) -> Option<&[u8]> {
+        match attribute {
+            CKA_CLASS => Some(&self.class),
+            CKA_TOKEN => Some(&self.token),
+            CKA_ID => Some(&self.id),
+            CKA_PRIVATE => Some(&self.private),
+            CKA_KEY_TYPE => Some(&self.key_type_attribute),
+            CKA_MODULUS => match &self.modulus {
+                Some(modulus) => Some(modulus.as_slice()),
+                None => None,
+            },
+            CKA_EC_PARAMS => match &self.ec_params {
+                Some(ec_params) => Some(ec_params.as_slice()),
+                None => None,
+            },
+            _ => None,
+        }
+    }
 }
 
 #[cfg(test)]

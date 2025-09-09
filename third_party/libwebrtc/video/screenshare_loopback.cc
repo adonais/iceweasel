@@ -310,7 +310,7 @@ ABSL_FLAG(std::string,
 std::vector<std::string> Slides() {
   std::vector<std::string> slides;
   std::string slides_list = absl::GetFlag(FLAGS_slides);
-  rtc::tokenize(slides_list, ',', &slides);
+  webrtc::tokenize(slides_list, ',', &slides);
   return slides;
 }
 
@@ -383,7 +383,7 @@ int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   absl::ParseCommandLine(argc, argv);
 
-  rtc::LogMessage::SetLogToStderr(absl::GetFlag(FLAGS_logs));
+  webrtc::LogMessage::SetLogToStderr(absl::GetFlag(FLAGS_logs));
 
   // InitFieldTrialsFromString stores the char*, so the char array must outlive
   // the application.

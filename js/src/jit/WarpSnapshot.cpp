@@ -34,7 +34,8 @@ WarpSnapshot::WarpSnapshot(JSContext* cx, TempAllocator& alloc,
       globalLexicalEnv_(&cx->global()->lexicalEnvironment()),
       globalLexicalEnvThis_(globalLexicalEnv_->thisObject()),
       bailoutInfo_(bailoutInfo),
-      nurseryObjects_(alloc) {
+      nurseryObjects_(alloc),
+      nurseryValues_(alloc) {
 #ifdef JS_CACHEIR_SPEW
   needsFinalWarmUpCount_ = needsFinalWarmUpCount;
 #endif
@@ -72,9 +73,15 @@ void WarpSnapshot::dump(GenericPrinter& out) const {
   }
   out.printf("\n");
 
-  out.printf("Nursery objects (%u):\n", unsigned(nurseryObjects_.length()));
+  out.printf("Nursery objects (%zu):\n", nurseryObjects_.length());
   for (size_t i = 0; i < nurseryObjects_.length(); i++) {
-    out.printf("  %u: 0x%p\n", unsigned(i), nurseryObjects_[i]);
+    out.printf("  %zu: 0x%p\n", i, nurseryObjects_[i]);
+  }
+  out.printf("\n");
+
+  out.printf("Nursery values (%zu):\n", nurseryValues_.length());
+  for (size_t i = 0; i < nurseryValues_.length(); i++) {
+    out.printf("  %zu: (gc::Cell*)0x%p\n", i, nurseryValues_[i].toGCThing());
   }
   out.printf("\n");
 
@@ -212,10 +219,14 @@ void WarpPolymorphicTypes::dumpData(GenericPrinter& out) const {
 #endif  // JS_JITSPEW
 
 void WarpSnapshot::trace(JSTracer* trc) {
-  // Nursery objects can be tenured in parallel with Warp compilation.
+  // Nursery objects/values can be tenured in parallel with Warp compilation.
   // Note: don't use TraceOffthreadGCPtr here as that asserts non-moving.
   for (size_t i = 0; i < nurseryObjects_.length(); i++) {
     TraceManuallyBarrieredEdge(trc, &nurseryObjects_[i], "warp-nursery-object");
+  }
+  for (size_t i = 0; i < nurseryValues_.length(); i++) {
+    MOZ_ASSERT(nurseryValues_[i].isGCThing());
+    TraceManuallyBarrieredEdge(trc, &nurseryValues_[i], "warp-nursery-value");
   }
 
   // Other GC things are not in the nursery.
@@ -351,13 +362,6 @@ void WarpCacheIR::traceData(JSTracer* trc) {
           TraceWarpStubPtr<Shape>(trc, word, "warp-cacheir-shape");
           break;
         }
-        case StubField::Type::WeakGetterSetter: {
-          // WeakGetterSetter pointers are traced strongly in this context.
-          uintptr_t word = stubInfo_->getStubRawWord(stubData_, offset);
-          TraceWarpStubPtr<GetterSetter>(trc, word,
-                                         "warp-cacheir-getter-setter");
-          break;
-        }
         case StubField::Type::JSObject:
         case StubField::Type::WeakObject: {
           // WeakObject pointers are traced strongly in this context.
@@ -396,7 +400,9 @@ void WarpCacheIR::traceData(JSTracer* trc) {
                               "warp-cacheir-jsid");
           break;
         }
-        case StubField::Type::Value: {
+        case StubField::Type::Value:
+        case StubField::Type::WeakValue: {
+          // WeakValues are traced strongly in this context.
           uint64_t data = stubInfo_->getStubRawInt64(stubData_, offset);
           Value val = Value::fromRawBits(data);
           TraceOffthreadGCPtr(trc, OffthreadGCPtr<Value>(val),

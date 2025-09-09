@@ -18,6 +18,7 @@
 #include "mozJSModuleLoader.h"
 #include "nsNetUtil.h"
 #include "nsThreadUtils.h"
+#include "ExecutionTracerIntegration.h"
 
 #include "nsIObserverService.h"
 #include "nsIDebug2.h"
@@ -792,8 +793,6 @@ void xpc::SetPrefableRealmOptions(JS::RealmOptions& options) {
 
 void xpc::SetPrefableCompileOptions(JS::PrefableCompileOptions& options) {
   options.setSourcePragmas(StaticPrefs::javascript_options_source_pragmas())
-      .setImportAttributes(
-          StaticPrefs::javascript_options_experimental_import_attributes())
       .setAsmJS(StaticPrefs::javascript_options_asmjs())
       .setThrowOnAsmJSValidationFailure(
           StaticPrefs::javascript_options_throw_on_asmjs_validation_failure());
@@ -1401,6 +1400,10 @@ nsresult XPCJSContext::Initialize() {
     // Failed to execute self-hosted JavaScript! Uh oh.
     MOZ_CRASH("InitSelfHostedCode failed");
   }
+
+#ifdef MOZ_EXECUTION_TRACING
+  JS_SetCustomObjectSummaryCallback(cx, ExecutionTracerIntegration::Callback);
+#endif
 
   MOZ_RELEASE_ASSERT(Runtime()->InitializeStrings(cx),
                      "InitializeStrings failed");

@@ -50,9 +50,8 @@ typedef struct intrabc_hash_info {
   uint32_t *hash_value_buffer[2][2];
   hash_table intrabc_hash_table;
 
-  CRC_CALCULATOR crc_calculator1;
-  CRC_CALCULATOR crc_calculator2;
-  int g_crc_initialized;
+  CRC32C crc_calculator;
+  int crc_initialized;
 } IntraBCHashInfo;
 
 void av1_hash_table_init(IntraBCHashInfo *intra_bc_hash_info);

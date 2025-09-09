@@ -1020,7 +1020,7 @@ inline bool RestyleHint::DefinitelyRecascadesAllSubtree() const {
 }
 
 template <>
-ImageResolution StyleImage::GetResolution(const ComputedStyle&) const;
+ImageResolution StyleImage::GetResolution(const ComputedStyle*) const;
 
 template <>
 inline const StyleImage& StyleImage::FinalImage() const {

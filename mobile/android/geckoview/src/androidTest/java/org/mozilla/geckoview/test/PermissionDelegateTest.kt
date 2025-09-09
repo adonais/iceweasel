@@ -18,6 +18,8 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import org.hamcrest.Matchers.*
 import org.json.JSONArray
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.fail
 import org.junit.Ignore
 import org.junit.Rule
@@ -34,6 +36,7 @@ import org.mozilla.geckoview.GeckoSession.PermissionDelegate.MediaSource
 import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.StorageController.ClearFlags
 import org.mozilla.geckoview.test.TrackingPermissionService.TrackingPermissionInstance
+import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.ClosedSessionAtStart
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.RejectedPromiseException
@@ -49,10 +52,13 @@ class PermissionDelegateTest : BaseSessionTest() {
             return true
         }
         return PackageManager.PERMISSION_GRANTED ==
-            InstrumentationRegistry.getInstrumentation().targetContext.checkSelfPermission(permission)
+            InstrumentationRegistry.getInstrumentation().targetContext.checkSelfPermission(
+                permission,
+            )
     }
 
-    private fun isEmulator(): Boolean = "generic" == Build.DEVICE || Build.DEVICE.startsWith("generic_")
+    private fun isEmulator(): Boolean =
+        "generic" == Build.DEVICE || Build.DEVICE.startsWith("generic_")
 
     private val storageController
         get() = sessionRule.runtime.storageController
@@ -1196,6 +1202,88 @@ class PermissionDelegateTest : BaseSessionTest() {
         assertThat("Values should match", importedPerm?.value, equalTo(notificationPerm?.value))
         assertThat("Context IDs should match", importedPerm?.contextId, equalTo(notificationPerm?.contextId))
         assertThat("Private mode should match", importedPerm?.privateMode, equalTo(notificationPerm?.privateMode))
+    }
+
+    @Test
+    fun localDeviceAccessPermission() {
+        sessionRule.setPrefsUntilTestEnd(mapOf("network.lna.blocking" to true))
+
+        mainSession.loadUri("https://example.com/")
+        mainSession.waitForPageStop()
+
+        var requestedPermission: Int? = null
+        mainSession.delegateDuringNextWait(
+            object : PermissionDelegate {
+                override fun onContentPermissionRequest(
+                    session: GeckoSession,
+                    perm: ContentPermission,
+                ): GeckoResult<Int?>? {
+                    requestedPermission = perm.permission
+                    return super.onContentPermissionRequest(session, perm)
+                }
+            },
+        )
+
+        // when we try to access a localhost address that's actually reachable
+        // in this case - GeckoSessionTestRule.TEST_ENDPOINT
+        try {
+            sessionRule.waitForJS(
+                mainSession,
+                """
+                fetch("${GeckoSessionTestRule.TEST_ENDPOINT}")
+                """.trimIndent(),
+            )
+        } catch (_: RejectedPromiseException) {
+        }
+
+        // verify that we receive the local device access permission
+        assertEquals(
+            "Expected requested permission to be " +
+                "PermissionDelegate.PERMISSION_LOCAL_DEVICE_ACCESS",
+            PermissionDelegate.PERMISSION_LOCAL_DEVICE_ACCESS,
+            requestedPermission,
+        )
+    }
+
+    @Test
+    fun localDeviceAccessPermissionNotFiredIfPrefIsFalse() {
+        sessionRule.setPrefsUntilTestEnd(mapOf("network.lna.blocking" to false))
+
+        mainSession.loadUri("https://example.com/")
+        mainSession.waitForPageStop()
+
+        var requestedPermission: Int? = null
+        mainSession.delegateDuringNextWait(
+            object : PermissionDelegate {
+                override fun onContentPermissionRequest(
+                    session: GeckoSession,
+                    perm: ContentPermission,
+                ): GeckoResult<Int?>? {
+                    requestedPermission = perm.permission
+                    return super.onContentPermissionRequest(session, perm)
+                }
+            },
+        )
+
+        // when we try to access a localhost address that's actually reachable
+        // in this case - GeckoSessionTestRule.TEST_ENDPOINT
+        try {
+            sessionRule.waitForJS(
+                mainSession,
+                """
+                fetch("${GeckoSessionTestRule.TEST_ENDPOINT}")
+                """.trimIndent(),
+            )
+        } catch (_: RejectedPromiseException) {
+        }
+
+        // verify that any requested permission (if any) is not local device access
+        assertNotEquals(
+            "Expected requested permission to not be " +
+                "PermissionDelegate.PERMISSION_LOCAL_DEVICE_ACCESS",
+            PermissionDelegate.PERMISSION_LOCAL_DEVICE_ACCESS,
+            requestedPermission,
+        )
     }
 
     // @Test fun persistentStorage() {

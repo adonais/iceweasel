@@ -44,6 +44,16 @@ TASK_CONFIG_TESTS = {
             },
         ),
         (
+            ["dom/indexedDB/test/head.js"],
+            {
+                "try_task_config": {
+                    "env": {
+                        "MOZHARNESS_TEST_PATHS": '{"xpcshell": ["dom/indexedDB/test"]}'
+                    }
+                }
+            },
+        ),
+        (
             ["dom/indexedDB", "testing"],
             {
                 "try_task_config": {

@@ -161,11 +161,24 @@ Android_PackageName:
   type: string
   scope: report
 
+Android_ProcessName:
+  description: >
+    The name of the process which sent the crash report in the Android
+    application.
+  type: string
+  scope: report
+
 Android_Version:
   description: >
     The developer preview revision of a prerelease SDK plus The current
     development codename, or the string "REL" if this is a release build.
     e.g. "31 (REL)"
+  type: string
+  scope: report
+
+AndroidComponentVersion:
+  description: >
+    The version of android-components in use.
   type: string
   scope: report
 
@@ -179,6 +192,11 @@ AppInitDLLs:
 ApplicationBuildID:
   description: >
     Product application's build ID.
+  type: string
+  scope: report
+
+ApplicationServicesVersion:
+  description: The version of Application Services libraries.
   type: string
   scope: report
 
@@ -271,6 +289,11 @@ BuildID:
   type: string
   scope: ping
 
+CrashType:
+  description: The type of crash that occurred (Android-only).
+  type: string
+  scope: report
+
 ContentSandboxCapabilities:
   description: >
     List of capabilities of the content process sandbox.
@@ -343,6 +366,11 @@ DeviceResetReason:
   type: u32
   scope: report
 
+DistributionID:
+  description: The distribution ID of the application.
+  type: string
+  scope: report
+
 DOMFissionEnabled:
   description: >
     Set to 1 when DOM fission is enabled, and subframes are potentially loaded
@@ -383,6 +411,16 @@ FontName:
     Set before attempting to load a font to help diagnose crashes during loading.
   type: string
   scope: ping
+
+GeckoViewVersion:
+  description: The version of geckoview in use.
+  type: string
+  scope: report
+
+GleanVersion:
+  description: The version of Glean in use.
+  type: string
+  scope: report
 
 GMPLibraryPath:
   description: >

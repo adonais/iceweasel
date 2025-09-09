@@ -41,6 +41,15 @@ class SyncSignInRobot {
             BrowserRobot().interact()
             return BrowserRobot.Transition()
         }
+
+        fun goBackToHomeScreen(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
+            Log.i(TAG, "goBackToHomeScreen: Trying to click the navigate up button")
+            goBackButton().click()
+            Log.i(TAG, "goBackToHomeScreen: Clicked the navigate up button")
+
+            HomeScreenRobot().interact()
+            return HomeScreenRobot.Transition()
+        }
     }
 }
 

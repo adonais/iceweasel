@@ -862,7 +862,6 @@ def test_run_mach(
     """These tests were initially converted from the `cramtest` framework. It's
     likely there is duplication of test coverage between here and the specific
     selector tests."""
-    mocker.patch("tryselect.push.display_push_estimates")
     capfd.readouterr()
     if isinstance(commands[0], str):
         commands = [commands]

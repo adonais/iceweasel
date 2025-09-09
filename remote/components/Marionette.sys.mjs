@@ -203,7 +203,7 @@ class MarionetteParentProcess {
         let dialog = win.document.getElementById("safeModeDialog");
         if (dialog) {
           // accept the dialog to start in safe-mode
-          lazy.logger.trace("Safe mode detected, supressing dialog");
+          lazy.logger.trace("Safe mode detected, suppressing dialog");
           win.setTimeout(() => {
             dialog.getButton("accept").click();
           });

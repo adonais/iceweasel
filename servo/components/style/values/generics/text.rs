@@ -67,7 +67,8 @@ impl<Integer: ToCss + PartialEq> ToCss for GenericHyphenateLimitChars<Integer> {
         self.total_word_length.to_css(dest)?;
 
         if self.pre_hyphen_length != NumberOrAuto::Auto ||
-           self.post_hyphen_length != self.pre_hyphen_length {
+            self.post_hyphen_length != self.pre_hyphen_length
+        {
             dest.write_char(' ')?;
             self.pre_hyphen_length.to_css(dest)?;
             if self.post_hyphen_length != self.pre_hyphen_length {
@@ -158,6 +159,60 @@ pub enum GenericTextDecorationLength<L> {
     LengthPercentage(L),
     Auto,
     FromFont,
+}
+
+/// Text decoration trim values.
+///
+/// https://drafts.csswg.org/css-text-decor-4/#propdef-text-decoration-trim
+#[repr(C, u8)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+pub enum GenericTextDecorationTrim<L> {
+    /// `auto` value
+    Auto,
+    /// Start and end length values.
+    #[allow(missing_docs)]
+    Length { start: L, end: L },
+}
+
+impl<L: Zero> GenericTextDecorationTrim<L>{
+    /// Gets the initial value (zero)
+    #[inline]
+    pub fn get_initial_value() -> Self {
+        GenericTextDecorationTrim::Length{ start: L::zero(), end: L::zero() }
+    }
+}
+
+impl<L: ToCss + PartialEq> ToCss for GenericTextDecorationTrim<L> {
+    fn to_css<W>(&self, dst: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        match self {
+            GenericTextDecorationTrim::Auto => dst.write_str("auto"),
+            GenericTextDecorationTrim::Length { start, end } => {
+                start.to_css(dst)?;
+                if start != end {
+                    dst.write_char(' ')?;
+                    end.to_css(dst)?;
+                }
+                Ok(())
+            },
+        }
+    }
 }
 
 /// Implements type for text-indent

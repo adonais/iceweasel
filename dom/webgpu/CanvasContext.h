@@ -6,12 +6,12 @@
 #ifndef GPU_CanvasContext_H_
 #define GPU_CanvasContext_H_
 
-#include "nsICanvasRenderingContextInternal.h"
-#include "nsWrapperCache.h"
 #include "ObjectModel.h"
 #include "mozilla/layers/LayersTypes.h"
-#include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
+#include "mozilla/webrender/WebRenderAPI.h"
+#include "nsICanvasRenderingContextInternal.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla {
 namespace dom {
@@ -56,10 +56,12 @@ class CanvasContext final : public nsICanvasRenderingContextInternal,
   bool InitializeCanvasRenderer(nsDisplayListBuilder* aBuilder,
                                 layers::CanvasRenderer* aRenderer) override;
   mozilla::UniquePtr<uint8_t[]> GetImageBuffer(
+      mozilla::CanvasUtils::ImageExtraction aExtractionBehavior,
       int32_t* out_format, gfx::IntSize* out_imageSize) override;
-  NS_IMETHOD GetInputStream(const char* aMimeType,
-                            const nsAString& aEncoderOptions,
-                            nsIInputStream** aStream) override;
+  NS_IMETHOD GetInputStream(
+      const char* aMimeType, const nsAString& aEncoderOptions,
+      mozilla::CanvasUtils::ImageExtraction aExtractionBehavior,
+      nsIInputStream** aStream) override;
   already_AddRefed<gfx::SourceSurface> GetSurfaceSnapshot(
       gfxAlphaType* aOutAlphaType) override;
 

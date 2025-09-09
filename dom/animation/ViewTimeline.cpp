@@ -6,9 +6,9 @@
 
 #include "ViewTimeline.h"
 
+#include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/ElementInlines.h"
-#include "mozilla/ScrollContainerFrame.h"
 #include "nsLayoutUtils.h"
 
 namespace mozilla::dom {

@@ -4,13 +4,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
-
 #include "AnnexB.h"
 #include "BufferReader.h"
 #include "ByteWriter.h"
 #include "H264.h"
 #include "H265.h"
+#include "gtest/gtest.h"
 #include "mozilla/Types.h"
 
 namespace mozilla {

@@ -485,7 +485,7 @@ class GCMarker {
   void markAndTraverseEdge(S* source, const T& target);
 
   template <uint32_t markingOptions>
-  bool markAndTraversePrivateGCThing(JSObject* source, gc::TenuredCell* target);
+  bool markAndTraversePrivateGCThing(JSObject* source, gc::Cell* target);
 
   template <uint32_t markingOptions>
   bool markAndTraverseSymbol(JSObject* source, JS::Symbol* target);

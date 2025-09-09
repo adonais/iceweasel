@@ -400,6 +400,7 @@ export function FakeNimbusFeature() {
     getEnrollmentMetadata() {},
     getVariable() {},
     getAllVariables() {},
+    getAllEnrollments() {},
     onUpdate() {},
     offUpdate() {},
   };

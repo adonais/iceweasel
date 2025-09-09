@@ -8,8 +8,8 @@
 #define mozilla_dom_ScriptElement_h
 
 #include "mozilla/Attributes.h"
-#include "nsIScriptLoaderObserver.h"
 #include "nsIScriptElement.h"
+#include "nsIScriptLoaderObserver.h"
 #include "nsStubMutationObserver.h"
 
 namespace mozilla::dom {

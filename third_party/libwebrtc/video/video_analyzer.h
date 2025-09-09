@@ -35,7 +35,7 @@ namespace webrtc {
 
 class VideoAnalyzer : public PacketReceiver,
                       public Transport,
-                      public rtc::VideoSinkInterface<VideoFrame> {
+                      public VideoSinkInterface<VideoFrame> {
  public:
   VideoAnalyzer(test::LayerFilteringTransport* transport,
                 const std::string& test_label,
@@ -57,17 +57,17 @@ class VideoAnalyzer : public PacketReceiver,
   ~VideoAnalyzer();
 
   virtual void SetReceiver(PacketReceiver* receiver);
-  void SetSource(rtc::VideoSourceInterface<VideoFrame>* video_source,
+  void SetSource(VideoSourceInterface<VideoFrame>* video_source,
                  bool respect_sink_wants);
   void SetCall(Call* call);
   void SetSendStream(VideoSendStream* stream);
   void SetReceiveStream(VideoReceiveStreamInterface* stream);
   void SetAudioReceiveStream(AudioReceiveStreamInterface* recv_stream);
 
-  rtc::VideoSinkInterface<VideoFrame>* InputInterface();
-  rtc::VideoSourceInterface<VideoFrame>* OutputInterface();
+  VideoSinkInterface<VideoFrame>* InputInterface();
+  VideoSourceInterface<VideoFrame>* OutputInterface();
 
-  void DeliverRtcpPacket(rtc::CopyOnWriteBuffer packet) override;
+  void DeliverRtcpPacket(CopyOnWriteBuffer packet) override;
   void DeliverRtpPacket(MediaType media_type,
                         RtpPacketReceived packet,
                         PacketReceiver::OnUndemuxablePacketHandler
@@ -76,10 +76,10 @@ class VideoAnalyzer : public PacketReceiver,
   void PreEncodeOnFrame(const VideoFrame& video_frame);
   void PostEncodeOnFrame(size_t stream_id, uint32_t timestamp);
 
-  bool SendRtp(rtc::ArrayView<const uint8_t> packet,
+  bool SendRtp(ArrayView<const uint8_t> packet,
                const PacketOptions& options) override;
 
-  bool SendRtcp(rtc::ArrayView<const uint8_t> packet) override;
+  bool SendRtcp(ArrayView<const uint8_t> packet) override;
   void OnFrame(const VideoFrame& video_frame) override;
   void Wait();
 
@@ -145,32 +145,31 @@ class VideoAnalyzer : public PacketReceiver,
   // as a source to VideoSendStream.
   // It forwards all input frames to the VideoAnalyzer for later comparison and
   // forwards the captured frames to the VideoSendStream.
-  class CapturedFrameForwarder : public rtc::VideoSinkInterface<VideoFrame>,
-                                 public rtc::VideoSourceInterface<VideoFrame> {
+  class CapturedFrameForwarder : public VideoSinkInterface<VideoFrame>,
+                                 public VideoSourceInterface<VideoFrame> {
    public:
     CapturedFrameForwarder(VideoAnalyzer* analyzer,
                            Clock* clock,
                            int frames_to_capture,
                            TimeDelta test_duration);
-    void SetSource(rtc::VideoSourceInterface<VideoFrame>* video_source);
+    void SetSource(VideoSourceInterface<VideoFrame>* video_source);
 
    private:
     void OnFrame(const VideoFrame& video_frame)
         RTC_LOCKS_EXCLUDED(lock_) override;
 
     // Called when `send_stream_.SetSource()` is called.
-    void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
-                         const rtc::VideoSinkWants& wants)
+    void AddOrUpdateSink(VideoSinkInterface<VideoFrame>* sink,
+                         const VideoSinkWants& wants)
         RTC_LOCKS_EXCLUDED(lock_) override;
 
     // Called by `send_stream_` when `send_stream_.SetSource()` is called.
-    void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink)
+    void RemoveSink(VideoSinkInterface<VideoFrame>* sink)
         RTC_LOCKS_EXCLUDED(lock_) override;
 
     VideoAnalyzer* const analyzer_;
     Mutex lock_;
-    rtc::VideoSinkInterface<VideoFrame>* send_stream_input_
-        RTC_GUARDED_BY(lock_);
+    VideoSinkInterface<VideoFrame>* send_stream_input_ RTC_GUARDED_BY(lock_);
     VideoSourceInterface<VideoFrame>* video_source_;
     Clock* clock_;
     int captured_frames_ RTC_GUARDED_BY(lock_);

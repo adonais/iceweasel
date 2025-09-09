@@ -97,6 +97,7 @@ fun AwesomeBar(
             .testTag("mozac.awesomebar")
             .background(colors.background),
     ) {
+        if (groups.isEmpty()) return
         val fetcher = remember(groups) { SuggestionFetcher(groups, profiler) }
 
         // This state does not need to be remembered, because it can change if the providers list changes.

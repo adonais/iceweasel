@@ -60,6 +60,7 @@ Please note that some targeting attributes require stricter controls on the tele
 * [memoryMB](#memorymb)
 * [messageImpressions](#messageimpressions)
 * [needsUpdate](#needsupdate)
+* [newtabAddonVersion](#newtabaddonversion)
 * [newtabSettings](#newtabsettings)
 * [packageFamilyName](#packagefamilyname)
 * [pinnedSites](#pinnedsites)
@@ -956,6 +957,17 @@ Object {
 }
 ```
 
+### `newtabAddonVersion`
+
+The full version string of the built-in New Tab add-on that is actively in use.
+Comparisons should be done with the `versionCompare` filter expression.
+
+#### Definition
+
+```ts
+declare const newtabAddonVersion: string;
+```
+
 ### `newtabSettings`
 
 An object reflecting the current settings of the browser newtab page (about:newtab)
@@ -1097,7 +1109,7 @@ A boolean. `true` when the `toolkit.profiles.storeID` pref has a value. Indicate
 
 ### `unhandledCampaignAction`
 
-A string. A special message action to be executed on first-run. For example, `"SET_DEFAULT_BROWSER"` when the user selected to set as default via the [install marketing page](https://www.mozilla.org/firefox/new/) and set default has not yet been automatically triggered, `null` otherwise.
+A string. A special message action to be executed on first-run. For example, `"SET_DEFAULT_BROWSER"` when the user selected to set as default via the [install marketing page](https://www.mozilla.org/firefox/new/) and set default has not yet been automatically triggered, `null` otherwise. Currently supported actions include `"PIN_AND_DEFAULT"`, `"PIN_FIREFOX_TO_TASKBAR"`, and `"SET_DEFAULT_BROWSER"`.
 
 ### `isMSIX`
 

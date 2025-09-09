@@ -139,6 +139,7 @@ ml-perf-semantic-ft:
             --flavor mochitest
             --output $MOZ_FETCHES_DIR/../artifacts
             --hooks toolkit/components/ml/tests/tools/hooks_local_hub.py
+            --mochitest-extra-args setenv=MOZ_DISABLE_CONTENT_SANDBOX=1
             --mochitest-name-change
             toolkit/components/ml/tests/browser/browser_ml_semantic_history_search_perf.js
 
@@ -249,7 +250,7 @@ ml-perf-smart-tab-cluster:
             - mozilla-smart-tab-emb
     description: Run ML Smart Tab Clustering
     worker:
-        max-run-time: 14400
+        max-run-time: 900
     treeherder:
         symbol: perftest(ml-perf-stg-cluster)
         tier: 2
@@ -297,3 +298,33 @@ ml-perf-speecht5-tts:
             --hooks toolkit/components/ml/tests/tools/hooks_local_hub.py
             --mochitest-name-change
             toolkit/components/ml/tests/browser/browser_ml_speecht5_tts.js
+
+# XXX: We can consolidate this once bug 1865852 lands.
+perftest-accessibility:
+    description: Run accessibility performance tests
+    treeherder:
+        symbol: perftest(a11y)
+        tier: 2
+    attributes:
+        batch: false
+        cron: false
+    run-on-projects: [autoland, mozilla-central]
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --mochitest-binary ${MOZ_FETCHES_DIR}/firefox/firefox.exe
+            --flavor mochitest
+            --output $MOZ_FETCHES_DIR/../artifacts
+            accessible/tests/browser/performance/browser_addManyNodes.js
+            && python3 python/mozperftest/mozperftest/runner.py
+            --mochitest-binary ${MOZ_FETCHES_DIR}/firefox/firefox.exe
+            --flavor mochitest
+            --output $MOZ_FETCHES_DIR/../artifacts
+            accessible/tests/browser/performance/browser_reflowPseudoelements.js
+            && python3 python/mozperftest/mozperftest/runner.py
+            --mochitest-binary ${MOZ_FETCHES_DIR}/firefox/firefox.exe
+            --flavor mochitest
+            --output $MOZ_FETCHES_DIR/../artifacts
+            accessible/tests/browser/performance/browser_removeManySpellingErrors.js

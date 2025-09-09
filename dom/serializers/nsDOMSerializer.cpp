@@ -8,10 +8,10 @@
 
 #include "mozilla/Encoding.h"
 #include "mozilla/dom/Document.h"
-#include "nsIDocumentEncoder.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
 #include "nsError.h"
+#include "nsIDocumentEncoder.h"
 #include "nsINode.h"
 
 using namespace mozilla;

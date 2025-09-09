@@ -7,14 +7,14 @@
 #ifndef DOM_SVG_SVGUSEELEMENT_H_
 #define DOM_SVG_SVGUSEELEMENT_H_
 
+#include "SVGAnimatedLength.h"
+#include "SVGAnimatedString.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/FromParser.h"
 #include "mozilla/dom/IDTracker.h"
 #include "mozilla/dom/SVGGraphicsElement.h"
-#include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsStubMutationObserver.h"
-#include "SVGAnimatedLength.h"
-#include "SVGAnimatedString.h"
 #include "nsTArray.h"
 
 class nsIContent;

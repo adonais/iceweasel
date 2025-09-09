@@ -5,28 +5,34 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <string.h>
-#include "libavutil/dict.h"
+
 #include "libavcodec/avcodec.h"
+#include "libavutil/dict.h"
 #ifdef __GNUC__
 #  include <unistd.h>
 #endif
 
 #include "FFmpegDataDecoder.h"
+#include "FFmpegLibs.h"
 #include "FFmpegLog.h"
+#include "FFmpegUtils.h"
+#include "VideoUtils.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/TaskQueue.h"
+#include "mozilla/Unused.h"
 #include "prsystem.h"
-#include "VideoUtils.h"
-#include "FFmpegUtils.h"
 
-#include "FFmpegLibs.h"
+#if defined(MOZ_WIDGET_ANDROID) && defined(FFVPX_VERSION)
+#  include "mozilla/MediaDrmRemoteCDMParent.h"
+#endif
 
 namespace mozilla {
 
 StaticMutex FFmpegDataDecoder<LIBAV_VER>::sMutex;
 
 FFmpegDataDecoder<LIBAV_VER>::FFmpegDataDecoder(FFmpegLibWrapper* aLib,
-                                                AVCodecID aCodecID)
+                                                AVCodecID aCodecID,
+                                                PRemoteCDMActor* aCDM)
     : mLib(aLib),
       mCodecContext(nullptr),
       mCodecParser(nullptr),
@@ -40,6 +46,18 @@ FFmpegDataDecoder<LIBAV_VER>::FFmpegDataDecoder(FFmpegLibWrapper* aLib,
       mLastInputDts(media::TimeUnit::FromNegativeInfinity()) {
   MOZ_ASSERT(aLib);
   MOZ_COUNT_CTOR(FFmpegDataDecoder);
+
+#if defined(MOZ_WIDGET_ANDROID) && defined(FFVPX_VERSION)
+  if (aCDM) {
+    if (PRemoteCDMParent* parentCDM = aCDM->AsPRemoteCDMParent()) {
+      mCDM = static_cast<MediaDrmRemoteCDMParent*>(parentCDM);
+    }
+  }
+#elif defined(DEBUG)
+  MOZ_ASSERT(!aCDM);
+#else
+  Unused << aCDM;
+#endif
 }
 
 FFmpegDataDecoder<LIBAV_VER>::~FFmpegDataDecoder() {
@@ -88,12 +106,53 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::InitSWDecoder(
     return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                        RESULT_DETAIL("unable to find codec"));
   }
-  FFMPEG_LOG("  codec %s : %s", codec->name, codec->long_name);
+
+  return InitDecoder(codec, aOptions);
+}
+
+MediaResult FFmpegDataDecoder<LIBAV_VER>::MaybeAttachCDM() {
+  MOZ_ASSERT(mCodecContext);
+
+#if defined(MOZ_WIDGET_ANDROID) && defined(FFVPX_VERSION)
+  if (!mCDM) {
+    return NS_OK;
+  }
+
+  mCrypto = mCDM->GetCrypto();
+  if (NS_WARN_IF(!mCrypto)) {
+    return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                       RESULT_DETAIL("missing crypto from cdm"));
+  }
+
+  auto* ndkCrypto = mCrypto->GetNdkCrypto();
+  MOZ_ASSERT(ndkCrypto);
+
+  mCodecContext->moz_ndk_crypto = ndkCrypto;
+#endif
+
+  return NS_OK;
+}
+
+void FFmpegDataDecoder<LIBAV_VER>::MaybeDetachCDM() {
+#if defined(MOZ_WIDGET_ANDROID) && defined(FFVPX_VERSION)
+  if (mCodecContext) {
+    mCodecContext->moz_ndk_crypto = nullptr;
+  }
+
+  if (mCDM) {
+    mCDM = nullptr;
+  }
+#endif
+}
+
+MediaResult FFmpegDataDecoder<LIBAV_VER>::InitDecoder(AVCodec* aCodec,
+                                                      AVDictionary** aOptions) {
+  FFMPEG_LOG("  codec %s : %s", aCodec->name, aCodec->long_name);
 
   StaticMutexAutoLock mon(sMutex);
 
-  if (!(mCodecContext = mLib->avcodec_alloc_context3(codec))) {
-    FFMPEG_LOG("  couldn't allocate ffmpeg context for codec %s", codec->name);
+  if (!(mCodecContext = mLib->avcodec_alloc_context3(aCodec))) {
+    FFMPEG_LOG("  couldn't allocate ffmpeg context for codec %s", aCodec->name);
     return MediaResult(NS_ERROR_OUT_OF_MEMORY,
                        RESULT_DETAIL("Couldn't init ffmpeg context"));
   }
@@ -111,29 +170,42 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::InitSWDecoder(
   MediaResult ret = AllocateExtraData();
   if (NS_FAILED(ret)) {
     FFMPEG_LOG("  couldn't allocate ffmpeg extra data for codec %s",
-               codec->name);
-    mLib->av_freep(&mCodecContext);
+               aCodec->name);
+    ReleaseCodecContext();
     return ret;
   }
 
 #if LIBAVCODEC_VERSION_MAJOR < 57
-  if (codec->capabilities & CODEC_CAP_DR1) {
+  if (aCodec->capabilities & CODEC_CAP_DR1) {
     mCodecContext->flags |= CODEC_FLAG_EMU_EDGE;
   }
 #endif
 
-  if (mLib->avcodec_open2(mCodecContext, codec, aOptions) < 0) {
-    if (mCodecContext->extradata) {
-      mLib->av_freep(&mCodecContext->extradata);
-    }
-    mLib->av_freep(&mCodecContext);
-    FFMPEG_LOG("  Couldn't open avcodec for %s", codec->name);
+  if (mLib->avcodec_open2(mCodecContext, aCodec, aOptions) < 0) {
+    ReleaseCodecContext();
+    FFMPEG_LOG("  Couldn't open avcodec for %s", aCodec->name);
     return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                        RESULT_DETAIL("Couldn't open avcodec"));
   }
 
   FFMPEG_LOG("  FFmpeg decoder init successful.");
   return NS_OK;
+}
+
+void FFmpegDataDecoder<LIBAV_VER>::ReleaseCodecContext() {
+  if (!mCodecContext) {
+    return;
+  }
+#if LIBAVCODEC_VERSION_MAJOR < 57
+  mLib->avcodec_close(mCodecContext);
+  // avcodec_close only frees the extradata for encoders.
+  if (mCodecContext->extradata) {
+    mLib->av_freep(&mCodecContext->extradata);
+  }
+  mLib->av_freep(&mCodecContext);
+#else
+  mLib->avcodec_free_context(&mCodecContext);
+#endif
 }
 
 RefPtr<ShutdownPromise> FFmpegDataDecoder<LIBAV_VER>::Shutdown() {
@@ -152,6 +224,7 @@ RefPtr<MediaDataDecoder::DecodePromise> FFmpegDataDecoder<LIBAV_VER>::Decode(
 
 RefPtr<MediaDataDecoder::DecodePromise>
 FFmpegDataDecoder<LIBAV_VER>::ProcessDecode(MediaRawData* aSample) {
+  AUTO_PROFILER_LABEL("FFmpegDataDecoder::ProcessDecode", MEDIA_PLAYBACK);
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
   PROCESS_DECODE_LOG(aSample);
   bool gotFrame = false;
@@ -217,6 +290,7 @@ RefPtr<MediaDataDecoder::DecodePromise> FFmpegDataDecoder<LIBAV_VER>::Drain() {
 
 RefPtr<MediaDataDecoder::DecodePromise>
 FFmpegDataDecoder<LIBAV_VER>::ProcessDrain() {
+  AUTO_PROFILER_LABEL("FFmpegDataDecoder::ProcessDrain", MEDIA_PLAYBACK);
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
   FFMPEG_LOG("FFmpegDataDecoder: draining buffers");
   RefPtr<MediaRawData> empty(new MediaRawData());
@@ -230,20 +304,30 @@ FFmpegDataDecoder<LIBAV_VER>::ProcessDrain() {
   // as pending data in the pipeline being corrupt or invalid, non-EOS errors
   // like NS_ERROR_DOM_MEDIA_DECODE_ERR will be returned and must be handled
   // accordingly.
+  RefPtr<MediaDataDecoder::DecodePromise> p = mDrainPromise.Ensure(__func__);
   do {
     MediaResult r = DoDecode(empty, &gotFrame, results);
     if (NS_FAILED(r)) {
       if (r.Code() == NS_ERROR_DOM_MEDIA_END_OF_STREAM) {
         break;
       }
-      return DecodePromise::CreateAndReject(r, __func__);
+      if (r.Code() == NS_ERROR_NOT_AVAILABLE) {
+        if (results.IsEmpty()) {
+          return p;
+        }
+        break;
+      }
+      mDrainPromise.Reject(r, __func__);
+      return p;
     }
   } while (gotFrame);
-  return DecodePromise::CreateAndResolve(std::move(results), __func__);
+  mDrainPromise.Resolve(std::move(results), __func__);
+  return p;
 }
 
 RefPtr<MediaDataDecoder::FlushPromise>
 FFmpegDataDecoder<LIBAV_VER>::ProcessFlush() {
+  AUTO_PROFILER_LABEL("FFmpegDataDecoder::ProcessFlush", MEDIA_PLAYBACK);
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
   if (mCodecContext) {
     FFMPEG_LOG("FFmpegDataDecoder: flushing buffers");
@@ -258,20 +342,13 @@ FFmpegDataDecoder<LIBAV_VER>::ProcessFlush() {
 }
 
 void FFmpegDataDecoder<LIBAV_VER>::ProcessShutdown() {
+  AUTO_PROFILER_LABEL("FFmpegDataDecoder::ProcessShutdown", MEDIA_PLAYBACK);
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
   StaticMutexAutoLock mon(sMutex);
 
   if (mCodecContext) {
     FFMPEG_LOG("FFmpegDataDecoder: shutdown");
-    if (mCodecContext->extradata) {
-      mLib->av_freep(&mCodecContext->extradata);
-    }
-#if LIBAVCODEC_VERSION_MAJOR < 57
-    mLib->avcodec_close(mCodecContext);
-    mLib->av_freep(&mCodecContext);
-#else
-    mLib->avcodec_free_context(&mCodecContext);
-#endif
+    ReleaseCodecContext();
 #if LIBAVCODEC_VERSION_MAJOR >= 55
     mLib->av_frame_free(&mFrame);
 #elif LIBAVCODEC_VERSION_MAJOR == 54

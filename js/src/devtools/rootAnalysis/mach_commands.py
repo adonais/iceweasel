@@ -136,7 +136,7 @@ def bootstrap(command_context, **kwargs):
     orig_dir = os.getcwd()
     os.chdir(ensure_dir_exists(tools_dir()))
     try:
-        kwargs["from_build"] = ("linux64-gcc-sixgill", "linux64-gcc-9")
+        kwargs["from_build"] = ("linux64-gcc-10-sixgill", "linux64-gcc-10")
         command_context._mach_context.commands.dispatch(
             "artifact", command_context._mach_context, subcommand="toolchain", **kwargs
         )

@@ -21,13 +21,13 @@
 #ifndef mozilla_dom_NodeInfo_h___
 #define mozilla_dom_NodeInfo_h___
 
-#include "nsCycleCollectionParticipant.h"
-#include "mozilla/dom/NameSpaceConstants.h"
-#include "nsString.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/dom/NameSpaceConstants.h"
 #include "nsAtom.h"
+#include "nsCycleCollectionParticipant.h"
 #include "nsHashKeys.h"
+#include "nsString.h"
 
 class nsNodeInfoManager;
 

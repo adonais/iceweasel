@@ -53,6 +53,9 @@ newtab-topsites-add-shortcut-header = Pintasan Baru
 newtab-topsites-edit-topsites-header = Ubah Situs Pilihan
 newtab-topsites-edit-shortcut-header = Edit Pintasan
 newtab-topsites-add-shortcut-label = Tambahkan Pintasan
+newtab-topsites-add-shortcut-title =
+    .title = Tambahkan Pintasan
+    .aria-label = Tambahkan Pintasan
 newtab-topsites-title-label = Judul
 newtab-topsites-title-input =
     .placeholder = Masukkan judul
@@ -521,12 +524,6 @@ newtab-custom-wallpaper-title = Wallpaper kustom ada di sini
 newtab-custom-wallpaper-subtitle = Unggah wallpaper sendiri atau pilih warna kustom untuk menjadikan { -brand-product-name } lebih personal.
 newtab-custom-wallpaper-cta = Coba sekarang
 
-## Strings for download mobile highlight
-
-
-## Strings for shortcuts highlight
-
-
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -537,6 +534,3 @@ newtab-report-ads-reason-inappropriate =
     .label = Tidak pantas
 newtab-report-cancel = Batal
 newtab-report-submit = Kirim
-
-## Strings for trending searches
-

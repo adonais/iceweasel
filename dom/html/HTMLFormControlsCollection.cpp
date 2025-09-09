@@ -6,6 +6,8 @@
 
 #include "mozilla/dom/HTMLFormControlsCollection.h"
 
+#include "RadioNodeList.h"
+#include "jsfriendapi.h"
 #include "mozilla/FlushType.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Document.h"
@@ -13,10 +15,8 @@
 #include "mozilla/dom/HTMLFormControlsCollectionBinding.h"
 #include "mozilla/dom/HTMLFormElement.h"
 #include "nsGenericHTMLElement.h"  // nsGenericHTMLFormElement
-#include "nsQueryObject.h"
 #include "nsIFormControl.h"
-#include "RadioNodeList.h"
-#include "jsfriendapi.h"
+#include "nsQueryObject.h"
 
 namespace mozilla::dom {
 

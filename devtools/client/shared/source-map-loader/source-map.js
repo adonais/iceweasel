@@ -33,6 +33,7 @@ const {
   getSourceMap,
   getSourceMapWithMetadata,
   setSourceMap,
+  clearSourceMapForSources,
   clearSourceMaps: clearSourceMapsRequests,
 } = require("resource://devtools/client/shared/source-map-loader/utils/sourceMapRequests.js");
 const {
@@ -622,6 +623,9 @@ function setSourceMapForGeneratedSources(generatedSourceIds, map) {
     setSourceMap(generatedId, Promise.resolve(sourceMapConsumer));
   }
 }
+function clearSourceMapForGeneratedSources(generatedSourceIds) {
+  clearSourceMapForSources(generatedSourceIds);
+}
 
 function clearSourceMaps() {
   clearSourceMapsRequests();
@@ -642,5 +646,6 @@ module.exports = {
   getGeneratedRangesForOriginal,
   getFileGeneratedRange,
   setSourceMapForGeneratedSources,
+  clearSourceMapForGeneratedSources,
   clearSourceMaps,
 };

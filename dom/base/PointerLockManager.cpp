@@ -8,6 +8,7 @@
 
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/EventStateManager.h"
+#include "mozilla/Logging.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_full_screen_api.h"
@@ -20,7 +21,6 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/dom/WindowContext.h"
-#include "mozilla/Logging.h"
 #include "nsCOMPtr.h"
 #include "nsMenuPopupFrame.h"
 #include "nsSandboxFlags.h"

@@ -5,7 +5,6 @@
 package mozilla.components.service.location
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.fetch.Client
@@ -33,7 +32,6 @@ import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import java.io.IOException
 
-@ExperimentalCoroutinesApi // for runTest
 @RunWith(AndroidJUnit4::class)
 class MozillaLocationServiceTest {
     @Before

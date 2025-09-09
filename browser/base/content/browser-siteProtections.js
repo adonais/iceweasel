@@ -7,7 +7,8 @@
 ChromeUtils.defineESModuleGetters(this, {
   ContentBlockingAllowList:
     "resource://gre/modules/ContentBlockingAllowList.sys.mjs",
-  ReportBrokenSite: "resource:///modules/ReportBrokenSite.sys.mjs",
+  ReportBrokenSite:
+    "moz-src:///browser/components/reportbrokensite/ReportBrokenSite.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
 });
@@ -331,10 +332,14 @@ let Fingerprinting =
   new (class FingerprintingProtection extends ProtectionCategory {
     iconSrc = "chrome://browser/skin/fingerprint.svg";
     l10nKeys = {
-      title: "fingerprinter",
       content: "fingerprinters",
       general: "fingerprinter",
+      title: {
+        blocking: "protections-blocking-fingerprinters",
+        "not-blocking": "protections-not-blocking-fingerprinters",
+      },
     };
+    #isInitialized = false;
 
     constructor() {
       super(
@@ -362,15 +367,24 @@ let Fingerprinting =
     init() {
       this.updateEnabled();
 
-      Services.prefs.addObserver(this.prefEnabled, this);
-      Services.prefs.addObserver(this.prefFPPEnabled, this);
-      Services.prefs.addObserver(this.prefFPPEnabledInPrivateWindows, this);
+      if (!this.#isInitialized) {
+        Services.prefs.addObserver(this.prefEnabled, this);
+        Services.prefs.addObserver(this.prefFPPEnabled, this);
+        Services.prefs.addObserver(this.prefFPPEnabledInPrivateWindows, this);
+        this.#isInitialized = true;
+      }
     }
 
     uninit() {
-      Services.prefs.removeObserver(this.prefEnabled, this);
-      Services.prefs.removeObserver(this.prefFPPEnabled, this);
-      Services.prefs.removeObserver(this.prefFPPEnabledInPrivateWindows, this);
+      if (this.#isInitialized) {
+        Services.prefs.removeObserver(this.prefEnabled, this);
+        Services.prefs.removeObserver(this.prefFPPEnabled, this);
+        Services.prefs.removeObserver(
+          this.prefFPPEnabledInPrivateWindows,
+          this
+        );
+        this.#isInitialized = false;
+      }
     }
 
     updateEnabled() {
@@ -427,19 +441,26 @@ let Cryptomining = new ProtectionCategory(
 Cryptomining.l10nId = "trustpanel-cryptomining";
 Cryptomining.iconSrc = "chrome://browser/skin/controlcenter/cryptominers.svg";
 Cryptomining.l10nKeys = {
-  title: "cryptominer",
   content: "cryptominers",
   general: "cryptominer",
+  title: {
+    blocking: "protections-blocking-cryptominers",
+    "not-blocking": "protections-not-blocking-cryptominers",
+  },
 };
 
 let TrackingProtection =
   new (class TrackingProtection extends ProtectionCategory {
     iconSrc = "chrome://browser/skin/canvas.svg";
     l10nKeys = {
-      title: "tracking-content",
       content: "tracking-content",
       general: "tracking-content",
+      title: {
+        blocking: "protections-blocking-tracking-content",
+        "not-blocking": "protections-not-blocking-tracking-content",
+      },
     };
+    #isInitialized = false;
 
     constructor() {
       super(
@@ -496,26 +517,35 @@ let TrackingProtection =
     init() {
       this.updateEnabled();
 
-      Services.prefs.addObserver(this.prefEnabled, this);
-      Services.prefs.addObserver(this.prefEnabledInPrivateWindows, this);
-      Services.prefs.addObserver(this.prefEmailTrackingProtectionEnabled, this);
-      Services.prefs.addObserver(
-        this.prefEmailTrackingProtectionEnabledInPrivateWindows,
-        this
-      );
+      if (!this.#isInitialized) {
+        Services.prefs.addObserver(this.prefEnabled, this);
+        Services.prefs.addObserver(this.prefEnabledInPrivateWindows, this);
+        Services.prefs.addObserver(
+          this.prefEmailTrackingProtectionEnabled,
+          this
+        );
+        Services.prefs.addObserver(
+          this.prefEmailTrackingProtectionEnabledInPrivateWindows,
+          this
+        );
+        this.#isInitialized = true;
+      }
     }
 
     uninit() {
-      Services.prefs.removeObserver(this.prefEnabled, this);
-      Services.prefs.removeObserver(this.prefEnabledInPrivateWindows, this);
-      Services.prefs.removeObserver(
-        this.prefEmailTrackingProtectionEnabled,
-        this
-      );
-      Services.prefs.removeObserver(
-        this.prefEmailTrackingProtectionEnabledInPrivateWindows,
-        this
-      );
+      if (this.#isInitialized) {
+        Services.prefs.removeObserver(this.prefEnabled, this);
+        Services.prefs.removeObserver(this.prefEnabledInPrivateWindows, this);
+        Services.prefs.removeObserver(
+          this.prefEmailTrackingProtectionEnabled,
+          this
+        );
+        Services.prefs.removeObserver(
+          this.prefEmailTrackingProtectionEnabledInPrivateWindows,
+          this
+        );
+        this.#isInitialized = false;
+      }
     }
 
     observe() {
@@ -679,9 +709,12 @@ let ThirdPartyCookies =
   new (class ThirdPartyCookies extends ProtectionCategory {
     iconSrc = "chrome://browser/skin/controlcenter/3rdpartycookies.svg";
     l10nKeys = {
-      title: "cookies-trackers",
       content: "cross-site-tracking-cookies",
       general: "tracking-cookies",
+      title: {
+        blocking: "protections-blocking-cookies-third-party",
+        "not-blocking": "protections-not-blocking-cookies-third-party",
+      },
     };
 
     constructor() {
@@ -1129,9 +1162,12 @@ let SocialTracking =
   new (class SocialTrackingProtection extends ProtectionCategory {
     iconSrc = "chrome://browser/skin/thumb-down.svg";
     l10nKeys = {
-      title: "social-media-trackers",
       content: "social-media-trackers",
       general: "social-tracking",
+      title: {
+        blocking: "protections-blocking-social-media-trackers",
+        "not-blocking": "protections-not-blocking-social-media-trackers",
+      },
     };
 
     constructor() {

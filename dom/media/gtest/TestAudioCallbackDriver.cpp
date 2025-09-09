@@ -7,17 +7,14 @@
 
 #include "CubebUtils.h"
 #include "GraphDriver.h"
-
+#include "MediaTrackGraphImpl.h"
+#include "MockCubeb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include "MediaTrackGraphImpl.h"
-#include "mozilla/gtest/WaitFor.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/SyncRunnable.h"
+#include "mozilla/gtest/WaitFor.h"
 #include "nsTArray.h"
-
-#include "MockCubeb.h"
 
 namespace mozilla {
 

@@ -62,8 +62,8 @@ class CustomReviewPromptBottomSheetFragment : BottomSheetDialogFragment() {
 
         FirefoxTheme {
             CustomReviewPrompt(
-                state = state,
-                onRequestDismiss = { dismissAllowingStateLoss() },
+                customReviewPromptState = state,
+                onDismissRequest = { dismissAllowingStateLoss() },
                 onNegativePrePromptButtonClick = { store.dispatch(NegativePrePromptButtonClicked) },
                 onPositivePrePromptButtonClick = { store.dispatch(PositivePrePromptButtonClicked) },
                 onRateButtonClick = { store.dispatch(RateButtonClicked) },

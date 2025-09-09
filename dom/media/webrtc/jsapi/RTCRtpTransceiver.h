@@ -5,18 +5,19 @@
 #define _TRANSCEIVERIMPL_H_
 
 #include <string>
-#include "mozilla/dom/RTCRtpCapabilitiesBinding.h"
-#include "mozilla/StateMirroring.h"
+
+#include "ErrorList.h"
+#include "RTCStatsReport.h"
+#include "jsep/JsepSession.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/StateMirroring.h"
+#include "mozilla/dom/MediaStreamTrack.h"
+#include "mozilla/dom/RTCRtpCapabilitiesBinding.h"
+#include "mozilla/dom/RTCRtpTransceiverBinding.h"
 #include "nsCOMPtr.h"
 #include "nsISerialEventTarget.h"
 #include "nsTArray.h"
-#include "mozilla/dom/MediaStreamTrack.h"
-#include "ErrorList.h"
-#include "jsep/JsepSession.h"
 #include "transport/transportlayer.h"  // For TransportLayer::State
-#include "mozilla/dom/RTCRtpTransceiverBinding.h"
-#include "RTCStatsReport.h"
 
 class nsIPrincipal;
 

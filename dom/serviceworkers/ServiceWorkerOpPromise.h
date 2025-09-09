@@ -10,7 +10,6 @@
 #include <utility>
 
 #include "mozilla/MozPromise.h"
-
 #include "mozilla/dom/SafeRefPtr.h"
 #include "mozilla/dom/ServiceWorkerOpArgs.h"
 

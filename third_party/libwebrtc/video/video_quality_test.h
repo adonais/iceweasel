@@ -92,7 +92,7 @@ class VideoQualityTest : public test::CallTest,
   void StopThumbnails();
   void DestroyThumbnailStreams();
   // Helper method for creating a real ADM (using hardware) for all platforms.
-  rtc::scoped_refptr<AudioDeviceModule> CreateAudioDevice();
+  scoped_refptr<AudioDeviceModule> CreateAudioDevice();
   void InitializeAudioDevice(CallConfig* send_call_config,
                              CallConfig* recv_call_config,
                              bool use_real_adm);
@@ -103,7 +103,7 @@ class VideoQualityTest : public test::CallTest,
   virtual std::unique_ptr<test::LayerFilteringTransport> CreateSendTransport();
   virtual std::unique_ptr<test::DirectTransport> CreateReceiveTransport();
 
-  std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>
+  std::vector<std::unique_ptr<VideoSourceInterface<VideoFrame>>>
       thumbnail_capturers_;
   Clock* const clock_;
   const std::unique_ptr<TaskQueueFactory> task_queue_factory_;

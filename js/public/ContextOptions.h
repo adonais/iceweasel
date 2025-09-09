@@ -105,12 +105,6 @@ class JS_PUBLIC_API ContextOptions {
     return *this;
   }
 
-  bool importAttributes() const { return compileOptions_.importAttributes(); }
-  ContextOptions& setImportAttributes(bool enabled) {
-    compileOptions_.setImportAttributes(enabled);
-    return *this;
-  }
-
   // Override to allow disabling the eval restriction security checks for
   // this context.
   bool disableEvalSecurityChecks() const { return disableEvalSecurityChecks_; }

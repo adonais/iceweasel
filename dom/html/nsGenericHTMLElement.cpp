@@ -4,97 +4,93 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nsGenericHTMLElement.h"
+
+#include "HTMLBRElement.h"
+#include "HTMLFieldSetElement.h"
+#include "ReferrerInfo.h"
+#include "imgIContainer.h"
 #include "mozilla/EditorBase.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/EventStateManager.h"
-#include "mozilla/HTMLEditor.h"
 #include "mozilla/FocusModel.h"
+#include "mozilla/HTMLEditor.h"
 #include "mozilla/IMEContentObserver.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MouseEvents.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/TextEditor.h"
-#include "mozilla/TextEvents.h"
+#include "mozilla/PresState.h"
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/TextEditor.h"
+#include "mozilla/TextEvents.h"
 #include "mozilla/dom/AncestorIterator.h"
-#include "mozilla/dom/FetchPriority.h"
-#include "mozilla/dom/FormData.h"
-#include "mozilla/dom/HTMLElementBinding.h"
-#include "nsCaseTreatment.h"
-#include "nscore.h"
-#include "nsGenericHTMLElement.h"
-#include "nsCOMPtr.h"
-#include "nsAtom.h"
-#include "nsQueryObject.h"
 #include "mozilla/dom/BindContext.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/UnbindContext.h"
-#include "nsPIDOMWindow.h"
-#include "nsIFrameInlines.h"
-#include "nsView.h"
-#include "nsViewManager.h"
-#include "nsIWidget.h"
-#include "nsRange.h"
-#include "nsPresContext.h"
-#include "nsError.h"
-#include "nsIPrincipal.h"
-#include "nsContainerFrame.h"
-#include "nsStyleUtil.h"
-#include "ReferrerInfo.h"
-
-#include "mozilla/PresState.h"
-#include "nsILayoutHistoryState.h"
-
-#include "nsHTMLParts.h"
-#include "nsContentUtils.h"
-#include "mozilla/dom/DirectionalityUtils.h"
-#include "mozilla/dom/DocumentOrShadowRoot.h"
-#include "nsString.h"
-#include "nsGkAtoms.h"
-#include "nsDOMCSSDeclaration.h"
-#include "nsIFormControl.h"
-#include "mozilla/dom/HTMLFormElement.h"
-#include "nsFocusManager.h"
-
-#include "nsDOMStringMap.h"
-#include "nsDOMString.h"
-
-#include "nsLayoutUtils.h"
-#include "mozilla/dom/DocumentInlines.h"
-#include "HTMLFieldSetElement.h"
-#include "nsTextNode.h"
-#include "HTMLBRElement.h"
-#include "nsDOMMutationObserver.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/dom/FromParser.h"
-#include "mozilla/dom/Link.h"
-#include "mozilla/dom/ScriptLoader.h"
-
-#include "nsDOMTokenList.h"
-#include "nsThreadUtils.h"
 #include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/MouseEventBinding.h"
-#include "mozilla/dom/ToggleEvent.h"
-#include "mozilla/dom/TouchEvent.h"
-#include "mozilla/dom/InputEvent.h"
 #include "mozilla/dom/CommandEvent.h"
-#include "mozilla/ErrorResult.h"
-#include "nsHTMLDocument.h"
-#include "nsGlobalWindowInner.h"
-#include "mozilla/dom/HTMLBodyElement.h"
-#include "imgIContainer.h"
-#include "nsComputedDOMStyle.h"
-#include "mozilla/dom/HTMLDialogElement.h"
-#include "mozilla/dom/HTMLLabelElement.h"
-#include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/CustomElementRegistry.h"
+#include "mozilla/dom/DirectionalityUtils.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/DocumentOrShadowRoot.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/ElementInternals.h"
+#include "mozilla/dom/FetchPriority.h"
+#include "mozilla/dom/FormData.h"
+#include "mozilla/dom/FromParser.h"
+#include "mozilla/dom/HTMLBodyElement.h"
+#include "mozilla/dom/HTMLDialogElement.h"
+#include "mozilla/dom/HTMLElementBinding.h"
+#include "mozilla/dom/HTMLFormElement.h"
+#include "mozilla/dom/HTMLInputElement.h"
+#include "mozilla/dom/HTMLLabelElement.h"
+#include "mozilla/dom/InputEvent.h"
+#include "mozilla/dom/Link.h"
+#include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/dom/ScriptLoader.h"
+#include "mozilla/dom/ToggleEvent.h"
+#include "mozilla/dom/TouchEvent.h"
+#include "mozilla/dom/UnbindContext.h"
+#include "nsAtom.h"
+#include "nsCOMPtr.h"
+#include "nsCaseTreatment.h"
+#include "nsComputedDOMStyle.h"
+#include "nsContainerFrame.h"
+#include "nsContentUtils.h"
+#include "nsDOMCSSDeclaration.h"
+#include "nsDOMMutationObserver.h"
+#include "nsDOMString.h"
+#include "nsDOMStringMap.h"
+#include "nsDOMTokenList.h"
+#include "nsError.h"
+#include "nsFocusManager.h"
+#include "nsGkAtoms.h"
+#include "nsGlobalWindowInner.h"
+#include "nsHTMLDocument.h"
+#include "nsHTMLParts.h"
+#include "nsIFormControl.h"
+#include "nsIFrameInlines.h"
+#include "nsILayoutHistoryState.h"
+#include "nsIPrincipal.h"
+#include "nsIWidget.h"
+#include "nsLayoutUtils.h"
+#include "nsPIDOMWindow.h"
+#include "nsPresContext.h"
+#include "nsQueryObject.h"
+#include "nsRange.h"
+#include "nsString.h"
+#include "nsStyleUtil.h"
+#include "nsTextNode.h"
+#include "nsThreadUtils.h"
+#include "nsView.h"
+#include "nsViewManager.h"
+#include "nscore.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -414,8 +410,8 @@ nsresult nsGenericHTMLElement::BindToTree(BindContext& aContext,
 
   // Hide any nonce from the DOM, but keep the internal value of the
   // nonce by copying and resetting the internal nonce value.
-  if (HasFlag(NODE_HAS_NONCE_AND_HEADER_CSP) && IsInComposedDoc() &&
-      OwnerDoc()->GetBrowsingContext()) {
+  if (!aContext.IsMove() && HasFlag(NODE_HAS_NONCE_AND_HEADER_CSP) &&
+      IsInComposedDoc() && OwnerDoc()->GetBrowsingContext()) {
     nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
         "nsGenericHTMLElement::ResetNonce::Runnable",
         [self = RefPtr<nsGenericHTMLElement>(this)]() {
@@ -443,7 +439,7 @@ void nsGenericHTMLElement::UnbindFromTree(UnbindContext& aContext) {
     // If removedNode's popover attribute is not in the no popover state, then
     // run the hide popover algorithm given removedNode, false, false, and
     // false.
-    if (GetPopoverData()) {
+    if (!aContext.IsMove() && GetPopoverData()) {
       HidePopoverWithoutRunningScript();
     }
     RegUnRegAccessKey(false);
@@ -2059,12 +2055,6 @@ bool nsGenericHTMLFormElement::IsElementDisabledForEvents(WidgetEvent* aEvent,
     return false;
   }
 
-  // FIXME(emilio): This poking at the style of the frame is slightly bogus
-  // unless we flush before every event, which we don't really want to do.
-  if (aFrame && aFrame->StyleUI()->UserInput() == StyleUserInput::None) {
-    return true;
-  }
-
   return IsDisabled();
 }
 
@@ -2833,12 +2823,34 @@ void nsGenericHTMLFormControlElementWithState::SetPopoverTargetElement(
   ExplicitlySetAttrElement(nsGkAtoms::popovertarget, aElement);
 }
 
-void nsGenericHTMLFormControlElementWithState::HandlePopoverTargetAction() {
-  RefPtr<nsGenericHTMLElement> target = GetEffectivePopoverTargetElement();
-  if (!target) {
+// https://html.spec.whatwg.org/multipage/#popover-target-attribute-activation-behavior
+void nsGenericHTMLFormControlElementWithState::HandlePopoverTargetAction(
+    mozilla::dom::Element* aEventTarget) {
+  // 1. Let popover be node's popover target element.
+  RefPtr<nsGenericHTMLElement> popover = GetEffectivePopoverTargetElement();
+
+  // 2. If popover is null, then return.
+  if (!popover) {
     return;
   }
 
+  // 3. If eventTarget is a shadow-including inclusive descendant of popover and
+  // popover is a shadow-including descendant of node, then return.
+  if (aEventTarget &&
+      aEventTarget->IsShadowIncludingInclusiveDescendantOf(popover) &&
+      popover->IsShadowIncludingDescendantOf(this)) {
+    return;
+  }
+
+  // 4. If node's popovertargetaction attribute is in the show state and
+  // popover's popover visibility state is showing, then return.
+  // 5. If node's popovertargetaction attribute is in the hide state and
+  // popover's popover visibility state is hidden, then return.
+  // 6. If popover's popover visibility state is showing, then run the hide
+  // popover algorithm given popover, true, true, false, and node.
+  // 7. Otherwise, if popover's popover visibility state is hidden and the
+  // result of running check popover validity given popover, false, false, and
+  // null is true, then run show popover given popover, false, and node.
   auto action = PopoverTargetAction::Toggle;
   if (const nsAttrValue* value =
           GetParsedAttr(nsGkAtoms::popovertargetaction)) {
@@ -2848,15 +2860,15 @@ void nsGenericHTMLFormControlElementWithState::HandlePopoverTargetAction() {
 
   bool canHide = action == PopoverTargetAction::Hide ||
                  action == PopoverTargetAction::Toggle;
-  bool shouldHide = canHide && target->IsPopoverOpen();
+  bool shouldHide = canHide && popover->IsPopoverOpen();
   bool canShow = action == PopoverTargetAction::Show ||
                  action == PopoverTargetAction::Toggle;
-  bool shouldShow = canShow && !target->IsPopoverOpen();
+  bool shouldShow = canShow && !popover->IsPopoverOpen();
 
   if (shouldHide) {
-    target->HidePopover(IgnoreErrors());
+    popover->HidePopover(IgnoreErrors());
   } else if (shouldShow) {
-    target->ShowPopoverInternal(this, IgnoreErrors());
+    popover->ShowPopoverInternal(this, IgnoreErrors());
   }
 }
 

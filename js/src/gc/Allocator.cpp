@@ -45,14 +45,16 @@ static Heap MinHeapToTenure(bool allowNurseryAlloc) {
 }
 
 void Zone::setNurseryAllocFlags(bool allocObjects, bool allocStrings,
-                                bool allocBigInts) {
+                                bool allocBigInts, bool allocGetterSetters) {
   allocNurseryObjects_ = allocObjects;
   allocNurseryStrings_ = allocStrings;
   allocNurseryBigInts_ = allocBigInts;
+  allocNurseryGetterSetters_ = allocGetterSetters;
 
   minObjectHeapToTenure_ = MinHeapToTenure(allocNurseryObjects());
   minStringHeapToTenure_ = MinHeapToTenure(allocNurseryStrings());
   minBigintHeapToTenure_ = MinHeapToTenure(allocNurseryBigInts());
+  minGetterSetterHeapToTenure_ = MinHeapToTenure(allocNurseryGetterSetters());
 }
 
 #define INSTANTIATE_ALLOC_NURSERY_CELL(traceKind, allowGc)          \
@@ -65,6 +67,8 @@ INSTANTIATE_ALLOC_NURSERY_CELL(JS::TraceKind::String, NoGC)
 INSTANTIATE_ALLOC_NURSERY_CELL(JS::TraceKind::String, CanGC)
 INSTANTIATE_ALLOC_NURSERY_CELL(JS::TraceKind::BigInt, NoGC)
 INSTANTIATE_ALLOC_NURSERY_CELL(JS::TraceKind::BigInt, CanGC)
+INSTANTIATE_ALLOC_NURSERY_CELL(JS::TraceKind::GetterSetter, NoGC)
+INSTANTIATE_ALLOC_NURSERY_CELL(JS::TraceKind::GetterSetter, CanGC)
 #undef INSTANTIATE_ALLOC_NURSERY_CELL
 
 // Attempt to allocate a new cell in the nursery. If there is not enough room in
@@ -487,14 +491,7 @@ Arena* GCRuntime::allocateArena(ArenaChunk* chunk, Zone* zone,
 
   Arena* arena = chunk->allocateArena(this, zone, thingKind);
 
-  if (IsBufferAllocKind(thingKind)) {
-    // Try to keep GC scheduling the same to minimize benchmark noise.
-    // Keep this in sync with Arena::release.
-    size_t usableSize = ArenaSize - Arena::firstThingOffset(thingKind);
-    zone->mallocHeapSize.addBytes(usableSize);
-  } else {
-    zone->gcHeapSize.addGCArena(heapSize);
-  }
+  zone->gcHeapSize.addGCArena(heapSize);
 
   // Trigger an incremental slice if needed.
   if (checkThresholds != ShouldCheckThresholds::DontCheckThresholds) {

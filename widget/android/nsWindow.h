@@ -192,6 +192,7 @@ class nsWindow final : public nsBaseWidget {
   void SetInputContext(const InputContext& aContext,
                        const InputContextAction& aAction) override;
   InputContext GetInputContext() override;
+  void PostHandleKeyEvent(mozilla::WidgetKeyboardEvent* aEvent) override;
 
   WindowRenderer* GetWindowRenderer() override;
 

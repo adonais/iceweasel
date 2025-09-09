@@ -26,9 +26,8 @@
 #include <string>
 #include <vector>
 
-#include "content_decryption_module.h"
-
 #include "RefCounted.h"
+#include "content_decryption_module.h"
 
 class ClearKeySessionManager;
 

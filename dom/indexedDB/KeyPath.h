@@ -9,11 +9,12 @@
 
 #include <new>
 #include <utility>
+
 #include "js/TypeDecls.h"
 #include "mozilla/Result.h"
 #include "mozilla/ipc/IPCForwards.h"
-#include "nsISupports.h"
 #include "nsError.h"
+#include "nsISupports.h"
 #include "nsString.h"
 #include "nsTArray.h"
 

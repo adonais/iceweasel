@@ -293,8 +293,7 @@ class ResponsiveUI {
     // If our tab is about to be closed, there's not enough time to exit
     // gracefully, but that shouldn't be a problem since the tab will go away.
     // So, skip any waiting when we're about to close the tab.
-    const isTabDestroyed =
-      !this.tab.linkedBrowser || this.responsiveFront?.isDestroyed();
+    const isTabDestroyed = !this.tab.linkedBrowser;
     const isWindowClosing = options?.reason === "unload" || isTabDestroyed;
     const isTabContentDestroying =
       isWindowClosing || options?.reason === "TabClose";
@@ -399,7 +398,7 @@ class ResponsiveUI {
     if (!isTabContentDestroying) {
       await commandsDestroyed;
     }
-    this.commands = this.responsiveFront = null;
+    this.commands = null;
     this.destroyed = true;
 
     return true;
@@ -1111,12 +1110,6 @@ class ResponsiveUI {
     }
 
     if (targetFront.isTopLevel) {
-      this.responsiveFront = await targetFront.getFront("responsive");
-
-      if (this.destroying) {
-        return;
-      }
-
       await this.restoreActorState(isTargetSwitching);
       this.emitForTests("responsive-ui-target-switch-done");
     }
@@ -1125,6 +1118,11 @@ class ResponsiveUI {
       targetFront.on("contentScrolled", this.onContentScrolled);
     }
   }
+
+  async setElementPickerState(state, pickerType) {
+    this.commands.responsiveCommand.setElementPickerState(state, pickerType);
+  }
+
   // This just needed to setup watching for network resources,
   // to support network throttling.
   onNetworkResourceAvailable() {}

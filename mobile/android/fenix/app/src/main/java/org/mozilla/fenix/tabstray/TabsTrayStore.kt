@@ -89,9 +89,13 @@ enum class Page {
          * Returns the [Page] that corresponds to the [position].
          *
          * @param position The index of the page.
+         * @param enhancementsEnabled Whether this function is being invoked from the Tab Manager enhancements.
          */
-        fun positionToPage(position: Int): Page {
-            return if (DefaultTabManagementFeatureHelper.enhancementsEnabled) {
+        fun positionToPage(
+            position: Int,
+            enhancementsEnabled: Boolean = true,
+        ): Page {
+            return if (enhancementsEnabled) {
                 when (position) {
                     0 -> PrivateTabs
                     1 -> NormalTabs
@@ -110,9 +114,13 @@ enum class Page {
          * Returns the visual index that corresponds to the [page].
          *
          * @param page The [Page] whose visual index is being looked-up.
+         * @param enhancementsEnabled Whether this function is being invoked from the Tab Manager enhancements.
          */
-        fun pageToPosition(page: Page): Int {
-            return if (DefaultTabManagementFeatureHelper.enhancementsEnabled) {
+        fun pageToPosition(
+            page: Page,
+            enhancementsEnabled: Boolean = true,
+        ): Int {
+            return if (enhancementsEnabled) {
                 when (page) {
                     PrivateTabs -> 0
                     NormalTabs -> 1
@@ -224,6 +232,11 @@ sealed class TabsTrayAction : Action {
      * [TabsTrayAction] fired when the user requests to close all private tabs.
      */
     object CloseAllPrivateTabs : TabsTrayAction()
+
+    /**
+     * [TabsTrayAction] fired when the user requests to bookmark selected tabs.
+     */
+    data class BookmarkSelectedTabs(val tabCount: Int) : TabsTrayAction()
 }
 
 /**
@@ -271,6 +284,7 @@ internal object TabsTrayReducer {
             is TabsTrayAction.ShareAllPrivateTabs -> state
             is TabsTrayAction.CloseAllNormalTabs -> state
             is TabsTrayAction.CloseAllPrivateTabs -> state
+            is TabsTrayAction.BookmarkSelectedTabs -> state
         }
     }
 }

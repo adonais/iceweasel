@@ -66,7 +66,7 @@ class BrowserToolbarToFenixSearchMapperMiddlewareTest {
         val searchStore = buildSearchStore(listOf(buildMiddleware()))
         toolbarStore.dispatch(ToggleEditMode(true))
 
-        searchStore.dispatch(SearchStarted(mockk(), false, false))
+        searchStore.dispatch(SearchStarted(mockk(), false, false, searchStartedForCurrentUrl = false))
 
         toolbarStore.dispatch(SearchQueryUpdated("t"))
         assertEquals("t", searchStore.state.query)
@@ -79,6 +79,22 @@ class BrowserToolbarToFenixSearchMapperMiddlewareTest {
 
         toolbarStore.dispatch(SearchQueryUpdated("test"))
         assertEquals("test", searchStore.state.query)
+    }
+
+    @Test
+    fun `GIVEN search was started for the current URL WHEN there's a new query in the toolbar THEN don't update the search state`() {
+        val searchStore = buildSearchStore(listOf(buildMiddleware()))
+        toolbarStore.dispatch(ToggleEditMode(true))
+
+        searchStore.dispatch(SearchStarted(mockk(), false, false, searchStartedForCurrentUrl = true))
+        toolbarStore.dispatch(SearchQueryUpdated("https://mozilla.org", isQueryPrefilled = true))
+        assertEquals("", searchStore.state.query)
+
+        toolbarStore.dispatch(SearchQueryUpdated("t"))
+        assertEquals("t", searchStore.state.query)
+
+        toolbarStore.dispatch(SearchQueryUpdated("https://mozilla.org"))
+        assertEquals("https://mozilla.org", searchStore.state.query)
     }
 
     private fun buildSearchStore(

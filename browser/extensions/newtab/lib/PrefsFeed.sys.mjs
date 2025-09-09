@@ -32,10 +32,13 @@ export class PrefsFeed {
     this._prefMap = prefMap;
     this._prefs = new Prefs();
     this.onExperimentUpdated = this.onExperimentUpdated.bind(this);
+    this.onTrainhopExperimentUpdated =
+      this.onTrainhopExperimentUpdated.bind(this);
     this.onPocketExperimentUpdated = this.onPocketExperimentUpdated.bind(this);
     this.onSmartShortcutsExperimentUpdated =
       this.onSmartShortcutsExperimentUpdated.bind(this);
     this.onWidgetsUpdated = this.onWidgetsUpdated.bind(this);
+    this.onOhttpImagesUpdated = this.onOhttpImagesUpdated.bind(this);
     this.onInferredPersonalizationExperimentUpdated =
       this.onInferredPersonalizationExperimentUpdated.bind(this);
   }
@@ -91,6 +94,46 @@ export class PrefsFeed {
         type: at.PREF_CHANGED,
         data: {
           name: "featureConfig",
+          value,
+        },
+      })
+    );
+  }
+
+  /**
+   * Handler for when experiment data updates.
+   */
+  onTrainhopExperimentUpdated() {
+    const allEnrollments =
+      lazy.NimbusFeatures.newtabTrainhop.getAllEnrollments() || [];
+
+    // Combine all trainhop experiments keyed by type.
+    // Rules for duplicates:
+    // - Experiments take precedence over rollouts (this is expected).
+    // - If multiple experiments or multiple rollouts exist for the same type,
+    //   only the first is kept. This is nondeterministic and considered an error;
+    //   those experiments/rollouts should be relaunched.
+    const value = {};
+    allEnrollments.reduce((accumulator, currentValue) => {
+      if (currentValue?.value?.type) {
+        if (
+          !accumulator[currentValue.value.type] ||
+          (accumulator[currentValue.value.type].meta.isRollout &&
+            !currentValue.meta.isRollout)
+        ) {
+          accumulator[currentValue.value.type] = currentValue;
+          // Shorten the data chain.
+          value[currentValue.value.type] = currentValue.value.payload;
+        }
+      }
+      return accumulator;
+    }, {});
+
+    this.store.dispatch(
+      ac.BroadcastToContent({
+        type: at.PREF_CHANGED,
+        data: {
+          name: "trainhopConfig",
           value,
         },
       })
@@ -169,9 +212,30 @@ export class PrefsFeed {
     );
   }
 
+  /**
+   * Handler for when OHTTP images experiment data updates.
+   */
+  onOhttpImagesUpdated() {
+    // newtabOhttpImages was introduced in 143.
+    const value =
+      lazy.NimbusFeatures.newtabOhttpImages?.getAllVariables() || {};
+    this.store.dispatch(
+      ac.BroadcastToContent({
+        type: at.PREF_CHANGED,
+        data: {
+          name: "ohttpImagesConfig",
+          value,
+        },
+      })
+    );
+  }
+
   init() {
     this._prefs.observeBranch(this);
     lazy.NimbusFeatures.newtab.onUpdate(this.onExperimentUpdated);
+    lazy.NimbusFeatures.newtabTrainhop.onUpdate(
+      this.onTrainhopExperimentUpdated
+    );
     lazy.NimbusFeatures.pocketNewtab.onUpdate(this.onPocketExperimentUpdated);
     lazy.NimbusFeatures.newtabSmartShortcuts.onUpdate(
       this.onSmartShortcutsExperimentUpdated
@@ -180,6 +244,11 @@ export class PrefsFeed {
       this.onInferredPersonalizationExperimentUpdated
     );
     lazy.NimbusFeatures.newtabWidgets.onUpdate(this.onWidgetsUpdated);
+
+    // newtabOhttpImages was introduced in 143.
+    if (lazy.NimbusFeatures.newtabOhttpImages) {
+      lazy.NimbusFeatures.newtabOhttpImages.onUpdate(this.onOhttpImagesUpdated);
+    }
 
     // Get the initial value of each activity stream pref
     const values = {};
@@ -250,15 +319,13 @@ export class PrefsFeed {
     this._setBoolPref(values, "logowordmark.alwaysVisible", false);
     this._setBoolPref(values, "feeds.section.topstories", false);
     this._setBoolPref(values, "discoverystream.enabled", false);
-    this._setBoolPref(
-      values,
-      "discoverystream.sponsored-collections.enabled",
-      false
-    );
-    this._setBoolPref(values, "discoverystream.isCollectionDismissible", false);
     this._setBoolPref(values, "discoverystream.hardcoded-basic-layout", false);
     this._setBoolPref(values, "discoverystream.personalization.enabled", false);
-    this._setBoolPref(values, "discoverystream.personalization.override");
+    this._setBoolPref(
+      values,
+      "discoverystream.personalization.override",
+      false
+    );
     this._setStringPref(
       values,
       "discoverystream.personalization.modelKeys",
@@ -287,11 +354,25 @@ export class PrefsFeed {
   removeListeners() {
     this._prefs.ignoreBranch(this);
     lazy.NimbusFeatures.newtab.offUpdate(this.onExperimentUpdated);
+    lazy.NimbusFeatures.newtabTrainhop.offUpdate(
+      this.onTrainhopExperimentUpdated
+    );
     lazy.NimbusFeatures.pocketNewtab.offUpdate(this.onPocketExperimentUpdated);
     lazy.NimbusFeatures.newtabSmartShortcuts.offUpdate(
       this.onSmartShortcutsExperimentUpdated
     );
+    lazy.NimbusFeatures.newtabInferredPersonalization.offUpdate(
+      this.onInferredPersonalizationExperimentUpdated
+    );
     lazy.NimbusFeatures.newtabWidgets.offUpdate(this.onWidgetsUpdated);
+
+    // newtabOhttpImages was introduced in 143.
+    if (lazy.NimbusFeatures.newtabOhttpImages) {
+      lazy.NimbusFeatures.newtabOhttpImages.offUpdate(
+        this.onOhttpImagesUpdated
+      );
+    }
+
     if (this.geo === "") {
       Services.obs.removeObserver(this, lazy.Region.REGION_TOPIC);
     }

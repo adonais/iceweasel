@@ -581,6 +581,8 @@ typedef struct AVPacket {
      * or muxers.
      */
     AVRational time_base;
+
+    void* moz_ndk_crypto_info;
 } AVPacket;
 
 #if FF_API_INIT_PACKET

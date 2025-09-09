@@ -61,6 +61,7 @@ import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.util.dpToPx
 import mozilla.components.support.ktx.android.view.setNavigationBarColorCompat
 import mozilla.components.support.utils.ext.isLandscape
+import mozilla.components.support.utils.ext.top
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.Config
@@ -84,7 +85,10 @@ import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
 import org.mozilla.fenix.components.menu.store.TranslationInfo
 import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
+import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.getWindowInsets
 import org.mozilla.fenix.ext.openSetDefaultBrowserOption
+import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.settings
@@ -140,19 +144,21 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
         return super.onCreateDialog(savedInstanceState).apply {
             setOnShowListener {
                 val safeActivity = activity ?: return@setOnShowListener
-                val browsingModeManager = (safeActivity as HomeActivity).browsingModeManager
+                val appStore = safeActivity.components.appStore
 
-                isPrivate = browsingModeManager.mode.isPrivate
+                isPrivate = appStore.state.mode.isPrivate
 
-                val navigationBarColor = if (browsingModeManager.mode.isPrivate) {
-                    ContextCompat.getColor(context, R.color.fx_mobile_private_layer_color_3)
-                } else {
-                    ContextCompat.getColor(context, R.color.fx_mobile_layer_color_3)
+                if (!Config.channel.isNightlyOrDebug) {
+                    val navigationBarColor = if (isPrivate) {
+                        ContextCompat.getColor(context, R.color.fx_mobile_private_layer_color_3)
+                    } else {
+                        ContextCompat.getColor(context, R.color.fx_mobile_layer_color_3)
+                    }
+
+                    window?.setNavigationBarColorCompat(navigationBarColor)
                 }
 
-                window?.setNavigationBarColorCompat(navigationBarColor)
-
-                if (browsingModeManager.mode.isPrivate && args.accesspoint == MenuAccessPoint.Home) {
+                if (isPrivate && args.accesspoint == MenuAccessPoint.Home) {
                     window?.setBackgroundDrawable(
                         Color.BLACK.toDrawable().mutate().apply {
                             alpha = PRIVATE_HOME_MENU_BACKGROUND_ALPHA
@@ -161,8 +167,8 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                 }
 
                 val bottomSheet = findViewById<View?>(R.id.design_bottom_sheet)
-                bottomSheet?.setBackgroundResource(android.R.color.transparent)
                 if (Config.channel.isNightlyOrDebug) {
+                    bottomSheet?.setBackgroundResource(R.drawable.bottom_sheet_with_top_rounded_corners)
                     bottomSheet?.let { sheet ->
                         sheet.translationY = sheet.height * MenuAnimationConfig.START_OFFSET_RATIO
                         sheet.animate()
@@ -171,6 +177,8 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                             .setDuration(MenuAnimationConfig.DURATION)
                             .start()
                     }
+                } else {
+                    bottomSheet?.setBackgroundResource(android.R.color.transparent)
                 }
 
                 bottomSheetBehavior = bottomSheet?.let {
@@ -338,12 +346,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
 
                 var isMoreMenuExpanded by remember { mutableStateOf(false) }
 
-                val cornerShape = if (Config.channel.isNightlyOrDebug) {
-                    RoundedCornerShape(28.dp)
-                } else {
-                    RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-                }
-
                 MenuDialogBottomSheet(
                     modifier = Modifier
                         .verticalScroll(rememberScrollState())
@@ -351,9 +353,9 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                         .width(32.dp),
                     onRequestDismiss = ::dismiss,
                     handlebarContentDescription = handlebarContentDescription,
-                    isExtensionsExpanded = isExtensionsExpanded,
-                    isMoreMenuExpanded = isMoreMenuExpanded,
-                    cornerShape = cornerShape,
+                    isMenuDragBarDark = !settings.shouldUseBottomToolbar &&
+                            (isExtensionsExpanded || isMoreMenuExpanded),
+                    cornerShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
                     handleColor = FirefoxTheme.colors.borderInverted.copy(0.4f),
                     handleCornerRadius = CornerRadius(100f, 100f),
                     menuCfrState = if (settings.shouldShowMenuCFR) {
@@ -551,6 +553,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     account = account,
                                     accountState = accountState,
                                     showQuitMenu = settings.shouldDeleteBrowsingDataOnQuit,
+                                    isBottomToolbar = settings.shouldUseBottomToolbar,
                                     isSiteLoading = isSiteLoading,
                                     isExtensionsProcessDisabled = isExtensionsProcessDisabled,
                                     isExtensionsExpanded = isExtensionsExpanded,
@@ -675,6 +678,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                             externalAppName = appLinksRedirect?.appName ?: "",
                                             isWebCompatReporterSupported = isWebCompatReporterSupported,
                                             translationInfo = translationInfo,
+                                            showShortcuts = settings.showTopSitesFeature,
                                             onWebCompatReporterClick = {
                                                 store.dispatch(MenuAction.Navigate.WebCompatReporter)
                                             },
@@ -765,6 +769,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                 CustomTabMenu(
                                     canGoBack = customTab?.content?.canGoBack ?: true,
                                     canGoForward = customTab?.content?.canGoForward ?: true,
+                                    isBottomToolbar = settings.shouldUseBottomToolbar,
                                     isSiteLoading = isSiteLoading,
                                     scrollState = scrollState,
                                     isPdf = customTab?.content?.isPdf == true,
@@ -879,9 +884,8 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
     private fun calculateMenuSheetWidth(): Int {
         val isLandscape = requireContext().isLandscape()
         val screenWidthPx = requireContext().resources.configuration.screenWidthDp.dpToPx(resources.displayMetrics)
-        val totalHorizontalPadding = 2 * requireContext().resources.getDimensionPixelSize(R.dimen.browser_menu_padding)
-        val minScreenWidth = requireContext().resources.getDimensionPixelSize(R.dimen.browser_menu_max_width) +
-            totalHorizontalPadding
+        val totalHorizontalPadding = 2 * pixelSizeFor(R.dimen.browser_menu_padding)
+        val minScreenWidth = pixelSizeFor(R.dimen.browser_menu_max_width) + totalHorizontalPadding
 
         // We only want to restrict the width of the menu if the device is in landscape mode AND the
         // device's screen width is smaller than the menu's max width and total horizontal padding combined.
@@ -889,15 +893,20 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
         return if (isLandscape && screenWidthPx < minScreenWidth) {
             screenWidthPx - totalHorizontalPadding
         } else {
-            requireContext().resources.getDimensionPixelSize(R.dimen.browser_menu_max_width)
+            pixelSizeFor(R.dimen.browser_menu_max_width)
         }
     }
 
     private fun calculateMenuSheetHeight(): Int {
-        return if (requireContext().isLandscape()) {
+        val bottomSheet = dialog?.findViewById<View?>(R.id.design_bottom_sheet)
+        val topBarHeight = bottomSheet?.getWindowInsets()?.top() ?: 0
+
+        val orientationMaxHeight = if (requireContext().isLandscape()) {
             resources.displayMetrics.heightPixels
         } else {
             resources.displayMetrics.heightPixels - EXPANDED_OFFSET.dpToPx(resources.displayMetrics)
         }
+
+        return orientationMaxHeight - topBarHeight
     }
 }

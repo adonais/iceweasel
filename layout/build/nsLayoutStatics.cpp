@@ -19,6 +19,7 @@
 #include "mozilla/GlobalStyleSheetCache.h"
 #include "mozilla/css/ErrorReporter.h"
 #include "mozilla/dom/Attr.h"
+#include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/HTMLDNSPrefetch.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/PopupBlocker.h"
@@ -56,7 +57,6 @@
 #include "nsRegion.h"
 #include "nsRepeatService.h"
 #include "nsTextControlFrame.h"
-#include "nsTextFragment.h"
 #include "nsTextFrame.h"
 #include "nsTreeSanitizer.h"
 #include "nsXULContentUtils.h"
@@ -161,9 +161,9 @@ nsresult nsLayoutStatics::Initialize() {
 
   nsAttrValue::Init();
 
-  rv = nsTextFragment::Init();
+  rv = CharacterDataBuffer::Init();
   if (NS_FAILED(rv)) {
-    NS_ERROR("Could not initialize nsTextFragment");
+    NS_ERROR("Could not initialize CharacterDataBuffer");
     return rv;
   }
 
@@ -340,7 +340,7 @@ void nsLayoutStatics::Shutdown() {
 
   mozilla::css::ErrorReporter::ReleaseGlobals();
 
-  nsTextFragment::Shutdown();
+  CharacterDataBuffer::Shutdown();
 
   nsAttrValue::Shutdown();
   nsContentUtils::Shutdown();

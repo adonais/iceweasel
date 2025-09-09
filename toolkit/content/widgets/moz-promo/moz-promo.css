@@ -15,9 +15,9 @@
 */
 
 :host([type="vibrant"]) {
-  --promo-message-text-color: var(--color-violet-80);
+  --promo-message-text-color: light-dark(var(--color-violet-80), var(--color-violet-0));
   --promo-heading-text-color: var(--promo-message-text-color);
-  --promo-background-color: var(--color-violet-0);
+  --promo-background-color: light-dark(var(--color-violet-0), var(--color-violet-90));
   --promo-border-color: var(--color-violet-30);
 }
 
@@ -84,6 +84,7 @@
 
 .heading {
   color: var(--promo-heading-text-color);
+  margin-block: 0;
 }
 
 /* MozPromo message styles */
@@ -92,4 +93,12 @@
   flex-wrap: wrap;
   word-break: break-word;
   margin: 0;
+}
+
+/* MozPromo slot styles */
+
+.actions-and-support-link-wrapper {
+  display: flex;
+  gap: var(--space-small);
+  align-items: baseline;
 }

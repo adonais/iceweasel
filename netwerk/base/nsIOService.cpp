@@ -256,6 +256,7 @@ static const char* gCallbackPrefsForSocketProcess[] = {
     "network.socket.attach_mock_network_layer",
     "network.lna.enabled",
     "network.lna.blocking",
+    "network.lna.address_space.private.override",
     nullptr,
 };
 

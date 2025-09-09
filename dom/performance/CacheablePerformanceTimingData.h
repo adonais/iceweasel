@@ -11,7 +11,7 @@
 
 #include "nsCOMPtr.h"
 #include "nsITimedChannel.h"
-#include "nsStringFwd.h"
+#include "nsString.h"
 #include "nsTArray.h"
 
 class nsIHttpChannel;

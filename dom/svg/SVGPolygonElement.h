@@ -7,8 +7,8 @@
 #ifndef DOM_SVG_SVGPOLYGONELEMENT_H_
 #define DOM_SVG_SVGPOLYGONELEMENT_H_
 
-#include "mozilla/Attributes.h"
 #include "SVGPolyElement.h"
+#include "mozilla/Attributes.h"
 
 nsresult NS_NewSVGPolygonElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);

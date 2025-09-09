@@ -8,14 +8,14 @@
 #define mozilla_CamerasParent_h
 
 #include "CamerasChild.h"
-#include "mozilla/Atomics.h"
-#include "mozilla/camera/PCamerasParent.h"
-#include "mozilla/media/MediaUtils.h"
-#include "mozilla/ipc/Shmem.h"
-#include "mozilla/ShmemPool.h"
 #include "api/video/video_sink_interface.h"
 #include "modules/video_capture/video_capture.h"
 #include "modules/video_capture/video_capture_defines.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/ShmemPool.h"
+#include "mozilla/camera/PCamerasParent.h"
+#include "mozilla/ipc/Shmem.h"
+#include "mozilla/media/MediaUtils.h"
 #include "video/render/incoming_video_stream.h"
 
 class WebrtcLogSinkHandle;
@@ -30,7 +30,7 @@ namespace mozilla::camera {
 class CamerasParent;
 class VideoEngine;
 
-class CallbackHelper : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
+class CallbackHelper : public webrtc::VideoSinkInterface<webrtc::VideoFrame> {
  public:
   CallbackHelper(CaptureEngine aCapEng, uint32_t aStreamId,
                  CamerasParent* aParent)
@@ -57,8 +57,7 @@ class CallbackHelper : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
 
 class DeliverFrameRunnable;
 
-class CamerasParent final : public PCamerasParent,
-                            private webrtc::VideoInputFeedBack {
+class CamerasParent final : public PCamerasParent {
  public:
   using ShutdownMozPromise = media::ShutdownBlockingTicket::ShutdownMozPromise;
 
@@ -141,8 +140,7 @@ class CamerasParent final : public PCamerasParent,
   void StopCapture(const CaptureEngine& aCapEngine, int aCaptureId);
   int ReleaseCapture(const CaptureEngine& aCapEngine, int aCaptureId);
 
-  // VideoInputFeedBack
-  void OnDeviceChange() override;
+  void OnDeviceChange();
 
   // Creates a new DeviceInfo or returns an existing DeviceInfo for given
   // capture engine. Returns a nullptr in case capture engine failed to be
@@ -185,6 +183,11 @@ class CamerasParent final : public PCamerasParent,
 
   std::map<nsCString, std::map<uint32_t, webrtc::VideoCaptureCapability>>
       mAllCandidateCapabilities;
+
+  // Listener for the camera VideoEngine::DeviceChangeEvent(). Video capture
+  // thread only.
+  MediaEventListener mDeviceChangeEventListener;
+  bool mDeviceChangeEventListenerConnected = false;
 
   // While alive, ensure webrtc logging is hooked up to MOZ_LOG. Main thread
   // only.

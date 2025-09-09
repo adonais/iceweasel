@@ -7,12 +7,12 @@
 #ifndef mozilla_dom_ReferrerInfo_h
 #define mozilla_dom_ReferrerInfo_h
 
+#include "mozilla/HashFunctions.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "nsCOMPtr.h"
 #include "nsIReferrerInfo.h"
 #include "nsReadableUtils.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/HashFunctions.h"
-#include "mozilla/dom/ReferrerPolicyBinding.h"
 
 #define REFERRERINFO_CONTRACTID "@mozilla.org/referrer-info;1"
 // 041a129f-10ce-4bda-a60d-e027a26d5ed0

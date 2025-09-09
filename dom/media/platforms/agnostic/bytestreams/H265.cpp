@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "H265.h"
+
 #include <stdint.h>
 
 #include <cmath>

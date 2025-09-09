@@ -51,6 +51,8 @@ support-files = [
   "blank_iframe.html",
 ]
 
+["browser_URILoadingHelper_chromeless.js"]
+
 ["browser_UnsubmittedCrashHandler.js"]
 run-if = ["crashreporter"]
 

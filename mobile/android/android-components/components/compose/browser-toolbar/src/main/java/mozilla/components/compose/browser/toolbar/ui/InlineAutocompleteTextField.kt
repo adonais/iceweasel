@@ -41,6 +41,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.toolbar.BrowserEditToolbar
+import mozilla.components.compose.browser.toolbar.R
 import mozilla.components.concept.toolbar.AutocompleteDelegate
 import mozilla.components.concept.toolbar.AutocompleteProvider
 import mozilla.components.concept.toolbar.AutocompleteResult
@@ -138,6 +139,8 @@ internal fun InlineAutocompleteTextField(
     AndroidView(
         factory = { context ->
             InlineAutocompleteEditText(context).apply {
+                id = R.id.mozac_addressbar_search_query_input
+
                 imeOptions = EditorInfo.IME_ACTION_GO or
                     EditorInfo.IME_FLAG_NO_EXTRACT_UI or
                     EditorInfo.IME_FLAG_NO_FULLSCREEN
@@ -160,7 +163,7 @@ internal fun InlineAutocompleteTextField(
 
                 updateText(query)
                 if (showQueryAsPreselected && query.isNotBlank()) {
-                    selectAll()
+                    post { selectAll() }
                 }
 
                 setOnCommitListener {

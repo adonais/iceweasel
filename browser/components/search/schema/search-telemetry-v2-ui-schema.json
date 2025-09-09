@@ -11,6 +11,7 @@
     "organicCodes",
     "followOnParamNames",
     "followOnCookies",
+    "searchMode",
     "extraAdServersRegexps",
     "adServerAttributes",
     "components",

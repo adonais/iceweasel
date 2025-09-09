@@ -55,9 +55,7 @@ add_task(async function () {
 
   ok(
     await outerFrameHighlighterTestFront.assertHighlightedNode(
-      isEveryFrameTargetEnabled()
-        ? outerFrameMainSelector.at(-1)
-        : outerFrameMainSelector
+      outerFrameMainSelector.at(-1)
     ),
     "outerFrameDiv is highlighted."
   );
@@ -66,9 +64,7 @@ add_task(async function () {
   await hoverElement(inspector, innerFrameSectionSelector);
   ok(
     await innerFrameHighlighterTestFront.assertHighlightedNode(
-      isEveryFrameTargetEnabled()
-        ? innerFrameSectionSelector.at(-1)
-        : innerFrameSectionSelector
+      innerFrameSectionSelector.at(-1)
     ),
     "innerFrameDiv is highlighted."
   );

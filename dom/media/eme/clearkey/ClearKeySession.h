@@ -24,9 +24,8 @@
 #include <string>
 #include <vector>
 
-#include "content_decryption_module.h"
-
 #include "ClearKeyUtils.h"
+#include "content_decryption_module.h"
 
 class ClearKeySession {
  public:

@@ -10,8 +10,6 @@ import androidx.work.Configuration
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.testing.WorkManagerTestInitHelper
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.places.PlacesReaderConnection
 import mozilla.appservices.places.PlacesWriterConnection
@@ -55,11 +53,11 @@ import org.robolectric.annotation.Config
 import java.io.File
 import java.util.concurrent.TimeUnit
 
-@ExperimentalCoroutinesApi // for runTestOnMain
 @RunWith(AndroidJUnit4::class)
 class PlacesHistoryStorageTest {
     @get:Rule
     val coroutinesTestRule = MainCoroutineRule()
+    private val dispatcher = coroutinesTestRule.testDispatcher
 
     private lateinit var history: PlacesHistoryStorage
 
@@ -549,9 +547,9 @@ class PlacesHistoryStorageTest {
     @Test
     fun `store can delete by 'range'`() = runTestOnMain {
         history.recordVisit("http://www.mozilla.org/1", PageVisit(VisitType.TYPED))
-        advanceUntilIdle()
+        dispatcher.scheduler.advanceUntilIdle()
         history.recordVisit("http://www.mozilla.org/2", PageVisit(VisitType.DOWNLOAD))
-        advanceUntilIdle()
+        dispatcher.scheduler.advanceUntilIdle()
         history.recordVisit("http://www.mozilla.org/3", PageVisit(VisitType.BOOKMARK))
 
         var visits = history.getDetailedVisits(0, Long.MAX_VALUE)

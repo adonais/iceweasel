@@ -5,9 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WebTransportDatagramDuplexStream.h"
+
 #include "mozilla/dom/AutoEntryScript.h"
-#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/Promise-inl.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebTransportLog.h"
 
 namespace mozilla::dom {

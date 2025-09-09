@@ -139,6 +139,24 @@ async function ensureQuickSuggestInit({ ...args } = {}) {
           },
         ],
       },
+      {
+        type: "dynamic-suggestions",
+        suggestion_type: "important_dates",
+        score: 1.0,
+        attachment: [
+          {
+            keywords: ["important dates"],
+            data: {
+              result: {
+                payload: {
+                  dates: ["2025-03-05", "2026-02-18"],
+                  name: "Event 1",
+                },
+              },
+            },
+          },
+        ],
+      },
     ],
     ...args,
   });

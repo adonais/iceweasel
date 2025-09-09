@@ -8,6 +8,7 @@
 
 #include <new>
 #include <utility>
+
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"

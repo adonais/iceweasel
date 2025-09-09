@@ -7,11 +7,11 @@
 #ifndef mozilla_dom_cache_FileUtils_h
 #define mozilla_dom_cache_FileUtils_h
 
-#include "CacheCommon.h"
 #include "CacheCipherKeyManager.h"
+#include "CacheCommon.h"
+#include "mozIStorageConnection.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/cache/Types.h"
-#include "mozIStorageConnection.h"
 #include "nsStreamUtils.h"
 #include "nsTArrayForwardDeclare.h"
 

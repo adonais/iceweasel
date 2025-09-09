@@ -4,10 +4,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <stdint.h>
-#include "gtest/gtest.h"
+
 #include "BitReader.h"
 #include "BitWriter.h"
 #include "H264.h"
+#include "gtest/gtest.h"
 
 using namespace mozilla;
 

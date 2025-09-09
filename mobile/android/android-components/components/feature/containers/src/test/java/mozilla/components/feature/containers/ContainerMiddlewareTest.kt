@@ -5,7 +5,6 @@
 package mozilla.components.feature.containers
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flow
 import mozilla.components.browser.state.action.ContainerAction
 import mozilla.components.browser.state.state.BrowserState
@@ -24,7 +23,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.verify
 
-@ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class ContainerMiddlewareTest {
     @get:Rule

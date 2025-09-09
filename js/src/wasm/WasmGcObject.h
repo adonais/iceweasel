@@ -176,24 +176,6 @@ class WasmArrayObject : public WasmGcObject,
     return offsetToPointer<uint8_t>(offsetOfInlineStorage());
   }
 
-  // This tells us how big the object is if we know the number of inline bytes
-  // it was created with.
-  static inline constexpr size_t sizeOfIncludingInlineStorage(
-      size_t sizeOfInlineStorage) {
-    size_t n = sizeof(WasmArrayObject) + sizeOfInlineStorage;
-    MOZ_ASSERT(n <= JSObject::MAX_BYTE_SIZE);
-    return n;
-  }
-
-  // This tells us how big the object is if we know the number of inline bytes
-  // it was created with.
-  static inline constexpr size_t sizeOfIncludingInlineData(
-      size_t sizeOfInlineData) {
-    size_t n = sizeof(WasmArrayObject) + sizeOfInlineData;
-    MOZ_ASSERT(n <= JSObject::MAX_BYTE_SIZE);
-    return n;
-  }
-
   // AllocKind for object creation
   static inline gc::AllocKind allocKindForOOL();
   static inline gc::AllocKind allocKindForIL(uint32_t storageBytes);
@@ -231,6 +213,11 @@ class WasmArrayObject : public WasmGcObject,
   // given element size.
   static inline constexpr uint32_t maxInlineElementsForElemSize(
       uint32_t elemSize);
+
+  static void addSizeOfExcludingThis(JSObject* obj,
+                                     mozilla::MallocSizeOf mallocSizeOf,
+                                     JS::ClassInfo* info,
+                                     JS::RuntimeSizes* runtimeSizes);
 
   using DataHeader = uintptr_t;
   static const DataHeader DataIsIL = 0;
@@ -369,6 +356,11 @@ class WasmStructObject : public WasmGcObject,
     MOZ_ASSERT(n <= JSObject::MAX_BYTE_SIZE);
     return n;
   }
+
+  static void addSizeOfExcludingThis(JSObject* obj,
+                                     mozilla::MallocSizeOf mallocSizeOf,
+                                     JS::ClassInfo* info,
+                                     JS::RuntimeSizes* runtimeSizes);
 
   static const JSClass* classForTypeDef(const wasm::TypeDef* typeDef);
   static js::gc::AllocKind allocKindForTypeDef(const wasm::TypeDef* typeDef);

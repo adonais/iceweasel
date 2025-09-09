@@ -4,6 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsMenuItemX.h"
+#include "mozilla/dom/HTMLImageElement.h"
 #include "nsMenuBarX.h"
 #include "nsMenuX.h"
 #include "nsMenuItemIconX.h"
@@ -43,11 +44,9 @@ nsMenuItemX::nsMenuItemX(nsMenuX* aParent, const nsString& aLabel,
 
   mMenuGroupOwner->RegisterForContentChanges(mContent, this);
 
-  dom::Document* doc = mContent->GetUncomposedDoc();
-
   // if we have a command associated with this menu item, register for changes
   // to the command DOM node
-  if (doc) {
+  if (dom::Document* doc = mContent->GetUncomposedDoc()) {
     nsAutoString ourCommand;
     mContent->AsElement()->GetAttr(nsGkAtoms::command, ourCommand);
 
@@ -60,6 +59,12 @@ nsMenuItemX::nsMenuItemX(nsMenuX* aParent, const nsString& aLabel,
         mMenuGroupOwner->RegisterForContentChanges(mCommandElement, this);
       }
     }
+  }
+
+  if (auto* img = dom::HTMLImageElement::FromNodeOrNull(
+          mContent->GetFirstElementChild())) {
+    mImageElement = img;
+    mMenuGroupOwner->RegisterForContentChanges(mImageElement, this);
   }
 
   // decide enabled state based on command content if it exists, otherwise do it
@@ -147,6 +152,9 @@ void nsMenuItemX::DetachFromGroupOwner() {
     }
     if (mCommandElement) {
       mMenuGroupOwner->UnregisterForContentChanges(mCommandElement);
+    }
+    if (mImageElement) {
+      mMenuGroupOwner->UnregisterForContentChanges(mImageElement);
     }
   }
 
@@ -383,8 +391,6 @@ void nsMenuItemX::ObserveAttributeChanged(dom::Document* aDocument,
       SetBadge();
     } else if (aAttribute == nsGkAtoms::key) {
       SetKeyEquiv();
-    } else if (aAttribute == nsGkAtoms::image) {
-      SetupIcon();
     } else if (aAttribute == nsGkAtoms::disabled) {
       mNativeMenuItem.enabled = !aContent->AsElement()->AttrValueIs(
           kNameSpaceID_None, nsGkAtoms::disabled, nsGkAtoms::_true,
@@ -414,6 +420,8 @@ void nsMenuItemX::ObserveAttributeChanged(dom::Document* aDocument,
           kNameSpaceID_None, nsGkAtoms::disabled, nsGkAtoms::_true,
           eCaseMatters);
     }
+  } else if (aContent == mImageElement && aAttribute == nsGkAtoms::srcset) {
+    SetupIcon();
   }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
@@ -434,6 +442,10 @@ void nsMenuItemX::ObserveContentRemoved(dom::Document* aDocument,
     mMenuGroupOwner->UnregisterForContentChanges(mCommandElement);
     mCommandElement = nullptr;
   }
+  if (aChild == mImageElement) {
+    mMenuGroupOwner->UnregisterForContentChanges(mImageElement);
+    mImageElement = nullptr;
+  }
   if (IsMenuStructureElement(aChild)) {
     mMenuParent->SetRebuild(true);
   }
@@ -449,6 +461,13 @@ void nsMenuItemX::ObserveContentInserted(dom::Document* aDocument,
   // menu.
   if (IsMenuStructureElement(aChild)) {
     mMenuParent->SetRebuild(true);
+  }
+
+  if (!mImageElement && aContainer == mContent &&
+      aChild->IsHTMLElement(nsGkAtoms::img)) {
+    mImageElement = aChild->AsElement();
+    mMenuGroupOwner->RegisterForContentChanges(aChild, this);
+    SetupIcon();
   }
 }
 

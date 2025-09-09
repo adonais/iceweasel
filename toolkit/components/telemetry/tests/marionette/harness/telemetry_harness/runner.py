@@ -42,6 +42,7 @@ class TelemetryTestRunner(BaseMarionetteTestRunner):
                 "datareporting.healthreport.uploadEnabled": True,
                 "datareporting.policy.dataSubmissionEnabled": True,
                 "datareporting.policy.dataSubmissionPolicyBypassNotification": True,
+                "datareporting.usage.uploadEnabled": True,
                 "toolkit.telemetry.log.level": "Trace",
                 "toolkit.telemetry.log.dump": True,
                 "toolkit.telemetry.send.overrideOfficialCheck": True,

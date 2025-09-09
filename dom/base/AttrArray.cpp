@@ -16,10 +16,9 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ServoBindings.h"
-
+#include "nsContentUtils.h"  // nsAutoScriptBlocker
 #include "nsString.h"
 #include "nsUnicharUtils.h"
-#include "nsContentUtils.h"  // nsAutoScriptBlocker
 
 using mozilla::CheckedUint32;
 

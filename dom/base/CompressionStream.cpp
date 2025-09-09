@@ -6,20 +6,19 @@
 
 #include "mozilla/dom/CompressionStream.h"
 
+#include "CompressionStreamHelper.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/BufferSourceBindingFwd.h"
 #include "mozilla/dom/BufferSourceBinding.h"
+#include "mozilla/dom/BufferSourceBindingFwd.h"
 #include "mozilla/dom/CompressionStreamBinding.h"
 #include "mozilla/dom/ReadableStream.h"
-#include "mozilla/dom/WritableStream.h"
-#include "mozilla/dom/TransformStream.h"
 #include "mozilla/dom/TextDecoderStream.h"
+#include "mozilla/dom/TransformStream.h"
 #include "mozilla/dom/TransformerCallbackHelpers.h"
 #include "mozilla/dom/UnionTypes.h"
-
-#include "CompressionStreamHelper.h"
+#include "mozilla/dom/WritableStream.h"
 
 // See the zlib manual in https://www.zlib.net/manual.html or in
 // https://searchfox.org/mozilla-central/source/modules/zlib/src/zlib.h

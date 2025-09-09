@@ -49,7 +49,7 @@ add_task(async function test_support_toolbar_field_properties() {
   });
 
   let fields = [
-    document.querySelector("#urlbar-background"),
+    document.querySelector("#urlbar > .urlbar-background"),
     document.getElementById("searchbar"),
   ].filter(field => {
     let bounds = field.getBoundingClientRect();

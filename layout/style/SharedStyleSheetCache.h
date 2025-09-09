@@ -22,7 +22,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/SharedSubResourceCache.h"
 #include "mozilla/css/Loader.h"
-#include "nsRefPtrHashtable.h"
 
 namespace mozilla {
 
@@ -90,16 +89,26 @@ class SharedStyleSheetCache final
     return principalMap.Lookup(aBuffer);
   }
 
+  struct InlineSheetEntry {
+    RefPtr<StyleSheet> mSheet;
+    bool mWasLoadedAsImage = false;
+  };
+  using InlineSheetCandidates = nsTArray<InlineSheetEntry>;
+
   void InsertInline(nsIPrincipal* aPrincipal, const nsAString& aBuffer,
-                    RefPtr<StyleSheet> aSheet) {
+                    InlineSheetEntry&& aEntry) {
+    // TODO(emilio): Maybe a better eviction policy for inline sheets, or an
+    // expiration tracker or so?
     auto& principalMap = mInlineSheets.LookupOrInsert(aPrincipal);
-    principalMap.InsertOrUpdate(aBuffer, std::move(aSheet));
+    principalMap
+        .LookupOrInsertWith(aBuffer, [] { return InlineSheetCandidates(); })
+        .AppendElement(std::move(aEntry));
   }
 
  protected:
   void InsertIfNeeded(css::SheetLoadData&);
-
-  nsTHashMap<PrincipalHashKey, nsRefPtrHashtable<nsStringHashKey, StyleSheet>>
+  nsTHashMap<PrincipalHashKey,
+             nsTHashMap<nsStringHashKey, InlineSheetCandidates>>
       mInlineSheets;
 
   ~SharedStyleSheetCache();

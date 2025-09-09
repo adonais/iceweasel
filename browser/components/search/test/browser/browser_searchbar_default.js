@@ -188,7 +188,7 @@ add_task(async function test_form_history_delete() {
   EventUtils.synthesizeKey("KEY_ArrowDown");
 
   let initialEntriesLength = searchPopup.richlistbox.itemChildren.filter(
-    child => !child.getAttribute("collapsed")
+    child => !child.hasAttribute("collapsed")
   ).length;
 
   Assert.equal(initialEntriesLength, 2, "Should have two items in the popup");
@@ -216,7 +216,7 @@ add_task(async function test_form_history_delete() {
   await TestUtils.waitForCondition(
     () =>
       searchPopup.richlistbox.itemChildren.filter(
-        child => !child.getAttribute("collapsed")
+        child => !child.hasAttribute("collapsed")
       ).length ==
       initialEntriesLength - 1,
     "Should reduced the entries in the listbox"
@@ -234,7 +234,7 @@ add_task(async function test_form_history_delete() {
   );
   Assert.equal(
     searchPopup.richlistbox.itemChildren.filter(
-      child => !child.getAttribute("collapsed")
+      child => !child.hasAttribute("collapsed")
     ).length,
     initialEntriesLength - 1,
     "Should have reduced the number of autocomplete results by 1"

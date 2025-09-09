@@ -46,7 +46,6 @@ for (const type of [
   "DIALOG_CLOSE",
   "DIALOG_OPEN",
   "DISABLE_SEARCH",
-  "DISCOVERY_STREAM_COLLECTION_DISMISSIBLE_TOGGLE",
   "DISCOVERY_STREAM_CONFIG_CHANGE",
   "DISCOVERY_STREAM_CONFIG_RESET",
   "DISCOVERY_STREAM_CONFIG_RESET_DEFAULTS",
@@ -77,7 +76,6 @@ for (const type of [
   "DISCOVERY_STREAM_POCKET_STATE_INIT",
   "DISCOVERY_STREAM_POCKET_STATE_SET",
   "DISCOVERY_STREAM_PREFS_SETUP",
-  "DISCOVERY_STREAM_RECENT_SAVES",
   "DISCOVERY_STREAM_RETRY_FEED",
   "DISCOVERY_STREAM_SPOCS_CAPS",
   "DISCOVERY_STREAM_SPOCS_ENDPOINT",
@@ -95,7 +93,6 @@ for (const type of [
   "FOLLOW_SECTION",
   "HANDOFF_SEARCH_TO_AWESOMEBAR",
   "HIDE_PERSONALIZE",
-  "HIDE_PRIVACY_INFO",
   "HIDE_TOAST_MESSAGE",
   "INFERRED_PERSONALIZATION_MODEL_UPDATE",
   "INFERRED_PERSONALIZATION_REFRESH",
@@ -142,6 +139,9 @@ for (const type of [
   "PREVIEW_REQUEST",
   "PREVIEW_REQUEST_CANCEL",
   "PREVIEW_RESPONSE",
+  "PROMO_CARD_CLICK",
+  "PROMO_CARD_DISMISS",
+  "PROMO_CARD_IMPRESSION",
   "REMOVE_DOWNLOAD_FILE",
   "REPORT_AD_OPEN",
   "REPORT_AD_SUBMIT",
@@ -230,12 +230,19 @@ for (const type of [
   "WEBEXT_DISMISS",
   "WIDGETS_LISTS_CHANGE_SELECTED",
   "WIDGETS_LISTS_SET",
+  "WIDGETS_LISTS_SET_SELECTED",
   "WIDGETS_LISTS_UPDATE",
+  "WIDGETS_LISTS_USER_EVENT",
+  "WIDGETS_LISTS_USER_IMPRESSION",
   "WIDGETS_TIMER_END",
   "WIDGETS_TIMER_PAUSE",
+  "WIDGETS_TIMER_PLAY",
   "WIDGETS_TIMER_RESET",
+  "WIDGETS_TIMER_SET",
   "WIDGETS_TIMER_SET_DURATION",
-  "WIDGETS_TIMER_START",
+  "WIDGETS_TIMER_SET_TYPE",
+  "WIDGETS_TIMER_USER_EVENT",
+  "WIDGETS_TIMER_USER_IMPRESSION",
 ]) {
   actionTypes[type] = type;
 }
@@ -297,12 +304,14 @@ function OnlyToMain(action, fromTarget) {
  * BroadcastToContent - Creates a message that will be dispatched to main and sent to ALL content processes.
  *
  * @param  {object} action Any redux action (required)
+ * @param  {object} options (optional)
  * @return {object} An action with added .meta properties
  */
-function BroadcastToContent(action) {
+function BroadcastToContent(action, options) {
   return _RouteMessage(action, {
     from: MAIN_MESSAGE_TYPE,
     to: CONTENT_MESSAGE_TYPE,
+    ...options,
   });
 }
 

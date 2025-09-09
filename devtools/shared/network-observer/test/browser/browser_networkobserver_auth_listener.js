@@ -70,6 +70,7 @@ add_task(async function testAuthRequestWithoutListener() {
 
   const events = [];
   const networkObserver = new NetworkObserver({
+    decodeResponseBodies: true,
     ignoreChannelFunction: channel => channel.URI.spec !== AUTH_URL,
     onNetworkEvent: () => {
       const owner = new AuthForwardingOwner();
@@ -114,6 +115,7 @@ add_task(async function testAuthRequestWithForwardingListener() {
 
   const events = [];
   const networkObserver = new NetworkObserver({
+    decodeResponseBodies: true,
     ignoreChannelFunction: channel => channel.URI.spec !== AUTH_URL,
     onNetworkEvent: () => {
       info("waitForNetworkEvents received a new event");
@@ -166,6 +168,7 @@ add_task(async function testAuthRequestWithCancellingListener() {
 
   const events = [];
   const networkObserver = new NetworkObserver({
+    decodeResponseBodies: true,
     ignoreChannelFunction: channel => channel.URI.spec !== AUTH_URL,
     onNetworkEvent: () => {
       const owner = new AuthCancellingOwner();
@@ -216,6 +219,7 @@ add_task(async function testAuthRequestWithWrongCredentialsListener() {
 
   const events = [];
   const networkObserver = new NetworkObserver({
+    decodeResponseBodies: true,
     ignoreChannelFunction: channel => channel.URI.spec !== AUTH_URL,
     onNetworkEvent: (event, channel) => {
       const owner = new AuthCredentialsProvidingOwner(
@@ -272,6 +276,7 @@ add_task(async function testAuthRequestWithCredentialsListener() {
 
   const events = [];
   const networkObserver = new NetworkObserver({
+    decodeResponseBodies: true,
     ignoreChannelFunction: channel => channel.URI.spec !== AUTH_URL,
     onNetworkEvent: (event, channel) => {
       const owner = new AuthCredentialsProvidingOwner(

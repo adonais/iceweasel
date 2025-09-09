@@ -7,12 +7,13 @@
 #ifndef _SDPMEDIASECTION_H_
 #define _SDPMEDIASECTION_H_
 
-#include "mozilla/Maybe.h"
-#include "sdp/SdpEnum.h"
-#include "sdp/SdpAttributeList.h"
+#include <sstream>
 #include <string>
 #include <vector>
-#include <sstream>
+
+#include "mozilla/Maybe.h"
+#include "sdp/SdpAttributeList.h"
+#include "sdp/SdpEnum.h"
 
 namespace mozilla {
 

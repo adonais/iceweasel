@@ -135,9 +135,9 @@ BEGIN_TEST(testJitRangeAnalysis_MathSignBeta) {
   // if (p < 0)
   MParameter* p = func.createParameter();
   entry->add(p);
-  MConstant* c0 = MConstant::New(func.alloc, DoubleValue(0.0));
+  MConstant* c0 = MConstant::NewDouble(func.alloc, 0.0);
   entry->add(c0);
-  MConstant* cm0 = MConstant::New(func.alloc, DoubleValue(-0.0));
+  MConstant* cm0 = MConstant::NewDouble(func.alloc, -0.0);
   entry->add(cm0);
   MCompare* cmp =
       MCompare::New(func.alloc, p, c0, JSOp::Lt, MCompare::Compare_Double);
@@ -238,7 +238,7 @@ BEGIN_TEST(testJitRangeAnalysis_StrictCompareBeta) {
   // if (p === 0)
   MParameter* p = func.createParameter();
   entry->add(p);
-  MConstant* c0 = MConstant::New(func.alloc, DoubleValue(0.0));
+  MConstant* c0 = MConstant::NewDouble(func.alloc, 0.0);
   entry->add(c0);
   MCompare* cmp = MCompare::New(func.alloc, p, c0, JSOp::StrictEq,
                                 MCompare::Compare_Double);
@@ -249,7 +249,7 @@ BEGIN_TEST(testJitRangeAnalysis_StrictCompareBeta) {
   // {
   //   return p + -0;
   // }
-  MConstant* cm0 = MConstant::New(func.alloc, DoubleValue(-0.0));
+  MConstant* cm0 = MConstant::NewDouble(func.alloc, -0.0);
   thenBlock->add(cm0);
   MAdd* thenAdd = MAdd::New(func.alloc, p, cm0, MIRType::Double);
   thenBlock->add(thenAdd);

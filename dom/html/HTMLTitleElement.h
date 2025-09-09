@@ -19,7 +19,7 @@ namespace dom {
 class HTMLTitleElement final : public nsGenericHTMLElement,
                                public nsStubMutationObserver {
  public:
-  using Element::GetText;
+  using Element::GetCharacterDataBuffer;
 
   explicit HTMLTitleElement(
       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);

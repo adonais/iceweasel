@@ -6,10 +6,10 @@
 
 #include "SVGMotionSMILPathUtils.h"
 
-#include "nsCharSeparatedTokenizer.h"
-#include "nsContentUtils.h"  // for NS_ENSURE_FINITE2
 #include "SVGContentUtils.h"
 #include "SVGLength.h"
+#include "nsCharSeparatedTokenizer.h"
+#include "nsContentUtils.h"  // for NS_ENSURE_FINITE2
 
 using namespace mozilla::gfx;
 

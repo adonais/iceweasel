@@ -27,6 +27,7 @@ from mozfile import which
 from mozversioncontrol import get_repository_object
 from packaging.version import Version
 
+from mozboot.aerynos import AerynOsBootstrapper
 from mozboot.archlinux import ArchlinuxBootstrapper
 from mozboot.base import MODERN_RUST_VERSION
 from mozboot.centosfedora import CentOSFedoraBootstrapper
@@ -272,6 +273,8 @@ class Bootstrapper:
                 cls = SolusBootstrapper
             elif dist_id in ("arch") or Path("/etc/arch-release").exists():
                 cls = ArchlinuxBootstrapper
+            elif dist_id in ("aerynos"):
+                cls = AerynOsBootstrapper
             elif dist_id in ("void"):
                 cls = VoidBootstrapper
             elif dist_id in (

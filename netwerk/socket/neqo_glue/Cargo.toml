@@ -25,6 +25,7 @@ libc = "0.2.0"
 static_assertions = "1.1"
 static_prefs = { path = "../../../modules/libpref/init/static_prefs"}
 uuid = { version = "1.0", features = ["v4"] }
+zlib-rs = "0.4.2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winapi = {version = "0.3", features = ["ws2def"] }

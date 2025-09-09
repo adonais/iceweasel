@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WorkerCSPEventListener.h"
+
 #include "WorkerRef.h"
 #include "WorkerRunnable.h"
 #include "WorkerScope.h"

@@ -6,9 +6,9 @@
 #ifndef AUDIOSTREAMTRACK_H_
 #define AUDIOSTREAMTRACK_H_
 
-#include "MediaStreamTrack.h"
-#include "DOMMediaStream.h"
 #include "CrossGraphPort.h"
+#include "DOMMediaStream.h"
+#include "MediaStreamTrack.h"
 #include "nsClassHashtable.h"
 
 namespace mozilla::dom {

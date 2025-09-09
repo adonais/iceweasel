@@ -17,19 +17,24 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <ctime>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
+#include "rtc_base/boringssl_certificate.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/openssl.h"
+#include "rtc_base/openssl_key_pair.h"
 #include "rtc_base/openssl_utility.h"
+#include "rtc_base/ssl_certificate.h"
+#include "rtc_base/ssl_identity.h"
 
-namespace rtc {
+namespace webrtc {
 
 BoringSSLIdentity::BoringSSLIdentity(
     std::unique_ptr<OpenSSLKeyPair> key_pair,
@@ -214,4 +219,4 @@ bool BoringSSLIdentity::operator!=(const BoringSSLIdentity& other) const {
   return !(*this == other);
 }
 
-}  // namespace rtc
+}  // namespace webrtc

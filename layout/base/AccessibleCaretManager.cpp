@@ -305,14 +305,16 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
   AC_LOG("%s: selection: %p", __FUNCTION__, GetSelection());
 
   int32_t startOffset = 0;
-  nsIFrame* startFrame =
-      GetFrameForFirstRangeStartOrLastRangeEnd(eDirNext, &startOffset);
+  nsCOMPtr<nsIContent> startContent;
+  nsIFrame* startFrame = GetFrameForFirstRangeStartOrLastRangeEnd(
+      eDirNext, &startOffset, getter_AddRefs(startContent));
 
   int32_t endOffset = 0;
-  nsIFrame* endFrame =
-      GetFrameForFirstRangeStartOrLastRangeEnd(eDirPrevious, &endOffset);
+  nsCOMPtr<nsIContent> endContent;
+  nsIFrame* endFrame = GetFrameForFirstRangeStartOrLastRangeEnd(
+      eDirPrevious, &endOffset, getter_AddRefs(endContent));
 
-  if (!CompareTreePosition(startFrame, endFrame)) {
+  if (!CompareTreePosition(startFrame, endFrame, startContent, endContent)) {
     // XXX: Do we really have to hide carets if this condition isn't satisfied?
     HideCaretsAndDispatchCaretStateChangedEvent();
     return;
@@ -911,9 +913,8 @@ nsresult AccessibleCaretManager::SelectWord(nsIFrame* aFrame,
   AC_LOGV("%s", __FUNCTION__);
 
   SetSelectionDragState(true);
-  const RefPtr<nsPresContext> pinnedPresContext{mPresShell->GetPresContext()};
-  nsresult rs = aFrame->SelectByTypeAtPoint(pinnedPresContext, aPoint,
-                                            eSelectWord, eSelectWord, 0);
+  nsresult rs =
+      aFrame->SelectByTypeAtPoint(aPoint, eSelectWord, eSelectWord, 0);
 
   SetSelectionDragState(false);
   ClearMaintainedSelection();
@@ -1216,10 +1217,13 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
   return true;
 }
 
-bool AccessibleCaretManager::CompareTreePosition(nsIFrame* aStartFrame,
-                                                 nsIFrame* aEndFrame) const {
-  return (aStartFrame && aEndFrame &&
-          nsLayoutUtils::CompareTreePosition(aStartFrame, aEndFrame) <= 0);
+bool AccessibleCaretManager::CompareTreePosition(
+    const nsIFrame* aStartFrame, const nsIFrame* aEndFrame,
+    const nsIContent* aStartContent, const nsIContent* aEndContent) const {
+  // nsContentUtils::CompareTreePosition expects non-null content pointers.
+  return aStartFrame && aEndFrame && aStartContent && aEndContent &&
+         nsContentUtils::CompareTreePosition<TreeKind::DOM>(
+             aStartContent, aEndContent, nullptr) <= 0;
 }
 
 nsresult AccessibleCaretManager::DragCaretInternal(const nsPoint& aPoint) {

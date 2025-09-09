@@ -89,12 +89,6 @@ class LibrarySubMenusMultipleSelectionToolbarRobot {
         Log.i(TAG, "verifyShareHistoryButton: Verified that the multi-selection share history button is displayed")
     }
 
-    fun verifyShareBookmarksButton() {
-        Log.i(TAG, "verifyShareBookmarksButton: Trying to verify that the multi-selection share bookmarks button is displayed")
-        shareBookmarksButton().check(matches(isDisplayed()))
-        Log.i(TAG, "verifyShareBookmarksButton: Verified that the multi-selection share bookmarks button is displayed")
-    }
-
     fun verifyShareOverlay() {
         Log.i(TAG, "verifyShareOverlay: Trying to verify that the share overlay is displayed")
         onView(withId(R.id.shareWrapper)).check(matches(isDisplayed()))
@@ -129,19 +123,6 @@ class LibrarySubMenusMultipleSelectionToolbarRobot {
         Log.i(TAG, "clickShareHistoryButton: Trying to click the multi-selection share history button")
         shareHistoryButton().click()
         Log.i(TAG, "clickShareHistoryButton: Clicked the multi-selection share history button")
-
-        mDevice.waitNotNull(
-            Until.findObject(
-                By.text("ALL ACTIONS"),
-            ),
-            waitingTime,
-        )
-    }
-
-    fun clickShareBookmarksButton() {
-        Log.i(TAG, "clickShareBookmarksButton: Trying to click the multi-selection share bookmarks button")
-        shareBookmarksButton().click()
-        Log.i(TAG, "clickShareBookmarksButton: Clicked the multi-selection share bookmarks button")
 
         mDevice.waitNotNull(
             Until.findObject(
@@ -222,8 +203,6 @@ fun multipleSelectionToolbar(interact: LibrarySubMenusMultipleSelectionToolbarRo
 private fun closeToolbarButton() = onView(withContentDescription("Navigate up"))
 
 private fun shareHistoryButton() = onView(withId(R.id.share_history_multi_select))
-
-private fun shareBookmarksButton() = onView(withId(R.id.share_bookmark_multi_select))
 
 private fun openInNewTabButton() = onView(withText("Open in new tab"))
 

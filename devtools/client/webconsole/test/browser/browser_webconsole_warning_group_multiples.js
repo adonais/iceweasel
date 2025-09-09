@@ -36,7 +36,7 @@ registerCleanupFunction(function () {
 });
 
 pushPref("privacy.trackingprotection.enabled", true);
-pushPref("devtools.webconsole.groupWarningMessages", true);
+pushPref("devtools.webconsole.groupSimilarMessages", true);
 
 add_task(async function testEnhancedTrackingProtectionMessage() {
   await pushPref(COOKIE_BEHAVIOR_PREF, COOKIE_BEHAVIORS_REJECT_FOREIGN);

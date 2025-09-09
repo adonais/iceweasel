@@ -8,9 +8,9 @@
 #define mozilla_dom_EventTarget_h_
 
 #include "mozilla/dom/Nullable.h"
+#include "nsAtom.h"
 #include "nsISupports.h"
 #include "nsWrapperCache.h"
-#include "nsAtom.h"
 
 class nsIDOMEventListener;
 class nsIGlobalObject;

@@ -78,7 +78,7 @@ add_task(async function () {
     `,
     expectedMatchedSelectors: [
       // style attribute wins
-      { selector: "this.style", value: "var(--style-attr_in-attr)" },
+      { selector: "element", value: "var(--style-attr_in-attr)" },
       { selector: "#style-attr", value: "var(--style-attr_in-rule)" },
     ],
   });
@@ -311,7 +311,10 @@ add_task(async function () {
         selector: "#important-style-attr",
         value: "var(--important-style-attr_in-rule-important)",
       },
-      { selector: "this.style", value: "var(--important-style-attr_in-attr)" },
+      {
+        selector: "element",
+        value: "var(--important-style-attr_in-attr)",
+      },
     ],
   });
 
@@ -334,7 +337,7 @@ add_task(async function () {
     expectedMatchedSelectors: [
       // both values are important, so style attribute wins
       {
-        selector: "this.style",
+        selector: "element",
         value: "var(--all-important-style-attr_in-attr-important)",
       },
       {
@@ -585,7 +588,7 @@ add_task(async function () {
     expectedMatchedSelectors: [
       // important properties in style attribute wins
       {
-        selector: "this.style",
+        selector: "element",
         value:
           "var(--all-important-in-layer-no-layer-style-attr_in-attr-important)",
       },
@@ -794,6 +797,54 @@ add_task(async function () {
       },
     ],
   });
+
+  info("Check that attribute styles declarations are displayed");
+  await selectNode("#align", inspector);
+  await checkMatchedSelectorForProperty(view, {
+    property: "text-align",
+    expectedComputedValue: "left",
+    expectedMatchedSelectors: [
+      {
+        selector: "element",
+        value: "left",
+      },
+      {
+        selector: "#align",
+        value: "center",
+      },
+      {
+        selector: "element attributes style",
+        value: "-moz-right",
+      },
+    ],
+  });
+
+  await selectNode("#align-child", inspector);
+  await checkMatchedSelectorForProperty(view, {
+    property: "text-align",
+    expectedComputedValue: "-moz-center",
+    expectedMatchedSelectors: [
+      {
+        selector: "element attributes style",
+        value: "-moz-center",
+      },
+      {
+        selector: "#align",
+        value: "left",
+        match: false,
+      },
+      {
+        selector: "#align",
+        value: "center",
+        match: false,
+      },
+      {
+        selector: "#align attributes style",
+        value: "-moz-right",
+        match: false,
+      },
+    ],
+  });
 });
 
 async function checkBackgroundColorMatchedSelectors(
@@ -835,13 +886,32 @@ async function checkBackgroundColorMatchedSelectors(
     `The created element does have a "blue" background-color`
   );
 
-  const propertyView = getPropertyView(view, "background-color");
-  ok(propertyView, "found PropertyView for background-color");
-  const valueNode = propertyView.valueNode.querySelector(".computed-color");
+  await checkMatchedSelectorForProperty(view, {
+    property: "background-color",
+    expectedComputedValue: "rgb(0, 0, 255)",
+    expectedMatchedSelectors,
+  });
+
+  // cleanup
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [elementId], id => {
+    // Remove added element and stylesheet
+    content.document.getElementById(id).remove();
+    // Some test cases don't insert a style element
+    content.document.getElementById(`style-${id}`)?.remove();
+  });
+}
+
+async function checkMatchedSelectorForProperty(
+  view,
+  { property, expectedComputedValue, expectedMatchedSelectors }
+) {
+  const propertyView = getPropertyView(view, property);
+  ok(propertyView, `found PropertyView for "${property}"`);
+  const { valueNode } = propertyView;
   is(
     valueNode.textContent,
-    "rgb(0, 0, 255)",
-    `The displayed computed value is the expected "blue"`
+    expectedComputedValue,
+    `Expected displayed computed value for "${property}"`
   );
 
   is(propertyView.hasMatchedSelectors, true, "hasMatchedSelectors is true");
@@ -867,21 +937,15 @@ async function checkBackgroundColorMatchedSelectors(
     is(
       selectorEl.querySelector(".computed-other-property-value").innerText,
       expectedMatchedSelectors[index].value,
-      `Selector #${index} has the expected background color`
+      `Selector #${index} ("${expectedMatchedSelectors[index].selector}") has the expected "${property}"`
     );
     const classToMatch = index === 0 ? "bestmatch" : "matched";
-    ok(
+    const expectedMatch = expectedMatchedSelectors[index].match ?? true;
+    is(
       selectorEl.classList.contains(classToMatch),
-      `selector element has expected "${classToMatch}" class`
+      expectedMatch,
+      `Selector #${index} ("${expectedMatchedSelectors[index].selector}") element does ${expectedMatch ? "" : "not "}have a matching class`
     );
-  });
-
-  // cleanup
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [elementId], id => {
-    // Remove added element and stylesheet
-    content.document.getElementById(id).remove();
-    // Some test cases don't insert a style element
-    content.document.getElementById(`style-${id}`)?.remove();
   });
 }
 

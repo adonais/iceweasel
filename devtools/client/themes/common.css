@@ -43,6 +43,8 @@
   --devtools-searchinput-clear-hover-cross-color: transparent;
   --devtools-searchinput-clear-opacity: 0.8;
 
+  --devtools-twisty-size: 14px;
+
   /* Don't allow forced colors in DevTools if they're not supported */
   &:not([forced-colors-active]) {
     forced-color-adjust: none;
@@ -662,8 +664,8 @@ iframe {
 /* Twisty and checkbox controls */
 
 .theme-twisty {
-  width: 14px;
-  height: 14px;
+  width: var(--devtools-twisty-size);
+  height: var(--devtools-twisty-size);
   cursor: pointer;
   background-image: url("chrome://devtools/skin/images/arrow.svg");
   background-position: center;

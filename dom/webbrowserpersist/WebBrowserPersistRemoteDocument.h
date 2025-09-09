@@ -10,8 +10,8 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/PWebBrowserPersistDocumentParent.h"
 #include "nsCOMPtr.h"
-#include "nsIWebBrowserPersistDocument.h"
 #include "nsIInputStream.h"
+#include "nsIWebBrowserPersistDocument.h"
 
 class nsIPrincipal;
 

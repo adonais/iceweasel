@@ -170,6 +170,13 @@ tasks.withType(Detekt).configureEach() {
     exclude "**/build/**"
     exclude "**/resources/**"
     exclude "**/tmp/**"
+
+    reports {
+        custom {
+            reportId = "suppression-count"
+            outputLocation.set(file("$projectDir/build/reports/suppressions.txt"))
+        }
+    }
 }
 
 // Apply same path exclusions as for the main task
@@ -191,9 +198,9 @@ dependencies {
             attribute(Bundling.BUNDLING_ATTRIBUTE, getObjects().named(Bundling, Bundling.EXTERNAL))
         }
     }
-
+    detekt project(":components:tooling-detekt")
     detekt project(":mozilla-detekt-rules")
-    detekt "io.gitlab.arturbosch.detekt:detekt-cli:${libs.versions.detekt.get()}"
+    detekt libs.detekt.cli
 }
 
 tasks.register('ktlint', JavaExec) {

@@ -66,11 +66,8 @@ SimpleTest.waitForFocus(function() {
   synthesizeKey("KEY_Enter");
   sendString("A");
 
-  // TODO: The <br> in the new paragraph and the paragraph containing the <img>
-  //       should be removed at typing "A" because they are not necessary
-  //       anymore to make the paragraphs visible (bug 503838).
   const expectedHTML =
-    "<p><tt>xyz</tt></p><p><tt><img src=\"" + getImageDataURI() + "\"><br></tt></p>" +
+    "<p><tt>xyz</tt></p><p><tt><img src=\"" + getImageDataURI() + "\"></tt></p>" +
     "<p><tt>A</tt></p>";
   is(
     div.innerHTML,

@@ -35,8 +35,8 @@
     "forcedColors": "{Theme$background/color/canvas}"
   },
   "border/color": {
-    "light": "#CFCFD8",
-    "dark": "#3A3944",
+    "light": "{Colors$color/gray/50}",
+    "dark": "{Colors$color/gray/70}",
     "forcedColors": "{HCM Theme$CanvasText}"
   },
   "border/color/transparent": {

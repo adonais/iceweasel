@@ -9,8 +9,8 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "nsError.h"
-#include "txExpandedName.h"
 #include "nsTArray.h"
+#include "txExpandedName.h"
 
 class txExpandedNameMap_base {
  protected:

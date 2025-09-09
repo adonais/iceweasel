@@ -12,8 +12,8 @@
 #include "mozIStorageConnection.h"
 #include "mozIStorageStatement.h"
 #include "mozilla/ErrorNames.h"
-#include "mozilla/MozPromise.h"
 #include "mozilla/Logging.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/dom/quota/ScopedLogExtraInfo.h"
@@ -29,8 +29,8 @@
 
 #ifdef XP_WIN
 #  include "mozilla/Atomics.h"
-#  include "mozilla/ipc/BackgroundParent.h"
 #  include "mozilla/StaticPrefs_dom.h"
+#  include "mozilla/ipc/BackgroundParent.h"
 #  include "nsILocalFileWin.h"
 #endif
 

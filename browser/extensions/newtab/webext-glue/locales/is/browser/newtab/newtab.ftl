@@ -53,6 +53,9 @@ newtab-topsites-add-shortcut-header = Nýr flýtilykill
 newtab-topsites-edit-topsites-header = Breyta toppsíðu
 newtab-topsites-edit-shortcut-header = Breyta flýtilykli
 newtab-topsites-add-shortcut-label = Bæta við flýtileið
+newtab-topsites-add-shortcut-title =
+    .title = Bæta við flýtileið
+    .aria-label = Bæta við flýtileið
 newtab-topsites-title-label = Titill
 newtab-topsites-title-input =
     .placeholder = Settu inn titil
@@ -535,9 +538,6 @@ newtab-download-mobile-highlight-body-variant-b = Taktu upp þráðinn þar sem 
 newtab-download-mobile-highlight-body-variant-c = Vissir þú að þú getur tekið { -brand-product-name } með þér hvert sem er? Sami vafrinn, í vasanum þínum.
 newtab-download-mobile-highlight-image =
     .aria-label = QR-kóði til að sækja { -brand-product-name } fyrir farsíma
-
-## Strings for shortcuts highlight
-
 
 ## Strings for reporting ads and content
 

@@ -89,11 +89,6 @@ class MOZ_RAII AutoProfileRunnable {
       mName = "Unnamed runnable";
     }
   }
-  // XXX: we should remove this constructor so that we can track flows properly
-  explicit AutoProfileRunnable(nsACString& aName)
-      : mStartTime(TimeStamp::Now()),
-        mName(aName),
-        mRunnable(Flow::FromPointer(&aName)) {}
 
   ~AutoProfileRunnable() {
     if (mName.IsEmpty()) {

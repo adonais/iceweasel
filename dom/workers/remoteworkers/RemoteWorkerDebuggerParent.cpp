@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "RemoteWorkerDebuggerParent.h"
+
 #include "mozilla/dom/WorkerDebuggerManager.h"
 #include "mozilla/dom/WorkerPrivate.h"
 

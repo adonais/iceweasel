@@ -6,7 +6,6 @@ package mozilla.components.feature.addons.ui
 
 import android.widget.ImageButton
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.AddonManager
 import mozilla.components.support.test.any
@@ -26,7 +25,6 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 
 @RunWith(AndroidJUnit4::class)
-@ExperimentalCoroutinesApi
 class UnsupportedAddonsAdapterTest {
 
     @get:Rule

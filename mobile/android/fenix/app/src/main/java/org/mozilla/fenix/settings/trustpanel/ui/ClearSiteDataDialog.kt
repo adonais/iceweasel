@@ -32,7 +32,7 @@ fun ClearSiteDataDialog(
         title = {
             Text(
                 text = stringResource(id = R.string.clear_site_data),
-                style = FirefoxTheme.typography.headline7,
+                style = FirefoxTheme.typography.headline5,
             )
         },
         text = {

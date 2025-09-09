@@ -8,9 +8,9 @@
 #define mozilla_dom_URLClassifierParent_h
 
 #include "mozilla/dom/PContent.h"
-#include "mozilla/dom/PURLClassifierParent.h"
-#include "mozilla/dom/PURLClassifierLocalParent.h"
 #include "mozilla/dom/PURLClassifierLocalByNameParent.h"
+#include "mozilla/dom/PURLClassifierLocalParent.h"
+#include "mozilla/dom/PURLClassifierParent.h"
 #include "nsIURIClassifier.h"
 #include "nsIUrlClassifierFeature.h"
 

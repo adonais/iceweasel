@@ -75,7 +75,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "chatProviders",
   "browser.ml.chat.providers",
-  "claude,chatgpt,gemini,lechat",
+  "claude,chatgpt,copilot,gemini,lechat",
   reorderChatProviders
 );
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -162,7 +162,7 @@ export const GenAI = {
       },
     ],
     [
-      "https://copilot.microsoft.com",
+      "https://copilot.microsoft.com/?form=MOZCMC",
       {
         choiceIds: [
           "genai-onboarding-copilot-generate",
@@ -463,12 +463,11 @@ export const GenAI = {
      * @returns { mozMessageBarEl } MozMessageBar warning message bar
      */
     const createMessageBarWarning = chatProvider => {
-      const mozMessageBarEl = document.createElement("moz-message-bar");
-
-      // Create MozMessageBar
-      mozMessageBarEl.dataset.l10nAttrs = "heading,message";
-      mozMessageBarEl.setAttribute("type", "warning");
-      mozMessageBarEl.className = "ask-chat-shortcut-warning";
+      const mozMessageBarEl = this.createWarningEl(
+        document,
+        "ask-chat-shortcut-warning",
+        null
+      );
 
       // If provider is not defined, use generic warning message
       const translationId = chatProvider?.name
@@ -499,9 +498,7 @@ export const GenAI = {
       vbox.innerHTML = "";
 
       const chatProvider = this.chatProviders.get(lazy.chatProvider);
-      const selectionLength = aiActionButton.data.selection.length;
-      const showWarning =
-        this.estimateSelectionLimit(chatProvider?.maxLength) < selectionLength;
+      const showWarning = this.isContextTooLong(aiActionButton.data.selection);
 
       // Show warning if selection is too long
       if (showWarning) {
@@ -663,6 +660,43 @@ export const GenAI = {
   },
 
   /**
+   * Determine whether a warning should be shown depending on provider max length
+   *
+   * @param {string} selection selected text from context
+   */
+  isContextTooLong(selection) {
+    const chatProvider = this.chatProviders.get(lazy.chatProvider);
+    const selectionLength = selection.length;
+
+    return (
+      this.estimateSelectionLimit(chatProvider?.maxLength) < selectionLength
+    );
+  },
+
+  /**
+   * Create <moz-message-bar> warning element
+   *
+   * @param {Document} document the element
+   * @param {string | null} className css class to apply
+   * @param {string | null} dismissable attribute setting
+   */
+  createWarningEl(document, className, dismissable) {
+    const mozMessageBarEl = document.createElement("moz-message-bar");
+
+    mozMessageBarEl.dataset.l10nAttrs = "heading,message";
+    mozMessageBarEl.setAttribute("type", "warning");
+    if (dismissable) {
+      mozMessageBarEl.setAttribute("dismissable", true);
+    }
+
+    if (className) {
+      mozMessageBarEl.className = className;
+    }
+
+    return mozMessageBarEl;
+  },
+
+  /**
    * Build prompts menu to ask chat for context menu.
    *
    * @param {MozMenu} menu element to update
@@ -682,7 +716,7 @@ export const GenAI = {
     // or revamp sidebar excludes chatbot
     const isPageFeatureAllowed =
       lazy.chatPage &&
-      lazy.chatMenu &&
+      (lazy.chatProvider != "" || lazy.chatMenu) &&
       (!lazy.sidebarRevamp || lazy.sidebarTools.includes("aichat"));
 
     let canShow = false;
@@ -1030,7 +1064,9 @@ export const GenAI = {
    */
   async handleAskChat(promptObj, context) {
     // Record up to 3 types of event telemetry for backwards compatibility
-    if (promptObj.id == "summarize" && context.contentType == "page") {
+    const isPageSummarizeRequest =
+      promptObj.id == "summarize" && context.contentType == "page";
+    if (isPageSummarizeRequest) {
       Glean.genaiChatbot.summarizePage.record({
         provider: this.getProviderId(),
         reader_mode: context.readerMode,
@@ -1058,11 +1094,9 @@ export const GenAI = {
       source: context.entry,
     });
 
-    await this.prepareChatPromptPrefix();
-    const prompt = this.buildChatPrompt(promptObj, context);
-
     // If no provider is configured, open sidebar and wait once for onboarding
     const { SidebarController } = context.window;
+
     if (!lazy.chatProvider) {
       await SidebarController.show("viewGenaiChatSidebar");
       await SidebarController.browser.contentWindow.onboardingPromise;
@@ -1070,6 +1104,10 @@ export const GenAI = {
         return;
       }
     }
+
+    // Build prompt after provider is confirmed to use correct length limits
+    await this.prepareChatPromptPrefix();
+    const prompt = this.buildChatPrompt(promptObj, context);
 
     // Pass the prompt via GET url ?q= param or request header
     const { header, queryParam = "q" } =
@@ -1082,6 +1120,7 @@ export const GenAI = {
         {}
       ),
     };
+
     if (header) {
       options.headers = Cc[
         "@mozilla.org/io/string-input-stream;1"
@@ -1098,9 +1137,19 @@ export const GenAI = {
     if (lazy.chatSidebar) {
       await SidebarController.show("viewGenaiChatSidebar");
       browser = await SidebarController.browser.contentWindow.browserPromise;
+      const showWarning =
+        isPageSummarizeRequest && this.isContextTooLong(context.selection);
+
+      await SidebarController.browser.contentWindow.onNewPrompt({
+        show: showWarning,
+        ...(showWarning
+          ? { contextLength: context.selection?.length ?? 0 }
+          : {}),
+      });
     } else {
       browser = context.window.gBrowser.addTab("", options).linkedBrowser;
     }
+
     browser.fixupAndLoadURIString(url, options);
   },
 };

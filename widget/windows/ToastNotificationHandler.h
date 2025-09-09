@@ -145,7 +145,11 @@ class ToastNotificationHandler final
   bool ShowAlert();
   nsresult AsyncSaveImage(imgIRequest* aRequest);
   nsresult OnWriteImageSuccess();
+  // Pings the alert observer with alertfinish.
   void SendFinished();
+  // Called either when Windows tells us the notification is closed or failed to
+  // open.
+  void HandleCloseFromSystem();
 
   bool CreateWindowsNotificationFromXml(ComPtr<IXmlDocument>& aToastXml);
   ComPtr<IXmlDocument> CreateToastXmlDocument();

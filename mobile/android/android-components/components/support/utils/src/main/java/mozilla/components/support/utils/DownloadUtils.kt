@@ -12,7 +12,9 @@ import mozilla.components.support.utils.DownloadUtils.fileNameAsteriskContentDis
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.UnsupportedEncodingException
+import java.util.regex.Matcher
 import java.util.regex.Pattern
+import kotlin.text.replace
 
 object DownloadUtils {
 
@@ -351,22 +353,58 @@ object DownloadUtils {
         }
     }
 
-    private fun parseContentDispositionWithFileName(contentDisposition: String): String? {
-        val m = contentDispositionPattern.matcher(contentDisposition)
-        return if (m.find()) {
-            val encodedFileName = m.group(ENCODED_FILE_NAME_GROUP)
-            val encoding = m.group(ENCODING_GROUP)
-            if (encodedFileName != null && encoding != null) {
-                decodeHeaderField(encodedFileName, encoding)
-            } else {
-                // Return quoted string if available and replace escaped characters.
-                val quotedFileName = m.group(QUOTED_FILE_NAME_GROUP)
-                quotedFileName?.replace("\\\\(.)".toRegex(), "$1")
-                    ?: m.group(UNQUOTED_FILE_NAME)
+    private fun getUnencodedFileName(contentDisposition: String): String? {
+        val marker = "utf-8''"
+        val indexOfMarker = contentDisposition.indexOf(marker)
+
+        if (indexOfMarker != -1) {
+            val startIndex = indexOfMarker + marker.length
+            val unencodedFileName = contentDisposition.substring(startIndex)
+            val indexOfNextSemicolon = unencodedFileName.indexOf(';')
+            if (indexOfNextSemicolon != -1) {
+                return unencodedFileName.substring(0, indexOfNextSemicolon)
             }
-        } else {
-            null
+            return unencodedFileName
         }
+        return null
+    }
+
+    @Suppress("ReturnCount")
+    private fun parseContentDispositionWithFileName(contentDisposition: String): String? {
+        val matcher = contentDispositionPattern.matcher(contentDisposition)
+        if (!matcher.find()) {
+            return null
+        }
+
+        val unencodedFileNameOverride = getUnencodedFileName(contentDisposition)
+        val encodedFileName = matcher.group(ENCODED_FILE_NAME_GROUP)
+
+        // If getUnencodedFileName provides a direct value, and it's different from
+        // what might be the group containing the encoded fileName.
+        // We assume that the file name is not encoded, and we are returning it.
+        if (unencodedFileNameOverride != null && unencodedFileNameOverride != encodedFileName) {
+            return unencodedFileNameOverride
+        }
+
+        val encoding = matcher.group(ENCODING_GROUP)
+
+        if (encodedFileName != null && encoding != null) {
+            return try {
+                decodeHeaderField(encodedFileName, encoding)
+            } catch (_: UnsupportedEncodingException) {
+                null
+            }
+        }
+
+        return extractQuotedOrUnquoted(matcher)
+    }
+
+    private fun extractQuotedOrUnquoted(matcher: Matcher): String? {
+        val quotedFileName = matcher.group(QUOTED_FILE_NAME_GROUP)
+        if (quotedFileName != null) {
+            return quotedFileName.replace("\\\\(.)".toRegex(), "$1")
+        }
+        return matcher.group(UNQUOTED_FILE_NAME)
     }
 
     private fun parseContentDispositionWithFileNameAsterisk(contentDisposition: String): String? {
@@ -421,7 +459,7 @@ object DownloadUtils {
         // either .htm or .html extensions. Since [getExtensionFromMimeType]
         // we try to only rename when there is a clear indication the existing extension is wrong.
         return if (isFileMimeTypeDifferentFromProvidedMimeType && !fileHasPossibleExtension) {
-            return "${file.nameWithoutExtension}.$extensionFromMimeType"
+            return "$file.$extensionFromMimeType"
         } else {
             filename
         }

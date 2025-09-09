@@ -432,7 +432,7 @@ export class SearchSuggestionController {
       }
       context.gleanTimerId = 0;
       context.telemetryHandled = true;
-      if (context.engine.isAppProvided) {
+      if (context.engine.isConfigEngine) {
         if (context.abort) {
           Glean.searchSuggestions.abortedRequests[context.engine.id].add();
         } else if (context.error) {

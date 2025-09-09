@@ -436,6 +436,19 @@ template <typename ArrayLength>
   return ToIntegerIndexSlow(cx, value, length, result);
 }
 
+static inline size_t ToIntegerIndex(intptr_t index, size_t length) {
+  static_assert(std::is_same_v<size_t, uintptr_t>,
+                "expect size_t being equal to uintptr_t");
+
+  if (index >= 0) {
+    return std::min(size_t(index), length);
+  }
+  if (mozilla::Abs(index) <= length) {
+    return length - mozilla::Abs(index);
+  }
+  return 0;
+}
+
 } /* namespace js */
 
 #endif /* jsnum_h */

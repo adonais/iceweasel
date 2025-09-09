@@ -11,14 +11,14 @@
 #ifndef mozilla_dom_ScriptLoadHandler_h
 #define mozilla_dom_ScriptLoadHandler_h
 
-#include "nsIIncrementalStreamLoader.h"
-#include "nsIChannelEventSink.h"
-#include "nsIInterfaceRequestor.h"
-#include "nsISupports.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "nsIChannelEventSink.h"
+#include "nsIIncrementalStreamLoader.h"
+#include "nsIInterfaceRequestor.h"
+#include "nsISupports.h"
 
 namespace JS::loader {
 class ScriptLoadRequest;

@@ -1678,7 +1678,7 @@ nsresult nsRFPService::GenerateCanvasKeyFromImageData(
       StaticPrefs::
           privacy_resistFingerprinting_randomization_canvas_use_siphash()) {
     // Hash the canvas data to generate the image data hash.
-    mozilla::HashNumber imageHashData = mozilla::HashString(aImageData, aSize);
+    mozilla::HashNumber imageHashData = mozilla::HashBytes(aImageData, aSize);
 
     // Then, we use the SipHash seeded by the first half of the random key to
     // generate a hash result using the image hash data. Our sipHash is
@@ -1739,7 +1739,7 @@ nsresult nsRFPService::RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
     return NS_OK;
   }
 
-  if (aPrincipal && CanvasUtils::GetCanvasExtractDataPermission(*aPrincipal) ==
+  if (aPrincipal && CanvasUtils::GetCanvasExtractDataPermission(aPrincipal) ==
                         nsIPermissionManager::ALLOW_ACTION) {
     return NS_OK;
   }
@@ -2691,12 +2691,7 @@ CSSIntRect nsRFPService::GetSpoofedScreenAvailSize(const nsRect& aRect,
 
 /* static */
 uint64_t nsRFPService::GetSpoofedStorageLimit() {
-  uint64_t gib = 1024ULL * 1024ULL * 1024ULL;  // 1 GiB
-#ifdef ANDROID
-  uint64_t limit = 32ULL * gib;  // 32 GiB
-#else
-  uint64_t limit = 50ULL * gib;  // 50 GiB
-#endif
+  uint64_t limit = 50ULL * 1024ULL * 1024ULL * 1024ULL;  // 50 GiB
   MOZ_ASSERT(limit / 5 ==
              dom::quota::QuotaManager::GetGroupLimitForLimit(limit));
 
@@ -2732,8 +2727,10 @@ bool nsRFPService::IsWebCodecsRFPTargetEnabled(JSContext* aCx) {
   // We know that the RFPTarget::WebCodecs is enabled, check if principal
   // is exempted.
 
-  // VideoFrame::PrefEnabled function can be called without a JSContext.
-  if (!aCx) {
+  if (NS_WARN_IF(!aCx)) {
+    MOZ_LOG(gResistFingerprintingLog, LogLevel::Warning,
+            ("nsRFPService::IsWebCodecsRFPTargetEnabled called with null "
+             "JSContext"));
     return true;
   }
 

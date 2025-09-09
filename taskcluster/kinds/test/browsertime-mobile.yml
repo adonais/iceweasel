@@ -566,3 +566,25 @@ browsertime-power:
     mozharness:
         extra-options:
             - --power-test
+
+browsertime-trr-performance-m:
+    raptor:
+        apps: [fenix]
+        run-visual-metrics: false
+        subtests:
+            - trr-clou-m
+            - trr-next-m
+            - trr-natv-m
+            - trr-w-cl-m
+            - trr-w-ne-m
+
+    description: Raptor (browsertime) trr performance tests, mobile
+    max-run-time: 600
+    run-on-projects:
+        by-app:
+            fenix:
+                by-test-platform:
+                    android-hw-a55.*shippable.*: [mozilla-central]
+                    default: []
+    tier: 3
+    treeherder-symbol: Btime(trrperfm)

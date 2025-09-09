@@ -29,3 +29,6 @@ skip-if = [
 run-sequentially = "very high failure rate in parallel"
 
 ["test_distribution_cachedexistence.js"]
+
+["test_startupTelemetry_launchMethod.js"]
+run-if = ["os == 'win'"]

@@ -6,16 +6,16 @@
 
 #include "sdp/SdpHelper.h"
 
-#include "sdp/Sdp.h"
-#include "sdp/SdpMediaSection.h"
-#include "transport/logging.h"
+#include <string.h>
+
+#include <set>
 
 #include "nsDebug.h"
 #include "nsError.h"
 #include "prprf.h"
-
-#include <string.h>
-#include <set>
+#include "sdp/Sdp.h"
+#include "sdp/SdpMediaSection.h"
+#include "transport/logging.h"
 
 namespace mozilla {
 MOZ_MTLOG_MODULE("sdp")

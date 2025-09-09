@@ -42,18 +42,14 @@
   <string name="home_bookmarks_menu_item_remove">తొలగించు</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s‌ని తయారుచేసినది మొజిల్లా.</string>
-  <!--
-    Private Browsing
-
-    Explanation for private browsing displayed to users on home view when they first enable private mode.
-    %1$s is the name of the app (for example "Firefox").
-  -->
-  <string name="private_browsing_placeholder_description_2" moz:removedIn="141" tools:ignore="UnusedResources">మీరు అంతరంగిక ట్యాబులను మూసివేసినప్పుడు లేదా అనువర్తనం నుండి నిష్క్రమించినప్పుడు మీ వెతుకుడు, విహరణ చరిత్రను %1$s తుడిచివేస్తుంది. ఇది మిమ్మల్ని వెబ్‌సైట్లకు లేదా మీ ఇంటర్నెట్ సర్వీస్ ప్రొవైడర్‌కు అనామకంగా చేయనప్పటికీ, ఈ పరికరాన్ని వాడే ఇతరుల నుండి మీ ఆన్‌లైన్ కార్యకలాపాన్ని అంతరంగికంగా ఉంచుకోవడంలో తోడ్పడుతుంది.</string>
+  <!-- Private Browsing -->
   <string name="private_browsing_common_myths">అంతరంగిక విహారణ గురించి సామాన్య అపోహలు</string>
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">అమరికలకు వెళ్లు</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">విస్మరించు</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">అమరికలకు వెళ్లు</string>
   <!-- Text for the negative action button to dismiss the dialog. -->
@@ -111,8 +107,6 @@
   <string name="browser_menu_stop">ఆపివేయి</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">పొడగింతలు</string>
-  <!-- Browser menu banner link text for learning more about extensions -->
-  <string name="browser_menu_extensions_banner_learn_more" moz:removedIn="141" tools:ignore="UnusedResources">ఇంకా తెలుసుకోండి</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">ఖాతా సమాచారం</string>
   <!-- Browser menu button that sends a user to help articles -->
@@ -162,24 +156,10 @@
   <string name="browser_menu_edit">మార్చు</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">సంకేతపదాలు</string>
-  <!--
-    Browser menu label that navigates to the SUMO page for the Firefox for Android release notes.
-    %1$s is the name of the app (for example "Firefox").
-  -->
-  <string name="browser_menu_new_in_firefox" moz:removedIn="141" tools:ignore="UnusedResources">%1$sలో కొత్తవి</string>
-  <!-- Browser menu label that toggles the request for the desktop site of the currently visited page -->
-  <string name="browser_menu_switch_to_desktop_site" moz:removedIn="141" tools:ignore="UnusedResources">డెస్క్‌టాప్ సైటుకి మారండి</string>
-  <!-- Browser menu label that navigates to the page tools sub-menu -->
-  <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">పనిముట్లు</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
   <string name="browser_main_menu_content_description_help_button">సహాయం</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
   <string name="browser_main_menu_content_description_settings_button">అమరికలు</string>
-  <!--
-    Browser menu label that navigates to the save sub-menu, which contains various save related menu items such as
-    bookmarking a page, saving to collection, shortcut or as a PDF, and adding to home screen
-  -->
-  <string name="browser_menu_save" moz:removedIn="141" tools:ignore="UnusedResources">భద్రపరుచు</string>
   <!--
     Browser Toolbar
 
@@ -212,10 +192,6 @@
   <string name="search_engine_suggestions_title">%s‌లో వెతకండి</string>
   <!-- Menu option in the search selector menu to open the search settings -->
   <string name="search_settings_menu_item">వెతుకుడు అమరికలు</string>
-  <!-- Text for the button to continue the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_get_started_button" moz:removedIn="141" tools:ignore="UnusedResources">మొదలుపెట్టండి</string>
-  <!-- Text for the button to skip the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_skip_button" moz:removedIn="141" tools:ignore="UnusedResources">దాటవేయి</string>
   <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">మూసివేయి</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -325,8 +301,6 @@
   <string name="preferences_language">భాష</string>
   <!-- Preference for translations -->
   <string name="preferences_translations">అనువాదాలు</string>
-  <!-- Preference for data choices -->
-  <string name="preferences_data_choices" tools:ignore="UnusedResources" moz:removedIn="141">డేటా ఎంపికలు</string>
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">దత్త సేకరణ</string>
   <!-- Preference for developers -->
@@ -349,18 +323,8 @@
   <string name="preferences_open_links_in_apps">లంకెలను అనువర్తనాల్లో తెరువు</string>
   <!-- Preference for open links in third party apps always open in apps option -->
   <string name="preferences_open_links_in_apps_always">ఎల్లప్పుడూ</string>
-  <!-- Preference for open download with an external download manager app -->
-  <string name="preferences_external_download_manager" tools:ignore="UnusedResources" moz:removedIn="141">బయటి దింపుకోలు నిర్వాహకి</string>
   <!-- Preference for notifications -->
   <string name="preferences_notifications">గమనింపులు</string>
-  <!--
-    Add-on Permissions
-
-    The title of the required permissions section from addon's permissions screen
-  -->
-  <string name="addons_permissions_heading_required" tools:ignore="UnusedResources" moz:removedIn="141">అవసరం</string>
-  <!-- The title of the optional permissions section from addon's permissions screen -->
-  <string name="addons_permissions_heading_optional" tools:ignore="UnusedResources" moz:removedIn="141">ఐచ్ఛికం</string>
   <!-- Button caption to confirm the add-on collection configuration -->
   <string name="customize_addon_collection_ok">సరే</string>
   <!-- Button caption to abort the add-on collection configuration -->
@@ -377,7 +341,7 @@
   -->
   <string name="customize_toggle_recently_visited">ఇటీవల చూసినవి</string>
   <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action">చూడండి</string>
+  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">చూడండి</string>
   <!-- Snackbar label for action to retry downloading the wallpaper -->
   <string name="wallpaper_download_error_snackbar_action">మళ్ళీ ప్రయత్నించు</string>
   <!-- Text displayed that links to website containing documentation about the "Limited Edition" wallpapers. -->
@@ -444,8 +408,6 @@
   <string name="exceptions_empty_message_description">మినహాయింపులు మీరు ఎంచుకున్న సైట్లకు ట్రాకింగ్ సంరక్షణను అచేతనం చేసుకోనిస్తాయి.</string>
   <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
   <string name="exceptions_empty_message_learn_more_link">ఇంకా తెలుసుకోండి</string>
-  <!-- Preference switch for usage and technical learn more link -->
-  <string name="preference_usage_data_learn_more" tools:ignore="UnusedResources" moz:removedIn="141">ఇంకా తెలుసుకోండి</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">అధ్యయనాలు</string>
   <!-- Summary for studies preferences -->
@@ -946,20 +908,16 @@
     Text shown in snackbar when user deletes a collection
   -->
   <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">సేకరణ తొలగించబడింది</string>
-  <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">సేకరణ పేరు మార్చబడింది</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">ట్యాబు మూసివేయబడింది</string>
   <!-- Text shown in snackbar when user closes all tabs -->
   <string name="snackbar_tabs_closed">ట్యాబులు మూసివేయబడ్డాయి</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">అంతరంగిక ట్యాబు మూసివేయబడింది</string>
-  <!-- Text shown in snackbar when user closes all private tabs -->
-  <string name="snackbar_private_tabs_closed" moz:removedIn="141" tools:ignore="UnusedResources">అంతరంగిక ట్యాబులు మూసివేయబడ్డాయి</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">చర్య రద్దుచేయి</string>
   <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed">సైటు తీసివేయబడింది</string>
+  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">సైటు తీసివేయబడింది</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -1445,10 +1403,6 @@
   <string name="radio_preference_info_content_description">మరిన్ని వివరాలకు నొక్కండి</string>
   <!-- Content description for privacy content close button -->
   <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">మూసివేయి</string>
-  <!-- Header text for a section on the home screen. -->
-  <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">అంశంవారీగా కథనాలు</string>
-  <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
-  <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">ఇంకా కనుగొనండి</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">అమరికలకు వెళ్ళు</string>
   <!-- Title for dialog displayed when trying to access links present in a text. -->

@@ -5,15 +5,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WMFAudioMFTManager.h"
+
+#include "BufferReader.h"
 #include "MediaInfo.h"
 #include "TimeUnits.h"
 #include "VideoUtils.h"
 #include "WMFUtils.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Logging.h"
-#include "nsTArray.h"
-#include "BufferReader.h"
 #include "mozilla/ScopeExit.h"
+#include "nsTArray.h"
 
 #define LOG(...) MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
 
@@ -79,6 +80,7 @@ const GUID& WMFAudioMFTManager::GetMediaSubtypeGUID() {
 }
 
 bool WMFAudioMFTManager::Init() {
+  AUTO_PROFILER_LABEL("WMFAudioMFTManager::Init", MEDIA_PLAYBACK);
   NS_ENSURE_TRUE(StreamTypeIsAudio(mStreamType), false);
 
   RefPtr<MFTDecoder> decoder(new MFTDecoder());

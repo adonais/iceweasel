@@ -285,8 +285,6 @@ static void RelocateCell(Zone* zone, TenuredCell* src, AllocKind thingKind,
     JSObject* srcObj = static_cast<JSObject*>(static_cast<Cell*>(src));
     poison = !(srcObj->is<WasmArrayObject>() &&
                srcObj->as<WasmArrayObject>().isDataInline());
-  } else if (IsBufferAllocKind(thingKind)) {
-    poison = false;
   }
   if (poison) {
     AlwaysPoison(reinterpret_cast<uint8_t*>(src) + sizeof(uintptr_t),
@@ -904,12 +902,7 @@ void GCRuntime::clearRelocatedArenasWithoutUnlocking(Arena* arenaList,
     bool allArenasRelocated = ShouldRelocateAllArenas(reason);
     bool updateRetainedSize = !allArenasRelocated && !arena->isNewlyCreated();
     Zone* zone = arena->zone();
-    if (IsBufferAllocKind(arena->getAllocKind())) {
-      size_t usableBytes = ArenaSize - arena->getFirstThingOffset();
-      zone->mallocHeapSize.removeBytes(usableBytes, updateRetainedSize);
-    } else {
-      zone->gcHeapSize.removeBytes(ArenaSize, updateRetainedSize, heapSize);
-    }
+    zone->gcHeapSize.removeBytes(ArenaSize, updateRetainedSize, heapSize);
 
     // There is no atom marking bitmap index to free.
     MOZ_ASSERT(!zone->isAtomsZone());

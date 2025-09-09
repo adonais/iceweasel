@@ -7,12 +7,20 @@ package org.mozilla.fenix.components.menu.compose
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -30,7 +38,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -38,6 +50,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * and automatically adapting its background, icon tint, and text color according to [MenuItemState].
  *
  * @param modifier Modifier to apply to the root Surface container.
+ * @param isHighlighted Whether this item should display a notification icon.
  * @param iconRes Drawable resource ID for the icon.
  * @param labelRes String resource ID for the label text.
  * @param state The state of the menu item to display.
@@ -48,6 +61,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 @Composable
 fun LibraryMenuItem(
     modifier: Modifier = Modifier,
+    isHighlighted: Boolean = false,
     @DrawableRes iconRes: Int,
     @StringRes labelRes: Int,
     state: MenuItemState = MenuItemState.ENABLED,
@@ -80,11 +94,19 @@ fun LibraryMenuItem(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 12.dp),
         ) {
-            Icon(
-                painter = painterResource(iconRes),
-                contentDescription = null,
-                tint = FirefoxTheme.colors.iconPrimary,
-            )
+            BadgedBox(
+                badge = {
+                    if (isHighlighted) {
+                        Badge(containerColor = FirefoxTheme.colors.actionInformation)
+                    }
+                },
+            ) {
+                Icon(
+                    painter = painterResource(iconRes),
+                    contentDescription = null,
+                    tint = FirefoxTheme.colors.iconPrimary,
+                )
+            }
             Spacer(Modifier.height(4.dp))
             Text(
                 text = stringResource(labelRes),
@@ -100,4 +122,92 @@ fun LibraryMenuItem(
             )
         }
     }
+}
+
+@PreviewLightDark
+@Composable
+private fun LibraryMenuItemPreview(
+    @PreviewParameter(HighlightedItemPreviewParameterProvider::class) isHighlighted: Boolean,
+) {
+    val spacerWidth = 2.dp
+    val innerRounding = 4.dp
+    val outerRounding = 28.dp
+
+    val leftShape = RoundedCornerShape(
+        topStart = outerRounding, topEnd = innerRounding,
+        bottomStart = outerRounding, bottomEnd = innerRounding,
+    )
+    val middleShape = RoundedCornerShape(innerRounding)
+    val rightShape = RoundedCornerShape(
+        topStart = innerRounding,
+        topEnd = outerRounding, bottomStart = innerRounding, bottomEnd = outerRounding,
+    )
+
+    FirefoxTheme {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            LibraryMenuItem(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                isHighlighted = isHighlighted,
+                iconRes = R.drawable.mozac_ic_history_24,
+                labelRes = R.string.library_history,
+                shape = leftShape,
+                onClick = {},
+            )
+
+            Spacer(Modifier.width(spacerWidth))
+
+            LibraryMenuItem(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                isHighlighted = isHighlighted,
+                iconRes = R.drawable.mozac_ic_bookmark_tray_fill_24,
+                labelRes = R.string.library_bookmarks,
+                shape = middleShape,
+                onClick = {},
+            )
+
+            Spacer(Modifier.width(spacerWidth))
+
+            LibraryMenuItem(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                isHighlighted = isHighlighted,
+                iconRes = R.drawable.mozac_ic_download_24,
+                labelRes = R.string.library_downloads,
+                shape = middleShape,
+                onClick = {},
+            )
+
+            Spacer(Modifier.width(spacerWidth))
+
+            LibraryMenuItem(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                isHighlighted = isHighlighted,
+                iconRes = R.drawable.mozac_ic_login_24,
+                labelRes = R.string.browser_menu_passwords,
+                shape = rightShape,
+                onClick = {},
+            )
+        }
+    }
+}
+
+/**
+ * A [PreviewParameterProvider] implementation that provides boolean values
+ * representing the loading state of a site.
+ */
+class HighlightedItemPreviewParameterProvider : PreviewParameterProvider<Boolean> {
+    override val values = sequenceOf(true, false)
 }

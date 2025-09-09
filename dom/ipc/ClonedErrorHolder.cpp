@@ -6,6 +6,9 @@
 
 #include "mozilla/dom/ClonedErrorHolder.h"
 
+#include "js/StructuredClone.h"
+#include "jsapi.h"
+#include "jsfriendapi.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ClonedErrorHolderBinding.h"
 #include "mozilla/dom/DOMException.h"
@@ -13,9 +16,6 @@
 #include "mozilla/dom/Exceptions.h"
 #include "mozilla/dom/StructuredCloneTags.h"
 #include "mozilla/dom/ToJSValue.h"
-#include "jsapi.h"
-#include "jsfriendapi.h"
-#include "js/StructuredClone.h"
 #include "nsReadableUtils.h"
 #include "xpcpublic.h"
 

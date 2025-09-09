@@ -6,11 +6,11 @@
 #include "ObjectModel.h"
 
 #include "Adapter.h"
-#include "ShaderModule.h"
+#include "CommandEncoder.h"
 #include "CompilationInfo.h"
 #include "Device.h"
-#include "CommandEncoder.h"
 #include "Instance.h"
+#include "ShaderModule.h"
 #include "Texture.h"
 #include "nsIGlobalObject.h"
 

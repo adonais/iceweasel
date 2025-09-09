@@ -49,8 +49,8 @@ pub enum TextMetric {
     Child(TextMetricIpc),
 }
 
-crate::define_metric_metadata_getter!(TextMetric, TEXT_MAP);
-crate::define_metric_namer!(TextMetric, PARENT_ONLY);
+define_metric_metadata_getter!(TextMetric, TEXT_MAP);
+define_metric_namer!(TextMetric, PARENT_ONLY);
 
 #[derive(Clone, Debug)]
 pub struct TextMetricIpc;

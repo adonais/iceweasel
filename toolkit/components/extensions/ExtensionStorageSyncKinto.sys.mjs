@@ -1194,6 +1194,23 @@ export class ExtensionStorageSyncKinto {
     return openCollection(extension);
   }
 
+  /**
+   * Get the keys for a collection
+   *
+   * @param {Extension} extension
+   *                    The extension for which we are seeking
+   *                    a collection.
+   * @param {BaseContext} context
+   *                  The context of the extension, so that we can
+   *                  stop syncing the collection when the extension ends.
+   * @returns {Promise<string[]>}
+   */
+  async getKeys(extension, context) {
+    const coll = await this.getCollection(extension, context);
+    const res = await coll.list();
+    return res.data.map(record => record.key);
+  }
+
   async set(extension, items, context) {
     const coll = await this.getCollection(extension, context);
     const keys = Object.keys(items);

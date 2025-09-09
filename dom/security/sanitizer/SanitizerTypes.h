@@ -5,8 +5,8 @@
 #ifndef mozilla_dom_SanitizerTypes_h
 #define mozilla_dom_SanitizerTypes_h
 
-#include "mozilla/dom/SanitizerBinding.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/dom/SanitizerBinding.h"
 
 namespace mozilla::dom::sanitizer {
 

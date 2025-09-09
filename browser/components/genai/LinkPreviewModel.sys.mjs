@@ -297,8 +297,11 @@ export const LinkPreviewModel = {
     text,
     maxNumSentences = lazy.inputSentences ?? DEFAULT_INPUT_SENTENCES
   ) {
+    // Filter out emoji characters. The `u` flag is for unicode and `g` for global.
+    // Use `Emoji_Presentation` to avoid removing numbers and other symbols.
+    const textWithoutEmoji = text.replace(/\p{Emoji_Presentation}/gu, "");
     return (
-      this.getSentences(text)
+      this.getSentences(textWithoutEmoji)
         .map(s =>
           // trim and replace consecutive blank by a single one.
           s.trim().replace(

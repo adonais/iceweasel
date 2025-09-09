@@ -141,7 +141,7 @@ export class DSContextFooter extends React.PureComponent {
 }
 
 export const DSMessageFooter = props => {
-  const { context, context_type, saveToPocketCard } = props;
+  const { context, context_type } = props;
 
   const dsMessageLabel = DSMessageLabel({
     context,
@@ -149,7 +149,7 @@ export const DSMessageFooter = props => {
   });
 
   // This case is specific and already displayed to the user elsewhere.
-  if (!dsMessageLabel || (saveToPocketCard && context_type === "pocket")) {
+  if (!dsMessageLabel) {
     return null;
   }
 

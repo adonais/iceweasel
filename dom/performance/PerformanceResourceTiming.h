@@ -7,12 +7,12 @@
 #ifndef mozilla_dom_PerformanceResourceTiming_h___
 #define mozilla_dom_PerformanceResourceTiming_h___
 
-#include "mozilla/UniquePtr.h"
-#include "nsCOMPtr.h"
 #include "Performance.h"
 #include "PerformanceEntry.h"
 #include "PerformanceServerTiming.h"
 #include "PerformanceTiming.h"
+#include "mozilla/UniquePtr.h"
+#include "nsCOMPtr.h"
 
 namespace mozilla::dom {
 enum class RenderBlockingStatusType : uint8_t;

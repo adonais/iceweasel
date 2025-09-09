@@ -19,6 +19,7 @@
 #include <new>
 #include <type_traits>
 #include <utility>
+
 #include "ErrorList.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MacroForEach.h"
@@ -30,12 +31,12 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/LSValue.h"
-#include "mozilla/dom/quota/QuotaCommon.h"
-#include "mozilla/dom/quota/ResultExtensions.h"
-#include "mozilla/dom/quota/ScopedLogExtraInfo.h"
 #include "mozilla/dom/PBackgroundLSDatabase.h"
 #include "mozilla/dom/PBackgroundLSSharedTypes.h"
 #include "mozilla/dom/PBackgroundLSSnapshot.h"
+#include "mozilla/dom/quota/QuotaCommon.h"
+#include "mozilla/dom/quota/ResultExtensions.h"
+#include "mozilla/dom/quota/ScopedLogExtraInfo.h"
 #include "nsBaseHashtable.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"

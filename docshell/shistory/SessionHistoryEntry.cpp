@@ -1727,6 +1727,7 @@ void IPDLParamTraits<dom::LoadingSessionHistoryInfo>::Write(
     IPC::MessageWriter* aWriter, IProtocol* aActor,
     const dom::LoadingSessionHistoryInfo& aParam) {
   WriteIPDLParam(aWriter, aActor, aParam.mInfo);
+  WriteIPDLParam(aWriter, aActor, aParam.mContiguousEntries);
   WriteIPDLParam(aWriter, aActor, aParam.mLoadId);
   WriteIPDLParam(aWriter, aActor, aParam.mLoadIsFromSessionHistory);
   WriteIPDLParam(aWriter, aActor, aParam.mOffset);
@@ -1738,6 +1739,7 @@ bool IPDLParamTraits<dom::LoadingSessionHistoryInfo>::Read(
     IPC::MessageReader* aReader, IProtocol* aActor,
     dom::LoadingSessionHistoryInfo* aResult) {
   if (!ReadIPDLParam(aReader, aActor, &aResult->mInfo) ||
+      !ReadIPDLParam(aReader, aActor, &aResult->mContiguousEntries) ||
       !ReadIPDLParam(aReader, aActor, &aResult->mLoadId) ||
       !ReadIPDLParam(aReader, aActor, &aResult->mLoadIsFromSessionHistory) ||
       !ReadIPDLParam(aReader, aActor, &aResult->mOffset) ||

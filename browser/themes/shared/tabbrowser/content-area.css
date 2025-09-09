@@ -12,7 +12,7 @@
     --tabpanel-background-color: #2b2a33;
   }
   &[privatebrowsingmode="temporary"] {
-    /* Value for --in-content-page-background in aboutPrivateBrowsing.css.
+    /* Value for --background-color-canvas in aboutPrivateBrowsing.css.
        !important overrides the direct setting of this variable in
        ThemeVariableMap.sys.mjs when the user has a theme that defines
        ntp_background. */

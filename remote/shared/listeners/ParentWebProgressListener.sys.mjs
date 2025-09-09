@@ -229,7 +229,7 @@ export class ParentWebProgressListener {
   }
 
   #getAllBrowsingContexts() {
-    return lazy.TabManager.browsers.flatMap(browser =>
+    return lazy.TabManager.getBrowsers().flatMap(browser =>
       browser.browsingContext.getAllBrowsingContextsInSubtree()
     );
   }

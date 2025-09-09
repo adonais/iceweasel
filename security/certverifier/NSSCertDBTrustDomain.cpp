@@ -65,12 +65,10 @@ namespace psm {
 NSSCertDBTrustDomain::NSSCertDBTrustDomain(
     SECTrustType certDBTrustType, OCSPFetching ocspFetching,
     OCSPCache& ocspCache, SignatureCache* signatureCache,
-    TrustCache* trustCache,
-    /*optional but shouldn't be*/ void* pinArg, TimeDuration ocspTimeoutSoft,
-    TimeDuration ocspTimeoutHard, uint32_t certShortLifetimeInDays,
-    unsigned int minRSABits, ValidityCheckingMode validityCheckingMode,
-    NetscapeStepUpPolicy netscapeStepUpPolicy, CRLiteMode crliteMode,
-    const OriginAttributes& originAttributes,
+    TrustCache* trustCache, /*optional but shouldn't be*/ void* pinArg,
+    TimeDuration ocspTimeoutSoft, TimeDuration ocspTimeoutHard,
+    uint32_t certShortLifetimeInDays, unsigned int minRSABits,
+    CRLiteMode crliteMode, const OriginAttributes& originAttributes,
     const nsTArray<Input>& thirdPartyRootInputs,
     const nsTArray<Input>& thirdPartyIntermediateInputs,
     const Maybe<nsTArray<nsTArray<uint8_t>>>& extraCertificates,
@@ -87,8 +85,6 @@ NSSCertDBTrustDomain::NSSCertDBTrustDomain(
       mOCSPTimeoutHard(ocspTimeoutHard),
       mCertShortLifetimeInDays(certShortLifetimeInDays),
       mMinRSABits(minRSABits),
-      mValidityCheckingMode(validityCheckingMode),
-      mNetscapeStepUpPolicy(netscapeStepUpPolicy),
       mCRLiteMode(crliteMode),
       mOriginAttributes(originAttributes),
       mThirdPartyRootInputs(thirdPartyRootInputs),
@@ -1506,63 +1502,7 @@ Result NSSCertDBTrustDomain::VerifyECDSASignedData(
 Result NSSCertDBTrustDomain::CheckValidityIsAcceptable(
     Time notBefore, Time notAfter, EndEntityOrCA endEntityOrCA,
     KeyPurposeId keyPurpose) {
-  if (endEntityOrCA != EndEntityOrCA::MustBeEndEntity) {
-    return Success;
-  }
-  if (keyPurpose == KeyPurposeId::id_kp_OCSPSigning) {
-    return Success;
-  }
-
-  Duration DURATION_27_MONTHS_PLUS_SLOP((2 * 365 + 3 * 31 + 7) *
-                                        Time::ONE_DAY_IN_SECONDS);
-  Duration maxValidityDuration(UINT64_MAX);
-  Duration validityDuration(notBefore, notAfter);
-
-  switch (mValidityCheckingMode) {
-    case ValidityCheckingMode::CheckingOff:
-      return Success;
-    case ValidityCheckingMode::CheckForEV:
-      // The EV Guidelines say the maximum is 27 months, but we use a slightly
-      // higher limit here to (hopefully) minimize compatibility breakage.
-      maxValidityDuration = DURATION_27_MONTHS_PLUS_SLOP;
-      break;
-    default:
-      MOZ_ASSERT_UNREACHABLE(
-          "We're not handling every ValidityCheckingMode type");
-  }
-
-  if (validityDuration > maxValidityDuration) {
-    return Result::ERROR_VALIDITY_TOO_LONG;
-  }
-
   return Success;
-}
-
-Result NSSCertDBTrustDomain::NetscapeStepUpMatchesServerAuth(
-    Time notBefore,
-    /*out*/ bool& matches) {
-  // (new Date("2015-08-23T00:00:00Z")).getTime() / 1000
-  static const Time AUGUST_23_2015 = TimeFromEpochInSeconds(1440288000);
-  // (new Date("2016-08-23T00:00:00Z")).getTime() / 1000
-  static const Time AUGUST_23_2016 = TimeFromEpochInSeconds(1471910400);
-
-  switch (mNetscapeStepUpPolicy) {
-    case NetscapeStepUpPolicy::AlwaysMatch:
-      matches = true;
-      return Success;
-    case NetscapeStepUpPolicy::MatchBefore23August2016:
-      matches = notBefore < AUGUST_23_2016;
-      return Success;
-    case NetscapeStepUpPolicy::MatchBefore23August2015:
-      matches = notBefore < AUGUST_23_2015;
-      return Success;
-    case NetscapeStepUpPolicy::NeverMatch:
-      matches = false;
-      return Success;
-    default:
-      MOZ_ASSERT_UNREACHABLE("unhandled NetscapeStepUpPolicy type");
-  }
-  return Result::FATAL_ERROR_LIBRARY_FAILURE;
 }
 
 void NSSCertDBTrustDomain::ResetAccumulatedState() {

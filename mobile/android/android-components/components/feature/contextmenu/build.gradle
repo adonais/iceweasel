@@ -38,6 +38,7 @@ dependencies {
     implementation libs.google.material
     implementation libs.androidx.constraintlayout
     implementation libs.androidx.core.ktx
+    implementation libs.androidx.compose.ui.text.android
 
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit

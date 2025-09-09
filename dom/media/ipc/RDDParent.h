@@ -6,7 +6,6 @@
 #ifndef _include_dom_media_ipc_RDDParent_h__
 #define _include_dom_media_ipc_RDDParent_h__
 #include "mozilla/PRDDParent.h"
-
 #include "mozilla/RefPtr.h"
 #include "mozilla/ipc/AsyncBlockers.h"
 
@@ -57,7 +56,7 @@ class RDDParent final : public PRDDParent {
   mozilla::ipc::IPCResult RecvUnblockUntrustedModulesThread();
 #endif  // defined(XP_WIN)
   mozilla::ipc::IPCResult RecvPreferenceUpdate(const Pref& pref);
-  mozilla::ipc::IPCResult RecvUpdateVar(const GfxVarUpdate& pref);
+  mozilla::ipc::IPCResult RecvUpdateVar(const nsTArray<GfxVarUpdate>& var);
 
 #if defined(MOZ_SANDBOX) && defined(MOZ_DEBUG) && defined(ENABLE_TESTS)
   mozilla::ipc::IPCResult RecvInitSandboxTesting(

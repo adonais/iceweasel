@@ -184,4 +184,30 @@ class ReaderViewMiddlewareTest {
 
         assertEquals("https://mozilla.org/article1", store.state.findTab(tab.id)!!.content.url)
     }
+
+    @Test
+    fun `GIVEN navigating to a new URL WHEN that is not a reader mode URL THEN clear reader mode status for the tab`() {
+        val tab = createTab(
+            "https://www.mozilla.org",
+            id = "test-tab1",
+            readerState = ReaderState(
+                active = true,
+                baseUrl = "moz-extension://123",
+                activeUrl = "https://mozilla.org/article1",
+            ),
+        )
+        val store = BrowserStore(
+            initialState = BrowserState(tabs = listOf(tab)),
+            middleware = listOf(ReaderViewMiddleware()),
+        )
+
+        store.dispatch(
+            ContentAction.UpdateUrlAction(
+                tab.id,
+                "https://mozilla.org/article1",
+            ),
+        ).joinBlocking()
+
+        assertFalse(store.state.findTab(tab.id)!!.readerState.active)
+    }
 }

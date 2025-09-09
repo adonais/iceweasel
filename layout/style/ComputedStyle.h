@@ -22,9 +22,9 @@
 enum nsChangeHint : uint32_t;
 class nsWindowSizes;
 
-#define STYLE_STRUCT(name_) struct nsStyle##name_;
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT
+#define FORWARD_STRUCT(name_) struct nsStyle##name_;
+FOR_EACH_STYLE_STRUCT(FORWARD_STRUCT, FORWARD_STRUCT)
+#undef FORWARD_STRUCT
 
 extern "C" {
 void Gecko_ComputedStyle_Destroy(mozilla::ComputedStyle*);
@@ -129,11 +129,6 @@ class ComputedStyle {
     return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_TEXT_COLOR);
   }
 
-  // Whether any margin _and_ font-size are set.
-  bool HasAuthorSpecifiedMarginAndFontSize() const {
-    return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_MARGIN_AND_FONT_SIZE);
-  }
-
   // Does this ComputedStyle or any of its ancestors have text
   // decoration lines?
   // Differs from nsStyleTextReset::HasTextDecorationLines, which tests
@@ -229,12 +224,12 @@ class ComputedStyle {
     mCachedInheritingStyles.Insert(aStyle);
   }
 
-#define STYLE_STRUCT(name_)                                              \
+#define GENERATE_ACCESSOR(name_)                                         \
   inline const nsStyle##name_* Style##name_() const MOZ_NONNULL_RETURN { \
     return mSource.Style##name_();                                       \
   }
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT
+  FOR_EACH_STYLE_STRUCT(GENERATE_ACCESSOR, GENERATE_ACCESSOR)
+#undef GENERATE_ACCESSOR
 
   inline mozilla::StylePointerEvents PointerEvents() const;
   inline mozilla::StyleUserSelect UserSelect() const;

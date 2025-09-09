@@ -45,6 +45,13 @@ const BackgroundFileSaverStreamListener = Components.Constructor(
   "nsIBackgroundFileSaver"
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "enableDeletePrivateFeature",
+  "browser.download.enableDeletePrivate",
+  false
+);
+
 /**
  * Returns true if the given value is a primitive string or a String object.
  */
@@ -643,11 +650,20 @@ Download.prototype = {
     if (this.launchWhenSucceeded) {
       this.launch().catch(console.error);
 
-      if (this.source.isPrivate) {
+      // If the "have users choose whether to delete private downloads" feature
+      // is not enabled, we should delete the temporary file once the private
+      // browsing session ends. Otherwise, we'll decide whether to delete the
+      // file further down, for all downloads (not just the ones that have
+      // `launchWhenSucceeded` set to true).
+      // Once we complete rollout of `enableDeletePrivateFeature`, we can
+      // remove this block.
+      if (!lazy.enableDeletePrivateFeature && this.source.isPrivate) {
         lazy.gExternalAppLauncher.deleteTemporaryPrivateFileWhenPossible(
           new lazy.FileUtils.File(this.target.path)
         );
-      } else if (
+      }
+      if (
+        !this.source.isPrivate &&
         Services.prefs.getBoolPref("browser.helperApps.deleteTempFileOnExit") &&
         Services.prefs.getBoolPref(
           "browser.download.start_downloads_in_tmp_dir",
@@ -661,10 +677,7 @@ Download.prototype = {
     }
 
     if (
-      Services.prefs.getBoolPref(
-        "browser.download.enableDeletePrivate",
-        false
-      ) &&
+      lazy.enableDeletePrivateFeature &&
       Services.prefs.getBoolPref("browser.download.deletePrivate", false) &&
       this.source.isPrivate
     ) {

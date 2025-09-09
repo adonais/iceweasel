@@ -387,7 +387,7 @@ async function setupAudioTab() {
   let tab = BrowserTestUtils.addTab(gBrowser, origin, { skipAnimation: true });
   tab.testTitle = title;
   tab.testOrigin = origin;
-  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser, { wantLoad: origin });
   await SpecialPowers.spawn(tab.linkedBrowser, [title], async title => {
     content.document.title = title;
     const ROOT =
@@ -451,10 +451,10 @@ async function testAboutProcessesWithConfig({ showAllFrames, showThreads }) {
       skipAnimation: true,
     });
     await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-    let p = BrowserTestUtils.browserLoaded(
-      tab.linkedBrowser,
-      true /* includeSubFrames */
-    );
+    let p = BrowserTestUtils.browserLoaded(tab.linkedBrowser, {
+      includeSubFrames: true,
+      wantLoad: "about:blank",
+    });
     await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
       // Open an in-process iframe to test toolkit.aboutProcesses.showAllSubframes
       let frame = content.document.createElement("iframe");

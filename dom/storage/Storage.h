@@ -10,12 +10,12 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Maybe.h"
-#include "nsCycleCollectionParticipant.h"
 #include "nsCOMPtr.h"
-#include "nsWrapperCache.h"
+#include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"
-#include "nsTArrayForwardDeclare.h"
 #include "nsString.h"
+#include "nsTArrayForwardDeclare.h"
+#include "nsWrapperCache.h"
 
 class nsIPrincipal;
 class nsPIDOMWindowInner;

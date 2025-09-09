@@ -24,13 +24,14 @@ use firefox_on_glean::{
     metrics::networking,
     private::{LocalCustomDistribution, LocalMemoryDistribution},
 };
+use libc::{c_uchar, size_t};
 #[cfg(not(windows))]
 use libc::{c_int, AF_INET, AF_INET6};
 use neqo_common::{
     event::Provider as _, qdebug, qerror, qlog::Qlog, qwarn, Datagram, DatagramBatch, Decoder,
     Encoder, Header, Role, Tos,
 };
-use neqo_crypto::{init, PRErrorCode};
+use neqo_crypto::{agent::CertificateCompressor, init, PRErrorCode};
 use neqo_http3::{
     features::extended_connect::SessionCloseReason, Error as Http3Error, Http3Client,
     Http3ClientEvent, Http3Parameters, Http3State, Priority, WebTransportEvent,
@@ -55,6 +56,8 @@ use winapi::{
     shared::ws2def::{AF_INET, AF_INET6},
 };
 use xpcom::{interfaces::nsISocketProvider, AtomicRefcnt, RefCounted, RefPtr};
+use zlib_rs::inflate::{uncompress_slice, InflateConfig};
+use zlib_rs::ReturnCode;
 
 std::thread_local! {
     static RECV_BUF: RefCell<neqo_udp::RecvBuf> = RefCell::new(neqo_udp::RecvBuf::new());
@@ -165,6 +168,145 @@ fn netaddr_to_socket_addr(arg: *const NetAddr) -> Result<SocketAddr, nsresult> {
     }
 
     Err(NS_ERROR_UNEXPECTED)
+}
+
+fn enable_zlib_decoder(c: &mut Connection) -> neqo_transport::Res<()> {
+    struct ZlibCertDecoder {}
+
+    impl CertificateCompressor for ZlibCertDecoder {
+        // RFC 8879
+        const ID: u16 = 0x1;
+        const NAME: &std::ffi::CStr = c"zlib";
+
+        fn decode(input: &[u8], output: &mut [u8]) -> neqo_crypto::Res<()> {
+            let (output_slice, error) = uncompress_slice(output, &input, InflateConfig::default());
+            if error != ReturnCode::Ok {
+                return Err(neqo_crypto::Error::CertificateDecoding);
+            }
+            if output_slice.len() != output.len() {
+                return Err(neqo_crypto::Error::CertificateDecoding);
+            }
+
+            Ok(())
+        }
+    }
+
+    c.set_certificate_compression::<ZlibCertDecoder>()
+}
+
+extern "C" {
+    pub fn ZSTD_decompress(
+        dst: *mut ::core::ffi::c_void,
+        dstCapacity: usize,
+        src: *const ::core::ffi::c_void,
+        compressedSize: usize,
+    ) -> usize;
+}
+
+extern "C" {
+    pub fn ZSTD_isError(result: usize) -> ::core::ffi::c_uint;
+}
+
+fn enable_zstd_decoder(c: &mut Connection) -> neqo_transport::Res<()> {
+    struct ZstdCertDecoder {}
+
+    impl CertificateCompressor for ZstdCertDecoder {
+        // RFC 8879
+        const ID: u16 = 0x3;
+        const NAME: &std::ffi::CStr = c"zstd";
+
+        fn decode(input: &[u8], output: &mut [u8]) -> neqo_crypto::Res<()> {
+            if input.is_empty() {
+                return Err(neqo_crypto::Error::CertificateDecoding);
+            }
+            if output.is_empty() {
+                return Err(neqo_crypto::Error::CertificateDecoding);
+            }
+
+            let output_len = unsafe {
+                ZSTD_decompress(
+                    output.as_mut_ptr() as *mut c_void,
+                    output.len(),
+                    input.as_ptr() as *const c_void,
+                    input.len(),
+                )
+            };
+
+            // ZSTD_isError return 1 if error, 0 otherwise
+            if unsafe {ZSTD_isError(output_len) != 0} {
+                qdebug!("zstd compression failed with {output_len}");
+                return Err(neqo_crypto::Error::CertificateDecoding);
+            }
+
+            if output.len() != output_len {
+                qdebug!("zstd compression `output_len` {output_len} doesn't match expected `output.len()` {}", output.len());
+                return Err(neqo_crypto::Error::CertificateDecoding);
+            }
+
+            Ok(())
+        }
+    }
+
+    c.set_certificate_compression::<ZstdCertDecoder>()
+}
+
+#[repr(C)]
+#[derive(Debug, PartialEq)]
+pub enum BrotliDecoderResult {
+    Error = 0,
+    Success = 1,
+    NeedsMoreInput = 2,
+    NeedsMoreOutput = 3,
+}
+
+extern "C" {
+    pub fn BrotliDecoderDecompress(
+        encoded_size: size_t,
+        encoded_buffer: *const c_uchar,
+        decoded_size: *mut size_t,
+        decoded_buffer: *mut c_uchar,
+    ) -> BrotliDecoderResult;
+}
+
+fn enable_brotli_decoder(c: &mut Connection) -> neqo_transport::Res<()> {
+    struct BrotliCertDecoder {}
+
+    impl CertificateCompressor for BrotliCertDecoder {
+        // RFC 8879
+        const ID: u16 = 0x2;
+        const NAME: &std::ffi::CStr = c"brotli";
+
+        fn decode(input: &[u8], output: &mut [u8]) -> neqo_crypto::Res<()> {
+            if input.is_empty() {
+                return Err(neqo_crypto::Error::CertificateDecoding);
+            }
+            if output.is_empty() {
+                return Err(neqo_crypto::Error::CertificateDecoding);
+            }
+
+            let mut uncompressed_size = output.len();
+            let result = unsafe {
+                BrotliDecoderDecompress(
+                    input.len(),
+                    input.as_ptr(),
+                    &mut uncompressed_size as *mut usize,
+                    output.as_mut_ptr(),
+                )
+            };
+
+            if result != BrotliDecoderResult::Success {
+                return Err(neqo_crypto::Error::CertificateDecoding);
+            }
+
+            if uncompressed_size != output.len() {
+                return Err(neqo_crypto::Error::CertificateDecoding);
+            }
+
+            Ok(())
+        }
+    }
+
+    c.set_certificate_compression::<BrotliCertDecoder>()
 }
 
 type SendFunc = extern "C" fn(
@@ -347,6 +489,24 @@ impl NeqoHttp3Conn {
         conn.send_additional_key_shares(additional_shares)
             .map_err(|_| NS_ERROR_UNEXPECTED)?;
 
+        if static_prefs::pref!("security.tls.enable_certificate_compression_zlib")
+            && static_prefs::pref!("network.http.http3.enable_certificate_compression_zlib")
+        {
+            enable_zlib_decoder(&mut conn).map_err(|_| NS_ERROR_UNEXPECTED)?;
+        }
+
+        if static_prefs::pref!("security.tls.enable_certificate_compression_zstd")
+            && static_prefs::pref!("network.http.http3.enable_certificate_compression_zstd")
+        {
+            enable_zstd_decoder(&mut conn).map_err(|_| NS_ERROR_UNEXPECTED)?;
+        }
+
+        if static_prefs::pref!("security.tls.enable_certificate_compression_brotli")
+            && static_prefs::pref!("network.http.http3.enable_certificate_compression_brotli")
+        {
+            enable_brotli_decoder(&mut conn).map_err(|_| NS_ERROR_UNEXPECTED)?;
+        }
+
         let mut conn = Http3Client::new_with_conn(conn, http3_settings);
 
         if !qlog_dir.is_empty() {
@@ -389,7 +549,6 @@ impl NeqoHttp3Conn {
         unsafe { RefPtr::from_raw(conn).ok_or(NS_ERROR_NOT_CONNECTED) }
     }
 
-    #[cfg(not(target_os = "android"))]
     fn record_stats_in_glean(&self) {
         use firefox_on_glean::metrics::networking as glean;
         use neqo_common::Ecn;
@@ -518,12 +677,6 @@ impl NeqoHttp3Conn {
             }
         }
     }
-
-    // Noop on Android for now, due to performance regressions.
-    // - <https://bugzilla.mozilla.org/show_bug.cgi?id=1898810>
-    // - <https://bugzilla.mozilla.org/show_bug.cgi?id=1906664>
-    #[cfg(target_os = "android")]
-    fn record_stats_in_glean(&self) {}
 
     fn increment_would_block_rx(&mut self) {
         self.would_block_counter.increment_rx();
@@ -992,16 +1145,19 @@ fn parse_headers(headers: &nsACString) -> Result<Vec<Header>, nsresult> {
                 if elem.is_empty() {
                     continue;
                 }
-                let hdr_str: Vec<_> = elem.splitn(2, ':').collect();
-                let name = hdr_str[0].trim().to_lowercase();
+
+                let mut hdr_str = elem.splitn(2, ':');
+                let name = hdr_str
+                    .next()
+                    .expect("`elem` is not empty")
+                    .trim()
+                    .to_lowercase();
                 if is_excluded_header(&name) {
                     continue;
                 }
-                let value = if hdr_str.len() > 1 {
-                    String::from(hdr_str[1].trim())
-                } else {
-                    String::new()
-                };
+                let value = hdr_str
+                    .next()
+                    .map_or_else(String::new, |v| v.trim().to_string());
 
                 hdrs.push(Header::new(name, value));
             }

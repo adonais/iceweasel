@@ -174,6 +174,9 @@ const TEST_GLOBAL = {
   ContentSearchUIController: function () {},
   // eslint-disable-next-line object-shorthand
   ContentSearchHandoffUIController: function () {},
+  ContextId: {
+    request: () => "ContextId",
+  },
   Cc: {
     "@mozilla.org/browser/nav-bookmarks-service;1": {
       addObserver() {},
@@ -219,6 +222,11 @@ const TEST_GLOBAL = {
     "@mozilla.org/network/stream-loader;1": {
       createInstance() {
         return {};
+      },
+    },
+    "@mozilla.org/network/protocol;1?name=http": {
+      getService() {
+        return this;
       },
     },
   },
@@ -499,10 +507,12 @@ const TEST_GLOBAL = {
   NimbusFeatures: FakeNimbusFeatures([
     "glean",
     "newtab",
+    "newtabTrainhop",
     "pocketNewtab",
     "newtabSmartShortcuts",
     "newtabInferredPersonalization",
     "newtabWidgets",
+    "newtabOhttpImages",
     "cookieBannerHandling",
   ]),
   TelemetryEnvironment: {
@@ -677,6 +687,7 @@ const TEST_GLOBAL = {
       submit() {},
     },
   },
+  userAgent: "",
   Utils: {
     SERVER_URL: "bogus://foo",
   },

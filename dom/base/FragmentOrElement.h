@@ -18,9 +18,9 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/RadioGroupContainer.h"
+#include "nsAtomHashKeys.h"
 #include "nsCycleCollectionParticipant.h"  // NS_DECL_CYCLE_*
 #include "nsIContent.h"                    // base class
-#include "nsAtomHashKeys.h"
 #include "nsIHTMLCollection.h"
 #include "nsIWeakReferenceUtils.h"
 
@@ -102,7 +102,7 @@ class FragmentOrElement : public nsIContent {
                                       mozilla::ErrorResult& aError) override;
 
   // nsIContent interface methods
-  const nsTextFragment* GetText() override;
+  const CharacterDataBuffer* GetCharacterDataBuffer() const override;
   uint32_t TextLength() const override;
   bool TextIsOnlyWhitespace() override;
   bool ThreadSafeTextIsOnlyWhitespace() const override;

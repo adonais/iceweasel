@@ -543,7 +543,7 @@ MockCubeb::MockCubeb() : MockCubeb(MockCubeb::RunningMode::Automatic) {}
 MockCubeb::MockCubeb(RunningMode aRunningMode)
     : ops(&mock_ops), mRunningMode(aRunningMode) {}
 
-MockCubeb::~MockCubeb() { MOZ_RELEASE_ASSERT(!mFakeAudioThread); };
+MockCubeb::~MockCubeb() { MOZ_RELEASE_ASSERT(!mFakeAudioThreadRunning); }
 
 void MockCubeb::Destroy() {
   MOZ_RELEASE_ASSERT(mHasCubebContext);
@@ -811,9 +811,10 @@ void MockCubeb::StartStream(MockCubebStream* aStream) {
     // Forcing an audio thread must happen before starting streams
     MOZ_RELEASE_ASSERT(streams->IsEmpty());
   }
-  if (!mFakeAudioThread && mRunningMode == RunningMode::Automatic) {
+  if (!mFakeAudioThreadRunning && mRunningMode == RunningMode::Automatic) {
     AddRef();  // released when the thread exits
-    mFakeAudioThread = WrapUnique(new std::thread(ThreadFunction_s, this));
+    std::thread(ThreadFunction_s, this).detach();
+    mFakeAudioThreadRunning = true;
   }
 }
 
@@ -844,14 +845,9 @@ void MockCubeb::ThreadFunction() {
         }
       }
       streams->RemoveElementsBy([](const auto& stream) { return !stream; });
-      MOZ_RELEASE_ASSERT(mFakeAudioThread);
+      MOZ_RELEASE_ASSERT(mFakeAudioThreadRunning);
       if (streams->IsEmpty() && !mForcedAudioThread) {
-        // This leaks the std::thread if Gecko's main thread has already been
-        // shut down.
-        NS_DispatchToMainThread(NS_NewRunnableFunction(
-            __func__, [audioThread = std::move(mFakeAudioThread)] {
-              audioThread->join();
-            }));
+        mFakeAudioThreadRunning = false;
         break;
       }
     }

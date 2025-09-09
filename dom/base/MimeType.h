@@ -8,8 +8,8 @@
 #define mozilla_dom_MimeType_h
 
 #include "mozilla/TextUtils.h"
-#include "nsTHashMap.h"
 #include "nsTArray.h"
+#include "nsTHashMap.h"
 
 template <typename char_type>
 struct HashKeyType;

@@ -5,25 +5,26 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "TimeoutManager.h"
-#include "nsIGlobalObject.h"
+
+#include "TimeoutExecutor.h"
 #include "mozilla/Logging.h"
+#include "mozilla/MediaManager.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/ThrottledEventQueue.h"
 #include "mozilla/TimeStamp.h"
-#include "nsINamed.h"
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/PopupBlocker.h"
-#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/TimeoutHandler.h"
-#include "TimeoutExecutor.h"
-#include "mozilla/net/WebSocketEventService.h"
-#include "mozilla/MediaManager.h"
-#include "mozilla/dom/WorkerScope.h"
 #include "mozilla/dom/WebTaskScheduler.h"
+#include "mozilla/dom/WorkerScope.h"
+#include "mozilla/net/WebSocketEventService.h"
+#include "nsIGlobalObject.h"
+#include "nsINamed.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

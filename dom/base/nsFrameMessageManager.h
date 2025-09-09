@@ -7,13 +7,15 @@
 #ifndef nsFrameMessageManager_h__
 #define nsFrameMessageManager_h__
 
-#include <cstdint>
 #include <string.h>
+
+#include <cstdint>
 #include <utility>
+
 #include "ErrorList.h"
-#include "js/experimental/JSStencil.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
+#include "js/experimental/JSStencil.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
@@ -25,7 +27,6 @@
 #include "nsCOMPtr.h"
 #include "nsClassHashtable.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsTHashMap.h"
 #include "nsHashKeys.h"
 #include "nsIMessageManager.h"
 #include "nsIObserver.h"
@@ -34,6 +35,7 @@
 #include "nsIWeakReferenceUtils.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
+#include "nsTHashMap.h"
 #include "nsTObserverArray.h"
 #include "nscore.h"
 

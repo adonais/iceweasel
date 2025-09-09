@@ -486,8 +486,15 @@ nsWindowsShellService::CreateWindowsIcon(nsIFile* aIcoFile,
   MOZ_LOG(sLog, LogLevel::Debug,
           ("%s:%d - Reading input image...\n", __FILE__, __LINE__));
 
-  RefPtr<gfx::SourceSurface> surface = aImage->GetFrame(
-      imgIContainer::FRAME_FIRST, imgIContainer::FLAG_SYNC_DECODE);
+  // At present SVG frame retrieval defaults to 16x16, which will result in
+  // small bordered icon in some contexts icons are used - e.g. pin to taskbar
+  // notifications. To prevent this we retrieve the frame at 256x256. This only
+  // works for SVGs, raster `imgIContainer` formats instead select the closest
+  // matching size from existing frames.
+  RefPtr<gfx::SourceSurface> surface =
+      aImage->GetFrameAtSize(nsIntSize(256, 256), imgIContainer::FRAME_FIRST,
+                             imgIContainer::FLAG_SYNC_DECODE |
+                                 imgIContainer::FLAG_HIGH_QUALITY_SCALING);
   NS_ENSURE_TRUE(surface, NS_ERROR_FAILURE);
 
   // At time of writing only `DataSourceSurface` was guaranteed thread safe. We

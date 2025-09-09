@@ -136,13 +136,13 @@ TEST(PCFullStackTest, Pc_Foreman_Cif_Net_Delay_0_0_Plr_0_VP9) {
             video, ClipNameToClipPath("foreman_cif"));
         alice->AddVideoConfig(std::move(video), std::move(frame_generator));
         alice->SetVideoCodecs({VideoCodecConfig(
-            /*name=*/cricket::kVp9CodecName, /*required_params=*/{
+            /*name=*/kVp9CodecName, /*required_params=*/{
                 {kVP9FmtpProfileId,
                  VP9ProfileToString(VP9Profile::kProfile0)}})});
       },
       [](PeerConfigurer* bob) {
         bob->SetVideoCodecs({VideoCodecConfig(
-            /*name=*/cricket::kVp9CodecName, /*required_params=*/{
+            /*name=*/kVp9CodecName, /*required_params=*/{
                 {kVP9FmtpProfileId,
                  VP9ProfileToString(VP9Profile::kProfile0)}})});
       });
@@ -167,13 +167,13 @@ TEST(PCGenericDescriptorTest,
             video, ClipNameToClipPath("foreman_cif"));
         alice->AddVideoConfig(std::move(video), std::move(frame_generator));
         alice->SetVideoCodecs({VideoCodecConfig(
-            /*name=*/cricket::kVp9CodecName, /*required_params=*/{
+            /*name=*/kVp9CodecName, /*required_params=*/{
                 {kVP9FmtpProfileId,
                  VP9ProfileToString(VP9Profile::kProfile0)}})});
       },
       [](PeerConfigurer* bob) {
         bob->SetVideoCodecs({VideoCodecConfig(
-            /*name=*/cricket::kVp9CodecName, /*required_params=*/{
+            /*name=*/kVp9CodecName, /*required_params=*/{
                 {kVP9FmtpProfileId,
                  VP9ProfileToString(VP9Profile::kProfile0)}})});
       });
@@ -203,13 +203,13 @@ TEST(PCFullStackTest, MAYBE_Pc_Generator_Net_Delay_0_0_Plr_0_VP9Profile2) {
             video, test::FrameGeneratorInterface::OutputType::kI010);
         alice->AddVideoConfig(std::move(video), std::move(frame_generator));
         alice->SetVideoCodecs({VideoCodecConfig(
-            /*name=*/cricket::kVp9CodecName, /*required_params=*/{
+            /*name=*/kVp9CodecName, /*required_params=*/{
                 {kVP9FmtpProfileId,
                  VP9ProfileToString(VP9Profile::kProfile2)}})});
       },
       [](PeerConfigurer* bob) {
         bob->SetVideoCodecs({VideoCodecConfig(
-            /*name=*/cricket::kVp9CodecName, /*required_params=*/{
+            /*name=*/kVp9CodecName, /*required_params=*/{
                 {kVP9FmtpProfileId,
                  VP9ProfileToString(VP9Profile::kProfile2)}})});
       });
@@ -535,10 +535,10 @@ TEST(PCFullStackTest, Pc_Foreman_Cif_Net_Delay_0_0_Plr_0_H264) {
         auto frame_generator = CreateFromYuvFileFrameGenerator(
             video, ClipNameToClipPath("foreman_cif"));
         alice->AddVideoConfig(std::move(video), std::move(frame_generator));
-        alice->SetVideoCodecs({VideoCodecConfig(cricket::kH264CodecName)});
+        alice->SetVideoCodecs({VideoCodecConfig(webrtc::kH264CodecName)});
       },
       [](PeerConfigurer* bob) {
-        bob->SetVideoCodecs({VideoCodecConfig(cricket::kH264CodecName)});
+        bob->SetVideoCodecs({VideoCodecConfig(webrtc::kH264CodecName)});
       });
   fixture->Run(RunParams(TimeDelta::Seconds(kTestDurationSec)));
 }
@@ -563,10 +563,10 @@ TEST(PCFullStackTest, Pc_Foreman_Cif_30kbps_Net_Delay_0_0_Plr_0_H264) {
         bitrate_settings.start_bitrate_bps = 30000;
         bitrate_settings.max_bitrate_bps = 30000;
         alice->SetBitrateSettings(bitrate_settings);
-        alice->SetVideoCodecs({VideoCodecConfig(cricket::kH264CodecName)});
+        alice->SetVideoCodecs({VideoCodecConfig(webrtc::kH264CodecName)});
       },
       [](PeerConfigurer* bob) {
-        bob->SetVideoCodecs({VideoCodecConfig(cricket::kH264CodecName)});
+        bob->SetVideoCodecs({VideoCodecConfig(webrtc::kH264CodecName)});
       });
   fixture->Run(RunParams(TimeDelta::Seconds(kTestDurationSec)));
 }
@@ -588,10 +588,10 @@ TEST(PCGenericDescriptorTest,
         auto frame_generator = CreateFromYuvFileFrameGenerator(
             video, ClipNameToClipPath("foreman_cif"));
         alice->AddVideoConfig(std::move(video), std::move(frame_generator));
-        alice->SetVideoCodecs({VideoCodecConfig(cricket::kH264CodecName)});
+        alice->SetVideoCodecs({VideoCodecConfig(webrtc::kH264CodecName)});
       },
       [](PeerConfigurer* bob) {
-        bob->SetVideoCodecs({VideoCodecConfig(cricket::kH264CodecName)});
+        bob->SetVideoCodecs({VideoCodecConfig(webrtc::kH264CodecName)});
       });
   fixture->Run(RunParams(TimeDelta::Seconds(kTestDurationSec)));
 }
@@ -615,10 +615,10 @@ TEST(PCFullStackTest, Pc_Foreman_Cif_Delay_50_0_Plr_5_H264_Sps_Pps_Idr) {
         auto frame_generator = CreateFromYuvFileFrameGenerator(
             video, ClipNameToClipPath("foreman_cif"));
         alice->AddVideoConfig(std::move(video), std::move(frame_generator));
-        alice->SetVideoCodecs({VideoCodecConfig(cricket::kH264CodecName)});
+        alice->SetVideoCodecs({VideoCodecConfig(webrtc::kH264CodecName)});
       },
       [](PeerConfigurer* bob) {
-        bob->SetVideoCodecs({VideoCodecConfig(cricket::kH264CodecName)});
+        bob->SetVideoCodecs({VideoCodecConfig(webrtc::kH264CodecName)});
       });
   fixture->Run(RunParams(TimeDelta::Seconds(kTestDurationSec)));
 }
@@ -639,11 +639,11 @@ TEST(PCFullStackTest, Pc_Foreman_Cif_Delay_50_0_Plr_5_H264_Flexfec) {
         auto frame_generator = CreateFromYuvFileFrameGenerator(
             video, ClipNameToClipPath("foreman_cif"));
         alice->AddVideoConfig(std::move(video), std::move(frame_generator));
-        alice->SetVideoCodecs({VideoCodecConfig(cricket::kH264CodecName)});
+        alice->SetVideoCodecs({VideoCodecConfig(webrtc::kH264CodecName)});
         alice->SetUseFlexFEC(true);
       },
       [](PeerConfigurer* bob) {
-        bob->SetVideoCodecs({VideoCodecConfig(cricket::kH264CodecName)});
+        bob->SetVideoCodecs({VideoCodecConfig(webrtc::kH264CodecName)});
         bob->SetUseFlexFEC(true);
       });
   RunParams run_params(TimeDelta::Seconds(kTestDurationSec));
@@ -669,11 +669,11 @@ TEST(PCFullStackTest, DISABLED_Pc_Foreman_Cif_Delay_50_0_Plr_5_H264_Ulpfec) {
         auto frame_generator = CreateFromYuvFileFrameGenerator(
             video, ClipNameToClipPath("foreman_cif"));
         alice->AddVideoConfig(std::move(video), std::move(frame_generator));
-        alice->SetVideoCodecs({VideoCodecConfig(cricket::kH264CodecName)});
+        alice->SetVideoCodecs({VideoCodecConfig(webrtc::kH264CodecName)});
         alice->SetUseUlpFEC(true);
       },
       [](PeerConfigurer* bob) {
-        bob->SetVideoCodecs({VideoCodecConfig(cricket::kH264CodecName)});
+        bob->SetVideoCodecs({VideoCodecConfig(webrtc::kH264CodecName)});
         bob->SetUseUlpFEC(true);
       });
   fixture->Run(RunParams(TimeDelta::Seconds(kTestDurationSec)));
@@ -936,7 +936,7 @@ TEST_P(ParameterizedPCFullStackTest,
             video, ClipNameToClipPath("ConferenceMotion_1280_720_50"));
         alice->AddVideoConfig(std::move(video), std::move(frame_generator));
         alice->SetVideoCodecs({VideoCodecConfig(
-            /*name=*/cricket::kVp9CodecName, /*required_params=*/{
+            /*name=*/kVp9CodecName, /*required_params=*/{
                 {kVP9FmtpProfileId,
                  VP9ProfileToString(VP9Profile::kProfile0)}})});
         if (GetParam().use_network_thread_as_worker_thread) {
@@ -945,7 +945,7 @@ TEST_P(ParameterizedPCFullStackTest,
       },
       [](PeerConfigurer* bob) {
         bob->SetVideoCodecs({VideoCodecConfig(
-            /*name=*/cricket::kVp9CodecName, /*required_params=*/{
+            /*name=*/kVp9CodecName, /*required_params=*/{
                 {kVP9FmtpProfileId,
                  VP9ProfileToString(VP9Profile::kProfile0)}})});
         if (GetParam().use_network_thread_as_worker_thread) {
@@ -1253,13 +1253,13 @@ TEST(PCFullStackTest, Pc_Screenshare_Slides_Vp9_3sl_High_Fps) {
             video, ScreenShareConfig(TimeDelta::Seconds(10)));
         alice->AddVideoConfig(std::move(video), std::move(frame_generator));
         alice->SetVideoCodecs({VideoCodecConfig(
-            /*name=*/cricket::kVp9CodecName, /*required_params=*/{
+            /*name=*/kVp9CodecName, /*required_params=*/{
                 {kVP9FmtpProfileId,
                  VP9ProfileToString(VP9Profile::kProfile0)}})});
       },
       [](PeerConfigurer* bob) {
         bob->SetVideoCodecs({VideoCodecConfig(
-            /*name=*/cricket::kVp9CodecName, /*required_params=*/{
+            /*name=*/kVp9CodecName, /*required_params=*/{
                 {kVP9FmtpProfileId,
                  VP9ProfileToString(VP9Profile::kProfile0)}})});
       });
@@ -1286,13 +1286,13 @@ TEST(PCFullStackTest, Pc_Vp9svc_3sl_High) {
             video, ClipNameToClipPath("ConferenceMotion_1280_720_50"));
         alice->AddVideoConfig(std::move(video), std::move(frame_generator));
         alice->SetVideoCodecs({VideoCodecConfig(
-            /*name=*/cricket::kVp9CodecName, /*required_params=*/{
+            /*name=*/kVp9CodecName, /*required_params=*/{
                 {kVP9FmtpProfileId,
                  VP9ProfileToString(VP9Profile::kProfile0)}})});
       },
       [](PeerConfigurer* bob) {
         bob->SetVideoCodecs({VideoCodecConfig(
-            /*name=*/cricket::kVp9CodecName, /*required_params=*/{
+            /*name=*/kVp9CodecName, /*required_params=*/{
                 {kVP9FmtpProfileId,
                  VP9ProfileToString(VP9Profile::kProfile0)}})});
       });
@@ -1319,13 +1319,13 @@ TEST(PCFullStackTest, Pc_Vp9svc_3sl_Low) {
             video, ClipNameToClipPath("ConferenceMotion_1280_720_50"));
         alice->AddVideoConfig(std::move(video), std::move(frame_generator));
         alice->SetVideoCodecs({VideoCodecConfig(
-            /*name=*/cricket::kVp9CodecName, /*required_params=*/{
+            /*name=*/kVp9CodecName, /*required_params=*/{
                 {kVP9FmtpProfileId,
                  VP9ProfileToString(VP9Profile::kProfile0)}})});
       },
       [](PeerConfigurer* bob) {
         bob->SetVideoCodecs({VideoCodecConfig(
-            /*name=*/cricket::kVp9CodecName, /*required_params=*/{
+            /*name=*/kVp9CodecName, /*required_params=*/{
                 {kVP9FmtpProfileId,
                  VP9ProfileToString(VP9Profile::kProfile0)}})});
       });

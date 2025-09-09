@@ -6,12 +6,12 @@
 
 #include "FlacDemuxer.h"
 
-#include "mozilla/Maybe.h"
 #include "BitReader.h"
-#include "prenv.h"
 #include "FlacFrameParser.h"
-#include "VideoUtils.h"
 #include "TimeUnits.h"
+#include "VideoUtils.h"
+#include "mozilla/Maybe.h"
+#include "prenv.h"
 
 extern mozilla::LazyLogModule gMediaDemuxerLog;
 #define LOG(msg, ...) \

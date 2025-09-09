@@ -43,10 +43,10 @@ nsresult ButtonControlFrame::HandleEvent(nsPresContext* aPresContext,
   return NS_OK;
 }
 
-void ButtonControlFrame::Reflow(nsPresContext* aPc, ReflowOutput& aDesiredSize,
+void ButtonControlFrame::Reflow(nsPresContext* aPc, ReflowOutput& aReflowOutput,
                                 const ReflowInput& aReflowInput,
                                 nsReflowStatus& aStatus) {
-  nsBlockFrame::Reflow(aPc, aDesiredSize, aReflowInput, aStatus);
+  nsBlockFrame::Reflow(aPc, aReflowOutput, aReflowInput, aStatus);
   // We're always complete and we don't support overflow containers
   // so we shouldn't have a next-in-flow ever.
   aStatus.Reset();

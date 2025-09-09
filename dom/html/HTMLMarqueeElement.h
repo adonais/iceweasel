@@ -7,8 +7,8 @@
 #define HTMLMarqueeElement_h___
 
 #include "mozilla/Attributes.h"
-#include "nsGenericHTMLElement.h"
 #include "nsContentUtils.h"
+#include "nsGenericHTMLElement.h"
 
 namespace mozilla::dom {
 class HTMLMarqueeElement final : public nsGenericHTMLElement {

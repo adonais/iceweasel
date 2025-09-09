@@ -7,11 +7,11 @@
 #include "mozilla/AnimationEventDispatcher.h"
 
 #include "mozilla/EventDispatcher.h"
+#include "mozilla/dom/AnimationEffect.h"
+#include "nsCSSProps.h"
+#include "nsGlobalWindowInner.h"
 #include "nsPresContext.h"
 #include "nsRefreshDriver.h"
-#include "nsCSSProps.h"
-#include "mozilla/dom/AnimationEffect.h"
-#include "nsGlobalWindowInner.h"
 
 using namespace mozilla;
 

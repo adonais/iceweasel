@@ -26,7 +26,9 @@ logger = logging.getLogger(__name__)
         "Take the label of the current task, "
         "and trigger the task with that label "
         "on previous pushes in the same project "
-        "while adding the --gecko-profile cmd arg."
+        "while adding the --gecko-profile cmd arg. "
+        "Plus optional overrides for threads, "
+        "features, and sampling interval."
     ),
     order=200,
     context=[
@@ -44,6 +46,26 @@ logger = logging.getLogger(__name__)
                 "maximum": 10,
                 "title": "Depth",
                 "description": "How many pushes to backfill the profiling task on.",
+            },
+            "gecko_profile_interval": {
+                "type": "integer",
+                "default": None,
+                "title": "Sampling interval (ms)",
+                "description": "How often to sample the profiler (in ms).",
+            },
+            "gecko_profile_features": {
+                "type": "string",
+                "default": "",
+                "title": "Features",
+                "description": "Comma-separated Gecko profiler features. "
+                "Example: js,stackwalk,cpu,screenshots,memory",
+            },
+            "gecko_profile_threads": {
+                "type": "string",
+                "default": "",
+                "title": "Threads",
+                "description": "Comma-separated thread names to profile. "
+                "Example: GeckoMain,Compositor,Renderer",
             },
         },
     },
@@ -93,18 +115,63 @@ def geckoprofile_action(parameters, graph_config, input, task_group_id, task_id)
                 if task.label != label:
                     return task
 
-                if task.kind == "perftest":
-                    perf_flags = task.task["payload"]["env"].get("PERF_FLAGS")
-                    if perf_flags:
-                        task.task["payload"]["env"][
-                            "PERF_FLAGS"
-                        ] = f"{perf_flags} gecko-profile"
-                    else:
-                        task.task["payload"]["env"]["PERF_FLAGS"] = "gecko-profile"
-                else:
+                interval = input.get("gecko_profile_interval")
+                features = input.get("gecko_profile_features")
+                threads = input.get("gecko_profile_threads")
+
+                task_kind = task.kind
+                env = task.task["payload"]["env"]
+                perf_flags = env.get("PERF_FLAGS", "")
+                test_suite = task.attributes.get("unittest_suite")
+                profiling_command_flags = ["--gecko-profile"]
+
+                if task_kind == "perftest":
+                    # Add "gecko-profile" to PERF_FLAGS if missing and then add remaining
+                    # Gecko Profiler customizations via MOZ_PROFILER_STARTUP_* env overrides.
+                    if "gecko-profile" not in perf_flags:
+                        env["PERF_FLAGS"] = (perf_flags + " gecko-profile").strip()
+
+                    if interval is not None:
+                        env["MOZ_PROFILER_STARTUP_INTERVAL"] = str(interval)
+                    if features is not None:
+                        env["MOZ_PROFILER_STARTUP_FEATURES"] = features
+                    if threads is not None:
+                        env["MOZ_PROFILER_STARTUP_FILTERS"] = threads
+
+                elif test_suite == "raptor":
+                    # Use PERF_FLAGS env to cusomize profiler settings.
+                    raptor_flags = []
+                    if interval is not None:
+                        raptor_flags.append(f"gecko-profile-interval={interval}")
+                    if features is not None:
+                        raptor_flags.append(f"gecko-profile-features={features}")
+                    if threads is not None:
+                        raptor_flags.append(f"gecko-profile-threads={threads}")
+
+                    env["PERF_FLAGS"] = (
+                        perf_flags + " " + " ".join(raptor_flags)
+                    ).strip()
+
+                elif test_suite == "talos":
+                    # Pass everything through the command directly
+                    # Bug 1979192 will modify Talos to make use of PERF_FLAGS.
+                    if interval is not None:
+                        profiling_command_flags.append(
+                            f"--gecko-profile-interval={interval}"
+                        )
+                    if features is not None:
+                        profiling_command_flags.append(
+                            f"--gecko-profile-features={features}"
+                        )
+                    if threads is not None:
+                        profiling_command_flags.append(
+                            f"--gecko-profile-threads={threads}"
+                        )
+
+                if "command" in task.task["payload"]:
                     cmd = task.task["payload"]["command"]
                     task.task["payload"]["command"] = add_args_to_perf_command(
-                        cmd, ["--gecko-profile"]
+                        cmd, profiling_command_flags
                     )
 
                 task.task["extra"]["treeherder"]["symbol"] += "-p"
@@ -123,7 +190,7 @@ def geckoprofile_action(parameters, graph_config, input, task_group_id, task_id)
             )
             backfill_pushes.append(push)
         else:
-            logging.info(f"Could not find {label} on {push}. Skipping.")
+            logger.info(f"Could not find {label} on {push}. Skipping.")
     combine_task_graph_files(backfill_pushes)
 
 

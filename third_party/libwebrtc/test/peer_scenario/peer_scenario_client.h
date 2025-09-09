@@ -37,7 +37,8 @@ class PeerScenarioClient {
   struct CallbackHandlers {
     std::vector<std::function<void(PeerConnectionInterface::SignalingState)>>
         on_signaling_change;
-    std::vector<std::function<void(rtc::scoped_refptr<DataChannelInterface>)>>
+    std::vector<
+        std::function<void(webrtc::scoped_refptr<DataChannelInterface>)>>
         on_data_channel;
     std::vector<std::function<void()>> on_renegotiation_needed;
     std::vector<
@@ -59,13 +60,14 @@ class PeerScenarioClient {
     std::vector<std::function<void(const std::vector<webrtc::Candidate>&)>>
         on_ice_candidates_removed;
     std::vector<std::function<void(
-        rtc::scoped_refptr<RtpReceiverInterface>,
-        const std::vector<rtc::scoped_refptr<MediaStreamInterface>>&)>>
+        webrtc::scoped_refptr<RtpReceiverInterface>,
+        const std::vector<webrtc::scoped_refptr<MediaStreamInterface>>&)>>
         on_add_track;
     std::vector<
-        std::function<void(rtc::scoped_refptr<RtpTransceiverInterface>)>>
+        std::function<void(webrtc::scoped_refptr<RtpTransceiverInterface>)>>
         on_track;
-    std::vector<std::function<void(rtc::scoped_refptr<RtpReceiverInterface>)>>
+    std::vector<
+        std::function<void(webrtc::scoped_refptr<RtpReceiverInterface>)>>
         on_remove_track;
   };
   struct Config {
@@ -100,16 +102,16 @@ class PeerScenarioClient {
   };
 
   struct AudioSendTrack {
-    rtc::scoped_refptr<AudioTrackInterface> track;
-    rtc::scoped_refptr<RtpSenderInterface> sender;
+    scoped_refptr<AudioTrackInterface> track;
+    scoped_refptr<RtpSenderInterface> sender;
   };
 
   struct VideoSendTrack {
     // Raw pointer to the capturer owned by `source`.
     FrameGeneratorCapturer* capturer;
-    rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource> source;
-    rtc::scoped_refptr<VideoTrackInterface> track;
-    rtc::scoped_refptr<RtpSenderInterface> sender;
+    scoped_refptr<FrameGeneratorCapturerVideoTrackSource> source;
+    scoped_refptr<VideoTrackInterface> track;
+    scoped_refptr<RtpSenderInterface> sender;
   };
 
   PeerScenarioClient(
@@ -130,12 +132,11 @@ class PeerScenarioClient {
   // index in PeerScenarioClient::config.
   EmulatedEndpoint* endpoint(int index = 0);
 
-  AudioSendTrack CreateAudio(std::string track_id,
-                             cricket::AudioOptions options);
+  AudioSendTrack CreateAudio(std::string track_id, AudioOptions options);
   VideoSendTrack CreateVideo(std::string track_id, VideoSendTrackConfig config);
 
   void AddVideoReceiveSink(std::string track_id,
-                           rtc::VideoSinkInterface<VideoFrame>* video_sink);
+                           VideoSinkInterface<VideoFrame>* video_sink);
 
   CallbackHandlers* handlers() { return &handlers_; }
 
@@ -165,13 +166,13 @@ class PeerScenarioClient {
   const std::unique_ptr<Thread> worker_thread_;
   CallbackHandlers handlers_ RTC_GUARDED_BY(signaling_thread_);
   const std::unique_ptr<PeerConnectionObserver> observer_;
-  std::map<std::string, std::vector<rtc::VideoSinkInterface<VideoFrame>*>>
+  std::map<std::string, std::vector<VideoSinkInterface<VideoFrame>*>>
       track_id_to_video_sinks_ RTC_GUARDED_BY(signaling_thread_);
   std::list<std::unique_ptr<IceCandidateInterface>> pending_ice_candidates_
       RTC_GUARDED_BY(signaling_thread_);
 
-  rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
-  rtc::scoped_refptr<PeerConnectionInterface> peer_connection_
+  scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
+  scoped_refptr<PeerConnectionInterface> peer_connection_
       RTC_GUARDED_BY(signaling_thread_);
 };
 

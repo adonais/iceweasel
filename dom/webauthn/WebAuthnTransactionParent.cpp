@@ -4,17 +4,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/dom/WebAuthnTransactionParent.h"
+
+#include "WebAuthnArgs.h"
+#include "WebAuthnUtil.h"
 #include "mozilla/Base64.h"
 #include "mozilla/JSONStringWriteFuncs.h"
 #include "mozilla/JSONWriter.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/PWindowGlobalParent.h"
-#include "mozilla/dom/WebAuthnTransactionParent.h"
 #include "mozilla/dom/WindowGlobalParent.h"
-
 #include "nsThreadUtils.h"
-#include "WebAuthnArgs.h"
-#include "WebAuthnUtil.h"
+
+#ifdef MOZ_WIDGET_ANDROID
+#  include "mozilla/java/WebAuthnTokenManagerWrappers.h"
+#endif
 
 namespace mozilla::dom {
 

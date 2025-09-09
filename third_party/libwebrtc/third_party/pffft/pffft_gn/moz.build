@@ -15,6 +15,7 @@ FINAL_LIBRARY = "xul"
 
 
 LOCAL_INCLUDES += [
+    "!/dist/include/libwebrtc_overrides",
     "!/ipc/ipdl/_ipdlheaders",
     "!/third_party/libwebrtc/gen",
     "/ipc/chromium/src",
@@ -118,13 +119,11 @@ if CONFIG["TARGET_CPU"] == "loongarch64":
 
 if CONFIG["TARGET_CPU"] == "mips32":
 
-    DEFINES["CR_SYSROOT_KEY"] = "20250129T203412Z-1"
     DEFINES["PFFFT_SIMD_DISABLE"] = True
     DEFINES["_GNU_SOURCE"] = True
 
 if CONFIG["TARGET_CPU"] == "mips64":
 
-    DEFINES["CR_SYSROOT_KEY"] = "20250129T203412Z-1"
     DEFINES["PFFFT_SIMD_DISABLE"] = True
     DEFINES["_GNU_SOURCE"] = True
 
@@ -164,12 +163,10 @@ if CONFIG["OS_TARGET"] == "Android" and CONFIG["TARGET_CPU"] == "x86":
 
 if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "aarch64":
 
-    DEFINES["CR_SYSROOT_KEY"] = "20250129T203412Z-1"
     DEFINES["_GNU_SOURCE"] = True
 
 if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "arm":
 
-    DEFINES["CR_SYSROOT_KEY"] = "20250129T203412Z-1"
     DEFINES["_GNU_SOURCE"] = True
 
 if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86":
@@ -178,12 +175,10 @@ if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86":
         "-msse2"
     ]
 
-    DEFINES["CR_SYSROOT_KEY"] = "20250129T203412Z-1"
     DEFINES["_GNU_SOURCE"] = True
 
 if CONFIG["OS_TARGET"] == "Linux" and CONFIG["TARGET_CPU"] == "x86_64":
 
-    DEFINES["CR_SYSROOT_KEY"] = "20250129T203412Z-1"
     DEFINES["_GNU_SOURCE"] = True
 
 Library("pffft_gn")

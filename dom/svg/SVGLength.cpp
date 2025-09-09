@@ -6,12 +6,13 @@
 
 #include "SVGLength.h"
 
+#include <algorithm>
+#include <limits>
+
+#include "SVGContentUtils.h"
 #include "mozilla/dom/SVGElement.h"
 #include "nsCSSValue.h"
 #include "nsTextFormatter.h"
-#include "SVGContentUtils.h"
-#include <limits>
-#include <algorithm>
 
 using namespace mozilla::dom;
 using namespace mozilla::dom::SVGLength_Binding;

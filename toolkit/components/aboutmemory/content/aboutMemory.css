@@ -146,7 +146,7 @@ a.treemapEntry {
   text-decoration: none;
   border: 1px solid var(--in-content-border-color);
   border-radius: var(--border-radius-small);
-  background: var(--in-content-page-background);
+  background: var(--background-color-canvas);
   z-index: 0;
 
   > .treemapEntryContent {

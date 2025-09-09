@@ -5,27 +5,27 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "BroadcastChannel.h"
+
 #include "BroadcastChannelChild.h"
+#include "mozilla/StorageAccess.h"
 #include "mozilla/dom/BroadcastChannelBinding.h"
-#include "mozilla/dom/Navigator.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/MessageEvent.h"
 #include "mozilla/dom/MessageEventBinding.h"
-#include "mozilla/dom/StructuredCloneHolder.h"
-#include "mozilla/dom/ipc/StructuredCloneData.h"
+#include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/RefMessageBodyService.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/SharedMessageBody.h"
-#include "mozilla/dom/WorkerScope.h"
+#include "mozilla/dom/StructuredCloneHolder.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerRunnable.h"
+#include "mozilla/dom/WorkerScope.h"
+#include "mozilla/dom/ipc/StructuredCloneData.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundChild.h"
-#include "mozilla/StorageAccess.h"
-
 #include "nsICookieJarSettings.h"
-#include "mozilla/dom/Document.h"
 
 #ifdef XP_WIN
 #  undef PostMessage

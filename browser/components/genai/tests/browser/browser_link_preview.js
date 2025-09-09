@@ -107,7 +107,10 @@ add_task(async function test_skip_generate_if_non_eng() {
  */
 add_task(async function test_link_preview_with_shift_alt_key_event() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.ml.linkPreview.enabled", true]],
+    set: [
+      ["browser.ml.linkPreview.enabled", true],
+      ["browser.ml.linkPreview.shift", true],
+    ],
   });
 
   let stub = sinon.stub(LinkPreview, "_maybeLinkPreview");
@@ -222,6 +225,10 @@ add_task(async function test_link_preview_with_long_press() {
  * Tests that regular typing prevents link preview.
  */
 add_task(async function test_link_preview_with_typing() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.linkPreview.shift", true]],
+  });
+
   const stub = sinon.stub(LinkPreview, "renderLinkPreviewPanel");
 
   XULBrowserWindow.setOverLink(TEST_LINK_URL, {});
@@ -284,6 +291,10 @@ add_task(async function test_link_preview_with_typing() {
  * Tests that certain behaviors do not trigger unexpectedly.
  */
 add_task(async function test_link_preview_no_trigger() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.linkPreview.shift", true]],
+  });
+
   const stub = sinon.stub(LinkPreview, "renderLinkPreviewPanel");
 
   LinkPreview.keyboardComboActive = true;

@@ -78,9 +78,9 @@ nrappkit copyright:
    ekr@rtfm.com  Thu Dec 20 20:14:49 2001
 */
 #include "logging.h"
+#include "mediapacket.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
-#include "mediapacket.h"
 
 // mozilla/utils.h defines this as well
 #ifdef UNIMPLEMENTED
@@ -88,6 +88,7 @@ nrappkit copyright:
 #endif
 
 extern "C" {
+// clang-format off
 #include "nr_api.h"
 #include "async_wait.h"
 #include "async_timer.h"
@@ -97,11 +98,13 @@ extern "C" {
 #include "stun_util.h"
 #include "registry.h"
 #include "nr_socket_buffered_stun.h"
+#include "addrs.h"
+// clang-format on
 }
 
-#include "stunserver.h"
-
 #include <string>
+
+#include "stunserver.h"
 
 MOZ_MTLOG_MODULE("stunserver");
 
@@ -270,8 +273,8 @@ int TestStunServer::Initialize(int address_family) {
     return R_INTERNAL;
   }
 
-  // removes duplicates and, based on prefs, loopback and link_local addrs
-  r = nr_stun_filter_local_addresses(addrs, &addr_ct);
+  // removes duplicate, loopback, and link_local addrs
+  r = nr_stun_filter_addrs(addrs, true, true, &addr_ct);
   if (r) {
     MOZ_MTLOG(ML_ERROR, "Couldn't filter addresses");
     return R_INTERNAL;

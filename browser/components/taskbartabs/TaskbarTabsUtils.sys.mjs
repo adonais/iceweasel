@@ -9,6 +9,7 @@ let lazy = {};
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
   Favicons: ["@mozilla.org/browser/favicon-service;1", "nsIFaviconService"],
+  imgTools: ["@mozilla.org/image/tools;1", "imgITools"],
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logConsole", () => {
@@ -73,9 +74,21 @@ export const TaskbarTabsUtils = {
 
     let imgContainer;
     if (favicon) {
-      lazy.logConsole.debug(`Using favicon at URI ${favicon.dataURI.spec}.`);
       try {
-        imgContainer = await getImageFromUri(favicon.dataURI);
+        if (favicon.mimeType !== "image/svg+xml") {
+          // Image containers retrieved via `getImageFromUri` error when
+          // attempting to scale via `scaleImage`. Since we have the raw image
+          // data from the favicon service and the image container decoded from
+          // it scales without error, use it instead.
+          let img = lazy.imgTools.decodeImageFromArrayBuffer(
+            new Uint8Array(favicon.rawData).buffer,
+            favicon.mimeType
+          );
+          imgContainer = scaleImage(img);
+        } else {
+          // `imgITools::decodeImage*` APIs don't work with SVG images.
+          imgContainer = getImageFromUri(favicon.dataURI);
+        }
       } catch (e) {
         lazy.logConsole.error(
           `${e.message}, falling through to default favicon.`
@@ -93,6 +106,47 @@ export const TaskbarTabsUtils = {
     return imgContainer;
   },
 };
+
+/**
+ * Attempts to scale the provided image container to a 256x256 image.
+ *
+ * @param {imgIContainer} aImgContainer - The image container to scale from.
+ * @returns {imgIContainer} The scaled image container on success, or the
+ * provided image container on failure.
+ */
+function scaleImage(aImgContainer) {
+  try {
+    const istream = lazy.imgTools.encodeScaledImage(
+      aImgContainer,
+      "image/png",
+      256,
+      256
+    );
+    const size = istream.available();
+
+    // Use a binary input stream to grab the bytes.
+    const bis = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
+      Ci.nsIBinaryInputStream
+    );
+    bis.setInputStream(istream);
+
+    const bytes = bis.readBytes(size);
+    if (size != bytes.length) {
+      throw new Error("Didn't read expected number of bytes");
+    }
+    aImgContainer = lazy.imgTools.decodeImageFromBuffer(
+      bytes,
+      bytes.length,
+      "image/png"
+    );
+  } catch (e) {
+    lazy.logConsole.error(
+      "Failed to scale the favicon image, continuing with the unscaled image container."
+    );
+  }
+
+  return aImgContainer;
+}
 
 class ChannelListener {
   #request = null;
@@ -122,7 +176,10 @@ class ChannelListener {
       this.#imageListener.onStopRequest(request, status);
     }
 
-    if (!Components.isSuccessCode(status)) {
+    if (
+      !Components.isSuccessCode(status) &&
+      status !== Cr.NS_ERROR_PARSED_DATA_CACHED
+    ) {
       this.#rejector(new Components.Exception("Image loading failed", status));
     }
 
@@ -163,11 +220,9 @@ async function getImageFromUri(aUri) {
   );
 
   return new Promise((resolve, reject) => {
-    let imageTools = Cc["@mozilla.org/image/tools;1"].getService(Ci.imgITools);
-
     // Despite the docs it is fine to pass null here, we then just get a global loader.
-    let imageLoader = imageTools.getImgLoaderForDocument(null);
-    let observer = imageTools.createScriptedObserver({
+    let imageLoader = lazy.imgTools.getImgLoaderForDocument(null);
+    let observer = lazy.imgTools.createScriptedObserver({
       decodeComplete() {
         request.cancel(Cr.NS_BINDING_ABORTED);
         resolve(request.image);

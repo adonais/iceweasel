@@ -37,30 +37,31 @@ inline std::vector<T> MakeVector(const T a[], size_t s) {
 #define MAKE_VECTOR(a) webrtc::MakeVector(a, arraysize(a))
 
 // Create Simulcast StreamParams with given `ssrcs` and `cname`.
-cricket::StreamParams CreateSimStreamParams(const std::string& cname,
-                                            const std::vector<uint32_t>& ssrcs);
+StreamParams CreateSimStreamParams(const std::string& cname,
+                                   const std::vector<uint32_t>& ssrcs);
 // Create Simulcast stream with given `ssrcs` and `rtx_ssrcs`.
 // The number of `rtx_ssrcs` must match number of `ssrcs`.
-cricket::StreamParams CreateSimWithRtxStreamParams(
+StreamParams CreateSimWithRtxStreamParams(
     const std::string& cname,
     const std::vector<uint32_t>& ssrcs,
     const std::vector<uint32_t>& rtx_ssrcs);
 
 // Create StreamParams with single primary SSRC and corresponding FlexFEC SSRC.
-cricket::StreamParams CreatePrimaryWithFecFrStreamParams(
-    const std::string& cname,
-    uint32_t primary_ssrc,
-    uint32_t flexfec_ssrc);
+StreamParams CreatePrimaryWithFecFrStreamParams(const std::string& cname,
+                                                uint32_t primary_ssrc,
+                                                uint32_t flexfec_ssrc);
 
 }  //  namespace webrtc
 
 // Re-export symbols from the webrtc namespace for backwards compatibility.
 // TODO(bugs.webrtc.org/4222596): Remove once all references are updated.
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace cricket {
 using ::webrtc::CreatePrimaryWithFecFrStreamParams;
 using ::webrtc::CreateSimStreamParams;
 using ::webrtc::CreateSimWithRtxStreamParams;
 using ::webrtc::MakeVector;
 }  // namespace cricket
+#endif  // WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 
 #endif  // MEDIA_BASE_TEST_UTILS_H_

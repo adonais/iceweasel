@@ -80,6 +80,9 @@ class MOZ_STACK_CLASS WarpScriptOracle {
   bool maybeReplaceNurseryPointer(const CacheIRStubInfo* stubInfo,
                                   uint8_t* stubDataCopy, JSObject* obj,
                                   size_t offset);
+  bool maybeReplaceNurseryPointer(const CacheIRStubInfo* stubInfo,
+                                  uint8_t* stubDataCopy, Value v,
+                                  size_t offset);
 
  public:
   WarpScriptOracle(JSContext* cx, WarpOracle* oracle, HandleScript script,
@@ -176,6 +179,9 @@ AbortReasonOr<WarpSnapshot*> WarpOracle::createSnapshot() {
   }
 
   if (!snapshot->nurseryObjects().appendAll(nurseryObjects_)) {
+    return abort(outerScript_, AbortReason::Alloc);
+  }
+  if (!snapshot->nurseryValues().appendAll(nurseryValues_)) {
     return abort(outerScript_, AbortReason::Alloc);
   }
 
@@ -789,6 +795,127 @@ static void MaybeSetInliningStateFromJitHints(JSContext* cx,
   }
 }
 
+template <auto FuseMember, CompilationDependency::Type DepType>
+struct RealmFuseDependency final : public CompilationDependency {
+  RealmFuseDependency() : CompilationDependency(DepType) {}
+
+  virtual bool registerDependency(JSContext* cx,
+                                  const IonScriptKey& ionScript) override {
+    MOZ_ASSERT(checkDependency(cx));
+
+    return (cx->realm()->realmFuses.*FuseMember)
+        .addFuseDependency(cx, ionScript);
+  }
+
+  virtual CompilationDependency* clone(TempAllocator& alloc) const override {
+    return new (alloc.fallible()) RealmFuseDependency<FuseMember, DepType>();
+  }
+
+  virtual bool checkDependency(JSContext* cx) const override {
+    return (cx->realm()->realmFuses.*FuseMember).intact();
+  }
+
+  virtual HashNumber hash() const override {
+    return mozilla::HashGeneric(type);
+  }
+  virtual bool operator==(const CompilationDependency& dep) const override {
+    return dep.type == type;
+  }
+};
+
+bool WarpOracle::addFuseDependency(RealmFuses::FuseIndex fuseIndex,
+                                   bool* stillValid) {
+  auto addIfStillValid = [&](const auto& dep) {
+    if (!dep.checkDependency(cx_)) {
+      *stillValid = false;
+      return true;
+    }
+    *stillValid = true;
+    return mirGen().tracker.addDependency(alloc_, dep);
+  };
+
+  // Register a compilation dependency for all invalidating fuses that are still
+  // valid.
+  switch (fuseIndex) {
+    case RealmFuses::FuseIndex::OptimizeGetIteratorFuse: {
+      using Dependency =
+          RealmFuseDependency<&RealmFuses::optimizeGetIteratorFuse,
+                              CompilationDependency::Type::GetIterator>;
+      return addIfStillValid(Dependency());
+    }
+    case RealmFuses::FuseIndex::OptimizeArraySpeciesFuse: {
+      using Dependency =
+          RealmFuseDependency<&RealmFuses::optimizeArraySpeciesFuse,
+                              CompilationDependency::Type::ArraySpecies>;
+      return addIfStillValid(Dependency());
+    }
+    case RealmFuses::FuseIndex::OptimizeTypedArraySpeciesFuse: {
+      using Dependency =
+          RealmFuseDependency<&RealmFuses::optimizeTypedArraySpeciesFuse,
+                              CompilationDependency::Type::TypedArraySpecies>;
+      return addIfStillValid(Dependency());
+    }
+    case RealmFuses::FuseIndex::OptimizeRegExpPrototypeFuse: {
+      using Dependency =
+          RealmFuseDependency<&RealmFuses::optimizeRegExpPrototypeFuse,
+                              CompilationDependency::Type::RegExpPrototype>;
+      return addIfStillValid(Dependency());
+    }
+    case RealmFuses::FuseIndex::OptimizeStringPrototypeSymbolsFuse: {
+      using Dependency = RealmFuseDependency<
+          &RealmFuses::optimizeStringPrototypeSymbolsFuse,
+          CompilationDependency::Type::StringPrototypeSymbols>;
+      return addIfStillValid(Dependency());
+    }
+    default:
+      MOZ_ASSERT(!RealmFuses::isInvalidatingFuse(fuseIndex));
+      *stillValid = true;
+      return true;
+  }
+}
+
+class ObjectPropertyFuseDependency final : public CompilationDependency {
+  ObjectFuse* fuse_;
+  uint32_t expectedGeneration_;
+  uint32_t propSlot_;
+
+ public:
+  ObjectPropertyFuseDependency(ObjectFuse* fuse, uint32_t expectedGeneration,
+                               uint32_t propSlot)
+      : CompilationDependency(CompilationDependency::Type::ObjectFuseProperty),
+        fuse_(fuse),
+        expectedGeneration_(expectedGeneration),
+        propSlot_(propSlot) {}
+
+  virtual bool registerDependency(JSContext* cx,
+                                  const IonScriptKey& ionScript) override {
+    MOZ_ASSERT(checkDependency(cx));
+    return fuse_->addDependency(propSlot_, ionScript);
+  }
+
+  virtual CompilationDependency* clone(TempAllocator& alloc) const override {
+    return new (alloc.fallible())
+        ObjectPropertyFuseDependency(fuse_, expectedGeneration_, propSlot_);
+  }
+
+  virtual bool checkDependency(JSContext* cx) const override {
+    return fuse_->checkPropertyIsConstant(expectedGeneration_, propSlot_);
+  }
+
+  virtual HashNumber hash() const override {
+    return mozilla::HashGeneric(type, fuse_, expectedGeneration_, propSlot_);
+  }
+  virtual bool operator==(const CompilationDependency& dep) const override {
+    if (dep.type != type) {
+      return false;
+    }
+    auto& other = static_cast<const ObjectPropertyFuseDependency&>(dep);
+    return fuse_ == other.fuse_ &&
+           expectedGeneration_ == other.expectedGeneration_ &&
+           propSlot_ == other.propSlot_;
+  }
+};
+
 AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
                                                   BytecodeLocation loc) {
   // Do one of the following:
@@ -798,6 +925,11 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
   //
   // * If that single ICStub is a call IC with a known target, instead add a
   //   WarpInline snapshot to transpile the guards to MIR and inline the target.
+  //
+  // * If that single ICStub has a CacheIR fuse guard for an invalidating fuse,
+  //   add a compilation dependency for this fuse. If the fuse is no longer
+  //   valid, add a WarpBailout snapshot to avoid throwing away the JIT code
+  //   immediately after compilation.
   //
   // * If the Baseline IC is cold (never executed), add a WarpBailout snapshot
   //   so that we can collect information in Baseline.
@@ -908,10 +1040,10 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
 
   // Only create a snapshot if all opcodes are supported by the transpiler.
   CacheIRReader reader(stubInfo);
+  bool hasInvalidFuseGuard = false;
   while (reader.more()) {
     CacheOp op = reader.readOp();
     CacheIROpInfo opInfo = CacheIROpInfos[size_t(op)];
-    reader.skip(opInfo.argLength);
 
     if (!opInfo.transpile) {
       [[maybe_unused]] unsigned line;
@@ -934,33 +1066,81 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
     // them.
     switch (op) {
       case CacheOp::CallRegExpMatcherResult:
+        reader.argsForCallRegExpMatcherResult();  // Unused.
         if (!oracle_->snapshotJitZoneStub(JitZone::StubKind::RegExpMatcher)) {
           return abort(AbortReason::Error);
         }
         break;
       case CacheOp::CallRegExpSearcherResult:
+        reader.argsForCallRegExpSearcherResult();  // Unused.
         if (!oracle_->snapshotJitZoneStub(JitZone::StubKind::RegExpSearcher)) {
           return abort(AbortReason::Error);
         }
         break;
       case CacheOp::RegExpBuiltinExecMatchResult:
+        reader.argsForRegExpBuiltinExecMatchResult();  // Unused.
         if (!oracle_->snapshotJitZoneStub(JitZone::StubKind::RegExpExecMatch)) {
           return abort(AbortReason::Error);
         }
         break;
       case CacheOp::RegExpBuiltinExecTestResult:
+        reader.argsForRegExpBuiltinExecTestResult();  // Unused.
         if (!oracle_->snapshotJitZoneStub(JitZone::StubKind::RegExpExecTest)) {
           return abort(AbortReason::Error);
         }
         break;
       case CacheOp::ConcatStringsResult:
+        reader.argsForConcatStringsResult();  // Unused.
         if (!oracle_->snapshotJitZoneStub(JitZone::StubKind::StringConcat)) {
           return abort(AbortReason::Error);
         }
         break;
+      case CacheOp::GuardFuse: {
+        auto [fuseIndex] = reader.argsForGuardFuse();
+        bool stillValid;
+        if (!oracle_->addFuseDependency(fuseIndex, &stillValid)) {
+          return abort(AbortReason::Alloc);
+        }
+        if (!stillValid) {
+          hasInvalidFuseGuard = true;
+        }
+        break;
+      }
+      case CacheOp::GuardObjectFuseProperty: {
+        auto args = reader.argsForGuardObjectFuseProperty();
+        ObjectFuse* fuse = reinterpret_cast<ObjectFuse*>(
+            stubInfo->getStubRawWord(stubData, args.objFuseOffset));
+        uint32_t generation =
+            stubInfo->getStubRawInt32(stubData, args.expectedGenerationOffset);
+        uint32_t propIndex =
+            stubInfo->getStubRawInt32(stubData, args.propIndexOffset);
+        uint32_t propMask =
+            stubInfo->getStubRawInt32(stubData, args.propMaskOffset);
+        uint32_t propSlot =
+            ObjectFuse::propertySlotFromIndexAndMask(propIndex, propMask);
+        ObjectPropertyFuseDependency dep(fuse, generation, propSlot);
+        if (dep.checkDependency(cx_)) {
+          if (!oracle_->mirGen().tracker.addDependency(alloc_, dep)) {
+            return abort(AbortReason::Alloc);
+          }
+        } else {
+          hasInvalidFuseGuard = true;
+        }
+        break;
+      }
       default:
+        reader.skip(opInfo.argLength);
         break;
     }
+  }
+
+  // Insert a bailout if the stub has a guard for an invalidating fuse that's
+  // no longer intact.
+  if (hasInvalidFuseGuard) {
+    if (!AddOpSnapshot<WarpBailout>(alloc_, snapshots, offset)) {
+      return abort(AbortReason::Alloc);
+    }
+    return Ok();
   }
 
   // Check GC is not possible between updating stub pointers and creating the
@@ -1267,13 +1447,6 @@ bool WarpScriptOracle::replaceNurseryAndAllocSitePointers(
         stubInfo->getStubField<StubField::Type::WeakShape>(stub, offset).get();
         break;
       }
-      case StubField::Type::WeakGetterSetter: {
-        static_assert(std::is_convertible_v<GetterSetter*, gc::TenuredCell*>,
-                      "Code assumes GetterSetters are tenured");
-        stubInfo->getStubField<StubField::Type::WeakGetterSetter>(stub, offset)
-            .get();
-        break;
-      }
       case StubField::Type::Symbol:
         static_assert(std::is_convertible_v<JS::Symbol*, gc::TenuredCell*>,
                       "Code assumes symbols are tenured");
@@ -1328,10 +1501,17 @@ bool WarpScriptOracle::replaceNurseryAndAllocSitePointers(
 #endif
         break;
       }
-      case StubField::Type::Value: {
-        Value v =
-            stubInfo->getStubField<StubField::Type::Value>(stub, offset).get();
-        MOZ_ASSERT_IF(v.isGCThing(), !IsInsideNursery(v.toGCThing()));
+      case StubField::Type::Value:
+      case StubField::Type::WeakValue: {
+        Value v;
+        if (fieldType == StubField::Type::Value) {
+          v = stubInfo->getStubField<StubField::Type::Value>(stub, offset)
+                  .get();
+        } else {
+          MOZ_ASSERT(fieldType == StubField::Type::WeakValue);
+          v = stubInfo->getStubField<StubField::Type::WeakValue>(stub, offset)
+                  .get();
+        }
         if (v.isString()) {
           Value newVal;
           JSAtom* atom = AtomizeString(cx_, v.toString());
@@ -1341,6 +1521,10 @@ bool WarpScriptOracle::replaceNurseryAndAllocSitePointers(
           newVal.setString(atom);
           stubInfo->replaceStubRawValueBits(stubDataCopy, offset, v.asRawBits(),
                                             newVal.asRawBits());
+        } else {
+          if (!maybeReplaceNurseryPointer(stubInfo, stubDataCopy, v, offset)) {
+            return false;
+          }
         }
         break;
       }
@@ -1378,6 +1562,28 @@ bool WarpScriptOracle::maybeReplaceNurseryPointer(
   return true;
 }
 
+bool WarpScriptOracle::maybeReplaceNurseryPointer(
+    const CacheIRStubInfo* stubInfo, uint8_t* stubDataCopy, Value v,
+    size_t offset) {
+  // ValueOrNurseryValueIndex uses MagicValueUint32 to encode nursery indexes.
+  // Assert this doesn't conflict with |v|.
+  MOZ_ASSERT(ValueOrNurseryValueIndex::fromValue(v).isValue());
+
+  if (!v.isGCThing() || !IsInsideNursery(v.toGCThing())) {
+    return true;
+  }
+
+  uint32_t nurseryIndex;
+  if (!oracle_->registerNurseryValue(v, &nurseryIndex)) {
+    return false;
+  }
+
+  auto newValue = ValueOrNurseryValueIndex::fromNurseryIndex(nurseryIndex);
+  stubInfo->replaceStubRawValueBits(stubDataCopy, offset, v.asRawBits(),
+                                    newValue.asRawBits());
+  return true;
+}
+
 bool WarpOracle::registerNurseryObject(JSObject* obj, uint32_t* nurseryIndex) {
   MOZ_ASSERT(IsInsideNursery(obj));
 
@@ -1392,4 +1598,21 @@ bool WarpOracle::registerNurseryObject(JSObject* obj, uint32_t* nurseryIndex) {
   }
   *nurseryIndex = nurseryObjects_.length() - 1;
   return nurseryObjectsMap_.add(p, obj, *nurseryIndex);
+}
+
+bool WarpOracle::registerNurseryValue(Value v, uint32_t* nurseryIndex) {
+  gc::Cell* cell = v.toGCThing();
+  MOZ_ASSERT(IsInsideNursery(cell));
+
+  auto p = nurseryValuesMap_.lookupForAdd(cell);
+  if (p) {
+    *nurseryIndex = p->value();
+    return true;
+  }
+
+  if (!nurseryValues_.append(v)) {
+    return false;
+  }
+  *nurseryIndex = nurseryValues_.length() - 1;
+  return nurseryValuesMap_.add(p, cell, *nurseryIndex);
 }

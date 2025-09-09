@@ -60,7 +60,7 @@ In the presence of patches, two steps are needed:
 1. Vendor without applying patches (patches are applied *after*
    ``update-actions``) through ``--patch-mode none``
 
-2. Apply patches on updated sources through ``--patch -mode only``
+2. Apply patches on updated sources through ``--patch-mode only``
 
 In the absence of patches, a single step is needed, and no extra argument is
 required.

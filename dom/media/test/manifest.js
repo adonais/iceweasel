@@ -502,6 +502,20 @@ gPlayTests.push(
     duration: 1.06,
   }
 );
+
+if (
+  AppConstants.isPlatformAndVersionAtLeast("win", "11") ||
+  AppConstants.isPlatformAndVersionAtLeast("macosx", "10.15") ||
+  // Android 9
+  AppConstants.isPlatformAndVersionAtLeast("android", "28")
+) {
+  gPlayTests.push({
+    name: "sine-3s-xhe-aac-44khz-mono.mp4",
+    type: 'audio/mp4; codecs="mp4a.40.42"',
+    duration: 3.0,
+  });
+}
+
 if (AppConstants.platform != "win") {
   // Windows WMF decoder doesn't do >48K everywhere. See bug 1698639.
   gPlayTests.push(

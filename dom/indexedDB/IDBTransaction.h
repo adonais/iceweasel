@@ -8,16 +8,16 @@
 #define mozilla_dom_idbtransaction_h__
 
 #include "FlippedOnce.h"
+#include "SafeRefPtr.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/SourceLocation.h"
 #include "mozilla/dom/IDBTransactionBinding.h"
 #include "mozilla/dom/quota/CheckedUnsafePtr.h"
-#include "mozilla/DOMEventTargetHelper.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIRunnable.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "SafeRefPtr.h"
 
 namespace mozilla {
 

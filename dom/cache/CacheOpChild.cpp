@@ -188,10 +188,6 @@ void CacheOpChild::AssertOwningThread() const {
 }
 #endif
 
-PBackgroundChild* CacheOpChild::GetIPCManager() {
-  MOZ_CRASH("CacheOpChild does not implement TypeUtils::GetIPCManager()");
-}
-
 void CacheOpChild::HandleResponse(const Maybe<CacheResponse>& aMaybeResponse) {
   if (aMaybeResponse.isNothing()) {
     mPromise->MaybeResolveWithUndefined();

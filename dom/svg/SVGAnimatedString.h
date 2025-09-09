@@ -7,12 +7,12 @@
 #ifndef DOM_SVG_SVGANIMATEDSTRING_H_
 #define DOM_SVG_SVGANIMATEDSTRING_H_
 
-#include "nsError.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/SVGAnimatedClassOrString.h"
-#include "mozilla/dom/SVGElement.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/SVGElement.h"
+#include "nsError.h"
 
 namespace mozilla {
 

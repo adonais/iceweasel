@@ -279,7 +279,7 @@ void FakeVideoSendStream::OnFrame(const VideoFrame& frame) {
               encoder_config_);
     } else {
       VideoEncoder::EncoderInfo encoder_info;
-      auto factory = rtc::make_ref_counted<EncoderStreamFactory>(encoder_info);
+      auto factory = make_ref_counted<EncoderStreamFactory>(encoder_info);
 
       video_streams_ = factory->CreateEncoderStreams(
           env_.field_trials(), frame.width(), frame.height(), encoder_config_);
@@ -316,7 +316,7 @@ void FakeVideoSendStream::ReconfigureVideoEncoder(
         env_.field_trials(), width, height, config);
   } else {
     VideoEncoder::EncoderInfo encoder_info;
-    auto factory = rtc::make_ref_counted<EncoderStreamFactory>(encoder_info);
+    auto factory = make_ref_counted<EncoderStreamFactory>(encoder_info);
 
     video_streams_ = factory->CreateEncoderStreams(env_.field_trials(), width,
                                                    height, config);
@@ -373,7 +373,7 @@ FakeVideoSendStream::GetAdaptationResources() {
 }
 
 void FakeVideoSendStream::SetSource(
-    rtc::VideoSourceInterface<VideoFrame>* source,
+    VideoSourceInterface<VideoFrame>* source,
     const DegradationPreference& degradation_preference) {
   if (source_)
     source_->RemoveSink(this);
@@ -397,9 +397,8 @@ void FakeVideoSendStream::SetSource(
       break;
   }
   if (source)
-    source->AddOrUpdateSink(this, resolution_scaling_enabled_
-                                      ? sink_wants_
-                                      : rtc::VideoSinkWants());
+    source->AddOrUpdateSink(
+        this, resolution_scaling_enabled_ ? sink_wants_ : VideoSinkWants());
 }
 
 void FakeVideoSendStream::GenerateKeyFrame(
@@ -407,8 +406,7 @@ void FakeVideoSendStream::GenerateKeyFrame(
   keyframes_requested_by_rid_ = rids;
 }
 
-void FakeVideoSendStream::InjectVideoSinkWants(
-    const rtc::VideoSinkWants& wants) {
+void FakeVideoSendStream::InjectVideoSinkWants(const VideoSinkWants& wants) {
   sink_wants_ = wants;
   source_->AddOrUpdateSink(this, wants);
 }
@@ -768,7 +766,7 @@ void FakeCall::OnUpdateSyncGroup(AudioReceiveStreamInterface& stream,
   fake_stream.SetSyncGroup(sync_group);
 }
 
-void FakeCall::OnSentPacket(const rtc::SentPacket& sent_packet) {
+void FakeCall::OnSentPacket(const SentPacketInfo& sent_packet) {
   last_sent_packet_ = sent_packet;
   if (sent_packet.packet_id >= 0) {
     last_sent_nonnegative_packet_id_ = sent_packet.packet_id;

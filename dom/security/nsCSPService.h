@@ -7,10 +7,10 @@
 #ifndef nsCSPService_h___
 #define nsCSPService_h___
 
-#include "nsXPCOM.h"
-#include "nsIContentPolicy.h"
 #include "nsIChannel.h"
 #include "nsIChannelEventSink.h"
+#include "nsIContentPolicy.h"
+#include "nsXPCOM.h"
 
 #define CSPSERVICE_CONTRACTID "@mozilla.org/cspservice;1"
 #define CSPSERVICE_CID \

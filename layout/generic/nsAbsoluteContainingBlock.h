@@ -117,8 +117,9 @@ class nsAbsoluteContainingBlock {
    * its placeholder or if the position or size of aFrame depends on a
    * containing block dimension that changed.
    */
-  bool FrameDependsOnContainer(nsIFrame* aFrame, bool aCBWidthChanged,
-                               bool aCBHeightChanged);
+  bool FrameDependsOnContainer(
+      nsIFrame* aFrame, bool aCBWidthChanged, bool aCBHeightChanged,
+      AnchorPosReferencedAnchors* aReferencedAnchors = nullptr);
 
   /**
    * After an abspos child's size is known, this method can be used to
@@ -150,13 +151,12 @@ class nsAbsoluteContainingBlock {
                                      mozilla::LogicalMargin& aMargin,
                                      mozilla::LogicalMargin& aOffsets);
 
-  void ReflowAbsoluteFrame(nsIFrame* aDelegatingFrame,
-                           nsPresContext* aPresContext,
-                           const ReflowInput& aReflowInput,
-                           const nsRect& aContainingBlockRect,
-                           AbsPosReflowFlags aFlags, nsIFrame* aKidFrame,
-                           nsReflowStatus& aStatus,
-                           mozilla::OverflowAreas* aOverflowAreas);
+  void ReflowAbsoluteFrame(
+      nsIFrame* aDelegatingFrame, nsPresContext* aPresContext,
+      const ReflowInput& aReflowInput, const nsRect& aContainingBlockRect,
+      AbsPosReflowFlags aFlags, nsIFrame* aKidFrame, nsReflowStatus& aStatus,
+      mozilla::OverflowAreas* aOverflowAreas,
+      AnchorPosReferencedAnchors* aReferencedAnchors = nullptr);
 
   /**
    * Mark our absolute frames dirty.

@@ -1076,11 +1076,13 @@ let $24 = instantiate(`(module
   )
 )`);
 
-// ./test/core/align.wast:864
-assert_trap(() => invoke($24, `store`, [65532, -1n]), `out of bounds memory access`);
+if (!partialOobWriteMayWritePartialData()) {
+  // ./test/core/align.wast:864
+  assert_trap(() => invoke($24, `store`, [65532, -1n]), `out of bounds memory access`);
 
-// ./test/core/align.wast:866
-assert_return(() => invoke($24, `load`, [65532]), [value("i32", 0)]);
+  // ./test/core/align.wast:866
+  assert_return(() => invoke($24, `load`, [65532]), [value("i32", 0)]);
+}
 
 // ./test/core/align.wast:872
 assert_invalid(

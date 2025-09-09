@@ -6,9 +6,9 @@
 
 #include "mozilla/dom/SVGRect.h"
 
+#include "SVGAnimatedViewBox.h"
 #include "mozilla/dom/SVGRectBinding.h"
 #include "mozilla/dom/SVGSVGElement.h"
-#include "SVGAnimatedViewBox.h"
 #include "nsWrapperCache.h"
 
 using namespace mozilla::gfx;

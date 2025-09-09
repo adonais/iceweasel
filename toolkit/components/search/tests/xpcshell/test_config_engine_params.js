@@ -81,7 +81,7 @@ add_task(async function test_get_extension() {
   let engine = Services.search.getEngineByName("get-engine");
   Assert.notEqual(engine, null, "Should have found an engine");
 
-  let url = engine.wrappedJSObject._getURLOfType(SearchUtils.URL_TYPE.SEARCH);
+  let url = engine.wrappedJSObject.getURLOfType(SearchUtils.URL_TYPE.SEARCH);
   Assert.equal(url.method, "GET", "Search URLs method is GET");
 
   let submission = engine.getSubmission("foo");
@@ -112,7 +112,7 @@ add_task(async function test_post_extension() {
   let engine = Services.search.getEngineByName("post-engine");
   Assert.ok(!!engine, "Should have found an engine");
 
-  let url = engine.wrappedJSObject._getURLOfType(SearchUtils.URL_TYPE.SEARCH);
+  let url = engine.wrappedJSObject.getURLOfType(SearchUtils.URL_TYPE.SEARCH);
   Assert.equal(url.method, "POST", "Search URLs method is POST");
 
   let submission = engine.getSubmission("foo");
@@ -149,7 +149,7 @@ add_task(async function test_enterprise_params() {
   let engine = Services.search.getEngineByName("get-engine");
   Assert.notEqual(engine, null, "Should have found an engine");
 
-  let url = engine.wrappedJSObject._getURLOfType(SearchUtils.URL_TYPE.SEARCH);
+  let url = engine.wrappedJSObject.getURLOfType(SearchUtils.URL_TYPE.SEARCH);
   Assert.equal(url.method, "GET", "Search URLs method is GET");
 
   let submission = engine.getSubmission("foo");

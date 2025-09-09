@@ -269,10 +269,12 @@ void nsHostResolver::ClearPendingQueue(
 // cache that have 'Resolve' set true but not 'OnQueue' are being resolved
 // right now, so we need to mark them to get re-resolved on completion!
 
-void nsHostResolver::FlushCache(bool aTrrToo) {
+void nsHostResolver::FlushCache(bool aTrrToo, bool aFlushEvictionQueue) {
   MutexAutoLock lock(mLock);
 
-  mQueue.FlushEvictionQ(mRecordDB, lock);
+  if (aFlushEvictionQueue) {
+    mQueue.FlushEvictionQ(mRecordDB, lock);
+  }
 
   // Refresh the cache entries that are resolving RIGHT now, remove the rest.
   for (auto iter = mRecordDB.Iter(); !iter.Done(); iter.Next()) {

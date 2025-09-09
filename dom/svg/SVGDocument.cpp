@@ -6,15 +6,15 @@
 
 #include "mozilla/dom/SVGDocument.h"
 
-#include "mozilla/css/Loader.h"
-#include "nsNetUtil.h"
-#include "nsServiceManagerUtils.h"
-#include "nsString.h"
-#include "nsLiteralString.h"
-#include "mozilla/dom/Element.h"
 #include "SVGElement.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
+#include "mozilla/css/Loader.h"
+#include "mozilla/dom/Element.h"
+#include "nsLiteralString.h"
+#include "nsNetUtil.h"
+#include "nsServiceManagerUtils.h"
+#include "nsString.h"
 
 using namespace mozilla::css;
 using namespace mozilla::dom;

@@ -7,13 +7,12 @@
 #ifndef mozilla_dom_quota_quotacommon_h__
 #define mozilla_dom_quota_quotacommon_h__
 
-#include "mozilla/dom/quota/Config.h"
-
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
 #include <utility>
+
 #include "mozIStorageStatement.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
@@ -24,6 +23,7 @@
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/StaticString.h"
 #include "mozilla/Try.h"
+#include "mozilla/dom/quota/Config.h"
 #if defined(QM_LOG_ERROR_ENABLED) && defined(QM_ERROR_STACKS_ENABLED)
 #  include "mozilla/Variant.h"
 #endif

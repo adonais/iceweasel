@@ -6,9 +6,9 @@
 #define DOM_MEDIA_PLATFORMS_AGNOSTIC_BYTESTREAMS_ANNEX_B_H_
 
 #include "ErrorList.h"
+#include "H264.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
-#include "H264.h"
 
 template <class>
 class nsTArray;

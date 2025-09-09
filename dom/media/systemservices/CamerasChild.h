@@ -161,7 +161,7 @@ class CamerasChild final : public PCamerasChild {
       const VideoCaptureCapability& capability) override;
   mozilla::ipc::IPCResult RecvReplyGetCaptureDevice(
       const nsACString& device_name, const nsACString& device_id,
-      const bool& scary, const bool& device_is_placeholder) override;
+      const bool& scary) override;
   mozilla::ipc::IPCResult RecvReplyFailure(void) override;
   mozilla::ipc::IPCResult RecvReplySuccess(void) override;
   void ActorDestroy(ActorDestroyReason aWhy) override;
@@ -188,8 +188,7 @@ class CamerasChild final : public PCamerasChild {
                        char* device_nameUTF8,
                        const unsigned int device_nameUTF8Length,
                        char* unique_idUTF8,
-                       const unsigned int unique_idUTF8Length, bool* scary,
-                       bool* device_is_placeholder);
+                       const unsigned int unique_idUTF8Length, bool* scary);
   int EnsureInitialized(CaptureEngine aCapEngine);
 
   template <typename This>
@@ -253,7 +252,6 @@ class CamerasChild final : public PCamerasChild {
   nsCString mReplyDeviceName;
   nsCString mReplyDeviceID;
   bool mReplyScary;
-  bool mReplyDeviceIsPlaceholder;
   MediaEventProducer<void> mDeviceListChangeEvent;
 };
 

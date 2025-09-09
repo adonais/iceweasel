@@ -7,13 +7,12 @@
 #include "ContentIterator.h"
 
 #include "mozilla/Assertions.h"
-#include "mozilla/dom/ShadowRoot.h"
-#include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/RangeUtils.h"
 #include "mozilla/Result.h"
-
+#include "mozilla/dom/HTMLSlotElement.h"
+#include "mozilla/dom/ShadowRoot.h"
 #include "nsContentUtils.h"
 #include "nsElementTable.h"
 #include "nsIContent.h"

@@ -59,9 +59,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vector>
 
-#include "mozilla/Mutex.h"
-
 #include "m_cpp_utils.h"
+#include "mozilla/Mutex.h"
 
 namespace mozilla {
 

@@ -4,6 +4,14 @@
 
 "use strict";
 
+/**
+ * A map of Setting instances (values) along with their IDs
+ * (keys) so that the dependencies of a setting can
+ * be easily looked up by just their ID.
+ *
+ * @typedef {Record<string, any>} PreferenceSettingDepsMap
+ */
+
 // We attach Preferences to the window object so other contexts (tests, JSMs)
 // have access to it.
 const Preferences = (window.Preferences = (function () {
@@ -68,11 +76,14 @@ const Preferences = (window.Preferences = (function () {
     },
 
     addSetting(settingConfig) {
-      this._settings.set(settingConfig.id, settingConfig);
+      this._settings.set(
+        settingConfig.id,
+        new Setting(settingConfig.id, settingConfig)
+      );
     },
 
     getSetting(settingId) {
-      return new Setting(settingId, this._settings.get(settingId));
+      return this._settings.get(settingId);
     },
 
     defaultBranch: Services.prefs.getDefaultBranch(""),
@@ -142,6 +153,7 @@ const Preferences = (window.Preferences = (function () {
     },
 
     onUnload() {
+      this._settings.forEach(setting => setting?.destroy?.());
       Services.prefs.removeObserver("", this);
     },
 
@@ -685,19 +697,66 @@ const Preferences = (window.Preferences = (function () {
   }
 
   class Setting extends EventEmitter {
+    /**
+     * @type {Preference | undefined | null}
+     */
+    pref;
+
+    /**
+     * Keeps a cache of each dep's Setting so that
+     * it can be easily looked up by its ID.
+     *
+     * @type {PreferenceSettingDepsMap | undefined}
+     */
+    _deps;
+
     constructor(id, config) {
       super();
       this.id = id;
       this.config = config;
       this.pref = config.pref && Preferences.get(config.pref);
+
+      for (const setting of Object.values(this.deps)) {
+        setting.on("change", this.onChange);
+      }
+
       if (this.pref) {
         this.pref.on("change", this.onChange);
+      }
+      if (typeof this.config.setup === "function") {
+        this._teardown = this.config.setup(this.onChange);
       }
     }
 
     onChange = () => {
       this.emit("change");
     };
+
+    /**
+     * A map of each dep and it's associated {@link Setting} instance.
+     *
+     * @type {PreferenceSettingDepsMap}
+     */
+    get deps() {
+      if (this._deps) {
+        return this._deps;
+      }
+      /**
+       * @type {PreferenceSettingDepsMap}
+       */
+      const deps = {};
+
+      if (this.config.deps) {
+        for (let id of this.config.deps) {
+          const setting = Preferences.getSetting(id);
+          if (setting) {
+            deps[id] = setting;
+          }
+        }
+      }
+      this._deps = deps;
+      return this._deps;
+    }
 
     get value() {
       let prefVal = this.pref?.value;
@@ -719,7 +778,11 @@ const Preferences = (window.Preferences = (function () {
     }
 
     get visible() {
-      return this.config.visible ? this.config.visible() : true;
+      return this.config.visible ? this.config.visible(this.deps) : true;
+    }
+
+    get disabled() {
+      return this.config.disabled ? this.config.disabled(this.deps) : false;
     }
 
     getControlConfig(config) {
@@ -733,6 +796,13 @@ const Preferences = (window.Preferences = (function () {
       this.value = val;
       if (this.config.onUserChange) {
         this.config.onUserChange(val);
+      }
+    }
+
+    destroy() {
+      if (typeof this._teardown === "function") {
+        this._teardown();
+        this._teardown = null;
       }
     }
   }

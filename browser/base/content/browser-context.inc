@@ -250,6 +250,9 @@
       <menuitem id="context-viewimagedesc"
                 data-l10n-id="main-context-menu-image-desc"
                 />
+      <menuitem id="context-visual-search"
+                hidden="true"
+                />
       <menuseparator id="context-sep-setbackground"/>
       <menuitem id="context-setDesktopBackground"
                 data-l10n-id="main-context-menu-image-set-image-as-background"
@@ -310,6 +313,8 @@
       <menuitem id="context-selectall"
                 data-l10n-id="text-action-select-all"
                 command="cmd_selectAll"/>
+      <menuitem id="context-pdfjs-comment-selection"
+                data-l10n-id="text-action-comment-selection"/>
       <menuitem id="context-pdfjs-highlight-selection"
                 data-l10n-id="text-action-highlight-selection"/>
       <menuitem id="context-reveal-password"

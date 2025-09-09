@@ -10,7 +10,7 @@ ChromeUtils.defineESModuleGetters(this, {
   TaskbarTabsWindowManager:
     "resource:///modules/taskbartabs/TaskbarTabsWindowManager.sys.mjs",
   TaskbarTabsPin: "resource:///modules/taskbartabs/TaskbarTabsPin.sys.mjs",
-  ShellService: "resource:///modules/ShellService.sys.mjs",
+  ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
   MockRegistrar: "resource://testing-common/MockRegistrar.sys.mjs",
 });

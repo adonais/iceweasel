@@ -7,9 +7,9 @@
 #ifndef DOM_SVG_SVGPATHSEGUTILS_H_
 #define DOM_SVG_SVGPATHSEGUTILS_H_
 
+#include "mozilla/Span.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Rect.h"
-#include "mozilla/Span.h"
 
 namespace mozilla {
 template <typename Angle, typename LP>

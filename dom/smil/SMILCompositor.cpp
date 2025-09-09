@@ -6,11 +6,11 @@
 
 #include "SMILCompositor.h"
 
-#include "mozilla/dom/SVGSVGElement.h"
-#include "nsComputedDOMStyle.h"
-#include "nsCSSProps.h"
-#include "nsHashKeys.h"
 #include "SMILCSSProperty.h"
+#include "mozilla/dom/SVGSVGElement.h"
+#include "nsCSSProps.h"
+#include "nsComputedDOMStyle.h"
+#include "nsHashKeys.h"
 
 namespace mozilla {
 

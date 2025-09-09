@@ -9,6 +9,7 @@
 
 #include "FFmpegLibWrapper.h"
 #include "PlatformEncoderModule.h"
+#include "mozilla/DataMutex.h"
 
 namespace mozilla {
 
@@ -47,7 +48,8 @@ class FFmpegEncoderModule final : public PlatformEncoderModule {
  private:
   // This refers to a static FFmpegLibWrapper, so raw pointer is adequate.
   const FFmpegLibWrapper* mLib;  // set in constructor
-  MOZ_RUNINIT static inline nsTArray<uint32_t> sSupportedHWCodecs;
+  MOZ_RUNINIT static inline StaticDataMutex<nsTArray<uint32_t>>
+      sSupportedHWCodecs{"sSupportedHWCodecs"};
 };
 
 }  // namespace mozilla

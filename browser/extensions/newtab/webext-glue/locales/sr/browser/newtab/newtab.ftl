@@ -53,6 +53,9 @@ newtab-topsites-add-shortcut-header = Нова пречица
 newtab-topsites-edit-topsites-header = Уреди популарне сајтове
 newtab-topsites-edit-shortcut-header = Измени пречицу
 newtab-topsites-add-shortcut-label = Додај пречицу
+newtab-topsites-add-shortcut-title =
+    .title = Додај пречицу
+    .aria-label = Додај пречицу
 newtab-topsites-title-label = Наслов
 newtab-topsites-title-input =
     .placeholder = Унесите наслов
@@ -117,9 +120,6 @@ newtab-menu-delete-pocket = Избриши из { -pocket-brand-name(case: "gen"
 newtab-menu-archive-pocket = Архивирај у { -pocket-brand-name(case: "loc") }
 newtab-menu-show-privacy-info = Наши спонзори и ваша приватност
 newtab-menu-about-fakespot = О { -fakespot-brand-name }-у
-
-## Context menu options for sponsored stories and new ad formats on New Tab.
-
 
 ## Message displayed in a modal window to explain privacy and provide context for sponsored content.
 
@@ -373,9 +373,6 @@ feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
 
-## Celestial
-
-
 ## New Tab Weather
 
 # Variables:
@@ -447,31 +444,3 @@ newtab-topic-selection-button-maybe-later = Можда касније
 newtab-topic-selection-privacy-link = Сазнајте како штитимо и управљамо подацима
 newtab-topic-selection-button-update-interests = Ажурирајте ваша интересовања
 newtab-topic-selection-button-pick-interests = Одаберите ваша интересовања
-
-## Content Feed Sections
-## "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
-## e.g. Following the travel section of stories.
-
-
-## Button to block/unblock listed topics
-## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
-## e.g. Blocked the politics section of stories.
-
-
-## Confirmation modal for blocking a section
-
-
-## Strings for custom wallpaper highlight
-
-
-## Strings for download mobile highlight
-
-
-## Strings for shortcuts highlight
-
-
-## Strings for reporting ads and content
-
-
-## Strings for trending searches
-

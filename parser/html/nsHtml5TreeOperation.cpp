@@ -209,6 +209,8 @@ nsHtml5TreeOperation::~nsHtml5TreeOperation() {
 
     void operator()(const opEnableEncodingMenu& aOperation) {}
 
+    void operator()(const opMicrotaskCheckpoint& aOperation) {}
+
     void operator()(const uninitialized& aOperation) {
       NS_WARNING("Uninitialized tree op.");
     }
@@ -1240,6 +1242,12 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
     nsresult operator()(const opEnableEncodingMenu& aOperation) {
       Document* doc = mBuilder->GetDocument();
       doc->EnableEncodingMenu();
+      return NS_OK;
+    }
+
+    nsresult operator()(const opMicrotaskCheckpoint& aOperation) {
+      nsHtml5AutoPauseUpdate autoPauseContentUpdate(mBuilder);
+      nsAutoMicroTask mt;
       return NS_OK;
     }
 

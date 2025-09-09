@@ -7,10 +7,10 @@
 #ifndef mozilla_dom_cache_QuotaClient_h
 #define mozilla_dom_cache_QuotaClient_h
 
+#include "mozIStorageConnection.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/cache/Types.h"
 #include "mozilla/dom/quota/Client.h"
-#include "mozIStorageConnection.h"
 
 namespace mozilla::dom::cache {
 

@@ -7,8 +7,8 @@
 #ifndef MOZILLA_GFX_SOURCESURFACEWEBGL_H_
 #define MOZILLA_GFX_SOURCESURFACEWEBGL_H_
 
-#include "mozilla/gfx/2D.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/gfx/2D.h"
 
 namespace mozilla::gfx {
 

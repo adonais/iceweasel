@@ -5,15 +5,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "URL.h"
+
+#include "MainThreadUtils.h"
 #include "URLMainThread.h"
 #include "URLWorker.h"
-
-#include "nsASCIIMask.h"
-#include "MainThreadUtils.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingUtils.h"
-#include "nsContentUtils.h"
 #include "mozilla/dom/Document.h"
+#include "nsASCIIMask.h"
+#include "nsContentUtils.h"
 #include "nsIURIMutator.h"
 #include "nsNetUtil.h"
 

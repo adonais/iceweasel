@@ -9,48 +9,47 @@
 
 #include <type_traits>
 
-#include "jsfriendapi.h"
 #include "js/CharacterEncoding.h"
 #include "js/Conversions.h"
-#include "js/experimental/BindingAllocs.h"
-#include "js/experimental/JitInfo.h"  // JSJitGetterOp, JSJitInfo
-#include "js/friend/WindowProxy.h"  // js::IsWindow, js::IsWindowProxy, js::ToWindowProxyIfWindow
 #include "js/MemoryFunctions.h"
 #include "js/Object.h"  // JS::GetClass, JS::GetCompartment, JS::GetReservedSlot, JS::SetReservedSlot
 #include "js/RealmOptions.h"
 #include "js/String.h"  // JS::GetLatin1LinearStringChars, JS::GetTwoByteLinearStringChars, JS::GetLinearStringLength, JS::LinearStringHasLatin1Chars, JS::StringHasLatin1Chars
 #include "js/Wrapper.h"
 #include "js/Zone.h"
-#include "mozilla/ArrayUtils.h"
+#include "js/experimental/BindingAllocs.h"
+#include "js/experimental/JitInfo.h"  // JSJitGetterOp, JSJitInfo
+#include "js/friend/WindowProxy.h"  // js::IsWindow, js::IsWindowProxy, js::ToWindowProxyIfWindow
+#include "jsfriendapi.h"
 #include "mozilla/Array.h"
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/DeferredFinalize.h"
 #include "mozilla/EnumTypeTraits.h"
 #include "mozilla/EnumeratedRange.h"
+#include "mozilla/ErrorResult.h"
+#include "mozilla/Likely.h"
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/SegmentedVector.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingCallContext.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/DOMJSClass.h"
 #include "mozilla/dom/DOMJSProxyHandler.h"
+#include "mozilla/dom/FakeString.h"
 #include "mozilla/dom/JSSlots.h"
 #include "mozilla/dom/NonRefcountedDOMObject.h"
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/PrototypeList.h"
 #include "mozilla/dom/RemoteObjectProxy.h"
-#include "mozilla/SegmentedVector.h"
-#include "mozilla/ErrorResult.h"
-#include "mozilla/Likely.h"
-#include "mozilla/MemoryReporting.h"
 #include "nsIGlobalObject.h"
-#include "nsJSUtils.h"
 #include "nsISupportsImpl.h"
+#include "nsIVariant.h"
+#include "nsJSUtils.h"
+#include "nsWrapperCacheInlines.h"
 #include "xpcObjectHelper.h"
 #include "xpcpublic.h"
-#include "nsIVariant.h"
-#include "mozilla/dom/FakeString.h"
-#include "mozilla/ProfilerLabels.h"
-
-#include "nsWrapperCacheInlines.h"
 
 class nsGlobalWindowInner;
 class nsGlobalWindowOuter;
@@ -1029,55 +1028,22 @@ using ToWrapperCacheHelper = std::conditional_t<
     CastableToWrapperCache<CastableToWrapperCacheHelper::OffsetOf<T>()>,
     NeedsQIToWrapperCache>;
 
-template <class Base>
-class NativeTypeHelpersBase_nsISupports : public Base {
- public:
-  static bool AddProperty(JSContext* cx, JS::Handle<JSObject*> aObj,
-                          JS::Handle<jsid>, JS::Handle<JS::Value>) {
-    nsISupports* self =
-        UnwrapPossiblyNotInitializedDOMObject<nsISupports>(aObj);
-    // We obviously can't preserve if we're not initialized.
-    if (self) {
-      nsWrapperCache* cache = Base::GetWrapperCache(self);
-      // We don't want to preserve if we don't have a wrapper.
-      if (cache->GetWrapperPreserveColor()) {
-        cache->PreserveWrapper(self);
-      }
-    }
-    return true;
-  }
-};
-
 template <class T,
           bool CastableToWrapperCache = std::is_base_of_v<nsWrapperCache, T>>
 class NativeTypeHelpers_nsISupports;
 
 template <class T>
 class NativeTypeHelpers_nsISupports<T, true>
-    : public NativeTypeHelpersBase_nsISupports<
-          CastableToWrapperCache<CastableToWrapperCacheHelper::OffsetOf<T>()>> {
-};
+    : public CastableToWrapperCache<
+          CastableToWrapperCacheHelper::OffsetOf<T>()> {};
 
 template <class T>
-class NativeTypeHelpers_nsISupports<T, false>
-    : public NativeTypeHelpersBase_nsISupports<NeedsQIToWrapperCache> {};
+class NativeTypeHelpers_nsISupports<T, false> : public NeedsQIToWrapperCache {};
 
 template <class T>
 class NativeTypeHelpers_Other
     : public CastableToWrapperCache<
-          CastableToWrapperCacheHelper::OffsetOf<T>()> {
- public:
-  static bool AddProperty(JSContext* cx, JS::Handle<JSObject*> aObj,
-                          JS::Handle<jsid>, JS::Handle<JS::Value>) {
-    T* self = UnwrapPossiblyNotInitializedDOMObject<T>(aObj);
-    // We obviously can't preserve if we're not initialized, and we don't want
-    // to preserve if we don't have a wrapper.
-    if (self && self->GetWrapperPreserveColor()) {
-      self->PreserveWrapper(self, NS_CYCLE_COLLECTION_PARTICIPANT(T));
-    }
-    return true;
-  }
-};
+          CastableToWrapperCacheHelper::OffsetOf<T>()> {};
 
 template <class T>
 using NativeTypeHelpers = std::conditional_t<std::is_base_of_v<nsISupports, T>,

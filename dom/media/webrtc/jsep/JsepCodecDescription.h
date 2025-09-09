@@ -8,12 +8,13 @@
 #include <cmath>
 #include <set>
 #include <string>
-#include "sdp/SdpMediaSection.h"
-#include "sdp/SdpHelper.h"
+
+#include "mozilla/Preferences.h"
+#include "mozilla/net/DataChannelProtocol.h"
 #include "nsCRT.h"
 #include "nsString.h"
-#include "mozilla/net/DataChannelProtocol.h"
-#include "mozilla/Preferences.h"
+#include "sdp/SdpHelper.h"
+#include "sdp/SdpMediaSection.h"
 
 namespace mozilla {
 
@@ -1371,8 +1372,7 @@ class JsepApplicationCodecDescription final : public JsepCodecDescription {
         mLocalPort(localPort),
         mLocalMaxMessageSize(localMaxMessageSize),
         mRemotePort(0),
-        mRemoteMaxMessageSize(0),
-        mRemoteMMSSet(false) {}
+        mRemoteMaxMessageSize(0) {}
 
   static constexpr SdpMediaSection::MediaType type =
       SdpMediaSection::kApplication;
@@ -1431,11 +1431,8 @@ class JsepApplicationCodecDescription final : public JsepCodecDescription {
     JsepCodecDescription::Negotiate(pt, remoteMsection, remoteIsOffer,
                                     localMsection);
 
-    uint32_t message_size;
-    mRemoteMMSSet = remoteMsection.GetMaxMessageSize(&message_size);
-    if (mRemoteMMSSet) {
-      mRemoteMaxMessageSize = message_size;
-    } else {
+    bool wasSet = remoteMsection.GetMaxMessageSize(&mRemoteMaxMessageSize);
+    if (!wasSet) {
       mRemoteMaxMessageSize =
           WEBRTC_DATACHANNEL_MAX_MESSAGE_SIZE_REMOTE_DEFAULT;
     }

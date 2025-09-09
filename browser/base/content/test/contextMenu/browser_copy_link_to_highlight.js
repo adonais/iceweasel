@@ -358,7 +358,7 @@ async function testCopyLinkToHighlight({ testPage, runTests }) {
         "popupshown"
       );
       await BrowserTestUtils.synthesizeMouseAtCenter(
-        "#text",
+        "#span",
         { type: "contextmenu", button: 2 },
         browser
       );

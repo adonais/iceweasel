@@ -21,10 +21,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/e83c311e5293902be
  1 file changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/rtc_base/platform_thread.cc b/rtc_base/platform_thread.cc
-index 85b888eaed..b7141bcf16 100644
+index 53381a4d4e..82081ec8a3 100644
 --- a/rtc_base/platform_thread.cc
 +++ b/rtc_base/platform_thread.cc
-@@ -191,15 +191,17 @@ PlatformThread PlatformThread::SpawnThread(
+@@ -197,15 +197,17 @@ PlatformThread PlatformThread::SpawnThread(
    // Set the reserved stack stack size to 1M, which is the default on Windows
    // and Linux.
    DWORD thread_id = 0;

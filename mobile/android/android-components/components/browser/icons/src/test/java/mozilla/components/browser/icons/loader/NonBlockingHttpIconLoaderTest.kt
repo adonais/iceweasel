@@ -5,7 +5,6 @@
 package mozilla.components.browser.icons.loader
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mozilla.components.browser.icons.Icon
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.concept.fetch.Client
@@ -39,7 +38,6 @@ import org.mockito.Mockito.verifyNoMoreInteractions
 import java.io.IOException
 import java.io.InputStream
 
-@ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class NonBlockingHttpIconLoaderTest {
     @get:Rule

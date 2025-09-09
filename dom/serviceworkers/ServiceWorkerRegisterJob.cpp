@@ -6,9 +6,9 @@
 
 #include "ServiceWorkerRegisterJob.h"
 
-#include "mozilla/dom/WorkerCommon.h"
 #include "ServiceWorkerManager.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/dom/WorkerCommon.h"
 
 namespace mozilla::dom {
 

@@ -8,7 +8,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.work.ListenableWorker.Result
 import androidx.work.testing.TestListenableWorkerBuilder
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
@@ -22,7 +21,6 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import kotlin.reflect.KVisibility
 
-@ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class PlacesHistoryStorageWorkerTest {
 

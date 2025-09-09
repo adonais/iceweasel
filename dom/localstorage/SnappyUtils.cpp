@@ -7,6 +7,7 @@
 #include "SnappyUtils.h"
 
 #include <stddef.h>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/fallible.h"

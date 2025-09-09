@@ -9,8 +9,8 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
-#include "nsTArray.h"
 #include "mozilla/RefPtr.h"
+#include "nsTArray.h"
 
 class nsIGlobalObject;
 

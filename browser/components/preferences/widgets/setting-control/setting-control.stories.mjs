@@ -24,6 +24,16 @@ select-option-1 =
   .label = Option 1
 select-option-2 =
   .label = Option 2
+radio-example-input =
+  .label = Radio example of setting-control
+  .description = Could have a description like moz-radio-group.
+radio-option-0 =
+  .label = Option 0
+radio-option-1 =
+  .label = Option 1
+  .description = It's a full moz-radio
+radio-option-2 =
+  .label = Option 2
 `,
   },
 };
@@ -56,21 +66,53 @@ Select.args = {
     supportPage: "example-support",
     options: [
       {
-        value: "0",
+        value: 0,
         l10nId: "select-option-0",
       },
       {
-        value: "1",
+        value: 1,
         l10nId: "select-option-1",
       },
       {
-        value: "2",
+        value: 2,
         l10nId: "select-option-2",
       },
     ],
   },
   setting: {
-    value: "1",
+    value: 1,
+    on() {},
+    off() {},
+    userChange() {},
+    getControlConfig: c => c,
+  },
+};
+
+export const Radio = Template.bind({});
+Radio.args = {
+  config: {
+    id: "radio-example",
+    l10nId: "radio-example-input",
+    control: "moz-radio-group",
+    supportPage: "example-support",
+    options: [
+      {
+        value: 0,
+        l10nId: "radio-option-0",
+      },
+      {
+        value: 1,
+        l10nId: "radio-option-1",
+        supportPage: "support-page",
+      },
+      {
+        value: 2,
+        l10nId: "radio-option-2",
+      },
+    ],
+  },
+  setting: {
+    value: 1,
     on() {},
     off() {},
     userChange() {},

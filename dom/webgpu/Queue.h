@@ -6,11 +6,11 @@
 #ifndef GPU_Queue_H_
 #define GPU_Queue_H_
 
-#include "nsWrapperCache.h"
 #include "ObjectModel.h"
 #include "mozilla/dom/BufferSourceBindingFwd.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla {
 class ErrorResult;
@@ -66,9 +66,12 @@ class Queue final : public ObjectBase, public ChildOf<Device> {
 
  private:
   virtual ~Queue();
-  void Cleanup() {}
+  void Cleanup();
 
   RefPtr<WebGPUChild> mBridge;
+  // Index to use for the next submission containing external textures. Used to
+  // keep track of when work involving external textures is done.
+  uint64_t mNextExternalTextureSubmissionIndex = 1;
 
  public:
 };

@@ -6,24 +6,43 @@
 
 #include "EventStateManager.h"
 
+#include "ContentEventHandler.h"
+#include "IMEContentObserver.h"
+#include "RemoteDragStartData.h"
+#include "Units.h"
+#include "WheelHandlingHelper.h"
+#include "imgIContainer.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ConnectedAncestorTracker.h"
 #include "mozilla/EditorBase.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventForwards.h"
-#include "mozilla/Hal.h"
+#include "mozilla/FocusModel.h"
 #include "mozilla/HTMLEditor.h"
+#include "mozilla/Hal.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/Likely.h"
-#include "mozilla/FocusModel.h"
-#include "mozilla/MiscEvents.h"
+#include "mozilla/Logging.h"
+#include "mozilla/LookAndFeel.h"
 #include "mozilla/MathAlgorithms.h"
+#include "mozilla/MiscEvents.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PointerLockManager.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ScrollTypes.h"
+#include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_accessibility.h"
+#include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/StaticPrefs_mousewheel.h"
+#include "mozilla/StaticPrefs_ui.h"
+#include "mozilla/StaticPrefs_zoom.h"
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextControlElement.h"
 #include "mozilla/TextEditor.h"
@@ -32,101 +51,76 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/BrowserBridgeChild.h"
+#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/DOMIntersectionObserver.h"
+#include "mozilla/dom/DataTransfer.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/DragEvent.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/FrameLoaderBinding.h"
 #include "mozilla/dom/HTMLDialogElement.h"
-#include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
+#include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/MouseEventBinding.h"
-#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/PointerEventHandler.h"
+#include "mozilla/dom/Record.h"
+#include "mozilla/dom/Selection.h"
 #include "mozilla/dom/UIEvent.h"
 #include "mozilla/dom/UIEventBinding.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/WheelEventBinding.h"
 #include "mozilla/glean/ProcesstoolsMetrics.h"
-#include "mozilla/ScrollContainerFrame.h"
-#include "mozilla/StaticPrefs_accessibility.h"
-#include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/StaticPrefs_mousewheel.h"
-#include "mozilla/StaticPrefs_ui.h"
-#include "mozilla/StaticPrefs_zoom.h"
-
-#include "ContentEventHandler.h"
-#include "IMEContentObserver.h"
-#include "WheelHandlingHelper.h"
-#include "RemoteDragStartData.h"
-
-#include "nsCommandParams.h"
 #include "nsCOMPtr.h"
+#include "nsComboboxControlFrame.h"
+#include "nsCommandParams.h"
+#include "nsContentAreaDragDrop.h"
+#include "nsContentUtils.h"
 #include "nsCopySupport.h"
 #include "nsFocusManager.h"
+#include "nsFontMetrics.h"
+#include "nsFrameLoaderOwner.h"
+#include "nsFrameManager.h"
+#include "nsFrameSelection.h"
 #include "nsGenericHTMLElement.h"
+#include "nsGkAtoms.h"
+#include "nsIBaseWindow.h"
+#include "nsIBrowserChild.h"
 #include "nsIClipboard.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
-#include "mozilla/dom/Document.h"
+#include "nsIController.h"
 #include "nsICookieJarSettings.h"
-#include "nsIFrame.h"
-#include "nsFrameLoaderOwner.h"
-#include "nsIWeakReferenceUtils.h"
-#include "nsIWidget.h"
-#include "nsLiteralString.h"
-#include "nsPresContext.h"
-#include "nsTArray.h"
-#include "nsGkAtoms.h"
-#include "nsIFormControl.h"
-#include "nsComboboxControlFrame.h"
 #include "nsIDOMXULControlElement.h"
-#include "nsNameSpaceManager.h"
-#include "nsIBaseWindow.h"
-#include "nsFrameSelection.h"
-#include "nsPIDOMWindow.h"
-#include "nsPIWindowRoot.h"
-#include "nsIWebNavigation.h"
-#include "nsIDocumentViewer.h"
-#include "nsFrameManager.h"
-#include "nsIBrowserChild.h"
-#include "nsMenuPopupFrame.h"
-
-#include "nsIObserverService.h"
 #include "nsIDocShell.h"
-
-#include "nsSubDocumentFrame.h"
-#include "nsLayoutUtils.h"
-#include "nsIInterfaceRequestorUtils.h"
-#include "nsUnicharUtils.h"
-#include "nsContentUtils.h"
-
-#include "imgIContainer.h"
-#include "nsIProperties.h"
-#include "nsISupportsPrimitives.h"
-
-#include "nsServiceManagerUtils.h"
-#include "nsITimer.h"
-#include "nsFontMetrics.h"
+#include "nsIDocumentViewer.h"
 #include "nsIDragService.h"
 #include "nsIDragSession.h"
-#include "mozilla/dom/DataTransfer.h"
-#include "nsContentAreaDragDrop.h"
+#include "nsIFormControl.h"
+#include "nsIFrame.h"
+#include "nsIInterfaceRequestorUtils.h"
+#include "nsIObserverService.h"
+#include "nsIProperties.h"
+#include "nsISupportsPrimitives.h"
+#include "nsITimer.h"
+#include "nsIWeakReferenceUtils.h"
+#include "nsIWebNavigation.h"
+#include "nsIWidget.h"
+#include "nsLayoutUtils.h"
+#include "nsLiteralString.h"
+#include "nsMenuPopupFrame.h"
+#include "nsNameSpaceManager.h"
+#include "nsPIDOMWindow.h"
+#include "nsPIWindowRoot.h"
+#include "nsPresContext.h"
+#include "nsServiceManagerUtils.h"
+#include "nsSubDocumentFrame.h"
+#include "nsTArray.h"
 #include "nsTreeBodyFrame.h"
-#include "nsIController.h"
-#include "mozilla/Services.h"
-#include "mozilla/dom/ContentParent.h"
-#include "mozilla/dom/Record.h"
-#include "mozilla/dom/Selection.h"
-
-#include "mozilla/Preferences.h"
-#include "mozilla/LookAndFeel.h"
-#include "mozilla/ProfilerLabels.h"
-#include "Units.h"
+#include "nsUnicharUtils.h"
 
 #ifdef XP_MACOSX
 #  import <ApplicationServices/ApplicationServices.h>
@@ -135,6 +129,26 @@
 namespace mozilla {
 
 using namespace dom;
+
+// Log the mouse cursor updates.  That should be updated only by the events for
+// the last pointer which is actually handled as a user input.  I.e., should not
+// be updated by synthesized mouse/pointer move events which are not for the
+// last pointer.
+// - MouseCursorUpdate:3 logs only when EventStateManager and BrowserParent
+// updated the cursor.
+// - MouseCursorUpdate:4 logs any results when BrowserParent handles that.
+// - MouseCursorUpdate:5 logs when UpdateCursor() stopped updating the cursor.
+//
+// NOTE: This can work only on debug builds for avoiding to the damage to the
+// performance.
+LazyLogModule gMouseCursorUpdates("MouseCursorUpdates");
+
+#ifdef DEBUG
+#  define MOZ_LOG_IF_DEBUG(_module, _level, _args) \
+    MOZ_LOG(_module, _level, _args)
+#else
+#  define MOZ_LOG_IF_DEBUG(_module, _level, _args)
+#endif
 
 static const LayoutDeviceIntPoint kInvalidRefPoint =
     LayoutDeviceIntPoint(-1, -1);
@@ -644,6 +658,11 @@ EventStateManager::EventStateManager()
   ++sESMInstanceCount;
 }
 
+// static
+LazyLogModule& EventStateManager::MouseCursorUpdateLogRef() {
+  return gMouseCursorUpdates;
+}
+
 nsresult EventStateManager::UpdateUserActivityTimer() {
   if (!gUserInteractionTimerCallback) return NS_OK;
 
@@ -1146,6 +1165,8 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
         // We should synthetize corresponding pointer events
         GeneratePointerEnterExit(ePointerLeave, mouseEvent);
         GenerateMouseEnterExit(mouseEvent);
+        // Remove the pointer from the active pointerId table.
+        PointerEventHandler::UpdatePointerActiveState(mouseEvent);
         // This is really an exit and should stop here
         aEvent->mMessage = eVoidEvent;
         break;
@@ -4639,7 +4660,8 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       break;
 
     case eMouseExitFromWidget:
-      PointerEventHandler::UpdatePointerActiveState(aEvent->AsMouseEvent());
+      MOZ_ASSERT_UNREACHABLE(
+          "Should've already been handled in PreHandleEvent()");
       break;
 
 #ifdef XP_MACOSX
@@ -4838,7 +4860,7 @@ static CursorImage ComputeCustomCursor(nsPresContext* aPresContext,
                           : Nothing();
     gfx::IntPoint hotspot = ComputeHotspot(container, specifiedHotspot);
     CursorImage result{hotspot, std::move(container),
-                       image.image.GetResolution(style), loading};
+                       image.image.GetResolution(&style), loading};
     if (ShouldBlockCustomCursor(aPresContext, aEvent, result)) {
       continue;
     }
@@ -4852,6 +4874,23 @@ void EventStateManager::UpdateCursor(nsPresContext* aPresContext,
                                      WidgetMouseEvent* aEvent,
                                      nsIFrame* aTargetFrame,
                                      nsEventStatus* aStatus) {
+  if (!PointerEventHandler::IsLastPointerId(aEvent->pointerId)) {
+    MOZ_LOG_IF_DEBUG(
+        gMouseCursorUpdates, LogLevel::Verbose,
+        ("EventStateManager::UpdateCursor(aEvent=${pointerId=%u, source=%s, "
+         "message=%s, reason=%s}): Stopped updating cursor for the pointer "
+         "because of %s, ESM: %p, in-process root PresShell: %p",
+         aEvent->pointerId, InputSourceToString(aEvent->mInputSource).get(),
+         ToChar(aEvent->mMessage), aEvent->IsReal() ? "Real" : "Synthesized",
+         !PointerEventHandler::GetLastPointerId()
+             ? "no last pointerId"
+             : nsPrintfCString("different from last pointerId (%u)",
+                               *PointerEventHandler::GetLastPointerId())
+                   .get(),
+         this, GetRootPresShell()));
+    return;
+  }
+
   // XXX This is still not entirely correct, e.g. when mouse hover over the
   // broder of a cross-origin iframe, we should show the cursor specified on the
   // iframe (see bug 1943530).
@@ -4859,6 +4898,15 @@ void EventStateManager::UpdateCursor(nsPresContext* aPresContext,
     if (auto* fl = f->FrameLoader();
         fl && fl->IsRemoteFrame() && f->ContentReactsToPointerEvents()) {
       // The sub-frame will update the cursor if needed.
+      MOZ_LOG_IF_DEBUG(
+          gMouseCursorUpdates, LogLevel::Verbose,
+          ("EventStateManager::UpdateCursor(aEvent=${pointerId=%u, source=%s, "
+           "message=%s, reason=%s}): Stopped updating cursor for the pointer "
+           "because of over a remote frame, ESM: %p, in-process root "
+           "PresShell: %p",
+           aEvent->pointerId, InputSourceToString(aEvent->mInputSource).get(),
+           ToChar(aEvent->mMessage), aEvent->IsReal() ? "Real" : "Synthesized",
+           this, GetRootPresShell()));
       return;
     }
   }
@@ -4911,6 +4959,14 @@ void EventStateManager::UpdateCursor(nsPresContext* aPresContext,
               aTargetFrame->GetNearestWidget(), false);
     gLastCursorSourceFrame = aTargetFrame;
     gLastCursorUpdateTime = TimeStamp::NowLoRes();
+    MOZ_LOG_IF_DEBUG(
+        gMouseCursorUpdates, LogLevel::Info,
+        ("EventStateManager::UpdateCursor(aEvent=${pointerId=%u, source=%s, "
+         "message=%s, reason=%s}): Updated the cursor to %u, ESM: %p, "
+         "in-process root PresShell: %p",
+         aEvent->pointerId, InputSourceToString(aEvent->mInputSource).get(),
+         ToChar(aEvent->mMessage), aEvent->IsReal() ? "Real" : "Synthesized",
+         static_cast<uint32_t>(cursor), this, GetRootPresShell()));
   }
 
   if (mLockCursor != kInvalidCursorKind || StyleCursorKind::Auto != cursor) {
@@ -6552,13 +6608,6 @@ bool EventStateManager::SetContentState(nsIContent* aContent,
     // Hover and active are hierarchical
     updateAncestors = true;
 
-    // check to see that this state is allowed by style. Check dragover too?
-    // XXX Is this even what we want?
-    if (mCurrentTarget &&
-        mCurrentTarget->StyleUI()->UserInput() == StyleUserInput::None) {
-      return false;
-    }
-
     if (aState == ElementState::ACTIVE) {
       if (aContent && !CanContentHaveActiveState(*aContent)) {
         aContent = nullptr;
@@ -6724,8 +6773,22 @@ void EventStateManager::NativeAnonymousContentRemoved(nsIContent* aContent) {
   }
 }
 
+void EventStateManager::ContentInserted(nsIContent* aChild,
+                                        const ContentInsertInfo& aInfo) {
+  if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
+    fm->ContentInserted(aChild, aInfo);
+  }
+}
+void EventStateManager::ContentAppended(nsIContent* aFirstNewContent,
+                                        const ContentAppendInfo& aInfo) {
+  if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
+    fm->ContentAppended(aFirstNewContent, aInfo);
+  }
+}
+
 void EventStateManager::ContentRemoved(Document* aDocument,
-                                       nsIContent* aContent) {
+                                       nsIContent* aContent,
+                                       const ContentRemoveInfo& aInfo) {
   /*
    * Anchor and area elements when focused or hovered might make the UI to show
    * the current link. We want to make sure that the UI gets informed when they
@@ -6749,7 +6812,7 @@ void EventStateManager::ContentRemoved(Document* aDocument,
   // inform the focus manager that the content is being removed. If this
   // content is focused, the focus will be removed without firing events.
   if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
-    fm->ContentRemoved(aDocument, aContent);
+    fm->ContentRemoved(aDocument, aContent, aInfo);
   }
 
   RemoveNodeFromChainIfNeeded(ElementState::HOVER, aContent, true);
@@ -6762,7 +6825,9 @@ void EventStateManager::ContentRemoved(Document* aDocument,
     sDragOverContent = nullptr;
   }
 
-  PointerEventHandler::ReleaseIfCaptureByDescendant(aContent);
+  if (!aInfo.mNewParent) {
+    PointerEventHandler::ReleaseIfCaptureByDescendant(aContent);
+  }
 
   if (mMouseEnterLeaveHelper) {
     const bool hadMouseOutTarget =
@@ -6851,6 +6916,11 @@ uint32_t EventStateManager::GetRegisteredAccessKey(Element* aElement) {
   nsAutoString accessKey;
   aElement->GetAttr(nsGkAtoms::accesskey, accessKey);
   return accessKey.First();
+}
+
+PresShell* EventStateManager::GetRootPresShell() const {
+  PresShell* const presShell = GetPresShell();
+  return presShell ? presShell->GetRootPresShell() : nullptr;
 }
 
 void EventStateManager::EnsureDocument(nsPresContext* aPresContext) {
@@ -7696,3 +7766,5 @@ void EventStateManager::NotifyContentWillBeRemovedForGesture(
 }
 
 }  // namespace mozilla
+
+#undef MOZ_LOG_IF_DEBUG

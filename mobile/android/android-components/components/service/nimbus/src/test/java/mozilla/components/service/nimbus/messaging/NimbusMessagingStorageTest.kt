@@ -44,7 +44,6 @@ import java.util.UUID
 private const val MOCK_TIME_MILLIS = 1000L
 
 @RunWith(RobolectricTestRunner::class)
-@kotlinx.coroutines.ExperimentalCoroutinesApi
 class NimbusMessagingStorageTest {
     @Mock private lateinit var metadataStorage: MessageMetadataStorage
 

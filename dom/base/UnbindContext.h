@@ -25,9 +25,16 @@ struct MOZ_STACK_CLASS UnbindContext final {
   explicit UnbindContext(nsINode& aRoot)
       : mRoot(aRoot), mOriginalParent(aRoot.GetParentNode()) {}
 
+  void SetIsMove(bool aIsMove) { mIsMove = aIsMove; }
+
+  bool IsMove() const { return mIsMove; }
+
  private:
   nsINode& mRoot;
   nsINode* const mOriginalParent;
+
+  // If set, we're moving the shadow-including inclusive ancestor.
+  bool mIsMove = false;
 };
 
 }  // namespace mozilla::dom

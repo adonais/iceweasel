@@ -20,10 +20,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/58f47eacaf10d12e2
  11 files changed, 27 insertions(+), 27 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index c79280232b..e3804f1745 100644
+index c1e86466a0..5c87acc7fd 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -440,12 +440,12 @@ config("common_config") {
+@@ -444,12 +444,12 @@ config("common_config") {
      }
    }
  
@@ -38,7 +38,7 @@ index c79280232b..e3804f1745 100644
      defines += [ "WEBRTC_ARCH_ARM" ]
      if (arm_version >= 7) {
        defines += [ "WEBRTC_ARCH_ARM_V7" ]
-@@ -455,7 +455,7 @@ config("common_config") {
+@@ -459,7 +459,7 @@ config("common_config") {
      }
    }
  
@@ -48,7 +48,7 @@ index c79280232b..e3804f1745 100644
      if (mips_float_abi == "hard") {
        defines += [ "MIPS_FPU_LE" ]
 diff --git a/common_audio/BUILD.gn b/common_audio/BUILD.gn
-index 0b5f6cb858..82fceb8ead 100644
+index 8135f5fca0..c909b8458d 100644
 --- a/common_audio/BUILD.gn
 +++ b/common_audio/BUILD.gn
 @@ -66,7 +66,7 @@ rtc_library("common_audio") {
@@ -87,7 +87,7 @@ index 0b5f6cb858..82fceb8ead 100644
      sources += [
        "signal_processing/complex_bit_reverse.c",
        "signal_processing/filter_ar_fast_q12.c",
-@@ -231,7 +231,7 @@ rtc_library("fir_filter_factory") {
+@@ -232,7 +232,7 @@ rtc_library("fir_filter_factory") {
      "../rtc_base/system:arch",
      "../system_wrappers",
    ]
@@ -96,7 +96,7 @@ index 0b5f6cb858..82fceb8ead 100644
      deps += [ ":common_audio_sse2" ]
      deps += [ ":common_audio_avx2" ]
    }
-@@ -240,7 +240,7 @@ rtc_library("fir_filter_factory") {
+@@ -241,7 +241,7 @@ rtc_library("fir_filter_factory") {
    }
  }
  
@@ -105,7 +105,7 @@ index 0b5f6cb858..82fceb8ead 100644
    rtc_library("common_audio_sse2") {
      sources = [
        "fir_filter_sse.cc",
-@@ -289,7 +289,7 @@ if (rtc_build_with_neon) {
+@@ -290,7 +290,7 @@ if (rtc_build_with_neon) {
        "resampler/sinc_resampler_neon.cc",
      ]
  
@@ -114,7 +114,7 @@ index 0b5f6cb858..82fceb8ead 100644
        # Enable compilation for the NEON instruction set.
        suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
        cflags = [ "-mfpu=neon" ]
-@@ -312,7 +312,7 @@ if (rtc_build_with_neon) {
+@@ -313,7 +313,7 @@ if (rtc_build_with_neon) {
        "signal_processing/min_max_operations_neon.c",
      ]
  
@@ -263,7 +263,7 @@ index 31ad61156d..6587fd14f3 100644
      cflags = [ "-mfpu=neon" ]
    }
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index 059a4dadc1..9e687b8787 100644
+index cc2a1a2302..8178c3bc6c 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
 @@ -10,7 +10,7 @@ import("//build/config/linux/gtk/gtk.gni")
@@ -276,7 +276,7 @@ index 059a4dadc1..9e687b8787 100644
  config("x11_config") {
    if (rtc_use_x11_extensions) {
 diff --git a/webrtc.gni b/webrtc.gni
-index 29286c5b95..dc0553d964 100644
+index c7d0befb56..e2830f07a3 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -169,13 +169,13 @@ declare_args() {

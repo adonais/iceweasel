@@ -298,9 +298,8 @@ already_AddRefed<nsIWidget> nsMenuPopupFrame::ComputeParentWidget() const {
       return nullptr;
     }
 
-    nsCOMPtr<nsIBaseWindow> baseWindow(do_QueryInterface(treeOwner));
-    if (baseWindow) {
-      baseWindow->GetMainWidget(getter_AddRefs(parentWidget));
+    if (nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(treeOwner)) {
+      parentWidget = baseWindow->GetMainWidget();
     }
   }
   if (!parentWidget && mView && mView->GetParent()) {

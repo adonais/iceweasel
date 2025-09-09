@@ -17,10 +17,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -59,6 +61,14 @@ internal fun LoginDetailsScreen(store: LoginsStore) {
     val state by store.observeAsState(store.state) { it }
     val detailState = state.loginsLoginDetailState ?: return
     val snackbarHostState = remember { AcornSnackbarHostState() }
+
+    val deletionDialogState = state.loginDeletionDialogState
+    if (deletionDialogState is LoginDeletionDialogState.Presenting) {
+        LoginDeletionDialog(
+            onCancelTapped = { store.dispatch(LoginDeletionDialogAction.CancelTapped) },
+            onDeleteTapped = { store.dispatch(LoginDeletionDialogAction.DeleteTapped) },
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -319,6 +329,41 @@ private fun LoginDetailsPassword(
     }
 }
 
+@Composable
+private fun LoginDeletionDialog(
+    onCancelTapped: () -> Unit,
+    onDeleteTapped: () -> Unit,
+) {
+    AlertDialog(
+        title = {
+            Text(
+                text = stringResource(R.string.login_deletion_confirmation_2),
+                color = FirefoxTheme.colors.textPrimary,
+                style = FirefoxTheme.typography.body1,
+            )
+        },
+        onDismissRequest = onCancelTapped,
+        confirmButton = {
+            TextButton(
+                onClick = onDeleteTapped,
+            ) {
+                Text(
+                    text = stringResource(R.string.bookmark_menu_delete_button).uppercase(),
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onCancelTapped,
+            ) {
+                Text(
+                    text = stringResource(R.string.bookmark_delete_negative).uppercase(),
+                )
+            }
+        },
+    )
+}
+
 private fun showTextCopiedSnackbar(
     message: String,
     coroutineScope: CoroutineScope,
@@ -337,14 +382,7 @@ private fun showTextCopiedSnackbar(
 @FlexibleWindowLightDarkPreview
 private fun LoginDetailsScreenPreview() {
     val store = LoginsStore(
-        initialState = LoginsState(
-            loginItems = listOf(),
-            searchText = "",
-            sortOrder = LoginsSortOrder.default,
-            biometricAuthenticationDialogState = null,
-            loginsListState = null,
-            loginsAddLoginState = null,
-            loginsEditLoginState = null,
+        initialState = LoginsState.default.copy(
             loginsLoginDetailState = LoginsLoginDetailState(
                 login = LoginItem(
                     guid = "123",
@@ -353,7 +391,6 @@ private fun LoginDetailsScreenPreview() {
                     password = "password 123",
                 ),
             ),
-            loginsDeletionState = null,
         ),
     )
 

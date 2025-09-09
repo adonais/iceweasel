@@ -34,11 +34,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Discovery: "resource:///modules/Discovery.sys.mjs",
   DistributionManagement: "resource:///modules/distribution.sys.mjs",
   DownloadsViewableInternally:
-    "resource:///modules/DownloadsViewableInternally.sys.mjs",
+    "moz-src:///browser/components/downloads/DownloadsViewableInternally.sys.mjs",
   ExtensionsUI: "resource:///modules/ExtensionsUI.sys.mjs",
-  // FilePickerCrashed is used by the `listeners` object below.
-  // eslint-disable-next-line mozilla/valid-lazy
-  FilePickerCrashed: "resource:///modules/FilePickerCrashed.sys.mjs",
   FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
   Interactions: "moz-src:///browser/components/places/Interactions.sys.mjs",
   LoginBreaches: "resource:///modules/LoginBreaches.sys.mjs",
@@ -47,13 +44,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   OnboardingMessageProvider:
     "resource:///modules/asrouter/OnboardingMessageProvider.sys.mjs",
-  PageDataService: "resource:///modules/pagedata/PageDataService.sys.mjs",
+  PageDataService:
+    "moz-src:///browser/components/pagedata/PageDataService.sys.mjs",
   PdfJs: "resource://pdf.js/PdfJs.sys.mjs",
   PlacesBrowserStartup:
     "moz-src:///browser/components/places/PlacesBrowserStartup.sys.mjs",
-  // PluginManager is used by the `listeners` object below.
-  // eslint-disable-next-line mozilla/valid-lazy
-  PluginManager: "resource:///actors/PluginParent.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ProfileDataUpgrader:
     "moz-src:///browser/components/ProfileDataUpgrader.sys.mjs",
@@ -131,44 +126,6 @@ ChromeUtils.defineLazyGetter(lazy, "gBrowserBundle", function () {
     "chrome://browser/locale/browser.properties"
   );
 });
-
-const listeners = {
-  observers: {
-    "file-picker-crashed": ["FilePickerCrashed"],
-    "gmp-plugin-crash": ["PluginManager"],
-    "plugin-crashed": ["PluginManager"],
-  },
-
-  observe(subject, topic, data) {
-    for (let module of this.observers[topic]) {
-      try {
-        lazy[module].observe(subject, topic, data);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  },
-
-  init() {
-    for (let observer of Object.keys(this.observers)) {
-      Services.obs.addObserver(this, observer);
-    }
-  },
-};
-if (AppConstants.MOZ_UPDATER) {
-  ChromeUtils.defineESModuleGetters(lazy, {
-    // This listeners/observers/lazy indirection is too much for eslint:
-    // eslint-disable-next-line mozilla/valid-lazy
-    UpdateListener: "resource://gre/modules/UpdateListener.sys.mjs",
-  });
-
-  listeners.observers["update-downloading"] = ["UpdateListener"];
-  listeners.observers["update-staged"] = ["UpdateListener"];
-  listeners.observers["update-downloaded"] = ["UpdateListener"];
-  listeners.observers["update-available"] = ["UpdateListener"];
-  listeners.observers["update-error"] = ["UpdateListener"];
-  listeners.observers["update-swap"] = ["UpdateListener"];
-}
 
 // Seconds of idle time before the late idle tasks will be scheduled.
 const LATE_TASKS_IDLE_TIME_SEC = 20;
@@ -448,8 +405,6 @@ BrowserGlue.prototype = {
       lazy.FormAutofillUtils.setOSAuthEnabled(false);
       lazy.LoginHelper.setOSAuthEnabled(false);
     }
-
-    listeners.init();
 
     lazy.BrowserUtils.callModulesFromCategory({
       categoryName: "browser-before-ui-startup",
@@ -771,6 +726,9 @@ BrowserGlue.prototype = {
       "resource://gre/modules/TelemetryTimestamps.sys.mjs"
     );
     TelemetryTimestamps.add("blankWindowShown");
+    Glean.browserTimings.startupTimeline.blankWindowShown.set(
+      Services.telemetry.msSinceProcessStart()
+    );
 
     function getValue(attr) {
       return Services.xulStore.getValue(
@@ -1641,7 +1599,7 @@ BrowserGlue.prototype = {
     // Use an increasing number to keep track of the current state of the user's
     // profile, so we can move data around as needed as the browser evolves.
     // Completely unrelated to the current Firefox release number.
-    const APP_DATA_VERSION = 158;
+    const APP_DATA_VERSION = 159;
     const PREF = "browser.migration.version";
 
     let profileDataVersion = Services.prefs.getIntPref(PREF, -1);

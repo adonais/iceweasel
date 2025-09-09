@@ -29,7 +29,7 @@ namespace {
 
 /**
  * This class provides a way to get a pow() results in constant-time. It works
- * by caching 129 ((1 << sCacheIndexPrecisionBits) + 1) values for bases between
+ * by caching 257 ((1 << sCacheIndexPrecisionBits) + 1) values for bases between
  * 0 and 1 and a fixed exponent.
  **/
 class PowCache {
@@ -89,7 +89,7 @@ class PowCache {
 
   static const int sInputIntPrecisionBits = 15;
   static const int sOutputIntPrecisionBits = 15;
-  static const int sCacheIndexPrecisionBits = 7;
+  static const int sCacheIndexPrecisionBits = 8;
 
   inline bool HasPowerTable() const { return mNumPowTablePreSquares >= 0; }
 
@@ -584,7 +584,7 @@ void FilterNodeSoftware::Draw(DrawTarget* aDrawTarget, const Rect& aSourceRect,
 #ifdef DEBUG_DUMP_SURFACES
   printf("output from %s:\n", GetName());
   printf("<img src='");
-  gfxUtils::DumpAsDataURL(result);
+  gfxUtils::DumpAsDataURI(result);
   printf("'>\n");
   printf("</pre>\n");
 #endif
@@ -727,10 +727,8 @@ FilterNodeSoftware::GetInputDataSourceSurface(
   }
 
 #ifdef DEBUG_DUMP_SURFACES
-  printf(
-      "<section><h1>GetInputDataSourceSurface with aRect: %d, %d, %d, "
-      "%d</h1>\n",
-      aRect.x, aRect.y, aRect.Width(), aRect.Height());
+  printf("<section><h1>GetInputDataSourceSurface with aRect: %s</h1>\n",
+         ToString(aRect).c_str());
 #endif
   int32_t inputIndex = InputIndex(aInputEnumIndex);
   if (inputIndex < 0 || (uint32_t)inputIndex >= NumberOfSetInputs()) {
@@ -840,7 +838,7 @@ FilterNodeSoftware::GetInputDataSourceSurface(
 
 #ifdef DEBUG_DUMP_SURFACES
   printf("<img src='");
-  gfxUtils::DumpAsDataURL(result);
+  gfxUtils::DumpAsDataURI(result);
   printf("'></section>");
 #endif
 

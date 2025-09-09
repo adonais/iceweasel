@@ -6,6 +6,7 @@ package org.mozilla.fenix.wallpapers
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -32,7 +33,9 @@ data class WallpaperState(
      * @return The appropriate light or dark wallpaper card [Color], if available, otherwise a default.
      */
     val cardBackgroundColor: Color
-        @Composable get() = when {
+        @Composable
+        @ReadOnlyComposable
+        get() = when {
             currentWallpaper.cardColorLight != null && currentWallpaper.cardColorDark != null -> {
                 if (isSystemInDarkTheme()) {
                     Color(currentWallpaper.cardColorDark)
@@ -47,7 +50,9 @@ data class WallpaperState(
      * [Color] to use for a button background color on the current wallpaper.
      */
     val buttonBackgroundColor: Color
-        @Composable get() = if (isCurrentWallpaperDefault()) {
+        @Composable
+        @ReadOnlyComposable
+        get() = if (isCurrentWallpaperDefault()) {
             FirefoxTheme.colors.actionSecondary
         } else {
             FirefoxTheme.colors.layer1
@@ -57,7 +62,9 @@ data class WallpaperState(
      * [Color] to use for button text on the current wallpaper.
      */
     val buttonTextColor: Color
-        @Composable get() = when {
+        @Composable
+        @ReadOnlyComposable
+        get() = when {
             currentWallpaper.cardColorDark != null &&
                 isSystemInDarkTheme() -> FirefoxTheme.colors.textPrimary
             else -> FirefoxTheme.colors.textActionSecondary

@@ -13,9 +13,9 @@
 #include "mozilla/SMILTimeContainer.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
+#include "nsHashKeys.h"
 #include "nsTArray.h"
 #include "nsTHashtable.h"
-#include "nsHashKeys.h"
 
 class nsRefreshDriver;
 

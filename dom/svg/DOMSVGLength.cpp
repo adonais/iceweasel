@@ -6,17 +6,17 @@
 
 #include "DOMSVGLength.h"
 
-#include "DOMSVGLengthList.h"
 #include "DOMSVGAnimatedLengthList.h"
-#include "nsError.h"
-#include "nsMathUtils.h"
+#include "DOMSVGLengthList.h"
 #include "SVGAnimatedLength.h"
 #include "SVGAnimatedLengthList.h"
 #include "SVGAttrTearoffTable.h"
 #include "SVGLength.h"
+#include "mozilla/FloatingPoint.h"
 #include "mozilla/dom/SVGElement.h"
 #include "mozilla/dom/SVGLengthBinding.h"
-#include "mozilla/FloatingPoint.h"
+#include "nsError.h"
+#include "nsMathUtils.h"
 
 // See the architecture comment in DOMSVGAnimatedLengthList.h.
 

@@ -80,9 +80,7 @@ DocumentChannel::DocumentChannel(nsDocShellLoadState* aLoadState,
   LOG(("DocumentChannel ctor [this=%p, uri=%s]", this,
        aLoadState->URI()->GetSpecOrDefault().get()));
   RefPtr<nsHttpHandler> handler = nsHttpHandler::GetInstance();
-  uint64_t channelId;
-  Unused << handler->NewChannelId(channelId);
-  mChannelId = channelId;
+  mChannelId = handler->NewChannelId();
 }
 
 NS_IMETHODIMP

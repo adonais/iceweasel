@@ -205,8 +205,9 @@ void TRRServiceParent::SetDefaultTRRConnectionInfo(
   Unused << SendSetDefaultTRRConnectionInfo(Some(infoArgs));
 }
 
-mozilla::ipc::IPCResult TRRServiceParent::RecvInitTRRConnectionInfo() {
-  InitTRRConnectionInfo();
+mozilla::ipc::IPCResult TRRServiceParent::RecvInitTRRConnectionInfo(
+    bool aForceReinit) {
+  InitTRRConnectionInfo(aForceReinit);
   return IPC_OK();
 }
 

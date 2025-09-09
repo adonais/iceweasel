@@ -98,7 +98,8 @@ class AppRequestInterceptor(
             return false
         }
 
-        if (navController?.get()?.currentDestination?.id != R.id.homeFragment) {
+        val currentDestination = navController?.get()?.currentDestination?.id
+        if (!listOf(R.id.homeFragment, R.id.onboardingFragment).contains(currentDestination)) {
             navController?.get()?.navigate(NavGraphDirections.actionGlobalHome())
         }
 

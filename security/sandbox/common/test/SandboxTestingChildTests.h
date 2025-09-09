@@ -14,7 +14,9 @@
 #  include <netdb.h>
 #  ifdef XP_LINUX
 #    include <arpa/inet.h>
+#    include <linux/memfd.h>
 #    include <linux/mempolicy.h>
+#    include <linux/mman.h>
 #    include <sched.h>
 #    include <sys/ioctl.h>
 #    include <sys/mman.h>
@@ -74,6 +76,12 @@ namespace ApplicationServices {
 #  ifndef MREMAP_DONTUNMAP
 #    define MREMAP_DONTUNMAP 4
 #  endif
+// Added in 4.14.
+#  ifndef MFD_HUGETLB
+#    define MFD_HUGETLB 4U
+#    define MFD_HUGE_2MB (21U << 26)
+#  endif
+// (MAP_HUGE_* is from 3.8.  MAP_HUGETLB is 2.6.32.)
 #endif
 
 constexpr bool kIsDebug =
@@ -566,6 +574,23 @@ void RunTestsContent(SandboxTestingChild* child) {
   child->ErrnoValueTest("send_with_flag"_ns, ENOSYS, [] {
     char c = 0;
     return send(0, &c, 1, MSG_CONFIRM);
+  });
+
+  child->ErrnoValueTest("mmap_huge"_ns, ENOSYS, [] {
+    void* ptr =
+        mmap(nullptr, 1 << 21, PROT_READ | PROT_WRITE,
+             MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_HUGE_2MB, -1, 0);
+    return ptr == MAP_FAILED ? -1 : 0;
+  });
+
+  child->ErrnoValueTest("memfd_huge"_ns, ENOSYS, [] {
+    int fd = syscall(__NR_memfd_create, "hugemem",
+                     MFD_CLOEXEC | MFD_HUGETLB | MFD_HUGE_2MB);
+    if (fd >= 0) {
+      close(fd);
+    }
+    // Returning a closed fd is fine; it's just going to be tested for >= 0.
+    return fd;
   });
 
 #  endif  // XP_LINUX

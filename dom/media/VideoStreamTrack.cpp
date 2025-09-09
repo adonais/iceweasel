@@ -7,9 +7,9 @@
 
 #include "MediaTrackGraph.h"
 #include "MediaTrackListener.h"
+#include "VideoOutput.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
-#include "VideoOutput.h"
 
 namespace mozilla::dom {
 

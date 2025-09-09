@@ -9,11 +9,11 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/fd4bc7427678a4528
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/.gn b/.gn
-index e58101388b..72c42e9202 100644
+index e18f9eed57..391eadb382 100644
 --- a/.gn
 +++ b/.gn
 @@ -38,7 +38,9 @@ no_check_targets = [
- exec_script_whitelist = build_dotfile_settings.exec_script_whitelist +
+ exec_script_allowlist = build_dotfile_settings.exec_script_allowlist +
                          [ "//build_overrides/build.gni" ]
  
 -export_compile_commands = [ "*" ]

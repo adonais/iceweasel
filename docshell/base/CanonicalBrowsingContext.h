@@ -326,8 +326,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void GetLoadingSessionHistoryInfoFromParent(
       Maybe<LoadingSessionHistoryInfo>& aLoadingInfo);
 
-  mozilla::Span<const SessionHistoryInfo> GetContiguousSessionHistoryInfos();
-
   void HistoryCommitIndexAndLength();
 
   void SynchronizeLayoutHistoryState();
@@ -606,7 +604,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     RefPtr<SessionHistoryEntry> mEntry;
   };
   nsTArray<LoadingSessionHistoryEntry> mLoadingEntries;
-  AutoCleanLinkedList<RefPtr<SessionHistoryEntry>> mActiveEntryList;
+  LinkedList<SessionHistoryEntry> mActiveEntryList;
   RefPtr<SessionHistoryEntry> mActiveEntry;
 
   RefPtr<nsSecureBrowserUI> mSecureBrowserUI;
@@ -651,8 +649,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   bool mFullyDiscarded = false;
 
   nsTArray<std::function<void(uint64_t)>> mFullyDiscardedListeners;
-
-  nsTArray<SessionHistoryInfo> mActiveContiguousEntries;
 };
 
 }  // namespace dom

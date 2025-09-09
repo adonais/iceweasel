@@ -1737,6 +1737,7 @@ var gCSSProperties = {
   },
   "-moz-appearance": {
     domProp: "MozAppearance",
+    domPropDisabled: true, // Bug 1977489
     inherited: false,
     type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
     alias_for: "appearance",
@@ -2963,19 +2964,27 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     initial_values: ["normal"],
-    other_values: ["inline-size", "size"],
+    other_values: ["inline-size", "size"], // see also "layout.css.scroll-state.enabled" in this file
     invalid_values: [
+      // invalid values should always be invalid
       "none style",
       "none inline-size",
       "inline-size none",
       "style none",
       "style style",
       "inline-size style inline-size",
+      "inline-size normal inline-size",
       "inline-size block-size",
       "block-size",
       "block-size style",
       "size inline-size",
       "size block-size",
+      "size normal",
+      "normal size",
+      "inline-size normal",
+      "normal inline-size",
+      "scroll-state normal",
+      "normal scroll-state",
     ],
   },
   "container-name": {
@@ -9833,14 +9842,6 @@ var gCSSProperties = {
     other_values: ["non-scaling-stroke"],
     invalid_values: ["none non-scaling-stroke"],
   },
-  "-moz-window-dragging": {
-    domProp: "MozWindowDragging",
-    inherited: false,
-    type: CSS_TYPE_LONGHAND,
-    initial_values: ["default"],
-    other_values: ["drag", "no-drag"],
-    invalid_values: ["none"],
-  },
   "accent-color": {
     domProp: "accentColor",
     inherited: true,
@@ -13576,6 +13577,16 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
   };
 }
 
+if (IsCSSPropertyPrefEnabled("layout.css.scroll-state.enabled")) {
+  gCSSProperties["container-type"].other_values.push(
+    "scroll-state",
+    "size scroll-state",
+    "scroll-state size",
+    "inline-size scroll-state",
+    "scroll-state inline-size"
+  );
+}
+
 gCSSProperties["hyphenate-limit-chars"] = {
   domProp: "hyphenateLimitChars",
   inherited: true,
@@ -14182,6 +14193,94 @@ gCSSProperties["text-wrap-style"] = {
   invalid_values: ["wrap", "nowrap", "normal"],
 };
 
+if (IsCSSPropertyPrefEnabled("layout.css.text-autospace.enabled")) {
+  Object.assign(gCSSProperties, {
+    "text-autospace": {
+      domProp: "textAutospace",
+      inherited: true,
+      type: CSS_TYPE_LONGHAND,
+      applies_to_first_letter: true,
+      applies_to_first_line: true,
+      applies_to_placeholder: true,
+      initial_values: ["normal"],
+      other_values: [
+        "no-autospace",
+        "auto",
+        "ideograph-alpha",
+        "ideograph-numeric",
+        "ideograph-alpha ideograph-numeric",
+        "punctuation",
+        "punctuation ideograph-alpha",
+        "ideograph-alpha punctuation",
+        "punctuation ideograph-alpha ideograph-numeric",
+        "ideograph-alpha ideograph-numeric punctuation",
+        "ideograph-alpha insert",
+        "ideograph-numeric insert",
+        "ideograph-alpha ideograph-numeric insert",
+        "punctuation insert",
+        "punctuation ideograph-alpha insert",
+        "ideograph-alpha punctuation insert",
+        "insert ideograph-alpha",
+        "ideograph-alpha insert",
+        "insert ideograph-numeric",
+        "ideograph-numeric insert",
+        "insert ideograph-alpha ideograph-numeric",
+        "ideograph-alpha ideograph-numeric insert",
+        "insert punctuation",
+        "punctuation insert",
+        "insert punctuation ideograph-alpha",
+        "ideograph-alpha punctuation insert",
+        "insert punctuation ideograph-alpha ideograph-numeric",
+        "ideograph-alpha ideograph-numeric punctuation insert",
+        // Bug 1980111: Uncomment the valid 'replace' values below to enable the tests.
+        // "ideograph-alpha replace",
+        // "ideograph-numeric replace",
+        // "ideograph-alpha ideograph-numeric replace",
+        // "punctuation replace",
+        // "punctuation ideograph-alpha replace",
+        // "ideograph-alpha punctuation replace",
+        // "replace ideograph-alpha",
+        // "ideograph-alpha replace",
+        // "replace ideograph-numeric",
+        // "ideograph-numeric replace",
+        // "replace ideograph-alpha ideograph-numeric",
+        // "ideograph-alpha ideograph-numeric replace",
+        // "replace punctuation",
+        // "punctuation replace",
+        // "replace punctuation ideograph-alpha",
+        // "ideograph-alpha punctuation replace",
+        // "replace punctuation ideograph-alpha ideograph-numeric",
+        // "ideograph-alpha ideograph-numeric punctuation replace",
+      ],
+      invalid_values: [
+        "punctuation normal",
+        "punctuation normal insert",
+        "insert punctuation normal",
+        "punctuation normal replace",
+        "replace punctuation normal",
+        "normal ideograph-alpha",
+        "normal ideograph-alpha ideograph-numeric",
+        "normal punctuation",
+        "auto ideograph-alpha",
+        "auto ideograph-alpha ideograph-numeric",
+        "auto punctuation",
+        "normal insert",
+        "normal replace",
+        "auto insert",
+        "auto replace",
+        "13",
+        "-25",
+        "rubbish",
+        ",./!@#$",
+        "all",
+        "stretch",
+        "-10%",
+        "calc(10% + 1cm)",
+      ],
+    },
+  });
+}
+
 if (IsCSSPropertyPrefEnabled("layout.css.prefixes.transforms")) {
   Object.assign(gCSSProperties, {
     "-moz-transform": {
@@ -14293,19 +14392,6 @@ if (IsCSSPropertyPrefEnabled("layout.css.prefixes.transitions")) {
   });
 }
 
-if (IsCSSPropertyPrefEnabled("layout.css.moz-user-input.enabled")) {
-  Object.assign(gCSSProperties, {
-    "-moz-user-input": {
-      domProp: "MozUserInput",
-      inherited: true,
-      type: CSS_TYPE_LONGHAND,
-      initial_values: ["auto"],
-      other_values: ["none"],
-      invalid_values: [],
-    },
-  });
-}
-
 if (IsCSSPropertyPrefEnabled("layout.css.field-sizing.enabled")) {
   Object.assign(gCSSProperties, {
     "field-sizing": {
@@ -14364,6 +14450,64 @@ if (IsCSSPropertyPrefEnabled("dom.viewTransitions.enabled")) {
         "\\32bounce abc",
       ],
       invalid_values: ["abc none", "10px", "rgb(1, 2, 3)", "default"],
+    },
+  });
+}
+
+if (IsCSSPropertyPrefEnabled("layout.css.text-decoration-trim.enabled")) {
+  Object.assign(gCSSProperties, {
+    "text-decoration-trim": {
+      domProp: "textDecorationTrim",
+      inherited: false,
+      type: CSS_TYPE_LONGHAND,
+      applies_to_first_letter: true,
+      applies_to_first_line: true,
+      applies_to_placeholder: true,
+      applies_to_cue: true,
+      initial_values: ["0"],
+      other_values: [
+        "0",
+        "-14px",
+        "25px",
+        "100em",
+        "-45em",
+        "-40px",
+        "0 1px",
+        "4em -2px",
+        "100px 2in",
+        "3cm 0",
+        "-1mm -2px",
+        "calc(-1mm + 2em)",
+        "2px calc(2px - 1em)",
+        "calc(0) 0",
+      ],
+      invalid_values: [
+        "13",
+        "-25",
+        "rubbish",
+        ",./!@#$",
+        "from-font",
+        "all",
+        "stretch",
+        "-10%",
+        "43%",
+        "10px5cm",
+        "10px, 5cm",
+        "1em 10%",
+        "0 10%",
+        "50% 50%",
+        "100% 8mm",
+        "100% 0",
+        "0 solid",
+        "auto 7px",
+        "word 9em",
+        "10em auto",
+        "1px 2px 3px",
+        "45em auto 0",
+        "0px 10% 9em",
+        "calc(10% + 1cm)",
+        "0 calc(100% - 10px)",
+      ],
     },
   });
 }

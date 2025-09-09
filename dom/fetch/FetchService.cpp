@@ -2,27 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/dom/FetchService.h"
+
 #include "FetchLog.h"
 #include "FetchParent.h"
-#include "nsContentUtils.h"
-#include "nsIContentSecurityPolicy.h"
-#include "nsICookieJarSettings.h"
-#include "nsILoadGroup.h"
-#include "nsILoadInfo.h"
-#include "nsIIOService.h"
-#include "nsIObserverService.h"
-#include "nsIPrincipal.h"
-#include "nsIScriptSecurityManager.h"
-#include "nsNetUtil.h"
-#include "nsThreadUtils.h"
-#include "nsXULAppAPI.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ClientInfo.h"
-#include "mozilla/dom/FetchService.h"
 #include "mozilla/dom/InternalRequest.h"
 #include "mozilla/dom/InternalResponse.h"
 #include "mozilla/dom/PerformanceStorage.h"
@@ -31,6 +20,18 @@
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/net/CookieJarSettings.h"
+#include "nsContentUtils.h"
+#include "nsIContentSecurityPolicy.h"
+#include "nsICookieJarSettings.h"
+#include "nsIIOService.h"
+#include "nsILoadGroup.h"
+#include "nsILoadInfo.h"
+#include "nsIObserverService.h"
+#include "nsIPrincipal.h"
+#include "nsIScriptSecurityManager.h"
+#include "nsNetUtil.h"
+#include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"
 
 namespace mozilla::dom {
 

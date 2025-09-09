@@ -8,7 +8,6 @@ import android.content.Context
 import androidx.lifecycle.LifecycleOwner
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
@@ -119,7 +118,6 @@ internal open class TestableFxaAccountManager(
 const val EXPECTED_AUTH_STATE = "goodAuthState"
 const val UNEXPECTED_AUTH_STATE = "badAuthState"
 
-@ExperimentalCoroutinesApi // for runTest
 @RunWith(AndroidJUnit4::class)
 class FxaAccountManagerTest {
 

@@ -450,7 +450,8 @@ class CssLogic {
       rule.selectors.forEach(function (selector) {
         if (
           selector._matchId !== this._matchId &&
-          (selector.inlineStyle ||
+          (rule.domRule.declarationOrigin === "style-attribute" ||
+            rule.domRule.declarationOrigin === "pres-hints" ||
             this.selectorMatchesElement(rule.domRule, selector.selectorIndex))
         ) {
           selector._matchId = this._matchId;
@@ -599,15 +600,6 @@ class CssLogic {
         continue;
       }
 
-      // Add element.style information. Order matters here, and style attribute wins over
-      // other rules, so we need to add it in `this._matchesRules` before the regular rules.
-      if (element.style && element.style.length) {
-        const rule = new CssRule(null, { style: element.style }, element);
-        rule._matchId = this._matchId;
-        rule._passId = this._passId;
-        this._matchedRules.push([rule, status, distance]);
-      }
-
       // getMatchingCSSRules can return null with a shadow DOM element.
       if (domRules !== null) {
         // getMatchingCSSRules returns ordered from least-specific to most-specific,
@@ -616,7 +608,26 @@ class CssLogic {
         for (let i = domRules.length - 1; i >= 0; i--) {
           const domRule = domRules[i];
           if (domRule.declarationOrigin) {
-            // TODO(bug 1212289): Handle these rules.
+            // We only consume element.style and pres hint declarations for now
+            if (
+              domRule.declarationOrigin !== "style-attribute" &&
+              domRule.declarationOrigin !== "pres-hints"
+            ) {
+              continue;
+            }
+
+            const rule = new CssRule(
+              null,
+              {
+                style: domRule.style,
+                declarationOrigin: domRule.declarationOrigin,
+              },
+              element
+            );
+            rule._matchId = this._matchId;
+            rule._passId = this._passId;
+            this._matchedRules.push([rule, status, distance]);
+
             continue;
           }
           const sheet = this.getSheet(domRule.parentStyleSheet, -1);
@@ -986,9 +997,9 @@ class CssRule {
    * @param {CSSStyleSheet|null} cssSheet the CssSheet object of the stylesheet that
    * holds the CSSStyleRule. If the rule comes from element.style, set this
    * argument to null.
-   * @param {CSSStyleRule|object} domRule the DOM CSSStyleRule for which you want
-   * to cache data. If the rule comes from element.style, then provide
-   * an object of the form: {style: element.style}.
+   * @param {CSSStyleRule|InspectorDeclaration} domRule the DOM CSSStyleRule for which you want
+   * to cache data. If the rule comes from element.style or presentational attributes, it
+   * will be an InspectorDeclaration (object of the form {style: element.style, declarationOrigin: string}).
    * @param {Element} [element] If the rule comes from element.style, then this
    * argument must point to the element.
    * @constructor
@@ -1007,7 +1018,14 @@ class CssRule {
       this.userRule = this._cssSheet.userSheet;
       this.agentRule = this._cssSheet.agentSheet;
     } else if (element) {
-      this._selectors = [new CssSelector(this, "@element.style", 0)];
+      let selector = "";
+      if (domRule.declarationOrigin === "style-attribute") {
+        selector = "@element.style";
+      } else if (domRule.declarationOrigin === "pres-hints") {
+        selector = "@element.attributesStyle";
+      }
+
+      this._selectors = [new CssSelector(this, selector, 0)];
       this.line = -1;
       this.href = "#";
       this.authorRule = true;
@@ -1040,6 +1058,20 @@ class CssRule {
   }
 
   /**
+   * Returns the underlying CSSRule style
+   *
+   * @returns CSS2Properties
+   */
+  getStyle() {
+    // When dealing with a style attribute "rule", this.domRule is a InspectorDeclaration
+    // and its style property might not reflect the current declarations, so we need to
+    // retrieve the source element style instead.
+    return this.domRule.declarationOrigin === "style-attribute"
+      ? this.sourceElement.style
+      : this.domRule.style;
+  }
+
+  /**
    * Retrieve the style property value from the current CSSStyleRule.
    *
    * @param {string} property the CSS property name for which you want the
@@ -1047,7 +1079,7 @@ class CssRule {
    * @return {string} the property value.
    */
   getPropertyValue(property) {
-    return this.domRule.style.getPropertyValue(property);
+    return this.getStyle().getPropertyValue(property);
   }
 
   /**
@@ -1058,7 +1090,7 @@ class CssRule {
    * @return {string} the property priority.
    */
   getPropertyPriority(property) {
-    return this.domRule.style.getPropertyPriority(property);
+    return this.getStyle().getPropertyPriority(property);
   }
 
   /**
@@ -1106,7 +1138,7 @@ class CssSelector {
   constructor(cssRule, selector, index) {
     this.cssRule = cssRule;
     this.text = selector;
-    this.inlineStyle = this.text == "@element.style";
+    this.inlineStyle = cssRule.domRule?.declarationOrigin === "style-attribute";
     this._specificity = null;
     this.selectorIndex = index;
   }
@@ -1212,11 +1244,19 @@ class CssSelector {
    */
   get specificity() {
     if (this.inlineStyle) {
-      // We can't ask specificity from DOMUtils as element styles don't provide
-      // CSSStyleRule interface DOMUtils expect. However, specificity of element
-      // style is constant, 1,0,0,0 or 0x40000000, just return the constant
-      // directly. @see http://www.w3.org/TR/CSS2/cascade.html#specificity
+      // We don't have an actual rule to call selectorSpecificityAt for element styles.
+      // However, specificity of element style is constant, 1,0,0,0 or 0x40000000,
+      // so just return the constant directly.
+      // @see http://www.w3.org/TR/CSS2/cascade.html#specificity
       return 0x40000000;
+    }
+
+    if (this.cssRule.declarationOrigin === "pres-hints") {
+      // As for element styles, we don't have an actual rule to call selectorSpecificityAt
+      // on for pres-hints styles.
+      // However, specificity of such "rule" is constant, 0,0,0,0, just return the constant
+      // directly. @see https://www.w3.org/TR/CSS2/cascade.html#preshint
+      return 0;
     }
 
     if (typeof this._specificity !== "number") {

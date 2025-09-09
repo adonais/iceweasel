@@ -302,6 +302,7 @@ def install_requirements_file(
 # this mapping will map paths when running there.
 # The key is the source path, and the value the ci path
 _TRY_MAPPING = {
+    Path("accessible"): Path("mochitest", "browser", "accessible"),
     Path("browser"): Path("mochitest", "browser", "browser"),
     Path("netwerk"): Path("xpcshell", "tests", "netwerk"),
     Path("dom"): Path("mochitest", "tests", "dom"),

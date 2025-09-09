@@ -142,7 +142,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   NS_IMETHOD Suspend() override;
   NS_IMETHOD Resume() override;
   // nsIChannel
-  NS_IMETHOD GetSecurityInfo(nsITransportSecurityInfo** aSecurityInfo) override;
+  NS_IMETHOD
+  GetSecurityInfo(nsITransportSecurityInfo** aSecurityInfo) override;
   NS_IMETHOD AsyncOpen(nsIStreamListener* aListener) override;
   // nsIHttpChannel
   NS_IMETHOD GetEncodedBodySize(uint64_t* aEncodedBodySize) override;
@@ -335,6 +336,11 @@ class nsHttpChannel final : public HttpBaseChannel,
       nsHttpConnectionInfo* aConnInfo);
   [[nodiscard]] nsresult ContinueProcessResponse2(nsresult);
   nsresult HandleOverrideResponse();
+  nsresult OnPermissionPromptResult(bool aGranted, const nsACString& aType);
+  LNAPermission UpdateLocalNetworkAccessPermissions(
+      const nsACString& aPermissionType);
+  void MaybeUpdateDocumentIPAddressSpaceFromCache();
+  nsresult ProcessLNAActions();
 
  public:
   void UpdateCacheDisposition(bool aSuccessfulReval, bool aPartialContentUsed);
@@ -855,6 +861,9 @@ class nsHttpChannel final : public HttpBaseChannel,
   // rates of retried channels to the fallback domain.
   Maybe<EssentialDomainCategory> mEssentialDomainCategory;
   static EssentialDomainCategory GetEssentialDomainCategory(nsCString& domain);
+
+  // Permissions for the request to make local network access
+  LNAPerms mLNAPermission{};
 
  protected:
   virtual void DoNotifyListenerCleanup() override;

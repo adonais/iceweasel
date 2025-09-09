@@ -10,8 +10,8 @@
 #include "txExpandedNameMap.h"
 #include "txList.h"
 #include "txNodeSet.h"
-#include "txXSLTPatterns.h"
 #include "txXMLUtils.h"
+#include "txXSLTPatterns.h"
 
 class txPattern;
 class Expr;

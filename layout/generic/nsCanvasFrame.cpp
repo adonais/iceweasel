@@ -107,38 +107,10 @@ void nsCanvasFrame::AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
 }
 
 void nsCanvasFrame::Destroy(DestroyContext& aContext) {
-  if (ScrollContainerFrame* sf = PresShell()->GetRootScrollContainerFrame()) {
-    sf->RemoveScrollPositionListener(this);
-  }
-
   if (mTooltipContent) {
     aContext.AddAnonymousContent(mTooltipContent.forget());
   }
   nsContainerFrame::Destroy(aContext);
-}
-
-void nsCanvasFrame::ScrollPositionWillChange(nscoord aX, nscoord aY) {
-  if (mDoPaintFocus) {
-    mDoPaintFocus = false;
-    PresShell()->GetRootFrame()->InvalidateFrameSubtree();
-  }
-}
-
-NS_IMETHODIMP
-nsCanvasFrame::SetHasFocus(bool aHasFocus) {
-  if (mDoPaintFocus != aHasFocus) {
-    mDoPaintFocus = aHasFocus;
-    PresShell()->GetRootFrame()->InvalidateFrameSubtree();
-
-    if (!mAddedScrollPositionListener) {
-      if (ScrollContainerFrame* sf =
-              PresShell()->GetRootScrollContainerFrame()) {
-        sf->AddScrollPositionListener(this);
-        mAddedScrollPositionListener = true;
-      }
-    }
-  }
-  return NS_OK;
 }
 
 void nsCanvasFrame::SetInitialChildList(ChildListID aListID,
@@ -241,35 +213,6 @@ bool nsDisplayCanvasBackgroundImage::IsSingleFixedPositionImage(
 
   return true;
 }
-
-/**
- * A display item to paint the focus ring for the document.
- *
- * The only reason this can't use nsDisplayGeneric is overriding GetBounds.
- */
-class nsDisplayCanvasFocus final : public nsPaintedDisplayItem {
- public:
-  nsDisplayCanvasFocus(nsDisplayListBuilder* aBuilder, nsCanvasFrame* aFrame)
-      : nsPaintedDisplayItem(aBuilder, aFrame) {
-    MOZ_COUNT_CTOR(nsDisplayCanvasFocus);
-  }
-
-  MOZ_COUNTED_DTOR_FINAL(nsDisplayCanvasFocus)
-
-  nsRect GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) const override {
-    *aSnap = false;
-    // This is an overestimate, but that's not a problem.
-    auto* frame = static_cast<nsCanvasFrame*>(mFrame);
-    return frame->CanvasArea() + ToReferenceFrame();
-  }
-
-  void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override {
-    auto* frame = static_cast<nsCanvasFrame*>(mFrame);
-    frame->PaintFocus(aCtx->GetDrawTarget(), ToReferenceFrame());
-  }
-
-  NS_DISPLAY_DECL_NAME("CanvasFocus", TYPE_CANVAS_FOCUS)
-};
 
 void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                      const nsDisplayListSet& aLists) {
@@ -464,28 +407,6 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     // part of the blend group. Suppress it by making it transparent.
     backgroundColorItem->OverrideColor(NS_TRANSPARENT);
   }
-
-  if (mDoPaintFocus) {
-    aLists.Outlines()->AppendNewToTop<nsDisplayCanvasFocus>(aBuilder, this);
-  }
-}
-
-void nsCanvasFrame::PaintFocus(DrawTarget* aDrawTarget, nsPoint aPt) {
-  nsRect focusRect(aPt, GetSize());
-
-  if (ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(GetParent())) {
-    nsRect portRect = scrollContainerFrame->GetScrollPortRect();
-    focusRect.width = portRect.width;
-    focusRect.height = portRect.height;
-    focusRect.MoveBy(scrollContainerFrame->GetScrollPosition());
-  }
-
-  // XXX use the root frame foreground color, but should we find BODY frame
-  // for HTML documents?
-  nsIFrame* root = mFrames.FirstChild();
-  const auto* text = root ? root->StyleText() : StyleText();
-  nsCSSRendering::PaintFocus(PresContext(), aDrawTarget, focusRect,
-                             text->mColor.ToColor());
 }
 
 nscoord nsCanvasFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,

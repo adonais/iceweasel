@@ -3156,7 +3156,7 @@ js::gc::AllocKind JSObject::allocKindForTenure(
   MOZ_ASSERT(IsInsideNursery(this));
 
   if (is<NativeObject>()) {
-    if (canHaveFixedElements()) {
+    if (is<ArrayObject>()) {
       const NativeObject& nobj = as<NativeObject>();
       MOZ_ASSERT(nobj.numFixedSlots() == 0);
 
@@ -3261,6 +3261,12 @@ void JSObject::addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
   } else if (is<WeakCollectionObject>()) {
     info->objectsMallocHeapMisc +=
         as<WeakCollectionObject>().sizeOfExcludingThis(mallocSizeOf);
+  } else if (is<WasmStructObject>()) {
+    WasmStructObject::addSizeOfExcludingThis(this, mallocSizeOf, info,
+                                             runtimeSizes);
+  } else if (is<WasmArrayObject>()) {
+    WasmArrayObject::addSizeOfExcludingThis(this, mallocSizeOf, info,
+                                            runtimeSizes);
   }
 #ifdef JS_HAS_CTYPES
   else {
@@ -3271,9 +3277,8 @@ void JSObject::addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
 #endif
 }
 
-size_t JSObject::sizeOfIncludingThisInNursery() const {
-  // This function doesn't concern itself yet with typed objects (bug 1133593).
-
+size_t JSObject::sizeOfIncludingThisInNursery(
+    mozilla::MallocSizeOf mallocSizeOf) const {
   MOZ_ASSERT(!isTenured());
 
   const Nursery& nursery = runtimeFromMainThread()->gc.nursery();
@@ -3293,6 +3298,16 @@ size_t JSObject::sizeOfIncludingThisInNursery() const {
     if (is<ArgumentsObject>()) {
       size += as<ArgumentsObject>().sizeOfData();
     }
+  } else if (is<WasmStructObject>()) {
+    const WasmStructObject& s = as<WasmStructObject>();
+    if (s.outlineData_) {
+      size += mallocSizeOf(s.outlineData_);
+    }
+  } else if (is<WasmArrayObject>()) {
+    const WasmArrayObject& a = as<WasmArrayObject>();
+    if (!a.isDataInline()) {
+      size += mallocSizeOf(a.dataHeader());
+    }
   }
 
   return size;
@@ -3303,7 +3318,7 @@ JS::ubi::Node::Size JS::ubi::Concrete<JSObject>::size(
   JSObject& obj = get();
 
   if (!obj.isTenured()) {
-    return obj.sizeOfIncludingThisInNursery();
+    return obj.sizeOfIncludingThisInNursery(mallocSizeOf);
   }
 
   JS::ClassInfo info;
@@ -3543,10 +3558,9 @@ void JSObject::debugCheckNewObject(Shape* shape, js::gc::AllocKind allocKind,
   MOZ_ASSERT(!shape->isDictionary());
 
   // If the class has the JSCLASS_DELAY_METADATA_BUILDER flag, the caller must
-  // use AutoSetNewObjectMetadata. Ignore Wasm GC objects for now (bug 1963323).
-  MOZ_ASSERT_IF(
-      clasp->shouldDelayMetadataBuilder() && !IsWasmGcObjectClass(clasp),
-      shape->realm()->hasActiveAutoSetNewObjectMetadata());
+  // use AutoSetNewObjectMetadata.
+  MOZ_ASSERT_IF(clasp->shouldDelayMetadataBuilder(),
+                shape->realm()->hasActiveAutoSetNewObjectMetadata());
   MOZ_ASSERT(!shape->realm()->hasObjectPendingMetadata());
 
   // Non-native classes manage their own data and slots, so numFixedSlots is

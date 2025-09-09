@@ -258,3 +258,11 @@ support-files = [
 ["browser_search_telemetry_visibility_helper_horizontal.js"]
 
 ["browser_search_telemetry_visibility_helper_vertical.js"]
+
+["browser_search_telemetry_visualSearch.js"]
+support-files = [
+  "searchTelemetry.html",
+  "../browser_contentContextMenu.xhtml",
+  "../ctxmenu-image.png",
+  "../search-glass.svg",
+]

@@ -37,10 +37,7 @@ add_task(async function () {
   await waitForSelectedLocation(dbg, 1);
 
   info("Pretty-print source.");
-  clickElement(dbg, "prettyPrintButton");
-  await waitForSelectedSource(dbg, "shadowdom_open_debugger.min.js:formatted");
-  info("Switch back to the original source.");
-  await selectSource(dbg, "shadowdom_open_debugger.min.js");
+  await togglePrettyPrint(dbg);
 
   info("Return to inspector.");
   await toolbox.selectTool("inspector");
@@ -50,4 +47,19 @@ add_task(async function () {
 
   await waitForSelectedSource(dbg, "shadowdom_open_debugger.min.js:formatted");
   await waitForSelectedLocation(dbg, 5);
+
+  info("Return to debugger.");
+  await toolbox.selectTool("jsdebugger");
+
+  info("Switch back to the minimized source.");
+  await togglePrettyPrint(dbg);
+
+  info("Return to inspector again.");
+  await toolbox.selectTool("inspector");
+
+  info("Click custom badge once more.");
+  customBadge.click();
+
+  await waitForSelectedSource(dbg, "shadowdom_open_debugger.min.js");
+  await waitForSelectedLocation(dbg, 1, 90);
 });

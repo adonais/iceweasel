@@ -44,6 +44,11 @@ internal sealed class DetailLoginMenuAction : LoginsAction {
     data class DeleteLoginMenuItemClicked(val item: LoginItem) : DetailLoginMenuAction()
 }
 
+internal sealed class LoginDeletionDialogAction : LoginsAction {
+    data object CancelTapped : LoginDeletionDialogAction()
+    data object DeleteTapped : LoginDeletionDialogAction()
+}
+
 internal data object LoginsDetailBackClicked : LoginsAction
 internal data object AddLoginBackClicked : LoginsAction
 internal data object EditLoginBackClicked : LoginsAction

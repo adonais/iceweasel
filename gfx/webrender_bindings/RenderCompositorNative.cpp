@@ -33,6 +33,8 @@ RenderCompositorNative::RenderCompositorNative(
       mNativeLayerRoot(GetWidget()->GetNativeLayerRoot()) {
   LOG("RenderCompositorNative::RenderCompositorNative()");
 
+  MOZ_ASSERT(mNativeLayerRoot);
+
 #if defined(XP_DARWIN) || defined(MOZ_WAYLAND)
   auto pool = RenderThread::Get()->SharedSurfacePool();
   if (pool) {

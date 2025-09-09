@@ -88,4 +88,16 @@ class ToggleRadioButtonPreference @JvmOverloads constructor(
             notifyChanged()
         }
     }
+
+    /**
+     * Updates the icon resources for the true and false states of the preference and refreshes the UI.
+     *
+     * @param trueOptionIconRes Resource ID for the icon shown when the preference is checked (true).
+     * @param falseOptionIconRes Resource ID for the icon shown when the preference is unchecked (false).
+     */
+    fun updateIcon(trueOptionIconRes: Int, falseOptionIconRes: Int) {
+        this.trueOptionIconRes = trueOptionIconRes
+        this.falseOptionIconRes = falseOptionIconRes
+        notifyChanged()
+    }
 }

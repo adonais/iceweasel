@@ -7,9 +7,9 @@
 #ifndef DOM_SVG_SVGPATHSEGMENT_H_
 #define DOM_SVG_SVGPATHSEGMENT_H_
 
-#include "nsWrapperCache.h"
 #include "SVGPathSegUtils.h"
 #include "mozilla/dom/SVGPathElement.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla::dom {
 

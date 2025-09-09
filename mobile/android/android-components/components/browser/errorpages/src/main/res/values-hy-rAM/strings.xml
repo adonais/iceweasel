@@ -83,9 +83,9 @@
   <!-- In the example, the two URLs in markup do not need to be translated. -->
   <string name="mozac_browser_errorpages_unknown_host_message"><![CDATA[<p> Դիտարկիչը չկարողացավ գտնել տրամադրված հասցեի հոսթի սպասարկիչը:</p> <ul> <li> Ստուգեք հասցեն՝ մուտքագրման սխալների համար, ինչպիսիք են՝ <strong> ww </strong>.example.com՝ <strong> www </strong>.example.com</li>-ի փոխարեն <li>Եթե որևէ էջ չի բեռնվում, ապա ստուգեք ձեր սարքի տվյալները կամ Wi-Fi կապակցումը:</li> </ul>]]></string>
   <!-- The document title and heading of an error page. -->
-  <string name="mozac_browser_errorpages_no_internet_title_2">Կարծես թե ձեր ինտերնետ կապի հետ կապված խնդիր կա</string>
+  <string name="mozac_browser_errorpages_no_internet_title_2">Կարծես թե ձեր համացանցային կապակցման հետ կապված խնդիր կա</string>
   <!-- The main body text of this error page. It will be shown beneath the title -->
-  <string name="mozac_browser_errorpages_no_internet_message_2">Փորձեք միանալ մեկ այլ սարքում: Ստուգեք ձեր մոդեմը կամ երթուղիչը: Կապախզեք և նորից միացեք Wi-Fi-ին:</string>
+  <string name="mozac_browser_errorpages_no_internet_message_2">Փորձեք միանալ մեկ այլ սարքի: Ստուգեք ձեր մոդեմը կամ երթուղիչը: Կապախզեք և նորից միացեք Wi-Fi-ին:</string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_no_internet_error_code">Սխալի կոդը՝ NS_ERROR_OFFLINE</string>
   <!-- Text that will show up on the button at the bottom of the error page -->

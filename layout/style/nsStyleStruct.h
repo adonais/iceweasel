@@ -379,6 +379,41 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBackground {
 using AnchorResolvedMargin =
     mozilla::UniqueOrNonOwningPtr<const mozilla::StyleMargin>;
 
+// Resolved anchor positioning data.
+struct AnchorPosResolutionData {
+  // Size of the referenced anchor.
+  nsSize mSize;
+  // Origin of the referenced anchor, w.r.t. containing block at the time of
+  // resolution. Includes scroll offsets, for now.
+  // Nothing if the anchor did not resolve, or if the anchor was only referred
+  // to by its size.
+  mozilla::Maybe<nsPoint> mOrigin;
+};
+
+// Mapping from a referenced anchor to its resolution (If a valid anchor is
+// found).
+class AnchorPosReferencedAnchors {
+ public:
+  AnchorPosReferencedAnchors() = default;
+  AnchorPosReferencedAnchors(const AnchorPosReferencedAnchors&) = delete;
+  AnchorPosReferencedAnchors(AnchorPosReferencedAnchors&&) = default;
+
+  AnchorPosReferencedAnchors& operator=(const AnchorPosReferencedAnchors&) =
+      delete;
+  AnchorPosReferencedAnchors& operator=(AnchorPosReferencedAnchors&&) = default;
+
+  struct Result {
+    bool mAlreadyResolved;
+    mozilla::Maybe<AnchorPosResolutionData>* mEntry;
+  };
+
+  Result Lookup(const nsAtom* aAnchorName, bool aNeedOffset);
+
+ private:
+  nsTHashMap<RefPtr<const nsAtom>, mozilla::Maybe<AnchorPosResolutionData>>
+      mMap;
+};
+
 // Base set of parameters required to resolve a reference to an anchor.
 struct AnchorPosResolutionParams {
   // Frame of the anchor positioned element.
@@ -386,10 +421,15 @@ struct AnchorPosResolutionParams {
   const nsIFrame* mFrame;
   // Position property of the element in question.
   mozilla::StylePositionProperty mPosition;
+  // Storage for referenced anchors. To be populated on abspos reflow, whenever
+  // the frame makes any anchor reference.
+  AnchorPosReferencedAnchors* const mReferencedAnchors = nullptr;
 
   // Helper functions for creating anchor resolution parameters.
   // Defined in corresponding header files.
-  static inline AnchorPosResolutionParams From(const nsIFrame* aFrame);
+  static inline AnchorPosResolutionParams From(
+      const nsIFrame* aFrame,
+      AnchorPosReferencedAnchors* aReferencedAnchors = nullptr);
   static inline AnchorPosResolutionParams From(const mozilla::ReflowInput* aRI);
   static inline AnchorPosResolutionParams From(
       const nsComputedDOMStyle* aComputedDOMStyle);
@@ -730,8 +770,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList {
   nsStyleList& operator=(const nsStyleList& aOther) = delete;
   nsChangeHint CalcDifference(const nsStyleList& aNewData,
                               const mozilla::ComputedStyle& aOldStyle) const;
-
-  already_AddRefed<nsIURI> GetListStyleImageURI() const;
 
   mozilla::StyleListStylePosition mListStylePosition;
 
@@ -1149,6 +1187,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTextReset {
   mozilla::StyleInitialLetter mInitialLetter;
   mozilla::StyleColor mTextDecorationColor;
   mozilla::StyleTextDecorationLength mTextDecorationThickness;
+  mozilla::StyleTextDecorationTrim mTextDecorationTrim;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
@@ -1207,6 +1246,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
 
   mozilla::StyleTextWrapStyle mTextWrapStyle =
       mozilla::StyleTextWrapStyle::Auto;
+
+  mozilla::StyleTextAutospace mTextAutospace =
+      mozilla::StyleTextAutospace::NORMAL;
 
   char16_t TextSecurityMaskChar() const {
     switch (mWebkitTextSecurity) {
@@ -1548,7 +1590,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   mozilla::StyleContainerType mContainerType;
 
   bool IsQueryContainer() const {
-    return mContainerType != mozilla::StyleContainerType::Normal;
+    return mContainerType != mozilla::StyleContainerType::NORMAL;
   }
 
   // See WritingModes.h for the implementations.
@@ -2082,15 +2124,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUI {
   mozilla::StyleMozTheme mMozTheme;
 
  private:
-  mozilla::StyleUserInput mUserInput;
   mozilla::StyleUserFocus mUserFocus;
   mozilla::StylePointerEvents mPointerEvents;
   mozilla::StyleCursor mCursor;
 
  public:
   bool IsInert() const { return mInert == mozilla::StyleInert::Inert; }
-
-  mozilla::StyleUserInput UserInput() const { return mUserInput; }
 
   mozilla::StyleUserFocus UserFocus() const {
     return IsInert() ? mozilla::StyleUserFocus::None : mUserFocus;

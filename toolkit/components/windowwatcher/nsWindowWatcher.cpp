@@ -1052,10 +1052,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     // where we can't shut down because an invisible window is open.  If
     // someone tries to do this, throw.
     if (!hasChromeParent && (chromeFlags & nsIWebBrowserChrome::CHROME_MODAL)) {
-      nsCOMPtr<nsIBaseWindow> parentWindow(do_GetInterface(parentTreeOwner));
       nsCOMPtr<nsIWidget> parentWidget;
-      if (parentWindow) {
-        parentWindow->GetMainWidget(getter_AddRefs(parentWidget));
+      if (nsCOMPtr<nsIBaseWindow> parentWindow =
+              do_GetInterface(parentTreeOwner)) {
+        parentWidget = parentWindow->GetMainWidget();
       }
       // NOTE: the logic for this visibility check is duplicated in
       // nsIDOMWindowUtils::isParentWindowMainWidgetVisible - if we change
@@ -1451,8 +1451,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     nsCOMPtr<nsIBaseWindow> parentWindow(do_GetInterface(newTreeOwner));
     nsCOMPtr<nsIWidget> parentWidget;
     if (parentWindow) {
-      parentWindow->GetMainWidget(getter_AddRefs(parentWidget));
-      if (parentWidget) {
+      if ((parentWidget = parentWindow->GetMainWidget())) {
         isAppModal = parentWidget->IsRunningAppModal();
       }
     }

@@ -8,11 +8,11 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
-#include "txExprResult.h"
-#include "txCore.h"
-#include "nsString.h"
-#include "txOwningArray.h"
 #include "nsAtom.h"
+#include "nsString.h"
+#include "txCore.h"
+#include "txExprResult.h"
+#include "txOwningArray.h"
 
 #ifdef DEBUG
 #  define TX_TO_STRING

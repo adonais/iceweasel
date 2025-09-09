@@ -7,10 +7,10 @@
 #include "CSSTransition.h"
 
 #include "mozilla/AnimationEventDispatcher.h"
-#include "mozilla/dom/CSSTransitionBinding.h"
-#include "mozilla/dom/KeyframeEffectBinding.h"
-#include "mozilla/dom/KeyframeEffect.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/dom/CSSTransitionBinding.h"
+#include "mozilla/dom/KeyframeEffect.h"
+#include "mozilla/dom/KeyframeEffectBinding.h"
 #include "nsPresContext.h"
 
 namespace mozilla::dom {

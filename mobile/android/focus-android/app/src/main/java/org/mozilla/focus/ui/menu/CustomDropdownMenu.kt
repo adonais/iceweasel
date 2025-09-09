@@ -7,7 +7,7 @@ package org.mozilla.focus.ui.menu
 import androidx.compose.foundation.background
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import org.mozilla.focus.ui.theme.focusColors

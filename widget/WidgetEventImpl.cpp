@@ -204,6 +204,28 @@ const char* ToChar(EventClassID aEventClassID) {
   }
 }
 
+nsCString InputSourceToString(uint16_t aInputSource) {
+  switch (aInputSource) {
+    case dom::MouseEvent_Binding::MOZ_SOURCE_UNKNOWN:
+      return "MOZ_SOURCE_UNKNOWN"_ns;
+    case dom::MouseEvent_Binding::MOZ_SOURCE_MOUSE:
+      return "MOZ_SOURCE_MOUSE"_ns;
+    case dom::MouseEvent_Binding::MOZ_SOURCE_PEN:
+      return "MOZ_SOURCE_PEN"_ns;
+    case dom::MouseEvent_Binding::MOZ_SOURCE_ERASER:
+      return "MOZ_SOURCE_ERASER"_ns;
+    case dom::MouseEvent_Binding::MOZ_SOURCE_CURSOR:
+      return "MOZ_SOURCE_CURSOR"_ns;
+    case dom::MouseEvent_Binding::MOZ_SOURCE_TOUCH:
+      return "MOZ_SOURCE_TOUCH"_ns;
+    case dom::MouseEvent_Binding::MOZ_SOURCE_KEYBOARD:
+      return "MOZ_SOURCE_KEYBOARD"_ns;
+    default:
+      return nsPrintfCString("<unknown value %u (0x%04X)>", aInputSource,
+                             aInputSource);
+  }
+}
+
 const nsCString ToString(KeyNameIndex aKeyNameIndex) {
   if (aKeyNameIndex == KEY_NAME_INDEX_USE_STRING) {
     return "USE_STRING"_ns;

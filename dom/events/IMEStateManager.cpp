@@ -33,7 +33,6 @@
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/widget/IMEData.h"
-
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsFocusManager.h"

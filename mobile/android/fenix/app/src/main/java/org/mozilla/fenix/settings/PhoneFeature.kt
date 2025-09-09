@@ -36,6 +36,8 @@ enum class PhoneFeature(val androidPermissionsList: Array<String>) : Parcelable 
     PERSISTENT_STORAGE(emptyArray()),
     MEDIA_KEY_SYSTEM_ACCESS(emptyArray()),
     CROSS_ORIGIN_STORAGE_ACCESS(emptyArray()),
+    LOCAL_DEVICE_ACCESS(emptyArray()),
+    LOCAL_NETWORK_ACCESS(emptyArray()),
     ;
 
     fun isAndroidPermissionGranted(context: Context): Boolean {
@@ -90,6 +92,8 @@ enum class PhoneFeature(val androidPermissionsList: Array<String>) : Parcelable 
             MEDIA_KEY_SYSTEM_ACCESS -> context.getString(R.string.preference_phone_feature_media_key_system_access)
             AUTOPLAY, AUTOPLAY_AUDIBLE, AUTOPLAY_INAUDIBLE ->
                 context.getString(R.string.preference_browser_feature_autoplay)
+            LOCAL_DEVICE_ACCESS -> context.getString(R.string.preference_browser_feature_local_device_access)
+            LOCAL_NETWORK_ACCESS -> context.getString(R.string.preference_browser_feature_local_network_access)
         }
     }
 
@@ -107,6 +111,8 @@ enum class PhoneFeature(val androidPermissionsList: Array<String>) : Parcelable 
             CROSS_ORIGIN_STORAGE_ACCESS -> R.string.preference_phone_feature_cross_origin_storage_access
             MEDIA_KEY_SYSTEM_ACCESS -> R.string.preference_phone_feature_media_key_system_access
             AUTOPLAY, AUTOPLAY_AUDIBLE, AUTOPLAY_INAUDIBLE -> R.string.preference_browser_feature_autoplay
+            LOCAL_DEVICE_ACCESS -> R.string.preference_browser_feature_local_device_access
+            LOCAL_NETWORK_ACCESS -> R.string.preference_browser_feature_local_network_access
         }
     }
 
@@ -124,6 +130,8 @@ enum class PhoneFeature(val androidPermissionsList: Array<String>) : Parcelable 
             CROSS_ORIGIN_STORAGE_ACCESS -> R.drawable.mozac_ic_cookies_24
             MEDIA_KEY_SYSTEM_ACCESS -> R.drawable.mozac_ic_link_24
             AUTOPLAY, AUTOPLAY_AUDIBLE, AUTOPLAY_INAUDIBLE -> R.drawable.mozac_ic_autoplay_24
+            LOCAL_DEVICE_ACCESS -> R.drawable.mozac_ic_device_desktop_24
+            LOCAL_NETWORK_ACCESS -> R.drawable.mozac_ic_router_24
         }
     }
 
@@ -144,6 +152,8 @@ enum class PhoneFeature(val androidPermissionsList: Array<String>) : Parcelable 
             PERSISTENT_STORAGE -> R.string.pref_key_browser_feature_persistent_storage
             CROSS_ORIGIN_STORAGE_ACCESS -> R.string.pref_key_browser_feature_cross_origin_storage_access
             MEDIA_KEY_SYSTEM_ACCESS -> R.string.pref_key_browser_feature_media_key_system_access
+            LOCAL_DEVICE_ACCESS -> R.string.pref_key_browser_feature_local_device_access
+            LOCAL_NETWORK_ACCESS -> R.string.pref_key_browser_feature_local_network_access
         }
     }
 

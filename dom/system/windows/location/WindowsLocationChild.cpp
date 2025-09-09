@@ -4,14 +4,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "WindowsLocationChild.h"
-#include "nsCOMPtr.h"
+
+#include <locationapi.h>
+
 #include "WindowsLocationProvider.h"
 #include "mozilla/dom/GeolocationPosition.h"
 #include "mozilla/dom/GeolocationPositionErrorBinding.h"
+#include "nsCOMPtr.h"
 #include "nsIGeolocationProvider.h"
 #include "prtime.h"
-
-#include <locationapi.h>
 
 namespace mozilla::dom {
 

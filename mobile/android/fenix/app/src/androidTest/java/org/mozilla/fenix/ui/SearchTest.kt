@@ -9,6 +9,7 @@ import android.hardware.camera2.CameraManager
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
 import androidx.test.espresso.Espresso
+import androidx.test.espresso.Espresso.openActionBarOverflowOrOptionsMenu
 import androidx.test.filters.SdkSuppress
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
 import okhttp3.mockwebserver.MockWebServer
@@ -40,8 +41,10 @@ import org.mozilla.fenix.helpers.TestAssetHelper
 import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.helpers.TestHelper.clickSnackbarButton
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
+import org.mozilla.fenix.helpers.TestHelper.longTapSelectItem
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
 import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
+import org.mozilla.fenix.helpers.TestHelper.waitUntilSnackbarGone
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.clickContextMenuItem
@@ -421,7 +424,6 @@ class SearchTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1592269
-    @Ignore("Bug causing inconsistencies, see: https://bugzilla.mozilla.org/show_bug.cgi?id=1943051 for more info")
     @SmokeTest
     @Test
     fun deleteIndividualHistoryItemsFromSearchGroupTest() {
@@ -450,21 +452,22 @@ class SearchTest : TestSetup() {
             verifyRecentlyVisitedSearchGroupDisplayed(activityTestRule, shouldBeDisplayed = true, searchTerm = queryString, groupSize = 3)
         }.openRecentlyVisitedSearchGroupHistoryList(activityTestRule, queryString) {
             clickDeleteHistoryButton(firstPageUrl.toString())
-            TestHelper.longTapSelectItem(secondPageUrl)
+            longTapSelectItem(secondPageUrl)
             multipleSelectionToolbar {
-                Espresso.openActionBarOverflowOrOptionsMenu(activityTestRule.activity)
+                openActionBarOverflowOrOptionsMenu(activityTestRule.activity)
                 clickMultiSelectionDelete()
+                waitUntilSnackbarGone()
             }
             exitMenu()
         }
         homeScreen {
+            waitForAppWindowToBeUpdated()
             // checking that the group is removed when only 1 item is left
             verifyRecentlyVisitedSearchGroupDisplayed(activityTestRule, shouldBeDisplayed = false, searchTerm = queryString, groupSize = 1)
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1592242
-    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=1922538")
     @Test
     fun deleteSearchGroupFromHomeScreenTest() {
         val firstPageUrl = TestAssetHelper.getGenericAsset(searchMockServer, 1).url

@@ -2943,6 +2943,7 @@ nsresult CacheFileIOManager::OverLimitEvictionInternal() {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
+  auto frecencySnapshot = CacheIndex::GetSortedSnapshotForEviction();
   while (true) {
     int64_t freeSpace;
     rv = mCacheDirectory->GetDiskSpaceAvailable(&freeSpace);
@@ -3011,9 +3012,9 @@ nsresult CacheFileIOManager::OverLimitEvictionInternal() {
     }
 
     SHA1Sum::Hash hash;
-    uint32_t cnt;
+    uint32_t cnt = 0;
     static uint32_t consecutiveFailures = 0;
-    rv = CacheIndex::GetEntryForEviction(false, &hash, &cnt);
+    rv = CacheIndex::GetEntryForEviction(frecencySnapshot, false, &hash, &cnt);
     NS_ENSURE_SUCCESS(rv, rv);
 
     rv = DoomFileByKeyInternal(&hash);
@@ -3041,23 +3042,7 @@ nsresult CacheFileIOManager::OverLimitEvictionInternal() {
            "DoomFileByKeyInternal() failed. [rv=0x%08" PRIx32 "]",
            static_cast<uint32_t>(rv)));
 
-      // Normally, CacheIndex::UpdateEntry() is called only to update newly
-      // created/opened entries which are always fresh and UpdateEntry() expects
-      // and checks this flag. The way we use UpdateEntry() here is a kind of
-      // hack and we must make sure the flag is set by calling
-      // EnsureEntryExists().
-      rv = CacheIndex::EnsureEntryExists(&hash);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      // Move the entry at the end of both lists to make sure we won't end up
-      // failing on one entry forever.
-      uint32_t frecency = 0;
-      rv = CacheIndex::UpdateEntry(&hash, &frecency, nullptr, nullptr, nullptr,
-                                   nullptr, nullptr);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      consecutiveFailures++;
-      if (consecutiveFailures >= cnt) {
+      if (++consecutiveFailures >= cnt) {
         // This doesn't necessarily mean that we've tried to doom every entry
         // but we've reached a sane number of tries. It is likely that another
         // eviction will start soon. And as said earlier, this normally doesn't
@@ -4088,8 +4073,8 @@ nsresult CacheFileIOManager::OpenNSPRHandle(CacheFileHandle* aHandle,
 
       SHA1Sum::Hash hash;
       uint32_t cnt;
-
-      rv = CacheIndex::GetEntryForEviction(true, &hash, &cnt);
+      auto snapshot = CacheIndex::GetSortedSnapshotForEviction();
+      rv = CacheIndex::GetEntryForEviction(snapshot, true, &hash, &cnt);
       if (NS_SUCCEEDED(rv)) {
         rv = DoomFileByKeyInternal(&hash);
       }

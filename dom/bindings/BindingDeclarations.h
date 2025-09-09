@@ -13,23 +13,19 @@
 #ifndef mozilla_dom_BindingDeclarations_h__
 #define mozilla_dom_BindingDeclarations_h__
 
+#include <type_traits>
+
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
-
+#include "js/Value.h"
+#include "mozilla/CycleCollectedUniquePtr.h"
 #include "mozilla/Maybe.h"
-
+#include "mozilla/RootedOwningNonNull.h"
+#include "mozilla/RootedRefPtr.h"
 #include "mozilla/dom/DOMString.h"
-
 #include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nsTArray.h"
-
-#include <type_traits>
-
-#include "js/Value.h"
-#include "mozilla/CycleCollectedUniquePtr.h"
-#include "mozilla/RootedOwningNonNull.h"
-#include "mozilla/RootedRefPtr.h"
 
 class nsIPrincipal;
 class nsWrapperCache;

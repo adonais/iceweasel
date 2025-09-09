@@ -26,11 +26,19 @@ WaylandSurfaceLock::WaylandSurfaceLock(RefPtr<WaylandSurface> aWaylandSurface,
 #endif
 }
 
-WaylandSurfaceLock::~WaylandSurfaceLock() {
 #ifdef MOZ_WAYLAND
+void WaylandSurfaceLock::Commit() {
   if (GdkIsWaylandDisplay()) {
     mWaylandSurface->Commit(this, mForceCommit,
                             /* flush display */ false);
+  }
+}
+#endif
+
+WaylandSurfaceLock::~WaylandSurfaceLock() {
+#ifdef MOZ_WAYLAND
+  if (GdkIsWaylandDisplay()) {
+    Commit();
     mWaylandSurface->Unlock(&mSurface, this);
   }
 #endif

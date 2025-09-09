@@ -20,6 +20,7 @@
 #include "PDMFactory.h"
 #include "mozilla/CDMProxy.h"
 #include "mozilla/EMEUtils.h"
+#include "mozilla/RemoteCDMChild.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
@@ -396,6 +397,12 @@ EMEDecoderModule::AsyncCreateDecoder(const CreateDecoderParams& aParams) {
              aParams.mEncryptedCustomIdent ==
                  CreateDecoderParams::EncryptedCustomIdent::True);
   MOZ_ASSERT(mPDM);
+
+  // If the CDMProxy is a RemoteCDMChild actor, then we know that the CDM
+  // functionality will be exercised by the decoder in the remote process.
+  if (auto* cdm = static_cast<PRemoteCDMActor*>(mProxy->AsRemoteCDMChild())) {
+    return mPDM->CreateDecoder(CreateDecoderParams{aParams, cdm});
+  }
 
   if (aParams.mConfig.IsVideo()) {
     if (StaticPrefs::media_eme_video_blank()) {

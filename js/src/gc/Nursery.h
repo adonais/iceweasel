@@ -476,7 +476,8 @@ class Nursery {
   const js::gc::GCSchedulingTunables& tunables() const;
 
   void getAllocFlagsForZone(JS::Zone* zone, bool* allocObjectsOut,
-                            bool* allocStringsOut, bool* allocBigIntsOut);
+                            bool* allocStringsOut, bool* allocBigIntsOut,
+                            bool* allocGetterSettersOut);
   void updateAllZoneAllocFlags();
   void updateAllocFlagsForZone(JS::Zone* zone);
   void discardCodeAndSetJitFlagsForZone(JS::Zone* zone);

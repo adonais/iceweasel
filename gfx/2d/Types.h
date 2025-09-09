@@ -479,6 +479,8 @@ enum class ColorDepth : uint8_t {
   _Last = COLOR_16,
 };
 
+std::ostream& operator<<(std::ostream& aOut, const ColorDepth& aColorDepth);
+
 enum class TransferFunction : uint8_t {
   BT709,
   SRGB,

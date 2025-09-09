@@ -8,6 +8,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/net/OpaqueResponseUtils.h"
+#include "nsHttp.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsICachingChannel.h"
 #include "nsIClassOfService.h"
@@ -15,7 +16,6 @@
 #include "nsIInputStream.h"
 #include "nsIThreadRetargetableRequest.h"
 #include "nsITimedChannel.h"
-#include "nsHttp.h"
 #include "nsNetUtil.h"
 
 static const uint32_t HTTP_PARTIAL_RESPONSE_CODE = 206;

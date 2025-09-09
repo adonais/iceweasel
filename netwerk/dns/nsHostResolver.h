@@ -168,7 +168,7 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   /**
    * Flush the DNS cache.
    */
-  void FlushCache(bool aTrrToo);
+  void FlushCache(bool aTrrToo, bool aFlushEvictionQueue = false);
 
   LookupStatus CompleteLookup(nsHostRecord*, nsresult, mozilla::net::AddrInfo*,
                               bool pb, const nsACString& aOriginsuffix,

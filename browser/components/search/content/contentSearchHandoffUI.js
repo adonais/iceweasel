@@ -65,9 +65,9 @@ class ContentSearchHandoffUIController {
       URL.revokeObjectURL(this._engineIcon);
     }
 
-    // We only show the engines icon for app provided engines, otherwise show
+    // We only show the engines icon for config engines, otherwise show
     // a default. xref https://bugzilla.mozilla.org/show_bug.cgi?id=1449338#c19
-    if (!engine.isAppProvided) {
+    if (!engine.isConfigEngine) {
       this._engineIcon = "chrome://global/skin/icons/search-glass.svg";
     } else if (engine.iconData) {
       this._engineIcon = this._getFaviconURIFromIconData(engine.iconData);
@@ -102,7 +102,7 @@ class ContentSearchHandoffUIController {
           ? "about-private-browsing-search-placeholder"
           : "newtab-search-box-text"
       );
-    } else if (!engine.isAppProvided) {
+    } else if (!engine.isConfigEngine) {
       document.l10n.setAttributes(
         fakeButton,
         this._isAboutPrivateBrowsing

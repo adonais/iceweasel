@@ -8,8 +8,8 @@
 #define nsControllerCommandTable_h_
 
 #include "nsIControllerCommandTable.h"
-#include "nsWeakReference.h"
 #include "nsInterfaceHashtable.h"
+#include "nsWeakReference.h"
 
 class nsIControllerCommand;
 

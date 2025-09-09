@@ -66,6 +66,7 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
     VSYNC_PRIORITY = 2,
     MEDIUMHIGH_PRIORITY = 3,
     CONTROL_PRIORITY = 4,
+    LOW_PRIORITY = 5,
   };
 
   enum MessageCompression {
@@ -337,17 +338,16 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
                             mozilla::UniqueMachSendRight* port) const;
 
   uint32_t num_send_rights() const;
-#endif
 
-  uint32_t num_relayed_attachments() const {
-#if defined(XP_WIN)
-    return num_handles();
-#elif defined(XP_DARWIN)
-    return num_send_rights();
-#else
-    return 0;
+  bool WriteMachReceiveRight(mozilla::UniqueMachReceiveRight port);
+
+  // WARNING: This method is marked as `const` so it can be called when
+  // deserializing the message, but will mutate it, consuming the send rights.
+  bool ConsumeMachReceiveRight(PickleIterator* iter,
+                               mozilla::UniqueMachReceiveRight* port) const;
+
+  uint32_t num_receive_rights() const;
 #endif
-  }
 
 #ifdef FUZZING_SNAPSHOT
   bool IsFuzzMsg() const { return isFuzzMsg; }
@@ -362,6 +362,9 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   }
 
   friend class Channel;
+  friend class ChannelMach;
+  friend class ChannelPosix;
+  friend class ChannelWin;
   friend class MessageReplyDeserializer;
   friend class SyncMessage;
   friend class mozilla::ipc::MiniTransceiver;
@@ -412,6 +415,17 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   // Mutable, as this array can be mutated during `ConsumeMachSendRight` when
   // deserializing a message.
   mutable nsTArray<mozilla::UniqueMachSendRight> attached_send_rights_;
+
+  // The set of mach receive rights which are attached to this message.
+  //
+  // Mutable, as this array can be mutated during `ConsumeMachReceiveRight` when
+  // deserializing a message.
+  mutable nsTArray<mozilla::UniqueMachReceiveRight> attached_receive_rights_;
+
+  // Mach voucher handle. This is kept alive to indicate that this Message is
+  // being processed, which may be used by the system to temporarily boost the
+  // QoS for this process.
+  mozilla::UniqueMachSendRight mach_voucher_;
 #endif
 
   // Total size of buffers which should have been sent in shared memory, but had

@@ -7,6 +7,10 @@ import { clearTimeout, setTimeout } from "resource://gre/modules/Timer.sys.mjs";
 const WORKER_URL = "resource://gre/modules/translations/cld-worker.js";
 
 /**
+ * @import {DetectionResult} from "./translations.d.ts"
+ */
+
+/**
  * The options used for when detecting a language.
  *
  * @typedef {object} DetectionOptions
@@ -22,29 +26,6 @@ const WORKER_URL = "resource://gre/modules/translations/cld-worker.js";
  * @property {string} [encoding] - A string describing the encoding of the document the
  *     string was extracted from. Note that, regardless of the value of this property,
  *     the 'text' property must be a UTF-16 JavaScript string.
- */
-
-/**
- * A larger web document can be composed of multiple languages. This object details the
- * breakdown of what languages are present in the document, and at what percentages.
- * For instance a document could be 70% English and 30% French:
- *
- *   [
- *      { language: "en", percentage: 70 },
- *      { language: "fr", percentage: 30 },
- *   ]
- *
- * @typedef {object} MultilingualSection
- * @property {string} language - BCP 47 language tag, or "un" for unknown.
- * @property {number} percent - The integral percentage ranged 0-100.
- */
-
-/**
- * @typedef {object} DetectionResult
- * @property {string} language - The language code
- * @property {boolean} confident - Whether the detector is confident of the result.
- * @property {Array<MultilingualSection>} languages - The list of languages detected in
- *     multilingual content. This is between 0 and 3 languages.
  */
 
 /**
@@ -225,7 +206,7 @@ export class LanguageDetector {
    * Attempts to determine the language in which the document's content is written.
    *
    * @param {Document} document
-   * @returns {DetectionResult}
+   * @returns {Promise<DetectionResult>}
    */
   static async detectLanguageFromDocument(document) {
     // Grab a selection of text.

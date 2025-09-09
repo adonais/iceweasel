@@ -266,16 +266,8 @@ static mozilla::Maybe<bool> RunAsLauncherProcess(int& argc, wchar_t** argv) {
 
 namespace mozilla {
 
-Maybe<int> LauncherMain(int& argc, wchar_t* argv[],
-                        const StaticXREAppData& aAppData) {
+Maybe<int> LauncherMain(int& argc, wchar_t* argv[]) {
   EnsureBrowserCommandlineSafe(argc, argv);
-
-  SetLauncherErrorAppData(aAppData);
-
-  if (CheckArg(argc, argv, "log-launcher-error", nullptr,
-               mozilla::CheckArgFlag::RemoveArg) == ARG_FOUND) {
-    SetLauncherErrorForceEventLog();
-  }
 
   // return fast when we're a child process.
   // (The remainder of this function has some side effects that are

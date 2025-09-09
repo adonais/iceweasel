@@ -9,9 +9,9 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/PlacesObserversBinding.h"
 #include "mozilla/dom/PlacesEvent.h"
 #include "mozilla/dom/PlacesEventCounts.h"
+#include "mozilla/dom/PlacesObserversBinding.h"
 #include "mozilla/places/INativePlacesEventCallback.h"
 #include "nsIWeakReferenceUtils.h"
 

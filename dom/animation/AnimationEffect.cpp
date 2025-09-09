@@ -5,13 +5,13 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/AnimationEffect.h"
-#include "mozilla/dom/AnimationEffectBinding.h"
 
-#include "mozilla/dom/Animation.h"
-#include "mozilla/dom/KeyframeEffect.h"
-#include "mozilla/dom/MutationObservers.h"
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/dom/Animation.h"
+#include "mozilla/dom/AnimationEffectBinding.h"
+#include "mozilla/dom/KeyframeEffect.h"
+#include "mozilla/dom/MutationObservers.h"
 #include "nsDOMMutationObserver.h"
 
 namespace mozilla::dom {

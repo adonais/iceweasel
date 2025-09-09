@@ -60,7 +60,8 @@ class RendererRecordedFrame final : public layers::RecordedFrame {
 
 wr::WrExternalImage wr_renderer_lock_external_image(void* aObj,
                                                     wr::ExternalImageId aId,
-                                                    uint8_t aChannelIndex) {
+                                                    uint8_t aChannelIndex,
+                                                    bool aIsComposited) {
   RendererOGL* renderer = reinterpret_cast<RendererOGL*>(aObj);
   RenderTextureHost* texture = renderer->GetRenderTexture(aId);
   MOZ_ASSERT(texture);
@@ -71,8 +72,8 @@ wr::WrExternalImage wr_renderer_lock_external_image(void* aObj,
   }
 
 #if defined(MOZ_WAYLAND)
-  // Wayland native compositor doesn't use textures so pass null GL context.
-  if (texture->AsRenderDMABUFTextureHost() &&
+  // Wayland native compositor doesn't use textures for direct compositing.
+  if (aIsComposited && texture->AsRenderDMABUFTextureHost() &&
       renderer->GetCompositor()->CompositorType() ==
           layers::WebRenderCompositor::WAYLAND) {
     return texture->Lock(aChannelIndex, nullptr);
@@ -297,10 +298,10 @@ RenderedFrameId RendererOGL::UpdateAndRender(
 }
 
 bool RendererOGL::EnsureAsyncScreenshot() {
-  if (mCompositor->SupportAsyncScreenshot()) {
-    return true;
+  if (mCompositor->UseLayerCompositor()) {
+    return mCompositor->EnableAsyncScreenshot();
   }
-  if (mCompositor->EnableAsyncScreenshot()) {
+  if (mCompositor->SupportAsyncScreenshot()) {
     return true;
   }
   if (!mDisableNativeCompositor) {

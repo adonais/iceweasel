@@ -6,13 +6,12 @@
 
 #include "mozilla/dom/BrowserHost.h"
 
+#include "mozilla/ProcessPriorityManager.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/CancelContentJSOptionsBinding.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/WindowGlobalParent.h"
-#include "mozilla/ProcessPriorityManager.h"
-
 #include "nsIObserverService.h"
 
 namespace mozilla::dom {

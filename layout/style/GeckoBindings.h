@@ -20,6 +20,7 @@
 #include "mozilla/css/SheetLoadData.h"
 #include "mozilla/dom/Document.h"
 #include "nsStyleStruct.h"
+#include "nsStyleStructList.h"
 
 class nsAtom;
 class nsIURI;
@@ -504,14 +505,14 @@ float Gecko_GetLookAndFeelFloat(int32_t float_id);
 void Gecko_AddPropertyToSet(nsCSSPropertyIDSet*, nsCSSPropertyID);
 
 // Style-struct management.
-#define STYLE_STRUCT(name)                                                   \
+#define DECLARE_GECKO_FUNCTIONS(name)                                        \
   void Gecko_Construct_Default_nsStyle##name(nsStyle##name* ptr,             \
                                              const mozilla::dom::Document*); \
   void Gecko_CopyConstruct_nsStyle##name(nsStyle##name* ptr,                 \
                                          const nsStyle##name* other);        \
   void Gecko_Destroy_nsStyle##name(nsStyle##name* ptr);
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT
+FOR_EACH_STYLE_STRUCT(DECLARE_GECKO_FUNCTIONS, DECLARE_GECKO_FUNCTIONS)
+#undef DECLARE_GECKO_FUNCTIONS
 
 bool Gecko_DocumentRule_UseForPresentation(
     const mozilla::dom::Document*, const nsACString* aPattern,

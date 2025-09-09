@@ -6,86 +6,131 @@
 
 :host {
   --status-card-connected-background-color: var(--color-violet-90);
+  --connection-shield-color: var(--panel-background);
+  --connection-shield-off-background-color: var(--icon-color-critical);
+  --connection-shield-on-background-color: var(--color-accent-primary);
+}
+
+hr {
+  border-style: solid none none none;
+  border-color: var(--panel-separator-color);
+  margin: var(--panel-separator-margin);
 }
 
 #ipprotection-content-wrapper {
   display: flex;
   flex-direction: column;
+  padding-inline: var(--panel-subview-body-padding-inline);
+  padding-block: var(--panel-subview-body-padding-block);
+}
+
+.vpn-top-content {
+  margin-inline: var(--space-large);
+  margin-block-start: var(--space-small);
+}
+
+.vpn-status-group {
+  position: relative;
+  margin: var(--space-large);
+  overflow: hidden;
+}
+
+.is-enabled {
+  color: #fff;
+  background-color: var(--status-card-connected-background-color);
 }
 
 #status-card {
-  padding: var(--space-large);
-  margin: var(--space-large);
-  background-color: initial;
-  color: initial;
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-medium);
+  --shield-bgcolor: var(--connection-shield-off-background-color);
+  --box-icon-fill: var(--connection-shield-color);
+  --box-icon-stroke: var(--shield-bgcolor);
+  -moz-context-properties: fill, stroke;
+  /**
+   * moz-box-group changes the border of items based on its position in the group.
+   * Undo it to preserve the border radius even though the animation rings are
+   * loaded first in the group.
+   */
+  --box-border-radius-start: initial;
+  fill: var(--connection-shield-color);
+  stroke: var(--shield-bgcolor);
 
   &.is-enabled {
-    background-color: var(--status-card-connected-background-color);
-    color: #fff;
+    --shield-bgcolor: var(--connection-shield-on-background-color);
   }
 }
 
-#connection-wrapper {
-  display: flex;
-  align-items: center;
-  gap: var(--space-large);
+#connection-toggle {
+  margin-inline-end: var(--space-small);
 }
 
-/* TODO: add animations for the icon (Bug 1976388) */
-#connection-icon {
-  width: 48px;
-  height: 48px;
-  background-image: url("chrome://browser/content/ipprotection/assets/ipprotection-connection-off.svg");
+#connection-toggle {
+  --toggle-width: var(--size-item-xlarge);
+  --toggle-height: var(--size-item-medium);
+  --toggle-dot-margin: 2px;
+}
+
+#status-card-animation {
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+#animation-rings {
+  display: block;
+  width: 100%;
+  height: 100%;
+  contain: strict;
+  /**
+   * A hacky attempt at centering the rings with the globe icon.
+   * It makes some assumptions about the icon size and padding pixels used in moz-box-item.
+   * The rings are 200px in height and width, so they have a radius of 100px.
+   * Additional px gap is merely for alignment and not tied to any element.
+   * TODO: (Bug 1981251) See if we can better calculate the center coords.
+   */
+  background-position-x: calc(-100px + var(--icon-size-xlarge) + var(--space-large) - 15px);
+  background-position-y: calc(-100px + var(--icon-size-xlarge) + var(--space-large) - 13px);
+  background-image: url("chrome://browser/content/ipprotection/assets/rings.svg");
   background-repeat: no-repeat;
-  background-size: cover;
-  -moz-context-properties: fill;
-  fill: currentColor;
 
-  &.is-enabled {
-    background-image: url("chrome://browser/content/ipprotection/assets/ipprotection-connection-on.svg");
+  &:dir(rtl) {
+    /* Shift by approximately 100% of the element's width to move the rings to the opposite side. */
+    background-position-x: calc(100% + var(--icon-size-xlarge) + var(--space-large) + 28px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    display: none;
   }
 }
 
-#connection-details-and-toggle {
-  display: flex;
-  align-items: center;
-  flex-grow: 1;
-  justify-content: space-between;
+#location-wrapper {
+  --box-icon-fill: currentColor;
 }
 
-#connection-title,
-#connection-time {
-  margin: 0;
-}
-
-#connection-title {
-  margin-block-end: var(--space-small);
-}
-
-#upgrade-vpn-content {
+.vpn-bottom-content {
   display: flex;
   flex-direction: column;
   padding: var(--space-small) var(--space-large);
 }
 
-#upgrade-vpn-title {
+.vpn-subtitle {
   margin: 0;
 }
 
-#upgrade-vpn-button {
+.vpn-button {
   align-self: end;
+}
+
+#signed-out-vpn-title {
+  margin-bottom: 0;
 }
 
 #signed-out-vpn-content {
   display: flex;
   flex-direction: column;
   padding: var(--space-medium) var(--space-large) var(--space-small);
-}
-
-#sign-in-vpn {
-  align-self: end;
 }
 
 @media (prefers-color-scheme: dark) {

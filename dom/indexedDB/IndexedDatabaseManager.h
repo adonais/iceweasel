@@ -7,16 +7,16 @@
 #ifndef mozilla_dom_indexeddatabasemanager_h__
 #define mozilla_dom_indexeddatabasemanager_h__
 
-#include "js/TypeDecls.h"
 #include "MainThreadUtils.h"
+#include "SafeRefPtr.h"
+#include "js/TypeDecls.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/dom/quota/PersistenceType.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/dom/quota/PersistenceType.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
 #include "nsIIndexedDatabaseManager.h"
-#include "SafeRefPtr.h"
 
 namespace mozilla {
 

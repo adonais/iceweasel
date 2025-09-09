@@ -198,7 +198,7 @@ void ScriptLoadRequest::CacheEntryFound(LoadedScript* aLoadedScript) {
       mBaseURL = mLoadedScript->BaseURL();
 
       // Modules need to wait for fetching dependencies before setting to
-      // Ready.  See also ModuleLoadRequest::DependenciesLoaded.
+      // Ready.
       mState = State::Fetching;
       break;
     case ScriptKind::eEvent:

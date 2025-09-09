@@ -21,8 +21,8 @@
 namespace webrtc {
 
 VideoSourceSinkController::VideoSourceSinkController(
-    rtc::VideoSinkInterface<VideoFrame>* sink,
-    rtc::VideoSourceInterface<VideoFrame>* source)
+    VideoSinkInterface<VideoFrame>* sink,
+    VideoSourceInterface<VideoFrame>* source)
     : sink_(sink), source_(source) {
   RTC_DCHECK(sink_);
 }
@@ -32,10 +32,10 @@ VideoSourceSinkController::~VideoSourceSinkController() {
 }
 
 void VideoSourceSinkController::SetSource(
-    rtc::VideoSourceInterface<VideoFrame>* source) {
+    VideoSourceInterface<VideoFrame>* source) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
 
-  rtc::VideoSourceInterface<VideoFrame>* old_source = source_;
+  VideoSourceInterface<VideoFrame>* old_source = source_;
   source_ = source;
 
   if (old_source != source && old_source)
@@ -62,7 +62,7 @@ void VideoSourceSinkController::PushSourceSinkSettings() {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   if (!source_)
     return;
-  rtc::VideoSinkWants wants = CurrentSettingsToSinkWants();
+  VideoSinkWants wants = CurrentSettingsToSinkWants();
   source_->AddOrUpdateSink(sink_, wants);
 }
 
@@ -93,7 +93,7 @@ int VideoSourceSinkController::resolution_alignment() const {
   return resolution_alignment_;
 }
 
-const std::vector<rtc::VideoSinkWants::FrameSize>&
+const std::vector<VideoSinkWants::FrameSize>&
 VideoSourceSinkController::resolutions() const {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   return resolutions_;
@@ -104,7 +104,7 @@ bool VideoSourceSinkController::active() const {
   return active_;
 }
 
-std::optional<rtc::VideoSinkWants::FrameSize>
+std::optional<VideoSinkWants::FrameSize>
 VideoSourceSinkController::scale_resolution_down_to() const {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   return scale_resolution_down_to_;
@@ -140,7 +140,7 @@ void VideoSourceSinkController::SetResolutionAlignment(
 }
 
 void VideoSourceSinkController::SetResolutions(
-    std::vector<rtc::VideoSinkWants::FrameSize> resolutions) {
+    std::vector<VideoSinkWants::FrameSize> resolutions) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   resolutions_ = std::move(resolutions);
 }
@@ -151,23 +151,22 @@ void VideoSourceSinkController::SetActive(bool active) {
 }
 
 void VideoSourceSinkController::SetScaleResolutionDownTo(
-    std::optional<rtc::VideoSinkWants::FrameSize> scale_resolution_down_to) {
+    std::optional<VideoSinkWants::FrameSize> scale_resolution_down_to) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   scale_resolution_down_to_ = std::move(scale_resolution_down_to);
 }
 
 // RTC_EXCLUSIVE_LOCKS_REQUIRED(sequence_checker_)
-rtc::VideoSinkWants VideoSourceSinkController::CurrentSettingsToSinkWants()
-    const {
-  rtc::VideoSinkWants wants;
+VideoSinkWants VideoSourceSinkController::CurrentSettingsToSinkWants() const {
+  VideoSinkWants wants;
   wants.rotation_applied = rotation_applied_;
   // `wants.black_frames` is not used, it always has its default value false.
   wants.max_pixel_count =
-      rtc::dchecked_cast<int>(restrictions_.max_pixels_per_frame().value_or(
+      dchecked_cast<int>(restrictions_.max_pixels_per_frame().value_or(
           std::numeric_limits<int>::max()));
   wants.target_pixel_count =
       restrictions_.target_pixels_per_frame().has_value()
-          ? std::optional<int>(rtc::dchecked_cast<int>(
+          ? std::optional<int>(dchecked_cast<int>(
                 restrictions_.target_pixels_per_frame().value()))
           : std::nullopt;
   wants.max_framerate_fps =
@@ -177,7 +176,7 @@ rtc::VideoSinkWants VideoSourceSinkController::CurrentSettingsToSinkWants()
   wants.resolution_alignment = resolution_alignment_;
   wants.max_pixel_count =
       std::min(wants.max_pixel_count,
-               rtc::dchecked_cast<int>(pixels_per_frame_upper_limit_.value_or(
+               dchecked_cast<int>(pixels_per_frame_upper_limit_.value_or(
                    std::numeric_limits<int>::max())));
   wants.max_framerate_fps =
       std::min(wants.max_framerate_fps,

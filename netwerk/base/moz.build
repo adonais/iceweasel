@@ -189,6 +189,7 @@ UNIFIED_SOURCES += [
     "EventTokenBucket.cpp",
     "InterceptionInfo.cpp",
     "IPv4Parser.cpp",
+    "LNAPermissionRequest.cpp",
     "LoadContextInfo.cpp",
     "LoadInfo.cpp",
     "MemoryDownloader.cpp",

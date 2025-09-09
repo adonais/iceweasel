@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Nova scursanida
 newtab-topsites-edit-topsites-header = Modifitgar la pagina principala
 newtab-topsites-edit-shortcut-header = Modifitgar la scursanida
 newtab-topsites-add-shortcut-label = Agiuntar ina scursanida
+newtab-topsites-add-shortcut-title =
+    .title = Agiuntar ina scursanida
+    .aria-label = Agiuntar ina scursanida
 newtab-topsites-title-label = Titel
 newtab-topsites-title-input =
     .placeholder = Endatar in titel
@@ -573,6 +576,3 @@ newtab-report-content-spam-misleading =
     .label = Spam u engianus
 newtab-report-cancel = Interrumper
 newtab-report-submit = Trametter
-
-## Strings for trending searches
-

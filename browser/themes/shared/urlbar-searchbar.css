@@ -5,24 +5,34 @@
 @namespace html url("http://www.w3.org/1999/xhtml");
 
 :root {
+  --urlbar-container-min-width: 310px;
   --urlbar-container-padding: 1px;
   --urlbar-margin-inline: 5px;
   --urlbar-padding-block: 4px;
+
+  &[taskbartab] {
+    /* Taskbar tab windows are more size-constrained due to window controls
+       being in the nav bar, so we use the not-yet-default value from below as
+       if the trust panel was enabled. */
+    --urlbar-container-min-width: 275px;
+  }
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("browser.urlbar.trustPanel.featureGate") {
+    /* Enabling the trust panel saves up to two icons in the front part of the
+       address bar. */
+    --urlbar-container-min-width: 275px;
+  }
 }
 
 #urlbar[actiontype="switchtab"][action-override] > .urlbar-input-container > #urlbar-label-box,
-#urlbar:not([actiontype="switchtab"], [actiontype="extension"], [searchmode]) > .urlbar-input-container > #urlbar-label-box,
+#urlbar:not([actiontype="switchtab"], [actiontype="extension"]) > .urlbar-input-container > #urlbar-label-box,
 #urlbar:not([actiontype="switchtab"]) > .urlbar-input-container > #urlbar-label-box > #urlbar-label-switchtab,
 #urlbar:not([actiontype="extension"]) > .urlbar-input-container > #urlbar-label-box > #urlbar-label-extension,
-#urlbar[searchmode][breakout-extend] > .urlbar-input-container > #urlbar-label-box,
-#urlbar:not([searchmode]) > .urlbar-input-container > #urlbar-label-box > #urlbar-label-search-mode,
-#urlbar[breakout-extend] > .urlbar-input-container > #urlbar-label-box > #urlbar-label-search-mode,
 .urlbar-input-container[pageproxystate="invalid"] > #page-action-buttons > .urlbar-page-action,
 #identity-box.chromeUI ~ #page-action-buttons > .urlbar-page-action:not(#star-button-box),
 #urlbar[usertyping] > .urlbar-input-container > #page-action-buttons > #urlbar-zoom-button,
-#urlbar:not([usertyping]) > .urlbar-input-container > .urlbar-go-button,
-#urlbar:not([focused]) > .urlbar-input-container > .urlbar-go-button,
-#urlbar-revert-button-container {
+.urlbar:is(:not([usertyping]), :not([focused])) > .urlbar-input-container > .urlbar-go-button,
+.urlbar-revert-button-container {
   display: none;
 }
 
@@ -45,7 +55,7 @@
   }
 }
 
-#urlbar {
+.urlbar {
   display: flex;
   flex-direction: row;
   flex: 1;
@@ -63,7 +73,7 @@
   background-color: initial;
 }
 
-#urlbar,
+.urlbar,
 #searchbar {
   /* Setting a min-width to let the location & search bars maintain a constant
    * width in case they haven't been resized manually. (bug 965772) */
@@ -85,7 +95,7 @@
   }
 }
 
-#urlbar[focused],
+.urlbar[focused],
 #searchbar:focus-within {
   :root[lwt-toolbar-field-focus="light"] & {
     color-scheme: light;
@@ -95,7 +105,7 @@
   }
 }
 
-#urlbar-background,
+.urlbar-background,
 #searchbar {
   background-color: var(--toolbar-field-background-color);
   background-clip: border-box;
@@ -142,23 +152,23 @@
     text-align: right !important;
   }
 
-  #urlbar:not([focused])[domaindir="ltr"] > .urlbar-input-container > .urlbar-input-box > & {
+  .urlbar:not([focused])[domaindir="ltr"] > .urlbar-input-container > .urlbar-input-box > & {
     direction: ltr;
     unicode-bidi: embed;
   }
 
   /* The following rules apply overflow masks to the unfocused urlbar
      This mask may be overriden when a Contextual Feature Recommendation is shown. */
-  #urlbar:not([focused])[textoverflow="both"] > .urlbar-input-container > .urlbar-input-box > & {
+  .urlbar:not([focused])[textoverflow="both"] > .urlbar-input-container > .urlbar-input-box > & {
     mask-image: linear-gradient(to right, transparent, black 3ch, black calc(100% - 3ch), transparent);
   }
-  #urlbar:not([focused])[textoverflow="right"] > .urlbar-input-container > .urlbar-input-box > & {
+  .urlbar:not([focused])[textoverflow="right"] > .urlbar-input-container > .urlbar-input-box > & {
     mask-image: linear-gradient(to left, transparent, black 3ch);
   }
-  #urlbar:not([focused])[textoverflow="left"] > .urlbar-input-container > .urlbar-input-box > & {
+  .urlbar:not([focused])[textoverflow="left"] > .urlbar-input-container > .urlbar-input-box > & {
     mask-image: linear-gradient(to right, transparent, black 3ch);
   }
-  #urlbar:not([focused])[textoverflow="left"][domaindir="rtl"] > .urlbar-input-container > .urlbar-input-box > & {
+  .urlbar:not([focused])[textoverflow="left"][domaindir="rtl"] > .urlbar-input-container > .urlbar-input-box > & {
     mask-image: linear-gradient(to right, transparent var(--urlbar-scheme-size), black calc(var(--urlbar-scheme-size) + 3ch));
   }
 }
@@ -177,7 +187,7 @@
   }
 }
 
-#urlbar[focused]:not([suppress-focus-border]) > #urlbar-background,
+[focused]:not([suppress-focus-border]) > .urlbar-background,
 #searchbar:focus-within {
   outline: var(--focus-outline);
   outline-offset: var(--focus-outline-inset);
@@ -190,22 +200,31 @@
   border-color: transparent;
 }
 
-#urlbar[focused] > #urlbar-background,
+[focused] > .urlbar-background,
 #searchbar:focus-within {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.23);
 }
 
-#urlbar[open] > #urlbar-background {
+[open] > .urlbar-background {
   border-color: var(--arrowpanel-border-color);
   box-shadow: 0 2px 14px rgba(0, 0, 0, 0.13);
+
+  @media (-moz-platform: macos) and (prefers-contrast) {
+    /* The "increase contrast" preference on macOS draws a 1px black line around
+       panels, including the separate search bar. Since the Urlbar is not
+       implemented as a panel, it does not get this outline. This outline rule
+       resembles the system outline, bringing the Urlbar in line with panels and
+       other Mac apps. */
+    outline: 1px solid var(--focus-outline-color);
+  }
 }
 
-#urlbar:is([focused], [open]),
+.urlbar:is([focused], [open]),
 #searchbar:focus-within {
   color: var(--toolbar-field-focus-color);
 }
 
-#urlbar:is([focused], [open]) > #urlbar-background,
+.urlbar:is([focused], [open]) > .urlbar-background,
 #searchbar:focus-within {
   background-color: var(--toolbar-field-focus-background-color);
 }
@@ -234,7 +253,7 @@
   }
 }
 
-#urlbar:not([focused]) {
+.urlbar:not([focused]) {
   caret-color: transparent;
 }
 
@@ -244,13 +263,13 @@
  * the bounds of the urlbar.
  */
 
-#urlbar,
+.urlbar,
 .urlbar-input-container,
 .urlbarView {
   position: relative;
 }
 
-#urlbar-background {
+.urlbar-background {
   display: block;
   position: absolute;
   inset: 0;
@@ -267,7 +286,7 @@
   min-height: var(--urlbar-container-height);
 }
 
-#urlbar[breakout] {
+.urlbar[breakout] {
   display: block;
   /* This is technically not needed, because popover takes care of it, but
    * helps for clarity. */
@@ -281,12 +300,12 @@
   }
 }
 
-#urlbar:not([open]) > .urlbarView,
-#urlbar:not([breakout]) > .urlbarView {
+.urlbar:not([open]) > .urlbarView,
+.urlbar:not([breakout]) > .urlbarView {
   display: none;
 }
 
-#urlbar[breakout][breakout-extend] {
+.urlbar[breakout][breakout-extend] {
   height: auto;
   margin-left: calc(-1 * var(--urlbar-margin-inline));
   width: calc(var(--urlbar-width) + 2 * var(--urlbar-margin-inline));
@@ -307,15 +326,15 @@
   }
 }
 
-#urlbar[breakout][breakout-extend] > #urlbar-background {
+[breakout][breakout-extend] > .urlbar-background {
   animation-name: urlbar-grow;
   animation-duration: 0s;
   animation-timing-function: var(--animation-easing-function);
-}
 
-@media (prefers-reduced-motion: no-preference) {
-  #urlbar[breakout][breakout-extend][breakout-extend-animate] > #urlbar-background {
-    animation-duration: 150ms;
+  @media (prefers-reduced-motion: no-preference) {
+    [breakout-extend-animate] > & {
+      animation-duration: 150ms;
+    }
   }
 }
 
@@ -336,30 +355,30 @@
 
 #urlbar-container {
   align-items: center;
-  /* We leave 310px plus whatever space the download and unified extensions
+  /* We leave a base width plus whatever space the download and unified extensions
    * buttons will need when they *both* appear. Normally, for each button, this
    * should be 16px for the icon, plus 2 * 2px padding plus the
    * toolbarbutton-inner-padding. We're adding 4px to ensure things like rounding
    * on hidpi don't accidentally result in the buttons going into overflow.
    */
-  width: calc(310px + 2 * (24px + 2 * var(--toolbarbutton-inner-padding)));
+  width: calc(var(--urlbar-container-min-width) + 2 * (24px + 2 * var(--toolbarbutton-inner-padding)));
 
   /* When the download button OR the unified extensions button is shown, we leave
-   * 310px plus the space needed for a single button as described above. */
+   * the base width plus the space needed for a single button as described above. */
   #nav-bar:is([downloadsbuttonshown], [unifiedextensionsbuttonshown]) & {
-    width: calc(310px + 24px + 2 * var(--toolbarbutton-inner-padding));
+    width: calc(var(--urlbar-container-min-width) + 24px + 2 * var(--toolbarbutton-inner-padding));
   }
 
   /* When both the download and unified extensions buttons are visible, we use
    * the base min-width value. */
   #nav-bar[downloadsbuttonshown][unifiedextensionsbuttonshown] & {
-    width: 310px;
+    width: var(--urlbar-container-min-width);
   }
 
   /* Customize mode is difficult to use at moderate window width if the Urlbar
-   * remains 310px wide. */
+   * remains as wide. */
   :root[customizing] & {
-    width: 280px;
+    width: calc(var(--urlbar-container-min-width) - 30px);
   }
 }
 
@@ -483,12 +502,8 @@
   }
 }
 
-#urlbar[searchmode] > .urlbar-input-container > #urlbar-label-box {
-  display: none;
-}
-
 #urlbar-search-mode-indicator-close,
-#searchmode-switcher-close {
+.searchmode-switcher-close {
   background: url(chrome://global/skin/icons/close.svg) no-repeat center;
   background-size: round(62.5%, 2px);
   width: round(max(16px, 1em), 2px);
@@ -644,7 +659,7 @@
     height: 16px;
   }
 
-  #urlbar-background {
+  .urlbar-background {
     background-image: repeating-linear-gradient(-45deg, rgba(255, 60, 60, 0.25) 0 25px, rgba(175, 0, 0, 0.25) 25px 50px);
 
     background-attachment: fixed;
@@ -827,12 +842,12 @@
   }
 }
 
-#urlbar[persistsearchterms] {
-  #urlbar-revert-button-container {
+.urlbar[persistsearchterms] > .urlbar-input-container {
+  > .urlbar-revert-button-container {
     display: inherit;
   }
 
-  .urlbar-go-button {
+  > .urlbar-go-button {
     display: none;
   }
 }
@@ -1020,6 +1035,20 @@
   }
 }
 
+#searchbar-new {
+  display: none;
+}
+
+/* stylelint-disable-next-line media-query-no-invalid */
+@media -moz-pref("browser.search.widget.new") {
+  #searchbar-new {
+    display: flex;
+  }
+  #searchbar {
+    display: none;
+  }
+}
+
 .search-go-button {
   margin-inline: 1px;
 }
@@ -1096,7 +1125,7 @@
   opacity: 0.7;
 }
 
-#urlbar-searchmode-switcher {
+.searchmode-switcher {
   appearance: none;
   border-radius: var(--urlbar-icon-border-radius);
   margin: 0;
@@ -1113,19 +1142,19 @@
   }
 
   /* No need space if page information icons such as lock and shield is shown */
-  #urlbar[pageproxystate="valid"] & {
+  .urlbar[pageproxystate="valid"] & {
     margin-inline-end: 0;
   }
 
-  #urlbar[searchmode] & {
+  .urlbar[searchmode] & {
     background-color: var(--urlbar-box-bgcolor);
     margin-inline-end: 0;
     border-start-end-radius: 0;
     border-end-end-radius: 0;
   }
 
-  /* The background rule should match to #searchmode-switcher-chicklet */
-  #urlbar[focused] & {
+  /* The background rule should match to .searchmode-switcher-chicklet */
+  .urlbar[focused] & {
     background-color: var(--urlbar-box-focus-bgcolor);
   }
 
@@ -1136,7 +1165,7 @@
   /* stylelint-enable media-query-no-invalid */
 }
 
-#searchmode-switcher-icon {
+.searchmode-switcher-icon {
   width: 16px;
   height: 16px;
   border-radius: var(--urlbar-icon-border-radius);
@@ -1145,7 +1174,7 @@
   list-style-image: url("chrome://global/skin/icons/search-glass.svg");
 }
 
-#searchmode-switcher-chicklet {
+.searchmode-switcher-chicklet {
   background-color: var(--urlbar-box-bgcolor);
   border-start-end-radius: var(--toolbarbutton-border-radius);
   border-end-end-radius: var(--urlbar-icon-border-radius);
@@ -1157,17 +1186,17 @@
 
   /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.urlbar.searchModeSwitcher.featureGate") or -moz-pref("browser.urlbar.scotchBonnet.enableOverride") {
-    #urlbar[searchmode] & {
+    .urlbar[searchmode] & {
       display: inline-flex;
     }
   }
 
-  #urlbar[focused] & {
+  .urlbar[focused] & {
     background-color: var(--urlbar-box-focus-bgcolor);
   }
 }
 
-#searchmode-switcher-title {
+.searchmode-switcher-title {
   margin: 0;
   align-items: center;
   text-overflow: ellipsis;
@@ -1180,26 +1209,26 @@
   }
 }
 
-#searchmode-switcher-close {
+.searchmode-switcher-close {
   appearance: none;
   pointer-events: all;
   margin-inline: var(--urlbar-searchmodeswitcher-inline-padding);
 
-  #urlbar[searchmode] & {
+  .urlbar[searchmode] & {
     display: inline-flex;
   }
 }
 
-#searchmode-switcher-dropmarker {
-  #urlbar[searchmode] & {
+.searchmode-switcher-dropmarker {
+  .urlbar[searchmode] & {
     display: none;
   }
-  #urlbar-searchmode-switcher[open] & {
+  .urlbar-searchmode-switcher[open] & {
     transform: rotate(180deg);
   }
 }
 
-#searchmode-switcher-popup {
+.searchmode-switcher-popup {
   --panel-padding: 4px 0;
   max-width: var(--search-engine-name-max-width);
 
@@ -1219,12 +1248,12 @@
   }
 }
 
-#searchmode-switcher-popup-description {
+.searchmode-switcher-popup-description {
   margin-inline: 4px;
   padding: var(--arrowpanel-menuitem-padding);
 }
 
-#searchmode-switcher-popup-search-settings-button,
+.searchmode-switcher-popup-search-settings-button,
 .searchmode-switcher-local {
   -moz-context-properties: fill;
   fill: currentColor;
@@ -1238,16 +1267,16 @@
 
   /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
-    #urlbar-searchmode-switcher {
+    .searchmode-switcher {
       background-color: var(--urlbar-box-bgcolor);
-      #urlbar:not([unifiedsearchbutton-available]) > .urlbar-input-container > & {
+      .urlbar:not([unifiedsearchbutton-available]) > .urlbar-input-container > & {
         /* Display as off-screen to get focus */
         position: fixed;
         top: -999px;
       }
     }
 
-    #searchmode-switcher-dropmarker {
+    .searchmode-switcher-dropmarker {
       margin-inline-start: var(--urlbar-searchmodeswitcher-inline-padding);
     }
 

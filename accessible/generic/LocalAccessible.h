@@ -1038,6 +1038,8 @@ class LocalAccessible : public nsISupports, public Accessible {
   role FindNextValidARIARole(
       std::initializer_list<nsStaticAtom*> aRolesToSkip) const;
 
+  LocalAccessible* GetCommandForDetailsRelation() const;
+
   LocalAccessible* GetPopoverTargetDetailsRelation() const;
 };
 

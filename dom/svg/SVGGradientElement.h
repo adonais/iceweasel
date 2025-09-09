@@ -11,8 +11,8 @@
 #include "SVGAnimatedLength.h"
 #include "SVGAnimatedString.h"
 #include "SVGAnimatedTransformList.h"
-#include "mozilla/dom/SVGElement.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/SVGElement.h"
 
 nsresult NS_NewSVGLinearGradientElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);

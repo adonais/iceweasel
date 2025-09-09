@@ -38,6 +38,7 @@ namespace widget {
 class WinCompositorWidget;
 class GtkCompositorWidget;
 class AndroidCompositorWidget;
+class CocoaCompositorWidget;
 class CompositorWidgetInitData;
 
 // Gecko widgets usually need to communicate with the CompositorWidget with
@@ -63,7 +64,7 @@ class CompositorWidgetDelegate {
 
 // Platforms that support out-of-process widgets.
 #if defined(XP_WIN) || defined(MOZ_X11) || defined(MOZ_WIDGET_ANDROID) || \
-    defined(MOZ_WAYLAND)
+    defined(MOZ_WAYLAND) || defined(XP_MACOSX)
 // CompositorWidgetParent should implement CompositorWidget and
 // PCompositorWidgetParent.
 class CompositorWidgetParent;
@@ -267,6 +268,7 @@ class CompositorWidget {
   virtual WinCompositorWidget* AsWindows() { return nullptr; }
   virtual GtkCompositorWidget* AsGTK() { return nullptr; }
   virtual AndroidCompositorWidget* AsAndroid() { return nullptr; }
+  virtual CocoaCompositorWidget* AsCocoa() { return nullptr; }
 
   /**
    * Return the platform-specific delegate for the widget, if any.

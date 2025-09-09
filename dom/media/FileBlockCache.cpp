@@ -5,15 +5,17 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FileBlockCache.h"
+
+#include <algorithm>
+
 #include "MediaCache.h"
 #include "VideoUtils.h"
-#include "prio.h"
-#include <algorithm>
+#include "mozilla/ScopeExit.h"
+#include "mozilla/dom/ContentChild.h"
 #include "nsAnonymousTemporaryFile.h"
 #include "nsIThreadManager.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/ScopeExit.h"
 #include "nsXULAppAPI.h"
+#include "prio.h"
 
 namespace mozilla {
 

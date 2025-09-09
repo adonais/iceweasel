@@ -6,21 +6,21 @@
 #ifndef nsGenericHTMLElement_h___
 #define nsGenericHTMLElement_h___
 
+#include <cstdint>
+
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
-#include "nsNameSpaceManager.h"  // for kNameSpaceID_None
-#include "nsIFormControl.h"
-#include "nsGkAtoms.h"
-#include "nsContentCreatorFunctions.h"
-#include "nsStyledElement.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/dom/DOMRect.h"
-#include "mozilla/dom/ValidityState.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/dom/PopoverData.h"
 #include "mozilla/dom/ToggleEvent.h"
-
-#include <cstdint>
+#include "mozilla/dom/ValidityState.h"
+#include "nsContentCreatorFunctions.h"
+#include "nsGkAtoms.h"
+#include "nsIFormControl.h"
+#include "nsNameSpaceManager.h"  // for kNameSpaceID_None
+#include "nsStyledElement.h"
 
 class nsDOMTokenList;
 class nsIFrame;
@@ -1270,7 +1270,7 @@ class nsGenericHTMLFormControlElementWithState
   /**
    * https://html.spec.whatwg.org/#popover-target-attribute-activation-behavior
    */
-  MOZ_CAN_RUN_SCRIPT void HandlePopoverTargetAction();
+  MOZ_CAN_RUN_SCRIPT void HandlePopoverTargetAction(mozilla::dom::Element*);
 
   /**
    * Get the presentation state for a piece of content, or create it if it does

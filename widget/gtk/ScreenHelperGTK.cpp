@@ -25,6 +25,7 @@
 #include "nsGtkUtils.h"
 #include "nsTArray.h"
 #include "nsWindow.h"
+#include "mozilla/ScopeExit.h"
 
 struct wl_registry;
 
@@ -405,7 +406,7 @@ static const struct wp_image_description_info_v1_listener
                                     image_description_info_target_max_fall};
 
 void WaylandMonitor::ImageDescriptionDone() {
-  LOG_SCREEN("WaylandMonitor()[%p] ImageDescriptionDone", this);
+  LOG_SCREEN("WaylandMonitor() [%p] ImageDescriptionDone HDR %d", this, mIsHDR);
   if (mScreenGetter) {
     mScreenGetter->AddScreen(MakeScreenGtk(mMonitor, mIsHDR));
   }
@@ -534,8 +535,8 @@ void ScreenGetterGtk::Finish() {
   LOG_SCREEN("ScreenGetterGtk::Finish() [%p]", this);
   for (auto& monitor : mWaylandMonitors) {
     monitor->Finish();
-    monitor = nullptr;
   }
+  mWaylandMonitors.Clear();
 #endif
 }
 
@@ -585,6 +586,8 @@ void ScreenGetterGtk::AddScreen(RefPtr<Screen> aScreen) {
     return;
   }
 
+  auto finish = MakeScopeExit([&] { Finish(); });
+
   if (mSerial != ScreenHelperGTK::GetLastSerial()) {
     MOZ_DIAGNOSTIC_ASSERT(mSerial <= ScreenHelperGTK::GetLastSerial());
     LOG_SCREEN(
@@ -602,6 +605,7 @@ void ScreenGetterGtk::AddScreen(RefPtr<Screen> aScreen) {
       supportsHDR |= screen->GetIsHDR();
     }
     if (!supportsHDR) {
+      LOG_SCREEN("ScreenGetterGtk::AddScreen() [%p]: no HDR support", this);
       return;
     }
   }
@@ -643,7 +647,7 @@ ScreenGetterGtk::~ScreenGetterGtk() {
 }
 
 void ScreenHelperGTK::RequestRefreshScreens(bool aInitialRefresh) {
-  LOG_SCREEN("ScreenHelperGTK::RequestRefreshScreens");
+  LOG_SCREEN("ScreenHelperGTK::RequestRefreshScreens()");
 
   gLastSerial++;
 
@@ -699,7 +703,7 @@ static GdkFilterReturn root_window_event_filter(GdkXEvent* aGdkXEvent,
 }
 
 ScreenHelperGTK::ScreenHelperGTK() {
-  LOG_SCREEN("ScreenHelperGTK created");
+  LOG_SCREEN("ScreenHelperGTK::ScreenHelperGTK() created");
   GdkScreen* defaultScreen = gdk_screen_get_default();
   if (!defaultScreen) {
     // Sometimes we don't initial X (e.g., xpcshell)
@@ -737,6 +741,7 @@ ScreenHelperGTK::ScreenHelperGTK() {
 
 #ifdef MOZ_WAYLAND
   if (GdkIsWaylandDisplay() && WaylandDisplayGet()->IsHDREnabled()) {
+    LOG_SCREEN("ScreenHelperGTK() query HDR Wayland display");
     RequestRefreshScreens(/* aInitialRefresh */ true);
   }
 #endif
@@ -747,11 +752,15 @@ int ScreenHelperGTK::GetMonitorCount() {
 }
 
 ScreenHelperGTK::~ScreenHelperGTK() {
+  LOG_SCREEN("ScreenHelperGTK::~ScreenHelperGTK() deleted");
   if (sRootWindow) {
     g_signal_handlers_disconnect_by_data(gdk_screen_get_default(), this);
     gdk_window_remove_filter(sRootWindow, root_window_event_filter, this);
     g_object_unref(sRootWindow);
     sRootWindow = nullptr;
+  }
+  if (gLastScreenGetter) {
+    gLastScreenGetter->Finish();
   }
   gLastScreenGetter = nullptr;
 }

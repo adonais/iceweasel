@@ -211,9 +211,6 @@
  *
  * [Index]
  *   [Constants]
- *   [Compound primitives]
- *     Record literals
- *     Tuple literals
  *   [Expressions]
  *     Unary operators
  *     Binary operators

@@ -10,7 +10,8 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
-  CustomizableUI: "resource:///modules/CustomizableUI.sys.mjs",
+  CustomizableUI:
+    "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
   PageActions: "resource:///modules/PageActions.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -70,7 +71,18 @@ const SESSION_STORE_SAVED_TAB_GROUPS_TOPIC =
 export const MINIMUM_TAB_COUNT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes, in ms
 
 // The elements we consider to be interactive.
-const UI_TARGET_ELEMENTS = [
+const UI_TARGET_CHANGE_ELEMENTS = new Set([
+  "moz-checkbox",
+  "moz-select",
+  "moz-radio",
+  "moz-toggle",
+  "moz-input-folder",
+  "moz-input-password",
+  "moz-input-search",
+  "moz-input-text",
+  "moz-visual-picker-item",
+]);
+const UI_TARGET_COMMAND_ELEMENTS = new Set([
   "menuitem",
   "toolbarbutton",
   "key",
@@ -81,9 +93,16 @@ const UI_TARGET_ELEMENTS = [
   "image",
   "radio",
   "richlistitem",
-  "moz-checkbox",
-];
-const UI_TARGET_COMPOSED_ELEMENTS_MAP = new Map([["moz-checkbox", "input"]]);
+  "moz-button",
+  "moz-box-button",
+  "moz-box-link",
+  "dialog-button",
+]);
+const UI_TARGET_ELEMENTS = new Map([
+  ["change", UI_TARGET_CHANGE_ELEMENTS],
+  ["click", UI_TARGET_COMMAND_ELEMENTS],
+  ["command", UI_TARGET_COMMAND_ELEMENTS],
+]);
 
 // The containers of interactive elements that we care about and their pretty
 // names. These should be listed in order of most-specific to least-specific,
@@ -269,12 +288,11 @@ function getPinnedTabsCount() {
 export let URICountListener = {
   // A set containing the visited domains, see bug 1271310.
   _domainSet: new Set(),
-  // A set containing the visited origins during the last 24 hours (similar to domains, but not quite the same)
-  _domain24hrSet: new Set(),
+  // A map containing the visited origins during the last 24 hours (similar
+  // to domains, but not quite the same), mapping to a timeoutId or 0.
+  _domain24hrSet: new Map(),
   // A map to keep track of the URIs loaded from the restored tabs.
   _restoredURIsMap: new WeakMap(),
-  // Ongoing expiration timeouts.
-  _timeouts: new Set(),
 
   isHttpURI(uri) {
     // Only consider http(s) schemas.
@@ -415,14 +433,19 @@ export let URICountListener = {
       Glean.browserEngagement.uniqueDomainsCount.set(this._domainSet.size);
     }
 
-    this._domain24hrSet.add(baseDomain);
-    if (lazy.gRecentVisitedOriginsExpiry) {
-      let timeoutId = lazy.setTimeout(() => {
-        this._domain24hrSet.delete(baseDomain);
-        this._timeouts.delete(timeoutId);
-      }, lazy.gRecentVisitedOriginsExpiry * 1000);
-      this._timeouts.add(timeoutId);
+    // Clear and re-add the expiration timeout for this base domain, if any.
+    let timeoutId = this._domain24hrSet.get(baseDomain);
+    if (timeoutId) {
+      lazy.clearTimeout(timeoutId);
     }
+    if (lazy.gRecentVisitedOriginsExpiry) {
+      timeoutId = lazy.setTimeout(() => {
+        this._domain24hrSet.delete(baseDomain);
+      }, lazy.gRecentVisitedOriginsExpiry * 1000);
+    } else {
+      timeoutId = 0;
+    }
+    this._domain24hrSet.set(baseDomain, timeoutId);
   },
 
   /**
@@ -444,8 +467,7 @@ export let URICountListener = {
    * Resets the number of unique domains visited in this session.
    */
   resetUniqueDomainsVisitedInPast24Hours() {
-    this._timeouts.forEach(timeoutId => lazy.clearTimeout(timeoutId));
-    this._timeouts.clear();
+    this._domain24hrSet.forEach(value => lazy.clearTimeout(value));
     this._domain24hrSet.clear();
   },
 
@@ -961,8 +983,10 @@ export let BrowserUsageTelemetry = {
     const isAboutPreferences =
       node.ownerDocument.URL.startsWith("about:preferences") ||
       node.ownerDocument.URL.startsWith("about:settings");
+    let targetElements = UI_TARGET_ELEMENTS.get(event.type);
+
     while (
-      !UI_TARGET_ELEMENTS.includes(node.localName) &&
+      !targetElements.has(node.localName) &&
       !node.classList?.contains("wants-telemetry") &&
       // We are interested in links on about:preferences as well.
       !(
@@ -976,20 +1000,6 @@ export let BrowserUsageTelemetry = {
         // not interested in.
         return;
       }
-    }
-
-    // When the expected target is a Custom Element with a Shadow Root, there
-    // may be a specific part of the component that click events correspond to
-    // changes. Ignore any other events if requested.
-    let expectedEventTarget = UI_TARGET_COMPOSED_ELEMENTS_MAP.get(
-      node.localName
-    );
-    if (
-      event.type == "click" &&
-      expectedEventTarget &&
-      expectedEventTarget != event.composedTarget?.localName
-    ) {
-      return;
     }
 
     if (sourceEvent.type === "command") {
@@ -1072,9 +1082,10 @@ export let BrowserUsageTelemetry = {
    * Listens for UI interactions in the window.
    */
   _addUsageListeners(win) {
-    // Listen for command events from the UI.
-    win.addEventListener("command", event => this._recordCommand(event), true);
-    win.addEventListener("click", event => this._recordCommand(event), true);
+    // Listen for events that UI_TARGET_ELEMENTS expect from the UI.
+    UI_TARGET_ELEMENTS.keys().forEach(type =>
+      win.addEventListener(type, event => this._recordCommand(event), true)
+    );
   },
 
   /**

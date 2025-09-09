@@ -82,7 +82,7 @@ class MainMenuTest : TestSetup() {
         }.openThreeDotMenu {
         }.openDownloadsManager {
             verifyEmptyDownloadsList(composeTestRule)
-        }.goBack(composeTestRule) {
+        }.goBackToHomeScreen(composeTestRule) {
         }.openThreeDotMenu {
         }.openPasswords {
             verifySecurityPromptForLogins()
@@ -92,7 +92,7 @@ class MainMenuTest : TestSetup() {
         }.openThreeDotMenu {
         }.openAddonsManagerMenu {
             verifyAddonsListIsDisplayed(true)
-        }.goBack {
+        }.goBackToHomeScreen {
         }.openThreeDotMenu {
         }.openSyncSignIn {
             verifyTurnOnSyncMenu()
@@ -500,7 +500,6 @@ class MainMenuTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2937933
-    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=1974939")
     @Test
     fun verifyReportBrokenSiteFormNotDisplayedWhenTelemetryIsDisabledTest() {
         val defaultWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
@@ -509,7 +508,7 @@ class MainMenuTest : TestSetup() {
         }.openThreeDotMenu {
         }.openSettings {
         }.openSettingsSubMenuDataCollection {
-            clickUsageAndTechnicalDataToggle()
+            clickUsageAndTechnicalDataToggle(composeTestRule)
             verifyUsageAndTechnicalDataToggle(composeTestRule, isChecked = false)
         }
 

@@ -8,6 +8,7 @@
 #define MOZILLA_GFX_FILTERS_H_
 
 #include "Types.h"
+#include "mozilla/RefCounted.h"
 #include "mozilla/RefPtr.h"
 
 #include "Point.h"

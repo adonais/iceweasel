@@ -22,6 +22,9 @@ python_test_schema = Schema(
         Optional("workdir"): str,
         # Use the specified caches.
         Optional("use-caches"): Any(bool, [str]),
+        # Prepend the specified ENV variables to the command. This can be useful
+        # if the value of the ENV needs to be interpolated with another ENV.
+        Optional("prepend-env"): {str: str},
     }
 )
 

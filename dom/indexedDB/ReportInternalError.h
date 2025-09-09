@@ -7,10 +7,9 @@
 #ifndef mozilla_dom_indexeddb_reportinternalerror_h__
 #define mozilla_dom_indexeddb_reportinternalerror_h__
 
+#include "IndexedDatabase.h"
 #include "nsDebug.h"
 #include "nsPrintfCString.h"
-
-#include "IndexedDatabase.h"
 
 #define IDB_WARNING(...)                                                       \
   do {                                                                         \

@@ -172,7 +172,7 @@ class SyncedTabsInSidebar extends SidebarPage {
       type="accordion"
       expanded
       .heading=${deviceName}
-      icon
+      .iconSrc=${this.getDeviceIconSrc(deviceType)}
       class=${deviceType}
       @keydown=${e => this.treeView.handleCardKeydown(e)}
     >
@@ -199,7 +199,7 @@ class SyncedTabsInSidebar extends SidebarPage {
   noDeviceTabsTemplate(deviceName, deviceType) {
     return html`<moz-card
       .heading=${deviceName}
-      icon
+      .iconSrc=${this.getDeviceIconSrc(deviceType)}
       class=${deviceType}
       data-l10n-id="firefoxview-syncedtabs-device-notabs"
     >
@@ -217,7 +217,7 @@ class SyncedTabsInSidebar extends SidebarPage {
   noSearchResultsTemplate(deviceName, deviceType) {
     return html`<moz-card
       .heading=${deviceName}
-      icon
+      .iconSrc=${this.getDeviceIconSrc(deviceType)}
       class=${deviceType}
       data-l10n-id="firefoxview-search-results-empty"
       data-l10n-args=${JSON.stringify({
@@ -291,6 +291,21 @@ class SyncedTabsInSidebar extends SidebarPage {
           !this.controller.isURLQueuedToClose(item.fxaDeviceId, item.url) ||
           item.url === this.controller.lastClosedURL
       );
+  }
+
+  getDeviceIconSrc(deviceType) {
+    const phone = "chrome://browser/skin/device-phone.svg";
+    const desktop = "chrome://browser/skin/device-desktop.svg";
+    const tablet = "chrome://browser/skin/device-tablet.svg";
+
+    const deviceIcons = {
+      desktop,
+      mobile: phone,
+      phone,
+      tablet,
+    };
+
+    return deviceIcons[deviceType] || null;
   }
 
   render() {

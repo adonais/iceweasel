@@ -156,13 +156,13 @@ const TEST_DATA = [
   },
   {
     description: "Test for a property defined with prefix",
-    declarations: [{ name: "-moz-user-input" }],
+    declarations: [{ name: "-moz-user-focus" }],
     browsers: [FIREFOX_1, FIREFOX_60, FIREFOX_69],
     expectedIssues: [
       {
         type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
-        property: "-moz-user-input",
-        url: "https://developer.mozilla.org/docs/Web/CSS/-moz-user-input",
+        property: "-moz-user-focus",
+        url: "https://developer.mozilla.org/docs/Web/CSS/-moz-user-focus",
         specUrl: undefined,
         deprecated: true,
         experimental: false,

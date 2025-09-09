@@ -6,7 +6,7 @@ package org.mozilla.focus.input
 
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.widget.AppCompatEditText
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat

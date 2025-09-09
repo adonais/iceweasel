@@ -7,6 +7,7 @@
 #include "mozilla/dom/VideoFrame.h"
 
 #include <math.h>
+
 #include <limits>
 #include <utility>
 
@@ -39,6 +40,7 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Swizzle.h"
 #include "mozilla/layers/LayersSurfaces.h"
+#include "mozilla/webgpu/ExternalTexture.h"
 #include "nsIPrincipal.h"
 #include "nsIURI.h"
 #include "nsLayoutUtils.h"
@@ -2053,6 +2055,13 @@ void VideoFrame::Close() {
   mDisplaySize = gfx::IntSize();
   mColorSpace = VideoColorSpaceInternal();
 
+  for (const auto& weakExternalTexture : mWebGPUExternalTextures) {
+    if (auto* externalTexture = weakExternalTexture.get()) {
+      externalTexture->Expire();
+    }
+  }
+  mWebGPUExternalTextures.Clear();
+
   StopAutoClose();
 }
 
@@ -2065,6 +2074,11 @@ already_AddRefed<layers::Image> VideoFrame::GetImage() const {
     return nullptr;
   }
   return do_AddRef(mResource->mImage);
+}
+
+void VideoFrame::TrackWebGPUExternalTexture(
+    WeakPtr<webgpu::ExternalTexture> aExternalTexture) {
+  mWebGPUExternalTextures.AppendElement(aExternalTexture);
 }
 
 nsCString VideoFrame::ToString() const {

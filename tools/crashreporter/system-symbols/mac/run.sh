@@ -3,7 +3,7 @@
 set -v -e -x
 
 base="$(realpath "$(dirname "$0")")"
-export PATH="$PATH:/builds/worker/bin:$base:${MOZ_FETCHES_DIR}/dmg"
+export PATH="$PATH:$base:${MOZ_FETCHES_DIR}/dmg"
 
 cd /builds/worker
 
@@ -37,8 +37,22 @@ python3 /usr/local/bin/repo_sync --no-download
 packages=$(python3 "${base}/list-packages.py")
 
 for package in ${packages}; do
+  tmp_stderr="artifacts/tmp.repo_sync-product-id-${package}.stderr"
+  final_stderr="artifacts/repo_sync-product-id-${package}.stderr"
+
   # repo_sync is super-chatty, let's pipe stderr to separate files
-  python3 /usr/local/bin/repo_sync "--product-id=${package}" 2> "artifacts/repo_sync-product-id-${package}.stderr"
+  python3 /usr/local/bin/repo_sync "--product-id=${package}" 2> "$tmp_stderr"
+
+  # Filter out known warning lines
+  grep -v "has not been downloaded" "$tmp_stderr" > "$final_stderr" || true
+
+  # Only keep non-empty stderr files
+  if [ ! -s "$final_stderr" ]; then
+    rm -f "$final_stderr"
+  fi
+
+  rm -f "$tmp_stderr"
+
   # Stop downloading packages if we have more than 10 GiB of them to process
   download_size=$(du -B1073741824 -s /opt/data-reposado | cut -f1)
   if [ ${download_size} -gt 10 ]; then

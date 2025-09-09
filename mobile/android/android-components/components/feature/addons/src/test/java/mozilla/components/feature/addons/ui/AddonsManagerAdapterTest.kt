@@ -12,7 +12,6 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.addons.Addon
@@ -40,7 +39,6 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import java.util.Locale
 
-@ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class AddonsManagerAdapterTest {
 

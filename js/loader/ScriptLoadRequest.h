@@ -44,8 +44,7 @@ namespace mozilla::loader {
 class SyncLoadContext;
 }  // namespace mozilla::loader
 
-namespace JS {
-namespace loader {
+namespace JS::loader {
 
 class LoadContextBase;
 class ModuleLoadRequest;
@@ -106,7 +105,7 @@ class ScriptLoadRequest : public nsISupports,
   using super::getNext;
   using super::isInList;
 
-  template <typename T, typename D = JS::DeletePolicy<T>>
+  template <typename T, typename D = DeletePolicy<T>>
   using UniquePtr = mozilla::UniquePtr<T, D>;
 
   bool IsModuleRequest() const { return mKind == ScriptKind::eModule; }
@@ -134,8 +133,6 @@ class ScriptLoadRequest : public nsISupports,
     PendingFetchingError,
     Fetching,
     Compiling,
-    LoadingImports,
-    CancelingImports,
     Ready,
     Canceled
   };
@@ -150,8 +147,6 @@ class ScriptLoadRequest : public nsISupports,
   // the JavaScript engine.
   bool IsFetching() const { return mState == State::Fetching; }
   bool IsCompiling() const { return mState == State::Compiling; }
-  bool IsLoadingImports() const { return mState == State::LoadingImports; }
-  bool IsCancelingImports() const { return mState == State::CancelingImports; }
   bool IsCanceled() const { return mState == State::Canceled; }
 
   bool IsPendingFetchingError() const {
@@ -170,10 +165,6 @@ class ScriptLoadRequest : public nsISupports,
 
   enum mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
     return mReferrerPolicy;
-  }
-
-  void UpdateReferrerPolicy(mozilla::dom::ReferrerPolicy aReferrerPolicy) {
-    mReferrerPolicy = aReferrerPolicy;
   }
 
   enum ParserMetadata ParserMetadata() const {
@@ -312,7 +303,7 @@ class ScriptLoadRequest : public nsISupports,
   // it is parsed, and marked to be saved in the bytecode cache.
   //
   // NOTE: This field is not used for ModuleLoadRequest.
-  JS::Heap<JSScript*> mScriptForBytecodeEncoding;
+  Heap<JSScript*> mScriptForBytecodeEncoding;
 
   // Holds the Cache information, which is used to register the bytecode
   // on the cache entry, such that we can load it the next time.
@@ -380,7 +371,6 @@ inline void ImplCycleCollectionTraverse(
   }
 }
 
-}  // namespace loader
-}  // namespace JS
+}  // namespace JS::loader
 
 #endif  // js_loader_ScriptLoadRequest_h

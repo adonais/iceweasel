@@ -13,7 +13,6 @@
 #define StickyScrollContainer_h
 
 #include "mozilla/DepthOrderedFrameList.h"
-#include "nsIScrollPositionListener.h"
 #include "nsPoint.h"
 #include "nsRectAbsolute.h"
 #include "nsTArray.h"
@@ -25,21 +24,13 @@ namespace mozilla {
 
 class ScrollContainerFrame;
 
-class StickyScrollContainer final : public nsIScrollPositionListener {
+class StickyScrollContainer final {
  public:
   /**
    * Find (and create if necessary) the StickyScrollContainer associated with
    * the scroll container of the given frame, if a scroll container exists.
    */
-  static StickyScrollContainer* GetStickyScrollContainerForFrame(
-      nsIFrame* aFrame);
-
-  /**
-   * Find the StickyScrollContainer associated with the given scroll frame,
-   * if it exists.
-   */
-  static StickyScrollContainer* GetStickyScrollContainerForScrollFrame(
-      nsIFrame* aScrollFrame);
+  static StickyScrollContainer* GetOrCreateForFrame(nsIFrame*);
 
   void AddFrame(nsIFrame* aFrame) { mFrames.Add(aFrame); }
   void RemoveFrame(nsIFrame* aFrame) { mFrames.Remove(aFrame); }
@@ -77,9 +68,7 @@ class StickyScrollContainer final : public nsIScrollPositionListener {
    */
   void UpdatePositions(nsPoint aScrollPosition, nsIFrame* aSubtreeRoot);
 
-  // nsIScrollPositionListener
-  void ScrollPositionWillChange(nscoord aX, nscoord aY) override;
-  void ScrollPositionDidChange(nscoord aX, nscoord aY) override;
+  void ScrollPositionDidChange(const nsPoint&);
 
   ~StickyScrollContainer();
 
@@ -96,9 +85,9 @@ class StickyScrollContainer final : public nsIScrollPositionListener {
    */
   void MarkFramesForReflow();
 
- private:
   explicit StickyScrollContainer(ScrollContainerFrame* aScrollContainerFrame);
 
+ private:
   /**
    * Compute two rectangles that determine sticky positioning: |aStick|, based
    * on the scroll container, and |aContain|, based on the containing block.

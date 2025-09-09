@@ -4,31 +4,32 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsAttrValue.h"
-#include "nsAttrValueOrString.h"
-#include "nsGenericHTMLElement.h"
-#include "nsGkAtoms.h"
-#include "nsStyleConsts.h"
-#include "mozilla/dom/Document.h"
-#include "nsNetUtil.h"
-#include "nsContentUtils.h"
-#include "nsUnicharUtils.h"  // for nsCaseInsensitiveStringComparator()
-#include "nsIScriptContext.h"
-#include "nsIScriptGlobalObject.h"
-#include "nsServiceManagerUtils.h"
-#include "nsError.h"
-#include "nsTArray.h"
-#include "nsDOMJSUtils.h"
-#include "nsIScriptError.h"
-#include "nsISupportsImpl.h"
-#include "nsDOMTokenList.h"
-#include "mozilla/dom/FetchPriority.h"
 #include "mozilla/dom/HTMLScriptElement.h"
+
+#include "mozilla/Assertions.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/FetchPriority.h"
 #include "mozilla/dom/HTMLScriptElementBinding.h"
 #include "mozilla/dom/TrustedTypeUtils.h"
 #include "mozilla/dom/TrustedTypesConstants.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/StaticPrefs_dom.h"
+#include "nsAttrValue.h"
+#include "nsAttrValueOrString.h"
+#include "nsContentUtils.h"
+#include "nsDOMJSUtils.h"
+#include "nsDOMTokenList.h"
+#include "nsError.h"
+#include "nsGenericHTMLElement.h"
+#include "nsGkAtoms.h"
+#include "nsIScriptContext.h"
+#include "nsIScriptError.h"
+#include "nsIScriptGlobalObject.h"
+#include "nsISupportsImpl.h"
+#include "nsNetUtil.h"
+#include "nsServiceManagerUtils.h"
+#include "nsStyleConsts.h"
+#include "nsTArray.h"
+#include "nsUnicharUtils.h"  // for nsCaseInsensitiveStringComparator()
 
 NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(Script)
 

@@ -6,12 +6,12 @@
 #ifndef nsScreen_h___
 #define nsScreen_h___
 
+#include "Units.h"
+#include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/dom/ScreenBinding.h"
 #include "mozilla/dom/ScreenLuminance.h"
 #include "mozilla/dom/ScreenOrientation.h"
-#include "mozilla/DOMEventTargetHelper.h"
-#include "mozilla/StaticPrefs_media.h"
-#include "Units.h"
 
 class nsDeviceContext;
 

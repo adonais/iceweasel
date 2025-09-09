@@ -6,17 +6,17 @@
 
 #include "SharedScriptCache.h"
 
-#include "mozilla/Maybe.h"   // Maybe, Some, Nothing
-#include "mozilla/Unused.h"  // Unused
-#include "nsIPrefService.h"  // NS_PREFSERVICE_CONTRACTID
-#include "nsIPrefBranch.h"   // nsIPrefBranch, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID
-#include "nsISupportsImpl.h"    // NS_IMPL_ISUPPORTS
-#include "nsIMemoryReporter.h"  // nsIMemoryReporter, MOZ_DEFINE_MALLOC_SIZE_OF, RegisterWeakMemoryReporter, UnregisterWeakMemoryReporter, MOZ_COLLECT_REPORT, KIND_HEAP, UNITS_BYTES
-#include "mozilla/dom/ContentParent.h"  // dom::ContentParent
-#include "nsIPrincipal.h"               // nsIPrincipal
-#include "nsStringFwd.h"                // nsACString
-#include "ScriptLoader.h"               // ScriptLoader
 #include "ScriptLoadHandler.h"          // ScriptLoadHandler
+#include "ScriptLoader.h"               // ScriptLoader
+#include "mozilla/Maybe.h"              // Maybe, Some, Nothing
+#include "mozilla/Unused.h"             // Unused
+#include "mozilla/dom/ContentParent.h"  // dom::ContentParent
+#include "nsIMemoryReporter.h"  // nsIMemoryReporter, MOZ_DEFINE_MALLOC_SIZE_OF, RegisterWeakMemoryReporter, UnregisterWeakMemoryReporter, MOZ_COLLECT_REPORT, KIND_HEAP, UNITS_BYTES
+#include "nsIPrefBranch.h"   // nsIPrefBranch, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID
+#include "nsIPrefService.h"  // NS_PREFSERVICE_CONTRACTID
+#include "nsIPrincipal.h"    // nsIPrincipal
+#include "nsISupportsImpl.h"  // NS_IMPL_ISUPPORTS
+#include "nsStringFwd.h"      // nsACString
 
 namespace mozilla::dom {
 

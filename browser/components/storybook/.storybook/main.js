@@ -33,6 +33,8 @@ module.exports = {
     `${projectRoot}/toolkit/components/reader/**/*.stories.mjs`,
     // megalist components stories
     `${projectRoot}/toolkit/components/satchel/megalist/content/**/*.stories.mjs`,
+    // WebRTC components stories
+    `${projectRoot}/browser/components/webrtc/content/**/*.stories.mjs`,
     // Everything else
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
     // Design system files

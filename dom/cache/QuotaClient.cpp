@@ -4,10 +4,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "QuotaClientImpl.h"
-
 #include "DBAction.h"
 #include "FileUtilsImpl.h"
+#include "QuotaClientImpl.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Unused.h"

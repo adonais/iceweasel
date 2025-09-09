@@ -409,8 +409,12 @@ PageHost.prototype = {
     return Promise.resolve(this.frame);
   },
 
-  // Do nothing.
-  raise() {},
+  // Focus the tab owning the browser element.
+  raise() {
+    // See @constructor, for the page host, the frame is also the browser
+    // element.
+    focusTab(this.frame.ownerGlobal.gBrowser.getTabForBrowser(this.frame));
+  },
 
   // Do nothing.
   setTitle() {},

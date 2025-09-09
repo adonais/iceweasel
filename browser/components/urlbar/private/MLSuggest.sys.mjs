@@ -40,6 +40,15 @@ class _MLSuggest {
     featureId: "suggest-intent-classification",
     timeoutMS: -1,
     numThreads: 2,
+    backend: "onnx-native",
+  };
+
+  INTENT_OPTIONS_FALLBACK = {
+    taskName: "text-classification",
+    featureId: "suggest-intent-classification",
+    timeoutMS: -1,
+    numThreads: 2,
+    backend: "onnx",
   };
 
   NER_OPTIONS = {
@@ -47,6 +56,15 @@ class _MLSuggest {
     featureId: "suggest-NER",
     timeoutMS: -1,
     numThreads: 2,
+    backend: "onnx-native",
+  };
+
+  NER_OPTIONS_FALLBACK = {
+    taskName: "token-classification",
+    featureId: "suggest-NER",
+    timeoutMS: -1,
+    numThreads: 2,
+    backend: "onnx",
   };
 
   /**
@@ -63,8 +81,11 @@ class _MLSuggest {
    */
   async initialize() {
     await Promise.all([
-      this.#initializeModelEngine(this.INTENT_OPTIONS),
-      this.#initializeModelEngine(this.NER_OPTIONS),
+      this.#initializeModelEngine(
+        this.INTENT_OPTIONS,
+        this.INTENT_OPTIONS_FALLBACK
+      ),
+      this.#initializeModelEngine(this.NER_OPTIONS, this.NER_OPTIONS_FALLBACK),
     ]);
   }
 
@@ -151,7 +172,7 @@ class _MLSuggest {
     }
   }
 
-  async #initializeModelEngine(options) {
+  async #initializeModelEngine(options, fallbackOptions = null) {
     const featureId = options.featureId;
 
     // uses cache if engine was used
@@ -159,8 +180,18 @@ class _MLSuggest {
     if (engine) {
       return engine;
     }
+    try {
+      engine = await this.createEngine(options);
+    } catch (e) {
+      if (fallbackOptions) {
+        try {
+          engine = await this.createEngine(fallbackOptions);
+        } catch (_) {
+          // do nothing
+        }
+      }
+    }
 
-    engine = await this.createEngine(options);
     // Cache the engine
     this.#modelEngines.set(featureId, engine);
     return engine;
@@ -195,7 +226,10 @@ class _MLSuggest {
       // engine could timeout or fail, so remove that from cache
       // and reinitialize
       this.#modelEngines.delete(this.INTENT_OPTIONS.featureId);
-      this.#initializeModelEngine(this.INTENT_OPTIONS);
+      this.#initializeModelEngine(
+        this.INTENT_OPTIONS,
+        this.INTENT_OPTIONS_FALLBACK
+      );
       return null;
     }
     return res;
@@ -220,7 +254,7 @@ class _MLSuggest {
       // engine could timeout or fail, so remove that from cache
       // and reinitialize
       this.#modelEngines.delete(this.NER_OPTIONS.featureId);
-      this.#initializeModelEngine(this.NER_OPTIONS);
+      this.#initializeModelEngine(this.NER_OPTIONS, this.NER_OPTIONS_FALLBACK);
       return null;
     }
   }

@@ -8,6 +8,7 @@ import android.content.Context
 import android.os.Looper.getMainLooper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.fxaclient.FxaServer
 import mozilla.components.concept.engine.request.RequestInterceptor
@@ -71,6 +72,7 @@ class TestableFxaAccountManager(
     }
 }
 
+@ExperimentalCoroutinesApi // getCompleted
 @RunWith(AndroidJUnit4::class)
 class FirefoxAccountsAuthFeatureTest {
     val mockEntryPoint: FxAEntryPoint = mock<FxAEntryPoint>().apply {

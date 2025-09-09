@@ -1850,10 +1850,9 @@ export const XPIDatabase = {
       // use an Error here so we get a stack trace.
       let err = new Error("XPI database modified after shutdown began");
       logger.warn(err);
-      lazy.AddonManagerPrivate.recordSimpleMeasure(
-        "XPIDB_late_stack",
-        Log.stackTrace(err)
-      );
+      const stack = Log.stackTrace(err);
+      lazy.AddonManagerPrivate.recordSimpleMeasure("XPIDB_late_stack", stack);
+      Glean.xpiDatabase.lateStack.set(stack);
     }
 
     if (!this._saveTask) {
@@ -1909,10 +1908,9 @@ export const XPIDatabase = {
   syncLoadDB(aRebuildOnError) {
     let err = new Error("Synchronously loading the add-ons database");
     logger.debug(err.message);
-    lazy.AddonManagerPrivate.recordSimpleMeasure(
-      "XPIDB_sync_stack",
-      Log.stackTrace(err)
-    );
+    const stack = Log.stackTrace(err);
+    lazy.AddonManagerPrivate.recordSimpleMeasure("XPIDB_sync_stack", stack);
+    Glean.xpiDatabase.syncStack.set(stack);
     try {
       this.syncLoadingDB = true;
       XPIExports.XPIInternal.awaitPromise(this.asyncLoadDB(aRebuildOnError));
@@ -1923,6 +1921,7 @@ export const XPIDatabase = {
 
   _recordStartupError(reason) {
     lazy.AddonManagerPrivate.recordSimpleMeasure("XPIDB_startupError", reason);
+    Glean.xpiDatabase.startupError.set(reason);
   },
 
   /**
@@ -1934,8 +1933,10 @@ export const XPIDatabase = {
    *        If true, synchronously reconstruct the database from installed add-ons
    */
   async parseDB(aInputAddons, aRebuildOnError) {
+    let timerId;
     try {
       let parseTimer = lazy.AddonManagerPrivate.simpleTimer("XPIDB_parseDB_MS");
+      timerId = Glean.xpiDatabase.parses.start();
 
       if (!("schemaVersion" in aInputAddons) || !("addons" in aInputAddons)) {
         let error = new Error("Bad JSON file contents");
@@ -1995,11 +1996,15 @@ export const XPIDatabase = {
         }
       });
 
+      Glean.xpiDatabase.parses.stopAndAccumulate(timerId);
       parseTimer.done();
       this.addonDB = addonDB;
       logger.debug("Successfully read XPI database");
       this.initialized = true;
     } catch (e) {
+      if (timerId) {
+        Glean.xpiDatabase.parses.cancel(timerId);
+      }
       if (e.name == "SyntaxError") {
         logger.error("Syntax error parsing saved XPI JSON data");
         this._recordStartupError("syntax");
@@ -2046,10 +2051,9 @@ export const XPIDatabase = {
         "XPIDatabase.asyncLoadDB attempt after XPIProvider shutdown."
       );
       logger.warn("Fail to load AddonDB: ${error}", { error: err });
-      lazy.AddonManagerPrivate.recordSimpleMeasure(
-        "XPIDB_late_load",
-        Log.stackTrace(err)
-      );
+      const stack = Log.stackTrace(err);
+      lazy.AddonManagerPrivate.recordSimpleMeasure("XPIDB_late_load", stack);
+      Glean.xpiDatabase.lateLoad.set(stack);
       this._dbPromise = Promise.reject(err);
 
       XPIExports.XPIInternal.resolveDBReady(this._dbPromise);
@@ -2092,7 +2096,12 @@ export const XPIDatabase = {
 
   timeRebuildDatabase(timerName, rebuildOnError) {
     lazy.AddonManagerPrivate.recordTiming(timerName, () => {
-      return this.rebuildDatabase(rebuildOnError);
+      const timerId = Glean.xpiDatabase.rebuilds[timerName].start();
+      try {
+        return this.rebuildDatabase(rebuildOnError);
+      } finally {
+        Glean.xpiDatabase.rebuilds[timerName].stopAndAccumulate(timerId);
+      }
     });
   },
 

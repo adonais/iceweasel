@@ -7,11 +7,11 @@
 #ifndef mozilla_GraphRunner_h
 #define mozilla_GraphRunner_h
 
+#include <thread>
+
 #include "GraphDriver.h"
 #include "MediaSegment.h"
 #include "mozilla/Monitor.h"
-
-#include <thread>
 
 struct PRThread;
 

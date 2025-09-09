@@ -69,7 +69,7 @@ export class RootMessageHandler extends MessageHandler {
     this.#navigationManager = new lazy.NavigationManager();
     this.#navigationManager.startMonitoring();
 
-    // Map with inner window ids as keys, and sets of realm ids, assosiated with
+    // Map with inner window ids as keys, and sets of realm ids, associated with
     // this window as values.
     this.#realms = new Map();
     // In the general case, we don't get notified that realms got destroyed,

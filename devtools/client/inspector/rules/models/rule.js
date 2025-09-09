@@ -5,7 +5,7 @@
 "use strict";
 
 const {
-  style: { ELEMENT_STYLE },
+  style: { ELEMENT_STYLE, PRES_HINTS },
 } = require("resource://devtools/shared/constants.js");
 const CssLogic = require("resource://devtools/shared/inspector/css-logic.js");
 const TextProperty = require("resource://devtools/client/inspector/rules/models/text-property.js");
@@ -161,9 +161,15 @@ class Rule {
   }
 
   get selectorText() {
-    return this.domRule.selectors
-      ? this.domRule.selectors.join(", ")
-      : CssLogic.l10n("rule.sourceElement");
+    if (Array.isArray(this.domRule.selectors)) {
+      return this.domRule.selectors.join(", ");
+    }
+
+    if (this.domRule.type === PRES_HINTS) {
+      return CssLogic.l10n("rule.sourceElementAttributesStyle");
+    }
+
+    return CssLogic.l10n("rule.sourceElement");
   }
 
   /**
@@ -275,7 +281,13 @@ class Rule {
    *        Optional, property next to which the new property will be added.
    */
   createProperty(name, value, priority, enabled, siblingProp) {
-    const prop = new TextProperty(this, name, value, priority, enabled);
+    const prop = new TextProperty({
+      rule: this,
+      name,
+      value,
+      priority,
+      enabled,
+    });
 
     let ind;
     if (siblingProp) {
@@ -584,14 +596,15 @@ class Rule {
         name,
         prop.value
       );
-      const textProp = new TextProperty(
-        this,
+
+      const textProp = new TextProperty({
+        rule: this,
         name,
         value,
-        prop.priority,
-        !("commentOffsets" in prop),
-        invisible
-      );
+        priority: prop.priority,
+        enabled: !("commentOffsets" in prop),
+        invisible,
+      });
       textProps.push(textProp);
     }
 
@@ -618,7 +631,12 @@ class Rule {
         prop.name,
         prop.value
       );
-      const textProp = new TextProperty(this, prop.name, value, prop.priority);
+      const textProp = new TextProperty({
+        rule: this,
+        name: prop.name,
+        value,
+        priority: prop.priority,
+      });
       textProp.enabled = false;
       textProps.push(textProp);
     }
@@ -874,6 +892,13 @@ class Rule {
     return this.domRule.ancestorData.some(
       ({ type }) => type === "starting-style"
     );
+  }
+
+  /**
+   * @returns {Boolean} Whether or not the rule can be edited
+   */
+  isEditable() {
+    return !this.isSystem && this.domRule.type !== PRES_HINTS;
   }
 
   /**

@@ -5,23 +5,25 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsWindowMemoryReporter.h"
-#include "nsWindowSizes.h"
-#include "nsGlobalWindowInner.h"
-#include "nsGlobalWindowOuter.h"
-#include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/dom/Document.h"
+
+#include "XPCJSMemoryReporter.h"
+#include "js/MemoryMetrics.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/ResultExtensions.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Try.h"
-#include "mozilla/ResultExtensions.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/Document.h"
+#include "nsGlobalWindowInner.h"
+#include "nsGlobalWindowOuter.h"
 #include "nsNetCID.h"
 #include "nsPrintfCString.h"
-#include "XPCJSMemoryReporter.h"
-#include "js/MemoryMetrics.h"
 #include "nsQueryObject.h"
 #include "nsServiceManagerUtils.h"
+#include "nsStyleStructList.h"
+#include "nsWindowSizes.h"
 #include "nsXULPrototypeCache.h"
 
 using namespace mozilla;
@@ -481,7 +483,7 @@ static void CollectWindowReports(nsGlobalWindowInner* aWindow,
       js::MemoryReportingSundriesThreshold();
 
   size_t styleSundriesSize = 0;
-#define STYLE_STRUCT(name_)                                             \
+#define PROCESS_STYLE_STRUCT(name_)                                     \
   {                                                                     \
     size_t size = windowSizes.mStyleSizes.NS_STYLE_SIZES_FIELD(name_);  \
     if (size < STYLE_SUNDRIES_THRESHOLD) {                              \
@@ -493,8 +495,8 @@ static void CollectWindowReports(nsGlobalWindowInner* aWindow,
     }                                                                   \
     aWindowTotalSizes->mStyleSizes.NS_STYLE_SIZES_FIELD(name_) += size; \
   }
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT
+  FOR_EACH_STYLE_STRUCT(PROCESS_STYLE_STRUCT, PROCESS_STYLE_STRUCT)
+#undef PROCESS_STYLE_STRUCT
 
   if (styleSundriesSize > 0) {
     REPORT_SUM_SIZE(
@@ -674,10 +676,10 @@ nsWindowMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
          "sum of all windows' 'layout/display-list-arena/' numbers.");
 
   size_t styleTotal = 0;
-#define STYLE_STRUCT(name_) \
+#define ADD_TO_STYLE_TOTAL(name_) \
   styleTotal += windowTotalSizes.mStyleSizes.NS_STYLE_SIZES_FIELD(name_);
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT
+  FOR_EACH_STYLE_STRUCT(ADD_TO_STYLE_TOTAL, ADD_TO_STYLE_TOTAL)
+#undef ADD_TO_STYLE_TOTAL
 
   REPORT("window-objects/layout/style-structs", styleTotal,
          "Memory used for style structs within windows. This is the sum of "

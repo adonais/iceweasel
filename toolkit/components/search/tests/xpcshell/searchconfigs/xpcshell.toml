@@ -44,8 +44,6 @@ prefs = ["browser.search.newSearchConfig.enabled=true"]
 
 ["test_qwant.js"]
 
-["test_rakuten.js"]
-
 ["test_searchconfig_ui_schemas_valid.js"]
 support-files = [
   "../../../schema/search-config-icons-schema.json",

@@ -36,6 +36,12 @@ add_task(async function test_focus_browser() {
       );
       await delayedStartupPromise;
 
+      Assert.greaterOrEqual(
+        Glean.browserTimings.startupTimeline.delayedStartupFinished.testGetValue(),
+        Glean.browserTimings.startupTimeline.delayedStartupStarted.testGetValue(),
+        "Delayed startup timings in correct order."
+      );
+
       let focusedElement = Services.focus.getFocusedElementForWindow(
         newWin,
         false,

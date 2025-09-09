@@ -8,15 +8,13 @@
 #define mozilla_dom_SessionStorageManager_h
 
 #include "StorageObserver.h"
-
 #include "mozilla/dom/FlippedOnce.h"
-#include "nsIDOMStorageManager.h"
+#include "mozilla/ipc/PBackgroundChild.h"
+#include "mozilla/ipc/PBackgroundParent.h"
 #include "nsClassHashtable.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsHashKeys.h"
-
-#include "mozilla/ipc/PBackgroundChild.h"
-#include "mozilla/ipc/PBackgroundParent.h"
+#include "nsIDOMStorageManager.h"
 
 class nsIPrincipal;
 class nsITimer;

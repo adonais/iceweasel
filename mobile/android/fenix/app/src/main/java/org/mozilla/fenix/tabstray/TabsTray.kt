@@ -140,7 +140,7 @@ fun TabsTray(
 ) {
     val tabsTrayState by tabsTrayStore.observeAsState(initialValue = tabsTrayStore.state) { it }
     val pagerState = rememberPagerState(
-        initialPage = Page.pageToPosition(tabsTrayState.selectedPage),
+        initialPage = Page.pageToPosition(page = tabsTrayState.selectedPage, enhancementsEnabled = false),
         pageCount = { Page.entries.size },
     )
     val isInMultiSelectMode by remember(tabsTrayState.mode) {
@@ -161,7 +161,9 @@ fun TabsTray(
     }
 
     LaunchedEffect(tabsTrayState.selectedPage) {
-        pagerState.animateScrollToPage(Page.pageToPosition(tabsTrayState.selectedPage))
+        pagerState.animateScrollToPage(
+            page = Page.pageToPosition(page = tabsTrayState.selectedPage, enhancementsEnabled = false),
+        )
     }
 
     Column(
@@ -216,7 +218,7 @@ fun TabsTray(
                 beyondViewportPageCount = 2,
                 userScrollEnabled = false,
             ) { position ->
-                when (Page.positionToPage(position)) {
+                when (Page.positionToPage(position = position, enhancementsEnabled = false)) {
                     Page.NormalTabs -> {
                         NormalTabsPage(
                             normalTabs = tabsTrayState.normalTabs,

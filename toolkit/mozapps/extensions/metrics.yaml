@@ -296,19 +296,24 @@ addons_manager:
       - https://bugzilla.mozilla.org/1653020
       - https://bugzilla.mozilla.org/1699225
       - https://bugzilla.mozilla.org/1820153
+      - https://bugzilla.mozilla.org/1982913
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1653020#c6
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1820153#c3
+      - https://bugzilla.mozilla.org/1982913
     data_sensitivity:
       - interaction
     notification_emails:
       - addons-dev-internal@mozilla.com
     extra_keys:
       addon_id:
-        description: Id of the addon.
+        description: Full id of the addon.
         type: string
       addon_type:
         description: Type of the add-on.
+        type: string
+      hashed_addon_id:
+        description: The hashed addon id.
         type: string
       taar_based:
         description: |
@@ -471,6 +476,70 @@ addons_manager:
           The expected values are: "new", "existing" "existingWithVersionChanged"
         type: string
     expires: 147
+
+  startup_timeline:
+    type: labeled_quantity
+    unit: milliseconds since process creation
+    lifetime: application
+    description: |
+      Events on the startup timeline, in millis since process creation.
+      Previously carried in Legacy "main" ping `simpleMeasurements`.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    expires: never
+    data_sensitivity:
+      - technical
+    labels:
+      - AMI_startup_begin
+      - AMI_startup_end
+      - XPI_startup_begin
+      - XPI_bootstrap_addons_begin
+      - XPI_bootstrap_addons_end
+      - XPI_finalUIStartup
+      - XPI_startup_end
+
+  exception:
+    type: object
+    lifetime: application
+    description: |
+      Most recent exception reported by the Addons Manager this app session.
+      Previously reported in the "main" ping `simpleMeasurements`.
+      ```text
+      {
+        module: string module name,
+        context: string context, like the method name,
+        message: string message of the exception,
+        file: the file that the exception occured in,
+        line: the line number the exception was thrown from,
+      }
+      ```
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    expires: never
+    data_sensitivity:
+      - technical
+    structure:
+      type: object
+      properties:
+        module:
+          type: string
+        context:
+          type: string
+        message:
+          type: string
+        file:
+          type: string
+        line:
+          type: number
+
 
 blocklist:
   last_modified_rs_addons_mblf:
@@ -787,3 +856,126 @@ blocklist:
     notification_emails:
       - addons-dev-internal@mozilla.com
     expires: never
+
+xpi.database:
+  late_stack:
+    type: text
+    lifetime: application
+    description: |
+      Stack of XPI Database `saveChanges` call happening while the XPI provider
+      is closing.
+      Previously reported in "main" ping `simpleMeasurements`.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    expires: never
+    data_sensitivity:
+      - stored_content
+
+  sync_stack:
+    type: text
+    lifetime: application
+    description: |
+      Stack of XPI Database `syncLoadDB` call.
+      Previously reported in "main" ping `simpleMeasurements`.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    expires: never
+    data_sensitivity:
+      - stored_content
+
+  late_load:
+    type: text
+    lifetime: application
+    description: |
+      Stack of XPI Database `asyncLoadDB` call happening while the XPI provider
+      is closing.
+      Previously reported in "main" ping `simpleMeasurements`.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    expires: never
+    data_sensitivity:
+      - stored_content
+
+  startup_load_reasons:
+    type: string_list
+    lifetime: application
+    description: |
+      List of reasons the XPI Database was updated.
+      Examples include "appChanged", "directoryState".
+      Previously reported in "main" ping `simpleMeasurements`.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    expires: never
+    data_sensitivity:
+      - technical
+
+  startup_error:
+    type: string
+    lifetime: application
+    description: |
+      Reason for XPI Database startup error.
+      Previously reported in "main" ping `simpleMeasurements`.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    expires: never
+    data_sensitivity:
+      - technical
+
+  parses:
+    type: timing_distribution
+    time_unit: millisecond
+    lifetime: ping
+    description: |
+      How long it took to parse the XPI Database.
+      Previously reported in "main" ping `simpleMeasurements`.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    expires: never
+    data_sensitivity:
+      - technical
+
+  rebuilds:
+    type: labeled_timing_distribution
+    time_unit: millisecond
+    lifetime: ping
+    description: |
+      How long it took to rebuild the XPI Database
+      per reason it was rebuilt.
+      Previously reported in "main" ping `simpleMeasurements`.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972836
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    expires: never
+    data_sensitivity:
+      - technical
+    labels:
+      - XPIDB_rebuildReadFailed_MS
+      - XPIDB_rebuildBadJSON_MS
+      - XPIDB_rebuildUnreadableDB_MS

@@ -7,8 +7,8 @@
 #define GMPVideoi420FrameImpl_h_
 
 #include "gmp-video-frame-i420.h"
-#include "mozilla/ipc/Shmem.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/ipc/Shmem.h"
 #include "nsTArray.h"
 
 namespace mozilla::gmp {

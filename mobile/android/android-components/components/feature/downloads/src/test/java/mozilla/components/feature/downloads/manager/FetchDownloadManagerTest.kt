@@ -24,6 +24,7 @@ import mozilla.components.feature.downloads.DownloadEstimator
 import mozilla.components.feature.downloads.FileSizeFormatter
 import mozilla.components.feature.downloads.fake.FakeDateTimeProvider
 import mozilla.components.feature.downloads.fake.FakeFileSizeFormatter
+import mozilla.components.feature.downloads.fake.FakePackageNameProvider
 import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.test.any
 import mozilla.components.support.test.libstate.ext.waitUntilIdle
@@ -326,5 +327,6 @@ class FetchDownloadManagerTest {
         override val downloadEstimator: DownloadEstimator = DownloadEstimator(
             FakeDateTimeProvider(),
         )
+        override val packageNameProvider = FakePackageNameProvider("org.mozilla.fenix.test")
     }
 }

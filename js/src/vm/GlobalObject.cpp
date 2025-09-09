@@ -588,6 +588,9 @@ GlobalObject* GlobalObject::createInternal(JSContext* cx,
       ObjectFlag::QualifiedVarObj,
       ObjectFlag::GenerationCountedGlobal,
   };
+  if (JS::Prefs::objectfuse_for_global()) {
+    objectFlags.setFlag(ObjectFlag::HasObjectFuse);
+  }
 
   JSObject* obj =
       NewTenuredObjectWithGivenProto(cx, clasp, nullptr, objectFlags);

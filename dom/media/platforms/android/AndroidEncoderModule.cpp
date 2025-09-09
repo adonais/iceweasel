@@ -5,7 +5,6 @@
 #include "AndroidEncoderModule.h"
 
 #include "AndroidDataEncoder.h"
-
 #include "mozilla/Logging.h"
 #include "mozilla/java/HardwareCodecCapabilityUtilsWrappers.h"
 
@@ -52,6 +51,7 @@ EncodeSupportSet AndroidEncoderModule::Supports(
   if (aConfig.mScalabilityMode != ScalabilityMode::None) {
     return EncodeSupportSet{};
   }
+  // Only hardware encoder are supported for now.
   return SupportsCodec(aConfig.mCodec);
 }
 

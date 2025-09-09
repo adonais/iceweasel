@@ -51,7 +51,7 @@ registerCleanupFunction(async function () {
   });
 });
 
-pushPref("devtools.webconsole.groupWarningMessages", false);
+pushPref("devtools.webconsole.groupSimilarMessages", false);
 
 add_task(async function testEnhancedTrackingProtectionMessage() {
   await UrlClassifierTestUtils.addTestTrackers();

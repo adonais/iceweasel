@@ -138,6 +138,7 @@ class AndroidDownloadManagerTest {
             downloadWithFileName,
             cookie = "yummy_cookie=choco",
         )!!
+        store.waitUntilIdle()
 
         downloadManager.onDownloadStopped = { _, _, status ->
             downloadStatus = status

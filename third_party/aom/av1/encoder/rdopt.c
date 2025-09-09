@@ -3452,8 +3452,12 @@ static int64_t rd_pick_intrabc_mode_sb(const AV1_COMP *cpi, MACROBLOCK *x,
   const IntraBCMVCosts *const dv_costs = x->dv_costs;
   av1_set_ms_to_intra_mode(&fullms_params, dv_costs);
 
-  for (enum IntrabcMotionDirection dir = IBC_MOTION_ABOVE;
-       dir < IBC_MOTION_DIRECTIONS; ++dir) {
+  const enum IntrabcMotionDirection max_dir = cpi->sf.mv_sf.intrabc_search_level
+                                                  ? IBC_MOTION_LEFT
+                                                  : IBC_MOTION_DIRECTIONS;
+
+  for (enum IntrabcMotionDirection dir = IBC_MOTION_ABOVE; dir < max_dir;
+       ++dir) {
     switch (dir) {
       case IBC_MOTION_ABOVE:
         fullms_params.mv_limits.col_min =

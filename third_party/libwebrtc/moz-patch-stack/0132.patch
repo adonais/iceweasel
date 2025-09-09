@@ -14,7 +14,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/8b5653392e88ccd0c
  2 files changed, 5 insertions(+)
 
 diff --git a/video/config/video_encoder_config.h b/video/config/video_encoder_config.h
-index 59ee866f53..b062ca6563 100644
+index adb78c7706..11e7999057 100644
 --- a/video/config/video_encoder_config.h
 +++ b/video/config/video_encoder_config.h
 @@ -23,6 +23,7 @@
@@ -36,7 +36,7 @@ index 59ee866f53..b062ca6563 100644
      ~VideoStreamFactoryInterface() override {}
    };
 diff --git a/video/video_stream_encoder.cc b/video/video_stream_encoder.cc
-index 301cecae70..a8e52c1394 100644
+index e2812978af..bf710e58b6 100644
 --- a/video/video_stream_encoder.cc
 +++ b/video/video_stream_encoder.cc
 @@ -1061,6 +1061,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {

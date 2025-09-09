@@ -6,20 +6,19 @@
 
 #include "IntegrityPolicyService.h"
 
-#include "nsContentSecurityManager.h"
-#include "nsContentUtils.h"
-#include "nsILoadInfo.h"
-#include "nsString.h"
-
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/Logging.h"
+#include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/IntegrityPolicy.h"
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/RequestBinding.h"
 #include "mozilla/dom/SRIMetadata.h"
-#include "mozilla/Logging.h"
 #include "mozilla/net/SFVService.h"
-#include "mozilla/StaticPrefs_security.h"
+#include "nsContentSecurityManager.h"
+#include "nsContentUtils.h"
+#include "nsILoadInfo.h"
+#include "nsString.h"
 
 using namespace mozilla;
 

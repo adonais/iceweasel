@@ -6,17 +6,16 @@
 #ifndef nsHTMLDocument_h___
 #define nsHTMLDocument_h___
 
+#include "PLDHashTable.h"
 #include "mozilla/Attributes.h"
-#include "nsContentList.h"
+#include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/HTMLSharedElement.h"
+#include "nsContentList.h"
 #include "nsIHTMLCollection.h"
 #include "nsIScriptElement.h"
 #include "nsTArray.h"
-
-#include "PLDHashTable.h"
 #include "nsThreadUtils.h"
-#include "mozilla/dom/HTMLSharedElement.h"
-#include "mozilla/dom/BindingDeclarations.h"
 
 class nsCommandManager;
 class nsIURI;

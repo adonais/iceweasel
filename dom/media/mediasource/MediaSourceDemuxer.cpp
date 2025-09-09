@@ -6,14 +6,15 @@
 
 #include "MediaSourceDemuxer.h"
 
+#include <stdint.h>
+
+#include <algorithm>
+#include <limits>
+
 #include "MediaSourceUtils.h"
 #include "SourceBufferList.h"
 #include "VideoUtils.h"
 #include "nsPrintfCString.h"
-
-#include <algorithm>
-#include <limits>
-#include <stdint.h>
 
 extern mozilla::LogModule* GetMediaSourceLog();
 

@@ -532,9 +532,8 @@ MsaaAccessible::QueryInterface(REFIID iid, void** ppv) {
   // For interfaces below this point, we have to query the Accessible to
   // determine if they are available.
   if (!mAcc) {
-    // mscom::Interceptor (and maybe other callers) expects either S_OK or
-    // E_NOINTERFACE, so don't return CO_E_OBJNOTCONNECTED like we normally
-    // would for a dead object.
+    // Some callers expect either S_OK or E_NOINTERFACE, so don't return
+    // CO_E_OBJNOTCONNECTED like we normally would for a dead object.
     return E_NOINTERFACE;
   }
   AccessibleWrap* localAcc = LocalAcc();

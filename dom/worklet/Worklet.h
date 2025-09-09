@@ -8,9 +8,9 @@
 #define mozilla_dom_Worklet_h
 
 #include "mozilla/Attributes.h"
+#include "nsCOMPtr.h"
 #include "nsRefPtrHashtable.h"
 #include "nsWrapperCache.h"
-#include "nsCOMPtr.h"
 
 class nsPIDOMWindowInner;
 

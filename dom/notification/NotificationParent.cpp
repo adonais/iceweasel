@@ -8,13 +8,13 @@
 
 #include "NotificationHandler.h"
 #include "NotificationUtils.h"
-#include "nsThreadUtils.h"
 #include "mozilla/AlertNotification.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIServiceWorkerManager.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla::dom::notification {
 

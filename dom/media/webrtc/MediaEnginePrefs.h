@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <string.h>
+
 #include "mozilla/dom/MediaStreamTrackBinding.h"
 
 namespace mozilla {

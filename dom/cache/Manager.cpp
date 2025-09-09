@@ -6,6 +6,9 @@
 
 #include "mozilla/dom/cache/Manager.h"
 
+#include "QuotaClientImpl.h"
+#include "Types.h"
+#include "mozStorageHelper.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/AutoRestore.h"
@@ -13,31 +16,28 @@
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/cache/CacheTypes.h"
 #include "mozilla/dom/cache/Context.h"
 #include "mozilla/dom/cache/DBAction.h"
 #include "mozilla/dom/cache/DBSchema.h"
 #include "mozilla/dom/cache/FileUtils.h"
 #include "mozilla/dom/cache/ManagerId.h"
-#include "mozilla/dom/cache/CacheTypes.h"
 #include "mozilla/dom/cache/SavedTypes.h"
 #include "mozilla/dom/cache/StreamList.h"
 #include "mozilla/dom/cache/Types.h"
 #include "mozilla/dom/quota/Client.h"
 #include "mozilla/dom/quota/ClientDirectoryLock.h"
 #include "mozilla/dom/quota/ClientImpl.h"
-#include "mozilla/dom/quota/StringifyUtils.h"
 #include "mozilla/dom/quota/QuotaManager.h"
+#include "mozilla/dom/quota/StringifyUtils.h"
 #include "mozilla/ipc/BackgroundParent.h"
-#include "mozStorageHelper.h"
-#include "nsIInputStream.h"
 #include "nsID.h"
 #include "nsIFile.h"
+#include "nsIInputStream.h"
 #include "nsIThread.h"
 #include "nsIUUIDGenerator.h"
-#include "nsThreadUtils.h"
 #include "nsTObserverArray.h"
-#include "QuotaClientImpl.h"
-#include "Types.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla::dom::cache {
 
@@ -2190,8 +2190,7 @@ void Manager::NoteOrphanedBodyIdList(const nsTArray<nsID>& aDeletedBodyIdList) {
   deleteNowList.SetCapacity(aDeletedBodyIdList.Length());
 
   std::copy_if(aDeletedBodyIdList.cbegin(), aDeletedBodyIdList.cend(),
-               MakeBackInserter(deleteNowList),
-               [this](const auto& deletedBodyId) {
+               MakeBackInserter(deleteNowList), [&](const auto& deletedBodyId) {
                  return !SetBodyIdOrphanedIfRefed(deletedBodyId);
                });
 

@@ -31,7 +31,6 @@ import mozilla.components.compose.browser.toolbar.store.DisplayState
 import mozilla.components.compose.browser.toolbar.store.EditState
 import mozilla.components.compose.browser.toolbar.store.Mode
 import mozilla.components.compose.browser.toolbar.store.ProgressBarConfig
-import mozilla.components.compose.browser.toolbar.store.ProgressBarGravity.Bottom
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.MiddlewareContext
 import org.mozilla.samples.toolbar.R
@@ -297,10 +296,7 @@ internal class BrowserToolbarMiddleware(
         )
     }
 
-    private fun buildProgressBar(progress: Int = 0) = ProgressBarConfig(
-        progress = progress,
-        gravity = Bottom,
-    )
+    private fun buildProgressBar(progress: Int = 0) = ProgressBarConfig(progress)
 
     private var progressAnimationJob: Job? = null
     private fun simulateReload() {

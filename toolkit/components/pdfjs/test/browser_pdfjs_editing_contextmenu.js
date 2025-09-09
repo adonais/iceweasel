@@ -49,6 +49,7 @@ function getContextMenuItems(browser, box) {
         "context-pdfjs-selectall",
         "context-sep-pdfjs-selectall",
         "context-pdfjs-highlight-selection",
+        "context-pdfjs-comment-selection",
       ];
 
       await openContextMenuAt(browser, x + width / 2, y + height / 2);
@@ -359,7 +360,10 @@ add_task(async function test_highlight_selection() {
     { gBrowser, url: "about:blank" },
     async function (browser) {
       await SpecialPowers.pushPrefEnv({
-        set: [["pdfjs.annotationEditorMode", 0]],
+        set: [
+          ["pdfjs.annotationEditorMode", 0],
+          ["pdfjs.enableComment", false],
+        ],
       });
 
       await waitAndCheckEmptyContextMenu(browser);
@@ -404,6 +408,67 @@ add_task(async function test_highlight_selection() {
         await countElements(browser, ".highlightEditor"),
         1,
         "An highlight editor must have been added"
+      );
+
+      await waitForPdfJSClose(browser);
+    }
+  );
+});
+
+add_task(async function test_comment_selection() {
+  makePDFJSHandler();
+
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:blank" },
+    async function (browser) {
+      await SpecialPowers.pushPrefEnv({
+        set: [
+          ["pdfjs.annotationEditorMode", 0],
+          ["pdfjs.enableComment", true],
+        ],
+      });
+
+      await waitAndCheckEmptyContextMenu(browser);
+      const spanBox = await getSpanBox(browser, "and found references");
+
+      const changePromise = BrowserTestUtils.waitForContentEvent(
+        browser,
+        "annotationeditorstateschanged",
+        false,
+        null,
+        true
+      );
+      await clickAt(
+        browser,
+        spanBox.x + spanBox.width / 2,
+        spanBox.y + spanBox.height / 2,
+        2
+      );
+      await changePromise;
+      await TestUtils.waitForTick();
+
+      const mozBox = await getSpanBox(browser, "Mozilla automated testing");
+      const menuitems = await getContextMenuItems(browser, mozBox);
+
+      assertMenuitems(menuitems, [
+        "context-pdfjs-highlight-selection",
+        "context-pdfjs-comment-selection",
+      ]);
+
+      const telemetryPromise = BrowserTestUtils.waitForContentEvent(
+        browser,
+        "reporttelemetry",
+        false,
+        null,
+        true
+      );
+      await clickOnItem(browser, menuitems, "context-pdfjs-comment-selection");
+      await telemetryPromise;
+
+      await waitForSelector(
+        browser,
+        "#commentManagerDialog",
+        "The comment dialog must be visible"
       );
 
       await waitForPdfJSClose(browser);

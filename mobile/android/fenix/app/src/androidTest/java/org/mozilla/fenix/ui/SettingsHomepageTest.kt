@@ -10,6 +10,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.openAppFromExternalLink
+import org.mozilla.fenix.helpers.FeatureSettingsHelper.Companion.settings
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.RetryTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
@@ -190,10 +191,14 @@ class SettingsHomepageTest : TestSetup() {
             clickOpeningScreenOption("Homepage")
         }.goBackToHomeScreen {}
 
-        with(composeTestRule.activityRule) {
-            finishActivity()
-            mDevice.waitForIdle()
-            openAppFromExternalLink(genericPage.url.toString())
+        composeTestRule.activityRule.applySettingsExceptions {
+            it.isTermsOfServiceAccepted = true
+
+            with(composeTestRule.activityRule) {
+                finishActivity()
+                mDevice.waitForIdle()
+                openAppFromExternalLink(genericPage.url.toString())
+            }
         }
 
         browserScreen {

@@ -396,8 +396,9 @@ Http3Session::~Http3Session() {
       .AccumulateSingleSample(mTransactionsSenderBlockedByFlowControlCount);
 
   if (mTrrStreams) {
-    mozilla::glean::networking::trr_request_count_per_conn.Get("h3"_ns).Add(
-        static_cast<int32_t>(mTrrStreams));
+    mozilla::glean::networking::trr_request_count_per_conn
+        .Get(nsPrintfCString("%s_h3", mConnInfo->Origin()))
+        .Add(static_cast<int32_t>(mTrrStreams));
   }
 
   Shutdown();

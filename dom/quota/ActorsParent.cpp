@@ -10,17 +10,17 @@
 #include "CanonicalQuotaObject.h"
 #include "ClientUsageArray.h"
 #include "DirectoryMetadata.h"
-#include "Flatten.h"
 #include "FirstInitializationAttemptsImpl.h"
+#include "Flatten.h"
 #include "GroupInfo.h"
 #include "GroupInfoPair.h"
 #include "NormalOriginOperationBase.h"
 #include "OpenClientDirectoryUtils.h"
+#include "OriginInfo.h"
 #include "OriginOperationBase.h"
 #include "OriginOperations.h"
 #include "OriginParser.h"
 #include "OriginScope.h"
-#include "OriginInfo.h"
 #include "QuotaCommon.h"
 #include "QuotaManager.h"
 #include "QuotaPrefs.h"
@@ -30,17 +30,18 @@
 #include "UsageInfo.h"
 
 // Global includes
+#include <algorithm>
 #include <cinttypes>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <algorithm>
-#include <cstdint>
 #include <functional>
 #include <new>
 #include <numeric>
 #include <tuple>
 #include <type_traits>
 #include <utility>
+
 #include "DirectoryLockImpl.h"
 #include "ErrorList.h"
 #include "MainThreadUtils.h"
@@ -75,6 +76,7 @@
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/StorageOriginAttributes.h"
 #include "mozilla/SystemPrincipal.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/TimeStamp.h"
@@ -110,8 +112,8 @@
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/dom/quota/ScopedLogExtraInfo.h"
 #include "mozilla/dom/quota/StreamUtils.h"
-#include "mozilla/dom/quota/UniversalDirectoryLock.h"
 #include "mozilla/dom/quota/ThreadUtils.h"
+#include "mozilla/dom/quota/UniversalDirectoryLock.h"
 #include "mozilla/dom/simpledb/ActorsParent.h"
 #include "mozilla/fallible.h"
 #include "mozilla/glean/DomQuotaMetrics.h"
@@ -120,7 +122,6 @@
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/net/ExtensionProtocolHandler.h"
-#include "mozilla/StorageOriginAttributes.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsBaseHashtable.h"
 #include "nsCOMPtr.h"
@@ -134,8 +135,8 @@
 #include "nsIBinaryInputStream.h"
 #include "nsIBinaryOutputStream.h"
 #include "nsIConsoleService.h"
-#include "nsIDirectoryEnumerator.h"
 #include "nsIDUtils.h"
+#include "nsIDirectoryEnumerator.h"
 #include "nsIEventTarget.h"
 #include "nsIFile.h"
 #include "nsIFileStreams.h"
@@ -145,11 +146,11 @@
 #include "nsIObserver.h"
 #include "nsIObserverService.h"
 #include "nsIOutputStream.h"
+#include "nsIPlatformInfo.h"
+#include "nsIPrincipal.h"
 #include "nsIQuotaManagerServiceInternal.h"
 #include "nsIQuotaRequests.h"
 #include "nsIQuotaUtilsService.h"
-#include "nsIPlatformInfo.h"
-#include "nsIPrincipal.h"
 #include "nsIRunnable.h"
 #include "nsISupports.h"
 #include "nsIThread.h"
@@ -159,8 +160,8 @@
 #include "nsLiteralString.h"
 #include "nsNetUtil.h"
 #include "nsPrintfCString.h"
-#include "nsStandardURL.h"
 #include "nsServiceManagerUtils.h"
+#include "nsStandardURL.h"
 #include "nsString.h"
 #include "nsStringFlags.h"
 #include "nsStringFwd.h"
@@ -3754,6 +3755,16 @@ Result<FullOriginMetadata, nsresult> QuotaManager::LoadFullOriginMetadata(
 
 Result<FullOriginMetadata, nsresult>
 QuotaManager::LoadFullOriginMetadataWithRestore(nsIFile* aDirectory) {
+  QM_TRY_INSPECT(const auto& result,
+                 LoadFullOriginMetadataWithRestoreAndStatus(aDirectory));
+
+  // The first element of the pair is the FullOriginMetadata, the second is the
+  // restore status.
+  return result.first;
+}
+
+Result<std::pair<FullOriginMetadata, bool /* restore status */>, nsresult>
+QuotaManager::LoadFullOriginMetadataWithRestoreAndStatus(nsIFile* aDirectory) {
   // XXX Once the persistence type is stored in the metadata file, this block
   // for getting the persistence type from the parent directory name can be
   // removed.
@@ -3766,16 +3777,23 @@ QuotaManager::LoadFullOriginMetadataWithRestore(nsIFile* aDirectory) {
 
   const auto& persistenceType = maybePersistenceType.value();
 
-  QM_TRY_RETURN(QM_OR_ELSE_WARN(
-      // Expression.
-      LoadFullOriginMetadata(aDirectory, persistenceType),
-      // Fallback.
-      ([&aDirectory, &persistenceType,
-        this](const nsresult rv) -> Result<FullOriginMetadata, nsresult> {
-        QM_TRY(MOZ_TO_RESULT(RestoreDirectoryMetadata2(aDirectory)));
+  bool restored = false;
 
-        QM_TRY_RETURN(LoadFullOriginMetadata(aDirectory, persistenceType));
-      })));
+  QM_TRY_INSPECT(
+      const auto& fullOriginMetadata,
+      QM_OR_ELSE_WARN(
+          // Expression.
+          LoadFullOriginMetadata(aDirectory, persistenceType),
+          // Fallback.
+          ([&aDirectory, &persistenceType, &restored,
+            this](const nsresult rv) -> Result<FullOriginMetadata, nsresult> {
+            restored = true;
+            QM_TRY(MOZ_TO_RESULT(RestoreDirectoryMetadata2(aDirectory)));
+
+            QM_TRY_RETURN(LoadFullOriginMetadata(aDirectory, persistenceType));
+          })));
+
+  return std::make_pair(fullOriginMetadata, restored);
 }
 
 Result<OriginMetadata, nsresult> QuotaManager::GetOriginMetadata(

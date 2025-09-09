@@ -9,7 +9,45 @@
 #include <algorithm>
 #include <type_traits>
 
+#include "WorkerRunnable.h"
+#include "WorkerScope.h"
+#include "js/CompilationAndEvaluation.h"
+#include "js/Exception.h"
+#include "js/SourceText.h"
+#include "js/TypeDecls.h"
+#include "jsapi.h"
+#include "jsfriendapi.h"
+#include "mozilla/AntiTrackingUtils.h"
+#include "mozilla/ArrayAlgorithm.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/Encoding.h"
+#include "mozilla/LoadContext.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Result.h"
+#include "mozilla/ResultExtensions.h"
+#include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/dom/ClientChannelHelper.h"
+#include "mozilla/dom/ClientInfo.h"
+#include "mozilla/dom/Exceptions.h"
+#include "mozilla/dom/PerformanceStorage.h"
+#include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/RequestBinding.h"
+#include "mozilla/dom/Response.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/SerializedStackHolder.h"
+#include "mozilla/dom/nsCSPService.h"
+#include "mozilla/dom/nsCSPUtils.h"
+#include "mozilla/dom/workerinternals/CacheLoadHandler.h"
+#include "mozilla/dom/workerinternals/NetworkLoadHandler.h"
+#include "mozilla/dom/workerinternals/ScriptResponseHeaderProcessor.h"
+#include "mozilla/ipc/BackgroundUtils.h"
+#include "nsComponentManagerUtils.h"
+#include "nsContentPolicyUtils.h"
+#include "nsContentSecurityManager.h"
+#include "nsContentUtils.h"
+#include "nsDocShellCID.h"
+#include "nsError.h"
 #include "nsIChannel.h"
 #include "nsIContentPolicy.h"
 #include "nsIContentSecurityPolicy.h"
@@ -19,6 +57,8 @@
 #include "nsIHttpChannelInternal.h"
 #include "nsIIOService.h"
 #include "nsIOService.h"
+#include "nsIOutputStream.h"
+#include "nsIPipe.h"
 #include "nsIPrincipal.h"
 #include "nsIProtocolHandler.h"
 #include "nsIScriptError.h"
@@ -27,56 +67,14 @@
 #include "nsIThreadRetargetableRequest.h"
 #include "nsIURI.h"
 #include "nsIXPConnect.h"
-
-#include "jsapi.h"
-#include "jsfriendapi.h"
-#include "js/CompilationAndEvaluation.h"
-#include "js/Exception.h"
-#include "js/SourceText.h"
-#include "js/TypeDecls.h"
-#include "nsError.h"
-#include "nsComponentManagerUtils.h"
-#include "nsContentSecurityManager.h"
-#include "nsContentPolicyUtils.h"
-#include "nsContentUtils.h"
-#include "nsDocShellCID.h"
 #include "nsJSEnvironment.h"
 #include "nsNetUtil.h"
-#include "nsIPipe.h"
-#include "nsIOutputStream.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
 #include "nsXPCOM.h"
 #include "xpcpublic.h"
-
-#include "mozilla/AntiTrackingUtils.h"
-#include "mozilla/ArrayAlgorithm.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/Encoding.h"
-#include "mozilla/LoadContext.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/ipc/BackgroundUtils.h"
-#include "mozilla/dom/ClientChannelHelper.h"
-#include "mozilla/dom/ClientInfo.h"
-#include "mozilla/dom/Exceptions.h"
-#include "mozilla/dom/nsCSPService.h"
-#include "mozilla/dom/nsCSPUtils.h"
-#include "mozilla/dom/PerformanceStorage.h"
-#include "mozilla/dom/Response.h"
-#include "mozilla/dom/ReferrerInfo.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/SerializedStackHolder.h"
-#include "mozilla/dom/workerinternals/CacheLoadHandler.h"
-#include "mozilla/dom/workerinternals/NetworkLoadHandler.h"
-#include "mozilla/dom/workerinternals/ScriptResponseHeaderProcessor.h"
-#include "mozilla/Result.h"
-#include "mozilla/ResultExtensions.h"
-#include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/UniquePtr.h"
-#include "WorkerRunnable.h"
-#include "WorkerScope.h"
 
 #define MAX_CONCURRENT_SCRIPTS 1000
 
@@ -602,7 +600,10 @@ nsContentPolicyType WorkerScriptLoader::GetContentPolicyType(
   }
   if (aRequest->IsModuleRequest()) {
     if (aRequest->AsModuleRequest()->IsDynamicImport()) {
-      return nsIContentPolicy::TYPE_INTERNAL_MODULE;
+      return aRequest->AsModuleRequest()->mModuleType ==
+                     JS::ModuleType::JavaScript
+                 ? nsIContentPolicy::TYPE_INTERNAL_MODULE
+                 : nsIContentPolicy::TYPE_JSON;
     }
 
     // Implements the destination for Step 14 in
@@ -707,15 +708,11 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
     nsCOMPtr<nsIURI> referrer =
         mWorkerRef->Private()->GetReferrerInfo()->GetOriginalReferrer();
 
-    RefPtr<JS::loader::VisitedURLSet> visitedSet =
-        ModuleLoadRequest::NewVisitedSetForTopLevelImport(
-            uri, JS::ModuleType::JavaScript);
-
     // Part of Step 2. This sets the Top-level flag to true
     request = new ModuleLoadRequest(
         uri, JS::ModuleType::JavaScript, referrerPolicy, fetchOptions,
         SRIMetadata(), referrer, loadContext, ModuleLoadRequest::Kind::TopLevel,
-        moduleLoader, visitedSet, nullptr);
+        moduleLoader, nullptr);
   }
 
   // Set the mURL, it will be used for error handling and debugging.
@@ -1195,7 +1192,8 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
     //    relevant global object to fire an event named error at worker.
     //
     // The event will be dispatched in CompileScriptRunnable.
-    if (request->mModuleScript->HasParseError()) {
+    if (request->mModuleScript->HasParseError() ||
+        request->mModuleScript->HasErrorToRethrow()) {
       // Here we assign an error code that is not a JS Exception, so
       // CompileRunnable can dispatch the event.
       mRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);

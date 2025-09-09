@@ -10,6 +10,7 @@ import androidx.compose.ui.res.stringResource
 import mozilla.components.compose.browser.toolbar.BrowserDisplayToolbar
 import mozilla.components.compose.browser.toolbar.BrowserEditToolbar
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
+import mozilla.components.compose.browser.toolbar.store.ToolbarGravity
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.lib.state.ext.observeAsState
 
@@ -43,6 +44,7 @@ fun BrowserToolbar(
     if (uiState.isEditMode()) {
         BrowserEditToolbar(
             query = input,
+            gravity = ToolbarGravity.Top,
             editActionsStart = uiState.editState.editActionsStart,
             editActionsEnd = uiState.editState.editActionsEnd,
             hint = stringResource(uiState.editState.hint),
@@ -54,6 +56,7 @@ fun BrowserToolbar(
         BrowserDisplayToolbar(
             pageOrigin = uiState.displayState.pageOrigin,
             progressBarConfig = progressBarConfig,
+            gravity = ToolbarGravity.Top,
             browserActionsStart = uiState.displayState.browserActionsStart,
             pageActionsStart = uiState.displayState.pageActionsStart,
             pageActionsEnd = uiState.displayState.pageActionsEnd,

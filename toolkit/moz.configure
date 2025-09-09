@@ -54,7 +54,6 @@ option(
 )
 set_config("MOZ_STUB_INSTALLER", True, when="MOZ_STUB_INSTALLER")
 
-
 project_flag(
     env="MOZ_PROFILE_MIGRATOR",
     help="Enable profile migrator",
@@ -2614,6 +2613,14 @@ def ffvpx(target):
             ]
         elif target.cpu == "aarch64":
             use_nasm = False
+    elif target.os == "Android":
+        if target.cpu == "x86_64":
+            flags = ["-D__x86_64__", "-DPIC", "-DELF", "-Pconfig_android_x86_64.asm"]
+        elif target.cpu == "x86":
+            audio_only = True
+        elif target.cpu == "aarch64" or target.cpu == "arm":
+            flags = ["-DPIC", "-DELF"]
+            use_nasm = False
     elif target.cpu == "x86_64":
         flags = ["-D__x86_64__", "-DPIC", "-DELF", "-Pconfig_unix64.asm"]
     else:
@@ -2745,10 +2752,8 @@ with only_when(target_is_windows):
         dxc_dll_path,
         when=dxc_supports_target,
     )
-    @checking("for dxcompiler.dll and dxil.dll")
-
+    @checking("for dxcompiler.dll")
     @imports("os.path")
-
     def dxcompiler(target, artifact, windows_sdk_dir, dxc_path):
         if not windows_sdk_dir and not artifact:
             return namespace(enabled=False)
@@ -2765,7 +2770,7 @@ with only_when(target_is_windows):
                         "Missing dxcompiler.dll dependency. WebGPU will be disabled"
                     )
                     return namespace(enabled=False)
-        
+
             if not os.path.exists(dxc_path):
                 die("Could not find dxcompiler.dll at {}", dxc_path)
 
@@ -4225,3 +4230,14 @@ with only_when(artifact_builds):
             return onnxruntime_task_name in onnx_tasks
 
     set_define("ONNX_RUNTIME", is_onnxruntime_supported_by_taskcluster)
+
+set_config(
+    "GECKO_TRACE_ENABLE",
+    True,
+    when=moz_debug | milestone.is_early_beta_or_earlier,
+)
+set_define(
+    "GECKO_TRACE_ENABLE",
+    True,
+    when=moz_debug | milestone.is_early_beta_or_earlier,
+)

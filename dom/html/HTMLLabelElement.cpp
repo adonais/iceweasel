@@ -8,15 +8,16 @@
  * Implementation of HTML <label> elements.
  */
 #include "HTMLLabelElement.h"
+
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/dom/HTMLLabelElementBinding.h"
 #include "mozilla/dom/MouseEventBinding.h"
+#include "mozilla/dom/ShadowRoot.h"
+#include "nsContentUtils.h"
 #include "nsFocusManager.h"
 #include "nsIFrame.h"
-#include "nsContentUtils.h"
 #include "nsQueryObject.h"
-#include "mozilla/dom/ShadowRoot.h"
 
 // construction, destruction
 

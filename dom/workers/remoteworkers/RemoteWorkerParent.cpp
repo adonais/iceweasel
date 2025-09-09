@@ -5,12 +5,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "RemoteWorkerParent.h"
+
 #include "RemoteWorkerController.h"
 #include "RemoteWorkerServiceParent.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/PFetchEventOpProxyParent.h"
 #include "mozilla/ipc/BackgroundParent.h"
-#include "mozilla/Unused.h"
 
 namespace mozilla {
 
@@ -19,7 +20,7 @@ using namespace ipc;
 namespace dom {
 
 RemoteWorkerParent::RemoteWorkerParent(
-    UniqueThreadsafeContentParentKeepAlive aKeepAlive)
+    UniqueThreadsafeContentParentKeepAlive&& aKeepAlive)
     : mContentParentKeepAlive(std::move(aKeepAlive)) {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(XRE_IsParentProcess());

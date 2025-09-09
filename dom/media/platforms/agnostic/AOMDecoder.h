@@ -6,13 +6,13 @@
 #if !defined(AOMDecoder_h_)
 #  define AOMDecoder_h_
 
+#  include <aom/aom_decoder.h>
 #  include <stdint.h>
 
 #  include "PerformanceRecorder.h"
 #  include "PlatformDecoderModule.h"
-#  include <aom/aom_decoder.h>
-#  include "mozilla/Span.h"
 #  include "VideoUtils.h"
+#  include "mozilla/Span.h"
 
 namespace mozilla {
 

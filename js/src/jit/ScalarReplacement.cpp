@@ -15,6 +15,7 @@
 #include "jit/WarpBuilderShared.h"
 #include "js/Vector.h"
 #include "vm/ArgumentsObject.h"
+#include "vm/TypedArrayObject.h"
 
 #include "gc/ObjectKind-inl.h"
 
@@ -492,7 +493,7 @@ MBasicBlock* ObjectMemoryView::startingBlock() { return startBlock_; }
 
 bool ObjectMemoryView::initStartingState(BlockState** outState) {
   // Uninitialized slots have an "undefined" value.
-  undefinedVal_ = MConstant::New(alloc_, UndefinedValue());
+  undefinedVal_ = MConstant::NewUndefined(alloc_);
   startBlock_->insertBefore(obj_, undefinedVal_);
 
   // Create a new block state and insert at it at the location of the new
@@ -927,7 +928,7 @@ void ObjectMemoryView::visitCompare(MCompare* ins) {
   bool folded;
   MOZ_ALWAYS_TRUE(ins->tryFold(&folded));
 
-  auto* cst = MConstant::New(alloc_, BooleanValue(folded));
+  auto* cst = MConstant::NewBoolean(alloc_, folded);
   ins->block()->insertBefore(ins, cst);
 
   // Replace the comparison with a constant.
@@ -953,7 +954,7 @@ void ObjectMemoryView::visitIsObject(MIsObject* ins) {
     return;
   }
 
-  auto* cst = MConstant::New(alloc_, BooleanValue(true));
+  auto* cst = MConstant::NewBoolean(alloc_, true);
   ins->block()->insertBefore(ins, cst);
 
   // Replace the test with a constant.
@@ -1350,8 +1351,8 @@ MBasicBlock* ArrayMemoryView::startingBlock() { return startBlock_; }
 
 bool ArrayMemoryView::initStartingState(BlockState** pState) {
   // Uninitialized elements have an "undefined" value.
-  undefinedVal_ = MConstant::New(alloc_, UndefinedValue());
-  MConstant* initLength = MConstant::New(alloc_, Int32Value(0));
+  undefinedVal_ = MConstant::NewUndefined(alloc_);
+  MConstant* initLength = MConstant::NewInt32(alloc_, 0);
   arr_->block()->insertBefore(arr_, undefinedVal_);
   arr_->block()->insertBefore(arr_, initLength);
 
@@ -1560,7 +1561,7 @@ void ArrayMemoryView::visitSetInitializedLength(MSetInitializedLength* ins) {
   }
 
   int32_t initLengthValue = ins->index()->maybeConstantValue()->toInt32() + 1;
-  MConstant* initLength = MConstant::New(alloc_, Int32Value(initLengthValue));
+  MConstant* initLength = MConstant::NewInt32(alloc_, initLengthValue);
   ins->block()->insertBefore(ins, initLength);
   ins->block()->insertBefore(ins, state_);
   state_->setInitializedLength(initLength);
@@ -1604,7 +1605,7 @@ void ArrayMemoryView::visitArrayLength(MArrayLength* ins) {
 
   // Replace by the value of the length.
   if (!length_) {
-    length_ = MConstant::New(alloc_, Int32Value(state_->numElements()));
+    length_ = MConstant::NewInt32(alloc_, state_->numElements());
     arr_->block()->insertBefore(arr_, length_);
   }
   ins->replaceAllUsesWith(length_);
@@ -1696,7 +1697,7 @@ void ArrayMemoryView::visitCompare(MCompare* ins) {
   bool folded;
   MOZ_ALWAYS_TRUE(ins->tryFold(&folded));
 
-  auto* cst = MConstant::New(alloc_, BooleanValue(folded));
+  auto* cst = MConstant::NewBoolean(alloc_, folded);
   ins->block()->insertBefore(ins, cst);
 
   // Replace the comparison with a constant.
@@ -2114,13 +2115,13 @@ void ArgumentsReplacer::visitGetArgumentsObjectArg(
     } else {
       // Omitted arguments are not mapped to the arguments object, and
       // will always be undefined.
-      auto* undef = MConstant::New(alloc(), UndefinedValue());
+      auto* undef = MConstant::NewUndefined(alloc());
       ins->block()->insertBefore(ins, undef);
       getArg = undef;
     }
   } else {
     // Load the argument from the frame.
-    auto* index = MConstant::New(alloc(), Int32Value(ins->argno()));
+    auto* index = MConstant::NewInt32(alloc(), ins->argno());
     ins->block()->insertBefore(ins, index);
 
     auto* loadArg = MGetFrameArgument::New(alloc(), index);
@@ -2147,8 +2148,7 @@ void ArgumentsReplacer::visitLoadArgumentsObjectArg(
     auto* actualArgs = args_->toCreateInlinedArgumentsObject();
 
     // Insert bounds check.
-    auto* length =
-        MConstant::New(alloc(), Int32Value(actualArgs->numActuals()));
+    auto* length = MConstant::NewInt32(alloc(), actualArgs->numActuals());
     ins->block()->insertBefore(ins, length);
 
     MInstruction* check = MBoundsCheck::New(alloc(), index, length);
@@ -2239,7 +2239,7 @@ void ArgumentsReplacer::visitInArgumentsObjectArg(MInArgumentsObjectArg* ins) {
   MInstruction* length;
   if (isInlinedArguments()) {
     uint32_t argc = args_->toCreateInlinedArgumentsObject()->numActuals();
-    length = MConstant::New(alloc(), Int32Value(argc));
+    length = MConstant::NewInt32(alloc(), argc);
   } else {
     length = MArgumentsLength::New(alloc());
   }
@@ -2264,7 +2264,7 @@ void ArgumentsReplacer::visitArgumentsObjectLength(
   MInstruction* length;
   if (isInlinedArguments()) {
     uint32_t argc = args_->toCreateInlinedArgumentsObject()->numActuals();
-    length = MConstant::New(alloc(), Int32Value(argc));
+    length = MConstant::NewInt32(alloc(), argc);
   } else {
     length = MArgumentsLength::New(alloc());
   }
@@ -2294,7 +2294,7 @@ void ArgumentsReplacer::visitApplyArgsObj(MApplyArgsObj* ins) {
     }
 
     auto addUndefined = [this, &ins]() -> MConstant* {
-      MConstant* undef = MConstant::New(alloc(), UndefinedValue());
+      MConstant* undef = MConstant::NewUndefined(alloc());
       ins->block()->insertBefore(ins, undef);
       return undef;
     };
@@ -2362,7 +2362,7 @@ MNewArrayObject* ArgumentsReplacer::inlineArgsArray(MInstruction* ins,
 
     MConstant* index = nullptr;
     for (uint32_t i = 0; i < count; i++) {
-      index = MConstant::New(alloc(), Int32Value(i));
+      index = MConstant::NewInt32(alloc(), i);
       ins->block()->insertBefore(ins, index);
 
       MDefinition* arg = actualArgs->getArg(begin + i);
@@ -2503,7 +2503,7 @@ void ArgumentsReplacer::visitArgumentsSlice(MArgumentsSlice* ins) {
   MInstruction* numArgs;
   if (isInlinedArguments()) {
     uint32_t argc = args_->toCreateInlinedArgumentsObject()->numActuals();
-    numArgs = MConstant::New(alloc(), Int32Value(argc));
+    numArgs = MConstant::NewInt32(alloc(), argc);
   } else {
     numArgs = MArgumentsLength::New(alloc());
   }
@@ -2515,8 +2515,7 @@ void ArgumentsReplacer::visitArgumentsSlice(MArgumentsSlice* ins) {
   auto* end = MNormalizeSliceTerm::New(alloc(), ins->end(), numArgs);
   ins->block()->insertBefore(ins, end);
 
-  bool isMax = false;
-  auto* beginMin = MMinMax::New(alloc(), begin, end, MIRType::Int32, isMax);
+  auto* beginMin = MMinMax::NewMin(alloc(), begin, end, MIRType::Int32);
   ins->block()->insertBefore(ins, beginMin);
 
   // Safe to truncate because both operands are positive and end >= beginMin.
@@ -2895,7 +2894,7 @@ void RestReplacer::visitCompare(MCompare* ins) {
   bool folded;
   MOZ_ALWAYS_TRUE(ins->tryFold(&folded));
 
-  auto* cst = MConstant::New(alloc(), BooleanValue(folded));
+  auto* cst = MConstant::NewBoolean(alloc(), folded);
   ins->block()->insertBefore(ins, cst);
 
   // Replace the comparison with a constant.
@@ -2916,7 +2915,7 @@ void RestReplacer::visitLoadElement(MLoadElement* ins) {
 
   // Adjust the index to skip any extra formals.
   if (uint32_t formals = rest()->numFormals()) {
-    auto* numFormals = MConstant::New(alloc(), Int32Value(formals));
+    auto* numFormals = MConstant::NewInt32(alloc(), formals);
     ins->block()->insertBefore(ins, numFormals);
 
     auto* add = MAdd::New(alloc(), index, numFormals, TruncateKind::Truncate);
@@ -2940,18 +2939,17 @@ MDefinition* RestReplacer::restLength(MInstruction* ins) {
   auto* numActuals = rest()->numActuals();
 
   if (uint32_t formals = rest()->numFormals()) {
-    auto* numFormals = MConstant::New(alloc(), Int32Value(formals));
+    auto* numFormals = MConstant::NewInt32(alloc(), formals);
     ins->block()->insertBefore(ins, numFormals);
 
     auto* length = MSub::New(alloc(), numActuals, numFormals, MIRType::Int32);
     length->setTruncateKind(TruncateKind::Truncate);
     ins->block()->insertBefore(ins, length);
 
-    auto* zero = MConstant::New(alloc(), Int32Value(0));
+    auto* zero = MConstant::NewInt32(alloc(), 0);
     ins->block()->insertBefore(ins, zero);
 
-    bool isMax = true;
-    auto* minmax = MMinMax::New(alloc(), length, zero, MIRType::Int32, isMax);
+    auto* minmax = MMinMax::NewMax(alloc(), length, zero, MIRType::Int32);
     ins->block()->insertBefore(ins, minmax);
 
     return minmax;
@@ -3051,6 +3049,491 @@ void RestReplacer::visitConstructArray(MConstructArray* ins) {
   discardInstruction(ins, elements);
 }
 
+static inline bool IsOptimizableSubarrayInstruction(MInstruction* ins) {
+  return ins->isTypedArraySubarray();
+}
+
+class SubarrayReplacer : public MDefinitionVisitorDefaultNoop {
+ private:
+  const MIRGenerator* mir_;
+  MIRGraph& graph_;
+  MInstruction* subarray_;
+  uint32_t initialNumInstrIds_;
+
+  TempAllocator& alloc() { return graph_.alloc(); }
+  MTypedArraySubarray* subarray() const {
+    return subarray_->toTypedArraySubarray();
+  }
+
+  void visitArrayBufferViewByteOffset(MArrayBufferViewByteOffset* ins);
+  void visitArrayBufferViewElements(MArrayBufferViewElements* ins);
+  void visitArrayBufferViewLength(MArrayBufferViewLength* ins);
+  void visitGuardHasAttachedArrayBuffer(MGuardHasAttachedArrayBuffer* ins);
+  void visitGuardShape(MGuardShape* ins);
+  void visitTypedArrayElementSize(MTypedArrayElementSize* ins);
+  void visitTypedArrayFill(MTypedArrayFill* ins);
+  void visitTypedArraySet(MTypedArraySet* ins);
+  void visitTypedArraySubarray(MTypedArraySubarray* ins);
+  void visitUnbox(MUnbox* ins);
+
+  // New instructions created in SubarrayReplacer.
+  bool isNewInstruction(MDefinition* ins) const {
+    return ins->id() >= initialNumInstrIds_;
+  }
+
+  bool isSubarrayOrGuard(MDefinition* ins) const {
+    if (ins == subarray_) {
+      return true;
+    }
+
+    // GuardHasAttachedArrayBuffer is replaced with a guard on the subarray's
+    // object.
+    if (ins->isGuardHasAttachedArrayBuffer() && isNewInstruction(ins)) {
+      MOZ_ASSERT(ins->toGuardHasAttachedArrayBuffer()->object() ==
+                 subarray()->object());
+      return true;
+    }
+
+    return false;
+  }
+
+  MDefinition* toSubarrayObject(MDefinition* ins) const {
+    MOZ_ASSERT(isSubarrayOrGuard(ins));
+    if (ins == subarray_) {
+      return subarray()->object();
+    }
+    return ins;
+  }
+
+  auto* templateObject() const {
+    JSObject* obj = subarray()->templateObject();
+    MOZ_ASSERT(obj, "missing template object");
+    return &obj->as<TypedArrayObject>();
+  }
+
+  auto elementType() const { return templateObject()->type(); }
+
+  bool isImmutable() const {
+    return templateObject()->is<ImmutableTypedArrayObject>();
+  }
+
+ public:
+  SubarrayReplacer(const MIRGenerator* mir, MIRGraph& graph,
+                   MInstruction* subarray)
+      : mir_(mir),
+        graph_(graph),
+        subarray_(subarray),
+        initialNumInstrIds_(graph.getNumInstructionIds()) {
+    MOZ_ASSERT(IsOptimizableSubarrayInstruction(subarray_));
+  }
+
+  bool escapes(MInstruction* ins) const;
+  bool run();
+  void assertSuccess() const;
+};
+
+void SubarrayReplacer::visitUnbox(MUnbox* ins) {
+  // Skip unbox on other objects.
+  if (ins->input() != subarray_) {
+    return;
+  }
+  MOZ_ASSERT(ins->type() == MIRType::Object);
+
+  // Replace the unbox with the subarray object.
+  ins->replaceAllUsesWith(subarray_);
+
+  // Remove the unbox.
+  ins->block()->discard(ins);
+}
+
+void SubarrayReplacer::visitGuardShape(MGuardShape* ins) {
+  // Skip guards on other objects.
+  if (ins->object() != subarray_) {
+    return;
+  }
+
+  // Replace the guard with the subarray object.
+  ins->replaceAllUsesWith(subarray_);
+
+  // Remove the guard.
+  ins->block()->discard(ins);
+}
+
+void SubarrayReplacer::visitGuardHasAttachedArrayBuffer(
+    MGuardHasAttachedArrayBuffer* ins) {
+  // Skip guards on other objects.
+  if (ins->object() != subarray_) {
+    return;
+  }
+
+  // Create a new guard on the subarray's input argument.
+  auto* newGuard =
+      MGuardHasAttachedArrayBuffer::New(alloc(), subarray()->object());
+  newGuard->setBailoutKind(ins->bailoutKind());
+  ins->block()->insertBefore(ins, newGuard);
+
+  // Replace the guard.
+  ins->replaceAllUsesWith(newGuard);
+
+  // Remove original instruction.
+  ins->block()->discard(ins);
+}
+
+void SubarrayReplacer::visitArrayBufferViewLength(MArrayBufferViewLength* ins) {
+  // Skip other typed array objects.
+  if (!isSubarrayOrGuard(ins->object())) {
+    return;
+  }
+
+  MDefinition* replacement;
+  if (!isImmutable()) {
+    // Get length of |subarray->object()|.
+    auto* length = MArrayBufferViewLength::New(alloc(), subarray()->object());
+    ins->block()->insertBefore(ins, length);
+
+    // Minimum to zero the length if the underlying buffer is now detached.
+    auto* minmax =
+        MMinMax::NewMin(alloc(), subarray()->length(), length, MIRType::IntPtr);
+    ins->block()->insertBefore(ins, minmax);
+
+    replacement = minmax;
+  } else {
+    replacement = subarray()->length();
+  }
+
+  // Replace the instruction.
+  ins->replaceAllUsesWith(replacement);
+
+  // Remove original instruction.
+  ins->block()->discard(ins);
+}
+
+void SubarrayReplacer::visitArrayBufferViewByteOffset(
+    MArrayBufferViewByteOffset* ins) {
+  // Skip other typed array objects.
+  if (!isSubarrayOrGuard(ins->object())) {
+    return;
+  }
+
+  auto* shift = MConstant::NewIntPtr(alloc(), TypedArrayShift(elementType()));
+  ins->block()->insertBefore(ins, shift);
+
+  MDefinition* start;
+  if (!isImmutable()) {
+    // Get length of |subarray->object()|.
+    auto* length = MArrayBufferViewLength::New(alloc(), subarray()->object());
+    ins->block()->insertBefore(ins, length);
+
+    // Minimum to zero |start| if the underlying buffer is now detached.
+    auto* minmax =
+        MMinMax::NewMin(alloc(), subarray()->start(), length, MIRType::IntPtr);
+    ins->block()->insertBefore(ins, minmax);
+
+    start = minmax;
+  } else {
+    start = subarray()->start();
+  }
+
+  // Shift to convert start index to start byte-offset.
+  auto* adjustment = MLsh::New(alloc(), start, shift, MIRType::IntPtr);
+  ins->block()->insertBefore(ins, adjustment);
+
+  // Byte-offset of |subarray->object()|.
+  auto* byteOffset =
+      MArrayBufferViewByteOffset::New(alloc(), subarray()->object());
+  ins->block()->insertBefore(ins, byteOffset);
+
+  // Actual byte-offset into the array buffer.
+  auto* replacement =
+      MAdd::New(alloc(), byteOffset, adjustment, MIRType::IntPtr);
+  ins->block()->insertBefore(ins, replacement);
+
+  // Replace the byte-offset.
+  ins->replaceAllUsesWith(replacement);
+
+  // Remove original instruction.
+  ins->block()->discard(ins);
+}
+
+void SubarrayReplacer::visitArrayBufferViewElements(
+    MArrayBufferViewElements* ins) {
+  // Skip other typed array objects.
+  if (!isSubarrayOrGuard(ins->object())) {
+    return;
+  }
+
+  auto* replacement = MArrayBufferViewElementsWithOffset::New(
+      alloc(), subarray()->object(), subarray()->start(), elementType());
+  ins->block()->insertBefore(ins, replacement);
+
+  // Replace the elements.
+  ins->replaceAllUsesWith(replacement);
+
+  // Remove original instruction.
+  ins->block()->discard(ins);
+}
+
+void SubarrayReplacer::visitTypedArrayElementSize(MTypedArrayElementSize* ins) {
+  // Skip other typed array objects.
+  if (!isSubarrayOrGuard(ins->object())) {
+    return;
+  }
+
+  int32_t bytesPerElement = TypedArrayElemSize(elementType());
+  auto* replacement = MConstant::NewInt32(alloc(), bytesPerElement);
+  ins->block()->insertBefore(ins, replacement);
+
+  // Replace the element-size.
+  ins->replaceAllUsesWith(replacement);
+
+  // Remove original instruction.
+  ins->block()->discard(ins);
+}
+
+void SubarrayReplacer::visitTypedArrayFill(MTypedArrayFill* ins) {
+  // Skip other typed array objects.
+  if (!isSubarrayOrGuard(ins->object())) {
+    return;
+  }
+
+  auto* subarrayStart = subarray()->start();
+  auto* subarrayLength = subarray()->length();
+
+  // Make |start| and |end| relative to |subarrayLength|.
+  auto* relativeStart =
+      MToIntegerIndex::New(alloc(), ins->start(), subarrayLength);
+  ins->block()->insertBefore(ins, relativeStart);
+
+  auto* relativeEnd = MToIntegerIndex::New(alloc(), ins->end(), subarrayLength);
+  ins->block()->insertBefore(ins, relativeEnd);
+
+  // Compute actual start and end indices by adding |subarrayStart|.
+  auto* actualStart =
+      MAdd::New(alloc(), relativeStart, subarrayStart, MIRType::IntPtr);
+  ins->block()->insertBefore(ins, actualStart);
+
+  auto* actualEnd =
+      MAdd::New(alloc(), relativeEnd, subarrayStart, MIRType::IntPtr);
+  ins->block()->insertBefore(ins, actualEnd);
+
+  auto* newFill =
+      MTypedArrayFill::New(alloc(), subarray()->object(), ins->value(),
+                           actualStart, actualEnd, ins->elementType());
+  newFill->setBailoutKind(ins->bailoutKind());
+  newFill->stealResumePoint(ins);
+  ins->block()->insertBefore(ins, newFill);
+
+  // Replace the fill.
+  ins->replaceAllUsesWith(newFill);
+
+  // Remove original instruction.
+  ins->block()->discard(ins);
+}
+
+void SubarrayReplacer::visitTypedArraySet(MTypedArraySet* ins) {
+  // Skip other typed array objects.
+  if (!isSubarrayOrGuard(ins->target()) && !isSubarrayOrGuard(ins->source())) {
+    return;
+  }
+
+  // The replaced |subarray| instruction can be the target, source, or both
+  // operands of MTypedArraySet:
+  //
+  // - Target operand: `ta.subarray(...).set(...)`
+  // - Source operand: `ta.set(src.subarray(...), ...)`
+  // - Both operands: `sub = src.subarray(...); sub.set(sub, ...)`.
+  //
+  // When |subarray| is the target operand, |subarray->start| needs to be added
+  // to |ins->offset|.
+  //
+  // When |subarray| is the source operand, MTypedArraySet is replaced with
+  // MTypedArraySetFromSubarray to pass through |subarray->start| and
+  // |subarray->length|.
+  //
+  // When |subarray| is both the target and the source operand, the call is
+  // either a no-op instruction, or bails out and then throws an exception.
+
+  MInstruction* replacement;
+  if (isSubarrayOrGuard(ins->target()) && isSubarrayOrGuard(ins->source())) {
+    // Either a no-op when the offset is zero. Or bails out when the offset is
+    // non-zero. (Bail-out happens through MGuardTypedArraySetOffset.)
+    replacement = MNop::New(alloc());
+  } else if (isSubarrayOrGuard(ins->target())) {
+    auto* target = toSubarrayObject(ins->target());
+
+    // Addition can't overflow because preceding guards ensure:
+    // 1. |ins->offset()| and |subarray->start()| are both non-negative.
+    // 2. |ins->offset()| is a valid index into |subarray|.
+    // 3. |subarray->start()| is a valid index |subarray->object()|.
+    auto* newOffset =
+        MAdd::New(alloc(), ins->offset(), subarray()->start(), MIRType::IntPtr);
+    ins->block()->insertBefore(ins, newOffset);
+
+    replacement = MTypedArraySet::New(alloc(), target, ins->source(), newOffset,
+                                      ins->canUseBitwiseCopy());
+  } else {
+    auto* source = toSubarrayObject(ins->source());
+
+    replacement = MTypedArraySetFromSubarray::New(
+        alloc(), ins->target(), source, ins->offset(), subarray()->start(),
+        subarray()->length(), ins->canUseBitwiseCopy());
+  }
+  replacement->stealResumePoint(ins);
+  ins->block()->insertBefore(ins, replacement);
+
+  // Replace the set.
+  ins->replaceAllUsesWith(replacement);
+
+  // Remove original instruction.
+  ins->block()->discard(ins);
+}
+
+void SubarrayReplacer::visitTypedArraySubarray(MTypedArraySubarray* ins) {
+  // Skip other typed array objects.
+  if (!isSubarrayOrGuard(ins->object())) {
+    return;
+  }
+
+  // Add both |start| operands to get the adjusted start index.
+  auto* newStart =
+      MAdd::New(alloc(), subarray()->start(), ins->start(), MIRType::IntPtr);
+  ins->block()->insertBefore(ins, newStart);
+
+  auto* replacement = MTypedArraySubarray::New(
+      alloc(), subarray()->object(), newStart, ins->length(),
+      ins->templateObject(), ins->initialHeap());
+  ins->block()->insertBefore(ins, replacement);
+
+  // Replace the subarray.
+  ins->replaceAllUsesWith(replacement);
+
+  // Remove original instruction.
+  ins->block()->discard(ins);
+}
+
+// Returns false if the subarray typed array object does not escape.
+bool SubarrayReplacer::escapes(MInstruction* ins) const {
+  MOZ_ASSERT(ins->type() == MIRType::Object);
+
+  JitSpewDef(JitSpew_Escape, "Check subarray typed array\n", ins);
+  JitSpewIndent spewIndent(JitSpew_Escape);
+
+  // Check all uses to see whether they can be supported without allocating an
+  // TypedArrayObject for the `%TypedArray%.prototype.subarray` call.
+  for (MUseIterator i(ins->usesBegin()); i != ins->usesEnd(); i++) {
+    MNode* consumer = (*i)->consumer();
+
+    // If a resume point can observe this instruction, we can only optimize if
+    // it is recoverable.
+    if (consumer->isResumePoint()) {
+      if (!consumer->toResumePoint()->isRecoverableOperand(*i)) {
+        JitSpew(JitSpew_Escape, "Observable subarray cannot be recovered");
+        return true;
+      }
+      continue;
+    }
+
+    MDefinition* def = consumer->toDefinition();
+    switch (def->op()) {
+      case MDefinition::Opcode::GuardShape: {
+        auto* guard = def->toGuardShape();
+        if (templateObject()->shape() != guard->shape()) {
+          JitSpewDef(JitSpew_Escape, "has a non-matching guard shape\n", def);
+          return true;
+        }
+        if (escapes(guard)) {
+          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
+          return true;
+        }
+        break;
+      }
+
+      case MDefinition::Opcode::Unbox: {
+        if (def->type() != MIRType::Object) {
+          JitSpewDef(JitSpew_Escape, "has an invalid unbox\n", def);
+          return true;
+        }
+        if (escapes(def->toInstruction())) {
+          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
+          return true;
+        }
+        break;
+      }
+
+      case MDefinition::Opcode::GuardHasAttachedArrayBuffer: {
+        auto* guard = def->toGuardHasAttachedArrayBuffer();
+        if (escapes(guard)) {
+          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
+          return true;
+        }
+        break;
+      }
+
+      // Replacable instructions.
+      case MDefinition::Opcode::ArrayBufferViewByteOffset:
+      case MDefinition::Opcode::ArrayBufferViewElements:
+      case MDefinition::Opcode::ArrayBufferViewLength:
+      case MDefinition::Opcode::TypedArrayElementSize:
+      case MDefinition::Opcode::TypedArrayFill:
+      case MDefinition::Opcode::TypedArraySet:
+      case MDefinition::Opcode::TypedArraySubarray:
+        break;
+
+      // This instruction is a no-op used to test that scalar replacement is
+      // working as expected.
+      case MDefinition::Opcode::AssertRecoveredOnBailout:
+        break;
+
+      default:
+        JitSpewDef(JitSpew_Escape, "is escaped by\n", def);
+        return true;
+    }
+  }
+
+  JitSpew(JitSpew_Escape, "Subarray typed array object is not escaped");
+  return false;
+}
+
+bool SubarrayReplacer::run() {
+  MBasicBlock* startBlock = subarray_->block();
+
+  // Iterate over each basic block.
+  for (ReversePostorderIterator block = graph_.rpoBegin(startBlock);
+       block != graph_.rpoEnd(); block++) {
+    if (mir_->shouldCancel("Scalar replacement of subarray object")) {
+      return false;
+    }
+
+    // Iterates over phis and instructions.
+    // We do not have to visit resume points. Any resume points that capture the
+    // subarray typed array object will be handled by the Sink pass.
+    for (MDefinitionIterator iter(*block); iter;) {
+      // Increment the iterator before visiting the instruction, as the visit
+      // function might discard itself from the basic block.
+      MDefinition* def = *iter++;
+      switch (def->op()) {
+#define MIR_OP(op)              \
+  case MDefinition::Opcode::op: \
+    visit##op(def->to##op());   \
+    break;
+        MIR_OPCODE_LIST(MIR_OP)
+#undef MIR_OP
+      }
+      if (!graph_.alloc().ensureBallast()) {
+        return false;
+      }
+    }
+  }
+
+  assertSuccess();
+  return true;
+}
+
+void SubarrayReplacer::assertSuccess() const {
+  MOZ_ASSERT(subarray_->canRecoverOnBailout());
+  MOZ_ASSERT(!subarray_->hasLiveDefUses());
+}
+
 // WebAssembly only supports scalar replacement of structs with only inline
 // data for now.
 static inline bool IsOptimizableWasmStructInstruction(MInstruction* ins) {
@@ -3118,7 +3601,7 @@ MBasicBlock* WasmStructMemoryView::startingBlock() { return startBlock_; }
 bool WasmStructMemoryView::initStartingState(BlockState** pState) {
   // We need this undefined value to initialize phi inputs if we create some
   // later.
-  undefinedVal_ = MConstant::New(alloc_, UndefinedValue());
+  undefinedVal_ = MConstant::NewUndefined(alloc_);
 
   // Create a new block state and insert at it at the location of the new
   // struct.
@@ -3462,6 +3945,17 @@ bool ScalarReplacement(const MIRGenerator* mir, MIRGraph& graph) {
 
       if (IsOptimizableRestInstruction(*ins)) {
         RestReplacer replacer(mir, graph, *ins);
+        if (replacer.escapes(*ins)) {
+          continue;
+        }
+        if (!replacer.run()) {
+          return false;
+        }
+        continue;
+      }
+
+      if (IsOptimizableSubarrayInstruction(*ins)) {
+        SubarrayReplacer replacer(mir, graph, *ins);
         if (replacer.escapes(*ins)) {
           continue;
         }

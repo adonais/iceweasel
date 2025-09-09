@@ -7,11 +7,11 @@
 #ifndef mozilla_dom_HTMLImageElement_h
 #define mozilla_dom_HTMLImageElement_h
 
+#include "Units.h"
 #include "mozilla/Attributes.h"
+#include "nsCycleCollectionParticipant.h"
 #include "nsGenericHTMLElement.h"
 #include "nsImageLoadingContent.h"
-#include "Units.h"
-#include "nsCycleCollectionParticipant.h"
 
 namespace mozilla {
 class EventChainPreVisitor;

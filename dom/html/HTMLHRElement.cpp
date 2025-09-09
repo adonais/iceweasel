@@ -5,11 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/HTMLHRElement.h"
-#include "mozilla/dom/HTMLHRElementBinding.h"
 
+#include "mozilla/MappedDeclarationsBuilder.h"
+#include "mozilla/dom/HTMLHRElementBinding.h"
 #include "nsCSSProps.h"
 #include "nsStyleConsts.h"
-#include "mozilla/MappedDeclarationsBuilder.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(HR)
 

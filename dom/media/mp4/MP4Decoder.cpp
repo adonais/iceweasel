@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MP4Decoder.h"
+
 #include "H264.h"
 #include "VPXDecoder.h"
 #ifdef MOZ_AV1

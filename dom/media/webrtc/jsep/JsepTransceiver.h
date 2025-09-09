@@ -7,13 +7,12 @@
 
 #include <string>
 
+#include "jsep/JsepTrack.h"
+#include "jsep/JsepTransport.h"
+#include "nsError.h"
+#include "sdp/Sdp.h"
 #include "sdp/SdpAttribute.h"
 #include "sdp/SdpMediaSection.h"
-#include "sdp/Sdp.h"
-#include "jsep/JsepTransport.h"
-#include "jsep/JsepTrack.h"
-
-#include "nsError.h"
 
 namespace mozilla {
 

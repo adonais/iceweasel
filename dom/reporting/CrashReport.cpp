@@ -6,10 +6,10 @@
 
 #include "mozilla/dom/CrashReport.h"
 
-#include "mozilla/dom/Navigator.h"
-#include "mozilla/dom/ReportingHeader.h"
-#include "mozilla/dom/ReportDeliver.h"
 #include "mozilla/JSONStringWriteFuncs.h"
+#include "mozilla/dom/Navigator.h"
+#include "mozilla/dom/ReportDeliver.h"
+#include "mozilla/dom/ReportingHeader.h"
 #include "nsIPrincipal.h"
 #include "nsIURIMutator.h"
 #include "nsString.h"

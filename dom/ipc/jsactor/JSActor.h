@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_JSActor_h
 #define mozilla_dom_JSActor_h
 
-#include "js/TypeDecls.h"
 #include "ipc/EnumSerializer.h"
+#include "js/TypeDecls.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "nsCycleCollectionParticipant.h"

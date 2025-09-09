@@ -72,18 +72,6 @@ uint32_t IonEntry::callStackAtAddr(void* ptr, const char** results,
   return count;
 }
 
-uint64_t IonEntry::lookupRealmID(void* ptr) const {
-  uint32_t ptrOffset;
-  JitcodeRegionEntry region = RegionAtAddr(*this, ptr, &ptrOffset);
-  JitcodeRegionEntry::ScriptPcIterator locationIter = region.scriptPcIterator();
-  MOZ_ASSERT(locationIter.hasMore());
-  uint32_t scriptIdx, pcOffset;
-  locationIter.readNext(&scriptIdx, &pcOffset);
-
-  JSScript* script = getScript(scriptIdx);
-  return script->realm()->creationOptions().profilerRealmID();
-}
-
 IonEntry::~IonEntry() {
   // The region table is stored at the tail of the compacted data,
   // which means the start of the region table is a pointer to
@@ -113,9 +101,9 @@ uint32_t IonICEntry::callStackAtAddr(JSRuntime* rt, void* ptr,
   return entry.callStackAtAddr(rejoinAddr(), results, maxResults);
 }
 
-uint64_t IonICEntry::lookupRealmID(JSRuntime* rt, void* ptr) const {
+uint64_t IonICEntry::realmID(JSRuntime* rt) const {
   const IonEntry& entry = IonEntryForIonIC(rt, this);
-  return entry.lookupRealmID(rejoinAddr());
+  return entry.realmID();
 }
 
 void* BaselineEntry::canonicalNativeAddrFor(void* ptr) const {
@@ -133,10 +121,6 @@ uint32_t BaselineEntry::callStackAtAddr(void* ptr, const char** results,
   return 1;
 }
 
-uint64_t BaselineEntry::lookupRealmID() const {
-  return script_->realm()->creationOptions().profilerRealmID();
-}
-
 void* BaselineInterpreterEntry::canonicalNativeAddrFor(void* ptr) const {
   return ptr;
 }
@@ -147,7 +131,7 @@ uint32_t BaselineInterpreterEntry::callStackAtAddr(void* ptr,
   MOZ_CRASH("shouldn't be called for BaselineInterpreter entries");
 }
 
-uint64_t BaselineInterpreterEntry::lookupRealmID() const {
+uint64_t BaselineInterpreterEntry::realmID() const {
   MOZ_CRASH("shouldn't be called for BaselineInterpreter entries");
 }
 
@@ -174,7 +158,7 @@ uint32_t SelfHostedSharedEntry::callStackAtAddr(void* ptr, const char** results,
   return 1;
 }
 
-uint64_t SelfHostedSharedEntry::lookupRealmID() const { return 0; }
+uint64_t SelfHostedSharedEntry::realmID() const { return 0; }
 
 const JitcodeGlobalEntry* JitcodeGlobalTable::lookupForSampler(
     void* ptr, JSRuntime* rt, uint64_t samplePosInBuffer) {
@@ -317,7 +301,6 @@ void JitcodeGlobalTable::traceWeak(JSRuntime* rt, JSTracer* trc) {
     if (TraceManuallyBarrieredWeakEdge(
             trc, entry->jitcodePtr(),
             "JitcodeGlobalTable::JitcodeGlobalEntry::jitcode_")) {
-      entry->traceWeak(trc);
       return false;
     }
 
@@ -346,53 +329,6 @@ bool JitcodeGlobalEntry::isJitcodeMarkedFromAnyThread(JSRuntime* rt) {
   return IsMarkedUnbarriered(rt, jitcode_);
 }
 
-bool BaselineEntry::trace(JSTracer* trc) {
-  if (!IsMarkedUnbarriered(trc->runtime(), script_)) {
-    TraceManuallyBarrieredEdge(trc, &script_,
-                               "jitcodeglobaltable-baselineentry-script");
-    return true;
-  }
-  return false;
-}
-
-void BaselineEntry::traceWeak(JSTracer* trc) {
-  MOZ_ALWAYS_TRUE(
-      TraceManuallyBarrieredWeakEdge(trc, &script_, "BaselineEntry::script_"));
-}
-
-bool IonEntry::trace(JSTracer* trc) {
-  bool tracedAny = false;
-
-  JSRuntime* rt = trc->runtime();
-  for (auto& pair : scriptList_) {
-    if (!IsMarkedUnbarriered(rt, pair.script)) {
-      TraceManuallyBarrieredEdge(trc, &pair.script,
-                                 "jitcodeglobaltable-ionentry-script");
-      tracedAny = true;
-    }
-  }
-
-  return tracedAny;
-}
-
-void IonEntry::traceWeak(JSTracer* trc) {
-  for (auto& pair : scriptList_) {
-    JSScript** scriptp = &pair.script;
-    MOZ_ALWAYS_TRUE(
-        TraceManuallyBarrieredWeakEdge(trc, scriptp, "IonEntry script"));
-  }
-}
-
-bool IonICEntry::trace(JSTracer* trc) {
-  IonEntry& entry = IonEntryForIonIC(trc->runtime(), this);
-  return entry.trace(trc);
-}
-
-void IonICEntry::traceWeak(JSTracer* trc) {
-  IonEntry& entry = IonEntryForIonIC(trc->runtime(), this);
-  entry.traceWeak(trc);
-}
-
 uint32_t JitcodeGlobalEntry::callStackAtAddr(JSRuntime* rt, void* ptr,
                                              const char** results,
                                              uint32_t maxResults) const {
@@ -413,61 +349,25 @@ uint32_t JitcodeGlobalEntry::callStackAtAddr(JSRuntime* rt, void* ptr,
   MOZ_CRASH("Invalid kind");
 }
 
-uint64_t JitcodeGlobalEntry::lookupRealmID(JSRuntime* rt, void* ptr) const {
+uint64_t JitcodeGlobalEntry::realmID(JSRuntime* rt) const {
   switch (kind()) {
     case Kind::Ion:
-      return asIon().lookupRealmID(ptr);
+      return asIon().realmID();
     case Kind::IonIC:
-      return asIonIC().lookupRealmID(rt, ptr);
+      return asIonIC().realmID(rt);
     case Kind::Baseline:
-      return asBaseline().lookupRealmID();
+      return asBaseline().realmID();
     case Kind::Dummy:
-      return asDummy().lookupRealmID();
+      return asDummy().realmID();
     case Kind::SelfHostedShared:
-      return asSelfHostedShared().lookupRealmID();
+      return asSelfHostedShared().realmID();
     case Kind::BaselineInterpreter:
       break;
   }
   MOZ_CRASH("Invalid kind");
 }
 
-bool JitcodeGlobalEntry::trace(JSTracer* trc) {
-  bool tracedAny = traceJitcode(trc);
-  switch (kind()) {
-    case Kind::Ion:
-      tracedAny |= asIon().trace(trc);
-      break;
-    case Kind::IonIC:
-      tracedAny |= asIonIC().trace(trc);
-      break;
-    case Kind::Baseline:
-      tracedAny |= asBaseline().trace(trc);
-      break;
-    case Kind::BaselineInterpreter:
-    case Kind::Dummy:
-    case Kind::SelfHostedShared:
-      break;
-  }
-  return tracedAny;
-}
-
-void JitcodeGlobalEntry::traceWeak(JSTracer* trc) {
-  switch (kind()) {
-    case Kind::Ion:
-      asIon().traceWeak(trc);
-      break;
-    case Kind::IonIC:
-      asIonIC().traceWeak(trc);
-      break;
-    case Kind::Baseline:
-      asBaseline().traceWeak(trc);
-      break;
-    case Kind::BaselineInterpreter:
-    case Kind::Dummy:
-    case Kind::SelfHostedShared:
-      break;
-  }
-}
+bool JitcodeGlobalEntry::trace(JSTracer* trc) { return traceJitcode(trc); }
 
 void* JitcodeGlobalEntry::canonicalNativeAddrFor(JSRuntime* rt,
                                                  void* ptr) const {
@@ -788,7 +688,7 @@ bool JitcodeRegionEntry::WriteRun(CompactBufferWriter& writer,
       // NB: scriptList is guaranteed to contain curTree->script()
       uint32_t scriptIdx = 0;
       for (; scriptIdx < scriptList.length(); scriptIdx++) {
-        if (scriptList[scriptIdx].script == curTree->script()) {
+        if (scriptList[scriptIdx].sourceAndExtent.matches(curTree->script())) {
           break;
         }
       }
@@ -967,17 +867,19 @@ bool JitcodeIonTable::WriteIonTable(CompactBufferWriter& writer,
   MOZ_ASSERT(scriptList.length() > 0);
 
   JitSpew(JitSpew_Profiling,
-          "Writing native to bytecode map for %s:%u:%u (%zu entries)",
-          scriptList[0].script->filename(), scriptList[0].script->lineno(),
-          scriptList[0].script->column().oneOriginValue(),
+          "Writing native to bytecode map for %s (offset %u-%u) (%zu entries)",
+          scriptList[0].sourceAndExtent.scriptSource->filename(),
+          scriptList[0].sourceAndExtent.toStringStart,
+          scriptList[0].sourceAndExtent.toStringEnd,
           mozilla::PointerRangeSize(start, end));
 
   JitSpew(JitSpew_Profiling, "  ScriptList of size %u",
           unsigned(scriptList.length()));
   for (uint32_t i = 0; i < scriptList.length(); i++) {
-    JitSpew(JitSpew_Profiling, "  Script %u - %s:%u:%u", i,
-            scriptList[i].script->filename(), scriptList[i].script->lineno(),
-            scriptList[i].script->column().oneOriginValue());
+    JitSpew(JitSpew_Profiling, "  Script %u - %s (offset %u-%u)", i,
+            scriptList[i].sourceAndExtent.scriptSource->filename(),
+            scriptList[i].sourceAndExtent.toStringStart,
+            scriptList[i].sourceAndExtent.toStringEnd);
   }
 
   // Write out runs first.  Keep a vector tracking the positive offsets from
@@ -1082,7 +984,7 @@ JS::ProfiledFrameHandle::frameKind() const {
 }
 
 JS_PUBLIC_API uint64_t JS::ProfiledFrameHandle::realmID() const {
-  return entry_.lookupRealmID(rt_, addr_);
+  return entry_.realmID(rt_);
 }
 
 JS_PUBLIC_API JS::ProfiledFrameRange JS::GetProfiledFrames(JSContext* cx,

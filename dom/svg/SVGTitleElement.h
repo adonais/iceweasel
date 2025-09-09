@@ -7,8 +7,8 @@
 #ifndef DOM_SVG_SVGTITLEELEMENT_H_
 #define DOM_SVG_SVGTITLEELEMENT_H_
 
-#include "mozilla/Attributes.h"
 #include "SVGElement.h"
+#include "mozilla/Attributes.h"
 #include "nsStubMutationObserver.h"
 
 nsresult NS_NewSVGTitleElement(

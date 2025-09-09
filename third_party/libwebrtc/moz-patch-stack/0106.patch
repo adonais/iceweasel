@@ -11,7 +11,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/0993ae41fb7db1624
  2 files changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/rtc_base/internal/default_socket_server.cc b/rtc_base/internal/default_socket_server.cc
-index 744bd1a885..371d3f344c 100644
+index 043c2ce850..18049906e9 100644
 --- a/rtc_base/internal/default_socket_server.cc
 +++ b/rtc_base/internal/default_socket_server.cc
 @@ -14,7 +14,7 @@
@@ -24,14 +24,14 @@ index 744bd1a885..371d3f344c 100644
  #else
  #include "rtc_base/physical_socket_server.h"
 @@ -23,7 +23,7 @@
- namespace rtc {
+ namespace webrtc {
  
- std::unique_ptr<webrtc::SocketServer> CreateDefaultSocketServer() {
+ std::unique_ptr<SocketServer> CreateDefaultSocketServer() {
 -#if defined(__native_client__)
 +#if defined(__native_client__) || defined(WEBRTC_BSD)
-   return std::unique_ptr<SocketServer>(new rtc::NullSocketServer);
+   return std::unique_ptr<SocketServer>(new webrtc::NullSocketServer);
  #else
-   return std::unique_ptr<webrtc::SocketServer>(
+   return std::unique_ptr<SocketServer>(new PhysicalSocketServer);
 diff --git a/rtc_base/virtual_socket_server.cc b/rtc_base/virtual_socket_server.cc
 index 9fad9dfe27..3a5b2a48cc 100644
 --- a/rtc_base/virtual_socket_server.cc

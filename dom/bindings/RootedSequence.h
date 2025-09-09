@@ -7,8 +7,9 @@
 #ifndef mozilla_dom_RootedSequence_h__
 #define mozilla_dom_RootedSequence_h__
 
-#include "mozilla/dom/BindingDeclarations.h"
 #include "js/RootingAPI.h"
+#include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/BindingUtils.h"
 
 namespace mozilla::dom::binding_detail {
 

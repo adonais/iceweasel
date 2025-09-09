@@ -59,7 +59,7 @@
 }
 
 .menuitem-button:focus-visible {
-  outline-offset: var(--in-content-focus-outline-inset);
+  outline-offset: var(--focus-outline-inset);
 }
 
 .menuitem-separator {

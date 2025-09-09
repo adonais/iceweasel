@@ -8,17 +8,16 @@
 #ifndef mozilla_dom_WebTaskScheduler_h
 #define mozilla_dom_WebTaskScheduler_h
 
-#include "nsThreadUtils.h"
-#include "nsPIDOMWindow.h"
-#include "nsWrapperCache.h"
-#include "nsClassHashtable.h"
-
 #include "TaskSignal.h"
 #include "mozilla/Variant.h"
-#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/AbortFollower.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/TimeoutHandler.h"
 #include "mozilla/dom/WebTaskSchedulingBinding.h"
+#include "nsClassHashtable.h"
+#include "nsPIDOMWindow.h"
+#include "nsThreadUtils.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla::dom {
 

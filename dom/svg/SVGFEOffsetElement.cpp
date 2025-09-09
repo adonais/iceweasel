@@ -5,10 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/SVGFEOffsetElement.h"
-#include "mozilla/dom/SVGFEOffsetElementBinding.h"
+
 #include "mozilla/SVGFilterInstance.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/dom/BindContext.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/SVGFEOffsetElementBinding.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(FEOffset)
 

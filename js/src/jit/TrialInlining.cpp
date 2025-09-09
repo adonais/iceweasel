@@ -222,38 +222,35 @@ Maybe<InlinableCallData> FindInlinableCallData(ICCacheIRStub* stub) {
         // If we see a guard for a scripted function, remember which
         // operand we are guarding.
         MOZ_ASSERT(data.isNothing());
-        ObjOperandId maybeCalleeGuardOperand = reader.objOperandId();
-        uint32_t targetOffset = reader.stubOffset();
-        (void)reader.stubOffset();  // nargsAndFlags
+        auto args = reader.argsForGuardSpecificFunction();
+        uint32_t targetOffset = args.expectedOffset;
         uintptr_t rawFunction =
             stubInfo->getStubRawWord(stubData, targetOffset);
         JSFunction* function = reinterpret_cast<JSFunction*>(rawFunction);
         if (function->hasBytecode()) {
-          calleeGuardOperand = maybeCalleeGuardOperand;
+          calleeGuardOperand = args.funId;
           targetScript = function->nonLazyScript();
         }
         break;
       }
       case CacheOp::GuardFunctionScript: {
         MOZ_ASSERT(data.isNothing());
-        calleeGuardOperand = reader.objOperandId();
-        uint32_t targetOffset = reader.stubOffset();
+        auto args = reader.argsForGuardFunctionScript();
+        calleeGuardOperand = args.objId;
+        uint32_t targetOffset = args.expectedOffset;
         uintptr_t rawScript = stubInfo->getStubRawWord(stubData, targetOffset);
         targetScript = reinterpret_cast<JSScript*>(rawScript);
-        (void)reader.stubOffset();  // nargsAndFlags
         break;
       }
       case CacheOp::CallScriptedFunction: {
         // If we see a call, check if `callee` is the previously guarded
         // operand. If it is, we know the target and can inline.
-        ObjOperandId calleeOperand = reader.objOperandId();
-        mozilla::DebugOnly<Int32OperandId> argcId = reader.int32OperandId();
-        flags = reader.callFlags();
-        mozilla::DebugOnly<uint32_t> argcFixed = reader.uint32Immediate();
-        MOZ_ASSERT(argcFixed <= MaxUnrolledArgCopy);
+        auto args = reader.argsForCallScriptedFunction();
+        flags = args.flags;
+        MOZ_ASSERT(args.argcFixed <= MaxUnrolledArgCopy);
 
-        if (calleeOperand == calleeGuardOperand) {
-          MOZ_ASSERT(static_cast<OperandId&>(argcId).id() == 0);
+        if (args.calleeId == calleeGuardOperand) {
+          MOZ_ASSERT(args.argcId.id() == 0);
           MOZ_ASSERT(data.isNothing());
           data.emplace();
           data->endOfSharedPrefix = opStart;
@@ -261,20 +258,17 @@ Maybe<InlinableCallData> FindInlinableCallData(ICCacheIRStub* stub) {
         break;
       }
       case CacheOp::CallInlinedFunction: {
-        ObjOperandId calleeOperand = reader.objOperandId();
-        mozilla::DebugOnly<Int32OperandId> argcId = reader.int32OperandId();
-        uint32_t icScriptOffset = reader.stubOffset();
-        flags = reader.callFlags();
-        mozilla::DebugOnly<uint32_t> argcFixed = reader.uint32Immediate();
-        MOZ_ASSERT(argcFixed <= MaxUnrolledArgCopy);
+        auto args = reader.argsForCallInlinedFunction();
+        flags = args.flags;
+        MOZ_ASSERT(args.argcFixed <= MaxUnrolledArgCopy);
 
-        if (calleeOperand == calleeGuardOperand) {
-          MOZ_ASSERT(static_cast<OperandId&>(argcId).id() == 0);
+        if (args.calleeId == calleeGuardOperand) {
+          MOZ_ASSERT(args.argcId.id() == 0);
           MOZ_ASSERT(data.isNothing());
           data.emplace();
           data->endOfSharedPrefix = opStart;
           uintptr_t rawICScript =
-              stubInfo->getStubRawWord(stubData, icScriptOffset);
+              stubInfo->getStubRawWord(stubData, args.icScriptOffset);
           data->icScript = reinterpret_cast<ICScript*>(rawICScript);
         }
         break;
@@ -326,8 +320,7 @@ Maybe<InlinableGetterData> FindInlinableGetterData(ICCacheIRStub* stub) {
     switch (op) {
       case CacheOp::LoadObject: {
         // If we load a constant object, remember it in case it's the callee.
-        ObjOperandId resultOperand = reader.objOperandId();
-        uint32_t objOffset = reader.stubOffset();
+        auto [resultOperand, objOffset] = reader.argsForLoadObject();
         uintptr_t rawObject = stubInfo->getStubRawWord(stubData, objOffset);
         JSObject* object = reinterpret_cast<JSObject*>(rawObject);
         if (object->is<JSFunction>() &&
@@ -339,45 +332,40 @@ Maybe<InlinableGetterData> FindInlinableGetterData(ICCacheIRStub* stub) {
       }
       case CacheOp::GuardFunctionScript: {
         MOZ_ASSERT(data.isNothing());
-        maybeCalleeOperand = reader.objOperandId();
-        uint32_t targetOffset = reader.stubOffset();
+        auto args = reader.argsForGuardFunctionScript();
+        maybeCalleeOperand = args.objId;
+        uint32_t targetOffset = args.expectedOffset;
         uintptr_t rawScript = stubInfo->getStubRawWord(stubData, targetOffset);
         targetScript = reinterpret_cast<JSScript*>(rawScript);
-        (void)reader.stubOffset();  // nargsAndFlags
         break;
       }
       case CacheOp::CallScriptedGetterResult: {
-        ValOperandId receiverOperand = reader.valOperandId();
-        ObjOperandId calleeOperand = reader.objOperandId();
-        bool sameRealm = reader.readBool();
-        (void)reader.stubOffset();  // nargsAndFlags
+        auto args = reader.argsForCallScriptedGetterResult();
+        ObjOperandId calleeOperand = args.calleeId;
 
         if (maybeCalleeOperand == calleeOperand) {
           data.emplace();
           data->target = targetScript;
-          data->receiverOperand = receiverOperand;
+          data->receiverOperand = args.receiverId;
           data->calleeOperand = calleeOperand;
-          data->sameRealm = sameRealm;
+          data->sameRealm = args.sameRealm;
           data->endOfSharedPrefix = opStart;
         }
         break;
       }
       case CacheOp::CallInlinedGetterResult: {
-        ValOperandId receiverOperand = reader.valOperandId();
-        ObjOperandId calleeOperand = reader.objOperandId();
-        uint32_t icScriptOffset = reader.stubOffset();
+        auto args = reader.argsForCallInlinedGetterResult();
+        ObjOperandId calleeOperand = args.calleeId;
         uintptr_t rawICScript =
-            stubInfo->getStubRawWord(stubData, icScriptOffset);
-        bool sameRealm = reader.readBool();
-        (void)reader.stubOffset();  // nargsAndFlags
+            stubInfo->getStubRawWord(stubData, args.icScriptOffset);
 
         if (maybeCalleeOperand == calleeOperand) {
           data.emplace();
           data->target = targetScript;
-          data->receiverOperand = receiverOperand;
+          data->receiverOperand = args.receiverId;
           data->calleeOperand = calleeOperand;
           data->icScript = reinterpret_cast<ICScript*>(rawICScript);
-          data->sameRealm = sameRealm;
+          data->sameRealm = args.sameRealm;
           data->endOfSharedPrefix = opStart;
         }
         break;
@@ -419,8 +407,7 @@ Maybe<InlinableSetterData> FindInlinableSetterData(ICCacheIRStub* stub) {
     switch (op) {
       case CacheOp::LoadObject: {
         // If we load a constant object, remember it in case it's the callee.
-        ObjOperandId resultOperand = reader.objOperandId();
-        uint32_t objOffset = reader.stubOffset();
+        auto [resultOperand, objOffset] = reader.argsForLoadObject();
         uintptr_t rawObject = stubInfo->getStubRawWord(stubData, objOffset);
         JSObject* object = reinterpret_cast<JSObject*>(rawObject);
         if (object->is<JSFunction>() &&
@@ -432,49 +419,42 @@ Maybe<InlinableSetterData> FindInlinableSetterData(ICCacheIRStub* stub) {
       }
       case CacheOp::GuardFunctionScript: {
         MOZ_ASSERT(data.isNothing());
-        maybeCalleeOperand = reader.objOperandId();
-        uint32_t targetOffset = reader.stubOffset();
+        auto args = reader.argsForGuardFunctionScript();
+        maybeCalleeOperand = args.objId;
+        uint32_t targetOffset = args.expectedOffset;
         uintptr_t rawScript = stubInfo->getStubRawWord(stubData, targetOffset);
         targetScript = reinterpret_cast<JSScript*>(rawScript);
-        (void)reader.stubOffset();  // nargsAndFlags
         break;
       }
       case CacheOp::CallScriptedSetter: {
-        ObjOperandId receiverOperand = reader.objOperandId();
-        ObjOperandId calleeOperand = reader.objOperandId();
-        ValOperandId rhsOperand = reader.valOperandId();
-        bool sameRealm = reader.readBool();
-        (void)reader.stubOffset();  // nargsAndFlags
+        auto args = reader.argsForCallScriptedSetter();
+        ObjOperandId calleeOperand = args.calleeId;
 
         if (maybeCalleeOperand == calleeOperand) {
           data.emplace();
           data->target = targetScript;
-          data->receiverOperand = receiverOperand;
+          data->receiverOperand = args.receiverId;
           data->calleeOperand = calleeOperand;
-          data->rhsOperand = rhsOperand;
-          data->sameRealm = sameRealm;
+          data->rhsOperand = args.rhsId;
+          data->sameRealm = args.sameRealm;
           data->endOfSharedPrefix = opStart;
         }
         break;
       }
       case CacheOp::CallInlinedSetter: {
-        ObjOperandId receiverOperand = reader.objOperandId();
-        ObjOperandId calleeOperand = reader.objOperandId();
-        ValOperandId rhsOperand = reader.valOperandId();
-        uint32_t icScriptOffset = reader.stubOffset();
+        auto args = reader.argsForCallInlinedSetter();
+        ObjOperandId calleeOperand = args.calleeId;
         uintptr_t rawICScript =
-            stubInfo->getStubRawWord(stubData, icScriptOffset);
-        bool sameRealm = reader.readBool();
-        (void)reader.stubOffset();  // nargsAndFlags
+            stubInfo->getStubRawWord(stubData, args.icScriptOffset);
 
         if (maybeCalleeOperand == calleeOperand) {
           data.emplace();
           data->target = targetScript;
-          data->receiverOperand = receiverOperand;
+          data->receiverOperand = args.receiverId;
           data->calleeOperand = calleeOperand;
-          data->rhsOperand = rhsOperand;
+          data->rhsOperand = args.rhsId;
           data->icScript = reinterpret_cast<ICScript*>(rawICScript);
-          data->sameRealm = sameRealm;
+          data->sameRealm = args.sameRealm;
           data->endOfSharedPrefix = opStart;
         }
         break;

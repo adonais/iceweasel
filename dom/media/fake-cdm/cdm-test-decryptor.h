@@ -6,8 +6,9 @@
 #ifndef FAKE_DECRYPTOR_H__
 #define FAKE_DECRYPTOR_H__
 
-#include "content_decryption_module.h"
 #include <string>
+
+#include "content_decryption_module.h"
 
 class FakeDecryptor : public cdm::ContentDecryptionModule_10 {
  public:

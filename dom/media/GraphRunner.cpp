@@ -9,12 +9,12 @@
 #include "GraphDriver.h"
 #include "MediaTrackGraph.h"
 #include "MediaTrackGraphImpl.h"
+#include "Tracing.h"
+#include "audio_thread_priority.h"
+#include "mozilla/dom/WorkletThread.h"
 #include "nsISupportsImpl.h"
 #include "nsISupportsPriority.h"
 #include "prthread.h"
-#include "Tracing.h"
-#include "mozilla/dom/WorkletThread.h"
-#include "audio_thread_priority.h"
 #ifdef MOZ_WIDGET_ANDROID
 #  include "AndroidProcess.h"
 #endif  // MOZ_WIDGET_ANDROID

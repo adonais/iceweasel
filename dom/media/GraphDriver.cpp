@@ -7,20 +7,20 @@
 #include "GraphDriver.h"
 
 #include "AudioNodeEngine.h"
+#include "CallbackThreadRegistry.h"
+#include "CubebDeviceEnumerator.h"
+#include "MediaTrackGraphImpl.h"
+#include "Tracing.h"
 #include "cubeb/cubeb.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/MathAlgorithms.h"
+#include "mozilla/SchedulerGroup.h"
+#include "mozilla/SharedThreadPool.h"
+#include "mozilla/StaticPrefs_media.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/AudioContext.h"
 #include "mozilla/dom/AudioDeviceInfo.h"
 #include "mozilla/dom/BaseAudioContextBinding.h"
-#include "mozilla/SchedulerGroup.h"
-#include "mozilla/SharedThreadPool.h"
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/Unused.h"
-#include "mozilla/MathAlgorithms.h"
-#include "mozilla/StaticPrefs_media.h"
-#include "CubebDeviceEnumerator.h"
-#include "MediaTrackGraphImpl.h"
-#include "CallbackThreadRegistry.h"
-#include "Tracing.h"
 
 #ifdef MOZ_WEBRTC
 #  include "webrtc/MediaEngineWebRTC.h"
@@ -28,6 +28,7 @@
 
 #ifdef XP_MACOSX
 #  include <sys/sysctl.h>
+
 #  include "nsCocoaFeatures.h"
 #endif
 
@@ -598,6 +599,7 @@ void AudioCallbackDriver::Init(const nsCString& aStreamName) {
       CubebUtils::RouteOutputAsVoice()) {
     output.prefs |= static_cast<cubeb_stream_prefs>(CUBEB_STREAM_PREF_VOICE);
   }
+  output.input_params = CUBEB_INPUT_PROCESSING_PARAM_NONE;
 
   uint32_t latencyFrames = CubebUtils::GetCubebMTGLatencyInFrames(&output);
 
@@ -641,6 +643,7 @@ void AudioCallbackDriver::Init(const nsCString& aStreamName) {
   if (mInputDevicePreference == CUBEB_DEVICE_PREF_VOICE) {
     input.prefs |= static_cast<cubeb_stream_prefs>(CUBEB_STREAM_PREF_VOICE);
   }
+  input.input_params = CUBEB_INPUT_PROCESSING_PARAM_NONE;
 
   cubeb_stream* stream = nullptr;
   const char* streamName =

@@ -7,9 +7,10 @@
 #ifndef mozilla_RollingNumber_h_
 #define mozilla_RollingNumber_h_
 
+#include <limits>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include <limits>
 
 namespace mozilla {
 

@@ -16,7 +16,9 @@
 #include <functional>
 #include <new>
 #include <utility>
+
 #include "BrowserChild.h"
+#include "CharacterDataBuffer.h"
 #include "DecoderTraits.h"
 #include "ErrorList.h"
 #include "HTMLSplitOnSpacesTokenizer.h"
@@ -55,8 +57,6 @@
 #include "jsfriendapi.h"
 #include "mozAutoDocUpdate.h"
 #include "mozIDOMWindow.h"
-#include "nsIOService.h"
-#include "nsObjectLoadingContent.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ArrayIterator.h"
 #include "mozilla/ArrayUtils.h"
@@ -84,9 +84,9 @@
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/EventQueue.h"
 #include "mozilla/EventStateManager.h"
-#include "mozilla/extensions/WebExtensionPolicy.h"
-#include "mozilla/FlushType.h"
 #include "mozilla/FOGIPC.h"
+#include "mozilla/FlowMarkers.h"
+#include "mozilla/FlushType.h"
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/HangAnnotations.h"
 #include "mozilla/IMEStateManager.h"
@@ -107,18 +107,20 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerRunnable.h"
-#include "mozilla/FlowMarkers.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultExtensions.h"
-#include "mozilla/ScrollbarPreferences.h"
 #include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/ScrollbarPreferences.h"
 #include "mozilla/ShutdownPhase.h"
 #include "mozilla/Span.h"
 #include "mozilla/StaticAnalysisFunctions.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/extensions/WebExtensionPolicy.h"
+#include "nsIOService.h"
+#include "nsObjectLoadingContent.h"
 #ifdef FUZZING
 #  include "mozilla/StaticPrefs_fuzzing.h"
 #endif
@@ -130,14 +132,15 @@
 #include "mozilla/TextControlState.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TextEvents.h"
+#include "mozilla/Tokenizer.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/Variant.h"
 #include "mozilla/ViewportUtils.h"
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/AutoEntryScript.h"
-#include "mozilla/dom/AutocompleteInfoBinding.h"
 #include "mozilla/dom/AutoSuppressEventHandlingAndSuspend.h"
+#include "mozilla/dom/AutocompleteInfoBinding.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/BlobImpl.h"
@@ -205,8 +208,8 @@
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/dom/TrustedHTML.h"
-#include "mozilla/dom/TrustedTypesConstants.h"
 #include "mozilla/dom/TrustedTypeUtils.h"
+#include "mozilla/dom/TrustedTypesConstants.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/ViewTransition.h"
 #include "mozilla/dom/WindowContext.h"
@@ -214,7 +217,6 @@
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/XULCommandEvent.h"
-#include "mozilla/glean/GleanPings.h"
 #include "mozilla/fallible.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/BaseMargin.h"
@@ -224,9 +226,9 @@
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/gfx/Types.h"
+#include "mozilla/glean/GleanPings.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
-#include "mozilla/Tokenizer.h"
 #include "mozilla/widget/IMEData.h"
 #include "nsAboutProtocolUtils.h"
 #include "nsArrayUtils.h"
@@ -255,7 +257,6 @@
 #include "nsCycleCollectionNoteChild.h"
 #include "nsDOMMutationObserver.h"
 #include "nsDOMString.h"
-#include "nsTHashMap.h"
 #include "nsDebug.h"
 #include "nsDocShell.h"
 #include "nsDocShellCID.h"
@@ -344,6 +345,7 @@
 #include "nsITransferable.h"
 #include "nsIURI.h"
 #include "nsIURIMutator.h"
+#include "nsTHashMap.h"
 #if defined(MOZ_THUNDERBIRD) || defined(MOZ_SUITE)
 #  include "nsIURIWithSpecialOrigin.h"
 #endif
@@ -389,7 +391,6 @@
 #include "nsTLiteralString.h"
 #include "nsTPromiseFlatString.h"
 #include "nsTStringRepr.h"
-#include "nsTextFragment.h"
 #include "nsTextNode.h"
 #include "nsThreadManager.h"
 #include "nsThreadUtils.h"
@@ -398,9 +399,9 @@
 #include "nsURLHelper.h"
 #include "nsUnicodeProperties.h"
 #include "nsVariant.h"
-#include "nsWidgetsCID.h"
 #include "nsView.h"
 #include "nsViewManager.h"
+#include "nsWidgetsCID.h"
 #include "nsXPCOM.h"
 #include "nsXPCOMCID.h"
 #include "nsXULAppAPI.h"
@@ -4294,8 +4295,49 @@ bool nsContentUtils::IsNameWithDash(nsAtom* aName) {
   uint32_t len = aName->GetLength();
   bool hasDash = false;
 
+  // A string name is a valid custom element name if all of the following are
+  // true:
+
+  // name's 0th code point is an ASCII lower alpha;
   if (!len || name[0] < 'a' || name[0] > 'z') {
     return false;
+  }
+
+  if (StaticPrefs::dom_custom_elements_relaxed_names_enabled()) {
+    uint32_t i = 1;
+    while (i < len) {
+      // name does not contain any ASCII upper alphas
+      if (name[i] >= 'A' && name[i] <= 'Z') {
+        return false;
+      }
+
+      // name is a valid element local name;
+      //
+      //   // https://dom.spec.whatwg.org/#valid-element-local-name
+      //   Step 2.1.
+      //   If name contains ASCII whitespace, U+0000 NULL, U+002F (/), or U+003E
+      //   (>), then return false.
+      //
+      //   ASCII whitespace is U+0009 TAB, U+000A LF, U+000C FF, U+000D CR, or
+      //   U+0020 SPACE.
+      if (name[i] == 0x0000 ||  // null
+          name[i] == 0x0009 ||  // tab
+          name[i] == 0x000A ||  // newline
+          name[i] == 0x000C ||  // form feed
+          name[i] == 0x000D ||  // carriage return
+          name[i] == 0x0020 ||  // space
+          name[i] == 0x002F ||  // /
+          name[i] == 0x003E) {  // >
+        return false;
+      }
+
+      if (name[i] == '-') {
+        hasDash = true;
+      }
+
+      i++;
+    }
+    return hasDash;
   }
 
   uint32_t i = 1;
@@ -9910,7 +9952,7 @@ class StringBuilder {
       nsAtom* mAtom;
       LiteralSpan mLiteral;
       nsString mString;
-      const nsTextFragment* mTextFragment;
+      const CharacterDataBuffer* mCharacterDataBuffer;
     };
     Type mType = Type::Unknown;
   };
@@ -9969,19 +10011,19 @@ class StringBuilder {
     mLength += aLen;
   }
 
-  void Append(const nsTextFragment* aTextFragment) {
+  void Append(const CharacterDataBuffer* aCharacterDataBuffer) {
     Unit* u = AddUnit();
-    u->mTextFragment = aTextFragment;
+    u->mCharacterDataBuffer = aCharacterDataBuffer;
     u->mType = Unit::Type::TextFragment;
-    uint32_t len = aTextFragment->GetLength();
+    uint32_t len = aCharacterDataBuffer->GetLength();
     mLength += len;
   }
 
   // aLen can be !isValid(), which will get propagated into mLength.
-  void AppendWithEncode(const nsTextFragment* aTextFragment,
+  void AppendWithEncode(const CharacterDataBuffer* aCharacterDataBuffer,
                         CheckedInt<uint32_t> aLen) {
     Unit* u = AddUnit();
-    u->mTextFragment = aTextFragment;
+    u->mCharacterDataBuffer = aCharacterDataBuffer;
     u->mType = Unit::Type::TextFragmentWithEncode;
     mLength += aLen;
   }
@@ -10016,23 +10058,23 @@ class StringBuilder {
             appender.Append(u.mLiteral.AsSpan());
             break;
           case Unit::Type::TextFragment:
-            if (u.mTextFragment->Is2b()) {
-              appender.Append(
-                  Span(u.mTextFragment->Get2b(), u.mTextFragment->GetLength()));
+            if (u.mCharacterDataBuffer->Is2b()) {
+              appender.Append(Span(u.mCharacterDataBuffer->Get2b(),
+                                   u.mCharacterDataBuffer->GetLength()));
             } else {
-              appender.Append(
-                  Span(u.mTextFragment->Get1b(), u.mTextFragment->GetLength()));
+              appender.Append(Span(u.mCharacterDataBuffer->Get1b(),
+                                   u.mCharacterDataBuffer->GetLength()));
             }
             break;
           case Unit::Type::TextFragmentWithEncode:
-            if (u.mTextFragment->Is2b()) {
-              EncodeTextFragment(
-                  Span(u.mTextFragment->Get2b(), u.mTextFragment->GetLength()),
-                  appender);
+            if (u.mCharacterDataBuffer->Is2b()) {
+              EncodeTextFragment(Span(u.mCharacterDataBuffer->Get2b(),
+                                      u.mCharacterDataBuffer->GetLength()),
+                                 appender);
             } else {
-              EncodeTextFragment(
-                  Span(u.mTextFragment->Get1b(), u.mTextFragment->GetLength()),
-                  appender);
+              EncodeTextFragment(Span(u.mCharacterDataBuffer->Get1b(),
+                                      u.mCharacterDataBuffer->GetLength()),
+                                 appender);
             }
             break;
           default:
@@ -10150,7 +10192,7 @@ static_assert(sizeof(StringBuilder) <= StringBuilder::TARGET_SIZE,
 
 }  // namespace
 
-static void AppendEncodedCharacters(const nsTextFragment* aText,
+static void AppendEncodedCharacters(const CharacterDataBuffer* aText,
                                     StringBuilder& aBuilder) {
   uint32_t numEncodedChars = 0;
   uint32_t len = aText->GetLength();
@@ -10340,7 +10382,7 @@ static void StartElement(Element* aElement, StringBuilder& aBuilder) {
       if (fc &&
           (fc->NodeType() == nsINode::TEXT_NODE ||
            fc->NodeType() == nsINode::CDATA_SECTION_NODE)) {
-        const nsTextFragment* text = fc->GetText();
+        const CharacterDataBuffer* text = fc->GetText();
         if (text && text->GetLength() && text->CharAt(0) == char16_t('\n')) {
           aBuilder.Append("\n");
         }
@@ -10461,19 +10503,21 @@ static void SerializeNodeToMarkupInternal(
 
       case nsINode::TEXT_NODE:
       case nsINode::CDATA_SECTION_NODE: {
-        const nsTextFragment* text = &current->AsText()->TextFragment();
+        const CharacterDataBuffer* characterDataBuffer =
+            &current->AsText()->DataBuffer();
         nsIContent* parent = current->GetParent();
         if (ShouldEscape(parent)) {
-          AppendEncodedCharacters(text, aBuilder);
+          AppendEncodedCharacters(characterDataBuffer, aBuilder);
         } else {
-          aBuilder.Append(text);
+          aBuilder.Append(characterDataBuffer);
         }
         break;
       }
 
       case nsINode::COMMENT_NODE: {
         aBuilder.Append(u"<!--");
-        aBuilder.Append(static_cast<nsIContent*>(current)->GetText());
+        aBuilder.Append(
+            static_cast<nsIContent*>(current)->GetCharacterDataBuffer());
         aBuilder.Append(u"-->");
         break;
       }
@@ -10489,7 +10533,8 @@ static void SerializeNodeToMarkupInternal(
         aBuilder.Append(u"<?");
         aBuilder.Append(nsString(current->NodeName()));
         aBuilder.Append(u" ");
-        aBuilder.Append(static_cast<nsIContent*>(current)->GetText());
+        aBuilder.Append(
+            static_cast<nsIContent*>(current)->GetCharacterDataBuffer());
         aBuilder.Append(u">");
         break;
       }
@@ -11748,21 +11793,21 @@ bool nsContentUtils::IsOverridingWindowName(const nsAString& aName) {
 // Unfortunately, we can't unwrap an IDL object using only a concrete type.
 // We need to calculate type data based on the IDL typename. Which means
 // wrapping our templated function in a macro.
-#define EXTRACT_EXN_VALUES(T, ...)                                \
-  ExtractExceptionValues<mozilla::dom::prototypes::id::T,         \
-                         T##_Binding::NativeType, T>(__VA_ARGS__) \
+#define EXTRACT_EXN_VALUES(T, ...)                                    \
+  ExtractExceptionValuesImpl<mozilla::dom::prototypes::id::T,         \
+                             T##_Binding::NativeType, T>(__VA_ARGS__) \
       .isOk()
 
 template <prototypes::ID PrototypeID, class NativeType, typename T>
-static Result<Ok, nsresult> ExtractExceptionValues(
-    JSContext* aCx, JS::Handle<JSObject*> aObj, nsACString& aSourceSpecOut,
+static Result<Ok, nsresult> ExtractExceptionValuesImpl(
+    JSContext* aCx, JS::Handle<JSObject*> aObj, nsACString& aFilename,
     uint32_t* aLineOut, uint32_t* aColumnOut, nsString& aMessageOut) {
   AssertStaticUnwrapOK<PrototypeID>();
   RefPtr<T> exn;
   MOZ_TRY((UnwrapObject<PrototypeID, NativeType>(aObj, exn, nullptr)));
 
-  exn->GetFilename(aCx, aSourceSpecOut);
-  if (!aSourceSpecOut.IsEmpty()) {
+  exn->GetFilename(aCx, aFilename);
+  if (!aFilename.IsEmpty()) {
     *aLineOut = exn->LineNumber(aCx);
     *aColumnOut = exn->ColumnNumber();
   }
@@ -11774,6 +11819,16 @@ static Result<Ok, nsresult> ExtractExceptionValues(
   exn->GetMessageMoz(message);
   aMessageOut.Append(message);
   return Ok();
+}
+
+/* static */
+bool nsContentUtils::ExtractExceptionValues(
+    JSContext* aCx, JS::Handle<JSObject*> aObj, nsACString& aFilename,
+    uint32_t* aLineOut, uint32_t* aColumnOut, nsString& aMessageOut) {
+  return EXTRACT_EXN_VALUES(DOMException, aCx, aObj, aFilename, aLineOut,
+                            aColumnOut, aMessageOut) ||
+         EXTRACT_EXN_VALUES(Exception, aCx, aObj, aFilename, aLineOut,
+                            aColumnOut, aMessageOut);
 }
 
 /* static */
@@ -11789,8 +11844,7 @@ void nsContentUtils::ExtractErrorValues(
     // Try to process as an Error object.  Use the file/line/column values
     // from the Error as they will be more specific to the root cause of
     // the problem.
-    JSErrorReport* err = obj ? JS_ErrorFromException(aCx, obj) : nullptr;
-    if (err) {
+    if (JSErrorReport* err = JS_ErrorFromException(aCx, obj)) {
       // Use xpc to extract the error message only.  We don't actually send
       // this report anywhere.
       RefPtr<xpc::ErrorReport> report = new xpc::ErrorReport();
@@ -11807,15 +11861,9 @@ void nsContentUtils::ExtractErrorValues(
       aMessageOut.Assign(report->mErrorMsg);
     }
 
-    // Next, try to unwrap the rejection value as a DOMException.
-    else if (EXTRACT_EXN_VALUES(DOMException, aCx, obj, aSourceSpecOut,
-                                aLineOut, aColumnOut, aMessageOut)) {
-      return;
-    }
-
-    // Next, try to unwrap the rejection value as an XPC Exception.
-    else if (EXTRACT_EXN_VALUES(Exception, aCx, obj, aSourceSpecOut, aLineOut,
-                                aColumnOut, aMessageOut)) {
+    // Next, try to unwrap the rejection value as a (DOM)Exception.
+    else if (ExtractExceptionValues(aCx, obj, aSourceSpecOut, aLineOut,
+                                    aColumnOut, aMessageOut)) {
       return;
     }
   }
@@ -12464,6 +12512,18 @@ nsIContent* nsContentUtils::AttachDeclarativeShadowRoot(nsIContent* aHost,
     shadowRoot->SetAvailableToElementInternals();
   }
   return shadowRoot;
+}
+
+// https://html.spec.whatwg.org/#the-navigation-must-be-a-replace
+/* static */ bool nsContentUtils::NavigationMustBeAReplace(
+    nsIURI& aURI, const Document& aDocument) {
+  // The navigation must be a replace, given a URL url and a Document document,
+  // if any of the following are true:
+  // - url's scheme is "javascript"; or
+  // - document's is initial about:blank is true.
+  return aURI.SchemeIs("javascript") ||
+         (NS_IsAboutBlank(aDocument.GetDocumentURI()) &&
+          aDocument.IsInitialDocument());
 }
 
 template int32_t nsContentUtils::CompareTreePosition<TreeKind::DOM>(

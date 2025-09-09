@@ -5,11 +5,12 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <thread>
+
+#include "Pacer.h"
+#include "VideoUtils.h"
 #include "gmock/gmock-matchers.h"
 #include "gtest/gtest.h"
 #include "mozilla/gtest/WaitFor.h"
-#include "Pacer.h"
-#include "VideoUtils.h"
 
 using namespace mozilla;
 

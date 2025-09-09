@@ -8,26 +8,26 @@
 #define mozilla_dom_ContentChild_h
 
 #include "mozilla/Atomics.h"
+#include "mozilla/Hal.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/GetFilesHelper.h"
-#include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/PContentChild.h"
 #include "mozilla/dom/ProcessActor.h"
 #include "mozilla/dom/RemoteType.h"
-#include "mozilla/Hal.h"
+#include "mozilla/dom/UserActivation.h"
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/UniquePtr.h"
 #include "nsClassHashtable.h"
-#include "nscore.h"
 #include "nsHashKeys.h"
 #include "nsIDOMProcessChild.h"
 #include "nsRefPtrHashtable.h"
 #include "nsString.h"
 #include "nsTArrayForwardDeclare.h"
 #include "nsTHashSet.h"
+#include "nscore.h"
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 #  include "nsIFile.h"
@@ -281,7 +281,7 @@ class ContentChild final : public PContentChild,
                                            widget::ThemeChangeKind);
 
   mozilla::ipc::IPCResult RecvPreferenceUpdate(const Pref& aPref);
-  mozilla::ipc::IPCResult RecvVarUpdate(const GfxVarUpdate& pref);
+  mozilla::ipc::IPCResult RecvVarUpdate(const nsTArray<GfxVarUpdate>& var);
 
   mozilla::ipc::IPCResult RecvUpdatePerfStatsCollectionMask(
       const uint64_t& aMask);

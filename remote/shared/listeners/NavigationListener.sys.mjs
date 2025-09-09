@@ -12,7 +12,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * The NavigationListener simply wraps a NavigationManager instance and exposes
  * it with a convenient listener API, more consistent with the rest of the
  * remote codebase. NavigationManager is a singleton per session so it can't
- * be instanciated for each and every consumer.
+ * be instantiated for each and every consumer.
  *
  * Example:
  * ```

@@ -111,7 +111,7 @@ const gLoggingPresets = {
   },
   "media-playback": {
     modules:
-      "HTMLMediaElement:4,HTMLMediaElementEvents:4,cubeb:5,PlatformDecoderModule:5,AudioSink:5,AudioSinkWrapper:5,MediaDecoderStateMachine:4,MediaDecoder:4,MediaFormatReader:5,GMP:5,EME:5,MediaSource:5,MediaSourceSamples:5,Autoplay:5,GVAutoplay:5,MFMediaEngine:5,FFmpegVideo:5,FFmpegAudio:5,FFmpegLib:4",
+      "HTMLMediaElement:4,HTMLMediaElementEvents:4,cubeb:5,PlatformDecoderModule:5,AudioSink:5,AudioSinkWrapper:5,MediaDecoderStateMachine:4,MediaDecoder:4,MediaFormatReader:5,GMP:5,EME:5,MediaSource:5,MediaSourceSamples:5,Autoplay:5,GVAutoplay:5,MFMediaEngine:5,FFmpegVideo:5,FFmpegAudio:5,FFmpegLib:4,VideoFrameContainer:5,CompositableTextureParent:5",
     l10nIds: {
       label: "about-logging-preset-media-playback-label",
       description: "about-logging-preset-media-playback-description",
@@ -167,6 +167,13 @@ const gLoggingPresets = {
       description: "about-logging-preset-ml-description",
     },
     profilerPreset: "ml",
+  },
+  webcompat: {
+    modules: "console:5,PageMessages:5",
+    l10nIds: {
+      label: "about-logging-preset-web-compat-label",
+      description: "about-logging-preset-web-compat-description",
+    },
   },
   ...gOsSpecificLoggingPresets,
   custom: {
@@ -261,9 +268,11 @@ function updateLoggingOutputType(profilerOutputType) {
       }
       // hide options related to file output for clarity
       $("#log-file-configuration").hidden = true;
+      $("#with-javascript-tracing-checkbox").disabled = false;
       break;
     case "file":
       $("#with-profiler-stacks-checkbox").disabled = true;
+      $("#with-javascript-tracing-checkbox").disabled = true;
       $("#log-file-configuration").hidden = false;
       $("#no-log-file").hidden = !!$("#current-log-file").innerText.length;
       break;
@@ -314,6 +323,7 @@ function serializeState() {
   const threads = $("#threads")?.value;
   const profilerPreset = $("#profiler-preset-dropdown")?.value;
   const profilerStacks = $("#with-profiler-stacks-checkbox")?.checked;
+  const javascriptTracing = $("#with-javascript-tracing-checkbox")?.checked;
 
   if (logModules && logModules.trim()) {
     params.set("modules", logModules.trim());
@@ -339,6 +349,10 @@ function serializeState() {
     params.set("profilerstacks", "");
   }
 
+  if (javascriptTracing) {
+    params.set("javascriptTracing", "");
+  }
+
   return `about:logging?${params.toString()}`;
 }
 
@@ -354,7 +368,8 @@ function parseURL() {
     loggingPresetOverriden = null,
     threadsOverriden = null,
     profilerPresetOverriden = null,
-    profilerStacksOverriden = null;
+    profilerStacksOverriden = null,
+    javascriptTracingOverriden = null;
   try {
     for (let [k, v] of options) {
       switch (k) {
@@ -388,6 +403,9 @@ function parseURL() {
           break;
         case "profilerstacks":
           profilerStacksOverriden = true;
+          break;
+        case "javascriptTracing":
+          javascriptTracingOverriden = true;
           break;
         default:
           throw new ParseError("about-logging-unknown-option", k, v);
@@ -445,6 +463,13 @@ function parseURL() {
     someElementsDisabled = true;
     Services.prefs.setBoolPref("logging.config.profilerstacks", true);
     gLoggingSettings.profilerStacks = true;
+  }
+
+  if (javascriptTracingOverriden) {
+    const checkbox = $("#with-javascript-tracing-checkbox");
+    checkbox.disabled = true;
+    someElementsDisabled = true;
+    Services.prefs.setBoolPref("logging.config.javascriptTracing", true);
   }
 
   if (loggingPresetOverriden) {
@@ -524,6 +549,13 @@ function init() {
     updateLogModules();
   });
 
+  $("#with-javascript-tracing-checkbox").addEventListener("change", e => {
+    Services.prefs.setBoolPref(
+      "logging.config.javascriptTracing",
+      e.target.checked
+    );
+  });
+
   let loggingOutputType = Services.prefs.getCharPref(
     "logging.config.output_type",
     "profiler"
@@ -534,6 +566,11 @@ function init() {
 
   $("#with-profiler-stacks-checkbox").checked = Services.prefs.getBoolPref(
     "logging.config.profilerstacks",
+    false
+  );
+
+  $("#with-javascript-tracing-checkbox").checked = Services.prefs.getBoolPref(
+    "logging.config.javascriptTracing",
     false
   );
 
@@ -819,11 +856,14 @@ function startLogging() {
       const profilerPreset =
         gLoggingSettings.profilerPreset ??
         gLoggingPresets[gLoggingSettings.loggingPreset].profilerPreset;
-      lazy.ProfilerPrefsPresets.changePreset(
-        "aboutlogging",
-        profilerPreset,
-        supportedFeatures
-      );
+      // Some about:logging presets don't have an associated profiler preset.
+      if (profilerPreset) {
+        lazy.ProfilerPrefsPresets.changePreset(
+          "aboutlogging",
+          profilerPreset,
+          supportedFeatures
+        );
+      }
     } else {
       // a baseline set of threads, and possibly others, overriden by the URL
       lazy.ProfilerPrefsPresets.changePreset(
@@ -846,6 +886,10 @@ function startLogging() {
       if (gLoggingSettings.profilerThreads.includes("cubeb")) {
         features.push("audiocallbacktracing");
       }
+    }
+    if (Services.prefs.getBoolPref("logging.config.javascriptTracing", false)) {
+      dump(" add tracing\n");
+      features.push("tracing");
     }
 
     maybeEnsureButtonInNavbar();

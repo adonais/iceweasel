@@ -6,27 +6,27 @@
 
 #include "mozilla/dom/SVGUseElement.h"
 
+#include "SVGGeometryProperty.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/StaticPrefs_svg.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGUseFrame.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_svg.h"
 #include "mozilla/URLExtraData.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ReferrerInfo.h"
-#include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "mozilla/dom/SVGGraphicsElement.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/SVGSwitchElement.h"
 #include "mozilla/dom/SVGSymbolElement.h"
 #include "mozilla/dom/SVGUseElementBinding.h"
-#include "nsGkAtoms.h"
+#include "mozilla/dom/ShadowIncludingTreeIterator.h"
 #include "nsContentUtils.h"
+#include "nsGkAtoms.h"
 #include "nsIReferrerInfo.h"
 #include "nsIURI.h"
-#include "SVGGeometryProperty.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(Use)
 

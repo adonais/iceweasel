@@ -133,11 +133,19 @@ static int nr_turn_stun_ctx_create(nr_turn_client_ctx *tctx, int mode,
   if (!(sctx=RCALLOC(sizeof(nr_turn_stun_ctx))))
     ABORT(R_NO_MEMORY);
 
+  int flags = NR_STUN_TRANSPORT_ADDR_CHECK_WILDCARD;
+  if (!(tctx->ctx->flags & NR_ICE_CTX_FLAGS_ALLOW_LOOPBACK)) {
+    flags |= NR_STUN_TRANSPORT_ADDR_CHECK_LOOPBACK;
+  }
+  if (!(tctx->ctx->flags & NR_ICE_CTX_FLAGS_ALLOW_LINK_LOCAL)) {
+    flags |= NR_STUN_TRANSPORT_ADDR_CHECK_LINK_LOCAL;
+  }
+
   /* TODO(ekr@rtfm.com): label by phase */
   snprintf(label, sizeof(label), "%s:%s", tctx->label, ":TURN");
 
-  if ((r=nr_stun_client_ctx_create(label, tctx->sock, &tctx->turn_server_addr,
-                                   TURN_RTO, &sctx->stun))) {
+  if ((r = nr_stun_client_ctx_create(label, tctx->sock, &tctx->turn_server_addr,
+                                     TURN_RTO, flags, &sctx->stun))) {
     ABORT(r);
   }
 
@@ -300,6 +308,13 @@ static int nr_turn_stun_ctx_handle_redirect(nr_turn_stun_ctx *ctx)
       ctx->stun->response, NR_STUN_ATTR_ALTERNATE_SERVER, index++, &attr)) {
     alternate_addr = &attr->u.alternate_server;
 
+    if (nr_stun_transport_addr_check(alternate_addr, ctx->stun->mapped_addr_check_mask)) {
+      r_log(NR_LOG_TURN, LOG_INFO,
+            "TURN(%s): nr_turn_stun_ctx_handle_redirect not trying %s, since we are configured not to use addresses of this type (eg; loopback)",
+            tctx->label, alternate_addr->as_string);
+      continue;
+    }
+
     // TODO: Someday we may need to handle IP version switching, but it is
     // unclear how that is supposed to work with ICE when the IP version of
     // the candidate's base address is fixed...
@@ -413,7 +428,6 @@ static int nr_turn_stun_ctx_handle_redirect(nr_turn_stun_ctx *ctx)
           "TURN(%s): nr_turn_stun_ctx_handle_redirect nr_turn_stun_ctx_start "
           "failed(%d)!",
           tctx->label, r);
-    assert(0);
     ABORT(r);
   }
 

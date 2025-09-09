@@ -71,10 +71,16 @@ run-sequentially = "Uses the Mozilla Maintenance Service."
 ["marCallbackAppStageSuccessComplete_win.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."
 
+["marCallbackAppStageSuccessPartialZucchini_win.js"]
+run-sequentially = "Uses the Mozilla Maintenance Service."
+
 ["marCallbackAppStageSuccessPartial_win.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."
 
 ["marCallbackAppSuccessComplete_win.js"]
+run-sequentially = "Uses the Mozilla Maintenance Service."
+
+["marCallbackAppSuccessPartialZucchini_win.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."
 
 ["marCallbackAppSuccessPartial_win.js"]
@@ -83,7 +89,13 @@ run-sequentially = "Uses the Mozilla Maintenance Service."
 ["marFailurePartial.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."
 
+["marFailurePartialZucchini.js"]
+run-sequentially = "Uses the Mozilla Maintenance Service."
+
 ["marFileInUseStageFailureComplete_win.js"]
+run-sequentially = "Uses the Mozilla Maintenance Service."
+
+["marFileInUseStageFailurePartialZucchini_win.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."
 
 ["marFileInUseStageFailurePartial_win.js"]
@@ -92,10 +104,16 @@ run-sequentially = "Uses the Mozilla Maintenance Service."
 ["marFileInUseSuccessComplete_win.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."
 
+["marFileInUseSuccessPartialZucchini_win.js"]
+run-sequentially = "Uses the Mozilla Maintenance Service."
+
 ["marFileInUseSuccessPartial_win.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."
 
 ["marFileLockedFailureComplete_win.js"]
+run-sequentially = "Uses the Mozilla Maintenance Service."
+
+["marFileLockedFailurePartialZucchini_win.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."
 
 ["marFileLockedFailurePartial_win.js"]
@@ -104,10 +122,16 @@ run-sequentially = "Uses the Mozilla Maintenance Service."
 ["marFileLockedStageFailureComplete_win.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."
 
+["marFileLockedStageFailurePartialZucchini_win.js"]
+run-sequentially = "Uses the Mozilla Maintenance Service."
+
 ["marFileLockedStageFailurePartial_win.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."
 
 ["marRMRFDirFileInUseStageFailureComplete_win.js"]
+run-sequentially = "Uses the Mozilla Maintenance Service."
+
+["marRMRFDirFileInUseStageFailurePartialZucchini_win.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."
 
 ["marRMRFDirFileInUseStageFailurePartial_win.js"]
@@ -116,10 +140,16 @@ run-sequentially = "Uses the Mozilla Maintenance Service."
 ["marRMRFDirFileInUseSuccessComplete_win.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."
 
+["marRMRFDirFileInUseSuccessPartialZucchini_win.js"]
+run-sequentially = "Uses the Mozilla Maintenance Service."
+
 ["marRMRFDirFileInUseSuccessPartial_win.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."
 
 ["marStageFailurePartial.js"]
+run-sequentially = "Uses the Mozilla Maintenance Service."
+
+["marStageFailurePartialZucchini.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."
 
 ["marStageSuccessComplete.js"]
@@ -128,8 +158,14 @@ run-sequentially = "Uses the Mozilla Maintenance Service."
 ["marStageSuccessPartial.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."
 
+["marStageSuccessPartialZucchini.js"]
+run-sequentially = "Uses the Mozilla Maintenance Service."
+
 ["marSuccessComplete.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."
 
 ["marSuccessPartial.js"]
+run-sequentially = "Uses the Mozilla Maintenance Service."
+
+["marSuccessPartialZucchini.js"]
 run-sequentially = "Uses the Mozilla Maintenance Service."

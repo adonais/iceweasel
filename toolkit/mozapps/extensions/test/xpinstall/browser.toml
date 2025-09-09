@@ -1,7 +1,6 @@
 [DEFAULT]
 support-files = [
   "amosigned.xpi",
-  "authRedirect.sjs",
   "bug540558.html",
   "bug638292.html",
   "bug645699.html",
@@ -15,10 +14,10 @@ support-files = [
   "installchrome.html",
   "installtrigger.html",
   "installtrigger_frame.html",
+  "mozaddonmanager.html",
   "navigate.html",
   "recommended.xpi",
   "redirect.sjs",
-  "slowinstall.sjs",
   "startsoftwareupdate.html",
   "triggerredirect.html",
   "unsigned.xpi",
@@ -38,22 +37,11 @@ https_first_disabled = true # Bug 1737265
 ["browser_auth.js"]
 https_first_disabled = true # Bug 1737265
 
-["browser_auth2.js"]
-
-["browser_auth3.js"]
-
-["browser_auth4.js"]
-https_first_disabled = true # Bug 1737265
-
 ["browser_badargs.js"]
 https_first_disabled = true # Bug 1737265
 
 ["browser_badargs2.js"]
 https_first_disabled = true # Bug 1737265
-
-["browser_badhash.js"]
-
-["browser_badhashtype.js"]
 
 ["browser_block_fullscreen_prompt.js"]
 https_first_disabled = true # Bug 1737265
@@ -73,18 +61,8 @@ https_first_disabled = true # Bug 1737265
 skip-if = ["true"] # disabled due to a leak. See bug 682410.
 
 ["browser_containers.js"]
-https_first_disabled = true # Bug 1737265
 
 ["browser_cookies.js"]
-
-["browser_cookies2.js"]
-https_first_disabled = true # Bug 1737265
-
-["browser_cookies3.js"]
-https_first_disabled = true # Bug 1737265
-
-["browser_cookies4.js"]
-skip-if = ["true"] # Bug 1084646
 
 ["browser_corrupt.js"]
 https_first_disabled = true # Bug 1737265
@@ -100,28 +78,7 @@ skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && d
 
 ["browser_enabled.js"]
 
-["browser_hash.js"]
-https_first_disabled = true # Bug 1737265
-
-["browser_hash2.js"]
-https_first_disabled = true # Bug 1737265
-
 ["browser_httphash.js"]
-https_first_disabled = true # Bug 1737265
-
-["browser_httphash2.js"]
-
-["browser_httphash3.js"]
-https_first_disabled = true # Bug 1737265
-
-["browser_httphash4.js"]
-https_first_disabled = true # Bug 1737265
-
-["browser_httphash5.js"]
-https_first_disabled = true # Bug 1737265
-
-["browser_httphash6.js"]
-skip-if = ["true"] # Bug 1449788
 
 ["browser_installchrome.js"]
 https_first_disabled = true # Bug 1737265
@@ -142,7 +99,6 @@ run-if = ["debug"]  # This is a test for leaks, see comment in the test.
 ["browser_offline.js"]
 
 ["browser_privatebrowsing.js"]
-https_first_disabled = true # Bug 1737265
 
 ["browser_relative.js"]
 https_first_disabled = true # Bug 1737265

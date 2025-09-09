@@ -51,8 +51,8 @@ pub enum StringMetric {
 #[derive(Clone, Debug)]
 pub struct StringMetricIpc;
 
-crate::define_metric_metadata_getter!(StringMetric, STRING_MAP, LABELED_STRING_MAP);
-crate::define_metric_namer!(StringMetric, PARENT_ONLY);
+define_metric_metadata_getter!(StringMetric, STRING_MAP, LABELED_STRING_MAP);
+define_metric_namer!(StringMetric, PARENT_ONLY);
 
 impl StringMetric {
     /// Create a new string metric.

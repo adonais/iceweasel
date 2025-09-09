@@ -15,9 +15,8 @@
 
 #include <stdint.h>
 
-#include "prinrval.h"
-
 #include "m_cpp_utils.h"
+#include "prinrval.h"
 
 namespace mozilla {
 

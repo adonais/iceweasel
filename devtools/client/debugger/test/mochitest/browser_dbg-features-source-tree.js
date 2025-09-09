@@ -320,25 +320,22 @@ add_task(async function testSourceTreeOnTheIntegrationTestPage() {
     .getAllThreads()
     .find(thread => thread.name == "Main Thread");
 
-  // When EFT is disabled the iframe's source is meld into the main target.
-  const expectedSameUrlSources = isEveryFrameTargetEnabled() ? 3 : 4;
+  const expectedSameUrlSources = 3;
   is(
     sourceActors.filter(actor => actor.thread == mainThread.actor).length,
     expectedSameUrlSources,
     `same-url.js is loaded ${expectedSameUrlSources} times in the main thread`
   );
 
-  if (isEveryFrameTargetEnabled()) {
-    const iframeThread = dbg.selectors
-      .getAllThreads()
-      .find(thread => thread.name == testServer.urlFor("iframe.html"));
+  const iframeThread = dbg.selectors
+    .getAllThreads()
+    .find(thread => thread.name == testServer.urlFor("iframe.html"));
 
-    is(
-      sourceActors.filter(actor => actor.thread == iframeThread.actor).length,
-      1,
-      "same-url.js is loaded one time in the iframe thread"
-    );
-  }
+  is(
+    sourceActors.filter(actor => actor.thread == iframeThread.actor).length,
+    1,
+    "same-url.js is loaded one time in the iframe thread"
+  );
 
   const workerThread = dbg.selectors
     .getAllThreads()
@@ -415,14 +412,10 @@ add_task(async function testSourceTreeOnTheIntegrationTestPage() {
   assertBreakpointHeading(dbg, "query.js?x=1", 0);
 
   // pretty print the source and check the tab text
-  clickElement(dbg, "prettyPrintButton");
-  await waitForSource(dbg, "query.js?x=1:formatted");
-  await waitForSelectedSource(dbg, "query.js?x=1:formatted");
-  assertSourceIcon(dbg, "query.js?x=1", "prettyPrint");
+  await togglePrettyPrint(dbg);
 
   const prettyTab = findElement(dbg, "activeTab");
   is(prettyTab.innerText, "query.js?x=1", "Tab label is query.js?x=1");
-  ok(prettyTab.querySelector(".img.prettyPrint"));
   assertBreakpointHeading(dbg, "query.js?x=1", 0);
   assertTextContentOnLine(dbg, 1, `function query() {`);
   // Note the replacements of " by ' here:

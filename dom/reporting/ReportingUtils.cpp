@@ -5,9 +5,10 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/ReportingUtils.h"
+
+#include "mozilla/dom/Report.h"
 #include "mozilla/dom/ReportBody.h"
 #include "mozilla/dom/ReportDeliver.h"
-#include "mozilla/dom/Report.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundChild.h"

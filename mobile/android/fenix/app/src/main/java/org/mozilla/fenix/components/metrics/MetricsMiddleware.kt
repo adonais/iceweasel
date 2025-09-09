@@ -6,6 +6,7 @@ package org.mozilla.fenix.components.metrics
 
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.MiddlewareContext
+import org.mozilla.experiments.nimbus.NimbusEventStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 
@@ -14,6 +15,7 @@ import org.mozilla.fenix.components.appstate.AppState
  */
 class MetricsMiddleware(
     private val metrics: MetricController,
+    private val nimbusEventStore: NimbusEventStore,
 ) : Middleware<AppState, AppAction> {
     override fun invoke(
         context: MiddlewareContext<AppState, AppAction>,
@@ -32,6 +34,11 @@ class MetricsMiddleware(
             metrics.track(Event.GrowthData.UsageThreshold)
             metrics.track(Event.GrowthData.UserActivated(fromSearch = false))
         }
+
+        is AppAction.BookmarkAction.BookmarkAdded -> {
+            MetricsUtils.recordBookmarkAddMetric(action.source, nimbusEventStore)
+        }
+
         else -> Unit
     }
 }

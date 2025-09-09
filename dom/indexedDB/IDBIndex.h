@@ -9,8 +9,8 @@
 
 #include "js/RootingAPI.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/IDBCursorBinding.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/IDBCursorBinding.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"
 #include "nsTArrayForwardDeclare.h"

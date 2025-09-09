@@ -40,10 +40,6 @@ add_task(() => {
   server = new HttpServer();
   server.start(-1);
 
-  // Pretend we are in nightly channel to make sure all telemetry events are sent.
-  let oldGetChannel = Policy.getChannel;
-  Policy.getChannel = () => "nightly";
-
   // Point the blocklist clients to use this local HTTP server.
   Services.prefs.setStringPref(
     "services.settings.server",
@@ -75,7 +71,6 @@ add_task(() => {
   server.registerPathHandler("/fake-x5u", handleResponse);
 
   registerCleanupFunction(() => {
-    Policy.getChannel = oldGetChannel;
     server.stop(() => {});
   });
 });

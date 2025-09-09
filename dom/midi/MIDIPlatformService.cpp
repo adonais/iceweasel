@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MIDIPlatformService.h"
+
 #include "MIDIMessageQueue.h"
 #include "TestMIDIPlatformService.h"
 #ifdef MOZ_WEBMIDI_MIDIR_IMPL
@@ -16,10 +17,10 @@
 #include "mozilla/Unused.h"
 #include "mozilla/dom/MIDIManagerParent.h"
 #include "mozilla/dom/MIDIPlatformRunnables.h"
+#include "mozilla/dom/MIDIPortParent.h"
 #include "mozilla/dom/MIDIUtils.h"
 #include "mozilla/dom/PMIDIManagerParent.h"
 #include "mozilla/ipc/BackgroundParent.h"
-#include "mozilla/dom/MIDIPortParent.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

@@ -19,6 +19,8 @@
 #include "builtin/MapObject.h"
 #include "builtin/ModuleObject.h"
 #include "builtin/Object.h"
+#include "builtin/WeakMapObject.h"
+#include "builtin/WeakSetObject.h"
 #include "jit/BaselineIC.h"
 #include "jit/CacheIRCloner.h"
 #include "jit/CacheIRCompiler.h"
@@ -210,10 +212,6 @@ Shape* CacheIRCloner::getWeakShapeField(uint32_t stubOffset) {
   // No barrier is required to clone a weak pointer.
   return reinterpret_cast<Shape*>(readStubWord(stubOffset));
 }
-GetterSetter* CacheIRCloner::getWeakGetterSetterField(uint32_t stubOffset) {
-  // No barrier is required to clone a weak pointer.
-  return reinterpret_cast<GetterSetter*>(readStubWord(stubOffset));
-}
 JSObject* CacheIRCloner::getObjectField(uint32_t stubOffset) {
   return reinterpret_cast<JSObject*>(readStubWord(stubOffset));
 }
@@ -253,7 +251,11 @@ gc::AllocSite* CacheIRCloner::getAllocSiteField(uint32_t stubOffset) {
 jsid CacheIRCloner::getIdField(uint32_t stubOffset) {
   return jsid::fromRawBits(readStubWord(stubOffset));
 }
-const Value CacheIRCloner::getValueField(uint32_t stubOffset) {
+Value CacheIRCloner::getValueField(uint32_t stubOffset) {
+  return Value::fromRawBits(uint64_t(readStubInt64(stubOffset)));
+}
+Value CacheIRCloner::getWeakValueField(uint32_t stubOffset) {
+  // No barrier is required to clone a weak pointer.
   return Value::fromRawBits(uint64_t(readStubInt64(stubOffset)));
 }
 double CacheIRCloner::getDoubleField(uint32_t stubOffset) {
@@ -1042,11 +1044,10 @@ void IRGenerator::emitGuardGetterSetterSlot(NativeObject* holder,
   }
 }
 
-void GetPropIRGenerator::emitCallGetterResultGuards(NativeObject* obj,
-                                                    NativeObject* holder,
-                                                    HandleId id,
-                                                    PropertyInfo prop,
-                                                    ObjOperandId objId) {
+void IRGenerator::emitCallAccessorGuards(NativeObject* obj,
+                                         NativeObject* holder, HandleId id,
+                                         PropertyInfo prop, ObjOperandId objId,
+                                         AccessorKind accessorKind) {
   // Use the megamorphic guard if we're in megamorphic mode, except if |obj|
   // is a Window as GuardHasGetterSetter doesn't support this yet (Window may
   // require outerizing).
@@ -1054,6 +1055,24 @@ void GetPropIRGenerator::emitCallGetterResultGuards(NativeObject* obj,
   MOZ_ASSERT(holder->containsPure(id, prop));
 
   if (mode_ == ICState::Mode::Specialized || IsWindow(obj)) {
+    // Fast path for constant properties of objects with an ObjectFuse.
+    ObjectFuse* objFuse = nullptr;
+    if (canOptimizeConstantAccessorProperty(holder, prop, &objFuse)) {
+      ObjOperandId holderId;
+      if (obj == holder) {
+        writer.guardSpecificObject(objId, obj);
+        holderId = objId;
+      } else {
+        // Note: we don't need to call GeneratePrototypeGuards here because the
+        // ObjectFuse's generation will be updated when the proto chain is
+        // mutated.
+        TestMatchingNativeReceiver(writer, obj, objId);
+        holderId = writer.loadObject(holder);
+      }
+      emitGuardConstantAccessorProperty(holder, holderId, id, prop, objFuse);
+      return;
+    }
+
     TestMatchingNativeReceiver(writer, obj, objId);
 
     if (obj != holder) {
@@ -1063,15 +1082,25 @@ void GetPropIRGenerator::emitCallGetterResultGuards(NativeObject* obj,
       ObjOperandId holderId = writer.loadObject(holder);
       TestMatchingHolder(writer, holder, holderId);
 
-      emitGuardGetterSetterSlot(holder, prop, holderId, AccessorKind::Getter,
+      emitGuardGetterSetterSlot(holder, prop, holderId, accessorKind,
                                 /* holderIsConstant = */ true);
     } else {
-      emitGuardGetterSetterSlot(holder, prop, objId, AccessorKind::Getter);
+      emitGuardGetterSetterSlot(holder, prop, objId, accessorKind);
     }
   } else {
-    GetterSetter* gs = holder->getGetterSetter(prop);
-    writer.guardHasGetterSetter(objId, id, gs);
+    Value val = holder->getSlot(prop.slot());
+    MOZ_ASSERT(val.isPrivateGCThing());
+    MOZ_ASSERT(val.toGCThing()->is<GetterSetter>());
+    writer.guardHasGetterSetter(objId, id, val);
   }
+}
+
+void GetPropIRGenerator::emitCallGetterResultGuards(NativeObject* obj,
+                                                    NativeObject* holder,
+                                                    HandleId id,
+                                                    PropertyInfo prop,
+                                                    ObjOperandId objId) {
+  emitCallAccessorGuards(obj, holder, id, prop, objId, AccessorKind::Getter);
 }
 
 void GetPropIRGenerator::emitCallGetterResult(NativeGetPropKind kind,
@@ -1358,7 +1387,13 @@ AttachDecision GetPropIRGenerator::tryAttachWindowProxy(HandleObject obj,
       maybeEmitIdGuard(id);
       ObjOperandId windowObjId =
           GuardAndLoadWindowProxyWindow(writer, objId, windowObj);
-      EmitReadSlotResult(writer, windowObj, holder, *prop, windowObjId);
+      ObjectFuse* objFuse = nullptr;
+      if (holder == windowObj &&
+          canOptimizeConstantDataProperty(holder, *prop, &objFuse)) {
+        emitConstantDataPropertyResult(holder, windowObjId, id, *prop, objFuse);
+      } else {
+        EmitReadSlotResult(writer, windowObj, holder, *prop, windowObjId);
+      }
       writer.returnFromIC();
 
       trackAttached("GetProp.WindowProxySlot");
@@ -2134,6 +2169,10 @@ const JSClass* js::jit::ClassFor(GuardClassKind kind) {
       return &MapObject::class_;
     case GuardClassKind::Date:
       return &DateObject::class_;
+    case GuardClassKind::WeakMap:
+      return &WeakMapObject::class_;
+    case GuardClassKind::WeakSet:
+      return &WeakSetObject::class_;
   }
   MOZ_CRASH("unexpected kind");
 }
@@ -2158,6 +2197,8 @@ void IRGenerator::emitOptimisticClassGuard(ObjOperandId objId, JSObject* obj,
     case GuardClassKind::Set:
     case GuardClassKind::Map:
     case GuardClassKind::Date:
+    case GuardClassKind::WeakMap:
+    case GuardClassKind::WeakSet:
       MOZ_ASSERT(obj->hasClass(ClassFor(kind)));
       break;
 
@@ -2177,6 +2218,95 @@ void IRGenerator::emitOptimisticClassGuard(ObjOperandId objId, JSObject* obj,
   } else {
     writer.guardClass(objId, kind);
   }
+}
+
+bool IRGenerator::canOptimizeConstantDataProperty(NativeObject* holder,
+                                                  PropertyInfo prop,
+                                                  ObjectFuse** objFuse) {
+  MOZ_ASSERT(prop.isDataProperty());
+
+  if (mode_ != ICState::Mode::Specialized || !holder->hasObjectFuse()) {
+    return false;
+  }
+
+  *objFuse = cx_->zone()->objectFuses.getOrCreate(cx_, holder);
+  if (!*objFuse) {
+    cx_->recoverFromOutOfMemory();
+    return false;
+  }
+
+  // Warp supports nursery objects and nursery strings (all strings are
+  // atomized) but not nursery BigInts. This is very uncommon so we currently
+  // don't optimize such properties.
+  Value result = holder->getSlot(prop.slot());
+  if (result.isGCThing() && !result.toGCThing()->isTenured() &&
+      !result.isObject() && !result.isString()) {
+    MOZ_ASSERT(result.isBigInt());
+    return false;
+  }
+
+  return (*objFuse)->tryOptimizeConstantProperty(prop);
+}
+
+void IRGenerator::emitConstantDataPropertyResult(NativeObject* holder,
+                                                 ObjOperandId holderId,
+                                                 PropertyKey key,
+                                                 PropertyInfo prop,
+                                                 ObjectFuse* objFuse) {
+  MOZ_ASSERT(prop.isDataProperty());
+
+  auto data = objFuse->getConstantPropertyGuardData(prop);
+  bool canUseFastPath = !objFuse->hasInvalidatedConstantProperty();
+  writer.guardObjectFuseProperty(holderId, holder, objFuse, data.generation,
+                                 data.propIndex, data.propMask, canUseFastPath);
+#ifdef DEBUG
+  writer.assertPropertyLookup(holderId, key, prop.slot());
+#endif
+
+  // Use LoadObjectResult if the value is an object to support nursery objects
+  // in Warp.
+  Value result = holder->getSlot(prop.slot());
+  if (result.isObject()) {
+    ObjOperandId resObjId = writer.loadObject(&result.toObject());
+    writer.loadObjectResult(resObjId);
+  } else {
+    writer.loadValueResult(result);
+  }
+}
+
+bool IRGenerator::canOptimizeConstantAccessorProperty(NativeObject* holder,
+                                                      PropertyInfo prop,
+                                                      ObjectFuse** objFuse) {
+  MOZ_ASSERT(prop.isAccessorProperty());
+  MOZ_ASSERT(holder->getSlot(prop.slot()).toGCThing()->is<GetterSetter>());
+
+  if (mode_ != ICState::Mode::Specialized || !holder->hasObjectFuse()) {
+    return false;
+  }
+
+  *objFuse = cx_->zone()->objectFuses.getOrCreate(cx_, holder);
+  if (!*objFuse) {
+    cx_->recoverFromOutOfMemory();
+    return false;
+  }
+
+  return (*objFuse)->tryOptimizeConstantProperty(prop);
+}
+
+void IRGenerator::emitGuardConstantAccessorProperty(NativeObject* holder,
+                                                    ObjOperandId holderId,
+                                                    PropertyKey key,
+                                                    PropertyInfo prop,
+                                                    ObjectFuse* objFuse) {
+  MOZ_ASSERT(prop.isAccessorProperty());
+
+  auto data = objFuse->getConstantPropertyGuardData(prop);
+  bool canUseFastPath = !objFuse->hasInvalidatedConstantProperty();
+  writer.guardObjectFuseProperty(holderId, holder, objFuse, data.generation,
+                                 data.propIndex, data.propMask, canUseFastPath);
+#ifdef DEBUG
+  writer.assertPropertyLookup(holderId, key, prop.slot());
+#endif
 }
 
 static void AssertArgumentsCustomDataProp(ArgumentsObject* obj,
@@ -3586,14 +3716,20 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameValue(ObjOperandId objId,
     writer.loadDynamicSlotResult(objId, dynamicSlotOffset);
   } else if (holder == &globalLexical->global()) {
     MOZ_ASSERT(globalLexical->global().isGenerationCountedGlobal());
-    writer.guardGlobalGeneration(
-        globalLexical->global().generationCount(),
-        globalLexical->global().addressOfGenerationCount());
-    ObjOperandId holderId = writer.loadObject(holder);
+    ObjectFuse* objFuse = nullptr;
+    if (canOptimizeConstantDataProperty(holder, *prop, &objFuse)) {
+      ObjOperandId holderId = writer.loadObject(holder);
+      emitConstantDataPropertyResult(holder, holderId, id, *prop, objFuse);
+    } else {
+      writer.guardGlobalGeneration(
+          globalLexical->global().generationCount(),
+          globalLexical->global().addressOfGenerationCount());
+      ObjOperandId holderId = writer.loadObject(holder);
 #ifdef DEBUG
-    writer.assertPropertyLookup(holderId, id, prop->slot());
+      writer.assertPropertyLookup(holderId, id, prop->slot());
 #endif
-    EmitLoadSlotResult(writer, holderId, holder, *prop);
+      EmitLoadSlotResult(writer, holderId, holder, *prop);
+    }
   } else {
     // Check the prototype chain from the global to the holder
     // prototype. Ignore the global lexical scope as it doesn't figure
@@ -3655,24 +3791,32 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameGetter(ObjOperandId objId,
   bool needsWindowProxy =
       IsWindow(global) && GetterNeedsWindowProxyThis(holder, *prop);
 
-  // Shape guard for global lexical.
-  writer.guardShape(objId, globalLexical->shape());
-
-  // Guard on the shape of the GlobalObject.
-  ObjOperandId globalId = writer.loadEnclosingEnvironment(objId);
-  writer.guardShape(globalId, global->shape());
-
-  if (holder != global) {
-    // Shape guard holder.
-    ObjOperandId holderId = writer.loadObject(holder);
-    writer.guardShape(holderId, holder->shape());
-    emitGuardGetterSetterSlot(holder, *prop, holderId, AccessorKind::Getter,
-                              /* holderIsConstant = */ true);
+  ObjOperandId globalId;
+  ObjectFuse* objFuse = nullptr;
+  if (holder == global &&
+      canOptimizeConstantAccessorProperty(global, *prop, &objFuse)) {
+    globalId = writer.loadObject(global);
+    emitGuardConstantAccessorProperty(global, globalId, id, *prop, objFuse);
   } else {
-    // Note: pass true for |holderIsConstant| because the holder must be the
-    // current global object.
-    emitGuardGetterSetterSlot(holder, *prop, globalId, AccessorKind::Getter,
-                              /* holderIsConstant = */ true);
+    // Shape guard for global lexical.
+    writer.guardShape(objId, globalLexical->shape());
+
+    // Guard on the shape of the GlobalObject.
+    globalId = writer.loadEnclosingEnvironment(objId);
+    writer.guardShape(globalId, global->shape());
+
+    if (holder != global) {
+      // Shape guard holder.
+      ObjOperandId holderId = writer.loadObject(holder);
+      writer.guardShape(holderId, holder->shape());
+      emitGuardGetterSetterSlot(holder, *prop, holderId, AccessorKind::Getter,
+                                /* holderIsConstant = */ true);
+    } else {
+      // Note: pass true for |holderIsConstant| because the holder must be the
+      // current global object.
+      emitGuardGetterSetterSlot(holder, *prop, globalId, AccessorKind::Getter,
+                                /* holderIsConstant = */ true);
+    }
   }
 
   if (CanAttachDOMGetterSetter(cx_, JSJitInfo::Getter, global, holder, *prop,
@@ -4621,18 +4765,18 @@ static Maybe<PropertyInfo> LookupShapeForSetSlot(JSOp op, NativeObject* obj,
   return prop;
 }
 
-static bool CanAttachNativeSetSlot(JSOp op, JSObject* obj, PropertyKey id,
-                                   Maybe<PropertyInfo>* prop) {
+SetSlotOptimizable SetPropIRGenerator::canAttachNativeSetSlot(
+    JSObject* obj, PropertyKey id, Maybe<PropertyInfo>* prop) {
   if (!obj->is<NativeObject>()) {
-    return false;
+    return SetSlotOptimizable::No;
   }
 
-  if (Watchtower::watchesPropertyValueChange(&obj->as<NativeObject>())) {
-    return false;
+  *prop = LookupShapeForSetSlot(JSOp(*pc_), &obj->as<NativeObject>(), id);
+  if (!prop->isSome()) {
+    return SetSlotOptimizable::No;
   }
 
-  *prop = LookupShapeForSetSlot(op, &obj->as<NativeObject>(), id);
-  return prop->isSome();
+  return Watchtower::canOptimizeSetSlot(cx_, &obj->as<NativeObject>(), **prop);
 }
 
 // There is no need to guard on the shape. Global lexical bindings are
@@ -4660,8 +4804,14 @@ AttachDecision SetPropIRGenerator::tryAttachNativeSetSlot(HandleObject obj,
                                                           HandleId id,
                                                           ValOperandId rhsId) {
   Maybe<PropertyInfo> prop;
-  if (!CanAttachNativeSetSlot(JSOp(*pc_), obj, id, &prop)) {
-    return AttachDecision::NoAction;
+  SetSlotOptimizable optimizable = canAttachNativeSetSlot(obj, id, &prop);
+  switch (optimizable) {
+    case SetSlotOptimizable::No:
+      return AttachDecision::NoAction;
+    case SetSlotOptimizable::NotYet:
+      return AttachDecision::TemporarilyUnoptimizable;
+    case SetSlotOptimizable::Yes:
+      break;
   }
 
   if (mode_ == ICState::Mode::Megamorphic && cacheKind_ == CacheKind::SetProp &&
@@ -4673,6 +4823,12 @@ AttachDecision SetPropIRGenerator::tryAttachNativeSetSlot(HandleObject obj,
 
   NativeObject* nobj = &obj->as<NativeObject>();
   if (!IsGlobalLexicalSetGName(JSOp(*pc_), nobj, *prop)) {
+    // If the object has an ObjectFuse, we can only optimize for this specific
+    // object so we have to emit GuardSpecificObject. We don't need to do this
+    // for the global object because there's only one object with that shape.
+    if (nobj->hasObjectFuse() && !nobj->is<GlobalObject>()) {
+      writer.guardSpecificObject(objId, nobj);
+    }
     TestMatchingNativeReceiver(writer, nobj, objId);
   }
   EmitStoreSlotAndReturn(writer, objId, nobj, *prop, rhsId);
@@ -4904,28 +5060,7 @@ AttachDecision SetPropIRGenerator::tryAttachSetter(HandleObject obj,
 
   maybeEmitIdGuard(id);
 
-  // Use the megamorphic guard if we're in megamorphic mode, except if |obj|
-  // is a Window as GuardHasGetterSetter doesn't support this yet (Window may
-  // require outerizing).
-  if (mode_ == ICState::Mode::Specialized || IsWindow(nobj)) {
-    TestMatchingNativeReceiver(writer, nobj, objId);
-
-    if (nobj != holder) {
-      GeneratePrototypeGuards(writer, nobj, holder, objId);
-
-      // Guard on the holder's shape.
-      ObjOperandId holderId = writer.loadObject(holder);
-      TestMatchingHolder(writer, holder, holderId);
-
-      emitGuardGetterSetterSlot(holder, *prop, holderId, AccessorKind::Setter,
-                                /* holderIsConstant = */ true);
-    } else {
-      emitGuardGetterSetterSlot(holder, *prop, objId, AccessorKind::Setter);
-    }
-  } else {
-    GetterSetter* gs = holder->getGetterSetter(*prop);
-    writer.guardHasGetterSetter(objId, id, gs);
-  }
+  emitCallAccessorGuards(nobj, holder, id, *prop, objId, AccessorKind::Setter);
 
   if (CanAttachDOMGetterSetter(cx_, JSJitInfo::Setter, nobj, holder, *prop,
                                mode_)) {
@@ -5026,7 +5161,8 @@ static bool CanAttachAddElement(NativeObject* obj, bool isInit,
     const JSClass* clasp = obj->getClass();
     if (clasp != &ArrayObject::class_ &&
         (clasp->getAddProperty() || clasp->getResolve() ||
-         clasp->getOpsLookupProperty() || clasp->getOpsSetProperty())) {
+         clasp->getOpsLookupProperty() || clasp->getOpsSetProperty() ||
+         obj->hasUnpreservedWrapper())) {
       return false;
     }
 
@@ -5416,8 +5552,11 @@ AttachDecision SetPropIRGenerator::tryAttachDOMProxyExpando(
   }
 
   Maybe<PropertyInfo> prop;
-  if (CanAttachNativeSetSlot(JSOp(*pc_), expandoObj, id, &prop)) {
+  SetSlotOptimizable optimizable =
+      canAttachNativeSetSlot(expandoObj, id, &prop);
+  if (optimizable == SetSlotOptimizable::Yes) {
     auto* nativeExpandoObj = &expandoObj->as<NativeObject>();
+    MOZ_ASSERT(!nativeExpandoObj->hasObjectFuse());
 
     maybeEmitIdGuard(id);
     ObjOperandId expandoObjId = guardDOMProxyExpandoObjectAndShape(
@@ -5428,6 +5567,7 @@ AttachDecision SetPropIRGenerator::tryAttachDOMProxyExpando(
     trackAttached("SetProp.DOMProxyExpandoSlot");
     return AttachDecision::Attach;
   }
+  MOZ_ASSERT(optimizable == SetSlotOptimizable::No);
 
   NativeObject* holder = nullptr;
   if (CanAttachSetter(cx_, pc_, expandoObj, id, &holder, &prop)) {
@@ -5568,12 +5708,20 @@ AttachDecision SetPropIRGenerator::tryAttachWindowProxy(HandleObject obj,
   GlobalObject* windowObj = cx_->global();
 
   Maybe<PropertyInfo> prop;
-  if (!CanAttachNativeSetSlot(JSOp(*pc_), windowObj, id, &prop)) {
-    return AttachDecision::NoAction;
+  SetSlotOptimizable optimizable = canAttachNativeSetSlot(windowObj, id, &prop);
+  switch (optimizable) {
+    case SetSlotOptimizable::No:
+      return AttachDecision::NoAction;
+    case SetSlotOptimizable::NotYet:
+      return AttachDecision::TemporarilyUnoptimizable;
+    case SetSlotOptimizable::Yes:
+      break;
   }
 
   maybeEmitIdGuard(id);
 
+  // Note: we don't need to GuardSpecificObject here for the ObjectFuse,
+  // because this GlobalObject is the only object with this shape.
   ObjOperandId windowObjId =
       GuardAndLoadWindowProxyWindow(writer, objId, windowObj);
   writer.guardShape(windowObjId, windowObj->shape());
@@ -5804,7 +5952,10 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(
   DebugOnly<uint32_t> index;
   MOZ_ASSERT_IF(obj->is<ArrayObject>(), !IdIsIndex(id, &index));
   bool mustCallAddPropertyHook =
-      obj->getClass()->getAddProperty() && !obj->is<ArrayObject>();
+      !obj->is<ArrayObject>() &&
+      (obj->getClass()->getAddProperty() ||
+       (obj->getClass()->preservesWrapper() &&
+        !oldShape->hasObjectFlag(ObjectFlag::HasPreservedWrapper)));
 
   if (mustCallAddPropertyHook) {
     writer.addSlotAndCallAddPropHook(objId, rhsValId, newShape);
@@ -10838,6 +10989,108 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapSet() {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachWeakMapGet() {
+  // Ensure |this| is a WeakMapObject.
+  if (!thisval_.isObject() || !thisval_.toObject().is<WeakMapObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Need a single object argument.
+  if (args_.length() != 1 || !args_[0].isObject()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'get' native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard |this| is a WeakMapObject.
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  emitOptimisticClassGuard(objId, &thisval_.toObject(),
+                           GuardClassKind::WeakMap);
+
+  // Guard the argument is an object.
+  ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
+  ObjOperandId objArgId = writer.guardToObject(argId);
+
+  writer.weakMapGetObjectResult(objId, objArgId);
+  writer.returnFromIC();
+
+  trackAttached("WeakMapGet");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachWeakMapHas() {
+  // Ensure |this| is a WeakMapObject.
+  if (!thisval_.isObject() || !thisval_.toObject().is<WeakMapObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Need a single object argument.
+  if (args_.length() != 1 || !args_[0].isObject()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'has' native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard |this| is a WeakMapObject.
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  emitOptimisticClassGuard(objId, &thisval_.toObject(),
+                           GuardClassKind::WeakMap);
+
+  // Guard the argument is an object.
+  ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
+  ObjOperandId objArgId = writer.guardToObject(argId);
+
+  writer.weakMapHasObjectResult(objId, objArgId);
+  writer.returnFromIC();
+
+  trackAttached("WeakMapHas");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachWeakSetHas() {
+  // Ensure |this| is a WeakSetObject.
+  if (!thisval_.isObject() || !thisval_.toObject().is<WeakSetObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Need a single object argument.
+  if (args_.length() != 1 || !args_[0].isObject()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'has' native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard |this| is a WeakSetObject.
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+  emitOptimisticClassGuard(objId, &thisval_.toObject(),
+                           GuardClassKind::WeakSet);
+
+  // Guard the argument is an object.
+  ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
+  ObjOperandId objArgId = writer.guardToObject(argId);
+
+  writer.weakSetHasObjectResult(objId, objArgId);
+  writer.returnFromIC();
+
+  trackAttached("WeakSetHas");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachDateGetTime() {
   // Ensure |this| is a DateObject.
   if (!thisval_.isObject() || !thisval_.toObject().is<DateObject>()) {
@@ -11043,6 +11296,332 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayFill() {
+  // Expected arguments: value, optional start, optional end.
+  if (args_.length() < 1 || args_.length() > 3) {
+    return AttachDecision::NoAction;
+  }
+
+  if (!isFirstStub()) {
+    // Attach only once to prevent slowdowns for polymorphic calls.
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure |this| is a TypedArrayObject.
+  if (!thisval_.isObject() || !thisval_.toObject().is<TypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Both arguments must be valid indices.
+  int64_t unusedIndex;
+  if (args_.length() > 1 && !ValueIsInt64Index(args_[1], &unusedIndex)) {
+    return AttachDecision::NoAction;
+  }
+  if (args_.length() > 2 && !ValueIsInt64Index(args_[2], &unusedIndex)) {
+    return AttachDecision::NoAction;
+  }
+
+  auto* tarr = &thisval_.toObject().as<TypedArrayObject>();
+  auto elementType = tarr->type();
+
+  // Detached buffers throw.
+  if (tarr->hasDetachedBuffer()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Must not be an immutable typed array.
+  if (tarr->is<ImmutableTypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Resizable typed arrays not yet supported.
+  if (tarr->is<ResizableTypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Don't attach if the input type doesn't match the guard added below.
+  if (!ValueCanConvertToNumeric(elementType, args_[0])) {
+    return AttachDecision::NoAction;
+  }
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the `fill` native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard this is an object.
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+
+  // Shape guard to check class.
+  writer.guardShapeForClass(objId, tarr->shape());
+
+  // Guard the array buffer is not detached.
+  writer.guardHasAttachedArrayBuffer(objId);
+
+  ValOperandId fillValId = loadArgument(calleeId, ArgumentKind::Arg0);
+  OperandId fillNumericId = emitNumericGuard(fillValId, args_[0], elementType);
+
+  // Convert |start| to IntPtr.
+  IntPtrOperandId intPtrStartId;
+  if (args_.length() > 1) {
+    ValOperandId startId = loadArgument(calleeId, ArgumentKind::Arg1);
+    intPtrStartId =
+        guardToIntPtrIndex(args_[1], startId, /* supportOOB = */ false);
+  } else {
+    // Absent first argument defaults to zero.
+    intPtrStartId = writer.loadInt32AsIntPtrConstant(0);
+  }
+
+  // Convert |end| to IntPtr.
+  IntPtrOperandId intPtrEndId;
+  if (args_.length() > 2) {
+    ValOperandId endId = loadArgument(calleeId, ArgumentKind::Arg2);
+    intPtrEndId = guardToIntPtrIndex(args_[2], endId, /* supportOOB = */ false);
+  } else {
+    // Absent second argument defaults to the typed array length.
+    intPtrEndId = writer.loadArrayBufferViewLength(objId);
+  }
+
+  writer.typedArrayFillResult(objId, fillNumericId, intPtrStartId, intPtrEndId,
+                              elementType);
+  writer.returnFromIC();
+
+  trackAttached("TypedArrayFill");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachTypedArraySet() {
+  // Expected arguments: source (typed array), optional offset (int32).
+  if (args_.length() < 1 || args_.length() > 2) {
+    return AttachDecision::NoAction;
+  }
+
+  if (!isFirstStub()) {
+    // Attach only once to prevent slowdowns for polymorphic calls.
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure |this| is a TypedArrayObject.
+  if (!thisval_.isObject() || !thisval_.toObject().is<TypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure first argument is a TypedArrayObject.
+  if (!args_[0].isObject() || !args_[0].toObject().is<TypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure optional second argument is a non-negative index.
+  uint64_t targetOffset = 0;
+  if (args_.length() > 1) {
+    int64_t offsetIndex;
+    if (!ValueIsInt64Index(args_[1], &offsetIndex) || offsetIndex < 0) {
+      return AttachDecision::NoAction;
+    }
+    targetOffset = uint64_t(offsetIndex);
+  }
+
+  auto* tarr = &thisval_.toObject().as<TypedArrayObject>();
+  auto* source = &args_[0].toObject().as<TypedArrayObject>();
+
+  // Detached buffers throw.
+  if (tarr->hasDetachedBuffer() || source->hasDetachedBuffer()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Target must not be an immutable typed array.
+  if (tarr->is<ImmutableTypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Typed array contents must be compatible.
+  if (Scalar::isBigIntType(tarr->type()) !=
+      Scalar::isBigIntType(source->type())) {
+    return AttachDecision::NoAction;
+  }
+
+  // `set()` throws if `sourceLength + targetOffset > targetLength`.
+  size_t targetLength = tarr->length().valueOr(0);
+  size_t sourceLength = source->length().valueOr(0);
+  if (targetOffset > targetLength ||
+      sourceLength > targetLength - targetOffset) {
+    return AttachDecision::NoAction;
+  }
+
+  // Resizable typed arrays not yet supported.
+  if (tarr->is<ResizableTypedArrayObject>() ||
+      source->is<ResizableTypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Infallible operation if bit-wise copying is possible.
+  bool canUseBitwiseCopy = CanUseBitwiseCopy(tarr->type(), source->type());
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the `set` native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard this is an object.
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+
+  // Shape guard to check class.
+  writer.guardShapeForClass(objId, tarr->shape());
+
+  // Guard the array buffer is not detached.
+  writer.guardHasAttachedArrayBuffer(objId);
+
+  // Guard first argument is an object.
+  ValOperandId sourceId = loadArgument(calleeId, ArgumentKind::Arg0);
+  ObjOperandId sourceObjId = writer.guardToObject(sourceId);
+
+  // Shape guard to check class of first argument.
+  writer.guardShapeForClass(sourceObjId, source->shape());
+
+  // Guard the source is not detached. (Immutable typed arrays can't get
+  // detached.)
+  if (!source->is<ImmutableTypedArrayObject>()) {
+    writer.guardHasAttachedArrayBuffer(sourceObjId);
+  }
+
+  // Convert offset to IntPtr.
+  IntPtrOperandId intPtrOffsetId;
+  if (args_.length() > 1) {
+    ValOperandId offsetId = loadArgument(calleeId, ArgumentKind::Arg1);
+    intPtrOffsetId =
+        guardToIntPtrIndex(args_[1], offsetId, /* supportOOB = */ false);
+    writer.guardIntPtrIsNonNegative(intPtrOffsetId);
+  } else {
+    // Absent first argument defaults to zero.
+    intPtrOffsetId = writer.loadInt32AsIntPtrConstant(0);
+  }
+
+  writer.typedArraySetResult(objId, sourceObjId, intPtrOffsetId,
+                             canUseBitwiseCopy);
+  writer.returnFromIC();
+
+  trackAttached("TypedArraySet");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachTypedArraySubarray() {
+  // Only handle argc <= 2.
+  if (args_.length() > 2) {
+    return AttachDecision::NoAction;
+  }
+
+  if (!isFirstStub()) {
+    // Attach only once to prevent slowdowns for polymorphic calls.
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure |this| is a TypedArrayObject.
+  if (!thisval_.isObject() || !thisval_.toObject().is<TypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Both arguments must be valid indices.
+  int64_t unusedIndex;
+  if (args_.length() > 0 && !ValueIsInt64Index(args_[0], &unusedIndex)) {
+    return AttachDecision::NoAction;
+  }
+  if (args_.length() > 1 && !ValueIsInt64Index(args_[1], &unusedIndex)) {
+    return AttachDecision::NoAction;
+  }
+
+  Rooted<TypedArrayObject*> tarr(cx_,
+                                 &thisval_.toObject().as<TypedArrayObject>());
+
+  // Detached buffer throws.
+  if (tarr->hasDetachedBuffer()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Resizable typed arrays not yet supported.
+  if (tarr->is<ResizableTypedArrayObject>()) {
+    return AttachDecision::NoAction;
+  }
+
+  // TypedArray species fuse must still be intact.
+  if (!cx_->realm()->realmFuses.optimizeTypedArraySpeciesFuse.intact()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure |tarr|'s prototype is the actual concrete TypedArray.prototype.
+  auto protoKey = StandardProtoKeyOrNull(tarr);
+  auto* proto = cx_->global()->maybeGetPrototype(protoKey);
+  if (!proto || tarr->staticPrototype() != proto) {
+    return AttachDecision::NoAction;
+  }
+
+  // Ensure no own "constructor" property.
+  if (tarr->containsPure(cx_->names().constructor)) {
+    return AttachDecision::NoAction;
+  }
+
+  Rooted<TypedArrayObject*> templateObj(
+      cx_, TypedArrayObject::GetTemplateObjectForBufferView(cx_, tarr));
+  if (!templateObj) {
+    cx_->recoverFromOutOfMemory();
+    return AttachDecision::NoAction;
+  }
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the `subarray` native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard this is an object.
+  ValOperandId thisValId = loadThis(calleeId);
+  ObjOperandId objId = writer.guardToObject(thisValId);
+
+  // Shape guard to check class and prototype, and to ensure no own
+  // "constructor" property is present.
+  writer.guardShape(objId, tarr->shape());
+
+  // Guard the array buffer is not detached. (Immutable typed arrays can't get
+  // detached.)
+  if (!tarr->is<ImmutableTypedArrayObject>()) {
+    writer.guardHasAttachedArrayBuffer(objId);
+  }
+
+  // Guard the fuse is intact.
+  writer.guardFuse(RealmFuses::FuseIndex::OptimizeTypedArraySpeciesFuse);
+
+  // Convert |start| to IntPtr.
+  IntPtrOperandId intPtrStartId;
+  if (args_.length() > 0) {
+    ValOperandId startId = loadArgument(calleeId, ArgumentKind::Arg0);
+    intPtrStartId =
+        guardToIntPtrIndex(args_[0], startId, /* supportOOB = */ false);
+  } else {
+    // Absent first argument defaults to zero.
+    intPtrStartId = writer.loadInt32AsIntPtrConstant(0);
+  }
+
+  // Convert |end| to IntPtr.
+  IntPtrOperandId intPtrEndId;
+  if (args_.length() > 1) {
+    ValOperandId endId = loadArgument(calleeId, ArgumentKind::Arg1);
+    intPtrEndId = guardToIntPtrIndex(args_[1], endId, /* supportOOB = */ false);
+  } else {
+    // Absent second argument defaults to the typed array length.
+    intPtrEndId = writer.loadArrayBufferViewLength(objId);
+  }
+
+  writer.typedArraySubarrayResult(templateObj, objId, intPtrStartId,
+                                  intPtrEndId);
+  writer.returnFromIC();
+
+  trackAttached("TypedArraySubarray");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachIsTypedArray(
     bool isPossiblyWrapped) {
   // Self-hosted code calls this with a single object argument.
@@ -11083,68 +11662,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsTypedArrayConstructor() {
   return AttachDecision::Attach;
 }
 
-AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayByteOffset() {
-  // Self-hosted code calls this with a single TypedArrayObject argument.
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
-  MOZ_ASSERT(args_[0].toObject().is<TypedArrayObject>());
-
-  auto* tarr = &args_[0].toObject().as<TypedArrayObject>();
-
-  // Initialize the input operand.
-  initializeInputOperand();
-
-  // Note: we don't need to call emitNativeCalleeGuard for intrinsics.
-
-  ValOperandId argId = loadArgumentIntrinsic(ArgumentKind::Arg0);
-  ObjOperandId objArgId = writer.guardToObject(argId);
-
-  EmitGuardTypedArray(writer, tarr, objArgId);
-
-  size_t byteOffset = tarr->byteOffsetMaybeOutOfBounds();
-  if (!tarr->is<ResizableTypedArrayObject>()) {
-    if (byteOffset <= INT32_MAX) {
-      writer.arrayBufferViewByteOffsetInt32Result(objArgId);
-    } else {
-      writer.arrayBufferViewByteOffsetDoubleResult(objArgId);
-    }
-  } else {
-    if (byteOffset <= INT32_MAX) {
-      writer.resizableTypedArrayByteOffsetMaybeOutOfBoundsInt32Result(objArgId);
-    } else {
-      writer.resizableTypedArrayByteOffsetMaybeOutOfBoundsDoubleResult(
-          objArgId);
-    }
-  }
-
-  writer.returnFromIC();
-
-  trackAttached("IntrinsicTypedArrayByteOffset");
-  return AttachDecision::Attach;
-}
-
-AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayElementSize() {
-  // Self-hosted code calls this with a single TypedArrayObject argument.
-  MOZ_ASSERT(args_.length() == 1);
-  MOZ_ASSERT(args_[0].isObject());
-  MOZ_ASSERT(args_[0].toObject().is<TypedArrayObject>());
-
-  // Initialize the input operand.
-  initializeInputOperand();
-
-  // Note: we don't need to call emitNativeCalleeGuard for intrinsics.
-
-  ValOperandId argId = loadArgumentIntrinsic(ArgumentKind::Arg0);
-  ObjOperandId objArgId = writer.guardToObject(argId);
-  writer.typedArrayElementSizeResult(objArgId);
-  writer.returnFromIC();
-
-  trackAttached("TypedArrayElementSize");
-  return AttachDecision::Attach;
-}
-
 AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayLength(
-    bool isPossiblyWrapped, bool allowOutOfBounds) {
+    bool isPossiblyWrapped) {
   // Self-hosted code calls this with a single, possibly wrapped,
   // TypedArrayObject argument.
   MOZ_ASSERT(args_.length() == 1);
@@ -11159,16 +11678,13 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayLength(
 
   auto* tarr = &args_[0].toObject().as<TypedArrayObject>();
 
-  // Don't optimize when a resizable TypedArray is out-of-bounds and
-  // out-of-bounds isn't allowed.
+  // Don't optimize when a resizable TypedArray is out-of-bounds.
   auto length = tarr->length();
   if (length.isNothing() && !tarr->hasDetachedBuffer()) {
     MOZ_ASSERT(tarr->is<ResizableTypedArrayObject>());
     MOZ_ASSERT(tarr->isOutOfBounds());
 
-    if (!allowOutOfBounds) {
-      return AttachDecision::NoAction;
-    }
+    return AttachDecision::NoAction;
   }
 
   // Initialize the input operand.
@@ -11192,9 +11708,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayLength(
       writer.loadArrayBufferViewLengthDoubleResult(objArgId);
     }
   } else {
-    if (!allowOutOfBounds) {
-      writer.guardResizableArrayBufferViewInBoundsOrDetached(objArgId);
-    }
+    writer.guardResizableArrayBufferViewInBoundsOrDetached(objArgId);
 
     if (length.valueOr(0) <= INT32_MAX) {
       writer.resizableTypedArrayLengthInt32Result(objArgId);
@@ -11505,45 +12019,76 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayConstructor() {
   return AttachDecision::Attach;
 }
 
-AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayConstructor() {
+AttachDecision
+InlinableNativeIRGenerator::tryAttachTypedArrayConstructorFromLength() {
   MOZ_ASSERT(flags_.isConstructing());
+  MOZ_ASSERT(args_.length() == 0 || args_[0].isInt32());
 
-  if (args_.length() == 0 || args_.length() > 3) {
+  // Expected arguments: Optional length (int32)
+  if (args_.length() > 1) {
     return AttachDecision::NoAction;
   }
 
-  if (!isFirstStub()) {
-    // Attach only once to prevent slowdowns for polymorphic calls.
+  int32_t length = args_.length() > 0 ? args_[0].toInt32() : 0;
+
+  Scalar::Type type = TypedArrayConstructorType(target_);
+  Rooted<TypedArrayObject*> templateObj(cx_);
+  if (!TypedArrayObject::GetTemplateObjectForLength(cx_, type, length,
+                                                    &templateObj)) {
+    cx_->recoverFromOutOfMemory();
     return AttachDecision::NoAction;
   }
 
-  // The first argument must be int32 or a non-proxy object.
-  if (!args_[0].isInt32() && !args_[0].isObject()) {
+  // This can happen for large length values.
+  if (!templateObj) {
     return AttachDecision::NoAction;
   }
-  if (args_[0].isObject() && args_[0].toObject().is<ProxyObject>()) {
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee and newTarget are this TypedArray constructor function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  Int32OperandId lengthId;
+  if (args_.length() > 0) {
+    ValOperandId arg0Id = loadArgument(calleeId, ArgumentKind::Arg0);
+    lengthId = writer.guardToInt32(arg0Id);
+  } else {
+    lengthId = writer.loadInt32Constant(0);
+  }
+  writer.newTypedArrayFromLengthResult(templateObj, lengthId);
+  writer.returnFromIC();
+
+  trackAttached("TypedArrayConstructorFromLength");
+  return AttachDecision::Attach;
+}
+
+AttachDecision
+InlinableNativeIRGenerator::tryAttachTypedArrayConstructorFromArrayBuffer() {
+  MOZ_ASSERT(flags_.isConstructing());
+  MOZ_ASSERT(args_.length() > 0);
+  MOZ_ASSERT(args_[0].isObject());
+
+  // Expected arguments: array buffer, optional byteOffset, optional length
+  if (args_.length() > 3) {
     return AttachDecision::NoAction;
   }
 
 #ifdef JS_CODEGEN_X86
   // Unfortunately NewTypedArrayFromArrayBufferResult needs more registers than
   // we can easily support on 32-bit x86 for now.
-  if (args_[0].isObject() &&
-      args_[0].toObject().is<ArrayBufferObjectMaybeShared>()) {
-    return AttachDecision::NoAction;
-  }
-#endif
+  return AttachDecision::NoAction;
+#else
+  Scalar::Type type = TypedArrayConstructorType(target_);
 
-  RootedObject templateObj(cx_);
-  if (!TypedArrayObject::GetTemplateObjectForNative(cx_, target_->native(),
-                                                    args_, &templateObj)) {
-    cx_->recoverFromOutOfMemory();
-    return AttachDecision::NoAction;
-  }
+  Rooted<ArrayBufferObjectMaybeShared*> obj(
+      cx_, &args_[0].toObject().as<ArrayBufferObjectMaybeShared>());
 
+  Rooted<TypedArrayObject*> templateObj(
+      cx_, TypedArrayObject::GetTemplateObjectForBuffer(cx_, type, obj));
   if (!templateObj) {
-    // This can happen for large length values.
-    MOZ_ASSERT(args_[0].isInt32());
+    cx_->recoverFromOutOfMemory();
     return AttachDecision::NoAction;
   }
 
@@ -11554,55 +12099,116 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayConstructor() {
   ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
 
   ValOperandId arg0Id = loadArgument(calleeId, ArgumentKind::Arg0);
+  ObjOperandId objId = writer.guardToObject(arg0Id);
 
-  if (args_[0].isInt32()) {
-    // From length.
-    Int32OperandId lengthId = writer.guardToInt32(arg0Id);
-    writer.newTypedArrayFromLengthResult(templateObj, lengthId);
+  if (obj->is<FixedLengthArrayBufferObject>()) {
+    writer.guardClass(objId, GuardClassKind::FixedLengthArrayBuffer);
+  } else if (obj->is<FixedLengthSharedArrayBufferObject>()) {
+    writer.guardClass(objId, GuardClassKind::FixedLengthSharedArrayBuffer);
+  } else if (obj->is<ResizableArrayBufferObject>()) {
+    writer.guardClass(objId, GuardClassKind::ResizableArrayBuffer);
+  } else if (obj->is<GrowableSharedArrayBufferObject>()) {
+    writer.guardClass(objId, GuardClassKind::GrowableSharedArrayBuffer);
   } else {
-    JSObject* obj = &args_[0].toObject();
-    ObjOperandId objId = writer.guardToObject(arg0Id);
-
-    if (obj->is<ArrayBufferObjectMaybeShared>()) {
-      // From ArrayBuffer.
-      if (obj->is<FixedLengthArrayBufferObject>()) {
-        writer.guardClass(objId, GuardClassKind::FixedLengthArrayBuffer);
-      } else if (obj->is<FixedLengthSharedArrayBufferObject>()) {
-        writer.guardClass(objId, GuardClassKind::FixedLengthSharedArrayBuffer);
-      } else if (obj->is<ResizableArrayBufferObject>()) {
-        writer.guardClass(objId, GuardClassKind::ResizableArrayBuffer);
-      } else if (obj->is<GrowableSharedArrayBufferObject>()) {
-        writer.guardClass(objId, GuardClassKind::GrowableSharedArrayBuffer);
-      } else {
-        MOZ_ASSERT(obj->is<ImmutableArrayBufferObject>());
-        writer.guardClass(objId, GuardClassKind::ImmutableArrayBuffer);
-      }
-      ValOperandId byteOffsetId;
-      if (args_.length() > 1) {
-        byteOffsetId = loadArgument(calleeId, ArgumentKind::Arg1);
-      } else {
-        byteOffsetId = writer.loadUndefined();
-      }
-      ValOperandId lengthId;
-      if (args_.length() > 2) {
-        lengthId = loadArgument(calleeId, ArgumentKind::Arg2);
-      } else {
-        lengthId = writer.loadUndefined();
-      }
-      writer.newTypedArrayFromArrayBufferResult(templateObj, objId,
-                                                byteOffsetId, lengthId);
-    } else {
-      // From Array-like.
-      writer.guardIsNotArrayBufferMaybeShared(objId);
-      writer.guardIsNotProxy(objId);
-      writer.newTypedArrayFromArrayResult(templateObj, objId);
-    }
+    MOZ_ASSERT(obj->is<ImmutableArrayBufferObject>());
+    writer.guardClass(objId, GuardClassKind::ImmutableArrayBuffer);
   }
 
+  ValOperandId byteOffsetId;
+  if (args_.length() > 1) {
+    byteOffsetId = loadArgument(calleeId, ArgumentKind::Arg1);
+  } else {
+    byteOffsetId = writer.loadUndefined();
+  }
+
+  ValOperandId lengthId;
+  if (args_.length() > 2) {
+    lengthId = loadArgument(calleeId, ArgumentKind::Arg2);
+  } else {
+    lengthId = writer.loadUndefined();
+  }
+
+  writer.newTypedArrayFromArrayBufferResult(templateObj, objId, byteOffsetId,
+                                            lengthId);
   writer.returnFromIC();
 
-  trackAttached("TypedArrayConstructor");
+  trackAttached("TypedArrayConstructorFromArrayBuffer");
   return AttachDecision::Attach;
+#endif
+}
+
+AttachDecision
+InlinableNativeIRGenerator::tryAttachTypedArrayConstructorFromArray() {
+  MOZ_ASSERT(flags_.isConstructing());
+  MOZ_ASSERT(args_.length() > 0);
+  MOZ_ASSERT(args_[0].isObject());
+
+  // Expected arguments: Array-like object.
+  if (args_.length() != 1) {
+    return AttachDecision::NoAction;
+  }
+
+  Rooted<JSObject*> obj(cx_, &args_[0].toObject());
+  MOZ_ASSERT(!obj->is<ProxyObject>());
+  MOZ_ASSERT(!obj->is<ArrayBufferObjectMaybeShared>());
+
+  Scalar::Type type = TypedArrayConstructorType(target_);
+
+  Rooted<TypedArrayObject*> templateObj(
+      cx_, TypedArrayObject::GetTemplateObjectForArrayLike(cx_, type, obj));
+  if (!templateObj) {
+    cx_->recoverFromOutOfMemory();
+    return AttachDecision::NoAction;
+  }
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee and newTarget are this TypedArray constructor function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  ValOperandId arg0Id = loadArgument(calleeId, ArgumentKind::Arg0);
+  ObjOperandId objId = writer.guardToObject(arg0Id);
+
+  writer.guardIsNotArrayBufferMaybeShared(objId);
+  writer.guardIsNotProxy(objId);
+  writer.newTypedArrayFromArrayResult(templateObj, objId);
+  writer.returnFromIC();
+
+  trackAttached("TypedArrayConstructorFromArray");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayConstructor() {
+  MOZ_ASSERT(flags_.isConstructing());
+
+  if (!isFirstStub()) {
+    // Attach only once to prevent slowdowns for polymorphic calls.
+    return AttachDecision::NoAction;
+  }
+
+  // The first argument, if present, must be int32 or a non-proxy object.
+
+  if (args_.length() == 0 || args_[0].isInt32()) {
+    return tryAttachTypedArrayConstructorFromLength();
+  }
+
+  if (args_[0].isObject()) {
+    auto* obj = &args_[0].toObject();
+
+    // Proxy objects not allowed, because handling Wrappers is complicated.
+    if (obj->is<ProxyObject>()) {
+      return AttachDecision::NoAction;
+    }
+
+    if (obj->is<ArrayBufferObjectMaybeShared>()) {
+      return tryAttachTypedArrayConstructorFromArrayBuffer();
+    }
+    return tryAttachTypedArrayConstructorFromArray();
+  }
+
+  // Other argument types are not supported.
+  return AttachDecision::NoAction;
 }
 
 AttachDecision InlinableNativeIRGenerator::tryAttachMapSetConstructor(
@@ -12560,28 +13166,27 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
     case InlinableNative::IntrinsicGuardToSharedArrayBuffer:
       return tryAttachGuardToSharedArrayBuffer();
 
-    // TypedArray intrinsics.
+    // TypedArray natives.
     case InlinableNative::TypedArrayConstructor:
       return AttachDecision::NoAction;  // Not callable.
+    case InlinableNative::TypedArrayFill:
+      return tryAttachTypedArrayFill();
+    case InlinableNative::TypedArraySet:
+      return tryAttachTypedArraySet();
+    case InlinableNative::TypedArraySubarray:
+      return tryAttachTypedArraySubarray();
+
+    // TypedArray intrinsics.
     case InlinableNative::IntrinsicIsTypedArray:
       return tryAttachIsTypedArray(/* isPossiblyWrapped = */ false);
     case InlinableNative::IntrinsicIsPossiblyWrappedTypedArray:
       return tryAttachIsTypedArray(/* isPossiblyWrapped = */ true);
     case InlinableNative::IntrinsicIsTypedArrayConstructor:
       return tryAttachIsTypedArrayConstructor();
-    case InlinableNative::IntrinsicTypedArrayByteOffset:
-      return tryAttachTypedArrayByteOffset();
-    case InlinableNative::IntrinsicTypedArrayElementSize:
-      return tryAttachTypedArrayElementSize();
     case InlinableNative::IntrinsicTypedArrayLength:
-      return tryAttachTypedArrayLength(/* isPossiblyWrapped = */ false,
-                                       /* allowOutOfBounds = */ false);
-    case InlinableNative::IntrinsicTypedArrayLengthZeroOnOutOfBounds:
-      return tryAttachTypedArrayLength(/* isPossiblyWrapped = */ false,
-                                       /* allowOutOfBounds = */ true);
+      return tryAttachTypedArrayLength(/* isPossiblyWrapped = */ false);
     case InlinableNative::IntrinsicPossiblyWrappedTypedArrayLength:
-      return tryAttachTypedArrayLength(/* isPossiblyWrapped = */ true,
-                                       /* allowOutOfBounds = */ false);
+      return tryAttachTypedArrayLength(/* isPossiblyWrapped = */ true);
 
     // Reflect natives.
     case InlinableNative::ReflectGetPrototypeOf:
@@ -12664,6 +13269,14 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachDateGet(DateComponent::Minutes);
     case InlinableNative::DateGetSeconds:
       return tryAttachDateGet(DateComponent::Seconds);
+
+    // WeakMap/WeakSet natives.
+    case InlinableNative::WeakMapGet:
+      return tryAttachWeakMapGet();
+    case InlinableNative::WeakMapHas:
+      return tryAttachWeakMapHas();
+    case InlinableNative::WeakSetHas:
+      return tryAttachWeakSetHas();
 
     // Testing functions.
     case InlinableNative::TestBailout:

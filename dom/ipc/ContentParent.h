@@ -7,23 +7,9 @@
 #ifndef mozilla_dom_ContentParent_h
 #define mozilla_dom_ContentParent_h
 
-#include "mozilla/dom/PContentParent.h"
-#include "mozilla/dom/ipc/IdType.h"
-#include "mozilla/dom/MessageManagerCallback.h"
-#include "mozilla/dom/MediaSessionBinding.h"
-#include "mozilla/dom/ProcessIsolation.h"
-#include "mozilla/dom/RemoteBrowser.h"
-#include "mozilla/dom/RemoteType.h"
-#include "mozilla/dom/JSProcessActorParent.h"
-#include "mozilla/dom/ProcessActor.h"
-#include "mozilla/dom/UniqueContentParentKeepAlive.h"
-#include "mozilla/dom/UserActivation.h"
-#include "mozilla/gfx/gfxVarReceiver.h"
-#include "mozilla/gfx/GPUProcessListener.h"
-#include "mozilla/ipc/BackgroundUtils.h"
-#include "mozilla/ipc/GeckoChildProcessHost.h"
-#include "mozilla/ipc/InputStreamUtils.h"
-#include "mozilla/ipc/SharedMemoryHandle.h"
+#include "DriverCrashGuard.h"
+#include "MainThreadUtils.h"
+#include "PermissionMessageUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/HalTypes.h"
@@ -37,25 +23,38 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
-
-#include "MainThreadUtils.h"
+#include "mozilla/dom/JSProcessActorParent.h"
+#include "mozilla/dom/MediaSessionBinding.h"
+#include "mozilla/dom/MessageManagerCallback.h"
+#include "mozilla/dom/PContentParent.h"
+#include "mozilla/dom/ProcessActor.h"
+#include "mozilla/dom/ProcessIsolation.h"
+#include "mozilla/dom/RemoteBrowser.h"
+#include "mozilla/dom/RemoteType.h"
+#include "mozilla/dom/UniqueContentParentKeepAlive.h"
+#include "mozilla/dom/UserActivation.h"
+#include "mozilla/dom/ipc/IdType.h"
+#include "mozilla/gfx/GPUProcessListener.h"
+#include "mozilla/gfx/gfxVarReceiver.h"
+#include "mozilla/ipc/BackgroundUtils.h"
+#include "mozilla/ipc/GeckoChildProcessHost.h"
+#include "mozilla/ipc/InputStreamUtils.h"
+#include "mozilla/ipc/SharedMemoryHandle.h"
 #include "nsClassHashtable.h"
-#include "nsTHashMap.h"
-#include "nsTHashSet.h"
 #include "nsHashKeys.h"
 #include "nsIAsyncShutdown.h"
+#include "nsIDOMGeoPositionCallback.h"
+#include "nsIDOMGeoPositionErrorCallback.h"
 #include "nsIDOMProcessParent.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIObserver.h"
+#include "nsIReferrerInfo.h"
 #include "nsIRemoteTab.h"
 #include "nsITransferable.h"
-#include "nsIDOMGeoPositionCallback.h"
-#include "nsIDOMGeoPositionErrorCallback.h"
 #include "nsIUrlClassifierFeature.h"
 #include "nsRefPtrHashtable.h"
-#include "PermissionMessageUtils.h"
-#include "DriverCrashGuard.h"
-#include "nsIReferrerInfo.h"
+#include "nsTHashMap.h"
+#include "nsTHashSet.h"
 
 class nsConsoleService;
 class nsICycleCollectorLogSink;
@@ -83,6 +82,10 @@ class SandboxBrokerPolicyFactory;
 class PreallocatedProcessManagerImpl;
 
 using mozilla::loader::PScriptCacheParent;
+
+namespace performance::pageload_event {
+class PageloadEventData;
+}  // namespace performance::pageload_event
 
 namespace ipc {
 class CrashReporterHost;
@@ -747,7 +750,7 @@ class ContentParent final : public PContentParent,
 
   bool ShouldContinueFromReplyTimeout() override;
 
-  void OnVarChanged(const GfxVarUpdate& aVar) override;
+  void OnVarChanged(const nsTArray<GfxVarUpdate>& aVar) override;
   void OnCompositorUnexpectedShutdown() override;
 
  private:
@@ -1183,7 +1186,8 @@ class ContentParent final : public PContentParent,
   mozilla::ipc::IPCResult RecvRecordDiscardedData(
       const DiscardedData& aDiscardedData);
   mozilla::ipc::IPCResult RecvRecordPageLoadEvent(
-      mozilla::glean::perf::PageLoadExtra&& aPageLoadEventExtra);
+      mozilla::performance::pageload_event::PageloadEventData&&
+          aPageloadEventData);
   mozilla::ipc::IPCResult RecvRecordOrigin(const uint32_t& aMetricId,
                                            const nsACString& aOrigin);
   mozilla::ipc::IPCResult RecvReportContentBlockingLog(
@@ -1342,10 +1346,6 @@ class ContentParent final : public PContentParent,
       const MaybeDiscarded<BrowsingContext>& aContext,
       GetLoadingSessionHistoryInfoFromParentResolver&& aResolver);
 
-  mozilla::ipc::IPCResult RecvGetContiguousSessionHistoryInfos(
-      const MaybeDiscarded<BrowsingContext>& aContext,
-      GetContiguousSessionHistoryInfosResolver&& aResolver);
-
   mozilla::ipc::IPCResult RecvRemoveFromBFCache(
       const MaybeDiscarded<BrowsingContext>& aContext);
 
@@ -1421,7 +1421,7 @@ class ContentParent final : public PContentParent,
     return mBrowsingContextFieldEpoch;
   }
 
-  void UpdateNetworkLinkType();
+  uint32_t UpdateNetworkLinkType();
 
   already_AddRefed<JSActor> InitJSActor(JS::Handle<JSObject*> aMaybeActor,
                                         const nsACString& aName,

@@ -23,6 +23,7 @@ import org.mozilla.fenix.home.search.HomeSearchController
 import org.mozilla.fenix.home.sessioncontrol.DefaultSessionControlController
 import org.mozilla.fenix.home.sessioncontrol.SessionControlInteractor
 import org.mozilla.fenix.home.toolbar.ToolbarController
+import org.mozilla.fenix.home.topsites.controller.TopSiteController
 import org.mozilla.fenix.search.toolbar.SearchSelectorController
 
 class RecentVisitsInteractorTest {
@@ -37,6 +38,7 @@ class RecentVisitsInteractorTest {
     private val searchSelectorController: SearchSelectorController = mockk(relaxed = true)
     private val toolbarController: ToolbarController = mockk(relaxed = true)
     private val homeSearchController: HomeSearchController = mockk(relaxed = true)
+    private val topSiteController: TopSiteController = mockk(relaxed = true)
 
     private lateinit var interactor: SessionControlInteractor
 
@@ -53,6 +55,7 @@ class RecentVisitsInteractorTest {
             searchSelectorController,
             toolbarController,
             homeSearchController,
+            topSiteController,
         )
     }
 

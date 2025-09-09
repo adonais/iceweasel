@@ -43,7 +43,14 @@ struct SelectionDetails {
       : mStart(), mEnd(), mSelectionType(mozilla::SelectionType::eInvalid) {
     MOZ_COUNT_CTOR(SelectionDetails);
   }
-  MOZ_COUNTED_DTOR(SelectionDetails)
+  ~SelectionDetails() {
+    MOZ_COUNT_DTOR(SelectionDetails);
+    // Destroy the linked list without recursion.
+    auto next = std::move(mNext);
+    while (next) {
+      next = std::move(next->mNext);
+    }
+  }
 
   int32_t mStart;
   int32_t mEnd;

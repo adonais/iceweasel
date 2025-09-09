@@ -146,6 +146,18 @@ export class Tracer extends Component {
     if (!this.tooltip) {
       this.instantiateTooltip();
     }
+
+    // Force updating indexes when we navigate back to the tracer sidebar.
+    // For example, when we navigated away to the source tree.
+    if (!this.state.renderedTraceCount) {
+      this.updateIndexes(
+        {
+          startIndex: this.state.startIndex,
+          endIndex: this.state.endIndex,
+        },
+        this.props
+      );
+    }
   }
 
   instantiateTooltip() {
@@ -599,6 +611,11 @@ export class Tracer extends Component {
   }
 
   renderEventsInSlider() {
+    // When getting back to tracer sidebar after having moved to any other side panel, like source tree,
+    // the timeline is null and would crash here.
+    if (!this.refs.timeline) {
+      return null;
+    }
     const { topTraces, allTraces, traceChildren } = this.props;
     const { startIndex, endIndex } = this.state;
 

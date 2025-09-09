@@ -605,7 +605,9 @@ def get_compiler_info(configure_cache, compiler, language):
         if data.get("XCODE"):
             # Derived from https://en.wikipedia.org/wiki/Xcode#Toolchain_versions
             # with enough granularity for major.minor version checks further
-            # down the line
+            # down the line. `version` is compared against the version in the
+            # "clang version string" column, and the resolved version is the
+            # value from the "LLVM version" column.
             if version < "9.1":
                 version = Version("4.0.0.or.less")
             elif version < "10.0":
@@ -632,8 +634,10 @@ def get_compiler_info(configure_cache, compiler, language):
                 version = Version("15.0.0")
             elif version < "16.0":
                 version = Version("16.0.0")
+            elif version < "17.0":
+                version = Version("17.0.6")
             else:
-                version = Version("17.0.6.or.more")
+                version = Version("19.1.4.or.more")
 
     return namespace(
         type=type,
@@ -2453,7 +2457,7 @@ set_define("_LIBCPP_HIDE_FROM_ABI", libcxx_override_visibility.hide_from_abi)
 @depends(target, build_environment)
 def visibility_flags(target, env):
     if target.os != "WINNT":
-        if target.kernel == "Darwin":
+        if target.kernel in ("Darwin", "FreeBSD", "OpenBSD"):
             return ("-fvisibility=hidden", "-fvisibility-inlines-hidden")
         return (
             "-I%s/system_wrappers" % os.path.join(env.dist),
@@ -3710,18 +3714,18 @@ def ar_supports_response_files(c_compiler, extra_toolchain_flags, ar, ar_config)
                 with open(list_path, "w") as fd:
                     fd.write(obj_path)
 
-            log.debug("Creating `%s` with content:", list_path)
-            log.debug("| %s", obj_path)
+                log.debug("Creating `%s` with content:", list_path)
+                log.debug("| %s", obj_path)
 
-            with create_temporary_file(suffix=".a") as lib_path:
-                os.remove(lib_path)
-                ar_command = (
-                    [ar]
-                    + [x.replace("$@", lib_path) for x in ar_config.flags]
-                    + ["@" + list_path]
-                )
-                result = check_cmd_output(*ar_command, onerror=lambda: None)
-                return result is not None
+                with create_temporary_file(suffix=".a") as lib_path:
+                    os.remove(lib_path)
+                    ar_command = (
+                        [ar]
+                        + [x.replace("$@", lib_path) for x in ar_config.flags]
+                        + ["@" + list_path]
+                    )
+                    result = check_cmd_output(*ar_command, onerror=lambda: None)
+                    return result is not None
 
 
 set_config("AR_SUPPORTS_RESPONSE_FILE", True, when=ar_supports_response_files)

@@ -4,8 +4,10 @@
 
 package org.mozilla.fenix.home.store
 
+import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -91,7 +93,7 @@ internal sealed class HomepageState {
      * @property showPocketStories Whether to show the pocket stories section.
      * @property showCollections Whether to show the collections section.
      * @property showHeader Whether to show the homepage header.
-     * @property showSearchBar Whether to show the middle search bar.
+     * @property searchBarVisible Whether the middle search bar should be visible or not.
      * @property searchBarEnabled Whether the middle search bar is enabled or not.
      * @property firstFrameDrawn Flag indicating whether the first frame of the homescreen has been drawn.
      * @property setupChecklistState Optional state of the setup checklist feature.
@@ -120,7 +122,7 @@ internal sealed class HomepageState {
         val showPocketStories: Boolean,
         val showCollections: Boolean,
         override val showHeader: Boolean,
-        val showSearchBar: Boolean,
+        val searchBarVisible: Boolean,
         val searchBarEnabled: Boolean,
         override val firstFrameDrawn: Boolean = false,
         val setupChecklistState: SetupChecklistState?,
@@ -190,9 +192,10 @@ internal sealed class HomepageState {
                             recommendationState.pocketStories.isNotEmpty(),
                         showCollections = settings.collections,
                         showHeader = settings.showHomepageHeader,
-                        showSearchBar = shouldShowSearchBar(appState = appState),
+                        searchBarVisible = shouldShowSearchBar(appState = appState),
                         searchBarEnabled = settings.enableHomepageSearchBar &&
-                            settings.toolbarPosition == ToolbarPosition.TOP,
+                            settings.toolbarPosition == ToolbarPosition.TOP &&
+                                LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT,
                         firstFrameDrawn = firstFrameDrawn,
                         setupChecklistState = setupChecklistState,
                         topSiteColors = TopSiteColors.colors(wallpaperState = wallpaperState),
@@ -211,10 +214,8 @@ internal sealed class HomepageState {
 @Composable
 private fun getBottomSpace(): Dp {
     val toolbarHeight = LocalContext.current.settings().getBottomToolbarContainerHeight().dp
-    // We need this 88 dp because of this bug: https://github.com/mozilla-mobile/fenix/issues/20833
-    val extraSpace = 88.dp
 
-    return toolbarHeight + extraSpace + HOME_APP_BAR_HEIGHT
+    return toolbarHeight + HOME_APP_BAR_HEIGHT + 12.dp
 }
 
 /**

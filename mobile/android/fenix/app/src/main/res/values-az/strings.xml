@@ -14,7 +14,10 @@
   <string name="search_hint">Ünvanı daxil et və ya axtar</string>
   <!-- No Open Tabs Message Description -->
   <string name="no_open_tabs_description">Açıq vərəqləriniz burada göstəriləcək.</string>
+  <!-- Private Browsing -->
   <string name="private_browsing_common_myths">Məxfi səyahət haqqında olan əfsanələr</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!--
     Home screen icons - Long press shortcuts
 
@@ -143,8 +146,6 @@
   <string name="preferences_account_sync_error">Sinxronlaşdırmaya qayıtmaq üçün təkrar qoşul</string>
   <!-- Preference for language -->
   <string name="preferences_language">Dil</string>
-  <!-- Preference for data choices -->
-  <string name="preferences_data_choices" tools:ignore="UnusedResources" moz:removedIn="141">Məlumat seçimi</string>
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">Məlumat yığma</string>
   <!-- Preference for developers -->
@@ -477,8 +478,6 @@
     Text shown in snackbar when user deletes a collection
   -->
   <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Kolleksiya silindi</string>
-  <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Kolleksiyanın adı dəyişdirildi</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Vərəq qapatıldı</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -486,7 +485,7 @@
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">GERİ AL</string>
   <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed">Sayt silindi</string>
+  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">Sayt silindi</string>
   <!-- QR code scanner prompt dialog positive option to allow navigation to scanned link -->
   <string name="qr_scanner_dialog_positive">İCAZƏ VER</string>
   <!-- QR code scanner prompt dialog positive option to deny navigation to scanned link -->

@@ -15,6 +15,7 @@ import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
 import mozilla.components.support.utils.Browsers
 import mozilla.telemetry.glean.private.NoExtras
@@ -54,6 +55,7 @@ class OnboardingSecondFragment : Fragment() {
         )
         return ComposeView(requireContext()).apply {
             isTransitionGroup = true
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         }
     }
 

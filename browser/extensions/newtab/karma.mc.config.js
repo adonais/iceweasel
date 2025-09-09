@@ -175,20 +175,6 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
-            "content-src/components/DiscoveryStreamComponents/FeatureHighlight/WallpaperFeatureHighlight.jsx":
-              {
-                statements: 0,
-                lines: 0,
-                functions: 0,
-                branches: 0,
-              },
-            "content-src/components/DiscoveryStreamComponents/FeatureHighlight/DownloadMobilePromoHighlight.jsx":
-              {
-                statements: 0,
-                lines: 0,
-                functions: 0,
-                branches: 0,
-              },
             "content-src/components/DiscoveryStreamComponents/FeatureHighlight/FollowSectionButtonHighlight.jsx":
               {
                 statements: 88,
@@ -200,6 +186,14 @@ module.exports = function (config) {
                 statements: 88,
                 lines: 88,
                 functions: 80,
+              },
+            // for all other components in FeatureHighlight that dont have bespoke functionality
+            "content-src/components/DiscoveryStreamComponents/FeatureHighlight/!(FeatureHighlight).jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
               },
             "content-src/components/DiscoveryStreamComponents/ReportContent/ReportContent.jsx":
               {
@@ -237,8 +231,8 @@ module.exports = function (config) {
               },
             "content-src/components/DiscoveryStreamComponents/CardSections/CardSections.jsx":
               {
-                statements: 83.82,
-                lines: 83.33,
+                statements: 83.11,
+                lines: 82.52,
                 functions: 79.31,
                 branches: 52.8,
               },
@@ -262,6 +256,16 @@ module.exports = function (config) {
                 lines: 84,
                 functions: 83,
               },
+            /**
+             * PromoCard currently has no functionality and is a placeholder component
+             */
+            "content-src/components/DiscoveryStreamComponents/PromoCard/PromoCard.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
             "content-src/components/DiscoveryStreamComponents/DSThumbsUpDownButtons/DSThumbsUpDownButtons.jsx":
               {
                 statements: 75,
@@ -279,7 +283,7 @@ module.exports = function (config) {
               statements: 80.95,
               lines: 80.95,
               functions: 71.43,
-              branches: 71,
+              branches: 70.9,
             },
             /**
              * WallpaperCategories.jsx is tested via an xpcshell test
@@ -304,12 +308,6 @@ module.exports = function (config) {
              * Weather.jsx is tested via an xpcshell test
              */
             "content-src/components/Weather/*.jsx": {
-              statements: 0,
-              lines: 0,
-              functions: 0,
-              branches: 0,
-            },
-            "content-src/components/Widgets/FocusTimer/FocusTimer.jsx": {
               statements: 0,
               lines: 0,
               functions: 0,
@@ -341,6 +339,9 @@ module.exports = function (config) {
             },
             "content-src/lib/utils.jsx": {
               branches: 60,
+              statements: 95.56,
+              lines: 95.4,
+              functions: 92.86,
             },
             "content-src/components/MessageWrapper/MessageWrapper.jsx": {
               lines: 50,

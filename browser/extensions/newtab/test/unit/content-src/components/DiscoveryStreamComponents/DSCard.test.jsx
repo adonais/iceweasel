@@ -25,6 +25,8 @@ import { combineReducers, createStore } from "redux";
 const DEFAULT_PROPS = {
   url: "about:robots",
   title: "title",
+  raw_image_src: "https://picsum.photos/200",
+  icon_src: "https://picsum.photos/200",
   App: {
     isForStartupCache: false,
   },
@@ -72,6 +74,15 @@ describe("<DSCard>", () => {
       "onLinkClick",
       wrapper.instance().onLinkClick
     );
+  });
+
+  it("should pass isSponsored=false when flightId is not provided", () => {
+    assert.propertyVal(wrapper.children().at(0).props(), "isSponsored", false);
+  });
+
+  it("should pass isSponsored=true when flightId is provided", () => {
+    wrapper.setProps({ flightId: "12345" });
+    assert.propertyVal(wrapper.children().at(0).props(), "isSponsored", true);
   });
 
   it("should render DSLinkMenu", () => {
@@ -783,11 +794,241 @@ describe("<DSCard>", () => {
     });
   });
 
+  describe("DSCard standard sizes", () => {
+    it("should render grid with correct image sizes", async () => {
+      const standardImageSize = {
+        mediaMatcher: "default",
+        width: 296,
+        height: 148,
+      };
+      const image = wrapper.find(DSImage);
+      assert.deepEqual(image.props().sizes[0], standardImageSize);
+    });
+  });
+
   describe("DSCard medium rectangle format", () => {
     it("should pass an empty sizes array to the DSImage", async () => {
       wrapper.setProps({ format: "rectangle" });
       const image = wrapper.find(DSImage);
       assert.deepEqual(image.props().sizes, []);
+    });
+  });
+
+  describe("OHTTP images", () => {
+    function mountWithOptions({ prefs, props } = {}) {
+      const store = createStore(combineReducers(reducers), INITIAL_STATE);
+      const prefsState = {
+        ...INITIAL_STATE.Prefs,
+        values: {
+          ...INITIAL_STATE.Prefs.values,
+          "discoverystream.sections.enabled": true,
+          "unifiedAds.ohttp.enabled": true,
+          ohttpImagesConfig: { enabled: true, includeTopStoriesSection: false },
+          "discoverystream.merino-provider.ohttp.enabled": true,
+          "discoverystream.sections.contextualAds.enabled": true,
+          "discoverystream.sections.personalization.inferred.user.enabled": true,
+          "discoverystream.sections.personalization.inferred.enabled": true,
+          "discoverystream.publisherFavicon.enabled": true,
+          ...prefs,
+        },
+      };
+
+      wrapper = mount(
+        <Provider store={store}>
+          <DSCard
+            {...{
+              ...DEFAULT_PROPS,
+              sectionsCardImageSizes: {
+                1: "medium",
+                2: "medium",
+                3: "medium",
+                4: "medium",
+              },
+            }}
+            {...props}
+            Prefs={prefsState}
+          />
+        </Provider>
+      );
+      return wrapper;
+    }
+
+    function setWrapperIsSeen() {
+      const dsCardInstance = wrapper.find(DSCard).instance();
+      dsCardInstance.setState({ isSeen: true });
+      wrapper.update();
+    }
+
+    it("should set secureImage and faviconSrc for Merino", async () => {
+      wrapper = mountWithOptions();
+      setWrapperIsSeen();
+
+      const image = wrapper.find(DSImage);
+      assert.deepEqual(image.at(0).props().secureImage, true);
+      assert.deepEqual(image.at(1).props().secureImage, true);
+      assert.deepEqual(image.at(2).props().secureImage, true);
+      assert.deepEqual(image.at(3).props().secureImage, true);
+
+      const defaultMeta = wrapper.find(DefaultMeta);
+      assert.equal(
+        defaultMeta.props().icon_src,
+        `moz-cached-ohttp://newtab-image/?url=${encodeURIComponent(DEFAULT_PROPS.icon_src)}`
+      );
+    });
+
+    it("should set secureImage for unified ads", async () => {
+      wrapper = mountWithOptions({
+        props: {
+          flightId: "flightId",
+        },
+        prefs: {
+          "unifiedAds.ohttp.enabled": false,
+        },
+      });
+      setWrapperIsSeen();
+
+      let image = wrapper.find(DSImage);
+      assert.deepEqual(image.at(0).props().secureImage, false);
+      assert.deepEqual(image.at(1).props().secureImage, false);
+      assert.deepEqual(image.at(2).props().secureImage, false);
+      assert.deepEqual(image.at(3).props().secureImage, false);
+
+      wrapper = mountWithOptions({
+        props: {
+          flightId: "flightId",
+        },
+        prefs: {
+          "unifiedAds.ohttp.enabled": true,
+        },
+      });
+      setWrapperIsSeen();
+
+      image = wrapper.find(DSImage);
+      assert.deepEqual(image.at(0).props().secureImage, true);
+      assert.deepEqual(image.at(1).props().secureImage, true);
+      assert.deepEqual(image.at(2).props().secureImage, true);
+      assert.deepEqual(image.at(3).props().secureImage, true);
+    });
+
+    it("should not set secureImage or icon_src for top stories", async () => {
+      wrapper = mountWithOptions({
+        props: {
+          section: "top_stories_section",
+        },
+      });
+      setWrapperIsSeen();
+
+      let image = wrapper.find(DSImage);
+      assert.deepEqual(image.at(0).props().secureImage, false);
+      assert.deepEqual(image.at(1).props().secureImage, false);
+      assert.deepEqual(image.at(2).props().secureImage, false);
+      assert.deepEqual(image.at(3).props().secureImage, false);
+
+      let defaultMeta = wrapper.find(DefaultMeta);
+      assert.equal(defaultMeta.props().icon_src, DEFAULT_PROPS.icon_src);
+
+      wrapper = mountWithOptions({
+        props: {
+          section: "top_stories_section",
+        },
+        prefs: {
+          ohttpImagesConfig: { enabled: true, includeTopStoriesSection: true },
+        },
+      });
+      setWrapperIsSeen();
+
+      image = wrapper.find(DSImage);
+      assert.deepEqual(image.at(0).props().secureImage, true);
+      assert.deepEqual(image.at(1).props().secureImage, true);
+      assert.deepEqual(image.at(2).props().secureImage, true);
+      assert.deepEqual(image.at(3).props().secureImage, true);
+
+      defaultMeta = wrapper.find(DefaultMeta);
+      assert.equal(
+        defaultMeta.props().icon_src,
+        `moz-cached-ohttp://newtab-image/?url=${encodeURIComponent(DEFAULT_PROPS.icon_src)}`
+      );
+    });
+
+    it("should not be seen on idle callback", async () => {
+      wrapper = mountWithOptions();
+      const dsCardInstance = wrapper.find(DSCard).instance();
+      dsCardInstance.onIdleCallback();
+      wrapper.update();
+      assert.equal(dsCardInstance.state.isSeen, false);
+    });
+  });
+
+  describe("DSCard section images sizes", () => {
+    it("should render sections with correct image sizes", async () => {
+      const cardSizes = {
+        small: {
+          width: 110,
+          height: 117,
+        },
+        medium: {
+          width: 300,
+          height: 150,
+        },
+        large: {
+          width: 190,
+          height: 250,
+        },
+      };
+
+      const mediaMatcher = {
+        1: "default",
+        2: "(min-width: 724px)",
+        3: "(min-width: 1122px)",
+        4: "(min-width: 1390px)",
+      };
+
+      wrapper.setProps({
+        Prefs: {
+          values: {
+            "discoverystream.sections.enabled": true,
+          },
+        },
+        sectionsCardImageSizes: {
+          1: "medium",
+          2: "large",
+          3: "small",
+          4: "large",
+        },
+      });
+      const image = wrapper.find(DSImage);
+      assert.lengthOf(image, 4);
+
+      assert.equal(
+        image.at(0).props().sizes[0].mediaMatcher,
+        mediaMatcher["1"]
+      );
+      assert.equal(
+        image.at(0).props().sizes[0].height,
+        cardSizes.medium.height
+      );
+      assert.equal(image.at(0).props().sizes[0].width, cardSizes.medium.width);
+
+      assert.equal(
+        image.at(1).props().sizes[0].mediaMatcher,
+        mediaMatcher["2"]
+      );
+      assert.equal(image.at(1).props().sizes[0].height, cardSizes.large.height);
+      assert.equal(image.at(1).props().sizes[0].width, cardSizes.large.width);
+
+      assert.deepEqual(
+        image.at(2).props().sizes[0].mediaMatcher,
+        mediaMatcher["3"]
+      );
+      assert.equal(image.at(2).props().sizes[0].height, cardSizes.small.height);
+      assert.equal(image.at(2).props().sizes[0].width, cardSizes.small.width);
+
+      assert.equal(
+        image.at(3).props().sizes[0].mediaMatcher,
+        mediaMatcher["4"]
+      );
+      assert.equal(image.at(3).props().sizes[0].height, cardSizes.large.height);
+      assert.equal(image.at(3).props().sizes[0].width, cardSizes.large.width);
     });
   });
 });

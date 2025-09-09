@@ -339,8 +339,8 @@
 }
 
 .protections-popup-trackersView-empty-image {
-  width: 48px;
-  height: 48px;
+  width: var(--size-item-xlarge);
+  height: var(--size-item-xlarge);
   -moz-context-properties: fill;
   margin-bottom: 16px;
 }
@@ -537,6 +537,10 @@
   }
 }
 
+#protections-popup-cookie-banner-undetected {
+  color: var(--text-color-deemphasized);
+}
+
 #protections-popup-cookie-banner-section[hasException] .protections-popup-cookie-banner-switch-on-header,
 #protections-popup-cookie-banner-section:not([hasException]) .protections-popup-cookie-banner-switch-off-header {
   display: none;
@@ -552,8 +556,8 @@
   display: revert;
 }
 
-.protections-popup-switch-header {
-  font-weight: 600;
+#protections-popup-cookie-banner-switch > vbox {
+  gap: var(--space-xxsmall);
 }
 
 /* Protection popup footer categories */
@@ -789,8 +793,8 @@
 
 #trustpanel-popup-icon {
   -moz-context-properties: fill, fill-opacity;
-  width: var(--icon-size-default);
-  height: var(--icon-size-default);
+  width: var(--icon-size);
+  height: var(--icon-size);
   align-self: center;
 
   &:not([src]),
@@ -872,8 +876,8 @@
 #trustpanel-connection-icon,
 #trustpanel-siteinfo-icon {
   -moz-context-properties: fill, fill-opacity;
-  width: var(--icon-size-default);
-  height: var(--icon-size-default);
+  width: var(--icon-size);
+  height: var(--icon-size);
   list-style-image: url(chrome://global/skin/icons/security-broken.svg);
 
   #trustpanel-popup[connection^="secure"] & {

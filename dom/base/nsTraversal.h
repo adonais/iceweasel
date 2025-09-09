@@ -11,9 +11,9 @@
 #ifndef nsTraversal_h___
 #define nsTraversal_h___
 
-#include "nsCOMPtr.h"
 #include "mozilla/dom/CallbackObject.h"
 #include "mozilla/dom/NodeFilterBinding.h"
+#include "nsCOMPtr.h"
 
 class nsINode;
 

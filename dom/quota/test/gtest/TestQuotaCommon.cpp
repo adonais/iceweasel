@@ -4,10 +4,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/dom/quota/QuotaCommon.h"
-
-#include "gtest/gtest.h"
-
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -18,15 +14,18 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+
 #include "ErrorList.h"
+#include "gtest/gtest.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/ResultVariant.h"
 #include "mozilla/Unused.h"
-#include "mozilla/fallible.h"
+#include "mozilla/dom/quota/QuotaCommon.h"
 #include "mozilla/dom/quota/QuotaTestParent.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
+#include "mozilla/fallible.h"
 #include "nsCOMPtr.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"

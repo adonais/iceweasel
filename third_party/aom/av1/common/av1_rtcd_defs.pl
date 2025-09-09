@@ -441,7 +441,7 @@ if (aom_config("CONFIG_AV1_ENCODER") eq "yes") {
   specialize qw/av1_wedge_compute_delta_squares sse2 avx2 neon/;
 
   # hash
-  add_proto qw/uint32_t av1_get_crc32c_value/, "void *crc_calculator, uint8_t *p, size_t length";
+  add_proto qw/uint32_t av1_get_crc32c_value/, "void *crc_calculator, const uint8_t *p, size_t length";
   specialize qw/av1_get_crc32c_value sse4_2 arm_crc32/;
 
   if (aom_config("CONFIG_REALTIME_ONLY") ne "yes") {
@@ -619,12 +619,12 @@ if(aom_config("CONFIG_AV1_HIGHBITDEPTH") eq "yes") {
     specialize qw/av1_highbd_dist_wtd_convolve_x sse4_1 avx2 neon sve2/;
     specialize qw/av1_highbd_dist_wtd_convolve_y sse4_1 avx2 neon sve2/;
     specialize qw/av1_highbd_dist_wtd_convolve_2d_copy sse4_1 avx2 neon/;
-    specialize qw/av1_highbd_convolve_2d_sr ssse3 avx2 neon sve2/;
-    specialize qw/av1_highbd_convolve_2d_sr_intrabc neon/;
-    specialize qw/av1_highbd_convolve_x_sr ssse3 avx2 neon sve2/;
-    specialize qw/av1_highbd_convolve_x_sr_intrabc neon/;
-    specialize qw/av1_highbd_convolve_y_sr ssse3 avx2 neon sve2/;
-    specialize qw/av1_highbd_convolve_y_sr_intrabc neon/;
+    specialize qw/av1_highbd_convolve_2d_sr ssse3 avx2 neon sve2 rvv/;
+    specialize qw/av1_highbd_convolve_2d_sr_intrabc neon rvv/;
+    specialize qw/av1_highbd_convolve_x_sr ssse3 avx2 neon sve2 rvv/;
+    specialize qw/av1_highbd_convolve_x_sr_intrabc neon rvv/;
+    specialize qw/av1_highbd_convolve_y_sr ssse3 avx2 neon sve2 rvv/;
+    specialize qw/av1_highbd_convolve_y_sr_intrabc neon rvv/;
     specialize qw/av1_highbd_convolve_2d_scale sse4_1 neon/;
   }
 

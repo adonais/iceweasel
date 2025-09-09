@@ -6,6 +6,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   RemoteL10n: "resource:///modules/asrouter/RemoteL10n.sys.mjs",
   SpecialMessageActions:
@@ -104,6 +105,8 @@ class InfoBarNotification {
         }
         anchors.push(...importedNode.querySelectorAll("a[data-l10n-name]"));
 
+        const linkActions = this.message.content.linkActions || {};
+
         for (const a of anchors) {
           const name = a.dataset.l10nName;
           const template = doc
@@ -115,10 +118,32 @@ class InfoBarNotification {
           a.href = template.href;
           a.addEventListener("click", e => {
             e.preventDefault();
-            lazy.SpecialMessageActions.handleAction(
-              { type: "OPEN_URL", data: { args: a.href, where: "tab" } },
-              browser
-            );
+            // Open link URL
+            try {
+              lazy.SpecialMessageActions.handleAction(
+                {
+                  type: "OPEN_URL",
+                  data: { args: a.href, where: args?.where || "tab" },
+                },
+                browser
+              );
+            } catch (err) {
+              console.error(`Error handling OPEN_URL action:`, err);
+            }
+            // Then fire the defined actions for that link, if applicable
+            if (linkActions[name]) {
+              try {
+                lazy.SpecialMessageActions.handleAction(
+                  linkActions[name],
+                  browser
+                );
+              } catch (err) {
+                console.error(
+                  `Error handling ${linkActions[name]} action:`,
+                  err
+                );
+              }
+            }
           });
         }
       }
@@ -170,7 +195,7 @@ class InfoBarNotification {
       content.type !== TYPES.UNIVERSAL ||
       !InfoBar._universalInfobars.length
     ) {
-      this.addImpression();
+      this.addImpression(browser);
     }
 
     // Only add if the universal infobar is still active. Prevents race condition
@@ -258,7 +283,43 @@ class InfoBarNotification {
     return btnConfig;
   }
 
-  addImpression() {
+  handleImpressionAction(browser) {
+    const ALLOWED_IMPRESSION_ACTIONS = ["SET_PREF"];
+    const impressionAction = this.message.content.impression_action;
+    const actions =
+      impressionAction.type === "MULTI_ACTION"
+        ? impressionAction.data.actions
+        : [impressionAction];
+
+    actions.forEach(({ type, data, once }) => {
+      if (!ALLOWED_IMPRESSION_ACTIONS.includes(type)) {
+        return;
+      }
+
+      let { messageImpressions } = lazy.ASRouter.state;
+      // If we only want to perform the action on first impression, ensure no
+      // impressions exist for this message.
+      if (once && messageImpressions[this.message.id]?.length) {
+        return;
+      }
+
+      data.onImpression = true;
+      try {
+        lazy.SpecialMessageActions.handleAction({ type, data }, browser);
+      } catch (err) {
+        console.error(`Error handling ${type} impression action:`, err);
+      }
+    });
+  }
+
+  addImpression(browser) {
+    // If the message has an impression action, handle it before dispatching the
+    // impression. `this._dispatch` may be async and we want to ensure we have a
+    // consistent impression count when handling impression actions that should
+    // only occur once.
+    if (this.message.content.impression_action) {
+      this.handleImpressionAction(browser);
+    }
     // Record an impression in ASRouter for frequency capping
     this._dispatch({ type: "IMPRESSION", data: this.message });
     // Send a user impression telemetry ping

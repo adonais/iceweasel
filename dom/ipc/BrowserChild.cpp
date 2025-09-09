@@ -27,9 +27,8 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/LookAndFeel.h"
-#include "mozilla/MouseEvents.h"
-#include "mozilla/widget/ScreenManager.h"
 #include "mozilla/MediaFeatureChange.h"
+#include "mozilla/MouseEvents.h"
 #include "mozilla/NativeKeyBindingsType.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/PointerLockManager.h"
@@ -48,18 +47,19 @@
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
-#include "mozilla/dom/JSWindowActorChild.h"
 #include "mozilla/dom/ImageDocument.h"
+#include "mozilla/dom/JSWindowActorChild.h"
 #include "mozilla/dom/LoadURIOptionsBinding.h"
 #include "mozilla/dom/MessageManagerBinding.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/Nullable.h"
-#include "mozilla/dom/PaymentRequestChild.h"
 #include "mozilla/dom/PBrowser.h"
+#include "mozilla/dom/PaymentRequestChild.h"
 #include "mozilla/dom/PointerEventHandler.h"
-#include "mozilla/dom/SessionStoreUtils.h"
 #include "mozilla/dom/SessionStoreChild.h"
+#include "mozilla/dom/SessionStoreUtils.h"
 #include "mozilla/dom/UserActivation.h"
+#include "mozilla/dom/ViewTransition.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "mozilla/gfx/CrossProcessPaint.h"
@@ -68,7 +68,6 @@
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
-#include "mozilla/layers/TouchActionHelper.h"
 #include "mozilla/layers/APZCTreeManagerChild.h"
 #include "mozilla/layers/APZChild.h"
 #include "mozilla/layers/APZEventState.h"
@@ -78,7 +77,10 @@
 #include "mozilla/layers/IAPZCTreeManager.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/InputAPZContext.h"
+#include "mozilla/layers/TouchActionHelper.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
+#include "mozilla/widget/ScreenManager.h"
+#include "mozilla/widget/WidgetLogging.h"
 #include "nsCommandParams.h"
 #include "nsContentPermissionHelper.h"
 #include "nsContentUtils.h"
@@ -96,6 +98,7 @@
 #include "nsIDocShell.h"
 #include "nsIFrame.h"
 #include "nsILoadContext.h"
+#include "nsIOpenWindowInfo.h"
 #include "nsISHEntry.h"
 #include "nsISHistory.h"
 #include "nsIScreenManager.h"
@@ -105,9 +108,9 @@
 #include "nsIWeakReferenceUtils.h"
 #include "nsIWebBrowser.h"
 #include "nsIWebProgress.h"
+#include "nsIXULRuntime.h"
 #include "nsLayoutUtils.h"
 #include "nsNetUtil.h"
-#include "nsIOpenWindowInfo.h"
 #include "nsPIDOMWindow.h"
 #include "nsPIWindowRoot.h"
 #include "nsPrintfCString.h"
@@ -118,7 +121,6 @@
 #include "nsViewManager.h"
 #include "nsWebBrowser.h"
 #include "nsWindowWatcher.h"
-#include "nsIXULRuntime.h"
 
 #ifdef MOZ_WAYLAND
 #  include "nsAppRunner.h"
@@ -141,16 +143,6 @@ using namespace mozilla::layers;
 using namespace mozilla::layout;
 using namespace mozilla::widget;
 using mozilla::layers::GeckoContentController;
-
-extern mozilla::LazyLogModule sWidgetDragServiceLog;
-#define __DRAGSERVICE_LOG__(logLevel, ...) \
-  MOZ_LOG(sWidgetDragServiceLog, logLevel, __VA_ARGS__)
-#define DRAGSERVICE_LOGD(...) \
-  __DRAGSERVICE_LOG__(mozilla::LogLevel::Debug, (__VA_ARGS__))
-#define DRAGSERVICE_LOGI(...) \
-  __DRAGSERVICE_LOG__(mozilla::LogLevel::Info, (__VA_ARGS__))
-#define DRAGSERVICE_LOGE(...) \
-  __DRAGSERVICE_LOG__(mozilla::LogLevel::Error, (__VA_ARGS__))
 
 static const char BEFORE_FIRST_PAINT[] = "before-first-paint";
 
@@ -2134,10 +2126,11 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealDragEvent(
   nsCOMPtr<nsIDragSession> dragSession = GetDragSession();
   DRAGSERVICE_LOGD(
       "[%p] %s | aEvent.mMessage: %s | aDragAction: %u | aDropEffect: %u | "
-      "dragSession: %p",
+      "widgetRelativePt: (%d,%d) | dragSession: %p",
       this, __FUNCTION__,
       NS_ConvertUTF16toUTF8(dom::Event::GetEventName(aEvent.mMessage)).get(),
-      aDragAction, aDropEffect, dragSession.get());
+      aDragAction, aDropEffect, static_cast<int>(localEvent.mRefPoint.x),
+      static_cast<int>(localEvent.mRefPoint.y), dragSession.get());
   if (dragSession) {
     dragSession->SetDragAction(aDragAction);
     dragSession->SetTriggeringPrincipal(aPrincipal);
@@ -3086,9 +3079,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvNavigateByKey(
         aForward
             ? (aForDocumentNavigation
                    ? static_cast<uint32_t>(nsIFocusManager::MOVEFOCUS_FIRSTDOC)
-               : StaticPrefs::dom_disable_tab_focus_to_root_element()
-                   ? static_cast<uint32_t>(nsIFocusManager::MOVEFOCUS_FIRST)
-                   : static_cast<uint32_t>(nsIFocusManager::MOVEFOCUS_ROOT))
+                   : static_cast<uint32_t>(nsIFocusManager::MOVEFOCUS_FIRST))
             : (aForDocumentNavigation
                    ? static_cast<uint32_t>(nsIFocusManager::MOVEFOCUS_LASTDOC)
                    : static_cast<uint32_t>(nsIFocusManager::MOVEFOCUS_LAST));
@@ -3510,8 +3501,23 @@ void BrowserChild::SchedulePaint() {
   }
 }
 
+void SkipViewTransitionsAfterRenderingReset(Document& aDocument) {
+  if (RefPtr<ViewTransition> transition = aDocument.GetActiveViewTransition()) {
+    transition->SkipTransition(SkipTransitionReason::ResetRendering);
+  }
+
+  aDocument.EnumerateSubDocuments([&](Document& aSubDoc) {
+    SkipViewTransitionsAfterRenderingReset(aSubDoc);
+    return CallState::Continue;
+  });
+}
+
 void BrowserChild::ReinitRendering() {
   MOZ_ASSERT(mLayersId.IsValid());
+
+  if (RefPtr<Document> doc = GetTopLevelDocument()) {
+    SkipViewTransitionsAfterRenderingReset(*doc);
+  }
 
   // In some cases, like when we create a windowless browser,
   // RemoteLayerTreeOwner/BrowserChild is not connected to a compositor.

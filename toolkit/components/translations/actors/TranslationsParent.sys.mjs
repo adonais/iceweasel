@@ -35,6 +35,23 @@ const TOPIC_MAYBE_UPDATE_USER_LANG_TAG =
 const TOPIC_APP_LOCALES_CHANGED = "intl:app-locales-changed";
 const USE_LEXICAL_SHORTLIST_PREF = "browser.translations.useLexicalShortlist";
 
+/**
+ * @typedef {object} Lazy
+ * @property {typeof setTimeout} setTimeout
+ * @property {typeof clearTimeout} clearTimeout
+ * @property {typeof console} console
+ * @property {boolean} automaticallyPopupPref
+ * @property {any} BrowserHandler
+ * @property {typeof import("resource://services-settings/remote-settings.sys.mjs").RemoteSettings} RemoteSettings
+ * @property {typeof import("chrome://global/content/translations/TranslationsTelemetry.sys.mjs").TranslationsTelemetry} TranslationsTelemetry
+ * @property {typeof import("chrome://global/content/ml/EngineProcess.sys.mjs").EngineProcess} EngineProcess
+ */
+
+/**
+ * @import {DetectionResult} from "../translations.d.ts"
+ */
+
+/** @type {Lazy} */
 const lazy = {};
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
@@ -102,10 +119,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
     );
   }
 );
-
-/**
- * @import {DetectionResult} "../LanguageDetector.sys.mjs"
- */
 
 /**
  * Retrieves the most recent target languages that have been requested for translation by the user.
@@ -686,7 +699,7 @@ export class TranslationsParent extends JSWindowActorParent {
    * @param {LangTags} detectedLanguages
    */
   async maybeOfferTranslations(detectedLanguages) {
-    if (!this.browsingContext.currentWindowGlobal) {
+    if (!this.browsingContext?.currentWindowGlobal) {
       return;
     }
     if (!lazy.automaticallyPopupPref) {
@@ -709,7 +722,7 @@ export class TranslationsParent extends JSWindowActorParent {
       // behavior.
       lazy.console.log(
         "maybeOfferTranslations - Do not offer translations in automation.",
-        documentURI.spec
+        documentURI?.spec
       );
       return;
     }
@@ -738,14 +751,14 @@ export class TranslationsParent extends JSWindowActorParent {
     ) {
       lazy.console.log(
         `maybeOfferTranslations - Should never translate language. "${detectedLanguages.docLangTag}"`,
-        documentURI.spec
+        documentURI?.spec
       );
       return;
     }
     if (this.shouldNeverTranslateSite()) {
       lazy.console.log(
         "maybeOfferTranslations - Should never translate site.",
-        documentURI.spec
+        documentURI?.spec
       );
       return;
     }
@@ -758,7 +771,7 @@ export class TranslationsParent extends JSWindowActorParent {
     ) {
       lazy.console.error(
         "maybeOfferTranslations - The document and user lang tag are the same, not offering a translation.",
-        documentURI.spec
+        documentURI?.spec
       );
       return;
     }
@@ -767,31 +780,26 @@ export class TranslationsParent extends JSWindowActorParent {
     // Frequently pages' lang attributes are mislabeled. If there is a mismatch between
     // the identified and declared language, the translation icon will be shown, but the
     // popup will not be shown.
-    if (
-      detectedLanguages.htmlLangAttribute &&
-      !detectedLanguages.identifiedLangTag
-    ) {
+    if (detectedLanguages.htmlLangAttribute && !detectedLanguages.identified) {
       // Compare language langTagsMatch
-      const identifyResult = await this.queryIdentifyLanguage();
-      detectedLanguages.identifiedLangTag = identifyResult.language;
-      detectedLanguages.identifiedLangConfident = identifyResult.confident;
+      detectedLanguages.identified = await this.queryIdentifyLanguage();
 
       if (
         !lazy.TranslationsUtils.langTagsMatch(
-          detectedLanguages.identifiedLangTag,
+          detectedLanguages.identified.language,
           detectedLanguages.docLangTag
         )
       ) {
-        detectedLanguages.identifiedLangTag = Intl.getCanonicalLocales(
-          detectedLanguages.identifiedLangTag
+        detectedLanguages.identified.language = Intl.getCanonicalLocales(
+          detectedLanguages.identified.language
         )[0];
         if (
           !lazy.TranslationsUtils.langTagsMatch(
-            detectedLanguages.identifiedLangTag,
+            detectedLanguages.identified.language,
             detectedLanguages.docLangTag
           )
         ) {
-          if (!identifyResult.confident) {
+          if (!detectedLanguages.identified.confident) {
             lazy.console.log(
               "The identified language was not confident, and the language tags don't match so don't offer a translation.",
               this.languageState.detectedLanguages
@@ -808,14 +816,14 @@ export class TranslationsParent extends JSWindowActorParent {
           // consumers that are using it.
           detectedLanguages = {
             ...detectedLanguages,
-            docLangTag: detectedLanguages.identifiedLangTag,
+            docLangTag: detectedLanguages.identified.language,
           };
           this.languageState.detectedLanguages = detectedLanguages;
 
           if (originalDocLangTag) {
             lazy.console.log(
               "maybeOfferTranslations - The document language tag was changed, but there was an original language, so don't offer.",
-              documentURI.spec,
+              documentURI?.spec,
               detectedLanguages
             );
             return;
@@ -829,30 +837,48 @@ export class TranslationsParent extends JSWindowActorParent {
           ) {
             lazy.console.log(
               "maybeOfferTranslations - There was no original language tag, but the detected language is not supported.",
-              documentURI.spec,
+              documentURI?.spec,
               detectedLanguages
             );
             return;
           }
         }
       }
+      if (detectedLanguages.identified) {
+        // Since we've performed a language identification, and the html lang
+        // attribute matches, we should mark the identification as confident.
+        detectedLanguages.identified.confident = true;
+      }
+    }
+
+    if (
+      detectedLanguages.identified &&
+      !detectedLanguages.identified.confident
+    ) {
+      lazy.console.log(
+        "maybeOfferTranslations - The identified language was not confident.",
+        documentURI?.spec
+      );
+      return;
     }
 
     // Do the host check after the language identify check so that the translations popup
     // will update the language correctly.
     let host;
     try {
-      host = documentURI.host;
+      host = documentURI?.host;
     } catch {
       // nsIURI.host can throw if the URI scheme doesn't have a host. In this case
       // do not offer a translation.
+    }
+    if (!host) {
       return;
     }
     if (TranslationsParent.#hostsOffered.has(host)) {
       // This host was already offered a translation.
       lazy.console.log(
         "maybeOfferTranslations - Host already offered a translation, so skip.",
-        documentURI.spec
+        documentURI?.spec
       );
       return;
     }
@@ -862,21 +888,22 @@ export class TranslationsParent extends JSWindowActorParent {
     let isCurrentPage = false;
     if (AppConstants.platform !== "android") {
       isCurrentPage =
-        documentURI.spec ===
-        this.browsingContext.topChromeWindow.gBrowser.selectedBrowser
+        documentURI?.spec ===
+        this.browsingContext.topChromeWindow?.gBrowser.selectedBrowser
           .documentURI.spec;
     } else {
       // In Android, the active window is the active tab.
-      isCurrentPage = documentURI.spec === browser.documentURI.spec;
+      isCurrentPage = documentURI?.spec === browser.documentURI?.spec;
     }
     if (isCurrentPage) {
       lazy.console.log(
         "maybeOfferTranslations - Offering a translation",
-        documentURI.spec,
+        documentURI?.spec,
         detectedLanguages
       );
 
       /* eslint-disable-next-line no-shadow */
+      // @ts-ignore
       const { CustomEvent } = browser.ownerGlobal;
       browser.dispatchEvent(
         new CustomEvent("TranslationsParent:OfferTranslation", {
@@ -3476,12 +3503,13 @@ export class TranslationsParent extends JSWindowActorParent {
       // Do a final check that the identified language matches the reported language
       // tag to ensure that the page isn't reporting the incorrect languages. This
       // check is deferred to now for performance considerations.
-      const detectionResult = await this.queryIdentifyLanguage();
-      langTags.docLangTag = detectionResult.language;
-      langTags.identifiedLangTag = detectionResult.language;
-      langTags.identifiedLangConfident = detectionResult.confident;
+      langTags.identified = await this.queryIdentifyLanguage();
+      langTags.docLangTag = langTags.identified.language;
 
-      if (langTags.identifiedLangTag === langTags.htmlLangAttribute) {
+      if (
+        langTags.identified &&
+        langTags.identified.language === langTags.htmlLangAttribute
+      ) {
         return true;
       }
 
@@ -3500,7 +3528,7 @@ export class TranslationsParent extends JSWindowActorParent {
    * Finds a compatible source language tag for translation synchronously.
    * Searches the provided language pairs for a match based on the given language tag.
    *
-   * @param {string} langTag - A BCP-47 language tag to match against source languages.
+   * @param {string | null} langTag - A BCP-47 language tag to match against source languages.
    * @param {Array<{ sourceLanguage: string, targetLanguage: string }>} languagePairs - An array of language pair objects,
    *   where each object contains `sourceLanguage` and `targetLanguage` properties.
    * @returns {string | null} - The compatible source language tag, or `null` if no match is found.
@@ -3602,7 +3630,7 @@ export class TranslationsParent extends JSWindowActorParent {
    * If no special cases apply, the provided language tag is returned as-is.
    *
    * @param {string} langTag - A BCP-47 language tag to evaluate and possibly refine.
-   * @returns {Promise<string>} - The refined language tag, or null if processing was interrupted.
+   * @returns {string} - The refined language tag, or null if processing was interrupted.
    */
   maybeRefineMacroLanguageTag(langTag) {
     if (langTag === "no") {
@@ -3652,11 +3680,12 @@ export class TranslationsParent extends JSWindowActorParent {
       return null;
     }
 
+    /** @type {LangTags} */
     const langTags = {
       docLangTag: null,
       userLangTag: null,
       isDocLangTagSupported: false,
-      htmlLangAttribute,
+      htmlLangAttribute: htmlLangAttribute ?? null,
       identifiedLangTag: null,
     };
 
@@ -3706,17 +3735,12 @@ export class TranslationsParent extends JSWindowActorParent {
     }
 
     if (!langTags.docLangTag) {
-      // If the document's markup had no specified langTag, attempt to identify the page's language.
-      const identifyResult = await this.queryIdentifyLanguage();
-      if (identifyResult.confident) {
-        // Only set this as document language if we are confident.
-        langTags.docLangTag = identifyResult.language;
-      }
-      langTags.identifiedLangTag = identifyResult.language;
-      langTags.identifiedLangConfident = identifyResult.confident;
-
+      // If the document's markup had no specified langTag, attempt to identify the
+      // page's language.
+      langTags.identified = await this.queryIdentifyLanguage();
+      langTags.docLangTag = langTags.identified.language;
       maybeNormalizeDocLangTag();
-      langTags.identifiedLangTag = langTags.docLangTag;
+      langTags.identified.language = langTags.docLangTag;
 
       if (this.#isDestroyed) {
         return null;
@@ -3845,7 +3869,7 @@ export class TranslationsParent extends JSWindowActorParent {
    * Returns true if the current site is denied permissions to translate,
    * otherwise returns false.
    *
-   * @returns {Promise<boolean>}
+   * @returns {boolean}
    */
   shouldNeverTranslateSite() {
     const perms = Services.perms;

@@ -33,12 +33,6 @@ rtc_library("call_interfaces") {
     "syncable.cc",
     "syncable.h",
   ]
-  if (build_with_mozilla) {
-    sources += [
-      "call_basic_stats.cc",
-      "call_basic_stats.h",
-    ]
-  }
 
   deps = [
     ":audio_sender_interface",
@@ -77,7 +71,6 @@ rtc_library("call_interfaces") {
     "../modules/async_audio_processing",
     "../modules/rtp_rtcp",
     "../modules/rtp_rtcp:rtp_rtcp_format",
-    "../rtc_base:audio_format_to_string",
     "../rtc_base:checks",
     "../rtc_base:copy_on_write_buffer",
     "../rtc_base:stringutils",
@@ -130,6 +123,7 @@ rtc_library("rtp_interfaces") {
     "../common_video:frame_counts",
     "../modules/rtp_rtcp:rtp_rtcp_format",
     "../rtc_base:checks",
+    "../rtc_base:network_route",
     "../rtc_base:stringutils",
     "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/strings:string_view",

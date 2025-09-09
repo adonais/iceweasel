@@ -7,29 +7,26 @@
 #ifndef MEDIAENGINE_REMOTE_VIDEO_SOURCE_H_
 #define MEDIAENGINE_REMOTE_VIDEO_SOURCE_H_
 
+#include "DOMMediaStream.h"
+#include "mozilla/Mutex.h"
+#include "nsCOMPtr.h"
+#include "nsComponentManagerUtils.h"
+#include "nsDirectoryServiceDefs.h"
+#include "nsThreadUtils.h"
 #include "prcvar.h"
 #include "prthread.h"
 
-#include "mozilla/Mutex.h"
-#include "nsCOMPtr.h"
-#include "nsThreadUtils.h"
-#include "DOMMediaStream.h"
-#include "nsDirectoryServiceDefs.h"
-#include "nsComponentManagerUtils.h"
-
 // Avoid warnings about redefinition of WARN_UNUSED_RESULT
-#include "ipc/IPCMessageUtils.h"
-#include "VideoUtils.h"
-#include "MediaEngineSource.h"
-#include "VideoSegment.h"
 #include "AudioSegment.h"
+#include "MediaEngineSource.h"
 #include "MediaTrackGraph.h"
-
+#include "VideoSegment.h"
+#include "VideoUtils.h"
+#include "ipc/IPCMessageUtils.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
 
 // Camera Access via IPC
 #include "CamerasChild.h"
-
 #include "NullTransport.h"
 
 // WebRTC includes
@@ -209,7 +206,6 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
 
   // True when resolution settings have been updated from a real frame's
   // resolution. Threadsafe.
-  // TODO: This can be removed in bug 1453269.
   const RefPtr<media::Refcountable<AtomicBool>> mSettingsUpdatedByFrame;
 
   // The current settings of this source.
@@ -227,6 +223,10 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   // Set under mMutex on the owning thread. Accessed under one of the two.
   webrtc::CaptureCapability mCapability;
   DistanceCalculation mCalculation;
+
+  // The constraints we're currently operating under, for calculating incoming
+  // video resolution.
+  Maybe<NormalizedConstraints> mConstraints MOZ_GUARDED_BY(mMutex);
 
   // Owning thread only.
   UniquePtr<MediaEnginePrefs> mPrefs;

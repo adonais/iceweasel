@@ -5,20 +5,21 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/ReportingHeader.h"
+
 #include <limits>
 
 #include "js/Array.h"  // JS::GetArrayLength, JS::IsArrayObject
 #include "js/JSON.h"
 #include "js/PropertyAndElement.h"  // JS_GetElement
+#include "mozilla/OriginAttributes.h"
+#include "mozilla/Services.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/dom/ReportingBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SimpleGlobalObject.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/net/SFVService.h"
-#include "mozilla/OriginAttributes.h"
-#include "mozilla/Services.h"
-#include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/StaticPtr.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsIEffectiveTLDService.h"

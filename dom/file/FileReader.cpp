@@ -6,32 +6,31 @@
 
 #include "FileReader.h"
 
-#include "nsIGlobalObject.h"
-#include "nsITimer.h"
-
 #include "js/ArrayBuffer.h"  // JS::NewArrayBufferWithContents
 #include "mozilla/Base64.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/Encoding.h"
+#include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FileReaderBinding.h"
 #include "mozilla/dom/ProgressEvent.h"
-#include "mozilla/dom/UnionTypes.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/UnionTypes.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerScope.h"
-#include "mozilla/Encoding.h"
-#include "mozilla/HoldDropJSObjects.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDOMJSUtils.h"
 #include "nsError.h"
+#include "nsIGlobalObject.h"
+#include "nsITimer.h"
 #include "nsNetUtil.h"
+#include "nsReadableUtils.h"
 #include "nsStreamUtils.h"
 #include "nsThreadUtils.h"
 #include "xpcpublic.h"
-#include "nsReadableUtils.h"
 
 namespace mozilla::dom {
 

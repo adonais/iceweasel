@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <utility>
+
 #include "js/StructuredClone.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"

@@ -73,7 +73,7 @@ add_task(async function test_sidebar_providers() {
   await SidebarController.show("viewGenaiChatSidebar");
 
   const origCount = countVisible();
-  Assert.equal(origCount, 4, "Rendered expected number of provider options");
+  Assert.equal(origCount, 5, "Rendered expected number of provider options");
 
   SidebarController.hide();
   await SpecialPowers.pushPrefEnv({
@@ -132,41 +132,17 @@ add_task(async function test_sidebar_onboarding() {
 
   pickButton.click();
 
-  const startButton = await TestUtils.waitForCondition(() =>
-    document.querySelector(".chat_suggest .primary")
-  );
-  Assert.ok(startButton, "Got button to start");
   Assert.equal(
     Services.prefs.getStringPref("browser.ml.chat.provider"),
     "http://localhost:8080",
     "Provider pref changed during onboarding"
   );
-  events = Glean.genaiChatbot.onboardingContinue.testGetValue();
-  Assert.equal(events.length, 1, "Continued once");
-  Assert.equal(
-    events[0].extra.provider,
-    "localhost",
-    "Continued with localhost"
-  );
-  Assert.equal(events[0].extra.step, "1", "First step");
-  events = await TestUtils.waitForCondition(() =>
-    Glean.genaiChatbot.onboardingTextHighlightDisplayed.testGetValue()
-  );
-  Assert.equal(events.length, 1, "Displayed highlight once");
-  Assert.equal(
-    events[0].extra.provider,
-    "localhost",
-    "Continued with localhost"
-  );
-  Assert.equal(events[0].extra.step, "2", "Second step");
-
-  Services.prefs.clearUserPref("browser.ml.chat.provider");
-  startButton.click();
 
   const noOnboarding = await TestUtils.waitForCondition(
     () => !document.getElementById("multi-stage-message-root")
   );
   Assert.ok(noOnboarding, "Onboarding container went away");
+
   events = Glean.genaiChatbot.onboardingFinish.testGetValue();
   Assert.equal(events.length, 1, "Finished once");
   Assert.equal(
@@ -174,8 +150,9 @@ add_task(async function test_sidebar_onboarding() {
     "localhost",
     "Finished with localhost"
   );
-  Assert.equal(events[0].extra.step, "2", "Second step");
+  Assert.equal(events[0].extra.step, "1", "First step");
 
+  Services.prefs.clearUserPref("browser.ml.chat.provider");
   SidebarController.hide();
 });
 

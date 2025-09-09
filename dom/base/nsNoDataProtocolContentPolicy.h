@@ -19,8 +19,8 @@
 #define NS_NODATAPROTOCOLCONTENTPOLICY_CONTRACTID \
   "@mozilla.org/no-data-protocol-content-policy;1"
 
-#include "nsIContentPolicy.h"
 #include "mozilla/Attributes.h"
+#include "nsIContentPolicy.h"
 
 class nsNoDataProtocolContentPolicy final : public nsIContentPolicy {
   ~nsNoDataProtocolContentPolicy() = default;

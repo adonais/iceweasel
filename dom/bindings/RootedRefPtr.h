@@ -17,9 +17,9 @@
 #ifndef mozilla_RootedRefPtr_h__
 #define mozilla_RootedRefPtr_h__
 
-#include "mozilla/RefPtr.h"
 #include "js/GCPolicyAPI.h"
 #include "js/TypeDecls.h"
+#include "mozilla/RefPtr.h"
 
 namespace JS {
 template <typename T>

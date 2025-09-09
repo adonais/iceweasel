@@ -6,23 +6,24 @@
 
 #include "ContainerParser.h"
 
-#include "WebMBufferedParser.h"
-#include "mozilla/EndianUtils.h"
-#include "mozilla/IntegerPrintfMacros.h"
-#include "mozilla/ErrorResult.h"
-#include "MoofParser.h"
-#include "mozilla/Logging.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/Try.h"
-#include "MediaData.h"
-#include "nsMimeTypes.h"
+#include <algorithm>
+
 #include "AtomType.h"
 #include "BufferReader.h"
 #include "ByteStream.h"
 #include "MP4Interval.h"
+#include "MediaData.h"
+#include "MoofParser.h"
 #include "SampleIterator.h"
 #include "SourceBufferResource.h"
-#include <algorithm>
+#include "WebMBufferedParser.h"
+#include "mozilla/EndianUtils.h"
+#include "mozilla/ErrorResult.h"
+#include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Try.h"
+#include "nsMimeTypes.h"
 
 extern mozilla::LogModule* GetMediaSourceSamplesLog();
 

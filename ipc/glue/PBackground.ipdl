@@ -14,6 +14,7 @@ include protocol PBackgroundSessionStorageManager;
 include protocol PBackgroundSessionStorageService;
 include protocol PBackgroundStorage;
 include protocol PBackgroundTest;
+include protocol PBoundStorageKey;
 include protocol PBroadcastChannel;
 include protocol PCache;
 include protocol PCacheStorage;
@@ -254,6 +255,11 @@ parent:
                      bool aIsFromNsIFile);
 
   async PClientManager();
+
+  async CreateBoundStorageKeyParent(
+    Endpoint<PBoundStorageKeyParent> aEndPoint,
+    Namespace aNamespace,
+    PrincipalInfo aPrincipalInfo);
 
   async CreateMIDIManager(Endpoint<PMIDIManagerParent> aEndpoint);
   async CreateMIDIPort(Endpoint<PMIDIPortParent> aEndpoint,

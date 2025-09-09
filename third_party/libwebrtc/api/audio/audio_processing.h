@@ -26,7 +26,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <utility>
 
 #include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
@@ -591,7 +590,7 @@ class RTC_EXPORT AudioProcessing : public RefCountInterface {
   // representation of the input is returned. Returns true/false to indicate
   // whether an output returned.
   virtual bool GetLinearAecOutput(
-      rtc::ArrayView<std::array<float, 160>> linear_output) const = 0;
+      ArrayView<std::array<float, 160>> linear_output) const = 0;
 
   // This must be called prior to ProcessStream() if and only if adaptive analog
   // gain control is enabled, to pass the current analog level from the audio
@@ -633,14 +632,14 @@ class RTC_EXPORT AudioProcessing : public RefCountInterface {
   // return value of true indicates that the file has been
   // sucessfully opened, while a value of false indicates that
   // opening the file failed.
-  virtual bool CreateAndAttachAecDump(
-      absl::string_view file_name,
-      int64_t max_log_size_bytes,
-      absl::Nonnull<TaskQueueBase*> worker_queue) = 0;
-  virtual bool CreateAndAttachAecDump(
-      absl::Nonnull<FILE*> handle,
-      int64_t max_log_size_bytes,
-      absl::Nonnull<TaskQueueBase*> worker_queue) = 0;
+  virtual bool CreateAndAttachAecDump(absl::string_view file_name,
+                                      int64_t max_log_size_bytes,
+                                      TaskQueueBase* absl_nonnull
+                                          worker_queue) = 0;
+  virtual bool CreateAndAttachAecDump(FILE* absl_nonnull handle,
+                                      int64_t max_log_size_bytes,
+                                      TaskQueueBase* absl_nonnull
+                                          worker_queue) = 0;
 
   // TODO(webrtc:5298) Deprecated variant.
   // Attaches provided webrtc::AecDump for recording debugging
@@ -738,7 +737,7 @@ class AudioProcessingBuilderInterface {
  public:
   virtual ~AudioProcessingBuilderInterface() = default;
 
-  virtual absl::Nullable<scoped_refptr<AudioProcessing>> Build(
+  virtual absl_nullable scoped_refptr<AudioProcessing> Build(
       const Environment& env) = 0;
 };
 
@@ -747,9 +746,9 @@ class AudioProcessingBuilderInterface {
 // nullptr `audio_processing` is not supported as in some scenarios that imply
 // no audio processing, while in others - default builtin audio processing.
 // Callers should be explicit which of these two behaviors they want.
-absl::Nonnull<std::unique_ptr<AudioProcessingBuilderInterface>>
+absl_nonnull std::unique_ptr<AudioProcessingBuilderInterface>
 CustomAudioProcessing(
-    absl::Nonnull<scoped_refptr<AudioProcessing>> audio_processing);
+    absl_nonnull scoped_refptr<AudioProcessing> audio_processing);
 
 // Experimental interface for a custom analysis submodule.
 class CustomAudioAnalyzer {
@@ -879,11 +878,10 @@ class EchoDetector : public RefCountInterface {
                           int num_render_channels) = 0;
 
   // Analysis (not changing) of the first channel of the render signal.
-  virtual void AnalyzeRenderAudio(rtc::ArrayView<const float> render_audio) = 0;
+  virtual void AnalyzeRenderAudio(ArrayView<const float> render_audio) = 0;
 
   // Analysis (not changing) of the capture signal.
-  virtual void AnalyzeCaptureAudio(
-      rtc::ArrayView<const float> capture_audio) = 0;
+  virtual void AnalyzeCaptureAudio(ArrayView<const float> capture_audio) = 0;
 
   struct Metrics {
     std::optional<double> echo_likelihood;

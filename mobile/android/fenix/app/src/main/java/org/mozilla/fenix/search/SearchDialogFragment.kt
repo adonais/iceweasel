@@ -624,6 +624,7 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        _awesomeBarView?.dispose()
         _awesomeBarView = null
         nullableInteractor = null
         controller?.apply {

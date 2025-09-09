@@ -114,7 +114,7 @@ pub trait ExternalImageHandler {
     /// Lock the external image. Then, WR could start to read the image content.
     /// The WR client should not change the image content until the unlock()
     /// call.
-    fn lock(&mut self, key: ExternalImageId, channel_index: u8) -> ExternalImage;
+    fn lock(&mut self, key: ExternalImageId, channel_index: u8, is_composited: bool) -> ExternalImage;
     /// Unlock the external image. WR should not read the image content
     /// after this call.
     fn unlock(&mut self, key: ExternalImageId, channel_index: u8);

@@ -268,6 +268,96 @@ add_task(async function test_sessionData() {
   checkEvents(sessionData.getSessionData("mod", "event"), []);
 });
 
+add_task(function test_hasSessionData() {
+  const sessionData = new SessionData(new RootMessageHandler("session-id-1"));
+
+  ok(
+    !sessionData.hasSessionData("mod", "event"),
+    "Starts with no session data"
+  );
+
+  const globalContext = {
+    type: ContextDescriptorType.All,
+  };
+  const otherContext = { type: "other-type", id: "some-id" };
+
+  sessionData.applySessionData([
+    createUpdate(SessionDataMethod.Add, globalContext, ["test.event"]),
+  ]);
+  ok(sessionData.hasSessionData("mod", "event"), "Detects global context");
+  sessionData.applySessionData([
+    createUpdate(SessionDataMethod.Remove, globalContext, ["test.event"]),
+  ]);
+  ok(
+    !sessionData.hasSessionData("mod", "event"),
+    "Detects removal of global context data"
+  );
+
+  sessionData.applySessionData([
+    createUpdate(SessionDataMethod.Add, otherContext, ["other.event"]),
+  ]);
+  ok(
+    sessionData.hasSessionData("mod", "event"),
+    "Detects specific context data"
+  );
+
+  sessionData.applySessionData([
+    createUpdate(SessionDataMethod.Add, globalContext, ["global.event"]),
+  ]);
+  ok(sessionData.hasSessionData("mod", "event"), "Detects mixed context data");
+
+  sessionData.applySessionData([
+    createUpdate(SessionDataMethod.Remove, otherContext, ["other.event"]),
+  ]);
+  ok(
+    sessionData.hasSessionData("mod", "event"),
+    "Should still contain global context data"
+  );
+
+  sessionData.applySessionData([
+    createUpdate(SessionDataMethod.Remove, globalContext, ["global.event"]),
+  ]);
+  ok(
+    !sessionData.hasSessionData("mod", "event"),
+    "Should detect removal of all context data"
+  );
+
+  const specificContext = { type: "specific-type", id: "some-id" };
+
+  ok(!sessionData.hasSessionData("mod"), "Works without category");
+  sessionData.applySessionData([
+    createUpdate(SessionDataMethod.Add, specificContext, ["specific.event"]),
+  ]);
+  ok(sessionData.hasSessionData("mod"), "Detects without category");
+  sessionData.applySessionData([
+    createUpdate(SessionDataMethod.Remove, specificContext, ["specific.event"]),
+  ]);
+
+  ok(
+    !sessionData.hasSessionData("mod", "event", specificContext),
+    "No data for specific context initially"
+  );
+  sessionData.applySessionData([
+    createUpdate(SessionDataMethod.Add, specificContext, ["specific.event"]),
+  ]);
+  ok(
+    sessionData.hasSessionData("mod", "event", specificContext),
+    "Detects specific context data"
+  );
+  ok(
+    !sessionData.hasSessionData("mod", "event", otherContext),
+    "Doesn't show for wrong context"
+  );
+  sessionData.applySessionData([
+    createUpdate(SessionDataMethod.Remove, specificContext, ["specific.event"]),
+  ]);
+
+  ok(
+    !sessionData.hasSessionData("non-existent-module"),
+    "Unknown module returns false"
+  );
+});
+
 function checkEvents(events, expectedEvents) {
   // Check the arrays have the same size.
   equal(events.length, expectedEvents.length);

@@ -69,8 +69,8 @@
 #selection-size,
 #buttons-container {
   padding: 4px;
-  background-color: var(--in-content-page-background);
-  color: var(--in-content-text-color);
+  background-color: var(--background-color-canvas);
+  color: var(--text-color);
   border-radius: 4px;
 }
 
@@ -113,9 +113,9 @@
   color: #fff;
 
   @media (forced-colors) {
-    background-color: var(--in-content-button-background);
-    color: var(--in-content-button-text-color);
-    border-color: var(--in-content-button-border-color);
+    background-color: var(--button-background-color);
+    color: var(--button-text-color);
+    border-color: var(--button-border-color);
   }
 }
 
@@ -124,9 +124,9 @@
   color: #000;
 
   @media (forced-colors) {
-    background-color: var(--in-content-button-background-hover);
-    color: var(--in-content-button-text-color-hover);
-    border-color: var(--in-content-button-border-color-hover);
+    background-color: var(--button-background-color-hover);
+    color: var(--button-text-color-hover);
+    border-color: var(--button-border-color-hover);
   }
 }
 

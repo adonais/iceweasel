@@ -218,7 +218,7 @@ class nsCSSPropsGfxVarReceiver final : public gfx::gfxVarReceiver {
  public:
   static gfx::gfxVarReceiver& GetInstance() { return sInstance; }
 
-  void OnVarChanged(const gfx::GfxVarUpdate&) override {
+  void OnVarChanged(const nsTArray<gfx::GfxVarUpdate>&) override {
     bool enabled = gfx::gfxVars::AllowBackdropFilter();
     if (sLastKnownAllowBackdropFilter != enabled) {
       sLastKnownAllowBackdropFilter = enabled;

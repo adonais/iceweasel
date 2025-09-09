@@ -6,19 +6,8 @@
 
 #include "mozilla/dom/DOMParser.h"
 
-#include "nsNetUtil.h"
-#include "nsDOMString.h"
 #include "MainThreadUtils.h"
 #include "SystemPrincipal.h"
-#include "nsIScriptGlobalObject.h"
-#include "nsIStreamListener.h"
-#include "nsStringStream.h"
-#include "nsCRT.h"
-#include "nsStreamUtils.h"
-#include "nsContentUtils.h"
-#include "nsDOMJSUtils.h"
-#include "nsError.h"
-#include "nsPIDOMWindow.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/NullPrincipal.h"
@@ -27,6 +16,17 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/TrustedTypeUtils.h"
 #include "mozilla/dom/TrustedTypesConstants.h"
+#include "nsCRT.h"
+#include "nsContentUtils.h"
+#include "nsDOMJSUtils.h"
+#include "nsDOMString.h"
+#include "nsError.h"
+#include "nsIScriptGlobalObject.h"
+#include "nsIStreamListener.h"
+#include "nsNetUtil.h"
+#include "nsPIDOMWindow.h"
+#include "nsStreamUtils.h"
+#include "nsStringStream.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

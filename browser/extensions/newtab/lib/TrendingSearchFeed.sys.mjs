@@ -159,6 +159,12 @@ export class TrendingSearchFeed {
           await this.init();
         }
         break;
+      case at.DISCOVERY_STREAM_CONFIG_CHANGE:
+        await this.cache.set("trendingSearch", {});
+        if (this.enabled) {
+          await this.loadTrendingSearch();
+        }
+        break;
       case at.DISCOVERY_STREAM_DEV_SYSTEM_TICK:
       case at.SYSTEM_TICK:
         if (this.enabled) {

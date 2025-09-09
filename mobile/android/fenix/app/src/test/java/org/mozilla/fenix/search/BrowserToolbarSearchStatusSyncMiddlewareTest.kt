@@ -31,8 +31,8 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
+import org.mozilla.fenix.components.toolbar.BrowserToolbarEnvironment
 import org.mozilla.fenix.helpers.lifecycle.TestLifecycleOwner
-import org.mozilla.fenix.home.toolbar.HomeToolbarEnvironment
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 
@@ -123,7 +123,7 @@ class BrowserToolbarSearchStatusSyncMiddlewareTest {
         ).also {
             it.dispatch(
                 EnvironmentRehydrated(
-                    HomeToolbarEnvironment(
+                    BrowserToolbarEnvironment(
                         context = testContext,
                         navController = mockk(),
                         viewLifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED),

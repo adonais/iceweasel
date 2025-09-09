@@ -13,9 +13,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/Mutex.h"
-
 #include "mozilla/Unused.h"
-
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"

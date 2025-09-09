@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.4.19
- * pdfjsBuild = e0783cd07
+ * pdfjsVersion = 5.4.70
+ * pdfjsBuild = f16e0b6da
  */
 
 ;// ./src/scripting_api/constants.js
@@ -433,6 +433,9 @@ class Field extends PDFObject {
     this._fieldType = getFieldType(this._actions);
     this._siblings = data.siblings || null;
     this._rotation = data.rotation || 0;
+    this._datetimeFormat = data.datetimeFormat || null;
+    this._hasDateOrTime = !!data.hasDatetimeHTML;
+    this._util = data.util;
     this._globalEval = data.globalEval;
     this._appObjects = data.appObjects;
     this.value = data.value || "";
@@ -558,6 +561,15 @@ class Field extends PDFObject {
       this._setChoiceValue(value);
       return;
     }
+    if (this._hasDateOrTime && value) {
+      const date = this._util.scand(this._datetimeFormat, value);
+      if (date) {
+        this._originalValue = date.valueOf();
+        value = this._util.printd(this._datetimeFormat, date);
+        this._value = !isNaN(value) ? parseFloat(value) : value;
+        return;
+      }
+    }
     if (value === "" || typeof value !== "string" || this._fieldType >= FieldType.date) {
       this._originalValue = undefined;
       this._value = value;
@@ -566,6 +578,9 @@ class Field extends PDFObject {
     this._originalValue = value;
     const _value = value.trim().replace(",", ".");
     this._value = !isNaN(_value) ? parseFloat(_value) : value;
+  }
+  get _initialValue() {
+    return this._hasDateOrTime && this._originalValue || null;
   }
   _getValue() {
     return this._originalValue ?? this.value;
@@ -2243,12 +2258,17 @@ class Console extends PDFObject {
   }
   hide() {}
   println(msg) {
-    if (typeof msg === "string") {
-      this._send({
-        command: "println",
-        value: "PDF.js Console:: " + msg
-      });
+    if (typeof msg !== "string") {
+      try {
+        msg = JSON.stringify(msg);
+      } catch {
+        msg = msg.toString?.() || "[Unserializable object]";
+      }
     }
+    this._send({
+      command: "println",
+      value: "PDF.js Console:: " + msg
+    });
   }
   show() {}
 }
@@ -2458,6 +2478,19 @@ class Doc extends PDFObject {
     this._otherPageActions = null;
   }
   _initActions() {
+    for (const {
+      obj
+    } of this._fields.values()) {
+      const initialValue = obj._initialValue;
+      if (initialValue) {
+        this._send({
+          id: obj._id,
+          siblings: obj._siblings,
+          value: initialValue,
+          formattedValue: obj.value.toString()
+        });
+      }
+    }
     const dontRun = new Set(["WillClose", "WillSave", "DidSave", "WillPrint", "DidPrint", "OpenAction"]);
     this._disableSaving = true;
     for (const actionName of this._actions.keys()) {
@@ -3850,10 +3883,10 @@ class Util extends PDFObject {
       return strict ? null : this.#tryToGuessDate(cFormat, cDate);
     }
     const data = {
-      year: new Date().getFullYear(),
+      year: 2000,
       month: 0,
       day: 1,
-      hours: 12,
+      hours: 0,
       minutes: 0,
       seconds: 0,
       am: null
@@ -3933,6 +3966,7 @@ function initSandbox(params) {
       obj.doc = _document;
       obj.fieldPath = name;
       obj.appObjects = appObjects;
+      obj.util = util;
       const otherFields = annotations.slice(1);
       let field;
       switch (obj.type) {

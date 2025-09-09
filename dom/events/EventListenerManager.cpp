@@ -7,6 +7,9 @@
 // Microsoft's API Name hackery sucks
 #undef CreateEvent
 
+#include "mozilla/EventListenerManager.h"
+
+#include "EventListenerService.h"
 #include "js/ColumnNumber.h"      // JS::ColumnNumberOneOrigin
 #include "js/EnvironmentChain.h"  // JS::EnvironmentChain
 #include "js/loader/LoadedScript.h"
@@ -17,7 +20,6 @@
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/EventDispatcher.h"
-#include "mozilla/EventListenerManager.h"
 #include "mozilla/HalSensor.h"
 #include "mozilla/InternalMutationEvent.h"
 #include "mozilla/JSEventHandler.h"
@@ -31,9 +33,10 @@
 #include "mozilla/dom/AbortSignal.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ChromeUtils.h"
-#include "mozilla/dom/EventCallbackDebuggerNotification.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
+#include "mozilla/dom/EventCallbackDebuggerNotification.h"
 #include "mozilla/dom/EventTargetBinding.h"
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/PopupBlocker.h"
@@ -42,28 +45,25 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/TouchEvent.h"
 #include "mozilla/dom/UserActivation.h"
-
-#include "EventListenerService.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsDOMCID.h"
+#include "nsDisplayList.h"
 #include "nsError.h"
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsIContentSecurityPolicy.h"
-#include "mozilla/dom/Document.h"
+#include "nsIFrame.h"
 #include "nsIScriptGlobalObject.h"
 #include "nsISupports.h"
 #include "nsJSUtils.h"
 #include "nsNameSpaceManager.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIWindowRoot.h"
 #include "nsPrintfCString.h"
 #include "nsSandboxFlags.h"
 #include "xpcpublic.h"
-#include "nsIFrame.h"
-#include "nsDisplayList.h"
-#include "nsPIWindowRoot.h"
 
 namespace mozilla {
 

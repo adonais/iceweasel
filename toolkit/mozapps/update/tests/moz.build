@@ -103,6 +103,8 @@ FINAL_TARGET_FILES += [
     "data/partial_removed-files",
     "data/partial_removed-files_mac",
     "data/partial_update_manifest",
+    "data/partial_zucchini.mar",
+    "data/partial_zucchini_mac.mar",
     "data/replace_log_success",
     "data/simple.mar",
     "data/syncManagerTestChild.js",

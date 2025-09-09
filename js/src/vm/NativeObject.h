@@ -950,6 +950,10 @@ class NativeObject : public JSObject {
     return hasFlag(ObjectFlag::HadGetterSetterChange);
   }
 
+  static bool setHasObjectFuse(JSContext* cx, Handle<NativeObject*> obj) {
+    return setFlag(cx, obj, js::ObjectFlag::HasObjectFuse);
+  }
+
   bool allocateInitialSlots(JSContext* cx, uint32_t capacity);
 
   /*
@@ -1728,6 +1732,11 @@ class NativeObject : public JSObject {
     }
     return TaggedSlotOffset((slot - nfixed) * sizeof(Value),
                             /* isFixedSlot = */ false);
+  }
+
+  bool hasUnpreservedWrapper() const {
+    return getClass()->preservesWrapper() &&
+           !shape()->hasObjectFlag(ObjectFlag::HasPreservedWrapper);
   }
 
   /* JIT Accessors */

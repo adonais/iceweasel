@@ -25,8 +25,8 @@
 #ifndef HRTFPanner_h
 #define HRTFPanner_h
 
-#include "FFTConvolver.h"
 #include "DelayBuffer.h"
+#include "FFTConvolver.h"
 #include "mozilla/MemoryReporting.h"
 
 namespace mozilla {

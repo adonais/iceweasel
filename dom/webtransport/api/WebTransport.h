@@ -7,19 +7,19 @@
 #ifndef DOM_WEBTRANSPORT_API_WEBTRANSPORT__H_
 #define DOM_WEBTRANSPORT_API_WEBTRANSPORT__H_
 
-#include "nsCOMPtr.h"
-#include "nsTArray.h"
-#include "nsISupports.h"
-#include "nsTHashMap.h"
-#include "nsWrapperCache.h"
-#include "nsPIDOMWindow.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebTransportBinding.h"
 #include "mozilla/dom/WebTransportChild.h"
-#include "mozilla/dom/WebTransportSendStream.h"
 #include "mozilla/dom/WebTransportReceiveStream.h"
+#include "mozilla/dom/WebTransportSendStream.h"
 #include "mozilla/dom/WebTransportStreams.h"
 #include "mozilla/ipc/DataPipe.h"
+#include "nsCOMPtr.h"
+#include "nsISupports.h"
+#include "nsPIDOMWindow.h"
+#include "nsTArray.h"
+#include "nsTHashMap.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla::dom {
 

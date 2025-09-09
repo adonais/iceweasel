@@ -7,18 +7,32 @@ ChromeUtils.defineESModuleGetters(this, {
   FileTestUtils: "resource://testing-common/FileTestUtils.sys.mjs",
   MockRegistrar: "resource://testing-common/MockRegistrar.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
-  ShellService: "resource:///modules/ShellService.sys.mjs",
+  ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
   TaskbarTabsPin: "resource:///modules/taskbartabs/TaskbarTabsPin.sys.mjs",
   TaskbarTabsRegistry:
     "resource:///modules/taskbartabs/TaskbarTabsRegistry.sys.mjs",
+  XPCOMUtils: "resource://gre/modules/XPCOMUtils.sys.mjs",
+});
+
+XPCOMUtils.defineLazyServiceGetters(this, {
+  imgTools: ["@mozilla.org/image/tools;1", "imgITools"],
 });
 
 // We want to mock the native XPCOM interfaces of the initialized
 // `ShellService.shellService`, but those interfaces are frozen. Instead we
 // proxy `ShellService.shellService` and mock it.
-const mockNativeShellService = {
+let gCreateWindowsIcon = ShellService.shellService.createWindowsIcon;
+let gOverrideWindowsIconFileOnce;
+const kMockNativeShellService = {
   ...ShellService.shellService,
-  createWindowsIcon: sinon.stub().resolves(),
+  createWindowsIcon: sinon
+    .stub()
+    .callsFake(async (aIconFile, aImgContainer) => {
+      if (gOverrideWindowsIconFileOnce) {
+        await gCreateWindowsIcon(gOverrideWindowsIconFileOnce, aImgContainer);
+        gOverrideWindowsIconFileOnce = null;
+      }
+    }),
   createShortcut: sinon.stub().resolves("dummy_path"),
   deleteShortcut: sinon.stub().resolves("dummy_path"),
   pinShortcutToTaskbar: sinon.stub().resolves(),
@@ -28,7 +42,7 @@ const mockNativeShellService = {
   unpinShortcutFromTaskbar: sinon.stub(),
 };
 
-sinon.stub(ShellService, "shellService").value(mockNativeShellService);
+sinon.stub(ShellService, "shellService").value(kMockNativeShellService);
 
 registerCleanupFunction(() => {
   sinon.restore();
@@ -37,52 +51,64 @@ registerCleanupFunction(() => {
 // Favicons are written to the profile directory, ensure it exists.
 do_get_profile();
 
-const faviconService = Cc[
+const kFaviconService = Cc[
   "@mozilla.org/browser/favicon-service;1"
 ].createInstance(Ci.nsIFaviconService);
 
-const kFaviconUri = Services.io.newFileURI(do_get_file("favicon-normal16.png"));
-let faviconThrows = false;
+let gPngFavicon;
+let gSvgFavicon;
+add_setup(async () => {
+  const pngFile = do_get_file("favicon-normal16.png");
+  const pngData = await IOUtils.read(pngFile.path);
+  gPngFavicon = { rawData: pngData.buffer, mimeType: "image/png" };
 
-let mockFaviconService = {
+  const svgFile = do_get_file("icon.svg");
+  gSvgFavicon = {
+    dataURI: Services.io.newFileURI(svgFile),
+    mimeType: "image/svg+xml",
+  };
+});
+
+let gFavicon;
+
+const kMockFaviconService = {
   QueryInterface: ChromeUtils.generateQI(["nsIFaviconService"]),
   getFaviconForPage: sinon.stub().callsFake(async () => {
-    if (faviconThrows) {
-      return null;
-    }
-    return { dataURI: kFaviconUri };
+    return gFavicon;
   }),
   get defaultFavicon() {
-    return faviconService.defaultFavicon;
+    return kFaviconService.defaultFavicon;
   },
 };
-let defaultIconSpy = sinon.spy(mockFaviconService, "defaultFavicon", ["get"]);
+const kDefaultIconSpy = sinon.spy(kMockFaviconService, "defaultFavicon", [
+  "get",
+]);
 
 function shellPinCalled(aTaskbarTab) {
   ok(
-    mockNativeShellService.createWindowsIcon.calledOnce,
+    kMockNativeShellService.createWindowsIcon.calledOnce,
     `Icon creation should have been called.`
   );
   ok(
-    mockNativeShellService.createShortcut.calledOnce,
+    kMockNativeShellService.createShortcut.calledOnce,
     `Shortcut creation should have been called.`
   );
   ok(
-    mockNativeShellService.pinShortcutToTaskbar.calledOnce,
+    kMockNativeShellService.pinShortcutToTaskbar.calledOnce,
     `Pin to taskbar should have been called.`
   );
   Assert.equal(
-    mockNativeShellService.pinShortcutToTaskbar.firstCall.args[1],
-    mockNativeShellService.createShortcut.firstCall.args[6],
+    kMockNativeShellService.pinShortcutToTaskbar.firstCall.args[1],
+    kMockNativeShellService.createShortcut.firstCall.args[6],
     `The created and pinned shortcuts should be in the same folder.`
   );
   Assert.equal(
-    mockNativeShellService.pinShortcutToTaskbar.firstCall.args[2],
-    mockNativeShellService.createShortcut.firstCall.args[7],
+    kMockNativeShellService.pinShortcutToTaskbar.firstCall.args[2],
+    kMockNativeShellService.createShortcut.firstCall.args[7],
     `The created and pinned shortcuts should be the same file.`
   );
   Assert.equal(
-    mockNativeShellService.pinShortcutToTaskbar.firstCall.args[2],
+    kMockNativeShellService.pinShortcutToTaskbar.firstCall.args[2],
     aTaskbarTab.shortcutRelativePath,
     `The pinned shortcut should be the saved shortcut.`
   );
@@ -90,19 +116,37 @@ function shellPinCalled(aTaskbarTab) {
 
 function shellUnpinCalled() {
   ok(
-    mockNativeShellService.deleteShortcut.calledOnce,
+    kMockNativeShellService.deleteShortcut.calledOnce,
     `Unpin from taskbar should have been called.`
   );
   ok(
-    mockNativeShellService.unpinShortcutFromTaskbar.calledOnce,
+    kMockNativeShellService.unpinShortcutFromTaskbar.calledOnce,
     `Unpin from taskbar should have been called.`
   );
 }
 
 MockRegistrar.register(
   "@mozilla.org/browser/favicon-service;1",
-  mockFaviconService
+  kMockFaviconService
 );
+
+async function testWrittenIconFile(aIconFile) {
+  const data = await IOUtils.read(aIconFile.path);
+  const imgContainer = imgTools.decodeImageFromArrayBuffer(
+    data.buffer,
+    "image/vnd.microsoft.icon"
+  );
+  equal(
+    imgContainer.width,
+    256,
+    "Image written to disk should be 256px width."
+  );
+  equal(
+    imgContainer.height,
+    256,
+    "Image written to disk should be 256px height."
+  );
+}
 
 const url = Services.io.newURI("https://www.test.com");
 const userContextId = 0;
@@ -113,34 +157,70 @@ const taskbarTab = registry.findOrCreateTaskbarTab(url, userContextId);
 const patchedSpy = sinon.stub();
 registry.on(TaskbarTabsRegistry.events.patched, patchedSpy);
 
-add_task(async function test_pin_existing_favicon() {
+function getTempFile() {
+  let path = do_get_tempdir();
+  let filename = Services.uuid.generateUUID().toString().slice(1, -1);
+  path.append(filename + ".ico");
+  return path;
+}
+
+add_task(async function test_pin_existing_favicon_raster() {
   sinon.resetHistory();
-  faviconThrows = false;
+  gFavicon = gPngFavicon;
+
+  let iconFile = getTempFile();
+  gOverrideWindowsIconFileOnce = iconFile;
+
   await TaskbarTabsPin.pinTaskbarTab(taskbarTab, registry);
 
   ok(
-    mockFaviconService.getFaviconForPage.calledOnce,
+    kMockFaviconService.getFaviconForPage.calledOnce,
     "The favicon for the page should have attempted to be retrieved."
   );
+  const imgContainer =
+    kMockNativeShellService.createWindowsIcon.firstCall.args[1];
+  equal(imgContainer.width, 256, "Image should be scaled to 256px width.");
+  equal(imgContainer.height, 256, "Image should be scaled to 256px height.");
   ok(
-    defaultIconSpy.get.notCalled,
+    kDefaultIconSpy.get.notCalled,
     "The default icon should not be used when a favicon exists for the page."
   );
+
+  await testWrittenIconFile(iconFile);
+
+  shellPinCalled(taskbarTab);
+});
+
+add_task(async function test_pin_existing_favicon_vector() {
+  sinon.resetHistory();
+  gFavicon = gSvgFavicon;
+
+  let iconFile = getTempFile();
+  gOverrideWindowsIconFileOnce = iconFile;
+
+  await TaskbarTabsPin.pinTaskbarTab(taskbarTab, registry);
+
+  ok(
+    kDefaultIconSpy.get.notCalled,
+    "The default icon should not be used when a vector favicon exists for the page."
+  );
+
+  await testWrittenIconFile(iconFile);
 
   shellPinCalled(taskbarTab);
 });
 
 add_task(async function test_pin_missing_favicon() {
   sinon.resetHistory();
-  faviconThrows = true;
+  gFavicon = null;
   await TaskbarTabsPin.pinTaskbarTab(taskbarTab, registry);
 
   ok(
-    mockFaviconService.getFaviconForPage.calledOnce,
+    kMockFaviconService.getFaviconForPage.calledOnce,
     "The favicon for the page should have attempted to be retrieved."
   );
   ok(
-    defaultIconSpy.get.called,
+    kDefaultIconSpy.get.called,
     "The default icon should be used when a favicon does not exist for the page."
   );
 
@@ -151,7 +231,7 @@ add_task(async function test_pin_location() {
   sinon.resetHistory();
 
   await TaskbarTabsPin.pinTaskbarTab(taskbarTab, registry);
-  const spy = mockNativeShellService.createShortcut;
+  const spy = kMockNativeShellService.createShortcut;
   ok(spy.calledOnce, "A shortcut was created");
   Assert.equal(
     spy.firstCall.args[6],
@@ -178,7 +258,7 @@ add_task(async function test_pin_location_dos_name() {
   sinon.resetHistory();
 
   await TaskbarTabsPin.pinTaskbarTab(invalidTaskbarTab, registry);
-  const spy = mockNativeShellService.createShortcut;
+  const spy = kMockNativeShellService.createShortcut;
   ok(spy.calledOnce, "A shortcut was created");
   Assert.equal(
     spy.firstCall.args[6],

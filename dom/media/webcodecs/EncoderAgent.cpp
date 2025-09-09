@@ -281,14 +281,11 @@ RefPtr<ShutdownPromise> EncoderAgent::Shutdown() {
   mReconfigurationRequest.DisconnectIfExists();
   mReconfigurationPromise.RejectIfExists(r, __func__);
 
-  // Cancel encoder in flight if any.
+  // Cancel encode in flight if any.
   mEncodeRequest.DisconnectIfExists();
   mEncodePromise.RejectIfExists(r, __func__);
 
-  // Cancel flush-out in flight if any.
-  mDrainRequest.DisconnectIfExists();
-  mEncodeRequest.DisconnectIfExists();
-
+  // Cancel drain in flight if any.
   mDrainRequest.DisconnectIfExists();
   mDrainPromise.RejectIfExists(r, __func__);
 

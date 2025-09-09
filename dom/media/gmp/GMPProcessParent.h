@@ -7,10 +7,10 @@
 #ifndef GMPProcessParent_h
 #define GMPProcessParent_h 1
 
-#include "mozilla/Attributes.h"
 #include "base/basictypes.h"
 #include "base/file_path.h"
 #include "base/thread.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/media/MediaUtils.h"
 #include "nsIFile.h"

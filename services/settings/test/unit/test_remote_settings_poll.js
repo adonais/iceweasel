@@ -62,12 +62,7 @@ add_setup(() => {
   server = new HttpServer();
   server.start(-1);
 
-  // Pretend we are in nightly channel to make sure all telemetry events are sent.
-  let oldGetChannel = Policy.getChannel;
-  Policy.getChannel = () => "nightly";
-
   registerCleanupFunction(() => {
-    Policy.getChannel = oldGetChannel;
     server.stop(() => {});
   });
 });

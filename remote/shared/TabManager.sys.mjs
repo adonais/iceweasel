@@ -35,7 +35,7 @@ class TabManagerClass {
     this.#contextListener.on("attached", this.#onContextAttached);
     this.#contextListener.startListening();
 
-    this.browsers.forEach(browser => {
+    this.getBrowsers().forEach(browser => {
       if (this.isValidCanonicalBrowsingContext(browser.browsingContext)) {
         this.#navigableIds.set(
           browser.browsingContext,
@@ -47,18 +47,28 @@ class TabManagerClass {
 
   /**
    * Retrieve all the browser elements from tabs as contained in open windows.
+   * By default excludes browsers with a null browsingContext (unloaded tabs).
+   *
+   * @param {object=} options
+   * @param {boolean=} options.unloaded
+   *     Pass true to also retrieve browsers for unloaded tabs. Defaults to
+   *     false.
    *
    * @returns {Array<XULBrowser>}
    *     All the found <xul:browser>s. Will return an empty array if
    *     no windows and tabs can be found.
    */
-  get browsers() {
+  getBrowsers(options = {}) {
+    const { unloaded = false } = options;
     const browsers = [];
 
     for (const win of lazy.windowManager.windows) {
       for (const tab of this.getTabsForWindow(win)) {
         const contentBrowser = this.getBrowserForTab(tab);
-        if (contentBrowser !== null) {
+        if (
+          contentBrowser !== null &&
+          (unloaded || contentBrowser.browsingContext != null)
+        ) {
           browsers.push(contentBrowser);
         }
       }
@@ -210,6 +220,7 @@ class TabManagerClass {
    *
    * @param {string} id
    *     A browser unique id created by getIdForBrowser.
+   *
    * @returns {XULBrowser}
    *     The <xul:browser> corresponding to the provided id. Will return null if
    *     no matching browser element is found.
@@ -231,6 +242,7 @@ class TabManagerClass {
    *
    * @param {string} id
    *     A browsing context unique id (created by getIdForBrowsingContext).
+   *
    * @returns {BrowsingContext=}
    *     The browsing context found for this id, null if none was found or
    *     browsing context is discarded.
@@ -259,6 +271,7 @@ class TabManagerClass {
    *
    * @param {XULBrowser} browserElement
    *     The <xul:browser> for which we want to retrieve the id.
+   *
    * @returns {string} The unique id for this browser.
    */
   getIdForBrowser(browserElement) {

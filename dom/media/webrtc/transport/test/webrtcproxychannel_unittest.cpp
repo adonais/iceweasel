@@ -9,7 +9,6 @@
 
 #include "mozilla/net/WebrtcTCPSocket.h"
 #include "mozilla/net/WebrtcTCPSocketCallback.h"
-
 #include "nsISocketTransport.h"
 
 #define GTEST_HAS_RTTI 0

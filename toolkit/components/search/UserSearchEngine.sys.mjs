@@ -78,11 +78,11 @@ export class UserSearchEngine extends SearchEngine {
     this._name = formInfo.name.trim();
     let charset = formInfo.charset ?? lazy.SearchUtils.DEFAULT_QUERY_CHARSET;
 
-    let url = new EngineURL(
-      lazy.SearchUtils.URL_TYPE.SEARCH,
-      formInfo.method ?? "GET",
-      formInfo.url
-    );
+    let url = new EngineURL({
+      type: lazy.SearchUtils.URL_TYPE.SEARCH,
+      method: formInfo.method ?? "GET",
+      template: formInfo.url,
+    });
     for (let [key, value] of formInfo.params ?? []) {
       url.addParam(
         Services.textToSubURI.ConvertAndEscape(charset, key),
@@ -94,11 +94,10 @@ export class UserSearchEngine extends SearchEngine {
     this._urls.push(url);
 
     if (formInfo.suggestUrl) {
-      let suggestUrl = new EngineURL(
-        lazy.SearchUtils.URL_TYPE.SUGGEST_JSON,
-        "GET",
-        formInfo.suggestUrl
-      );
+      let suggestUrl = new EngineURL({
+        type: lazy.SearchUtils.URL_TYPE.SUGGEST_JSON,
+        template: formInfo.suggestUrl,
+      });
       this._urls.push(suggestUrl);
     }
 
@@ -162,7 +161,7 @@ export class UserSearchEngine extends SearchEngine {
 
     if (template) {
       let method = postData ? "POST" : "GET";
-      let url = new EngineURL(type, method, template);
+      let url = new EngineURL({ type, method, template });
       for (let [key, value] of new URLSearchParams(postData ?? "").entries()) {
         url.addParam(key, value);
       }
@@ -194,7 +193,7 @@ export class UserSearchEngine extends SearchEngine {
    * errors.
    */
   updateFavicon() {
-    let searchUrl = this._getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH);
+    let searchUrl = this.getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH);
     let searchUrlOrigin = new URL(searchUrl.template).origin;
 
     lazy.PlacesUtils.favicons

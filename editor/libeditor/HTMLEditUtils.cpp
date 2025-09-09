@@ -18,10 +18,11 @@
 #include "mozilla/ArrayUtils.h"  // for ArrayLength
 #include "mozilla/Assertions.h"  // for MOZ_ASSERT, etc.
 #include "mozilla/Attributes.h"
-#include "mozilla/StaticPrefs_editor.h"   // for StaticPrefs::editor_
-#include "mozilla/RangeUtils.h"           // for RangeUtils
-#include "mozilla/dom/DocumentInlines.h"  // for GetBodyElement()
-#include "mozilla/dom/Element.h"          // for Element, nsINode
+#include "mozilla/StaticPrefs_editor.h"       // for StaticPrefs::editor_
+#include "mozilla/RangeUtils.h"               // for RangeUtils
+#include "mozilla/dom/CharacterDataBuffer.h"  // for CharacterDataBuffer
+#include "mozilla/dom/DocumentInlines.h"      // for GetBodyElement()
+#include "mozilla/dom/Element.h"              // for Element, nsINode
 #include "mozilla/dom/ElementInlines.h"  // for IsContentEditablePlainTextOnly()
 #include "mozilla/dom/HTMLAnchorElement.h"
 #include "mozilla/dom/HTMLBodyElement.h"
@@ -48,10 +49,9 @@
 #include "nsPrintfCString.h"     // nsPringfCString
 #include "nsString.h"            // for nsAutoString
 #include "nsStyledElement.h"
-#include "nsStyleStruct.h"   // for StyleDisplay
-#include "nsStyleUtil.h"     // for nsStyleUtil
-#include "nsTextFragment.h"  // for nsTextFragment
-#include "nsTextFrame.h"     // for nsTextFrame
+#include "nsStyleStruct.h"  // for StyleDisplay
+#include "nsStyleUtil.h"    // for nsStyleUtil
+#include "nsTextFrame.h"    // for nsTextFrame
 
 namespace mozilla {
 
@@ -535,7 +535,7 @@ bool HTMLEditUtils::IsAnyTableElement(const nsINode* aNode) {
  * IsAnyTableElementButNotTable() returns true if aNode is an html td, tr, ...
  * (doesn't include table)
  */
-bool HTMLEditUtils::IsAnyTableElementButNotTable(nsINode* aNode) {
+bool HTMLEditUtils::IsAnyTableElementButNotTable(const nsINode* aNode) {
   MOZ_ASSERT(aNode);
   return aNode->IsAnyOfHTMLElements(nsGkAtoms::tr, nsGkAtoms::td, nsGkAtoms::th,
                                     nsGkAtoms::thead, nsGkAtoms::tfoot,
@@ -545,7 +545,7 @@ bool HTMLEditUtils::IsAnyTableElementButNotTable(nsINode* aNode) {
 /**
  * IsTable() returns true if aNode is an html table.
  */
-bool HTMLEditUtils::IsTable(nsINode* aNode) {
+bool HTMLEditUtils::IsTable(const nsINode* aNode) {
   return aNode && aNode->IsHTMLElement(nsGkAtoms::table);
 }
 
@@ -626,7 +626,7 @@ bool HTMLEditUtils::IsNamedAnchor(const nsINode* aNode) {
 /**
  * IsMozDiv() returns true if aNode is an html div node with |type = _moz|.
  */
-bool HTMLEditUtils::IsMozDiv(nsINode* aNode) {
+bool HTMLEditUtils::IsMozDiv(const nsINode* aNode) {
   MOZ_ASSERT(aNode);
   return aNode->IsHTMLElement(nsGkAtoms::div) &&
          aNode->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
@@ -752,16 +752,16 @@ EditorDOMPoint HTMLEditUtils::LineRequiresPaddingLineBreakToBeVisible(
       // white-spaces after the point.  However, it won't occur with usual web
       // apps.  Instead, we should optimize the response time when user typing
       // keys in the usual web apps.
-      const nsTextFragment& fragment =
-          point.template ContainerAs<Text>()->TextFragment();
+      const CharacterDataBuffer& characterDataBuffer =
+          point.template ContainerAs<Text>()->DataBuffer();
       const uint32_t inclusiveNextVisibleCharOffset =
-          fragment.FindNonWhitespaceChar(
+          characterDataBuffer.FindNonWhitespaceChar(
               EditorUtils::IsNewLinePreformatted(*point.ContainerAs<Text>())
                   ? WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant,
                                       WhitespaceOption::NewLineIsSignificant}
                   : WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant},
               point.Offset());
-      if (inclusiveNextVisibleCharOffset != nsTextFragment::kNotFound) {
+      if (inclusiveNextVisibleCharOffset != CharacterDataBuffer::kNotFound) {
         return EditorDOMPoint();  // followed by a visible character.
       }
       // Followed by only collapsible white-spaces, let's check the next visible
@@ -808,7 +808,9 @@ EditorDOMPoint HTMLEditUtils::LineRequiresPaddingLineBreakToBeVisible(
           {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
     EditorDOMPoint pointToInsertLineBreak =
         HTMLEditUtils::GetDeepestEditableEndPointOf<EditorDOMPoint>(
-            *maybeNonEditableBlock);
+            *maybeNonEditableBlock,
+            {EditablePointOption::RecognizeInvisibleWhiteSpaces,
+             EditablePointOption::StopAtComment});
     if (pointToInsertLineBreak.IsInTextNode()) {
       pointToInsertLineBreak.SetAfterContainer();
     }
@@ -973,12 +975,12 @@ Element* HTMLEditUtils::GetElementOfImmediateBlockBoundary(
       return nullptr;  // found a visible text node.
     }
     const uint32_t nonWhiteSpaceOffset =
-        textNode->TextFragment().FindNonWhitespaceChar(
+        textNode->DataBuffer().FindNonWhitespaceChar(
             EditorUtils::IsNewLinePreformatted(*textNode)
                 ? WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant,
                                     WhitespaceOption::NewLineIsSignificant}
                 : WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant});
-    if (nonWhiteSpaceOffset != nsTextFragment::kNotFound) {
+    if (nonWhiteSpaceOffset != CharacterDataBuffer::kNotFound) {
       return nullptr;  // found a visible text node.
     }
     // All white-spaces in the text node are invisible, keep scanning next one.
@@ -1068,17 +1070,17 @@ Maybe<EditorLineBreakType> HTMLEditUtils::GetUnnecessaryLineBreak(
         if (!textNode->TextLength()) {
           continue;  // ignore empty text node
         }
-        const nsTextFragment& textFragment = textNode->TextFragment();
+        const CharacterDataBuffer& characterDataBuffer = textNode->DataBuffer();
         if (EditorUtils::IsNewLinePreformatted(*textNode) &&
-            textFragment.CharAt(textFragment.GetLength() - 1u) ==
+            characterDataBuffer.CharAt(characterDataBuffer.GetLength() - 1u) ==
                 HTMLEditUtils::kNewLine) {
           // If the text node ends with a preserved line break, it's unnecessary
           // unless it follows another preformatted line break.
-          if (textFragment.GetLength() == 1u) {
+          if (characterDataBuffer.GetLength() == 1u) {
             return textNode;  // Need to scan previous leaf.
           }
-          return textFragment.CharAt(textFragment.GetLength() - 2u) ==
-                         HTMLEditUtils::kNewLine
+          return characterDataBuffer.CharAt(characterDataBuffer.GetLength() -
+                                            2u) == HTMLEditUtils::kNewLine
                      ? nullptr
                      : textNode;
         }
@@ -1141,9 +1143,9 @@ Maybe<EditorLineBreakType> HTMLEditUtils::GetUnnecessaryLineBreak(
       if (!textNode->TextDataLength()) {
         continue;  // ignore empty text node
       }
-      const nsTextFragment& textFragment = textNode->TextFragment();
+      const CharacterDataBuffer& characterDataBuffer = textNode->DataBuffer();
       if (EditorUtils::IsNewLinePreformatted(*textNode) &&
-          textFragment.CharAt(textFragment.GetLength() - 1u) ==
+          characterDataBuffer.CharAt(characterDataBuffer.GetLength() - 1u) ==
               HTMLEditUtils::kNewLine) {
         // So, we are here because the preformatted line break is followed by
         // lastLineBreakContent which is <br> or a text node containing only
@@ -1163,7 +1165,7 @@ Maybe<EditorLineBreakType> HTMLEditUtils::GetUnnecessaryLineBreak(
       }
       // Otherwise, only if the last character is a collapsible white-space,
       // we need lastLineBreakContent to make the trailing white-space visible.
-      switch (textFragment.CharAt(textFragment.GetLength() - 1u)) {
+      switch (characterDataBuffer.LastChar()) {
         case HTMLEditUtils::kSpace:
         case HTMLEditUtils::kNewLine:
         case HTMLEditUtils::kCarriageReturn:
@@ -1240,9 +1242,10 @@ Maybe<EditorLineBreakType> HTMLEditUtils::GetFollowingUnnecessaryLineBreak(
 }
 
 uint32_t HTMLEditUtils::GetFirstVisibleCharOffset(const Text& aText) {
-  const nsTextFragment& textFragment = aText.TextFragment();
-  if (!textFragment.GetLength() || !EditorRawDOMPointInText(&aText, 0u)
-                                        .IsCharCollapsibleASCIISpaceOrNBSP()) {
+  const CharacterDataBuffer& characterDataBuffer = aText.DataBuffer();
+  if (!characterDataBuffer.GetLength() ||
+      !EditorRawDOMPointInText(&aText, 0u)
+           .IsCharCollapsibleASCIISpaceOrNBSP()) {
     return 0u;
   }
   const WSScanResult previousThingOfText =
@@ -1253,37 +1256,37 @@ uint32_t HTMLEditUtils::GetFirstVisibleCharOffset(const Text& aText) {
     return 0u;
   }
   return HTMLEditUtils::GetInclusiveNextNonCollapsibleCharOffset(aText, 0u)
-      .valueOr(textFragment.GetLength());
+      .valueOr(characterDataBuffer.GetLength());
 }
 
 uint32_t HTMLEditUtils::GetOffsetAfterLastVisibleChar(const Text& aText) {
-  const nsTextFragment& textFragment = aText.TextFragment();
-  if (!textFragment.GetLength()) {
+  const CharacterDataBuffer& characterDataBuffer = aText.DataBuffer();
+  if (!characterDataBuffer.GetLength()) {
     return 0u;
   }
   if (!EditorRawDOMPointInText::AtLastContentOf(aText)
            .IsCharCollapsibleASCIISpaceOrNBSP()) {
-    return textFragment.GetLength();
+    return characterDataBuffer.GetLength();
   }
   const WSScanResult nextThingOfText =
       WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
           WSRunScanner::Scan::All, EditorRawDOMPoint::After(aText),
           BlockInlineCheck::UseComputedDisplayStyle);
   if (!nextThingOfText.ReachedLineBoundary()) {
-    return textFragment.GetLength();
+    return characterDataBuffer.GetLength();
   }
   const Maybe<uint32_t> lastNonCollapsibleCharOffset =
       HTMLEditUtils::GetPreviousNonCollapsibleCharOffset(
-          aText, textFragment.GetLength());
+          aText, characterDataBuffer.GetLength());
   if (lastNonCollapsibleCharOffset.isNothing()) {
     return 0u;
   }
-  if (*lastNonCollapsibleCharOffset == textFragment.GetLength() - 1u) {
-    return textFragment.GetLength();
+  if (*lastNonCollapsibleCharOffset == characterDataBuffer.GetLength() - 1u) {
+    return characterDataBuffer.GetLength();
   }
   const uint32_t firstTrailingWhiteSpaceOffset =
       *lastNonCollapsibleCharOffset + 1u;
-  MOZ_ASSERT(firstTrailingWhiteSpaceOffset < textFragment.GetLength());
+  MOZ_ASSERT(firstTrailingWhiteSpaceOffset < characterDataBuffer.GetLength());
   if (nextThingOfText.ReachedBlockBoundary()) {
     return firstTrailingWhiteSpaceOffset;
   }
@@ -1295,21 +1298,21 @@ uint32_t HTMLEditUtils::GetOffsetAfterLastVisibleChar(const Text& aText) {
 uint32_t HTMLEditUtils::GetInvisibleWhiteSpaceCount(
     const Text& aText, uint32_t aOffset /* = 0u */,
     uint32_t aLength /* = UINT32_MAX */) {
-  const nsTextFragment& textFragment = aText.TextFragment();
-  if (!aLength || textFragment.GetLength() <= aOffset) {
+  const CharacterDataBuffer& characterDataBuffer = aText.DataBuffer();
+  if (!aLength || characterDataBuffer.GetLength() <= aOffset) {
     return 0u;
   }
   const uint32_t endOffset = static_cast<uint32_t>(
       std::min(static_cast<uint64_t>(aOffset) + aLength,
-               static_cast<uint64_t>(textFragment.GetLength())));
+               static_cast<uint64_t>(characterDataBuffer.GetLength())));
   const auto firstVisibleOffset = [&]() -> uint32_t {
     // If the white-space sequence follows a preformatted linebreak, ASCII
     // spaces at start are invisible.
     if (aOffset &&
-        textFragment.CharAt(aOffset - 1u) == HTMLEditUtils::kNewLine &&
+        characterDataBuffer.CharAt(aOffset - 1u) == HTMLEditUtils::kNewLine &&
         EditorUtils::IsNewLinePreformatted(aText)) {
       for (const uint32_t offset : IntegerRange(aOffset, endOffset)) {
-        if (textFragment.CharAt(offset) == HTMLEditUtils::kNBSP) {
+        if (characterDataBuffer.CharAt(offset) == HTMLEditUtils::kNBSP) {
           return offset;
         }
       }
@@ -1326,17 +1329,17 @@ uint32_t HTMLEditUtils::GetInvisibleWhiteSpaceCount(
   const auto afterLastVisibleOffset = [&]() -> uint32_t {
     // If the white-spaces are followed by a preformatted line break, ASCII
     // spaces at end are invisible.
-    if (endOffset < textFragment.GetLength() &&
-        textFragment.CharAt(endOffset) == HTMLEditUtils::kNewLine &&
+    if (endOffset < characterDataBuffer.GetLength() &&
+        characterDataBuffer.CharAt(endOffset) == HTMLEditUtils::kNewLine &&
         EditorUtils::IsNewLinePreformatted(aText)) {
       for (const uint32_t offset : Reversed(IntegerRange(aOffset, endOffset))) {
-        if (textFragment.CharAt(offset) == HTMLEditUtils::kNBSP) {
+        if (characterDataBuffer.CharAt(offset) == HTMLEditUtils::kNBSP) {
           return offset + 1u;
         }
       }
       return aOffset;  // all white-spaces are invisible.
     }
-    if (endOffset < textFragment.GetLength() - 1u) {
+    if (endOffset < characterDataBuffer.GetLength() - 1u) {
       return endOffset;
     }
     return HTMLEditUtils::GetOffsetAfterLastVisibleChar(aText);
@@ -1348,7 +1351,7 @@ uint32_t HTMLEditUtils::GetInvisibleWhiteSpaceCount(
   PrevChar prevChar = PrevChar::NotChar;
   uint32_t invisibleChars = 0u;
   for (const uint32_t offset : IntegerRange(aOffset, endOffset)) {
-    if (textFragment.CharAt(offset) == HTMLEditUtils::kNBSP) {
+    if (characterDataBuffer.CharAt(offset) == HTMLEditUtils::kNBSP) {
       prevChar = PrevChar::NBSP;
       continue;
     }
@@ -2351,6 +2354,7 @@ Element* HTMLEditUtils::GetAncestorElement(
     const Element* aAncestorLimiter /* = nullptr */) {
   MOZ_ASSERT(
       aAncestorTypes.contains(AncestorType::ClosestBlockElement) ||
+      aAncestorTypes.contains(AncestorType::ClosestContainerElement) ||
       aAncestorTypes.contains(AncestorType::MostDistantInlineElementInBlock) ||
       aAncestorTypes.contains(AncestorType::ButtonElement) ||
       aAncestorTypes.contains(AncestorType::AllowRootOrAncestorLimiterElement));
@@ -2366,6 +2370,8 @@ Element* HTMLEditUtils::GetAncestorElement(
       aAncestorTypes.contains(AncestorType::EditableElement);
   const bool lookingForClosestBlockElement =
       aAncestorTypes.contains(AncestorType::ClosestBlockElement);
+  const bool lookingForClosestContainerElement =
+      aAncestorTypes.contains(AncestorType::ClosestContainerElement);
   const bool lookingForMostDistantInlineElementInBlock =
       aAncestorTypes.contains(AncestorType::MostDistantInlineElementInBlock);
   const bool ignoreHRElement =
@@ -2374,7 +2380,7 @@ Element* HTMLEditUtils::GetAncestorElement(
       aAncestorTypes.contains(AncestorType::ButtonElement);
   const bool lookingForAnyElement =
       aAncestorTypes.contains(AncestorType::AllowRootOrAncestorLimiterElement);
-  auto IsSearchingElementType = [&](const nsIContent& aContent) -> bool {
+  const auto IsSearchingElementType = [&](const nsIContent& aContent) -> bool {
     if (lookingForAnyElement) {
       return aContent.IsElement();
     }
@@ -2388,6 +2394,8 @@ Element* HTMLEditUtils::GetAncestorElement(
     }
     return (lookingForClosestBlockElement &&
             HTMLEditUtils::IsBlockElement(aContent, aBlockInlineCheck)) ||
+           (lookingForClosestContainerElement && aContent.IsElement() &&
+            HTMLEditUtils::IsContainerNode(aContent)) ||
            (lookingForMostDistantInlineElementInBlock &&
             HTMLEditUtils::IsInlineContent(aContent, aBlockInlineCheck)) ||
            (lookingForButtonElement &&
@@ -2411,6 +2419,10 @@ Element* HTMLEditUtils::GetAncestorElement(
     }
     if (lookingForButtonElement && element->IsHTMLElement(nsGkAtoms::button)) {
       return element;  // closest button element
+    }
+    if (lookingForClosestContainerElement &&
+        HTMLEditUtils::IsContainerNode(*element)) {
+      return element;  // closest container element
     }
     if (HTMLEditUtils::IsBlockElement(*element, aBlockInlineCheck)) {
       if (lookingForClosestBlockElement) {
@@ -2442,6 +2454,7 @@ Element* HTMLEditUtils::GetInclusiveAncestorElement(
     const Element* aAncestorLimiter /* = nullptr */) {
   MOZ_ASSERT(
       aAncestorTypes.contains(AncestorType::ClosestBlockElement) ||
+      aAncestorTypes.contains(AncestorType::ClosestContainerElement) ||
       aAncestorTypes.contains(AncestorType::MostDistantInlineElementInBlock) ||
       aAncestorTypes.contains(AncestorType::ButtonElement) ||
       aAncestorTypes.contains(AncestorType::AllowRootOrAncestorLimiterElement));
@@ -2452,6 +2465,8 @@ Element* HTMLEditUtils::GetInclusiveAncestorElement(
       aAncestorTypes.contains(AncestorType::EditableElement);
   const bool lookingForClosestBlockElement =
       aAncestorTypes.contains(AncestorType::ClosestBlockElement);
+  const bool lookingForClosestContainerElement =
+      aAncestorTypes.contains(AncestorType::ClosestContainerElement);
   const bool lookingForMostDistantInlineElementInBlock =
       aAncestorTypes.contains(AncestorType::MostDistantInlineElementInBlock);
   const bool lookingForButtonElement =
@@ -2474,11 +2489,17 @@ Element* HTMLEditUtils::GetInclusiveAncestorElement(
     }
     return (lookingForClosestBlockElement &&
             HTMLEditUtils::IsBlockElement(aContent, aBlockInlineCheck)) ||
+           (lookingForClosestContainerElement && aContent.IsElement() &&
+            HTMLEditUtils::IsContainerNode(aContent)) ||
            (lookingForMostDistantInlineElementInBlock &&
             HTMLEditUtils::IsInlineContent(aContent, aBlockInlineCheck)) ||
            (lookingForButtonElement &&
             aContent.IsHTMLElement(nsGkAtoms::button));
   };
+
+  if (&aContent == aAncestorLimiter && lookingForAnyElement) {
+    return const_cast<Element*>(aAncestorLimiter);
+  }
 
   // If aContent is the body element or the document element, we shouldn't climb
   // up to its parent.
@@ -2490,6 +2511,11 @@ Element* HTMLEditUtils::GetInclusiveAncestorElement(
   }
 
   if (lookingForButtonElement && aContent.IsHTMLElement(nsGkAtoms::button)) {
+    return const_cast<Element*>(aContent.AsElement());
+  }
+
+  if (lookingForClosestContainerElement && aContent.IsElement() &&
+      HTMLEditUtils::IsContainerNode(aContent)) {
     return const_cast<Element*>(aContent.AsElement());
   }
 
@@ -2510,7 +2536,7 @@ Element* HTMLEditUtils::GetInclusiveAncestorElement(
   if (!aContent.GetParent() ||
       (editableElementOnly && !EditorUtils::IsEditableContent(
                                   *aContent.GetParent(), EditorType::HTML)) ||
-      (!lookingForClosestBlockElement &&
+      (!lookingForClosestBlockElement && !lookingForClosestContainerElement &&
        HTMLEditUtils::IsBlockElement(*aContent.GetParent(),
                                      aBlockInlineCheck) &&
        !(ignoreHRElement &&
@@ -3147,6 +3173,37 @@ bool HTMLEditUtils::IsTransparentCSSColor(const nsAString& aColor) {
   return GetNormalizedCSSColorValue(aColor, ZeroAlphaColor::TransparentKeyword,
                                     normalizedCSSColorValue) &&
          normalizedCSSColorValue.EqualsASCII("transparent");
+}
+
+/******************************************************************************
+ * operator<<() for enum classes of HTMLEditUtils
+ ******************************************************************************/
+
+std::ostream& operator<<(std::ostream& aStream,
+                         const HTMLEditUtils::EditablePointOption& aOption) {
+  constexpr static const char* names[] = {
+      "RecognizeInvisibleWhiteSpaces",
+      "StopAtComment",
+      "StopAtListElement",
+      "StopAtListItemElement",
+      "StopAtTableElement",
+      "StopAtAnyTableElement",
+  };
+  return aStream << names[static_cast<uint32_t>(aOption)];
+}
+
+std::ostream& operator<<(std::ostream& aStream,
+                         const HTMLEditUtils::EditablePointOptions& aOptions) {
+  aStream << "{";
+  bool first = true;
+  for (const auto option : aOptions) {
+    if (!first) {
+      aStream << ", ";
+    }
+    aStream << ToString(option).c_str();
+    first = false;
+  }
+  return aStream << "}";
 }
 
 /******************************************************************************

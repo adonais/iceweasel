@@ -186,42 +186,6 @@ class LoginsMiddlewareTest {
             assertTrue(capturedNewTab)
         }
 
-    @Test
-    fun `WHEN two logins are deleted, the logins list is refreshed each time`() =
-        runTestOnMain {
-            var numberOfTimesLoginListRefreshed = 0
-            refreshLoginsList = { numberOfTimesLoginListRefreshed++ }
-            `when`(loginsStorage.list()).thenReturn(loginList)
-
-            val middleware = buildMiddleware()
-            val store = middleware.makeStore()
-            store.dispatch(
-                DetailLoginMenuAction.DeleteLoginMenuItemClicked(
-                    item = LoginItem(
-                        guid = loginList[1].guid,
-                        url = loginList[1].origin,
-                        username = loginList[1].username,
-                        password = loginList[1].password,
-                        timeLastUsed = 0L,
-                    ),
-                ),
-            )
-            store.dispatch(
-                DetailLoginMenuAction.DeleteLoginMenuItemClicked(
-                    item = LoginItem(
-                        guid = loginList[2].guid,
-                        url = loginList[2].origin,
-                        username = loginList[2].username,
-                        password = loginList[2].password,
-                        timeLastUsed = 0L,
-                    ),
-                ),
-            )
-            store.waitUntilIdle()
-
-            assertEquals(2, numberOfTimesLoginListRefreshed)
-        }
-
     private fun buildMiddleware() = LoginsMiddleware(
         loginsStorage = loginsStorage,
         getNavController = { navController },
@@ -234,7 +198,7 @@ class LoginsMiddlewareTest {
     )
 
     private fun LoginsMiddleware.makeStore(
-        initialState: LoginsState = LoginsState(),
+        initialState: LoginsState = LoginsState.default,
     ) = LoginsStore(
         initialState = initialState,
         middleware = listOf(this),

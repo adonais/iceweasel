@@ -431,7 +431,7 @@ class DefaultTabsTrayController(
     override fun handleBookmarkSelectedTabsClicked() {
         val tabs = tabsTrayStore.state.mode.selectedTabs
 
-        TabsTray.bookmarkSelectedTabs.record(TabsTray.BookmarkSelectedTabsExtra(tabCount = tabs.size))
+        tabsTrayStore.dispatch(TabsTrayAction.BookmarkSelectedTabs(tabCount = tabs.size))
 
         // We don't combine the context with lifecycleScope so that our jobs are not cancelled
         // if we leave the fragment, i.e. we still want the bookmarks to be added if the

@@ -1809,13 +1809,6 @@ void MArrayBufferViewByteOffset::computeRange(TempAllocator& alloc) {
   }
 }
 
-void MResizableTypedArrayByteOffsetMaybeOutOfBounds::computeRange(
-    TempAllocator& alloc) {
-  if constexpr (ArrayBufferObject::ByteLengthLimit <= INT32_MAX) {
-    setRange(Range::NewUInt32Range(alloc, 0, INT32_MAX));
-  }
-}
-
 void MResizableTypedArrayLength::computeRange(TempAllocator& alloc) {
   if constexpr (ArrayBufferObject::ByteLengthLimit <= INT32_MAX) {
     setRange(Range::NewUInt32Range(alloc, 0, INT32_MAX));
@@ -2494,7 +2487,7 @@ bool RangeAnalysis::addRangeAssertions() {
 
       // Perform range checking for all numeric and numeric-like types.
       if (!IsNumberType(ins->type()) && ins->type() != MIRType::Boolean &&
-          ins->type() != MIRType::Value && ins->type() != MIRType::IntPtr) {
+          ins->type() != MIRType::Value) {
         continue;
       }
 
@@ -2836,6 +2829,12 @@ TruncateKind MStoreTypedArrayElementHole::operandTruncateKind(
     size_t index) const {
   // An integer store truncates the stored value.
   return (index == 3 && isIntegerWrite()) ? TruncateKind::Truncate
+                                          : TruncateKind::NoTruncate;
+}
+
+TruncateKind MTypedArrayFill::operandTruncateKind(size_t index) const {
+  // An integer store truncates the stored value.
+  return (index == 1 && isIntegerWrite()) ? TruncateKind::Truncate
                                           : TruncateKind::NoTruncate;
 }
 

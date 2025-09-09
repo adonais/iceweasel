@@ -63,6 +63,7 @@ let patterns: string[];
 - [`onSearch`](#onsearch)
 - [`sidebarToolOpened`](#sidebartoolopened)
 - [`elementClicked`](#elementclicked)
+- [`ipProtectionReady`](#ipprotectionready)
 
 ### `openArticleURL`
 
@@ -421,5 +422,20 @@ The `elementId` string context variable is also available in targeting, and will
     params: ["element1-id", "element2-id"]
   },
   targeting: "elementId == 'element1-id'"
+}
+```
+
+### `ipProtectionReady`
+
+Fired once the IP protection widget is created and available. Used as a trigger for the IP protection feature introduction callout, which anchors to the widget.
+
+Targets users with the `browser.ipProtection.enabled` pref set to true, along with frequency caps.
+
+```js
+
+{
+  trigger: { "ipProtectionReady" },
+  targeting: "'browser.ipProtection.enabled' | preferenceValue && !(messageImpressions.IP_PROTECTION_INTRODUCTION_CALLOUT[messageImpressions.IP_PROTECTION_INTRODUCTION_CALLOUT | length - 1] < currentDate|date - (3600000 * 24))",
+
 }
 ```

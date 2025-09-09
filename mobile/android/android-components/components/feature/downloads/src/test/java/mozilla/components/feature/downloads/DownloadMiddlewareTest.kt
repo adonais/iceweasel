@@ -5,6 +5,7 @@
 package mozilla.components.feature.downloads
 
 import android.app.DownloadManager.EXTRA_DOWNLOAD_ID
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.os.Environment
@@ -25,6 +26,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.fetch.Response
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
+import mozilla.components.support.test.eq
 import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
@@ -37,6 +39,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.doNothing
+import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.never
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.spy
@@ -167,13 +171,18 @@ class DownloadMiddlewareTest {
     fun `Given a download in the storage and deleteFileFromStorage is true, When RemoveDownloadAction is dispatched, Then it MUST be removed from the storage and the file deleted`() =
         runTestOnMain {
             val applicationContext: Context = mock()
+            val contentResolver: ContentResolver = mock()
+            doReturn(contentResolver).`when`(applicationContext).contentResolver
             val downloadStorage: DownloadStorage = mock()
-            val downloadMiddleware = DownloadMiddleware(
+
+            val downloadMiddleware = spy(
+                DownloadMiddleware(
                 applicationContext,
                 AbstractFetchDownloadService::class.java,
                 downloadStorage = downloadStorage,
                 coroutineContext = dispatcher,
                 deleteFileFromStorage = { true },
+            ),
             )
             val store = BrowserStore(
                 initialState = BrowserState(),
@@ -197,7 +206,7 @@ class DownloadMiddlewareTest {
 
             verify(downloadStorage).remove(download)
 
-            assertFalse(File(download.filePath).exists())
+            verify(downloadMiddleware).deleteMediaFile(eq(contentResolver), eq(tempFile))
         }
 
     @Test

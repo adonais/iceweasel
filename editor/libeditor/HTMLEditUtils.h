@@ -26,6 +26,7 @@
 #include "mozilla/Result.h"
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/AncestorIterator.h"
+#include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/Selection.h"
@@ -36,7 +37,6 @@
 #include "nsGkAtoms.h"
 #include "nsHTMLTags.h"
 #include "nsTArray.h"
-#include "nsTextFragment.h"
 
 class nsAtom;
 class nsPresContext;
@@ -59,8 +59,8 @@ class HTMLEditUtils final {
   using Element = dom::Element;
   using Selection = dom::Selection;
   using Text = dom::Text;
-  using WhitespaceOption = nsTextFragment::WhitespaceOption;
-  using WhitespaceOptions = nsTextFragment::WhitespaceOptions;
+  using WhitespaceOption = dom::CharacterDataBuffer::WhitespaceOption;
+  using WhitespaceOptions = dom::CharacterDataBuffer::WhitespaceOptions;
 
  public:
   static constexpr char16_t kNewLine = '\n';
@@ -326,10 +326,10 @@ class HTMLEditUtils final {
   static bool IsNodeThatCanOutdent(nsINode* aNode);
   static bool IsHeader(nsINode& aNode);
   static bool IsListItem(const nsINode* aNode);
-  static bool IsTable(nsINode* aNode);
+  static bool IsTable(const nsINode* aNode);
   static bool IsTableRow(nsINode* aNode);
   static bool IsAnyTableElement(const nsINode* aNode);
-  static bool IsAnyTableElementButNotTable(nsINode* aNode);
+  static bool IsAnyTableElementButNotTable(const nsINode* aNode);
   static bool IsTableCell(const nsINode* aNode);
   static bool IsTableCellOrCaption(nsINode& aNode);
   static bool IsAnyListElement(const nsINode* aNode);
@@ -337,7 +337,7 @@ class HTMLEditUtils final {
   static bool IsImage(nsINode* aNode);
   static bool IsLink(const nsINode* aNode);
   static bool IsNamedAnchor(const nsINode* aNode);
-  static bool IsMozDiv(nsINode* aNode);
+  static bool IsMozDiv(const nsINode* aNode);
   static bool IsMailCite(const Element& aElement);
   static bool IsFormWidget(const nsINode* aNode);
   static bool SupportsAlignAttr(nsINode& aNode);
@@ -504,7 +504,7 @@ class HTMLEditUtils final {
   [[nodiscard]] static bool TextHasOnlyOnePreformattedLinefeed(
       const Text& aText) {
     return aText.TextDataLength() == 1u &&
-           aText.TextFragment().CharAt(0u) == kNewLine &&
+           aText.DataBuffer().CharAt(0u) == kNewLine &&
            EditorUtils::IsNewLinePreformatted(aText);
   }
 
@@ -618,16 +618,17 @@ class HTMLEditUtils final {
               *aPoint.template ContainerAs<Text>())) {
         return true;
       }
-      const nsTextFragment& textFragment =
-          aPoint.template ContainerAs<Text>()->TextFragment();
-      const uint32_t nextVisibleCharOffset = textFragment.FindNonWhitespaceChar(
-          EditorUtils::IsNewLinePreformatted(
-              *aPoint.template ContainerAs<Text>())
-              ? WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant,
-                                  WhitespaceOption::NewLineIsSignificant}
-              : WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant},
-          aPoint.Offset() + 1);
-      if (nextVisibleCharOffset != nsTextFragment::kNotFound) {
+      const dom::CharacterDataBuffer& characterDataBuffer =
+          aPoint.template ContainerAs<Text>()->DataBuffer();
+      const uint32_t nextVisibleCharOffset =
+          characterDataBuffer.FindNonWhitespaceChar(
+              EditorUtils::IsNewLinePreformatted(
+                  *aPoint.template ContainerAs<Text>())
+                  ? WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant,
+                                      WhitespaceOption::NewLineIsSignificant}
+                  : WhitespaceOptions{WhitespaceOption::FormFeedIsSignificant},
+              aPoint.Offset() + 1);
+      if (nextVisibleCharOffset != dom::CharacterDataBuffer::kNotFound) {
         return true;  // There is a visible character after the point.
       }
     }
@@ -1723,6 +1724,8 @@ class HTMLEditUtils final {
   enum class AncestorType {
     // If there is an ancestor block, it's a limiter of the scan.
     ClosestBlockElement,
+    // If there is an ancestor container element, it's a limiter of the scan.
+    ClosestContainerElement,
     // If there is no ancestor block in the range, the topmost inline element is
     // a limiter of the scan.
     MostDistantInlineElementInBlock,
@@ -1802,11 +1805,10 @@ class HTMLEditUtils final {
       const nsIContent& aContent);
 
   /**
-   * GetClosestAncestorListItemElement() returns a list item element if
-   * aContent or its ancestor in editing host is one.  However, this won't
-   * cross table related element.
+   * Return a list item element if aContent or its ancestor in editing host is
+   * one.  However, this won't cross table related element.
    */
-  static Element* GetClosestAncestorListItemElement(
+  static Element* GetClosestInclusiveAncestorListItemElement(
       const nsIContent& aContent, const Element* aAncestorLimit = nullptr) {
     MOZ_ASSERT_IF(aAncestorLimit,
                   aContent.IsInclusiveDescendantOf(aAncestorLimit));
@@ -2153,8 +2155,8 @@ class HTMLEditUtils final {
       }
       if (auto* textNode = Text::FromNode(*content)) {
         if (EditorUtils::IsNewLinePreformatted(*textNode)) {
-          uint32_t offset = textNode->TextFragment().FindChar(kNewLine);
-          if (offset != nsTextFragment::kNotFound) {
+          uint32_t offset = textNode->DataBuffer().FindChar(kNewLine);
+          if (offset != dom::CharacterDataBuffer::kNotFound) {
             return Some(EditorLineBreakType(*textNode, offset));
           }
         }
@@ -2240,9 +2242,9 @@ class HTMLEditUtils final {
       whitespaceOptions += WhitespaceOption::TreatNBSPAsCollapsible;
     }
     const uint32_t prevVisibleCharOffset =
-        aTextNode.TextFragment().RFindNonWhitespaceChar(whitespaceOptions,
-                                                        aOffset - 1);
-    return prevVisibleCharOffset != nsTextFragment::kNotFound
+        aTextNode.DataBuffer().RFindNonWhitespaceChar(whitespaceOptions,
+                                                      aOffset - 1);
+    return prevVisibleCharOffset != dom::CharacterDataBuffer::kNotFound
                ? Some(prevVisibleCharOffset)
                : Nothing();
   }
@@ -2299,9 +2301,9 @@ class HTMLEditUtils final {
       whitespaceOptions += WhitespaceOption::TreatNBSPAsCollapsible;
     }
     const uint32_t inclusiveNextVisibleCharOffset =
-        aTextNode.TextFragment().FindNonWhitespaceChar(whitespaceOptions,
-                                                       aOffset);
-    if (inclusiveNextVisibleCharOffset != nsTextFragment::kNotFound) {
+        aTextNode.DataBuffer().FindNonWhitespaceChar(whitespaceOptions,
+                                                     aOffset);
+    if (inclusiveNextVisibleCharOffset != dom::CharacterDataBuffer::kNotFound) {
       return Some(inclusiveNextVisibleCharOffset);
     }
     return Nothing();
@@ -2368,10 +2370,10 @@ class HTMLEditUtils final {
       return EditorDOMPointType();
     }
     const Text& textNode = *aPoint.template ContainerAs<Text>();
-    MOZ_ASSERT(aPoint.Offset() <= textNode.TextFragment().GetLength());
+    MOZ_ASSERT(aPoint.Offset() <= textNode.DataBuffer().GetLength());
     const uint32_t previousLineBreakOffset =
-        textNode.TextFragment().RFindChar('\n', aPoint.Offset() - 1u);
-    return previousLineBreakOffset != nsTextFragment::kNotFound
+        textNode.DataBuffer().RFindChar('\n', aPoint.Offset() - 1u);
+    return previousLineBreakOffset != dom::CharacterDataBuffer::kNotFound
                ? EditorDOMPointType(&textNode, previousLineBreakOffset)
                : EditorDOMPointType();
   }
@@ -2391,10 +2393,10 @@ class HTMLEditUtils final {
       return EditorDOMPointType();
     }
     const Text& textNode = *aPoint.template ContainerAs<Text>();
-    MOZ_ASSERT(aPoint.Offset() <= textNode.TextFragment().GetLength());
+    MOZ_ASSERT(aPoint.Offset() <= textNode.DataBuffer().GetLength());
     const uint32_t inclusiveNextVisibleCharOffset =
-        textNode.TextFragment().FindChar('\n', aPoint.Offset());
-    return inclusiveNextVisibleCharOffset != nsTextFragment::kNotFound
+        textNode.DataBuffer().FindChar('\n', aPoint.Offset());
+    return inclusiveNextVisibleCharOffset != dom::CharacterDataBuffer::kNotFound
                ? EditorDOMPointType(&textNode, inclusiveNextVisibleCharOffset)
                : EditorDOMPointType();
   }
@@ -2618,21 +2620,103 @@ class HTMLEditUtils final {
       const Element& aElement, const nsAtom& aAttribute1,
       const nsAtom& aAttribute2, const nsAtom& aAttribute3);
 
+  enum class EditablePointOption {
+    // Do not ignore invisible collapsible white-spaces which are next to a
+    // block boundary.
+    RecognizeInvisibleWhiteSpaces,
+    // Stop at Comment node.
+    StopAtComment,
+    // Stop at List element.
+    StopAtListElement,
+    // Stop at ListItem element.
+    StopAtListItemElement,
+    // Stop at Table element.
+    StopAtTableElement,
+    // Stop at any table element.
+    StopAtAnyTableElement,
+  };
+  using EditablePointOptions = EnumSet<EditablePointOption>;
+
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const EditablePointOption& aOption);
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const EditablePointOptions& aOptions);
+
+ private:
+  class MOZ_STACK_CLASS AutoEditablePointChecker final {
+   public:
+    explicit AutoEditablePointChecker(const EditablePointOptions& aOptions)
+        : mIgnoreInvisibleText(!aOptions.contains(
+              EditablePointOption::RecognizeInvisibleWhiteSpaces)),
+          mIgnoreComment(
+              !aOptions.contains(EditablePointOption::StopAtComment)),
+          mStopAtListElement(
+              aOptions.contains(EditablePointOption::StopAtListElement)),
+          mStopAtListItemElement(
+              aOptions.contains(EditablePointOption::StopAtListItemElement)),
+          mStopAtTableElement(
+              aOptions.contains(EditablePointOption::StopAtTableElement)),
+          mStopAtAnyTableElement(
+              aOptions.contains(EditablePointOption::StopAtAnyTableElement)) {}
+
+    [[nodiscard]] bool IgnoreInvisibleWhiteSpaces() const {
+      return mIgnoreInvisibleText;
+    }
+
+    [[nodiscard]] bool NodeShouldBeIgnored(const nsIContent& aContent) const {
+      if (mIgnoreInvisibleText && aContent.IsText() &&
+          HTMLEditUtils::IsSimplyEditableNode(aContent) &&
+          !HTMLEditUtils::IsVisibleTextNode(*aContent.AsText())) {
+        return true;
+      }
+      if (mIgnoreComment && aContent.IsComment()) {
+        return true;
+      }
+      return false;
+    }
+
+    [[nodiscard]] bool ShouldStopScanningAt(const nsIContent& aContent) const {
+      if (HTMLEditUtils::IsAnyListElement(&aContent)) {
+        return mStopAtListElement;
+      }
+      if (HTMLEditUtils::IsListItem(&aContent)) {
+        return mStopAtListItemElement;
+      }
+      if (HTMLEditUtils::IsAnyTableElement(&aContent)) {
+        return mStopAtAnyTableElement ||
+               (mStopAtTableElement && HTMLEditUtils::IsTable(&aContent));
+      }
+      return false;
+    }
+
+   private:
+    const bool mIgnoreInvisibleText;
+    const bool mIgnoreComment;
+    const bool mStopAtListElement;
+    const bool mStopAtListItemElement;
+    const bool mStopAtTableElement;
+    const bool mStopAtAnyTableElement;
+  };
+
+ public:
   /**
-   * Returns EditorDOMPoint which points deepest editable start/end point of
-   * aNode.  If a node is a container node and first/last child is editable,
-   * returns the child's start or last point recursively.
+   * Return a point which points deepest editable start point of aContent.  This
+   * walks the DOM tree in aContent to search meaningful first descendant.  If
+   * EditablePointOption::IgnoreInvisibleText is specified, this returns first
+   * visible char offset if this reaches a visible `Text` first.  If there is an
+   * empty inline element such as <span>, this returns start of the inline
+   * element.  If this reaches non-editable element or non-container element
+   * like <img>, this returns the position.
    */
-  enum class InvisibleText { Recognize, Skip };
   template <typename EditorDOMPointType>
   [[nodiscard]] static EditorDOMPointType GetDeepestEditableStartPointOf(
-      const nsIContent& aContent,
-      InvisibleText aInvisibleText = InvisibleText::Recognize) {
+      const nsIContent& aContent, const EditablePointOptions& aOptions) {
     if (NS_WARN_IF(!EditorUtils::IsEditableContent(
             aContent, EditorBase::EditorType::HTML))) {
       return EditorDOMPointType();
     }
-    EditorDOMPointType result(&aContent, 0u);
+    const AutoEditablePointChecker checker(aOptions);
+    EditorRawDOMPoint result(&aContent, 0u);
     while (true) {
       nsIContent* firstChild = result.GetContainer()->GetFirstChild();
       if (!firstChild) {
@@ -2640,49 +2724,67 @@ class HTMLEditUtils final {
       }
       // If the caller wants to skip invisible white-spaces, we should skip
       // invisible text nodes.
-      if (aInvisibleText == InvisibleText::Skip && firstChild->IsText() &&
-          EditorUtils::IsEditableContent(*firstChild,
-                                         EditorBase::EditorType::HTML) &&
-          !HTMLEditUtils::IsVisibleTextNode(*firstChild->AsText())) {
+      nsIContent* meaningfulFirstChild = nullptr;
+      if (checker.NodeShouldBeIgnored(*firstChild)) {
+        // If we ignored a non-empty `Text`, it means that we're next to a block
+        // boundary.
         for (nsIContent* nextSibling = firstChild->GetNextSibling();
              nextSibling; nextSibling = nextSibling->GetNextSibling()) {
-          if (!nextSibling->IsText() ||
-              // We know its previous sibling is very start of a block.
-              // Therefore, we only need to scan the text here.
-              HTMLEditUtils::GetInclusiveNextNonCollapsibleCharOffset(
-                  *firstChild->AsText(), 0u)
-                  .isSome()) {
-            firstChild = nextSibling;
+          if (!checker.NodeShouldBeIgnored(*nextSibling) ||
+              checker.ShouldStopScanningAt(*nextSibling)) {
+            meaningfulFirstChild = nextSibling;
             break;
           }
         }
+        if (!meaningfulFirstChild) {
+          break;
+        }
+      } else {
+        meaningfulFirstChild = firstChild;
       }
-      if ((!firstChild->IsText() &&
-           !HTMLEditUtils::IsContainerNode(*firstChild)) ||
-          !EditorUtils::IsEditableContent(*firstChild,
+      if (meaningfulFirstChild->IsText()) {
+        if (checker.IgnoreInvisibleWhiteSpaces()) {
+          result.Set(meaningfulFirstChild,
+                     HTMLEditUtils::GetInclusiveNextNonCollapsibleCharOffset(
+                         *meaningfulFirstChild->AsText(), 0u)
+                         .valueOr(0u));
+        } else {
+          result.Set(meaningfulFirstChild, 0u);
+        }
+        break;
+      }
+      if (checker.ShouldStopScanningAt(*meaningfulFirstChild) ||
+          !HTMLEditUtils::IsContainerNode(*meaningfulFirstChild) ||
+          !EditorUtils::IsEditableContent(*meaningfulFirstChild,
                                           EditorBase::EditorType::HTML)) {
+        // FIXME: If the node is at middle of invisible white-spaces, we should
+        // ignore the node.
+        result.Set(meaningfulFirstChild);
         break;
       }
-      if (aInvisibleText == InvisibleText::Skip && firstChild->IsText()) {
-        result.Set(firstChild,
-                   HTMLEditUtils::GetInclusiveNextNonCollapsibleCharOffset(
-                       *firstChild->AsText(), 0u)
-                       .valueOr(0u));
-        break;
-      }
-      result.Set(firstChild, 0u);
+      result.Set(meaningfulFirstChild, 0u);
     }
-    return result;
+    return result.To<EditorDOMPointType>();
   }
+
+  /**
+   * Return a point which points deepest editable last point of aContent.  This
+   * walks the DOM tree in aContent to search meaningful last descendant.  If
+   * EditablePointOption::IgnoreInvisibleText is specified, this returns next
+   * offset of the last visible char if this reaches a visible `Text` first.  If
+   * there is an empty inline element such as <span>, this returns end of the
+   * inline element.  If this reaches non-editable element or non-container
+   * element like <img>, this returns the position after that.
+   */
   template <typename EditorDOMPointType>
   [[nodiscard]] static EditorDOMPointType GetDeepestEditableEndPointOf(
-      const nsIContent& aContent,
-      InvisibleText aInvisibleText = InvisibleText::Recognize) {
+      const nsIContent& aContent, const EditablePointOptions& aOptions) {
     if (NS_WARN_IF(!EditorUtils::IsEditableContent(
             aContent, EditorBase::EditorType::HTML))) {
       return EditorDOMPointType();
     }
-    auto result = EditorDOMPointType::AtEndOf(aContent);
+    const AutoEditablePointChecker checker(aOptions);
+    auto result = EditorRawDOMPoint::AtEndOf(aContent);
     while (true) {
       nsIContent* lastChild = result.GetContainer()->GetLastChild();
       if (!lastChild) {
@@ -2690,43 +2792,51 @@ class HTMLEditUtils final {
       }
       // If the caller wants to skip invisible white-spaces, we should skip
       // invisible text nodes.
-      if (aInvisibleText == InvisibleText::Skip && lastChild->IsText() &&
-          EditorUtils::IsEditableContent(*lastChild,
-                                         EditorBase::EditorType::HTML) &&
-          !HTMLEditUtils::IsVisibleTextNode(*lastChild->AsText())) {
+      nsIContent* meaningfulLastChild = nullptr;
+      // XXX Should we skip the lastChild if it's an invisible line break?
+      if (checker.NodeShouldBeIgnored(*lastChild)) {
         for (nsIContent* nextSibling = lastChild->GetPreviousSibling();
              nextSibling; nextSibling = nextSibling->GetPreviousSibling()) {
-          if (!nextSibling->IsText() ||
-              // We know its previous sibling is very start of a block.
-              // Therefore, we only need to scan the text here.
-              HTMLEditUtils::GetPreviousNonCollapsibleCharOffset(
-                  *lastChild->AsText(), lastChild->AsText()->TextDataLength())
-                  .isSome()) {
-            lastChild = nextSibling;
+          if (!checker.NodeShouldBeIgnored(*nextSibling) ||
+              checker.ShouldStopScanningAt(*nextSibling)) {
+            meaningfulLastChild = nextSibling;
             break;
           }
         }
-      }
-      if ((!lastChild->IsText() &&
-           !HTMLEditUtils::IsContainerNode(*lastChild)) ||
-          !EditorUtils::IsEditableContent(*lastChild,
-                                          EditorBase::EditorType::HTML)) {
-        break;
-      }
-      if (aInvisibleText == InvisibleText::Skip && lastChild->IsText()) {
-        Maybe<uint32_t> visibleCharOffset =
-            HTMLEditUtils::GetPreviousNonCollapsibleCharOffset(
-                *lastChild->AsText(), lastChild->AsText()->TextDataLength());
-        if (visibleCharOffset.isNothing()) {
-          result = EditorDOMPointType::AtEndOf(*lastChild);
+        if (!meaningfulLastChild) {
           break;
         }
-        result.Set(lastChild, visibleCharOffset.value() + 1u);
+      } else {
+        meaningfulLastChild = lastChild;
+      }
+      if (meaningfulLastChild->IsText()) {
+        if (checker.IgnoreInvisibleWhiteSpaces()) {
+          const Maybe<uint32_t> visibleCharOffset =
+              HTMLEditUtils::GetPreviousNonCollapsibleCharOffset(
+                  *meaningfulLastChild->AsText(),
+                  meaningfulLastChild->AsText()->TextDataLength());
+          if (visibleCharOffset.isNothing()) {
+            result = EditorRawDOMPoint::AtEndOf(*meaningfulLastChild);
+          } else {
+            result.Set(meaningfulLastChild, visibleCharOffset.value() + 1u);
+          }
+        } else {
+          result = EditorRawDOMPoint::AtEndOf(*meaningfulLastChild);
+        }
         break;
       }
-      result = EditorDOMPointType::AtEndOf(*lastChild);
+      if (checker.ShouldStopScanningAt(*meaningfulLastChild) ||
+          !HTMLEditUtils::IsContainerNode(*meaningfulLastChild) ||
+          !EditorUtils::IsEditableContent(*meaningfulLastChild,
+                                          EditorBase::EditorType::HTML)) {
+        // FIXME: If the node is at middle of invisible white-spaces, we should
+        // ignore the node.
+        result.SetAfter(meaningfulLastChild);
+        break;
+      }
+      result = EditorRawDOMPoint::AtEndOf(*lastChild);
     }
-    return result;
+    return result.To<EditorDOMPointType>();
   }
 
   /**

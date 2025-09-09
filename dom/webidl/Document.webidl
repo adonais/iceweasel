@@ -558,12 +558,6 @@ partial interface Document {
   Promise<undefined> requestStorageAccessForOrigin(DOMString thirdPartyOrigin, optional boolean requireUserInteraction = true);
 };
 
-// Extension to give chrome JS the ability to determine whether
-// the user has interacted with the document or not.
-partial interface Document {
-  [ChromeOnly] readonly attribute boolean userHasInteracted;
-};
-
 // Extension to give chrome JS the ability to simulate activate the document
 // by user gesture.
 partial interface Document {

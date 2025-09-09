@@ -13,7 +13,6 @@ const PREF_SECTIONS_PERSONALIZATION_ENABLED =
 const DEFAULT_PROPS = {
   type: "CardGrid",
   firstVisibleTimeStamp: null,
-  is_collection: true,
   spocMessageVariant: "",
   ctaButtonSponsors: [""],
   anySectionsFollowed: false,

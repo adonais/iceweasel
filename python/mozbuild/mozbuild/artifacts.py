@@ -137,6 +137,16 @@ class ThunderbirdJobConfiguration:
 
 
 class ArtifactJob:
+    def _get_orig_basename(self, filename):
+        """Extract the original basename from a filename, removing hash prefixes if present."""
+        orig_basename = os.path.basename(filename)
+        # Turn 'HASH-target...' into 'target...' if possible.  It might not
+        # be possible if the file is given directly on the command line.
+        before, _sep, after = orig_basename.partition("-")
+        if re.match(r"[0-9a-fA-F]{16}$", before):
+            orig_basename = after
+        return orig_basename
+
     # These are a subset of TEST_HARNESS_BINS in testing/mochitest/Makefile.in.
     # Each item is a pair of (pattern, (src_prefix, dest_prefix), where src_prefix
     # is the prefix of the pattern relevant to its location in the archive, and
@@ -288,6 +298,20 @@ class ArtifactJob:
         if self._symbols_archive_suffix and filename.endswith(
             self._symbols_archive_suffix
         ):
+            # If UPLOAD_DIR is set, copy the symbol archive
+            # directly to the upload directory to avoid repackaging the symbols.
+            upload_dir = os.environ.get("UPLOAD_DIR")
+            if upload_dir:
+                dest_filename = self._get_orig_basename(filename)
+                dest_path = mozpath.join(upload_dir, dest_filename)
+                ensureParentDir(dest_path)
+                shutil.copy2(filename, dest_path)
+                self.log(
+                    logging.INFO,
+                    "artifact",
+                    {"src": filename, "dest": dest_path},
+                    "Copied symbols archive from {src} to {dest} for direct upload",
+                )
             return self.process_symbols_archive(filename, processed_filename)
         if filename.endswith(self._extra_archive_suffixes):
             return self.process_extra_archive(filename, processed_filename)
@@ -812,7 +836,7 @@ class WinArtifactJob(ArtifactJob):
     _package_artifact_patterns = {
         "{product}/dependentlibs.list",
         "{product}/**/*.dll",
-        "{product}/*.exe",
+        "{product}/**/*.exe",
         "{product}/*.tlb",
     }
 
@@ -1561,12 +1585,7 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
         ensureParentDir(mozpath.join(distdir, ".dummy"))
 
         if self._no_process:
-            orig_basename = os.path.basename(filename)
-            # Turn 'HASH-target...' into 'target...' if possible.  It might not
-            # be possible if the file is given directly on the command line.
-            before, _sep, after = orig_basename.rpartition("-")
-            if re.match(r"[0-9a-fA-F]{16}$", before):
-                orig_basename = after
+            orig_basename = self._artifact_job._get_orig_basename(filename)
             path = mozpath.join(distdir, orig_basename)
             with FileAvoidWrite(path, readmode="rb") as fh:
                 shutil.copyfileobj(open(filename, mode="rb"), fh)

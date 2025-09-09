@@ -210,6 +210,7 @@ class SVGUtils final {
             length - length to be converted
   */
   static float ObjectSpace(const gfxRect& aRect,
+                           const dom::UserSpaceMetrics& aMetrics,
                            const SVGAnimatedLength* aLength);
 
   /* Computes the input length in terms of user space coordinates.
@@ -398,6 +399,7 @@ class SVGUtils final {
   static gfxRect GetRelativeRect(uint16_t aUnits,
                                  const SVGAnimatedLength* aXYWH,
                                  const gfxRect& aBBox,
+                                 const SVGElement* aElement,
                                  const dom::UserSpaceMetrics& aMetrics);
 
   static bool OuterSVGIsCallingReflowSVG(nsIFrame* aFrame);

@@ -2639,6 +2639,12 @@ class BaseAssembler : public GenericAssembler {
     m_formatter.oneByteOp(OP_LEA, offset, base, dst);
   }
 
+  void leal_mr(int32_t offset, RegisterID index, int scale, RegisterID dst) {
+    spew("leal       " MEM_o32s ", %s", ADDR_o32s(offset, index, scale),
+         GPReg32Name(dst));
+    m_formatter.oneByteOp_disp32(OP_LEA, offset, index, scale, dst);
+  }
+
   // Flow control:
 
   [[nodiscard]] JmpSrc call() {

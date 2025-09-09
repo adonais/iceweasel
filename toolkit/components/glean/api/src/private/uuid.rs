@@ -28,8 +28,8 @@ pub enum UuidMetric {
 #[derive(Debug, Clone)]
 pub struct UuidMetricIpc;
 
-crate::define_metric_metadata_getter!(UuidMetric, UUID_MAP);
-crate::define_metric_namer!(UuidMetric, PARENT_ONLY);
+define_metric_metadata_getter!(UuidMetric, UUID_MAP);
+define_metric_namer!(UuidMetric, PARENT_ONLY);
 
 impl UuidMetric {
     /// Create a new UUID metric.

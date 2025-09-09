@@ -62,10 +62,6 @@ class ServerCertHashesTrustDomain : public mozilla::pkix::TrustDomain {
       mozilla::pkix::EndEntityOrCA endEntityOrCA,
       mozilla::pkix::KeyPurposeId keyPurpose) override;
 
-  virtual mozilla::pkix::Result NetscapeStepUpMatchesServerAuth(
-      mozilla::pkix::Time notBefore,
-      /*out*/ bool& matches) override;
-
   virtual mozilla::pkix::Result CheckRevocation(
       mozilla::pkix::EndEntityOrCA endEntityOrCA,
       const mozilla::pkix::CertID& certID, mozilla::pkix::Time time,
@@ -163,15 +159,6 @@ mozilla::pkix::Result ServerCertHashesTrustDomain::CheckValidityIsAcceptable(
     mozilla::pkix::Time notBefore, mozilla::pkix::Time notAfter,
     mozilla::pkix::EndEntityOrCA endEntityOrCA,
     mozilla::pkix::KeyPurposeId keyPurpose) {
-  MOZ_ASSERT_UNREACHABLE("not expecting this to be called");
-
-  return mozilla::pkix::Result::FATAL_ERROR_LIBRARY_FAILURE;
-}
-
-mozilla::pkix::Result
-ServerCertHashesTrustDomain::NetscapeStepUpMatchesServerAuth(
-    mozilla::pkix::Time notBefore,
-    /*out*/ bool& matches) {
   MOZ_ASSERT_UNREACHABLE("not expecting this to be called");
 
   return mozilla::pkix::Result::FATAL_ERROR_LIBRARY_FAILURE;

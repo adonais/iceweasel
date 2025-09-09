@@ -6,14 +6,12 @@
 
 #include "HighlightRegistry.h"
 
-#include "mozilla/ErrorResult.h"
-#include "mozilla/CompactPair.h"
-
 #include "Document.h"
 #include "Highlight.h"
-#include "mozilla/dom/HighlightBinding.h"
 #include "PresShell.h"
-
+#include "mozilla/CompactPair.h"
+#include "mozilla/ErrorResult.h"
+#include "mozilla/dom/HighlightBinding.h"
 #include "nsAtom.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsFrameSelection.h"

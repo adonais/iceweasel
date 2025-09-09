@@ -29,6 +29,7 @@
 #include "vm/DateTime.h"
 #include "vm/Iteration.h"
 #include "vm/JSContext.h"
+#include "wasm/WasmInstance.h"
 
 #include "gc/Marking-inl.h"
 #include "vm/JSObject-inl.h"
@@ -381,6 +382,9 @@ void Realm::setAllocationMetadataBuilder(
     }
   }
 
+  for (wasm::Instance* instance : wasm.instances()) {
+    instance->setAllocationMetadataBuilder(builder);
+  }
   allocationMetadataBuilder_ = builder;
 }
 
@@ -398,6 +402,9 @@ void Realm::forgetAllocationMetadataBuilder() {
 
   zone()->decNumRealmsWithAllocMetadataBuilder();
 
+  for (wasm::Instance* instance : wasm.instances()) {
+    instance->setAllocationMetadataBuilder(nullptr);
+  }
   allocationMetadataBuilder_ = nullptr;
 }
 

@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "BroadcastChannelChild.h"
+
 #include "BroadcastChannel.h"
 
 namespace mozilla {

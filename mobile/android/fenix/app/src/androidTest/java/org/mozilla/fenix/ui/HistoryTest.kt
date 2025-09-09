@@ -96,11 +96,13 @@ class HistoryTest : TestSetup() {
         }.openHistory {
             verifyHistoryListExists()
             registerAndCleanupIdlingResources(
-                RecyclerViewIdlingResource(activityTestRule.activity.findViewById(R.id.history_list), 1),
+                RecyclerViewIdlingResource(
+                    activityTestRule.activity.findViewById(R.id.history_list),
+                    1,
+                ),
             ) {
                 clickDeleteHistoryButton(firstWebPage.url.toString())
             }
-            verifySnackBarText(expectedText = "Deleted")
             verifyEmptyHistoryView()
         }
     }

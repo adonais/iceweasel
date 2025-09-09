@@ -4,21 +4,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ChromiumCDMChild.h"
-#include "GMPContentChild.h"
-#include "WidevineUtils.h"
-#include "WidevineFileIO.h"
-#include "WidevineVideoFrame.h"
-#include "GMPLog.h"
-#include "GMPPlatform.h"
-#include "mozilla/Unused.h"
-#include "nsPrintfCString.h"
-#include "base/time.h"
-#include "GMPUtils.h"
-#include "mozilla/ScopeExit.h"
-#include "CDMStorageIdProvider.h"
-#include "nsReadableUtils.h"
 
 #include <type_traits>
+
+#include "CDMStorageIdProvider.h"
+#include "GMPContentChild.h"
+#include "GMPLog.h"
+#include "GMPPlatform.h"
+#include "GMPUtils.h"
+#include "WidevineFileIO.h"
+#include "WidevineUtils.h"
+#include "WidevineVideoFrame.h"
+#include "base/time.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/Unused.h"
+#include "nsPrintfCString.h"
+#include "nsReadableUtils.h"
 
 namespace mozilla::gmp {
 

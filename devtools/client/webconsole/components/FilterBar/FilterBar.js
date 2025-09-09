@@ -72,7 +72,7 @@ class FilterBar extends Component {
       enableNetworkMonitoring: PropTypes.bool.isRequired,
       filter: PropTypes.object.isRequired,
       filteredMessagesCount: PropTypes.object.isRequired,
-      groupWarnings: PropTypes.bool.isRequired,
+      groupSimilar: PropTypes.bool.isRequired,
       persistLogs: PropTypes.bool.isRequired,
       eagerEvaluation: PropTypes.bool.isRequired,
       timestampsVisible: PropTypes.bool.isRequired,
@@ -112,7 +112,7 @@ class FilterBar extends Component {
       enableNetworkMonitoring,
       filter,
       filteredMessagesCount,
-      groupWarnings,
+      groupSimilar,
       persistLogs,
       timestampsVisible,
       eagerEvaluation,
@@ -124,7 +124,7 @@ class FilterBar extends Component {
       nextProps.displayMode !== displayMode ||
       nextProps.enableNetworkMonitoring !== enableNetworkMonitoring ||
       nextProps.filter !== filter ||
-      nextProps.groupWarnings !== groupWarnings ||
+      nextProps.groupSimilar !== groupSimilar ||
       nextProps.persistLogs !== persistLogs ||
       nextProps.timestampsVisible !== timestampsVisible ||
       nextProps.eagerEvaluation !== eagerEvaluation ||
@@ -329,7 +329,7 @@ class FilterBar extends Component {
       dispatch,
       enableNetworkMonitoring,
       eagerEvaluation,
-      groupWarnings,
+      groupSimilar,
       persistLogs,
       timestampsVisible,
       webConsoleUI,
@@ -340,7 +340,7 @@ class FilterBar extends Component {
       dispatch,
       enableNetworkMonitoring,
       eagerEvaluation,
-      groupWarnings,
+      groupSimilar,
       persistLogs,
       timestampsVisible,
       webConsoleUI,
@@ -427,7 +427,7 @@ function mapStateToProps(state) {
     closeButtonVisible: uiState.closeButtonVisible,
     filter: getAllFilters(state),
     filteredMessagesCount: getFilteredMessagesCount(state),
-    groupWarnings: prefsState.groupWarnings,
+    groupSimilar: prefsState.groupSimilar,
     persistLogs: uiState.persistLogs,
     eagerEvaluation: prefsState.eagerEvaluation,
     timestampsVisible: uiState.timestampsVisible,

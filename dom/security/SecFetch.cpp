@@ -5,17 +5,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SecFetch.h"
-#include "nsIHttpChannel.h"
+
+#include "mozIThirdPartyUtil.h"
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/RequestBinding.h"
 #include "nsContentSecurityManager.h"
 #include "nsContentUtils.h"
+#include "nsIHttpChannel.h"
 #include "nsIRedirectHistoryEntry.h"
 #include "nsIReferrerInfo.h"
-#include "mozIThirdPartyUtil.h"
 #include "nsMixedContentBlocker.h"
 #include "nsNetUtil.h"
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/dom/RequestBinding.h"
-#include "mozilla/StaticPrefs_dom.h"
 
 // Helper function which maps an internal content policy type
 // to the corresponding destination for the context of SecFetch.

@@ -6,9 +6,9 @@
 #ifndef GPU_CompilationMessage_H_
 #define GPU_CompilationMessage_H_
 
-#include "nsWrapperCache.h"
 #include "ObjectModel.h"
 #include "mozilla/dom/WebGPUBinding.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla {
 namespace dom {

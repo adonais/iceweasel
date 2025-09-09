@@ -251,5 +251,12 @@ bool GPUVideoTextureHost::NeedsDeferredDeletion() const {
   return mWrappedTextureHost->NeedsDeferredDeletion();
 }
 
+bool GPUVideoTextureHost::NeedsYFlip() const {
+  if (!mWrappedTextureHost) {
+    return TextureHost::NeedsYFlip();
+  }
+  return mWrappedTextureHost->NeedsYFlip();
+}
+
 }  // namespace layers
 }  // namespace mozilla

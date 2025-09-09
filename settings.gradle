@@ -23,6 +23,7 @@ pluginManagement {
     includeBuild("${rootProject.projectDir.absolutePath}/mobile/android/android-components/plugins/dependencies")
     includeBuild("${rootProject.projectDir.absolutePath}/mobile/android/android-components/plugins/publicsuffixlist")
     includeBuild("${rootProject.projectDir.absolutePath}/mobile/android/fenix/plugins/apksize")
+    includeBuild("${rootProject.projectDir.absolutePath}/mobile/android/gradle/plugins/apilint")
 }
 
 plugins {

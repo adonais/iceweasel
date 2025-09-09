@@ -57,7 +57,7 @@ function run_test() {
     checkService("search", Ci.nsISearchService);
   }
   if ("nsIGeckoViewBridge" in Ci) {
-    checkService("androidBridge", Ci.nsIGeckoViewBridge);
+    checkService("geckoviewBridge", Ci.nsIGeckoViewBridge);
   }
   if ("@mozilla.org/enterprisepolicies;1" in Cc) {
     checkService("policies", Ci.nsIEnterprisePolicies);

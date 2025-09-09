@@ -155,8 +155,12 @@ add_task(async function () {
 });
 
 async function assertSelectors(panel, expected) {
-  const selectorsEl = getSelectors(panel);
+  await waitFor(
+    () => getSelectors(panel).length === expected.length,
+    "Wait for the expected number of selectors item"
+  );
 
+  const selectorsEl = getSelectors(panel);
   is(
     selectorsEl.length,
     expected.length,

@@ -3,17 +3,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/FloatingPoint.h"
-
-#include "nsReadableUtils.h"
-#include "txExecutionState.h"
 #include "txXSLTPatterns.h"
-#include "txNodeSetContext.h"
+
+#include "mozilla/FloatingPoint.h"
+#include "nsIContent.h"
+#include "nsReadableUtils.h"
+#include "nsWhitespaceTokenizer.h"
+#include "txExecutionState.h"
 #include "txForwardContext.h"
+#include "txNodeSetContext.h"
 #include "txXMLUtils.h"
 #include "txXSLTFunctions.h"
-#include "nsWhitespaceTokenizer.h"
-#include "nsIContent.h"
 
 using mozilla::UniquePtr;
 using mozilla::Unused;

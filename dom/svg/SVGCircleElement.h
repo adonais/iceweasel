@@ -7,9 +7,9 @@
 #ifndef DOM_SVG_SVGCIRCLEELEMENT_H_
 #define DOM_SVG_SVGCIRCLEELEMENT_H_
 
-#include "nsCSSPropertyID.h"
-#include "SVGGeometryElement.h"
 #include "SVGAnimatedLength.h"
+#include "SVGGeometryElement.h"
+#include "nsCSSPropertyID.h"
 
 nsresult NS_NewSVGCircleElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);

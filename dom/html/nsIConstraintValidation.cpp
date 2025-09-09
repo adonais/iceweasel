@@ -6,15 +6,15 @@
 
 #include "nsIConstraintValidation.h"
 
-#include "nsGenericHTMLElement.h"
 #include "mozilla/dom/CustomEvent.h"
-#include "mozilla/dom/HTMLFormElement.h"
 #include "mozilla/dom/HTMLFieldSetElement.h"
+#include "mozilla/dom/HTMLFormElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/ValidityState.h"
+#include "nsContentUtils.h"
+#include "nsGenericHTMLElement.h"
 #include "nsIFormControl.h"
 #include "nsISimpleEnumerator.h"
-#include "nsContentUtils.h"
 
 const uint16_t nsIConstraintValidation::sContentSpecifiedMaxLengthMessage = 256;
 

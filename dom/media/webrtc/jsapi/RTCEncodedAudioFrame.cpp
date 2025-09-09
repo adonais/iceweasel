@@ -12,21 +12,20 @@
 #include <utility>
 
 #include "api/frame_transformer_interface.h"
-
+#include "js/RootingAPI.h"
 #include "jsapi/RTCEncodedFrameBase.h"
 #include "jsapi/RTCRtpScriptTransform.h"
-#include "mozilla/dom/RTCRtpScriptTransformer.h"
-#include "mozilla/dom/RTCEncodedAudioFrameBinding.h"
-#include "nsWrapperCache.h"
-#include "nsISupports.h"
-#include "nsCycleCollectionParticipant.h"
-#include "nsIGlobalObject.h"
-#include "nsContentUtils.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/RTCEncodedAudioFrameBinding.h"
+#include "mozilla/dom/RTCRtpScriptTransformer.h"
 #include "mozilla/fallible.h"
-#include "js/RootingAPI.h"
+#include "nsContentUtils.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsIGlobalObject.h"
+#include "nsISupports.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla::dom {
 

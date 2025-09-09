@@ -24,6 +24,7 @@
 #include "gfxUtils.h"
 #include "GLContextProvider.h"
 #include "GLContext.h"
+#include "GSettings.h"
 #include "GtkCompositorWidget.h"
 #include "imgIContainer.h"
 #include "InputData.h"
@@ -83,7 +84,6 @@
 #include "nsGfxCIID.h"
 #include "nsGtkUtils.h"
 #include "nsIFile.h"
-#include "nsIGSettingsService.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsImageToPixbuf.h"
 #include "nsINode.h"
@@ -220,10 +220,9 @@ static gboolean leave_notify_event_cb(GtkWidget* widget,
                                       GdkEventCrossing* event);
 static gboolean motion_notify_event_cb(GtkWidget* widget,
                                        GdkEventMotion* event);
-MOZ_CAN_RUN_SCRIPT static gboolean button_press_event_cb(GtkWidget* widget,
-                                                         GdkEventButton* event);
-static gboolean button_release_event_cb(GtkWidget* widget,
-                                        GdkEventButton* event);
+static gboolean button_press_event_cb(GtkWidget* widget, GdkEventButton* event);
+MOZ_CAN_RUN_SCRIPT static gboolean button_release_event_cb(
+    GtkWidget* widget, GdkEventButton* event);
 static gboolean focus_in_event_cb(GtkWidget* widget, GdkEventFocus* event);
 static gboolean focus_out_event_cb(GtkWidget* widget, GdkEventFocus* event);
 static gboolean key_press_event_cb(GtkWidget* widget, GdkEventKey* event);
@@ -1783,8 +1782,10 @@ bool nsWindow::WaylandPopupConfigure() {
     mPopupContextMenu = WaylandPopupIsContextMenu();
   }
 
-  LOG("nsWindow::WaylandPopupConfigure tracked %d anchored %d hint %d\n",
-      mPopupTrackInHierarchy, mPopupAnchored, int(mPopupType));
+  LOG("nsWindow::WaylandPopupConfigure tracked %d anchored %d hint %d "
+      "permanent %d\n",
+      mPopupTrackInHierarchy, mPopupAnchored, int(mPopupType),
+      WaylandPopupIsPermanent());
 
   // Permanent state changed and popup is mapped.
   // We need to switch popup type but that's done when popup is mapped
@@ -2217,16 +2218,12 @@ void nsWindow::WaylandPopupSetDirectPosition() {
   if (popupWidth > parentWidth) {
     mPopupPosition.x = -(parentWidth - popupWidth) / 2 + x;
   } else {
-    if (IsPopupDirectionRTL()) {
-      // Stick with right window edge
-      if (mPopupPosition.x < x) {
-        mPopupPosition.x = x;
-      }
-    } else {
-      // Stick with left window edge
-      if (mPopupPosition.x + popupWidth > parentWidth + x) {
-        mPopupPosition.x = parentWidth + x - popupWidth;
-      }
+    if (mPopupPosition.x < x) {
+      // Stick with left window edge if it's placed too left
+      mPopupPosition.x = x;
+    } else if (mPopupPosition.x + popupWidth > parentWidth + x) {
+      // Stick with right window edge otherwise
+      mPopupPosition.x = parentWidth + x - popupWidth;
     }
   }
 
@@ -2872,10 +2869,7 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
   mLastSizeModeRequest = aMode;
 }
 
-#define kDesktopMutterSchema "org.gnome.mutter"_ns
-#define kDesktopDynamicWorkspacesKey "dynamic-workspaces"_ns
-
-static bool WorkspaceManagementDisabled(GdkScreen* screen) {
+static bool WorkspaceManagementDisabled() {
   if (Preferences::GetBool("widget.disable-workspace-management", false)) {
     return true;
   }
@@ -2886,19 +2880,9 @@ static bool WorkspaceManagementDisabled(GdkScreen* screen) {
   if (IsGnomeDesktopEnvironment()) {
     // Gnome uses dynamic workspaces by default so disable workspace management
     // in that case.
-    bool usesDynamicWorkspaces = true;
-    nsCOMPtr<nsIGSettingsService> gsettings =
-        do_GetService(NS_GSETTINGSSERVICE_CONTRACTID);
-    if (gsettings) {
-      nsCOMPtr<nsIGSettingsCollection> mutterSettings;
-      gsettings->GetCollectionForSchema(kDesktopMutterSchema,
-                                        getter_AddRefs(mutterSettings));
-      if (mutterSettings) {
-        mutterSettings->GetBoolean(kDesktopDynamicWorkspacesKey,
-                                   &usesDynamicWorkspaces);
-      }
-    }
-    return usesDynamicWorkspaces;
+    return widget::GSettings::GetBoolean("org.gnome.mutter"_ns,
+                                         "dynamic-workspaces"_ns)
+        .valueOr(false);
   }
 
   const auto& desktop = GetDesktopEnvironmentIdentifier();
@@ -2922,7 +2906,7 @@ void nsWindow::GetWorkspaceID(nsAString& workspaceID) {
     return;
   }
 
-  if (WorkspaceManagementDisabled(gdk_window_get_screen(gdk_window))) {
+  if (WorkspaceManagementDisabled()) {
     LOG("  WorkspaceManagementDisabled, quit.");
     return;
   }
@@ -4013,8 +3997,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   // Our bounds may have changed after calling WillPaintWindow.  Clip
   // to the new bounds here.  The region is relative to this
   // window.
-  region.And(region,
-             LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetClientSize()));
+  region.AndWith(LayoutDeviceIntRect(LayoutDeviceIntPoint(), GetClientSize()));
   if (region.IsEmpty()) {
     LOG("quit, region.IsEmpty()");
     return TRUE;
@@ -5513,8 +5496,17 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
   if (mSizeMode != oldSizeMode || mIsTiled != oldIsTiled) {
     RecomputeBounds(MayChangeCsdMargin::No);
   }
-  if (mSizeMode != oldSizeMode && mWidgetListener) {
-    mWidgetListener->SizeModeChanged(mSizeMode);
+  if (mSizeMode != oldSizeMode) {
+    if (mWidgetListener) {
+      mWidgetListener->SizeModeChanged(mSizeMode);
+    }
+    if (mSizeMode == nsSizeMode_Fullscreen ||
+        oldSizeMode == nsSizeMode_Fullscreen) {
+      if (mCompositorWidgetDelegate) {
+        mCompositorWidgetDelegate->NotifyFullscreenChanged(
+            mSizeMode == nsSizeMode_Fullscreen);
+      }
+    }
   }
 }
 
@@ -7502,11 +7494,9 @@ bool nsWindow::DragInProgress() {
 // info about finished D&D operations and cancel it on our own.
 MOZ_CAN_RUN_SCRIPT static void WaylandDragWorkaround(nsWindow* aWindow,
                                                      GdkEventButton* aEvent) {
-  static int buttonPressCountWithDrag = 0;
-
   // We track only left button state as Firefox performs D&D on left
   // button only.
-  if (aEvent->button != 1 || aEvent->type != GDK_BUTTON_PRESS) {
+  if (aEvent->button != 1 || aEvent->type != GDK_BUTTON_RELEASE) {
     return;
   }
 
@@ -7517,25 +7507,16 @@ MOZ_CAN_RUN_SCRIPT static void WaylandDragWorkaround(nsWindow* aWindow,
   }
   nsCOMPtr<nsIDragSession> currentDragSession =
       dragService->GetCurrentSession(aWindow);
-
-  if (!currentDragSession) {
-    buttonPressCountWithDrag = 0;
+  if (!currentDragSession ||
+      static_cast<nsDragSession*>(currentDragSession.get())->IsActive()) {
     return;
   }
 
-  buttonPressCountWithDrag++;
-  if (buttonPressCountWithDrag > 1) {
-    LOGDRAG(
-        "WaylandDragWorkaround applied [buttonPressCountWithDrag %d], quit D&D "
-        "session",
-        buttonPressCountWithDrag);
-
-    NS_WARNING(
-        "Quit unfinished Wayland Drag and Drop operation. Buggy Wayland "
-        "compositor?");
-    buttonPressCountWithDrag = 0;
-    currentDragSession->EndDragSession(true, 0);
-  }
+  LOGDRAG("WaylandDragWorkaround applied, quit D&D session");
+  NS_WARNING(
+      "Quit unfinished Wayland Drag and Drop operation. Buggy Wayland "
+      "compositor?");
+  currentDragSession->EndDragSession(true, 0);
 }
 
 static nsWindow* get_window_for_gtk_widget(GtkWidget* widget) {
@@ -8183,10 +8164,6 @@ static gboolean button_press_event_cb(GtkWidget* widget,
 
   window->OnButtonPressEvent(event);
 
-  if (GdkIsWaylandDisplay()) {
-    WaylandDragWorkaround(window, event);
-  }
-
   return TRUE;
 }
 
@@ -8204,6 +8181,10 @@ static gboolean button_release_event_cb(GtkWidget* widget,
   }
 
   window->OnButtonReleaseEvent(event);
+
+  if (GdkIsWaylandDisplay()) {
+    WaylandDragWorkaround(window, event);
+  }
 
   return TRUE;
 }
@@ -8526,6 +8507,8 @@ gboolean WindowDragMotionHandler(GtkWidget* aWidget,
         static_cast<nsDragSession*>(dragService->StartDragSession(widget));
   }
   NS_ENSURE_TRUE(dragSession, FALSE);
+
+  dragSession->MarkAsActive();
 
   nsDragSession::AutoEventLoop loop(dragSession);
   if (!dragSession->ScheduleMotionEvent(
@@ -9894,6 +9877,7 @@ void nsWindow::OnUnmap() {
       static auto sGtkDragCancel =
           (void (*)(GdkDragContext*))dlsym(RTLD_DEFAULT, "gtk_drag_cancel");
       if (sGtkDragCancel) {
+        LOGDRAG("nsWindow::OnUnmap() Drag cancel");
         sGtkDragCancel(mSourceDragContext);
         mSourceDragContext = nullptr;
       }
@@ -10026,4 +10010,63 @@ UniquePtr<WaylandSurfaceLock> nsWindow::LockSurface() {
 #else
   return nullptr;
 #endif
+}
+
+using GdkWaylandWindowExported = void (*)(GdkWindow* window, const char* handle,
+                                          gpointer user_data);
+
+RefPtr<nsWindow::ExportHandlePromise> nsWindow::ExportHandle() {
+  auto promise = MakeRefPtr<ExportHandlePromise::Private>(__func__);
+  auto* toplevel = GetToplevelGdkWindow();
+#ifdef MOZ_WAYLAND
+  if (GdkIsWaylandDisplay()) {
+    static auto sGdkWaylandWindowExportHandle = (gboolean(*)(
+        const GdkWindow*, GdkWaylandWindowExported, gpointer,
+        GDestroyNotify))dlsym(RTLD_DEFAULT, "gdk_wayland_window_export_handle");
+    if (!sGdkWaylandWindowExportHandle || !toplevel) {
+      promise->Reject(false, __func__);
+    }
+    const bool success = sGdkWaylandWindowExportHandle(
+        toplevel,
+        [](GdkWindow*, const char* handle, gpointer promise) {
+          // NOTE: This addrefs, the releaser destroys.
+          RefPtr self = static_cast<ExportHandlePromise::Private*>(promise);
+          self->Resolve(nsPrintfCString("wayland:%s", handle), __func__);
+        },
+        promise.get(),
+        [](gpointer promise) {
+          RefPtr self =
+              dont_AddRef(static_cast<ExportHandlePromise::Private*>(promise));
+          // NOTE: This gets ignored if not pending.
+          self->Reject(false, __func__);
+        });
+    if (success) {
+      // Transfer ownership to the callback.
+      promise.get()->AddRef();
+    } else {
+      promise->Reject(false, __func__);
+    }
+    return promise.forget();
+  }
+#endif
+#ifdef MOZ_X11
+  if (GdkIsX11Display()) {
+    promise->Resolve(
+        nsPrintfCString("x11:%lx", gdk_x11_window_get_xid(toplevel)), __func__);
+    return promise.forget();
+  }
+#endif
+  MOZ_ASSERT_UNREACHABLE("how?");
+  promise->Reject(false, __func__);
+  return promise.forget();
+}
+
+void nsWindow::UnexportHandle() {
+  static auto sGdkWaylandWindowUnexportHandle = (void (*)(GdkWindow*))dlsym(
+      RTLD_DEFAULT, "gdk_wayland_window_unexport_handle");
+  if (GdkIsWaylandDisplay() && sGdkWaylandWindowUnexportHandle) {
+    if (auto* toplevel = GetToplevelGdkWindow()) {
+      sGdkWaylandWindowUnexportHandle(toplevel);
+    }
+  }
 }

@@ -63,12 +63,16 @@ add_task(async function () {
           }
 
           is(
-            infobar.getTextContent("text-label"),
+            infobar.getTextContent("accessible-text-label"),
             expected,
             "infobar text label audit text content is correct"
           );
           if (score) {
-            ok(infobar.getElement("text-label").classList.contains(score));
+            ok(
+              infobar
+                .getElement("accessible-text-label")
+                .classList.contains(score)
+            );
           }
         }
 

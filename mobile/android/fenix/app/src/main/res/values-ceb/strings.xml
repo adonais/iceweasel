@@ -34,18 +34,14 @@
   <string name="tab_tray_collection_button_multiselect_content_description">i-Save ang napiling tabs padulong sa collection</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s hinimo sa Mozilla.</string>
-  <!--
-    Private Browsing
-
-    Explanation for private browsing displayed to users on home view when they first enable private mode.
-    %1$s is the name of the app (for example "Firefox").
-  -->
-  <string name="private_browsing_placeholder_description_2" moz:removedIn="141" tools:ignore="UnusedResources">Ang %1$s moclear sa imong search ug browsing history sa private tabs kung i-sara o i-quit ang app. Bisan dili kini mohimo kanimo nga anonymous sa mga website ug sa imong internet service provider, gipasayon niini ang pagkapribado sa imong mga gihimo online gikan sa ubang gagamit niining device.</string>
+  <!-- Private Browsing -->
   <string name="private_browsing_common_myths">Mga tinuohan bahin sa private browsing</string>
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">Adto sa settings</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">i-Dismiss</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Kinahanglan ug camera access. Adto sa Android settings, i-tap and permissions, ug i-tap ang allow.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->

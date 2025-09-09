@@ -18,16 +18,16 @@
 #  include <Security/CipherSuite.h>
 #endif
 
+#include "ScopedNSSTypes.h"
+#include "dtlsidentity.h"
+#include "m_cpp_utils.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsITimer.h"
-#include "ScopedNSSTypes.h"
-#include "m_cpp_utils.h"
-#include "dtlsidentity.h"
-#include "transportlayer.h"
 #include "ssl.h"
 #include "sslproto.h"
+#include "transportlayer.h"
 
 namespace mozilla {
 

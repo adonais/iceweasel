@@ -6,10 +6,8 @@
 
 #include <string>
 
-#include "gtest/gtest.h"
-
 #include "FuzzingInterface.h"
-
+#include "gtest/gtest.h"
 #include "sdp/SipccSdpParser.h"
 
 using namespace mozilla;

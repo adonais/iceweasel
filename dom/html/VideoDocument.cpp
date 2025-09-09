@@ -4,14 +4,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "DocumentInlines.h"
 #include "MediaDocument.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLMediaElement.h"
+#include "nsContentCreatorFunctions.h"
+#include "nsContentUtils.h"
 #include "nsGkAtoms.h"
 #include "nsNodeInfoManager.h"
-#include "nsContentCreatorFunctions.h"
-#include "mozilla/dom/HTMLMediaElement.h"
-#include "DocumentInlines.h"
-#include "nsContentUtils.h"
-#include "mozilla/dom/Element.h"
 
 namespace mozilla::dom {
 

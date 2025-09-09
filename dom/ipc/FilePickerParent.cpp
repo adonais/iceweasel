@@ -5,19 +5,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FilePickerParent.h"
-#include "nsComponentManagerUtils.h"
-#include "nsNetCID.h"
-#include "mozilla/dom/Document.h"
-#include "nsIFile.h"
-#include "nsISimpleEnumerator.h"
+
 #include "mozilla/Unused.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FileBlobImpl.h"
 #include "mozilla/dom/FileSystemSecurity.h"
 #include "mozilla/dom/IPCBlobUtils.h"
+#include "nsComponentManagerUtils.h"
+#include "nsIFile.h"
+#include "nsISimpleEnumerator.h"
+#include "nsNetCID.h"
 
 using mozilla::Unused;
 using namespace mozilla::dom;

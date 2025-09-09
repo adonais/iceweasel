@@ -7,10 +7,10 @@
 #ifndef mozilla_dom_PermissionStatusSink_h
 #define mozilla_dom_PermissionStatusSink_h
 
-#include "mozilla/dom/PermissionsBinding.h"
-#include "mozilla/dom/PermissionStatusBinding.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/dom/PermissionStatusBinding.h"
+#include "mozilla/dom/PermissionsBinding.h"
 #include "nsIPermission.h"
 
 class nsPIDOMWindowInner;

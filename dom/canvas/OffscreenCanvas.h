@@ -8,14 +8,14 @@
 #define MOZILLA_DOM_OFFSCREENCANVAS_H_
 
 #include "gfxTypes.h"
-#include "mozilla/dom/CanvasRenderingContextHelper.h"
-#include "mozilla/dom/ImageEncoder.h"
-#include "mozilla/dom/OffscreenCanvasDisplayHelper.h"
 #include "mozilla/DOMEventTargetHelper.h"
-#include "mozilla/layers/LayersTypes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/CanvasRenderingContextHelper.h"
+#include "mozilla/dom/ImageEncoder.h"
+#include "mozilla/dom/OffscreenCanvasDisplayHelper.h"
+#include "mozilla/layers/LayersTypes.h"
 #include "nsCycleCollectionParticipant.h"
 
 struct JSContext;

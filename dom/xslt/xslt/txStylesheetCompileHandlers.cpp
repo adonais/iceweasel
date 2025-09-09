@@ -11,6 +11,9 @@
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "nsGkAtoms.h"
+#include "nsStringFlags.h"
+#include "nsStringIterator.h"
+#include "nsStyleUtil.h"
 #include "nsWhitespaceTokenizer.h"
 #include "txCore.h"
 #include "txInstructions.h"
@@ -22,9 +25,6 @@
 #include "txToplevelItems.h"
 #include "txURIUtils.h"
 #include "txXSLTFunctions.h"
-#include "nsStringFlags.h"
-#include "nsStyleUtil.h"
-#include "nsStringIterator.h"
 
 using namespace mozilla;
 

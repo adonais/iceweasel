@@ -38,6 +38,7 @@ dependencies {
     implementation libs.androidx.core.ktx
     implementation libs.google.material
     implementation libs.androidx.swiperefreshlayout
+    implementation libs.androidx.compose.ui.text.android
 
     testImplementation project(":components:support-test")
     testImplementation project(':components:support-test-fakes')

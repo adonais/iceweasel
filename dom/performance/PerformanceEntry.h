@@ -7,11 +7,11 @@
 #ifndef mozilla_dom_PerformanceEntry_h___
 #define mozilla_dom_PerformanceEntry_h___
 
+#include "mozilla/dom/PerformanceObserverBinding.h"
+#include "nsAtom.h"
 #include "nsDOMNavigationTiming.h"
 #include "nsString.h"
 #include "nsWrapperCache.h"
-#include "nsAtom.h"
-#include "mozilla/dom/PerformanceObserverBinding.h"
 
 class nsISupports;
 

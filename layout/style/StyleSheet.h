@@ -41,7 +41,7 @@ using StyleSheetParsePromise = MozPromise</* Dummy */ bool,
                                           /* IsExclusive = */ true>;
 
 enum class StyleRuleChangeKind : uint32_t;
-enum class StyleLikelyBaseUriDependency : uint8_t;
+enum class StyleNonLocalUriDependency : uint8_t;
 
 struct StyleRuleChange {
   StyleRuleChange() = delete;
@@ -161,7 +161,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   void PropagateUseCountersTo(dom::Document*) const;
 
   // Whether our original contents may be using relative URIs.
-  StyleLikelyBaseUriDependency OriginalContentsBaseUriDependency() const;
+  StyleNonLocalUriDependency OriginalContentsUriDependency() const;
 
   URLExtraData* URLData() const { return Inner().mURLData; }
 

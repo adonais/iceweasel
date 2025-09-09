@@ -8,11 +8,6 @@
 <script>
 test(() => {
   const style = getComputedStyle(document.querySelector('div'));
-  const currentColor = "rgb(0, 0, 0)"; // The default color value is black.
-  // The default computed value of text-decoration-color is depended on the
-  // current color value, and it is an rgb() value, instead of `currentcolor`.
-  // This is an ambiguous part in the spec, anyway.
-  assert_equals(style.getPropertyValue("text-decoration"),
-                "underline " + currentColor);
+  assert_equals(style.getPropertyValue("text-decoration"), "underline");
 });
 </script>

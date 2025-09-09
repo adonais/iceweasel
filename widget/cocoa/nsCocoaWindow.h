@@ -11,6 +11,8 @@
 #import <Cocoa/Cocoa.h>
 
 #include "mozilla/RefPtr.h"
+#include "mozilla/layers/NativeLayerRootRemoteMacChild.h"
+#include "mozilla/layers/NativeLayerRootRemoteMacParent.h"
 #include "nsBaseWidget.h"
 #include "nsCocoaUtils.h"
 #include "nsTouchBar.h"
@@ -28,8 +30,9 @@ namespace mozilla {
 enum class NativeKeyBindingsType : uint8_t;
 class VibrancyManager;
 namespace widget {
+class PlatformCompositorWidgetDelegate;
 class TextInputHandler;
-}
+}  // namespace widget
 }  // namespace mozilla
 
 // NSWindow subclass that is the base class for all of our own window classes.
@@ -387,6 +390,16 @@ class nsCocoaWindow final : public nsBaseWidget {
 
   bool WidgetPaintsBackground() override { return true; }
 
+  void CreateCompositor(int aWidth, int aHeight) override;
+  void FinishCreateCompositor(int aWidth, int aHeight);
+  void DestroyCompositor() override;
+  void SetCompositorWidgetDelegate(
+      mozilla::widget::CompositorWidgetDelegate*) override;
+
+  void GetCompositorWidgetInitData(
+      mozilla::widget::CompositorWidgetInitData* aInitData) override;
+  mozilla::layers::CompositorBridgeChild* GetCompositorBridgeChild() const;
+
   bool PreRender(mozilla::widget::WidgetRenderingContext* aContext) override;
   void PostRender(mozilla::widget::WidgetRenderingContext* aContext) override;
   RefPtr<mozilla::layers::NativeLayerRoot> GetNativeLayerRoot() override;
@@ -545,6 +558,12 @@ class nsCocoaWindow final : public nsBaseWidget {
   mutable CGFloat mBackingScaleFactor;
 
   RefPtr<mozilla::layers::NativeLayerRootCA> mNativeLayerRoot;
+  RefPtr<mozilla::layers::NativeLayerRootRemoteMacParent>
+      mNativeLayerRootRemoteMacParent;
+  mozilla::ipc::Endpoint<mozilla::layers::PNativeLayerRemoteParent>
+      mParentEndpoint;
+  mozilla::ipc::Endpoint<mozilla::layers::PNativeLayerRemoteChild>
+      mChildEndpoint;
 
   // In BasicLayers mode, this is the CoreAnimation layer that contains the
   // rendering from Gecko. It is a sublayer of mNativeLayerRoot's underlying
@@ -647,6 +666,9 @@ class nsCocoaWindow final : public nsBaseWidget {
   RefPtr<mozilla::widget::TextInputHandler> mTextInputHandler;
   InputContext mInputContext;
   NSWindowAnimationBehavior mWindowAnimationBehavior;
+
+  mozilla::widget::PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate =
+      nullptr;
 
  private:
   // This is class state for tracking which nsCocoaWindow, if any, is in the

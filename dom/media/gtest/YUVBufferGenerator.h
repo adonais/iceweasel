@@ -8,9 +8,9 @@
 #define YUVBufferGenerator_h
 
 #include "ImageContainer.h"
+#include "Point.h"  // mozilla::gfx::IntSize
 #include "mozilla/AlreadyAddRefed.h"
 #include "nsTArray.h"
-#include "Point.h"  // mozilla::gfx::IntSize
 
 // A helper object to generate of different YUV planes.
 class YUVBufferGenerator {

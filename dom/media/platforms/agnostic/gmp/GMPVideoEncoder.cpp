@@ -8,11 +8,11 @@
 
 #include "AnnexB.h"
 #include "ErrorList.h"
-#include "H264.h"
 #include "GMPLog.h"
-#include "GMPUtils.h"
 #include "GMPService.h"
+#include "GMPUtils.h"
 #include "GMPVideoHost.h"
+#include "H264.h"
 #include "ImageContainer.h"
 #include "ImageConversion.h"
 #include "mozilla/StaticPrefs_media.h"

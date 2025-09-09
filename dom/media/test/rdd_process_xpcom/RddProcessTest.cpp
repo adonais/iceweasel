@@ -5,9 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #if defined(ENABLE_TESTS)
-#  include "mozilla/RDDProcessManager.h"
-#  include "mozilla/RDDChild.h"
 #  include "mozilla/RddProcessTest.h"
+
+#  include "mozilla/RDDChild.h"
+#  include "mozilla/RDDProcessManager.h"
 #  include "mozilla/dom/Promise.h"
 
 namespace mozilla {

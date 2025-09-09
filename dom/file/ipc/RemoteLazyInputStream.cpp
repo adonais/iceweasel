@@ -5,19 +5,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "RemoteLazyInputStream.h"
+
 #include "RemoteLazyInputStreamChild.h"
 #include "RemoteLazyInputStreamParent.h"
+#include "RemoteLazyInputStreamStorage.h"
+#include "RemoteLazyInputStreamThread.h"
 #include "chrome/common/ipc_message_utils.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/Logging.h"
+#include "mozilla/NonBlockingAsyncInputStream.h"
 #include "mozilla/PRemoteLazyInputStream.h"
+#include "mozilla/SlicedInputStream.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/InputStreamParams.h"
 #include "mozilla/ipc/MessageChannel.h"
 #include "mozilla/ipc/ProtocolMessageUtils.h"
 #include "mozilla/net/SocketProcessParent.h"
-#include "mozilla/SlicedInputStream.h"
-#include "mozilla/NonBlockingAsyncInputStream.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
 #include "nsID.h"
@@ -26,8 +29,6 @@
 #include "nsNetUtil.h"
 #include "nsStreamUtils.h"
 #include "nsStringStream.h"
-#include "RemoteLazyInputStreamStorage.h"
-#include "RemoteLazyInputStreamThread.h"
 
 namespace mozilla {
 

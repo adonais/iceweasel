@@ -280,6 +280,23 @@
   args:
     fuseWord: RealmFuseIndexImm
 
+- name: GuardObjectFuseProperty
+  shared: true
+  transpile: true
+  cost_estimate: 1
+  args:
+    # These two fields are used in debug builds to check the object matches
+    # objFuseOwner. It also ensures the ObjectFuse outlives this IC stub.
+    obj: ObjId
+    objFuseOwner: WeakObjectField
+    # The ObjectFuse* and data used for the IC guard.
+    objFuse: RawPointerField
+    expectedGeneration: RawInt32Field
+    propIndex: RawInt32Field
+    propMask: RawInt32Field
+    # Whether IC code can use a fast path based on invalidatedConstantProperty_.
+    canUseFastPath: BoolImm
+
 # Guard on an arbitrary JSClass.
 - name: GuardAnyClass
   shared: false
@@ -635,7 +652,8 @@
   args:
     obj: ObjId
     id: IdField
-    getterSetter: WeakGetterSetterField
+    # The expected GetterSetter* stored as PrivateGCThingValue.
+    getterSetter: WeakValueField
 
 - name: GuardInt32IsNonNegative
   shared: true
@@ -643,6 +661,13 @@
   cost_estimate: 1
   args:
     index: Int32Id
+
+- name: GuardIntPtrIsNonNegative
+  shared: true
+  transpile: true
+  cost_estimate: 1
+  args:
+    index: IntPtrId
 
 - name: GuardIndexIsValidUpdateOrAdd
   shared: true
@@ -1248,20 +1273,6 @@
   args:
     obj: ObjId
 
-- name: ResizableTypedArrayByteOffsetMaybeOutOfBoundsInt32Result
-  shared: true
-  transpile: true
-  cost_estimate: 2
-  args:
-    obj: ObjId
-
-- name: ResizableTypedArrayByteOffsetMaybeOutOfBoundsDoubleResult
-  shared: true
-  transpile: true
-  cost_estimate: 2
-  args:
-    obj: ObjId
-
 - name: TypedArrayByteLengthInt32Result
   shared: true
   transpile: true
@@ -1298,13 +1309,6 @@
     obj: ObjId
 
 - name: ResizableTypedArrayLengthDoubleResult
-  shared: true
-  transpile: true
-  cost_estimate: 2
-  args:
-    obj: ObjId
-
-- name: TypedArrayElementSizeResult
   shared: true
   transpile: true
   cost_estimate: 2
@@ -1359,6 +1363,37 @@
   cost_estimate: 2
   args:
     obj: ObjId
+
+- name: TypedArrayFillResult
+  shared: true
+  transpile: true
+  cost_estimate: 4
+  args:
+    obj: ObjId
+    fillValue: RawId
+    start: IntPtrId
+    end: IntPtrId
+    elementType: ScalarTypeImm
+
+- name: TypedArraySetResult
+  shared: true
+  transpile: true
+  cost_estimate: 4
+  args:
+    target: ObjId
+    source: ObjId
+    offset: IntPtrId
+    canUseBitwiseCopy: BoolImm
+
+- name: TypedArraySubarrayResult
+  shared: true
+  transpile: true
+  cost_estimate: 5
+  args:
+    templateObject: ObjectField
+    obj: ObjId
+    start: IntPtrId
+    end: IntPtrId
 
 - name: NewArrayIteratorResult
   shared: true
@@ -2439,6 +2474,14 @@
   args:
     obj: ObjId
 
+- name: LoadArrayBufferViewLength
+  shared: true
+  transpile: true
+  cost_estimate: 1
+  args:
+    obj: ObjId
+    result: IntPtrId
+
 - name: LinearizeForCharAccess
   shared: true
   transpile: true
@@ -2678,6 +2721,14 @@
   args:
     val: RawInt32Field
     result: Int32Id
+
+- name: LoadInt32AsIntPtrConstant
+  shared: true
+  transpile: true
+  cost_estimate: 1
+  args:
+    val: RawInt32Field
+    result: IntPtrId
 
 - name: LoadDoubleConstant
   shared: true
@@ -3240,7 +3291,7 @@
 
 - name: LoadValueResult
   shared: false
-  transpile: false
+  transpile: true
   cost_estimate: 1
   args:
     val: ValueField
@@ -3624,6 +3675,30 @@
   cost_estimate: 1
   args:
     map: ObjId
+
+- name: WeakMapGetObjectResult
+  shared: true
+  transpile: true
+  cost_estimate: 3
+  args:
+    weakMap: ObjId
+    obj: ObjId
+
+- name: WeakMapHasObjectResult
+  shared: true
+  transpile: true
+  cost_estimate: 3
+  args:
+    weakMap: ObjId
+    obj: ObjId
+
+- name: WeakSetHasObjectResult
+  shared: true
+  transpile: true
+  cost_estimate: 3
+  args:
+    weakSet: ObjId
+    obj: ObjId
 
 - name: DateFillLocalTimeSlots
   shared: true

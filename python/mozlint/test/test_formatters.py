@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import json
+from textwrap import dedent
 
 import attr
 import mozpack.path as mozpath
@@ -36,6 +37,9 @@ EXPECTED = {
 /fake/root/a/b/c.txt
   1     error  oh no foo       (foo)
   4:10  error  oh no baz       (baz)
+      |
+    4 | if baz:
+      |    ^^^
   5     error  oh no foo-diff  (foo-diff)
   diff 1
   - hello
@@ -100,14 +104,19 @@ def result(scope="module"):
             message="oh no baz",
             lineno=4,
             column=10,
-            source="if baz:",
+            source=dedent(
+                """
+                  |
+                4 | if baz:
+                  |    ^^^
+            """
+            ).lstrip("\n"),
         ),
         Issue(
             linter="foo-diff",
             path="a/b/c.txt",
             message="oh no foo-diff",
             lineno=5,
-            source="if baz:",
             diff="diff 1\n- hello\n+ hello2",
         ),
     )

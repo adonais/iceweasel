@@ -8,8 +8,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
+import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.Dispatchers
@@ -54,23 +54,21 @@ class AddressManagementFragment : Fragment() {
 
         loadAddresses()
 
-        return ComposeView(requireContext()).apply {
-            setContent {
-                FirefoxTheme {
-                    val addresses = store.observeAsComposableState { state -> state.addresses }
+        return content {
+            FirefoxTheme {
+                val addresses = store.observeAsComposableState { state -> state.addresses }
 
-                    AddressList(
-                        addresses = addresses.value ?: emptyList(),
-                        onAddressClick = {
-                            interactor.onSelectAddress(it)
-                            Addresses.managementAddressTapped.record(NoExtras())
-                        },
-                        onAddAddressButtonClick = {
-                            interactor.onAddAddressButtonClick()
-                            Addresses.managementAddTapped.record(NoExtras())
-                        },
-                    )
-                }
+                AddressList(
+                    addresses = addresses.value ?: emptyList(),
+                    onAddressClick = {
+                        interactor.onSelectAddress(it)
+                        Addresses.managementAddressTapped.record(NoExtras())
+                    },
+                    onAddAddressButtonClick = {
+                        interactor.onAddAddressButtonClick()
+                        Addresses.managementAddTapped.record(NoExtras())
+                    },
+                )
             }
         }
     }

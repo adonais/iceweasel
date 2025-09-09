@@ -6,9 +6,9 @@
 #include "TextureView.h"
 
 #include "Device.h"
+#include "ipc/WebGPUChild.h"
 #include "mozilla/dom/WebGPUBinding.h"
 #include "mozilla/webgpu/CanvasContext.h"
-#include "ipc/WebGPUChild.h"
 
 namespace mozilla::webgpu {
 
@@ -38,8 +38,6 @@ void TextureView::Cleanup() {
   }
 
   ffi::wgpu_client_drop_texture_view(bridge->GetClient(), mId);
-
-  wgpu_client_free_texture_view_id(bridge->GetClient(), mId);
 }
 
 }  // namespace mozilla::webgpu

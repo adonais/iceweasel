@@ -7,14 +7,6 @@
 #ifndef mozilla_dom_KeyframeEffect_h
 #define mozilla_dom_KeyframeEffect_h
 
-#include "nsChangeHint.h"
-#include "nsCSSPropertyID.h"
-#include "nsCSSPropertyIDSet.h"
-#include "nsCSSValue.h"
-#include "nsCycleCollectionParticipant.h"
-#include "nsRefPtrHashtable.h"
-#include "nsTArray.h"
-#include "nsWrapperCache.h"
 #include "mozilla/AnimatedPropertyID.h"
 #include "mozilla/AnimatedPropertyIDSet.h"
 #include "mozilla/AnimationPerformanceWarning.h"
@@ -25,6 +17,14 @@
 #include "mozilla/Keyframe.h"
 #include "mozilla/KeyframeEffectParams.h"
 #include "mozilla/PostRestyleMode.h"
+#include "nsCSSPropertyID.h"
+#include "nsCSSPropertyIDSet.h"
+#include "nsCSSValue.h"
+#include "nsChangeHint.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsRefPtrHashtable.h"
+#include "nsTArray.h"
+#include "nsWrapperCache.h"
 // StyleLockedDeclarationBlock and associated RefPtrTraits
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/StyleAnimationValue.h"

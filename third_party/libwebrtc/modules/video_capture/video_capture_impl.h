@@ -45,9 +45,9 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
    *   deviceUniqueIdUTF8 -  name of the device. Available names can be found by
    * using GetDeviceName
    */
-  static rtc::scoped_refptr<VideoCaptureModule> Create(
+  static scoped_refptr<VideoCaptureModule> Create(
       const char* deviceUniqueIdUTF8);
-  static rtc::scoped_refptr<VideoCaptureModule> Create(
+  static scoped_refptr<VideoCaptureModule> Create(
       VideoCaptureOptions* options,
       const char* deviceUniqueIdUTF8);
 
@@ -61,11 +61,11 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
 
   // Call backs
   void RegisterCaptureDataCallback(
-      rtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
+      VideoSinkInterface<VideoFrame>* dataCallback) override;
   virtual void RegisterCaptureDataCallback(
       RawVideoSinkInterface* dataCallback) override;
   void DeRegisterCaptureDataCallback(
-      rtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
+      webrtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
 
   int32_t StopCaptureIfAllClientsClose() override;
   int32_t SetCaptureRotation(VideoRotation rotation) override;
@@ -119,7 +119,7 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
   // last time the frame rate callback function was called.
   int64_t _lastFrameRateCallbackTimeNanos RTC_GUARDED_BY(capture_checker_);
 
-  std::set<rtc::VideoSinkInterface<VideoFrame>*> _dataCallBacks RTC_GUARDED_BY(api_lock_);
+  std::set<VideoSinkInterface<VideoFrame>*> _dataCallBacks RTC_GUARDED_BY(api_lock_);
   RawVideoSinkInterface* _rawDataCallBack RTC_GUARDED_BY(api_lock_);
 
   int64_t _lastProcessFrameTimeNanos RTC_GUARDED_BY(capture_checker_);

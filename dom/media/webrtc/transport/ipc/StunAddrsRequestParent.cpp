@@ -4,16 +4,14 @@
 
 #include "StunAddrsRequestParent.h"
 
+#include "../mdns_service/mdns_service.h"
 #include "../runnable_utils.h"
 #include "mozilla/StaticPtr.h"
 #include "nsIThread.h"
 #include "nsNetUtil.h"
-
 #include "transport/nricectx.h"
 #include "transport/nricemediastream.h"  // needed only for including nricectx.h
 #include "transport/nricestunaddr.h"
-
-#include "../mdns_service/mdns_service.h"
 
 extern "C" {
 #include "local_addr.h"

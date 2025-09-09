@@ -5,26 +5,26 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/JSActor.h"
-#include "mozilla/dom/JSActorBinding.h"
 
 #include "chrome/common/ipc_channel.h"
+#include "js/Promise.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/FunctionRef.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/ClonedErrorHolder.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
+#include "mozilla/dom/JSActorBinding.h"
 #include "mozilla/dom/JSActorManager.h"
 #include "mozilla/dom/MessageManagerBinding.h"
 #include "mozilla/dom/PWindowGlobal.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "js/Promise.h"
-#include "xpcprivate.h"
 #include "nsFrameMessageManager.h"
 #include "nsICrashReporter.h"
+#include "xpcprivate.h"
 
 namespace mozilla::dom {
 

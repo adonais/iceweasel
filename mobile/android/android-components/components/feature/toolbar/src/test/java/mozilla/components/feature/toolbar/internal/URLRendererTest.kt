@@ -12,10 +12,9 @@ import android.util.Patterns
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.Dispatchers
 import mozilla.components.concept.toolbar.Toolbar
+import mozilla.components.concept.toolbar.fake.FakeToolbar
 import mozilla.components.feature.toolbar.ToolbarFeature
 import mozilla.components.lib.publicsuffixlist.PublicSuffixList
-import mozilla.components.support.test.argumentCaptor
-import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.rule.runTestOnMain
@@ -27,7 +26,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito.verify
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
@@ -41,7 +39,7 @@ class URLRendererTest {
 
     @Test
     fun `Lifecycle methods start and stop job`() {
-        val renderer = URLRenderer(mock(), mock())
+        val renderer = URLRenderer(FakeToolbar(), getConfiguration())
 
         assertNull(renderer.job)
 
@@ -59,133 +57,38 @@ class URLRendererTest {
     @Test
     fun `Render with configuration`() {
         runTestOnMain {
-            val configuration = ToolbarFeature.UrlRenderConfiguration(
-                publicSuffixList = PublicSuffixList(testContext, Dispatchers.Unconfined),
-                registrableDomainColor = Color.RED,
-                urlColor = Color.GREEN,
-            )
+            val renderedUrl = getSpannedUrl("https://www.mozilla.org/")
 
-            val toolbar: Toolbar = mock()
+            assertEquals("https://www.mozilla.org/", renderedUrl.toString())
 
-            val renderer = URLRenderer(toolbar, configuration)
-
-            renderer.updateUrl("https://www.mozilla.org/")
-
-            val captor = argumentCaptor<CharSequence>()
-            verify(toolbar).url = captor.capture()
-
-            assertNotNull(captor.value)
-            assertTrue(captor.value is SpannableStringBuilder)
-            val url = captor.value as SpannableStringBuilder
-
-            assertEquals("https://www.mozilla.org/", url.toString())
-
-            val spans = url.getSpans(0, url.length, ForegroundColorSpan::class.java)
+            val spans = renderedUrl.getSpans(0, renderedUrl.length, ForegroundColorSpan::class.java)
 
             assertEquals(2, spans.size)
             assertEquals(Color.GREEN, spans[0].foregroundColor)
             assertEquals(Color.RED, spans[1].foregroundColor)
 
-            val domain = url.subSequence(12, 23)
+            val domain = renderedUrl.subSequence(12, 23)
             assertEquals("mozilla.org", domain.toString())
 
-            val domainSpans = url.getSpans(13, 23, ForegroundColorSpan::class.java)
+            val domainSpans = renderedUrl.getSpans(13, 23, ForegroundColorSpan::class.java)
             assertEquals(2, domainSpans.size)
             assertEquals(Color.GREEN, domainSpans[0].foregroundColor)
             assertEquals(Color.RED, domainSpans[1].foregroundColor)
 
-            val prefix = url.subSequence(0, 12)
+            val prefix = renderedUrl.subSequence(0, 12)
             assertEquals("https://www.", prefix.toString())
 
-            val prefixSpans = url.getSpans(0, 12, ForegroundColorSpan::class.java)
+            val prefixSpans = renderedUrl.getSpans(0, 12, ForegroundColorSpan::class.java)
             assertEquals(1, prefixSpans.size)
             assertEquals(Color.GREEN, prefixSpans[0].foregroundColor)
 
-            val suffix = url.subSequence(23, url.length)
+            val suffix = renderedUrl.subSequence(23, renderedUrl.length)
             assertEquals("/", suffix.toString())
 
-            val suffixSpans = url.getSpans(23, url.length, ForegroundColorSpan::class.java)
+            val suffixSpans = renderedUrl.getSpans(23, renderedUrl.length, ForegroundColorSpan::class.java)
             assertEquals(1, suffixSpans.size)
             assertEquals(Color.GREEN, suffixSpans[0].foregroundColor)
         }
-    }
-
-    private suspend fun getSpannedUrl(testUrl: String): SpannableStringBuilder {
-        val configuration = ToolbarFeature.UrlRenderConfiguration(
-            publicSuffixList = PublicSuffixList(testContext, Dispatchers.Unconfined),
-            registrableDomainColor = Color.RED,
-            urlColor = Color.GREEN,
-            renderStyle = ToolbarFeature.RenderStyle.ColoredUrl,
-        )
-
-        val toolbar: Toolbar = mock()
-
-        val renderer = URLRenderer(toolbar, configuration)
-
-        renderer.updateUrl(testUrl)
-
-        val captor = argumentCaptor<CharSequence>()
-        verify(toolbar).url = captor.capture()
-
-        return requireNotNull(captor.value as? SpannableStringBuilder) { "Toolbar URL should not be null" }
-    }
-
-    private suspend fun testRenderWithColoredUrl(
-        testUrl: String,
-        expectedRegistrableDomainSpan: Pair<Int, Int>,
-    ) {
-        val url = getSpannedUrl(testUrl)
-
-        assertEquals(testUrl, url.toString())
-
-        val spans = url.getSpans(0, url.length, ForegroundColorSpan::class.java)
-
-        assertEquals(2, spans.size)
-        assertEquals(Color.GREEN, spans[0].foregroundColor)
-        assertEquals(Color.RED, spans[1].foregroundColor)
-
-        assertEquals(0, url.getSpanStart(spans[0]))
-        assertEquals(testUrl.length, url.getSpanEnd(spans[0]))
-
-        assertEquals(expectedRegistrableDomainSpan.first, url.getSpanStart(spans[1]))
-        assertEquals(expectedRegistrableDomainSpan.second, url.getSpanEnd(spans[1]))
-    }
-
-    private suspend fun testRenderWithUncoloredUrl(testUrl: String) {
-        val url = getSpannedUrl(testUrl)
-
-        assertEquals(testUrl, url.toString())
-
-        val spans = url.getSpans(0, url.length, ForegroundColorSpan::class.java)
-
-        assertEquals(0, spans.size)
-    }
-
-    private suspend fun testRenderWithRegistrableDomain(
-        testUrl: String,
-        expectedUrl: String,
-    ) {
-        val configuration = ToolbarFeature.UrlRenderConfiguration(
-            publicSuffixList = PublicSuffixList(testContext, Dispatchers.Unconfined),
-            registrableDomainColor = Color.RED,
-            urlColor = Color.GREEN,
-            renderStyle = ToolbarFeature.RenderStyle.RegistrableDomain,
-        )
-
-        val toolbar: Toolbar = mock()
-
-        val renderer = URLRenderer(toolbar, configuration)
-
-        renderer.updateUrl(testUrl)
-
-        val captor = argumentCaptor<CharSequence>()
-        verify(toolbar).url = captor.capture()
-
-        assertNotNull(captor.value)
-        assertTrue(captor.value is String)
-        val url = captor.value as String
-
-        assertEquals(expectedUrl, url)
     }
 
     @Test
@@ -532,6 +435,70 @@ class URLRendererTest {
                 expectedUrl = "content://media/external/file/1000000000",
             )
         }
+    }
+
+    private suspend fun getSpannedUrl(url: String): SpannableStringBuilder {
+        val toolbar: Toolbar = FakeToolbar(url = "")
+
+        val renderer = URLRenderer(toolbar, getConfiguration())
+
+        renderer.updateUrl(url)
+
+        return requireNotNull(toolbar.url as? SpannableStringBuilder) { "Toolbar URL should not be null" }
+    }
+
+    private fun getConfiguration() = ToolbarFeature.UrlRenderConfiguration(
+        publicSuffixList = PublicSuffixList(testContext, Dispatchers.Unconfined),
+        registrableDomainColor = Color.RED,
+        urlColor = Color.GREEN,
+    )
+
+    private suspend fun testRenderWithColoredUrl(
+        testUrl: String,
+        expectedRegistrableDomainSpan: Pair<Int, Int>,
+    ) {
+        val url = getSpannedUrl(testUrl)
+
+        assertEquals(testUrl, url.toString())
+
+        val spans = url.getSpans(0, url.length, ForegroundColorSpan::class.java)
+
+        assertEquals(2, spans.size)
+        assertEquals(Color.GREEN, spans[0].foregroundColor)
+        assertEquals(Color.RED, spans[1].foregroundColor)
+
+        assertEquals(0, url.getSpanStart(spans[0]))
+        assertEquals(testUrl.length, url.getSpanEnd(spans[0]))
+
+        assertEquals(expectedRegistrableDomainSpan.first, url.getSpanStart(spans[1]))
+        assertEquals(expectedRegistrableDomainSpan.second, url.getSpanEnd(spans[1]))
+    }
+
+    private suspend fun testRenderWithUncoloredUrl(testUrl: String) {
+        val url = getSpannedUrl(testUrl)
+        assertEquals(testUrl, url.toString())
+
+        val spans = url.getSpans(0, url.length, ForegroundColorSpan::class.java)
+        assertEquals(0, spans.size)
+    }
+
+    private suspend fun testRenderWithRegistrableDomain(
+        testUrl: String,
+        expectedUrl: String,
+    ) {
+        val toolbar: Toolbar = FakeToolbar(url = testUrl)
+
+        val configuration = ToolbarFeature.UrlRenderConfiguration(
+            publicSuffixList = PublicSuffixList(testContext, Dispatchers.Unconfined),
+            registrableDomainColor = Color.RED,
+            urlColor = Color.GREEN,
+            renderStyle = ToolbarFeature.RenderStyle.RegistrableDomain,
+        )
+
+        val renderer = URLRenderer(toolbar, configuration)
+
+        renderer.updateUrl(testUrl)
+        assertEquals(expectedUrl, toolbar.url)
     }
 }
 

@@ -15,8 +15,8 @@
 #include "MediaTrackConstraints.h"
 #include "MediaTrackGraph.h"
 #include "MediaTrackListener.h"
-#include "VideoStreamTrack.h"
 #include "Tracing.h"
+#include "VideoStreamTrack.h"
 #include "VideoUtils.h"
 #include "mozilla/Base64.h"
 #include "mozilla/EventTargetCapability.h"
@@ -26,7 +26,6 @@
 #include "mozilla/PermissionDelegateHandler.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/glean/DomMediaWebrtcMetrics.h"
 #include "mozilla/Types.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Document.h"
@@ -43,6 +42,7 @@
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalChild.h"
+#include "mozilla/glean/DomMediaWebrtcMetrics.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/media/CamerasTypes.h"
@@ -954,8 +954,7 @@ NS_IMPL_ISUPPORTS(LocalMediaDevice, nsIMediaDevice)
 MediaDevice::MediaDevice(MediaEngine* aEngine, MediaSourceEnum aMediaSource,
                          const nsString& aRawName, const nsString& aRawID,
                          const nsString& aRawGroupID, IsScary aIsScary,
-                         const OsPromptable canRequestOsLevelPrompt,
-                         const IsPlaceholder aIsPlaceholder)
+                         const OsPromptable canRequestOsLevelPrompt)
     : mEngine(aEngine),
       mAudioDeviceInfo(nullptr),
       mMediaSource(aMediaSource),
@@ -965,7 +964,6 @@ MediaDevice::MediaDevice(MediaEngine* aEngine, MediaSourceEnum aMediaSource,
       mScary(aIsScary == IsScary::Yes),
       mCanRequestOsLevelPrompt(canRequestOsLevelPrompt == OsPromptable::Yes),
       mIsFake(mEngine->IsFake()),
-      mIsPlaceholder(aIsPlaceholder == IsPlaceholder::Yes),
       mType(NS_ConvertASCIItoUTF16(dom::GetEnumString(mKind))),
       mRawID(aRawID),
       mRawGroupID(aRawGroupID),
@@ -987,7 +985,6 @@ MediaDevice::MediaDevice(MediaEngine* aEngine,
       mScary(false),
       mCanRequestOsLevelPrompt(false),
       mIsFake(false),
-      mIsPlaceholder(false),
       mType(NS_ConvertASCIItoUTF16(dom::GetEnumString(mKind))),
       mRawID(aRawID),
       mRawGroupID(mAudioDeviceInfo->GroupID()),
@@ -1000,8 +997,7 @@ RefPtr<MediaDevice> MediaDevice::CopyWithNewRawGroupId(
   return new MediaDevice(aOther->mEngine, aOther->mMediaSource,
                          aOther->mRawName, aOther->mRawID, aRawGroupID,
                          IsScary(aOther->mScary),
-                         OsPromptable(aOther->mCanRequestOsLevelPrompt),
-                         IsPlaceholder(aOther->mIsPlaceholder));
+                         OsPromptable(aOther->mCanRequestOsLevelPrompt));
 }
 
 MediaDevice::~MediaDevice() = default;
@@ -2245,12 +2241,6 @@ MediaManager::MaybeRequestPermissionAndEnumerateRawDevices(
               "rejected");
         }
 
-        if (aParams.VideoInputType() == MediaSourceEnum::Camera &&
-            aParams.mFlags.contains(EnumerationFlag::AllowPermissionRequest) &&
-            aValue.ResolveValue() == CamerasAccessStatus::Granted) {
-          EnsureNoPlaceholdersInDeviceCache();
-        }
-
         // We have to nest this, unfortunately, since we have no guarantees that
         // mMediaThread is alive. If we'd reject due to shutdown above, and have
         // the below async operation in a Then handler on the media thread the
@@ -2679,20 +2669,6 @@ void MediaManager::DeviceListChanged() {
             HandleDeviceListChanged();
           },
           [] { /* Timer was canceled by us, or we're in shutdown. */ });
-}
-
-void MediaManager::EnsureNoPlaceholdersInDeviceCache() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (mPhysicalDevices) {
-    // Invalidate the list if there is a placeholder
-    for (const auto& device : *mPhysicalDevices) {
-      if (device->mIsPlaceholder) {
-        InvalidateDeviceCache();
-        break;
-      }
-    }
-  }
 }
 
 void MediaManager::InvalidateDeviceCache() {
@@ -3194,8 +3170,8 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
           GetCurrentSerialEventTarget(), __func__,
           [self, windowID, c, windowListener, placeholderListener, hasAudio,
            hasVideo, askPermission, prefs, isSecure, isHandlingUserInput,
-           callID, principalInfo, aCallerType, resistFingerprinting,
-           audioType](RefPtr<LocalMediaDeviceSetRefCnt> aDevices) mutable {
+           callID, principalInfo, aCallerType, resistFingerprinting, audioType,
+           forceFakes](RefPtr<LocalMediaDeviceSetRefCnt> aDevices) mutable {
             LOG("GetUserMedia: starting post enumeration promise2 success "
                 "callback!");
 
@@ -3258,6 +3234,10 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
             // It is time to ask for user permission, prime voice processing
             // now. Use a local lambda to enable a guard pattern.
             [&] {
+              if (forceFakes) {
+                return;
+              }
+
               if (audioType != MediaSourceEnum::Microphone) {
                 return;
               }

@@ -5,15 +5,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/SVGFEConvolveMatrixElement.h"
-#include "mozilla/dom/SVGFEConvolveMatrixElementBinding.h"
+
+#include <numeric>
+
+#include "DOMSVGAnimatedNumberList.h"
 #include "mozilla/SVGFilterInstance.h"
 #include "mozilla/SVGUtils.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
-#include "DOMSVGAnimatedNumberList.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/dom/BindContext.h"
-#include <numeric>
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/SVGFEConvolveMatrixElementBinding.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(FEConvolveMatrix)
 

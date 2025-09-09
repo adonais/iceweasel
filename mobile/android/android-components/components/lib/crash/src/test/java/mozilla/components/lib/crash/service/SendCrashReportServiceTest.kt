@@ -7,7 +7,6 @@ package mozilla.components.lib.crash.service
 import android.content.ComponentName
 import android.content.Intent
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.lib.crash.Crash
 import mozilla.components.lib.crash.CrashReporter
@@ -27,7 +26,6 @@ import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.robolectric.Robolectric
 
-@ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class SendCrashReportServiceTest {
     private var service: SendCrashReportService? = null

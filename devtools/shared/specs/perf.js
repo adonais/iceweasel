@@ -46,7 +46,7 @@ const perfDescription = {
       response: { value: RetVal("boolean") },
     },
 
-    /* @backward-compat { version 140 }
+    /* @backward-compat { version 143 }
      * Version 140 introduced getProfileAndStopProfilerBulk below, a more
      * efficient version of getProfileAndStopProfiler. getProfileAndStopProfiler
      * needs to stay to support older versions of Firefox. */

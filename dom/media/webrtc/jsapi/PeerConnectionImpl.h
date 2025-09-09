@@ -5,56 +5,53 @@
 #ifndef _PEER_CONNECTION_IMPL_H_
 #define _PEER_CONNECTION_IMPL_H_
 
+#include <cmath>
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
-#include <cmath>
 
-#include "prlock.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
 #include "nsComponentManagerUtils.h"
-#include "nsPIDOMWindow.h"
-#include "nsIUUIDGenerator.h"
 #include "nsIThread.h"
+#include "nsIUUIDGenerator.h"
+#include "nsPIDOMWindow.h"
 #include "nsTHashSet.h"
-#include "mozilla/Mutex.h"
-#include "mozilla/Attributes.h"
+#include "prlock.h"
 
 // Work around nasty macro in webrtc/voice_engine/voice_engine_defines.h
 #ifdef GetLastError
 #  undef GetLastError
 #endif
 
-#include "jsep/JsepSession.h"
-#include "jsep/JsepSessionImpl.h"
-#include "sdp/SdpMediaSection.h"
 #include "DefaultCodecPreferences.h"
-
-#include "mozilla/ErrorResult.h"
-#include "jsapi/PacketDumper.h"
-#include "mozilla/dom/RTCPeerConnectionBinding.h"  // mozPacketDumpType, maybe move?
-#include "mozilla/dom/PeerConnectionImplBinding.h"  // ChainedOperation
-#include "mozilla/dom/RTCRtpCapabilitiesBinding.h"
-#include "mozilla/dom/RTCRtpTransceiverBinding.h"
-#include "mozilla/dom/RTCConfigurationBinding.h"
-#include "PrincipalChangeObserver.h"
-#include "mozilla/dom/PromiseNativeHandler.h"
-
-#include "mozilla/TimeStamp.h"
-#include "mozilla/net/DataChannel.h"
-#include "VideoUtils.h"
-#include "VideoSegment.h"
-#include "mozilla/dom/RTCStatsReportBinding.h"
-#include "mozilla/PeerIdentity.h"
-#include "RTCStatsIdGenerator.h"
-#include "RTCStatsReport.h"
-
-#include "mozilla/net/StunAddrsRequestChild.h"
 #include "MediaEventSource.h"
 #include "MediaTransportHandler.h"
-#include "nsIHttpChannelInternal.h"
+#include "PrincipalChangeObserver.h"
 #include "RTCDtlsTransport.h"
 #include "RTCRtpTransceiver.h"
+#include "RTCStatsIdGenerator.h"
+#include "RTCStatsReport.h"
+#include "VideoSegment.h"
+#include "VideoUtils.h"
+#include "jsapi/PacketDumper.h"
+#include "jsep/JsepSession.h"
+#include "jsep/JsepSessionImpl.h"
+#include "mozilla/ErrorResult.h"
+#include "mozilla/PeerIdentity.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/dom/PeerConnectionImplBinding.h"  // ChainedOperation
+#include "mozilla/dom/PromiseNativeHandler.h"
+#include "mozilla/dom/RTCConfigurationBinding.h"
+#include "mozilla/dom/RTCPeerConnectionBinding.h"  // mozPacketDumpType, maybe move?
+#include "mozilla/dom/RTCRtpCapabilitiesBinding.h"
+#include "mozilla/dom/RTCRtpTransceiverBinding.h"
+#include "mozilla/dom/RTCStatsReportBinding.h"
+#include "mozilla/net/DataChannel.h"
+#include "mozilla/net/StunAddrsRequestChild.h"
+#include "nsIHttpChannelInternal.h"
+#include "sdp/SdpMediaSection.h"
 
 namespace test {
 #ifdef USE_FAKE_PCOBSERVER
@@ -615,8 +612,7 @@ class PeerConnectionImpl final
   nsresult CalculateFingerprint(const nsACString& algorithm,
                                 std::vector<uint8_t>* fingerprint) const;
 
-  NS_IMETHODIMP EnsureDataConnection(uint16_t aLocalPort, uint16_t aNumstreams,
-                                     uint32_t aMaxMessageSize, bool aMMSSet);
+  NS_IMETHODIMP EnsureDataConnection(uint16_t aLocalPort, uint16_t aNumstreams);
 
   nsresult CheckApiState(bool assert_ice_ready) const;
   void StoreFinalStats(UniquePtr<dom::RTCStatsReportInternal>&& report);
@@ -635,7 +631,7 @@ class PeerConnectionImpl final
 
   nsresult GetDatachannelParameters(uint32_t* channels, uint16_t* localport,
                                     uint16_t* remoteport,
-                                    uint32_t* maxmessagesize, bool* mmsset,
+                                    uint32_t* maxmessagesize,
                                     std::string* transportId,
                                     bool* client) const;
 

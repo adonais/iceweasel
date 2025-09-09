@@ -7,11 +7,12 @@
 #define GPU_Texture_H_
 
 #include <cstdint>
-#include "mozilla/WeakPtr.h"
-#include "nsWrapperCache.h"
+
 #include "ObjectModel.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla {
 namespace dom {

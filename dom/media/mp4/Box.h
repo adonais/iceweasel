@@ -8,11 +8,12 @@
 #define BOX_H_
 
 #include <stdint.h>
-#include "nsTArray.h"
-#include "MediaResource.h"
-#include "mozilla/EndianUtils.h"
+
 #include "AtomType.h"
 #include "BufferReader.h"
+#include "MediaResource.h"
+#include "mozilla/EndianUtils.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 class ByteStream;

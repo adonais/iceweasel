@@ -565,6 +565,14 @@ class BidiEventsProtocolPart(ProtocolPart):
         pass
 
     @abstractmethod
+    async def unsubscribe(self, subscriptions: List[str]) -> Mapping[str, Any]:
+        """
+        Unsubscribes from the subscriptions with the given IDs.
+        :param subscriptions: The list of subscription ids to unsubscribe from.
+        """
+        pass
+
+    @abstractmethod
     async def unsubscribe_all(self):
         """Cleans up the subscription state. Removes all the previously added subscriptions."""
         pass
@@ -751,6 +759,29 @@ class TestDriverProtocolPart(ProtocolPart):
     __metaclass__ = ABCMeta
 
     name = "testdriver"
+
+    @abstractmethod
+    def run(self, url, script_resume, test_window=None):
+        """Run a test using the testdriver protocol
+
+        :param str url: URL of the test
+        :param str script_resume: Script to run implementing the browser
+                                  side of the protocol
+        :param test_window: Optional test window handle, otherwise the
+                            current active window is used.
+        :returns: Test result data"""
+        pass
+
+    @abstractmethod
+    def get_next_message(self, url, script_resume, test_window):
+        """Get the next message from the browser
+
+        :param str url: URL of the current test
+        :param str script_resume: Script implementing the browsr
+                                  side of the protocol.
+        :param test_window: Window handle of the test window
+        :returns: Testdriver message dict"""
+        pass
 
     @abstractmethod
     def send_message(self, cmd_id, message_type, status, message=None):

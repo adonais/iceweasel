@@ -86,17 +86,6 @@ PACKAGES_WE_ALWAYS_WANT_AN_OVERRIDE_OF = [
 ]
 
 
-# Historically duplicated crates. Eventually we want this list to be empty.
-# If you do need to make changes increasing the number of duplicates, please
-# add a comment as to why.
-TOLERATED_DUPES = {
-    # Transition from time 0.1 to 0.3 underway, but chrono is stuck on 0.1
-    # and hasn't been updated in 1.5 years (an hypothetical update is
-    # expected to remove the dependency on time altogether).
-    "time": 2,
-}
-
-
 class VendorRust(MozbuildObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -147,18 +136,24 @@ class VendorRust(MozbuildObject):
                 )
             return cargo
 
-    def check_cargo_version(self, cargo):
-        """
-        Ensure that Cargo is new enough.
-        """
+    def cargo_version(self, cargo):
         out = (
             subprocess.check_output([cargo, "--version"])
             .splitlines()[0]
             .decode("UTF-8")
         )
         if not out.startswith("cargo"):
+            raise RuntimeError("Unexpected `cargo --version` output")
+        return LooseVersion(out.split()[1])
+
+    def check_cargo_version(self, cargo):
+        """
+        Ensure that Cargo is new enough.
+        """
+        try:
+            version = self.cargo_version(cargo)
+        except RuntimeError:
             return False
-        version = LooseVersion(out.split()[1])
         # Cargo 1.85.0 changed vendoring in a way that creates a lot of noise
         # if we go back and forth between vendoring with an older version and
         # a newer version. Only allow the newer versions.
@@ -204,36 +199,6 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
                 ),
             )
         return modified
-
-    def check_openssl(self):
-        """
-        Set environment flags for building with openssl.
-
-        MacOS doesn't include openssl, but the openssl-sys crate used by
-        mach-vendor expects one of the system. It's common to have one
-        installed in /usr/local/opt/openssl by homebrew, but custom link
-        flags are necessary to build against it.
-        """
-
-        test_paths = ["/usr/include", "/usr/local/include"]
-        if any(
-            [os.path.exists(os.path.join(path, "openssl/ssl.h")) for path in test_paths]
-        ):
-            # Assume we can use one of these system headers.
-            return None
-
-        if os.path.exists("/usr/local/opt/openssl/include/openssl/ssl.h"):
-            # Found a likely homebrew install.
-            self.log(
-                logging.INFO, "openssl", {}, "Using OpenSSL in /usr/local/opt/openssl"
-            )
-            return {
-                "OPENSSL_INCLUDE_DIR": "/usr/local/opt/openssl/include",
-                "OPENSSL_LIB_DIR": "/usr/local/opt/openssl/lib",
-            }
-
-        self.log(logging.ERROR, "openssl", {}, "OpenSSL not found!")
-        return None
 
     def _ensure_cargo(self):
         """
@@ -660,74 +625,16 @@ license file's hash.
                         if all(d.split()[0] != name for d in p.get("dependencies", []))
                     ]
                 )
-                expected = TOLERATED_DUPES.get(name, 1)
-                if num > expected:
+                if num > 1:
                     self.log(
                         logging.ERROR,
                         "duplicate_crate",
                         {
                             "crate": name,
                             "num": num,
-                            "expected": expected,
-                            "file": Path(__file__).relative_to(self.topsrcdir),
                         },
-                        "There are {num} different versions of crate {crate} "
-                        "(expected {expected}). Please avoid the extra duplication "
-                        "or adjust TOLERATED_DUPES in {file} if not possible "
-                        "(but we'd prefer the former).",
-                    )
-                    failed = True
-                elif num < expected and num > 1:
-                    self.log(
-                        logging.ERROR,
-                        "less_duplicate_crate",
-                        {
-                            "crate": name,
-                            "num": num,
-                            "expected": expected,
-                            "file": Path(__file__).relative_to(self.topsrcdir),
-                        },
-                        "There are {num} different versions of crate {crate} "
-                        "(expected {expected}). Please adjust TOLERATED_DUPES in "
-                        "{file} to reflect this improvement.",
-                    )
-                    failed = True
-                elif num < expected and num > 0:
-                    self.log(
-                        logging.ERROR,
-                        "less_duplicate_crate",
-                        {
-                            "crate": name,
-                            "file": Path(__file__).relative_to(self.topsrcdir),
-                        },
-                        "Crate {crate} is not duplicated anymore. "
-                        "Please adjust TOLERATED_DUPES in {file} to reflect this improvement.",
-                    )
-                    failed = True
-                elif name in TOLERATED_DUPES and expected <= 1:
-                    self.log(
-                        logging.ERROR,
-                        "broken_allowed_dupes",
-                        {
-                            "crate": name,
-                            "file": Path(__file__).relative_to(self.topsrcdir),
-                        },
-                        "Crate {crate} is not duplicated. Remove it from "
-                        "TOLERATED_DUPES in {file}.",
-                    )
-                    failed = True
-
-            for name in TOLERATED_DUPES:
-                if name not in grouped:
-                    self.log(
-                        logging.ERROR,
-                        "outdated_allowed_dupes",
-                        {
-                            "crate": name,
-                            "file": Path(__file__).relative_to(self.topsrcdir),
-                        },
-                        "Crate {crate} is not in Cargo.lock anymore. Remove it from "
-                        "TOLERATED_DUPES in {file}.",
+                        "There are {num} different versions of crate {crate}. "
+                        "Please avoid the extra duplication.",
                     )
                     failed = True
 
@@ -881,6 +788,81 @@ license file's hash.
                     directory=replace["directory"],
                 )
             )
+
+        # cargo 1.89 started adding things that older versions didn't add, but
+        # it's a tough sell to bump the vendoring requirement to 1.89 when we're
+        # still using 1.86 on CI.
+        if self.cargo_version(cargo) >= "1.89":
+            for package in cargo_lock["package"]:
+                # Crates vendored from crates.io are affected by changes, but not
+                # those vendored from git.
+                if not package.get("source", "").startswith("registry+"):
+                    continue
+                package_dir = Path(vendor_dir) / package["name"]
+                # Cargo.toml.orig was not included before but now is.
+                unlinked = ["Cargo.toml.orig"]
+                with (package_dir / "Cargo.toml").open(encoding="utf-8") as fh:
+                    toml_data = toml.load(fh)
+                    cargo_package = toml_data.get("package", {})
+                    # A readme explicitly listed in package.readme is now included
+                    # even when it's not in package.include.
+                    if readme := cargo_package.get("readme"):
+                        if includes := cargo_package.get("include"):
+                            if not any(
+                                mozpath.match(readme, include.removeprefix("/"))
+                                for include in includes
+                            ):
+                                try:
+                                    (package_dir / readme).unlink()
+                                    unlinked.append(readme)
+                                except FileNotFoundError:
+                                    pass
+
+                # dotfiles weren't included before, but now are.
+                for path in package_dir.glob("**/.*"):
+                    # The checksum file is handled separately because it needs to
+                    # be updated.
+                    if path.name == ".cargo-checksum.json":
+                        continue
+                    if path.is_dir():
+                        for root, dirs, files in os.walk(path, topdown=False):
+                            root = Path(root)
+                            for name in files:
+                                to_unlink = root / name
+                                try:
+                                    to_unlink.unlink()
+                                    unlinked.append(
+                                        mozpath.normsep(
+                                            str(to_unlink.relative_to(package_dir))
+                                        )
+                                    )
+                                except FileNotFoundError:
+                                    pass
+                            for name in dirs:
+                                try:
+                                    (root / name).rmdir()
+                                except OSError:
+                                    pass
+                    else:
+                        try:
+                            path.unlink()
+                            unlinked.append(
+                                mozpath.normsep(str(path.relative_to(package_dir)))
+                            )
+                        except FileNotFoundError:
+                            pass
+
+                # Update the checksums with the changes we made.
+                checksum_json = package_dir / ".cargo-checksum.json"
+                with checksum_json.open(encoding="utf-8") as fh:
+                    checksum_data = json.load(fh)
+                for path in unlinked:
+                    try:
+                        del checksum_data["files"][path]
+                    except KeyError:
+                        pass
+                with checksum_json.open(mode="w", encoding="utf-8") as fh:
+                    json.dump(checksum_data, fh, separators=(",", ":"))
 
         if not self._check_licenses(vendor_dir) and not force:
             self.log(

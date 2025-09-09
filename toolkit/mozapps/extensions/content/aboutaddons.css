@@ -82,7 +82,7 @@ h2 {
   display: inline-block;
   min-width: 20px;
   background-color: var(--color-accent-primary);
-  color: var(--in-content-primary-button-text-color);
+  color: var(--button-text-color-primary);
   font-weight: bold;
   /* Use a large border-radius to get semi-circles on the sides. */
   border-radius: 1000px;
@@ -125,7 +125,7 @@ h2 {
 }
 
 .sticky-container {
-  background: var(--in-content-page-background);
+  background: var(--background-color-canvas);
   width: 100%;
   position: sticky;
   top: 0;
@@ -133,7 +133,7 @@ h2 {
 }
 
 .main-search {
-  background: var(--in-content-page-background);
+  background: var(--background-color-canvas);
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -160,7 +160,7 @@ search-addons {
 }
 
 .main-heading {
-  background: var(--in-content-page-background);
+  background: var(--background-color-canvas);
   display: flex;
   margin-inline-start: var(--main-margin-start);
   padding-bottom: 16px;
@@ -332,7 +332,7 @@ addon-card[expanded] .update-postponed-bar + .addon-card-message {
 
 .addon-name-link,
 .addon-name-link:hover {
-  color: var(--in-content-text-color);
+  color: var(--text-color);
   text-decoration: none;
 }
 
@@ -571,7 +571,7 @@ button.addon-detail-description-toggle {
   border-top: 1px solid var(--in-content-border-color);
   margin: 0 calc(var(--card-padding) * -1);
   padding: var(--card-padding);
-  color: var(--in-content-text-color);
+  color: var(--text-color);
 }
 
 .addon-detail-row.addon-detail-help-row {
@@ -765,8 +765,8 @@ button.tab-button[selected]:hover {
 @media (prefers-contrast) {
   button.tab-button[selected],
   button.tab-button[selected]:hover {
-    color: var(--in-content-primary-button-text-color);
-    background-color: var(--in-content-primary-button-background);
+    color: var(--button-text-color-primary);
+    background-color: var(--button-background-color-primary);
   }
 }
 

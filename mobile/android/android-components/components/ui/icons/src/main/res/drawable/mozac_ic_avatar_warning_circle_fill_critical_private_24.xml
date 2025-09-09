@@ -14,7 +14,7 @@
         tools:ignore="VectorRaster"
         tools:targetApi="n" />
     <path
-        android:fillColor="@color/mozac_ui_avatar_warning_fill_critical"
+        android:fillColor="@color/mozac_ui_private_avatar_warning_fill_critical"
         android:pathData="M16.951,12.755C17.526,11.748 18.975,11.748 19.551,12.755L23.55,19.749C24.123,20.751 23.401,22 22.25,22H14.251C13.099,22 12.378,20.751 12.952,19.749L16.951,12.755ZM17.501,19V20.5H19.001V19H17.501ZM17.501,15V17.75H19.001V15H17.501Z"
         tools:ignore="VectorRaster" />
 </vector>

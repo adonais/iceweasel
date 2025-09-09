@@ -6,14 +6,14 @@
 
 #include "URLMainThread.h"
 
+#include "mozilla/Unused.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Blob.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
-#include "mozilla/Unused.h"
+#include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
 #include "nsNetUtil.h"
 #include "nsThreadUtils.h"
-#include "mozilla/dom/Document.h"
 
 namespace mozilla::dom {
 

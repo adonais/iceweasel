@@ -38,7 +38,6 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.EnvironmentCleared
 import mozilla.components.compose.browser.toolbar.store.EnvironmentRehydrated
 import mozilla.components.compose.browser.toolbar.store.ProgressBarConfig
-import mozilla.components.compose.browser.toolbar.store.ProgressBarGravity
 import mozilla.components.concept.engine.cookiehandling.CookieBannersStorage
 import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.concept.engine.permission.SitePermissionsStorage
@@ -117,8 +116,8 @@ class CustomTabBrowserToolbarMiddleware(
                 next(action)
 
                 val customTab = customTab
-                updateStartPageActions(context.store, customTab)
-                updateEndBrowserActions(context.store, customTab)
+                updateStartPageActions(context, customTab)
+                updateEndBrowserActions(context, customTab)
             }
 
             is EnvironmentRehydrated -> {
@@ -126,13 +125,13 @@ class CustomTabBrowserToolbarMiddleware(
 
                 environment = action.environment as? CustomTabToolbarEnvironment
 
-                updateStartBrowserActions(context.store, customTab)
-                updateCurrentPageOrigin(context.store, customTab)
-                updateEndPageActions(context.store, customTab)
+                updateStartBrowserActions(context, customTab)
+                updateCurrentPageOrigin(context, customTab)
+                updateEndPageActions(context, customTab)
 
-                observePageLoadUpdates(context.store)
-                observePageOriginUpdates(context.store)
-                observePageSecurityUpdates(context.store)
+                observePageLoadUpdates(context)
+                observePageOriginUpdates(context)
+                observePageSecurityUpdates(context)
             }
 
             is EnvironmentCleared -> {
@@ -230,22 +229,22 @@ class CustomTabBrowserToolbarMiddleware(
         }
     }
 
-    private fun observePageOriginUpdates(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
+    private fun observePageOriginUpdates(context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>) {
         browserStore.observeWhileActive {
             mapNotNull { state -> state.findCustomTab(customTabId) }
                 .ifAnyChanged { tab -> arrayOf(tab.content.title, tab.content.url) }
                 .collect {
-                    updateCurrentPageOrigin(store, it)
+                    updateCurrentPageOrigin(context, it)
                 }
         }
     }
 
-    private fun observePageLoadUpdates(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
+    private fun observePageLoadUpdates(context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>) {
         browserStore.observeWhileActive {
             mapNotNull { state -> state.findCustomTab(customTabId) }
                 .distinctUntilChangedBy { it.content.progress }
                 .collect {
-                    store.dispatch(
+                    context.dispatch(
                         UpdateProgressBarConfig(
                             buildProgressBar(it.content.progress),
                         ),
@@ -254,40 +253,40 @@ class CustomTabBrowserToolbarMiddleware(
         }
     }
 
-    private fun observePageSecurityUpdates(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
+    private fun observePageSecurityUpdates(context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>) {
         browserStore.observeWhileActive {
             mapNotNull { state -> state.findCustomTab(customTabId) }
                 .distinctUntilChangedBy { tab -> tab.content.securityInfo }
                 .collect {
-                    updateStartPageActions(store, it)
+                    updateStartPageActions(context, it)
                 }
         }
     }
 
     private fun updateStartBrowserActions(
-        store: Store<BrowserToolbarState, BrowserToolbarAction>,
+        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
         customTab: CustomTabSessionState?,
-    ) = store.dispatch(
+    ) = context.dispatch(
         BrowserActionsStartUpdated(
             buildStartBrowserActions(customTab),
         ),
     )
 
     private fun updateStartPageActions(
-        store: Store<BrowserToolbarState, BrowserToolbarAction>,
+        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
         customTab: CustomTabSessionState?,
-    ) = store.dispatch(
+    ) = context.dispatch(
         PageActionsStartUpdated(
             buildStartPageActions(customTab),
         ),
     )
 
     private fun updateCurrentPageOrigin(
-        store: Store<BrowserToolbarState, BrowserToolbarAction>,
+        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
         customTab: CustomTabSessionState?,
     ) {
         environment?.viewLifecycleOwner?.lifecycleScope?.launch {
-            store.dispatch(
+            context.dispatch(
                 BrowserDisplayToolbarAction.PageOriginUpdated(
                     PageOrigin(
                         hint = R.string.search_hint,
@@ -301,18 +300,18 @@ class CustomTabBrowserToolbarMiddleware(
     }
 
     private fun updateEndPageActions(
-        store: Store<BrowserToolbarState, BrowserToolbarAction>,
+        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
         customTab: CustomTabSessionState?,
-    ) = store.dispatch(
+    ) = context.dispatch(
         BrowserDisplayToolbarAction.PageActionsEndUpdated(
             buildEndPageActions(customTab),
         ),
     )
 
     private fun updateEndBrowserActions(
-        store: Store<BrowserToolbarState, BrowserToolbarAction>,
+        context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>,
         customTab: CustomTabSessionState?,
-    ) = store.dispatch(
+    ) = context.dispatch(
         BrowserActionsEndUpdated(
             buildEndBrowserActions(customTab),
         ),
@@ -408,13 +407,7 @@ class CustomTabBrowserToolbarMiddleware(
         )
     }
 
-    private fun buildProgressBar(progress: Int = 0) = ProgressBarConfig(
-        progress = progress,
-        gravity = when (settings.shouldUseBottomToolbar) {
-            true -> ProgressBarGravity.Top
-            false -> ProgressBarGravity.Bottom
-        },
-    )
+    private fun buildProgressBar(progress: Int = 0) = ProgressBarConfig(progress)
 
     private suspend fun getUrlDomain(): String? {
         val url = customTab?.content?.url

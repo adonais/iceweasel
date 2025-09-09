@@ -116,7 +116,9 @@ void RDDChild::OnCompositorUnexpectedShutdown() {
   }
 }
 
-void RDDChild::OnVarChanged(const GfxVarUpdate& aVar) { SendUpdateVar(aVar); }
+void RDDChild::OnVarChanged(const nsTArray<GfxVarUpdate>& aVar) {
+  SendUpdateVar(aVar);
+}
 
 mozilla::ipc::IPCResult RDDChild::RecvAddMemoryReport(
     const MemoryReport& aReport) {

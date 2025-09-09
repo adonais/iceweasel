@@ -175,9 +175,6 @@ let propNameAllowlist = [
   /* Allow design tokens in devtools without all variables being used there */
   { sourceName: /\/design-system\/tokens-.*\.css$/, isFromDevTools: true },
 
-  // Bug 1908535 to refactor form components to use this token
-  { propName: "--input-space-block", isFromDevTools: false },
-
   // Ignore token properties that follow the pattern --color-[name]-[number]
   // This enables us to provide our full color palette for developers.
   { propName: /--color-[a-z]+-\d+/, isFromDevTools: false },

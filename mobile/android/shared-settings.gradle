@@ -114,6 +114,10 @@ def yaml = new Yaml()
 def buildConfigFile = new File(gradle.mozconfig.topsrcdir, "mobile/android/android-components/.buildconfig.yml")
 def buildconfig = yaml.load(buildConfigFile.newInputStream())
 
+// Setup the parent ":components" project
+settings.include(":components")
+project(":components").projectDir = new File(gradle.mozconfig.topsrcdir, "mobile/android/android-components/components")
+
 buildconfig.projects.each { project ->
     // If we're building A-C, set up all projects, otherwise exclude samples e.g., if we're building Fenix or Focus.
     // The samples are not relevant for the Fenix and Focus builds.

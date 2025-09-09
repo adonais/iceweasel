@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Nova ŝparvojo
 newtab-topsites-edit-topsites-header = Redakti oftan retejon
 newtab-topsites-edit-shortcut-header = Redakti ŝparvojon
 newtab-topsites-add-shortcut-label = Aldoni ŝparvojon
+newtab-topsites-add-shortcut-title =
+    .title = Aldoni ŝparvojon
+    .aria-label = Aldoni ŝparvojon
 newtab-topsites-title-label = Titolo
 newtab-topsites-title-input =
     .placeholder = Tajpu titolon
@@ -534,6 +537,10 @@ newtab-custom-wallpaper-title = Tie ĉi troviĝas personecigitaj ekranfonoj
 # 'Make firefox yours" means to customize or personalize
 newtab-custom-wallpaper-subtitle = Alŝutu vian propran ekranfonon aŭ elektu koloron por personecigi { -brand-product-name }.
 newtab-custom-wallpaper-cta = Provi
+
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-cta = Provu nun
 
 ## Strings for download mobile highlight
 

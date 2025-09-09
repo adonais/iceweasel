@@ -5,11 +5,10 @@
 #include "AudioDecoderInputTrack.h"
 
 #include "MediaData.h"
+#include "RLBoxSoundTouch.h"
+#include "Tracing.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "Tracing.h"
-
-#include "RLBoxSoundTouch.h"
 
 namespace mozilla {
 

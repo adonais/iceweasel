@@ -7,12 +7,12 @@
 #ifndef DOM_SVG_SVGNUMBERLIST_H_
 #define DOM_SVG_SVGNUMBERLIST_H_
 
+#include "SVGElement.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
 #include "nsIContent.h"
 #include "nsINode.h"
 #include "nsIWeakReferenceUtils.h"
-#include "SVGElement.h"
 #include "nsTArray.h"
 
 namespace mozilla {

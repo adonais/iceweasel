@@ -2381,8 +2381,7 @@ bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
     CacheOp op = reader.readOp();
     switch (op) {
       case CacheOp::GuardShape: {
-        ObjOperandId objId = reader.objOperandId();
-        uint32_t shapeOffset = reader.stubOffset();
+        auto [objId, shapeOffset] = reader.argsForGuardShape();
         if (shapeOffset == *foldableFieldOffset) {
           // Ensure that the allocation of the ShapeListObject doesn't trigger a
           // GC and free the stubInfo we're currently reading. Note that

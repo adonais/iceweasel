@@ -9,7 +9,8 @@ ChromeUtils.defineESModuleGetters(this, {
   ContentBlockingAllowList:
     "resource://gre/modules/ContentBlockingAllowList.sys.mjs",
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
-  PanelMultiView: "resource:///modules/PanelMultiView.sys.mjs",
+  PanelMultiView:
+    "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   SiteDataManager: "resource:///modules/SiteDataManager.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
@@ -112,9 +113,6 @@ class TrustPanel {
       let wrapper = document.getElementById("template-trustpanel-popup");
       wrapper.replaceWith(wrapper.content);
 
-      document
-        .getElementById("trustpanel-toggle")
-        .addEventListener("toggle", () => this.#toggleTrackingProtection());
       document
         .getElementById("trustpanel-popup-connection")
         .addEventListener("click", event =>
@@ -223,9 +221,15 @@ class TrustPanel {
     document.getElementById("trustpanel-popup-icon").src =
       favicon?.uri.spec ?? "";
 
-    document
-      .getElementById("trustpanel-toggle")
-      .toggleAttribute("pressed", this.#trackingProtectionEnabled);
+    let toggle = document.getElementById("trustpanel-toggle");
+    toggle.toggleAttribute("pressed", this.#trackingProtectionEnabled);
+    document.l10n.setAttributes(
+      toggle,
+      this.#trackingProtectionEnabled
+        ? "trustpanel-etp-toggle-on"
+        : "trustpanel-etp-toggle-off",
+      { host }
+    );
 
     document.getElementById("trustpanel-popup-host").textContent = host;
 
@@ -340,7 +344,7 @@ class TrustPanel {
     let blockingKey = blocking ? "blocking" : "not-blocking";
     document.l10n.setAttributes(
       document.getElementById("trustpanel-blockerDetailsView"),
-      `protections-${blockingKey}-${blocker.l10nKeys.title}`
+      blocker.l10nKeys.title[blockingKey]
     );
     document.l10n.setAttributes(
       document.getElementById("trustpanel-blocker-details-header"),
@@ -351,14 +355,19 @@ class TrustPanel {
       document.getElementById("trustpanel-blocker-details-content"),
       `protections-panel-${blocker.l10nKeys.content}`
     );
-    let header = blocker.l10nKeys.general;
-    // These sections use the same string so reuse the same l10n key.
-    if (["cookies", "tracking-cookies", "social-tracking"].includes(header)) {
-      header = "tracking";
+
+    let listHeaderId;
+    if (blocker.l10nKeys.general == "fingerprinter") {
+      listHeaderId = "trustpanel-fingerprinter-list-header";
+    } else if (blocker.l10nKeys.general == "cryptominer") {
+      listHeaderId = "trustpanel-cryptominer-tab-list-header";
+    } else {
+      listHeaderId = "trustpanel-tracking-content-tab-list-header";
     }
+
     document.l10n.setAttributes(
       document.getElementById("trustpanel-blocker-details-list-header"),
-      `trustpanel-${blocker.l10nKeys.general}-tab-list-header`
+      listHeaderId
     );
 
     let { items } = await blocker._generateSubViewListItems();
@@ -441,11 +450,11 @@ class TrustPanel {
     this.#hidePopup();
   }
 
-  #toggleTrackingProtection(enable) {
-    if (enable) {
-      ContentBlockingAllowList.remove(window.gBrowser.selectedBrowser);
-    } else {
+  #toggleTrackingProtection() {
+    if (this.#trackingProtectionEnabled) {
       ContentBlockingAllowList.add(window.gBrowser.selectedBrowser);
+    } else {
+      ContentBlockingAllowList.remove(window.gBrowser.selectedBrowser);
     }
 
     PanelMultiView.hidePopup(this.#popup);

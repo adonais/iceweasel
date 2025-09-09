@@ -6,11 +6,13 @@ package org.mozilla.fenix.ext
 
 import android.app.Activity
 import android.content.Intent
+import android.content.res.Resources
 import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.DimenRes
 import androidx.annotation.IdRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
@@ -65,7 +67,7 @@ fun Fragment.getPreferenceKey(@StringRes resourceId: Int): String = getString(re
 fun Fragment.showToolbar(title: String) {
     (requireActivity() as AppCompatActivity).title = title
     activity?.setNavigationIcon(R.drawable.ic_back_button)
-    (activity as NavHostActivity).getSupportActionBarAndInflateIfNecessary().show()
+    (activity as? NavHostActivity)?.getSupportActionBarAndInflateIfNecessary()?.show()
 }
 
 /**
@@ -206,3 +208,14 @@ fun Fragment.updateMicrosurveyPromptForConfigurationChange(
         reinitializeMicrosurveyPrompt()
     }
 }
+
+/**
+ * Returns the pixel size for the given dimension resource ID.
+ *
+ * This is a wrapper around [Resources.getDimensionPixelSize], reducing verbosity when accessing
+ * dimension values from a [Fragment].
+ *
+ * @param resId Resource ID of the dimension.
+ * @return The pixel size corresponding to the given dimension resource.
+ */
+fun Fragment.pixelSizeFor(@DimenRes resId: Int) = resources.getDimensionPixelSize(resId)

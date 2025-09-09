@@ -10,14 +10,13 @@
 #  include "MediaCodec.h"
 #  include "MediaDataDemuxer.h"
 #  include "MediaDecoder.h"
+#  include "VideoUtils.h"
 #  include "mozilla/Atomics.h"
-#  include "mozilla/java/GeckoHLSDemuxerWrapperWrappers.h"
-#  include "mozilla/java/GeckoHLSSampleWrappers.h"
 #  include "mozilla/Maybe.h"
 #  include "mozilla/Mutex.h"
 #  include "mozilla/TaskQueue.h"
-
-#  include "VideoUtils.h"
+#  include "mozilla/java/GeckoHLSDemuxerWrapperWrappers.h"
+#  include "mozilla/java/GeckoHLSSampleWrappers.h"
 
 namespace mozilla {
 

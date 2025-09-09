@@ -51,6 +51,11 @@ interface FeatureSettingsHelper {
     var isDeleteSitePermissionsEnabled: Boolean
 
     /**
+     * Whether the Unified Trust Panel is enabled or not.
+     */
+    var isUnifiedTrustPanelEnabled: Boolean
+
+    /**
      * The current "Enhanced Tracking Protection" policy.
      * @see ETPPolicy
      */
@@ -65,6 +70,11 @@ interface FeatureSettingsHelper {
      * Enable or disable all location permission requests.
      */
     var isLocationPermissionEnabled: SitePermissionsRules.Action
+
+    /**
+     * Enable or disable the composable toolbar.
+     */
+    var isComposableToolbarEnabled: Boolean
 
     /**
      * Enable or disable the new main menu.
@@ -95,6 +105,16 @@ interface FeatureSettingsHelper {
      * Enable or disable new crash reporter.
      */
     var isUseNewCrashReporterDialog: Boolean
+
+    /**
+     * Enable or disable the tab swipe CFR.
+     */
+    var isTabSwipeCFREnabled: Boolean
+
+    /**
+     * Accept or not the terms of service.
+     */
+    var isTermsOfServiceAccepted: Boolean
 
     /**
      * Enable or disable the translations prompt after a page that can be translated is loaded.

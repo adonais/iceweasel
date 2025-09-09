@@ -312,7 +312,7 @@ add_task(async function testTelemetrySentOnDialogAccept() {
     "chrome://browser/content/preferences/dialogs/syncChooseWhatToSync.xhtml",
     null,
     {},
-    async () => {
+    () => {
       var expectedEnabledEngines = [];
       var expectedDisabledEngines = [];
 
@@ -335,7 +335,7 @@ add_task(async function testTelemetrySentOnDialogAccept() {
       }
       callbackCalled = true;
 
-      const actual = await Glean.syncSettings.save.testGetValue()[0];
+      const actual = Glean.syncSettings.save.testGetValue()[0];
       const expectedCategory = "sync_settings";
       const expectedName = "save";
       const actualEnabledEngines = actual.extra.enabled_engines.split(",");

@@ -26,7 +26,7 @@ add_task(async function () {
   ok(true, "Eye dropper is visible after clicking the button in the inspector");
 
   const style = await highlighterTestFront.getEyeDropperElementAttribute(
-    "root",
+    "eye-dropper-root",
     "style"
   );
   is(style, "top:100px;left:100px;", "The eyedropper is correctly positioned");

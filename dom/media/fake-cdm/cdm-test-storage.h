@@ -6,9 +6,10 @@
 #ifndef TEST_CDM_STORAGE_H__
 #define TEST_CDM_STORAGE_H__
 
+#include <cstdint>
 #include <functional>
 #include <string>
-#include <cstdint>
+
 #include "content_decryption_module.h"
 
 #define IO_SUCCEEDED(x) ((x) == cdm::FileIOClient::Status::kSuccess)

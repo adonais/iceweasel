@@ -12,11 +12,11 @@
 #define mozilla_dom_Attr_h
 
 #include "mozilla/Attributes.h"
+#include "nsCOMPtr.h"
+#include "nsCycleCollectionParticipant.h"
 #include "nsDOMAttributeMap.h"
 #include "nsINode.h"
 #include "nsString.h"
-#include "nsCOMPtr.h"
-#include "nsCycleCollectionParticipant.h"
 #include "nsStubMutationObserver.h"
 
 namespace mozilla {

@@ -7,8 +7,8 @@
 #ifndef DOM_SVG_SVGTRANSFORMLISTPARSER_H_
 #define DOM_SVG_SVGTRANSFORMLISTPARSER_H_
 
-#include "mozilla/Attributes.h"
 #include "SVGDataParser.h"
+#include "mozilla/Attributes.h"
 #include "nsTArray.h"
 
 ////////////////////////////////////////////////////////////////////////

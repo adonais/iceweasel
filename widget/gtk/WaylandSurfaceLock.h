@@ -35,6 +35,10 @@ class WaylandSurfaceLock final {
 #endif
   }
 
+#ifdef MOZ_WAYLAND
+  void Commit();
+#endif
+
  private:
 #ifdef MOZ_WAYLAND
   RefPtr<WaylandSurface> mWaylandSurface;

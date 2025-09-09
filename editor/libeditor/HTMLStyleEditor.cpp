@@ -61,6 +61,8 @@ namespace mozilla {
 
 using namespace dom;
 
+using EditablePointOption = HTMLEditUtils::EditablePointOption;
+using EditablePointOptions = HTMLEditUtils::EditablePointOptions;
 using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
 using LeafNodeType = HTMLEditUtils::LeafNodeType;
 using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
@@ -431,7 +433,9 @@ nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
                   : HTMLEditUtils::GetDeepestEditableStartPointOf<
                         EditorRawDOMPoint>(
                         *inlineStyleSetter.FirstHandledPointRef()
-                             .ContainerAs<nsIContent>());
+                             .ContainerAs<nsIContent>(),
+                        {EditablePointOption::RecognizeInvisibleWhiteSpaces,
+                         EditablePointOption::StopAtComment});
           const auto endPoint =
               !inlineStyleSetter.LastHandledPointRef().IsEndOfContainer()
                   ? inlineStyleSetter.LastHandledPointRef()
@@ -439,7 +443,9 @@ nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
                   : HTMLEditUtils::GetDeepestEditableEndPointOf<
                         EditorRawDOMPoint>(
                         *inlineStyleSetter.LastHandledPointRef()
-                             .ContainerAs<nsIContent>());
+                             .ContainerAs<nsIContent>(),
+                        {EditablePointOption::RecognizeInvisibleWhiteSpaces,
+                         EditablePointOption::StopAtComment});
           nsresult rv = domRange->SetStartAndEnd(
               startPoint.ToRawRangeBoundary(), endPoint.ToRawRangeBoundary());
           if (NS_SUCCEEDED(rv)) {
@@ -3612,13 +3618,19 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
                 maybeNextContent &&
                         maybeNextContent != selectionRange->GetStartContainer()
                     ? HTMLEditUtils::GetDeepestEditableStartPointOf<
-                          EditorRawDOMPoint>(*maybeNextContent)
+                          EditorRawDOMPoint>(
+                          *maybeNextContent,
+                          {EditablePointOption::RecognizeInvisibleWhiteSpaces,
+                           EditablePointOption::StopAtComment})
                     : range.StartRef();
             const auto endPoint =
                 maybePreviousContent && maybePreviousContent !=
                                             selectionRange->GetEndContainer()
                     ? HTMLEditUtils::GetDeepestEditableEndPointOf<
-                          EditorRawDOMPoint>(*maybePreviousContent)
+                          EditorRawDOMPoint>(
+                          *maybePreviousContent,
+                          {EditablePointOption::RecognizeInvisibleWhiteSpaces,
+                           EditablePointOption::StopAtComment})
                     : range.EndRef();
             DebugOnly<nsresult> rvIgnored = selectionRange->SetStartAndEnd(
                 startPoint.ToRawRangeBoundary(), endPoint.ToRawRangeBoundary());

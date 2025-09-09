@@ -6,12 +6,12 @@
 
 #include "SVGAnimatedNumber.h"
 
+#include "SMILFloatType.h"
+#include "SVGAttrTearoffTable.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILValue.h"
 #include "mozilla/SVGContentUtils.h"
 #include "nsContentUtils.h"
-#include "SMILFloatType.h"
-#include "SVGAttrTearoffTable.h"
 
 using namespace mozilla::dom;
 

@@ -51,29 +51,44 @@ static bool CanUseWMFHwEncoder(CodecType aCodec) {
   }
 }
 
-EncodeSupportSet CanCreateWMFEncoder(
-    CodecType aCodec, const gfx::IntSize& aFrameSize,
-    const EncoderConfig::CodecSpecific& aCodecSpecific) {
+EncodeSupportSet CanCreateWMFEncoder(const EncoderConfig& aConfig) {
   EncodeSupportSet supports;
   mscom::EnsureMTA([&]() {
     if (!wmf::MediaFoundationInitializer::HasInitialized()) {
       return;
     }
-    // Try HW encoder if allowed.
-    if (CanUseWMFHwEncoder(aCodec)) {
-      auto hwEnc =
-          MakeRefPtr<MFTEncoder>(MFTEncoder::HWPreference::HardwareOnly);
-      if (SUCCEEDED(hwEnc->Create(CodecToSubtype(aCodec), aFrameSize,
-                                  aCodecSpecific))) {
-        supports += EncodeSupport::HardwareEncode;
+    // Try HW encoder if allowed by graphics and not disallowed by the caller.
+    if (aConfig.mHardwarePreference != HardwarePreference::RequireSoftware) {
+      if (CanUseWMFHwEncoder(aConfig.mCodec)) {
+        auto hwEnc =
+            MakeRefPtr<MFTEncoder>(MFTEncoder::HWPreference::HardwareOnly);
+        if (SUCCEEDED(hwEnc->Create(CodecToSubtype(aConfig.mCodec),
+                                    aConfig.mSize, aConfig.mCodecSpecific))) {
+          supports += EncodeSupport::HardwareEncode;
+        }
+      } else {
+        WMF_ENC_LOG("HW encoder is disabled for %s", aConfig.CodecString());
       }
     }
-    // Try SW encoder.
-    auto swEnc = MakeRefPtr<MFTEncoder>(MFTEncoder::HWPreference::SoftwareOnly);
-    if (SUCCEEDED(swEnc->Create(CodecToSubtype(aCodec), aFrameSize,
-                                aCodecSpecific))) {
-      supports += EncodeSupport::SoftwareEncode;
+    if (aConfig.mHardwarePreference != HardwarePreference::RequireHardware) {
+      // Try SW encoder if not disallowed by the caller.
+      auto swEnc =
+          MakeRefPtr<MFTEncoder>(MFTEncoder::HWPreference::SoftwareOnly);
+      if (SUCCEEDED(swEnc->Create(CodecToSubtype(aConfig.mCodec), aConfig.mSize,
+                                  aConfig.mCodecSpecific))) {
+        supports += EncodeSupport::SoftwareEncode;
+      }
     }
+
+    WMF_ENC_LOG(
+        "%s encoder support for %s",
+        supports.contains(EncodeSupportSet(EncodeSupport::HardwareEncode,
+                                           EncodeSupport::SoftwareEncode))
+            ? "HW | SW"
+        : supports.contains(EncodeSupport::HardwareEncode) ? "HW"
+        : supports.contains(EncodeSupport::SoftwareEncode) ? "SW"
+                                                           : "No",
+        aConfig.ToString().get());
   });
   return supports;
 }

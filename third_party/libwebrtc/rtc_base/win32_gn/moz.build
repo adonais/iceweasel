@@ -20,6 +20,7 @@ DEFINES["RTC_ENABLE_VP9"] = True
 DEFINES["RTC_ENABLE_WIN_WGC"] = True
 DEFINES["UNICODE"] = True
 DEFINES["USE_AURA"] = "1"
+DEFINES["WEBRTC_ALLOW_DEPRECATED_NAMESPACES"] = True
 DEFINES["WEBRTC_ENABLE_PROTOBUF"] = "0"
 DEFINES["WEBRTC_LIBRARY_IMPL"] = True
 DEFINES["WEBRTC_MOZILLA_BUILD"] = True
@@ -51,6 +52,7 @@ FINAL_LIBRARY = "xul"
 
 
 LOCAL_INCLUDES += [
+    "!/dist/include/libwebrtc_overrides",
     "!/ipc/ipdl/_ipdlheaders",
     "!/third_party/libwebrtc/gen",
     "/ipc/chromium/src",

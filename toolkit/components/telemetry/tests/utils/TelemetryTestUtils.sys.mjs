@@ -241,8 +241,8 @@ export var TelemetryTestUtils = {
         filtered
       )}`
     );
-    if (expectedEvents.length === 0) {
-      // Job's done!
+    if (!expectedEvents.length) {
+      // Without expected events, there's nothing to check.
       return;
     }
 
@@ -263,6 +263,11 @@ export var TelemetryTestUtils = {
     const EXTRA_INDEX = 4;
     for (let i = 0; i < expectedEvents.length; ++i) {
       let expected = expectedEvents[i];
+      if (i >= filtered.length) {
+        // We will have failed the length equality assert above,
+        // so stop here without further logging.
+        return;
+      }
       let actual = filtered[i];
 
       // Match everything up to `extra`

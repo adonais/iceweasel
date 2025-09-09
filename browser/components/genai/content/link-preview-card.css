@@ -96,11 +96,11 @@
 
   img.icon {
     fill: currentColor;
-    height: var(--icon-size-default);
+    height: var(--icon-size);
     margin-inline-start: var(--space-xlarge);
     -moz-context-properties: fill;
     pointer-events: none;
-    width: var(--icon-size-default);
+    width: var(--icon-size);
   }
 
   .keypoints-content {
@@ -118,7 +118,7 @@
       font-size: var(--og-main-font-size);
       line-height: 1.15; /* Design requires 18px line-height */
       list-style-type: square;
-      padding-inline-start: var(--space-xlarge);
+      padding-inline: var(--space-xlarge) var(--space-xsmall);
     }
 
     li {

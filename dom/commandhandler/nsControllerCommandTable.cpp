@@ -4,12 +4,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsString.h"
-#include "nsIControllerCommand.h"
 #include "nsControllerCommandTable.h"
-#include "nsGlobalWindowCommands.h"
+
 #include "mozilla/EditorController.h"
 #include "mozilla/HTMLEditorController.h"
+#include "nsGlobalWindowCommands.h"
+#include "nsIControllerCommand.h"
+#include "nsString.h"
 
 // this value is used to size the hash table. Just a sensible upper bound
 #define NUM_COMMANDS_LENGTH 32

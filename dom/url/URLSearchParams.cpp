@@ -6,13 +6,15 @@
 
 #include "mozilla/dom/URLSearchParams.h"
 
-// XXX encoding_rs.h is not self-contained, this order is required
+// clang-format off
 #include "mozilla/Encoding.h"
 #include "encoding_rs.h"
+// clang-format on
 
 #include <new>
 #include <type_traits>
 #include <utility>
+
 #include "js/StructuredClone.h"
 #include "mozilla/ArrayIterator.h"
 #include "mozilla/Attributes.h"

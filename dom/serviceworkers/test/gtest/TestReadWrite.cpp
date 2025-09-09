@@ -6,18 +6,16 @@
 
 #include "gtest/gtest.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ServiceWorkerRegistrar.h"
 #include "mozilla/dom/ServiceWorkerRegistrarTypes.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
-#include "mozilla/UniquePtr.h"
-
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsIFile.h"
 #include "nsIOutputStream.h"
+#include "nsIServiceWorkerManager.h"
 #include "nsNetUtil.h"
 #include "nsPrintfCString.h"
-#include "nsIServiceWorkerManager.h"
-
 #include "prtime.h"
 
 using namespace mozilla::dom;

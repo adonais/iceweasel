@@ -7,15 +7,15 @@
 #ifndef mozilla_EventListenerService_h_
 #define mozilla_EventListenerService_h_
 
+#include "EventListenerManager.h"
 #include "jsapi.h"
 #include "mozilla/Attributes.h"
 #include "nsCycleCollectionParticipant.h"
-#include "EventListenerManager.h"
+#include "nsGkAtoms.h"
 #include "nsIEventListenerService.h"
 #include "nsString.h"
-#include "nsTObserverArray.h"
 #include "nsTHashMap.h"
-#include "nsGkAtoms.h"
+#include "nsTObserverArray.h"
 
 class nsIMutableArray;
 

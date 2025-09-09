@@ -11,8 +11,8 @@
 #include "mozilla/Attributes.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsINode.h"
-#include "nsWrapperCache.h"
 #include "nsString.h"
+#include "nsWrapperCache.h"
 #include "nsXULElement.h"
 
 class nsMenuPopupFrame;

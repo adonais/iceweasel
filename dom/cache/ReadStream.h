@@ -7,9 +7,9 @@
 #ifndef mozilla_dom_cache_ReadStream_h
 #define mozilla_dom_cache_ReadStream_h
 
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/SafeRefPtr.h"
 #include "mozilla/ipc/FileDescriptor.h"
-#include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsID.h"
 #include "nsIInputStream.h"

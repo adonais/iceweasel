@@ -114,6 +114,12 @@
 !define MOZ_MAINTENANCE_SERVICE
 #endif
 
+# Only build on platforms that have WinHTTP.h (i.e. not mingw)
+#ifdef HAVE_WINHTTP_H
+# Disable until Bug 1985118 is resolved.
+# !define DESKTOP_LAUNCHER_ENABLED
+#endif
+
 #ifdef MOZ_BITS_DOWNLOAD
 !define MOZ_BITS_DOWNLOAD
 #endif

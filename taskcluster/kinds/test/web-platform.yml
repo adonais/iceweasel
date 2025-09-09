@@ -122,6 +122,7 @@ web-platform-tests:
             - --skip-implementation-status=not-implementing
             - --skip-timeout
             - --skip-crash
+            - --no-update-status-on-crash
             # Because we have a separate job for them, don't run the (core)
             # webgpu/* tests in the main WPT runs. (but still run tests in dirs
             # other than webgpu/* that are tagged webgpu, e.g. canvas tests)
@@ -163,6 +164,7 @@ web-platform-tests-backlog:
             - --skip-implementation-status=implementing
             - --skip-implementation-status=not-implementing
             - --backlog
+            - --no-update-status-on-crash
             - --exclude-tag=webgpu
             - --exclude-tag=webcodecs
             - --exclude-tag=eme
@@ -183,6 +185,7 @@ web-platform-tests-webcodecs:
             - --test-type=testharness
             - --default-exclude
             - --tag=webcodecs
+            - --no-update-status-on-crash
 
 web-platform-tests-eme:
     description: "Web platform EME test run"
@@ -211,6 +214,7 @@ web-platform-tests-eme:
             - --test-type=testharness
             - --default-exclude
             - --tag=eme
+            - --no-update-status-on-crash
 
 web-platform-tests-reftest:
     description: "Web platform reftest run"
@@ -223,6 +227,8 @@ web-platform-tests-reftest:
     chunks:
         by-test-platform:
             .*-ccov.*: 8
+            android.*/debug: 16
+            android.*: 8
             linux.*64-tsan(-qr)?/opt: 16
             linux1804-64(-qr)?/.*: 6
             linux1804-64-asan(-qr)?/.*: 6
@@ -232,7 +238,6 @@ web-platform-tests-reftest:
             macosx.*-64/opt: 3
             windows.*-32.*/debug: 5
             windows.*-64.*/debug: 5
-            android.*: 6
             default: 4
     variants:
         - no-fission
@@ -289,6 +294,7 @@ web-platform-tests-reftest:
             - --skip-implementation-status=not-implementing
             - --skip-timeout
             - --skip-crash
+            - --no-update-status-on-crash
 
 web-platform-tests-webgpu:
     description: "Web platform WebGPU test run"
@@ -486,6 +492,7 @@ web-platform-tests-canvas:
             - --skip-implementation-status=not-implementing
             - --skip-timeout
             - --skip-crash
+            - --no-update-status-on-crash
             # Because we have a separate job for them, don't run the (core)
             # webgpu/* tests in the main WPT runs. (but still run tests in dirs
             # other than webgpu/* that are tagged webgpu, e.g. canvas tests)
@@ -521,6 +528,7 @@ web-platform-tests-reftest-backlog:
             - --skip-implementation-status=implementing
             - --skip-implementation-status=not-implementing
             - --backlog
+            - --no-update-status-on-crash
             - --exclude-tag=webgpu
             - --exclude-tag=webcodecs
             - --exclude-tag=eme
@@ -746,6 +754,7 @@ web-platform-tests-print-reftest:
     mozharness:
         extra-options:
             - --test-type=print-reftest
+            - --no-update-status-on-crash
 
 test-verify-wpt:
     description: "Extra verification of web-platform tests modified on this push"

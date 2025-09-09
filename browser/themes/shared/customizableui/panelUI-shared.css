@@ -17,9 +17,9 @@
 
   --arrowpanel-header-info-icon-padding: 4px;
   --arrowpanel-header-info-icon-full-width: calc(16px + (2 * var(--arrowpanel-header-info-icon-padding)));
-  --panel-separator-margin-vertical: 4px;
-  --panel-separator-margin-horizontal: 8px;
-  --panel-separator-margin: var(--panel-separator-margin-vertical) var(--panel-separator-margin-horizontal);
+  --panel-separator-padding-vertical: 4px;
+  --panel-separator-padding-horizontal: 8px;
+  --panel-separator-padding: var(--panel-separator-padding-vertical) var(--panel-separator-padding-horizontal);
   --panel-subview-body-padding-block: 8px;
   --panel-subview-body-padding-inline: 0;
   --panel-subview-body-padding: var(--panel-subview-body-padding-block) var(--panel-subview-body-padding-inline);
@@ -33,7 +33,7 @@
   &[uidensity="compact"] {
     --arrowpanel-menuitem-margin-inline: 4px;
     --arrowpanel-menuitem-padding-block: 4px;
-    --panel-separator-margin-horizontal: 4px;
+    --panel-separator-padding-horizontal: 4px;
     --panel-subview-body-padding-block: 4px;
     :is(panel, menupopup):not([touchmode]) {
       --arrowpanel-header-back-icon-padding: 4px;
@@ -55,7 +55,12 @@ menupopup {
   /* The min-height is calculated with the separator's horizontal margin rather
    * than the vertical, to let the back icon have even spacing all around
    * while being aligned with the separator. */
-  --arrowpanel-header-min-height: calc(var(--arrowpanel-header-back-icon-full-width) + (var(--panel-separator-margin-horizontal) * 2));
+  --arrowpanel-header-min-height: calc(var(--arrowpanel-header-back-icon-full-width) + (var(--panel-separator-padding-horizontal) * 2));
+}
+
+panel toolbarseparator {
+  color: var(--panel-separator-color);
+  padding: var(--panel-separator-padding);
 }
 
 #PanelUI-menu-button {
@@ -89,11 +94,11 @@ menupopup {
       /* "!important" is necessary to override the rule in toolbarbutton.css */
       margin: -5px 0 0 !important;
       margin-inline-end: -3px !important;
-      min-width: 12px;
-      min-height: 12px;
+      min-width: var(--icon-size-xsmall);
+      min-height: var(--icon-size-xsmall);
       -moz-context-properties: fill;
       background: url(chrome://browser/skin/notification-fill-12.svg) no-repeat center;
-      background-size: 12px;
+      background-size: var(--icon-size-xsmall);
     }
   }
 
@@ -162,11 +167,11 @@ menupopup {
 
 #fxa-toolbar-menu-button[badge-status="sync-disabled"] > .toolbarbutton-badge-stack > .toolbarbutton-badge {
   box-shadow: none;
-  min-width: 12px;
-  min-height: 12px;
+  min-width: var(--icon-size-xsmall);
+  min-height: var(--icon-size-xsmall);
   -moz-context-properties: stroke, fill;
   background: url(chrome://browser/skin/notification-fill-12.svg) no-repeat center;
-  background-size: 12px;
+  background-size: var(--icon-size-xsmall);
   stroke: var(--arrowpanel-background);
   fill: var(--warning-icon-bgcolor);
   filter: drop-shadow(0 0 5px var(--warning-icon-bgcolor));
@@ -368,7 +373,7 @@ panelview {
   }
 
   menuseparator {
-    padding: var(--panel-separator-margin);
+    padding: var(--panel-separator-padding);
   }
 }
 
@@ -824,8 +829,8 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 /* Firefox Account Toolbar Panel */
 
 #fxa-avatar-image {
-  width: var(--icon-size-default);
-  height: var(--icon-size-default);
+  width: var(--icon-size);
+  height: var(--icon-size);
 }
 
 :root {
@@ -887,9 +892,9 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
     .avatar-container::after {
       content: "";
       position: absolute;
-      top: calc(var(--icon-size-default) - 6px);
+      top: calc(var(--icon-size) - 6px);
       /* Avatar icon size minus its circle width minus half of the little circle icon size */
-      left: calc(var(--icon-size-default) - 1px - 6px / 2);
+      left: calc(var(--icon-size) - 1px - 6px / 2);
       height: 6px;
       width: 6px;
       background-image: url(chrome://browser/skin/fxa/circle.svg);
@@ -1252,8 +1257,8 @@ panelview .toolbarbutton-1,
     fill: currentColor;
     fill-opacity: 0.6;
     display: flex;
-    height: 12px;
-    width: 12px;
+    height: var(--icon-size-xsmall);
+    width: var(--icon-size-xsmall);
   }
 
   &[type="open-to-new"]:-moz-locale-dir(rtl)::after {
@@ -1420,7 +1425,7 @@ panelview .toolbarbutton-1,
     display: none;
   }
 
-  toolbarseparator.proton-zap {
+  toolbarseparator.proton-zap::before {
     border-image: var(--panel-separator-zap-gradient, none) 1;
   }
 }
@@ -1653,8 +1658,8 @@ toolbarbutton[itemtype="showinactivebutton"] {
     url(chrome://browser/skin/panic-panel/header.png),
     url(chrome://browser/skin/panic-panel/header@2x.png) 2x
   );
-  max-height: 48px;
-  width: 48px;
+  max-height: var(--size-item-xlarge);
+  width: var(--size-item-xlarge);
 }
 
 #panic-button-success-header {
@@ -1816,7 +1821,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   min-height: var(--arrowpanel-header-min-height);
 
   + toolbarseparator {
-    margin-top: 0 !important;
+    padding-top: 0 !important;
   }
 
   > h1 {
@@ -1967,7 +1972,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
     }
 
     toolbarseparator {
-      border-color: #0003;
+      color: #0003;
     }
   }
 
@@ -1995,7 +2000,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 
 #PanelUI-profiler-content {
   position: relative;
-  padding: calc(15px - var(--panel-separator-margin-vertical)) 15px 15px;
+  padding: calc(15px - var(--panel-separator-padding-vertical)) 15px 15px;
 }
 
 .PanelUI-profiler-description-title {
@@ -2324,4 +2329,9 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 
 #PanelUI-ipprotection-header {
   width: 100%;
+}
+
+#PanelUI-ipprotection .panel-header,
+#PanelUI-ipprotection .panel-header + toolbarseparator {
+  display: none;
 }

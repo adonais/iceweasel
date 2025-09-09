@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Nuevo acceso directo
 newtab-topsites-edit-topsites-header = Editar sitio popular
 newtab-topsites-edit-shortcut-header = Editar acceso directo
 newtab-topsites-add-shortcut-label = Añadir acceso directo
+newtab-topsites-add-shortcut-title =
+    .title = Añadir acceso directo
+    .aria-label = Añadir acceso directo
 newtab-topsites-title-label = Título
 newtab-topsites-title-input =
     .placeholder = Introducir título
@@ -544,9 +547,6 @@ newtab-download-mobile-highlight-body-variant-b = Continúe donde lo dejó al si
 newtab-download-mobile-highlight-body-variant-c = ¿Sabía usted que puede llevar { -brand-product-name } con usted? El mismo navegador. En su bolsillo.
 newtab-download-mobile-highlight-image =
     .aria-label = Código QR para descargar { -brand-product-name } para móviles
-
-## Strings for shortcuts highlight
-
 
 ## Strings for reporting ads and content
 

@@ -6,14 +6,15 @@
 #ifndef WebMDemuxer_h_
 #define WebMDemuxer_h_
 
-#include "nsTArray.h"
+#include <stdint.h>
+
+#include <deque>
+#include <utility>
+
 #include "MediaDataDemuxer.h"
 #include "MediaResource.h"
 #include "NesteggPacketHolder.h"
-
-#include <deque>
-#include <stdint.h>
-#include <utility>
+#include "nsTArray.h"
 
 typedef struct nestegg nestegg;
 

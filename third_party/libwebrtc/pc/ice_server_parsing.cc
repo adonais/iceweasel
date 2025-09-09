@@ -13,9 +13,17 @@
 #include <stddef.h>
 
 #include <cctype>  // For std::isdigit.
+#include <optional>
 #include <string>
 #include <tuple>
+#include <vector>
 
+#include "absl/strings/string_view.h"
+#include "api/candidate.h"
+#include "api/peer_connection_interface.h"
+#include "api/rtc_error.h"
+#include "p2p/base/port.h"
+#include "p2p/base/port_allocator.h"
 #include "p2p/base/port_interface.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
@@ -157,7 +165,7 @@ std::tuple<bool, absl::string_view, int> ParseHostnameAndPortFromString(
 // by parsing `url` and using the username/password in `server`.
 RTCError ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
                            absl::string_view url,
-                           cricket::ServerAddresses* stun_servers,
+                           ServerAddresses* stun_servers,
                            std::vector<RelayServerConfig>* turn_servers) {
   // RFC 7064
   // stunURI       = scheme ":" host [ ":" port ]
@@ -178,12 +186,11 @@ RTCError ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
   RTC_DCHECK(turn_servers != nullptr);
   ProtocolType turn_transport_type = PROTO_UDP;
   RTC_DCHECK(!url.empty());
-  std::vector<absl::string_view> tokens = rtc::split(url, '?');
+  std::vector<absl::string_view> tokens = split(url, '?');
   absl::string_view uri_without_transport = tokens[0];
   // Let's look into transport= param, if it exists.
   if (tokens.size() == kTurnTransportTokensNum) {  // ?transport= is present.
-    std::vector<absl::string_view> transport_tokens =
-        rtc::split(tokens[1], '=');
+    std::vector<absl::string_view> transport_tokens = split(tokens[1], '=');
     if (transport_tokens[0] != kTransport) {
       LOG_AND_RETURN_ERROR(
           RTCErrorType::SYNTAX_ERROR,
@@ -195,8 +202,7 @@ RTCError ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
           "ICE server parsing failed: Transport parameter missing value.");
     }
 
-    std::optional<ProtocolType> proto =
-        cricket::StringToProto(transport_tokens[1]);
+    std::optional<ProtocolType> proto = StringToProto(transport_tokens[1]);
     if (!proto || (*proto != PROTO_UDP && *proto != PROTO_TCP)) {
       LOG_AND_RETURN_ERROR(
           RTCErrorType::SYNTAX_ERROR,
@@ -317,7 +323,7 @@ RTCError ParseIceServerUrl(const PeerConnectionInterface::IceServer& server,
 
 RTCError ParseIceServersOrError(
     const PeerConnectionInterface::IceServers& servers,
-    cricket::ServerAddresses* stun_servers,
+    ServerAddresses* stun_servers,
     std::vector<RelayServerConfig>* turn_servers) {
   for (const PeerConnectionInterface::IceServer& server : servers) {
     if (!server.urls.empty()) {
@@ -350,7 +356,7 @@ RTCError ParseIceServersOrError(
 
 RTCError ParseAndValidateIceServersFromConfiguration(
     const PeerConnectionInterface::RTCConfiguration& configuration,
-    cricket::ServerAddresses& stun_servers,
+    ServerAddresses& stun_servers,
     std::vector<RelayServerConfig>& turn_servers) {
   RTC_DCHECK(stun_servers.empty());
   RTC_DCHECK(turn_servers.empty());
@@ -370,7 +376,7 @@ RTCError ParseAndValidateIceServersFromConfiguration(
   }
 
   // Add the turn logging id to all turn servers
-  for (cricket::RelayServerConfig& turn_server : turn_servers) {
+  for (RelayServerConfig& turn_server : turn_servers) {
     turn_server.turn_logging_id = configuration.turn_logging_id;
   }
 

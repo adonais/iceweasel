@@ -243,7 +243,7 @@ nsresult nsFileChannel::Init() {
   NS_ENSURE_STATE(mLoadInfo);
 
   RefPtr<nsHttpHandler> handler = nsHttpHandler::GetInstance();
-  MOZ_ALWAYS_SUCCEEDS(handler->NewChannelId(mChannelId));
+  mChannelId = handler->NewChannelId();
 
   // If we have a link file, we should resolve its target right away.
   // This is to protect against a same origin attack where the same link file

@@ -851,16 +851,19 @@ class Value {
     MOZ_ASSERT(isGCThing());
     static_assert((JSVAL_TAG_STRING & 0x03) == size_t(JS::TraceKind::String),
                   "Value type tags must correspond with JS::TraceKinds.");
-    static_assert((JSVAL_TAG_SYMBOL & 0x03) == size_t(JS::TraceKind::Symbol),
-                  "Value type tags must correspond with JS::TraceKinds.");
     static_assert((JSVAL_TAG_OBJECT & 0x03) == size_t(JS::TraceKind::Object),
                   "Value type tags must correspond with JS::TraceKinds.");
     static_assert((JSVAL_TAG_BIGINT & 0x03) == size_t(JS::TraceKind::BigInt),
                   "Value type tags must correspond with JS::TraceKinds.");
-    if (MOZ_UNLIKELY(isPrivateGCThing())) {
+    static_assert(JSVAL_TAG_SYMBOL + 1 == JSVAL_TAG_PRIVATE_GCTHING,
+                  "Symbol and PrivateGCThing tags should be adjacent to allow "
+                  "checking for them with a single branch");
+    JSValueTag tag = toTag();
+    if (MOZ_UNLIKELY(tag == JSVAL_TAG_SYMBOL ||
+                     tag == JSVAL_TAG_PRIVATE_GCTHING)) {
       return JS::GCThingTraceKind(toGCThing());
     }
-    return JS::TraceKind(toTag() & 0x03);
+    return JS::TraceKind(tag & 0x03);
   }
 
   JSWhyMagic whyMagic() const {

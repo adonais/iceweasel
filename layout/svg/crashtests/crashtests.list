@@ -199,6 +199,7 @@ load 1182496-1.html
 load 1209525-1.svg
 load 1223281-1.svg
 load 1234726-1.svg
+load 1258920.html
 load 1322537-1.html
 load 1322537-2.html
 load 1322852.html
@@ -269,3 +270,4 @@ load 1848851.html
 load 1882921-1.html
 asserts(5-20) load 1941838.html
 load 1953296.html
+load 1982067-1.html

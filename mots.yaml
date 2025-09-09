@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2025-07-16T13:08:24.154160+00:00'
+updated_at: '2025-08-07T08:27:43.954734+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -1025,6 +1025,10 @@ people:
   - bmo_id: 468136
     name: Dan Gohman
     nick: sunfish
+  - &sunil
+    bmo_id: 711499
+    name: Sunil Mayya
+    nick: sunil
   - &Sylvestre
     bmo_id: 495955
     name: Sylvestre Ledru
@@ -2408,6 +2412,7 @@ modules:
     peers:
       - *kershaw
       - *jesup
+      - *sunil
     machine_name: core_necko
 
   - name: 'Core: NodeJS usage, tools, and style'
@@ -4607,5 +4612,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 71667912fce426b901f9a9bbffd9a7036c59fbc1
-  export: 1b08a44222bbac5b5c00f1d7f610b64925882aae
+  config: e74b5f06f5659fc5aa4c58bc0961ad9f6e08b4f8
+  export: 2596fd3cfb6d02fe6fa2fc006003183b7ff0db83

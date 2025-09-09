@@ -95,6 +95,7 @@ class Mitmproxy(Playback):
         # when running locally it comes from obj_path via mozharness/mach
         if self.config.get("obj_path") is not None:
             self.mozproxy_dir = self.config.get("obj_path")
+            self.upload_dir = os.environ.get("MOZ_UPLOAD_DIR", self.mozproxy_dir)
         else:
             # in production it is ../tasks/task_N/build/, in production that dir
             # is not available as an envvar, however MOZ_UPLOAD_DIR is set as
@@ -103,8 +104,10 @@ class Mitmproxy(Playback):
                 os.path.dirname(os.environ["MOZ_UPLOAD_DIR"])
             )
 
+            # Set the upload dir to the internal storage
+            self.upload_dir = os.environ.get("MOZ_INTERNAL_UPLOAD_DIR")
+
         self.mozproxy_dir = os.path.join(self.mozproxy_dir, "testing", "mozproxy")
-        self.upload_dir = os.environ.get("MOZ_UPLOAD_DIR", self.mozproxy_dir)
 
         LOG.info(
             "mozproxy_dir used for mitmproxy downloads and exe files: %s"

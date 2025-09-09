@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsIGlobalObject.h"
+
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/GlobalFreezeObserver.h"
@@ -21,8 +22,8 @@
 #include "mozilla/dom/ServiceWorkerRegistration.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsContentUtils.h"
-#include "nsThreadUtils.h"
 #include "nsGlobalWindowInner.h"
+#include "nsThreadUtils.h"
 
 // Max number of Report objects
 constexpr auto MAX_REPORT_RECORDS = 100;

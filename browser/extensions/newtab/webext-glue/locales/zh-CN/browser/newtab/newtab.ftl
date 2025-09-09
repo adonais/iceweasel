@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = 新建快捷方式
 newtab-topsites-edit-topsites-header = 编辑常用网站
 newtab-topsites-edit-shortcut-header = 编辑快捷方式
 newtab-topsites-add-shortcut-label = 添加快捷方式
+newtab-topsites-add-shortcut-title =
+    .title = 添加快捷方式
+    .aria-label = 添加快捷方式
 newtab-topsites-title-label = 标题
 newtab-topsites-title-input =
     .placeholder = 输入标题
@@ -84,6 +87,14 @@ newtab-confirm-delete-history-p2 = 此操作无法撤销。
 ## Top Sites - Sponsored label
 
 newtab-topsite-sponsored = 赞助推广
+
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title }（已固定）
+    .title = { $title }
 
 ## Context Menu - Action Tooltips.
 
@@ -533,6 +544,12 @@ newtab-custom-wallpaper-title = 在此处自定义壁纸
 # 'Make firefox yours" means to customize or personalize
 newtab-custom-wallpaper-subtitle = 自行上传壁纸或选取自定义颜色，让 { -brand-product-name } 更有个性。
 newtab-custom-wallpaper-cta = 试试看
+
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = 选张壁纸，让 { -brand-product-name } 独具个性
+newtab-new-user-custom-wallpaper-subtitle = 自定义壁纸和颜色，让新标签页亲切如家。
+newtab-new-user-custom-wallpaper-cta = 现在就试试
 
 ## Strings for download mobile highlight
 

@@ -7,8 +7,8 @@
 #include "VsyncParent.h"
 
 #include "mozilla/Unused.h"
-#include "nsThreadUtils.h"
 #include "nsIThread.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla::dom {
 

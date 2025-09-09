@@ -5,22 +5,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "GMPProcessParent.h"
+
 #include "GMPUtils.h"
 #include "nsIRunnable.h"
 #ifdef XP_WIN
 #  include "WinUtils.h"
 #endif
+#include <string>
+
 #include "GMPLog.h"
+#include "base/process_util.h"
+#include "base/string_util.h"
 #include "mozilla/GeckoArgs.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/ipc/ProcessChild.h"
 #include "mozilla/ipc/ProcessUtils.h"
-#include "mozilla/StaticPrefs_media.h"
 #include "nsFmtString.h"
-
-#include "base/string_util.h"
-#include "base/process_util.h"
-
-#include <string>
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 #  include "mozilla/Omnijar.h"

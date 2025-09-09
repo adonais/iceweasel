@@ -6,7 +6,13 @@
 DESKTOP_DEFAULT(CanvasRandomization)
 DESKTOP_DEFAULT(FontVisibilityLangPack)
 DESKTOP_DEFAULT(JSMathFdlibm)
+DESKTOP_DEFAULT(ScreenAvailToResolution)
+DESKTOP_DEFAULT(NavigatorHWConcurrencyTiered)
+DESKTOP_DEFAULT(MaxTouchPointsCollapse)
 
 ANDROID_DEFAULT(CanvasRandomization)
 ANDROID_DEFAULT(FontVisibilityLangPack)
 ANDROID_DEFAULT(JSMathFdlibm)
+ANDROID_DEFAULT(ScreenAvailToResolution)
+ANDROID_DEFAULT(NavigatorHWConcurrencyTiered)
+ANDROID_DEFAULT(MaxTouchPointsCollapse)

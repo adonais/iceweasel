@@ -480,7 +480,7 @@ class HomeScreenRobot {
 
     fun verifyNavigationToolbarIsSetToTheBottomOfTheHomeScreen() {
         Log.i(TAG, "verifyAddressBarPosition: Trying to verify that the navigation toolbar is set to bottom")
-        onView(withId(R.id.toolbar_navbar_container)).check(isPartiallyBelow(withId(R.id.homepageView)))
+        onView(withId(R.id.navigation_bar)).check(isPartiallyBelow(withId(R.id.homepageView)))
         Log.i(TAG, "verifyAddressBarPosition: Verified that the navigation toolbar is set to bottom")
     }
 
@@ -831,7 +831,7 @@ class HomeScreenRobot {
             mDevice
                 .findObject(
                     UiSelector()
-                        .textContains(getStringResource(R.string.recent_tabs_show_all)),
+                        .descriptionContains(getStringResource(R.string.recent_tabs_show_all_content_description_2)),
                 ).clickAndWaitForNewWindow(waitingTime)
             Log.i(TAG, "clickJumpBackInShowAllButton: Clicked \"Show all\" button and wait for $waitingTime ms for a new window")
 

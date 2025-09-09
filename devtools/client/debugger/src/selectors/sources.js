@@ -4,12 +4,11 @@
 
 import { createSelector } from "devtools/client/shared/vendor/reselect";
 
-import { getPrettySourceURL, isPretty, isJavaScript } from "../utils/source";
+import { getPrettySourceURL, isJavaScript } from "../utils/source";
 
 import { findPosition } from "../utils/breakpoint/breakpointPositions";
 import { isFulfilled } from "../utils/async-value";
 
-import { originalToGeneratedId } from "devtools/client/shared/source-map-loader/index";
 import { prefs } from "../utils/prefs";
 import { UNDEFINED_LOCATION, NO_LOCATION } from "../reducers/sources";
 
@@ -33,6 +32,7 @@ export function getSourceFromId(state, id) {
   const source = getSource(state, id);
   if (!source) {
     console.warn(`source ${id} does not exist`);
+    dump(`>> ${new Error().stack}\n`);
   }
   return source;
 }
@@ -66,18 +66,6 @@ function getOriginalSourceByURL(state, url) {
 
 export function getGeneratedSourceByURL(state, url) {
   return getSpecificSourceByURL(state, url, false);
-}
-
-export function getGeneratedSource(state, source) {
-  if (!source) {
-    return null;
-  }
-
-  if (!source.isOriginal) {
-    return source;
-  }
-
-  return getSourceFromId(state, originalToGeneratedId(source.id));
 }
 
 export function getPendingSelectedLocation(state) {
@@ -153,14 +141,14 @@ export function getSelectedMappedSource(state) {
     return null;
   }
 
-  const mappedSource = getGeneratedSource(state, selectedLocation.source);
-  // getGeneratedSource will return the exact same source object on sources
-  // that don't map to any original source. In this case, return null
-  // as that's most likely a regular source, not using source maps.
-  if (mappedSource == selectedLocation.source) {
+  // For non original source, which don't have selectedOriginalLocation provided,
+  // don't try to map to anything.
+  if (!selectedLocation.source.isOriginal) {
     return null;
   }
-  return mappedSource || null;
+
+  // Otherwise, for original source, simply map to their related generated source
+  return selectedLocation.source.generatedSource;
 }
 
 /**
@@ -225,7 +213,7 @@ export function getFirstSourceActorForGeneratedSource(
     return null;
   }
   if (source.isOriginal) {
-    source = getSource(state, originalToGeneratedId(source.id));
+    source = source.generatedSource;
   }
   const actors = getSourceActorsForSource(state, source.id);
   if (threadId) {
@@ -257,7 +245,7 @@ export function canPrettyPrintSource(state, location) {
   const source = getSource(state, sourceId);
   if (
     !source ||
-    isPretty(source) ||
+    source.isPrettyPrinted ||
     source.isOriginal ||
     (prefs.clientSourceMapsEnabled && isSourceWithMap(state, sourceId))
   ) {
@@ -283,8 +271,8 @@ export function getPrettyPrintMessage(state, location) {
     return L10N.getStr("sourceTabs.prettyPrint");
   }
 
-  if (isPretty(source)) {
-    return L10N.getStr("sourceFooter.prettyPrint.isPrettyPrintedMessage");
+  if (source.isPrettyPrinted) {
+    return L10N.getStr("sourceTabs.removePrettyPrint");
   }
 
   if (source.isOriginal) {

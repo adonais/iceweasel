@@ -7,8 +7,8 @@
 #define nsHistory_h___
 
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/HistoryBinding.h"
 #include "mozilla/dom/ChildSHistory.h"
+#include "mozilla/dom/HistoryBinding.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIWeakReferenceUtils.h"  // for nsWeakPtr

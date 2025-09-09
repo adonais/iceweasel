@@ -93,8 +93,8 @@ pub enum DatetimeMetric {
     Child(ChildMetricMeta),
 }
 
-crate::define_metric_metadata_getter!(DatetimeMetric, DATETIME_MAP);
-crate::define_metric_namer!(DatetimeMetric);
+define_metric_metadata_getter!(DatetimeMetric, DATETIME_MAP);
+define_metric_namer!(DatetimeMetric);
 
 impl DatetimeMetric {
     /// Create a new datetime metric.

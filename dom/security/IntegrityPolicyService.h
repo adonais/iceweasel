@@ -7,9 +7,8 @@
 #ifndef IntegrityPolicyService_h___
 #define IntegrityPolicyService_h___
 
-#include "nsIContentPolicy.h"
-
 #include "mozilla/dom/IntegrityPolicy.h"
+#include "nsIContentPolicy.h"
 
 #define NS_INTEGRITYPOLICYSERVICE_CONTRACTID \
   "@mozilla.org/integritypolicyservice;1"

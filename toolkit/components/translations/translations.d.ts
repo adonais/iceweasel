@@ -267,8 +267,7 @@ export interface LangTags {
   docLangTag: string | null;
   userLangTag: string | null;
   htmlLangAttribute: string | null;
-  identifiedLangTag: string | null;
-  identifiedLangConfident?: boolean;
+  identified: null | DetectionResult;
 }
 
 /**
@@ -535,3 +534,30 @@ export interface TranslationRequest {
  * A convenience type describing a function that executes a translation.
  */
 export type TranslationFunction = (message: string) => Promise<string>;
+
+/**
+ * A larger web document can be composed of multiple languages. This object details the
+ * breakdown of what languages are present in the document, and at what percentages.
+ * For instance a document could be 70% English and 30% French:
+ *
+ *   [
+ *      { language: "en", percentage: 70 },
+ *      { language: "fr", percentage: 30 },
+ *   ]
+ */
+interface MultilingualSection {
+  // BCP 47 language tag, or "un" for unknown.
+  language: string;
+  // The integral percentage ranged 0-100.
+  percent: number;
+}
+
+interface DetectionResult {
+  // The language code.
+  language: string;
+  // Whether the detector is confident of the result.
+  confident: boolean;
+  // The list of languages detected in multilingual content. This is between 0 and 3
+  // languages.
+  languages: MultilingualSection[];
+}

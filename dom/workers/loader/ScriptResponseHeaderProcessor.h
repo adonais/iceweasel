@@ -7,15 +7,14 @@
 #ifndef mozilla_dom_workers_ScriptResponseHeaderProcessor_h__
 #define mozilla_dom_workers_ScriptResponseHeaderProcessor_h__
 
+#include "js/Modules.h"
+#include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/WorkerCommon.h"
-
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIStreamLoader.h"
 #include "nsStreamUtils.h"
-#include "js/Modules.h"
-#include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/StaticPrefs_dom.h"
 
 namespace mozilla::dom {
 

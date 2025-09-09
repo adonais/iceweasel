@@ -7,18 +7,18 @@
 #if !defined(PlatformEncoderModule_h_)
 #  define PlatformEncoderModule_h_
 
+#  include "EncoderConfig.h"
 #  include "MP4Decoder.h"
 #  include "MediaCodecsSupport.h"
 #  include "MediaResult.h"
 #  include "VPXDecoder.h"
+#  include "VideoUtils.h"
 #  include "mozilla/Maybe.h"
 #  include "mozilla/MozPromise.h"
 #  include "mozilla/RefPtr.h"
 #  include "mozilla/TaskQueue.h"
 #  include "mozilla/dom/ImageBitmapBinding.h"
 #  include "nsISupportsImpl.h"
-#  include "VideoUtils.h"
-#  include "EncoderConfig.h"
 
 namespace mozilla {
 

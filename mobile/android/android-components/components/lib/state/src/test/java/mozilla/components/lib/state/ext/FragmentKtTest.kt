@@ -37,7 +37,6 @@ import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
 @RunWith(AndroidJUnit4::class)
-@ExperimentalCoroutinesApi
 class FragmentKtTest {
 
     @get:Rule
@@ -272,6 +271,7 @@ class FragmentKtTest {
     }
 
     @Test
+    @ExperimentalCoroutinesApi // setMain
     fun `consumeFlow - creates flow synchronously`() {
         val fragment = mock<Fragment>()
         val fragmentLifecycle = mock<LifecycleRegistry>()

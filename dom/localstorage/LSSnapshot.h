@@ -9,17 +9,18 @@
 
 #include <cstdint>
 #include <cstdlib>
+
 #include "ErrorList.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
-#include "nsTHashMap.h"
 #include "nsHashKeys.h"
 #include "nsIRunnable.h"
 #include "nsISupports.h"
 #include "nsStringFwd.h"
 #include "nsTArrayForwardDeclare.h"
+#include "nsTHashMap.h"
 #include "nsTHashSet.h"
 
 class nsITimer;

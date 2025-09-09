@@ -616,6 +616,18 @@ bool TextEventDispatcher::DispatchKeyboardEventInternal(
     keyEvent.PreventDefaultBeforeDispatch(CrossProcessForwarding::eAllow);
   }
 
+  // If the widget wants to reply to OS asynchronously, the given event is
+  // marked as "waiting reply from remote process".  Then, we need to mark the
+  // dispatching event as so. NOTE: This is currently used by Android widget. On
+  // desktop, marking it will run GlobalKeyListener to scan all shortcut keys
+  // which match with the dispatching keyboard event.  So, if you need to use
+  // this path on desktop, we should add a flag to skip the check at receiving
+  // the reply event.
+  if (XRE_IsParentProcess() &&
+      aKeyboardEvent.IsWaitingReplyFromRemoteProcess()) {
+    keyEvent.MarkAsWaitingReplyFromRemoteProcess();
+  }
+
   // Corrects each member for the specific key event type.
   if (keyEvent.mKeyNameIndex != KEY_NAME_INDEX_USE_STRING) {
     MOZ_ASSERT(!aIndexOfKeypress,

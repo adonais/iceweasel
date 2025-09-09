@@ -11,15 +11,15 @@
 #include "GMPUtils.h"
 #include "MainThreadUtils.h"
 #include "VideoConduit.h"
-#include "gmp-video-frame-encoded.h"
-#include "gmp-video-frame-i420.h"
-#include "mozilla/CheckedInt.h"
-#include "nsServiceManagerUtils.h"
 #include "api/video/video_frame_type.h"
 #include "common_video/include/video_frame_buffer.h"
+#include "gmp-video-frame-encoded.h"
+#include "gmp-video-frame-i420.h"
 #include "media/base/media_constants.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/svc/create_scalability_structure.h"
+#include "mozilla/CheckedInt.h"
+#include "nsServiceManagerUtils.h"
 
 namespace mozilla {
 
@@ -159,8 +159,8 @@ int32_t WebrtcGmpVideoEncoder::InitEncode(
   codecParams.mHeight = aCodecSettings->height;
 
   uint32_t maxPayloadSize = aSettings.max_payload_size;
-  if (mFormatParams.count(cricket::kH264FmtpPacketizationMode) == 1 &&
-      mFormatParams.at(cricket::kH264FmtpPacketizationMode) == "1") {
+  if (mFormatParams.count(webrtc::kH264FmtpPacketizationMode) == 1 &&
+      mFormatParams.at(webrtc::kH264FmtpPacketizationMode) == "1") {
     maxPayloadSize = 0;  // No limit, use FUAs
   }
 
@@ -628,8 +628,8 @@ void WebrtcGmpVideoEncoder::Encoded(
   info.codecType = webrtc::kVideoCodecH264;
   info.codecSpecific = {};
   info.codecSpecific.H264.packetization_mode =
-      mFormatParams.count(cricket::kH264FmtpPacketizationMode) == 1 &&
-              mFormatParams.at(cricket::kH264FmtpPacketizationMode) == "1"
+      mFormatParams.count(webrtc::kH264FmtpPacketizationMode) == 1 &&
+              mFormatParams.at(webrtc::kH264FmtpPacketizationMode) == "1"
           ? webrtc::H264PacketizationMode::NonInterleaved
           : webrtc::H264PacketizationMode::SingleNalUnit;
   info.codecSpecific.H264.temporal_idx = webrtc::kNoTemporalIdx;
@@ -1017,7 +1017,7 @@ void WebrtcGmpVideoDecoder::Decoded(GMPVideoi420Frame* aDecodedFrame) {
       // Note: the last parameter to WrapI420Buffer is named no_longer_used,
       // but is currently called in the destructor of WrappedYuvBuffer when
       // the buffer is "no_longer_used".
-      rtc::scoped_refptr<webrtc::I420BufferInterface> video_frame_buffer =
+      webrtc::scoped_refptr<webrtc::I420BufferInterface> video_frame_buffer =
           webrtc::WrapI420Buffer(
               aDecodedFrame->Width(), aDecodedFrame->Height(), buffer_y,
               aDecodedFrame->Stride(kGMPYPlane), buffer_u,

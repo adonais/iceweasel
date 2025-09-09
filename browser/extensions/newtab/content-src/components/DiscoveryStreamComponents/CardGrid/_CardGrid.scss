@@ -139,17 +139,6 @@
     column-gap: var(--space-large);
   }
 
-  &.ds-card-grid-recent-saves {
-    .ds-card {
-      // Hide the second row orphan on narrow screens.
-      @media (min-width: $break-point-medium) and (max-width: $break-point-large) {
-        &:last-child:nth-child(2n - 1) {
-          display: none;
-        }
-      }
-    }
-  }
-
   .ds-card-link:focus {
     @include ds-focus;
 

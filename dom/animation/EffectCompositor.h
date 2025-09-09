@@ -19,8 +19,8 @@
 #include "mozilla/dom/EndpointBehavior.h"
 #include "nsCSSPropertyID.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsTHashMap.h"
 #include "nsTArray.h"
+#include "nsTHashMap.h"
 
 class nsCSSPropertyIDSet;
 class nsAtom;

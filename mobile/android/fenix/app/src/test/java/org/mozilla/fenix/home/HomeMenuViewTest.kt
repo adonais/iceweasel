@@ -25,13 +25,13 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.HomeScreen
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.AccountState
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
+import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.whatsnew.WhatsNew
@@ -50,6 +50,7 @@ class HomeMenuViewTest {
     private lateinit var homeActivity: HomeActivity
     private lateinit var navController: NavController
     private lateinit var menuButton: MenuButton
+    private lateinit var fenixBrowserUseCases: FenixBrowserUseCases
     private lateinit var homeMenuView: HomeMenuView
 
     @Before
@@ -61,6 +62,7 @@ class HomeMenuViewTest {
             every { navigate(any<NavDirections>(), any<NavOptions>()) } just runs
             every { currentDestination?.id } returns R.id.homeFragment
         }
+        fenixBrowserUseCases = mockk(relaxed = true)
 
         menuButton = spyk(MenuButton(testContext))
 
@@ -69,6 +71,7 @@ class HomeMenuViewTest {
             lifecycleOwner = lifecycleOwner,
             homeActivity = homeActivity,
             navController = navController,
+            fenixBrowserUseCases = fenixBrowserUseCases,
             menuButton = WeakReference(menuButton),
         )
     }
@@ -191,13 +194,17 @@ class HomeMenuViewTest {
         assertNotNull(HomeMenuMetrics.helpTapped.testGetValue())
 
         verify {
-            homeActivity.openToBrowserAndLoad(
+            navController.navigate(
+                HomeFragmentDirections.actionGlobalBrowser(),
+                null,
+            )
+            fenixBrowserUseCases.loadUrlOrSearch(
                 searchTermOrURL = SupportUtils.getSumoURLForTopic(
                     context = testContext,
                     topic = SupportUtils.SumoTopic.HELP,
                 ),
                 newTab = true,
-                from = BrowserDirection.FromHome,
+                private = false,
             )
         }
     }
@@ -218,10 +225,14 @@ class HomeMenuViewTest {
         verify {
             WhatsNew.userViewedWhatsNew(testContext)
 
-            homeActivity.openToBrowserAndLoad(
+            navController.navigate(
+                HomeFragmentDirections.actionGlobalBrowser(),
+                null,
+            )
+            fenixBrowserUseCases.loadUrlOrSearch(
                 searchTermOrURL = SupportUtils.WHATS_NEW_URL,
                 newTab = true,
-                from = BrowserDirection.FromHome,
+                private = false,
             )
         }
     }

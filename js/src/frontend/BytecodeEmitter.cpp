@@ -5678,20 +5678,10 @@ bool BytecodeEmitter::emitAsyncIterator(SelfHostedIter selfHostedIter) {
 }
 
 bool BytecodeEmitter::emitSpread(SelfHostedIter selfHostedIter) {
-  // [stack] NEXT ITER ARR I
-  return emitSpread(selfHostedIter, 2, JSOp::InitElemInc);
-  // [stack] ARR FINAL_INDEX
-}
-
-bool BytecodeEmitter::emitSpread(SelfHostedIter selfHostedIter,
-                                 int spreadeeStackItems, JSOp storeElementOp) {
   LoopControl loopInfo(this, StatementKind::Spread);
-  // In the [stack] annotations, (spreadee) can be "ARR I" (when spreading
-  // into an array or into call parameters, or "TUPLE" (when spreading into a
-  // tuple)
 
   if (!loopInfo.emitLoopHead(this, Nothing())) {
-    //              [stack] NEXT ITER (spreadee)
+    //              [stack] NEXT ITER ARR I
     return false;
   }
 
@@ -5703,39 +5693,39 @@ bool BytecodeEmitter::emitSpread(SelfHostedIter selfHostedIter,
     // Spread operations can't contain |continue|, so don't bother setting loop
     // and enclosing "update" offsets, as we do with for-loops.
 
-    if (!emitDupAt(spreadeeStackItems + 1, 2)) {
-      //            [stack] NEXT ITER (spreadee) NEXT ITER
+    if (!emitDupAt(3, 2)) {
+      //            [stack] NEXT ITER ARR I NEXT ITER
       return false;
     }
     if (!emitIteratorNext(Nothing(), IteratorKind::Sync, selfHostedIter)) {
-      //            [stack] NEXT ITER (spreadee) RESULT
+      //            [stack] NEXT ITER ARR I RESULT
       return false;
     }
     if (!emit1(JSOp::Dup)) {
-      //            [stack] NEXT ITER (spreadee) RESULT RESULT
+      //            [stack] NEXT ITER ARR I RESULT RESULT
       return false;
     }
     if (!emitAtomOp(JSOp::GetProp, TaggedParserAtomIndex::WellKnown::done())) {
-      //            [stack] NEXT ITER (spreadee) RESULT DONE
+      //            [stack] NEXT ITER ARR I RESULT DONE
       return false;
     }
     if (!emitJump(JSOp::JumpIfTrue, &loopInfo.breaks)) {
-      //            [stack] NEXT ITER (spreadee) RESULT
+      //            [stack] NEXT ITER ARR I RESULT
       return false;
     }
 
     // Emit code to assign result.value to the iteration variable.
     if (!emitAtomOp(JSOp::GetProp, TaggedParserAtomIndex::WellKnown::value())) {
-      //            [stack] NEXT ITER (spreadee) VALUE
+      //            [stack] NEXT ITER ARR I VALUE
       return false;
     }
-    if (!emit1(storeElementOp)) {
-      //            [stack] NEXT ITER (spreadee)
+    if (!emit1(JSOp::InitElemInc)) {
+      //            [stack] NEXT ITER ARR I
       return false;
     }
 
     if (!loopInfo.emitLoopEnd(this, JSOp::Goto, TryNoteKind::ForOf)) {
-      //            [stack] NEXT ITER (spreadee)
+      //            [stack] NEXT ITER ARR I
       return false;
     }
 
@@ -5750,17 +5740,17 @@ bool BytecodeEmitter::emitSpread(SelfHostedIter selfHostedIter,
   // No continues should occur in spreads.
   MOZ_ASSERT(!loopInfo.continues.offset.valid());
 
-  if (!emit2(JSOp::Pick, spreadeeStackItems + 2)) {
-    //              [stack] ITER (spreadee) RESULT NEXT
+  if (!emit2(JSOp::Pick, 4)) {
+    //              [stack] ITER ARR I RESULT NEXT
     return false;
   }
-  if (!emit2(JSOp::Pick, spreadeeStackItems + 2)) {
-    //              [stack] (spreadee) RESULT NEXT ITER
+  if (!emit2(JSOp::Pick, 4)) {
+    //              [stack] ARR I RESULT NEXT ITER
     return false;
   }
 
   return emitPopN(3);
-  //                [stack] (spreadee)
+  //                [stack] ARR I
 }
 
 bool BytecodeEmitter::emitInitializeForInOrOfTarget(TernaryNode* forHead) {

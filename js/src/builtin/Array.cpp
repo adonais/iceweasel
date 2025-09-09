@@ -1315,6 +1315,33 @@ static bool ArrayJoinDenseKernel(JSContext* cx, SeparatorOp sepOp,
     }
   }
 
+  // If we processed all dense elements and there are no other extra indexed
+  // properties, all remaining GetElement operations would return undefined.
+  // This is used to optimize str.repeat() like uses:
+  //   new Array(1e5).join("foo").
+  if (*numProcessed == initLength && initLength < length &&
+      length < UINT32_MAX) {
+    // initLength < length, so this can't be packed.
+    MOZ_ASSERT(!ObjectMayHaveExtraIndexedProperties(obj));
+    while (*numProcessed < length) {
+      if (!CheckForInterrupt(cx)) {
+        return false;
+      }
+
+#ifdef DEBUG
+      RootedValue v(cx);
+      if (!GetArrayElement(cx, obj, *numProcessed, &v)) {
+        return false;
+      }
+      MOZ_ASSERT(v.isUndefined());
+#endif
+
+      if (++(*numProcessed) != length && !sepOp(sb)) {
+        return false;
+      }
+    }
+  }
+
   return true;
 }
 
@@ -5396,7 +5423,7 @@ static JSObject* CreateArrayConstructor(JSContext* cx, JSProtoKey key) {
   if (!ctor) {
     return nullptr;
   }
-  if (!JSObject::setHasFuseProperty(cx, ctor)) {
+  if (!JSObject::setHasRealmFuseProperty(cx, ctor)) {
     return nullptr;
   }
   return ctor;
@@ -5443,8 +5470,9 @@ static bool array_proto_finish(JSContext* cx, JS::HandleObject ctor,
     return false;
   }
 
-  // Mark Array prototype as having fuse property (@iterator for example).
-  return JSObject::setHasFuseProperty(cx, proto);
+  // Mark Array prototype as having a RealmFuse property (@iterator for
+  // example).
+  return JSObject::setHasRealmFuseProperty(cx, proto);
 }
 
 static const JSClassOps ArrayObjectClassOps = {

@@ -146,6 +146,24 @@
         is(setting.visible, false, "Setting is not visible");
       });
 
+      add_task(async function testPrefSettingDisabled() {
+        const DEFAULT_SETTING_ID = "testSettingDisabledDefault";
+        const DISABLED_SETTING_ID = "testSettingDisabled";
+        Preferences.addSetting({
+          id: DEFAULT_SETTING_ID,
+        });
+        Preferences.addSetting({
+          id: DISABLED_SETTING_ID,
+          disabled: () => true,
+        });
+
+        let defaultSetting = Preferences.getSetting(DEFAULT_SETTING_ID);
+        ok(!defaultSetting.disabled, "Setting is not disabled by default");
+
+        let disabledSetting = Preferences.getSetting(DISABLED_SETTING_ID);
+        ok(disabledSetting.disabled, "Setting disabled is called");
+      });
+
       add_task(async function testPrefIsLocked() {
         const PREF_ID = "test.setting.locked";
         const SETTING_ID = "testSettingLocked";
@@ -210,6 +228,39 @@
           noConfigControlConfig,
           BASE_CONFIG,
           "There's a default implementation"
+        );
+      });
+
+      add_task(async function testDepsChange() {
+        const DEP_PREF_ID = "test.depsChange.dep";
+        const DEP_SETTING_ID = "testDepsChangeDep";
+        await SpecialPowers.pushPrefEnv({
+          set: [[DEP_PREF_ID, true]],
+        });
+        Preferences.add({ id: DEP_PREF_ID, type: "bool" });
+        Preferences.addSetting({
+          id: DEP_SETTING_ID,
+          pref: DEP_PREF_ID,
+        });
+
+        const PARENT_SETTING_ID = "testDepsChangeParent";
+        Preferences.addSetting({
+          id: PARENT_SETTING_ID,
+          deps: [DEP_SETTING_ID],
+          visible: deps => deps[DEP_SETTING_ID].value,
+        });
+
+        const parentSetting = Preferences.getSetting(PARENT_SETTING_ID);
+
+        ok(parentSetting.visible, "Parent setting is visible initially");
+
+        let settingChanged = waitForSettingChange(parentSetting);
+        Services.prefs.setBoolPref(DEP_PREF_ID, false);
+        await settingChanged;
+
+        ok(
+          !parentSetting.visible,
+          "Parent setting is not visible based on dep"
         );
       });
     </script>

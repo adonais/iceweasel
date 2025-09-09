@@ -413,6 +413,7 @@ void HttpChannelChild::OnStartRequest(
   mIsRacing = aArgs.isRacing();
   mCacheEntryAvailable = aArgs.cacheEntryAvailable();
   mCacheEntryId = aArgs.cacheEntryId();
+  mCacheDisposition = aArgs.cacheDisposition();
   mCacheFetchCount = aArgs.cacheFetchCount();
   mProtocolVersion = aArgs.protocolVersion();
   mCacheExpirationTime = aArgs.cacheExpirationTime();
@@ -489,8 +490,16 @@ void HttpChannelChild::OnStartRequest(
                                       false);
   }
 
-  if (!aArgs.cookieHeaders().IsEmpty()) {
-    SetCookieHeaders(aArgs.cookieHeaders());
+  RefPtr<CookieServiceChild> cookieService = CookieServiceChild::GetSingleton();
+
+  for (const CookieChange& cookieChange : aArgs.cookieChanges()) {
+    if (cookieChange.added()) {
+      Unused << cookieService->RecvAddCookie(
+          cookieChange.cookie(), cookieChange.originAttributes(), Nothing());
+    } else {
+      Unused << cookieService->RecvRemoveCookie(
+          cookieChange.cookie(), cookieChange.originAttributes(), Nothing());
+    }
   }
 
   // Note: this is where we would notify "http-on-after-examine-response"
@@ -3400,6 +3409,16 @@ void HttpChannelChild::ExplicitSetUploadStreamLength(
   MOZ_ASSERT(!LoadWasOpened());
   HttpBaseChannel::ExplicitSetUploadStreamLength(aContentLength,
                                                  aSetContentLengthHeader);
+}
+
+NS_IMETHODIMP
+HttpChannelChild::GetCacheDisposition(
+    nsICacheInfoChannel::CacheDisposition* aDisposition) {
+  if (!aDisposition) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  *aDisposition = mCacheDisposition;
+  return NS_OK;
 }
 
 }  // namespace mozilla::net

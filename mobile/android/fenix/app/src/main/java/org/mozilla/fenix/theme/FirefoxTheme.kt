@@ -7,6 +7,7 @@ package org.mozilla.fenix.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
 import mozilla.components.compose.base.theme.AcornColors
 import mozilla.components.compose.base.theme.AcornTheme
@@ -70,6 +71,7 @@ enum class Theme {
          * @return the current [Theme] that is displayed.
          */
         @Composable
+        @ReadOnlyComposable
         fun getTheme(allowPrivateTheme: Boolean = true) =
             if (allowPrivateTheme &&
                 !inComposePreview &&
@@ -90,6 +92,7 @@ enum class Theme {
 object FirefoxTheme {
     val colors: AcornColors
         @Composable
+        @ReadOnlyComposable
         get() = AcornTheme.colors
 
     val typography: AcornTypography
@@ -97,9 +100,11 @@ object FirefoxTheme {
 
     val layout: AcornLayout
         @Composable
+        @ReadOnlyComposable
         get() = AcornTheme.layout
 
     val windowSize: AcornWindowSize
         @Composable
+        @ReadOnlyComposable
         get() = AcornTheme.windowSize
 }

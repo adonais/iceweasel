@@ -329,6 +329,95 @@ add_task(async function test_tab_menu_has_label_and_separator() {
 });
 
 /**
+ * Check tab menu shows page feature when provider is configured or chat menu is enabled
+ */
+add_task(async function test_tab_menu_page_feature_with_provider_or_menu() {
+  // Test with provider configured but no chat menu
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.chat.provider", "http://localhost:8080"],
+      ["browser.ml.chat.page", true],
+      ["browser.ml.chat.menu", false],
+      ["sidebar.revamp", true],
+      ["sidebar.main.tools", "aichat"],
+    ],
+  });
+
+  await openContextMenu({
+    menuId: TAB_CONTEXT_MENU,
+    browser: gBrowser.selectedTab.linkedBrowser,
+  });
+
+  const menu = document.getElementById("context_askChat");
+  await TestUtils.waitForCondition(() => {
+    return menu && !menu.hidden && !menu.disabled;
+  }, "Menu should be visible with provider configured");
+
+  Assert.equal(
+    menu.hidden,
+    false,
+    "Tab menu shows page feature when provider is configured"
+  );
+
+  await hideContextMenu(TAB_CONTEXT_MENU);
+
+  // Test with no provider but chat menu enabled
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.chat.provider", ""],
+      ["browser.ml.chat.page", true],
+      ["browser.ml.chat.menu", true],
+      ["sidebar.revamp", true],
+      ["sidebar.main.tools", "aichat"],
+    ],
+  });
+
+  await openContextMenu({
+    menuId: TAB_CONTEXT_MENU,
+    browser: gBrowser.selectedTab.linkedBrowser,
+  });
+
+  await TestUtils.waitForCondition(() => {
+    return menu && !menu.hidden && !menu.disabled;
+  }, "Menu should be visible with chat menu enabled");
+
+  Assert.equal(
+    menu.hidden,
+    false,
+    "Tab menu shows page feature when chat menu is enabled"
+  );
+
+  await hideContextMenu(TAB_CONTEXT_MENU);
+
+  // Test with neither provider nor chat menu
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.chat.provider", ""],
+      ["browser.ml.chat.page", true],
+      ["browser.ml.chat.menu", false],
+      ["sidebar.revamp", true],
+      ["sidebar.main.tools", "aichat"],
+    ],
+  });
+
+  await openContextMenu({
+    menuId: TAB_CONTEXT_MENU,
+    browser: gBrowser.selectedTab.linkedBrowser,
+  });
+
+  await TestUtils.waitForCondition(() => {
+    return menu.hidden;
+  }, "Menu should be hidden with neither provider nor chat menu");
+
+  Assert.ok(
+    menu.hidden,
+    "Tab menu hides page feature when neither provider nor chat menu is configured"
+  );
+
+  await hideContextMenu(TAB_CONTEXT_MENU);
+});
+
+/**
  * Check tab menu should not be shown
  *
  */
@@ -482,4 +571,50 @@ add_task(async function test_provider_less_summarization() {
 
   SidebarController.hide();
   gBrowser.removeTab(gBrowser.selectedTab);
+});
+
+add_task(async function test_show_warning_when_text_is_long() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.chat.sidebar", true],
+      ["browser.ml.chat.page", true],
+      ["browser.ml.chat.provider", "http://localhost:8080"],
+    ],
+  });
+
+  await BrowserTestUtils.withNewTab(
+    "data:text/plain,hi".repeat(10000),
+    async () => {
+      await SidebarController.show("viewGenaiChatSidebar");
+
+      const { document } = SidebarController.browser.contentWindow;
+      const messageContainer = document.getElementById("message-container");
+      const summarizeButton = document.getElementById("summarize-button");
+
+      summarizeButton.click();
+      await TestUtils.waitForCondition(() => {
+        return messageContainer.hasChildNodes();
+      }, "Warning message shows because text is too long");
+
+      let events = Glean.genaiChatbot.lengthDisclaimer.testGetValue();
+      Assert.equal(events.length, 1, "Warning message is shown");
+      Assert.equal(events[0].extra.type, "page_summarization", "Page type");
+      Assert.equal(events[0].extra.length, 179984, "Has selection length");
+      Assert.equal(events[0].extra.provider, "localhost", "With localhost");
+
+      const warningElement = messageContainer.querySelector("moz-message-bar");
+      warningElement.shadowRoot.querySelector(".close").click();
+      await TestUtils.waitForCondition(() => {
+        return !messageContainer.hasChildNodes();
+      }, "Warning message is dismissed");
+
+      events = Glean.genaiChatbot.lengthDisclaimerDismissed.testGetValue();
+      Assert.equal(events.length, 1, "Warning message is dismissed");
+      Assert.equal(events[0].extra.type, "page_summarization", "Page type");
+      Assert.equal(events[0].extra.provider, "localhost", "With localhost");
+
+      SidebarController.hide();
+      await SpecialPowers.popPrefEnv();
+    }
+  );
 });

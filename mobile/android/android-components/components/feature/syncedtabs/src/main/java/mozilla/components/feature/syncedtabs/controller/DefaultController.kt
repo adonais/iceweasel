@@ -12,7 +12,7 @@ import mozilla.components.feature.syncedtabs.view.SyncedTabsView
 import mozilla.components.feature.syncedtabs.view.SyncedTabsView.ErrorType
 import mozilla.components.service.fxa.SyncEngine
 import mozilla.components.service.fxa.manager.FxaAccountManager
-import mozilla.components.service.fxa.manager.ext.withConstellation
+import mozilla.components.service.fxa.manager.ext.withConstellationIfExists
 import mozilla.components.service.fxa.sync.SyncReason
 import kotlin.coroutines.CoroutineContext
 
@@ -30,7 +30,7 @@ internal class DefaultController(
      */
     override fun refreshSyncedTabs() {
         scope.launch {
-            accountManager.withConstellation {
+            accountManager.withConstellationIfExists {
                 val syncedDeviceTabs = provider.getSyncedDeviceTabs()
                 val otherDevices = state()?.otherDevices
 
@@ -57,7 +57,7 @@ internal class DefaultController(
     override fun syncAccount() {
         view.startLoading()
         scope.launch {
-            accountManager.withConstellation { refreshDevices() }
+            accountManager.withConstellationIfExists { refreshDevices() }
             accountManager.syncNow(
                 SyncReason.User,
                 customEngineSubset = listOf(SyncEngine.Tabs),

@@ -5,6 +5,7 @@ import io
 import json
 import os
 import re
+import subprocess
 import textwrap
 import traceback
 from collections import defaultdict
@@ -142,8 +143,183 @@ class ScriptInfo(defaultdict):
             self["test"] = "mochitest"
             self.script_type = ScriptType.mochitest
 
+    def _get_node_builtins(self):
+        """
+        Returns a set of global variables/functions built into Node.js. (e.g. console, setTimeout)
+        """
+        js = """
+        const builtins = Object.getOwnPropertyNames(globalThis);
+        console.log(JSON.stringify(builtins));
+        """
+        result = subprocess.run(["node", "-e", js], capture_output=True, text=True)
+        return set(json.loads(result.stdout))
+
+    def _classify_globals(self):
+        """
+        Analyzes the test script to find global functions, variables, and object method calls.
+        Returns:
+            tuple:
+                - undeclared_funcs (set[str]): Function names that are called but not declared.
+                - undeclared_vars (set[str]): Identifiers used but not declared or built-in.
+                - member_calls (dict[str, set[str]]): Object method calls (e.g., Assert.ok → {'Assert': {'ok'}}).
+        """
+        # A set of function names that are called directly.
+        # Example: add_task() → 'add_task'
+        undeclared_funcs = set()
+
+        # A set of variable names that are declared via const, let, or var.
+        # Example: const perfMetadata = "abc"; → 'perfMetadata'
+        declared_vars = set()
+
+        # A set of all identifiers used in the script.
+        # This includes variable names, function names, and objects.
+        used_identifiers = set()
+
+        # A mapping of object names to the methods accessed on them.
+        # Example: Assert.ok() → {'Assert': {'ok'}}
+        member_calls = defaultdict(set)
+
+        def walk(node):
+            if isinstance(node, list):
+                for child in node:
+                    walk(child)
+            elif isinstance(node, dict):
+                node_type = node.get("type")
+
+                if node_type == "CallExpression":
+                    callee = node.get("callee", {})
+                    if callee["type"] == "Identifier":
+                        # Simple function call: add_task()
+                        undeclared_funcs.add(callee["name"])
+                    elif callee.get("type") == "MemberExpression":
+                        # Member function call: Assert.ok()
+                        obj = callee.get("object")
+                        prop = callee.get("property")
+                        if (
+                            obj
+                            and prop
+                            and obj.get("type") == "Identifier"
+                            and prop.get("type") == "Identifier"
+                        ):
+                            member_calls[obj["name"]].add(prop["name"])
+                    walk(callee)
+                    for arg in node.get("arguments", []):
+                        walk(arg)
+                elif node_type == "VariableDeclaration":
+                    # Variable declaration like: const x = ...;
+                    for decl in node.get("declarations", []):
+                        id_node = decl.get("id")
+                        if id_node["type"] == "Identifier" and "init" in decl:
+                            declared_vars.add(decl["id"]["name"])
+                        elif id_node["type"] == "ArrayPattern":
+                            for element in id_node.get("elements", []):
+                                if element and element.get("type") == "Identifier":
+                                    declared_vars.add(element["name"])
+                        if "init" in decl and decl["init"]:
+                            walk(decl["init"])
+                elif node_type == "Identifier":
+                    # Any usage of an identifier (variable, function, etc.)
+                    used_identifiers.add(node["name"])
+                else:
+                    for child in node.values():
+                        walk(child)
+
+        walk(self.parsed.toDict())
+
+        js_builtins = self._get_node_builtins()
+        # Remove built-in objects from member_calls
+        filtered_member_calls = {
+            obj: methods
+            for obj, methods in member_calls.items()
+            if obj not in js_builtins
+        }
+        return (
+            undeclared_funcs,
+            used_identifiers - declared_vars - js_builtins - undeclared_funcs,
+            filtered_member_calls,
+        )
+
+    def _get_perf_metadata_from_node(self):
+        """
+        Runs the JS script in a Node.js VM with mocked globals to safely extract the `perfMetadata` object.
+        Returns:
+            dict: Parsed metadata including `__function_keys__`.
+        """
+        global_funcs, global_vars, member_calls = self._classify_globals()
+        stub_declarations = "\n".join(
+            [f"globalThis.{name} = function(){{}};" for name in sorted(global_funcs)]
+            + [
+                (
+                    f"globalThis.{name} = '{name}';"
+                    if name.isupper()
+                    else f"globalThis.{name} = {{}};"
+                )
+                for name in sorted(global_vars)
+            ]
+        )
+        for obj, funcs in member_calls.items():
+            func_defs = ", ".join(f"{f}: () => true" for f in sorted(funcs))
+            stub_declarations += f"\nglobalThis.{obj} = {{ {func_defs} }};"
+        js_code = f"""
+        const vm = require('vm');
+
+        const fileCode = {json.dumps(self.script_content)};
+        const stubGlobals = {json.dumps(stub_declarations)};
+        const finalScript = fileCode +
+            "\\nif (typeof perfMetadata !== 'undefined')" +
+            " globalThis.perfMetadata = perfMetadata;";
+
+        const context = {{ perfMetadata: undefined, module: {{ exports: {{}} }}, console: console, }};
+
+        vm.createContext(context);
+        vm.runInContext(stubGlobals, context);
+        vm.runInContext(finalScript, context);
+
+        const metadata =
+            context.perfMetadata ||
+            context.module.exports.perfMetadata ||
+            context.module.exports;
+
+        const functionKeys = Object.entries(metadata)
+            .filter(([key, val]) => typeof val === 'function')
+            .map(([key]) => key);
+
+        const result = {{
+            ...metadata,
+            __function_keys__: functionKeys
+        }};
+
+        if (!result) throw new Error('perfMetadata not found');
+        console.log(JSON.stringify(result));
+        """
+
+        process = subprocess.run(
+            ["node", "-e", js_code],
+            capture_output=True,
+            text=True,
+        )
+
+        if process.returncode != 0:
+            raise RuntimeError(f"Node.js error: {process.stderr.strip()}")
+
+        return json.loads(process.stdout)
+
     def _parse_script_content(self):
         self.parsed = esprima.parseScript(self.script_content)
+        parsed_perfmetadata_dynamic = False
+        try:
+            metadata = self._get_perf_metadata_from_node()
+            for key, value in metadata.items():
+                if key == "__function_keys__":
+                    for func_name in value:
+                        self[func_name] = func_name
+                else:
+                    self[key] = value
+            parsed_perfmetadata_dynamic = True
+        except Exception as e:
+            print(
+                f"Failed to parse perfMetadata dynamically, using static fallback. Error: {e}"
+            )
 
         # looking for the exports statement
         found_perfmetadata = False
@@ -164,6 +340,9 @@ class ScriptInfo(defaultdict):
             if stmt.type == "FunctionDeclaration" and stmt.id.name in XPCSHELL_FUNCS:
                 self["test"] = "xpcshell"
                 self.script_type = ScriptType.xpcshell
+                continue
+
+            if parsed_perfmetadata_dynamic:
                 continue
 
             # is this the perfMetdatata plain var ?
@@ -195,7 +374,7 @@ class ScriptInfo(defaultdict):
             found_perfmetadata = True
             self.scan_properties(stmt.expression.right.properties)
 
-        if not found_perfmetadata:
+        if not (found_perfmetadata or parsed_perfmetadata_dynamic):
             raise MissingPerfMetadataError(self.script)
 
     def _parse_html_file(self):
@@ -337,7 +516,9 @@ class ScriptInfo(defaultdict):
         info += options
         info += f"\n**{self['description']}**\n"
         if "longDescription" in self:
-            info += f"\n{self['longDescription']}\n"
+            desc = " ".join(self["longDescription"].splitlines())
+            desc = re.sub(r"\s{2,}", " ", desc).strip()
+            info += f"\n{desc}\n"
 
         return info
 

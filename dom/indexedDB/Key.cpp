@@ -6,35 +6,37 @@
 
 #include "Key.h"
 
+#include <stdint.h>  // for UINT32_MAX, uintptr_t
+
 #include <algorithm>
 #include <cstdint>
-#include <stdint.h>    // for UINT32_MAX, uintptr_t
+
+#include "ReportInternalError.h"
 #include "js/Array.h"  // JS::NewArrayObject
 #include "js/ArrayBuffer.h"  // JS::{IsArrayBufferObject,NewArrayBuffer{,WithContents}}
 #include "js/Date.h"
-#include "js/experimental/TypedData.h"  // JS::ArrayBufferOrView
 #include "js/MemoryFunctions.h"
 #include "js/Object.h"              // JS::GetBuiltinClass
 #include "js/PropertyAndElement.h"  // JS_DefineElement, JS_GetProperty, JS_GetPropertyById, JS_HasOwnProperty, JS_HasOwnPropertyById
 #include "js/Value.h"
+#include "js/experimental/TypedData.h"  // JS::ArrayBufferOrView
 #include "jsfriendapi.h"
+#include "mozIStorageStatement.h"
+#include "mozIStorageValueArray.h"
 #include "mozilla/Casting.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/FloatingPoint.h"
-#include "mozilla/intl/Collator.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/ReverseIterator.h"
+#include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/indexedDB/IDBResult.h"
 #include "mozilla/dom/indexedDB/Key.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
-#include "mozilla/dom/TypedArray.h"
-#include "mozIStorageStatement.h"
-#include "mozIStorageValueArray.h"
+#include "mozilla/intl/Collator.h"
 #include "nsJSUtils.h"
 #include "nsTStringRepr.h"
-#include "ReportInternalError.h"
 #include "xpcpublic.h"
 
 namespace mozilla::dom::indexedDB {

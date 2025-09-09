@@ -6,21 +6,22 @@
 
 #include "SVGPathData.h"
 
-#include "gfx2DGlue.h"
-#include "gfxPlatform.h"
-#include "mozilla/dom/SVGPathSegment.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/Types.h"
-#include "mozilla/gfx/Point.h"
-#include "mozilla/RefPtr.h"
-#include "nsError.h"
-#include "nsString.h"
+#include <algorithm>
+
 #include "SVGArcConverter.h"
-#include "nsStyleConsts.h"
 #include "SVGContentUtils.h"
 #include "SVGGeometryElement.h"
 #include "SVGPathSegUtils.h"
-#include <algorithm>
+#include "gfx2DGlue.h"
+#include "gfxPlatform.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/dom/SVGPathSegment.h"
+#include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/Point.h"
+#include "mozilla/gfx/Types.h"
+#include "nsError.h"
+#include "nsString.h"
+#include "nsStyleConsts.h"
 
 using namespace mozilla::gfx;
 

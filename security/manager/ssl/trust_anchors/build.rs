@@ -5,6 +5,7 @@
 
 extern crate bindgen;
 extern crate nom;
+extern crate sha2;
 
 use bindgen::callbacks::*;
 use bindgen::*;
@@ -20,6 +21,8 @@ use nom::combinator::{fail, recognize};
 use nom::multi::{many1, separated_list0};
 use nom::sequence::{delimited, separated_pair, terminated, tuple};
 use nom::IResult;
+
+use sha2::{Digest, Sha256};
 
 use std::collections::HashMap;
 use std::env;
@@ -66,7 +69,12 @@ impl fmt::Display for Ck<'_> {
             Ck::Empty => write!(f, "None"),
             Ck::MultilineOctal(s) => write!(f, "&[{}]", octal_block_to_hex_string(s)),
             Ck::OptionBool(s) => write!(f, "Some({s}_BYTES)"),
-            Ck::Trust(s) => write!(f, "{s}_BYTES"),
+            Ck::Trust(s) => match *s {
+                "CKT_NSS_TRUSTED_DELEGATOR" => write!(f, "CKT_TRUST_ANCHOR_BYTES"),
+                "CKT_NSS_MUST_VERIFY_TRUST" => write!(f, "CKT_TRUST_MUST_VERIFY_TRUST_BYTES"),
+                "CKT_NSS_NOT_TRUSTED" => write!(f, "CKT_NOT_TRUSTED_BYTES"),
+                _ => unreachable!(),
+            },
             Ck::Utf8(s) => write!(f, "\"{s}\\0\""),
         }
     }
@@ -547,14 +555,16 @@ fn main() -> std::io::Result<()> {
             return Ok(());
         }
         let trust = *matching_trusts[0];
-        let sha1 = match attr(trust, "CKA_CERT_SHA1_HASH") {
-            Ck::MultilineOctal(x) => octal_block_to_hex_string(x),
+
+        let sha256 = match attr(cert, "CKA_VALUE") {
+            Ck::MultilineOctal(x) => Sha256::digest(octal_block_to_vec_u8(x))
+                .iter()
+                .map(|x| format!("0x{:02X}", x))
+                .collect::<Vec<String>>()
+                .join(", "),
             _ => unreachable!(),
         };
-        let md5 = match attr(trust, "CKA_CERT_MD5_HASH") {
-            Ck::MultilineOctal(x) => octal_block_to_hex_string(x),
-            _ => unreachable!(),
-        };
+
         let server = attr(trust, "CKA_TRUST_SERVER_AUTH");
         let email = attr(trust, "CKA_TRUST_EMAIL_PROTECTION");
 
@@ -568,8 +578,7 @@ fn main() -> std::io::Result<()> {
             mozilla_ca_policy: {mozpol},
             server_distrust_after: {server_distrust},
             email_distrust_after: {email_distrust},
-            sha1: [{sha1}],
-            md5: [{md5}],
+            sha256: [{sha256}],
             trust_server: {server},
             trust_email: {email},
         }},"

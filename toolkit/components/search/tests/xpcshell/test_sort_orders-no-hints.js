@@ -68,7 +68,7 @@ add_task(async function test_engine_sort_with_non_builtins_sort() {
     "zEngineEvenLaterInAlphabet",
   ];
 
-  // We should still have the same built-in engines listed.
+  // We should still have the same app-provided engines listed.
   await checkOrder("getAppProvidedEngines", EXPECTED_ORDER);
 
   const expected = [...EXPECTED_ORDER];

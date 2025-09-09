@@ -157,8 +157,8 @@ export class WeatherSuggestions extends SuggestProvider {
     ];
   }
 
-  get primaryUserControlledPreference() {
-    return "suggest.weather";
+  get primaryUserControlledPreferences() {
+    return ["suggest.weather"];
   }
 
   get rustSuggestionType() {

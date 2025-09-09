@@ -289,9 +289,11 @@ Http2Session::~Http2Session() {
 
   Shutdown(NS_OK);
 
-  if (mTrrStreams) {
-    mozilla::glean::networking::trr_request_count_per_conn.Get("h2"_ns).Add(
-        static_cast<int32_t>(mTrrStreams));
+  RefPtr<nsHttpConnectionInfo> ci = ConnectionInfo();
+  if (mTrrStreams && ci) {
+    mozilla::glean::networking::trr_request_count_per_conn
+        .Get(nsPrintfCString("%s_h2", ci->Origin()))
+        .Add(static_cast<int32_t>(mTrrStreams));
   }
   glean::spdy::parallel_streams.AccumulateSingleSample(mConcurrentHighWater);
   glean::spdy::request_per_conn.AccumulateSingleSample(mCntActivated);
@@ -409,9 +411,12 @@ static_assert(sControlFunctions[0x0F] == Http2Session::RecvUnused);
 static_assert(sControlFunctions[Http2Session::FRAME_TYPE_PRIORITY_UPDATE] ==
               Http2Session::RecvPriorityUpdate);
 
-bool Http2Session::RoomForMoreConcurrent() {
+uint32_t Http2Session::RoomForMoreConcurrent() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  return (mConcurrent < mMaxConcurrent);
+  if (mConcurrent > mMaxConcurrent) {
+    return 0;
+  }
+  return mMaxConcurrent - mConcurrent;
 }
 
 bool Http2Session::RoomForMoreStreams() {
@@ -682,15 +687,16 @@ void Http2Session::QueueStream(Http2StreamBase* stream) {
 void Http2Session::ProcessPending() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
+  uint32_t available = RoomForMoreConcurrent();
   RefPtr<Http2StreamBase> stream;
-  while (RoomForMoreConcurrent() &&
-         (stream = mQueueManager.GetNextStreamFromQueue(
-              Http2StreamQueueType::QueuedStreams))) {
+  while (available && (stream = mQueueManager.GetNextStreamFromQueue(
+                           Http2StreamQueueType::QueuedStreams))) {
     LOG3(("Http2Session::ProcessPending %p stream %p woken from queue.", this,
           stream.get()));
     MOZ_ASSERT(!stream->CountAsActive());
     mQueueManager.AddStreamToQueue(Http2StreamQueueType::ReadyForWrite, stream);
     SetWriteCallbacks();
+    available--;
   }
 }
 

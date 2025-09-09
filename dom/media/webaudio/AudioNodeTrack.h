@@ -6,11 +6,11 @@
 #ifndef MOZILLA_AUDIONODETRACK_H_
 #define MOZILLA_AUDIONODETRACK_H_
 
-#include "MediaTrackGraph.h"
-#include "mozilla/dom/AudioNodeBinding.h"
 #include "AlignedTArray.h"
 #include "AudioBlock.h"
 #include "AudioSegment.h"
+#include "MediaTrackGraph.h"
+#include "mozilla/dom/AudioNodeBinding.h"
 
 namespace WebCore {
 class Reverb;

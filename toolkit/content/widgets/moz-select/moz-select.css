@@ -88,8 +88,8 @@ select {
 .select-option-icon,
 .select-chevron-icon {
   position: absolute;
-  width: var(--icon-size-default);
-  height: var(--icon-size-default);
+  width: var(--icon-size);
+  height: var(--icon-size);
   pointer-events: none;
 }
 
@@ -111,8 +111,8 @@ select {
 }
 
 .with-icon select {
-  padding-inline-start: calc(var(--space-large) + var(--icon-size-default) + var(--space-small));
-  transform: translateX(calc(-1 * (var(--icon-size-default) + var(--space-small))));
+  padding-inline-start: calc(var(--space-large) + var(--icon-size) + var(--space-small));
+  transform: translateX(calc(-1 * (var(--icon-size) + var(--space-small))));
   transition: transform 0.3s ease;
 
   @media (prefers-reduced-motion) {

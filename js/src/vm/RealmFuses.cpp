@@ -5,11 +5,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "vm/RealmFuses.h"
 
+#include <array>
+
 #include "builtin/MapObject.h"
 #include "builtin/Promise.h"
 #include "builtin/RegExp.h"
 #include "builtin/WeakMapObject.h"
 #include "builtin/WeakSetObject.h"
+#include "js/experimental/TypedData.h"
 #include "vm/GlobalObject.h"
 #include "vm/NativeObject.h"
 #include "vm/ObjectOperations.h"
@@ -373,6 +376,52 @@ bool js::OptimizeSharedArrayBufferSpeciesFuse::checkInvariant(JSContext* cx) {
   return SpeciesFuseCheckInvariant(
       cx, JSProto_SharedArrayBuffer,
       cx->names().dollar_SharedArrayBufferSpecies_);
+}
+
+bool js::OptimizeTypedArraySpeciesFuse::checkInvariant(JSContext* cx) {
+  // Check `constructor` and `@@species` on %TypedArray%.
+  if (!SpeciesFuseCheckInvariant(cx, JSProto_TypedArray,
+                                 cx->names().dollar_TypedArraySpecies_)) {
+    return false;
+  }
+
+  auto typedArrayProtoKeys = std::array{
+#define PROTO_KEY(_, T, N) JSProto_##N##Array,
+      JS_FOR_EACH_TYPED_ARRAY(PROTO_KEY)
+#undef PROTO_KEY
+  };
+
+  auto* typedArrayproto =
+      cx->global()->maybeGetPrototype<NativeObject>(JSProto_TypedArray);
+
+  // Check all concrete TypedArray prototypes.
+  for (auto protoKey : typedArrayProtoKeys) {
+    // Prototype must be initialized.
+    auto* proto = cx->global()->maybeGetPrototype<NativeObject>(protoKey);
+    if (!proto) {
+      // No proto, invariant still holds
+      continue;
+    }
+    MOZ_ASSERT(typedArrayproto,
+               "%TypedArray%.prototype must be initialized when TypedArray "
+               "subclass is initialized");
+
+    // Ensure the prototype's prototype is %TypedArray%.prototype.
+    if (proto->staticPrototype() != typedArrayproto) {
+      return false;
+    }
+
+    auto* ctor = cx->global()->maybeGetConstructor<NativeObject>(protoKey);
+    MOZ_ASSERT(ctor);
+
+    // Ensure the prototype's `constructor` slot is the original constructor.
+    if (!ObjectHasDataPropertyValue(proto, NameToId(cx->names().constructor),
+                                    ObjectValue(*ctor))) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 void js::OptimizePromiseLookupFuse::popFuse(JSContext* cx,

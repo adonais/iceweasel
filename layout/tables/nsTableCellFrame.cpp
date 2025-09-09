@@ -256,63 +256,62 @@ inline nscolor EnsureDifferentColors(nscolor colorA, nscolor colorB) {
 void nsTableCellFrame::DecorateForSelection(DrawTarget* aDrawTarget,
                                             nsPoint aPt) {
   NS_ASSERTION(IsSelected(), "Should only be called for selected cells");
-  int16_t displaySelection;
-  displaySelection = DetermineDisplaySelection();
-  if (displaySelection) {
-    RefPtr<nsFrameSelection> frameSelection = PresShell()->FrameSelection();
-
-    if (frameSelection->IsInTableSelectionMode()) {
-      nscolor bordercolor;
-      if (displaySelection == nsISelectionController::SELECTION_DISABLED) {
-        bordercolor = NS_RGB(176, 176, 176);  // disabled color
-      } else {
-        bordercolor = LookAndFeel::Color(LookAndFeel::ColorID::Highlight, this);
-      }
-      nscoord threePx = nsPresContext::CSSPixelsToAppUnits(3);
-      if ((mRect.width > threePx) && (mRect.height > threePx)) {
-        // compare bordercolor to background-color
-        bordercolor = EnsureDifferentColors(
-            bordercolor, StyleBackground()->BackgroundColor(this));
-
-        int32_t appUnitsPerDevPixel = PresContext()->AppUnitsPerDevPixel();
-        Point devPixelOffset = NSPointToPoint(aPt, appUnitsPerDevPixel);
-
-        AutoRestoreTransform autoRestoreTransform(aDrawTarget);
-        aDrawTarget->SetTransform(
-            aDrawTarget->GetTransform().PreTranslate(devPixelOffset));
-
-        ColorPattern color(ToDeviceColor(bordercolor));
-
-        nscoord onePixel = nsPresContext::CSSPixelsToAppUnits(1);
-
-        StrokeLineWithSnapping(nsPoint(onePixel, 0), nsPoint(mRect.width, 0),
-                               appUnitsPerDevPixel, *aDrawTarget, color);
-        StrokeLineWithSnapping(nsPoint(0, onePixel), nsPoint(0, mRect.height),
-                               appUnitsPerDevPixel, *aDrawTarget, color);
-        StrokeLineWithSnapping(nsPoint(onePixel, mRect.height),
-                               nsPoint(mRect.width, mRect.height),
-                               appUnitsPerDevPixel, *aDrawTarget, color);
-        StrokeLineWithSnapping(nsPoint(mRect.width, onePixel),
-                               nsPoint(mRect.width, mRect.height),
-                               appUnitsPerDevPixel, *aDrawTarget, color);
-        // middle
-        nsRect r(onePixel, onePixel, mRect.width - onePixel,
-                 mRect.height - onePixel);
-        Rect devPixelRect =
-            NSRectToSnappedRect(r, appUnitsPerDevPixel, *aDrawTarget);
-        aDrawTarget->StrokeRect(devPixelRect, color);
-        // shading
-        StrokeLineWithSnapping(
-            nsPoint(2 * onePixel, mRect.height - 2 * onePixel),
-            nsPoint(mRect.width - onePixel, mRect.height - (2 * onePixel)),
-            appUnitsPerDevPixel, *aDrawTarget, color);
-        StrokeLineWithSnapping(
-            nsPoint(mRect.width - (2 * onePixel), 2 * onePixel),
-            nsPoint(mRect.width - (2 * onePixel), mRect.height - onePixel),
-            appUnitsPerDevPixel, *aDrawTarget, color);
-      }
-    }
+  if (!IsSelectable(nullptr)) {
+    return;
   }
+  RefPtr<nsFrameSelection> frameSelection = PresShell()->FrameSelection();
+  if (!frameSelection->IsInTableSelectionMode()) {
+    return;
+  }
+  nscoord threePx = nsPresContext::CSSPixelsToAppUnits(3);
+  if (mRect.width <= threePx || mRect.height <= threePx) {
+    return;
+  }
+  nscolor bordercolor;
+  if (frameSelection->GetDisplaySelection() ==
+      nsISelectionController::SELECTION_DISABLED) {
+    bordercolor = NS_RGB(176, 176, 176);  // disabled color
+  } else {
+    bordercolor = LookAndFeel::Color(LookAndFeel::ColorID::Highlight, this);
+  }
+  // compare bordercolor to background-color
+  bordercolor = EnsureDifferentColors(bordercolor,
+                                      StyleBackground()->BackgroundColor(this));
+
+  int32_t appUnitsPerDevPixel = PresContext()->AppUnitsPerDevPixel();
+  Point devPixelOffset = NSPointToPoint(aPt, appUnitsPerDevPixel);
+
+  AutoRestoreTransform autoRestoreTransform(aDrawTarget);
+  aDrawTarget->SetTransform(
+      aDrawTarget->GetTransform().PreTranslate(devPixelOffset));
+
+  ColorPattern color(ToDeviceColor(bordercolor));
+
+  nscoord onePixel = nsPresContext::CSSPixelsToAppUnits(1);
+
+  StrokeLineWithSnapping(nsPoint(onePixel, 0), nsPoint(mRect.width, 0),
+                         appUnitsPerDevPixel, *aDrawTarget, color);
+  StrokeLineWithSnapping(nsPoint(0, onePixel), nsPoint(0, mRect.height),
+                         appUnitsPerDevPixel, *aDrawTarget, color);
+  StrokeLineWithSnapping(nsPoint(onePixel, mRect.height),
+                         nsPoint(mRect.width, mRect.height),
+                         appUnitsPerDevPixel, *aDrawTarget, color);
+  StrokeLineWithSnapping(nsPoint(mRect.width, onePixel),
+                         nsPoint(mRect.width, mRect.height),
+                         appUnitsPerDevPixel, *aDrawTarget, color);
+  // middle
+  nsRect r(onePixel, onePixel, mRect.width - onePixel, mRect.height - onePixel);
+  Rect devPixelRect = NSRectToSnappedRect(r, appUnitsPerDevPixel, *aDrawTarget);
+  aDrawTarget->StrokeRect(devPixelRect, color);
+  // shading
+  StrokeLineWithSnapping(
+      nsPoint(2 * onePixel, mRect.height - 2 * onePixel),
+      nsPoint(mRect.width - onePixel, mRect.height - (2 * onePixel)),
+      appUnitsPerDevPixel, *aDrawTarget, color);
+  StrokeLineWithSnapping(
+      nsPoint(mRect.width - (2 * onePixel), 2 * onePixel),
+      nsPoint(mRect.width - (2 * onePixel), mRect.height - onePixel),
+      appUnitsPerDevPixel, *aDrawTarget, color);
 }
 
 void nsTableCellFrame::ProcessBorders(nsTableFrame* aFrame,

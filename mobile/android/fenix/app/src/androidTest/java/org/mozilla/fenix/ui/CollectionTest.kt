@@ -11,9 +11,9 @@ import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MockBrowserDataHelper
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
-import org.mozilla.fenix.helpers.TestHelper.clickSnackbarButton
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
+import org.mozilla.fenix.helpers.TestHelper.waitUntilSnackbarGone
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
@@ -218,19 +218,7 @@ class CollectionTest : TestSetup() {
             clickCollectionThreeDotButton(composeTestRule)
             selectDeleteCollection(composeTestRule)
         }
-
         homeScreen {
-            verifySnackBarText("Collection deleted")
-            clickSnackbarButton(composeTestRule, "UNDO")
-            verifyCollectionIsDisplayed(composeTestRule, collectionName, true)
-            verifyCollectionIsDisplayed(composeTestRule, collectionName)
-        }.expandCollection(composeTestRule, collectionName) {
-            clickCollectionThreeDotButton(composeTestRule)
-            selectDeleteCollection(composeTestRule)
-        }
-
-        homeScreen {
-            verifySnackBarText("Collection deleted")
             verifyNoCollectionsText(composeTestRule)
         }
     }
@@ -329,6 +317,7 @@ class CollectionTest : TestSetup() {
                 collectionName = collectionName,
             )
             verifySnackBarText("Collection saved!")
+            waitUntilSnackbarGone()
         }.closeTabDrawer {
         }.goToHomescreen(composeTestRule) {
             verifyCollectionIsDisplayed(composeTestRule, collectionName)
@@ -351,15 +340,6 @@ class CollectionTest : TestSetup() {
         }.expandCollection(composeTestRule, collectionName) {
             verifyTabSavedInCollection(composeTestRule, webPage.title, true)
             removeTabFromCollection(webPage.title)
-        }
-        homeScreen {
-            verifySnackBarText("Collection deleted")
-            clickSnackbarButton(composeTestRule, "UNDO")
-            verifyCollectionIsDisplayed(composeTestRule, collectionName)
-        }.expandCollection(composeTestRule, collectionName) {
-            verifyTabSavedInCollection(composeTestRule, webPage.title, true)
-            removeTabFromCollection(webPage.title)
-            verifyTabSavedInCollection(composeTestRule, webPage.title, false)
         }
         homeScreen {
             verifyCollectionIsDisplayed(composeTestRule, collectionName, false)
@@ -431,14 +411,6 @@ class CollectionTest : TestSetup() {
             verifyTabSavedInCollection(composeTestRule, testPage.title, false)
         }
         homeScreen {
-            clickSnackbarButton(composeTestRule, "UNDO")
-            verifyCollectionIsDisplayed(composeTestRule, collectionName)
-        }.expandCollection(composeTestRule, collectionName) {
-            verifyTabSavedInCollection(composeTestRule, testPage.title, true)
-            swipeTabRight(testPage.title)
-            verifyTabSavedInCollection(composeTestRule, testPage.title, false)
-        }
-        homeScreen {
             verifyCollectionIsDisplayed(composeTestRule, collectionName, false)
         }
     }
@@ -465,6 +437,7 @@ class CollectionTest : TestSetup() {
         }.clickSaveCollection {
             typeCollectionNameAndSave(collectionName)
             verifySnackBarText("Collection saved!")
+            waitUntilSnackbarGone()
         }
 
         composeTabDrawer(composeTestRule) {
@@ -486,6 +459,7 @@ class CollectionTest : TestSetup() {
         }.openTabDrawer(composeTestRule) {
             createCollection(webPage.title, collectionName = collectionName)
             verifySnackBarText("Collection saved!")
+            waitUntilSnackbarGone()
         }.closeTabDrawer {
         }.openThreeDotMenu {
         }.openSaveToCollection {

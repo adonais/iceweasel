@@ -7,17 +7,18 @@
 #ifndef nsWrapperCache_h___
 #define nsWrapperCache_h___
 
-#include "nsCycleCollectionParticipant.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/ServoUtils.h"
-#include "mozilla/RustCell.h"
+#include <type_traits>
+
 #include "js/HeapAPI.h"
 #include "js/RootingAPI.h"
 #include "js/TracingAPI.h"
 #include "js/TypeDecls.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/RustCell.h"
+#include "mozilla/ServoUtils.h"
+#include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"
 #include "nsISupportsUtils.h"
-#include <type_traits>
 
 namespace mozilla::dom::binding_detail {
 class CastableToWrapperCacheHelper;
@@ -321,6 +322,10 @@ class JS_HAZ_ROOTED nsWrapperCache {
 
   void ReleaseWrapper(void* aScriptObjectHolder);
 
+  // Special case version of ReleaseWrapper. For use by
+  // Rule::UnlinkDeclarationWrapper only.
+  void ReleaseWrapperWithoutDrop();
+
   void TraceWrapper(JSTracer* aTrc, const char* name) {
     if (mWrapper) {
       js::UnsafeTraceManuallyBarrieredEdge(aTrc, &mWrapper, name);
@@ -338,6 +343,8 @@ class JS_HAZ_ROOTED nsWrapperCache {
 
  private:
   void SetWrapperJSObject(JSObject* aWrapper);
+
+  void ReleaseWrapperAndMaybeDropHolder(void* aScriptObjectHolderToDrop);
 
   // We'd like to assert that these aren't used from servo threads, but we don't
   // have a great way to do that because:

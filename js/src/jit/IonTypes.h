@@ -674,12 +674,14 @@ static inline const char* StringFromMIRType(MIRType type) {
 }
 
 static inline bool IsIntType(MIRType type) {
-  return type == MIRType::Int32 || type == MIRType::Int64;
+  return type == MIRType::Int32 || type == MIRType::Int64 ||
+         type == MIRType::IntPtr;
 }
 
 static inline bool IsNumberType(MIRType type) {
   return type == MIRType::Int32 || type == MIRType::Double ||
-         type == MIRType::Float32 || type == MIRType::Int64;
+         type == MIRType::Float32 || type == MIRType::Int64 ||
+         type == MIRType::IntPtr;
 }
 
 static inline bool IsTypeRepresentableAsDouble(MIRType type) {
@@ -849,6 +851,56 @@ inline uint32_t NumIntermediateValues(ResumeMode mode) {
       return 0;
   }
 }
+
+// Type that represents a constant JS::Value that's either available at compile
+// time or (for Cells allocated in the nursery) represented by an index into the
+// nursery-Values list.
+//
+// See the SMDOC comment for WarpObjectField for an explanation of how this is
+// used.
+class ValueOrNurseryValueIndex {
+  Value val_;
+
+  explicit ValueOrNurseryValueIndex(Value val) : val_(val) {}
+
+ public:
+  static ValueOrNurseryValueIndex fromValue(Value val) {
+    ValueOrNurseryValueIndex res(val);
+    MOZ_ASSERT(res.toValue() == val);
+    return res;
+  }
+  static ValueOrNurseryValueIndex fromValueOrNurseryIndex(Value val) {
+    return ValueOrNurseryValueIndex(val);
+  }
+  static ValueOrNurseryValueIndex fromNurseryIndex(uint32_t index) {
+    MOZ_RELEASE_ASSERT(index < UINT32_MAX - JS_WHY_MAGIC_COUNT);
+    Value v = JS::MagicValueUint32(JS_WHY_MAGIC_COUNT + index);
+    ValueOrNurseryValueIndex res(v);
+    MOZ_ASSERT(res.toNurseryValueIndex() == index);
+    return res;
+  }
+
+  bool isValue() const {
+    return !val_.isMagic() || val_.magicUint32() < JS_WHY_MAGIC_COUNT;
+  }
+  Value toValue() const {
+    MOZ_ASSERT(isValue());
+    return val_;
+  }
+  uint32_t toNurseryValueIndex() const {
+    MOZ_ASSERT(!isValue());
+    return val_.magicUint32() - JS_WHY_MAGIC_COUNT;
+  }
+
+  uint64_t asRawBits() const { return val_.asRawBits(); }
+
+  bool operator==(ValueOrNurseryValueIndex other) const {
+    return val_ == other.val_;
+  }
+  bool operator!=(ValueOrNurseryValueIndex other) const {
+    return val_ != other.val_;
+  }
+};
 
 }  // namespace jit
 }  // namespace js

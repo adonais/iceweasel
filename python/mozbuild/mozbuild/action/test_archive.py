@@ -52,7 +52,9 @@ TEST_HARNESS_BINS = [
     "plugin-container",
 ]
 
-TEST_HARNESS_DLLS = ["crashinjectdll", "mozglue", "xul", "nss3", "gkcodecs", "lgpllibs"]
+TEST_HARNESS_DLLS = ["crashinjectdll", "mozglue"]
+
+TRAIN_HOP_DLLS = ["xul", "nss3", "gkcodecs", "lgpllibs"]
 
 GMP_TEST_PLUGIN_DIRS = ["gmp-fake/**", "gmp-fakeopenh264/**"]
 
@@ -96,6 +98,7 @@ ARCHIVE_FILES = {
                 "jittest/**",  # To make the ignore checker happy
                 "perftests/**",
                 "fuzztest/**",
+                "trainhop/**",
             ],
         },
         {"source": buildconfig.topobjdir, "base": "_tests", "pattern": "modules/**"},
@@ -681,6 +684,26 @@ ARCHIVE_FILES = {
             "base": "js/src",
             "pattern": "jsapi.h",
             "dest": "jit-test",
+        },
+    ],
+    "trainhop": [
+        {
+            "source": buildconfig.topobjdir,
+            "base": "dist/bin",
+            "patterns": [
+                "%s%s" % (f, buildconfig.substs["BIN_SUFFIX"])
+                for f in TEST_HARNESS_BINS
+            ]
+            + [
+                "%s%s%s"
+                % (
+                    buildconfig.substs["DLL_PREFIX"],
+                    f,
+                    buildconfig.substs["DLL_SUFFIX"],
+                )
+                for f in TRAIN_HOP_DLLS
+            ],
+            "dest": "bin",
         },
     ],
 }

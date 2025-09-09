@@ -10,13 +10,10 @@
 #ifndef transportlayerice_h__
 #define transportlayerice_h__
 
-#include "sigslot.h"
-
-#include "mozilla/RefPtr.h"
-
 #include "m_cpp_utils.h"
-
+#include "mozilla/RefPtr.h"
 #include "nricemediastream.h"
+#include "sigslot.h"
 #include "transportlayer.h"
 
 // An ICE transport layer -- corresponds to a single ICE

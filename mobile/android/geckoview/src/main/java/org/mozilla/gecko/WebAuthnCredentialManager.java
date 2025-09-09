@@ -77,11 +77,18 @@ public class WebAuthnCredentialManager {
       final int[] algs,
       final WebAuthnUtils.WebAuthnPublicCredential[] excludeList,
       final GeckoBundle authenticatorSelection,
+      final GeckoBundle extensions,
       final byte[] clientDataHash) {
     try {
       final JSONObject requestJSON =
           WebAuthnUtils.getJSONObjectForMakeCredential(
-              credentialBundle, userId, challenge, algs, excludeList, authenticatorSelection);
+              credentialBundle,
+              userId,
+              challenge,
+              algs,
+              excludeList,
+              authenticatorSelection,
+              extensions);
       final Bundle bundle = getRequestBundle(requestJSON.toString(), clientDataHash);
       if (bundle == null) {
         return null;
@@ -135,19 +142,13 @@ public class WebAuthnCredentialManager {
       final int[] algs,
       final WebAuthnUtils.WebAuthnPublicCredential[] excludeList,
       final GeckoBundle authenticatorSelection,
+      final GeckoBundle extensions,
       final byte[] clientDataHash) {
-    final Boolean requireResidentKey =
-        authenticatorSelection.getBoolean("requireResidentKey", false);
 
-    final Boolean residentKeyDiscouraged =
-        authenticatorSelection
-            .getString("residentKey", requireResidentKey ? "required" : "discouraged")
-            .equals("discouraged");
-
-    // We only use Credential Manager for Passkeys. If residentKey is discouraged, use GMS FIDO2.
-    if (residentKeyDiscouraged) {
-      return GeckoResult.fromException(new WebAuthnUtils.Exception("NOT_SUPPORTED_ERR"));
-    }
+    // We use Credential Manager first. If it doesn't work, we use GMS FIDO2.
+    // Credential manager may support non-discoverable keys,
+    // Else, following the specifications, `residentKey=discouraged` allows discoverable keys too
+    // but prefer non-discoverable keys
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
       return GeckoResult.fromException(new WebAuthnUtils.Exception("NOT_SUPPORTED_ERR"));
     }
@@ -167,6 +168,7 @@ public class WebAuthnCredentialManager {
             algs,
             excludeList,
             authenticatorSelection,
+            extensions,
             clientDataHash);
     if (requestBundle == null) {
       return GeckoResult.fromException(new WebAuthnUtils.Exception("UNKNOWN_ERR"));

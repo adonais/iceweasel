@@ -232,18 +232,15 @@ class PageStyleActor extends Actor {
   /**
    * Get the computed style for a node.
    *
-   * @param NodeActor node
-   * @param object options
-   *   `filter`: A string filter that affects the "matched" handling.
-   *     'user': Include properties from user style sheets.
-   *     'ua': Include properties from user and user-agent sheets.
-   *     Default value is 'ua'
-   *   `markMatched`: true if you want the 'matched' property to be added
-   *     when a computed property has been modified by a style included
-   *     by `filter`.
-   *   `onlyMatched`: true if unmatched properties shouldn't be included.
-   *   `filterProperties`: An array of properties names that you would like
-   *     returned.
+   * @param {NodeActor} node
+   * @param {Object} options
+   * @param {String} options.filter: A string filter that affects the "matched" handling.
+   * @param {Array<String>} options.filterProperties: An array of properties names that
+   *        you would like returned.
+   * @param {Boolean} options.markMatched: true if you want the 'matched' property to be
+   *        added when a computed property has been modified by a style included by `filter`.
+   * @param {Boolean} options.onlyMatched: true if unmatched properties shouldn't be included.
+   * @param {Boolean} options.clearCache: true if the cssLogic cache should be cleared.
    *
    * @returns a JSON blob with the following form:
    *   {
@@ -258,6 +255,9 @@ class PageStyleActor extends Actor {
   getComputed(node, options) {
     const ret = Object.create(null);
 
+    if (options.clearCache) {
+      this.cssLogic.reset();
+    }
     const filterProperties = Array.isArray(options.filterProperties)
       ? options.filterProperties
       : null;
@@ -556,15 +556,24 @@ class PageStyleActor extends Actor {
   // node.
   getSelectorSource(selectorInfo, relativeTo) {
     let result = selectorInfo.selector.text;
-    if (selectorInfo.inlineStyle) {
+    const ruleDeclarationOrigin =
+      selectorInfo.selector.cssRule.domRule.declarationOrigin;
+    if (
+      ruleDeclarationOrigin === "style-attribute" ||
+      ruleDeclarationOrigin === "pres-hints"
+    ) {
       const source = selectorInfo.sourceElement;
       if (source === relativeTo) {
-        result = "this";
+        result = "element";
       } else {
         result = CssLogic.getShortName(source);
       }
-      result += ".style";
+
+      if (ruleDeclarationOrigin === "pres-hints") {
+        result += " attributes style";
+      }
     }
+
     return result;
   }
 
@@ -660,34 +669,36 @@ class PageStyleActor extends Actor {
     );
     const rules = [];
 
-    if (!bindingElement || !bindingElement.style) {
+    if (!bindingElement) {
       return rules;
     }
 
-    const elementStyle = this._styleRef(
-      bindingElement,
-      // for inline style, we can't have a related pseudo element
-      null
-    );
-    const showElementStyles = !inherited && !pseudo;
-    const showInheritedStyles =
-      inherited && this._hasInheritedProps(bindingElement.style);
+    if (bindingElement.style) {
+      const elementStyle = this._styleRef(
+        bindingElement,
+        // for inline style, we can't have a related pseudo element
+        null
+      );
+      const showElementStyles = !inherited && !pseudo;
+      const showInheritedStyles =
+        inherited && this._hasInheritedProps(bindingElement.style);
 
-    const rule = this._getRuleItem(elementStyle, node.rawNode, {
-      pseudoElement: null,
-      isSystem: false,
-      inherited: false,
-    });
+      const rule = this._getRuleItem(elementStyle, node.rawNode, {
+        pseudoElement: null,
+        isSystem: false,
+        inherited: false,
+      });
 
-    // First any inline styles
-    if (showElementStyles) {
-      rules.push(rule);
-    }
+      // First any inline styles
+      if (showElementStyles) {
+        rules.push(rule);
+      }
 
-    // Now any inherited styles
-    if (showInheritedStyles) {
-      rule.inherited = inherited;
-      rules.push(rule);
+      // Now any inherited styles
+      if (showInheritedStyles) {
+        rule.inherited = inherited;
+        rules.push(rule);
+      }
     }
 
     // Add normal rules.  Typically this is passing in the node passed into the
@@ -704,46 +715,55 @@ class PageStyleActor extends Actor {
       }
     );
 
-    // Now any pseudos.
-    if (!pseudo && !options.skipPseudo) {
-      const relevantPseudoElements = [];
-      for (const readPseudo of PSEUDO_ELEMENTS) {
-        if (!this._pseudoIsRelevant(bindingElement, readPseudo, inherited)) {
-          continue;
-        }
+    // If we don't want to check pseudo elements rules, we can stop here.
+    if (options.skipPseudo) {
+      return rules;
+    }
 
-        // FIXME: Bug 1909173. Need to handle view transitions peudo-elements.
-        if (readPseudo === "::highlight") {
-          InspectorUtils.getRegisteredCssHighlights(
-            this.inspector.targetActor.window.document,
-            // only active
-            true
-          ).forEach(name => {
-            relevantPseudoElements.push(`::highlight(${name})`);
-          });
-        } else {
-          relevantPseudoElements.push(readPseudo);
-        }
+    // Now retrieve any pseudo element rules.
+    // We can have pseudo element that are children of other pseudo elements (e.g. with
+    // ::before::marker , ::marker is a child of ::before).
+    // In such case, we want to call _getElementRules with the actual pseudo element node,
+    // not its binding element.
+    const elementForPseudo = pseudo ? node.rawNode : bindingElement;
+
+    const relevantPseudoElements = [];
+    for (const readPseudo of PSEUDO_ELEMENTS) {
+      if (!this._pseudoIsRelevant(elementForPseudo, readPseudo, inherited)) {
+        continue;
       }
 
-      for (const readPseudo of relevantPseudoElements) {
-        const pseudoRules = this._getElementRules(
-          bindingElement,
-          readPseudo,
-          inherited,
-          options
-        );
-        // inherited element backed pseudo element rules (e.g. `::details-content`) should
-        // not be at the same "level" as rules inherited from the binding element (e.g. `<details>`),
-        // so we need to put them before the "regular" rules.
-        if (
-          SharedCssLogic.ELEMENT_BACKED_PSEUDO_ELEMENTS.has(readPseudo) &&
-          inherited
-        ) {
-          rules.unshift(...pseudoRules);
-        } else {
-          rules.push(...pseudoRules);
-        }
+      // FIXME: Bug 1909173. Need to handle view transitions peudo-elements.
+      if (readPseudo === "::highlight") {
+        InspectorUtils.getRegisteredCssHighlights(
+          this.inspector.targetActor.window.document,
+          // only active
+          true
+        ).forEach(name => {
+          relevantPseudoElements.push(`::highlight(${name})`);
+        });
+      } else {
+        relevantPseudoElements.push(readPseudo);
+      }
+    }
+
+    for (const readPseudo of relevantPseudoElements) {
+      const pseudoRules = this._getElementRules(
+        elementForPseudo,
+        readPseudo,
+        inherited,
+        options
+      );
+      // inherited element backed pseudo element rules (e.g. `::details-content`) should
+      // not be at the same "level" as rules inherited from the binding element (e.g. `<details>`),
+      // so we need to put them before the "regular" rules.
+      if (
+        SharedCssLogic.ELEMENT_BACKED_PSEUDO_ELEMENTS.has(readPseudo) &&
+        inherited
+      ) {
+        rules.unshift(...pseudoRules);
+      } else {
+        rules.push(...pseudoRules);
       }
     }
 
@@ -879,6 +899,10 @@ class PageStyleActor extends Actor {
    * @returns Array
    */
   _getElementRules(node, pseudo, inherited, options) {
+    if (!Element.isInstance(node)) {
+      return [];
+    }
+
     // we don't need to retrieve inherited starting style rules
     const includeStartingStyleRules = !inherited;
     const domRules = InspectorUtils.getMatchingCSSRules(
@@ -900,14 +924,18 @@ class PageStyleActor extends Actor {
     // most-specific.
     for (let i = domRules.length - 1; i >= 0; i--) {
       const domRule = domRules[i];
-      if (domRule.declarationOrigin) {
-        // TODO(bug 1212289): Deal with declarations here.
+      const isSystem =
+        domRule.parentStyleSheet &&
+        SharedCssLogic.isAgentStylesheet(domRule.parentStyleSheet);
+
+      // For now, when dealing with InspectorDeclaration, we only care about presentational
+      // hints style (e.g. <img height=100>).
+      if (
+        domRule.declarationOrigin &&
+        domRule.declarationOrigin !== "pres-hints"
+      ) {
         continue;
       }
-
-      const isSystem = SharedCssLogic.isAgentStylesheet(
-        domRule.parentStyleSheet
-      );
 
       if (isSystem && options.filter != SharedCssLogic.FILTER.UA) {
         continue;
@@ -916,9 +944,16 @@ class PageStyleActor extends Actor {
       if (inherited) {
         // Don't include inherited rules if none of its properties
         // are inheritable.
-        const hasInherited = [...domRule.style].some(prop =>
-          InspectorUtils.isInheritedProperty(doc, prop)
-        );
+        let hasInherited = false;
+        // This can be on a hot path, so let's use a simple for rule instead of turning
+        // domRule.style into an Array to use some on it.
+        for (let j = 0, len = domRule.style.length; j < len; j++) {
+          if (InspectorUtils.isInheritedProperty(doc, domRule.style[j])) {
+            hasInherited = true;
+            break;
+          }
+        }
+
         if (!hasInherited) {
           continue;
         }

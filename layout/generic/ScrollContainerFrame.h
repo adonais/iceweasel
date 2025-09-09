@@ -29,7 +29,6 @@
 class nsPresContext;
 class nsIContent;
 class nsAtom;
-class nsIScrollPositionListener;
 class AutoContainsBlendModeCapturer;
 
 namespace mozilla {
@@ -40,6 +39,7 @@ enum class PhysicalAxis : uint8_t;
 enum class StyleScrollbarWidth : uint8_t;
 class ScrollContainerFrame;
 class ScrollPositionUpdate;
+class StickyScrollContainer;
 struct ScrollReflowInput;
 struct ScrollStyles;
 struct StyleScrollSnapAlign;
@@ -131,6 +131,11 @@ class ScrollContainerFrame : public nsContainerFrame,
   Maybe<nscoord> GetNaturalBaselineBOffset(
       WritingMode aWM, BaselineSharingGroup aBaselineGroup,
       BaselineExportContext aExportContext) const override;
+
+  StickyScrollContainer* GetStickyContainer() const {
+    return mStickyContainer.get();
+  }
+  StickyScrollContainer& EnsureStickyContainer();
 
   // Recomputes the scrollable overflow area we store in the helper to take
   // children that are affected by perpsective set on the outer frame and scroll
@@ -516,28 +521,11 @@ class ScrollContainerFrame : public nsContainerFrame,
   }
 
   /**
-   * Add a scroll position listener. This listener must be removed
-   * before it is destroyed.
-   */
-  void AddScrollPositionListener(nsIScrollPositionListener* aListener) {
-    mListeners.AppendElement(aListener);
-  }
-
-  /**
-   * Remove a scroll position listener.
-   */
-  void RemoveScrollPositionListener(nsIScrollPositionListener* aListener) {
-    mListeners.RemoveElement(aListener);
-  }
-
-  /**
    * @note This method might destroy the frame, pres shell and other objects.
    * Internal method used by scrollbars to notify their scrolling
    * container of changes.
    */
-  void CurPosAttributeChanged(nsIContent* aChild) {
-    return CurPosAttributeChangedInternal(aChild);
-  }
+  void ScrollbarCurPosChanged(bool aDoScroll = true);
 
   /**
    * Allows the docshell to request that the scroll frame post an event
@@ -699,7 +687,7 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   /**
    * @note This method might destroy the frame, pres shell and other objects.
-   * Update scrollbar curpos attributes to reflect current scroll position
+   * Update scrollbar to reflect current scroll position
    */
   void UpdateScrollbarPosition();
 
@@ -1116,35 +1104,15 @@ class ScrollContainerFrame : public nsContainerFrame,
                            const nsDisplayListSet& aLists, bool aCreateLayer,
                            bool aPositioned);
 
-  /**
-   * @note This method might destroy the frame, pres shell and other objects.
-   * Called when the 'curpos' attribute on one of the scrollbars changes.
-   */
-  void CurPosAttributeChangedInternal(nsIContent*, bool aDoScroll = true);
-
   void PostScrollEvent();
   MOZ_CAN_RUN_SCRIPT void FireScrollEvent();
   void PostScrolledAreaEvent();
   MOZ_CAN_RUN_SCRIPT void FireScrolledAreaEvent();
 
-  /**
-   * @note This method might destroy the frame, pres shell and other objects.
-   */
-  void FinishReflowForScrollbar(Element* aElement, nscoord aMinXY,
+  void FinishReflowForScrollbar(nsScrollbarFrame*, nscoord aMinXY,
                                 nscoord aMaxXY, nscoord aCurPosXY,
-                                nscoord aPageIncrement, nscoord aIncrement);
-  /**
-   * @note This method might destroy the frame, pres shell and other objects.
-   */
-  void SetScrollbarEnabled(Element* aElement, nscoord aMaxPos);
-  /**
-   * @note This method might destroy the frame, pres shell and other objects.
-   */
-  void SetCoordAttribute(Element* aElement, nsAtom* aAtom, nscoord aSize);
-
-  nscoord GetCoordAttribute(nsIFrame* aFrame, nsAtom* aAtom,
-                            nscoord aDefaultValue, nscoord* aRangeStart,
-                            nscoord* aRangeLength);
+                                nscoord aPageIncrement);
+  void ActivityOccurred();
 
   nsRect GetLayoutScrollRange() const;
   // Get the scroll range assuming the viewport has size (aWidth, aHeight).
@@ -1348,7 +1316,6 @@ class ScrollContainerFrame : public nsContainerFrame,
   RefPtr<AsyncScroll> mAsyncScroll;
   RefPtr<AsyncSmoothMSDScroll> mAsyncSmoothMSDScroll;
   RefPtr<layout::ScrollbarActivity> mScrollbarActivity;
-  nsTArray<nsIScrollPositionListener*> mListeners;
   ScrollOrigin mLastScrollOrigin;
   Maybe<nsPoint> mApzSmoothScrollDestination;
   MainThreadScrollGeneration mScrollGeneration;
@@ -1551,6 +1518,8 @@ class ScrollContainerFrame : public nsContainerFrame,
   // in the case of the top level document.
   nsRect mScrollPort;
   UniquePtr<ScrollSnapTargetIds> mLastSnapTargetIds;
+  // Lazily created on demand, see StickyScrollContainer::GetOrCreateForFrame.
+  UniquePtr<StickyScrollContainer> mStickyContainer;
 };
 
 }  // namespace mozilla

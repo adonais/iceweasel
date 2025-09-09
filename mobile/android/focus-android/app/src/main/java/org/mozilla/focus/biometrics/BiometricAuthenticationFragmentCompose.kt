@@ -10,9 +10,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,7 +75,7 @@ private fun ComponentShowBiometricPromptButton(showBiometricPrompt: () -> Unit) 
     Button(
         onClick = showBiometricPrompt,
         colors = ButtonDefaults.textButtonColors(
-            backgroundColor = colorResource(R.color.biometric_show_button_background),
+            containerColor = colorResource(R.color.biometric_show_button_background),
         ),
         modifier = Modifier
             .padding(16.dp)

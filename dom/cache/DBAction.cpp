@@ -6,6 +6,10 @@
 
 #include "mozilla/dom/cache/DBAction.h"
 
+#include "mozIStorageConnection.h"
+#include "mozIStorageService.h"
+#include "mozStorageCID.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/cache/Connection.h"
 #include "mozilla/dom/cache/DBSchema.h"
@@ -14,14 +18,10 @@
 #include "mozilla/dom/quota/PersistenceType.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/net/nsFileProtocolHandler.h"
-#include "mozilla/AppShutdown.h"
-#include "mozIStorageConnection.h"
-#include "mozIStorageService.h"
-#include "mozStorageCID.h"
 #include "nsIFile.h"
+#include "nsIFileURL.h"
 #include "nsIURI.h"
 #include "nsIURIMutator.h"
-#include "nsIFileURL.h"
 
 namespace mozilla::dom::cache {
 

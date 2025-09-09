@@ -5,8 +5,8 @@
 #ifndef _MTRANSPORTCHILD_H__
 #define _MTRANSPORTCHILD_H__
 
-#include "mozilla/dom/PMediaTransportChild.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/dom/PMediaTransportChild.h"
 
 namespace mozilla {
 class MediaTransportHandlerIPC;

@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DocumentOrShadowRoot.h"
+
 #include "mozilla/AnimationComparator.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/PointerLockManager.h"
@@ -15,12 +16,12 @@
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/StyleSheetList.h"
-#include "nsTHashtable.h"
 #include "nsContentUtils.h"
 #include "nsFocusManager.h"
 #include "nsIFormControl.h"
 #include "nsLayoutUtils.h"
 #include "nsNameSpaceManager.h"
+#include "nsTHashtable.h"
 #include "nsWindowSizes.h"
 
 namespace mozilla::dom {

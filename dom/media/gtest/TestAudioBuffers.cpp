@@ -4,9 +4,11 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <stdint.h>
+
+#include <vector>
+
 #include "AudioBufferUtils.h"
 #include "gtest/gtest.h"
-#include <vector>
 
 const uint32_t FRAMES = 256;
 

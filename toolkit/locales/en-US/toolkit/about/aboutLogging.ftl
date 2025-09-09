@@ -31,6 +31,7 @@ about-logging-no-log-modules = None
 about-logging-no-log-file = None
 about-logging-logging-preset-selector-text = Logging preset:
 about-logging-with-profiler-stacks-checkbox = Enable stack traces for log messages
+about-logging-with-javascript-tracing-checkbox = Enable JavaScript tracing
 about-logging-menu =
   .title = Advanced options
 
@@ -54,6 +55,8 @@ about-logging-preset-webcodecs-label = WebCodecs
 about-logging-preset-webcodecs-description = Log modules to diagnose issues with WebCodecs audio/video decoders and encoders, and image decoders
 about-logging-preset-ml-label = Machine Learning
 about-logging-preset-ml-description = Log modules to diagnose machine learning issues
+about-logging-preset-web-compat-label = Web Compat
+about-logging-preset-web-compat-description = Log modules to diagnose web compatibility issues
 about-logging-preset-webgpu-label = WebGPU
 about-logging-preset-webgpu-description = Log modules to diagnose WebGPU issues
 about-logging-preset-gfx-label = Graphics

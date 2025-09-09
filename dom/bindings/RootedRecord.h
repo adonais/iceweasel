@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_RootedRecord_h__
 #define mozilla_dom_RootedRecord_h__
 
-#include "mozilla/dom/Record.h"
 #include "js/RootingAPI.h"
+#include "mozilla/dom/Record.h"
 
 namespace mozilla::dom {
 

@@ -8,12 +8,12 @@
 #define DOM_SVG_DOMSVGTRANSFORMLIST_H_
 
 #include "DOMSVGAnimatedTransformList.h"
+#include "SVGTransformList.h"
 #include "mozAutoDocUpdate.h"
+#include "mozilla/Attributes.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
-#include "SVGTransformList.h"
 #include "nsTArray.h"
-#include "mozilla/Attributes.h"
 
 namespace mozilla {
 class ErrorResult;

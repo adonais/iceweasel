@@ -8,8 +8,8 @@
 #define mozilla_dom_HTMLLegendElement_h
 
 #include "mozilla/Attributes.h"
-#include "nsGenericHTMLElement.h"
 #include "mozilla/dom/HTMLFormElement.h"
+#include "nsGenericHTMLElement.h"
 
 namespace mozilla::dom {
 

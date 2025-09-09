@@ -312,7 +312,7 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   bool ShouldUseMappedAspectRatio() const;
 
   nsAtom* GetViewTransitionName() const;
-  Maybe<nsSize> GetViewTransitionSnapshotSize() const;
+  Maybe<nsSize> GetViewTransitionBorderBoxSize() const;
   mozilla::wr::ImageKey GetViewTransitionImageKey(
       mozilla::layers::RenderRootStateManager*,
       mozilla::wr::IpcResourceUpdateQueue&) const;
@@ -455,6 +455,7 @@ class nsDisplayImage final : public nsPaintedDisplayItem {
    *         Not necessarily contained in this item's bounds.
    */
   nsRect GetDestRect() const;
+  nsRect GetDestRectViewTransition() const;
 
   nsRect GetBounds(bool* aSnap) const {
     *aSnap = true;

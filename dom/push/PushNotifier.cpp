@@ -6,22 +6,21 @@
 
 #include "PushNotifier.h"
 
-#include "nsContentUtils.h"
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/Services.h"
+#include "mozilla/Unused.h"
+#include "mozilla/dom/BodyUtil.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/ServiceWorkerManager.h"
 #include "nsCOMPtr.h"
+#include "nsContentUtils.h"
 #include "nsICategoryManager.h"
 #include "nsIPushService.h"
 #include "nsIXULRuntime.h"
 #include "nsNetUtil.h"
 #include "nsXPCOM.h"
-#include "mozilla/dom/ServiceWorkerManager.h"
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/Services.h"
-#include "mozilla/Unused.h"
-
-#include "mozilla/dom/BodyUtil.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/ContentParent.h"
 
 namespace mozilla::dom {
 

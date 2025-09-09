@@ -589,6 +589,41 @@ struct ParamTraits<mozilla::gfx::IntRectTyped<T>> {
 };
 
 template <>
+struct ParamTraits<mozilla::gfx::RectCornerRadii> {
+  typedef mozilla::gfx::RectCornerRadii paramType;
+
+  static void Write(MessageWriter* writer, const paramType& param) {
+    for (const auto& i : param.radii) {
+      WriteParam(writer, i);
+    }
+  }
+
+  static bool Read(MessageReader* reader, paramType* result) {
+    for (auto& i : result->radii) {
+      if (!ReadParam(reader, &i)) {
+        return false;
+      }
+    }
+    return true;
+  }
+};
+
+template <>
+struct ParamTraits<mozilla::gfx::RoundedRect> {
+  typedef mozilla::gfx::RoundedRect paramType;
+
+  static void Write(MessageWriter* writer, const paramType& param) {
+    WriteParam(writer, param.rect);
+    WriteParam(writer, param.corners);
+  }
+
+  static bool Read(MessageReader* reader, paramType* result) {
+    return ReadParam(reader, &result->rect) &&
+           ReadParam(reader, &result->corners);
+  }
+};
+
+template <>
 struct ParamTraits<mozilla::gfx::Margin> {
   typedef mozilla::gfx::Margin paramType;
 

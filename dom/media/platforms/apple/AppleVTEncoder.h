@@ -10,8 +10,8 @@
 #include <CoreMedia/CoreMedia.h>
 #include <VideoToolbox/VideoToolbox.h>
 
-#include "apple/AppleUtils.h"
 #include "PlatformEncoderModule.h"
+#include "apple/AppleUtils.h"
 
 namespace mozilla {
 

@@ -40,15 +40,13 @@ void SetEncoderSpecific(VideoEncoderConfig* encoder_config,
     VideoCodecVP8 vp8 = VideoEncoder::GetDefaultVp8Settings();
     vp8.automaticResizeOn = automatic_resize;
     encoder_config->encoder_specific_settings =
-        rtc::make_ref_counted<VideoEncoderConfig::Vp8EncoderSpecificSettings>(
-            vp8);
+        make_ref_counted<VideoEncoderConfig::Vp8EncoderSpecificSettings>(vp8);
   } else if (type == kVideoCodecVP9) {
     VideoCodecVP9 vp9 = VideoEncoder::GetDefaultVp9Settings();
     vp9.automaticResizeOn = automatic_resize;
     vp9.numberOfSpatialLayers = num_spatial_layers;
     encoder_config->encoder_specific_settings =
-        rtc::make_ref_counted<VideoEncoderConfig::Vp9EncoderSpecificSettings>(
-            vp9);
+        make_ref_counted<VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9);
   }
 }
 }  // namespace
@@ -153,7 +151,7 @@ class ScalingObserver : public test::SendTest {
                        test_params_.size());
   }
 
-  Action OnSendRtp(rtc::ArrayView<const uint8_t> packet) override {
+  Action OnSendRtp(ArrayView<const uint8_t> packet) override {
     // The tests are expected to send at the configured start bitrate. Do not
     // send any packets to avoid receiving REMB and possibly go down in target
     // bitrate. A low bitrate estimate could result in downgrading due to other
@@ -194,8 +192,8 @@ class DownscalingObserver
     frame_generator_capturer->ChangeResolution(kInitialWidth, kInitialHeight);
   }
 
-  void OnSinkWantsChanged(rtc::VideoSinkInterface<VideoFrame>* sink,
-                          const rtc::VideoSinkWants& wants) override {
+  void OnSinkWantsChanged(VideoSinkInterface<VideoFrame>* sink,
+                          const VideoSinkWants& wants) override {
     if (wants.max_pixel_count < kInitialWidth * kInitialHeight)
       observation_complete_.Set();
   }
@@ -227,8 +225,8 @@ class UpscalingObserver
     frame_generator_capturer->ChangeResolution(kInitialWidth, kInitialHeight);
   }
 
-  void OnSinkWantsChanged(rtc::VideoSinkInterface<VideoFrame>* sink,
-                          const rtc::VideoSinkWants& wants) override {
+  void OnSinkWantsChanged(VideoSinkInterface<VideoFrame>* sink,
+                          const VideoSinkWants& wants) override {
     if (wants.max_pixel_count > last_wants_.max_pixel_count) {
       if (wants.max_pixel_count == std::numeric_limits<int>::max())
         observation_complete_.Set();
@@ -236,7 +234,7 @@ class UpscalingObserver
     last_wants_ = wants;
   }
 
-  rtc::VideoSinkWants last_wants_;
+  VideoSinkWants last_wants_;
 };
 
 TEST_F(QualityScalingTest, AdaptsDownForHighQp_Vp8) {

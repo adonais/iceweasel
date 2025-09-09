@@ -6,10 +6,10 @@
 
 #include "jsapi/RTCEncodedFrameBase.h"
 
-#include "js/GCAPI.h"
-#include "nsIGlobalObject.h"
-#include "mozilla/dom/ScriptSettings.h"
 #include "js/ArrayBuffer.h"
+#include "js/GCAPI.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "nsIGlobalObject.h"
 
 namespace mozilla::dom {
 NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(RTCEncodedFrameBase, (mGlobal),
@@ -48,7 +48,7 @@ void RTCEncodedFrameBase::SetData(const ArrayBuffer& aData) {
   if (mFrame) {
     aData.ProcessData([&](const Span<uint8_t>& aData, JS::AutoCheckCannotGC&&) {
       mFrame->SetData(
-          rtc::ArrayView<const uint8_t>(aData.Elements(), aData.Length()));
+          webrtc::ArrayView<const uint8_t>(aData.Elements(), aData.Length()));
     });
   }
 }

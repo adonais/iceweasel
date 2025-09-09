@@ -11,7 +11,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/0aac94794aad2ddb6
  1 file changed, 6 insertions(+)
 
 diff --git a/modules/desktop_capture/win/wgc_capture_session.cc b/modules/desktop_capture/win/wgc_capture_session.cc
-index bcdd365189..326bdb5175 100644
+index b4f9425699..b4a8cbbc29 100644
 --- a/modules/desktop_capture/win/wgc_capture_session.cc
 +++ b/modules/desktop_capture/win/wgc_capture_session.cc
 @@ -193,6 +193,11 @@ HRESULT WgcCaptureSession::StartCapture(const DesktopCaptureOptions& options) {
@@ -28,7 +28,7 @@ index bcdd365189..326bdb5175 100644
    // below is an attempt to remove this yellow border to make the capture
 @@ -204,6 +209,7 @@ HRESULT WgcCaptureSession::StartCapture(const DesktopCaptureOptions& options) {
            &session3))) {
-     session3->put_IsBorderRequired(false);
+     session3->put_IsBorderRequired(options.wgc_require_border());
    }
 +#endif
  

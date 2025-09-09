@@ -7,12 +7,12 @@
 #ifndef mozilla_dom_ScrollTimeline_h
 #define mozilla_dom_ScrollTimeline_h
 
-#include "mozilla/dom/AnimationTimeline.h"
-#include "mozilla/dom/Document.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/PairHash.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/WritingModes.h"
+#include "mozilla/dom/AnimationTimeline.h"
+#include "mozilla/dom/Document.h"
 
 #define PROGRESS_TIMELINE_DURATION_MILLISEC 100000
 

@@ -16,6 +16,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.espresso.Espresso.onView
@@ -39,6 +40,7 @@ import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
 import org.hamcrest.CoreMatchers.allOf
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.menu.MenuDialogTestTag.EXTENSIONS_OPTION_CHEVRON
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.WEB_EXTENSION_ITEM
 import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
 import org.mozilla.fenix.helpers.Constants.TAG
@@ -137,7 +139,7 @@ class SettingsSubMenuAddonsManagerRobot {
             } catch (e: NoMatchingViewException) {
                 Log.i(TAG, "clickInstallAddon: NoMatchingViewException caught, executing fallback methods")
                 addonsMenu {
-                }.goBack {
+                }.goBackToHomeScreen {
                 }.openThreeDotMenu {
                 }.openAddonsManagerMenu {
                 }
@@ -397,6 +399,7 @@ class SettingsSubMenuAddonsManagerRobot {
     }
 
     fun clickManageExtensionsButtonFromRedesignedMainMenu(composeTestRule: ComposeTestRule) {
+        waitForAppWindowToBeUpdated()
         Log.i(TAG, "clickManageExtensionsButtonFromRedesignedMainMenu: Trying to click the manage extensions button")
         composeTestRule.onNodeWithText(getStringResource(R.string.browser_menu_manage_extensions), useUnmergedTree = true).performClick()
         Log.i(TAG, "clickManageExtensionsButtonFromRedesignedMainMenu: Clicked the manage extensions button")
@@ -424,10 +427,10 @@ class SettingsSubMenuAddonsManagerRobot {
         Log.i(TAG, "verifyInstalledExtension: Verified that extension: $extensionTitle is displayed")
     }
     class Transition {
-        fun goBack(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
-            Log.i(TAG, "goBack: Trying to click navigate up toolbar button")
+        fun goBackToHomeScreen(interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
+            Log.i(TAG, "goBackToHomeScreen: Trying to click navigate up toolbar button")
             onView(allOf(withContentDescription("Navigate up"))).click()
-            Log.i(TAG, "goBack: Clicked the navigate up toolbar button")
+            Log.i(TAG, "goBackToHomeScreen: Clicked the navigate up toolbar button")
 
             HomeScreenRobot().interact()
             return HomeScreenRobot.Transition()
@@ -509,6 +512,30 @@ class SettingsSubMenuAddonsManagerRobot {
         ).click()
         Log.i(TAG, "allowPermissionToInstall: Clicked the \"Add\" button")
     }
+
+    fun clickCollapseExtensionsChevronFromMainMenu(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "clickExtensionsChevronFromMainMenu: Trying to click the \"Extensions chevron\" button from the new main menu design.")
+        composeTestRule.extensionsChevronButton().performClick()
+        Log.i(TAG, "clickExtensionsChevronFromMainMenu: Clicked the \"Extensions chevron\" button from the new main menu design.")
+    }
+
+    fun verifyExtensionsMainMenuOptionIsCollapsed(composeTestRule: ComposeTestRule, areExtensionsInstalled: Boolean) {
+        if (areExtensionsInstalled) {
+            Log.i(TAG, "verifyExtensionsMainMenuOptionIsCollapsed: Trying to verify that the \"Manage extensions\" button is not displayed")
+            composeTestRule.onNode(
+                hasText(getStringResource(R.string.browser_menu_manage_extensions)),
+                useUnmergedTree = true,
+            ).assertDoesNotExist()
+            Log.i(TAG, "verifyExtensionsMainMenuOptionIsCollapsed: Verified that the \"Manage extensions\" button is not displayed")
+        } else {
+            Log.i(TAG, "verifyExtensionsMainMenuOptionIsCollapsed: Trying to verify that the \"Discover more extensions\" button is not displayed")
+            composeTestRule.onNode(
+                hasText(getStringResource(R.string.browser_menu_discover_more_extensions)),
+                useUnmergedTree = true,
+            ).assertDoesNotExist()
+            Log.i(TAG, "verifyExtensionsMainMenuOptionIsCollapsed: Verified that the \"Discover more extensions\" button is not displayed")
+        }
+    }
 }
 
 fun addonsMenu(interact: SettingsSubMenuAddonsManagerRobot.() -> Unit): SettingsSubMenuAddonsManagerRobot.Transition {
@@ -542,3 +569,5 @@ private fun addonItem(addonName: String) =
 
 private fun addonsList() =
     UiScrollable(UiSelector().resourceId("$packageName:id/add_ons_list")).setAsVerticalList()
+
+private fun ComposeTestRule.extensionsChevronButton() = onNodeWithTag(EXTENSIONS_OPTION_CHEVRON, useUnmergedTree = true)

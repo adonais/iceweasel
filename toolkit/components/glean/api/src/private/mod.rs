@@ -12,6 +12,9 @@ pub use glean::{
     RecordedEvent, TimeUnit, TimerId,
 };
 
+#[macro_use]
+mod metric_getter;
+
 mod boolean;
 mod counter;
 mod custom_distribution;
@@ -27,7 +30,6 @@ mod labeled_custom_distribution;
 mod labeled_memory_distribution;
 mod labeled_timing_distribution;
 mod memory_distribution;
-mod metric_getter;
 mod numerator;
 mod object;
 mod ping;
@@ -132,6 +134,8 @@ impl ChildMetricMeta {
 pub(crate) mod profiler_utils {
     use std::marker::PhantomData;
 
+    use chrono::{DateTime, FixedOffset, Local};
+
     use crate::private::{MetricMetadataGetter, MetricNamer};
 
     use super::max_string_byte_length;
@@ -144,54 +148,11 @@ pub(crate) mod profiler_utils {
     pub const TelemetryProfilerCategory: gecko_profiler::ProfilingCategoryPair =
         gecko_profiler::ProfilingCategoryPair::Telemetry(None);
 
-    // Get the datetime *now*
-    // From https://searchfox.org/mozilla-central/source/third_party/rust/glean-core/src/util.rs#51
-    // This should be removed when Bug 1925313 is fixed.
-    /// Get the current date & time with a fixed-offset timezone.
-    ///
-    /// This converts from the `Local` timezone into its fixed-offset equivalent.
-    /// If a timezone outside of [-24h, +24h] is detected it corrects the timezone offset to UTC (+0).
-    #[allow(deprecated)] // use of deprecated chrono functions.
-    pub(crate) fn local_now_with_offset() -> chrono::DateTime<chrono::FixedOffset> {
-        use chrono::{DateTime, Local};
-        #[cfg(target_os = "windows")]
-        {
-            // `Local::now` takes the user's timezone offset
-            // and panics if it's not within a range of [-24, +24] hours.
-            // This causes crashes in a small number of clients on Windows.
-            //
-            // We can't determine the faulty clients
-            // or the circumstancens under which this happens,
-            // so the best we can do is have a workaround:
-            //
-            // We try getting the time and timezone first,
-            // then manually check that it is a valid timezone offset.
-            // If it is, we proceed and use that time and offset.
-            // If it isn't we fallback to UTC.
-            //
-            // This has the small downside that it will use 2 calls to get the time,
-            // but only on Windows.
-            //
-            // See https://bugzilla.mozilla.org/show_bug.cgi?id=1611770.
-
-            use chrono::{FixedOffset, Utc};
-
-            // Get timespec, including the user's timezone.
-            let tm = time::now();
-            // Same as chrono:
-            // https://docs.rs/chrono/0.4.10/src/chrono/offset/local.rs.html#37
-            let offset = tm.tm_utcoff;
-            if let None = FixedOffset::east_opt(offset) {
-                log::warn!(
-                    "Detected invalid timezone offset: {}. Using UTC fallback.",
-                    offset
-                );
-                let now: DateTime<Utc> = Utc::now();
-                let utc_offset = FixedOffset::east(0);
-                return now.with_timezone(&utc_offset);
-            }
-        }
-
+    pub(crate) fn local_now_with_offset() -> DateTime<FixedOffset> {
+        // See https://bugzilla.mozilla.org/show_bug.cgi?id=1611770.
+        //
+        // It's not clear if this bug on Windows still exist with the latest versions of
+        // the `time` crate. Removed the workaround.
         let now: DateTime<Local> = Local::now();
         now.with_timezone(now.offset())
     }
@@ -256,6 +217,11 @@ pub(crate) mod profiler_utils {
                     // label we got while retrieveing the metric, is valid,
                     // use them directly.
                     Some(label) => {
+                        // If the label comes from a dual_labeled_counter,
+                        // it is prefixed and delimited with a record separator
+                        // which we should adapt for display.
+                        let label = label.strip_prefix('\x1E').unwrap_or(&label);
+                        let label = label.replace('\x1E', ", ");
                         json_writer.unique_string_property("id", &metadata.name);
                         json_writer.unique_string_property("label", &label);
                     }

@@ -6,9 +6,9 @@
 #ifndef GPU_PipelineLayout_H_
 #define GPU_PipelineLayout_H_
 
-#include "nsWrapperCache.h"
 #include "ObjectModel.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla::webgpu {
 

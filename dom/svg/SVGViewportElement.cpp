@@ -7,6 +7,11 @@
 #include "mozilla/dom/SVGViewportElement.h"
 
 #include <stdint.h>
+
+#include <algorithm>
+
+#include "DOMSVGLength.h"
+#include "DOMSVGPoint.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/ContentEvents.h"
@@ -18,18 +23,13 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGViewElement.h"
-
-#include "DOMSVGLength.h"
-#include "DOMSVGPoint.h"
 #include "nsContentUtils.h"
-#include "nsFrameSelection.h"
 #include "nsError.h"
+#include "nsFrameSelection.h"
 #include "nsGkAtoms.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsStyleUtil.h"
-
-#include <algorithm>
 #include "prtime.h"
 
 using namespace mozilla::gfx;
@@ -169,8 +169,7 @@ gfx::Matrix SVGViewportElement::GetViewBoxTransform() const {
 
   SVGViewBox viewBox = GetViewBoxWithSynthesis(viewportWidth, viewportHeight);
 
-  if (!std::isfinite(viewBox.width) || viewBox.width <= 0.0f ||
-      !std::isfinite(viewBox.height) || viewBox.height <= 0.0f) {
+  if (!viewBox.IsValid()) {
     return gfx::Matrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);  // singular
   }
 

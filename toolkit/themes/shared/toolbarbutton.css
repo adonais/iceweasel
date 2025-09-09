@@ -34,18 +34,10 @@ toolbarbutton {
 
 /* ::::: toolbarbutton menu ::::: */
 
-.toolbarbutton-menu-dropmarker,
 .toolbarbutton-combined-buttons-dropmarker {
   appearance: none;
   -moz-context-properties: fill;
   fill: currentColor;
-}
-
-.toolbarbutton-menu-dropmarker {
-  content: url("chrome://global/skin/icons/arrow-down-12.svg");
-}
-
-.toolbarbutton-combined-buttons-dropmarker {
   list-style-image: url("chrome://global/skin/icons/arrow-down-12.svg");
 }
 

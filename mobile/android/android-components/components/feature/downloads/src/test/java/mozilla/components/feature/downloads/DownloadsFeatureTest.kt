@@ -1508,7 +1508,7 @@ class DownloadsFeatureTest {
             arrayOf(INTERNET, WRITE_EXTERNAL_STORAGE),
         ).`when`(downloadManager).permissions
 
-        val download = DownloadState(url = "https://www.mozilla.org", sessionId = "test-tab")
+        val download = DownloadState(url = "https://www.mozilla.org", sessionId = "test-tab", id = "downloadId")
 
         doReturn("id").`when`(downloadManager).download(eq(download), anyString())
 
@@ -1531,7 +1531,7 @@ class DownloadsFeatureTest {
 
         feature.startDownload(download)
 
-        verify(onDownloadStartedListener).invoke("id")
+        verify(onDownloadStartedListener).invoke("downloadId")
     }
 }
 

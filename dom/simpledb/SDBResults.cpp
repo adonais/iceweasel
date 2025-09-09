@@ -10,6 +10,7 @@
 #include <cstring>
 #include <new>
 #include <utility>
+
 #include "ErrorList.h"
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"

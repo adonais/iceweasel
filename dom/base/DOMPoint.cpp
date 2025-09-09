@@ -7,6 +7,7 @@
 #include "mozilla/dom/DOMPoint.h"
 
 #include <cstdint>
+
 #include "js/StructuredClone.h"
 #include "mozilla/Casting.h"
 #include "mozilla/ErrorResult.h"

@@ -10,6 +10,7 @@
 #define logging_h__
 
 #include <sstream>
+
 #include "mozilla/Logging.h"
 
 #ifdef MOZILLA_INTERNAL_API

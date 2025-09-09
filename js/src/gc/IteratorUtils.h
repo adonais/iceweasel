@@ -67,6 +67,9 @@ class NestedIterator {
       a.next();
     }
   }
+
+ protected:
+  const IteratorA& iterA() const { return a; }
 };
 
 /*

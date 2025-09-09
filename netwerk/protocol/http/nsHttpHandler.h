@@ -806,7 +806,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   Mutex mHttpExclusionLock MOZ_UNANNOTATED{"nsHttpHandler::HttpExclusion"};
 
  public:
-  [[nodiscard]] nsresult NewChannelId(uint64_t& channelId);
+  [[nodiscard]] uint64_t NewChannelId();
   void AddHttpChannel(uint64_t aId, nsISupports* aChannel);
   void RemoveHttpChannel(uint64_t aId);
   nsWeakPtr GetWeakHttpChannel(uint64_t aId);

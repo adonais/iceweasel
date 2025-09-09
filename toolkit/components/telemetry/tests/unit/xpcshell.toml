@@ -84,10 +84,6 @@ skip-if = [
 
 ["test_TelemetryHistograms.js"]
 
-["test_TelemetryLateWrites.js"]
-
-["test_TelemetryLockCount.js"]
-
 ["test_TelemetryReportingPolicy.js"]
 tags = "addons"
 
@@ -119,7 +115,7 @@ skip-if = ["os == 'android'"]
 ["test_TelemetryUtils.js"]
 
 ["test_ThirdPartyModulesPing.js"]
-run-if = ["(os == 'win' && !msix)"] # Disabled for MSIX due to https://bugzilla.mozilla.org/show_bug.cgi?id=1807929
+run-if = ["(os == 'win' && !msix && !artifact)"] # Disabled for MSIX due to https://bugzilla.mozilla.org/show_bug.cgi?id=1807929, disabled for artifact for bug 1982870.
 
 ["test_UninstallPing.js"]
 support-files = ["file_UninstallPing.worker.js"]

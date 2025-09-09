@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/NavigationActivation.h"
+
 #include "mozilla/dom/NavigationActivationBinding.h"
 
 namespace mozilla::dom {

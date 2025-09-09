@@ -7,7 +7,6 @@ package mozilla.components.browser.thumbnails
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.annotation.VisibleForTesting
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -30,7 +29,6 @@ typealias RequestHomepageScreenshot = (Bitmap) -> Unit
  * Ideally, this should be used in conjunction with `SessionManager.onLowMemory` to allow
  * free up some [ContentState.thumbnail] from memory.
  */
-@OptIn(ExperimentalCoroutinesApi::class)
 class HomepageThumbnails(
     private val context: Context,
     private val store: BrowserStore,

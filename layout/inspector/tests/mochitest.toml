@@ -1,5 +1,6 @@
 [DEFAULT]
 prefs = [
+  "layout.css.at-scope.enabled=true",
   "layout.css.basic-shape-rect.enabled=true",
   "layout.css.basic-shape-shape.enabled=true",
   "layout.css.basic-shape-xywh.enabled=true",
@@ -91,6 +92,8 @@ skip-if = ["os == 'android'"]
 ["test_rgba_to_color_name.html"]
 
 ["test_selectormatcheselement.html"]
+
+["test_selectormatcheselement_scope.html"]
 
 ["test_supports.html"]
 

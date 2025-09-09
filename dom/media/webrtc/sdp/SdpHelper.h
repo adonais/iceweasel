@@ -7,16 +7,14 @@
 #ifndef _SDPHELPER_H_
 #define _SDPHELPER_H_
 
-#include "nsError.h"
-
-#include "sdp/SdpMediaSection.h"
-#include "sdp/SdpAttribute.h"
-
-#include "transport/m_cpp_utils.h"
-
-#include <string>
 #include <map>
+#include <string>
 #include <vector>
+
+#include "nsError.h"
+#include "sdp/SdpAttribute.h"
+#include "sdp/SdpMediaSection.h"
+#include "transport/m_cpp_utils.h"
 
 namespace mozilla {
 class SdpMediaSection;

@@ -71,9 +71,5 @@ add_task(async function () {
     "#00F background color is set."
   );
 
-  is(
-    propEditor.warning.hidden,
-    true,
-    "warning icon is hidden after cancelling the edit"
-  );
+  ok(!propEditor.warning, "warning icon is hidden after cancelling the edit");
 });

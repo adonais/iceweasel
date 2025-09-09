@@ -736,3 +736,27 @@ addAccessibleTask(
     is(combobox.childCount, 1, "combobox has listbox");
   }
 );
+
+/**
+ * Test relocating a child within its parent while also moving the caret. This
+ * is based on a fuzzing test case.
+ */
+addAccessibleTask(
+  `
+<address id="a" contenteditable="true"></address>
+AAAAAAAA
+<label>
+  `,
+  async function testRelocateChildWithCaretMove(browser, docAcc) {
+    let moved = waitForEvent(EVENT_TEXT_CARET_MOVED, docAcc);
+    await invokeContentTask(browser, [], () => {
+      content.document.body.setAttribute("aria-owns", "a");
+      content.getSelection().selectAllChildren(content.document.body);
+      content.document.documentElement.style.display = "none";
+      content.document.documentElement.getBoundingClientRect();
+      content.document.documentElement.style.display = "";
+      content.getSelection().modify("extend", "right", "line");
+    });
+    await moved;
+  }
+);

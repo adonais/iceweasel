@@ -114,6 +114,62 @@ function validateFeatureValueEnum({ branch }) {
   }
 }
 
+const NimbusLogging = {
+  LOG_LEVEL_PREF: "messaging-system.log",
+
+  originalLogLevel: null,
+  outstandingResets: 0,
+
+  /**
+   * Enable logging, setting the log level to `all`.
+   *
+   * This function may be called multiple times and
+   * {@link NimbusLogging.maybeResetLogLevel} must be called the same number of
+   * time to reset the log level. This ensures that tests that call
+   * {@link NimbusTestUtils.enroll} et al. multiple times do not reset the log
+   * level until every cleanup handler is called.
+   */
+  enableLogging() {
+    if (this.outstandingResets == 0) {
+      if (
+        Services.prefs.getPrefType(this.LOG_LEVEL_PREF) !=
+        Ci.nsIPrefBranch.PREF_INVALID
+      ) {
+        this.originalLogLevel = Services.prefs.getStringPref(
+          this.LOG_LEVEL_PREF
+        );
+      }
+      Services.prefs.setStringPref(this.LOG_LEVEL_PREF, "all");
+    }
+
+    this.outstandingResets += 1;
+  },
+
+  /**
+   * Reset the log level.
+   *
+   * This function must be called once for each call to
+   * {@link NimbusLogging.enableLogging}.
+   */
+  maybeResetLogLevel() {
+    if (this.outstandingResets > 0) {
+      this.outstandingResets -= 1;
+
+      if (this.outstandingResets == 0) {
+        if (this.originalLogLevel !== null) {
+          Services.prefs.setStringPref(
+            this.LOG_LEVEL_PREF,
+            this.originalLogLevel
+          );
+        } else {
+          Services.prefs.clearUserPref(this.LOG_LEVEL_PREF);
+        }
+        this.originalLogLevel = null;
+      }
+    }
+  },
+};
+
 let _testSuite = null;
 
 export const NimbusTestUtils = {
@@ -753,8 +809,6 @@ export const NimbusTestUtils = {
    *                 if the recipe fails to enroll.
    */
   async enroll(recipe, { manager, source = "nimbus-test-utils" } = {}) {
-    const experimentManager = manager ?? ExperimentAPI.manager;
-
     if (!recipe?.slug) {
       throw new Error("Experiment with slug is required");
     }
@@ -767,6 +821,9 @@ export const NimbusTestUtils = {
       }
     }
 
+    NimbusLogging.enableLogging();
+
+    const experimentManager = manager ?? ExperimentAPI.manager;
     await experimentManager.store.ready();
 
     const enrollment = await experimentManager.enroll(recipe, source);
@@ -782,6 +839,8 @@ export const NimbusTestUtils = {
       experimentManager.store._deleteForTests(enrollment.slug);
 
       await NimbusTestUtils.flushStore(experimentManager.store);
+
+      NimbusLogging.maybeResetLogLevel();
     };
   },
 
@@ -1092,6 +1151,8 @@ export const NimbusTestUtils = {
     features,
     migrationState,
   } = {}) {
+    NimbusLogging.enableLogging();
+
     const sandbox = lazy.sinon.createSandbox();
 
     let cleanupFeatures = null;
@@ -1145,6 +1206,8 @@ export const NimbusTestUtils = {
 
         // Remove all migration state.
         Services.prefs.deleteBranch("nimbus.migrations.");
+
+        NimbusLogging.maybeResetLogLevel();
       },
     };
 

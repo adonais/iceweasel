@@ -53,8 +53,7 @@ bool DisplayItemClip::MayIntersect(const nsRect& aRect) const {
   if (r.IsEmpty()) {
     return false;
   }
-  for (uint32_t i = 0; i < mRoundedClipRects.Length(); ++i) {
-    const RoundedRect& rr = mRoundedClipRects[i];
+  for (const RoundedRect& rr : mRoundedClipRects) {
     if (!nsLayoutUtils::RoundedRectIntersectsRect(rr.mRect, rr.mRadii, r)) {
       return false;
     }
@@ -142,8 +141,7 @@ nsRect DisplayItemClip::ApproximateIntersectInward(const nsRect& aRect) const {
   if (mHaveClipRect) {
     r.IntersectRect(r, mClipRect);
   }
-  for (uint32_t i = 0, iEnd = mRoundedClipRects.Length(); i < iEnd; ++i) {
-    const RoundedRect& rr = mRoundedClipRects[i];
+  for (const RoundedRect& rr : mRoundedClipRects) {
     nsRegion rgn =
         nsLayoutUtils::RoundedRectIntersectRect(rr.mRect, rr.mRadii, r);
     r = rgn.GetLargestRectangle();

@@ -80,6 +80,9 @@
 
 label {
   line-height: 1.8em;
+  & + input {
+    margin-inline-start: 1em;
+  }
 }
 
 input[type="text"] {

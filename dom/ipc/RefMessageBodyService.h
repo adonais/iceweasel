@@ -8,6 +8,7 @@
 #define mozilla_dom_RefMessageBodyService_h
 
 #include <cstdint>
+
 #include "js/TypeDecls.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"

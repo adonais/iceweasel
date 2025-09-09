@@ -155,6 +155,29 @@ class SharedSurface {
   virtual bool IsValid() const { return true; };
 
   virtual Maybe<layers::SurfaceDescriptor> ToSurfaceDescriptor() = 0;
+
+  void BeginWrite() {
+    WaitForBufferOwnership();
+    ProducerAcquire();
+    LockProd();
+  }
+
+  void EndWrite() {
+    UnlockProd();
+    ProducerRelease();
+    Commit();
+  }
+
+  void BeginRead() {
+    WaitForBufferOwnership();
+    LockProd();
+    ProducerReadAcquire();
+  }
+
+  void EndRead() {
+    ProducerReadRelease();
+    UnlockProd();
+  }
 };
 
 // -

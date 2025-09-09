@@ -312,7 +312,7 @@ skip-if = [
 
 ["browser_markup_pagesize_02.js"]
 
-["browser_markup_pseudo_on_reload.js"]
+["browser_markup_pseudo.js"]
 
 ["browser_markup_remove_xul_attributes.js"]
 

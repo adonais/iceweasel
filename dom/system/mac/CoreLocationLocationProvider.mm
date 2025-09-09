@@ -4,25 +4,25 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsCOMPtr.h"
-#include "GeolocationPosition.h"
-#include "nsIConsoleService.h"
-#include "nsServiceManagerUtils.h"
 #include "CoreLocationLocationProvider.h"
-#include "prtime.h"
+#include "GeolocationPosition.h"
+#include "MLSFallback.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/GeolocationPositionErrorBinding.h"
 #include "mozilla/glean/DomGeolocationMetrics.h"
-#include "MLSFallback.h"
+#include "nsCOMPtr.h"
+#include "nsIConsoleService.h"
+#include "nsServiceManagerUtils.h"
+#include "prtime.h"
 
 #include <CoreLocation/CLError.h>
 #include <CoreLocation/CLLocation.h>
 #include <CoreLocation/CLLocationManager.h>
 #include <CoreLocation/CLLocationManagerDelegate.h>
 
-#include <objc/objc.h>
 #include <objc/objc-runtime.h>
+#include <objc/objc.h>
 
 #include "nsObjCExceptions.h"
 

@@ -16,36 +16,36 @@ function test() {
   let pbMenuItem;
 
   function doTest(aIsPrivateMode, aWindow, aCallback) {
-    BrowserTestUtils.browserLoaded(aWindow.gBrowser.selectedBrowser).then(
-      function () {
-        ok(aWindow.gPrivateBrowsingUI, "The gPrivateBrowsingUI object exists");
+    BrowserTestUtils.browserLoaded(aWindow.gBrowser.selectedBrowser, {
+      wantLoad: () => true,
+    }).then(function () {
+      ok(aWindow.gPrivateBrowsingUI, "The gPrivateBrowsingUI object exists");
 
-        pbMenuItem = aWindow.document.getElementById("menu_newPrivateWindow");
-        ok(pbMenuItem, "The Private Browsing menu item exists");
+      pbMenuItem = aWindow.document.getElementById("menu_newPrivateWindow");
+      ok(pbMenuItem, "The Private Browsing menu item exists");
 
-        let cmd = aWindow.document.getElementById("Tools:PrivateBrowsing");
-        isnot(
-          cmd,
-          null,
-          "XUL command object for the private browsing service exists"
-        );
+      let cmd = aWindow.document.getElementById("Tools:PrivateBrowsing");
+      isnot(
+        cmd,
+        null,
+        "XUL command object for the private browsing service exists"
+      );
 
-        is(
-          pbMenuItem.getAttribute("label"),
-          "New Private Window",
-          'The Private Browsing menu item should read "New Private Window"'
-        );
-        is(
-          PrivateBrowsingUtils.isWindowPrivate(aWindow),
-          aIsPrivateMode,
-          "PrivateBrowsingUtils should report the correct per-window private browsing status (privateBrowsing should be " +
-            aIsPrivateMode +
-            ")"
-        );
+      is(
+        pbMenuItem.getAttribute("label"),
+        "New Private Window",
+        'The Private Browsing menu item should read "New Private Window"'
+      );
+      is(
+        PrivateBrowsingUtils.isWindowPrivate(aWindow),
+        aIsPrivateMode,
+        "PrivateBrowsingUtils should report the correct per-window private browsing status (privateBrowsing should be " +
+          aIsPrivateMode +
+          ")"
+      );
 
-        aCallback();
-      }
-    );
+      aCallback();
+    });
 
     BrowserTestUtils.startLoadingURIString(
       aWindow.gBrowser.selectedBrowser,

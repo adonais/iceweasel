@@ -1,6 +1,6 @@
 use super::utils::{
-    test_get_devices_in_scope, test_ops_context_operation, test_ops_stream_operation, Scope,
-    StreamType, TestDeviceInfo, TestDeviceSwitcher,
+    test_get_devices_in_scope, test_object_id_to_devid, test_ops_context_operation,
+    test_ops_stream_operation, Scope, StreamType, TestDeviceInfo, TestDeviceSwitcher,
 };
 use super::*;
 use std::io;
@@ -227,7 +227,7 @@ fn test_stream_tester() {
                  \t'p': set input processing",
                 streams
                     .current_idx
-                    .map(|i| format!("{}", i + 1 as usize))
+                    .map(|i| format!("{}", i + 1_usize))
                     .unwrap_or(String::from("N/A")),
                 streams.len(),
             );
@@ -301,7 +301,7 @@ fn test_stream_tester() {
         let current_idx = streams.current_idx.unwrap();
         println!(
             "Current stream is {}. Select stream 1 to {} on which to apply commands:",
-            current_idx + 1 as usize,
+            current_idx + 1_usize,
             num_streams
         );
         let mut selection: Option<usize> = None;
@@ -310,7 +310,7 @@ fn test_stream_tester() {
             let _ = io::stdin().read_line(&mut input);
             assert_eq!(input.pop().unwrap(), '\n');
             selection = match input.parse::<usize>() {
-                Ok(i) if (1..=num_streams).contains((&i).into()) => Some(i),
+                Ok(i) if (1..=num_streams).contains(&i) => Some(i),
                 _ => {
                     println!("Invalid stream. Select again.\n");
                     None
@@ -552,7 +552,7 @@ fn test_stream_tester() {
             return;
         }
         unsafe {
-            OPS.stream_destroy.unwrap()((*stream).stream_ptr);
+            OPS.stream_destroy.unwrap()(stream.stream_ptr);
         }
         println!("Stream {:p} destroyed.", stream.stream_ptr);
         stream.stream_ptr = ptr::null_mut();
@@ -654,6 +654,7 @@ fn test_stream_tester() {
                 ptr::null_mut(),
             )
         };
+        let input_device = test_object_id_to_devid(context_ptr, input_device, DeviceType::INPUT);
 
         let (output_device, output_stream_params) = if stream_type.contains(StreamType::OUTPUT) {
             (
@@ -666,6 +667,7 @@ fn test_stream_tester() {
                 ptr::null_mut(),
             )
         };
+        let output_device = test_object_id_to_devid(context_ptr, output_device, DeviceType::OUTPUT);
 
         let stream_name = CString::new("stream tester").unwrap();
 
@@ -772,7 +774,7 @@ fn test_stream_tester() {
 #[test]
 fn test_tone() {
     let devices = test_get_devices_in_scope(Scope::Output);
-    for (_, device) in devices.iter().enumerate() {
+    for device in devices.iter() {
         let info = TestDeviceInfo::new(*device, Scope::Output);
         let mut pa = AudioObjectPropertyAddress::default();
         pa.mSelector = kAudioDevicePropertyPreferredChannelsForStereo;
@@ -780,7 +782,7 @@ fn test_tone() {
         pa.mElement = kAudioObjectPropertyElementMaster;
         get_serial_queue_singleton().run_sync(|| {
             let mut ssize: usize = 8;
-            let mut value = [0 as u32; 2];
+            let mut value = [0_u32; 2];
             let r = audio_object_get_property_data(*device, &pa, &mut ssize, &mut value);
             if r != 0 {
                 eprintln!("Error getting prop data");

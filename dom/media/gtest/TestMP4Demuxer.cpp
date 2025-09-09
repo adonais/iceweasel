@@ -3,16 +3,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
 #include "MP4Demuxer.h"
-#include "mozilla/MozPromise.h"
 #include "MediaDataDemuxer.h"
-#include "mozilla/SharedThreadPool.h"
-#include "mozilla/TaskQueue.h"
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/Unused.h"
 #include "MockMediaResource.h"
 #include "VideoUtils.h"
+#include "gtest/gtest.h"
+#include "mozilla/ArrayUtils.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/SharedThreadPool.h"
+#include "mozilla/TaskQueue.h"
+#include "mozilla/Unused.h"
 
 using namespace mozilla;
 using media::TimeUnit;

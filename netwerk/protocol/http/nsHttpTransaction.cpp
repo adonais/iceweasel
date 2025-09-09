@@ -3702,20 +3702,25 @@ bool nsHttpTransaction::AllowedToConnectToIpAddressSpace(
   // for private network access
   // XXX add link to LNA spec once it is published
 
-  if (mozilla::net::IsLocalNetworkAccess(mParentIPAddressSpace,
-                                         aTargetIpAddressSpace)) {
+  if (mozilla::net::IsLocalOrPrivateNetworkAccess(mParentIPAddressSpace,
+                                                  aTargetIpAddressSpace)) {
     if (aTargetIpAddressSpace == nsILoadInfo::IPAddressSpace::Local &&
         mLnaPermissionStatus.mLocalHostPermission == LNAPermission::Denied) {
       return false;
     }
+
     if (aTargetIpAddressSpace == nsILoadInfo::IPAddressSpace::Private &&
         mLnaPermissionStatus.mLocalNetworkPermission == LNAPermission::Denied) {
       return false;
     }
 
-    if (StaticPrefs::network_lna_blocking()) {
-      // If LNA blocking is enabled, we block any LNA requests. Currently we
-      // should hit this case for tests
+    if ((StaticPrefs::network_lna_blocking() ||
+         StaticPrefs::network_lna_block_trackers()) &&
+        (mLnaPermissionStatus.mLocalHostPermission == LNAPermission::Pending) &&
+        (mLnaPermissionStatus.mLocalNetworkPermission ==
+         LNAPermission::Pending)) {
+      // If LNA prompts are enabled or tracker blocking is enabled we disallow
+      // requests
       return false;
     }
   }

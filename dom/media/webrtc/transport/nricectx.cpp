@@ -43,23 +43,23 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vector>
 
-#include "nr_socket_proxy_config.h"
-#include "nsXULAppAPI.h"
-
+#include "ScopedNSSTypes.h"
 #include "logging.h"
-#include "pk11pub.h"
-#include "plbase64.h"
-
+#include "mozilla/Preferences.h"
+#include "nr_socket_proxy_config.h"
 #include "nsCOMPtr.h"
 #include "nsError.h"
+#include "nsIUUIDGenerator.h"
 #include "nsNetCID.h"
 #include "nsServiceManagerUtils.h"
-#include "ScopedNSSTypes.h"
+#include "nsXULAppAPI.h"
+#include "pk11pub.h"
+#include "plbase64.h"
 #include "runnable_utils.h"
-#include "nsIUUIDGenerator.h"
 
 // nICEr includes
 extern "C" {
+// clang-format off
 #include "nr_api.h"
 #include "registry.h"
 #include "async_timer.h"
@@ -75,12 +75,13 @@ extern "C" {
 #include "ice_codeword.h"
 #include "ice_ctx.h"
 #include "ice_candidate.h"
+// clang-format on
 }
 
 // Local includes
+#include "nr_socket_prsock.h"
 #include "nricectx.h"
 #include "nricemediastream.h"
-#include "nr_socket_prsock.h"
 #include "nrinterfaceprioritizer.h"
 #include "rlogconnector.h"
 #include "test_nr_socket.h"
@@ -299,6 +300,14 @@ nsresult NrIceCtx::SetIceConfig(const Config& aConfig) {
       nr_ice_ctx_remove_flags(ctx_, NR_ICE_CTX_FLAGS_DISABLE_HOST_CANDIDATES);
       nr_ice_ctx_remove_flags(ctx_, NR_ICE_CTX_FLAGS_RELAY_ONLY);
       break;
+  }
+
+  if (config_.mAllowLoopback) {
+    nr_ice_ctx_add_flags(ctx_, NR_ICE_CTX_FLAGS_ALLOW_LOOPBACK);
+  }
+
+  if (config_.mAllowLinkLocal) {
+    nr_ice_ctx_add_flags(ctx_, NR_ICE_CTX_FLAGS_ALLOW_LINK_LOCAL);
   }
 
   // TODO: Support re-configuring the test NAT someday?
@@ -572,13 +581,6 @@ void NrIceCtx::InitializeGlobals(const GlobalConfig& aConfig) {
 
     NR_reg_set_char((char*)NR_ICE_REG_ICE_TCP_DISABLE, !aConfig.mTcpEnabled);
 
-    if (aConfig.mAllowLoopback) {
-      NR_reg_set_char((char*)NR_STUN_REG_PREF_ALLOW_LOOPBACK_ADDRS, 1);
-    }
-
-    if (aConfig.mAllowLinkLocal) {
-      NR_reg_set_char((char*)NR_STUN_REG_PREF_ALLOW_LINK_LOCAL_ADDRS, 1);
-    }
     if (!aConfig.mForceNetInterface.Length()) {
       NR_reg_set_string((char*)NR_ICE_REG_PREF_FORCE_INTERFACE_NAME,
                         const_cast<char*>(aConfig.mForceNetInterface.get()));
@@ -654,6 +656,7 @@ bool NrIceCtx::Initialize() {
   int r;
 
   UINT4 flags = NR_ICE_CTX_FLAGS_AGGRESSIVE_NOMINATION;
+
   r = nr_ice_ctx_create(const_cast<char*>(name_.c_str()), flags,
                         ice_gather_handler_, &ctx_);
 

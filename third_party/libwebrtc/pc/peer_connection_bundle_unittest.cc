@@ -88,7 +88,7 @@ using ::testing::Values;
 
 class FakeNetworkManagerWithNoAnyNetwork : public FakeNetworkManager {
  public:
-  std::vector<const rtc::Network*> GetAnyAddressNetworks() override {
+  std::vector<const Network*> GetAnyAddressNetworks() override {
     // This function allocates networks that are owned by the
     // NetworkManager. But some tests assume that they can release
     // all networks independent of the network manager.
@@ -123,12 +123,11 @@ class PeerConnectionWrapperForBundleTest : public PeerConnectionWrapper {
     return (voice_channel() ? voice_channel()->rtp_transport() : nullptr);
   }
 
-  cricket::VoiceChannel* voice_channel() {
+  VoiceChannel* voice_channel() {
     auto transceivers = GetInternalPeerConnection()->GetTransceiversInternal();
     for (const auto& transceiver : transceivers) {
       if (transceiver->media_type() == webrtc::MediaType::AUDIO) {
-        return static_cast<cricket::VoiceChannel*>(
-            transceiver->internal()->channel());
+        return static_cast<VoiceChannel*>(transceiver->internal()->channel());
       }
     }
     return nullptr;
@@ -138,12 +137,11 @@ class PeerConnectionWrapperForBundleTest : public PeerConnectionWrapper {
     return (video_channel() ? video_channel()->rtp_transport() : nullptr);
   }
 
-  cricket::VideoChannel* video_channel() {
+  VideoChannel* video_channel() {
     auto transceivers = GetInternalPeerConnection()->GetTransceiversInternal();
     for (const auto& transceiver : transceivers) {
       if (transceiver->media_type() == webrtc::MediaType::VIDEO) {
-        return static_cast<cricket::VideoChannel*>(
-            transceiver->internal()->channel());
+        return static_cast<VideoChannel*>(transceiver->internal()->channel());
       }
     }
     return nullptr;
@@ -232,9 +230,8 @@ class PeerConnectionBundleBaseTest : public ::testing::Test {
 
     auto observer = std::make_unique<MockPeerConnectionObserver>();
     RTCConfiguration modified_config = config;
-    modified_config.set_port_allocator_flags(
-        cricket::PORTALLOCATOR_DISABLE_TCP |
-        cricket::PORTALLOCATOR_DISABLE_RELAY);
+    modified_config.set_port_allocator_flags(PORTALLOCATOR_DISABLE_TCP |
+                                             PORTALLOCATOR_DISABLE_RELAY);
     modified_config.sdp_semantics = sdp_semantics_;
     auto result = pc_factory->CreatePeerConnectionOrError(
         modified_config, PeerConnectionDependencies(observer.get()));
@@ -263,8 +260,8 @@ class PeerConnectionBundleBaseTest : public ::testing::Test {
 
   Candidate CreateLocalUdpCandidate(const SocketAddress& address) {
     Candidate candidate;
-    candidate.set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
-    candidate.set_protocol(cricket::UDP_PROTOCOL_NAME);
+    candidate.set_component(ICE_CANDIDATE_COMPONENT_DEFAULT);
+    candidate.set_protocol(UDP_PROTOCOL_NAME);
     candidate.set_address(address);
     return candidate;
   }
@@ -289,7 +286,7 @@ class PeerConnectionBundleTestUnifiedPlan
 };
 
 SdpContentMutator RemoveRtcpMux() {
-  return [](ContentInfo* content, cricket::TransportInfo* transport) {
+  return [](ContentInfo* content, TransportInfo* transport) {
     content->media_description()->set_rtcp_mux(false);
   };
 }
@@ -333,12 +330,12 @@ TEST_P(PeerConnectionBundleTest,
               IsRtcOk());
   EXPECT_THAT(
       GetCandidateComponents(caller->observer()->GetCandidatesByMline(0)),
-      UnorderedElementsAre(cricket::ICE_CANDIDATE_COMPONENT_RTP,
-                           cricket::ICE_CANDIDATE_COMPONENT_RTCP));
+      UnorderedElementsAre(ICE_CANDIDATE_COMPONENT_RTP,
+                           ICE_CANDIDATE_COMPONENT_RTCP));
   EXPECT_THAT(
       GetCandidateComponents(caller->observer()->GetCandidatesByMline(1)),
-      UnorderedElementsAre(cricket::ICE_CANDIDATE_COMPONENT_RTP,
-                           cricket::ICE_CANDIDATE_COMPONENT_RTCP));
+      UnorderedElementsAre(ICE_CANDIDATE_COMPONENT_RTP,
+                           ICE_CANDIDATE_COMPONENT_RTCP));
 
   // Check that callee has separate RTP and RTCP candidates for each media.
   EXPECT_THAT(WaitUntil([&] { return callee->IsIceGatheringDone(); },
@@ -346,12 +343,12 @@ TEST_P(PeerConnectionBundleTest,
               IsRtcOk());
   EXPECT_THAT(
       GetCandidateComponents(callee->observer()->GetCandidatesByMline(0)),
-      UnorderedElementsAre(cricket::ICE_CANDIDATE_COMPONENT_RTP,
-                           cricket::ICE_CANDIDATE_COMPONENT_RTCP));
+      UnorderedElementsAre(ICE_CANDIDATE_COMPONENT_RTP,
+                           ICE_CANDIDATE_COMPONENT_RTCP));
   EXPECT_THAT(
       GetCandidateComponents(callee->observer()->GetCandidatesByMline(1)),
-      UnorderedElementsAre(cricket::ICE_CANDIDATE_COMPONENT_RTP,
-                           cricket::ICE_CANDIDATE_COMPONENT_RTCP));
+      UnorderedElementsAre(ICE_CANDIDATE_COMPONENT_RTP,
+                           ICE_CANDIDATE_COMPONENT_RTCP));
 }
 
 // Test that there is 1 local UDP candidate for both RTP and RTCP for each media
@@ -702,12 +699,12 @@ TEST_P(PeerConnectionBundleTest, BundleOnFirstMidInAnswer) {
 
   auto answer = callee->CreateAnswer();
   auto* old_bundle_group =
-      answer->description()->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
+      answer->description()->GetGroupByName(GROUP_TYPE_BUNDLE);
   std::string first_mid = old_bundle_group->content_names()[0];
   std::string second_mid = old_bundle_group->content_names()[1];
-  answer->description()->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  answer->description()->RemoveGroupByName(GROUP_TYPE_BUNDLE);
 
-  ContentGroup new_bundle_group(cricket::GROUP_TYPE_BUNDLE);
+  ContentGroup new_bundle_group(GROUP_TYPE_BUNDLE);
   new_bundle_group.AddContentName(second_mid);
   new_bundle_group.AddContentName(first_mid);
   answer->description()->AddGroup(new_bundle_group);
@@ -792,10 +789,10 @@ TEST_P(PeerConnectionBundleTest, RejectDescriptionChangingBundleTag) {
 
   // Create a new bundle-group with different bundled_mid.
   auto* old_bundle_group =
-      offer->description()->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
+      offer->description()->GetGroupByName(GROUP_TYPE_BUNDLE);
   std::string first_mid = old_bundle_group->content_names()[0];
   std::string second_mid = old_bundle_group->content_names()[1];
-  ContentGroup new_bundle_group(cricket::GROUP_TYPE_BUNDLE);
+  ContentGroup new_bundle_group(GROUP_TYPE_BUNDLE);
   new_bundle_group.AddContentName(second_mid);
 
   auto re_offer = CloneSessionDescription(offer.get());
@@ -804,14 +801,14 @@ TEST_P(PeerConnectionBundleTest, RejectDescriptionChangingBundleTag) {
   // Reject the first MID.
   answer->description()->contents()[0].rejected = true;
   // Remove the first MID from the bundle group.
-  answer->description()->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  answer->description()->RemoveGroupByName(GROUP_TYPE_BUNDLE);
   answer->description()->AddGroup(new_bundle_group);
   // The answer is expected to be rejected.
   EXPECT_FALSE(caller->SetRemoteDescription(std::move(answer)));
 
   // Do the same thing for re-offer.
   re_offer->description()->contents()[0].rejected = true;
-  re_offer->description()->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  re_offer->description()->RemoveGroupByName(GROUP_TYPE_BUNDLE);
   re_offer->description()->AddGroup(new_bundle_group);
   // The re-offer is expected to be rejected.
   EXPECT_FALSE(caller->SetLocalDescription(std::move(re_offer)));
@@ -832,17 +829,17 @@ TEST_P(PeerConnectionBundleTest, RemovingContentAndRejectBundleGroup) {
 
   // Removing the second MID from the BUNDLE group.
   auto* old_bundle_group =
-      offer->description()->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
+      offer->description()->GetGroupByName(webrtc::GROUP_TYPE_BUNDLE);
   std::string first_mid = old_bundle_group->content_names()[0];
   std::string third_mid = old_bundle_group->content_names()[2];
-  cricket::ContentGroup new_bundle_group(cricket::GROUP_TYPE_BUNDLE);
+  webrtc::ContentGroup new_bundle_group(webrtc::GROUP_TYPE_BUNDLE);
   new_bundle_group.AddContentName(first_mid);
   new_bundle_group.AddContentName(third_mid);
 
   // Reject the entire new bundle group.
   re_offer->description()->contents()[0].rejected = true;
   re_offer->description()->contents()[2].rejected = true;
-  re_offer->description()->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  re_offer->description()->RemoveGroupByName(webrtc::GROUP_TYPE_BUNDLE);
   re_offer->description()->AddGroup(new_bundle_group);
 
   EXPECT_TRUE(caller->SetLocalDescription(std::move(re_offer)));
@@ -859,9 +856,9 @@ TEST_P(PeerConnectionBundleTest, AddContentToBundleGroupInAnswerNotSupported) {
   const auto first_mid = offer->description()->contents()[0].mid();
   const auto second_mid = offer->description()->contents()[1].mid();
 
-  ContentGroup bundle_group(cricket::GROUP_TYPE_BUNDLE);
+  ContentGroup bundle_group(GROUP_TYPE_BUNDLE);
   bundle_group.AddContentName(first_mid);
-  offer->description()->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  offer->description()->RemoveGroupByName(GROUP_TYPE_BUNDLE);
   offer->description()->AddGroup(bundle_group);
   EXPECT_TRUE(
       caller->SetLocalDescription(CloneSessionDescription(offer.get())));
@@ -869,7 +866,7 @@ TEST_P(PeerConnectionBundleTest, AddContentToBundleGroupInAnswerNotSupported) {
 
   auto answer = callee->CreateAnswer();
   bundle_group.AddContentName(second_mid);
-  answer->description()->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  answer->description()->RemoveGroupByName(GROUP_TYPE_BUNDLE);
   answer->description()->AddGroup(bundle_group);
 
   // The answer is expected to be rejected because second mid is not in the
@@ -884,9 +881,9 @@ TEST_P(PeerConnectionBundleTest, RejectBundleGroupWithNonExistingMid) {
 
   auto offer = caller->CreateOffer();
   auto invalid_bundle_group =
-      *offer->description()->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
+      *offer->description()->GetGroupByName(GROUP_TYPE_BUNDLE);
   invalid_bundle_group.AddContentName("non-existing-MID");
-  offer->description()->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  offer->description()->RemoveGroupByName(GROUP_TYPE_BUNDLE);
   offer->description()->AddGroup(invalid_bundle_group);
 
   EXPECT_FALSE(
@@ -909,9 +906,9 @@ TEST_P(PeerConnectionBundleTest, RemoveContentFromBundleGroup) {
   const auto second_mid = answer->description()->contents()[1].mid();
 
   auto invalid_bundle_group =
-      *answer->description()->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
+      *answer->description()->GetGroupByName(GROUP_TYPE_BUNDLE);
   invalid_bundle_group.RemoveContentName(second_mid);
-  answer->description()->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  answer->description()->RemoveGroupByName(GROUP_TYPE_BUNDLE);
   answer->description()->AddGroup(invalid_bundle_group);
 
   EXPECT_FALSE(
@@ -948,7 +945,7 @@ TEST_F(PeerConnectionBundleTestUnifiedPlan,
   const SessionDescriptionInterface* desc = callee->pc()->local_description();
   ASSERT_NE(nullptr, desc);
   const ContentGroup* bundle_group =
-      desc->description()->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
+      desc->description()->GetGroupByName(GROUP_TYPE_BUNDLE);
   ASSERT_NE(nullptr, bundle_group);
   EXPECT_TRUE(bundle_group->content_names().empty());
 }
@@ -964,11 +961,11 @@ TEST_F(PeerConnectionBundleTestUnifiedPlan, MultipleBundleGroups) {
   auto offer = caller->CreateOffer(RTCOfferAnswerOptions());
   // Modify the GROUP to have two BUNDLEs. We know that the MIDs will be 0,1,2,4
   // because our implementation has predictable MIDs.
-  offer->description()->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
-  ContentGroup bundle_group1(cricket::GROUP_TYPE_BUNDLE);
+  offer->description()->RemoveGroupByName(GROUP_TYPE_BUNDLE);
+  ContentGroup bundle_group1(GROUP_TYPE_BUNDLE);
   bundle_group1.AddContentName("0");
   bundle_group1.AddContentName("1");
-  ContentGroup bundle_group2(cricket::GROUP_TYPE_BUNDLE);
+  ContentGroup bundle_group2(GROUP_TYPE_BUNDLE);
   bundle_group2.AddContentName("2");
   bundle_group2.AddContentName("3");
   offer->description()->AddGroup(bundle_group1);
@@ -1028,8 +1025,8 @@ TEST_F(PeerConnectionBundleTestUnifiedPlan, AddNonBundledSection) {
   // Add a track but munge SDP so it's not part of the bundle group.
   caller->AddAudioTrack("3_audio");
   offer = caller->CreateOffer(RTCOfferAnswerOptions());
-  offer->description()->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
-  ContentGroup bundle_group(cricket::GROUP_TYPE_BUNDLE);
+  offer->description()->RemoveGroupByName(GROUP_TYPE_BUNDLE);
+  ContentGroup bundle_group(GROUP_TYPE_BUNDLE);
   bundle_group.AddContentName("0");
   bundle_group.AddContentName("1");
   offer->description()->AddGroup(bundle_group);

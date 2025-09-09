@@ -34,6 +34,7 @@ import org.junit.Test
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.FindInPageIntegration
 import org.mozilla.fenix.components.toolbar.BottomToolbarContainerView
+import org.mozilla.fenix.components.toolbar.BrowserNavigationBar
 import org.mozilla.fenix.components.toolbar.BrowserToolbarView
 import org.mozilla.fenix.components.toolbar.ToolbarContainerView
 import org.mozilla.fenix.ext.components
@@ -661,14 +662,18 @@ class BaseBrowserFragmentTest {
         val browserToolbarView = mockk<BrowserToolbarView>(relaxed = true)
         val toolbarContainerView = mockk<ToolbarContainerView>(relaxed = true)
         val bottomToolbarContainerView = mockk<BottomToolbarContainerView>()
+        val browserNavigationBar = mockk<BrowserNavigationBar>(relaxed = true)
         every { bottomToolbarContainerView.toolbarContainerView } returns toolbarContainerView
         fragment._browserToolbarView = browserToolbarView
         fragment._bottomToolbarContainerView = bottomToolbarContainerView
+        fragment.browserNavigationBar = browserNavigationBar
 
         fragment.expandBrowserView()
 
         verify { browserToolbarView.collapse() }
         verify { browserToolbarView.gone() }
+        verify { browserNavigationBar.collapse() }
+        verify { browserNavigationBar.gone() }
         verify { toolbarContainerView.collapse() }
         verify { toolbarContainerView.isVisible = false }
         val browserViewParams = swipeRefreshLayout.layoutParams as CoordinatorLayout.LayoutParams
@@ -687,9 +692,11 @@ class BaseBrowserFragmentTest {
         val browserToolbarView = mockk<BrowserToolbarView>(relaxed = true)
         val toolbarContainerView = mockk<ToolbarContainerView>(relaxed = true)
         val bottomToolbarContainerView = mockk<BottomToolbarContainerView>()
+        val browserNavigationBar = mockk<BrowserNavigationBar>(relaxed = true)
         every { bottomToolbarContainerView.toolbarContainerView } returns toolbarContainerView
         fragment._browserToolbarView = browserToolbarView
         fragment._bottomToolbarContainerView = bottomToolbarContainerView
+        fragment.browserNavigationBar = browserNavigationBar
 
         fragment.collapseBrowserView()
 
@@ -697,6 +704,7 @@ class BaseBrowserFragmentTest {
         verify { browserToolbarView.visible() }
         verify { toolbarContainerView.isVisible = true }
         verify { browserToolbarView.expand() }
+        verify { browserNavigationBar.expand() }
         verify { toolbarContainerView.expand() }
     }
 

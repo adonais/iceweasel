@@ -8,39 +8,42 @@
 
 #include "audio_thread_priority.h"
 #include "mozilla/AbstractThread.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/glean/DomMediaMetrics.h"
-#include "mozilla/ipc/FileDescriptor.h"
+#include "mozilla/Components.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/Components.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/UnderrunHandler.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/glean/DomMediaMetrics.h"
+#include "mozilla/ipc/FileDescriptor.h"
 #if defined(MOZ_SANDBOX)
 #  include "mozilla/SandboxSettings.h"
 #endif
+#include <stdint.h>
+
+#include <algorithm>
+
 #include "nsContentUtils.h"
 #include "nsDebug.h"
 #include "nsIStringBundle.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
 #include "prdtoa.h"
-#include <algorithm>
-#include <stdint.h>
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/java/GeckoAppShellWrappers.h"
 #endif
 #ifdef XP_WIN
 #  include "mozilla/mscom/EnsureMTA.h"
 #endif
-#include "audioipc2_server_ffi_generated.h"
-#include "audioipc2_client_ffi_generated.h"
 #include <cmath>
 #include <thread>
+
 #include "CallbackThreadRegistry.h"
+#include "audioipc2_client_ffi_generated.h"
+#include "audioipc2_server_ffi_generated.h"
 #include "mozilla/StaticPrefs_media.h"
 
 #define AUDIOIPC_STACK_SIZE_DEFAULT (64 * 4096)
@@ -888,6 +891,7 @@ bool EstimatedLatencyDefaultDevices(double* aMean, double* aStdDev,
   output_params.channels = 2;
   output_params.layout = CUBEB_LAYOUT_UNDEFINED;
   output_params.prefs = GetDefaultStreamPrefs(CUBEB_DEVICE_TYPE_OUTPUT);
+  output_params.input_params = CUBEB_INPUT_PROCESSING_PARAM_NONE;
 
   latencyFrames = GetCubebMTGLatencyInFrames(&output_params);
 
@@ -897,6 +901,7 @@ bool EstimatedLatencyDefaultDevices(double* aMean, double* aStdDev,
   input_params.channels = 1;
   input_params.layout = CUBEB_LAYOUT_UNDEFINED;
   input_params.prefs = GetDefaultStreamPrefs(CUBEB_DEVICE_TYPE_INPUT);
+  input_params.input_params = CUBEB_INPUT_PROCESSING_PARAM_NONE;
 
   cubeb_stream* stm;
   rv = cubeb_stream_init(handle->Context(), &stm,
@@ -966,20 +971,19 @@ bool EstimatedLatencyDefaultDevices(double* aMean, double* aStdDev,
 
 #ifdef MOZ_WIDGET_ANDROID
 int32_t AndroidGetAudioOutputSampleRate() {
-#  if defined(MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS)
-  return 44100;  // TODO: Remote value; will be handled in following patch.
-#  else
+  if (java::GeckoAppShell::IsIsolatedProcess()) {
+    return 44100;  // TODO: Remote value; will be handled in following patch.
+  }
+
   int32_t sample_rate = java::GeckoAppShell::GetAudioOutputSampleRate();
   return sample_rate;
-#  endif
 }
 int32_t AndroidGetAudioOutputFramesPerBuffer() {
-#  if defined(MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS)
-  return 512;  // TODO: Remote value; will be handled in following patch.
-#  else
+  if (java::GeckoAppShell::IsIsolatedProcess()) {
+    return 512;  // TODO: Remote value; will be handled in following patch.
+  }
   int32_t frames = java::GeckoAppShell::GetAudioOutputFramesPerBuffer();
   return frames;
-#  endif
 }
 #endif
 

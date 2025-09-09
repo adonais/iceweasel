@@ -31,7 +31,6 @@ import android.webkit.WebViewDatabase
 import androidx.core.net.toUri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.engine.system.matcher.UrlMatcher
 import mozilla.components.browser.errorpages.ErrorType
@@ -79,7 +78,6 @@ import org.robolectric.Robolectric
 import org.robolectric.annotation.Config
 import java.io.StringReader
 
-@ExperimentalCoroutinesApi // for runTest
 @RunWith(AndroidJUnit4::class)
 class SystemEngineViewTest {
 

@@ -27,7 +27,6 @@ import org.mozilla.fenix.tabstray.ui.inactivetabs.InactiveTabsList
  * @param inactiveTabsExpanded Whether the Inactive Tabs section is expanded.
  * @param displayTabsInGrid Whether the normal and private tabs should be displayed in a grid.
  * @param onTabClose Invoked when the user clicks to close a tab.
- * @param onTabMediaClick Invoked when the user interacts with a tab's media controls.
  * @param onTabClick Invoked when the user clicks on a tab.
  * @param onTabLongClick Invoked when the user long clicks a tab.
  * @param shouldShowInactiveTabsAutoCloseDialog Whether the inactive tabs auto close dialog should be displayed.
@@ -58,7 +57,6 @@ internal fun NormalTabsPage(
     inactiveTabsExpanded: Boolean,
     displayTabsInGrid: Boolean,
     onTabClose: (TabSessionState) -> Unit,
-    onTabMediaClick: (TabSessionState) -> Unit,
     onTabClick: (TabSessionState) -> Unit,
     onTabLongClick: (TabSessionState) -> Unit,
     shouldShowInactiveTabsAutoCloseDialog: (Int) -> Boolean,
@@ -124,7 +122,6 @@ internal fun NormalTabsPage(
             selectionMode = selectionMode,
             modifier = Modifier.testTag(TabsTrayTestTag.NORMAL_TABS_LIST),
             onTabClose = onTabClose,
-            onTabMediaClick = onTabMediaClick,
             onTabClick = onTabClick,
             onTabLongClick = onTabLongClick,
             header = optionalInactiveTabsHeader,

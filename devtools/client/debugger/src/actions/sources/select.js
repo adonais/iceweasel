@@ -145,6 +145,7 @@ export function selectSource(source, sourceActor) {
  */
 async function mayBeSelectMappedSource(location, keepContext, thunkArgs) {
   const { getState, dispatch } = thunkArgs;
+
   // Preserve the current source map context (original / generated)
   // when navigating to a new location.
   // i.e. if keepContext isn't manually overriden to false,
@@ -155,20 +156,38 @@ async function mayBeSelectMappedSource(location, keepContext, thunkArgs) {
   // even if that used to refer only to the generated source.
   let shouldSelectOriginalLocation =
     getShouldSelectOriginalLocation(getState());
-  if (keepContext) {
-    // Pretty print source may not be registered yet and getRelatedMapLocation may not return it.
-    // Wait for the pretty print source to be fully processed.
-    const sourceHasPrettyTab = hasPrettyTab(getState(), location.source);
-    if (
-      !location.source.isOriginal &&
-      shouldSelectOriginalLocation &&
-      sourceHasPrettyTab
-    ) {
-      // Note that prettyPrintSource has already been called a bit before when this generated source has been added
-      // but it is a slow operation and is most likely not resolved yet.
-      // prettyPrintSource uses memoization to avoid doing the operation more than once, while waiting from both callsites.
-      await dispatch(prettyPrintSource(location.source));
+
+  // Pretty print source may not be registered yet and getRelatedMapLocation may not return it.
+  // Wait for the pretty print source to be fully processed.
+  //
+  // In this case we don't follow the "should select original location",
+  // we solely follow user decision to have pretty printed the source.
+  const sourceHasPrettyTab = hasPrettyTab(getState(), location.source);
+  if (!location.source.isOriginal && sourceHasPrettyTab) {
+    // Note that prettyPrintSource has already been called a bit before when this generated source has been added
+    // but it is a slow operation and is most likely not resolved yet.
+    // prettyPrintSource uses memoization to avoid doing the operation more than once, while waiting from both callsites.
+    const prettyPrintedSource = await dispatch(
+      prettyPrintSource(location.source)
+    );
+    // If we aren't selecting a particular location line will be 0 and column be undefined,
+    // avoid calling getRelatedMapLocation which may not map to any original location.
+    if (location.line == 0 && !location.column) {
+      return {
+        shouldSelectOriginalLocation,
+        newLocation: createLocation({
+          ...location,
+          source: prettyPrintedSource,
+          line: 1,
+          column: 0,
+        }),
+      };
     }
+    location = await getRelatedMapLocation(location, thunkArgs);
+    return { shouldSelectOriginalLocation, newLocation: location };
+  }
+
+  if (keepContext) {
     if (shouldSelectOriginalLocation != location.source.isOriginal) {
       // Only try to map the location if the source is mapped:
       // - mapping from original to generated, if this is original source
@@ -276,7 +295,7 @@ export function selectLocation(
       location = createLocation({ ...location, sourceActor });
     }
 
-    if (!tabExists(getState(), source.id)) {
+    if (!tabExists(getState(), source)) {
       dispatch(addTab(source, sourceActor));
     }
     dispatch(

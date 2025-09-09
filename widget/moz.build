@@ -235,6 +235,7 @@ EXPORTS.mozilla.widget += [
     "ScreenManager.h",
     "TextRecognition.h",
     "ThemeChangeKind.h",
+    "WidgetLogging.h",
     "WidgetMessageUtils.h",
     "WindowOcclusionState.h",
 ]
@@ -256,6 +257,7 @@ UNIFIED_SOURCES += [
     "IMEData.cpp",
     "InProcessCompositorWidget.cpp",
     "InputData.cpp",
+    "NativeMenu.cpp",
     "nsAutoRollup.cpp",
     "nsBaseAppShell.cpp",
     "nsBaseClipboard.cpp",
@@ -390,6 +392,12 @@ elif toolkit == "android":
     IPDL_SOURCES = [
         "android/PCompositorWidget.ipdl",
         "android/PlatformWidgetTypes.ipdlh",
+        "headless/HeadlessWidgetTypes.ipdlh",
+    ]
+elif toolkit == "cocoa":
+    IPDL_SOURCES = [
+        "cocoa/PCompositorWidget.ipdl",
+        "cocoa/PlatformWidgetTypes.ipdlh",
         "headless/HeadlessWidgetTypes.ipdlh",
     ]
 else:

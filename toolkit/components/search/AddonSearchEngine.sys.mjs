@@ -22,8 +22,11 @@ const lazy = XPCOMUtils.declareLazy({
  * AddonSearchEngine represents a search engine defined by an add-on.
  */
 export class AddonSearchEngine extends SearchEngine {
-  // The extension ID if added by an extension.
-  _extensionID = null;
+  /**
+   * @type {string}
+   * The extension ID if added by an extension.
+   */
+  _extensionID;
 
   /**
    * Creates a AddonSearchEngine.

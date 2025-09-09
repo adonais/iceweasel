@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { Assert } from "resource://testing-common/Assert.sys.mjs";
-import { StructuredLogger } from "resource://testing-common/StructuredLog.sys.mjs";
 
 /*
  * This module implements useful utilites for interacting with the profiler,
@@ -16,6 +15,27 @@ export var ProfilerTestUtils = {
     INTERVAL: 1,
     INTERVAL_START: 2,
     INTERVAL_END: 3,
+  },
+
+  async assertProfilerInactive() {
+    if (Services.profiler.IsActive()) {
+      if (Services.env.exists("MOZ_PROFILER_STARTUP")) {
+        // If the startup profiling environment variable exists, it is likely
+        // that tests are being profiled.
+        // Stop the profiler before starting profiler tests.
+        console.log(
+          "This test starts and stops the profiler and is not compatible " +
+            "with the use of MOZ_PROFILER_STARTUP. " +
+            "Stopping the profiler before starting the test."
+        );
+        await Services.profiler.StopProfiler();
+      } else {
+        throw new Error(
+          "The profiler must not be active before starting it in a test."
+        );
+      }
+    }
+    Assert.ok(!Services.profiler.IsActive(), "The profiler is inactive.");
   },
 
   /**
@@ -45,28 +65,7 @@ export var ProfilerTestUtils = {
       activeTabId: 0,
       duration: 0,
     };
-    if (Services.profiler.IsActive()) {
-      Assert.ok(
-        Services.env.exists("MOZ_PROFILER_STARTUP"),
-        "The profiler is active at the begining of the test, " +
-          "the MOZ_PROFILER_STARTUP environment variable should be set."
-      );
-      if (Services.env.exists("MOZ_PROFILER_STARTUP")) {
-        // If the startup profiling environment variable exists, it is likely
-        // that tests are being profiled.
-        // Stop the profiler before starting profiler tests.
-        StructuredLogger.info(
-          "This test starts and stops the profiler and is not compatible " +
-            "with the use of MOZ_PROFILER_STARTUP. " +
-            "Stopping the profiler before starting the test."
-        );
-        await Services.profiler.StopProfiler();
-      } else {
-        throw new Error(
-          "The profiler must not be active before starting it in a test."
-        );
-      }
-    }
+    await this.assertProfilerInactive();
     const settings = Object.assign({}, defaultSettings, callersSettings);
     return Services.profiler.StartProfiler(
       settings.entries,

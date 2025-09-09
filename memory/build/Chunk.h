@@ -149,10 +149,10 @@ struct arena_chunk_map_t {
 // Arena chunk header.
 struct arena_chunk_t {
   // Arena that owns the chunk.
-  arena_t* arena;
+  arena_t* mArena;
 
   // Linkage for the arena's tree of dirty chunks.
-  RedBlackTreeNode<arena_chunk_t> link_dirty;
+  RedBlackTreeNode<arena_chunk_t> mLinkDirty;
 
 #ifdef MALLOC_DOUBLE_PURGE
   // If we're double-purging, we maintain a linked list of chunks which
@@ -161,17 +161,20 @@ struct arena_chunk_t {
   //
   // We're currently lazy and don't remove a chunk from this list when
   // all its madvised pages are recommitted.
-  mozilla::DoublyLinkedListElement<arena_chunk_t> chunks_madvised_elem;
+  mozilla::DoublyLinkedListElement<arena_chunk_t> mChunksMavisedElim;
 #endif
 
-  // Number of dirty pages.
-  size_t ndirty;
+  // Number of dirty pages that may be purged, the header is never counted
+  // here.
+  size_t mNumDirty = 0;
 
-  bool mIsPurging;
-  bool mDying;
+  bool mIsPurging = false;
+  bool mDying = false;
 
   // Map of pages within chunk that keeps track of free/large/small.
-  arena_chunk_map_t map[];  // Dynamically sized.
+  arena_chunk_map_t mPageMap[];  // Dynamically sized.
+
+  explicit arena_chunk_t(arena_t* aArena) : mArena(aArena) {}
 
   bool IsEmpty();
 };

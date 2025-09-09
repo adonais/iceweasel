@@ -34,7 +34,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ASRouterTargeting: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
   ASRouterTriggerListeners:
     "resource:///modules/asrouter/ASRouterTriggerListeners.sys.mjs",
-  AttributionCode: "resource:///modules/AttributionCode.sys.mjs",
+  AttributionCode:
+    "moz-src:///browser/components/attribution/AttributionCode.sys.mjs",
   BookmarksBarButton: "resource:///modules/asrouter/BookmarksBarButton.sys.mjs",
   UnstoredDownloader: "resource://services-settings/Attachments.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
@@ -42,7 +43,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/asrouter/FeatureCalloutBroker.sys.mjs",
   InfoBar: "resource:///modules/asrouter/InfoBar.sys.mjs",
   KintoHttpClient: "resource://services-common/kinto-http-client.sys.mjs",
-  MacAttribution: "resource:///modules/MacAttribution.sys.mjs",
+  MacAttribution:
+    "moz-src:///browser/components/attribution/MacAttribution.sys.mjs",
   MenuMessage: "resource:///modules/asrouter/MenuMessage.sys.mjs",
   MomentsPageHub: "resource:///modules/asrouter/MomentsPageHub.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
@@ -89,6 +91,7 @@ const DEFAULT_ALLOWLIST_HOSTS = {
 };
 // Max possible impressions cap for any message
 const MAX_MESSAGE_LIFETIME_CAP = 100;
+const SIX_MONTHS_MS = (60 * 60 * 24 * 365 * 1000) / 2; // six months in milliseconds
 
 const LOCAL_MESSAGE_PROVIDERS = {
   OnboardingMessageProvider,
@@ -692,6 +695,7 @@ export class _ASRouter {
     this._state = {
       providers: [],
       messageBlockList: [],
+      multiProfileMessageBlocklist: [],
       messageImpressions: {},
       screenImpressions: {},
       messages: [],
@@ -1246,7 +1250,11 @@ export class _ASRouter {
     }
   }
 
-  async _updateMultiprofileData() {
+  async _updateMultiprofileData(aSubject, aTopic, aSource) {
+    // Return early if sharedDb update event source is from the local profile
+    if (aSource === "local" && aTopic === MULTIPROFILE_DATA_UPDATED) {
+      return;
+    }
     // wait to ensure storage has been initialized before accessing _storage
     if (!this.initialized) {
       await this.waitForInitialized;
@@ -1375,8 +1383,7 @@ export class _ASRouter {
     if (
       message.profileScope === PROFILE_MESSAGE_SCOPE.SINGLE &&
       message.id in state.multiProfileMessageImpressions &&
-      (!(message.id in state.messageImpressions) ||
-        state.messageImpressions[message.id]?.length === 0)
+      !(message.id in state.messageImpressions)
     ) {
       return false;
     }
@@ -1387,6 +1394,7 @@ export class _ASRouter {
     const { state } = this;
     return (
       !state.messageBlockList.includes(message.id) &&
+      !state.multiProfileMessageBlocklist.includes(message.id) &&
       (!message.campaign ||
         !state.messageBlockList.includes(message.campaign)) &&
       this.hasGroupsEnabled(message.groups) &&
@@ -1721,9 +1729,19 @@ export class _ASRouter {
    *    will be cleared.
    * 2. If the item has time-bound frequency caps but no lifetime cap, any item impressions older
    *    than the longest time period will be cleared.
+   * 3. For multi-profile environments, shared message impressions are cleaned up separately and stored
+   *    in a shared database accessible across profiles.
    */
   cleanupImpressions() {
     return this.setState(state => {
+      let multiProfileMessageImpressions = {};
+      if (lazy.ASRouterTargeting.Environment.canCreateSelectableProfiles) {
+        multiProfileMessageImpressions = this._cleanupMultiProfileImpressions(
+          state,
+          state.messages,
+          "multiProfileMessageImpressions"
+        );
+      }
       const messageImpressions = this._cleanupImpressionsForItems(
         state,
         state.messages,
@@ -1734,7 +1752,12 @@ export class _ASRouter {
         state.groups,
         "groupImpressions"
       );
-      return { messageImpressions, groupImpressions };
+
+      return {
+        messageImpressions,
+        groupImpressions,
+        multiProfileMessageImpressions,
+      };
     });
   }
 
@@ -1780,6 +1803,54 @@ export class _ASRouter {
     if (needsUpdate) {
       this._storage.set(impressionsString, impressions);
     }
+    return impressions;
+  }
+
+  /** _cleanupMultiProfileImpressions - Helper for cleanupImpressions. This method handles cleanup of impression data in
+   *                                    multi-profile environments where impression data is shared across all user profiles.
+   *                                    It performs the following cleanup:
+   *                                  - For deleted/invalid items: Removes impressions older than 6 months (gradual cleanup)
+   *                                  - For items with custom frequency caps: Removes impressions older than the longest period
+   *                                  - Handles corrupted or malformed impression data
+   *                                  - Updates the shared database after each cleanup operation
+   *
+   * @param {obj} state Reference to ASRouter internal state
+   * @param {array} items are messages that we count impressions for
+   * @param {string} impressionsString Key name for entry in state where impressions are stored
+   * @returns {obj} Updated impressions object with cleaned data
+   */
+  _cleanupMultiProfileImpressions(state, items, impressionsString) {
+    const impressions = { ...state[impressionsString] };
+    const now = Date.now();
+    Object.keys(impressions).forEach(id => {
+      const [item] = items.filter(x => x.id === id);
+      // Remove impressions older than six months for items that no longer exist
+      if (!item || !item.frequency || !Array.isArray(impressions[id])) {
+        lazy.ASRouterPreferences.console.debug(
+          "_cleanupMultiProfileImpressions: removing impressions older than six months for deleted or changed item: ",
+          item
+        );
+        lazy.ASRouterPreferences.console.trace();
+        impressions[id] = impressions[id].filter(t => now - t < SIX_MONTHS_MS);
+
+        this._storage.setSharedMessageImpressions(id, impressions[id]);
+        return;
+      }
+      if (!impressions[id].length) {
+        return;
+      }
+      // We don't want to store impressions older than the longest period
+      if (item?.frequency?.custom && !item.frequency.lifetime) {
+        lazy.ASRouterPreferences.console.debug(
+          "_cleanupMultiProfileImpressions: removing impressions older than longest period for item: ",
+          item
+        );
+        impressions[id] = impressions[id].filter(
+          t => now - t < this.getLongestPeriod(item)
+        );
+        this._storage.setSharedMessageImpressions(id, impressions[id]);
+      }
+    });
     return impressions;
   }
 
@@ -1927,6 +1998,12 @@ export class _ASRouter {
     return this.setState(state => {
       const messageBlockList = [...state.messageBlockList];
       const messageImpressions = { ...state.messageImpressions };
+      const multiProfileMessageBlocklist = [
+        ...state.multiProfileMessageBlocklist,
+      ];
+      const multiProfileMessageImpressions = {
+        ...state.multiProfileMessageImpressions,
+      };
 
       idsToBlock.forEach(id => {
         const message = state.messages.find(m => m.id === id);
@@ -1934,14 +2011,33 @@ export class _ASRouter {
         if (!messageBlockList.includes(idToBlock)) {
           messageBlockList.push(idToBlock);
         }
-
         // When a message is blocked, its impressions should be cleared as well
         delete messageImpressions[id];
+        // If selectable profiles are enabled && the message has a
+        // profile scope set, block it in all profiles
+        if (
+          lazy.ASRouterTargeting.Environment.canCreateSelectableProfiles &&
+          message.profileScope === PROFILE_MESSAGE_SCOPE.SINGLE
+        ) {
+          // Update sharedDb by adding the messageId to the MessageBlocklist
+          // and deleting the messageId impressions from MessageImpressions
+          this._storage.setSharedMessageBlocked(idToBlock);
+          if (!multiProfileMessageBlocklist.includes(idToBlock)) {
+            multiProfileMessageBlocklist.push(idToBlock);
+          }
+          // Clear profile Impression of blocked messageId
+          delete multiProfileMessageImpressions[idToBlock];
+        }
       });
 
       this._storage.set("messageBlockList", messageBlockList);
       this._storage.set("messageImpressions", messageImpressions);
-      return { messageBlockList, messageImpressions };
+      return {
+        messageBlockList,
+        messageImpressions,
+        multiProfileMessageBlocklist,
+        multiProfileMessageImpressions,
+      };
     });
   }
 
@@ -1950,6 +2046,9 @@ export class _ASRouter {
 
     return this.setState(state => {
       const messageBlockList = [...state.messageBlockList];
+      const multiProfileMessageBlocklist = [
+        ...state.multiProfileMessageBlocklist,
+      ];
       idsToUnblock
         .map(id => state.messages.find(m => m.id === id))
         // Remove all `id`s from the message block list
@@ -1957,10 +2056,20 @@ export class _ASRouter {
           const idToUnblock =
             message && message.campaign ? message.campaign : message.id;
           messageBlockList.splice(messageBlockList.indexOf(idToUnblock), 1);
+          if (
+            lazy.ASRouterTargeting.Environment.canCreateSelectableProfiles &&
+            message.profileScope === PROFILE_MESSAGE_SCOPE.SINGLE
+          ) {
+            this._storage.setSharedMessageBlocked(idToUnblock, false);
+            multiProfileMessageBlocklist.splice(
+              multiProfileMessageBlocklist.indexOf(idToUnblock),
+              1
+            );
+          }
         });
 
       this._storage.set("messageBlockList", messageBlockList);
-      return { messageBlockList };
+      return { messageBlockList, multiProfileMessageBlocklist };
     });
   }
 
@@ -1980,6 +2089,10 @@ export class _ASRouter {
     const newMessageImpressions = {};
     for (let { id } of this.state.messages) {
       newMessageImpressions[id] = [];
+      // Update shared storage if needed
+      if (lazy.ASRouterTargeting.Environment.canCreateSelectableProfiles) {
+        this._storage.setSharedMessageImpressions(id, null);
+      }
     }
     // Update storage
     this._storage.set("messageImpressions", newMessageImpressions);

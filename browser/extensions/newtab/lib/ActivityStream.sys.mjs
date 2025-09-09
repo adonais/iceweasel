@@ -60,11 +60,6 @@ const REGION_INFERRED_PERSONALIZATION_CONFIG =
 const LOCALE_INFERRED_PERSONALIZATION_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.sections.personalization.inferred.locale-config";
 
-const REGION_SHORTCUTS_PERSONALIZATION_CONFIG =
-  "browser.newtabpage.activity-stream.discoverystream.shortcuts.personalization.region-config";
-const LOCALE_SHORTCUTS_PERSONALIZATION_CONFIG =
-  "browser.newtabpage.activity-stream.discoverystream.shortcuts.personalization.locale-config";
-
 const REGION_WEATHER_CONFIG =
   "browser.newtabpage.activity-stream.discoverystream.region-weather-config";
 const LOCALE_WEATHER_CONFIG =
@@ -122,13 +117,6 @@ function useInferredPersonalization({ geo, locale }) {
   return (
     csvPrefHasValue(REGION_INFERRED_PERSONALIZATION_CONFIG, geo) &&
     csvPrefHasValue(LOCALE_INFERRED_PERSONALIZATION_CONFIG, locale)
-  );
-}
-
-function useShortcutsPersonalization({ geo, locale }) {
-  return (
-    csvPrefHasValue(REGION_SHORTCUTS_PERSONALIZATION_CONFIG, geo) &&
-    csvPrefHasValue(LOCALE_SHORTCUTS_PERSONALIZATION_CONFIG, locale)
   );
 }
 
@@ -299,6 +287,20 @@ export const PREFS_CONFIG = new Map([
     {
       title:
         "Boolean flag enable layout and styling refinements for content and ad cards across different card sizes",
+      value: false,
+    },
+  ],
+  [
+    "discoverystream.merino-provider.ohttp.enabled",
+    {
+      title: "Enables the Merino requests and images sent over OHTTP",
+      value: false,
+    },
+  ],
+  [
+    "unifiedAds.ohttp.enabled",
+    {
+      title: "Enables the MARS requests and images sent over OHTTP",
       value: false,
     },
   ],
@@ -604,9 +606,16 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "newtabShortcuts.refresh",
+    "discoverystream.promoCard.enabled",
     {
-      title: "Boolean flag to change sizes and spacing of new tab shortcuts",
+      title: "Boolean flag to turn the promo card on and off",
+      value: false,
+    },
+  ],
+  [
+    "discoverystream.promoCard.visible",
+    {
+      title: "Boolean flag whether the promo card is visible or not",
       value: false,
     },
   ],
@@ -659,9 +668,16 @@ export const PREFS_CONFIG = new Map([
   [
     "discoverystream.shortcuts.personalization.enabled",
     {
-      title: "Boolean flag to enable inferred personalizaton",
-      // pref is dynamic
-      getValue: useShortcutsPersonalization,
+      title: "Boolean flag to enable shortcuts personalization",
+      value: false,
+    },
+  ],
+  [
+    "discoverystream.shortcuts.force_log.enabled",
+    {
+      title:
+        "Boolean flag to enable logging shortcuts interactions even if enabled is off",
+      value: false,
     },
   ],
   [
@@ -867,6 +883,13 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.system.enabled",
+    {
+      title: "Enables visibility of all widgets and controls to enable them",
+      value: false,
+    },
+  ],
+  [
     "widgets.lists.enabled",
     {
       title: "Enables the to-do lists widget",
@@ -874,9 +897,32 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.lists.maxLists",
+    {
+      title: "Maximum number of lists that can be created",
+      value: 10,
+    },
+  ],
+  [
+    "widgets.lists.maxListItems",
+    {
+      title:
+        "Maximum number of items that can be created on an individual list",
+      value: 100,
+    },
+  ],
+  [
     "widgets.system.lists.enabled",
     {
       title: "Enables the to-do lists widget experiment in Nimbus",
+      value: false,
+    },
+  ],
+  [
+    "widgets.lists.interaction",
+    {
+      title:
+        "Boolean flag for determining if a user has interacted with the lists widget",
       value: false,
     },
   ],
@@ -891,6 +937,21 @@ export const PREFS_CONFIG = new Map([
     "widgets.system.focusTimer.enabled",
     {
       title: "Enables the focus timer widget experiment in Nimbus",
+      value: false,
+    },
+  ],
+  [
+    "widgets.focusTimer.interaction",
+    {
+      title:
+        "Boolean flag for determining if a user has interacted with the timer widget",
+      value: false,
+    },
+  ],
+  [
+    "widgets.focusTimer.showSystemNotifications",
+    {
+      title: "Enables the focus timer widget to show system notifications",
       value: false,
     },
   ],
@@ -969,13 +1030,6 @@ export const PREFS_CONFIG = new Map([
         "Endpoint prefixes (comma-separated) that are allowed to be requested",
       value:
         "https://getpocket.cdn.mozilla.net/,https://firefox-api-proxy.cdn.mozilla.net/,https://spocs.getpocket.com/,https://merino.services.mozilla.com/,https://ads.mozilla.org/",
-    },
-  ],
-  [
-    "discoverystream.isCollectionDismissible",
-    {
-      title: "Allows Pocket story collections to be dismissed",
-      value: false,
     },
   ],
   [
@@ -1129,13 +1183,6 @@ export const PREFS_CONFIG = new Map([
       title: "Enables topic labels for discovery stream",
       // pref is dynamic
       getValue: showTopicLabels,
-    },
-  ],
-  [
-    "showRecentSaves",
-    {
-      title: "Control whether a user wants recent saves visible on Newtab",
-      value: true,
     },
   ],
   [

@@ -472,46 +472,6 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
-  PictureInPictureLauncher: {
-    parent: {
-      esModuleURI: "resource://gre/modules/PictureInPicture.sys.mjs",
-    },
-    child: {
-      esModuleURI: "resource://gre/actors/PictureInPictureChild.sys.mjs",
-      events: {
-        MozTogglePictureInPicture: { capture: true },
-      },
-    },
-
-    allFrames: true,
-  },
-
-  PictureInPicture: {
-    parent: {
-      esModuleURI: "resource://gre/modules/PictureInPicture.sys.mjs",
-    },
-    child: {
-      esModuleURI: "resource://gre/actors/PictureInPictureChild.sys.mjs",
-    },
-
-    allFrames: true,
-  },
-
-  PictureInPictureToggle: {
-    parent: {
-      esModuleURI: "resource://gre/modules/PictureInPicture.sys.mjs",
-    },
-    child: {
-      esModuleURI: "resource://gre/actors/PictureInPictureChild.sys.mjs",
-      events: {
-        UAWidgetSetupOrChange: {},
-        contextmenu: { capture: true },
-      },
-    },
-
-    allFrames: true,
-  },
-
   PopupBlocking: {
     parent: {
       esModuleURI: "resource://gre/actors/PopupBlockingParent.sys.mjs",
@@ -734,6 +694,46 @@ if (AppConstants.platform != "android") {
     },
 
     includeChrome: true,
+    allFrames: true,
+  };
+
+  JSWINDOWACTORS.PictureInPictureLauncher = {
+    parent: {
+      esModuleURI: "resource://gre/modules/PictureInPicture.sys.mjs",
+    },
+    child: {
+      esModuleURI: "resource://gre/actors/PictureInPictureChild.sys.mjs",
+      events: {
+        MozTogglePictureInPicture: { capture: true },
+      },
+    },
+
+    allFrames: true,
+  };
+
+  JSWINDOWACTORS.PictureInPicture = {
+    parent: {
+      esModuleURI: "resource://gre/modules/PictureInPicture.sys.mjs",
+    },
+    child: {
+      esModuleURI: "resource://gre/actors/PictureInPictureChild.sys.mjs",
+    },
+
+    allFrames: true,
+  };
+
+  JSWINDOWACTORS.PictureInPictureToggle = {
+    parent: {
+      esModuleURI: "resource://gre/modules/PictureInPicture.sys.mjs",
+    },
+    child: {
+      esModuleURI: "resource://gre/actors/PictureInPictureChild.sys.mjs",
+      events: {
+        UAWidgetSetupOrChange: {},
+        contextmenu: { capture: true },
+      },
+    },
+
     allFrames: true,
   };
 }

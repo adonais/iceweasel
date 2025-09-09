@@ -13,10 +13,10 @@ const {
 
 // Test the behavior rules are dynamically added
 
-const ISSUE_OUTLINE_RADIUS = {
+const ISSUE_DEPRECATED = {
   type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
-  property: "-moz-user-input",
-  url: "https://developer.mozilla.org/docs/Web/CSS/-moz-user-input",
+  property: "-moz-user-focus",
+  url: "https://developer.mozilla.org/docs/Web/CSS/-moz-user-focus",
   deprecated: true,
   experimental: false,
 };
@@ -32,7 +32,7 @@ const ISSUE_SCROLLBAR_COLOR = {
 const TEST_URI = `
   <style>
     .issue {
-      -moz-user-input: none;
+      -moz-user-focus: none;
     }
   </style>
   <body>
@@ -78,8 +78,8 @@ add_task(async function () {
     inspector,
     selectedElementPane,
     allElementsPane,
-    [ISSUE_SCROLLBAR_COLOR, ISSUE_OUTLINE_RADIUS],
-    [ISSUE_SCROLLBAR_COLOR, ISSUE_OUTLINE_RADIUS],
+    [ISSUE_SCROLLBAR_COLOR, ISSUE_DEPRECATED],
+    [ISSUE_SCROLLBAR_COLOR, ISSUE_DEPRECATED],
     async function () {
       content.document.querySelector(".test").classList.add("issue");
     }

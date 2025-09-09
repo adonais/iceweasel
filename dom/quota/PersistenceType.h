@@ -9,6 +9,7 @@
 
 #include <array>
 #include <cstdint>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/fallible.h"

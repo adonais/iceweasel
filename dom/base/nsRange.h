@@ -11,17 +11,17 @@
 #ifndef nsRange_h___
 #define nsRange_h___
 
-#include "nsCOMPtr.h"
-#include "mozilla/dom/AbstractRange.h"
-#include "mozilla/dom/StaticRange.h"
-#include "mozilla/dom/CrossShadowBoundaryRange.h"
-#include "prmon.h"
-#include "nsStubMutationObserver.h"
-#include "nsWrapperCache.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/AbstractRange.h"
+#include "mozilla/dom/CrossShadowBoundaryRange.h"
+#include "mozilla/dom/StaticRange.h"
+#include "nsCOMPtr.h"
+#include "nsStubMutationObserver.h"
+#include "nsWrapperCache.h"
+#include "prmon.h"
 
 class nsIPrincipal;
 

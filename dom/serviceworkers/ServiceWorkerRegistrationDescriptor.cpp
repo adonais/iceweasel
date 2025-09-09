@@ -6,9 +6,9 @@
 
 #include "mozilla/dom/ServiceWorkerRegistrationDescriptor.h"
 
+#include "ServiceWorkerInfo.h"
 #include "mozilla/dom/IPCServiceWorkerRegistrationDescriptor.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
-#include "ServiceWorkerInfo.h"
 
 namespace mozilla::dom {
 

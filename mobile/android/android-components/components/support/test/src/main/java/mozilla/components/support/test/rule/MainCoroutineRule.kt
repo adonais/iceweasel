@@ -20,21 +20,13 @@ import org.junit.runner.Description
 import java.util.concurrent.Executors
 
 /**
- * Create single threaded dispatcher for test environment.
- */
-@Deprecated("Use a `TestDispatcher` from the kotlinx-coroutines-test library", ReplaceWith("UnconfinedTestDispatcher()"))
-fun createTestCoroutinesDispatcher(): CoroutineDispatcher = Executors.newSingleThreadExecutor(
-    NamedThreadFactory("TestCoroutinesDispatcher"),
-).asCoroutineDispatcher()
-
-/**
  * JUnit rule to change Dispatchers.Main in coroutines.
  * This assumes no other calls to `Dispatchers.setMain` are made to override the main dispatcher.
  *
  * @param testDispatcher [TestDispatcher] for handling all coroutines execution.
  * Defaults to [UnconfinedTestDispatcher] which will eagerly enter `launch` or `async` blocks.
  */
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class) // resetMain, setMain, UnconfinedTestDispatcher
 class MainCoroutineRule(val testDispatcher: TestDispatcher = UnconfinedTestDispatcher()) : TestWatcher() {
     /**
      * Get a [TestScope] that integrates with `runTest` and can be passed as an argument

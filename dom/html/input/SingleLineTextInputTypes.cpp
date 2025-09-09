@@ -6,12 +6,12 @@
 
 #include "mozilla/dom/SingleLineTextInputTypes.h"
 
-#include "mozilla/dom/HTMLInputElement.h"
-#include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/TextUtils.h"
 #include "HTMLSplitOnSpacesTokenizer.h"
-#include "nsContentUtils.h"
+#include "mozilla/TextUtils.h"
+#include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/HTMLInputElement.h"
 #include "nsCRTGlue.h"
+#include "nsContentUtils.h"
 #include "nsIIOService.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"

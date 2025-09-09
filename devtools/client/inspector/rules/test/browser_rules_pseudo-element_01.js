@@ -13,7 +13,6 @@ add_task(async function () {
   await pushPref("dom.customHighlightAPI.enabled", true);
   await pushPref("dom.text_fragments.enabled", true);
   await pushPref("layout.css.modern-range-pseudos.enabled", true);
-  await pushPref("layout.css.details-content.enabled", true);
   await pushPref("full-screen-api.transition-duration.enter", "0 0");
   await pushPref("full-screen-api.transition-duration.leave", "0 0");
 
@@ -26,7 +25,8 @@ add_task(async function () {
   await testBottomLeft(inspector, view);
   await testParagraph(inspector, view);
   await testBody(inspector, view);
-  await testList(inspector, view);
+  await testListAfterElement(inspector, view);
+  await testListItem(inspector, view);
   await testCustomHighlight(inspector, view);
   await testSlider(inspector, view);
   await testUrlFragmentTextDirective(inspector, view);
@@ -37,15 +37,20 @@ add_task(async function () {
 
 async function testTopLeft(inspector, view) {
   const id = "#topleft";
-  const rules = await assertPseudoElementRulesNumbers(id, inspector, view, {
-    elementRules: 4,
-    firstLineRules: 2,
-    firstLetterRules: 1,
-    selectionRules: 1,
-    markerRules: 0,
-    afterRules: 1,
-    beforeRules: 2,
-  });
+  const rules = await assertPseudoElementRulesNumbersForSelector(
+    id,
+    inspector,
+    view,
+    {
+      elementRules: 4,
+      firstLineRules: 2,
+      firstLetterRules: 1,
+      selectionRules: 1,
+      markerRules: 0,
+      afterRules: 1,
+      beforeRules: 2,
+    }
+  );
 
   const gutters = assertGutters(view);
 
@@ -184,15 +189,20 @@ async function testTopLeft(inspector, view) {
 }
 
 async function testTopRight(inspector, view) {
-  await assertPseudoElementRulesNumbers("#topright", inspector, view, {
-    elementRules: 4,
-    firstLineRules: 1,
-    firstLetterRules: 1,
-    selectionRules: 0,
-    markerRules: 0,
-    beforeRules: 2,
-    afterRules: 1,
-  });
+  await assertPseudoElementRulesNumbersForSelector(
+    "#topright",
+    inspector,
+    view,
+    {
+      elementRules: 4,
+      firstLineRules: 1,
+      firstLetterRules: 1,
+      selectionRules: 0,
+      markerRules: 0,
+      beforeRules: 2,
+      afterRules: 1,
+    }
+  );
 
   const gutters = assertGutters(view);
 
@@ -211,31 +221,41 @@ async function testTopRight(inspector, view) {
 }
 
 async function testBottomRight(inspector, view) {
-  await assertPseudoElementRulesNumbers("#bottomright", inspector, view, {
-    elementRules: 4,
-    firstLineRules: 1,
-    firstLetterRules: 1,
-    selectionRules: 0,
-    markerRules: 0,
-    beforeRules: 3,
-    afterRules: 1,
-  });
+  await assertPseudoElementRulesNumbersForSelector(
+    "#bottomright",
+    inspector,
+    view,
+    {
+      elementRules: 4,
+      firstLineRules: 1,
+      firstLetterRules: 1,
+      selectionRules: 0,
+      markerRules: 0,
+      beforeRules: 3,
+      afterRules: 1,
+    }
+  );
 }
 
 async function testBottomLeft(inspector, view) {
-  await assertPseudoElementRulesNumbers("#bottomleft", inspector, view, {
-    elementRules: 4,
-    firstLineRules: 1,
-    firstLetterRules: 1,
-    selectionRules: 0,
-    markerRules: 0,
-    beforeRules: 2,
-    afterRules: 1,
-  });
+  await assertPseudoElementRulesNumbersForSelector(
+    "#bottomleft",
+    inspector,
+    view,
+    {
+      elementRules: 4,
+      firstLineRules: 1,
+      firstLetterRules: 1,
+      selectionRules: 0,
+      markerRules: 0,
+      beforeRules: 2,
+      afterRules: 1,
+    }
+  );
 }
 
 async function testParagraph(inspector, view) {
-  const rules = await assertPseudoElementRulesNumbers(
+  const rules = await assertPseudoElementRulesNumbersForSelector(
     "#bottomleft p",
     inspector,
     view,
@@ -275,35 +295,70 @@ async function testParagraph(inspector, view) {
 }
 
 async function testBody(inspector, view) {
-  await testNode("body", inspector, view);
+  await selectNode("body", inspector);
 
   const gutters = getGutters(view);
   is(gutters.length, 0, "There are no gutter headings");
 }
 
-async function testList(inspector, view) {
-  await assertPseudoElementRulesNumbers("#list", inspector, view, {
-    elementRules: 4,
-    firstLineRules: 1,
-    firstLetterRules: 1,
-    selectionRules: 0,
+async function testListAfterElement(inspector, view) {
+  // Test that ::after::marker is displayed in the pseudo element section when
+  // selecting the #list::after node.
+  const listNode = await getNodeFront("#list", inspector);
+  const listChildren = await inspector.markup.walker.children(listNode);
+  const listAfterNode = listChildren.nodes.at(-1);
+  is(
+    listAfterNode.tagName,
+    "_moz_generated_content_after",
+    "tag name is correct for #list::after"
+  );
+  await selectNode(listAfterNode, inspector);
+
+  await assertPseudoElementRulesNumbers(view, "#list::after", {
+    elementRules: 3,
     markerRules: 1,
-    beforeRules: 1,
-    afterRules: 1,
   });
+
+  Assert.deepEqual(
+    getGutters(view).map(gutter => gutter.textContent),
+    [
+      "Pseudo-elements",
+      "This Element",
+      "Inherited from ol#list",
+      "Inherited from body",
+    ],
+    "Got expected gutter headings when selecting #list::after"
+  );
+}
+
+async function testListItem(inspector, view) {
+  await assertPseudoElementRulesNumbersForSelector(
+    "#list-item",
+    inspector,
+    view,
+    {
+      elementRules: 4,
+      firstLineRules: 1,
+      firstLetterRules: 1,
+      selectionRules: 0,
+      markerRules: 1,
+      beforeRules: 1,
+      afterRules: 1,
+    }
+  );
 
   assertGutters(view);
 }
 
 async function testBackdrop(inspector, view) {
   info("Test ::backdrop for dialog element");
-  await assertPseudoElementRulesNumbers("dialog", inspector, view, {
+  await assertPseudoElementRulesNumbersForSelector("dialog", inspector, view, {
     elementRules: 3,
     backdropRules: 1,
   });
 
   info("Test ::backdrop for popover element");
-  await assertPseudoElementRulesNumbers(
+  await assertPseudoElementRulesNumbersForSelector(
     "#in-dialog[popover]",
     inspector,
     view,
@@ -343,7 +398,7 @@ async function testBackdrop(inspector, view) {
   });
   await onInspectorUpdated;
 
-  await assertPseudoElementRulesNumbers("canvas", inspector, view, {
+  await assertPseudoElementRulesNumbersForSelector("canvas", inspector, view, {
     elementRules: 3,
     backdropRules: 1,
   });
@@ -365,14 +420,14 @@ async function testBackdrop(inspector, view) {
   info(
     "Test ::backdrop rules are not displayed when elements are not fullscreen"
   );
-  await assertPseudoElementRulesNumbers("canvas", inspector, view, {
+  await assertPseudoElementRulesNumbersForSelector("canvas", inspector, view, {
     elementRules: 3,
     backdropRules: 0,
   });
 }
 
 async function testCustomHighlight(inspector, view) {
-  const { highlightRules } = await assertPseudoElementRulesNumbers(
+  const { highlightRules } = await assertPseudoElementRulesNumbersForSelector(
     ".highlights-container",
     inspector,
     view,
@@ -420,7 +475,7 @@ async function testCustomHighlight(inspector, view) {
 }
 
 async function testSlider(inspector, view) {
-  await assertPseudoElementRulesNumbers(
+  await assertPseudoElementRulesNumbersForSelector(
     "input[type=range].slider",
     inspector,
     view,
@@ -436,7 +491,7 @@ async function testSlider(inspector, view) {
   info(
     "Check that ::slider-* pseudo elements are not displayed for non-range inputs"
   );
-  await assertPseudoElementRulesNumbers(
+  await assertPseudoElementRulesNumbersForSelector(
     "input[type=text].slider",
     inspector,
     view,
@@ -450,7 +505,7 @@ async function testSlider(inspector, view) {
 }
 
 async function testUrlFragmentTextDirective(inspector, view) {
-  await assertPseudoElementRulesNumbers(
+  await assertPseudoElementRulesNumbersForSelector(
     ".url-fragment-text-directives",
     inspector,
     view,
@@ -463,7 +518,7 @@ async function testUrlFragmentTextDirective(inspector, view) {
 }
 
 async function testDetailsContent(inspector, view) {
-  await assertPseudoElementRulesNumbers("details", inspector, view, {
+  await assertPseudoElementRulesNumbersForSelector("details", inspector, view, {
     // `element`, `*`, and inherited `body`
     elementRules: 3,
     detailsContentRules: 1,
@@ -482,12 +537,6 @@ function convertTextPropsToString(textProps) {
     .join("; ");
 }
 
-async function testNode(selector, inspector, view) {
-  await selectNode(selector, inspector);
-  const elementStyle = view._elementStyle;
-  return elementStyle;
-}
-
 const PSEUDO_DICT = {
   firstLineRules: "::first-line",
   firstLetterRules: "::first-letter",
@@ -504,14 +553,21 @@ const PSEUDO_DICT = {
   detailsContentRules: "::details-content",
 };
 
-async function assertPseudoElementRulesNumbers(
+async function assertPseudoElementRulesNumbersForSelector(
   selector,
   inspector,
   view,
   ruleNbs
 ) {
-  const elementStyle = await testNode(selector, inspector, view);
+  await selectNode(selector, inspector);
+  return assertPseudoElementRulesNumbers(view, selector, ruleNbs);
+}
 
+async function assertPseudoElementRulesNumbers(
+  view,
+  elementDescription,
+  ruleNbs
+) {
   // Wait for the expected pseudo classes to be displayed
   await waitFor(() =>
     Object.entries(ruleNbs).every(([key, nb]) => {
@@ -528,11 +584,11 @@ async function assertPseudoElementRulesNumbers(
   );
 
   const rules = {
-    elementRules: elementStyle.rules.filter(rule => !rule.pseudoElement),
+    elementRules: view._elementStyle.rules.filter(rule => !rule.pseudoElement),
     ...Object.fromEntries(
       Object.entries(PSEUDO_DICT).map(([key, pseudoElementSelector]) => [
         key,
-        elementStyle.rules.filter(rule =>
+        view._elementStyle.rules.filter(rule =>
           rule.pseudoElement.startsWith(pseudoElementSelector)
         ),
       ])
@@ -542,7 +598,7 @@ async function assertPseudoElementRulesNumbers(
   is(
     rules.elementRules.length,
     ruleNbs.elementRules || 0,
-    selector + " has the correct number of non pseudo element rules"
+    elementDescription + " has the correct number of non pseudo element rules"
   );
 
   // Go through all the pseudo element types and assert that we have the expected number
@@ -550,7 +606,7 @@ async function assertPseudoElementRulesNumbers(
     is(
       rules[key].length,
       ruleNbs[key] || 0,
-      `${selector} has the correct number of ${key} rules`
+      `${elementDescription} has the correct number of ${key} rules`
     );
   }
 
@@ -558,7 +614,7 @@ async function assertPseudoElementRulesNumbers(
   // as matched or unmatched
   if (
     rules.elementRules.length &&
-    elementStyle.rules.length !== rules.elementRules.length
+    view._elementStyle.rules.length !== rules.elementRules.length
   ) {
     const pseudoElementContainer = view.styleWindow.document.getElementById(
       "pseudo-elements-container"
@@ -581,7 +637,7 @@ async function assertPseudoElementRulesNumbers(
 }
 
 function getGutters(view) {
-  return view.element.querySelectorAll(".ruleview-header");
+  return Array.from(view.element.querySelectorAll(".ruleview-header"));
 }
 
 function assertGutters(view) {

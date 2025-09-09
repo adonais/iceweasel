@@ -7,11 +7,11 @@
 #include "nsDOMStringMap.h"
 
 #include "jsapi.h"
-#include "nsError.h"
-#include "nsGenericHTMLElement.h"
-#include "nsContentUtils.h"
 #include "mozilla/dom/DOMStringMapBinding.h"
 #include "mozilla/dom/MutationEventBinding.h"
+#include "nsContentUtils.h"
+#include "nsError.h"
+#include "nsGenericHTMLElement.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

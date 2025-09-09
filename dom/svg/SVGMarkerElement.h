@@ -13,9 +13,9 @@
 #include "SVGAnimatedPreserveAspectRatio.h"
 #include "SVGAnimatedViewBox.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/SVGElement.h"
 #include "mozilla/dom/SVGMarkerElementBinding.h"
-#include "mozilla/UniquePtr.h"
 
 nsresult NS_NewSVGMarkerElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);

@@ -8,8 +8,8 @@
 #define DOM_SVG_SVGSETELEMENT_H_
 
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/SVGAnimationElement.h"
 #include "mozilla/SMILSetAnimationFunction.h"
+#include "mozilla/dom/SVGAnimationElement.h"
 
 nsresult NS_NewSVGSetElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);

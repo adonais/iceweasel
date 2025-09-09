@@ -8,6 +8,7 @@
 #define mozilla_dom_localstorage_LSObject_h
 
 #include <cstdint>
+
 #include "ErrorList.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"

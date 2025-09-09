@@ -26,6 +26,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.biometric.BiometricManager
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.getSystemService
@@ -34,8 +35,6 @@ import androidx.core.view.OnApplyWindowInsetsListener
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
@@ -53,6 +52,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.appservices.places.uniffi.PlacesApiException
+import mozilla.components.browser.engine.gecko.preferences.BrowserPrefObserverIntegration
 import mozilla.components.browser.menu.view.MenuButton
 import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.browser.state.selector.findCustomTabOrSelectedTab
@@ -69,6 +69,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.thumbnails.BrowserThumbnails
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.compose.base.Divider
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.concept.engine.prompt.ShareData
@@ -154,25 +155,22 @@ import org.mozilla.fenix.ReaderViewBinding
 import org.mozilla.fenix.bindings.FindInPageBinding
 import org.mozilla.fenix.biometricauthentication.AuthenticationStatus
 import org.mozilla.fenix.biometricauthentication.BiometricAuthenticationManager
-import org.mozilla.fenix.biometricauthentication.NavigationOrigin
+import org.mozilla.fenix.bookmarks.friendlyRootTitle
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.readermode.DefaultReaderModeController
-import org.mozilla.fenix.browser.store.BrowserScreenAction.EnvironmentCleared
-import org.mozilla.fenix.browser.store.BrowserScreenAction.EnvironmentRehydrated
-import org.mozilla.fenix.browser.store.BrowserScreenMiddleware
+import org.mozilla.fenix.browser.readermode.ReaderModeController
 import org.mozilla.fenix.browser.store.BrowserScreenStore
-import org.mozilla.fenix.browser.store.BrowserScreenStore.Environment
 import org.mozilla.fenix.browser.tabstrip.TabStrip
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.FenixAutocompletePrompt
 import org.mozilla.fenix.components.FenixSuggestStrongPasswordPrompt
 import org.mozilla.fenix.components.FindInPageIntegration
-import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.components.accounts.FxaWebChannelIntegration
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.MessagingAction
 import org.mozilla.fenix.components.appstate.AppAction.MessagingAction.MicrosurveyAction
 import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.metrics.MetricsUtils.BookmarkAction.Source
 import org.mozilla.fenix.components.toolbar.BottomToolbarContainerIntegration
 import org.mozilla.fenix.components.toolbar.BottomToolbarContainerView
 import org.mozilla.fenix.components.toolbar.BrowserNavigationBar
@@ -187,7 +185,9 @@ import org.mozilla.fenix.components.toolbar.ToolbarIntegration
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.components.toolbar.interactor.BrowserToolbarInteractor
 import org.mozilla.fenix.components.toolbar.interactor.DefaultBrowserToolbarInteractor
+import org.mozilla.fenix.components.toolbar.isTallWindow
 import org.mozilla.fenix.compose.core.Action
+import org.mozilla.fenix.compose.snackbar.DefaultSnackbarFactory
 import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState
 import org.mozilla.fenix.crashes.CrashContentIntegration
@@ -204,6 +204,7 @@ import org.mozilla.fenix.ext.hideToolbar
 import org.mozilla.fenix.ext.isToolbarAtBottom
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.navigateWithBreadcrumb
+import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.registerForActivityResult
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
@@ -212,19 +213,19 @@ import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.tabClosedUndoMessage
 import org.mozilla.fenix.ext.updateMicrosurveyPromptForConfigurationChange
 import org.mozilla.fenix.home.HomeScreenViewModel
-import org.mozilla.fenix.library.bookmarks.friendlyRootTitle
-import org.mozilla.fenix.lifecycle.observePrivateModeLock
 import org.mozilla.fenix.messaging.FenixMessageSurfaceId
 import org.mozilla.fenix.messaging.MessagingFeature
 import org.mozilla.fenix.microsurvey.ui.MicrosurveyRequestPrompt
 import org.mozilla.fenix.microsurvey.ui.ext.MicrosurveyUIData
 import org.mozilla.fenix.microsurvey.ui.ext.toMicrosurveyUIData
+import org.mozilla.fenix.pbmlock.NavigationOrigin
+import org.mozilla.fenix.pbmlock.observePrivateModeLock
 import org.mozilla.fenix.perf.MarkersFragmentLifecycleCallbacks
+import org.mozilla.fenix.search.awesomebar.AwesomeBarComposable
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.biometric.BiometricPromptFeature
 import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 import org.mozilla.fenix.snackbar.SnackbarBinding
-import org.mozilla.fenix.tabstray.DefaultTabManagementFeatureHelper
 import org.mozilla.fenix.tabstray.Page
 import org.mozilla.fenix.tabstray.ext.toDisplayTitle
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -233,7 +234,6 @@ import org.mozilla.fenix.utils.allowUndo
 import org.mozilla.fenix.wifi.SitePermissionsWifiIntegration
 import java.lang.ref.WeakReference
 import kotlin.coroutines.cancellation.CancellationException
-import org.mozilla.fenix.GleanMetrics.TabStrip as TabStripMetrics
 
 /**
  * Base fragment extended by [BrowserFragment].
@@ -268,12 +268,14 @@ abstract class BaseBrowserFragment :
     @VisibleForTesting
     @Suppress("VariableNaming")
     internal var _browserToolbarView: FenixBrowserToolbarView? = null
+    private var awesomeBarComposable: AwesomeBarComposable? = null
 
     @VisibleForTesting
     internal val browserToolbarView: FenixBrowserToolbarView
         get() = _browserToolbarView!!
 
-    private var browserNavigationBar: BrowserNavigationBar? = null
+    @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
+    internal var browserNavigationBar: BrowserNavigationBar? = null
 
     @VisibleForTesting(otherwise = VisibleForTesting.PROTECTED)
     @Suppress("VariableNaming")
@@ -324,6 +326,7 @@ abstract class BaseBrowserFragment :
     private val searchFeature = ViewBoundFeatureWrapper<SearchFeature>()
     private val webAuthnFeature = ViewBoundFeatureWrapper<WebAuthnFeature>()
     private val screenOrientationFeature = ViewBoundFeatureWrapper<ScreenOrientationFeature>()
+    private val browserPrefObserverIntegration = ViewBoundFeatureWrapper<BrowserPrefObserverIntegration>()
     private val biometricPromptFeature = ViewBoundFeatureWrapper<BiometricPromptFeature>()
     private val crashContentIntegration = ViewBoundFeatureWrapper<CrashContentIntegration>()
     private val readerViewBinding = ViewBoundFeatureWrapper<ReaderViewBinding>()
@@ -443,7 +446,9 @@ abstract class BaseBrowserFragment :
             appStore = requireComponents.appStore,
             onPrivateModeLocked = {
                 findNavController().navigate(
-                    NavGraphDirections.actionGlobalUnlockPrivateTabsFragment(NavigationOrigin.TAB),
+                    NavGraphDirections.actionGlobalUnlockPrivateTabsFragment(
+                        if (customTabSessionId != null) NavigationOrigin.CUSTOM_TAB else NavigationOrigin.TAB,
+                    ),
                 )
             },
         )
@@ -643,9 +648,10 @@ abstract class BaseBrowserFragment :
 
         standardSnackbarErrorBinding.set(
             feature = StandardSnackbarErrorBinding(
-                requireActivity(),
-                binding.dynamicSnackbarContainer,
-                requireActivity().components.appStore,
+                snackbarParent = binding.dynamicSnackbarContainer,
+                appStore = requireActivity().components.appStore,
+                snackbarFactory = DefaultSnackbarFactory(),
+                dismissLabel = getString(R.string.standard_snackbar_error_dismiss),
             ),
             owner = viewLifecycleOwner,
             view = binding.root,
@@ -720,12 +726,12 @@ abstract class BaseBrowserFragment :
                     R.attr.textOnColorPrimary,
                     context,
                 ),
-                positiveButtonRadius = (resources.getDimensionPixelSize(R.dimen.tab_corner_radius)).toFloat(),
+                positiveButtonRadius = pixelSizeFor(R.dimen.tab_corner_radius).toFloat(),
             ),
-            onDownloadStartedListener = {
+            onDownloadStartedListener = { downloadId ->
                 context.components.appStore.dispatch(
                     AppAction.DownloadAction.DownloadInProgress(
-                        getCurrentTab()?.id,
+                        downloadId,
                     ),
                 )
             },
@@ -1198,6 +1204,14 @@ abstract class BaseBrowserFragment :
             view = view,
         )
 
+        browserPrefObserverIntegration.set(
+            feature = BrowserPrefObserverIntegration(
+                engine = requireComponents.core.engine,
+            ),
+            owner = this,
+            view = view,
+        )
+
         context.settings().setSitePermissionSettingListener(viewLifecycleOwner) {
             // If the user connects to WIFI while on the BrowserFragment, this will update the
             // SitePermissionsRules (specifically autoplay) accordingly
@@ -1284,62 +1298,35 @@ abstract class BaseBrowserFragment :
     private fun initializeBrowserToolbarComposable(
         activity: HomeActivity,
         store: BrowserStore,
-        readerMenuController: DefaultReaderModeController,
+        readerModeController: DefaultReaderModeController,
     ): BrowserToolbarComposable {
-        browserScreenStore = StoreProvider.get(this) {
-            BrowserScreenStore(
-                middleware = listOf(
-                    BrowserScreenMiddleware(requireComponents.analytics.crashReporter),
-                ),
-            )
-        }.also {
-            it.dispatch(
-                EnvironmentRehydrated(
-                    Environment(
-                        context = requireContext(),
-                        viewLifecycleOwner = viewLifecycleOwner,
-                        fragmentManager = childFragmentManager,
-                    ),
-                ),
-            )
-            viewLifecycleOwner.lifecycle.addObserver(
-                object : DefaultLifecycleObserver {
-                    override fun onDestroy(owner: LifecycleOwner) {
-                        it.dispatch(EnvironmentCleared)
-                    }
-                },
-            )
-        }
+        browserScreenStore = buildBrowserScreenStore()
+        val toolbarStore = buildToolbarStore(activity, readerModeController)
 
         browserNavigationBar =
              BrowserNavigationBar(
                 context = activity,
-                lifecycleOwner = this,
                 container = binding.browserLayout,
-                appStore = activity.components.appStore,
-                browserScreenStore = browserScreenStore,
+                toolbarStore = toolbarStore,
                 browserStore = store,
-                components = activity.components,
                 settings = activity.settings(),
+                hideWhenKeyboardShown = true,
                 customTabSession = customTabSessionId?.let { store.state.findCustomTab(it) },
             )
 
         return BrowserToolbarComposable(
             activity = activity,
-            lifecycleOwner = this,
             container = binding.browserLayout,
-            navController = findNavController(),
-            appStore = activity.components.appStore,
+            toolbarStore = toolbarStore,
             browserScreenStore = browserScreenStore,
+            appStore = requireComponents.appStore,
             browserStore = store,
-            components = activity.components,
-            browsingModeManager = activity.browsingModeManager,
-            browserAnimator = browserAnimator,
-            thumbnailsFeature = thumbnailsFeature.get(),
-            readerModeController = readerMenuController,
             settings = activity.settings(),
             customTabSession = customTabSessionId?.let { store.state.findCustomTab(it) },
             tabStripContent = buildTabStrip(activity),
+            searchSuggestionsContent = { modifier ->
+                (awesomeBarComposable ?: buildAwesomeBar(activity, toolbarStore, modifier)).SearchSuggestions()
+            },
             navigationBarContent = browserNavigationBar?.asComposable(),
         )
     }
@@ -1363,13 +1350,21 @@ abstract class BaseBrowserFragment :
     ): @Composable () -> Unit = {
         FirefoxTheme {
             TabStrip(
+                // Show action buttons only if the navigation bar (which has the same buttons) is not showing.
+                showActionButtons = context?.settings()?.shouldUseExpandedToolbar != true ||
+                        context?.isTallWindow() == false,
                 onAddTabClick = {
-                    findNavController().navigate(
-                        NavGraphDirections.actionGlobalHome(
-                            focusOnAddressBar = true,
-                        ),
-                    )
-                    TabStripMetrics.newTabTapped.record()
+                    if (activity.settings().enableHomepageAsNewTab) {
+                        requireComponents.useCases.fenixBrowserUseCases.addNewHomepageTab(
+                            private = activity.browsingModeManager.mode.isPrivate,
+                        )
+                    } else {
+                        findNavController().navigate(
+                            NavGraphDirections.actionGlobalHome(
+                                focusOnAddressBar = true,
+                            ),
+                        )
+                    }
                 },
                 onLastTabClose = { isPrivate ->
                     requireComponents.appStore.dispatch(
@@ -1379,17 +1374,57 @@ abstract class BaseBrowserFragment :
                         BrowserFragmentDirections.actionGlobalHome(),
                     )
                 },
-                onSelectedTabClick = {
-                    TabStripMetrics.selectTab.record()
-                },
+                onSelectedTabClick = {},
                 onCloseTabClick = { isPrivate ->
                     showUndoSnackbar(activity.tabClosedUndoMessage(isPrivate))
-                    TabStripMetrics.closeTab.record()
                 },
                 onTabCounterClick = { onTabCounterClicked(activity.browsingModeManager.mode) },
             )
         }
     }
+
+    private fun buildAwesomeBar(
+        activity: HomeActivity,
+        toolbarStore: BrowserToolbarStore,
+        modifier: Modifier,
+    ) = AwesomeBarComposable(
+        activity = activity,
+        modifier = modifier,
+        components = requireComponents,
+        appStore = requireComponents.appStore,
+        browserStore = requireComponents.core.store,
+        toolbarStore = toolbarStore,
+        navController = findNavController(),
+        lifecycleOwner = this,
+        showScrimWhenNoSuggestions = true,
+    ).also {
+        awesomeBarComposable = it
+    }
+
+    private fun buildBrowserScreenStore() = BrowserScreenStoreBuilder.build(
+        context = requireContext(),
+        lifecycleOwner = this,
+        fragmentManager = childFragmentManager,
+    )
+
+    private fun buildToolbarStore(
+        activity: HomeActivity,
+        readerModeController: ReaderModeController,
+    ) = BrowserToolbarStoreBuilder.build(
+        activity = activity,
+        lifecycleOwner = this,
+        navController = findNavController(),
+        appStore = activity.components.appStore,
+        browserStore = activity.components.core.store,
+        browserScreenStore = browserScreenStore,
+        components = activity.components,
+        browsingModeManager = activity.browsingModeManager,
+        browserAnimator = browserAnimator,
+        thumbnailsFeature = thumbnailsFeature.get(),
+        readerModeController = readerModeController,
+        settings = activity.settings(),
+        customTabSession = customTabSessionId?.let { activity.components.core.store.state.findCustomTab(it) },
+    )
 
     private fun showUndoSnackbar(message: String) {
         viewLifecycleOwner.lifecycleScope.allowUndo(
@@ -1552,7 +1587,7 @@ abstract class BaseBrowserFragment :
 
     private fun onTabCounterClicked(browsingMode: BrowsingMode) {
         thumbnailsFeature.get()?.requestScreenshot()
-        if (DefaultTabManagementFeatureHelper.enhancementsEnabled) {
+        if (requireContext().settings().tabManagerEnhancementsEnabled) {
             findNavController().nav(
                 R.id.browserFragment,
                 BrowserFragmentDirections.actionGlobalTabManagementFragment(
@@ -1582,7 +1617,7 @@ abstract class BaseBrowserFragment :
                 feature = MessagingFeature(
                     appStore = requireComponents.appStore,
                     surface = FenixMessageSurfaceId.MICROSURVEY,
-                    runWhenReadyQueue = requireComponents.performance.visualCompletenessQueue.queue,
+                    runWhenReadyQueue = requireComponents.performance.visualCompletenessQueue,
                 ),
                 owner = viewLifecycleOwner,
                 view = binding.root,
@@ -1598,9 +1633,12 @@ abstract class BaseBrowserFragment :
         val isToolbarAtBottom = context.isToolbarAtBottom()
         val browserToolbar = (browserToolbarView as? BrowserToolbarView)?.toolbar
             ?: (browserToolbarView as BrowserToolbarComposable).layout
+        val navigationBar = browserNavigationBar?.layout
         // The toolbar view has already been added directly to the container.
         if (isToolbarAtBottom) {
             binding.browserLayout.removeView(browserToolbar)
+        } else if (navigationBar != null) {
+            binding.browserLayout.removeView(navigationBar)
         }
 
         _bottomToolbarContainerView = BottomToolbarContainerView(
@@ -1646,6 +1684,8 @@ abstract class BaseBrowserFragment :
 
                         if (isToolbarAtBottom) {
                             AndroidView(factory = { _ -> browserToolbar })
+                        } else if (navigationBar != null) {
+                            AndroidView(factory = { _ -> navigationBar })
                         }
                     }
                 }
@@ -2064,7 +2104,7 @@ abstract class BaseBrowserFragment :
                     position = null,
                 )
 
-                MetricsUtils.recordBookmarkMetrics(MetricsUtils.BookmarkAction.ADD, METRIC_SOURCE)
+                MetricsUtils.recordBookmarkAddMetric(Source.PAGE_ACTION_MENU, requireComponents.nimbus.events)
                 showBookmarkSavedSnackbar(
                     message = getString(
                         R.string.bookmark_saved_in_folder_snackbar,
@@ -2073,7 +2113,7 @@ abstract class BaseBrowserFragment :
                     onClick = {
                         MetricsUtils.recordBookmarkMetrics(
                             MetricsUtils.BookmarkAction.EDIT,
-                            TOAST_METRIC_SOURCE,
+                            Source.ADD_BOOKMARK_TOAST,
                         )
                         findNavController().navigateWithBreadcrumb(
                             directions = BrowserFragmentDirections.actionGlobalBookmarkEditFragment(
@@ -2191,6 +2231,12 @@ abstract class BaseBrowserFragment :
             collapse()
             gone()
         }
+
+        browserNavigationBar?.apply {
+            collapse()
+            gone()
+        }
+
         _bottomToolbarContainerView?.toolbarContainerView?.apply {
             collapse()
             isVisible = false
@@ -2214,9 +2260,11 @@ abstract class BaseBrowserFragment :
     internal fun collapseBrowserView() {
         if (webAppToolbarShouldBeVisible) {
             browserToolbarView.visible()
+            browserNavigationBar?.visible()
             _bottomToolbarContainerView?.toolbarContainerView?.isVisible = true
             reinitializeEngineView()
             browserToolbarView.expand()
+            browserNavigationBar?.expand()
             _bottomToolbarContainerView?.toolbarContainerView?.expand()
         }
     }
@@ -2281,6 +2329,7 @@ abstract class BaseBrowserFragment :
 
         _bottomToolbarContainerView = null
         _browserToolbarView = null
+        awesomeBarComposable = null
         browserNavigationBar = null
         _browserToolbarInteractor = null
         _binding = null
@@ -2311,8 +2360,6 @@ abstract class BaseBrowserFragment :
         private const val REQUEST_CODE_DOWNLOAD_PERMISSIONS = 1
         private const val REQUEST_CODE_PROMPT_PERMISSIONS = 2
         private const val REQUEST_CODE_APP_PERMISSIONS = 3
-        private const val METRIC_SOURCE = "page_action_menu"
-        private const val TOAST_METRIC_SOURCE = "add_bookmark_toast"
         private const val LAST_SAVED_GENERATED_PASSWORD = "last_saved_generated_password"
 
         val onboardingLinksList: List<String> = listOf(

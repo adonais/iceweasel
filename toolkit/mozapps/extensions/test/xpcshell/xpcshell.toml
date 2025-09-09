@@ -189,6 +189,8 @@ skip-if = [
 ["test_recommendations.js"]
 skip-if = ["require_signing"]
 
+["test_recordException.js"]
+
 ["test_registerchrome.js"]
 
 ["test_registry.js"]
@@ -258,6 +260,8 @@ skip-if = [
   "os == 'linux'", # Bug 1613268
   "condprof", # Bug 1769184 - by design for now
 ]
+
+["test_startupTimeline.js"]
 
 ["test_startup_enable.js"]
 

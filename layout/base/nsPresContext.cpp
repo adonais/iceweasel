@@ -1070,13 +1070,11 @@ struct QueryContainerState {
     if (mType != aNewState.mType) {
       return true;
     }
-    switch (mType) {
-      case StyleContainerType::Normal:
-        break;
-      case StyleContainerType::Size:
-        return mSize != aNewState.mSize;
-      case StyleContainerType::InlineSize:
-        return GetInlineSize() != aNewState.GetInlineSize();
+    if (mType & StyleContainerType::SIZE) {
+      return mSize != aNewState.mSize;
+    }
+    if (mType & StyleContainerType::INLINE_SIZE) {
+      return GetInlineSize() != aNewState.GetInlineSize();
     }
     return false;
   }
@@ -1112,7 +1110,7 @@ bool nsPresContext::UpdateContainerQueryStyles() {
     MOZ_ASSERT(frame->IsPrimaryFrame());
 
     auto type = frame->StyleDisplay()->mContainerType;
-    MOZ_ASSERT(type != StyleContainerType::Normal,
+    MOZ_ASSERT(type != StyleContainerType::NORMAL,
                "Non-container frames shouldn't be in this set");
 
     const QueryContainerState newState{frame->GetSize(),

@@ -10,8 +10,6 @@ export {
   TOP_SITES_MAX_SITES_PER_ROW,
 } from "resource:///modules/topsites/constants.mjs";
 
-const PREF_COLLECTION_DISMISSIBLE = "discoverystream.isCollectionDismissible";
-
 const dedupe = new Dedupe(site => site && site.url);
 
 export const INITIAL_STATE = {
@@ -74,8 +72,6 @@ export const INITIAL_STATE = {
     // This is a JSON-parsed copy of the discoverystream.config pref value.
     config: { enabled: false },
     layout: [],
-    isPrivacyInfoModalVisible: false,
-    isCollectionDismissible: false,
     topicsLoading: false,
     feeds: {
       data: {
@@ -106,9 +102,7 @@ export const INITIAL_STATE = {
       utmCampaign: undefined,
       utmContent: undefined,
     },
-    recentSavesData: [],
     isUserLoggedIn: false,
-    recentSavesEnabled: false,
     showTopicSelection: false,
     report: {
       visible: false,
@@ -185,25 +179,32 @@ export const INITIAL_STATE = {
     // Default state of an empty task list
     lists: {
       taskList: {
-        label: "Task List",
+        label: "",
         tasks: [],
+        completed: [],
       },
-    },
-    // Keeping this separate from `lists` so that it isnt rendered
-    // in the same way
-    completed: {
-      label: "Completed",
-      tasks: [],
     },
   },
   TimerWidget: {
-    // Timer duration set by user
-    duration: 0,
-    // Time that the timer was started
-    startTime: null,
-    // Calculated when a user pauses the timer
-    remaining: 0,
-    isRunning: false,
+    // The timer will have 2 types of states, focus and break.
+    // Focus will the default state
+    timerType: "focus",
+    focus: {
+      // Timer duration set by user; 25 mins by default
+      duration: 25 * 60,
+      // Initial duration - also set by the user; does not update until timer ends or user resets timer
+      initialDuration: 25 * 60,
+      // the Date.now() value when a user starts/resumes a timer
+      startTime: null,
+      // Boolean indicating if timer is currently running
+      isRunning: false,
+    },
+    break: {
+      duration: 5 * 60,
+      initialDuration: 5 * 60,
+      startTime: null,
+      isRunning: false,
+    },
   },
 };
 
@@ -737,11 +738,6 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
         ...prevState,
         layout: action.data.layout || [],
       };
-    case at.DISCOVERY_STREAM_COLLECTION_DISMISSIBLE_TOGGLE:
-      return {
-        ...prevState,
-        isCollectionDismissible: action.data.value,
-      };
     case at.DISCOVERY_STREAM_TOPICS_LOADING:
       return {
         ...prevState,
@@ -750,9 +746,7 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
     case at.DISCOVERY_STREAM_PREFS_SETUP:
       return {
         ...prevState,
-        recentSavesEnabled: action.data.recentSavesEnabled,
         pocketButtonEnabled: action.data.pocketButtonEnabled,
-        saveToPocketCard: action.data.saveToPocketCard,
         hideDescriptions: action.data.hideDescriptions,
         compactImages: action.data.compactImages,
         imageGradient: action.data.imageGradient,
@@ -761,25 +755,14 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
         descLines: action.data.descLines,
         readTime: action.data.readTime,
       };
-    case at.DISCOVERY_STREAM_RECENT_SAVES:
-      return {
-        ...prevState,
-        recentSavesData: action.data.recentSaves,
-      };
     case at.DISCOVERY_STREAM_POCKET_STATE_SET:
       return {
         ...prevState,
         isUserLoggedIn: action.data.isUserLoggedIn,
       };
-    case at.HIDE_PRIVACY_INFO:
-      return {
-        ...prevState,
-        isPrivacyInfoModalVisible: false,
-      };
     case at.SHOW_PRIVACY_INFO:
       return {
         ...prevState,
-        isPrivacyInfoModalVisible: true,
       };
     case at.DISCOVERY_STREAM_LAYOUT_RESET:
       return { ...INITIAL_STATE.DiscoveryStream, config: prevState.config };
@@ -909,14 +892,6 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
         ? prevState
         : nextState(items => items.map(removeBookmarkInfo));
     }
-    case at.PREF_CHANGED:
-      if (action.data.name === PREF_COLLECTION_DISMISSIBLE) {
-        return {
-          ...prevState,
-          isCollectionDismissible: action.data.value,
-        };
-      }
-      return prevState;
     case at.TOPIC_SELECTION_SPOTLIGHT_OPEN:
       return {
         ...prevState,
@@ -1101,34 +1076,75 @@ function TrendingSearch(prevState = INITIAL_STATE.TrendingSearch, action) {
 }
 
 function TimerWidget(prevState = INITIAL_STATE.TimerWidget, action) {
+  // fallback to current timerType in state if not provided in action
+  const timerType = action.data?.timerType || prevState.timerType;
   switch (action.type) {
     case at.WIDGETS_TIMER_SET:
-      return { ...action.data };
+      return {
+        ...prevState,
+        ...action.data,
+      };
+    case at.WIDGETS_TIMER_SET_TYPE:
+      return {
+        ...prevState,
+        timerType: action.data.timerType,
+      };
     case at.WIDGETS_TIMER_SET_DURATION:
       return {
         ...prevState,
-        duration: action.data,
-        remaining: action.data,
+        [timerType]: {
+          // setting a dynamic key assignment to let us dynamically update timer type's state based on what is set
+          duration: action.data.duration,
+          initialDuration: action.data.duration,
+          startTime: null,
+          isRunning: false,
+        },
       };
-    case at.WIDGETS_TIMER_START:
-      return { ...prevState, startTime: Date.now(), isRunning: true };
+    case at.WIDGETS_TIMER_PLAY:
+      return {
+        ...prevState,
+        [timerType]: {
+          ...prevState[timerType],
+          startTime: Math.floor(Date.now() / 1000), // reflected in seconds
+          isRunning: true,
+        },
+      };
     case at.WIDGETS_TIMER_PAUSE:
-      if (prevState.isRunning) {
-        const elapsed = Date.now() - prevState.startTime;
+      if (prevState[timerType]?.isRunning) {
         return {
           ...prevState,
-          remaining: prevState.duration - elapsed,
-          isRunning: false,
-          startTime: null,
+          [timerType]: {
+            ...prevState[timerType],
+            duration: action.data.duration,
+            // setting startTime to null on pause because we need to check the exact time the user presses play,
+            // whether it's when the user starts or resumes the timer. This helps get accurate results
+            startTime: null,
+            isRunning: false,
+          },
         };
       }
-      break;
+      return prevState;
     case at.WIDGETS_TIMER_RESET:
       return {
         ...prevState,
-        isRunning: false,
-        startTime: null,
-        remaining: prevState.duration,
+        [timerType]: {
+          ...prevState[timerType],
+          duration: action.data.duration,
+          initialDuration: action.data.duration,
+          startTime: null,
+          isRunning: false,
+        },
+      };
+    case at.WIDGETS_TIMER_END:
+      return {
+        ...prevState,
+        [timerType]: {
+          ...prevState[timerType],
+          duration: action.data.duration,
+          initialDuration: action.data.duration,
+          startTime: null,
+          isRunning: false,
+        },
       };
     default:
       return prevState;
@@ -1139,7 +1155,7 @@ function ListsWidget(prevState = INITIAL_STATE.ListsWidget, action) {
   switch (action.type) {
     case at.WIDGETS_LISTS_SET:
       return { ...prevState, lists: action.data };
-    case at.WIDGETS_LISTS_CHANGE_SELECTED:
+    case at.WIDGETS_LISTS_SET_SELECTED:
       return { ...prevState, selected: action.data };
     default:
       return prevState;

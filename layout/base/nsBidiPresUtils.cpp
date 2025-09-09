@@ -1474,7 +1474,7 @@ bool nsBidiPresUtils::ChildListMayRequireBidi(nsIFrame* aFirstChild,
         dom::Text* content = frame->GetContent()->AsText();
         if (content != *aCurrContent) {
           *aCurrContent = content;
-          const nsTextFragment* txt = &content->TextFragment();
+          const dom::CharacterDataBuffer* txt = &content->DataBuffer();
           if (txt->Is2b() &&
               HasRTLChars(Span(txt->Get2b(), txt->GetLength()))) {
             return true;

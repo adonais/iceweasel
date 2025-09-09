@@ -7,7 +7,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutWelcomeParent: "resource:///actors/AboutWelcomeParent.sys.mjs",
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
-  CustomizableUI: "resource:///modules/CustomizableUI.sys.mjs",
+  CustomizableUI:
+    "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   PageEventManager: "resource:///modules/asrouter/PageEventManager.sys.mjs",
 });
 
@@ -2271,50 +2272,46 @@ export class FeatureCallout {
     "themed-content": {
       all: {
         background:
-          "var(--newtab-background-color, var(--in-content-page-background)) linear-gradient(var(--newtab-background-color-secondary), var(--newtab-background-color-secondary))",
-        color: "var(--newtab-text-primary-color, var(--in-content-page-color))",
+          "var(--newtab-background-color, var(--background-color-canvas)) linear-gradient(var(--newtab-background-color-secondary), var(--newtab-background-color-secondary))",
+        color: "var(--newtab-text-primary-color, var(--text-color))",
         border:
           "color-mix(in srgb, var(--newtab-background-color-secondary) 80%, #000)",
-        "accent-color": "var(--in-content-primary-button-background)",
+        "accent-color": "var(--button-background-color-primary)",
         "button-background": "color-mix(in srgb, transparent 93%, #000)",
-        "button-color":
-          "var(--newtab-text-primary-color, var(--in-content-page-color))",
+        "button-color": "var(--newtab-text-primary-color, var(--text-color))",
         "button-border": "transparent",
         "button-background-hover": "color-mix(in srgb, transparent 88%, #000)",
         "button-color-hover":
-          "var(--newtab-text-primary-color, var(--in-content-page-color))",
+          "var(--newtab-text-primary-color, var(--text-color))",
         "button-border-hover": "transparent",
         "button-background-active": "color-mix(in srgb, transparent 80%, #000)",
         "button-color-active":
-          "var(--newtab-text-primary-color, var(--in-content-page-color))",
+          "var(--newtab-text-primary-color, var(--text-color))",
         "button-border-active": "transparent",
-        "primary-button-background":
-          "var(--in-content-primary-button-background)",
-        "primary-button-color": "var(--in-content-primary-button-text-color)",
-        "primary-button-border":
-          "var(--in-content-primary-button-border-color)",
+        "primary-button-background": "var(--button-background-color-primary)",
+        "primary-button-color": "var(--button-text-color-primary)",
+        "primary-button-border": "var(--button-border-color-primary)",
         "primary-button-background-hover":
-          "var(--in-content-primary-button-background-hover)",
-        "primary-button-color-hover":
-          "var(--in-content-primary-button-text-color-hover)",
+          "var(--button-background-color-primary-hover)",
+        "primary-button-color-hover": "var(--button-text-color-primary-hover)",
         "primary-button-border-hover":
-          "var(--in-content-primary-button-border-hover)",
+          "var(--button-border-color-primary-hover)",
         "primary-button-background-active":
-          "var(--in-content-primary-button-background-active)",
+          "var(--button-background-color-primary-active)",
         "primary-button-color-active":
-          "var(--in-content-primary-button-text-color-active)",
+          "var(--button-text-color-primary-active)",
         "primary-button-border-active":
-          "var(--in-content-primary-button-border-active)",
+          "var(--button-border-color-primary-active)",
         "link-color": "LinkText",
         "link-color-hover": "LinkText",
         "link-color-active": "ActiveText",
         "link-color-visited": "VisitedText",
         "dismiss-button-background":
-          "var(--newtab-background-color, var(--in-content-page-background)) linear-gradient(var(--newtab-background-color-secondary), var(--newtab-background-color-secondary))",
+          "var(--newtab-background-color, var(--background-color-canvas)) linear-gradient(var(--newtab-background-color-secondary), var(--newtab-background-color-secondary))",
         "dismiss-button-background-hover":
-          "var(--newtab-background-color, var(--in-content-page-background)) linear-gradient(color-mix(in srgb, currentColor 14%, var(--newtab-background-color-secondary)), color-mix(in srgb, currentColor 14%, var(--newtab-background-color-secondary)))",
+          "var(--newtab-background-color, var(--background-color-canvas)) linear-gradient(color-mix(in srgb, currentColor 14%, var(--newtab-background-color-secondary)), color-mix(in srgb, currentColor 14%, var(--newtab-background-color-secondary)))",
         "dismiss-button-background-active":
-          "var(--newtab-background-color, var(--in-content-page-background)) linear-gradient(color-mix(in srgb, currentColor 21%, var(--newtab-background-color-secondary)), color-mix(in srgb, currentColor 21%, var(--newtab-background-color-secondary)))",
+          "var(--newtab-background-color, var(--background-color-canvas)) linear-gradient(color-mix(in srgb, currentColor 21%, var(--newtab-background-color-secondary)), color-mix(in srgb, currentColor 21%, var(--newtab-background-color-secondary)))",
       },
       dark: {
         border:

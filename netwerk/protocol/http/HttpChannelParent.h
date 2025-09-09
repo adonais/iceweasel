@@ -107,14 +107,12 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   // BeginConnect.
   void OverrideReferrerInfoDuringBeginConnect(nsIReferrerInfo* aReferrerInfo);
 
-  // Set the cookie strings, which will be informed to the child actor during
-  // PHttpBackgroundChannel::OnStartRequest. Note that CookieService also sends
-  // the information to all actors via PContent, a main thread IPC, which could
-  // be slower than background IPC PHttpBackgroundChannel::OnStartRequest.
-  // Therefore, another cookie notification via PBackground is needed to
-  // guarantee the listener in child has the necessary cookies before
-  // OnStartRequest.
-  void SetCookieHeaders(const nsTArray<nsCString>& aCookieHeaders);
+  // Set the cookie changes triggered by the channel, which will be applied by
+  // the child actor during PHttpBackgroundChannel::OnStartRequest. Note that
+  // CookieService also sends the information to all actors via PContent, a main
+  // thread IPC, which could be slower than background IPC
+  // PHttpBackgroundChannel::OnStartRequest.
+  void SetCookieChanges(nsTArray<CookieChange>&& aCookieChanges);
 
   using ChildEndpointPromise =
       MozPromise<ipc::Endpoint<extensions::PStreamFilterChild>, bool, true>;
@@ -289,9 +287,9 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   // original one. This info will be sent in OnStartRequest.
   nsCOMPtr<nsIReferrerInfo> mOverrideReferrerInfo;
 
-  // The cookie string in Set-Cookie header. This info will be sent in
-  // OnStartRequest.
-  nsTArray<nsCString> mCookieHeaders;
+  // The cookie changes received while processing the Set-Cookie header. This
+  // info will be sent in OnStartRequest.
+  nsTArray<CookieChange> mCookieChanges;
 
   // OnStatus is always called before OnProgress.
   // Set true in OnStatus if next OnProgress can be ignored

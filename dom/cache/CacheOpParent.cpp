@@ -13,29 +13,21 @@
 #include "mozilla/dom/cache/ManagerId.h"
 #include "mozilla/dom/cache/ReadStream.h"
 #include "mozilla/dom/cache/SavedTypes.h"
-#include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
+#include "mozilla/ipc/InputStreamUtils.h"
 
 namespace mozilla::dom::cache {
 
 using mozilla::ipc::PBackgroundParent;
 
-CacheOpParent::CacheOpParent(PBackgroundParent* aIpcManager, CacheId aCacheId,
-                             const CacheOpArgs& aOpArgs)
+CacheOpParent::CacheOpParent(const WeakRefParentType& aIpcManager,
+                             const CacheOpArgs& aOpArgs, CacheId aCacheId,
+                             Namespace aNamespace)
     : mIpcManager(aIpcManager),
       mCacheId(aCacheId),
-      mNamespace(INVALID_NAMESPACE),
-      mOpArgs(aOpArgs) {
-  MOZ_DIAGNOSTIC_ASSERT(mIpcManager);
-}
-
-CacheOpParent::CacheOpParent(PBackgroundParent* aIpcManager,
-                             Namespace aNamespace, const CacheOpArgs& aOpArgs)
-    : mIpcManager(aIpcManager),
-      mCacheId(INVALID_CACHE_ID),
       mNamespace(aNamespace),
       mOpArgs(aOpArgs) {
-  MOZ_DIAGNOSTIC_ASSERT(mIpcManager);
+  MOZ_DIAGNOSTIC_ASSERT(mIpcManager.isSome());
 }
 
 CacheOpParent::~CacheOpParent() { NS_ASSERT_OWNINGTHREAD(CacheOpParent); }
@@ -118,7 +110,7 @@ void CacheOpParent::ActorDestroy(ActorDestroyReason aReason) {
     mManager = nullptr;
   }
 
-  mIpcManager = nullptr;
+  mIpcManager.destroy();
 }
 
 void CacheOpParent::OnPrincipalVerified(
@@ -141,7 +133,7 @@ void CacheOpParent::OnOpComplete(ErrorResult&& aRv,
                                  CacheId aOpenedCacheId,
                                  const Maybe<StreamInfo>& aStreamInfo) {
   NS_ASSERT_OWNINGTHREAD(CacheOpParent);
-  MOZ_DIAGNOSTIC_ASSERT(mIpcManager);
+  MOZ_DIAGNOSTIC_ASSERT(mIpcManager.isSome());
   MOZ_DIAGNOSTIC_ASSERT(mManager);
 
   // Never send an op-specific result if we have an error.  Instead, send
@@ -172,7 +164,7 @@ void CacheOpParent::OnOpComplete(ErrorResult&& aRv,
   // result requires actor-specific operations, then we do that below.
   // If the type and data types don't match, then we will trigger an
   // assertion in AutoParentOpResult::Add().
-  AutoParentOpResult result(mIpcManager, aResult, entryCount);
+  AutoParentOpResult result(mIpcManager.ref(), aResult, entryCount);
 
   if (aOpenedCacheId != INVALID_CACHE_ID) {
     result.Add(aOpenedCacheId, mManager.clonePtr());

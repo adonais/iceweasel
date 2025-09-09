@@ -91,6 +91,7 @@ class SVGGradientFrame : public SVGPaintServerFrame {
   }
   uint16_t GetGradientUnits();
   uint16_t GetSpreadMethod();
+  float GetLengthValue(const SVGAnimatedLength& aLength);
 
   // Gradient-type-specific lookups since the length values differ between
   // linear and radial gradients
@@ -145,6 +146,7 @@ class SVGLinearGradientFrame final : public SVGGradientFrame {
 #endif  // DEBUG
 
  protected:
+  using SVGGradientFrame::GetLengthValue;
   float GetLengthValue(uint32_t aIndex);
   mozilla::dom::SVGLinearGradientElement* GetLinearGradientWithLength(
       uint32_t aIndex,
@@ -186,10 +188,11 @@ class SVGRadialGradientFrame final : public SVGGradientFrame {
 #endif  // DEBUG
 
  protected:
-  float GetLengthValue(uint32_t aIndex);
-  float GetLengthValue(uint32_t aIndex, float aDefaultValue);
-  float GetLengthValueFromElement(
-      uint32_t aIndex, mozilla::dom::SVGRadialGradientElement& aElement);
+  using SVGGradientFrame::GetLengthValue;
+  float GetLengthValue(uint32_t aIndex, Maybe<float> aDefaultValue = Nothing());
+  float GetLengthValue(uint32_t aIndex, float aDefaultValue) {
+    return GetLengthValue(aIndex, Some(aDefaultValue));
+  }
   mozilla::dom::SVGRadialGradientElement* GetRadialGradientWithLength(
       uint32_t aIndex,
       mozilla::dom::SVGRadialGradientElement* aDefault) override;

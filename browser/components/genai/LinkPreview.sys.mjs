@@ -27,6 +27,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
+  "cfrFeatures",
+  "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features",
+  true
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
   "collapsed",
   "browser.ml.linkPreview.collapsed",
   null,
@@ -183,8 +189,13 @@ export const LinkPreview = {
   },
 
   get showOnboarding() {
-    const timesArray = lazy.onboardingTimes;
+    // Don't show onboarding if CFR features are disabled. This is true for
+    // automated tests.
+    if (!lazy.cfrFeatures) {
+      return false;
+    }
 
+    const timesArray = lazy.onboardingTimes;
     const lastValidTime = timesArray.at(-1) || 0;
     const timeSinceLastOnboarding = Date.now() - lastValidTime;
 
@@ -604,7 +615,6 @@ export const LinkPreview = {
     const doc = win.document;
     const onboardingCard = doc.createElement("link-preview-card-onboarding");
     onboardingCard.style.width = "100%";
-    onboardingCard.onboardingType = lazy.longPress ? "longPress" : "shiftKey";
 
     // Telemetry for onboarding card view
     Glean.genaiLinkpreview.onboardingCard.record({

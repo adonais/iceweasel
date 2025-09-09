@@ -14,15 +14,16 @@
 #endif
 
 #include <stdint.h>
+
 #include "js/Value.h"
 #include "jspubtd.h"
+#include "mozilla/dom/BindingDeclarations.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsID.h"
-#include "nsWrapperCache.h"
 #include "nsIException.h"
 #include "nsString.h"
-#include "mozilla/dom/BindingDeclarations.h"
+#include "nsWrapperCache.h"
 
 class nsIGlobalObject;
 class nsIStackFrame;

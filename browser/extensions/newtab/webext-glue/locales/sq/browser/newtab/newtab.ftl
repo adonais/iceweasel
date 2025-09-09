@@ -53,6 +53,9 @@ newtab-topsites-add-shortcut-header = Shkurtore e Re
 newtab-topsites-edit-topsites-header = Përpunoni Sajtin Kryesues
 newtab-topsites-edit-shortcut-header = Përpunoni Shkurtore
 newtab-topsites-add-shortcut-label = Shtoni Shkurtore
+newtab-topsites-add-shortcut-title =
+    .title = Shtoni Shkurtore
+    .aria-label = Shtoni Shkurtore
 newtab-topsites-title-label = Titull
 newtab-topsites-title-input =
     .placeholder = Jepni një titull
@@ -531,9 +534,6 @@ newtab-download-mobile-highlight-body-variant-c = E dinit se mund ta merrni { -b
 newtab-download-mobile-highlight-image =
     .aria-label = Kod QR për të shkarkuar { -brand-product-name } për celular
 
-## Strings for shortcuts highlight
-
-
 ## Strings for reporting ads and content
 
 newtab-report-content-why-reporting-this =
@@ -556,6 +556,3 @@ newtab-report-cancel = Anuloje
 newtab-report-submit = Parashtroje
 newtab-toast-thanks-for-reporting =
     .message = Faleminderit për njoftimin rreth kësaj.
-
-## Strings for trending searches
-

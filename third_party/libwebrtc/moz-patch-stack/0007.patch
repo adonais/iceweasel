@@ -21,7 +21,7 @@ Bug 1654112 - Replace custom upstream code for remote received audio stats with 
  8 files changed, 21 insertions(+), 10 deletions(-)
 
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index b054832b31..24833be098 100644
+index c2f27ec5f3..ae9951e6f9 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
 @@ -172,6 +172,7 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
@@ -33,10 +33,10 @@ index b054832b31..24833be098 100644
      // Timing frame info: all important timestamps for a full lifetime of a
      // single 'timing frame'.
 diff --git a/modules/rtp_rtcp/source/rtcp_receiver.cc b/modules/rtp_rtcp/source/rtcp_receiver.cc
-index 9f94e253c4..ed4a9aa70e 100644
+index ee76626b0d..c5b3606c44 100644
 --- a/modules/rtp_rtcp/source/rtcp_receiver.cc
 +++ b/modules/rtp_rtcp/source/rtcp_receiver.cc
-@@ -385,10 +385,12 @@ RTCPReceiver::ConsumeReceivedXrReferenceTimeInfo() {
+@@ -386,10 +386,12 @@ RTCPReceiver::ConsumeReceivedXrReferenceTimeInfo() {
  }
  
  void RTCPReceiver::RemoteRTCPSenderInfo(uint32_t* packet_count,
@@ -51,7 +51,7 @@ index 9f94e253c4..ed4a9aa70e 100644
  
  std::vector<ReportBlockData> RTCPReceiver::GetLatestReportBlockData() const {
 diff --git a/modules/rtp_rtcp/source/rtcp_receiver.h b/modules/rtp_rtcp/source/rtcp_receiver.h
-index 2551534b9f..029fc3a5e2 100644
+index c5a17b7763..8fc8ea4bf6 100644
 --- a/modules/rtp_rtcp/source/rtcp_receiver.h
 +++ b/modules/rtp_rtcp/source/rtcp_receiver.h
 @@ -125,7 +125,8 @@ class RTCPReceiver final {
@@ -65,7 +65,7 @@ index 2551534b9f..029fc3a5e2 100644
    std::optional<TimeDelta> AverageRtt() const;
    std::optional<TimeDelta> LastRtt() const;
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl.cc b/modules/rtp_rtcp/source/rtp_rtcp_impl.cc
-index 6390343c03..9ba5e9c6ac 100644
+index 8bd840c6d3..449c56fc78 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl.cc
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl.cc
 @@ -517,8 +517,10 @@ void ModuleRtpRtcpImpl::GetSendStreamDataCounters(
@@ -82,7 +82,7 @@ index 6390343c03..9ba5e9c6ac 100644
  
  std::vector<ReportBlockData> ModuleRtpRtcpImpl::GetLatestReportBlockData()
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl.h b/modules/rtp_rtcp/source/rtp_rtcp_impl.h
-index 00783ac95c..2d6ceb4633 100644
+index 34a2bc3dd7..b0218aadc0 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl.h
 @@ -204,7 +204,8 @@ class ABSL_DEPRECATED("") ModuleRtpRtcpImpl
@@ -96,7 +96,7 @@ index 00783ac95c..2d6ceb4633 100644
    // A snapshot of the most recent Report Block with additional data of
    // interest to statistics. Used to implement RTCRemoteInboundRtpStreamStats.
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-index e25a4f069b..05f3b876c6 100644
+index 67b5594c8f..b6769cfe85 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
 @@ -528,8 +528,10 @@ void ModuleRtpRtcpImpl2::GetSendStreamDataCounters(
@@ -113,10 +113,10 @@ index e25a4f069b..05f3b876c6 100644
  
  std::vector<ReportBlockData> ModuleRtpRtcpImpl2::GetLatestReportBlockData()
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl2.h b/modules/rtp_rtcp/source/rtp_rtcp_impl2.h
-index 1b2afac61f..625ec14c8d 100644
+index d36280b29f..fa9d16c48e 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl2.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl2.h
-@@ -199,7 +199,8 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
+@@ -198,7 +198,8 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
        StreamDataCounters* rtx_counters) const override;
  
    void RemoteRTCPSenderInfo(uint32_t* packet_count,
@@ -127,7 +127,7 @@ index 1b2afac61f..625ec14c8d 100644
    // A snapshot of the most recent Report Block with additional data of
    // interest to statistics. Used to implement RTCRemoteInboundRtpStreamStats.
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_interface.h b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-index b61d75cde2..68e8fb70bd 100644
+index 81f3f04c1b..40836198de 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_interface.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
 @@ -404,9 +404,10 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {

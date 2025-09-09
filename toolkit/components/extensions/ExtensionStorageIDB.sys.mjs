@@ -301,6 +301,25 @@ class ExtensionStorageLocalIDB extends IndexedDB {
   }
 
   /**
+   * Asynchronously retrieves all keys.
+   *
+   * @returns {Promise<Array<string>>}
+   *          Returns an array of keys.
+   */
+  async getKeys() {
+    const cursor = await this.objectStore(
+      IDB_DATA_STORENAME,
+      "readonly"
+    ).openCursor();
+    const keys = [];
+    while (!cursor.done) {
+      keys.push(cursor.key);
+      await cursor.continue();
+    }
+    return keys;
+  }
+
+  /**
    * Asynchronously removes the given storage items.
    *
    * @param {string|Array<string>} keys

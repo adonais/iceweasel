@@ -7,12 +7,11 @@
 #ifndef nsDOMWindowUtils_h_
 #define nsDOMWindowUtils_h_
 
-#include "nsWeakReference.h"
-
-#include "nsIDOMWindowUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/Result.h"
+#include "nsIDOMWindowUtils.h"
+#include "nsWeakReference.h"
 
 class nsGlobalWindowOuter;
 class nsIDocShell;

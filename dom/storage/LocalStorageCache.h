@@ -7,13 +7,12 @@
 #ifndef mozilla_dom_LocalStorageCache_h
 #define mozilla_dom_LocalStorageCache_h
 
+#include "mozilla/Atomics.h"
+#include "mozilla/Monitor.h"
+#include "nsHashKeys.h"
 #include "nsIPrincipal.h"
-
 #include "nsString.h"
 #include "nsTHashMap.h"
-#include "nsHashKeys.h"
-#include "mozilla/Monitor.h"
-#include "mozilla/Atomics.h"
 
 namespace mozilla::dom {
 

@@ -6,6 +6,7 @@ package mozilla.components.compose.base.utils
 
 import androidx.annotation.AttrRes
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 
@@ -14,6 +15,7 @@ import androidx.compose.ui.platform.LocalInspectionMode
  */
 val inComposePreview: Boolean
     @Composable
+    @ReadOnlyComposable
     get() = LocalInspectionMode.current
 
 /**

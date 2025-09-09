@@ -8,14 +8,15 @@
 
 #include "SVGMotionSMILType.h"
 
+#include <math.h>
+
+#include "gfx2DGlue.h"
 #include "mozilla/SMILValue.h"
 #include "mozilla/gfx/Point.h"
-#include "gfx2DGlue.h"
 #include "nsDebug.h"
-#include "nsMathUtils.h"
 #include "nsISupportsUtils.h"
+#include "nsMathUtils.h"
 #include "nsTArray.h"
-#include <math.h>
 
 using namespace mozilla::gfx;
 

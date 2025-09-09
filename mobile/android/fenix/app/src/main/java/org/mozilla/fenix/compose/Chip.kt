@@ -15,6 +15,7 @@ import androidx.compose.material3.FilterChipDefaults.filterChipColors
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -94,6 +95,7 @@ data class SelectableChipColors(
          * Builder function used to construct an instance of [SelectableChipColors].
          */
         @Composable
+        @ReadOnlyComposable
         fun buildColors(
             selectedContainerColor: Color = FirefoxTheme.colors.actionChipSelected,
             containerColor: Color = FirefoxTheme.colors.layer1,

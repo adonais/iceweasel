@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -110,13 +111,15 @@ class SearchSuggestionsFragment : Fragment(), CoroutineScope {
             searchSuggestionsViewModel.dismissNoSuggestionsMessage()
         }
 
-        val searchSuggestionsView = view.findViewById<ComposeView>(R.id.search_suggestions_view)
-        searchSuggestionsView.setContent {
-            FocusTheme {
-                SearchOverlay(
-                    searchSuggestionsViewModel,
-                    defaultSearchEngineName,
-                ) { view.hideKeyboard() }
+        view.findViewById<ComposeView>(R.id.search_suggestions_view).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                FocusTheme {
+                    SearchOverlay(
+                        searchSuggestionsViewModel,
+                        defaultSearchEngineName,
+                    ) { view.hideKeyboard() }
+                }
             }
         }
     }

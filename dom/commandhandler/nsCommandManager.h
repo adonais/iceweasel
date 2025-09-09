@@ -7,12 +7,11 @@
 #ifndef nsCommandManager_h__
 #define nsCommandManager_h__
 
-#include "nsString.h"
 #include "nsClassHashtable.h"
-#include "nsWeakReference.h"
-
-#include "nsICommandManager.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsICommandManager.h"
+#include "nsString.h"
+#include "nsWeakReference.h"
 
 class nsIController;
 template <class E>

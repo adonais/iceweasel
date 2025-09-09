@@ -6,19 +6,18 @@
 
 #include "FetchEventOpParent.h"
 
-#include "mozilla/dom/FetchTypes.h"
-#include "nsDebug.h"
-
 #include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/FetchEventOpProxyParent.h"
 #include "mozilla/dom/FetchStreamUtils.h"
+#include "mozilla/dom/FetchTypes.h"
 #include "mozilla/dom/InternalResponse.h"
 #include "mozilla/dom/RemoteWorkerControllerParent.h"
 #include "mozilla/dom/RemoteWorkerParent.h"
 #include "mozilla/dom/RemoteWorkerServiceParent.h"
 #include "mozilla/ipc/BackgroundParent.h"
+#include "nsDebug.h"
 
 namespace mozilla {
 

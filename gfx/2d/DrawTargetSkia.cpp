@@ -11,6 +11,7 @@
 #include "HelpersSkia.h"
 
 #include "mozilla/CheckedInt.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/Vector.h"
 
 #include "skia/include/core/SkBitmap.h"
@@ -37,9 +38,9 @@
 #include <algorithm>
 #include <cmath>
 
-#ifdef MOZ_WIDGET_COCOA
+#ifdef XP_DARWIN
 #  include "BorrowedContext.h"
-#  include <ApplicationServices/ApplicationServices.h>
+#  include <CoreGraphics/CGBitmapContext.h>
 #endif
 
 #ifdef XP_WIN
@@ -475,6 +476,9 @@ static void SetPaintPattern(SkPaint& aPaint, const Pattern& aPattern,
       break;
     }
     case PatternType::LINEAR_GRADIENT: {
+      if (StaticPrefs::gfx_skia_dithering_AtStartup()) {
+        aPaint.setDither(true);
+      }
       const LinearGradientPattern& pat =
           static_cast<const LinearGradientPattern&>(aPattern);
       GradientStopsSkia* stops =
@@ -1033,7 +1037,7 @@ void DrawTargetSkia::Fill(const Path* aPath, const Pattern& aPattern,
   mCanvas->drawPath(skiaPath->GetPath(), paint.mPaint);
 }
 
-#ifdef MOZ_WIDGET_COCOA
+#ifdef XP_DARWIN
 static inline CGAffineTransform GfxMatrixToCGAffineTransform(const Matrix& m) {
   CGAffineTransform t;
   t.a = m._11;

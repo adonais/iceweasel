@@ -16,6 +16,8 @@ support-files = ["test_attachments_downloader/**"]
 
 ["test_remote_settings_offline.js"]
 
+["test_remote_settings_older_than_local.js"]
+
 ["test_remote_settings_poll.js"]
 
 ["test_remote_settings_recover_broken.js"]

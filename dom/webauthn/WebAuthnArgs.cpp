@@ -5,6 +5,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WebAuthnArgs.h"
+
 #include "WebAuthnEnumStrings.h"
 #include "WebAuthnUtil.h"
 #include "mozilla/dom/PWebAuthnTransactionParent.h"

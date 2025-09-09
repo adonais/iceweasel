@@ -6,30 +6,30 @@
 
 #include "Animation.h"
 
-#include "mozilla/Likely.h"
-#include "nsIFrame.h"
 #include "AnimationUtils.h"
+#include "ScrollTimelineAnimationTracker.h"
 #include "mozAutoDocUpdate.h"
+#include "mozilla/AnimationEventDispatcher.h"
+#include "mozilla/AnimationTarget.h"
+#include "mozilla/AutoRestore.h"
+#include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/DeclarationBlock.h"
+#include "mozilla/Likely.h"
+#include "mozilla/Maybe.h"  // For Maybe
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/AnimationBinding.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/AnimationEventDispatcher.h"
-#include "mozilla/AnimationTarget.h"
-#include "mozilla/AutoRestore.h"
-#include "mozilla/CycleCollectedJSContext.h"
-#include "mozilla/DeclarationBlock.h"
-#include "mozilla/Maybe.h"  // For Maybe
-#include "mozilla/StaticPrefs_dom.h"
 #include "nsAnimationManager.h"  // For CSSAnimation
 #include "nsComputedDOMStyle.h"
-#include "nsDOMMutationObserver.h"    // For nsAutoAnimationMutationBatch
 #include "nsDOMCSSAttrDeclaration.h"  // For nsDOMCSSAttributeDeclaration
+#include "nsDOMMutationObserver.h"    // For nsAutoAnimationMutationBatch
+#include "nsIFrame.h"
 #include "nsThreadUtils.h"  // For nsRunnableMethod and nsRevocableEventPtr
 #include "nsTransitionManager.h"  // For CSSTransition
-#include "ScrollTimelineAnimationTracker.h"
 
 namespace mozilla::dom {
 

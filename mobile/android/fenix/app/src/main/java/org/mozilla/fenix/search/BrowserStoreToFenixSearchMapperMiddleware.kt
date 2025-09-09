@@ -47,20 +47,19 @@ class BrowserStoreToFenixSearchMapperMiddleware(
         if (action is EnvironmentRehydrated) {
             environment = action.environment
 
-            val searchStore = context.store as? SearchFragmentStore ?: return
-            observeBrowserSearchState(searchStore)
+            observeBrowserSearchState(context)
         } else if (action is EnvironmentCleared) {
+            observeBrowserSearchStateJob?.cancel()
             environment = null
         }
     }
 
-    private fun observeBrowserSearchState(store: SearchFragmentStore) {
-        observeBrowserSearchStateJob?.cancel()
+    private fun observeBrowserSearchState(context: MiddlewareContext<SearchFragmentState, SearchFragmentAction>) {
         observeBrowserSearchStateJob = browserStore.observeWhileActive {
             map { it.search }
                 .distinctUntilChanged()
                 .collect { searchState ->
-                    store.dispatch(
+                    context.dispatch(
                         UpdateSearchState(searchState, true),
                     )
                 }

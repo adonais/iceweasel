@@ -4,20 +4,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/SMILTimeValueSpec.h"
+
+#include <limits>
+
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/SMILInstanceTime.h"
 #include "mozilla/SMILInterval.h"
 #include "mozilla/SMILParserUtils.h"
 #include "mozilla/SMILTimeContainer.h"
-#include "mozilla/SMILTimedElement.h"
-#include "mozilla/SMILTimeValueSpec.h"
 #include "mozilla/SMILTimeValue.h"
+#include "mozilla/SMILTimedElement.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/SVGAnimationElement.h"
 #include "mozilla/dom/TimeEvent.h"
 #include "nsString.h"
-#include <limits>
 
 using namespace mozilla::dom;
 

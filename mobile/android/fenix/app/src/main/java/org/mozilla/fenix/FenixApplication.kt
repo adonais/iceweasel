@@ -30,6 +30,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import mozilla.appservices.autofill.AutofillApiException
 import mozilla.components.browser.state.action.SystemAction
+import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.searchEngines
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
@@ -107,7 +108,6 @@ import org.mozilla.fenix.perf.StorageStatsMetrics
 import org.mozilla.fenix.perf.runBlockingIncrement
 import org.mozilla.fenix.push.PushFxaIntegration
 import org.mozilla.fenix.push.WebPushEngineIntegration
-import org.mozilla.fenix.session.PerformanceActivityLifecycleCallbacks
 import org.mozilla.fenix.session.VisibilityLifecycleCallback
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.isLargeScreenSize
@@ -312,11 +312,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
     }
 
     private fun initVisualCompletenessQueueAndQueueTasks() {
-        val queue = components.performance.visualCompletenessQueue.queue
-
-        fun initQueue() {
-            registerActivityLifecycleCallbacks(PerformanceActivityLifecycleCallbacks(queue))
-        }
+        val queue = components.performance.visualCompletenessQueue
 
         @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
         fun queueInitStorageAndServices() {
@@ -446,8 +442,6 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
                 downloadWallpapers()
             }
         }
-
-        initQueue()
 
         // We init these items in the visual completeness queue to avoid them initing in the critical
         // startup path, before the UI finishes drawing (i.e. visual completeness).
@@ -827,7 +821,13 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
                     !searchEngine.isCustomEngine() || searchEngine.isKnownSearchDomain()
                 if (sendSearchUrl) {
                     SearchDefaultEngine.apply {
-                        code.set(searchEngine.id)
+                        code.set(
+                            if (searchEngine.telemetrySuffix.isNullOrEmpty()) {
+                                searchEngine.id
+                            } else {
+                                "${searchEngine.id}-${searchEngine.telemetrySuffix}"
+                            },
+                        )
                         name.set(searchEngine.name)
                         searchUrl.set(searchEngine.buildSearchUrl(""))
                     }
@@ -900,6 +900,13 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
                     settings.shouldUseFixedTopToolbar -> "fixed_top"
                     settings.shouldUseBottomToolbar -> "bottom"
                     else -> "top"
+                },
+            )
+
+            toolbarModeSetting.set(
+                when {
+                    settings.shouldUseExpandedToolbar -> "expanded"
+                    else -> "simple"
                 },
             )
 

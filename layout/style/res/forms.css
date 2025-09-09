@@ -251,10 +251,8 @@ select:-moz-select-list-box {
   vertical-align: text-bottom;
   appearance: auto;
   -moz-default-appearance: listbox;
-}
 
-@media (-moz-platform: macos) {
-  select:-moz-select-list-box {
+  @media (-moz-platform: macos) {
     scrollbar-width: thin;
   }
 }

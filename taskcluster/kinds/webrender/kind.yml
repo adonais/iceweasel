@@ -112,11 +112,12 @@ tasks:
                   name: public/build/wrench-macos-headless.tar.bz2
                   path: /builds/worker/artifacts/wrench-macos-headless.tar.bz2
         dependencies:
+            # Using libLLVM and headers for gallium, which require an older version
             macosx64-clang-14: toolchain-macosx64-clang-14-raw
         fetches:
             toolchain:
                 - linux64-rust-macos
-                - linux64-clang-14
+                - linux64-clang
                 - macosx64-sdk-13.3
                 - wrench-deps
             macosx64-clang-14:

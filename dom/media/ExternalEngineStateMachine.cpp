@@ -10,16 +10,16 @@
 #  include "mozilla/MFMediaEngineChild.h"
 #  include "mozilla/StaticPrefs_media.h"
 #endif
+#include "VideoUtils.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ProfilerLabels.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/StaticMutex.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/glean/DomMediaPlatformsWmfMetrics.h"
 #include "nsPrintfCString.h"
 #include "nsThreadUtils.h"
-#include "VideoUtils.h"
 
 namespace mozilla {
 

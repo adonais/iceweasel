@@ -6,10 +6,12 @@ use api::{CompositeOperator, FilterPrimitive, FilterPrimitiveInput, FilterPrimit
 use api::{LineStyle, LineOrientation, ClipMode, MixBlendMode, ColorF, ColorSpace, FilterOpGraphPictureBufferId};
 use api::MAX_RENDER_TASK_SIZE;
 use api::units::*;
+use std::time::Duration;
 use crate::box_shadow::BLUR_SAMPLE_SCALE;
 use crate::clip::{ClipDataStore, ClipItemKind, ClipStore, ClipNodeRange};
 use crate::command_buffer::{CommandBufferIndex, QuadFlags};
 use crate::pattern::{PatternKind, PatternShaderInput};
+use crate::profiler::{add_text_marker};
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::filterdata::SFilterData;
 use crate::frame_builder::FrameBuilderConfig;
@@ -153,6 +155,14 @@ impl RenderTaskLocation {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CachedTask {
     pub target_kind: RenderTargetKind,
+}
+
+#[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct ImageRequestTask {
+    pub request: ImageRequest,
+    pub is_composited: bool,
 }
 
 #[derive(Debug)]
@@ -369,7 +379,7 @@ pub struct RenderTaskData {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum RenderTaskKind {
-    Image(ImageRequest),
+    Image(ImageRequestTask),
     Cached(CachedTask),
     Picture(PictureTask),
     CacheMask(CacheMaskTask),
@@ -1087,6 +1097,7 @@ impl RenderTask {
     pub fn new_image(
         size: DeviceIntSize,
         request: ImageRequest,
+        is_composited: bool,
     ) -> Self {
         // Note: this is a special constructor for image render tasks that does not
         // do the render task size sanity check. This is because with SWGL we purposefully
@@ -1099,7 +1110,10 @@ impl RenderTask {
         RenderTask {
             location: RenderTaskLocation::CacheRequest { size, },
             children: TaskDependencies::new(),
-            kind: RenderTaskKind::Image(request),
+            kind: RenderTaskKind::Image(ImageRequestTask {
+                request,
+                is_composited,
+            }),
             free_after: PassId::MAX,
             render_on: PassId::MIN,
             uv_rect_handle: GpuCacheHandle::new(),
@@ -2064,12 +2078,8 @@ impl RenderTask {
                 FilterGraphOp::SVGFEBlendScreen => {},
                 FilterGraphOp::SVGFEBlendSoftLight => {},
                 FilterGraphOp::SVGFEColorMatrix{values} => {
-                    if values[3] != 0.0 ||
-                        values[7] != 0.0 ||
-                        values[11] != 0.0 ||
-                        values[15] != 1.0 ||
-                        values[19] != 0.0 {
-                        // Manipulating alpha can easily create new
+                    if values[19] > 0.0 {
+                        // Manipulating alpha offset can easily create new
                         // pixels outside of input subregions
                         used_subregion = full_subregion;
                     }
@@ -2194,6 +2204,12 @@ impl RenderTask {
                     used_subregion = full_subregion;
                 },
             }
+
+            add_text_marker(
+                "SVGFEGraph",
+                &format!("{}({})", op.kind(), filter_index),
+                Duration::from_micros((used_subregion.width() * used_subregion.height() / 1000.0) as u64),
+            );
 
             // SVG spec requires that a later node sampling pixels outside
             // this node's subregion will receive a transparent black color

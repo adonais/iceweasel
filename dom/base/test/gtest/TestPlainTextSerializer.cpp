@@ -5,12 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gtest/gtest.h"
-
+#include "nsCRT.h"
+#include "nsIDocumentEncoder.h"
+#include "nsIParserUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
-#include "nsIDocumentEncoder.h"
-#include "nsCRT.h"
-#include "nsIParserUtils.h"
 
 const uint32_t kDefaultWrapColumn = 72;
 

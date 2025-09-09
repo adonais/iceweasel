@@ -225,7 +225,7 @@ add_task(async function test_extension_get_params() {
   let engine = Services.search.getEngineByName("MozSearch");
   ok(engine, "Engine should exist.");
 
-  let url = engine.wrappedJSObject._getURLOfType("text/html");
+  let url = engine.wrappedJSObject.getURLOfType("text/html");
   equal(url.method, "GET", "Search URLs method is GET");
 
   let expectedURL = kSearchEngineURL.replace("{searchTerms}", kSearchTerm);
@@ -276,7 +276,7 @@ add_task(async function test_extension_post_params() {
   let engine = Services.search.getEngineByName("MozSearch");
   ok(engine, "Engine should exist.");
 
-  let url = engine.wrappedJSObject._getURLOfType("text/html");
+  let url = engine.wrappedJSObject.getURLOfType("text/html");
   equal(url.method, "POST", "Search URLs method is POST");
 
   let expectedURL = kSearchEngineURL.replace("{searchTerms}", kSearchTerm);
@@ -393,7 +393,7 @@ add_task(async function test_extension_empty_suggestUrl() {
   let engine = Services.search.getEngineByName("MozSearch");
   ok(engine, "Engine should exist.");
 
-  let url = engine.wrappedJSObject._getURLOfType("text/html");
+  let url = engine.wrappedJSObject.getURLOfType("text/html");
   equal(url.method, "POST", "Search URLs method is POST");
 
   let expectedURL = kSearchEngineURL.replace("{searchTerms}", kSearchTerm);
@@ -449,7 +449,7 @@ add_task(async function test_extension_empty_suggestUrl_with_params() {
   let engine = Services.search.getEngineByName("MozSearch");
   ok(engine, "Engine should exist.");
 
-  let url = engine.wrappedJSObject._getURLOfType("text/html");
+  let url = engine.wrappedJSObject.getURLOfType("text/html");
   equal(url.method, "POST", "Search URLs method is POST");
 
   let expectedURL = kSearchEngineURL.replace("{searchTerms}", kSearchTerm);

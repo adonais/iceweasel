@@ -6,6 +6,8 @@
 
 #include "MediaData.h"
 
+#include <stdint.h>
+
 #include <functional>
 
 #include "ImageContainer.h"
@@ -19,8 +21,6 @@
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/KnowsCompositor.h"
 #include "mozilla/layers/SharedRGBImage.h"
-
-#include <stdint.h>
 
 #ifdef XP_WIN
 #  include "mozilla/gfx/DeviceManagerDx.h"

@@ -18,16 +18,6 @@ var clickHoldDelay = Services.prefs.getIntPref(
   500
 );
 
-// Touch state constants are derived from values defined in: nsIDOMWindowUtils.idl
-const TOUCH_CONTACT = 0x02;
-const TOUCH_REMOVE = 0x04;
-
-const TOUCH_STATES = {
-  touchstart: TOUCH_CONTACT,
-  touchmove: TOUCH_CONTACT,
-  touchend: TOUCH_REMOVE,
-};
-
 const EVENTS_TO_HANDLE = [
   "mousedown",
   "mousemove",
@@ -203,7 +193,7 @@ class TouchSimulator {
 
     const target = eventTarget || this.target;
     if (target && type) {
-      this.synthesizeNativeTouch(content, evt.screenX, evt.screenY, type);
+      this.sendTouchEvent(content, evt.clientX, evt.clientY, type);
     }
 
     evt.preventDefault();
@@ -230,24 +220,34 @@ class TouchSimulator {
   }
 
   /**
-   * Synthesizes a native touch action on a given target element.
+   * Sends a touch action on a given target element.
    *
    * @param {Window} win
    *        The target window.
-   * @param {Number} screenX
-   *        The `x` screen coordinate relative to the screen origin.
-   * @param {Number} screenY
-   *        The `y` screen coordinate relative to the screen origin.
+   * @param {Number} clientX
+   *        The `x` screen coordinate relative to the viewport origin.
+   * @param {Number} clientY
+   *        The `y` screen coordinate relative to the viewport origin.
    * @param {String} type
-   *        A key appearing in the TOUCH_STATES associative array.
+   *        The type of the touch event.
    */
-  synthesizeNativeTouch(win, screenX, screenY, type) {
-    // Native events work in device pixels.
+  sendTouchEvent(win, clientX, clientY, type) {
     const utils = win.windowUtils;
-    const deviceScale = win.devicePixelRatio;
-    const pt = { x: screenX * deviceScale, y: screenY * deviceScale };
-
-    utils.sendNativeTouchPoint(0, TOUCH_STATES[type], pt.x, pt.y, 1, 90, null);
+    utils.sendTouchEvent(
+      type,
+      [0],
+      [clientX],
+      [clientY],
+      [0],
+      [0],
+      [0],
+      [0],
+      [0],
+      [0],
+      [0],
+      0,
+      utils.ASYNC_ENABLED
+    );
     return true;
   }
 

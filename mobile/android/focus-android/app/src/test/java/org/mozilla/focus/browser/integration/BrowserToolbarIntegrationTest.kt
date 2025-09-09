@@ -36,6 +36,7 @@ import org.mockito.MockitoAnnotations
 import org.mozilla.focus.fragment.BrowserFragment
 import org.robolectric.RobolectricTestRunner
 
+@ExperimentalCoroutinesApi // resetMain, setMain, UnconfinedTestDispatcher
 @RunWith(RobolectricTestRunner::class)
 class BrowserToolbarIntegrationTest {
     private val testDispatcher = UnconfinedTestDispatcher()
@@ -54,7 +55,6 @@ class BrowserToolbarIntegrationTest {
     private lateinit var store: BrowserStore
 
     @Before
-    @ExperimentalCoroutinesApi
     fun setUp() {
         MockitoAnnotations.openMocks(this)
         Dispatchers.setMain(testDispatcher)
@@ -90,7 +90,6 @@ class BrowserToolbarIntegrationTest {
     }
 
     @After
-    @ExperimentalCoroutinesApi
     fun tearDown() {
         Dispatchers.resetMain()
     }

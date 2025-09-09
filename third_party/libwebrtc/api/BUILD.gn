@@ -201,6 +201,7 @@ rtc_library("candidate") {
     "../rtc_base:stringutils",
     "../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/base:core_headers",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }
@@ -345,6 +346,7 @@ if (!build_with_mozilla) {
     ":async_dns_resolver",
     ":audio_options_api",
     ":candidate",
+    ":data_channel_event_observer_interface",
     ":dtls_transport_interface",
     ":fec_controller_api",
     ":field_trials",
@@ -414,6 +416,7 @@ if (!build_with_mozilla) {
     "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/functional:any_invocable",
     "//third_party/abseil-cpp/absl/memory",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/strings:string_view",
 
     # Basically, don't add stuff here. You might break sensitive downstream
@@ -484,6 +487,7 @@ rtc_source_set("packet_socket_factory") {
     ":async_dns_resolver",
     "../rtc_base:async_packet_socket",
     "../rtc_base:socket_address",
+    "../rtc_base:ssl",
     "../rtc_base/system:rtc_export",
   ]
 }
@@ -817,6 +821,15 @@ rtc_library("create_peer_connection_quality_test_frame_generator") {
     "units:time_delta",
   ]
 }
+}
+
+rtc_source_set("data_channel_event_observer_interface") {
+  visibility = [ "*" ]
+  sources = [ "data_channel_event_observer_interface.h" ]
+  deps = [
+    ":array_view",
+    "//third_party/abseil-cpp/absl/strings:string_view",
+  ]
 }
 
 rtc_source_set("libjingle_logging_api") {
@@ -1342,6 +1355,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":candidate",
+      ":data_channel_event_observer_interface",
       ":dtls_transport_interface",
       ":libjingle_logging_api",
       ":libjingle_peerconnection_api",
@@ -1353,6 +1367,7 @@ if (rtc_include_tests) {
       ":rtp_parameters",
       "../api:scoped_refptr",
       "../rtc_base:refcount",
+      "../rtc_base:threading",
       "../test:test_support",
       "adaptation:resource_adaptation_api",
       "transport:bandwidth_estimation_settings",
@@ -1384,6 +1399,7 @@ if (rtc_include_tests) {
     testonly = true
     sources = [ "test/mock_session_description_interface.h" ]
     deps = [
+      ":candidate",
       ":libjingle_peerconnection_api",
       "../test:test_support",
     ]
@@ -1397,6 +1413,7 @@ if (rtc_include_tests) {
       ":array_view",
       ":frame_transformer_interface",
       "../test:test_support",
+      "units:time_delta",
       "units:timestamp",
     ]
   }
@@ -1453,6 +1470,7 @@ if (rtc_include_tests) {
       ":frame_transformer_interface",
       "../api/units:timestamp",
       "../test:test_support",
+      "units:time_delta",
     ]
   }
 

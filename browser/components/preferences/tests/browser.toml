@@ -293,6 +293,8 @@ support-files = [
 
 ["browser_trendingsuggestions.js"]
 
+["browser_usage_telemetry.js"]
+
 ["browser_warning_permanent_private_browsing.js"]
 
 ["browser_windows_launch_on_login.js"]

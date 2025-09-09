@@ -25,14 +25,17 @@ ChromeUtils.defineESModuleGetters(this, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   CFRPageActions: "resource:///modules/asrouter/CFRPageActions.sys.mjs",
   Color: "resource://gre/modules/Color.sys.mjs",
-  ContentAnalysis: "resource:///modules/ContentAnalysis.sys.mjs",
+  ContentAnalysis:
+    "moz-src:///browser/components/contentanalysis/content/ContentAnalysis.sys.mjs",
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
-  CustomizableUI: "resource:///modules/CustomizableUI.sys.mjs",
+  CustomizableUI:
+    "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   DevToolsSocketStatus:
     "resource://devtools/shared/security/DevToolsSocketStatus.sys.mjs",
   DownloadUtils: "resource://gre/modules/DownloadUtils.sys.mjs",
-  DownloadsCommon: "resource:///modules/DownloadsCommon.sys.mjs",
+  DownloadsCommon:
+    "moz-src:///browser/components/downloads/DownloadsCommon.sys.mjs",
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
   ExtensionsUI: "resource:///modules/ExtensionsUI.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
@@ -53,8 +56,10 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/search/OpenSearchManager.sys.mjs",
   PageActions: "resource:///modules/PageActions.sys.mjs",
   PageThumbs: "resource://gre/modules/PageThumbs.sys.mjs",
-  PanelMultiView: "resource:///modules/PanelMultiView.sys.mjs",
-  PanelView: "resource:///modules/PanelMultiView.sys.mjs",
+  PanelMultiView:
+    "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
+  PanelView:
+    "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
   PictureInPicture: "resource://gre/modules/PictureInPicture.sys.mjs",
   PlacesTransactions: "resource://gre/modules/PlacesTransactions.sys.mjs",
   PlacesUIUtils: "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs",
@@ -66,7 +71,8 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs",
   PromptUtils: "resource://gre/modules/PromptUtils.sys.mjs",
   ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
-  ResetPBMPanel: "resource:///modules/ResetPBMPanel.sys.mjs",
+  ResetPBMPanel:
+    "moz-src:///browser/components/privatebrowsing/ResetPBMPanel.sys.mjs",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.sys.mjs",
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
   ScreenshotsUtils: "resource:///modules/ScreenshotsUtils.sys.mjs",
@@ -88,8 +94,10 @@ ChromeUtils.defineESModuleGetters(this, {
   TaskbarTabsChrome:
     "resource:///modules/taskbartabs/TaskbarTabsChrome.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
-  ToolbarContextMenu: "resource:///modules/ToolbarContextMenu.sys.mjs",
-  ToolbarDropHandler: "resource:///modules/ToolbarDropHandler.sys.mjs",
+  ToolbarContextMenu:
+    "moz-src:///browser/components/customizableui/ToolbarContextMenu.sys.mjs",
+  ToolbarDropHandler:
+    "moz-src:///browser/components/customizableui/ToolbarDropHandler.sys.mjs",
   ToolbarIconColor: "moz-src:///browser/themes/ToolbarIconColor.sys.mjs",
   TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
   UITour: "moz-src:///browser/components/uitour/UITour.sys.mjs",
@@ -348,7 +356,7 @@ ChromeUtils.defineLazyGetter(this, "gBrowserBundle", () => {
 
 ChromeUtils.defineLazyGetter(this, "gCustomizeMode", () => {
   let { CustomizeMode } = ChromeUtils.importESModule(
-    "resource:///modules/CustomizeMode.sys.mjs"
+    "moz-src:///browser/components/customizableui/CustomizeMode.sys.mjs"
   );
   return new CustomizeMode(window);
 });
@@ -462,9 +470,8 @@ ChromeUtils.defineLazyGetter(this, "PopupNotifications", () => {
         return anchorElement;
       }
       let fallback = [
-        document.getElementById("searchmode-switcher-icon"),
+        gURLBar.querySelector(".searchmode-switcher-icon"),
         document.getElementById("identity-icon"),
-        gURLBar.querySelector(".urlbar-search-button"),
         document.getElementById("remote-control-icon"),
       ];
       return fallback.find(element => element?.checkVisibility()) ?? null;
@@ -620,6 +627,13 @@ customElements.setElementCreationCallback("screenshots-buttons", () => {
 customElements.setElementCreationCallback("fxa-menu-message", () => {
   ChromeUtils.importESModule(
     "chrome://browser/content/asrouter/components/fxa-menu-message.mjs",
+    { global: "current" }
+  );
+});
+
+customElements.setElementCreationCallback("webrtc-preview", () => {
+  ChromeUtils.importESModule(
+    "chrome://browser/content/webrtc/webrtc-preview.mjs",
     { global: "current" }
   );
 });
@@ -1052,7 +1066,6 @@ const gStoragePressureObserver = {
     }
     this._lastNotificationTime = Date.now();
 
-    MozXULElement.insertFTLIfNeeded("branding/brand.ftl");
     MozXULElement.insertFTLIfNeeded("browser/preferences/preferences.ftl");
 
     const BYTES_IN_GIGABYTE = 1073741824;
@@ -1229,18 +1242,6 @@ var gKeywordURIFixup = {
     this.check(browser, fixupInfo);
   },
 };
-
-/* Creates a null principal using the userContextId
-   from the current selected tab or a passed in tab argument */
-function _createNullPrincipalFromTabUserContextId(tab = gBrowser.selectedTab) {
-  let userContextId;
-  if (tab.hasAttribute("usercontextid")) {
-    userContextId = tab.getAttribute("usercontextid");
-  }
-  return Services.scriptSecurityManager.createNullPrincipal({
-    userContextId,
-  });
-}
 
 function HandleAppCommandEvent(evt) {
   switch (evt.command) {
@@ -1603,9 +1604,12 @@ function FillHistoryMenu(event) {
       item.setAttribute("historyindex", j - index);
 
       if (j != index) {
-        // Use list-style-image rather than the image attribute in order to
+        // Use --menuitem-icon rather than the image attribute in order to
         // allow CSS to override this.
-        item.style.listStyleImage = `url(page-icon:${uri})`;
+        item.style.setProperty(
+          "--menuitem-icon",
+          `url(page-icon:${CSS.escape(uri)})`
+        );
       }
 
       if (j < index) {
@@ -3072,14 +3076,14 @@ function setToolbarVisibility(
     }
   }
 
-  if (toolbar.getAttribute(hidingAttribute) == (!isVisible).toString()) {
+  if (toolbar.hasAttribute(hidingAttribute) != isVisible) {
     // If this call will not result in a visibility change, return early
     // since dispatching toolbarvisibilitychange will cause views to get rebuilt.
     return;
   }
 
   toolbar.classList.toggle("instant", !animated);
-  toolbar.setAttribute(hidingAttribute, !isVisible);
+  toolbar.toggleAttribute(hidingAttribute, !isVisible);
   // For the bookmarks toolbar, we will have saved state above. For other
   // toolbars, we need to do it after setting the attribute, or we might
   // save the wrong state.
@@ -3300,8 +3304,7 @@ function GetDynamicShortcutTooltipText(nodeId) {
 }
 
 function UpdateDynamicShortcutTooltipText(aTooltip) {
-  let nodeId =
-    aTooltip.triggerNode.id || aTooltip.triggerNode.getAttribute("anonid");
+  let nodeId = aTooltip.triggerNode.id;
   aTooltip.setAttribute("label", GetDynamicShortcutTooltipText(nodeId));
 }
 
@@ -3719,125 +3722,6 @@ var BrowserOffline = {
     }
 
     this._uiElement.setAttribute("checked", aOffline);
-  },
-};
-
-var CanvasPermissionPromptHelper = {
-  _permissionsPrompt: "canvas-permissions-prompt",
-  _permissionsPromptHideDoorHanger: "canvas-permissions-prompt-hide-doorhanger",
-  _notificationIcon: "canvas-notification-icon",
-
-  init() {
-    Services.obs.addObserver(this, this._permissionsPrompt);
-    Services.obs.addObserver(this, this._permissionsPromptHideDoorHanger);
-  },
-
-  uninit() {
-    Services.obs.removeObserver(this, this._permissionsPrompt);
-    Services.obs.removeObserver(this, this._permissionsPromptHideDoorHanger);
-  },
-
-  // aSubject is an nsIBrowser (e10s) or an nsIDOMWindow (non-e10s).
-  // aData is an Origin string.
-  observe(aSubject, aTopic, aData) {
-    if (
-      aTopic != this._permissionsPrompt &&
-      aTopic != this._permissionsPromptHideDoorHanger
-    ) {
-      return;
-    }
-
-    let browser;
-    if (aSubject instanceof Ci.nsIDOMWindow) {
-      browser = aSubject.docShell.chromeEventHandler;
-    } else {
-      browser = aSubject;
-    }
-
-    if (browser?.ownerGlobal !== window) {
-      // Must belong to some other window.
-      return;
-    }
-
-    let message = gNavigatorBundle.getFormattedString(
-      "canvas.siteprompt2",
-      ["<>"],
-      1
-    );
-
-    let principal =
-      Services.scriptSecurityManager.createContentPrincipalFromOrigin(aData);
-
-    function setCanvasPermission(aPerm, aPersistent) {
-      Services.perms.addFromPrincipal(
-        principal,
-        "canvas",
-        aPerm,
-        aPersistent
-          ? Ci.nsIPermissionManager.EXPIRE_NEVER
-          : Ci.nsIPermissionManager.EXPIRE_SESSION
-      );
-    }
-
-    let mainAction = {
-      label: gNavigatorBundle.getString("canvas.allow2"),
-      accessKey: gNavigatorBundle.getString("canvas.allow2.accesskey"),
-      callback(state) {
-        setCanvasPermission(
-          Ci.nsIPermissionManager.ALLOW_ACTION,
-          state && state.checkboxChecked
-        );
-      },
-    };
-
-    let secondaryActions = [
-      {
-        label: gNavigatorBundle.getString("canvas.block"),
-        accessKey: gNavigatorBundle.getString("canvas.block.accesskey"),
-        callback(state) {
-          setCanvasPermission(
-            Ci.nsIPermissionManager.DENY_ACTION,
-            state && state.checkboxChecked
-          );
-        },
-      },
-    ];
-
-    let checkbox = {
-      // In PB mode, we don't want the "always remember" checkbox
-      show: !PrivateBrowsingUtils.isWindowPrivate(window),
-    };
-    if (checkbox.show) {
-      checkbox.checked = true;
-      checkbox.label = gBrowserBundle.GetStringFromName("canvas.remember2");
-    }
-
-    let options = {
-      checkbox,
-      name: principal.host,
-      learnMoreURL:
-        Services.urlFormatter.formatURLPref("app.support.baseURL") +
-        "fingerprint-permission",
-      dismissed: aTopic == this._permissionsPromptHideDoorHanger,
-      eventCallback(e) {
-        if (e == "showing") {
-          this.browser.ownerDocument.getElementById(
-            "canvas-permissions-prompt-warning"
-          ).textContent = gBrowserBundle.GetStringFromName(
-            "canvas.siteprompt2.warning"
-          );
-        }
-      },
-    };
-    PopupNotifications.show(
-      browser,
-      this._permissionsPrompt,
-      message,
-      this._notificationIcon,
-      mainAction,
-      secondaryActions,
-      options
-    );
   },
 };
 
@@ -4571,154 +4455,13 @@ function switchToTabHavingURI(
   aOpenParams = {},
   aUserContextId = null
 ) {
-  // Certain URLs can be switched to irrespective of the source or destination
-  // window being in private browsing mode:
-  const kPrivateBrowsingWhitelist = new Set(["about:addons"]);
-
-  let ignoreFragment = aOpenParams.ignoreFragment;
-  let ignoreQueryString = aOpenParams.ignoreQueryString;
-  let replaceQueryString = aOpenParams.replaceQueryString;
-  let adoptIntoActiveWindow = aOpenParams.adoptIntoActiveWindow;
-
-  // These properties are only used by switchToTabHavingURI and should
-  // not be used as a parameter for the new load.
-  delete aOpenParams.ignoreFragment;
-  delete aOpenParams.ignoreQueryString;
-  delete aOpenParams.replaceQueryString;
-  delete aOpenParams.adoptIntoActiveWindow;
-
-  let isBrowserWindow = !!window.gBrowser;
-
-  // This will switch to the tab in aWindow having aURI, if present.
-  function switchIfURIInWindow(aWindow) {
-    // We can switch tab only if if both the source and destination windows have
-    // the same private-browsing status.
-    if (
-      !kPrivateBrowsingWhitelist.has(aURI.spec) &&
-      PrivateBrowsingUtils.isWindowPrivate(window) !==
-        PrivateBrowsingUtils.isWindowPrivate(aWindow)
-    ) {
-      return false;
-    }
-
-    // Remove the query string, fragment, both, or neither from a given url.
-    function cleanURL(url, removeQuery, removeFragment) {
-      let ret = url;
-      if (removeFragment) {
-        ret = ret.split("#")[0];
-        if (removeQuery) {
-          // This removes a query, if present before the fragment.
-          ret = ret.split("?")[0];
-        }
-      } else if (removeQuery) {
-        // This is needed in case there is a fragment after the query.
-        let fragment = ret.split("#")[1];
-        ret = ret
-          .split("?")[0]
-          .concat(fragment != undefined ? "#".concat(fragment) : "");
-      }
-      return ret;
-    }
-
-    // Need to handle nsSimpleURIs here too (e.g. about:...), which don't
-    // work correctly with URL objects - so treat them as strings
-    let ignoreFragmentWhenComparing =
-      typeof ignoreFragment == "string" &&
-      ignoreFragment.startsWith("whenComparing");
-    let requestedCompare = cleanURL(
-      aURI.displaySpec,
-      ignoreQueryString || replaceQueryString,
-      ignoreFragmentWhenComparing
-    );
-    let browsers = aWindow.gBrowser.browsers;
-    for (let i = 0; i < browsers.length; i++) {
-      let browser = browsers[i];
-      let browserCompare = cleanURL(
-        browser.currentURI.displaySpec,
-        ignoreQueryString || replaceQueryString,
-        ignoreFragmentWhenComparing
-      );
-      let browserUserContextId = browser.getAttribute("usercontextid") || "";
-      if (aUserContextId != null && aUserContextId != browserUserContextId) {
-        continue;
-      }
-      if (requestedCompare == browserCompare) {
-        // If adoptIntoActiveWindow is set, and this is a cross-window switch,
-        // adopt the tab into the current window, after the active tab.
-        let doAdopt =
-          adoptIntoActiveWindow && isBrowserWindow && aWindow != window;
-
-        if (doAdopt) {
-          const newTab = window.gBrowser.adoptTab(
-            aWindow.gBrowser.getTabForBrowser(browser),
-            {
-              tabIndex: window.gBrowser.tabContainer.selectedIndex + 1,
-              selectTab: true,
-            }
-          );
-          if (!newTab) {
-            doAdopt = false;
-          }
-        }
-        if (!doAdopt) {
-          aWindow.focus();
-        }
-
-        if (ignoreFragment == "whenComparingAndReplace" || replaceQueryString) {
-          browser.loadURI(aURI, {
-            triggeringPrincipal:
-              aOpenParams.triggeringPrincipal ||
-              _createNullPrincipalFromTabUserContextId(),
-          });
-        }
-
-        if (!doAdopt) {
-          aWindow.gBrowser.tabContainer.selectedIndex = i;
-        }
-
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // This can be passed either nsIURI or a string.
-  if (!(aURI instanceof Ci.nsIURI)) {
-    aURI = Services.io.newURI(aURI);
-  }
-
-  // Prioritise this window.
-  if (isBrowserWindow && switchIfURIInWindow(window)) {
-    return true;
-  }
-
-  for (let browserWin of browserWindows()) {
-    // Skip closed (but not yet destroyed) windows,
-    // and the current window (which was checked earlier).
-    if (browserWin.closed || browserWin == window) {
-      continue;
-    }
-    if (switchIfURIInWindow(browserWin)) {
-      return true;
-    }
-  }
-
-  // No opened tab has that url.
-  if (aOpenNew) {
-    if (
-      UrlbarPrefs.get("switchTabs.searchAllContainers") &&
-      aUserContextId != null
-    ) {
-      aOpenParams.userContextId = aUserContextId;
-    }
-    if (isBrowserWindow && gBrowser.selectedTab.isEmpty) {
-      openTrustedLinkIn(aURI.spec, "current", aOpenParams);
-    } else {
-      openTrustedLinkIn(aURI.spec, "tab", aOpenParams);
-    }
-  }
-
-  return false;
+  return URILoadingHelper.switchToTabHavingURI(
+    window,
+    aURI,
+    aOpenNew,
+    aOpenParams,
+    aUserContextId
+  );
 }
 
 // Prompt user to restart the browser in safe mode

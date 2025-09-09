@@ -7,9 +7,9 @@
 
 #include "AudioSegment.h"
 #include "MediaEventSource.h"
+#include "MediaSegment.h"
 #include "MediaTimer.h"
 #include "MediaTrackGraph.h"
-#include "MediaSegment.h"
 #include "TimeUnits.h"
 #include "mozilla/SPSCQueue.h"
 #include "mozilla/StateMirroring.h"

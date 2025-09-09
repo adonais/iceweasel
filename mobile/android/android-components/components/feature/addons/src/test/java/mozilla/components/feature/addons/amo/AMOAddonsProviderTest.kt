@@ -6,7 +6,6 @@ package mozilla.components.feature.addons.amo
 
 import android.graphics.Bitmap
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.fetch.Client
 import mozilla.components.concept.fetch.Request
@@ -37,7 +36,6 @@ import java.io.InputStream
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
-@ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class AMOAddonsProviderTest {
 

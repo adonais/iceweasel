@@ -4,10 +4,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "GMPVideoEncodedFrameImpl.h"
-#include "GMPVideoHost.h"
-#include "mozilla/gmp/GMPTypes.h"
-#include "mozilla/Unused.h"
+
 #include "GMPSharedMemManager.h"
+#include "GMPVideoHost.h"
+#include "mozilla/Unused.h"
+#include "mozilla/gmp/GMPTypes.h"
 
 namespace mozilla::gmp {
 

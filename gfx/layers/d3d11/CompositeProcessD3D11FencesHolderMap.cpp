@@ -7,6 +7,7 @@
 #include "CompositeProcessD3D11FencesHolderMap.h"
 
 #include "mozilla/layers/FenceD3D11.h"
+#include "nsXULAppAPI.h"
 
 namespace mozilla {
 

@@ -9,30 +9,31 @@
  * attribute.
  */
 
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/DebugOnly.h"
-#include "mozilla/HashFunctions.h"
-
 #include "nsAttrValue.h"
-#include "nsAttrValueInlines.h"
-#include "nsUnicharUtils.h"
+
+#include <algorithm>
+
+#include "ReferrerInfo.h"
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/AttributeStyles.h"
-#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/BloomFilter.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/DeclarationBlock.h"
+#include "mozilla/HashFunctions.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/SVGAttrValueWrapper.h"
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoUtils.h"
 #include "mozilla/ShadowParts.h"
-#include "mozilla/SVGAttrValueWrapper.h"
 #include "mozilla/URLExtraData.h"
 #include "mozilla/dom/Document.h"
+#include "nsAttrValueInlines.h"
 #include "nsContentUtils.h"
+#include "nsIURI.h"
 #include "nsReadableUtils.h"
 #include "nsStyledElement.h"
-#include "nsIURI.h"
-#include "ReferrerInfo.h"
-#include <algorithm>
+#include "nsUnicharUtils.h"
 
 using namespace mozilla;
 

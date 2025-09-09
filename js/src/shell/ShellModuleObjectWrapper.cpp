@@ -110,6 +110,9 @@ bool GetModuleStatusName(JSContext* cx, JS::Handle<JS::Value> from,
 
   const char* statusStr = nullptr;
   switch (static_cast<ModuleStatus>(from.toInt32())) {
+    case ModuleStatus::New:
+      statusStr = "New";
+      break;
     case ModuleStatus::Unlinked:
       statusStr = "Unlinked";
       break;

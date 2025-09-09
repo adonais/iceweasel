@@ -52,6 +52,7 @@ static cubeb_stream_params CreateStreamInitParams(uint32_t aChannels,
   params.channels = aChannels;
   params.layout = CUBEB_LAYOUT_UNDEFINED;
   params.prefs = CubebUtils::GetDefaultStreamPrefs(CUBEB_DEVICE_TYPE_INPUT);
+  params.input_params = CUBEB_INPUT_PROCESSING_PARAM_NONE;
 
   if (aIsVoice) {
     params.prefs |= static_cast<cubeb_stream_prefs>(CUBEB_STREAM_PREF_VOICE);

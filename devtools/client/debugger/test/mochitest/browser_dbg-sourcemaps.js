@@ -124,6 +124,12 @@ add_task(async function () {
     "To bundle.js",
     "The link to mapped source mentions the bundle"
   );
+
+  is(
+    mappedSourceLink.title,
+    "Open related bundle (https://example.com/browser/devtools/client/debugger/test/mochitest/examples/sourcemaps/bundle.js)",
+    "The tooltip to mapped source shows the correct message to open the bundle"
+  );
   mappedSourceLink.click();
 
   await waitForSelectedSource(dbg, bundleSrc);

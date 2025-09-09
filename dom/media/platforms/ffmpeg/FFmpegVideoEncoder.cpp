@@ -6,9 +6,9 @@
 
 #include "FFmpegVideoEncoder.h"
 
-#include <algorithm>
-
 #include <aom/aomcx.h>
+
+#include <algorithm>
 
 #include "BufferReader.h"
 #include "EncoderConfig.h"

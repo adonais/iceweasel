@@ -23,7 +23,7 @@ import mozilla.components.concept.sync.Device
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.service.fxa.SyncEngine
 import mozilla.components.service.fxa.manager.FxaAccountManager
-import mozilla.components.service.fxa.manager.ext.withConstellation
+import mozilla.components.service.fxa.manager.ext.withConstellationIfExists
 import mozilla.components.service.fxa.sync.SyncReason
 
 /**
@@ -99,7 +99,7 @@ class SyncedTabsStorage(
      */
     @VisibleForTesting
     internal fun syncClients(): List<Device>? {
-        accountManager.withConstellation {
+        accountManager.withConstellationIfExists {
             return state()?.otherDevices
         }
         return null

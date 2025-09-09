@@ -269,9 +269,23 @@ class Benchmark:
 
         if not external_repo_path.is_dir():
             LOG.info(f"Cloning the benchmarks to {external_repo_path}")
-            # Bug 1804694 - Use sparse checkouts instead of full clones
-            # Locally, we should always do a full clone
-            self._full_clone(benchmark_repository, external_repo_path)
+            # Use sparse checkouts instead of full clones in CI. Locally, we can do
+            # a full clone. At the moment this is necessary for the perf-automation
+            # repo which hosts multiple benchmarks and we only need to sparse clone
+            # the required benchmark. Other benchmarks are either vendored in-tree
+            # or cloned directly (e.g. speedometer 3, motionmark 1.3)
+            use_sparse_checkout = (
+                self.test.get("sparse_checkout", False) and not run_local
+            )
+
+            if use_sparse_checkout:
+                LOG.info("Performing a sparse clone...")
+                self._sparse_clone(benchmark_repository, external_repo_path)
+                LOG.info("Sparse clone successful")
+            else:
+                LOG.info("Performing a full clone...")
+                self._full_clone(benchmark_repository, external_repo_path)
+                LOG.info("Full clone successful")
         else:
             # Make sure that the repo origin wasn't changed
             url = (

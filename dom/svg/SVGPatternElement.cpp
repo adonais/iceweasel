@@ -6,12 +6,12 @@
 
 #include "mozilla/dom/SVGPatternElement.h"
 
+#include "DOMSVGAnimatedTransformList.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGPatternElementBinding.h"
 #include "mozilla/dom/SVGUnitTypesBinding.h"
-#include "DOMSVGAnimatedTransformList.h"
 #include "nsGkAtoms.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(Pattern)

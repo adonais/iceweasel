@@ -7,14 +7,14 @@
 #ifndef mozilla_dom_WindowGlobalActor_h
 #define mozilla_dom_WindowGlobalActor_h
 
-#include "nsWrapperCache.h"
-#include "nsISupports.h"
 #include "mozilla/dom/BrowsingContext.h"
-#include "nsIURI.h"
-#include "nsString.h"
 #include "mozilla/dom/JSActor.h"
 #include "mozilla/dom/JSActorManager.h"
 #include "mozilla/dom/WindowGlobalTypes.h"
+#include "nsISupports.h"
+#include "nsIURI.h"
+#include "nsString.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla {
 class ErrorResult;

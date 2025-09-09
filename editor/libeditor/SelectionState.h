@@ -274,8 +274,46 @@ class MOZ_STACK_CLASS RangeUpdater final {
     NS_WARNING_ASSERTION(mLocked, "Not locked");
     mLocked = false;
   }
-  void DidMoveNode(const nsINode& aOldParent, uint32_t aOldOffset,
-                   const nsINode& aNewParent, uint32_t aNewOffset);
+  template <typename PT, typename CT>
+  struct SimpleEditorDOMPointBase {
+    SimpleEditorDOMPointBase() = default;
+    SimpleEditorDOMPointBase(const nsINode* aContainer,
+                             const nsIContent* aChild, uint32_t aOffset)
+        : mContainer(const_cast<nsINode*>(aContainer)),
+          mChild(const_cast<nsIContent*>(aChild)),
+          mOffset(Some(aOffset)) {}
+    SimpleEditorDOMPointBase(const nsIContent* aChild, uint32_t aOffset)
+        : mContainer(aChild->GetParentNode()),
+          mChild(const_cast<nsIContent*>(aChild)),
+          mOffset(Some(aOffset)) {}
+    SimpleEditorDOMPointBase(const nsINode* aContainer,
+                             const nsIContent* aChild)
+        : mContainer(const_cast<nsINode*>(aContainer)),
+          mChild(const_cast<nsIContent*>(aChild)) {}
+    explicit SimpleEditorDOMPointBase(const nsIContent* aChild)
+        : mContainer(aChild->GetParentNode()),
+          mChild(const_cast<nsIContent*>(aChild)) {}
+
+    uint32_t Offset() const {
+      if (!mOffset && mContainer) {
+        mOffset = mContainer->ComputeIndexOf(mChild);
+      }
+      return mOffset.valueOr(0);
+    }
+    nsIContent* GetNextSiblingOfChild() const {
+      return mChild->GetNextSibling();
+    }
+    PT mContainer;
+    CT mChild;
+    mutable Maybe<uint32_t> mOffset;
+  };
+  using SimpleEditorDOMPoint =
+      SimpleEditorDOMPointBase<nsCOMPtr<nsINode>, nsCOMPtr<nsIContent>>;
+  using SimpleEditorRawDOMPoint =
+      SimpleEditorDOMPointBase<nsINode*, nsIContent*>;
+  void DidMoveNodes(const nsTArray<SimpleEditorDOMPoint>& aOldPoints,
+                    const SimpleEditorDOMPoint& aExpectedDestination,
+                    const nsTArray<SimpleEditorDOMPoint>& aNewPoints);
 
  private:
   // TODO: A lot of loop in these methods check whether each item `nullptr` or
@@ -653,29 +691,69 @@ class MOZ_STACK_CLASS AutoInsertContainerSelNotify final {
 
 class MOZ_STACK_CLASS AutoMoveNodeSelNotify final {
  public:
+  using SimpleEditorDOMPoint = RangeUpdater::SimpleEditorDOMPoint;
+
   AutoMoveNodeSelNotify() = delete;
-  AutoMoveNodeSelNotify(RangeUpdater& aRangeUpdater,
-                        const EditorRawDOMPoint& aOldPoint,
-                        const EditorRawDOMPoint& aNewPoint)
+  explicit AutoMoveNodeSelNotify(RangeUpdater& aRangeUpdater,
+                                 const EditorRawDOMPoint& aExpectedDestination)
       : mRangeUpdater(aRangeUpdater),
-        mOldParent(*aOldPoint.GetContainer()),
-        mNewParent(*aNewPoint.GetContainer()),
-        mOldOffset(aOldPoint.Offset()),
-        mNewOffset(aNewPoint.Offset()) {
-    MOZ_ASSERT(aOldPoint.IsSet());
-    MOZ_ASSERT(aNewPoint.IsSet());
+        mExpectedDestination(aExpectedDestination.GetContainer(), nullptr,
+                             aExpectedDestination.Offset()) {}
+  AutoMoveNodeSelNotify(RangeUpdater& aRangeUpdater, nsIContent& aContent,
+                        const EditorRawDOMPoint& aExpectedDestination)
+      : mRangeUpdater(aRangeUpdater),
+        mExpectedDestination(aExpectedDestination.GetContainer(), nullptr,
+                             aExpectedDestination.Offset()) {
+    if (aContent.GetParentNode()) {
+      mOldPoints.AppendElement(SimpleEditorDOMPoint(
+          &aContent, aContent.ComputeIndexInParentNode().valueOr(0)));
+      return;
+    }
+    mOldPoints.AppendElement(SimpleEditorDOMPoint(&aContent));
+  }
+
+  void AppendContentWhichWillBeMoved(nsIContent& aContent) {
+    if (!mOldPoints.IsEmpty() &&
+        mOldPoints.LastElement().GetNextSiblingOfChild() == &aContent) {
+      mOldPoints.AppendElement(SimpleEditorDOMPoint(
+          &aContent, mOldPoints.LastElement().Offset() + 1));
+      return;
+    }
+    if (aContent.GetParentNode()) {
+      mOldPoints.AppendElement(SimpleEditorDOMPoint(
+          &aContent, aContent.ComputeIndexInParentNode().valueOr(0)));
+      return;
+    }
+    mOldPoints.AppendElement(SimpleEditorDOMPoint(&aContent));
+  }
+
+  void DidMoveContent(nsIContent& aContent) {
+    if (!mNewPoints.IsEmpty() &&
+        mNewPoints.LastElement().GetNextSiblingOfChild() == &aContent) {
+      mNewPoints.AppendElement(SimpleEditorDOMPoint(
+          &aContent, mNewPoints.LastElement().Offset() + 1));
+      return;
+    }
+    // Compute offset when we need it.
+    mNewPoints.AppendElement(SimpleEditorDOMPoint(&aContent));
   }
 
   ~AutoMoveNodeSelNotify() {
-    mRangeUpdater.DidMoveNode(mOldParent, mOldOffset, mNewParent, mNewOffset);
+    mRangeUpdater.DidMoveNodes(mOldPoints, mExpectedDestination, mNewPoints);
+  }
+
+  [[nodiscard]] size_t MovingContentCount() const {
+    return mOldPoints.Length();
+  }
+  [[nodiscard]] nsIContent* GetContentAt(size_t index) const {
+    return mOldPoints[index].mChild;
   }
 
  private:
   RangeUpdater& mRangeUpdater;
-  nsINode& mOldParent;
-  nsINode& mNewParent;
-  const uint32_t mOldOffset;
-  const uint32_t mNewOffset;
+  SimpleEditorDOMPoint mExpectedDestination;
+  AutoTArray<SimpleEditorDOMPoint, 12> mOldPoints;
+  AutoTArray<SimpleEditorDOMPoint, 12> mNewPoints;
 };
 
 }  // namespace mozilla

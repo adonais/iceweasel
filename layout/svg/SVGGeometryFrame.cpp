@@ -360,8 +360,10 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
 
   if ((aFlags & SVGUtils::eForGetClientRects) &&
       aToBBoxUserspace.PreservesAxisAlignedRectangles()) {
-    Rect rect = NSRectToRect(mRect, AppUnitsPerCSSPixel());
-    bbox = aToBBoxUserspace.TransformBounds(rect);
+    if (!mRect.IsEmpty()) {
+      Rect rect = NSRectToRect(mRect, AppUnitsPerCSSPixel());
+      bbox = aToBBoxUserspace.TransformBounds(rect);
+    }
     return bbox;
   }
 
@@ -414,7 +416,7 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
     }
     gotSimpleBounds = element->GetGeometryBounds(
         &simpleBounds, strokeOptions, aToBBoxUserspace, &moz2dUserToOuterSVG);
-  } else {
+  } else if (getFill || getStroke) {
     gotSimpleBounds = element->GetGeometryBounds(&simpleBounds, strokeOptions,
                                                  aToBBoxUserspace);
   }
@@ -422,26 +424,29 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
   if (gotSimpleBounds) {
     bbox = simpleBounds;
   } else {
-    // Get the bounds using a Moz2D Path object (more expensive):
-    RefPtr<DrawTarget> tmpDT;
-    tmpDT = gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
-
-    FillRule fillRule = SVGUtils::ToFillRule(
-        HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD) ? StyleSVG()->mClipRule
-                                                     : StyleSVG()->mFillRule);
-    RefPtr<Path> pathInUserSpace = element->GetOrBuildPath(tmpDT, fillRule);
-    if (!pathInUserSpace) {
-      return bbox;
-    }
     RefPtr<Path> pathInBBoxSpace;
-    if (aToBBoxUserspace.IsIdentity()) {
-      pathInBBoxSpace = pathInUserSpace;
-    } else {
-      RefPtr<PathBuilder> builder =
-          pathInUserSpace->TransformedCopyToBuilder(aToBBoxUserspace, fillRule);
-      pathInBBoxSpace = builder->Finish();
-      if (!pathInBBoxSpace) {
+    RefPtr<Path> pathInUserSpace;
+    if (getFill || getStroke) {
+      // Get the bounds using a Moz2D Path object (more expensive):
+      RefPtr<DrawTarget> tmpDT;
+      tmpDT = gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
+
+      FillRule fillRule = SVGUtils::ToFillRule(
+          HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD) ? StyleSVG()->mClipRule
+                                                       : StyleSVG()->mFillRule);
+      pathInUserSpace = element->GetOrBuildPath(tmpDT, fillRule);
+      if (!pathInUserSpace) {
         return bbox;
+      }
+      if (aToBBoxUserspace.IsIdentity()) {
+        pathInBBoxSpace = pathInUserSpace;
+      } else {
+        RefPtr<PathBuilder> builder = pathInUserSpace->TransformedCopyToBuilder(
+            aToBBoxUserspace, fillRule);
+        pathInBBoxSpace = builder->Finish();
+        if (!pathInBBoxSpace) {
+          return bbox;
+        }
       }
     }
 

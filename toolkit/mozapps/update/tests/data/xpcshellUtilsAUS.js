@@ -58,6 +58,8 @@ const DIR_RESOURCES =
 const TEST_FILE_SUFFIX = AppConstants.platform == "macosx" ? "_mac" : "";
 const FILE_COMPLETE_MAR = "complete" + TEST_FILE_SUFFIX + ".mar";
 const FILE_PARTIAL_MAR = "partial" + TEST_FILE_SUFFIX + ".mar";
+const FILE_PARTIAL_ZUCCHINI_MAR =
+  "partial_zucchini" + TEST_FILE_SUFFIX + ".mar";
 const FILE_COMPLETE_PRECOMPLETE = "complete_precomplete" + TEST_FILE_SUFFIX;
 const FILE_PARTIAL_PRECOMPLETE = "partial_precomplete" + TEST_FILE_SUFFIX;
 const FILE_COMPLETE_REMOVEDFILES = "complete_removed-files" + TEST_FILE_SUFFIX;

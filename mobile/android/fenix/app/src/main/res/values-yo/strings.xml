@@ -36,13 +36,7 @@
   <string name="tab_tray_collection_button_multiselect_content_description">Ṣe ìfipamọ́ àwọn táàbù tí o yàn sí inú àkójọpọ̀</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s Jẹ́ ṣíṣẹ̀dá látọwọ́ọ Mozilla.</string>
-  <!--
-    Private Browsing
-
-    Explanation for private browsing displayed to users on home view when they first enable private mode.
-    %1$s is the name of the app (for example "Firefox").
-  -->
-  <string name="private_browsing_placeholder_description_2" moz:removedIn="141" tools:ignore="UnusedResources">%1$s pa ìwádìí àti ìtàn ìlọkiri rẹ̀ lórí àwọn táàbù ìkọ̀kọ̀ nígbà tí o bá tì wọ́n tàbí nígbà tí o kò lo áàpù náà mọ́. Ní àkó́kò tí èyí kò sọ ẹ́ di aláìnídáánimọ̀ sí àwọn wẹ́íbusaìtì yí tàbí olùpèsè ìlò íntánẹ́ẹ̀tì rẹ, ó jẹ́ kó rọrùn láti tọ́jú gbogbo ohun tí ò ń ṣe lórí ayélujára sí ìkọ̀kọ̀ fún ẹnikẹ́ni tó bá lo èrọ yìí.</string>
+  <!-- Private Browsing -->
   <string name="private_browsing_common_myths">Àwọn àròsọ tó wọ́pọ̀ nípa ìlọkiri-oníwẹ́ẹ̀bù ìkọ̀kọ̀</string>
   <!--
     Open in App "contextual feature recommendation" (CFR)
@@ -54,6 +48,8 @@
   <string name="open_in_app_cfr_positive_button_text">Lọ sí àwọn ètò</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Yọ kúrò</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">A nílò àti lo ẹ̀rọ ayàwòrán. Lọ sí àwọn ètò Ańdíróídì, tẹ àwọn ìgbaniláàyè, kí o sì tẹ ìgbàláàyè.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -219,17 +215,11 @@
   <string name="search_engine_suggestions_description">Wá tààrà láti ààyè ìfi-àdírẹ̀sì-sí</string>
   <!-- Menu option in the search selector menu to open the search settings -->
   <string name="search_settings_menu_item">Àwọn ètò ìwádìí</string>
-  <!-- Home onboarding dialog welcome screen description text. -->
-  <string name="onboarding_home_welcome_description" moz:removedIn="141" tools:ignore="UnusedResources">Ọ̀pọ̀ àwọn àwọ̀. Ìkọ̀kọ̀ tó dára. Irúfẹ́ ìfarafún bẹ̀ẹ́ sí àwọn ènìyàn lóri àwọn èrè.</string>
-  <!-- Home onboarding dialog sign into sync screen description text. -->
-  <string name="onboarding_home_sync_description" moz:removedIn="141" tools:ignore="UnusedResources">Lọ mú níbi tí o ti kúrò pẹ̀lú àwọn táàbù láti inú àwọn ẹ̀rọ tí ó kù tí ó wà lóri ojúùwé àkọ́ọ́kàn rẹ lọ́wọ́lọ́wọ́.</string>
-  <!-- Text for the button to continue the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_get_started_button" moz:removedIn="141" tools:ignore="UnusedResources">Bẹ̀rẹ̀</string>
-  <!-- Text for the button to navigate to the sync sign in screen on the home onboarding dialog. -->
-  <string name="onboarding_home_sign_in_button" moz:removedIn="141" tools:ignore="UnusedResources">Wọlé</string>
-  <!-- Text for the button to skip the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_skip_button" moz:removedIn="141" tools:ignore="UnusedResources">Fò</string>
-  <!-- Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section. -->
+  <!--
+    Home onboarding
+
+    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+  -->
   <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">Àwọn táàbù rẹ ti ń ṣiṣẹ́ pọ̀! Mú u sókè níbi tí o ti kúrò lóri ẹ̀rọ rẹ mìíràn.</string>
   <!--
     Search Widget
@@ -318,8 +308,6 @@
   <string name="preferences_account_sync_error">Tún darapọ̀ láti tún bẹ̀rẹ̀ ìṣiṣẹ́pọ̀ padà</string>
   <!-- Preference for language -->
   <string name="preferences_language">Èdè</string>
-  <!-- Preference for data choices -->
-  <string name="preferences_data_choices" tools:ignore="UnusedResources" moz:removedIn="141">Àwọn dátà tó wunni</string>
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">Gbígba àwọn dátà</string>
   <!-- Preference for developers -->
@@ -344,8 +332,6 @@
   <string name="preferences_enable_autocomplete_urls">Ìdápé-aláìfọwọ́sí àwọn URL</string>
   <!-- Preference for open links in third party apps -->
   <string name="preferences_open_links_in_apps">Ṣí àwọn ọ̀nà àsopọ̀ nínú awọn áápù</string>
-  <!-- Preference for open download with an external download manager app -->
-  <string name="preferences_external_download_manager" tools:ignore="UnusedResources" moz:removedIn="141">Alákòóso ìgbàsílẹ̀ ìta</string>
   <!-- Preference for notifications -->
   <string name="preferences_notifications">Àwọn ìfitónilétí</string>
   <!-- Button caption to confirm the add-on collection configuration -->
@@ -380,9 +366,9 @@
   -->
   <string name="wallpapers_item_name_content_description">Ohun Ìṣẹ̀ṣọ́ ògiri: %1$s</string>
   <!-- Snackbar message for when wallpaper is selected -->
-  <string name="wallpaper_updated_snackbar_message">Ìsọdọ̀tun ìṣẹ̀sọ́ ògiri!</string>
+  <string name="wallpaper_updated_snackbar_message" tools:ignore="UnusedResources" moz:removedIn="144">Ìsọdọ̀tun ìṣẹ̀sọ́ ògiri!</string>
   <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action">Wòó</string>
+  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">Wòó</string>
   <!-- Preference for triggering sync -->
   <string name="preferences_sync_now">Ṣepọ̀ nísìyín</string>
   <!-- Preference category for sync -->
@@ -954,8 +940,6 @@
     Text shown in snackbar when user deletes a collection
   -->
   <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Ti pa àkójọpọ̀ rẹ́</string>
-  <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Àkójọpọ̀ ti gba orúkọ mìíràn</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Táàbù di pípadé</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -964,12 +948,10 @@
   <string name="snackbar_added_to_shortcuts">Ṣàfikún àwọn ọ̀nà-àbùjá!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">Táàbù ìkọ̀kọ̀ ti padé</string>
-  <!-- Text shown in snackbar when user closes all private tabs -->
-  <string name="snackbar_private_tabs_closed" moz:removedIn="141" tools:ignore="UnusedResources">Àwọn táàbù ìkọ̀kọ̀ ti padé</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">MÁṢÈÉ</string>
   <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed">Sáìtì ti di yíyọ kúrò</string>
+  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">Sáìtì ti di yíyọ kúrò</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -1544,10 +1526,6 @@
   <string name="action_bar_up_description">Lọ kiri sókẹ̀</string>
   <!-- Content description for privacy content close button -->
   <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">Tì</string>
-  <!-- Header text for a section on the home screen. -->
-  <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">Àwọn ìtàn nípasẹ̀ kókó-ọ̀rọ̀</string>
-  <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
-  <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">Ṣàwárí si</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Onígbọ̀wọ́</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->

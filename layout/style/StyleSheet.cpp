@@ -1254,18 +1254,21 @@ void StyleSheet::FinishAsyncParse(
   UnblockParsePromise();
 }
 
-StyleLikelyBaseUriDependency StyleSheet::OriginalContentsBaseUriDependency()
-    const {
+StyleNonLocalUriDependency StyleSheet::OriginalContentsUriDependency() const {
   const auto* counters = UseCounters();
   if (Servo_IsCustomUseCounterRecorded(
           counters, StyleCustomUseCounter::MaybeHasFullBaseUriDependency)) {
-    return StyleLikelyBaseUriDependency::Full;
+    return StyleNonLocalUriDependency::Full;
   }
   if (Servo_IsCustomUseCounterRecorded(
           counters, StyleCustomUseCounter::MaybeHasPathBaseUriDependency)) {
-    return StyleLikelyBaseUriDependency::Path;
+    return StyleNonLocalUriDependency::Path;
   }
-  return StyleLikelyBaseUriDependency::No;
+  if (Servo_IsCustomUseCounterRecorded(
+          counters, StyleCustomUseCounter::HasNonLocalUriDependency)) {
+    return StyleNonLocalUriDependency::Absolute;
+  }
+  return StyleNonLocalUriDependency::No;
 }
 
 const StyleUseCounters* StyleSheet::UseCounters() const {

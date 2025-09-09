@@ -99,7 +99,7 @@ const perfMetadata = {
   },
 };
 
-requestLongerTimeout(120);
+requestLongerTimeout(20);
 
 // To run locally
 // pip install huggingface-hub

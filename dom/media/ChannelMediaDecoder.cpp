@@ -5,17 +5,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ChannelMediaDecoder.h"
+
+#include "BaseMediaResource.h"
 #include "ChannelMediaResource.h"
 #include "DecoderTraits.h"
 #include "ExternalEngineStateMachine.h"
 #include "MediaDecoderStateMachine.h"
 #include "MediaFormatReader.h"
-#include "BaseMediaResource.h"
 #include "MediaShutdownManager.h"
+#include "VideoUtils.h"
 #include "base/process_util.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "VideoUtils.h"
 
 namespace mozilla {
 
@@ -221,6 +222,9 @@ MediaDecoderStateMachineBase* ChannelMediaDecoder::CreateStateMachine(
                            sTrackingIdCounter++,
                            TrackingId::TrackAcrossProcesses::Yes);
   mReader = DecoderTraits::CreateReader(ContainerType(), init);
+  if (NS_WARN_IF(!mReader)) {
+    return nullptr;
+  }
 
 #ifdef MOZ_WMF_MEDIA_ENGINE
   // This state machine is mainly used for the encrypted playback. However, for

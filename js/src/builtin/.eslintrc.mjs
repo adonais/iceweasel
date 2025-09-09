@@ -170,9 +170,7 @@ export default [
         // release, in which case we can remove these extra entries.
         AsyncIterator: "off",
         Iterator: "off",
-        Record: "off",
         Temporal: "off",
-        Tuple: "off",
       },
     },
   },

@@ -766,8 +766,7 @@ void DBusMenuBar::OnNameOwnerChanged() {
       mAppMenu = org_kde_kwin_appmenu_manager_create(appMenuManager, surface);
     }
 
-    // Mostly for consistency with the X11 path.
-    mMenuModel->Element()->SetBoolAttr(nsGkAtoms::hidden, true);
+    mMenuModel->Element()->SetBoolAttr(nsGkAtoms::native, true);
     org_kde_kwin_appmenu_set_address(mAppMenu, myServiceName,
                                      mObjectPath.get());
     return;
@@ -782,12 +781,12 @@ void DBusMenuBar::OnNameOwnerChanged() {
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self = RefPtr{this}](RefPtr<GVariant>&& aResult) {
-            self->mMenuModel->Element()->SetBoolAttr(nsGkAtoms::hidden, true);
+            self->mMenuModel->Element()->SetBoolAttr(nsGkAtoms::native, true);
           },
           [self = RefPtr{this}](GUniquePtr<GError>&& aError) {
             g_printerr("Failed to register window menubar: %s\n",
                        aError->message);
-            self->mMenuModel->Element()->SetBoolAttr(nsGkAtoms::hidden, false);
+            self->mMenuModel->Element()->SetBoolAttr(nsGkAtoms::native, false);
           });
 #  endif
 }

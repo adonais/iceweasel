@@ -262,16 +262,16 @@ class MOZ_RAII AutoProfilerTerminatingFlowMarkerFlowOnly {
 };
 
 #define AUTO_PROFILER_FLOW_MARKER(markerName, categoryName, flow) \
-  AutoProfilerFlowMarker PROFILER_RAII(                           \
+  ::mozilla::AutoProfilerFlowMarker PROFILER_RAII(                \
       markerName, ::mozilla::baseprofiler::category::categoryName, flow)
 
 #define AUTO_PROFILER_TERMINATING_FLOW_MARKER(markerName, categoryName, flow) \
-  AutoProfilerTerminatingFlowMarker PROFILER_RAII(                            \
+  ::mozilla::AutoProfilerTerminatingFlowMarker PROFILER_RAII(                 \
       markerName, ::mozilla::baseprofiler::category::categoryName, flow)
 
 #define AUTO_PROFILER_TERMINATING_FLOW_MARKER_FLOW_ONLY(markerName,         \
                                                         categoryName, flow) \
-  AutoProfilerTerminatingFlowMarkerFlowOnly PROFILER_RAII(                  \
+  ::mozilla::AutoProfilerTerminatingFlowMarkerFlowOnly PROFILER_RAII(       \
       markerName, ::mozilla::baseprofiler::category::categoryName, flow)
 
 #define PROFILER_MARKER_FLOW_ONLY(markerName, categoryName, options,           \

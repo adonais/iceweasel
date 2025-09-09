@@ -129,10 +129,18 @@ int nr_ice_candidate_pair_create(nr_ice_peer_ctx *pctx, nr_ice_candidate *lcand,
       ABORT(r);
     t_priority = tmpcand.priority;
 
+    int flags = NR_STUN_TRANSPORT_ADDR_CHECK_WILDCARD;
+    if (!(pctx->ctx->flags & NR_ICE_CTX_FLAGS_ALLOW_LOOPBACK)) {
+      flags |= NR_STUN_TRANSPORT_ADDR_CHECK_LOOPBACK;
+    }
+    if (!(pctx->ctx->flags & NR_ICE_CTX_FLAGS_ALLOW_LINK_LOCAL)) {
+      flags |= NR_STUN_TRANSPORT_ADDR_CHECK_LINK_LOCAL;
+    }
+
     /* Our sending context */
-    if(r=nr_stun_client_ctx_create(pair->as_string,
-      lcand->osock,
-      &rcand->addr,RTO,&pair->stun_client))
+    if (r = nr_stun_client_ctx_create(pair->as_string, lcand->osock,
+                                      &rcand->addr, RTO, flags,
+                                      &pair->stun_client))
       ABORT(r);
     if(!(pair->stun_client->params.ice_binding_request.username=r_strdup(rcand->stream->l2r_user)))
       ABORT(R_NO_MEMORY);

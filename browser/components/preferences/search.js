@@ -10,11 +10,10 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AddonSearchEngine:
     "moz-src:///toolkit/components/search/AddonSearchEngine.sys.mjs",
-  CustomizableUI: "resource:///modules/CustomizableUI.sys.mjs",
+  CustomizableUI:
+    "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
-  UserInstalledAppEngine:
-    "moz-src:///toolkit/components/search/AppProvidedSearchEngine.sys.mjs",
   UserSearchEngine:
     "moz-src:///toolkit/components/search/UserSearchEngine.sys.mjs",
 });
@@ -619,8 +618,6 @@ class EngineStore {
       aEngine.wrappedJSObject instanceof lazy.AddonSearchEngine;
     clonedObj.isUserEngine =
       aEngine.wrappedJSObject instanceof lazy.UserSearchEngine;
-    clonedObj.isUserInstalledAppEngine =
-      aEngine.wrappedJSObject instanceof lazy.UserInstalledAppEngine;
     clonedObj.originalEngine = aEngine;
 
     // Trigger getting the iconURL for this engine.
@@ -699,10 +696,7 @@ class EngineStore {
 
     this.engines.splice(index, 1)[0];
 
-    if (
-      aEngine.isAppProvided &&
-      !(aEngine.wrappedJSObject instanceof lazy.UserInstalledAppEngine)
-    ) {
+    if (aEngine.isAppProvided) {
       gSearchPane.showRestoreDefaults(true);
     }
 
@@ -978,7 +972,7 @@ class EngineView {
    *   The search engine object from EngineStore to remove.
    */
   async promptAndRemoveEngine(engine) {
-    if (engine.isAppProvided && !engine.isUserInstalledAppEngine) {
+    if (engine.isAppProvided) {
       Services.search.removeEngine(
         this.selectedEngine.originalEngine,
         Ci.nsISearchService.CHANGE_REASON_USER

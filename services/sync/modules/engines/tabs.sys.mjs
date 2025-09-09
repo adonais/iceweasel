@@ -32,6 +32,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   getTabsStore: "resource://services-sync/TabsStore.sys.mjs",
   RemoteTabRecord:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustTabs.sys.mjs",
+  setupLoggerForTarget: "resource://gre/modules/AppServicesTracing.sys.mjs",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -127,6 +128,9 @@ TabEngine.prototype = {
   async initialize() {
     await SyncEngine.prototype.initialize.call(this);
 
+    lazy.setupLoggerForTarget("tabs", "Sync.Engine.Tabs");
+    // highlights problems with simple logs - we get everyone's sql-support
+    lazy.setupLoggerForTarget("sql_support", "Sync.Engine.Tabs");
     this._rustStore = await lazy.getTabsStore();
     this._bridge = await this._rustStore.bridgedEngine();
 

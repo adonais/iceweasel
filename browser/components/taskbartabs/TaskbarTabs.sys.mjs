@@ -46,6 +46,30 @@ export const TaskbarTabs = new (class {
     return this.#registry.findOrCreateTaskbarTab(...args);
   }
 
+  /**
+   * Moves an existing tab into a new Taskbar Tab window.
+   *
+   * If there is already a Taskbar Tab for the tab's selected URL and container,
+   * opens the existing Taskbar Tab. If not, a new Taskbar Tab is created.
+   *
+   * @param {MozTabbrowserTab} aTab - The tab to move into a Taskbar Tab window.
+   * @returns {{window: DOMWindow, taskbarTab: TaskbarTab}} The created window
+   * and the Taskbar Tab it is associated with.
+   */
+  async moveTabIntoTaskbarTab(aTab) {
+    const browser = aTab.linkedBrowser;
+    let url = browser.currentURI;
+    let userContextId = aTab.userContextId;
+
+    let taskbarTab = await this.findOrCreateTaskbarTab(url, userContextId);
+
+    let win = await this.replaceTabWithWindow(taskbarTab, aTab);
+    return {
+      window: win,
+      taskbarTab,
+    };
+  }
+
   async resetForTests(...args) {
     await this.#ready;
     return this.#registry.resetForTests(...args);

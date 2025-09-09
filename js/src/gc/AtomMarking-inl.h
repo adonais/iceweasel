@@ -90,7 +90,12 @@ inline bool GCRuntime::isSymbolReferencedByUncollectedZone(JS::Symbol* sym) {
   size_t bit = GetAtomBit(sym);
   MOZ_ASSERT(bit / JS_BITS_PER_WORD < atomMarking.allocatedWords);
 
-  return atomsUsedByUncollectedZones.ref()->getBit(bit);
+  const DenseBitmap& bitmap = *atomsUsedByUncollectedZones.ref();
+  if (bit >= bitmap.count()) {
+    return false;  // Atom created during collection.
+  }
+
+  return bitmap.getBit(bit);
 }
 
 void AtomMarkingRuntime::markChildren(JSContext* cx, JSAtom*) {}

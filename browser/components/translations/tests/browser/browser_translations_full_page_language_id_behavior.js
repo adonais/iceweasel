@@ -147,7 +147,7 @@ const cases = [
   },
   {
     // Case 12 - Nothing is set to auto translate.
-    page: SPANISH_PAGE_MISMATCH_SHORT_URL,
+    page: SPANISH_PAGE_UNDECLARED_SHORT_URL,
     buttonShown: true,
     message:
       "A language was detected, but it was so low confidence only show the button.",

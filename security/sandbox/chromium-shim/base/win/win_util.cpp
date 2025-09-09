@@ -15,6 +15,8 @@
 namespace base {
 namespace win {
 
+const char kApplicationVerifierDllName[] = "verifier.dll";
+
 std::wstring GetWindowObjectName(HANDLE handle) {
   // Get the size of the name.
   std::wstring object_name;
@@ -36,6 +38,10 @@ std::wstring GetWindowObjectName(HANDLE handle) {
   }
 
   return object_name;
+}
+
+bool IsAppVerifierLoaded() {
+  return GetModuleHandleA(kApplicationVerifierDllName);
 }
 
 }  // namespace win

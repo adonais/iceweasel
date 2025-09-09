@@ -3,18 +3,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
-#include "js/Conversions.h"
-#include "MediaData.h"
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/gtest/MozAssertions.h"
-#include "mozilla/Preferences.h"
-
 #include "BufferStream.h"
 #include "MP4Metadata.h"
+#include "MediaData.h"
 #include "MoofParser.h"
 #include "TelemetryFixture.h"
 #include "TelemetryTestHelpers.h"
+#include "gtest/gtest.h"
+#include "js/Conversions.h"
+#include "mozilla/ArrayUtils.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/gtest/MozAssertions.h"
 
 class TestStream;
 namespace mozilla {

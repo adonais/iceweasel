@@ -7,11 +7,11 @@
 #ifndef MediaResult_h_
 #define MediaResult_h_
 
-#include "nsString.h"  // Required before 'mozilla/ErrorNames.h'!?
 #include "mozilla/ErrorNames.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "nsError.h"
 #include "nsPrintfCString.h"
+#include "nsString.h"  // Required before 'mozilla/ErrorNames.h'!?
 
 // MediaResult can be used interchangeably with nsresult.
 // It allows to store extra information such as where the error occurred.

@@ -319,10 +319,12 @@ void nsPageContentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   MOZ_ASSERT(GetParent());
   MOZ_ASSERT(GetParent()->IsPageFrame());
   auto* pageFrame = static_cast<nsPageFrame*>(GetParent());
-  auto pageNum = pageFrame->GetPageNum();
-  NS_ASSERTION(pageNum <= 255, "Too many pages to handle OOFs");
 
-  if (aBuilder->GetBuildingExtraPagesForPageNum()) {
+  if (auto pageNum = aBuilder->GetBuildingPageNum()) {
+    // We're an extra page, avoid building duplicate OOFs that are going to be
+    // built already.
+    nsDisplayListBuilder::AutoPageNumberSetter p(
+        aBuilder, pageNum, /* aAvoidBuildingDuplicateOofs = */ true);
     return mozilla::ViewportFrame::BuildDisplayList(aBuilder, aLists);
   }
 
@@ -330,6 +332,10 @@ void nsPageContentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   nsDisplayList content(aBuilder);
   {
+    nsDisplayListBuilder::AutoPageNumberSetter p(aBuilder,
+                                                 pageFrame->GetPageNum());
+    NS_ASSERTION(!aBuilder->AvoidBuildingDuplicateOofs(),
+                 "Too many pages to handle OOFs");
     const nsRect clipRect(aBuilder->ToReferenceFrame(this), GetSize());
     DisplayListClipState::AutoSaveRestore clipState(aBuilder);
 
@@ -339,8 +345,7 @@ void nsPageContentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     clipState.ClipContentDescendants(clipRect);
 
     if (StaticPrefs::layout_display_list_improve_fragmentation() &&
-        pageNum <= 255) {
-      nsDisplayListBuilder::AutoPageNumberSetter p(aBuilder, pageNum);
+        !aBuilder->AvoidBuildingDuplicateOofs()) {
       BuildPreviousPageOverflow(aBuilder, pageFrame, this, set);
     }
     mozilla::ViewportFrame::BuildDisplayList(aBuilder, set);
@@ -360,10 +365,8 @@ void nsPageContentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     // items duplicated. We tell the builder to include our page number
     // in the unique key for any extra page items so that they can be
     // differentiated from the ones created on the normal page.
-    if (pageNum <= 255) {
+    if (!aBuilder->AvoidBuildingDuplicateOofs()) {
       const nsRect overflowRect = ScrollableOverflowRectRelativeToSelf();
-      nsDisplayListBuilder::AutoPageNumberSetter p(aBuilder, pageNum);
-
       // The static_cast here is technically unnecessary, but it helps
       // devirtualize the GetNextContinuation() function call if pcf has a
       // concrete type (with an inherited `final` GetNextContinuation() impl).

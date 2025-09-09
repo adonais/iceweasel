@@ -12,6 +12,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/AboutNewTabResourceMapping.sys.mjs",
   ActivityStream: "resource://newtab/lib/ActivityStream.sys.mjs",
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
+  TelemetryReportingPolicy:
+    "resource://gre/modules/TelemetryReportingPolicy.sys.mjs",
 });
 
 const ABOUT_URL = "about:newtab";
@@ -19,7 +21,6 @@ const PREF_ACTIVITY_STREAM_DEBUG = "browser.newtabpage.activity-stream.debug";
 // AboutHomeStartupCache needs us in "quit-application", so stay alive longer.
 // TODO: We could better have a shared async shutdown blocker?
 const TOPIC_APP_QUIT = "profile-before-change";
-const BROWSER_READY_NOTIFICATION = "sessionstore-windows-restored";
 
 export const AboutNewTab = {
   QueryInterface: ChromeUtils.generateQI([
@@ -78,7 +79,10 @@ export const AboutNewTab = {
     this.toggleActivityStream(true);
     this.initialized = true;
 
-    Services.obs.addObserver(this, BROWSER_READY_NOTIFICATION);
+    Services.obs.addObserver(
+      this,
+      lazy.TelemetryReportingPolicy.TELEMETRY_TOU_ACCEPTED_OR_INELIGIBLE
+    );
   },
 
   /**
@@ -268,8 +272,12 @@ export const AboutNewTab = {
         this.uninit();
         break;
       }
-      case BROWSER_READY_NOTIFICATION: {
-        Services.obs.removeObserver(this, BROWSER_READY_NOTIFICATION);
+      case lazy.TelemetryReportingPolicy.TELEMETRY_TOU_ACCEPTED_OR_INELIGIBLE: {
+        Services.obs.removeObserver(
+          this,
+          lazy.TelemetryReportingPolicy.TELEMETRY_TOU_ACCEPTED_OR_INELIGIBLE
+        );
+
         // Avoid running synchronously during this event that's used for timing
         Services.tm.dispatchToMainThread(() => this.onBrowserReady());
         break;

@@ -14,15 +14,16 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertExternalAppOpens
+import org.mozilla.fenix.helpers.AppAndSystemHelper.assertNativeAppOpens
 import org.mozilla.fenix.helpers.AppAndSystemHelper.deleteDownloadedFileOnStorage
 import org.mozilla.fenix.helpers.AppAndSystemHelper.setNetworkEnabled
+import org.mozilla.fenix.helpers.Constants.PackageName.GMAIL_APP
 import org.mozilla.fenix.helpers.Constants.PackageName.GOOGLE_APPS_PHOTOS
 import org.mozilla.fenix.helpers.Constants.PackageName.GOOGLE_DOCS
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.TestAssetHelper
-import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestHelper.clickSnackbarButton
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
@@ -73,7 +74,6 @@ class DownloadTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2299405
-    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=1964989")
     @Test
     fun verifyTheDownloadFailedNotificationsTest() {
         downloadRobot {
@@ -81,14 +81,22 @@ class DownloadTest : TestSetup() {
             setNetworkEnabled(enabled = false)
             verifyDownloadFailedSnackbar(fileName = "1GB.zip")
             clickSnackbarButton(composeTestRule = activityTestRule, "DETAILS")
-            // A clickTryAgainButton() method should be called here, to tap the "Try Again button from Downloads menu.
-            // This is not implemented yet.
-            setNetworkEnabled(enabled = true)
-        }
-        mDevice.openNotification()
-        notificationShade {
+        }.openNotificationShade {
             verifySystemNotificationExists("Download failed")
-        }.closeNotificationTray {}
+        }.closeNotificationTray {
+        }
+        downloadRobot {
+            verifyDownloadFileFailedMessage(activityTestRule, "1GB.zip")
+            setNetworkEnabled(enabled = true)
+            clickTryAgainDownloadMenuButton(activityTestRule)
+            verifyPauseDownloadMenuButtonButton(activityTestRule)
+        }
+        downloadRobot {
+        }.openNotificationShade {
+            expandNotificationMessage("1GB.zip")
+            clickDownloadNotificationControlButton("CANCEL")
+            verifySystemNotificationDoesNotExist("1GB.zip")
+        }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2298616
@@ -270,14 +278,13 @@ class DownloadTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2299297
-    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=1964989")
     @Test
     fun notificationCanBeDismissedIfDownloadIsInterruptedTest() {
         downloadRobot {
             openPageAndDownloadFile(url = downloadTestPage.toUri(), downloadFile = "1GB.zip")
             setNetworkEnabled(enabled = false)
             verifyDownloadFailedSnackbar(fileName = "1GB.zip")
-
+        }
         browserScreen {
         }.openNotificationShade {
             verifySystemNotificationExists("Download failed")
@@ -288,8 +295,6 @@ class DownloadTest : TestSetup() {
                 notificationItem = "1GB.zip",
             )
             verifySystemNotificationDoesNotExist("Firefox Fenix")
-        }.closeNotificationTray {}
-         waitUntilDownloadSnackbarGone()
         }
     }
 
@@ -366,29 +371,26 @@ class DownloadTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/244125
-    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=1964989")
     @Test
     fun restartDownloadFromAppNotificationAfterConnectionIsInterruptedTest() {
         downloadFile = "3GB.zip"
 
-        navigationToolbar {
-        }.enterURLAndEnterToBrowser(downloadTestPage.toUri()) {
-            waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
-        }.clickDownloadLink(downloadFile) {
-            verifyDownloadPrompt(downloadFile)
+        downloadRobot {
+            openPageAndDownloadFile(url = downloadTestPage.toUri(), downloadFile = "3GB.zip")
             setNetworkEnabled(false)
-        }.clickDownload {
             verifyDownloadFailedSnackbar(fileName = "3GB.zip")
             setNetworkEnabled(true)
-            clickSnackbarButton(composeTestRule = activityTestRule, "DETAILS") // Downloads menu opens
-            // A clickTryAgainButton() method should be called here, to tap the "Try Again button from Downloads menu.
-            // This is not implemented yet.
+            clickSnackbarButton(composeTestRule = activityTestRule, "DETAILS")
+            verifyDownloadFileFailedMessage(activityTestRule, "3GB.zip")
+            setNetworkEnabled(enabled = true)
+            clickTryAgainDownloadMenuButton(activityTestRule)
+            verifyPauseDownloadMenuButtonButton(activityTestRule)
         }
-        browserScreen {
+        downloadRobot {
         }.openNotificationShade {
             expandNotificationMessage("3GB.zip")
             clickDownloadNotificationControlButton("CANCEL")
-        // This test is not complete yet, as download was not resumed
+            verifySystemNotificationDoesNotExist("3GB.zip")
         }
     }
 
@@ -430,7 +432,8 @@ class DownloadTest : TestSetup() {
             clickDownloadItemMenuIcon(activityTestRule, "web_icon.png")
         }.shareDownloadedItem(activityTestRule, "web_icon.png") {
             verifyAndroidShareLayout()
-            verifySharingWithSelectedApp(appName = "Gmail", "", "")
+            clickSharingApp("Gmail", GMAIL_APP)
+            assertNativeAppOpens(GMAIL_APP)
         }
     }
 }

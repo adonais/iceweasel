@@ -7,9 +7,10 @@
 #ifndef ChildIterator_h
 #define ChildIterator_h
 
+#include <stdint.h>
+
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
-#include <stdint.h>
 
 class nsIContent;
 

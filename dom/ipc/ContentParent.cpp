@@ -4,74 +4,63 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/AppShutdown.h"
-#include "mozilla/DebugOnly.h"
-
-#include "base/basictypes.h"
-
 #include "ContentParent.h"
-#include "mozilla/ipc/ProcessUtils.h"
-#include "mozilla/CmdLineAndEnvUtils.h"
-#include "BrowserParent.h"
 
-#include "chrome/common/process_watcher.h"
-#include "mozilla/Result.h"
-#include "mozilla/Services.h"
-#include "mozilla/XREAppData.h"
-#include "nsComponentManagerUtils.h"
-#include "nsIBrowserDOMWindow.h"
-#include "nsIPrivateAttributionService.h"
-
-#include "GMPServiceParent.h"
-#include "HandlerServiceParent.h"
-#include "IHistory.h"
-#include <cstdint>
 #include <map>
 #include <utility>
 
+#include "BrowserParent.h"
 #include "ContentProcessManager.h"
+#include "GMPServiceParent.h"
 #include "GeckoProfiler.h"
 #include "Geolocation.h"
 #include "GfxInfoBase.h"
+#include "HandlerServiceParent.h"
+#include "IHistory.h"
 #include "MMPrinter.h"
 #include "PreallocatedProcessManager.h"
 #include "ProcessPriorityManager.h"
 #include "ProfilerParent.h"
 #include "SandboxHal.h"
 #include "SourceSurfaceRawData.h"
-#include "mozilla/ipc/URIUtils.h"
+#include "base/basictypes.h"
+#include "chrome/common/process_watcher.h"
 #include "gfxPlatform.h"
 #include "gfxPlatformFontList.h"
-#include "nsDNSService2.h"
-#include "nsPIDNSService.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/AutoRestore.h"
-#include "mozilla/ClipboardContentAnalysisParent.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Casting.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/ClipboardContentAnalysisParent.h"
 #include "mozilla/ClipboardReadRequestParent.h"
 #include "mozilla/ClipboardWriteRequestParent.h"
+#include "mozilla/CmdLineAndEnvUtils.h"
+#include "mozilla/Components.h"
 #include "mozilla/ContentBlockingUserInteraction.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/FOGIPC.h"
-#include "mozilla/GlobalStyleSheetCache.h"
 #include "mozilla/GeckoArgs.h"
+#include "mozilla/GlobalStyleSheetCache.h"
 #include "mozilla/HangDetails.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/NullPrincipal.h"
+#include "mozilla/PageloadEvent.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProcessHangMonitor.h"
 #include "mozilla/ProcessHangMonitorIPC.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
-#include "mozilla/RecursiveMutex.h"
 #include "mozilla/RDDProcessManager.h"
+#include "mozilla/RecursiveMutex.h"
+#include "mozilla/RemoteLazyInputStreamParent.h"
+#include "mozilla/Result.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ScriptPreloader.h"
-#include "mozilla/Components.h"
+#include "mozilla/Services.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_fission.h"
@@ -83,13 +72,13 @@
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/TaskController.h"
-#include "mozilla/glean/DomMetrics.h"
-#include "mozilla/glean/IpcMetrics.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/TelemetryComms.h"
 #include "mozilla/TelemetryIPC.h"
 #include "mozilla/ThreadSafety.h"
 #include "mozilla/Unused.h"
 #include "mozilla/WebBrowserPersistDocumentParent.h"
+#include "mozilla/XREAppData.h"
 #include "mozilla/devtools/HeapSnapshotTempFileHelperParent.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/BrowserHost.h"
@@ -114,9 +103,8 @@
 #include "mozilla/dom/JSProcessActorBinding.h"
 #include "mozilla/dom/LocalStorageCommon.h"
 #include "mozilla/dom/MediaController.h"
-#include "mozilla/dom/MemoryReportRequest.h"
 #include "mozilla/dom/MediaStatusManager.h"
-#include "mozilla/dom/notification/NotificationUtils.h"
+#include "mozilla/dom/MemoryReportRequest.h"
 #include "mozilla/dom/PContentPermissionRequestParent.h"
 #include "mozilla/dom/PCycleCollectWithLogsParent.h"
 #include "mozilla/dom/ParentProcessMessageManager.h"
@@ -131,11 +119,12 @@
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/SessionStorageManager.h"
 #include "mozilla/dom/StorageIPC.h"
-#include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/URLClassifierParent.h"
+#include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/ipc/SharedMap.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
+#include "mozilla/dom/notification/NotificationUtils.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/dom/power/PowerManagerService.h"
 #include "mozilla/dom/quota/QuotaManagerService.h"
@@ -143,7 +132,9 @@
 #include "mozilla/extensions/StreamFilterParent.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/glean/DomMetrics.h"
 #include "mozilla/glean/GleanPings.h"
+#include "mozilla/glean/IpcMetrics.h"
 #include "mozilla/hal_sandbox/PHalParent.h"
 #include "mozilla/intl/L10nRegistry.h"
 #include "mozilla/intl/LocaleService.h"
@@ -154,8 +145,10 @@
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/FileDescriptorUtils.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
+#include "mozilla/ipc/ProcessUtils.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
 #include "mozilla/ipc/TestShellParent.h"
+#include "mozilla/ipc/URIUtils.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ImageBridgeParent.h"
 #include "mozilla/layers/LayerTreeOwnerTracker.h"
@@ -163,15 +156,13 @@
 #include "mozilla/loader/ScriptCacheActors.h"
 #include "mozilla/media/MediaParent.h"
 #include "mozilla/mozSpellChecker.h"
+#include "mozilla/net/CookieKey.h"
 #include "mozilla/net/CookieServiceParent.h"
 #include "mozilla/net/NeckoMessageUtils.h"
 #include "mozilla/net/NeckoParent.h"
 #include "mozilla/net/PCookieServiceParent.h"
-#include "mozilla/net/CookieKey.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/net/TRRService.h"
-#include "mozilla/TelemetryComms.h"
-#include "mozilla/RemoteLazyInputStreamParent.h"
+#include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/widget/RemoteLookAndFeel.h"
 #include "mozilla/widget/ScreenManager.h"
 #include "mozilla/widget/TextRecognition.h"
@@ -179,12 +170,14 @@
 #include "nsAppRunner.h"
 #include "nsCExternalHandlerService.h"
 #include "nsCOMPtr.h"
+#include "nsCRT.h"
 #include "nsChromeRegistryChrome.h"
+#include "nsComponentManagerUtils.h"
 #include "nsConsoleMessage.h"
 #include "nsConsoleService.h"
 #include "nsContentPermissionHelper.h"
 #include "nsContentUtils.h"
-#include "nsCRT.h"
+#include "nsDNSService2.h"
 #include "nsDebugImpl.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDocShell.h"
@@ -199,12 +192,14 @@
 #include "nsIAppWindow.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIBidiKeyboard.h"
+#include "nsIBrowserDOMWindow.h"
 #include "nsICaptivePortalService.h"
 #include "nsICertOverrideService.h"
 #include "nsIClipboard.h"
 #include "nsIContentAnalysis.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsICookie.h"
+#include "nsICookieNotification.h"
 #include "nsICrashService.h"
 #include "nsICycleCollectorListener.h"
 #include "nsIDocShell.h"
@@ -212,7 +207,6 @@
 #include "nsIDragService.h"
 #include "nsIExternalProtocolService.h"
 #include "nsIGfxInfo.h"
-#include "nsIUserIdleService.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsILocalStorageManager.h"
 #include "nsIMemoryInfoDumper.h"
@@ -220,6 +214,7 @@
 #include "nsINetworkLinkService.h"
 #include "nsIObserverService.h"
 #include "nsIParentChannel.h"
+#include "nsIPrivateAttributionService.h"
 #include "nsIScriptError.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsIServiceWorkerManager.h"
@@ -227,16 +222,19 @@
 #include "nsIStringBundle.h"
 #include "nsITimer.h"
 #include "nsIURL.h"
+#include "nsIUserIdleService.h"
 #include "nsIWebBrowserChrome.h"
 #include "nsIX509Cert.h"
 #include "nsIXULRuntime.h"
-#include "nsICookieNotification.h"
+#include "nsPIDNSService.h"
 #if defined(MOZ_WIDGET_GTK) || defined(XP_WIN)
 #  include "nsIconChannel.h"
 #endif
+#include "nsFrameLoaderOwner.h"
 #include "nsMemoryInfoDumper.h"
 #include "nsMemoryReporterManager.h"
 #include "nsOpenURIInFrameParams.h"
+#include "nsOpenWindowInfo.h"
 #include "nsPIWindowWatcher.h"
 #include "nsQueryObject.h"
 #include "nsReadableUtils.h"
@@ -253,16 +251,14 @@
 #include "prio.h"
 #include "private/pprio.h"
 #include "xpcpublic.h"
-#include "nsOpenWindowInfo.h"
-#include "nsFrameLoaderOwner.h"
 
 #ifdef MOZ_WEBRTC
 #  include "jsapi/WebrtcGlobalParent.h"
 #endif
 
 #if defined(XP_MACOSX)
-#  include "nsMacUtilsImpl.h"
 #  include "mozilla/AvailableMemoryWatcher.h"
+#  include "nsMacUtilsImpl.h"
 #endif
 
 #if defined(ANDROID) || defined(LINUX)
@@ -287,12 +283,12 @@
 
 #ifdef MOZ_WIDGET_GTK
 #  include <gdk/gdk.h>
+
 #  include "mozilla/WidgetUtilsGtk.h"
 #endif
 
-#include "mozilla/RemoteSpellCheckEngineParent.h"
-
 #include "Crypto.h"
+#include "mozilla/RemoteSpellCheckEngineParent.h"
 
 #ifdef MOZ_WEBSPEECH
 #  include "mozilla/dom/SpeechSynthesisParent.h"
@@ -301,9 +297,9 @@
 #if defined(MOZ_SANDBOX)
 #  include "mozilla/SandboxSettings.h"
 #  if defined(XP_LINUX)
-#    include "mozilla/SandboxInfo.h"
 #    include "mozilla/SandboxBroker.h"
 #    include "mozilla/SandboxBrokerPolicyFactory.h"
+#    include "mozilla/SandboxInfo.h"
 #  endif
 #  if defined(XP_MACOSX)
 #    include "mozilla/Sandbox.h"
@@ -328,8 +324,8 @@
 #endif
 
 #include "mozilla/RemoteDecodeUtils.h"
-#include "nsIToolkitProfileService.h"
 #include "nsIToolkitProfile.h"
+#include "nsIToolkitProfileService.h"
 
 #ifdef MOZ_WMF_CDM
 #  include "mozilla/EMEUtils.h"
@@ -1534,7 +1530,10 @@ void ContentParent::BroadcastMediaCodecsSupportedUpdate(
   // Generate + save FULL support string for display in about:support
   supportString.Truncate();
   media::MCSInfo::GetMediaCodecsSupportedString(supportString, fullSupport);
-  gfx::gfxVars::SetCodecSupportInfo(supportString);
+
+  if (nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service()) {
+    gfxInfo->SetCodecSupportInfo(supportString);
+  }
 }
 
 const nsACString& ContentParent::GetRemoteType() const { return mRemoteType; }
@@ -3134,7 +3133,7 @@ void ContentParent::SetInputPriorityEventEnabled(bool aEnabled) {
   Unused << SendResumeInputEventQueue();
 }
 
-void ContentParent::OnVarChanged(const GfxVarUpdate& aVar) {
+void ContentParent::OnVarChanged(const nsTArray<GfxVarUpdate>& aVar) {
   if (!CanSend()) {
     return;
   }
@@ -3932,21 +3931,19 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
   return NS_OK;
 }
 
-void ContentParent::UpdateNetworkLinkType() {
+uint32_t ContentParent::UpdateNetworkLinkType() {
+  uint32_t linkType = nsINetworkLinkService::LINK_TYPE_UNKNOWN;
   nsresult rv;
   nsCOMPtr<nsINetworkLinkService> nls =
       do_GetService(NS_NETWORK_LINK_SERVICE_CONTRACTID, &rv);
-  if (NS_FAILED(rv)) {
-    return;
+  if (NS_SUCCEEDED(rv)) {
+    rv = nls->GetLinkType(&linkType);
+    if (NS_SUCCEEDED(rv)) {
+      Unused << SendNetworkLinkTypeChange(linkType);
+    }
   }
 
-  uint32_t linkType = nsINetworkLinkService::LINK_TYPE_UNKNOWN;
-  rv = nls->GetLinkType(&linkType);
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  Unused << SendNetworkLinkTypeChange(linkType);
+  return linkType;
 }
 
 NS_IMETHODIMP
@@ -6256,9 +6253,15 @@ static bool WebdriverRunning() {
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvRecordPageLoadEvent(
-    mozilla::glean::perf::PageLoadExtra&& aPageLoadEventExtra) {
+    mozilla::performance::pageload_event::PageloadEventData&&
+        aPageloadEventData) {
   // Check whether a webdriver is running.
-  aPageLoadEventExtra.usingWebdriver = mozilla::Some(WebdriverRunning());
+  aPageloadEventData.set_usingWebdriver(WebdriverRunning());
+
+#if defined(ANDROID)
+  // Get network link type iff android.
+  aPageloadEventData.set_networkType(UpdateNetworkLinkType());
+#endif
 
 #if defined(XP_WIN)
   // The "hasSSD" property is only set on Windows during the first
@@ -6272,19 +6275,43 @@ mozilla::ipc::IPCResult ContentParent::RecvRecordPageLoadEvent(
   bool hasSSD;
   rv = infoService->GetPropertyAsBool(u"hasSSD"_ns, &hasSSD);
   if (NS_SUCCEEDED(rv)) {
-    aPageLoadEventExtra.hasSsd = Some(hasSSD);
+    aPageloadEventData.set_hasSsd(hasSSD);
   }
 #endif
-  mozilla::glean::perf::page_load.Record(mozilla::Some(aPageLoadEventExtra));
 
-  // Send the PageLoadPing after every 30 page loads, or on startup.
-  if (++sPageLoadEventCounter >= 30) {
-    Unused << NS_WARN_IF(NS_FAILED(NS_DispatchToMainThreadQueue(
+  // If the etld information exists, then we need to send it using a special
+  // page load event ping that is sent via ohttp and stripped of any information
+  // that can be used to fingerprint the client.  Otherwise, use the regular
+  // pageload event ping.
+  if (aPageloadEventData.HasDomain()) {
+    // If the event is a page_load_domain event, then immediately send it.
+    mozilla::glean::perf::PageLoadDomainExtra extra =
+        aPageloadEventData.ToPageLoadDomainExtra();
+    mozilla::glean::perf::page_load_domain.Record(mozilla::Some(extra));
+
+    // The etld events must be sent by themselves for privacy preserving
+    // reasons.
+    NS_SUCCEEDED(NS_DispatchToMainThreadQueue(
         NS_NewRunnableFunction(
-            "PageLoadPingIdleTask",
-            [] { mozilla::glean_pings::Pageload.Submit("threshold"_ns); }),
-        EventQueuePriority::Idle)));
-    sPageLoadEventCounter = 0;
+            "PageloadBaseDomainPingIdleTask",
+            [] {
+              mozilla::glean_pings::PageloadBaseDomain.Submit("pageload"_ns);
+            }),
+        EventQueuePriority::Idle));
+  } else {
+    mozilla::glean::perf::PageLoadExtra extra =
+        aPageloadEventData.ToPageLoadExtra();
+    mozilla::glean::perf::page_load.Record(mozilla::Some(extra));
+
+    // Send the PageLoadPing after every 10 page loads, or on startup.
+    if (++sPageLoadEventCounter >= 10) {
+      NS_SUCCEEDED(NS_DispatchToMainThreadQueue(
+          NS_NewRunnableFunction(
+              "PageLoadPingIdleTask",
+              [] { mozilla::glean_pings::Pageload.Submit("threshold"_ns); }),
+          EventQueuePriority::Idle));
+      sPageLoadEventCounter = 0;
+    }
   }
   return IPC_OK();
 }
@@ -7669,18 +7696,6 @@ ContentParent::RecvGetLoadingSessionHistoryInfoFromParent(
   Maybe<LoadingSessionHistoryInfo> info;
   aContext.get_canonical()->GetLoadingSessionHistoryInfoFromParent(info);
   aResolver(info);
-
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult ContentParent::RecvGetContiguousSessionHistoryInfos(
-    const MaybeDiscarded<BrowsingContext>& aContext,
-    GetContiguousSessionHistoryInfosResolver&& aResolver) {
-  if (aContext.IsNullOrDiscarded()) {
-    return IPC_OK();
-  }
-
-  aResolver(aContext.get_canonical()->GetContiguousSessionHistoryInfos());
 
   return IPC_OK();
 }

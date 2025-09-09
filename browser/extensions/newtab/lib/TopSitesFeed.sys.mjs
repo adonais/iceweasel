@@ -125,8 +125,8 @@ const DISPLAY_FAIL_REASON_OVERSOLD = "oversold";
 const DISPLAY_FAIL_REASON_DISMISSED = "dismissed";
 const DISPLAY_FAIL_REASON_UNRESOLVED = "unresolved";
 
-// Thompson sampling of top sites
-import { tsampleTopSites } from "resource://newtab/lib/ShortcutsRanker.sys.mjs";
+// Smart shortcuts
+import { RankShortcutsProvider } from "resource://newtab/lib/SmartShortcutsRanker/RankShortcuts.mjs";
 
 const PREF_SYSTEM_SHORTCUTS_PERSONALIZATION =
   "discoverystream.shortcuts.personalization.enabled";
@@ -745,6 +745,7 @@ export class TopSitesFeed {
       "_currentSearchHostname",
       getShortHostnameForCurrentSearch
     );
+    this.ranker = new RankShortcutsProvider();
 
     this.dedupe = new Dedupe(this._dedupeKey);
     this.frecentCache = new lazy.LinksCache(
@@ -1482,7 +1483,11 @@ export class TopSitesFeed {
     // Sample topsites via thompson sampling, if in experiment
     let sampledSites;
     if (smartshortcutsEnabled(this.store.getState().Prefs.values)) {
-      sampledSites = await tsampleTopSites(checkedAdult, prefValues);
+      sampledSites = await this.ranker.rankTopSites(
+        checkedAdult,
+        prefValues,
+        isStartup
+      );
     } else {
       sampledSites = checkedAdult;
     }

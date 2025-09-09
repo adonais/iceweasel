@@ -21,7 +21,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/string_encode.h"
 
-namespace cricket {
+namespace webrtc {
 
 using webrtc::RTCError;
 using webrtc::RTCErrorOr;
@@ -43,7 +43,7 @@ RTCError CheckInputConsistency(const std::vector<Codec>& codecs) {
       }
     }
   }
-  for (const Codec& codec : codecs) {
+  for (const webrtc::Codec& codec : codecs) {
     switch (codec.GetResiliencyType()) {
       case Codec::ResiliencyType::kRed:
         // Check that the target codec exists
@@ -71,7 +71,7 @@ RTCError CheckInputConsistency(const std::vector<Codec>& codecs) {
           break;
         }
         int associated_pt;
-        if (!(rtc::FromString(apt_it->second, &associated_pt))) {
+        if (!(webrtc::FromString(apt_it->second, &associated_pt))) {
           RTC_LOG(LS_ERROR) << "Non-numeric argument to rtx apt: " << codec
                             << " apt=" << apt_it->second;
           LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
@@ -121,4 +121,4 @@ void CodecList::CheckConsistency() {
   RTC_DCHECK(CheckInputConsistency(codecs_).ok());
 }
 
-}  // namespace cricket
+}  // namespace webrtc

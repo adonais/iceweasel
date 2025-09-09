@@ -30,8 +30,8 @@ const LASTDEFAULTCHANGED_PREF = "recentsearches.lastDefaultChanged";
  * A provider that returns the Recent Searches performed by the user.
  */
 class ProviderRecentSearches extends UrlbarProvider {
-  constructor(...args) {
-    super(...args);
+  constructor() {
+    super();
     Services.obs.addObserver(this, lazy.SearchUtils.TOPIC_ENGINE_MODIFIED);
   }
 

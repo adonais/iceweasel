@@ -7,12 +7,12 @@
 #include "mozilla/dom/SVGTests.h"
 
 #include "DOMSVGStringList.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/dom/SVGSwitchElement.h"
+#include "mozilla/intl/oxilangtag_ffi_generated.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
-#include "mozilla/dom/SVGSwitchElement.h"
-#include "mozilla/intl/oxilangtag_ffi_generated.h"
-#include "mozilla/Preferences.h"
 
 namespace mozilla::dom {
 

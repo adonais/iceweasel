@@ -533,35 +533,44 @@ void js::Nursery::updateAllZoneAllocFlags() {
 
 void js::Nursery::getAllocFlagsForZone(JS::Zone* zone, bool* allocObjectsOut,
                                        bool* allocStringsOut,
-                                       bool* allocBigIntsOut) {
+                                       bool* allocBigIntsOut,
+                                       bool* allocGetterSettersOut) {
   *allocObjectsOut = isEnabled();
   *allocStringsOut =
       isEnabled() && canAllocateStrings() && !zone->nurseryStringsDisabled;
   *allocBigIntsOut =
       isEnabled() && canAllocateBigInts() && !zone->nurseryBigIntsDisabled;
+  *allocGetterSettersOut = isEnabled();
 }
 
 void js::Nursery::setAllocFlagsForZone(JS::Zone* zone) {
   bool allocObjects;
   bool allocStrings;
   bool allocBigInts;
+  bool allocGetterSetters;
 
-  getAllocFlagsForZone(zone, &allocObjects, &allocStrings, &allocBigInts);
-  zone->setNurseryAllocFlags(allocObjects, allocStrings, allocBigInts);
+  getAllocFlagsForZone(zone, &allocObjects, &allocStrings, &allocBigInts,
+                       &allocGetterSetters);
+  zone->setNurseryAllocFlags(allocObjects, allocStrings, allocBigInts,
+                             allocGetterSetters);
 }
 
 void js::Nursery::updateAllocFlagsForZone(JS::Zone* zone) {
   bool allocObjects;
   bool allocStrings;
   bool allocBigInts;
+  bool allocGetterSetters;
 
-  getAllocFlagsForZone(zone, &allocObjects, &allocStrings, &allocBigInts);
+  getAllocFlagsForZone(zone, &allocObjects, &allocStrings, &allocBigInts,
+                       &allocGetterSetters);
 
   if (allocObjects != zone->allocNurseryObjects() ||
       allocStrings != zone->allocNurseryStrings() ||
-      allocBigInts != zone->allocNurseryBigInts()) {
+      allocBigInts != zone->allocNurseryBigInts() ||
+      allocGetterSetters != zone->allocNurseryGetterSetters()) {
     CancelOffThreadIonCompile(zone);
-    zone->setNurseryAllocFlags(allocObjects, allocStrings, allocBigInts);
+    zone->setNurseryAllocFlags(allocObjects, allocStrings, allocBigInts,
+                               allocGetterSetters);
     discardCodeAndSetJitFlagsForZone(zone);
   }
 }
@@ -1396,12 +1405,6 @@ void js::Nursery::collect(JS::GCOptions options, JS::GCReason reason) {
   stats().beginNurseryCollection();
   gcprobes::MinorGCStart();
 
-  if (stats().bufferAllocStatsEnabled() && runtime()->isMainRuntime()) {
-    stats().maybePrintProfileHeaders();
-    BufferAllocator::printStats(gc, gc->stats().creationTime(), false,
-                                gc->stats().profileFile());
-  }
-
   gc->callNurseryCollectionCallbacks(
       JS::GCNurseryProgress::GC_NURSERY_COLLECTION_START, reason);
 
@@ -1422,6 +1425,12 @@ void js::Nursery::collect(JS::GCOptions options, JS::GCReason reason) {
   // minor GC number, which is incremented regardless. See the call to
   // joinSweepTask in GCRuntime::endSweepingSweepGroup.
   joinSweepTask();
+
+  if (stats().bufferAllocStatsEnabled() && runtime()->isMainRuntime()) {
+    stats().maybePrintProfileHeaders();
+    BufferAllocator::printStats(gc, gc->stats().creationTime(), false,
+                                gc->stats().profileFile());
+  }
 
   // If it isn't empty, it will call doCollection, and possibly after that
   // isEmpty() will become true, so use another variable to keep track of the

@@ -5,10 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "PartitionedLocalStorage.h"
-#include "SessionStorageCache.h"
-#include "nsContentUtils.h"
 
+#include "SessionStorageCache.h"
 #include "mozilla/dom/StorageBinding.h"
+#include "nsContentUtils.h"
 
 namespace mozilla::dom {
 

@@ -151,7 +151,7 @@ bool FeatureOptions::init(JSContext* cx, HandleValue val) {
     }
 
     this->jsStringConstantsNamespace =
-        js_new<ShareableChars>(std::move(jsStringConstantsNamespace));
+        cx->new_<ShareableChars>(std::move(jsStringConstantsNamespace));
     if (!this->jsStringConstantsNamespace) {
       return false;
     }

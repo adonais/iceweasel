@@ -15,18 +15,18 @@
 // Base class for contentsink implementations.
 
 #include "mozilla/Attributes.h"
-#include "nsICSSLoaderObserver.h"
-#include "nsWeakReference.h"
-#include "nsCOMPtr.h"
-#include "nsString.h"
-#include "nsGkAtoms.h"
-#include "nsITimer.h"
-#include "nsStubDocumentObserver.h"
-#include "nsIContentSink.h"
 #include "mozilla/Logging.h"
-#include "nsCycleCollectionParticipant.h"
-#include "nsThreadUtils.h"
 #include "mozilla/StaticPrefs_content.h"
+#include "nsCOMPtr.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsGkAtoms.h"
+#include "nsICSSLoaderObserver.h"
+#include "nsIContentSink.h"
+#include "nsITimer.h"
+#include "nsString.h"
+#include "nsStubDocumentObserver.h"
+#include "nsThreadUtils.h"
+#include "nsWeakReference.h"
 
 class nsIURI;
 class nsIChannel;

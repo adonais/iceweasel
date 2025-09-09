@@ -235,7 +235,7 @@ tasks:
         worker-type: b-linux-gcp
         worker:
             docker-image: {in-tree: android-build}
-            max-run-time: 10800
+            max-run-time: 14400
             env:
                 PERFHERDER_EXTRA_OPTIONS: searchfox
                 MOZSEARCH_PLATFORM: "android-aarch64"

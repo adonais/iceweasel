@@ -177,6 +177,8 @@ test_newtab({
         ),
       "Topsite not removed"
     );
+    // This was set when the topsite was removed, we need to reset it.
+    SpecialPowers.clearUserPref("browser.newtabpage.blocked");
   },
 });
 

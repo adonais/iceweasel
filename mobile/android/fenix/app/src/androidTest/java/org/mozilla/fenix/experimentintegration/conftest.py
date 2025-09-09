@@ -119,12 +119,12 @@ def fixture_experiment_data(experiment_url, request):
     data = requests.get(experiment_url).json()
     branches = next(iter(data.get("branches")), None)
     features = next(iter(branches.get("features")), None)
-    match request.config.getoption("--experiment-feature"):
-        case "messaging_survey":
-            if features.get("value").get("messages"):
-                for item in features["value"]["messages"].values():
-                    if "USER_EN-US_SPEAKER" in item["trigger-if-all"]:
-                        item["trigger-if-all"] = ["ALWAYS"]
+    experiment_feature = request.config.getoption("--experiment-feature")
+    if experiment_feature == "messaging_survey":
+        if features.get("value").get("messages"):
+            for item in features["value"]["messages"].values():
+                if "USER_EN-US_SPEAKER" in item["trigger-if-all"]:
+                    item["trigger-if-all"] = ["ALWAYS"]
     logging.debug(f"JSON Data used for this test: {data}")
     return [data]
 

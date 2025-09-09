@@ -3,8 +3,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "Device.h"
 #include "QuerySet.h"
+
+#include "Device.h"
 #include "ipc/WebGPUChild.h"
 #include "mozilla/dom/WebGPUBinding.h"
 
@@ -24,8 +25,6 @@ void QuerySet::Cleanup() {
   }
 
   ffi::wgpu_client_drop_query_set(bridge->GetClient(), mId);
-
-  wgpu_client_free_query_set_id(bridge->GetClient(), mId);
 }
 
 GPU_IMPL_CYCLE_COLLECTION(QuerySet, mParent)

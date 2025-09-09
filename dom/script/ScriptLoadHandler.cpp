@@ -7,7 +7,9 @@
 #include "ScriptLoadHandler.h"
 
 #include <stdlib.h>
+
 #include <utility>
+
 #include "ScriptCompression.h"
 #include "ScriptLoader.h"
 #include "ScriptTrace.h"

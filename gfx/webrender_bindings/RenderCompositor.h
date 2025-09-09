@@ -115,7 +115,9 @@ class RenderCompositor {
 
   virtual bool ShouldUseNativeCompositor() { return false; }
 
-  virtual bool ShouldUseLayerCompositor() { return false; }
+  virtual bool ShouldUseLayerCompositor() const { return false; }
+
+  virtual bool UseLayerCompositor() const { return false; }
 
   virtual bool EnableAsyncScreenshot() { return false; }
 

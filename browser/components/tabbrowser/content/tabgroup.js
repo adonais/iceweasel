@@ -97,6 +97,8 @@
       this.#labelElement.container = gBrowser.tabContainer;
       this.#labelElement.group = this;
 
+      this.#labelElement.addEventListener("mouseover", this);
+      this.#labelElement.addEventListener("mouseout", this);
       this.#labelElement.addEventListener("contextmenu", e => {
         e.preventDefault();
         gBrowser.tabGroupMenu.openEditModal(this);
@@ -145,7 +147,7 @@
 
     #observeTabChanges() {
       if (!this.#tabChangeObserver) {
-        this.#tabChangeObserver = new window.MutationObserver(() => {
+        this.#tabChangeObserver = new window.MutationObserver(mutations => {
           if (!this.tabs.length) {
             this.dispatchEvent(
               new CustomEvent("TabGroupRemoved", { bubbles: true })
@@ -158,9 +160,10 @@
           } else {
             let tabs = this.tabs;
             let tabCount = tabs.length;
+            let hasActiveTab = false;
             tabs.forEach((tab, index) => {
               if (tab.selected) {
-                this.hasActiveTab = true;
+                hasActiveTab = true;
               }
 
               // Renumber tabs so that a11y tools can tell users that a given
@@ -168,6 +171,7 @@
               tab.setAttribute("aria-posinset", index + 1);
               tab.setAttribute("aria-setsize", tabCount);
             });
+            this.hasActiveTab = hasActiveTab;
 
             // When a group containing the active tab is collapsed,
             // the overflow count displays the number of additional tabs
@@ -193,6 +197,18 @@
             } else {
               overflowCountLabel.textContent = "";
               this.toggleAttribute("hasmultipletabs", false);
+            }
+          }
+          for (const mutation of mutations) {
+            for (const addedNode of mutation.addedNodes) {
+              if (addedNode.tagName == "tab") {
+                this.#updateTabAriaHidden(addedNode);
+              }
+            }
+            for (const removedNode of mutation.removedNodes) {
+              if (removedNode.tagName == "tab") {
+                this.#updateTabAriaHidden(removedNode);
+              }
             }
           }
         });
@@ -243,10 +259,16 @@
       this.setAttribute("id", val);
     }
 
+    /**
+     * @returns {boolean}
+     */
     get hasActiveTab() {
       return this.hasAttribute("hasactivetab");
     }
 
+    /**
+     * @param {boolean} val
+     */
     set hasActiveTab(val) {
       this.toggleAttribute("hasactivetab", val);
     }
@@ -297,6 +319,10 @@
       this.toggleAttribute("collapsed", val);
       this.#updateCollapsedAriaAttributes();
       this.#updateTooltip();
+      for (const tab of this.tabs) {
+        this.#updateTabAriaHidden(tab);
+      }
+      gBrowser.tabContainer.previewPanel?.deactivate(this, { force: true });
       const eventName = val ? "TabGroupCollapse" : "TabGroupExpand";
       this.dispatchEvent(new CustomEvent(eventName, { bubbles: true }));
     }
@@ -342,8 +368,36 @@
         });
     }
 
+    /**
+     * @param {MozTabbrowserTab} tab
+     */
+    #updateTabAriaHidden(tab) {
+      if (tab.group?.collapsed && !tab.selected) {
+        tab.setAttribute("aria-hidden", "true");
+      } else {
+        tab.removeAttribute("aria-hidden");
+      }
+    }
+
+    /**
+     * @returns {MozTabbrowserTab[]}
+     */
     get tabs() {
       return Array.from(this.children).filter(node => node.matches("tab"));
+    }
+
+    /**
+     * @param {MozTabbrowserTab} tab
+     * @returns {boolean}
+     */
+    isTabVisibleInGroup(tab) {
+      if (this.isBeingDragged) {
+        return false;
+      }
+      if (this.collapsed && !tab.selected) {
+        return false;
+      }
+      return true;
     }
 
     /**
@@ -362,6 +416,20 @@
      */
     set wasCreatedByAdoption(value) {
       this.#wasCreatedByAdoption = value;
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    get isBeingDragged() {
+      return this.hasAttribute("movingtabgroup");
+    }
+
+    /**
+     * @param {boolean} val
+     */
+    set isBeingDragged(val) {
+      this.toggleAttribute("movingtabgroup", val);
     }
 
     /**
@@ -452,8 +520,40 @@
       }
     }
 
+    /**
+     * @param {CustomEvent} event
+     */
+    on_mouseover(event) {
+      if (event.target === this.#labelElement) {
+        this.#labelElement.dispatchEvent(
+          new CustomEvent("TabGroupLabelHoverStart", { bubbles: true })
+        );
+      }
+    }
+
+    /**
+     * @param {CustomEvent} event
+     */
+    on_mouseout(event) {
+      if (event.target === this.#labelElement) {
+        this.#labelElement.dispatchEvent(
+          new CustomEvent("TabGroupLabelHoverEnd", { bubbles: true })
+        );
+      }
+    }
+
+    /**
+     * @param {CustomEvent} event
+     */
     on_TabSelect(event) {
+      const { previousTab } = event.detail;
       this.hasActiveTab = event.target.group === this;
+      if (this.hasActiveTab) {
+        this.#updateTabAriaHidden(event.target);
+      }
+      if (previousTab.group === this) {
+        this.#updateTabAriaHidden(previousTab);
+      }
     }
 
     /**

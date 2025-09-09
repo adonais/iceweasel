@@ -5,12 +5,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FFmpegAudioDecoder.h"
-#include "FFmpegUtils.h"
+
 #include "AudioSampleFormat.h"
+#include "BufferReader.h"
 #include "FFmpegLog.h"
+#include "FFmpegUtils.h"
 #include "TimeUnits.h"
 #include "VideoUtils.h"
-#include "BufferReader.h"
 #include "libavutil/dict.h"
 #include "libavutil/samplefmt.h"
 #if defined(FFVPX_VERSION)
@@ -18,14 +19,21 @@
 #endif
 #include "mozilla/StaticPrefs_media.h"
 
+#ifdef MOZ_WIDGET_ANDROID
+#  include "ffvpx/hwcontext_mediacodec.h"
+#  include "ffvpx/mediacodec.h"
+#endif
+
 namespace mozilla {
 
 using TimeUnit = media::TimeUnit;
 
 FFmpegAudioDecoder<LIBAV_VER>::FFmpegAudioDecoder(
     FFmpegLibWrapper* aLib, const CreateDecoderParams& aDecoderParams)
-    : FFmpegDataDecoder(aLib, GetCodecId(aDecoderParams.AudioConfig().mMimeType,
-                                         aDecoderParams.AudioConfig())),
+    : FFmpegDataDecoder(aLib,
+                        GetCodecId(aDecoderParams.AudioConfig().mMimeType,
+                                   aDecoderParams.AudioConfig()),
+                        aDecoderParams.mCDM),
       mAudioInfo(aDecoderParams.AudioConfig()) {
   MOZ_COUNT_CTOR(FFmpegAudioDecoder);
 
@@ -85,6 +93,7 @@ FFmpegAudioDecoder<LIBAV_VER>::FFmpegAudioDecoder(
 }
 
 RefPtr<MediaDataDecoder::InitPromise> FFmpegAudioDecoder<LIBAV_VER>::Init() {
+  AUTO_PROFILER_LABEL("FFmpegAudioDecoder::Init", MEDIA_PLAYBACK);
   AVDictionary* options = nullptr;
   if (mCodecID == AV_CODEC_ID_OPUS) {
     // Opus has a special feature for stereo coding where it represent wide
@@ -109,7 +118,20 @@ RefPtr<MediaDataDecoder::InitPromise> FFmpegAudioDecoder<LIBAV_VER>::Init() {
     }
   }
 
-  MediaResult rv = InitSWDecoder(&options);
+  MediaResult rv(NS_ERROR_NOT_AVAILABLE);
+#ifdef MOZ_WIDGET_ANDROID
+  if (XRE_IsRDDProcess() || XRE_IsUtilityProcess()) {
+    AVCodec* codec = FindHardwareAVCodec(mLib, mCodecID, AV_HWDEVICE_TYPE_NONE);
+    if (codec) {
+      rv = InitDecoder(codec, &options);
+    }
+  }
+
+  if (NS_FAILED(rv))
+#endif
+  {
+    rv = InitSWDecoder(&options);
+  }
 
   mLib->av_dict_free(&options);
 

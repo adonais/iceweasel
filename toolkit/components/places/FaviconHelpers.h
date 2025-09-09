@@ -14,6 +14,7 @@
 #include "nsThreadUtils.h"
 #include "nsProxyRelease.h"
 #include "imgLoader.h"
+#include "ConcurrentConnection.h"
 
 class nsIPrincipal;
 
@@ -180,12 +181,15 @@ class AsyncGetFaviconForPageRunnable final : public Runnable {
    */
   AsyncGetFaviconForPageRunnable(
       const nsCOMPtr<nsIURI>& aPageURI, uint16_t aPreferredWidth,
-      const RefPtr<FaviconPromise::Private>& aPromise);
+      const RefPtr<FaviconPromise::Private>& aPromise, bool aOnConcurrentConn);
 
  private:
+  ~AsyncGetFaviconForPageRunnable();
+
   nsCOMPtr<nsIURI> mPageURI;
   uint16_t mPreferredWidth;
   nsMainThreadPtrHandle<FaviconPromise::Private> mPromise;
+  bool mOnConcurrentConn;
 };
 
 /**
@@ -239,6 +243,55 @@ class AsyncTryCopyFaviconsRunnable final : public Runnable {
   nsCOMPtr<nsIURI> mToPageURI;
   bool mCanAddToHistoryForToPage;
   nsMainThreadPtrHandle<BoolPromise::Private> mPromise;
+};
+
+/**
+ * Provides a uniform way to obtain statements from either the
+ * main Places Database or a ConcurrentConnection.
+ */
+class ConnectionAdapter {
+ public:
+  /**
+   * Constructor.
+   *
+   * @param aDB
+   *  The main Database object.
+   */
+  explicit ConnectionAdapter(const RefPtr<Database>& aDB)
+      : mDatabase(aDB), mConcurrentConnection(nullptr) {}
+
+  /**
+   * Constructor.
+   *
+   * @param aConn
+   *  The read-only ConcurrentConnection.
+   */
+  explicit ConnectionAdapter(const RefPtr<ConcurrentConnection>& aConn)
+      : mDatabase(nullptr), mConcurrentConnection(aConn) {}
+
+  already_AddRefed<mozIStorageStatement> GetStatement(
+
+      const nsCString& aQuery) const {
+    MOZ_ASSERT(!NS_IsMainThread(), "Must be on helper thread");
+
+    if (mDatabase) {
+      return mDatabase->GetStatement(aQuery);
+    } else if (mConcurrentConnection) {
+      auto conn = mConcurrentConnection.get();
+      if (conn) {
+        return conn->GetStatementOnHelperThread(aQuery);
+      }
+    }
+    return nullptr;
+  }
+
+  explicit operator bool() const {
+    return mDatabase || mConcurrentConnection.get();
+  }
+
+ private:
+  RefPtr<Database> mDatabase;
+  RefPtr<ConcurrentConnection> mConcurrentConnection;
 };
 
 }  // namespace places

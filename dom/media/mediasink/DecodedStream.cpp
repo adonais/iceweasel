@@ -21,9 +21,9 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkerTypes.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/gfx/Point.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "nsProxyRelease.h"
 
 namespace mozilla {

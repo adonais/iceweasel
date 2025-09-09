@@ -4,7 +4,7 @@
 "use strict";
 
 const { AttributionCode } = ChromeUtils.importESModule(
-  "resource:///modules/AttributionCode.sys.mjs"
+  "moz-src:///browser/components/attribution/AttributionCode.sys.mjs"
 );
 
 let validAttrCodes = [
@@ -118,7 +118,7 @@ async function setupStubs() {
   if (AppConstants.platform == "macosx") {
     // We're implicitly using the fact that modules are shared between importers here.
     const { MacAttribution } = ChromeUtils.importESModule(
-      "resource:///modules/MacAttribution.sys.mjs"
+      "moz-src:///browser/components/attribution/MacAttribution.sys.mjs"
     );
     sinon
       .stub(MacAttribution, "applicationPath")

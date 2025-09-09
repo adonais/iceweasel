@@ -7,13 +7,13 @@
 #ifndef mozilla_dom_responsiveimageselector_h__
 #define mozilla_dom_responsiveimageselector_h__
 
-#include "mozilla/UniquePtr.h"
-#include "mozilla/ServoBindingTypes.h"
 #include "mozilla/FunctionRef.h"
-#include "nsISupports.h"
-#include "nsIContent.h"
-#include "nsString.h"
+#include "mozilla/ServoBindingTypes.h"
+#include "mozilla/UniquePtr.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIContent.h"
+#include "nsISupports.h"
+#include "nsString.h"
 
 class nsMediaQuery;
 class nsCSSValue;

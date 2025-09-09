@@ -39,8 +39,7 @@ private const val CFR_VERTICAL_OFFSET_PORTRAIT = -6
  * @param onRequestDismiss Invoked when when accessibility services or UI automation requests
  * dismissal of the bottom sheet.
  * @param handlebarContentDescription Bottom sheet handlebar content description.
- * @param isExtensionsExpanded Whether the extensions menu is expanded.
- * @param isMoreMenuExpanded Whether the more menu is expanded.
+ * @param isMenuDragBarDark Whether or not the menu's drag bar background should be dark.
  * @param cornerShape The shape of the bottom sheet's top corners.
  * @param handleColor The color of the handle.
  * @param handleCornerRadius The corner radius of the handle.
@@ -53,8 +52,7 @@ fun MenuDialogBottomSheet(
     modifier: Modifier = Modifier,
     onRequestDismiss: () -> Unit,
     handlebarContentDescription: String,
-    isExtensionsExpanded: Boolean = false,
-    isMoreMenuExpanded: Boolean = false,
+    isMenuDragBarDark: Boolean = false,
     cornerShape: Shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
     handleColor: Color = FirefoxTheme.colors.borderInverted,
     handleCornerRadius: CornerRadius = CornerRadius.Zero,
@@ -75,8 +73,7 @@ fun MenuDialogBottomSheet(
                 state = menuCfrState,
                 onRequestDismiss = onRequestDismiss,
                 contentDescription = handlebarContentDescription,
-                isExtensionsExpanded = isExtensionsExpanded,
-                isMoreMenuExpanded = isMoreMenuExpanded,
+                isMenuDragBarDark = isMenuDragBarDark,
                 cornerShape = cornerShape,
                 handleColor = handleColor,
                 handleCornerRadius = handleCornerRadius,
@@ -86,8 +83,7 @@ fun MenuDialogBottomSheet(
                 modifier = modifier,
                 onRequestDismiss = onRequestDismiss,
                 contentDescription = handlebarContentDescription,
-                isExtensionsExpanded = isExtensionsExpanded,
-                isMoreMenuExpanded = isMoreMenuExpanded,
+                isMenuDragBarDark = isMenuDragBarDark,
                 cornerShape = cornerShape,
                 color = handleColor,
                 cornerRadius = handleCornerRadius,
@@ -103,8 +99,7 @@ private fun MenuBottomSheetHandle(
     modifier: Modifier = Modifier,
     onRequestDismiss: () -> Unit,
     contentDescription: String,
-    isExtensionsExpanded: Boolean = false,
-    isMoreMenuExpanded: Boolean = false,
+    isMenuDragBarDark: Boolean = false,
     cornerShape: Shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
     color: Color = FirefoxTheme.colors.borderInverted,
     cornerRadius: CornerRadius = CornerRadius.Zero,
@@ -113,7 +108,7 @@ private fun MenuBottomSheetHandle(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = if (isExtensionsExpanded || isMoreMenuExpanded) {
+                color = if (isMenuDragBarDark) {
                     FirefoxTheme.colors.layerSearch
                 } else {
                     Color.Transparent
@@ -141,8 +136,7 @@ private fun CFRBottomSheetHandle(
     state: MenuCFRState,
     contentDescription: String,
     onRequestDismiss: () -> Unit,
-    isExtensionsExpanded: Boolean,
-    isMoreMenuExpanded: Boolean,
+    isMenuDragBarDark: Boolean,
     cornerShape: Shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
     handleColor: Color = FirefoxTheme.colors.borderInverted,
     handleCornerRadius: CornerRadius = CornerRadius.Zero,
@@ -190,8 +184,7 @@ private fun CFRBottomSheetHandle(
             modifier = modifier,
             onRequestDismiss = onRequestDismiss,
             contentDescription = contentDescription,
-            isExtensionsExpanded = isExtensionsExpanded,
-            isMoreMenuExpanded = isMoreMenuExpanded,
+            isMenuDragBarDark = isMenuDragBarDark,
             cornerShape = cornerShape,
             color = handleColor,
             cornerRadius = handleCornerRadius,

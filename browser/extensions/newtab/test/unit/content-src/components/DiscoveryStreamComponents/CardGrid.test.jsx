@@ -2,19 +2,14 @@ import {
   _CardGrid as CardGrid,
   // eslint-disable-next-line no-shadow
   IntersectionObserver,
-  RecentSavesContainer,
   OnboardingExperience,
-  DSSubHeader,
 } from "content-src/components/DiscoveryStreamComponents/CardGrid/CardGrid";
 import { combineReducers, createStore } from "redux";
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { Provider } from "react-redux";
-import {
-  DSCard,
-  PlaceholderDSCard,
-} from "content-src/components/DiscoveryStreamComponents/DSCard/DSCard";
+import { DSCard } from "content-src/components/DiscoveryStreamComponents/DSCard/DSCard";
 import { TopicsWidget } from "content-src/components/DiscoveryStreamComponents/TopicsWidget/TopicsWidget";
-import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { actionCreators as ac } from "common/Actions.mjs";
 import React from "react";
 import { shallow, mount } from "enzyme";
 
@@ -67,37 +62,6 @@ describe("<CardGrid>", () => {
     assert.ok(wrapper.find(".ds-card-grid-hide-background").exists());
   });
 
-  it("should render sub header in the middle of the card grid for both regular and compact", () => {
-    const commonProps = {
-      essentialReadsHeader: true,
-      editorsPicksHeader: true,
-      items: 12,
-      data: {
-        recommendations: [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
-      },
-      Prefs: INITIAL_STATE.Prefs,
-      DiscoveryStream: INITIAL_STATE.DiscoveryStream,
-    };
-    wrapper = mount(
-      <WrapWithProvider>
-        <CardGrid {...commonProps} />
-      </WrapWithProvider>
-    );
-
-    assert.ok(wrapper.find(DSSubHeader).exists());
-
-    wrapper.setProps({
-      compact: true,
-    });
-    wrapper = mount(
-      <WrapWithProvider>
-        <CardGrid {...commonProps} compact={true} />
-      </WrapWithProvider>
-    );
-
-    assert.ok(wrapper.find(DSSubHeader).exists());
-  });
-
   it("should add/hide description classname to card grid", () => {
     wrapper.setProps({
       data: { recommendations: [{}, {}] },
@@ -129,8 +93,6 @@ describe("<CardGrid>", () => {
 
   it("should create a list feed", () => {
     const commonProps = {
-      essentialReadsHeader: true,
-      editorsPicksHeader: true,
       items: 12,
       data: {
         recommendations: [
@@ -318,102 +280,6 @@ describe("<IntersectionObserver>", () => {
       />
     );
     assert.calledOnce(onIntersecting);
-  });
-});
-
-describe("<RecentSavesContainer>", () => {
-  let wrapper;
-  let fakeWindow;
-  let intersectEntries;
-  let dispatch;
-
-  beforeEach(() => {
-    dispatch = sinon.stub();
-    intersectEntries = [{ isIntersecting: true }];
-    fakeWindow = {
-      IntersectionObserver: buildIntersectionObserver(intersectEntries),
-    };
-    wrapper = mount(
-      <WrapWithProvider
-        state={{
-          DiscoveryStream: {
-            isUserLoggedIn: true,
-            recentSavesData: [
-              {
-                resolved_id: "resolved_id",
-                top_image_url: "top_image_url",
-                title: "title",
-                resolved_url: "https://resolved_url",
-                domain: "domain",
-                excerpt: "excerpt",
-              },
-            ],
-            experimentData: {
-              utmSource: "utmSource",
-              utmContent: "utmContent",
-              utmCampaign: "utmCampaign",
-            },
-          },
-        }}
-      >
-        <RecentSavesContainer
-          gridClassName="ds-card-grid"
-          windowObj={fakeWindow}
-          dispatch={dispatch}
-        />
-      </WrapWithProvider>
-    ).find(RecentSavesContainer);
-  });
-
-  it("should render an IntersectionObserver when not visible", () => {
-    intersectEntries = [{ isIntersecting: false }];
-    fakeWindow = {
-      IntersectionObserver: buildIntersectionObserver(intersectEntries),
-    };
-    wrapper = mount(
-      <WrapWithProvider>
-        <RecentSavesContainer windowObj={fakeWindow} dispatch={dispatch} />
-      </WrapWithProvider>
-    ).find(RecentSavesContainer);
-
-    assert.ok(wrapper.exists());
-    assert.ok(wrapper.find(IntersectionObserver).exists());
-  });
-
-  it("should render nothing if visible until we log in", () => {
-    assert.ok(!wrapper.find(IntersectionObserver).exists());
-    assert.calledOnce(dispatch);
-    assert.calledWith(
-      dispatch,
-      ac.AlsoToMain({
-        type: at.DISCOVERY_STREAM_POCKET_STATE_INIT,
-      })
-    );
-  });
-
-  it("should render a grid if visible and logged in", () => {
-    assert.lengthOf(wrapper.find(".ds-card-grid"), 1);
-    assert.lengthOf(wrapper.find(DSSubHeader), 1);
-    assert.lengthOf(wrapper.find(PlaceholderDSCard), 2);
-    assert.lengthOf(wrapper.find(DSCard), 3);
-  });
-
-  it("should render a my list link with proper utm params", () => {
-    assert.equal(
-      wrapper.find(".section-sub-link").at(0).prop("url"),
-      "https://getpocket.com/a?utm_source=utmSource&utm_content=utmContent&utm_campaign=utmCampaign"
-    );
-  });
-
-  it("should fire a UserEvent for my list clicks", () => {
-    wrapper.find(".section-sub-link").at(0).simulate("click");
-    assert.calledWith(
-      dispatch,
-      ac.DiscoveryStreamUserEvent({
-        event: "CLICK",
-        source: `CARDGRID_RECENT_SAVES_VIEW_LIST`,
-      })
-    );
   });
 });
 

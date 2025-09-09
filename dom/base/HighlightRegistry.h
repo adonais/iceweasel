@@ -12,8 +12,8 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsHashKeys.h"
-#include "nsTHashMap.h"
 #include "nsHashtablesFwd.h"
+#include "nsTHashMap.h"
 #include "nsWrapperCache.h"
 
 class nsFrameSelection;

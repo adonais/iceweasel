@@ -55,10 +55,14 @@ WorkletModuleLoader::WorkletModuleLoader(WorkletScriptLoader* aScriptLoader,
 }
 
 already_AddRefed<ModuleLoadRequest> WorkletModuleLoader::CreateStaticImport(
-    nsIURI* aURI, JS::ModuleType aModuleType, ModuleLoadRequest* aParent,
-    const mozilla::dom::SRIMetadata& aSriMetadata) {
+    nsIURI* aURI, JS::ModuleType aModuleType,
+    JS::loader::ModuleScript* aReferrerScript,
+    const mozilla::dom::SRIMetadata& aSriMetadata,
+    JS::loader::LoadContextBase* aLoadContext,
+    JS::loader::ModuleLoaderBase* aLoader) {
+  WorkletLoadContext* context = aLoadContext->AsWorkletContext();
   const nsMainThreadPtrHandle<WorkletFetchHandler>& handlerRef =
-      aParent->GetWorkletLoadContext()->GetHandlerRef();
+      context->GetHandlerRef();
   RefPtr<WorkletLoadContext> loadContext = new WorkletLoadContext(handlerRef);
 
   // https://html.spec.whatwg.org/multipage/webappapis.html#fetch-the-descendants-of-a-module-script
@@ -67,12 +71,12 @@ already_AddRefed<ModuleLoadRequest> WorkletModuleLoader::CreateStaticImport(
   // https://html.spec.whatwg.org/multipage/webappapis.html#internal-module-script-graph-fetching-procedure
   // Step 5. Fetch a single module script with referrer is referringScript's
   // base URL,
-  nsIURI* referrer = aParent->mURI;
+  nsIURI* referrer = aReferrerScript->GetURI();
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, aModuleType, aParent->ReferrerPolicy(), aParent->mFetchOptions,
-      SRIMetadata(), referrer, loadContext,
-      ModuleLoadRequest::Kind::StaticImport, this, aParent->mVisitedSet,
-      aParent->GetRootModule());
+      aURI, aModuleType, aReferrerScript->ReferrerPolicy(),
+      aReferrerScript->GetFetchOptions(), SRIMetadata(), referrer, loadContext,
+      ModuleLoadRequest::Kind::StaticImport, this,
+      aLoadContext->mRequest->AsModuleRequest()->GetRootModule());
 
   request->mURL = request->mURI->GetSpecOrDefault();
   request->NoCacheEntryFound();
@@ -80,9 +84,8 @@ already_AddRefed<ModuleLoadRequest> WorkletModuleLoader::CreateStaticImport(
 }
 
 already_AddRefed<ModuleLoadRequest> WorkletModuleLoader::CreateDynamicImport(
-    JSContext* aCx, nsIURI* aURI, JS::ModuleType aModuleType,
-    LoadedScript* aMaybeActiveScript, JS::Handle<JSString*> aSpecifier,
-    JS::Handle<JSObject*> aPromise) {
+    JSContext* aCx, nsIURI* aURI, LoadedScript* aMaybeActiveScript,
+    JS::Handle<JSObject*> aModuleRequestObj, JS::Handle<JSObject*> aPromise) {
   return nullptr;
 }
 
@@ -264,24 +267,36 @@ void WorkletModuleLoader::OnModuleLoadComplete(ModuleLoadRequest* aRequest) {
     return;
   }
 
-  if (!aRequest->InstantiateModuleGraph()) {
-    return;
-  }
-
-  nsresult rv = aRequest->EvaluateModule();
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
+  bool hasParseError = aRequest->mModuleScript->HasParseError();
   bool hasError = aRequest->mModuleScript->HasErrorToRethrow();
-  if (hasError) {
+
+  if (!hasParseError && !hasError) {
+    if (!aRequest->InstantiateModuleGraph()) {
+      return;
+    }
+
+    nsresult rv = aRequest->EvaluateModule();
+    if (NS_FAILED(rv)) {
+      return;
+    }
+
+    hasError = aRequest->mModuleScript->HasErrorToRethrow();
+  }
+
+  if (hasParseError || hasError) {
     AutoJSAPI jsapi;
     if (NS_WARN_IF(!jsapi.Init(GetGlobalObject()))) {
       return;
     }
 
     JSContext* cx = jsapi.cx();
-    JS::Rooted<JS::Value> error(cx, aRequest->mModuleScript->ErrorToRethrow());
+    JS::Rooted<JS::Value> error(cx);
+    if (hasParseError) {
+      error = aRequest->mModuleScript->ParseError();
+    } else {
+      error = aRequest->mModuleScript->ErrorToRethrow();
+    }
+    JS_SetPendingException(cx, error);
     RefPtr<AddModuleThrowErrorRunnable> runnable =
         new AddModuleThrowErrorRunnable(handlerRef);
     ErrorResult result;

@@ -7,13 +7,20 @@ package org.mozilla.fenix.tabstray
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.MiddlewareContext
 import mozilla.telemetry.glean.private.NoExtras
+import org.mozilla.experiments.nimbus.NimbusEventStore
 import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.GleanMetrics.TabsTray
+import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.metrics.MetricsUtils.BookmarkAction.Source
 
 /**
  * Middleware that records telemetry events for the Tabs Tray feature.
+ *
+ * @param nimbusEventStore [NimbusEventStore] for recording events to use in behavioral targeting.
  */
-class TabsTrayTelemetryMiddleware : Middleware<TabsTrayState, TabsTrayAction> {
+class TabsTrayTelemetryMiddleware(
+    private val nimbusEventStore: NimbusEventStore,
+) : Middleware<TabsTrayState, TabsTrayAction> {
 
     private var shouldReportInactiveTabMetrics: Boolean = true
 
@@ -53,6 +60,10 @@ class TabsTrayTelemetryMiddleware : Middleware<TabsTrayState, TabsTrayAction> {
             }
             is TabsTrayAction.CloseAllPrivateTabs -> {
                 TabsTray.closeAllTabs.record(NoExtras())
+            }
+            is TabsTrayAction.BookmarkSelectedTabs -> {
+                TabsTray.bookmarkSelectedTabs.record(TabsTray.BookmarkSelectedTabsExtra(tabCount = action.tabCount))
+                MetricsUtils.recordBookmarkAddMetric(Source.TABS_TRAY, nimbusEventStore, count = action.tabCount)
             }
             else -> {
                 // no-op

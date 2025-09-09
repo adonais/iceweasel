@@ -7,11 +7,11 @@
 #ifndef StorageAccessPermissionRequest_h_
 #define StorageAccessPermissionRequest_h_
 
-#include "nsContentPermissionHelper.h"
+#include <functional>
+
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
-
-#include <functional>
+#include "nsContentPermissionHelper.h"
 
 class nsPIDOMWindowInner;
 

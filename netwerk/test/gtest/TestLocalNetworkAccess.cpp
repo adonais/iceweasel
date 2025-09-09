@@ -36,6 +36,7 @@ TEST(TestNetAddrLNAUtil, IPAddressSpaceCategorization)
 
   std::vector<TestCase> testCases = {
       // Local IPv4
+      {"", nsILoadInfo::IPAddressSpace::Unknown},
       {"127.0.0.1", nsILoadInfo::IPAddressSpace::Local},
       {"198.18.0.0", nsILoadInfo::IPAddressSpace::Local},
       {"198.19.255.255", nsILoadInfo::IPAddressSpace::Local},
@@ -76,8 +77,11 @@ TEST(TestNetAddrLNAUtil, IPAddressSpaceCategorization)
     if (addr.raw.family == AF_INET) {
       EXPECT_EQ(addr.GetIpAddressSpace(), testCase.mExpectedSpace)
           << "Failed for IP: " << testCase.mIp;
-    } else if (addr.GetIpAddressSpace() == AF_INET6) {
+    } else if (addr.raw.family == AF_INET6) {
       EXPECT_EQ(addr.GetIpAddressSpace(), testCase.mExpectedSpace)
+          << "Failed for IP: " << testCase.mIp;
+    } else {
+      EXPECT_EQ(addr.GetIpAddressSpace(), nsILoadInfo::IPAddressSpace::Unknown)
           << "Failed for IP: " << testCase.mIp;
     }
   }

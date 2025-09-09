@@ -4,24 +4,24 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Assertions.h"
-#include "mozilla/CheckedInt.h"
-#include "mozilla/Logging.h"
 #include "mozilla/dom/AudioData.h"
-#include "mozilla/dom/AudioDataBinding.h"
-#include "mozilla/dom/BufferSourceBinding.h"
-#include "mozilla/dom/Promise.h"
-#include "mozilla/dom/StructuredCloneTags.h"
-#include "nsStringFwd.h"
-#include "nsFmtString.h"
 
 #include <utility>
 
 #include "AudioSampleFormat.h"
 #include "WebCodecsUtils.h"
 #include "js/StructuredClone.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/CheckedInt.h"
+#include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
+#include "mozilla/dom/AudioDataBinding.h"
+#include "mozilla/dom/BufferSourceBinding.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/StructuredCloneTags.h"
+#include "nsFmtString.h"
+#include "nsStringFwd.h"
 
 extern mozilla::LazyLogModule gWebCodecsLog;
 

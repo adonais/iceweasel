@@ -13,6 +13,7 @@
 
 // Global includes
 #include <utility>
+
 #include "MainThreadUtils.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/BasePrincipal.h"

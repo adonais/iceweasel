@@ -7,15 +7,15 @@
 #ifndef nsFocusManager_h___
 #define nsFocusManager_h___
 
-#include "nsCycleCollectionParticipant.h"
-#include "nsIContent.h"
-#include "mozilla/dom/Document.h"
-#include "nsIFocusManager.h"
-#include "nsIObserver.h"
-#include "nsWeakReference.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/dom/Document.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsIContent.h"
+#include "nsIFocusManager.h"
+#include "nsIObserver.h"
+#include "nsWeakReference.h"
 
 #define FOCUSMANAGER_CONTRACTID "@mozilla.org/focus-manager;1"
 
@@ -143,11 +143,17 @@ class nsFocusManager final : public nsIFocusManager,
     return mActiveBrowsingContextInContent;
   }
 
+  void ContentInserted(nsIContent* aChild, const ContentInsertInfo& aInfo);
+
+  void ContentAppended(nsIContent* aFirstNewContent,
+                       const ContentAppendInfo& aInfo);
+
   /**
    * Called when content has been removed.
    */
   MOZ_CAN_RUN_SCRIPT nsresult ContentRemoved(Document* aDocument,
-                                             nsIContent* aContent);
+                                             nsIContent* aContent,
+                                             const ContentRemoveInfo& aInfo);
 
   void NeedsFlushBeforeEventHandling(mozilla::dom::Element* aElement) {
     if (mFocusedElement == aElement) {
@@ -894,6 +900,8 @@ class nsFocusManager final : public nsIFocusManager,
   // Returns true if set and false if ignored.
   bool SetActiveBrowsingContextInChrome(mozilla::dom::BrowsingContext* aContext,
                                         uint64_t aActionId);
+
+  void FocusedElementMayHaveMoved(nsIContent* aContent, nsINode* aOldParent);
 
  public:
   // Chrome-only

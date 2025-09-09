@@ -20,6 +20,17 @@ checkbox-example-input =
   .description = Could have a description like moz-checkbox.
 checkbox-example-input2 =
   .label = Another checkbox
+browser-layout-label =
+  .label = Browser layout
+browser-layout-radio-horizontal =
+  .label = Horizontal tabs
+  .description = Displayed at the top of the browser
+browser-layout-radio-vertical =
+  .label = Vertical tabs
+  .description = Displayed on the side, in the sidebar
+browser-layout-sidebar =
+  .label = Show sidebar
+  .description = Quickly access bookmarks, tabs from your phone, AI chatbots, and more without leaving your main view
 `,
   },
 };
@@ -54,6 +65,36 @@ Group.args = {
         l10nId: "checkbox-example-input2",
         supportPage: "example-support",
         iconSrc: "chrome://global/skin/icons/highlights.svg",
+      },
+    ],
+  },
+};
+
+export const BrowserLayout = Template.bind({});
+BrowserLayout.args = {
+  config: {
+    id: "browser-layout-example",
+    l10nId: "browser-layout-label",
+    items: [
+      {
+        id: "tabs-layout",
+        control: "moz-radio-group",
+        options: [
+          {
+            id: "horizontal-tabs",
+            l10nId: "browser-layout-radio-horizontal",
+            value: true,
+          },
+          {
+            id: "vertical-tabs",
+            l10nId: "browser-layout-radio-vertical",
+            value: false,
+          },
+        ],
+      },
+      {
+        id: "show-sidebar",
+        l10nId: "browser-layout-sidebar",
       },
     ],
   },

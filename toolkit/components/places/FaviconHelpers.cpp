@@ -301,11 +301,11 @@ nsresult SetIconInfo(const RefPtr<Database>& aDB, IconData& aIcon,
   return NS_OK;
 }
 
-nsresult FetchMostFrecentSubPageIcon(const RefPtr<Database>& aDB,
+nsresult FetchMostFrecentSubPageIcon(const UniquePtr<ConnectionAdapter>& aConn,
                                      const nsACString& aPageRoot,
                                      const nsACString& aPageHost,
                                      IconData& aIconData) {
-  nsCOMPtr<mozIStorageStatement> stmt = aDB->GetStatement(
+  nsCOMPtr<mozIStorageStatement> stmt = aConn->GetStatement(
       "SELECT i.icon_url, i.id, i.expire_ms, i.data, i.width, i.root "
       "FROM moz_pages_w_icons pwi "
       "JOIN moz_icons_to_pages itp ON pwi.id = itp.page_id "
@@ -314,7 +314,7 @@ nsresult FetchMostFrecentSubPageIcon(const RefPtr<Database>& aDB,
       "WHERE p.rev_host = get_unreversed_host(:pageHost || '.') || '.' "
       "AND p.url BETWEEN :pageRoot AND :pageRoot || X'FFFF' "
       "ORDER BY p.frecency DESC, i.width DESC "
-      "LIMIT 1");
+      "LIMIT 1"_ns);
   NS_ENSURE_STATE(stmt);
   mozStorageStatementScoper scoperFallback(stmt);
 
@@ -380,7 +380,7 @@ nsresult FetchMostFrecentSubPageIcon(const RefPtr<Database>& aDB,
  * @param _icon
  *        Icon that should be fetched.
  */
-nsresult FetchIconInfo(const RefPtr<Database>& aDB,
+nsresult FetchIconInfo(const UniquePtr<ConnectionAdapter>& aConn,
                        const nsCOMPtr<nsIURI>& aPageURI,
                        uint16_t aPreferredWidth, IconData& _icon) {
   if (_icon.status & ICON_STATUS_CACHED) {
@@ -435,7 +435,7 @@ nsresult FetchIconInfo(const RefPtr<Database>& aDB,
       // Prefer non-rich icons for small sizes (<= 64px).
       aPreferredWidth <= THRESHOLD_WIDTH ? "isRich ASC, " : "");
 
-  nsCOMPtr<mozIStorageStatement> stmt = aDB->GetStatement(query);
+  nsCOMPtr<mozIStorageStatement> stmt = aConn->GetStatement(query);
 
   NS_ENSURE_STATE(stmt);
   mozStorageStatementScoper scoper(stmt);
@@ -606,7 +606,7 @@ nsresult FetchIconInfo(const RefPtr<Database>& aDB,
       (void)aPageURI->GetPrePath(pagePrePath);
 
       if (!pageHost.IsEmpty() && !pagePrePath.IsEmpty()) {
-        rv = FetchMostFrecentSubPageIcon(aDB, pagePrePath, pageHost, _icon);
+        rv = FetchMostFrecentSubPageIcon(aConn, pagePrePath, pageHost, _icon);
         NS_ENSURE_SUCCESS(rv, rv);
       }
     }
@@ -887,12 +887,13 @@ AsyncSetIconForPage::Run() {
 
 AsyncGetFaviconForPageRunnable::AsyncGetFaviconForPageRunnable(
     const nsCOMPtr<nsIURI>& aPageURI, uint16_t aPreferredWidth,
-    const RefPtr<FaviconPromise::Private>& aPromise)
+    const RefPtr<FaviconPromise::Private>& aPromise, bool aOnConcurrentConn)
     : Runnable("places::AsyncGetFaviconForPage"),
       mPageURI(aPageURI),
       mPreferredWidth(aPreferredWidth == 0 ? UINT16_MAX : aPreferredWidth),
       mPromise(new nsMainThreadPtrHolder<FaviconPromise::Private>(
-          "AsyncGetFaviconForPageRunnable::Promise", aPromise, false)) {
+          "AsyncGetFaviconForPageRunnable::Promise", aPromise, false)),
+      mOnConcurrentConn(aOnConcurrentConn) {
   MOZ_ASSERT(NS_IsMainThread());
 }
 
@@ -921,13 +922,36 @@ AsyncGetFaviconForPageRunnable::Run() {
     mPromise->Resolve(favicon.forget(), __func__);
   });
 
-  RefPtr<Database> DB = Database::GetDatabase();
-  NS_ENSURE_STATE(DB);
+  UniquePtr<ConnectionAdapter> adapter;
+  if (!mOnConcurrentConn) {
+    RefPtr<Database> DB = Database::GetDatabase();
+    MOZ_ASSERT(DB);
+    adapter = MakeUnique<ConnectionAdapter>(DB);
+  } else {
+    auto conn = ConcurrentConnection::GetInstance();
+    MOZ_ASSERT(conn);
+    if (conn.isSome()) {
+      adapter = MakeUnique<ConnectionAdapter>(conn.value());
+    }
+  }
+  // In certain circumstances, like when ConcurrentConnection is initialized
+  // during shutdown, we may not have a connection.
+  if (!adapter) {
+    return (rv = NS_ERROR_UNEXPECTED);
+  }
 
-  rv = FetchIconInfo(DB, mPageURI, mPreferredWidth, iconData);
+  rv = FetchIconInfo(adapter, mPageURI, mPreferredWidth, iconData);
   NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
+}
+
+AsyncGetFaviconForPageRunnable::~AsyncGetFaviconForPageRunnable() {
+  // If the promise is not fulfilled yet we must reject it to avoid assertions,
+  // otherwise this is a no-op.
+  // This may happen for example when the runnable is enqueued in
+  // ConcurrentConnection and it skips unnecessary work on shutdown.
+  mPromise->Reject(NS_ERROR_ABORT, __func__);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -973,8 +997,8 @@ NS_IMETHODIMP AsyncTryCopyFaviconsRunnable::Run() {
 
   RefPtr<Database> DB = Database::GetDatabase();
   NS_ENSURE_STATE(DB);
-
-  rv = FetchIconInfo(DB, mFromPageURI, UINT16_MAX, fromIconData);
+  UniquePtr<ConnectionAdapter> adapter = MakeUnique<ConnectionAdapter>(DB);
+  rv = FetchIconInfo(adapter, mFromPageURI, UINT16_MAX, fromIconData);
   NS_ENSURE_SUCCESS(rv, rv);
   if (fromIconData.payloads.IsEmpty()) {
     // There's nothing to copy.

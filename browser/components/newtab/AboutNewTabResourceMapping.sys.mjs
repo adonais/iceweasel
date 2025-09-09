@@ -84,6 +84,16 @@ export var AboutNewTabResourceMapping = {
   _updateAddonStateDeferredTask: null,
 
   /**
+   * Returns the version string for whichever version of New Tab is currently
+   * being used.
+   *
+   * @type {string}
+   */
+  get addonVersion() {
+    return this._addonVersion;
+  },
+
+  /**
    * This should be called early on in the lifetime of the browser, before any
    * attempt to load a resource from resource://newtab or chrome://newtab.
    *
@@ -414,6 +424,11 @@ export var AboutNewTabResourceMapping = {
       // Retrieve the new add-on wrapper if the xpi version has been uninstalled.
       if (changed) {
         addon = await lazy.AddonManager.getAddonByID(BUILTIN_ADDON_ID);
+
+        this.logger.debug(
+          "Invalidating AboutHomeStartupCache after train-hop uninstall"
+        );
+        lazy.AboutHomeStartupCache.clearCacheAndUninit();
       }
     }
 

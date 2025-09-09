@@ -15,7 +15,7 @@ const { UrlClassifierTestUtils } = ChromeUtils.importESModule(
 );
 
 const { ReportBrokenSite } = ChromeUtils.importESModule(
-  "resource:///modules/ReportBrokenSite.sys.mjs"
+  "moz-src:///browser/components/reportbrokensite/ReportBrokenSite.sys.mjs"
 );
 
 const BASE_URL =

@@ -19,7 +19,7 @@ const {
 } = require("resource://devtools/server/actors/utils/style-utils.js");
 
 const {
-  style: { ELEMENT_STYLE },
+  style: { ELEMENT_STYLE, PRES_HINTS },
 } = require("resource://devtools/shared/constants.js");
 
 loader.lazyRequireGetter(
@@ -110,6 +110,16 @@ class StyleRuleActor extends Actor {
         this.column = InspectorUtils.getRuleColumn(this.rawRule);
         this._parentSheet = this.rawRule.parentStyleSheet;
       }
+    } else if (item.declarationOrigin === "pres-hints") {
+      this.type = PRES_HINTS;
+      this.ruleClassName = PRES_HINTS;
+      this.rawNode = item;
+      this.rawRule = {
+        style: item.style,
+        toString() {
+          return "[element attribute styles " + this.style + "]";
+        },
+      };
     } else {
       // Fake a rule
       this.type = ELEMENT_STYLE;
@@ -425,6 +435,9 @@ class StyleRuleActor extends Actor {
         form.href = doc.location ? doc.location.href : "";
         form.authoredText = this.rawNode.getAttribute("style");
         break;
+      case PRES_HINTS:
+        form.href = "";
+        break;
       case "CSSCharsetRule":
         form.encoding = this.rawRule.encoding;
         break;
@@ -486,20 +499,28 @@ class StyleRuleActor extends Actor {
         // InspectorUtils.supports only supports the 1-arg version, but that's
         // what we want to do anyways so that we also accept !important in the
         // value.
-        decl.isValid = InspectorUtils.supports(
-          `${decl.name}:${decl.value}`,
-          supportsOptions
-        );
+        decl.isValid =
+          // Always consider pres hints styles declarations valid. We need this because
+          // in some cases we might get quirks declarations for which we serialize the
+          // value to something meaningful for the user, but that can't be actually set.
+          // (e.g. for <table> in quirks mode, we get a `color: -moz-inherit-from-body-quirk`)
+          // In such case InspectorUtils.supports() would return false, but that would be
+          // odd to show "invalid" pres hints declaration in the UI.
+          this.ruleClassName === PRES_HINTS ||
+          InspectorUtils.supports(
+            `${decl.name}:${decl.value}`,
+            supportsOptions
+          );
         // TODO: convert from Object to Boolean. See Bug 1574471
         decl.isUsed = isPropertyUsed(el, style, this.rawRule, decl.name);
         // Check property name. All valid CSS properties support "initial" as a value.
-        decl.isNameValid = InspectorUtils.supports(
-          `${decl.name}:initial`,
-          supportsOptions
-        );
+        decl.isNameValid =
+          // InspectorUtils.supports can be costly, don't call it when the declaration
+          // is a CSS variable, it should always be valid
+          decl.isCustomProperty ||
+          InspectorUtils.supports(`${decl.name}:initial`, supportsOptions);
 
-        if (SharedCssLogic.isCssVariable(decl.name)) {
-          decl.isCustomProperty = true;
+        if (decl.isCustomProperty) {
           decl.computedValue = style.getPropertyValue(decl.name);
 
           // If the variable is a registered property, we check if the variable is
@@ -576,6 +597,7 @@ class StyleRuleActor extends Actor {
       case "CSSNestedDeclarations":
       case "CSSStyleRule":
       case ELEMENT_STYLE:
+      case PRES_HINTS:
         return this.rawStyle.cssText || "";
       case "CSSKeyframesRule":
       case "CSSKeyframeRule":

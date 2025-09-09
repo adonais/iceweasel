@@ -11,7 +11,8 @@
     --box-border-radius: var(--border-radius-medium);
     --box-border-radius-inner: calc(var(--box-border-radius) - var(--border-width));
     --box-padding: var(--space-large);
-    --box-icon-size: var(--icon-size-default);
+    --box-icon-size: var(--icon-size);
+    --box-icon-fill: var(--icon-color);
 
     border: var(--box-border);
     border-block-end: var(--box-border-width-end) solid var(--box-border-color);
@@ -26,7 +27,7 @@
   .text-content {
     display: grid;
     place-items: center start;
-    gap: var(--space-xxsmall) var(--space-small);
+    gap: var(--space-xsmall) var(--space-small);
     grid-template-columns: var(--box-icon-size) 1fr;
     grid-template-areas: "label label";
 
@@ -55,12 +56,16 @@
     grid-area: icon;
     width: var(--box-icon-size);
     height: var(--box-icon-size);
-    -moz-context-properties: fill;
-    fill: var(--icon-color);
+    -moz-context-properties: fill, stroke;
+    fill: var(--box-icon-fill);
+    stroke: var(--box-icon-stroke);
   }
 
   .description {
     grid-area: description;
+    display: flex;
+    justify-content: center;
+    gap: var(--space-small);
   }
 }
 

@@ -990,8 +990,10 @@ export function showStreamSharingMenu(win, event, inclWindow = false) {
     let stream = activeStreams[0];
 
     const sharingItem = doc.createXULElement("menuitem");
-    const streamTitle = stream.browser.contentTitle || stream.uri;
-    doc.l10n.setAttributes(sharingItem, l10nIds[0], { streamTitle });
+    const displayHost = getDisplayHostForStream(stream);
+    doc.l10n.setAttributes(sharingItem, l10nIds[0], {
+      streamTitle: displayHost,
+    });
     sharingItem.setAttribute("disabled", "true");
     menu.appendChild(sharingItem);
 
@@ -1015,11 +1017,11 @@ export function showStreamSharingMenu(win, event, inclWindow = false) {
 
     for (let stream of activeStreams) {
       const controlItem = doc.createXULElement("menuitem");
-      const streamTitle = stream.browser.contentTitle || stream.uri;
+      const displayHost = getDisplayHostForStream(stream);
       doc.l10n.setAttributes(
         controlItem,
         "webrtc-indicator-menuitem-control-sharing-on",
-        { streamTitle }
+        { streamTitle: displayHost }
       );
       controlItem.stream = stream;
       controlItem.addEventListener("command", this);
@@ -1028,8 +1030,27 @@ export function showStreamSharingMenu(win, event, inclWindow = false) {
   }
 }
 
+function getDisplayHostForStream(stream) {
+  let uri = Services.io.newURI(stream.uri);
+
+  let displayHost;
+
+  try {
+    displayHost = uri.displayHost;
+  } catch (ex) {
+    displayHost = null;
+  }
+
+  // Host getter threw or returned "". Fall back to spec.
+  if (displayHost == null || displayHost == "") {
+    displayHost = uri.displaySpec;
+  }
+
+  return displayHost;
+}
+
 function onTabSharingMenuPopupShowing(e) {
-  const streams = webrtcUI.getActiveStreams(true, true, true, true);
+  const streams = webrtcUI.getActiveStreams(true, true, true, true, true);
   for (let streamInfo of streams) {
     const names = streamInfo.devices.map(({ mediaSource }) => {
       const l10nId = MEDIA_SOURCE_L10NID_BY_TYPE.get(mediaSource);

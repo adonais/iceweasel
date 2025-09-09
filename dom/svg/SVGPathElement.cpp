@@ -8,22 +8,22 @@
 
 #include <algorithm>
 
+#include "SVGArcConverter.h"
 #include "SVGGeometryProperty.h"
+#include "SVGPathSegUtils.h"
 #include "gfx2DGlue.h"
 #include "gfxPlatform.h"
 #include "mozAutoDocUpdate.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/SVGContentUtils.h"
+#include "mozilla/dom/SVGPathElementBinding.h"
+#include "mozilla/dom/SVGPathSegment.h"
+#include "mozilla/gfx/2D.h"
 #include "nsGkAtoms.h"
 #include "nsIFrame.h"
 #include "nsStyleConsts.h"
 #include "nsStyleStruct.h"
 #include "nsWindowSizes.h"
-#include "mozilla/dom/SVGPathElementBinding.h"
-#include "mozilla/dom/SVGPathSegment.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/SVGContentUtils.h"
-#include "SVGArcConverter.h"
-#include "SVGPathSegUtils.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(Path)
 

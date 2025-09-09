@@ -11,8 +11,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class LocationServiceTest {
-    @ExperimentalCoroutinesApi
     @Test
+    @ExperimentalCoroutinesApi // UnconfinedTestDispatcher
     fun `dummy implementation returns null`() {
         runTest(UnconfinedTestDispatcher()) {
             assertNull(LocationService.dummy().fetchRegion(false))

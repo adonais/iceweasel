@@ -100,6 +100,10 @@ urlbar-default-notification-anchor =
     .tooltiptext = Open message panel
 urlbar-geolocation-notification-anchor =
     .tooltiptext = Open location request panel
+urlbar-localhost-notification-anchor =
+    .tooltiptext = Manage local device access for this site
+urlbar-local-network-notification-anchor =
+    .tooltiptext = Manage sharing your local network access with this site
 urlbar-xr-notification-anchor =
     .tooltiptext = Open virtual reality permission panel
 urlbar-storage-access-anchor =
@@ -194,6 +198,10 @@ urlbar-search-mode-actions = Actions
 
 urlbar-geolocation-blocked =
     .tooltiptext = You have blocked location information for this website.
+urlbar-localhost-blocked =
+    .tooltiptext = You have blocked local device connections for this website.
+urlbar-local-network-blocked =
+    .tooltiptext = You have blocked local network connections for this website.
 urlbar-xr-blocked =
     .tooltiptext = You have blocked virtual reality device access for this website.
 urlbar-web-notifications-blocked =
@@ -716,6 +724,82 @@ urlbar-result-weather-title-city-only = <strong>{ $temperature }°{ $unit }</str
 #       name of a company, organization, or service.
 urlbar-result-weather-provider-sponsored = { $provider } · Sponsored
 
+## These strings are used for Realtime suggestions in the urlbar.
+## Market refers to stocks, indexes, and funds.
+
+# This string is shown as title when Market suggestion are disabled.
+urlbar-result-market-opt-in-title = Get stock market data right in your search bar
+
+# This string is shown as description when Market suggestion are disabled.
+urlbar-result-market-opt-in-description = Show market updates and more from our partners when you share search query data with { -vendor-short-name }. <a data-l10n-name="learn-more-link">Learn more</a>
+
+# This string is shown as button to activate online when realtime suggestion are disabled.
+urlbar-result-realtime-opt-in-allow = Show suggestions
+
+# This string is shown in split button to dismiss activation the Realtime suggestion.
+urlbar-result-realtime-opt-in-not-now = Not now
+urlbar-result-realtime-opt-in-dismiss = Dismiss
+urlbar-result-realtime-opt-in-dismiss-all =
+    .label = Don’t show these suggestions
+
+# This string is shown in the result menu.
+urlbar-result-menu-dont-show-market =
+  .label = Don’t show market suggestions
+
+# A message that replaces a result when the user dismisses Market suggestions.
+urlbar-result-dismissal-acknowledgment-market = Thanks for your feedback. You won’t see market suggestions anymore.
+
+# A message that replaces a result when the user dismisses all suggestions of a
+# particular type.
+urlbar-result-dismissal-acknowledgment-all = Thanks for your feedback. You won’t see these suggestions anymore.
+
+## These strings are used for suggestions of important dates in the urlbar.
+
+# The name of an event and the number of days until it starts separated by a
+# middot.
+# Variables:
+#   $name (string) - The name of the event.
+#   $daysUntilStart (integer) - The number of days until the event starts.
+urlbar-result-dates-countdown =
+    { $daysUntilStart ->
+        [one] { $name } · In { $daysUntilStart } day
+        *[other] { $name } · In { $daysUntilStart } days
+    }
+
+# The name of a multiple day long event and the number of days until it starts
+# separated by a middot.
+# Variables:
+#   $name (string) - The name of the event.
+#   $daysUntilStart (integer) - The number of days until the event starts.
+urlbar-result-dates-countdown-range =
+    { $daysUntilStart ->
+        [one] { $name } · Starts in { $daysUntilStart } day
+        *[other] { $name } · Starts in { $daysUntilStart } days
+    }
+
+# The name of a multiple day long event and the number of days until it ends
+# separated by a middot.
+# Variables:
+#   $name (string) - The name of the event.
+#   $daysUntilEnd (integer) - The number of days until the event ends.
+urlbar-result-dates-ongoing =
+    { $daysUntilEnd ->
+        [one] { $name } · Ends in { $daysUntilEnd } day
+        *[other] { $name } · Ends in { $daysUntilEnd } days
+    }
+
+# The name of an event and a note that it is happening today separated by a
+# middot.
+# Variables:
+#   $name (string) - The name of the event.
+urlbar-result-dates-today = { $name } · Today
+
+# The name of multiple day long event and a note that it is ends today
+# separated by a middot.
+# Variables:
+#   $name (string) - The name of the event.
+urlbar-result-dates-ends-today = { $name } · Ends today
+
 ## Strings used for buttons in the urlbar
 
 # Searchmode Switcher button
@@ -1097,6 +1181,10 @@ tabs-toolbar-list-all-tabs =
     .label = List all tabs
     .tooltiptext = List all tabs
 
+## Drop indicator text for pinned tabs when no tabs are pinned.
+
+pinned-tabs-drop-indicator = Drop tab here to pin
+
 ## Infobar shown at startup to suggest session-restore
 
 # <img data-l10n-name="icon"/> will be replaced by the application menu icon
@@ -1288,6 +1376,15 @@ onboarding-checklist-button-label = Finish setup
 trustpanel-etp-label-enabled = Enhanced Tracking Protection is on
 trustpanel-etp-label-disabled = Enhanced Tracking Protection is off
 
+# Variables
+#  $host (String): the hostname of the site that is being displayed.
+trustpanel-etp-toggle-on =
+  .aria-label = Enhanced Tracking Protection: On for { $host }
+# Variables
+#  $host (String): the hostname of the site that is being displayed.
+trustpanel-etp-toggle-off =
+  .aria-label = Enhanced Tracking Protection: Off for { $host }
+
 trustpanel-etp-description-enabled = If something looks broken on this site, try turning off protections.
 trustpanel-etp-description-disabled = { -brand-product-name } thinks companies should follow you less. We block as many trackers as we can when you turn on protections.
 
@@ -1318,7 +1415,7 @@ trustpanel-clear-cookies-subview-button-cancel = Cancel
 trustpanel-site-information-header =
     .title = Connection protections for { $host }
 
-trustpanel-connection-secure = You are securely connected to this site
+trustpanel-connection-secure = You are securely connected to this site.
 trustpanel-connection-not-secure = You are not securely connected to this site.
 
 trustpanel-siteinformation-morelink = More site information
@@ -1369,7 +1466,6 @@ trustpanel-social-tracking-not-blocking-tab-header = { $count ->
   [one] { -brand-product-name } allowed { $count } social media tracker
   *[other] { -brand-product-name } allowed { $count } social media trackers
 }
-trustpanel-social-tracking-tab-list-header = These sites are trying to track you:
 
 trustpanel-tracking-cookies-blocking-tab-header = { $count ->
   [one] { -brand-product-name } blocked { $count } cross-site tracking cookie
@@ -1379,7 +1475,6 @@ trustpanel-tracking-cookies-not-blocking-tab-header = { $count ->
   [one] { -brand-product-name } allowed { $count } cross-site tracking cookie
   *[other] { -brand-product-name } allowed { $count } cross-site tracking cookies
 }
-trustpanel-tracking-cookies-tab-list-header = These sites are trying to track you:
 
 trustpanel-tracking-content-blocking-tab-header = { $count ->
   [one] { -brand-product-name } blocked { $count } tracker
@@ -1399,7 +1494,7 @@ trustpanel-fingerprinter-not-blocking-tab-header = { $count ->
   [one] { -brand-product-name } allowed { $count } fingerprinter
   *[other] { -brand-product-name } allowed { $count } fingerprinters
 }
-trustpanel-fingerprinter-list-header = These site are trying to fingerprint you:
+trustpanel-fingerprinter-list-header = These sites are trying to fingerprint you:
 
 trustpanel-cryptominer-blocking-tab-header = { $count ->
   [one] { -brand-product-name } blocked { $count } cryptominer

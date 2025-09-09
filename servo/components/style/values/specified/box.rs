@@ -4,6 +4,7 @@
 
 //! Specified types for box properties.
 
+pub use crate::logical_geometry::WritingModeProperty;
 use crate::parser::{Parse, ParserContext};
 use crate::properties::{LonghandId, PropertyDeclarationId, PropertyId};
 use crate::values::generics::box_::{
@@ -13,7 +14,6 @@ use crate::values::generics::box_::{
 use crate::values::specified::length::{LengthPercentage, NonNegativeLength};
 use crate::values::specified::{AllowQuirks, Integer, NonNegativeNumberOrPercentage};
 use crate::values::CustomIdent;
-pub use crate::logical_geometry::WritingModeProperty;
 use cssparser::Parser;
 use num_traits::FromPrimitive;
 use std::fmt::{self, Write};
@@ -1007,9 +1007,7 @@ bitflags! {
 
 fn change_bits_for_longhand(longhand: LonghandId) -> WillChangeBits {
     match longhand {
-        LonghandId::Opacity => {
-            WillChangeBits::OPACITY | WillChangeBits::BACKDROP_ROOT
-        },
+        LonghandId::Opacity => WillChangeBits::OPACITY | WillChangeBits::BACKDROP_ROOT,
         LonghandId::Contain => WillChangeBits::CONTAIN,
         LonghandId::Perspective => WillChangeBits::PERSPECTIVE,
         LonghandId::Position => {
@@ -1024,22 +1022,20 @@ fn change_bits_for_longhand(longhand: LonghandId) -> WillChangeBits {
         LonghandId::OffsetPath => WillChangeBits::TRANSFORM,
         LonghandId::Filter | LonghandId::BackdropFilter => {
             WillChangeBits::STACKING_CONTEXT_UNCONDITIONAL |
-            WillChangeBits::BACKDROP_ROOT |
-            WillChangeBits::FIXPOS_CB_NON_SVG
+                WillChangeBits::BACKDROP_ROOT |
+                WillChangeBits::FIXPOS_CB_NON_SVG
         },
         LonghandId::ViewTransitionName => {
-            WillChangeBits::VIEW_TRANSITION_NAME |
-            WillChangeBits::BACKDROP_ROOT
+            WillChangeBits::VIEW_TRANSITION_NAME | WillChangeBits::BACKDROP_ROOT
         },
         LonghandId::MixBlendMode => {
-            WillChangeBits::STACKING_CONTEXT_UNCONDITIONAL |
-            WillChangeBits::BACKDROP_ROOT
+            WillChangeBits::STACKING_CONTEXT_UNCONDITIONAL | WillChangeBits::BACKDROP_ROOT
         },
-        LonghandId::Isolation |
-        LonghandId::MaskImage => WillChangeBits::STACKING_CONTEXT_UNCONDITIONAL,
+        LonghandId::Isolation | LonghandId::MaskImage => {
+            WillChangeBits::STACKING_CONTEXT_UNCONDITIONAL
+        },
         LonghandId::ClipPath => {
-            WillChangeBits::STACKING_CONTEXT_UNCONDITIONAL |
-            WillChangeBits::BACKDROP_ROOT
+            WillChangeBits::STACKING_CONTEXT_UNCONDITIONAL | WillChangeBits::BACKDROP_ROOT
         },
         _ => WillChangeBits::empty(),
     }
@@ -1274,27 +1270,54 @@ pub enum ContentVisibility {
     ToResolvedValue,
     ToShmem,
 )]
-#[repr(u8)]
-#[allow(missing_docs)]
+#[css(bitflags(
+    single = "normal",
+    mixed = "size,inline-size,scroll-state",
+    validate_mixed = "Self::validate_mixed_flags",
+))]
+#[repr(C)]
+/// Specified keyword values for the container-type property.
+/// Spec: normal | [ [ size | inline-size ] || scroll-state ]
+///
+/// Container Queries are moved from css-contain-3 to css-conditional-5 in August 2022:
 /// https://drafts.csswg.org/css-contain-3/#container-type
-pub enum ContainerType {
-    /// The `normal` variant.
-    Normal,
-    /// The `inline-size` variant.
-    InlineSize,
-    /// The `size` variant.
-    Size,
+/// https://drafts.csswg.org/css-conditional-5/#container-type
+pub struct ContainerType(u8);
+bitflags! {
+    impl ContainerType: u8 {
+        /// The `normal` variant.
+        const NORMAL = 0;
+        /// The `inline-size` variant.
+        const INLINE_SIZE = 1 << 0;
+        /// The `size` variant.
+        const SIZE = 1 << 1;
+        /// The `scroll-state` variant.
+        const SCROLL_STATE = 1 << 2;
+    }
 }
 
 impl ContainerType {
+    fn validate_mixed_flags(&self) -> bool {
+        // size and inline-size can't be mixed together.
+        if self.contains(Self::SIZE | Self::INLINE_SIZE) {
+            return false;
+        }
+        if self.contains(Self::SCROLL_STATE) &&
+            !static_prefs::pref!("layout.css.scroll-state.enabled")
+        {
+            return false;
+        }
+        true
+    }
+
     /// Is this container-type: normal?
     pub fn is_normal(self) -> bool {
-        self == Self::Normal
+        self == Self::NORMAL
     }
 
     /// Is this type containing size in any way?
     pub fn is_size_container_type(self) -> bool {
-        !self.is_normal()
+        self.intersects(Self::SIZE | Self::INLINE_SIZE)
     }
 }
 

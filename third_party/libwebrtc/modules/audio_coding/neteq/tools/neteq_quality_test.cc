@@ -91,7 +91,7 @@ std::unique_ptr<NetEq> CreateNetEq(
 }
 
 const std::string& GetInFilenamePath(absl::string_view file_name) {
-  std::vector<absl::string_view> name_parts = rtc::split(file_name, '.');
+  std::vector<absl::string_view> name_parts = split(file_name, '.');
   RTC_CHECK_EQ(name_parts.size(), 2);
   static const std::string path =
       ::webrtc::test::ResourcePath(name_parts[0], name_parts[1]);
@@ -173,7 +173,7 @@ NetEqQualityTest::NetEqQualityTest(
     int in_sampling_khz,
     int out_sampling_khz,
     const SdpAudioFormat& format,
-    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory)
+    const scoped_refptr<AudioDecoderFactory>& decoder_factory)
     : audio_format_(format),
       channels_(absl::GetFlag(FLAGS_channels)),
       decoded_time_ms_(0),
@@ -417,7 +417,7 @@ int NetEqQualityTest::Transmit() {
     if (!PacketLost()) {
       int ret = neteq_->InsertPacket(
           rtp_header_,
-          rtc::ArrayView<const uint8_t>(payload_.data(), payload_size_bytes_),
+          ArrayView<const uint8_t>(payload_.data(), payload_size_bytes_),
           Timestamp::Millis(packet_input_time_ms));
       if (ret != NetEq::kOK)
         return -1;

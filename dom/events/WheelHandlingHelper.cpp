@@ -8,6 +8,9 @@
 
 #include <utility>  // for std::swap
 
+#include "DocumentInlines.h"  // for Document and HTMLBodyElement
+#include "ScrollAnimationPhysics.h"
+#include "Units.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/MouseEvents.h"
@@ -17,18 +20,15 @@
 #include "mozilla/StaticPrefs_mousewheel.h"
 #include "mozilla/StaticPrefs_test.h"
 #include "mozilla/TextControlElement.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/WheelEventBinding.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
-#include "mozilla/dom/Document.h"
-#include "DocumentInlines.h"  // for Document and HTMLBodyElement
 #include "nsITimer.h"
 #include "nsPresContext.h"
 #include "prtime.h"
-#include "Units.h"
-#include "ScrollAnimationPhysics.h"
 
 static mozilla::LazyLogModule sWheelTransactionLog("dom.wheeltransaction");
 #define WTXN_LOG(...) \

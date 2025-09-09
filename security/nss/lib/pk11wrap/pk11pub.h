@@ -95,6 +95,15 @@ SECStatus PK11_GetTokenInfo(PK11SlotInfo *slot, CK_TOKEN_INFO *info);
 PRBool PK11_IsDisabled(PK11SlotInfo *slot);
 PRBool PK11_HasRootCerts(PK11SlotInfo *slot);
 PK11DisableReasons PK11_GetDisabledReason(PK11SlotInfo *slot);
+/* like PORT_Memcmp, return -1 if the version is less then the
+ * passed in version, 0 if it's equal to and 1 if it's greater than
+ * the passed in version. PKCS #11 returns versions in 2 places,
+ * once in the function table and once in the module. the former
+ * is good to determine if it is safe to call a new function,
+ * the latter is good for module functionality */
+PRInt32 PK11_CheckPKCS11Version(PK11SlotInfo *slot, CK_BYTE major,
+                                CK_BYTE minor, PRBool useFunctionTable);
+
 /* Prevents the slot from being used, and set disable reason to user-disable */
 /* NOTE: Mechanisms that were ON continue to stay ON */
 /*       Therefore, when the slot is enabled, it will remember */
@@ -778,6 +787,11 @@ void PK11_HPKE_DestroyContext(HpkeContext *cx, PRBool freeit);
 SECStatus PK11_HPKE_ExportContext(const HpkeContext *cx, PK11SymKey *wrapKey, SECItem **serialized);
 SECStatus PK11_HPKE_ExportSecret(const HpkeContext *cx, const SECItem *info, unsigned int L,
                                  PK11SymKey **outKey);
+
+/*
+ * Return a weak reference to SharedSecret stored in HPKE Context
+ */
+PK11SymKey *PK11_HPKE_GetSharedSecret(const HpkeContext *cx);
 const SECItem *PK11_HPKE_GetEncapPubKey(const HpkeContext *cx);
 HpkeContext *PK11_HPKE_ImportContext(const SECItem *serialized, PK11SymKey *wrapKey);
 SECStatus PK11_HPKE_Open(HpkeContext *cx, const SECItem *aad, const SECItem *ct, SECItem **outPt);

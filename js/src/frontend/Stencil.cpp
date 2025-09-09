@@ -2755,6 +2755,13 @@ bool CompilationStencil::instantiateStencilAfterPreparation(
     }
   }
 
+  // Trigger the use counter for asm.js. This should fire even if asm.js
+  // optimizations are disabled, see the comment in FunctionBox::setUseAsm()
+  // for how we do that.
+  if (stencil.hasAsmJS()) {
+    cx->runtime()->setUseCounter(cx->global(), JSUseCounter::USE_ASM);
+  }
+
   return true;
 }
 

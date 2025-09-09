@@ -4,8 +4,12 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  NetworkHelper:
+    "resource://devtools/shared/network-observer/NetworkHelper.sys.mjs",
   NetworkObserver:
     "resource://devtools/shared/network-observer/NetworkObserver.sys.mjs",
+  NetworkUtils:
+    "resource://devtools/shared/network-observer/NetworkUtils.sys.mjs",
 });
 
 const TEST_DIR = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
@@ -128,4 +132,75 @@ async function waitForNetworkEvents(expectedUrl = null, expectedRequestsCount) {
     () => events.length >= expectedRequestsCount
   );
   return events;
+}
+
+/**
+ * NetworkEventOwner class which can be used to assert the response content of
+ * a network event.
+ */
+class ResponseContentOwner extends NetworkEventOwner {
+  addResponseContent(response, { truncated }) {
+    super.addResponseContent();
+    this.compressionEncodings = response.compressionEncodings;
+    this.contentCharset = response.contentCharset;
+    this.decodedBodySize = response.decodedBodySize;
+    this.encodedBodySize = response.encodedBodySize;
+    this.encodedData = response.encodedData;
+    this.encoding = response.encoding;
+    this.isContentEncoded = response.isContentEncoded;
+    this.text = response.text;
+    this.truncated = truncated;
+  }
+
+  /**
+   * Simple helper to decode the content of a response from a network event.
+   */
+  async getDecodedContent() {
+    if (!this.isContentEncoded) {
+      // If the content is not encoded we can directly return the text property.
+      return this.text;
+    }
+
+    // Otherwise call the dedicated NetworkUtils decodeResponseChunks helper.
+    return NetworkUtils.decodeResponseChunks(this.encodedData, {
+      charset: this.contentCharset,
+      compressionEncodings: this.compressionEncodings,
+      encodedBodySize: this.encodedBodySize,
+      encoding: this.encoding,
+    });
+  }
+}
+
+/**
+ * Helper to compress a string using gzip.
+ */
+function gzipCompressString(string) {
+  return new Promise(resolve => {
+    const observer = {
+      onStreamComplete(loader, context, status, length, result) {
+        resolve(String.fromCharCode.apply(this, result));
+      },
+    };
+
+    const scs = Cc["@mozilla.org/streamConverters;1"].getService(
+      Ci.nsIStreamConverterService
+    );
+    const listener = Cc["@mozilla.org/network/stream-loader;1"].createInstance(
+      Ci.nsIStreamLoader
+    );
+    listener.init(observer);
+    const converter = scs.asyncConvertData(
+      "uncompressed",
+      "gzip",
+      listener,
+      null
+    );
+    const stringStream = Cc[
+      "@mozilla.org/io/string-input-stream;1"
+    ].createInstance(Ci.nsIStringInputStream);
+    stringStream.setByteStringData(string);
+    converter.onStartRequest(null, null);
+    converter.onDataAvailable(null, stringStream, 0, string.length);
+    converter.onStopRequest(null, null, null);
+  });
 }

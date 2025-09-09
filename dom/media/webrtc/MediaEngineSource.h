@@ -9,12 +9,12 @@
 
 #include "MediaSegment.h"
 #include "MediaTrackConstraints.h"
-#include "mozilla/dom/MediaStreamTrackBinding.h"
-#include "mozilla/media/MediaUtils.h"
+#include "PerformanceRecorder.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
+#include "mozilla/dom/MediaStreamTrackBinding.h"
+#include "mozilla/media/MediaUtils.h"
 #include "nsStringFwd.h"
-#include "PerformanceRecorder.h"
 
 namespace mozilla {
 

@@ -8,6 +8,7 @@
 #define mozilla_dom_quota_ActorsChild_h
 
 #include <cstdint>
+
 #include "ErrorList.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/quota/PQuotaChild.h"

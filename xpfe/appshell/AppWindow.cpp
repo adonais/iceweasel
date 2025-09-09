@@ -205,9 +205,8 @@ nsresult AppWindow::Initialize(nsIAppWindow* aParent, nsIAppWindow* aOpener,
      to be closed. This would mimic the behaviour of OSes that support
      top-level child windows in OSes that do not. Later.
   */
-  nsCOMPtr<nsIBaseWindow> parentAsWin(do_QueryInterface(aParent));
-  if (parentAsWin) {
-    parentAsWin->GetMainWidget(getter_AddRefs(parentWidget));
+  if (nsCOMPtr<nsIBaseWindow> parent = do_QueryInterface(aParent)) {
+    parentWidget = parent->GetMainWidget();
     mParentWindow = do_GetWeakReference(aParent);
   }
 
@@ -553,9 +552,8 @@ NS_IMETHODIMP AppWindow::Destroy() {
   // windows, see bug 1977581.
 #ifdef XP_WIN
   if (nsCOMPtr<nsIBaseWindow> parent = do_QueryReferent(mParentWindow)) {
-    nsCOMPtr<nsIWidget> parentWidget;
-    parent->GetMainWidget(getter_AddRefs(parentWidget));
-    if (parentWidget && parentWidget->IsVisible()) {
+    if (nsCOMPtr<nsIWidget> parentWidget = parent->GetMainWidget();
+        parentWidget && parentWidget->IsVisible()) {
       parentWidget->SetFocus(nsIWidget::Raise::Yes, dom::CallerType::System);
     }
   }
@@ -850,19 +848,14 @@ NS_IMETHODIMP AppWindow::SetParentWidget(nsIWidget* aParentWidget) {
 }
 
 NS_IMETHODIMP AppWindow::GetNativeHandle(nsAString& aNativeHandle) {
-  nsCOMPtr<nsIWidget> mainWidget;
-  NS_ENSURE_SUCCESS(GetMainWidget(getter_AddRefs(mainWidget)),
-                    NS_ERROR_FAILURE);
-
-  if (mainWidget) {
-    nativeWindow nativeWindowPtr = mainWidget->GetNativeData(NS_NATIVE_WINDOW);
+  if (mWindow) {
+    nativeWindow nativeWindowPtr = mWindow->GetNativeData(NS_NATIVE_WINDOW);
     /* the nativeWindow pointer is converted to and exposed as a string. This
        is a more reliable way not to lose information (as opposed to JS
        |Number| for instance) */
     aNativeHandle =
         NS_ConvertASCIItoUTF16(nsPrintfCString("0x%p", nativeWindowPtr));
   }
-
   return NS_OK;
 }
 
@@ -2309,12 +2302,11 @@ NS_IMETHODIMP AppWindow::GetHasPrimaryContent(bool* aResult) {
 }
 
 void AppWindow::EnableParent(bool aEnable) {
-  nsCOMPtr<nsIBaseWindow> parentWindow;
-  nsCOMPtr<nsIWidget> parentWidget;
-
-  parentWindow = do_QueryReferent(mParentWindow);
-  if (parentWindow) parentWindow->GetMainWidget(getter_AddRefs(parentWidget));
-  if (parentWidget) parentWidget->Enable(aEnable);
+  if (nsCOMPtr<nsIBaseWindow> parentWindow = do_QueryReferent(mParentWindow)) {
+    if (nsCOMPtr<nsIWidget> parentWidget = parentWindow->GetMainWidget()) {
+      parentWidget->Enable(aEnable);
+    }
+  }
 }
 
 void AppWindow::SetContentScrollbarVisibility(bool aVisible) {
@@ -2917,15 +2909,8 @@ static void LoadNativeMenus(Document* aDoc, nsIWidget* aParentWindow) {
 
   // Find the menubar tag (if there is more than one, we ignore all but
   // the first).
-  nsCOMPtr<nsINodeList> menubarElements = aDoc->GetElementsByTagNameNS(
-      u"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"_ns,
-      u"menubar"_ns);
-
-  RefPtr<Element> menubar;
-  if (menubarElements) {
-    menubar = Element::FromNodeOrNull(menubarElements->Item(0));
-  }
-
+  RefPtr<Element> menubar =
+      aDoc->QuerySelector("menubar:not([nonnative])"_ns, IgnoreErrors());
   widget::NativeMenuSupport::CreateNativeMenuBar(aParentWindow, menubar);
 
   if (sWaitingForHiddenWindowToLoadNativeMenus) {

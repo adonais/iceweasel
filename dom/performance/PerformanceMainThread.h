@@ -7,11 +7,11 @@
 #ifndef mozilla_dom_PerformanceMainThread_h
 #define mozilla_dom_PerformanceMainThread_h
 
-#include "Performance.h"
-#include "PerformanceStorage.h"
 #include "LargestContentfulPaint.h"
-#include "nsTextFrame.h"
+#include "Performance.h"
 #include "PerformanceInteractionMetrics.h"
+#include "PerformanceStorage.h"
+#include "nsTextFrame.h"
 
 namespace mozilla::dom {
 

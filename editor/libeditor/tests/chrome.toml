@@ -9,8 +9,6 @@ prefs = ["test.ime_content_observer.assert_invalid_cache=true"]
 
 ["test_bug616590.xhtml"]
 
-["test_bug780908.xhtml"]
-
 ["test_bug1397412.xhtml"]
 
 ["test_can_undo_after_setting_value.xhtml"]

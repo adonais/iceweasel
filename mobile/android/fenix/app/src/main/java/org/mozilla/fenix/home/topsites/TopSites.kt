@@ -58,15 +58,19 @@ import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.compose.MenuItem
 import org.mozilla.fenix.compose.PagerIndicator
 import org.mozilla.fenix.home.fake.FakeHomepagePreview
-import org.mozilla.fenix.home.sessioncontrol.TopSiteInteractor
 import org.mozilla.fenix.home.topsites.TopSitesTestTag.TOP_SITE_CARD_FAVICON
+import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.wallpapers.WallpaperState
 import kotlin.math.ceil
 
+/**
+ * The size of a top site item.
+ */
+const val TOP_SITES_ITEM_SIZE = 84
+
 private const val TOP_SITES_PER_PAGE = 8
 private const val TOP_SITES_PER_ROW = 4
-private const val TOP_SITES_ITEM_SIZE = 84
 private const val TOP_SITES_ROW_WIDTH = TOP_SITES_PER_ROW * TOP_SITES_ITEM_SIZE
 private const val TOP_SITES_FAVICON_CARD_SIZE = 60
 private const val TOP_SITES_FAVICON_SIZE = 36
@@ -301,7 +305,7 @@ data class TopSiteColors(
 @Suppress("LongMethod", "LongParameterList", "Deprecation") // https://bugzilla.mozilla.org/show_bug.cgi?id=1927713
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
-private fun TopSiteItem(
+fun TopSiteItem(
     topSite: TopSite,
     menuItems: List<MenuItem>,
     position: Int,
@@ -457,7 +461,7 @@ private fun TopSiteFavicon(url: String, imageUrl: String? = null) {
 }
 
 @Composable
-private fun getMenuItems(
+internal fun getMenuItems(
     topSite: TopSite,
     onOpenInPrivateTabClicked: (topSite: TopSite) -> Unit,
     onEditTopSiteClicked: (topSite: TopSite) -> Unit,

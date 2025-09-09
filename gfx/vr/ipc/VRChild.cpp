@@ -192,7 +192,9 @@ bool VRChild::SendRequestMemoryReport(const uint32_t& aGeneration,
   return true;
 }
 
-void VRChild::OnVarChanged(const GfxVarUpdate& aVar) { SendUpdateVar(aVar); }
+void VRChild::OnVarChanged(const nsTArray<GfxVarUpdate>& aVar) {
+  SendUpdateVar(aVar);
+}
 
 class DeferredDeleteVRChild : public Runnable {
  public:

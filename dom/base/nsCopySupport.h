@@ -7,6 +7,7 @@
 #define nsCopySupport_h__
 
 #include <cstdint>
+
 #include "ErrorList.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Attributes.h"

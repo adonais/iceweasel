@@ -7,6 +7,7 @@ package org.mozilla.fenix.snackbar
 import android.view.View
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
+import androidx.compose.ui.text.style.TextOverflow
 import com.google.android.material.snackbar.Snackbar.LENGTH_LONG
 import mozilla.components.ui.widgets.SnackbarDelegate
 import org.mozilla.fenix.compose.core.Action
@@ -55,6 +56,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
      *
      * @param text The text to show.
      * @param subText The optional sub-text to show.
+     * @param subTextOverflow Defines how visual overflow of the [subText] should be handled.
      * @param duration How long to display the message.
      * @param isError Whether the snackbar should be styled as an error.
      * @param action Optional String to display for the action.
@@ -65,6 +67,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
     fun show(
         text: String,
         subText: String? = null,
+        subTextOverflow: TextOverflow? = null,
         duration: Int = LENGTH_LONG,
         isError: Boolean = false,
         action: String? = null,
@@ -73,6 +76,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
         snackBarParentView = view,
         text = text,
         subText = subText,
+        subTextOverflow = subTextOverflow,
         duration = duration,
         isError = isError,
         action = action,
@@ -83,6 +87,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
         snackBarParentView: View,
         @StringRes text: Int,
         subText: String?,
+        subTextOverflow: TextOverflow?,
         duration: Int,
         isError: Boolean,
         @StringRes action: Int,
@@ -91,6 +96,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
         snackBarParentView = snackBarParentView,
         text = snackBarParentView.context.getString(text),
         subText = subText,
+        subTextOverflow = subTextOverflow,
         duration = duration,
         isError = isError,
         action = if (action == 0) null else snackBarParentView.context.getString(action),
@@ -101,6 +107,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
         snackBarParentView: View,
         text: String,
         subText: String?,
+        subTextOverflow: TextOverflow?,
         duration: Int,
         isError: Boolean,
         action: String?,
@@ -112,6 +119,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
                 snackBarParentView = snackBarParentView,
                 text = text,
                 subText = subText,
+                subTextOverflow = subTextOverflow,
                 duration = duration,
                 isError = isError,
                 actionText = action,
@@ -137,6 +145,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
         snackBarParentView: View,
         text: String,
         subText: String? = null,
+        subTextOverflow: TextOverflow? = null,
         duration: Int,
         isError: Boolean,
         actionText: String?,
@@ -153,9 +162,16 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
             null
         }
 
+        val subMessage = subText?.let {
+            SnackbarState.SubMessage(
+                text = it,
+                textOverflow = subTextOverflow ?: TextOverflow.Ellipsis,
+            )
+        }
+
         return SnackbarState(
             message = text,
-            subMessage = subText,
+            subMessage = subMessage,
             duration = duration.toSnackbarDuration(),
             type = if (isError) {
                 SnackbarState.Type.Warning

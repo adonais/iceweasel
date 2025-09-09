@@ -31,6 +31,7 @@ const MODIFIED_PREFS = Object.freeze([
   "browser.engagement.home-button.has-removed",
   "browser.engagement.home-button.has-removed",
   "browser.engagement.sidebar-button.has-used",
+  "sidebar.verticalTabs.dragToPinPromo.dismissed",
 ]);
 
 function clearModifiedPrefs() {

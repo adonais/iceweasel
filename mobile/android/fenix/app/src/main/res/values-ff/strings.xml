@@ -36,7 +36,10 @@
   <string name="tab_tray_collection_button_multiselect_content_description">Danndu tabbe labaaɗe to leemannde</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">Ko Mozilla jibini %1$s</string>
+  <!-- Private Browsing -->
   <string name="private_browsing_common_myths">Tinndi goowaaɗi baɗte banngogol suturo</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!-- Text for the positive action button to go to Settings for auto close tabs. -->
   <string name="tab_tray_close_tabs_banner_positive_button_text">Juɓtorɗe jiytol</string>
   <!-- Text for the banner message to tell users about our inactive tabs feature. -->
@@ -151,9 +154,11 @@
   <string name="search_engine_suggestions_title">Yiylo %s</string>
   <!-- Search engine suggestion description text -->
   <string name="search_engine_suggestions_description">Yiylo beƴ e palal ñiiɓirɗe ngal</string>
-  <!-- Home onboarding dialog sign into sync screen description text. -->
-  <string name="onboarding_home_sync_description" moz:removedIn="141" tools:ignore="UnusedResources">Ɓamtu ɗo dartino-ɗaa e tabbe iwɗe e kaɓirɗi goɗɗi gonɗi jooni e jaɓɓorgo maa.</string>
-  <!-- Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section. -->
+  <!--
+    Home onboarding
+
+    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+  -->
   <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">Tabbe maa ko canngoɗinaaɗe! Fuɗɗo ɗoon ɗo darnunu-ɗaa e kaɓirgol maa goɗngol.</string>
   <!--
     Search Widget
@@ -224,8 +229,6 @@
   <string name="preferences_account_sync_error">Seŋo kadi ngam fuɗɗitaade jahdingol</string>
   <!-- Preference for language -->
   <string name="preferences_language">Ɗemngal</string>
-  <!-- Preference for data choices -->
-  <string name="preferences_data_choices" tools:ignore="UnusedResources" moz:removedIn="141">Cuɓe keɓe</string>
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">Ƴettugol keɓe</string>
   <!-- Preference for developers -->
@@ -250,8 +253,6 @@
   <string name="preferences_enable_autocomplete_urls">Timmin binndi URL e jaajol</string>
   <!-- Preference for open links in third party apps -->
   <string name="preferences_open_links_in_apps">Uddit jokke e nder jaaɓnirɗe</string>
-  <!-- Preference for open download with an external download manager app -->
-  <string name="preferences_external_download_manager" tools:ignore="UnusedResources" moz:removedIn="141">Toppitorde gaawte yaasiire</string>
   <!-- Summary for notification preference indicating notifications are allowed -->
   <string name="notifications_allowed_summary">Yamiraama</string>
   <!-- Summary for notification preference indicating notifications are not allowed -->
@@ -280,9 +281,9 @@
   -->
   <string name="wallpapers_item_name_content_description">Temre ɗeerol ɓalal: %1$s</string>
   <!-- Snackbar message for when wallpaper is selected -->
-  <string name="wallpaper_updated_snackbar_message">Deɗol ɓalal hesɗitinaama!</string>
+  <string name="wallpaper_updated_snackbar_message" tools:ignore="UnusedResources" moz:removedIn="144">Deɗol ɓalal hesɗitinaama!</string>
   <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action">Hollir</string>
+  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">Hollir</string>
   <!-- Snackbar message for when wallpaper couldn't be downloaded -->
   <string name="wallpaper_download_error_snackbar_message">Horiima aawtaade wallpaper</string>
   <!-- Snackbar label for action to retry downloading the wallpaper -->
@@ -783,12 +784,10 @@
   <string name="snackbar_tabs_closed">Tabbe uddaama</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">Tabbere suuriinde uddaama</string>
-  <!-- Text shown in snackbar when user closes all private tabs -->
-  <string name="snackbar_private_tabs_closed" moz:removedIn="141" tools:ignore="UnusedResources">Tabbe cuuriinde uddaama</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">FIRTU</string>
   <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed">Lowre momtaama</string>
+  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">Lowre momtaama</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned

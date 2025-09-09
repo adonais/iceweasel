@@ -6,15 +6,12 @@
 
 #include "mozilla/dom/NavigationDestination.h"
 
-#include "nsIURI.h"
-
-#include "nsError.h"
-#include "nsReadableUtils.h"
-
 #include "mozilla/ErrorResult.h"
-
 #include "mozilla/dom/NavigationDestinationBinding.h"
 #include "mozilla/dom/NavigationHistoryEntry.h"
+#include "nsError.h"
+#include "nsIURI.h"
+#include "nsReadableUtils.h"
 
 namespace mozilla::dom {
 

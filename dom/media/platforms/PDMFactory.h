@@ -7,6 +7,8 @@
 #if !defined(PDMFactory_h_)
 #  define PDMFactory_h_
 
+#  include <utility>
+
 #  include "DecoderDoctorDiagnostics.h"
 #  include "MediaCodecsSupport.h"
 #  include "PlatformDecoderModule.h"
@@ -18,7 +20,6 @@
 #  include "nsISupports.h"
 #  include "nsStringFwd.h"
 #  include "nsTArray.h"
-#  include <utility>
 
 namespace mozilla {
 

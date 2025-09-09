@@ -2,14 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "WebAuthnService.h"
+
+#include "WebAuthnEnumStrings.h"
+#include "WebAuthnTransportIdentifiers.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "nsIObserverService.h"
 #include "nsTextFormatter.h"
 #include "nsThreadUtils.h"
-#include "WebAuthnEnumStrings.h"
-#include "WebAuthnService.h"
-#include "WebAuthnTransportIdentifiers.h"
 
 namespace mozilla::dom {
 

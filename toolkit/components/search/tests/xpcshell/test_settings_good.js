@@ -32,13 +32,13 @@ const enginesSettings = {
   engines: [
     {
       _metaData: { alias: null },
-      _isAppProvided: true,
+      _isConfigEngine: true,
       _name: "appDefault",
       id: "appDefault",
     },
     {
       _metaData: { alias: null },
-      _isAppProvided: true,
+      _isConfigEngine: true,
       _name: "other",
       id: "other",
     },

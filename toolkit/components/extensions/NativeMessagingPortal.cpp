@@ -14,6 +14,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WidgetUtilsGtk.h"
+#include "mozilla/widget/AsyncDBus.h"
 #include "mozilla/dom/Promise.h"
 
 #include "prlink.h"
@@ -234,26 +235,8 @@ NativeMessagingPortal::CreateSession(const nsACString& aApplication,
   RefPtr<dom::Promise> promise;
   MOZ_TRY(GetPromise(aCx, promise));
 
-  // Creating a session requires passing a unique token that will be used as the
-  // suffix for the session handle, and it should be a valid D-Bus object path
-  // component (i.e. it contains only the characters "[A-Z][a-z][0-9]_", see
-  // https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-marshaling-object-path
-  // and
-  // https://flatpak.github.io/xdg-desktop-portal/#gdbus-org.freedesktop.portal.Session).
-  // The token should be unique and not guessable. To avoid clashes with calls
-  // made from unrelated libraries, it is a good idea to use a per-library
-  // prefix combined with a random number.
-  // Here, we build the token by concatenating MOZ_APP_NAME (e.g. "firefox"),
-  // with the name of the native application (sanitized to remove invalid
-  // characters, see
-  // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_manifests#native_messaging_manifests),
-  // and a random number.
-  const nsCString& application = PromiseFlatCString(aApplication);
-  GUniquePtr<gchar> sanitizedApplicationName(g_strdup(application.get()));
-  g_strdelimit(sanitizedApplicationName.get(), ".", '_');
-  GUniquePtr<gchar> token(g_strdup_printf("%s_%s_%u", MOZ_APP_NAME,
-                                          sanitizedApplicationName.get(),
-                                          g_random_int()));
+  nsAutoCString token;
+  widget::MakePortalRequestToken(PromiseFlatCString(aApplication), token);
   RefPtr<GVariant> args = dont_AddRef(g_variant_new_string(token.get()));
 
   if (mInitialized) {
@@ -537,15 +520,13 @@ NativeMessagingPortal::Start(const nsACString& aHandle, const nsACString& aName,
   LOG_NMP("starting %s, requested by %s in session %s", name.get(),
           extension.get(), sessionHandle.get());
 
+  nsAutoCString token;
+  widget::MakePortalRequestToken(extension, token);
+
+  nsAutoCString requestPath;
+  widget::GetPortalRequestPath(mProxy, token, requestPath);
+
   GDBusConnection* connection = g_dbus_proxy_get_connection(mProxy);
-  GUniquePtr<gchar> senderName(
-      g_strdup(g_dbus_connection_get_unique_name(connection)));
-  g_strdelimit(senderName.get(), ".", '_');
-  GUniquePtr<gchar> handleToken(
-      g_strdup_printf("%s/%d", MOZ_APP_NAME, g_random_int_range(0, G_MAXINT)));
-  GUniquePtr<gchar> requestPath(
-      g_strdup_printf("/org/freedesktop/portal/desktop/request/%s/%s",
-                      senderName.get() + 1, handleToken.get()));
   releasedCallbackData->subscription_id = g_dbus_connection_signal_subscribe(
       connection, "org.freedesktop.portal.Desktop",
       "org.freedesktop.portal.Request", "Response", requestPath.get(), nullptr,
@@ -558,7 +539,7 @@ NativeMessagingPortal::Start(const nsACString& aHandle, const nsACString& aName,
   GVariantBuilder options;
   g_variant_builder_init(&options, G_VARIANT_TYPE_VARDICT);
   g_variant_builder_add(&options, "{sv}", "handle_token",
-                        g_variant_new_string(handleToken.get()));
+                        g_variant_new_string(token.get()));
   g_dbus_proxy_call(mProxy, "Start",
                     g_variant_new("(ossa{sv})", sessionHandle.get(), name.get(),
                                   extension.get(), &options),

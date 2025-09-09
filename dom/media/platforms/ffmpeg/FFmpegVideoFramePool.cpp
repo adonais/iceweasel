@@ -5,12 +5,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FFmpegVideoFramePool.h"
-#include "PlatformDecoderModule.h"
+
 #include "FFmpegLog.h"
-#include "mozilla/widget/DMABufDevice.h"
+#include "PlatformDecoderModule.h"
 #include "libavutil/pixfmt.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/widget/DMABufDevice.h"
 #include "mozilla/widget/va_drmcommon.h"
 
 // DMABufLibWrapper defines its own version of this which collides with the

@@ -6,10 +6,10 @@
 
 #include "SessionStorageManager.h"
 
-#include "StorageIPC.h"
 #include "SessionStorage.h"
 #include "SessionStorageCache.h"
 #include "SessionStorageObserver.h"
+#include "StorageIPC.h"
 #include "StorageUtils.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/OriginAttributes.h"

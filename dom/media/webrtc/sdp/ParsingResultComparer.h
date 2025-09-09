@@ -7,10 +7,10 @@
 #ifndef _PARSINGRESULTCOMPARER_H_
 #define _PARSINGRESULTCOMPARER_H_
 
+#include <string>
+
 #include "sdp/SdpParser.h"
 #include "sdp/SdpPref.h"
-
-#include <string>
 
 namespace mozilla {
 

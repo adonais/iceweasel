@@ -6,9 +6,9 @@
 #ifndef CODEC_CONFIG_H_
 #define CODEC_CONFIG_H_
 
+#include <sstream>
 #include <string>
 #include <vector>
-#include <sstream>
 
 #include "common/EncodingConstraints.h"
 #include "jsep/JsepCodecDescription.h"

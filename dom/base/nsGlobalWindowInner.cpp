@@ -10,10 +10,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <cstdint>
 #include <new>
 #include <type_traits>
 #include <utility>
+
 #include "AudioChannelService.h"
 #include "AutoplayPolicy.h"
 #include "Crypto.h"
@@ -28,9 +30,7 @@
 #include "js/ComparisonOperators.h"
 #include "js/CompilationAndEvaluation.h"
 #include "js/CompileOptions.h"
-#include "js/friend/PerformanceHint.h"
 #include "js/Id.h"
-#include "js/loader/LoadedScript.h"
 #include "js/PropertyAndElement.h"  // JS_DefineProperty, JS_GetProperty
 #include "js/PropertyDescriptor.h"
 #include "js/RealmOptions.h"
@@ -38,6 +38,8 @@
 #include "js/TypeDecls.h"
 #include "js/Value.h"
 #include "js/Warnings.h"
+#include "js/friend/PerformanceHint.h"
+#include "js/loader/LoadedScript.h"
 #include "js/shadow/String.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
@@ -52,6 +54,7 @@
 #include "mozilla/BasicEvents.h"
 #include "mozilla/BounceTrackingStorageObserver.h"
 #include "mozilla/CallState.h"
+#include "mozilla/Components.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/ErrorResult.h"
@@ -63,8 +66,8 @@
 #include "mozilla/FlushType.h"
 #include "mozilla/Likely.h"
 #include "mozilla/LinkedList.h"
-#include "mozilla/LookAndFeel.h"
 #include "mozilla/Logging.h"
+#include "mozilla/LookAndFeel.h"
 #include "mozilla/MacroForEach.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/OwningNonNull.h"
@@ -76,7 +79,6 @@
 #include "mozilla/Result.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ScrollTypes.h"
-#include "mozilla/Components.h"
 #include "mozilla/SizeOfState.h"
 #include "mozilla/Span.h"
 #include "mozilla/SpinEventLoopUntil.h"
@@ -88,8 +90,8 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/StoragePrincipalHelper.h"
-#include "mozilla/glean/DomMetrics.h"
 #include "mozilla/TelemetryHistogramEnums.h"
+#include "mozilla/ThrottledEventQueue.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
@@ -100,7 +102,6 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/dom/Credential.h"
 #include "mozilla/dom/CSPEvalChecker.h"
 #include "mozilla/dom/CallbackDebuggerNotification.h"
 #include "mozilla/dom/ChromeMessageBroadcaster.h"
@@ -112,10 +113,11 @@
 #include "mozilla/dom/CloseWatcher.h"
 #include "mozilla/dom/CloseWatcherManager.h"
 #include "mozilla/dom/Console.h"
-#include "mozilla/dom/CookieStore.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentFrameMessageManager.h"
 #include "mozilla/dom/ContentMediaController.h"
+#include "mozilla/dom/CookieStore.h"
+#include "mozilla/dom/Credential.h"
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/DebuggerNotification.h"
 #include "mozilla/dom/DebuggerNotificationBinding.h"
@@ -159,7 +161,6 @@
 #include "mozilla/dom/PrimitiveConversions.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RootedDictionary.h"
-#include "mozilla/dom/WebTaskSchedulerMainThread.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ServiceWorker.h"
@@ -185,8 +186,9 @@
 #include "mozilla/dom/VRDisplayEventBinding.h"
 #include "mozilla/dom/VREventObserver.h"
 #include "mozilla/dom/VisualViewport.h"
-#include "mozilla/dom/WebIdentityHandler.h"
 #include "mozilla/dom/WebIDLGlobalNameHash.h"
+#include "mozilla/dom/WebIdentityHandler.h"
+#include "mozilla/dom/WebTaskSchedulerMainThread.h"
 #include "mozilla/dom/WindowBinding.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalChild.h"
@@ -197,8 +199,6 @@
 #include "mozilla/dom/XRPermissionRequest.h"
 #include "mozilla/dom/cache/CacheStorage.h"
 #include "mozilla/dom/cache/Types.h"
-#include "mozilla/glean/bindings/Glean.h"
-#include "mozilla/glean/bindings/GleanPings.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
 #include "mozilla/fallible.h"
 #include "mozilla/gfx/BasePoint.h"
@@ -206,6 +206,9 @@
 #include "mozilla/gfx/BaseSize.h"
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/gfx/Types.h"
+#include "mozilla/glean/DomMetrics.h"
+#include "mozilla/glean/bindings/Glean.h"
+#include "mozilla/glean/bindings/GleanPings.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
@@ -246,6 +249,7 @@
 #include "nsICookieService.h"
 #include "nsID.h"
 #include "nsIDOMStorageManager.h"
+#include "nsIDOMXULControlElement.h"
 #include "nsIDeviceSensors.h"
 #include "nsIDocShell.h"
 #include "nsIDocShellTreeItem.h"
@@ -324,9 +328,6 @@
 #include "prtypes.h"
 #include "xpcprivate.h"
 #include "xpcpublic.h"
-#include "mozilla/ThrottledEventQueue.h"
-
-#include "nsIDOMXULControlElement.h"
 
 #ifdef NS_PRINTING
 #  include "nsIPrintSettings.h"
@@ -341,8 +342,9 @@
 #endif
 
 #ifdef XP_WIN
-#  include "mozilla/Debug.h"
 #  include <process.h>
+
+#  include "mozilla/Debug.h"
 #  define getpid _getpid
 #else
 #  include <unistd.h>  // for getpid()
@@ -914,7 +916,6 @@ nsGlobalWindowInner::nsGlobalWindowInner(nsGlobalWindowOuter* aOuterWindow,
       mIsChrome(false),
       mCleanMessageManager(false),
       mNeedsFocus(true),
-      mHasFocus(false),
       mFocusByKeyOccurred(false),
       mDidFireDocElemInserted(false),
       mHasGamepad(false),
@@ -4353,7 +4354,6 @@ void nsGlobalWindowInner::SetFocusedElement(Element* aElement,
     aNeedsFocus = false;
   }
   if (mFocusedElement != aElement) {
-    UpdateCanvasFocus(false, aElement);
     mFocusedElement = aElement;
     // TODO: Maybe this should be set on refocus too?
     mFocusMethod = aFocusMethod & nsIFocusManager::METHOD_MASK;
@@ -4400,17 +4400,12 @@ bool nsGlobalWindowInner::TakeFocus(bool aFocus, uint32_t aFocusMethod) {
     mFocusMethod = aFocusMethod & nsIFocusManager::METHOD_MASK;
   }
 
-  if (mHasFocus != aFocus) {
-    mHasFocus = aFocus;
-    UpdateCanvasFocus(true, mFocusedElement);
-  }
-
   // if mNeedsFocus is true, then the document has not yet received a
   // document-level focus event. If there is a root content node, then return
   // true to tell the calling focus manager that a focus event is expected. If
   // there is no root content node, the document hasn't loaded enough yet, or
   // there isn't one and there is no point in firing a focus event.
-  if (aFocus && mNeedsFocus && mDoc && mDoc->GetRootElement() != nullptr) {
+  if (aFocus && mNeedsFocus && mDoc && mDoc->GetRootElement()) {
     mNeedsFocus = false;
     return true;
   }
@@ -4554,41 +4549,6 @@ nsresult nsGlobalWindowInner::DispatchSyncPopState() {
   ErrorResult err;
   DispatchEvent(*event, err);
   return err.StealNSResult();
-}
-
-//-------------------------------------------------------
-// Tells the HTMLFrame/CanvasFrame that is now has focus
-void nsGlobalWindowInner::UpdateCanvasFocus(bool aFocusChanged,
-                                            nsIContent* aNewContent) {
-  // this is called from the inner window so use GetDocShell
-  nsIDocShell* docShell = GetDocShell();
-  if (!docShell) return;
-
-  bool editable;
-  docShell->GetEditable(&editable);
-  if (editable) return;
-
-  PresShell* presShell = docShell->GetPresShell();
-  if (!presShell || !mDoc) {
-    return;
-  }
-
-  Element* rootElement = mDoc->GetRootElement();
-  if (rootElement) {
-    if ((mHasFocus || aFocusChanged) &&
-        (mFocusedElement == rootElement || aNewContent == rootElement)) {
-      nsCanvasFrame* canvasFrame = presShell->GetCanvasFrame();
-      if (canvasFrame) {
-        canvasFrame->SetHasFocus(mHasFocus && rootElement == aNewContent);
-      }
-    }
-  } else {
-    // XXXbz I would expect that there is never a canvasFrame in this case...
-    nsCanvasFrame* canvasFrame = presShell->GetCanvasFrame();
-    if (canvasFrame) {
-      canvasFrame->SetHasFocus(false);
-    }
-  }
 }
 
 already_AddRefed<nsICSSDeclaration> nsGlobalWindowInner::GetComputedStyle(

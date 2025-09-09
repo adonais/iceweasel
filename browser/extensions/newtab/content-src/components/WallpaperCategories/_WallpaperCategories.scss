@@ -65,8 +65,8 @@
       content: '';
       -moz-context-properties: fill;
       fill: var(--icon-color);
-      width: calc(var(--icon-size-default) * 1.25 ); // Custom size: ~20px;
-      height: calc(var(--icon-size-default) * 1.25 ); // Custom size: ~20px;
+      width: calc(var(--icon-size) * 1.25 ); // Custom size: ~20px;
+      height: calc(var(--icon-size) * 1.25 ); // Custom size: ~20px;
       display: block;
       position: absolute;
       inset-block-start: 50%;
@@ -165,8 +165,8 @@
     content: '';
     -moz-context-properties: fill;
     fill: var(--icon-color);
-    width: calc(var(--icon-size-default) * 1.25); // Custom size: ~20px;
-    height: calc(var(--icon-size-default) * 1.25); // Custom size: ~20px;
+    width: calc(var(--icon-size) * 1.25); // Custom size: ~20px;
+    height: calc(var(--icon-size) * 1.25); // Custom size: ~20px;
     display: block;
     position: absolute;
     inset-block-start: 50%;

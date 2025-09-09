@@ -6,7 +6,6 @@ package mozilla.components.feature.top.sites
 
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
 import mozilla.components.concept.storage.FrecencyThresholdOption
 import mozilla.components.concept.storage.TopFrecentSiteInfo
@@ -26,7 +25,6 @@ import org.mockito.Mockito.anyInt
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 
-@ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class DefaultTopSitesStorageTest {
 

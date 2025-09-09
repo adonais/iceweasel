@@ -4,6 +4,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <stdlib.h>
+#include <string.h>
+
+#include "TelemetryFixture.h"
+#include "TelemetryTestHelpers.h"
 #include "core/TelemetryEvent.h"
 #include "gtest/gtest.h"
 #include "js/Array.h"               // JS::GetArrayLength
@@ -15,11 +20,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
-#include "TelemetryFixture.h"
-#include "TelemetryTestHelpers.h"
-
-#include <string.h>
-#include <stdlib.h>
 #include "nsContentSecurityManager.h"
 #include "nsContentSecurityUtils.h"
 #include "nsContentUtils.h"

@@ -5,8 +5,9 @@
 #ifndef _MTRANSPORTHANDLER_PARENT_H__
 #define _MTRANSPORTHANDLER_PARENT_H__
 
-#include "mozilla/dom/PMediaTransportParent.h"
 #include <memory>
+
+#include "mozilla/dom/PMediaTransportParent.h"
 
 namespace mozilla {
 

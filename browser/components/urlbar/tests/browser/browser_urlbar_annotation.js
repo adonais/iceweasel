@@ -3,6 +3,11 @@
 
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  SponsorProtection:
+    "moz-src:///browser/components/newtab/SponsorProtection.sys.mjs",
+});
+
 // Test whether a visit information is annotated correctly when picking a result.
 
 if (AppConstants.platform === "macosx") {
@@ -187,13 +192,17 @@ add_task(async function basic() {
       await PlacesUtils.bookmarks.insert(bookmark);
     }
 
-    await BrowserTestUtils.withNewTab("about:blank", async () => {
+    await BrowserTestUtils.withNewTab("about:blank", async browser => {
       info("Pick result");
       let promiseVisited = waitForVisitNotification(payload.url);
       await pickResult({ input, payloadURL: payload.url });
       await promiseVisited;
       info("Check database");
       await assertDatabase({ targetURL: payload.url, expected });
+      Assert.ok(
+        !SponsorProtection.isProtectedBrowser(browser),
+        "Navigations from the URL bar do not cause sponsor protection at this time."
+      );
     });
 
     UrlbarProvidersManager.unregisterProvider(provider);

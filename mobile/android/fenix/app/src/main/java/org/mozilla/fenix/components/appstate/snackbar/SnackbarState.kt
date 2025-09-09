@@ -113,6 +113,11 @@ sealed class SnackbarState {
     data object CopyLinkToClipboard : SnackbarState()
 
     /**
+     * Display a snackbar when a crash report is sent
+     */
+    data object ReportSent : SnackbarState()
+
+    /**
      * Display a snackbar when an URL has been copied to the clipboard.
      */
     data object URLCopiedToClipboard : SnackbarState()
@@ -139,9 +144,9 @@ sealed class SnackbarState {
     /**
      * Display a snackbar when a download is in progress.
      *
-     * @property sessionId The ID of the session associated with the download.
+     * @property downloadId The unique identifier for the ongoing download.
      */
-    data class DownloadInProgress(val sessionId: String?) : SnackbarState()
+    data class DownloadInProgress(val downloadId: String) : SnackbarState()
 
     /**
      * Display a snackbar when a download has failed.

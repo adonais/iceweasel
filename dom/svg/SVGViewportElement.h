@@ -7,8 +7,6 @@
 #ifndef DOM_SVG_SVGVIEWPORTELEMENT_H_
 #define DOM_SVG_SVGVIEWPORTELEMENT_H_
 
-#include "mozilla/Attributes.h"
-#include "nsIContentInlines.h"
 #include "SVGAnimatedEnumeration.h"
 #include "SVGAnimatedLength.h"
 #include "SVGAnimatedPreserveAspectRatio.h"
@@ -16,6 +14,8 @@
 #include "SVGGraphicsElement.h"
 #include "SVGPoint.h"
 #include "SVGPreserveAspectRatio.h"
+#include "mozilla/Attributes.h"
+#include "nsIContentInlines.h"
 
 namespace mozilla {
 class AutoPreserveAspectRatioOverride;

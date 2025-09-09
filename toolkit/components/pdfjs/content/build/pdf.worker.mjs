@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.4.19
- * pdfjsBuild = e0783cd07
+ * pdfjsVersion = 5.4.70
+ * pdfjsBuild = f16e0b6da
  */
 
 ;// ./src/shared/util.js
@@ -56,7 +56,8 @@ const AnnotationEditorType = {
   HIGHLIGHT: 9,
   STAMP: 13,
   INK: 15,
-  SIGNATURE: 101
+  SIGNATURE: 101,
+  COMMENT: 102
 };
 const AnnotationEditorParamsType = {
   RESIZE: 1,
@@ -68,10 +69,9 @@ const AnnotationEditorParamsType = {
   INK_THICKNESS: 22,
   INK_OPACITY: 23,
   HIGHLIGHT_COLOR: 31,
-  HIGHLIGHT_DEFAULT_COLOR: 32,
-  HIGHLIGHT_THICKNESS: 33,
-  HIGHLIGHT_FREE: 34,
-  HIGHLIGHT_SHOW_ALL: 35,
+  HIGHLIGHT_THICKNESS: 32,
+  HIGHLIGHT_FREE: 33,
+  HIGHLIGHT_SHOW_ALL: 34,
   DRAW_STEP: 41
 };
 const PermissionFlag = {
@@ -1495,7 +1495,7 @@ function _collectJS(entry, xref, list, parents) {
       }
       code &&= stringToPDFString(code, true).replaceAll("\x00", "");
       if (code) {
-        list.push(code);
+        list.push(code.trim());
       }
     }
     _collectJS(entry.getRaw("Next"), xref, list, parents);
@@ -50939,17 +50939,52 @@ class TextWidgetAnnotation extends WidgetAnnotation {
         actions
       }
     } = this;
-    for (const keystrokeAction of actions?.Keystroke || []) {
-      const m = keystrokeAction.trim().match(/^AF(Date|Time)_Keystroke(?:Ex)?\(['"]?([^'"]+)['"]?\);$/);
-      if (m) {
-        let format = m[2];
-        const num = parseInt(format, 10);
-        if (!isNaN(num) && Math.floor(Math.log10(num)) + 1 === m[2].length) {
-          format = (m[1] === "Date" ? DateFormats : TimeFormats)[num] ?? format;
-        }
-        this.data[m[1] === "Date" ? "dateFormat" : "timeFormat"] = format;
+    if (!actions) {
+      return;
+    }
+    const AFDateTime = /^AF(Date|Time)_(?:Keystroke|Format)(?:Ex)?\(['"]?([^'"]+)['"]?\);$/;
+    let canUseHTMLDateTime = false;
+    if (actions.Format?.length === 1 && actions.Keystroke?.length === 1 && AFDateTime.test(actions.Format[0]) && AFDateTime.test(actions.Keystroke[0]) || actions.Format?.length === 0 && actions.Keystroke?.length === 1 && AFDateTime.test(actions.Keystroke[0]) || actions.Keystroke?.length === 0 && actions.Format?.length === 1 && AFDateTime.test(actions.Format[0])) {
+      canUseHTMLDateTime = true;
+    }
+    const actionsToVisit = [];
+    if (actions.Format) {
+      actionsToVisit.push(...actions.Format);
+    }
+    if (actions.Keystroke) {
+      actionsToVisit.push(...actions.Keystroke);
+    }
+    if (canUseHTMLDateTime) {
+      delete actions.Keystroke;
+      actions.Format = actionsToVisit;
+    }
+    for (const formatAction of actionsToVisit) {
+      const m = formatAction.match(AFDateTime);
+      if (!m) {
+        continue;
+      }
+      const isDate = m[1] === "Date";
+      let format = m[2];
+      const num = parseInt(format, 10);
+      if (!isNaN(num) && Math.floor(Math.log10(num)) + 1 === m[2].length) {
+        format = (isDate ? DateFormats : TimeFormats)[num] ?? format;
+      }
+      this.data.datetimeFormat = format;
+      if (!canUseHTMLDateTime) {
         break;
       }
+      if (isDate) {
+        if (/HH|MM|ss|h/.test(format)) {
+          this.data.datetimeType = "datetime-local";
+          this.data.timeStep = /ss/.test(format) ? 1 : 60;
+        } else {
+          this.data.datetimeType = "date";
+        }
+        break;
+      }
+      this.data.datetimeType = "time";
+      this.data.timeStep = /ss/.test(format) ? 1 : 60;
+      break;
     }
   }
   get hasTextContent() {
@@ -51070,6 +51105,8 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       strokeColor: this.data.borderColor,
       fillColor: this.data.backgroundColor,
       rotation: this.rotation,
+      datetimeFormat: this.data.datetimeFormat,
+      hasDatetimeHTML: !!this.data.datetimeType,
       type: "text"
     };
   }
@@ -51684,6 +51721,9 @@ class LinkAnnotation extends Annotation {
       docBaseUrl: annotationGlobals.baseUrl,
       docAttachments: annotationGlobals.attachments
     });
+  }
+  get overlaysTextContent() {
+    return true;
   }
 }
 class PopupAnnotation extends Annotation {
@@ -52927,19 +52967,26 @@ class SingleIntersector {
   #minY = Infinity;
   #maxX = -Infinity;
   #maxY = -Infinity;
-  #quadPoints;
+  #quadPoints = null;
   #text = [];
   #extraChars = [];
   #lastIntersectingQuadIndex = -1;
   #canTakeExtraChars = false;
   constructor(annotation) {
     this.#annotation = annotation;
-    const quadPoints = this.#quadPoints = annotation.data.quadPoints;
+    const quadPoints = annotation.data.quadPoints;
+    if (!quadPoints) {
+      [this.#minX, this.#minY, this.#maxX, this.#maxY] = annotation.data.rect;
+      return;
+    }
     for (let i = 0, ii = quadPoints.length; i < ii; i += 8) {
       this.#minX = Math.min(this.#minX, quadPoints[i]);
       this.#maxX = Math.max(this.#maxX, quadPoints[i + 2]);
       this.#minY = Math.min(this.#minY, quadPoints[i + 5]);
       this.#maxY = Math.max(this.#maxY, quadPoints[i + 1]);
+    }
+    if (quadPoints.length > 8) {
+      this.#quadPoints = quadPoints;
     }
   }
   overlaps(other) {
@@ -52950,7 +52997,7 @@ class SingleIntersector {
       return false;
     }
     const quadPoints = this.#quadPoints;
-    if (quadPoints.length === 8) {
+    if (!quadPoints) {
       return true;
     }
     if (this.#lastIntersectingQuadIndex >= 0) {
@@ -53001,7 +53048,7 @@ class Intersector {
   #intersectors = new Map();
   constructor(annotations) {
     for (const annotation of annotations) {
-      if (!annotation.data.quadPoints) {
+      if (!annotation.data.quadPoints && !annotation.data.rect) {
         continue;
       }
       const intersector = new SingleIntersector(annotation);
@@ -54922,6 +54969,10 @@ class XRef {
         throw new FormatError(`invalid object offset in the ObjStm stream: ${offset}`);
       }
       nums[i] = num;
+      const entry = this.getEntry(num);
+      if (entry?.offset === tableOffset && entry.gen !== i) {
+        entry.gen = i;
+      }
       offsets[i] = offset;
     }
     const start = (stream.start || 0) + first;
@@ -57529,7 +57580,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "5.4.19";
+    const workerVersion = "5.4.70";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }

@@ -232,6 +232,7 @@ Size SVGUtils::GetContextSize(const nsIFrame* aFrame) {
 }
 
 float SVGUtils::ObjectSpace(const gfxRect& aRect,
+                            const dom::UserSpaceMetrics& aMetrics,
                             const SVGAnimatedLength* aLength) {
   float axis;
 
@@ -255,9 +256,7 @@ float SVGUtils::ObjectSpace(const gfxRect& aRect,
     // Multiply first to avoid precision errors:
     return axis * aLength->GetAnimValInSpecifiedUnits() / 100;
   }
-  return aLength->GetAnimValueWithZoom(
-             static_cast<SVGViewportElement*>(nullptr)) *
-         axis;
+  return aLength->GetAnimValueWithZoom(aMetrics) * axis;
 }
 
 float SVGUtils::UserSpace(nsIFrame* aNonSVGContext,
@@ -382,10 +381,13 @@ void SVGUtils::NotifyChildrenOfSVGChange(nsIFrame* aFrame, uint32_t aFlags) {
 // ************************************************************
 
 float SVGUtils::ComputeOpacity(const nsIFrame* aFrame, bool aHandleOpacity) {
+  if (!aHandleOpacity) {
+    return 1.0f;
+  }
+
   const auto* styleEffects = aFrame->StyleEffects();
 
-  if (!styleEffects->IsOpaque() &&
-      (SVGUtils::CanOptimizeOpacity(aFrame) || !aHandleOpacity)) {
+  if (!styleEffects->IsOpaque() && SVGUtils::CanOptimizeOpacity(aFrame)) {
     return 1.0f;
   }
 
@@ -539,7 +541,10 @@ class MixModeBlender {
     IntRect result;
     ToRect(clippedFrameSurfaceRect).ToIntRect(&result);
 
-    return Factory::CheckSurfaceSize(result.Size()) ? result : IntRect();
+    return mSourceCtx->GetDrawTarget()->CanCreateSimilarDrawTarget(
+               result.Size(), SurfaceFormat::B8G8R8A8)
+               ? result
+               : IntRect();
   }
 
   nsIFrame* mFrame;
@@ -976,19 +981,22 @@ gfxPoint SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(const nsIFrame* aFrame) {
 }
 
 static gfxRect GetBoundingBoxRelativeRect(const SVGAnimatedLength* aXYWH,
+                                          const SVGElement* aElement,
                                           const gfxRect& aBBox) {
-  return gfxRect(aBBox.x + SVGUtils::ObjectSpace(aBBox, &aXYWH[0]),
-                 aBBox.y + SVGUtils::ObjectSpace(aBBox, &aXYWH[1]),
-                 SVGUtils::ObjectSpace(aBBox, &aXYWH[2]),
-                 SVGUtils::ObjectSpace(aBBox, &aXYWH[3]));
+  SVGElementMetrics metrics(aElement);
+  return gfxRect(aBBox.x + SVGUtils::ObjectSpace(aBBox, metrics, &aXYWH[0]),
+                 aBBox.y + SVGUtils::ObjectSpace(aBBox, metrics, &aXYWH[1]),
+                 SVGUtils::ObjectSpace(aBBox, metrics, &aXYWH[2]),
+                 SVGUtils::ObjectSpace(aBBox, metrics, &aXYWH[3]));
 }
 
 gfxRect SVGUtils::GetRelativeRect(uint16_t aUnits,
                                   const SVGAnimatedLength* aXYWH,
                                   const gfxRect& aBBox,
+                                  const SVGElement* aElement,
                                   const UserSpaceMetrics& aMetrics) {
   if (aUnits == SVG_UNIT_TYPE_OBJECTBOUNDINGBOX) {
-    return GetBoundingBoxRelativeRect(aXYWH, aBBox);
+    return GetBoundingBoxRelativeRect(aXYWH, aElement, aBBox);
   }
   return gfxRect(UserSpace(aMetrics, &aXYWH[0]), UserSpace(aMetrics, &aXYWH[1]),
                  UserSpace(aMetrics, &aXYWH[2]),
@@ -998,13 +1006,15 @@ gfxRect SVGUtils::GetRelativeRect(uint16_t aUnits,
 gfxRect SVGUtils::GetRelativeRect(uint16_t aUnits,
                                   const SVGAnimatedLength* aXYWH,
                                   const gfxRect& aBBox, nsIFrame* aFrame) {
+  auto* svgElement = SVGElement::FromNode(aFrame->GetContent());
   if (aUnits == SVG_UNIT_TYPE_OBJECTBOUNDINGBOX) {
-    return GetBoundingBoxRelativeRect(aXYWH, aBBox);
+    return GetBoundingBoxRelativeRect(aXYWH, svgElement, aBBox);
   }
-  if (SVGElement* svgElement = SVGElement::FromNode(aFrame->GetContent())) {
-    return GetRelativeRect(aUnits, aXYWH, aBBox, SVGElementMetrics(svgElement));
+  if (svgElement) {
+    return GetRelativeRect(aUnits, aXYWH, aBBox, svgElement,
+                           SVGElementMetrics(svgElement));
   }
-  return GetRelativeRect(aUnits, aXYWH, aBBox,
+  return GetRelativeRect(aUnits, aXYWH, aBBox, svgElement,
                          NonSVGFrameUserSpaceMetrics(aFrame));
 }
 

@@ -279,9 +279,7 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
     nsTArray<GfxVarUpdate>&& vars, const DevicePrefs& devicePrefs,
     nsTArray<LayerTreeIdMapping>&& aMappings,
     nsTArray<GfxInfoFeatureStatus>&& aFeatures, uint32_t aWrNamespace) {
-  for (const auto& var : vars) {
-    gfxVars::ApplyUpdate(var);
-  }
+  gfxVars::ApplyUpdate(vars);
 
   // Inherit device preferences.
   gfxConfig::Inherit(Feature::HW_COMPOSITING, devicePrefs.hwCompositing());
@@ -498,33 +496,29 @@ mozilla::ipc::IPCResult GPUParent::RecvInitProfiler(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult GPUParent::RecvUpdateVar(const GfxVarUpdate& aUpdate) {
-#if defined(XP_WIN)
-  auto scopeExit = MakeScopeExit(
-      [couldUseHWDecoder = gfx::gfxVars::CanUseHardwareVideoDecoding()] {
-        if (couldUseHWDecoder != gfx::gfxVars::CanUseHardwareVideoDecoding()) {
-          MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(
-              NS_NewRunnableFunction(
-                  "GPUParent::RecvUpdateVar",
-                  []() {
-                    WMFDecoderModule::Init();
-                    if (StaticPrefs::media_ffvpx_hw_enabled()) {
-                      FFVPXRuntimeLinker::Init();
-                    }
-                    NS_DispatchToMainThread(NS_NewRunnableFunction(
-                        "GPUParent::UpdateMediaCodecsSupported",
-                        [supported = media::MCSInfo::GetSupportFromFactory(
-                             true /* force refresh */)]() {
-                          Unused << GPUParent::GetSingleton()
-                                        ->SendUpdateMediaCodecsSupported(
-                                            supported);
-                        }));
-                  }),
-              nsIEventTarget::DISPATCH_NORMAL));
-        }
-      });
-#endif
+mozilla::ipc::IPCResult GPUParent::RecvUpdateVar(
+    const nsTArray<GfxVarUpdate>& aUpdate) {
   gfxVars::ApplyUpdate(aUpdate);
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchBackgroundTask(
+      NS_NewRunnableFunction(
+          "GPUParent::RecvUpdateVar",
+          []() {
+#ifdef XP_WIN
+            WMFDecoderModule::Init();
+#endif
+            if (StaticPrefs::media_ffvpx_hw_enabled()) {
+              FFVPXRuntimeLinker::Init();
+            }
+            NS_DispatchToMainThread(NS_NewRunnableFunction(
+                "GPUParent::UpdateMediaCodecsSupported",
+                [supported = media::MCSInfo::GetSupportFromFactory(
+                     true /* force refresh */)]() {
+                  if (auto* gpu = GPUParent::GetSingleton()) {
+                    Unused << gpu->SendUpdateMediaCodecsSupported(supported);
+                  }
+                }));
+          }),
+      nsIEventTarget::DISPATCH_NORMAL));
   return IPC_OK();
 }
 

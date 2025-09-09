@@ -5,27 +5,26 @@
 
 #include "Instance.h"
 
+#include <optional>
+#include <string_view>
+
 #include "Adapter.h"
+#include "ipc/WebGPUChild.h"
+#include "ipc/WebGPUTypes.h"
 #include "js/Value.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/gfx/CanvasManagerChild.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/gfxVars.h"
+#include "mozilla/webgpu/ffi/wgpu.h"
 #include "nsDebug.h"
 #include "nsIGlobalObject.h"
-#include "ipc/WebGPUChild.h"
-#include "ipc/WebGPUTypes.h"
-#include "mozilla/webgpu/ffi/wgpu.h"
-#include "mozilla/dom/Promise.h"
-#include "mozilla/gfx/CanvasManagerChild.h"
-#include "mozilla/gfx/gfxVars.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
-
-#include "mozilla/dom/WorkerPrivate.h"
-
-#include <optional>
-#include <string_view>
 
 namespace mozilla::webgpu {
 
@@ -52,6 +51,11 @@ static inline nsDependentCString ToCString(const std::string_view s) {
   }
 
   return true;
+}
+
+/* static */ bool Instance::ExternalTexturePrefEnabled(JSContext* aCx,
+                                                       JSObject* aObj) {
+  return StaticPrefs::dom_webgpu_external_texture_enabled_AtStartup();
 }
 
 /*static*/
@@ -222,14 +226,11 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
     power_preference = ffi::WGPUPowerPreference_LowPower;
   }
 
-  RawId adapter_id = ffi::wgpu_client_make_adapter_id(bridge->GetClient());
+  RawId adapter_id = ffi::wgpu_client_request_adapter(
+      bridge->GetClient(), power_preference, aOptions.mForceFallbackAdapter);
 
-  ffi::wgpu_client_request_adapter(bridge->GetClient(), adapter_id,
-                                   power_preference,
-                                   aOptions.mForceFallbackAdapter);
-
-  auto pending_promise =
-      WebGPUChild::PendingRequestAdapterPromise{RefPtr(promise), RefPtr(this)};
+  auto pending_promise = WebGPUChild::PendingRequestAdapterPromise{
+      RefPtr(promise), RefPtr(this), adapter_id};
   bridge->mPendingRequestAdapterPromises.push_back(std::move(pending_promise));
 
   return promise.forget();

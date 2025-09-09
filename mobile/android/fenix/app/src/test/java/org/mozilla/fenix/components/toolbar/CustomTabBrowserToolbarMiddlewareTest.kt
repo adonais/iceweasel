@@ -34,8 +34,6 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.EnvironmentCleared
 import mozilla.components.compose.browser.toolbar.store.EnvironmentRehydrated
 import mozilla.components.compose.browser.toolbar.store.ProgressBarConfig
-import mozilla.components.compose.browser.toolbar.store.ProgressBarGravity.Bottom
-import mozilla.components.compose.browser.toolbar.store.ProgressBarGravity.Top
 import mozilla.components.concept.engine.cookiehandling.CookieBannersStorage
 import mozilla.components.concept.engine.permission.SitePermissionsStorage
 import mozilla.components.feature.session.TrackingProtectionUseCases
@@ -478,7 +476,6 @@ class CustomTabBrowserToolbarMiddlewareTest {
         assertEquals(
             ProgressBarConfig(
                 progress = 50,
-                gravity = Top,
                 color = null,
             ),
             toolbarStore.state.displayState.progressBarConfig,
@@ -489,7 +486,6 @@ class CustomTabBrowserToolbarMiddlewareTest {
         assertEquals(
             ProgressBarConfig(
                 progress = 80,
-                gravity = Top,
                 color = null,
             ),
             toolbarStore.state.displayState.progressBarConfig,
@@ -514,7 +510,6 @@ class CustomTabBrowserToolbarMiddlewareTest {
         assertEquals(
             ProgressBarConfig(
                 progress = 22,
-                gravity = Bottom,
                 color = null,
             ),
             toolbarStore.state.displayState.progressBarConfig,
@@ -525,7 +520,6 @@ class CustomTabBrowserToolbarMiddlewareTest {
         assertEquals(
             ProgressBarConfig(
                 progress = 67,
-                gravity = Bottom,
                 color = null,
             ),
             toolbarStore.state.displayState.progressBarConfig,

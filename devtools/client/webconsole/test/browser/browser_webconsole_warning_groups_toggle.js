@@ -16,7 +16,7 @@ const TRACKER_URL = "https://tracking.example.com/";
 const IMG_FILE =
   "browser/devtools/client/webconsole/test/browser/test-image.png";
 const CONTENT_BLOCKED_BY_ETP_URL = TRACKER_URL + IMG_FILE;
-const WARNING_GROUP_PREF = "devtools.webconsole.groupWarningMessages";
+const WARNING_GROUP_PREF = "devtools.webconsole.groupSimilarMessages";
 
 const { UrlClassifierTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/UrlClassifierTestUtils.sys.mjs"

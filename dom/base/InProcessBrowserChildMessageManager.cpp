@@ -5,23 +5,24 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "InProcessBrowserChildMessageManager.h"
-#include "nsContentUtils.h"
-#include "nsDocShell.h"
-#include "nsIInterfaceRequestorUtils.h"
-#include "nsComponentManagerUtils.h"
-#include "nsFrameLoader.h"
-#include "nsFrameLoaderOwner.h"
-#include "nsQueryObject.h"
-#include "xpcpublic.h"
+
 #include "mozilla/EventDispatcher.h"
+#include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/ChromeMessageSender.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/JSActorService.h"
 #include "mozilla/dom/MessageManagerBinding.h"
 #include "mozilla/dom/SameProcessMessageQueue.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/WindowProxyHolder.h"
-#include "mozilla/dom/JSActorService.h"
-#include "mozilla/HoldDropJSObjects.h"
+#include "nsComponentManagerUtils.h"
+#include "nsContentUtils.h"
+#include "nsDocShell.h"
+#include "nsFrameLoader.h"
+#include "nsFrameLoaderOwner.h"
+#include "nsIInterfaceRequestorUtils.h"
+#include "nsQueryObject.h"
+#include "xpcpublic.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

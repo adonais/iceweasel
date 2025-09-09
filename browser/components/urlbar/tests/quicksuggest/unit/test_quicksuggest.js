@@ -12,6 +12,8 @@ ChromeUtils.defineESModuleGetters(this, {
   AmpMatchingStrategy:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSuggest.sys.mjs",
   AmpSuggestions: "resource:///modules/urlbar/private/AmpSuggestions.sys.mjs",
+  SuggestBackendRust:
+    "resource:///modules/urlbar/private/SuggestBackendRust.sys.mjs",
   SuggestionProvider:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSuggest.sys.mjs",
 });
@@ -55,6 +57,7 @@ const REMOTE_SETTINGS_RESULTS = [
     advertiser: "HttpAdvertiser",
     iab_category: "22 - Shopping",
     icon: "1234",
+    serp_categories: [2],
   },
   {
     id: 4,
@@ -167,6 +170,7 @@ function expectedHttpResult() {
     clickUrl: suggestion.click_url,
     blockId: suggestion.id,
     advertiser: suggestion.advertiser,
+    categories: suggestion.serp_categories,
   });
 }
 
@@ -207,7 +211,6 @@ add_setup(async function init() {
     Ci.nsISearchService.CHANGE_REASON_UNKNOWN
   );
 
-  UrlbarPrefs.set("scotchBonnet.enableOverride", false);
   UrlbarPrefs.set("quicksuggest.ampTopPickCharThreshold", 0);
 
   await QuickSuggestTestUtils.ensureQuickSuggestInit();
@@ -1393,6 +1396,7 @@ add_task(async function tabToSearch() {
   // have the same behavior.
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   await QuickSuggestTestUtils.forceSync();
+  UrlbarPrefs.set("suggest.quickactions", false);
 
   Services.prefs.setBoolPref(
     "browser.urlbar.quicksuggest.sponsoredPriority",
@@ -1459,6 +1463,90 @@ add_task(async function tabToSearch() {
   await extension.unload();
 
   UrlbarPrefs.clear("tabToSearch.onboard.interactionsLeft");
+  UrlbarPrefs.clear("suggest.quickactions");
+  Services.prefs.clearUserPref("browser.search.suggest.enabled");
+  Services.prefs.clearUserPref("browser.urlbar.quicksuggest.sponsoredPriority");
+});
+
+// When a Suggest best match and a global action are shown in the same
+// search, both will have a `suggestedIndex` value of 1. The global action should
+// appear first.
+add_task(async function globalAction() {
+  // We'll use a sponsored priority result as the best match result. Different
+  // types of Suggest results can appear as best matches, and they all should
+  // have the same behavior.
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+  await QuickSuggestTestUtils.forceSync();
+
+  Services.prefs.setBoolPref(
+    "browser.urlbar.quicksuggest.sponsoredPriority",
+    true
+  );
+
+  // Disable search suggestions so we don't need to expect them below.
+  Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
+
+  // Set prefs to prevent quick actions onboarding label from showing.
+  UrlbarPrefs.set("quickactions.timesToShowOnboardingLabel", 3);
+  UrlbarPrefs.set("quickactions.timesShownOnboardingLabel", 3);
+
+  let engineURL = `https://example.com/`;
+  let extension = await SearchTestUtils.installSearchExtension(
+    {
+      name: "Amp",
+      search_url: engineURL,
+    },
+    { skipUnload: true }
+  );
+  let engine = Services.search.getEngineByName("Amp");
+
+  await PlacesTestUtils.addVisits(engineURL);
+
+  let context = createContext(SPONSORED_SEARCH_STRING, {
+    isPrivate: false,
+  });
+
+  await check_results({
+    context,
+    matches: [
+      // search heuristic
+      makeSearchResult(context, {
+        engineName: Services.search.defaultEngine.name,
+        engineIconUri: await Services.search.defaultEngine.getIconURL(),
+        heuristic: true,
+      }),
+
+      // "Search with engine" global action.
+      makeGlobalActionsResult({
+        actionsResults: [
+          {
+            providerName: "ActionsProviderContextualSearch",
+          },
+        ],
+        providesSearchMode: true,
+        engine: engine.name,
+        query: "",
+        input: "",
+        inputLength: context.searchString.length,
+        showOnboardingLabel: false,
+      }),
+
+      // Suggest best match
+      expectedSponsoredPriorityResult(),
+
+      // visit
+      makeVisitResult(context, {
+        uri: engineURL,
+        title: `test visit for ${engineURL}`,
+      }),
+    ],
+  });
+
+  await cleanupPlaces();
+  await extension.unload();
+
+  UrlbarPrefs.clear("quickactions.timesToShowOnboardingLabel");
+  UrlbarPrefs.clear("quickactions.timesShownOnboardingLabel");
   Services.prefs.clearUserPref("browser.search.suggest.enabled");
   Services.prefs.clearUserPref("browser.urlbar.quicksuggest.sponsoredPriority");
 });
@@ -2020,6 +2108,265 @@ async function doMerinoTest(callback) {
   await MerinoTestUtils.server.stop();
   UrlbarPrefs.clear("quicksuggest.dataCollection.enabled");
 }
+
+add_task(async function mergeRustProviderConstraints() {
+  let tests = [
+    {
+      a: null,
+      b: null,
+      expected: null,
+    },
+
+    // b is null
+    {
+      a: {},
+      b: null,
+      expected: {},
+    },
+    {
+      a: { ampAlternativeMatching: 1 },
+      b: null,
+      expected: { ampAlternativeMatching: 1 },
+    },
+    {
+      a: { dynamicSuggestionTypes: [] },
+      b: null,
+      expected: { dynamicSuggestionTypes: [] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa"] },
+      b: null,
+      expected: { dynamicSuggestionTypes: ["aaa"] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa", "bbb"] },
+      b: null,
+      expected: { dynamicSuggestionTypes: ["aaa", "bbb"] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa", "bbb"], ampAlternativeMatching: 1 },
+      b: null,
+      expected: {
+        dynamicSuggestionTypes: ["aaa", "bbb"],
+        ampAlternativeMatching: 1,
+      },
+    },
+
+    // b is an empty object
+    {
+      a: {},
+      b: {},
+      expected: {},
+    },
+    {
+      a: { ampAlternativeMatching: 1 },
+      b: {},
+      expected: { ampAlternativeMatching: 1 },
+    },
+    {
+      a: { dynamicSuggestionTypes: [] },
+      b: {},
+      expected: { dynamicSuggestionTypes: [] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa"] },
+      b: {},
+      expected: { dynamicSuggestionTypes: ["aaa"] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa", "bbb"] },
+      b: {},
+      expected: { dynamicSuggestionTypes: ["aaa", "bbb"] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa", "bbb"], ampAlternativeMatching: 1 },
+      b: {},
+      expected: {
+        dynamicSuggestionTypes: ["aaa", "bbb"],
+        ampAlternativeMatching: 1,
+      },
+    },
+
+    // b is { ampAlternativeMatching: 1 }
+    {
+      a: {},
+      b: { ampAlternativeMatching: 1 },
+      expected: { ampAlternativeMatching: 1 },
+    },
+    {
+      a: { ampAlternativeMatching: 1 },
+      b: { ampAlternativeMatching: 1 },
+      expected: { ampAlternativeMatching: 1 },
+    },
+    {
+      a: { dynamicSuggestionTypes: [] },
+      b: { ampAlternativeMatching: 1 },
+      expected: { dynamicSuggestionTypes: [], ampAlternativeMatching: 1 },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa"] },
+      b: { ampAlternativeMatching: 1 },
+      expected: { dynamicSuggestionTypes: ["aaa"], ampAlternativeMatching: 1 },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa", "bbb"] },
+      b: { ampAlternativeMatching: 1 },
+      expected: {
+        dynamicSuggestionTypes: ["aaa", "bbb"],
+        ampAlternativeMatching: 1,
+      },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa", "bbb"], ampAlternativeMatching: 1 },
+      b: { ampAlternativeMatching: 1 },
+      expected: {
+        dynamicSuggestionTypes: ["aaa", "bbb"],
+        ampAlternativeMatching: 1,
+      },
+    },
+
+    // b is { dynamicSuggestionTypes: [] }
+    {
+      a: {},
+      b: { dynamicSuggestionTypes: [] },
+      expected: { dynamicSuggestionTypes: [] },
+    },
+    {
+      a: { ampAlternativeMatching: 1 },
+      b: { dynamicSuggestionTypes: [] },
+      expected: { dynamicSuggestionTypes: [], ampAlternativeMatching: 1 },
+    },
+    {
+      a: { dynamicSuggestionTypes: [] },
+      b: { dynamicSuggestionTypes: [] },
+      expected: { dynamicSuggestionTypes: [] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa"] },
+      b: { dynamicSuggestionTypes: [] },
+      expected: { dynamicSuggestionTypes: ["aaa"] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa", "bbb"] },
+      b: { dynamicSuggestionTypes: [] },
+      expected: { dynamicSuggestionTypes: ["aaa", "bbb"] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa", "bbb"], ampAlternativeMatching: 1 },
+      b: { dynamicSuggestionTypes: [] },
+      expected: {
+        dynamicSuggestionTypes: ["aaa", "bbb"],
+        ampAlternativeMatching: 1,
+      },
+    },
+
+    // b is { dynamicSuggestionTypes: ["bbb"] }
+    {
+      a: {},
+      b: { dynamicSuggestionTypes: ["bbb"] },
+      expected: { dynamicSuggestionTypes: ["bbb"] },
+    },
+    {
+      a: { ampAlternativeMatching: 1 },
+      b: { dynamicSuggestionTypes: ["bbb"] },
+      expected: { dynamicSuggestionTypes: ["bbb"], ampAlternativeMatching: 1 },
+    },
+    {
+      a: { dynamicSuggestionTypes: [] },
+      b: { dynamicSuggestionTypes: ["bbb"] },
+      expected: { dynamicSuggestionTypes: ["bbb"] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa"] },
+      b: { dynamicSuggestionTypes: ["bbb"] },
+      expected: { dynamicSuggestionTypes: ["aaa", "bbb"] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["bbb"] },
+      b: { dynamicSuggestionTypes: ["bbb"] },
+      expected: { dynamicSuggestionTypes: ["bbb"] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa", "bbb"] },
+      b: { dynamicSuggestionTypes: ["bbb"] },
+      expected: { dynamicSuggestionTypes: ["aaa", "bbb"] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa", "bbb"], ampAlternativeMatching: 1 },
+      b: { dynamicSuggestionTypes: ["bbb"] },
+      expected: {
+        dynamicSuggestionTypes: ["aaa", "bbb"],
+        ampAlternativeMatching: 1,
+      },
+    },
+
+    // b is { dynamicSuggestionTypes: ["bbb", "ddd"] }
+    {
+      a: {},
+      b: { dynamicSuggestionTypes: ["bbb", "ddd"] },
+      expected: { dynamicSuggestionTypes: ["bbb", "ddd"] },
+    },
+    {
+      a: { ampAlternativeMatching: 1 },
+      b: { dynamicSuggestionTypes: ["bbb", "ddd"] },
+      expected: {
+        dynamicSuggestionTypes: ["bbb", "ddd"],
+        ampAlternativeMatching: 1,
+      },
+    },
+    {
+      a: { dynamicSuggestionTypes: [] },
+      b: { dynamicSuggestionTypes: ["bbb", "ddd"] },
+      expected: { dynamicSuggestionTypes: ["bbb", "ddd"] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa"] },
+      b: { dynamicSuggestionTypes: ["bbb", "ddd"] },
+      expected: { dynamicSuggestionTypes: ["aaa", "bbb", "ddd"] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["bbb"] },
+      b: { dynamicSuggestionTypes: ["bbb", "ddd"] },
+      expected: { dynamicSuggestionTypes: ["bbb", "ddd"] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa", "bbb"] },
+      b: { dynamicSuggestionTypes: ["bbb", "ddd"] },
+      expected: { dynamicSuggestionTypes: ["aaa", "bbb", "ddd"] },
+    },
+    {
+      a: { dynamicSuggestionTypes: ["aaa", "bbb", "ccc"] },
+      b: { dynamicSuggestionTypes: ["bbb", "ddd"] },
+      expected: { dynamicSuggestionTypes: ["aaa", "bbb", "ccc", "ddd"] },
+    },
+    {
+      a: {
+        dynamicSuggestionTypes: ["aaa", "bbb", "ccc"],
+        ampAlternativeMatching: 1,
+      },
+      b: { dynamicSuggestionTypes: ["bbb", "ddd"] },
+      expected: {
+        dynamicSuggestionTypes: ["aaa", "bbb", "ccc", "ddd"],
+        ampAlternativeMatching: 1,
+      },
+    },
+  ];
+
+  for (let { a, b, expected } of tests) {
+    for (let [first, second] of [
+      [a, b],
+      [b, a],
+    ]) {
+      info("Doing test: " + JSON.stringify({ first, second }));
+      let actual = SuggestBackendRust.mergeProviderConstraints(first, second);
+      Assert.deepEqual(
+        actual,
+        expected,
+        "Expected merged constraints with " + JSON.stringify({ first, second })
+      );
+    }
+  }
+});
 
 async function resetRemoteSettingsData(data = REMOTE_SETTINGS_RESULTS) {
   let isAmp = suggestion => suggestion.iab_category == "22 - Shopping";

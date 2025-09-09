@@ -686,7 +686,6 @@ var Impl = {
       payloadObj.fileIOReports = protect(
         () => Services.telemetry.fileIOReports
       );
-      payloadObj.lateWrites = protect(() => Services.telemetry.lateWrites);
 
       payloadObj.addonDetails = protect(() =>
         lazy.AddonManagerPrivate.getTelemetryDetails()
@@ -840,10 +839,14 @@ var Impl = {
     // Generate a unique id once per session so the server can cope with duplicate
     // submissions, orphaning and other oddities. The id is shared across subsessions.
     this._sessionId = Policy.generateSessionUUID();
+    Glean.legacyTelemetry.sessionId.set(this._sessionId);
     this.startNewSubsession();
     // startNewSubsession sets |_subsessionStartDate| to the current date/time. Use
     // the very same value for |_sessionStartDate|.
     this._sessionStartDate = this._subsessionStartDate;
+    Glean.legacyTelemetry.sessionStartDate.set(
+      this._sessionStartDate.getTime() * 1000
+    );
 
     annotateCrashReport(this._sessionId);
 
@@ -1082,6 +1085,8 @@ var Impl = {
         this._startupIO.startupSessionRestoreReadBytes,
         this._startupIO.startupSessionRestoreWriteBytes,
       ] = counters;
+      Glean.startupIo.read.sessionRestore.set(counters[0]);
+      Glean.startupIo.write.sessionRestore.set(counters[1]);
     }
     this._slowSQLStartup = Services.telemetry.slowSQL;
   },
@@ -1129,6 +1134,8 @@ var Impl = {
             this._startupIO.startupWindowVisibleReadBytes,
             this._startupIO.startupWindowVisibleWriteBytes,
           ] = counters;
+          Glean.startupIo.read.windowVisible.set(counters[0]);
+          Glean.startupIo.write.windowVisible.set(counters[1]);
         }
         break;
       case "sessionstore-windows-restored":

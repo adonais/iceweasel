@@ -285,7 +285,7 @@ async function testPrettyPrint(dbg, toolbox) {
   await selectSource(dbg, MINIFIED_URL);
 
   const prettyPrintButton = await waitUntil(() => {
-    return dbg.win.document.querySelector(".source-footer .prettyPrint.active");
+    return dbg.win.document.querySelector(".source-footer .prettyPrint");
   });
 
   dump("Click pretty-print button\n");

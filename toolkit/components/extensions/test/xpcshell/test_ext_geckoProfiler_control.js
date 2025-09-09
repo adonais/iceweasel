@@ -2,6 +2,10 @@
 /* vim: set sts=2 sw=2 et tw=80: */
 "use strict";
 
+const { ProfilerTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/ProfilerTestUtils.sys.mjs"
+);
+
 let getExtension = () => {
   return ExtensionTestUtils.loadExtension({
     background: async function () {
@@ -129,6 +133,8 @@ let verifyProfileData = profile => {
     "The profile contains a GeckoMain thread."
   );
 };
+
+add_setup(ProfilerTestUtils.assertProfilerInactive);
 
 add_task(async function testProfilerControl() {
   const acceptedExtensionIdsPref =

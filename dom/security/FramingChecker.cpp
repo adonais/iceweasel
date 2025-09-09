@@ -8,26 +8,25 @@
 
 #include <stdint.h>  // uint32_t
 
-#include "nsCOMPtr.h"
-#include "nsContentUtils.h"
-#include "nsDebug.h"
-#include "nsError.h"
-#include "nsHttpChannel.h"
-#include "nsContentSecurityUtils.h"
-#include "nsGlobalWindowOuter.h"
-#include "nsIContentPolicy.h"
-#include "nsIScriptError.h"
-#include "nsLiteralString.h"
-#include "nsTArray.h"
-#include "nsStringFwd.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/dom/WindowGlobalParent.h"
-#include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Services.h"
 #include "mozilla/Unused.h"
-
+#include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/net/HttpBaseChannel.h"
+#include "nsCOMPtr.h"
+#include "nsContentSecurityUtils.h"
+#include "nsContentUtils.h"
+#include "nsDebug.h"
+#include "nsError.h"
+#include "nsGlobalWindowOuter.h"
+#include "nsHttpChannel.h"
+#include "nsIContentPolicy.h"
 #include "nsIObserverService.h"
+#include "nsIScriptError.h"
+#include "nsLiteralString.h"
+#include "nsStringFwd.h"
+#include "nsTArray.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

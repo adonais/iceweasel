@@ -774,14 +774,6 @@ AutoAssertNoContentJS::~AutoAssertNoContentJS() {
 
 JS_PUBLIC_API void js::EnableCodeCoverage() { js::coverage::EnableLCov(); }
 
-JS_PUBLIC_API JS::Value js::MaybeGetScriptPrivate(JSObject* object) {
-  if (!object->is<ScriptSourceObject>()) {
-    return UndefinedValue();
-  }
-
-  return object->as<ScriptSourceObject>().getPrivate();
-}
-
 JS_PUBLIC_API uint64_t js::GetMemoryUsageForZone(Zone* zone) {
   // We do not include zone->sharedMemoryUseCounts since that's already included
   // in zone->mallocHeapSize.

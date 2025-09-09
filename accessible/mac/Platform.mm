@@ -120,8 +120,7 @@ void PlatformStateChangeEvent(Accessible* aTarget, uint64_t aState,
   }
 }
 
-void PlatformFocusEvent(Accessible* aTarget,
-                        const LayoutDeviceIntRect& aCaretRect) {
+void PlatformFocusEvent(Accessible* aTarget) {
   if (mozAccessible* wrapper = GetNativeFromGeckoAccessible(aTarget)) {
     [wrapper handleAccessibleEvent:nsIAccessibleEvent::EVENT_FOCUS];
   }
@@ -129,7 +128,6 @@ void PlatformFocusEvent(Accessible* aTarget,
 
 void PlatformCaretMoveEvent(Accessible* aTarget, int32_t aOffset,
                             bool aIsSelectionCollapsed, int32_t aGranularity,
-                            const LayoutDeviceIntRect& aCaretRect,
                             bool aFromUser) {
   mozAccessible* wrapper = GetNativeFromGeckoAccessible(aTarget);
   MOXTextMarkerDelegate* delegate = [MOXTextMarkerDelegate

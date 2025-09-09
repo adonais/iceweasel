@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Nouveau raccourci
 newtab-topsites-edit-topsites-header = Modifier le site populaire
 newtab-topsites-edit-shortcut-header = Modifier le raccourci
 newtab-topsites-add-shortcut-label = Ajouter un raccourci
+newtab-topsites-add-shortcut-title =
+    .title = Ajouter un raccourci
+    .aria-label = Ajouter un raccourci
 newtab-topsites-title-label = Titre
 newtab-topsites-title-input =
     .placeholder = Saisir un titre
@@ -84,6 +87,14 @@ newtab-confirm-delete-history-p2 = Cette action est irréversible.
 ## Top Sites - Sponsored label
 
 newtab-topsite-sponsored = Sponsorisé
+
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (épinglé)
+    .title = { $title }
 
 ## Context Menu - Action Tooltips.
 
@@ -532,6 +543,11 @@ newtab-custom-wallpaper-title = Les fonds d’écran personnalisés sont disponi
 # 'Make firefox yours" means to customize or personalize
 newtab-custom-wallpaper-subtitle = Téléchargez votre propre fond d’écran ou choisissez votre couleur, et appropriez-vous { -brand-product-name }.
 newtab-custom-wallpaper-cta = Essayer
+
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Choisissez un fond d’écran pour personnaliser { -brand-product-name }
+newtab-new-user-custom-wallpaper-cta = Essayer
 
 ## Strings for download mobile highlight
 

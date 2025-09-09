@@ -290,7 +290,7 @@ class DummyDtmfObserver : public DtmfSenderObserverInterface {
 void TestDtmfFromSenderToReceiver(PeerConnectionIntegrationWrapper* sender,
                                   PeerConnectionIntegrationWrapper* receiver) {
   // We should be able to get a DTMF sender from the local sender.
-  rtc::scoped_refptr<DtmfSenderInterface> dtmf_sender =
+  scoped_refptr<DtmfSenderInterface> dtmf_sender =
       sender->pc()->GetSenders().at(0)->GetDtmfSender();
   ASSERT_TRUE(dtmf_sender);
   DummyDtmfObserver observer;
@@ -429,7 +429,7 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithSendOnlyVideo) {
       CreateOneDirectionalPeerConnectionWrappers(/*caller_to_callee=*/true));
   ConnectFakeSignaling();
   // Add one-directional video, from caller to callee.
-  rtc::scoped_refptr<VideoTrackInterface> caller_track =
+  scoped_refptr<VideoTrackInterface> caller_track =
       caller()->CreateLocalVideoTrack();
   caller()->AddTrack(caller_track);
   PeerConnectionInterface::RTCOfferAnswerOptions options;
@@ -456,7 +456,7 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithReceiveOnlyVideo) {
       CreateOneDirectionalPeerConnectionWrappers(/*caller_to_callee=*/false));
   ConnectFakeSignaling();
   // Add one-directional video, from callee to caller.
-  rtc::scoped_refptr<VideoTrackInterface> callee_track =
+  scoped_refptr<VideoTrackInterface> callee_track =
       callee()->CreateLocalVideoTrack();
   callee()->AddTrack(callee_track);
   PeerConnectionInterface::RTCOfferAnswerOptions options;
@@ -481,7 +481,7 @@ TEST_P(PeerConnectionIntegrationTest,
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   // Add one-directional video, from caller to callee.
-  rtc::scoped_refptr<VideoTrackInterface> caller_track =
+  scoped_refptr<VideoTrackInterface> caller_track =
       caller()->CreateLocalVideoTrack();
   caller()->AddTrack(caller_track);
   caller()->CreateAndSetAndSignalOffer();
@@ -490,7 +490,7 @@ TEST_P(PeerConnectionIntegrationTest,
       IsRtcOk());
 
   // Add receive video.
-  rtc::scoped_refptr<VideoTrackInterface> callee_track =
+  scoped_refptr<VideoTrackInterface> callee_track =
       callee()->CreateLocalVideoTrack();
   callee()->AddTrack(callee_track);
   caller()->CreateAndSetAndSignalOffer();
@@ -509,7 +509,7 @@ TEST_P(PeerConnectionIntegrationTest,
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   // Add one-directional video, from callee to caller.
-  rtc::scoped_refptr<VideoTrackInterface> callee_track =
+  scoped_refptr<VideoTrackInterface> callee_track =
       callee()->CreateLocalVideoTrack();
   callee()->AddTrack(callee_track);
   caller()->CreateAndSetAndSignalOffer();
@@ -518,7 +518,7 @@ TEST_P(PeerConnectionIntegrationTest,
       IsRtcOk());
 
   // Add send video.
-  rtc::scoped_refptr<VideoTrackInterface> caller_track =
+  scoped_refptr<VideoTrackInterface> caller_track =
       caller()->CreateLocalVideoTrack();
   caller()->AddTrack(caller_track);
   caller()->CreateAndSetAndSignalOffer();
@@ -537,15 +537,15 @@ TEST_P(PeerConnectionIntegrationTest,
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   // Add send video, from caller to callee.
-  rtc::scoped_refptr<VideoTrackInterface> caller_track =
+  scoped_refptr<VideoTrackInterface> caller_track =
       caller()->CreateLocalVideoTrack();
-  rtc::scoped_refptr<RtpSenderInterface> caller_sender =
+  scoped_refptr<RtpSenderInterface> caller_sender =
       caller()->AddTrack(caller_track);
   // Add receive video, from callee to caller.
-  rtc::scoped_refptr<VideoTrackInterface> callee_track =
+  scoped_refptr<VideoTrackInterface> callee_track =
       callee()->CreateLocalVideoTrack();
 
-  rtc::scoped_refptr<RtpSenderInterface> callee_sender =
+  scoped_refptr<RtpSenderInterface> callee_sender =
       callee()->AddTrack(callee_track);
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_THAT(
@@ -573,15 +573,15 @@ TEST_P(PeerConnectionIntegrationTest,
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   // Add send video, from caller to callee.
-  rtc::scoped_refptr<VideoTrackInterface> caller_track =
+  scoped_refptr<VideoTrackInterface> caller_track =
       caller()->CreateLocalVideoTrack();
-  rtc::scoped_refptr<RtpSenderInterface> caller_sender =
+  scoped_refptr<RtpSenderInterface> caller_sender =
       caller()->AddTrack(caller_track);
   // Add receive video, from callee to caller.
-  rtc::scoped_refptr<VideoTrackInterface> callee_track =
+  scoped_refptr<VideoTrackInterface> callee_track =
       callee()->CreateLocalVideoTrack();
 
-  rtc::scoped_refptr<RtpSenderInterface> callee_sender =
+  scoped_refptr<RtpSenderInterface> callee_sender =
       callee()->AddTrack(callee_track);
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_THAT(
@@ -981,7 +981,7 @@ TEST_P(PeerConnectionIntegrationTest, VideoRejectedInSubsequentOffer) {
   if (sdp_semantics_ == SdpSemantics::kPlanB_DEPRECATED) {
     caller()->SetGeneratedSdpMunger(
         [](std::unique_ptr<SessionDescriptionInterface>& sdp) {
-          for (cricket::ContentInfo& content : sdp->description()->contents()) {
+          for (ContentInfo& content : sdp->description()->contents()) {
             if (IsVideoContent(&content)) {
               content.rejected = true;
             }
@@ -1021,9 +1021,8 @@ TEST_F(PeerConnectionIntegrationTestPlanB, EnableAudioAfterRejecting) {
   ConnectFakeSignaling();
 
   // Add audio track, do normal offer/answer.
-  rtc::scoped_refptr<AudioTrackInterface> track =
-      caller()->CreateLocalAudioTrack();
-  rtc::scoped_refptr<RtpSenderInterface> sender =
+  scoped_refptr<AudioTrackInterface> track = caller()->CreateLocalAudioTrack();
+  scoped_refptr<RtpSenderInterface> sender =
       caller()->pc()->AddTrack(track, {"stream"}).MoveValue();
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_THAT(
@@ -1106,8 +1105,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   // Add one-directional video, from caller to callee.
-  rtc::scoped_refptr<VideoTrackInterface> track =
-      caller()->CreateLocalVideoTrack();
+  scoped_refptr<VideoTrackInterface> track = caller()->CreateLocalVideoTrack();
 
   RtpTransceiverInit video_transceiver_init;
   video_transceiver_init.stream_ids = {"video1"};
@@ -1122,7 +1120,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   // Add receive direction.
   video_sender->SetDirectionWithError(RtpTransceiverDirection::kSendRecv);
 
-  rtc::scoped_refptr<VideoTrackInterface> callee_track =
+  scoped_refptr<VideoTrackInterface> callee_track =
       callee()->CreateLocalVideoTrack();
 
   callee()->AddTrack(callee_track);
@@ -1170,7 +1168,7 @@ void RemoveBundleGroupSsrcsAndMidExtension(
   sdp->description()->RemoveGroupByName("BUNDLE");
   for (ContentInfo& content : sdp->description()->contents()) {
     MediaContentDescription* media = content.media_description();
-    cricket::RtpHeaderExtensions extensions = media->rtp_header_extensions();
+    RtpHeaderExtensions extensions = media->rtp_header_extensions();
     extensions.erase(std::remove_if(extensions.begin(), extensions.end(),
                                     [](const RtpExtension& extension) {
                                       return extension.uri ==
@@ -1219,7 +1217,7 @@ void ModifyPayloadTypesAndRemoveMidExtension(
   int pt = 96;
   for (ContentInfo& content : sdp->description()->contents()) {
     MediaContentDescription* media = content.media_description();
-    cricket::RtpHeaderExtensions extensions = media->rtp_header_extensions();
+    RtpHeaderExtensions extensions = media->rtp_header_extensions();
     extensions.erase(std::remove_if(extensions.begin(), extensions.end(),
                                     [](const RtpExtension& extension) {
                                       return extension.uri ==
@@ -1227,7 +1225,7 @@ void ModifyPayloadTypesAndRemoveMidExtension(
                                     }),
                      extensions.end());
     media->set_rtp_header_extensions(extensions);
-    media->set_codecs({cricket::CreateVideoCodec(pt++, "VP8")});
+    media->set_codecs({CreateVideoCodec(pt++, "VP8")});
   }
 }
 
@@ -1322,7 +1320,7 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithTwoVideoTracks) {
 static void MakeSpecCompliantMaxBundleOffer(
     std::unique_ptr<SessionDescriptionInterface>& sdp) {
   bool first = true;
-  for (cricket::ContentInfo& content : sdp->description()->contents()) {
+  for (ContentInfo& content : sdp->description()->contents()) {
     if (first) {
       first = false;
       continue;
@@ -1330,15 +1328,14 @@ static void MakeSpecCompliantMaxBundleOffer(
     content.bundle_only = true;
   }
   first = true;
-  for (cricket::TransportInfo& transport :
-       sdp->description()->transport_infos()) {
+  for (TransportInfo& transport : sdp->description()->transport_infos()) {
     if (first) {
       first = false;
       continue;
     }
     transport.description.ice_ufrag.clear();
     transport.description.ice_pwd.clear();
-    transport.description.connection_role = cricket::CONNECTIONROLE_NONE;
+    transport.description.connection_role = CONNECTIONROLE_NONE;
     transport.description.identity_fingerprint.reset(nullptr);
   }
 }
@@ -1517,8 +1514,7 @@ TEST_P(PeerConnectionIntegrationTest, NewGetStatsManyAudioAndManyVideoStreams) {
       audio_sender_1->track()->id(), video_sender_1->track()->id(),
       audio_sender_2->track()->id(), video_sender_2->track()->id()};
 
-  rtc::scoped_refptr<const RTCStatsReport> caller_report =
-      caller()->NewGetStats();
+  scoped_refptr<const RTCStatsReport> caller_report = caller()->NewGetStats();
   ASSERT_TRUE(caller_report);
   auto outbound_stream_stats =
       caller_report->GetStatsOfType<RTCOutboundRtpStreamStats>();
@@ -1542,8 +1538,7 @@ TEST_P(PeerConnectionIntegrationTest, NewGetStatsManyAudioAndManyVideoStreams) {
   }
   EXPECT_THAT(outbound_track_ids, UnorderedElementsAreArray(track_ids));
 
-  rtc::scoped_refptr<const RTCStatsReport> callee_report =
-      callee()->NewGetStats();
+  scoped_refptr<const RTCStatsReport> callee_report = callee()->NewGetStats();
   ASSERT_TRUE(callee_report);
   auto inbound_stream_stats =
       callee_report->GetStatsOfType<RTCInboundRtpStreamStats>();
@@ -1583,7 +1578,7 @@ TEST_P(PeerConnectionIntegrationTest,
 
   // We received a frame, so we should have nonzero "bytes received" stats for
   // the unsignaled stream, if stats are working for it.
-  rtc::scoped_refptr<const RTCStatsReport> report = callee()->NewGetStats();
+  scoped_refptr<const RTCStatsReport> report = callee()->NewGetStats();
   ASSERT_NE(nullptr, report);
   auto inbound_stream_stats =
       report->GetStatsOfType<RTCInboundRtpStreamStats>();
@@ -1635,7 +1630,7 @@ TEST_P(PeerConnectionIntegrationTest,
   media_expectations.CalleeExpectsSomeVideo(1);
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
 
-  rtc::scoped_refptr<const RTCStatsReport> report = callee()->NewGetStats();
+  scoped_refptr<const RTCStatsReport> report = callee()->NewGetStats();
   ASSERT_NE(nullptr, report);
 
   auto inbound_rtps = report->GetStatsOfType<RTCInboundRtpStreamStats>();
@@ -1679,7 +1674,7 @@ TEST_P(PeerConnectionIntegrationTest, Dtls10CipherStatsAndUmaMetrics) {
   EXPECT_THAT(WaitUntil(
                   [&] {
                     return SSLStreamAdapter::IsAcceptableCipher(
-                        caller()->OldGetStats()->DtlsCipher(), rtc::KT_DEFAULT);
+                        caller()->OldGetStats()->DtlsCipher(), KT_DEFAULT);
                   },
                   ::testing::IsTrue()),
               IsRtcOk());
@@ -1704,7 +1699,7 @@ TEST_P(PeerConnectionIntegrationTest, Dtls12CipherStatsAndUmaMetrics) {
   EXPECT_THAT(WaitUntil(
                   [&] {
                     return SSLStreamAdapter::IsAcceptableCipher(
-                        caller()->OldGetStats()->DtlsCipher(), rtc::KT_DEFAULT);
+                        caller()->OldGetStats()->DtlsCipher(), KT_DEFAULT);
                   },
                   ::testing::IsTrue()),
               IsRtcOk());
@@ -1878,9 +1873,9 @@ TEST_P(PeerConnectionIntegrationTest, IceStatesReachCompletion) {
               IsRtcOk());
 }
 
-constexpr int kOnlyLocalPorts = cricket::PORTALLOCATOR_DISABLE_STUN |
-                                cricket::PORTALLOCATOR_DISABLE_RELAY |
-                                cricket::PORTALLOCATOR_DISABLE_TCP;
+constexpr int kOnlyLocalPorts = PORTALLOCATOR_DISABLE_STUN |
+                                PORTALLOCATOR_DISABLE_RELAY |
+                                PORTALLOCATOR_DISABLE_TCP;
 
 // Use a mock resolver to resolve the hostname back to the original IP on both
 // sides and check that the ICE connection connects.
@@ -1976,7 +1971,7 @@ class PeerConnectionIntegrationIceStatesTest
   }
 
   bool TestIPv6() {
-    return (port_allocator_flags_ & cricket::PORTALLOCATOR_ENABLE_IPV6);
+    return (port_allocator_flags_ & PORTALLOCATOR_ENABLE_IPV6);
   }
 
   std::vector<SocketAddress> CallerAddresses() {
@@ -2033,7 +2028,7 @@ TEST_P(PeerConnectionIntegrationIceStatesTestWithFakeClock,
   // Block connections to/from the caller and wait for ICE to become
   // disconnected.
   for (const auto& caller_address : CallerAddresses()) {
-    firewall()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, caller_address);
+    firewall()->AddRule(false, FP_ANY, FD_ANY, caller_address);
   }
 
   PeerConnectionInterface::RTCConfiguration config;
@@ -2115,14 +2110,14 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, MAYBE_VerifyBestConnection) {
                             kIceCandidatePairHostPublicHostPublic));
 }
 
-constexpr uint32_t kFlagsIPv4NoStun = cricket::PORTALLOCATOR_DISABLE_TCP |
-                                      cricket::PORTALLOCATOR_DISABLE_STUN |
-                                      cricket::PORTALLOCATOR_DISABLE_RELAY;
+constexpr uint32_t kFlagsIPv4NoStun = PORTALLOCATOR_DISABLE_TCP |
+                                      PORTALLOCATOR_DISABLE_STUN |
+                                      PORTALLOCATOR_DISABLE_RELAY;
 constexpr uint32_t kFlagsIPv6NoStun =
-    cricket::PORTALLOCATOR_DISABLE_TCP | cricket::PORTALLOCATOR_DISABLE_STUN |
-    cricket::PORTALLOCATOR_ENABLE_IPV6 | cricket::PORTALLOCATOR_DISABLE_RELAY;
+    PORTALLOCATOR_DISABLE_TCP | PORTALLOCATOR_DISABLE_STUN |
+    PORTALLOCATOR_ENABLE_IPV6 | PORTALLOCATOR_DISABLE_RELAY;
 constexpr uint32_t kFlagsIPv4Stun =
-    cricket::PORTALLOCATOR_DISABLE_TCP | cricket::PORTALLOCATOR_DISABLE_RELAY;
+    PORTALLOCATOR_DISABLE_TCP | PORTALLOCATOR_DISABLE_RELAY;
 
 INSTANTIATE_TEST_SUITE_P(
     PeerConnectionIntegrationTest,
@@ -2254,11 +2249,11 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithIceRenomination) {
   // Sanity check that ICE renomination was actually negotiated.
   const SessionDescription* desc =
       caller()->pc()->local_description()->description();
-  for (const cricket::TransportInfo& info : desc->transport_infos()) {
+  for (const TransportInfo& info : desc->transport_infos()) {
     ASSERT_THAT(info.description.transport_options, Contains("renomination"));
   }
   desc = callee()->pc()->local_description()->description();
-  for (const cricket::TransportInfo& info : desc->transport_infos()) {
+  for (const TransportInfo& info : desc->transport_infos()) {
     ASSERT_THAT(info.description.transport_options, Contains("renomination"));
   }
   MediaExpectations media_expectations;
@@ -2600,8 +2595,7 @@ TEST_P(PeerConnectionIntegrationTestWithFakeClock,
   caller()->AddAudioTrack();
 
   // Call getStats, assert there are no candidates.
-  rtc::scoped_refptr<const RTCStatsReport> first_report =
-      caller()->NewGetStats();
+  scoped_refptr<const RTCStatsReport> first_report = caller()->NewGetStats();
   ASSERT_TRUE(first_report);
   auto first_candidate_stats =
       first_report->GetStatsOfType<RTCLocalIceCandidateStats>();
@@ -2611,8 +2605,7 @@ TEST_P(PeerConnectionIntegrationTestWithFakeClock,
   // callee.
   caller()->CreateAndSetAndSignalOffer();
   // Call getStats again, assert there are candidates now.
-  rtc::scoped_refptr<const RTCStatsReport> second_report =
-      caller()->NewGetStats();
+  scoped_refptr<const RTCStatsReport> second_report = caller()->NewGetStats();
   ASSERT_TRUE(second_report);
   auto second_candidate_stats =
       second_report->GetStatsOfType<RTCLocalIceCandidateStats>();
@@ -2637,8 +2630,7 @@ TEST_P(PeerConnectionIntegrationTestWithFakeClock,
               IsRtcOk());
 
   // Call getStats, assert there are no candidates.
-  rtc::scoped_refptr<const RTCStatsReport> first_report =
-      caller()->NewGetStats();
+  scoped_refptr<const RTCStatsReport> first_report = caller()->NewGetStats();
   ASSERT_TRUE(first_report);
   auto first_candidate_stats =
       first_report->GetStatsOfType<RTCRemoteIceCandidateStats>();
@@ -2658,8 +2650,7 @@ TEST_P(PeerConnectionIntegrationTestWithFakeClock,
   ASSERT_TRUE(result.value().ok());
 
   // Call getStats again, assert there is a remote candidate now.
-  rtc::scoped_refptr<const RTCStatsReport> second_report =
-      caller()->NewGetStats();
+  scoped_refptr<const RTCStatsReport> second_report = caller()->NewGetStats();
   ASSERT_TRUE(second_report);
   auto second_candidate_stats =
       second_report->GetStatsOfType<RTCRemoteIceCandidateStats>();
@@ -2731,7 +2722,7 @@ TEST_P(PeerConnectionIntegrationTest, TCPUsedForTurnConnections) {
 
   // Enable TCP for the fake turn server.
   CreateTurnServer(turn_server_internal_address, turn_server_external_address,
-                   cricket::PROTO_TCP);
+                   PROTO_TCP);
 
   PeerConnectionInterface::IceServer ice_server;
   ice_server.urls.push_back("turn:88.88.88.0:3478?transport=tcp");
@@ -2781,7 +2772,7 @@ TEST_P(PeerConnectionIntegrationTest,
   // Enable TCP-TLS for the fake turn server. We need to pass in 88.88.88.0 so
   // that host name verification passes on the fake certificate.
   CreateTurnServer(turn_server_internal_address, turn_server_external_address,
-                   cricket::PROTO_TLS, "88.88.88.0");
+                   PROTO_TLS, "88.88.88.0");
 
   PeerConnectionInterface::IceServer ice_server;
   ice_server.urls.push_back("turns:88.88.88.0:3478?transport=tcp");
@@ -2847,7 +2838,7 @@ TEST_P(PeerConnectionIntegrationTest, IceTransportFactoryUsedForConnections) {
                                              /*reset_decoder_factory=*/false);
   ASSERT_TRUE(wrapper);
   wrapper->CreateDataChannel();
-  auto observer = rtc::make_ref_counted<MockSetSessionDescriptionObserver>();
+  auto observer = make_ref_counted<MockSetSessionDescriptionObserver>();
   wrapper->pc()->SetLocalDescription(observer.get(),
                                      wrapper->CreateOfferAndWait().release());
 }
@@ -2875,10 +2866,9 @@ TEST_P(PeerConnectionIntegrationTest, CodecNamesAreCaseInsensitive) {
         ASSERT_NE(nullptr, audio);
         auto audio_codecs = audio->codecs();
         audio_codecs.erase(
-            std::remove_if(audio_codecs.begin(), audio_codecs.end(),
-                           [](const cricket::Codec& codec) {
-                             return codec.name != "opus";
-                           }),
+            std::remove_if(
+                audio_codecs.begin(), audio_codecs.end(),
+                [](const Codec& codec) { return codec.name != "opus"; }),
             audio_codecs.end());
         ASSERT_EQ(1u, audio_codecs.size());
         audio_codecs[0].name = "OpUs";
@@ -2889,10 +2879,9 @@ TEST_P(PeerConnectionIntegrationTest, CodecNamesAreCaseInsensitive) {
         ASSERT_NE(nullptr, video);
         auto video_codecs = video->codecs();
         video_codecs.erase(
-            std::remove_if(video_codecs.begin(), video_codecs.end(),
-                           [](const cricket::Codec& codec) {
-                             return codec.name != "VP8";
-                           }),
+            std::remove_if(
+                video_codecs.begin(), video_codecs.end(),
+                [](const Codec& codec) { return codec.name != "VP8"; }),
             video_codecs.end());
         ASSERT_EQ(1u, video_codecs.size());
         video_codecs[0].name = "vP8";
@@ -3105,9 +3094,8 @@ TEST_F(PeerConnectionIntegrationTestPlanB, RemoveAndAddTrackWithNewStreamId) {
   ConnectFakeSignaling();
 
   // Add track using stream 1, do offer/answer.
-  rtc::scoped_refptr<AudioTrackInterface> track =
-      caller()->CreateLocalAudioTrack();
-  rtc::scoped_refptr<RtpSenderInterface> sender =
+  scoped_refptr<AudioTrackInterface> track = caller()->CreateLocalAudioTrack();
+  scoped_refptr<RtpSenderInterface> sender =
       caller()->AddTrack(track, {"stream_1"});
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_THAT(
@@ -3568,7 +3556,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   SetSignalIceCandidates(false);  // Workaround candidate outrace sdp.
   caller()->AddVideoTrack();
   callee()->AddVideoTrack();
-  auto observer = rtc::make_ref_counted<MockSetSessionDescriptionObserver>();
+  auto observer = make_ref_counted<MockSetSessionDescriptionObserver>();
   callee()->pc()->SetLocalDescription(observer.get(),
                                       callee()->CreateOfferAndWait().release());
   EXPECT_THAT(
@@ -3589,8 +3577,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
 
   ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
 
-  auto sld_observer =
-      rtc::make_ref_counted<MockSetSessionDescriptionObserver>();
+  auto sld_observer = make_ref_counted<MockSetSessionDescriptionObserver>();
   callee()->pc()->SetLocalDescription(sld_observer.get(),
                                       callee()->CreateOfferAndWait().release());
   EXPECT_THAT(
@@ -3598,8 +3585,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
       IsRtcOk());
   EXPECT_EQ(sld_observer->error(), "");
 
-  auto srd_observer =
-      rtc::make_ref_counted<MockSetSessionDescriptionObserver>();
+  auto srd_observer = make_ref_counted<MockSetSessionDescriptionObserver>();
   callee()->pc()->SetRemoteDescription(
       srd_observer.get(), caller()->CreateOfferAndWait().release());
   EXPECT_THAT(
@@ -3627,9 +3613,8 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
       if (codec.name == "H264") {
         std::string value;
         // The parameter is not supposed to be present in SDP by default.
-        EXPECT_FALSE(
-            codec.GetParam(cricket::kH264FmtpSpsPpsIdrInKeyframe, &value));
-        codec.SetParam(std::string(cricket::kH264FmtpSpsPpsIdrInKeyframe),
+        EXPECT_FALSE(codec.GetParam(kH264FmtpSpsPpsIdrInKeyframe, &value));
+        codec.SetParam(std::string(kH264FmtpSpsPpsIdrInKeyframe),
                        std::string(""));
       }
     }
@@ -3651,8 +3636,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
         for (auto&& codec : video->codecs()) {
           if (codec.name == "H264") {
             std::string value;
-            EXPECT_TRUE(
-                codec.GetParam(cricket::kH264FmtpSpsPpsIdrInKeyframe, &value));
+            EXPECT_TRUE(codec.GetParam(kH264FmtpSpsPpsIdrInKeyframe, &value));
           }
         }
       });
@@ -4163,7 +4147,7 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndRtpSenderVideoEncoderSelector) {
       CreateOneDirectionalPeerConnectionWrappers(/*caller_to_callee=*/true));
   ConnectFakeSignaling();
   // Add one-directional video, from caller to callee.
-  rtc::scoped_refptr<VideoTrackInterface> caller_track =
+  scoped_refptr<VideoTrackInterface> caller_track =
       caller()->CreateLocalVideoTrack();
   auto sender = caller()->AddTrack(caller_track);
   PeerConnectionInterface::RTCOfferAnswerOptions options;
@@ -4195,7 +4179,7 @@ TEST_P(PeerConnectionIntegrationTest,
       CreateOneDirectionalPeerConnectionWrappers(/*caller_to_callee=*/true));
   ConnectFakeSignaling();
   // Add one-directional video, from caller to callee.
-  rtc::scoped_refptr<VideoTrackInterface> caller_track =
+  scoped_refptr<VideoTrackInterface> caller_track =
       caller()->CreateLocalVideoTrack();
   auto sender = caller()->AddTrack(caller_track);
   PeerConnectionInterface::RTCOfferAnswerOptions options;
@@ -4235,7 +4219,7 @@ TEST_P(PeerConnectionIntegrationTest,
 }
 
 int NacksReceivedCount(PeerConnectionIntegrationWrapper& pc) {
-  rtc::scoped_refptr<const RTCStatsReport> report = pc.NewGetStats();
+  scoped_refptr<const RTCStatsReport> report = pc.NewGetStats();
   auto sender_stats = report->GetStatsOfType<RTCOutboundRtpStreamStats>();
   if (sender_stats.size() != 1) {
     ADD_FAILURE();
@@ -4248,7 +4232,7 @@ int NacksReceivedCount(PeerConnectionIntegrationWrapper& pc) {
 }
 
 int NacksSentCount(PeerConnectionIntegrationWrapper& pc) {
-  rtc::scoped_refptr<const RTCStatsReport> report = pc.NewGetStats();
+  scoped_refptr<const RTCStatsReport> report = pc.NewGetStats();
   auto receiver_stats = report->GetStatsOfType<RTCInboundRtpStreamStats>();
   if (receiver_stats.size() != 1) {
     ADD_FAILURE();
@@ -4276,14 +4260,14 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
       [](std::unique_ptr<SessionDescriptionInterface>& sdp) {
         for (ContentInfo& content : sdp->description()->contents()) {
           MediaContentDescription* media = content.media_description();
-          std::vector<cricket::Codec> codecs = media->codecs();
-          std::vector<cricket::Codec> codecs_out;
-          for (cricket::Codec codec : codecs) {
+          std::vector<Codec> codecs = media->codecs();
+          std::vector<Codec> codecs_out;
+          for (Codec codec : codecs) {
             if (codec.name == "opus") {
-              codec.AddFeedbackParam(cricket::FeedbackParam(
-                  cricket::kRtcpFbParamNack, cricket::kParamValueEmpty));
-              codec.AddFeedbackParam(cricket::FeedbackParam(
-                  cricket::kRtcpFbParamRrtr, cricket::kParamValueEmpty));
+              codec.AddFeedbackParam(
+                  FeedbackParam(kRtcpFbParamNack, kParamValueEmpty));
+              codec.AddFeedbackParam(
+                  FeedbackParam(kRtcpFbParamRrtr, kParamValueEmpty));
               codecs_out.push_back(codec);
             }
           }
@@ -4331,12 +4315,12 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan, VideoPacketLossCausesNack) {
       [](std::unique_ptr<SessionDescriptionInterface>& sdp) {
         for (ContentInfo& content : sdp->description()->contents()) {
           MediaContentDescription* media = content.media_description();
-          std::vector<cricket::Codec> codecs = media->codecs();
-          std::vector<cricket::Codec> codecs_out;
-          for (const cricket::Codec& codec : codecs) {
+          std::vector<Codec> codecs = media->codecs();
+          std::vector<Codec> codecs_out;
+          for (const Codec& codec : codecs) {
             if (codec.name == "VP8") {
-              ASSERT_TRUE(codec.HasFeedbackParam(cricket::FeedbackParam(
-                  cricket::kRtcpFbParamNack, cricket::kParamValueEmpty)));
+              ASSERT_TRUE(codec.HasFeedbackParam(
+                  FeedbackParam(kRtcpFbParamNack, kParamValueEmpty)));
               codecs_out.push_back(codec);
             }
           }
@@ -4433,7 +4417,7 @@ int ReassignPayloadIds(std::unique_ptr<SessionDescriptionInterface>& sdp) {
     if (!content.media_description()) {
       continue;
     }
-    std::vector<cricket::Codec> codecs = content.media_description()->codecs();
+    std::vector<Codec> codecs = content.media_description()->codecs();
     int left = 0;
     int right = codecs.size() - 1;
     while (left < right) {
@@ -4499,12 +4483,11 @@ int SetNewSsrcs(std::unique_ptr<SessionDescriptionInterface>& sdp) {
 }
 
 void SetNewFingerprint(std::unique_ptr<SessionDescriptionInterface>& sdp) {
-  auto identity = rtc::SSLIdentity::Create("NewIdentity", rtc::KT_DEFAULT);
-  auto new_fingerprint =
-      rtc::SSLFingerprint::CreateUnique("sha-256", *identity);
+  auto identity = SSLIdentity::Create("NewIdentity", KT_DEFAULT);
+  auto new_fingerprint = SSLFingerprint::CreateUnique("sha-256", *identity);
   for (auto& transport_info : sdp->description()->transport_infos()) {
     transport_info.description.identity_fingerprint =
-        absl::WrapUnique(new rtc::SSLFingerprint(*new_fingerprint));
+        absl::WrapUnique(new SSLFingerprint(*new_fingerprint));
   }
 }
 
@@ -4584,7 +4567,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
               IsRtcOk());
 
   for (const auto& pair : {caller(), callee()}) {
-    rtc::scoped_refptr<const RTCStatsReport> report = pair->NewGetStats();
+    scoped_refptr<const RTCStatsReport> report = pair->NewGetStats();
     ASSERT_TRUE(report);
     auto inbound_stream_stats =
         report->GetStatsOfType<RTCInboundRtpStreamStats>();
@@ -4646,7 +4629,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
               IsRtcOk());
 
   for (const auto& pair : {caller(), callee()}) {
-    rtc::scoped_refptr<const RTCStatsReport> report = pair->NewGetStats();
+    scoped_refptr<const RTCStatsReport> report = pair->NewGetStats();
     ASSERT_TRUE(report);
     auto inbound_stream_stats =
         report->GetStatsOfType<RTCInboundRtpStreamStats>();
@@ -4699,7 +4682,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
               IsRtcOk());
 
   for (const auto& pair : {caller(), callee()}) {
-    rtc::scoped_refptr<const RTCStatsReport> report = pair->NewGetStats();
+    scoped_refptr<const RTCStatsReport> report = pair->NewGetStats();
     ASSERT_TRUE(report);
     auto inbound_stream_stats =
         report->GetStatsOfType<RTCInboundRtpStreamStats>();
@@ -4777,7 +4760,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   auto munger = [](std::unique_ptr<SessionDescriptionInterface>& sdp) {
     auto video = GetFirstVideoContentDescription(sdp->description());
     auto codecs = video->codecs();
-    std::optional<cricket::Codec> replacement_codec;
+    std::optional<Codec> replacement_codec;
     for (auto&& codec : codecs) {
       if (codec.name == "AV1") {
         replacement_codec = codec;
@@ -4846,8 +4829,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
       "a=rtcp-fb:98 transport-cc\r\n"
       "a=rtpmap:99 rtx/90000\r\n"
       "a=fmtp:99 apt=96\r\n";
-  auto srd_observer =
-      rtc::make_ref_counted<MockSetSessionDescriptionObserver>();
+  auto srd_observer = make_ref_counted<MockSetSessionDescriptionObserver>();
   std::unique_ptr<SessionDescriptionInterface> remote_offer =
       CreateSessionDescription(SdpType::kOffer, remote_offer_string);
   EXPECT_TRUE(caller()->SetRemoteDescription(std::move(remote_offer)));
@@ -4861,17 +4843,69 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   auto codecs =
       answer->description()->contents()[0].media_description()->codecs();
   std::vector<int> apt_values;
-  for (const cricket::Codec& codec : codecs) {
-    if (codec.GetResiliencyType() == cricket::Codec::ResiliencyType::kRtx) {
-      const auto apt_it =
-          codec.params.find(cricket::kCodecParamAssociatedPayloadType);
+  for (const Codec& codec : codecs) {
+    if (codec.GetResiliencyType() == Codec::ResiliencyType::kRtx) {
+      const auto apt_it = codec.params.find(kCodecParamAssociatedPayloadType);
       int apt_value;
-      ASSERT_TRUE(rtc::FromString(apt_it->second, &apt_value));
+      ASSERT_TRUE(FromString(apt_it->second, &apt_value));
       apt_values.push_back(apt_value);
     }
   }
   for (int apt : apt_values) {
-    EXPECT_THAT(codecs, Contains(Field("id", &cricket::Codec::id, apt)));
+    EXPECT_THAT(codecs, Contains(Field("id", &Codec::id, apt)));
+  }
+}
+
+// This test documents the behavior expected in
+// https://issues.webrtc.org/412904801. It does not constitute a promise
+// that this mechanism will go on working.
+TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
+       MungeRawPacketizationChangesSubsequentSections) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  // Add first video track.
+  caller()->AddVideoTrack();
+  auto offer = caller()->CreateOfferAndWait();
+  EXPECT_EQ(offer->description()->contents().size(), 1U);
+  // Observe that packetization is NOT raw.
+  for (const auto& content : offer->description()->contents()) {
+    for (const auto& codec : content.media_description()->codecs()) {
+      ASSERT_THAT(codec.packetization, Eq(std::nullopt));
+    }
+  }
+  // Mangle packetization to be raw.
+  for (auto& content : offer->description()->contents()) {
+    std::vector<Codec> codecs = content.media_description()->codecs();
+    bool mangled_raw = false;
+    for (auto& codec : codecs) {
+      if (codec.name == "VP8" && codec.type == Codec::Type::kVideo) {
+        codec.packetization = kPacketizationParamRaw;
+        mangled_raw = true;
+      }
+    }
+    ASSERT_TRUE(mangled_raw);
+    content.media_description()->set_codecs(codecs);
+  }
+  // Set local description.
+  auto observer = make_ref_counted<MockSetSessionDescriptionObserver>();
+  caller()->pc()->SetLocalDescription(observer.get(), offer.release());
+  // Wait for SLD to complete.
+  EXPECT_THAT(
+      WaitUntil([&] { return observer->called(); }, ::testing::IsTrue()),
+      IsRtcOk());
+  // Add a second video track.
+  caller()->AddVideoTrack();
+  auto offer2 = caller()->CreateOfferAndWait();
+  // Observe that packetization is raw on BOTH media sections.
+  ASSERT_THAT(offer2, NotNull());
+  EXPECT_EQ(offer2->description()->contents().size(), 2U);
+  for (const auto& content : offer2->description()->contents()) {
+    for (const auto& codec : content.media_description()->codecs()) {
+      if (codec.type == Codec::Type::kVideo && codec.name == "VP8") {
+        EXPECT_EQ(codec.packetization, kPacketizationParamRaw);
+      } else {
+        EXPECT_THAT(codec.packetization, Eq(std::nullopt));
+      }
+    }
   }
 }
 

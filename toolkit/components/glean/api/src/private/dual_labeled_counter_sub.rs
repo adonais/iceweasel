@@ -9,7 +9,7 @@ use glean::traits::Counter;
 use crate::ipc::with_ipc_payload;
 #[cfg(test)]
 use crate::private::MetricId;
-use crate::private::{BaseMetricId, CounterMetric};
+use crate::private::{BaseMetric, BaseMetricId, BaseMetricResult, CounterMetric};
 
 use std::collections::HashMap;
 
@@ -123,6 +123,19 @@ impl Counter for DualLabeledCounterSubMetric {
                 "Cannot get the number of recorded errors for {:?} in non-parent process!",
                 id
             ),
+        }
+    }
+}
+
+impl BaseMetric for DualLabeledCounterSubMetric {
+    type BaseMetricT = CounterMetric;
+    fn get_base_metric<'a>(&'a self) -> BaseMetricResult<'a, Self::BaseMetricT> {
+        match self {
+            DualLabeledCounterSubMetric::Parent(p) => BaseMetricResult::BaseMetric(&p),
+            DualLabeledCounterSubMetric::Child { id, dual_labels } => {
+                // TODO: get the category in here too
+                BaseMetricResult::IndexLabelPair(*id, &dual_labels.0)
+            }
         }
     }
 }

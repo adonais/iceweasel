@@ -7,8 +7,8 @@
 #define _mozilla_dom_ServiceWorkerRegistrationDescriptor_h
 
 #include "mozilla/Maybe.h"
-#include "mozilla/dom/ServiceWorkerDescriptor.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/ServiceWorkerDescriptor.h"
 
 namespace mozilla {
 

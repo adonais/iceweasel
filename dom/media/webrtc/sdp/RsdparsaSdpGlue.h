@@ -7,8 +7,9 @@
 #define _RUSTSDPGLUE_H_
 
 #include <string>
-#include <vector>
 #include <utility>
+#include <vector>
+
 #include "SdpEnum.h"
 #include "mozilla/UniquePtr.h"
 #include "sdp/RsdparsaSdpInc.h"

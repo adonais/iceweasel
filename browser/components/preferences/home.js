@@ -8,6 +8,10 @@
 
 // HOME PAGE
 
+ChromeUtils.defineESModuleGetters(this, {
+  ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
+});
+
 /*
  * Preferences:
  *
@@ -187,11 +191,9 @@ var gHomePane = {
         );
         if (!currentOption) {
           let option = document.createXULElement("menuitem");
-          option.classList.add("addon-with-favicon");
           option.value = addon.id;
           option.label = addon.name;
           menupopup.append(option);
-          option.querySelector("image").src = addon.iconURL;
         }
         let setting = extensionOptions.find(o => o.id == addon.id);
         if (
@@ -438,7 +440,7 @@ var gHomePane = {
       this._renderCustomSettings();
       this._setInputDisabledStates(false);
     } else {
-      if (HomePage.get().startsWith("moz-extension:")) {
+      if (ExtensionUtils.isExtensionUrl(HomePage.get())) {
         controllingExtension = await getControllingExtension(
           PREF_SETTING_TYPE,
           HOMEPAGE_OVERRIDE_KEY

@@ -30,7 +30,12 @@ class AboutHomeBinding(
             .map { it.selectedTab?.content?.url }
             .distinctUntilChanged()
             .collect { url ->
-                if (url == ABOUT_HOME_URL && navController.currentDestination?.id != R.id.homeFragment) {
+                if (url == ABOUT_HOME_URL &&
+                    !listOf(
+                        R.id.homeFragment,
+                        R.id.onboardingFragment,
+                    ).contains(navController.currentDestination?.id)
+                ) {
                     navController.navigate(NavGraphDirections.actionGlobalHome())
                 }
             }

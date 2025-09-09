@@ -6,10 +6,10 @@
 #ifndef mozilla_dom_XPathEvaluator_h
 #define mozilla_dom_XPathEvaluator_h
 
-#include "mozilla/dom/NonRefcountedDOMObject.h"
-#include "nsString.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/NonRefcountedDOMObject.h"
+#include "nsString.h"
 
 class nsINode;
 class txIParseContext;

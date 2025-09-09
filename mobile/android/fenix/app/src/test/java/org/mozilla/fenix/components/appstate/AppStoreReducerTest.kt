@@ -176,6 +176,7 @@ class AppStoreReducerTest {
             AppAction.BookmarkAction.BookmarkAdded(
                 guidToEdit = guidToEdit,
                 parentNode = parentNode,
+                source = MetricsUtils.BookmarkAction.Source.TEST,
             ),
         )
             .joinBlocking()

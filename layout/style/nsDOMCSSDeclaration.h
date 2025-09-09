@@ -16,6 +16,10 @@
 #include "nsCOMPtr.h"
 #include "nsCompatibility.h"
 #include "nsICSSDeclaration.h"
+// The following include provides nsCSSProps::PropertyIDLName(), used by
+// generated CSS2PropertiesBinding.cpp
+// TODO: Ideally it would only be included from there.
+#include "nsCSSProps.h"
 
 class nsIPrincipal;
 struct JSContext;

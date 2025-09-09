@@ -32,8 +32,11 @@
   background-color: var(--status-code-color-2xx);
 }
 
+/* 3xx are redirect http status, "cached" status code requests are read from
+   local cache (in a sense redirected to local cache) */
+.status-code[data-status-code="cached"],
 .status-code[data-code^="3"] {
-  background-color: var(--status-code-color-3xx);
+  background-color: var(--status-code-color-redirect-or-cache);
 }
 
 .status-code[data-code^="4"] {
@@ -53,7 +56,7 @@
   background-color: var(--status-code-color-5xx);
 }
 
-.status-code:not([data-code^="3"], .status-code-blocked) {
+.status-code:not([data-status-code="cached"], [data-code^="3"], .status-code-blocked) {
   color: var(--theme-body-background);
 }
 

@@ -6,12 +6,12 @@
 #if !defined(DXVA2Manager_h_)
 #  define DXVA2Manager_h_
 
+#  include "D3D11TextureWrapper.h"
 #  include "MediaInfo.h"
 #  include "WMF.h"
+#  include "d3d11.h"
 #  include "mozilla/Mutex.h"
 #  include "mozilla/gfx/Rect.h"
-#  include "d3d11.h"
-#  include "D3D11TextureWrapper.h"
 
 namespace mozilla {
 

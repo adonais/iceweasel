@@ -7,11 +7,10 @@
 #ifndef PolicyContainer_h___
 #define PolicyContainer_h___
 
-#include "nsIPolicyContainer.h"
-
 #include "nsCOMPtr.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsIIntegrityPolicy.h"
+#include "nsIPolicyContainer.h"
 
 namespace mozilla::ipc {
 class PolicyContainerArgs;

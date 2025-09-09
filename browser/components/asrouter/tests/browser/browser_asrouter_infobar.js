@@ -12,6 +12,40 @@ const { CFRMessageProvider } = ChromeUtils.importESModule(
 const { ASRouter } = ChromeUtils.importESModule(
   "resource:///modules/asrouter/ASRouter.sys.mjs"
 );
+const { SpecialMessageActions } = ChromeUtils.importESModule(
+  "resource://messaging-system/lib/SpecialMessageActions.sys.mjs"
+);
+
+// Helper to record impressions in ASRouter state when dispatching an IMPRESSION
+// action
+function recordImpression(action) {
+  if (action.type === "IMPRESSION") {
+    let imps = ASRouter.state.messageImpressions || {};
+    const { id } = action.data;
+    ASRouter.state.messageImpressions = {
+      ...imps,
+      [id]: [...(imps[id] || []), {}],
+    };
+  }
+}
+
+// Clean up any prefs written via SET_PREF actions
+registerCleanupFunction(() => {
+  const prefsToClear = [
+    "messaging-system-action.embedded-link-sma",
+    "messaging-system-action.impressionActionTest",
+    "messaging-system-action.onceTest",
+    "messaging-system-action.multi.once",
+    "messaging-system-action.multi.every",
+  ];
+  for (let name of prefsToClear) {
+    try {
+      Services.prefs.clearUserPref(name);
+    } catch (e) {
+      info(`${name} pref wasn't set.`);
+    }
+  }
+});
 
 add_task(async function show_and_send_telemetry() {
   let message = (await CFRMessageProvider.getMessages()).find(
@@ -331,9 +365,6 @@ add_task(async function test_specialMessageAction_onLinkClick() {
   const browser = win.gBrowser.selectedBrowser;
   const box = win.gNotificationBox;
 
-  const { SpecialMessageActions } = ChromeUtils.importESModule(
-    "resource://messaging-system/lib/SpecialMessageActions.sys.mjs"
-  );
   let handleStub = sinon.stub(SpecialMessageActions, "handleAction");
 
   const parts = [
@@ -564,6 +595,7 @@ add_task(async function test_buildMessageFragment_withInlineAnchors() {
   sinon
     .stub(RemoteL10n, "formatLocalizableText")
     .resolves('<a data-l10n-name="foo">Click Here</a>');
+  let handleStub = sinon.stub(SpecialMessageActions, "handleAction");
 
   const linkUrl = "https://example.com/";
   const message = {
@@ -571,7 +603,7 @@ add_task(async function test_buildMessageFragment_withInlineAnchors() {
     content: {
       type: "global",
       priority: win.gNotificationBox.PRIORITY_INFO_LOW,
-      text: { string_id: "test-id" },
+      text: { string_id: "test-id", args: { where: "tabshifted" } },
       linkUrls: { foo: linkUrl },
       buttons: [{ label: "Close", action: { type: "CANCEL" } }],
     },
@@ -601,6 +633,15 @@ add_task(async function test_buildMessageFragment_withInlineAnchors() {
     rendered.textContent,
     "Click Here",
     "Rendered anchor text matches"
+  );
+
+  rendered.click();
+  Assert.equal(handleStub.callCount, 1, "handleAction called once");
+  let [actionArg] = handleStub.firstCall.args;
+  Assert.equal(
+    actionArg.data.where,
+    message.content.text.args.where,
+    "handleAction receives correct where value"
   );
 
   // Cleanup
@@ -654,6 +695,82 @@ add_task(async function test_buildMessageFragment_withoutInlineAnchors() {
   await BrowserTestUtils.waitForCondition(() => !InfoBar._activeInfobar);
   sinon.restore();
 });
+
+add_task(
+  async function test_buildMessageFragment_withInlineAnchor_openUrlAndSMA() {
+    const win = BrowserWindowTracker.getTopWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    const { RemoteL10n } = ChromeUtils.importESModule(
+      "resource:///modules/asrouter/RemoteL10n.sys.mjs"
+    );
+    sinon
+      .stub(RemoteL10n, "formatLocalizableText")
+      .resolves('<a data-l10n-name="foo">Click Me</a>');
+
+    const handleStub = sinon.stub(SpecialMessageActions, "handleAction");
+
+    const testUrl = "https://example.com/";
+    const customAction = {
+      type: "SET_PREF",
+      data: { pref: { name: "embedded-link-sma", value: true } },
+    };
+    const message = {
+      id: "TEST_INLINE_OPEN_URL_AND_ACTION",
+      content: {
+        type: "global",
+        priority: win.gNotificationBox.PRIORITY_INFO_LOW,
+        text: { string_id: "test" },
+        linkUrls: { foo: testUrl },
+        linkActions: { foo: customAction },
+        buttons: [{ label: "Close", action: { type: "CANCEL" } }],
+      },
+    };
+
+    const dispatchStub = sinon.stub();
+    const infobar = await InfoBar.showInfoBarMessage(
+      browser,
+      message,
+      dispatchStub
+    );
+
+    const rendered = infobar.notification.messageText.querySelector(
+      'a[data-l10n-name="foo"]'
+    );
+    Assert.ok(rendered, "Rendered inline anchor present");
+    Assert.equal(rendered.href, testUrl, "Rendered href is correct");
+
+    EventUtils.synthesizeMouseAtCenter(rendered, {}, browser.ownerGlobal);
+
+    Assert.equal(handleStub.callCount, 2, "handleAction called twice");
+
+    const [openUrlAction, openUrlBrowser] = handleStub.firstCall.args;
+    Assert.deepEqual(
+      openUrlAction,
+      { type: "OPEN_URL", data: { args: testUrl, where: "tab" } },
+      "First call opens the URL"
+    );
+    Assert.equal(openUrlBrowser, browser, "OPEN_URL got the correct browser");
+
+    const [customArg, customBrowser] = handleStub.secondCall.args;
+    Assert.deepEqual(
+      customArg,
+      customAction,
+      "Second call invokes the custom action"
+    );
+    Assert.equal(
+      customBrowser,
+      browser,
+      "Custom action got the correct browser"
+    );
+
+    // Cleanup
+    RemoteL10n.formatLocalizableText.restore();
+    handleStub.restore();
+    infobar.notification.closeButton.click();
+    await BrowserTestUtils.waitForCondition(() => !InfoBar._activeInfobar);
+  }
+);
 
 add_task(async function test_configurable_background_color() {
   const win = BrowserWindowTracker.getTopWindow();
@@ -797,4 +914,182 @@ add_task(async function test_infobar_css_background_fallback_var() {
     () => !InfoBar._activeInfobar,
     "Wait for infobar to close"
   );
+});
+
+add_task(async function test_impression_action_handling() {
+  const handleStub = sinon.stub(SpecialMessageActions, "handleAction");
+
+  let message = (await CFRMessageProvider.getMessages()).find(
+    m => m.id === "INFOBAR_ACTION_86"
+  );
+  Assert.ok(message, "Found base message");
+
+  message.content.impression_action = {
+    type: "SET_PREF",
+    data: {
+      pref: { name: "impressionActionTest", value: true },
+    },
+  };
+
+  const dispatchStub = sinon.stub();
+  let infobar = await InfoBar.showInfoBarMessage(
+    BrowserWindowTracker.getTopWindow().gBrowser.selectedBrowser,
+    message,
+    dispatchStub
+  );
+
+  Assert.equal(
+    handleStub.callCount,
+    1,
+    "handleAction called once on impression"
+  );
+
+  const [actionArg] = handleStub.firstCall.args;
+  Assert.equal(actionArg.type, "SET_PREF", "Correct action type dispatched");
+  Assert.ok(actionArg.data.onImpression, "onImpression flag set to true");
+  Assert.deepEqual(
+    actionArg.data.pref,
+    { name: "impressionActionTest", value: true },
+    "Original pref data preserved"
+  );
+
+  // Cleanup
+  infobar.notification.closeButton.click();
+  await BrowserTestUtils.waitForCondition(
+    () => !InfoBar._activeInfobar,
+    "Wait for infobar to close"
+  );
+  handleStub.restore();
+});
+
+add_task(
+  async function test_impression_action_once_allowed_only_on_first_impression() {
+    const handleStub = sinon.stub(SpecialMessageActions, "handleAction");
+
+    let message = (await CFRMessageProvider.getMessages()).find(
+      m => m.id === "INFOBAR_ACTION_86"
+    );
+    Assert.ok(message, "Found base message");
+
+    message.content.impression_action = {
+      type: "SET_PREF",
+      data: { pref: { name: "onceTest", value: true } },
+      once: true,
+    };
+
+    // Ensure ASRouter has no prior impressions recorded for this message
+    await ASRouter.resetMessageState();
+
+    let dispatchStub = sinon.stub();
+    dispatchStub.callsFake(recordImpression);
+
+    let infobar = await InfoBar.showInfoBarMessage(
+      BrowserWindowTracker.getTopWindow().gBrowser.selectedBrowser,
+      message,
+      dispatchStub
+    );
+
+    Assert.equal(
+      handleStub.callCount,
+      1,
+      "handleAction called once on first impression when once is true"
+    );
+
+    handleStub.resetHistory();
+
+    infobar.notification.closeButton.click();
+    await BrowserTestUtils.waitForCondition(
+      () => !InfoBar._activeInfobar,
+      "Wait for infobar to close"
+    );
+
+    let infobar2 = await InfoBar.showInfoBarMessage(
+      BrowserWindowTracker.getTopWindow().gBrowser.selectedBrowser,
+      message,
+      dispatchStub
+    );
+
+    Assert.equal(
+      handleStub.callCount,
+      0,
+      "handleAction suppressed on subsequent impressions when once is true"
+    );
+
+    // Cleanup
+    infobar2.notification.closeButton.click();
+    await BrowserTestUtils.waitForCondition(
+      () => !InfoBar._activeInfobar,
+      "Wait for infobar to close"
+    );
+    handleStub.restore();
+  }
+);
+
+add_task(async function test_impression_action_multi_action_once_and_every() {
+  const handleStub = sinon.stub(SpecialMessageActions, "handleAction");
+
+  let message = (await CFRMessageProvider.getMessages()).find(
+    m => m.id === "INFOBAR_ACTION_86"
+  );
+  Assert.ok(message, "Found base message");
+
+  message.content.impression_action = {
+    type: "MULTI_ACTION",
+    data: {
+      actions: [
+        {
+          type: "SET_PREF",
+          data: { pref: { name: "multi.once", value: true } },
+          once: true,
+        },
+        {
+          type: "SET_PREF",
+          data: { pref: { name: "multi.every", value: true } },
+        },
+      ],
+    },
+  };
+
+  await ASRouter.resetMessageState();
+
+  let dispatchStub = sinon.stub();
+  dispatchStub.callsFake(recordImpression);
+
+  let infobar1 = await InfoBar.showInfoBarMessage(
+    BrowserWindowTracker.getTopWindow().gBrowser.selectedBrowser,
+    message,
+    dispatchStub
+  );
+
+  Assert.equal(
+    handleStub.callCount,
+    2,
+    "handleAction called twice on first impression (once and every)"
+  );
+
+  infobar1.notification.closeButton.click();
+  await BrowserTestUtils.waitForCondition(
+    () => !InfoBar._activeInfobar,
+    "Wait for first infobar to close"
+  );
+
+  let infobar2 = await InfoBar.showInfoBarMessage(
+    BrowserWindowTracker.getTopWindow().gBrowser.selectedBrowser,
+    message,
+    dispatchStub
+  );
+
+  Assert.equal(
+    handleStub.callCount,
+    3,
+    "only the non-once action fires on second impression"
+  );
+
+  infobar2.notification.closeButton.click();
+  await BrowserTestUtils.waitForCondition(
+    () => !InfoBar._activeInfobar,
+    "Wait for second infobar to close"
+  );
+
+  handleStub.restore();
 });

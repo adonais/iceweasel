@@ -5,36 +5,36 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DecoderTraits.h"
-#include "MediaContainerType.h"
-#include "mozilla/glean/DomMediaHlsMetrics.h"
-#include "mozilla/Preferences.h"
 
+#include "MediaContainerType.h"
 #include "OggDecoder.h"
 #include "OggDemuxer.h"
-
 #include "WebMDecoder.h"
 #include "WebMDemuxer.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/glean/DomMediaHlsMetrics.h"
 
 #ifdef MOZ_ANDROID_HLS_SUPPORT
 #  include "HLSDecoder.h"
 #endif
+#include "ADTSDecoder.h"
+#include "ADTSDemuxer.h"
+#include "FlacDecoder.h"
+#include "FlacDemuxer.h"
+#include "MP3Decoder.h"
+#include "MP3Demuxer.h"
 #include "MP4Decoder.h"
 #include "MP4Demuxer.h"
 #include "MediaFormatReader.h"
-
-#include "MP3Decoder.h"
-#include "MP3Demuxer.h"
-
 #include "WaveDecoder.h"
 #include "WaveDemuxer.h"
 
-#include "ADTSDecoder.h"
-#include "ADTSDemuxer.h"
-
-#include "FlacDecoder.h"
-#include "FlacDemuxer.h"
-
 namespace mozilla {
+
+extern LazyLogModule gMediaDecoderLog;
+#define LOGD(x, ...) \
+  MOZ_LOG_FMT(gMediaDecoderLog, LogLevel::Debug, x, ##__VA_ARGS__)
 
 /* static */
 bool DecoderTraits::IsHttpLiveStreamingType(const MediaContainerType& aType) {
@@ -211,6 +211,8 @@ already_AddRefed<MediaDataDemuxer> DecoderTraits::CreateDemuxer(
     demuxer = new OggDemuxer(aResource);
   } else if (WebMDecoder::IsSupportedType(aType)) {
     demuxer = new WebMDemuxer(aResource);
+  } else {
+    LOGD("CreateDemuxer: unsupported type {}", aType.OriginalString().get());
   }
 
   return demuxer.forget();
@@ -296,3 +298,6 @@ nsTArray<UniquePtr<TrackInfo>> DecoderTraits::GetTracksInfo(
 }
 
 }  // namespace mozilla
+
+// avoid redefined macro in unified build
+#undef LOGD

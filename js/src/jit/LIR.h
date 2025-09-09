@@ -1176,6 +1176,11 @@ class LBlock {
   // which is not forming a loop. No code will be emitted for such blocks.
   bool isTrivial() { return begin()->isGoto() && !mir()->isLoopHeader(); }
 
+  // Test whether this basic block is a sequence of MoveGroups followed by a
+  // simple goto, and is not a loop header.  If so return the target of the
+  // jump, otherwise return nullptr.
+  LBlock* isMoveGroupsThenGoto();
+
 #ifdef JS_JITSPEW
   void dump(GenericPrinter& out);
   void dump();

@@ -201,6 +201,7 @@ add_task(async function test_show_warning_label() {
         8192,
         "Selected enough text"
       );
+
       // Hover button
       EventUtils.sendMouseEvent({ type: "mouseover" }, aiActionButton);
 

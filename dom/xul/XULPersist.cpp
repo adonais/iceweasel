@@ -6,14 +6,14 @@
 
 #include "XULPersist.h"
 
-#include "nsIXULStore.h"
-#include "nsIStringEnumerator.h"
-#include "nsServiceManagerUtils.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "nsContentUtils.h"
 #include "nsIAppWindow.h"
+#include "nsIStringEnumerator.h"
+#include "nsIXULStore.h"
+#include "nsServiceManagerUtils.h"
 
 namespace mozilla::dom {
 
@@ -89,7 +89,7 @@ void XULPersist::Persist(Element* aElement, nsAtom* aAttribute) {
   if (!mDocument) {
     return;
   }
-  // For non-chrome documents, persistance is simply broken
+  // For non-chrome documents, persistence is simply broken
   if (!mDocument->NodePrincipal()->IsSystemPrincipal()) {
     return;
   }

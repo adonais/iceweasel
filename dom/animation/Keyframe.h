@@ -7,13 +7,13 @@
 #ifndef mozilla_dom_Keyframe_h
 #define mozilla_dom_Keyframe_h
 
-#include "nsCSSValue.h"
-#include "nsTArray.h"
-#include "mozilla/dom/BaseKeyframeTypesBinding.h"  // CompositeOperationOrAuto
 #include "mozilla/AnimatedPropertyID.h"
-#include "mozilla/ServoStyleConsts.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ServoStyleConsts.h"
+#include "mozilla/dom/BaseKeyframeTypesBinding.h"  // CompositeOperationOrAuto
+#include "nsCSSValue.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 struct StyleLockedDeclarationBlock;

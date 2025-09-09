@@ -263,6 +263,11 @@ export class GeckoViewStartup {
                 )
               ) {
                 lazy.DoHController.init();
+              } else {
+                // When the autoselect isn't enabled, these prefs should be
+                // cleared. Otherwise doh-rollout.mode will override
+                // network.trr.mode forever as DoHController isn't running.
+                lazy.DoHController.cleanupPrefs();
               }
             },
           }

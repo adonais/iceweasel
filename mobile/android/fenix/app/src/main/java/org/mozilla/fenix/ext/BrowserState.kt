@@ -44,23 +44,6 @@ val BrowserState.lastOpenedNormalTab: TabSessionState?
     get() = selectedNormalTab ?: normalTabs.maxByOrNull { it.lastAccess }
 
 /**
- *  Get the second-to-last accessed normal tab.
- */
-val BrowserState.secondToLastOpenedNormalTab: TabSessionState?
-    get() = when {
-        normalTabs.size <= 1 -> null
-        else -> normalTabs.sortedByDescending { it.lastAccess }[1]
-    }
-
-/**
- * Get the last tab with in progress media.
- */
-val BrowserState.inProgressMediaTab: TabSessionState?
-    get() = normalTabs
-        .filter { it.hasMediaPlayed() }
-        .maxByOrNull { it.lastMediaAccessState.lastMediaAccess }
-
-/**
  * List of all inactive tabs based on [maxActiveTime].
  * The user may have disabled the feature so for user interactions consider using the [actualInactiveTabs] method
  * or an in place check of the feature status.

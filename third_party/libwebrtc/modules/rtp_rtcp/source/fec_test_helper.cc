@@ -10,13 +10,20 @@
 
 #include "modules/rtp_rtcp/source/fec_test_helper.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <memory>
 #include <utility>
 
+#include "api/rtp_headers.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
-#include "modules/rtp_rtcp/source/rtp_packet.h"
+#include "modules/rtp_rtcp/source/forward_error_correction.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/random.h"
 
 namespace webrtc {
 namespace test {
@@ -187,7 +194,7 @@ RtpPacketReceived UlpfecPacketGenerator::BuildMediaRedPacket(
     const AugmentedPacket& packet,
     bool is_recovered) {
   // Create a temporary buffer used to wrap the media packet in RED.
-  rtc::CopyOnWriteBuffer red_buffer;
+  CopyOnWriteBuffer red_buffer;
   const size_t kHeaderLength = packet.header.headerLength;
   // Append header.
   red_buffer.SetData(packet.data.data(), kHeaderLength);

@@ -7,11 +7,11 @@
 #ifndef _SDPPREF_H_
 #define _SDPPREF_H_
 
-#include "mozilla/Maybe.h"
-#include "mozilla/Preferences.h"
-
 #include <string>
 #include <unordered_map>
+
+#include "mozilla/Maybe.h"
+#include "mozilla/Preferences.h"
 
 namespace mozilla {
 

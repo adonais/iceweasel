@@ -288,7 +288,7 @@ toolbarpaletteitem {
     }
 
     > #search-container > #searchbar,
-    > #urlbar-container > #urlbar > #urlbar-background {
+    .urlbar-background {
       outline: 1px solid color-mix(in srgb, currentColor 60%, transparent);
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.13);
     }
@@ -376,15 +376,15 @@ toolbarpaletteitem {
 }
 
 #customization-uidensity-menuitem-normal {
-  list-style-image: url("chrome://browser/skin/customizableui/density-normal.svg");
+  --menuitem-icon: url("chrome://browser/skin/customizableui/density-normal.svg");
 }
 
 #customization-uidensity-menuitem-compact {
-  list-style-image: url("chrome://browser/skin/customizableui/density-compact.svg");
+  --menuitem-icon: url("chrome://browser/skin/customizableui/density-compact.svg");
 }
 
 #customization-uidensity-menuitem-touch {
-  list-style-image: url("chrome://browser/skin/customizableui/density-touch.svg");
+  --menuitem-icon: url("chrome://browser/skin/customizableui/density-touch.svg");
 }
 
 #customization-uidensity-button > .box-inherit > .box-inherit > .button-icon:-moz-locale-dir(rtl) {

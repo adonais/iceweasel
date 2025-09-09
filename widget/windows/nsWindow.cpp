@@ -331,10 +331,6 @@ UINT nsWindow::sRollupMsgId = 0;
 HWND nsWindow::sRollupMsgWnd = nullptr;
 UINT nsWindow::sHookTimerId = 0;
 
-// Used to prevent dispatching mouse events that do not originate from user
-// input.
-POINT nsWindow::sLastMouseMovePoint = {0};
-
 bool nsWindow::sIsRestoringSession = false;
 
 bool nsWindow::sTouchInjectInitialized = false;
@@ -442,6 +438,161 @@ static bool gInitializedVirtualDesktopManager = false;
 // to DOM target conversions for these, we cache responses for a given
 // coordinate this many milliseconds:
 #define HITTEST_CACHE_LIFETIME_MS 50
+
+/**
+ * Used to prevent dispatching eMouseMove events that do not originate from user
+ * input.
+ */
+class nsWindow::LastMouseMoveData {
+ public:
+  /**
+   * Return true if eMouseMove whose point is aPoint, input source is
+   * aInputSource and pointerId is aPointerId should not be dispatched to avoid
+   * unexpected behavior in content.
+   *
+   * @param aPoint          The ref-point where the new mouse move occurred.
+   * @param aInputSource    The input source of the mouse move event.
+   * @param aPointerId      The pointerId of the mouse move event.  If there is
+   *                        no specific one because of a mouse input, specify 0
+   *                        which won't be referred anyway.
+   * @return true if the event should not cause eMouseMove event in the content.
+   */
+  template <typename POINTOrLayoutDeviceIntPoint>
+  [[nodiscard]] static bool ShouldIgnoreMouseMoveOf(
+      const POINTOrLayoutDeviceIntPoint& aPoint, uint16_t aInputSource,
+      uint32_t aPointerId) {
+    return sInstance.ShouldIgnoreMouseMoveOfImpl(aPoint, aInputSource,
+                                                 aPointerId);
+  }
+
+  /**
+   * Forget the last mouse move point caused by both mouse and non-mouse.
+   */
+  static void Clear() { sInstance.ClearImpl(); }
+
+  /**
+   * Called when nsWindow will dispatch an eMouseMove event.
+   *
+   * @param aPoint          The ref-point where the native mouse move occurred.
+   * @param aInputSource    The input source of the mouse move event.
+   * @param aPointerId      The pointerId of the mouse move event.  If there is
+   *                        no specific one because of a mouse input, specify 0
+   *                        which won't be referred anyway.
+   */
+  static void WillDispatchMouseMoveOf(const LayoutDeviceIntPoint& aPoint,
+                                      uint16_t aInputSource,
+                                      uint32_t aPointerId) {
+    sInstance.WillDispatchMouseMoveOfImpl(aPoint, aInputSource, aPointerId);
+  }
+
+ private:
+  LastMouseMoveData() = default;
+
+  template <typename POINTOrLayoutDeviceIntPoint>
+  [[nodiscard]] bool ShouldIgnoreMouseMoveOfImpl(
+      const POINTOrLayoutDeviceIntPoint& aPoint, uint16_t aInputSource,
+      uint32_t aPointerId) const {
+    // Suppress mouse moves caused by widget creation which is fired at same
+    // screen position with the last mouse position. And also we should ignore
+    // odd mouse move events which are caused by some tablet drivers. They try
+    // to restore the mouse position and restore the pen position again
+    // continuously. We don't want such events for avoiding the mouse cursor to
+    // flicker, avoiding to dispatching synthesized mouse/pointer boundary
+    // events and avoiding to switch `:hover` state because they waste a lot of
+    // CPU resource.  So, let's ignore native mouse move events which occurs at
+    // the same position of the last point with the same pointer.
+    return PointsEqual(LastPoint(aInputSource, aPointerId), aPoint);
+  }
+
+  void ClearImpl() {
+    mLastPointByMouse.reset();
+    mLastPointAndPointerIdByNonMouse.reset();
+  }
+
+  void WillDispatchMouseMoveOfImpl(const LayoutDeviceIntPoint& aPoint,
+                                   uint16_t aInputSource, uint32_t aPointerId) {
+    POINT& lastPoint = [&]() -> POINT& {
+      if (IsMouse(aInputSource)) {
+        if (mLastPointByMouse.isNothing()) {
+          mLastPointByMouse.emplace();
+        }
+        return mLastPointByMouse.ref();
+      }
+      if (mLastPointAndPointerIdByNonMouse.isNothing()) {
+        mLastPointAndPointerIdByNonMouse.emplace();
+      }
+      mLastPointAndPointerIdByNonMouse->mPointerId = aPointerId;
+      return mLastPointAndPointerIdByNonMouse->mPoint;
+    }();
+    lastPoint.x = aPoint.x.value;
+    lastPoint.y = aPoint.y.value;
+  }
+
+  /**
+   * Return true if aInputSource is "mouse".
+   */
+  [[nodiscard]] static bool IsMouse(uint16_t aInputSource) {
+    return aInputSource == MouseEvent_Binding::MOZ_SOURCE_MOUSE;
+  }
+
+  /**
+   * Return true if aPoint and aOtherPoint are the same point.
+   */
+  template <typename PointType>
+  [[nodiscard]] static bool PointsEqual(const Maybe<POINT>& aPoint,
+                                        const PointType& aOtherPoint);
+
+  /**
+   * Return the last mouse move event position of aPointerId if aInputSource is
+   * not "mouse" or of the mouse if aInputSource is "mouse".
+   */
+  [[nodiscard]] Maybe<POINT> LastPoint(uint16_t aInputSource,
+                                       uint32_t aPointerId) const {
+    return IsMouse(aInputSource)
+               ? mLastPointByMouse
+               : (IsLastNonMousePointerId(aPointerId)
+                      ? Some(mLastPointAndPointerIdByNonMouse->mPoint)
+                      : Nothing());
+  }
+
+  /**
+   * Return true if aPointerId is same as the last non-mouse pointerId.
+   */
+  [[nodiscard]] bool IsLastNonMousePointerId(uint32_t aPointerId) const {
+    return mLastPointAndPointerIdByNonMouse &&
+           mLastPointAndPointerIdByNonMouse->mPointerId == aPointerId;
+  }
+
+  // We don't need to take care of pointerId of mouse because it's ignored by
+  // PresShell, PointerEventHandler and EventStateManager to handle mouse
+  // boundary events and CSS hover state.
+  Maybe<POINT> mLastPointByMouse;
+  // We need to manage the last non-mouse pointer location and pointerId as a
+  // pair because pointerId is meaningful for the non-mouse input sources.
+  struct LastNonMousePointerMoveData {
+    POINT mPoint = {0};
+    uint32_t mPointerId = 0;
+  };
+  Maybe<LastNonMousePointerMoveData> mLastPointAndPointerIdByNonMouse;
+
+  static LastMouseMoveData sInstance;
+};
+
+template <>
+bool nsWindow::LastMouseMoveData::PointsEqual(const Maybe<POINT>& aPoint,
+                                              const POINT& aOtherPoint) {
+  return aPoint.isSome() && aPoint->x == aOtherPoint.x &&
+         aPoint->y == aOtherPoint.y;
+}
+
+template <>
+bool nsWindow::LastMouseMoveData::PointsEqual(
+    const Maybe<POINT>& aPoint, const LayoutDeviceIntPoint& aOtherPoint) {
+  return aPoint.isSome() && aPoint->x == aOtherPoint.x.value &&
+         aPoint->y == aOtherPoint.y.value;
+}
+
+nsWindow::LastMouseMoveData nsWindow::LastMouseMoveData::sInstance;
 
 #if defined(ACCESSIBILITY)
 
@@ -671,8 +822,7 @@ nsWindow::nsWindow()
       mMicaBackdrop(false),
       mLastPaintEndTime(TimeStamp::Now()),
       mCachedHitTestTime(TimeStamp::Now()),
-      mSizeConstraintsScale(GetDefaultScale().scale),
-      mDesktopId("DesktopIdMutex") {
+      mSizeConstraintsScale(GetDefaultScale().scale) {
   if (!gInitializedVirtualDesktopManager) {
     TaskController::Get()->AddTask(
         MakeAndAddRef<InitializeVirtualDesktopManagerTask>());
@@ -2084,81 +2234,67 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
 
 nsSizeMode nsWindow::SizeMode() { return mFrameState->GetSizeMode(); }
 
-void DoGetWorkspaceID(HWND aWnd, nsAString* aWorkspaceID) {
+nsString DoGetWorkspaceID(HWND aWnd) {
+  nsString ret;
   RefPtr<IVirtualDesktopManager> desktopManager = gVirtualDesktopManager;
   if (!desktopManager || !aWnd) {
-    return;
+    return ret;
   }
 
   GUID desktop;
   HRESULT hr = desktopManager->GetWindowDesktopId(aWnd, &desktop);
   if (FAILED(hr)) {
-    return;
+    return ret;
   }
 
   RPC_WSTR workspaceIDStr = nullptr;
   if (UuidToStringW(&desktop, &workspaceIDStr) == RPC_S_OK) {
-    aWorkspaceID->Assign((wchar_t*)workspaceIDStr);
+    ret.Assign((wchar_t*)workspaceIDStr);
     RpcStringFreeW(&workspaceIDStr);
   }
+  return ret;
 }
 
 void nsWindow::GetWorkspaceID(nsAString& workspaceID) {
   // If we have a value cached, use that, but also make sure it is
   // scheduled to be updated.  If we don't yet have a value, get
   // one synchronously.
-  auto desktop = mDesktopId.Lock();
-  if (desktop->mID.IsEmpty()) {
-    DoGetWorkspaceID(mWnd, &desktop->mID);
-    desktop->mUpdateIsQueued = false;
+  AssertIsOnMainThread();
+  if (mDesktopId.IsEmpty()) {
+    mDesktopId = DoGetWorkspaceID(mWnd);
   } else {
-    AsyncUpdateWorkspaceID(*desktop);
+    AsyncUpdateWorkspaceID();
   }
-
-  workspaceID = desktop->mID;
+  workspaceID = mDesktopId;
 }
 
-void nsWindow::AsyncUpdateWorkspaceID(Desktop& aDesktop) {
-  struct UpdateWorkspaceIdTask : public Task {
-    explicit UpdateWorkspaceIdTask(nsWindow* aSelf)
-        : Task(Kind::OffMainThreadOnly, EventQueuePriority::Normal),
-          mSelf(aSelf) {}
-
-    TaskResult Run() override {
-      RefPtr<nsWindow> self(mSelf);
-      // If the window is not alive anymore, no need to do anything
-      if (!self) {
-        return TaskResult::Complete;
-      }
-      auto desktop = self->mDesktopId.Lock();
-      if (desktop->mUpdateIsQueued) {
-        DoGetWorkspaceID(self->mWnd, &desktop->mID);
-        desktop->mUpdateIsQueued = false;
-      }
-      return TaskResult::Complete;
-    }
-
-#ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
-    bool GetName(nsACString& aName) override {
-      aName.AssignLiteral("UpdateWorkspaceIdTask");
-      return true;
-    }
-#endif
-
-    // Only hold a weak pointer so this structure can't keep the window alive
-    // and possibly Release() it on the wrong thread (bug 1824697)
-    ThreadSafeWeakPtr<nsWindow> mSelf;
-  };
-
-  if (aDesktop.mUpdateIsQueued) {
-    return;
-  }
-
-  aDesktop.mUpdateIsQueued = true;
-  TaskController::Get()->AddTask(MakeAndAddRef<UpdateWorkspaceIdTask>(this));
+void nsWindow::AsyncUpdateWorkspaceID() {
+  nsWeakPtr weakSelf = do_GetWeakReference(this);
+  // Wrap weak reference in nsMainThreadPtrHandle to resist attempts to
+  // Release() the weak reference off-main-thread (it's not thread safe)
+  // in case of failed task dispatch.
+  nsMainThreadPtrHandle<nsIWeakReference> weakSelfHandle(
+      new nsMainThreadPtrHolder("AsyncUpdateWorkspaceID", weakSelf.forget()));
+  NS_DispatchBackgroundTask(NS_NewRunnableFunction(
+      "BackgroundUpdateWorkspaceID",
+      [hwnd = mWnd, weakSelfHandle = std::move(weakSelfHandle)]() mutable {
+        auto id = DoGetWorkspaceID(hwnd);
+        NS_DispatchToMainThread(NS_NewRunnableFunction(
+            "MainUpdateWorkspaceID",
+            [id = std::move(id),
+             weakSelfHandle = std::move(weakSelfHandle)]() mutable {
+              AssertIsOnMainThread();
+              nsCOMPtr<nsIWidget> widgetSelf = do_QueryReferent(weakSelfHandle);
+              auto* self = static_cast<nsWindow*>(widgetSelf.get());
+              if (self) {
+                self->mDesktopId = id;
+              }
+            }));
+      }));
 }
 
 void nsWindow::MoveToWorkspace(const nsAString& workspaceID) {
+  AssertIsOnMainThread();
   RefPtr<IVirtualDesktopManager> desktopManager = gVirtualDesktopManager;
   if (!desktopManager) {
     return;
@@ -2169,8 +2305,7 @@ void nsWindow::MoveToWorkspace(const nsAString& workspaceID) {
   RPC_WSTR workspaceIDStr = reinterpret_cast<RPC_WSTR>((wchar_t*)flat.get());
   if (UuidFromStringW(workspaceIDStr, &desktop) == RPC_S_OK) {
     if (SUCCEEDED(desktopManager->MoveWindowToDesktop(mWnd, desktop))) {
-      auto desktop = mDesktopId.Lock();
-      desktop->mID = workspaceID;
+      mDesktopId = workspaceID;
     }
   }
 }
@@ -4068,15 +4203,16 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
   LayoutDeviceIntPoint mpScreen = eventPoint + WidgetToScreenOffset();
 
   // Suppress mouse moves caused by widget creation. Make sure to do this early
-  // so that we update sLastMouseMovePoint even for touch-induced mousemove
-  // events.
+  // so that we update sLastMouseMovePointByAnyPointer even for touch-induced
+  // mousemove events.
   if (aEventMessage == eMouseMove) {
-    if ((sLastMouseMovePoint.x == mpScreen.x.value) &&
-        (sLastMouseMovePoint.y == mpScreen.y.value)) {
+    if (LastMouseMoveData::ShouldIgnoreMouseMoveOf(
+            mpScreen, aInputSource,
+            aPointerInfo ? aPointerInfo->pointerId : 0)) {
       return result;
     }
-    sLastMouseMovePoint.x = mpScreen.x;
-    sLastMouseMovePoint.y = mpScreen.y;
+    LastMouseMoveData::WillDispatchMouseMoveOf(
+        mpScreen, aInputSource, aPointerInfo ? aPointerInfo->pointerId : 0);
   }
 
   if (!bool(aIsNonclient) && WinUtils::GetIsMouseFromTouch(aEventMessage)) {
@@ -5071,16 +5207,14 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       POINT mp;
       mp.x = GET_X_LPARAM(lParamScreen);
       mp.y = GET_Y_LPARAM(lParamScreen);
-      bool userMovedMouse = false;
-      if ((sLastMouseMovePoint.x != mp.x) || (sLastMouseMovePoint.y != mp.y)) {
-        userMovedMouse = true;
-      }
-
-      if (userMovedMouse) {
-        result = DispatchMouseEvent(
-            eMouseMove, wParam, lParam, false, MouseButton::ePrimary,
-            MOUSE_INPUT_SOURCE(),
-            mPointerEvents.GetCachedPointerInfo(msg, wParam));
+      const uint16_t inputSource = MOUSE_INPUT_SOURCE();
+      WinPointerInfo* const pointerInfo =
+          mPointerEvents.GetCachedPointerInfo(msg, wParam);
+      if (!LastMouseMoveData::ShouldIgnoreMouseMoveOf(
+              mp, inputSource, pointerInfo ? pointerInfo->pointerId : 0)) {
+        result =
+            DispatchMouseEvent(eMouseMove, wParam, lParam, false,
+                               MouseButton::ePrimary, inputSource, pointerInfo);
         DispatchPendingEvents();
       }
     } break;
@@ -5158,11 +5292,11 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       mMousePresent = false;
 
       // Check if the mouse is over the fullscreen transition window, if so
-      // clear sLastMouseMovePoint. This way the WM_MOUSEMOVE we get after the
+      // clear LastMouseMoveData.  This way the WM_MOUSEMOVE we get after the
       // transition window disappears will not be ignored, even if the mouse
       // hasn't moved.
       if (mTransitionWnd && WindowAtMouse() == mTransitionWnd) {
-        sLastMouseMovePoint = {0};
+        LastMouseMoveData::Clear();
       }
 
       // We need to check mouse button states and put them in for
@@ -6183,10 +6317,10 @@ nsresult nsWindow::SynthesizeNativeMouseEvent(
   switch (aNativeMessage) {
     case NativeMouseMessage::Move:
       input.mi.dwFlags = MOUSEEVENTF_MOVE;
-      // Reset sLastMouseMovePoint so that even if we're moving the mouse
-      // to the position it's already at, we still dispatch a mousemove
-      // event, because the callers of this function expect that.
-      sLastMouseMovePoint = {0};
+      // Reset LastMouseMoveData so that even if we're moving the mouse to the
+      // position it's already at, we still dispatch a mousemove event, because
+      // the callers of this function expect that.
+      LastMouseMoveData::Clear();
       break;
     case NativeMouseMessage::ButtonDown:
     case NativeMouseMessage::ButtonUp: {

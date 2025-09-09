@@ -18,7 +18,6 @@
     --background-color-warning: light-dark(var(--color-yellow-0), var(--color-yellow-90));
 
     /** Border **/
-    --border-color: light-dark(#cfcfd8, #3a3944);
     --border-color-card: color-mix(in srgb, currentColor 10%, transparent);
     --border-color-interactive-hover: var(--border-color-interactive);
     --border-color-interactive-active: var(--border-color-interactive);
@@ -250,18 +249,15 @@
     --icon-color-information: light-dark(var(--color-blue-60), var(--color-blue-20));
     --icon-color-success: light-dark(var(--color-green-60), var(--color-green-20));
     --icon-color-warning: light-dark(var(--color-yellow-60), var(--color-yellow-20));
-    --icon-size-default: var(--icon-size-small);
-    --icon-size-xsmall: 12px;
+    --icon-size: var(--icon-size-small);
+    --icon-size-xsmall: var(--size-item-xsmall);
     --icon-size-small: var(--size-item-small);
     --icon-size-medium: 20px;
-    --icon-size-large: 24px;
+    --icon-size-large: var(--size-item-medium);
     --icon-size-xlarge: var(--size-item-large);
 
     /** Input - Text **/
     --input-text-min-height: var(--button-min-height);
-
-    /** Input - Space **/
-    --input-space-block: var(--space-xsmall);
 
     /** Link **/
     /**
@@ -275,9 +271,11 @@
     --outline-color-error: light-dark(var(--color-red-70), var(--color-red-20));
 
     /** Size **/
+    --size-item-xsmall: 12px;
     --size-item-small: 16px;
     --size-item-medium: 24px;
     --size-item-large: 32px;
+    --size-item-xlarge: 48px;
 
     /** Space **/
     --space-xxsmall: calc(0.5 * var(--space-xsmall)); /* 2px */

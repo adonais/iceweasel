@@ -252,6 +252,14 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   void InitSameProcess(widget::CompositorWidget* aWidget,
                        const LayersId& aLayerTreeId);
 
+#ifdef XP_MACOSX
+  // macOS platform-specific initdata uses move semantics, which
+  // changes the method signature. Other platforms don't need to
+  // override the existing method.
+  mozilla::ipc::IPCResult RecvPCompositorWidgetConstructor(
+      PCompositorWidgetParent* actor,
+      CompositorWidgetInitData&& aInitData) override;
+#endif
   mozilla::ipc::IPCResult RecvInitialize(
       const LayersId& aRootLayerTreeId) override;
   mozilla::ipc::IPCResult RecvWillClose() override;

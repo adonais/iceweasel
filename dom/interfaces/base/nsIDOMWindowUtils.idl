@@ -1966,8 +1966,7 @@ cenum AsyncEnabledOption : 8 {
 
   /**
    * In certain cases the event handling of nodes, form controls in practice,
-   * may be disabled. Such cases are for example the existence of disabled
-   * attribute or -moz-user-input: none.
+   * may be disabled. For example, by the existence of the disabled attribute.
    */
   boolean isNodeDisabledForEvents(in Node aNode);
 

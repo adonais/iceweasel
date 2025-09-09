@@ -5,10 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MediaElementAudioSourceNode.h"
-#include "mozilla/dom/MediaElementAudioSourceNodeBinding.h"
+
 #include "AudioDestinationNode.h"
 #include "AudioNodeTrack.h"
 #include "MediaStreamTrack.h"
+#include "mozilla/dom/MediaElementAudioSourceNodeBinding.h"
 
 namespace mozilla::dom {
 

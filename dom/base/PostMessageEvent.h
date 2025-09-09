@@ -9,13 +9,13 @@
 
 #include "js/StructuredClone.h"
 #include "js/TypeDecls.h"
-#include "mozilla/dom/DOMTypes.h"
-#include "mozilla/dom/ipc/StructuredCloneData.h"
-#include "mozilla/dom/StructuredCloneHolder.h"
-#include "nsCOMPtr.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/DOMTypes.h"
+#include "mozilla/dom/StructuredCloneHolder.h"
+#include "mozilla/dom/ipc/StructuredCloneData.h"
+#include "nsCOMPtr.h"
 #include "nsThreadUtils.h"
 
 class nsGlobalWindowOuter;

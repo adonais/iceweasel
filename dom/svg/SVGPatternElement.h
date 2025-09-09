@@ -13,8 +13,8 @@
 #include "SVGAnimatedString.h"
 #include "SVGAnimatedTransformList.h"
 #include "SVGAnimatedViewBox.h"
-#include "mozilla/dom/SVGElement.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/SVGElement.h"
 
 nsresult NS_NewSVGPatternElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);

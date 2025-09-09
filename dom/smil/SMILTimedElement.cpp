@@ -6,6 +6,8 @@
 
 #include "SMILTimedElement.h"
 
+#include <algorithm>
+
 #include "mozilla/AutoRestore.h"
 #include "mozilla/ContentEvents.h"
 #include "mozilla/DebugOnly.h"
@@ -19,15 +21,14 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/SVGAnimationElement.h"
 #include "nsAttrValueInlines.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsGkAtoms.h"
-#include "nsReadableUtils.h"
 #include "nsMathUtils.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
 #include "nsThreadUtils.h"
 #include "prdtoa.h"
 #include "prtime.h"
-#include "nsString.h"
-#include "nsCharSeparatedTokenizer.h"
-#include <algorithm>
 
 using namespace mozilla::dom;
 

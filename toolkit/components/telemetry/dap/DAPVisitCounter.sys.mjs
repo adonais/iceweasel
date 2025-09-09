@@ -19,7 +19,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 export const DAPVisitCounter = new (class {
   counters = null;
-  dapReportContoller = null;
+  dapReportController = null;
 
   async startup() {
     if (
@@ -40,7 +40,7 @@ export const DAPVisitCounter = new (class {
         switch (event.type) {
           case "history-cleared":
           case "page-removed": {
-            await this.dapReportContoller.deleteState();
+            await this.dapReportController.deleteState();
             break;
           }
           case "page-visited": {
@@ -51,7 +51,7 @@ export const DAPVisitCounter = new (class {
                 for (const pattern of counter.patterns) {
                   if (pattern.matches(event.url)) {
                     lazy.logConsole.debug(`${pattern.pattern} matched!`);
-                    await this.dapReportContoller.recordMeasurement(
+                    await this.dapReportController.recordMeasurement(
                       counter.experiment.task_id,
                       counter.experiment.bucket
                     );
@@ -66,9 +66,9 @@ export const DAPVisitCounter = new (class {
 
     lazy.NimbusFeatures.dapTelemetry.onUpdate(async () => {
       if (this.counters !== null) {
-        await this.dapReportContoller.cleanup(30 * 1000, "nimbus-update");
+        await this.dapReportController.cleanup(30 * 1000, "nimbus-update");
         this.counters = null;
-        this.dapReportContoller = null;
+        this.dapReportController = null;
       }
 
       // Clear registered calllbacks
@@ -97,19 +97,20 @@ export const DAPVisitCounter = new (class {
             bits: 8,
             vdaf: "histogram",
             length: counter.experiment.task_veclen,
+            timePrecision: 60,
             defaultMeasurement: 0,
           });
           tasks[counter.experiment.task_id] = task;
         }
 
-        this.dapReportContoller = new DAPReportController({
+        this.dapReportController = new DAPReportController({
           tasks,
           options: {
             windowDays: 7,
             submissionIntervalMins: 240,
           },
         });
-        this.dapReportContoller.startTimedSubmission();
+        this.dapReportController.startTimedSubmission();
       }
     });
   }

@@ -7,7 +7,10 @@ package mozilla.components.compose.base.modifier
 import android.graphics.Rect
 import android.os.SystemClock
 import androidx.annotation.FloatRange
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -255,6 +258,29 @@ fun Modifier.horizontalFadeGradient(
             )
         },
 )
+
+/**
+ * Applies a clickable modifier to a Composable if [onClick] is not null.
+
+ * @param enabled Controls the enabled state of the clickable modifier.
+ * @param onClick Will be called when the user clicks on the element. If `null`,
+ * the `clickable` modifier will not be applied.
+ * @return The [Modifier] instance, either with or without the `clickable` modifier applied.
+ */
+@Composable
+fun Modifier.optionalClickable(
+    enabled: Boolean = true,
+    onClick: (() -> Unit)?,
+): Modifier = if (onClick != null) {
+    this.clickable(
+        interactionSource = remember { MutableInteractionSource() },
+        indication = LocalIndication.current,
+        enabled = enabled,
+        onClick = onClick,
+    )
+} else {
+    this
+}
 
 /**
  * Describes the direction of fade for [Modifier.horizontalFadeGradient].

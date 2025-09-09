@@ -5,8 +5,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "HLSDecoder.h"
+
 #include "AndroidBridge.h"
-#include "base/process_util.h"
 #include "DecoderTraits.h"
 #include "HLSDemuxer.h"
 #include "HLSUtils.h"
@@ -15,16 +15,17 @@
 #include "MediaDecoderStateMachine.h"
 #include "MediaFormatReader.h"
 #include "MediaShutdownManager.h"
+#include "base/process_util.h"
+#include "mozilla/NullPrincipal.h"
+#include "mozilla/StaticPrefs_media.h"
+#include "mozilla/dom/HTMLMediaElement.h"
+#include "mozilla/glean/DomMediaHlsMetrics.h"
 #include "mozilla/java/GeckoHLSResourceWrapperNatives.h"
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
 #include "nsIURL.h"
 #include "nsNetUtil.h"
 #include "nsThreadUtils.h"
-#include "mozilla/dom/HTMLMediaElement.h"
-#include "mozilla/glean/DomMediaHlsMetrics.h"
-#include "mozilla/NullPrincipal.h"
-#include "mozilla/StaticPrefs_media.h"
 
 namespace mozilla {
 
@@ -315,8 +316,7 @@ already_AddRefed<nsIPrincipal> HLSDecoder::GetContentPrincipal(
   if (element->GetCORSMode() == CORS_USE_CREDENTIALS) {
     securityFlags |= nsILoadInfo::SEC_COOKIES_INCLUDE;
   }
-  nsCOMPtr<nsIPrincipal> principal =
-      NullPrincipal::Create(OriginAttributes());
+  nsCOMPtr<nsIPrincipal> principal = NullPrincipal::Create(OriginAttributes());
   nsCOMPtr<nsIChannel> channel;
   nsresult rv = NS_NewChannel(
       getter_AddRefs(channel), aMediaUri, static_cast<dom::Element*>(element),

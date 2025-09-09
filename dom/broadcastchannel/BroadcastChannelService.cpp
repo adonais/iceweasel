@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "BroadcastChannelService.h"
+
 #include "BroadcastChannelParent.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/File.h"

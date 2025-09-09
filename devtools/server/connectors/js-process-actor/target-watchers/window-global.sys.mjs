@@ -27,11 +27,6 @@ ChromeUtils.defineESModuleGetters(
   { global: "shared" }
 );
 
-const isEveryFrameTargetEnabled = Services.prefs.getBoolPref(
-  "devtools.every-frame-target.enabled",
-  false
-);
-
 function watch() {
   // Set the following preference in this function, so that we can easily
   // toggle these preferences on and off from tests and have the new value being picked up.
@@ -438,7 +433,7 @@ function createWindowGlobalTargetActor(
     // type of navigation/reload.
     followWindowGlobalLifeCycle: true,
     isTopLevelTarget,
-    ignoreSubFrames: isEveryFrameTargetEnabled,
+    ignoreSubFrames: true,
     sessionContext,
   });
   targetActor.createdFromJsWindowActor = true;

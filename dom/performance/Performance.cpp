@@ -15,7 +15,6 @@
 
 #include "ETWTools.h"
 #include "GeckoProfiler.h"
-#include "nsRFPService.h"
 #include "PerformanceEntry.h"
 #include "PerformanceMainThread.h"
 #include "PerformanceMark.h"
@@ -26,19 +25,20 @@
 #include "PerformanceWorker.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/dom/MessagePortBinding.h"
-#include "mozilla/dom/PerformanceBinding.h"
-#include "mozilla/dom/PerformanceEntryEvent.h"
-#include "mozilla/dom/PerformanceNavigationBinding.h"
-#include "mozilla/dom/PerformanceObserverBinding.h"
-#include "mozilla/dom/PerformanceNavigationTiming.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Perfetto.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/dom/MessagePortBinding.h"
+#include "mozilla/dom/PerformanceBinding.h"
+#include "mozilla/dom/PerformanceEntryEvent.h"
+#include "mozilla/dom/PerformanceNavigationBinding.h"
+#include "mozilla/dom/PerformanceNavigationTiming.h"
+#include "mozilla/dom/PerformanceObserverBinding.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkerScope.h"
+#include "nsRFPService.h"
 
 #define PERFLOG(msg, ...) printf_stderr(msg, ##__VA_ARGS__)
 
@@ -1131,7 +1131,7 @@ void Performance::QueueEntry(PerformanceEntry* aEntry) {
   if (!mObservers.IsEmpty()) {
     const auto [begin, end] = mObservers.NonObservingRange();
     std::copy_if(begin, end, MakeBackInserter(interestedObservers),
-                 [aEntry](PerformanceObserver* observer) {
+                 [&](PerformanceObserver* observer) {
                    return observer->ObservesTypeOfEntry(aEntry);
                  });
   }

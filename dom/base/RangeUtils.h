@@ -9,9 +9,9 @@
 
 #include "mozilla/Maybe.h"
 #include "mozilla/RangeBoundary.h"
+#include "nsContentUtils.h"
 #include "nsIContent.h"
 #include "nsINode.h"
-#include "nsContentUtils.h"
 
 namespace mozilla {
 

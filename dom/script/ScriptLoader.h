@@ -7,29 +7,29 @@
 #ifndef mozilla_dom_ScriptLoader_h
 #define mozilla_dom_ScriptLoader_h
 
+#include "ModuleLoader.h"
+#include "SharedScriptCache.h"
 #include "js/TypeDecls.h"
 #include "js/Utility.h"  // JS::FreePolicy
 #include "js/loader/LoadedScript.h"
 #include "js/loader/ScriptKind.h"
 #include "js/loader/ScriptLoadRequest.h"
+#include "mozilla/CORSMode.h"
+#include "mozilla/MaybeOneOf.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/dom/ScriptLoadContext.h"
 #include "mozilla/dom/ScriptLoadRequestType.h"
-#include "nsCOMPtr.h"
-#include "nsRefPtrHashtable.h"
-#include "nsIScriptElement.h"
-#include "SharedScriptCache.h"
 #include "nsCOMArray.h"
+#include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsTArray.h"
 #include "nsILoadInfo.h"  // nsSecurityFlags
 #include "nsINode.h"
 #include "nsIObserver.h"
+#include "nsIScriptElement.h"
 #include "nsIScriptLoaderObserver.h"
+#include "nsRefPtrHashtable.h"
+#include "nsTArray.h"
 #include "nsURIHashKey.h"
-#include "mozilla/CORSMode.h"
-#include "ModuleLoader.h"
-#include "mozilla/MaybeOneOf.h"
-#include "mozilla/MozPromise.h"
 
 class nsCycleCollectionTraversalCallback;
 class nsIChannel;
@@ -136,6 +136,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
  public:
   using MaybeSourceText =
       mozilla::MaybeOneOf<JS::SourceText<char16_t>, JS::SourceText<Utf8Unit>>;
+  using ScriptLoadRequest = JS::loader::ScriptLoadRequest;
 
   explicit ScriptLoader(Document* aDocument);
 
@@ -595,6 +596,9 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   nsresult RestartLoad(ScriptLoadRequest* aRequest);
 
   void HandleLoadError(ScriptLoadRequest* aRequest, nsresult aResult);
+
+  void HandleLoadErrorAndProcessPendingRequests(ScriptLoadRequest* aRequest,
+                                                nsresult aResult);
 
   /**
    * Process any pending requests asynchronously (i.e. off an event) if there

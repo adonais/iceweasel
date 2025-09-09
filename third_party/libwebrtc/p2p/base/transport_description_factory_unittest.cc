@@ -31,12 +31,12 @@
 #include "test/gtest.h"
 #include "test/scoped_key_value_config.h"
 
-using cricket::TransportDescription;
-using cricket::TransportDescriptionFactory;
-using cricket::TransportOptions;
 using ::testing::Contains;
 using ::testing::Not;
 using ::testing::NotNull;
+using ::webrtc::TransportDescription;
+using ::webrtc::TransportDescriptionFactory;
+using ::webrtc::TransportOptions;
 
 class TransportDescriptionFactoryTest : public ::testing::Test {
  public:
@@ -44,10 +44,12 @@ class TransportDescriptionFactoryTest : public ::testing::Test {
       : ice_credentials_({}),
         f1_(field_trials_),
         f2_(field_trials_),
-        cert1_(webrtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
-            new webrtc::FakeSSLIdentity("User1")))),
-        cert2_(webrtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
-            new webrtc::FakeSSLIdentity("User2")))) {
+        cert1_(
+            webrtc::RTCCertificate::Create(std::unique_ptr<webrtc::SSLIdentity>(
+                new webrtc::FakeSSLIdentity("User1")))),
+        cert2_(
+            webrtc::RTCCertificate::Create(std::unique_ptr<webrtc::SSLIdentity>(
+                new webrtc::FakeSSLIdentity("User2")))) {
     // By default, certificates are supplied.
     f1_.set_certificate(cert1_);
     f2_.set_certificate(cert2_);
@@ -61,9 +63,9 @@ class TransportDescriptionFactoryTest : public ::testing::Test {
     ASSERT_TRUE(desc != NULL);
     EXPECT_EQ(!opt.empty(), desc->HasOption(opt));
     if (ice_ufrag.empty() && ice_pwd.empty()) {
-      EXPECT_EQ(static_cast<size_t>(cricket::ICE_UFRAG_LENGTH),
+      EXPECT_EQ(static_cast<size_t>(webrtc::ICE_UFRAG_LENGTH),
                 desc->ice_ufrag.size());
-      EXPECT_EQ(static_cast<size_t>(cricket::ICE_PWD_LENGTH),
+      EXPECT_EQ(static_cast<size_t>(webrtc::ICE_PWD_LENGTH),
                 desc->ice_pwd.size());
     } else {
       EXPECT_EQ(ice_ufrag, desc->ice_ufrag);
@@ -89,7 +91,7 @@ class TransportDescriptionFactoryTest : public ::testing::Test {
     } else {
       SetInsecure();
     }
-    cricket::TransportOptions options;
+    webrtc::TransportOptions options;
     // The initial offer / answer exchange.
     std::unique_ptr<TransportDescription> offer =
         f1_.CreateOffer(options, NULL, &ice_credentials_);
@@ -119,9 +121,9 @@ class TransportDescriptionFactoryTest : public ::testing::Test {
     ASSERT_THAT(restart_desc, NotNull());
     EXPECT_NE(org_desc->ice_pwd, restart_desc->ice_pwd);
     EXPECT_NE(org_desc->ice_ufrag, restart_desc->ice_ufrag);
-    EXPECT_EQ(static_cast<size_t>(cricket::ICE_UFRAG_LENGTH),
+    EXPECT_EQ(static_cast<size_t>(webrtc::ICE_UFRAG_LENGTH),
               restart_desc->ice_ufrag.size());
-    EXPECT_EQ(static_cast<size_t>(cricket::ICE_PWD_LENGTH),
+    EXPECT_EQ(static_cast<size_t>(webrtc::ICE_PWD_LENGTH),
               restart_desc->ice_pwd.size());
     // If DTLS is enabled, make sure the finger print is unchanged.
     if (dtls) {
@@ -137,7 +139,7 @@ class TransportDescriptionFactoryTest : public ::testing::Test {
       SetInsecureNoDtls();
     }
 
-    cricket::TransportOptions options;
+    webrtc::TransportOptions options;
     // The initial offer / answer exchange.
     std::unique_ptr<TransportDescription> offer =
         f1_.CreateOffer(options, nullptr, &ice_credentials_);
@@ -178,12 +180,12 @@ class TransportDescriptionFactoryTest : public ::testing::Test {
   }
 
   webrtc::test::ScopedKeyValueConfig field_trials_;
-  cricket::IceCredentialsIterator ice_credentials_;
+  webrtc::IceCredentialsIterator ice_credentials_;
   TransportDescriptionFactory f1_;
   TransportDescriptionFactory f2_;
 
-  rtc::scoped_refptr<webrtc::RTCCertificate> cert1_;
-  rtc::scoped_refptr<webrtc::RTCCertificate> cert2_;
+  webrtc::scoped_refptr<webrtc::RTCCertificate> cert1_;
+  webrtc::scoped_refptr<webrtc::RTCCertificate> cert2_;
 };
 
 TEST_F(TransportDescriptionFactoryTest, TestOfferDtls) {
@@ -329,7 +331,7 @@ TEST_F(TransportDescriptionFactoryTest, TestIceRenominationWithDtls) {
 
 // Test that offers and answers have ice-option:trickle.
 TEST_F(TransportDescriptionFactoryTest, AddsTrickleIceOption) {
-  cricket::TransportOptions options;
+  webrtc::TransportOptions options;
   std::unique_ptr<TransportDescription> offer =
       f1_.CreateOffer(options, nullptr, &ice_credentials_);
   ASSERT_THAT(offer, NotNull());
@@ -341,10 +343,10 @@ TEST_F(TransportDescriptionFactoryTest, AddsTrickleIceOption) {
 
 // Test CreateOffer with IceCredentialsIterator.
 TEST_F(TransportDescriptionFactoryTest, CreateOfferIceCredentialsIterator) {
-  std::vector<cricket::IceParameters> credentials = {
-      cricket::IceParameters("kalle", "anka", false)};
-  cricket::IceCredentialsIterator credentialsIterator(credentials);
-  cricket::TransportOptions options;
+  std::vector<webrtc::IceParameters> credentials = {
+      webrtc::IceParameters("kalle", "anka", false)};
+  webrtc::IceCredentialsIterator credentialsIterator(credentials);
+  webrtc::TransportOptions options;
   std::unique_ptr<TransportDescription> offer =
       f1_.CreateOffer(options, nullptr, &credentialsIterator);
   EXPECT_EQ(offer->GetIceParameters().ufrag, credentials[0].ufrag);
@@ -353,13 +355,13 @@ TEST_F(TransportDescriptionFactoryTest, CreateOfferIceCredentialsIterator) {
 
 // Test CreateAnswer with IceCredentialsIterator.
 TEST_F(TransportDescriptionFactoryTest, CreateAnswerIceCredentialsIterator) {
-  cricket::TransportOptions options;
+  webrtc::TransportOptions options;
   std::unique_ptr<TransportDescription> offer =
       f1_.CreateOffer(options, nullptr, &ice_credentials_);
 
-  std::vector<cricket::IceParameters> credentials = {
-      cricket::IceParameters("kalle", "anka", false)};
-  cricket::IceCredentialsIterator credentialsIterator(credentials);
+  std::vector<webrtc::IceParameters> credentials = {
+      webrtc::IceParameters("kalle", "anka", false)};
+  webrtc::IceCredentialsIterator credentialsIterator(credentials);
   std::unique_ptr<TransportDescription> answer = f1_.CreateAnswer(
       offer.get(), options, false, nullptr, &credentialsIterator);
   EXPECT_EQ(answer->GetIceParameters().ufrag, credentials[0].ufrag);
@@ -367,33 +369,33 @@ TEST_F(TransportDescriptionFactoryTest, CreateAnswerIceCredentialsIterator) {
 }
 
 TEST_F(TransportDescriptionFactoryTest, CreateAnswerToDtlsActpassOffer) {
-  cricket::TransportOptions options;
+  webrtc::TransportOptions options;
   std::unique_ptr<TransportDescription> offer =
       f1_.CreateOffer(options, nullptr, &ice_credentials_);
 
   std::unique_ptr<TransportDescription> answer =
       f2_.CreateAnswer(offer.get(), options, false, nullptr, &ice_credentials_);
-  EXPECT_EQ(answer->connection_role, cricket::CONNECTIONROLE_ACTIVE);
+  EXPECT_EQ(answer->connection_role, webrtc::CONNECTIONROLE_ACTIVE);
 }
 
 TEST_F(TransportDescriptionFactoryTest, CreateAnswerToDtlsActiveOffer) {
-  cricket::TransportOptions options;
+  webrtc::TransportOptions options;
   std::unique_ptr<TransportDescription> offer =
       f1_.CreateOffer(options, nullptr, &ice_credentials_);
-  offer->connection_role = cricket::CONNECTIONROLE_ACTIVE;
+  offer->connection_role = webrtc::CONNECTIONROLE_ACTIVE;
 
   std::unique_ptr<TransportDescription> answer =
       f2_.CreateAnswer(offer.get(), options, false, nullptr, &ice_credentials_);
-  EXPECT_EQ(answer->connection_role, cricket::CONNECTIONROLE_PASSIVE);
+  EXPECT_EQ(answer->connection_role, webrtc::CONNECTIONROLE_PASSIVE);
 }
 
 TEST_F(TransportDescriptionFactoryTest, CreateAnswerToDtlsPassiveOffer) {
-  cricket::TransportOptions options;
+  webrtc::TransportOptions options;
   std::unique_ptr<TransportDescription> offer =
       f1_.CreateOffer(options, nullptr, &ice_credentials_);
-  offer->connection_role = cricket::CONNECTIONROLE_PASSIVE;
+  offer->connection_role = webrtc::CONNECTIONROLE_PASSIVE;
 
   std::unique_ptr<TransportDescription> answer =
       f2_.CreateAnswer(offer.get(), options, false, nullptr, &ice_credentials_);
-  EXPECT_EQ(answer->connection_role, cricket::CONNECTIONROLE_ACTIVE);
+  EXPECT_EQ(answer->connection_role, webrtc::CONNECTIONROLE_ACTIVE);
 }

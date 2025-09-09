@@ -46,13 +46,11 @@ static int nr_stun_client_send_request(nr_stun_client_ctx *ctx);
 static void nr_stun_client_timer_expired_cb(NR_SOCKET s, int b, void *cb_arg);
 static int nr_stun_client_get_password(void *arg, nr_stun_message *msg, Data **password);
 
-#define NR_STUN_TRANSPORT_ADDR_CHECK_WILDCARD 1
-#define NR_STUN_TRANSPORT_ADDR_CHECK_LOOPBACK 2
-
-int nr_stun_client_ctx_create(char *label, nr_socket *sock, nr_transport_addr *peer, UINT4 RTO, nr_stun_client_ctx **ctxp)
+int nr_stun_client_ctx_create(char* label, nr_socket* sock,
+                              nr_transport_addr* peer, UINT4 RTO, int flags,
+                              nr_stun_client_ctx** ctxp)
   {
     nr_stun_client_ctx *ctx=0;
-    char allow_loopback;
     int r,_status;
 
     if ((r=nr_stun_startup()))
@@ -87,11 +85,7 @@ int nr_stun_client_ctx_create(char *label, nr_socket *sock, nr_transport_addr *p
     if (NR_reg_get_uint4(NR_STUN_REG_PREF_CLNT_FINAL_RETRANSMIT_BACKOFF, &ctx->maximum_transmits_timeout_ms))
       ctx->maximum_transmits_timeout_ms = 16 * ctx->rto_ms;
 
-    ctx->mapped_addr_check_mask = NR_STUN_TRANSPORT_ADDR_CHECK_WILDCARD;
-    if (NR_reg_get_char(NR_STUN_REG_PREF_ALLOW_LOOPBACK_ADDRS, &allow_loopback) ||
-        !allow_loopback) {
-      ctx->mapped_addr_check_mask |= NR_STUN_TRANSPORT_ADDR_CHECK_LOOPBACK;
-    }
+    ctx->mapped_addr_check_mask=flags;
 
     if (ctx->my_addr.protocol == IPPROTO_TCP) {
       /* Because TCP is reliable there is only one final timeout value.
@@ -131,6 +125,17 @@ int nr_stun_client_start(nr_stun_client_ctx *ctx, int mode, NR_async_cb finished
 
     if (ctx->state != NR_STUN_CLIENT_STATE_INITTED)
         ABORT(R_NOT_PERMITTED);
+
+    /* We allow wildcard here if this is TCP, because we don't set the
+     * destination address in many cases. */
+    int flags = ctx->mapped_addr_check_mask;
+    if (ctx->peer_addr.protocol == IPPROTO_TCP) {
+      flags &= ~NR_STUN_TRANSPORT_ADDR_CHECK_WILDCARD;
+    }
+    if ((r=nr_stun_transport_addr_check(&ctx->peer_addr, flags))) {
+        r_log(NR_LOG_STUN,LOG_WARNING,"STUN-CLIENT(%s): Peer address is bogus",ctx->label);
+        ABORT(r);
+    }
 
     ctx->mode=mode;
 
@@ -440,6 +445,9 @@ int nr_stun_transport_addr_check(nr_transport_addr* addr, UINT4 check)
       return(R_BAD_DATA);
 
     if ((check & NR_STUN_TRANSPORT_ADDR_CHECK_LOOPBACK) && nr_transport_addr_is_loopback(addr))
+      return(R_BAD_DATA);
+
+    if ((check & NR_STUN_TRANSPORT_ADDR_CHECK_LINK_LOCAL) && nr_transport_addr_is_link_local(addr))
       return(R_BAD_DATA);
 
     return(0);

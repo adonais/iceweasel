@@ -8,6 +8,7 @@ const DEFAULT_PROPS = {
     pocketEnabled: true,
     topSitesEnabled: true,
   },
+  enabledWidgets: {},
   mayHaveSponsoredTopSites: true,
   mayHaveSponsoredStories: true,
   mayHaveWeather: true,

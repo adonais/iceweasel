@@ -7,25 +7,25 @@
 #include "jsapi/RTCEncodedVideoFrame.h"
 
 #include <stdint.h>
+
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "api/frame_transformer_interface.h"
-
+#include "js/RootingAPI.h"
 #include "jsapi/RTCEncodedFrameBase.h"
-#include "mozilla/dom/RTCEncodedVideoFrameBinding.h"
-#include "mozilla/dom/RTCRtpScriptTransformer.h"
-#include "nsWrapperCache.h"
-#include "nsISupports.h"
-#include "nsCycleCollectionParticipant.h"
-#include "nsIGlobalObject.h"
-#include "nsContentUtils.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/RTCEncodedVideoFrameBinding.h"
+#include "mozilla/dom/RTCRtpScriptTransformer.h"
 #include "mozilla/fallible.h"
-#include "mozilla/Maybe.h"
-#include "js/RootingAPI.h"
+#include "nsContentUtils.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsIGlobalObject.h"
+#include "nsISupports.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla::dom {
 

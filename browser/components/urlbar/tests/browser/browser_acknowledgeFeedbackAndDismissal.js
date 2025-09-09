@@ -178,10 +178,48 @@ add_task(async function acknowledgeDismissal_rowLabel() {
     resultIndex: 1,
     command: DISMISS_ALL_COMMAND,
     shouldBeSelected: false,
-    expectedLabel: "Firefox Suggest",
+    expectedLabelOnOriginalRow: "Firefox Suggest",
   });
 
   gTestProvider.results[0].suggestedIndex = suggestedIndex;
+});
+
+// When a row with `hideRowLabel` set is dismissed, the dismissal acknowledgment
+// tip should not have a row label.
+add_task(async function acknowledgeDismissal_hideRowLabel() {
+  // Show the result as the first row in the Firefox Suggest section so that it
+  // has the "Firefox Suggest" group label.
+  let { suggestedIndex } = gTestProvider.results[0];
+  gTestProvider.results[0].suggestedIndex = 0;
+
+  // Make sure the label is visible.
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test",
+  });
+  await checkRowLabel(1, "Firefox Suggest");
+  await UrlbarTestUtils.promisePopupClose(window);
+
+  // Now hide the row label and dismiss the result.
+  gTestProvider.results[0].hideRowLabel = true;
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test",
+  });
+
+  await checkRowLabel(1, null);
+  await checkRowLabel(2, "Firefox Suggest");
+
+  await doDismissTest({
+    resultIndex: 1,
+    command: DISMISS_ALL_COMMAND,
+    shouldBeSelected: false,
+    expectedLabelOnOriginalRow: null,
+    expectedLabelOnReplacementRow: "Firefox Suggest",
+  });
+
+  gTestProvider.results[0].suggestedIndex = suggestedIndex;
+  delete gTestProvider.results[0].hideRowLabel;
 });
 
 /**
@@ -203,16 +241,21 @@ add_task(async function acknowledgeDismissal_rowLabel() {
  * @param {number} options.resultIndex
  *   The index of the test result, if known beforehand. Leave -1 to find it
  *   automatically.
- * @param {string} options.expectedLabel
- *   The row label (a.k.a. group label) the row is expected to have. This should
- *   be the expected translated en-US string, not an l10n object. If null, the
- *   row is expected not to have a row label at all.
+ * @param {string} options.expectedLabelOnOriginalRow
+ *   The row label (a.k.a. group label) both the original row and the
+ *   acknowledgment tip are expected to have. This should be the expected
+ *   translated en-US string, not an l10n object. If null, the row is expected
+ *   not to have a row label at all.
+ * @param {string} options.expectedLabelOnReplacementRow
+ *   The expected label of the row that replaces the acknowledgment tip when the
+ *   tip's "Got it" button is clicked.
  */
 async function doDismissTest({
   command,
   shouldBeSelected,
   resultIndex = 2,
-  expectedLabel = null,
+  expectedLabelOnOriginalRow = null,
+  expectedLabelOnReplacementRow = expectedLabelOnOriginalRow,
 }) {
   let details = await UrlbarTestUtils.getDetailsOfResultAt(window, resultIndex);
   Assert.equal(
@@ -242,7 +285,7 @@ async function doDismissTest({
   }
 
   info("Checking the row label on the original row");
-  await checkRowLabel(resultIndex, expectedLabel);
+  await checkRowLabel(resultIndex, expectedLabelOnOriginalRow);
 
   let resultCount = UrlbarTestUtils.getResultCount(window);
 
@@ -299,7 +342,7 @@ async function doDismissTest({
   );
 
   info("Checking the row label on the dismissal acknowledgment tip");
-  await checkRowLabel(resultIndex, expectedLabel);
+  await checkRowLabel(resultIndex, expectedLabelOnOriginalRow);
 
   // Get the dismissal acknowledgment's "Got it" button.
   let gotItButton = UrlbarTestUtils.getButtonForResultIndex(
@@ -353,7 +396,7 @@ async function doDismissTest({
   info(
     "Checking the row label on the row that replaced the dismissal acknowledgment tip"
   );
-  await checkRowLabel(resultIndex, expectedLabel);
+  await checkRowLabel(resultIndex, expectedLabelOnReplacementRow);
 
   await UrlbarTestUtils.promisePopupClose(window);
 }
@@ -409,7 +452,7 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
           break;
         case DISMISS_ALL_COMMAND:
           details.result.acknowledgeDismissalL10n = {
-            id: "firefox-suggest-dismissal-acknowledgment-all",
+            id: "urlbar-result-dismissal-acknowledgment-all",
           };
           controller.removeResult(details.result);
           break;

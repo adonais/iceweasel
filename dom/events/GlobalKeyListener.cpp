@@ -5,11 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "GlobalKeyListener.h"
-#include "ErrorList.h"
-#include "EventTarget.h"
 
 #include <utility>
 
+#include "ErrorList.h"
+#include "EventTarget.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/HTMLEditor.h"

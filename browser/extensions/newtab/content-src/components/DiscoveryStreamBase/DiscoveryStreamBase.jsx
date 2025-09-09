@@ -3,11 +3,9 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { CardGrid } from "content-src/components/DiscoveryStreamComponents/CardGrid/CardGrid";
-import { CollectionCardGrid } from "content-src/components/DiscoveryStreamComponents/CollectionCardGrid/CollectionCardGrid";
 import { CollapsibleSection } from "content-src/components/CollapsibleSection/CollapsibleSection";
 import { connect } from "react-redux";
 import { DSMessage } from "content-src/components/DiscoveryStreamComponents/DSMessage/DSMessage";
-import { DSPrivacyModal } from "content-src/components/DiscoveryStreamComponents/DSPrivacyModal/DSPrivacyModal";
 import { ReportContent } from "../DiscoveryStreamComponents/ReportContent/ReportContent";
 import { DSSignup } from "content-src/components/DiscoveryStreamComponents/DSSignup/DSSignup";
 import { DSTextPromo } from "content-src/components/DiscoveryStreamComponents/DSTextPromo/DSTextPromo";
@@ -147,8 +145,6 @@ export class _DiscoveryStreamBase extends React.PureComponent {
             link_text={component.header && component.header.link_text}
             link_url={component.header && component.header.link_url}
             icon={component.header && component.header.icon}
-            essentialReadsHeader={component.essentialReadsHeader}
-            editorsPicksHeader={component.editorsPicksHeader}
           />
         );
       case "SectionTitle":
@@ -167,21 +163,6 @@ export class _DiscoveryStreamBase extends React.PureComponent {
             privacyNoticeURL={component.properties.privacyNoticeURL}
           />
         );
-      case "CollectionCardGrid": {
-        const { DiscoveryStream } = this.props;
-        return (
-          <CollectionCardGrid
-            data={component.data}
-            feed={component.feed}
-            spocs={DiscoveryStream.spocs}
-            placement={component.placement}
-            type={component.type}
-            items={component.properties.items}
-            dismissible={this.props.DiscoveryStream.isCollectionDismissible}
-            dispatch={this.props.dispatch}
-          />
-        );
-      }
       case "CardGrid": {
         const sectionsEnabled =
           this.props.Prefs.values["discoverystream.sections.enabled"];
@@ -193,7 +174,6 @@ export class _DiscoveryStreamBase extends React.PureComponent {
               dispatch={this.props.dispatch}
               type={component.type}
               firstVisibleTimestamp={this.props.firstVisibleTimestamp}
-              is_collection={true}
               ctaButtonSponsors={component.properties.ctaButtonSponsors}
               ctaButtonVariant={component.properties.ctaButtonVariant}
               spocMessageVariant={component.properties.spocMessageVariant}
@@ -213,13 +193,10 @@ export class _DiscoveryStreamBase extends React.PureComponent {
             hideCardBackground={component.properties.hideCardBackground}
             fourCardLayout={component.properties.fourCardLayout}
             compactGrid={component.properties.compactGrid}
-            essentialReadsHeader={component.properties.essentialReadsHeader}
             onboardingExperience={component.properties.onboardingExperience}
             ctaButtonSponsors={component.properties.ctaButtonSponsors}
             ctaButtonVariant={component.properties.ctaButtonVariant}
             spocMessageVariant={component.properties.spocMessageVariant}
-            editorsPicksHeader={component.properties.editorsPicksHeader}
-            recentSavesEnabled={this.props.DiscoveryStream.recentSavesEnabled}
             hideDescriptions={this.props.DiscoveryStream.hideDescriptions}
             firstVisibleTimestamp={this.props.firstVisibleTimestamp}
             spocPositions={component.spocs?.positions}
@@ -246,7 +223,12 @@ export class _DiscoveryStreamBase extends React.PureComponent {
 
   render() {
     const { locale, mayHaveSponsoredStories } = this.props;
-    // Select layout render data by adding spocs and position to recommendations
+    // Bug 1980459 - Note that selectLayoutRender acts as a selector that transforms layout data based on current
+    // preferences and experiment flags. It runs after Redux state is populated but before render.
+    // Components removed in selectLayoutRender (e.g., Widgets or TopSites) will not appear in the
+    // layoutRender result, and therefore will not be rendered here regardless of logic below.
+
+    // Select layout renders data by adding spocs and position to recommendations
     const { layoutRender } = selectLayoutRender({
       state: this.props.DiscoveryStream,
       prefs: this.props.Prefs.values,
@@ -293,8 +275,15 @@ export class _DiscoveryStreamBase extends React.PureComponent {
 
     // Extract TopSites to render before the rest and Message to use for header
     const topSites = extractComponent("TopSites");
-    const widgets = extractComponent("Widgets");
-    const sponsoredCollection = extractComponent("CollectionCardGrid");
+
+    // There are two ways to enable widgets:
+    // Via `widgets.system.*` prefs or Nimbus experiment
+    const widgetsNimbusEnabled = this.props.Prefs.values.widgetsConfig?.enabled;
+    const widgetsSystemPrefsEnabled =
+      this.props.Prefs.values["widgets.system.enabled"];
+
+    const widgets = widgetsNimbusEnabled || widgetsSystemPrefsEnabled;
+
     const message = extractComponent("Message") || {
       header: {
         link_text: topStories.learnMore.link.message,
@@ -313,26 +302,10 @@ export class _DiscoveryStreamBase extends React.PureComponent {
     let sectionTitle = message.header.title;
     let subTitle = "";
 
-    // If we're in one of these experiments, override the default message.
-    // For now this is English only.
-    if (message.essentialReadsHeader || message.editorsPicksHeader) {
-      learnMore = null;
-      subTitle = "Recommended By Pocket";
-      if (message.essentialReadsHeader) {
-        sectionTitle = "Today’s Essential Reads";
-      } else if (message.editorsPicksHeader) {
-        sectionTitle = "Editor’s Picks";
-      }
-    }
-
     const { DiscoveryStream } = this.props;
 
     return (
       <React.Fragment>
-        {this.props.DiscoveryStream.isPrivacyInfoModalVisible && (
-          <DSPrivacyModal dispatch={this.props.dispatch} />
-        )}
-
         {/* Reporting stories/articles will only be available in sections, not the default card grid  */}
         {((reportAdsEnabled && spocsEnabled) || sectionsEnabled) && (
           <ReportContent spocs={DiscoveryStream.spocs} />
@@ -350,15 +323,8 @@ export class _DiscoveryStreamBase extends React.PureComponent {
           this.renderLayout([
             {
               width: 12,
-              components: [widgets],
+              components: [{ type: "Widgets" }],
               sectionType: "widgets",
-            },
-          ])}
-        {sponsoredCollection &&
-          this.renderLayout([
-            {
-              width: 12,
-              components: [sponsoredCollection],
             },
           ])}
         {!!layoutRender.length && (

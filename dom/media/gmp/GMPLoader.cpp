@@ -5,13 +5,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "GMPLoader.h"
+
 #include <stdio.h>
+
+#include "gmp-entrypoints.h"
 #include "mozilla/Attributes.h"
 #include "nsExceptionHandler.h"
-#include "gmp-entrypoints.h"
-#include "prlink.h"
 #include "prenv.h"
 #include "prerror.h"
+#include "prlink.h"
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
 #  include "mozilla/sandboxTarget.h"
 #  include "mozilla/sandboxing/SandboxInitialization.h"

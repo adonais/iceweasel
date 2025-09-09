@@ -89,8 +89,8 @@ def generate_markdown_table(results):
 
     for name, metrics in results.items():
         base_name = name.replace("PartialWithBaselineProfiles", "")
-        if base_name.endswith("None"):
-            main_name = base_name[:-4]
+        if "None" in base_name:
+            main_name = base_name.replace("None", "")
             table_data[main_name]["median None"] = metrics["median"]
         else:
             table_data[base_name]["median"] = metrics["median"]

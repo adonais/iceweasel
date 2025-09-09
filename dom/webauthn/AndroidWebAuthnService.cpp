@@ -4,19 +4,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/StaticPtr.h"
-#include "mozilla/ipc/BackgroundParent.h"
-#include "mozilla/jni/GeckoBundleUtils.h"
-
 #include "AndroidWebAuthnService.h"
+
 #include "JavaBuiltins.h"
 #include "JavaExceptions.h"
-#include "WebAuthnPromiseHolder.h"
 #include "WebAuthnEnumStrings.h"
+#include "WebAuthnPromiseHolder.h"
 #include "WebAuthnResult.h"
 #include "mozilla/StaticPrefs_security.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/java/WebAuthnTokenManagerWrappers.h"
 #include "mozilla/jni/Conversions.h"
+#include "mozilla/jni/GeckoBundleUtils.h"
 
 namespace mozilla {
 namespace jni {
@@ -158,15 +158,11 @@ AndroidWebAuthnService::MakeCredential(uint64_t aTransactionId,
         // Unfortunately, GMS's FIDO2 API has no option for Passkey. If using
         // residentKey, credential will be synced with Passkey via Google
         // account or credential provider service. So this is experimental.
-        Maybe<bool> credPropsResponse;
         if (requestedCredProps &&
             StaticPrefs::
                 security_webauthn_webauthn_enable_android_fido2_residentkey()) {
           GECKOBUNDLE_PUT(authSelBundle, "residentKey",
                           jni::StringParam(residentKey));
-          bool residentKeyRequired = residentKey.EqualsLiteral(
-              MOZ_WEBAUTHN_RESIDENT_KEY_REQUIREMENT_REQUIRED);
-          credPropsResponse = Some(residentKeyRequired);
         }
 
         nsString userVerification;
@@ -196,6 +192,9 @@ AndroidWebAuthnService::MakeCredential(uint64_t aTransactionId,
         GECKOBUNDLE_FINISH(authSelBundle);
 
         GECKOBUNDLE_START(extensionsBundle);
+        GECKOBUNDLE_PUT(extensionsBundle, "credProps",
+                        requestedCredProps ? java::sdk::Boolean::TRUE()
+                                           : java::sdk::Boolean::FALSE());
         GECKOBUNDLE_FINISH(extensionsBundle);
 
         auto result = java::WebAuthnTokenManager::WebAuthnMakeCredential(
@@ -208,11 +207,7 @@ AndroidWebAuthnService::MakeCredential(uint64_t aTransactionId,
                    true>::FromGeckoResult(geckoResult)
             ->Then(
                 GetCurrentSerialEventTarget(), __func__,
-                [aPromise, credPropsResponse = std::move(credPropsResponse)](
-                    RefPtr<WebAuthnRegisterResult>&& aValue) {
-                  if (credPropsResponse.isSome()) {
-                    Unused << aValue->SetCredPropsRk(credPropsResponse.ref());
-                  }
+                [aPromise](RefPtr<WebAuthnRegisterResult>&& aValue) {
                   aPromise->Resolve(aValue);
                 },
                 [aPromise](AndroidWebAuthnError&& aValue) {

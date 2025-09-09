@@ -48,10 +48,6 @@ urlbar-group-local =
 # A message that replaces a result when the user dismisses a single suggestion.
 firefox-suggest-dismissal-acknowledgment-one = Thanks for your feedback. You won’t see this suggestion again.
 
-# A message that replaces a result when the user dismisses all suggestions of a
-# particular type.
-firefox-suggest-dismissal-acknowledgment-all = Thanks for your feedback. You won’t see these suggestions anymore.
-
 # A message that replaces a result when the user dismisses a single MDN
 # suggestion.
 firefox-suggest-dismissal-acknowledgment-one-mdn = Thanks for your feedback. You won’t see this { -mdn-brand-short-name } suggestion again.
@@ -65,13 +61,6 @@ firefox-suggest-dismissal-acknowledgment-one-yelp = Thanks for your feedback. Yo
 
 # A message that replaces a result when the user dismisses all Yelp suggestions.
 firefox-suggest-dismissal-acknowledgment-all-yelp = Thanks for your feedback. You won’t see { -yelp-brand-name } suggestions anymore.
-
-# A message that replaces a result when the user dismisses a single Fakespot
-# suggestion.
-firefox-suggest-dismissal-acknowledgment-one-fakespot = Thanks for your feedback. You won’t see this { -fakespot-brand-name } suggestion again.
-
-# A message that replaces a result when the user dismisses all Fakespot suggestions.
-firefox-suggest-dismissal-acknowledgment-all-fakespot = Thanks for your feedback. You won’t see { -fakespot-brand-name } suggestions anymore.
 
 ## These strings are used for urlbar weather suggestions in the "simpler" and
 ## "full" weather UIs.
@@ -115,8 +104,6 @@ firefox-suggest-command-not-relevant =
   .label = Not relevant
 firefox-suggest-command-not-interested =
   .label = Not interested
-firefox-suggest-command-manage-fakespot =
-  .label = Manage { -fakespot-brand-name } suggestions
 firefox-suggest-command-dont-show-this-suggestion =
   .label = Don’t show this suggestion
 firefox-suggest-command-dont-show-any-suggestions =
@@ -144,33 +131,6 @@ firefox-suggest-yelp-service-title = Top results for { $service }
 # This string is shown in Yelp suggestions and indicates the suggestion is for
 # Yelp.
 firefox-suggest-yelp-bottom-text = Yelp · Sponsored
-
-## These strings are used for Fakespot suggestions in the urlbar.
-
-# This string displays inside of the badge in Fakespot suggestion.
-firefox-suggest-fakespot-badge = RELIABLE REVIEWS
-
-## This string displays rating and total reviews as a label.
-## Variables:
-##  $rating (number) - The number of rating for the suggestion.
-##  $totalReviews (number) - The number of total reviews for the suggestion.
-
-# Show the exact number of reviews.
-firefox-suggest-fakespot-rating-and-total-reviews =
-  { $totalReviews ->
-     [one] { $rating } · ({ $totalReviews } review)
-    *[other] { $rating } · ({ $totalReviews } reviews)
-  }
-# Show an approximate number of reviews (e.g. 100,000+ reviews).
-firefox-suggest-fakespot-rating-and-total-reviews-overflow =
-  { $totalReviews ->
-     [one] { $rating } · ({ $totalReviews }+ review)
-    *[other] { $rating } · ({ $totalReviews }+ reviews)
-  }
-
-# This string is shown in Fakespot suggestion and indicates the suggestion is
-# sponsored.
-firefox-suggest-fakespot-sponsored = { -fakespot-brand-name } · Sponsored
 
 # These strings are used for a toggle switch in the settings UI that opts the
 # user into "online" Firefox Suggest, allowing them to receive suggestions from

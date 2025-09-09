@@ -89,7 +89,11 @@ support-files = [
 ]
 skip-if = ["os == 'linux' && socketprocess_networking"]
 
+["browser_copy_link_to_existing_highlight.js"]
+
 ["browser_copy_link_to_highlight.js"]
+
+["browser_copy_link_to_highlight_viewsource.js"]
 
 ["browser_save_image.js"]
 

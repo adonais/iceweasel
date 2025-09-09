@@ -7,23 +7,24 @@
 // mostly derived from the Allegro source code at:
 // http://alleg.svn.sourceforge.net/viewvc/alleg/allegro/branches/4.9/src/macosx/hidjoy.m?revision=13760&view=markup
 
-#include "mozilla/dom/GamepadHandle.h"
-#include "mozilla/dom/GamepadPlatformService.h"
-#include "mozilla/dom/GamepadRemapping.h"
-#include "mozilla/ipc/BackgroundParent.h"
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/Sprintf.h"
-#include "mozilla/Tainting.h"
-#include "nsComponentManagerUtils.h"
-#include "nsITimer.h"
-#include "nsThreadUtils.h"
 #include <CoreFoundation/CoreFoundation.h>
 #include <IOKit/hid/IOHIDBase.h>
 #include <IOKit/hid/IOHIDKeys.h>
 #include <IOKit/hid/IOHIDManager.h>
-
 #include <stdio.h>
+
 #include <vector>
+
+#include "mozilla/ArrayUtils.h"
+#include "mozilla/Sprintf.h"
+#include "mozilla/Tainting.h"
+#include "mozilla/dom/GamepadHandle.h"
+#include "mozilla/dom/GamepadPlatformService.h"
+#include "mozilla/dom/GamepadRemapping.h"
+#include "mozilla/ipc/BackgroundParent.h"
+#include "nsComponentManagerUtils.h"
+#include "nsITimer.h"
+#include "nsThreadUtils.h"
 
 namespace {
 
@@ -306,7 +307,8 @@ void DarwinGamepadService::DeviceAdded(IOHIDDeviceRef device) {
   // Gather some identifying information
   auto uintProperty = [&](CFStringRef key) {
     int value;
-    auto numberRef = reinterpret_cast<CFNumberRef>(IOHIDDeviceGetProperty(device, key));
+    auto numberRef =
+        reinterpret_cast<CFNumberRef>(IOHIDDeviceGetProperty(device, key));
     if (!numberRef || !CFNumberGetValue(numberRef, kCFNumberIntType, &value)) {
       return 0u;
     }
@@ -319,8 +321,9 @@ void DarwinGamepadService::DeviceAdded(IOHIDDeviceRef device) {
   char productName[128];
   CFStringRef productRef =
       (CFStringRef)IOHIDDeviceGetProperty(device, CFSTR(kIOHIDProductKey));
-  if (!productRef || !CFStringGetCString(productRef, productName, sizeof(productName),
-                       kCFStringEncodingASCII)) {
+  if (!productRef ||
+      !CFStringGetCString(productRef, productName, sizeof(productName),
+                          kCFStringEncodingASCII)) {
     SprintfLiteral(productName, "Unknown Device");
   }
 

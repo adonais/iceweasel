@@ -156,6 +156,8 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
 
   if (lastMessage && mutableMessagesById.size > 0) {
     if (
+      // only repeat messages if the group similar messages pref is enabled
+      prefsState.groupSimilar &&
       lastMessage.groupId === currentGroup &&
       areMessagesSimilar(lastMessage, newMessage)
     ) {
@@ -181,9 +183,8 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
   // proper message.
   const warningGroupType = getWarningGroupType(newMessage);
 
-  // If the preference for warning grouping is true, and the new message could be in a
-  // warning group.
-  if (prefsState.groupWarnings && warningGroupType !== null) {
+  // If the preference for grouping is true, and the new message could be in a warning group.
+  if (prefsState.groupSimilar && warningGroupType !== null) {
     const warningGroupMessageId = getParentWarningGroupMessageId(newMessage);
 
     // If there's no warning group for the type/innerWindowID yet
@@ -658,10 +659,10 @@ function messages(
         frontsToRelease: [],
       };
 
-    case constants.WARNING_GROUPS_TOGGLE:
+    case constants.GROUP_SIMILAR_MESSAGES_TOGGLE:
       // There's no warningGroups, and the pref was set to false,
       // we don't need to do anything.
-      if (!prefsState.groupWarnings && state.warningGroupsById.size === 0) {
+      if (!prefsState.groupSimilar && state.warningGroupsById.size === 0) {
         return state;
       }
 
@@ -714,7 +715,7 @@ function messages(
         uiState,
         // If the user disabled warning groups, we want the messages to be sorted by their
         // timestamps.
-        forceTimestampSort: !prefsState.groupWarnings,
+        forceTimestampSort: !prefsState.groupSimilar,
       });
 
     case constants.MESSAGE_REMOVE:
@@ -835,7 +836,7 @@ function setVisibleMessages({
   maybeSortVisibleMessages(
     newState,
     // Only sort for warningGroups if the feature is enabled
-    prefsState.groupWarnings,
+    prefsState.groupSimilar,
     forceTimestampSort
   );
 
@@ -1703,7 +1704,7 @@ function shouldGroupWarningMessages(
   }
 
   // Only group if the preference is ON.
-  if (!prefsState.groupWarnings) {
+  if (!prefsState.groupSimilar) {
     return false;
   }
 

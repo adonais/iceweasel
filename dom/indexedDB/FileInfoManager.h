@@ -7,14 +7,14 @@
 #ifndef DOM_INDEXEDDB_FILEINFOMANAGER_H_
 #define DOM_INDEXEDDB_FILEINFOMANAGER_H_
 
+#include "FileInfo.h"
+#include "FlippedOnce.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticMutex.h"
-#include "nsTHashMap.h"
 #include "nsHashKeys.h"
 #include "nsISupportsImpl.h"
-#include "FileInfo.h"
-#include "FlippedOnce.h"
+#include "nsTHashMap.h"
 
 namespace mozilla::dom::indexedDB {
 

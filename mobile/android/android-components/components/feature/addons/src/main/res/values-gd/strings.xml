@@ -185,8 +185,6 @@
   <!-- The text shown when an extension requests the userScripts permission, near the usual description of the userScripts permission -->
   <string name="mozac_feature_addons_permissions_user_scripts_extra_warning">Dh’fhaoidte gum bi sgriobtaichean gun dearbhadh cunnartach a thaobh tèarainteachd is prìobhaideachd. Na ruith ach sgriobtaichean aig leudachain no o thùsan sa bheil earbsa agad.</string>
   <!-- The sentence used when the extension has data collection permissions. %1$s is a formatted list of permissions. -->
-  <string name="mozac_feature_addons_permissions_required_data_collection_description" moz:removedIn="141" tools:ignore="UnusedResources">Tha an luchd-leasachaidh ag ràdh gun cruinnich na leudachan seo na leanas: %1$s.</string>
-  <!-- The sentence used when the extension has data collection permissions. %1$s is a formatted list of permissions. -->
   <string name="mozac_feature_addons_permissions_required_data_collection_description_2">Tha an luchd-leasachaidh ag ràdh gun cruinnich na leudachan seo na leanas: %1$s</string>
   <!-- The sentence used when the developer of an extension has explicitly stated that they do not collect any data collection. -->
   <string name="mozac_feature_addons_permissions_none_required_data_collection_description">Tha an luchd-leasachaidh ag ràdh nach cruinnich an leudachadh seo dàta.</string>
@@ -263,8 +261,6 @@
   <!-- Indicates the add-on is enabled. -->
   <string name="mozac_feature_addons_settings_on">Air</string>
   <!-- Indicates the add-on is allowed in private browsing mode. -->
-  <string name="mozac_feature_addons_settings_allow_in_private_browsing" moz:removedIn="141" tools:ignore="UnusedResources">Ceadaich brabhsadh prìobhaideach</string>
-  <!-- Indicates the add-on is allowed in private browsing mode. -->
   <string name="mozac_feature_addons_settings_allow_in_private_browsing_2">Leig leis an leudachan ruith ann am brabhsadh prìobhaideach</string>
   <!-- Indicates the add-on is allowed in private browsing mode. -->
   <string name="mozac_feature_addons_settings_run_in_private_browsing">Ruith sa bhrabhsadh phrìobhaideach</string>
@@ -291,8 +287,6 @@
   <!-- This is a button to report an add-on. -->
   <string name="mozac_feature_addons_report">Dèan aithris</string>
   <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
-  <string name="mozac_feature_addons_permissions_dialog_title" moz:removedIn="141" tools:ignore="UnusedResources">A bheil thu airson %1$s a chur ris?</string>
-  <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_permissions_dialog_title_2">Cuir %1$s ris</string>
   <!-- This is the title of a dialog that asks the users to grant optional permissions. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_optional_permissions_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">Tha %1$s ag iarraidh ceadan a bharrachd.</string>
@@ -300,8 +294,6 @@
   <string name="mozac_feature_addons_optional_permissions_with_data_collection_dialog_title">Tha %1$s ag iarraidh roghainnean a bharrachd</string>
   <!-- This is the title of a dialog that asks the users to grant optional data collection permissions only. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_optional_permissions_with_data_collection_only_dialog_title">Tha %1$s ag iarraidh cead barrachd dàta a chruinneachadh</string>
-  <!-- This is the subtitle of a dialog that asks the users if they want to install or not an add-on, the subtitle lists the permissions that this add-on requires, the permissions will dynamically be listed after the ":". -->
-  <string name="mozac_feature_addons_permissions_dialog_subtitle" moz:removedIn="141" tools:ignore="UnusedResources">Feumaidh e do chead airson:</string>
   <!-- Heading for the permissions section in the add-on install dialog. -->
   <string name="mozac_feature_addons_permissions_dialog_heading_required_permissions">Ceadan riatanach:</string>
   <!-- Heading for the data collection permissions section in the add-on install dialog. -->
@@ -366,6 +358,8 @@
   <string name="mozac_feature_addons_updater_notification_short_intro">Sguir dheth airson an tionndadh is na roghainnean làithreach agad a chumail.</string>
   <!-- The heading for the permissions section in the system notification shown when an add-on has an update that requires user confirmation. %1$s is a list of sentences. -->
   <string name="mozac_feature_addons_updater_notification_heading_permissions">Ceadan riatanach ùra: %1$s</string>
+  <!-- The heading for the data collection permission section in the system notification shown when an add-on has an update that requires user confirmation. %1$s is a list of permissions. -->
+  <string name="mozac_feature_addons_updater_notification_heading_data_collection_permissions">Feumar dàta a bharrachd a chruinneachadh. Tha an luchd-leasachaidh ag ràdh gun cruinnich an leudachan %1$s.</string>
   <!-- Name of the "notification channel" used for displaying a notification for updating an extension. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_feature_addons_updater_notification_channel_2">Naidheachdan leudachan</string>
   <!-- Name of the "notification channel" used for displaying a notification for new supported add-ons. See https://developer.android.com/training/notify-user/channels -->
@@ -448,8 +442,14 @@
   <string name="mozac_feature_addons_updater_dialog_status">Staid:</string>
   <!-- Text shown in the dialog when add-on installation is completed. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_installed_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">Chaidh %1$s a chur ri %2$s</string>
+  <!-- Text shown in the dialog when add-on installation is completed. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_installed_dialog_title_2">Chaidh %1$s a chur ris</string>
   <!-- Text shown in the dialog when add-on installation is completed. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_installed_dialog_description_2" moz:removedIn="142" tools:ignore="UnusedResources">Faigh cothrom air %1$s on clàr-taice “%2$s” menu.</string>
+  <!-- Used as text for the link in the description of the post-installation dialog. -->
+  <string name="mozac_feature_addons_installed_dialog_description_link_text">roghainnean an leudachain</string>
+  <!-- Text shown in the dialog when add-on installation is completed. %1$s is replaced by an active link, using mozac_feature_addons_installed_dialog_description_link_text as text ("extension settings"). -->
+  <string name="mozac_feature_addons_installed_dialog_description_3">’S urrainn dhut na ceadain is roghainnean dàta ùrachadh ann an %1$s uair sam bith.</string>
   <!-- Confirmation button text for the dialog when add-on installation is completed. -->
   <string name="mozac_feature_addons_installed_dialog_okay_button_2">Ceart ma-thà</string>
   <!-- "Learn more" link displayed below an add-on status message. -->

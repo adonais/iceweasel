@@ -76,6 +76,17 @@ struct CookieJarSettingsArgs
 };
 
 //-----------------------------------------------------------------------------
+// CookieChange
+//-----------------------------------------------------------------------------
+
+struct CookieChange
+{
+  bool added;
+  CookieStruct cookie;
+  OriginAttributes originAttributes;
+};
+
+//-----------------------------------------------------------------------------
 // Preferrer alternative data type
 //-----------------------------------------------------------------------------
 
@@ -671,6 +682,28 @@ struct FileChannelInfo
   LoadInfoArgs           loadInfo;
   nsCString              contentType;
   uint64_t               channelId;
+};
+
+//-----------------------------------------------------------------------------
+// GeckoView's Android Content IPDL structs
+//-----------------------------------------------------------------------------
+
+struct GeckoViewContentChannelOpenArgs
+{
+  URIParams uri;
+  LoadInfoArgs loadInfo;
+  uint32_t loadFlags;
+};
+
+struct GeckoViewContentChannelConnectArgs
+{
+  uint32_t channelId;
+};
+
+union GeckoViewContentChannelArgs
+{
+  GeckoViewContentChannelOpenArgs;
+  GeckoViewContentChannelConnectArgs;
 };
 
 struct RemoteStreamInfo {

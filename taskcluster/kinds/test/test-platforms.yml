@@ -169,13 +169,6 @@ windows11-32-24h2-mingwclang/opt:
     test-sets:
         - mingwclang-tests-opt
 
-# win64
-# Bug 1909894, windows 10 + sp3 temporarily
-windows10-64-shippable-qr/opt:
-    build-platform: win64-shippable/opt
-    test-sets:
-        - browsertime-benchmark
-
 windows11-64-24h2-hw-ref-shippable/opt:
     build-platform: win64-shippable/opt
     build-signing-label:

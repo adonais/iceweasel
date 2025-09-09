@@ -53,7 +53,7 @@ NSSSocketControl::NSSSocketControl(
       mSocketCreationTimestamp(TimeStamp::Now()),
       mPlaintextBytesRead(0),
       mClaimed(!(providerFlags & nsISocketProvider::IS_SPECULATIVE_CONNECTION)),
-      mPendingSelectClientAuthCertificate(nullptr),
+      mClientAuthCertificateRequest(Nothing()),
       mBrowserId(0) {}
 
 NS_IMETHODIMP
@@ -535,7 +535,7 @@ NSSSocketControl::SetHandshakeCallbackListener(
 PRStatus NSSSocketControl::CloseSocketAndDestroy() {
   COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
 
-  mPendingSelectClientAuthCertificate = nullptr;
+  mClientAuthCertificateRequest.reset();
 
   PRFileDesc* popped = PR_PopIOLayer(mFd, PR_TOP_IO_LAYER);
   MOZ_ASSERT(
@@ -752,6 +752,19 @@ void NSSSocketControl::SetPreliminaryHandshakeInfo(
   mSignatureSchemeName.emplace(getSignatureName(channelInfo.signatureScheme));
   mIsDelegatedCredential.emplace(channelInfo.peerDelegCred);
   mIsAcceptedEch.emplace(channelInfo.echAccepted);
+}
+
+void NSSSocketControl::MaybeSelectClientAuthCertificate() {
+  COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
+  if (!IsWaitingForCertVerification() && mClaimed &&
+      mClientAuthCertificateRequest.isSome()) {
+    MOZ_LOG(gPIPNSSLog, mozilla::LogLevel::Debug,
+            ("[%p] selecting client auth certificate", (void*)mFd));
+    ClientAuthCertificateRequest request(
+        mClientAuthCertificateRequest.extract());
+    DoSelectClientAuthCertificate(this, std::move(request.mServerCertificate),
+                                  std::move(request.mCANames));
+  }
 }
 
 NS_IMETHODIMP NSSSocketControl::Claim() {

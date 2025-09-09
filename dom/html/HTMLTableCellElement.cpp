@@ -5,13 +5,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/HTMLTableCellElement.h"
+
+#include "celldata.h"
+#include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/HTMLTableCellElementBinding.h"
 #include "mozilla/dom/HTMLTableElement.h"
 #include "mozilla/dom/HTMLTableRowElement.h"
-#include "mozilla/MappedDeclarationsBuilder.h"
 #include "nsAttrValueInlines.h"
-#include "celldata.h"
-#include "mozilla/dom/HTMLTableCellElementBinding.h"
 
 namespace {
 enum class StyleCellScope : uint8_t { Row, Col, Rowgroup, Colgroup };

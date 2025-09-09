@@ -10,6 +10,8 @@
 
 #include <gio/gio.h>
 #include <glib.h>
+
+#include "MLSFallback.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/GRefPtr.h"
 #include "mozilla/GUniquePtr.h"
@@ -22,7 +24,6 @@
 #include "mozilla/dom/GeolocationPosition.h"
 #include "mozilla/dom/GeolocationPositionErrorBinding.h"
 #include "mozilla/glean/DomGeolocationMetrics.h"
-#include "MLSFallback.h"
 #include "nsAppRunner.h"
 #include "nsCOMPtr.h"
 #include "nsIDOMGeoPosition.h"

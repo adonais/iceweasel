@@ -45,7 +45,7 @@ export function registerWebProgressListenerActor() {
     registered = true;
 
     // Ensure the WebProgress listener is started in existing contexts.
-    for (const browser of lazy.TabManager.browsers) {
+    for (const browser of lazy.TabManager.getBrowsers()) {
       if (!browser?.browsingContext) {
         continue;
       }

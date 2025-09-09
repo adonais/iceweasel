@@ -26,9 +26,8 @@
 #include <vector>
 
 #include "content_decryption_module.h"
-#include "pk11pub.h"
-
 #include "mozilla/Span.h"
+#include "pk11pub.h"
 
 #if 0
 void CK_Log(const char* aFmt, ...);

@@ -7,24 +7,22 @@
 #ifndef mozilla_dom_workers_CacheLoadHandler_h__
 #define mozilla_dom_workers_CacheLoadHandler_h__
 
-#include "nsIContentPolicy.h"
-#include "nsIInputStreamPump.h"
-#include "nsIStreamLoader.h"
-#include "nsStringFwd.h"
-#include "nsStreamUtils.h"
-
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/dom/CacheBinding.h"
 #include "mozilla/dom/ChannelInfo.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/ScriptLoadHandler.h"
-#include "mozilla/dom/cache/Cache.h"
-#include "mozilla/dom/cache/CacheStorage.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerRef.h"
-
+#include "mozilla/dom/cache/Cache.h"
+#include "mozilla/dom/cache/CacheStorage.h"
 #include "mozilla/dom/workerinternals/ScriptLoader.h"
+#include "nsIContentPolicy.h"
+#include "nsIInputStreamPump.h"
+#include "nsIStreamLoader.h"
+#include "nsStreamUtils.h"
+#include "nsStringFwd.h"
 
 using mozilla::dom::cache::Cache;
 using mozilla::dom::cache::CacheStorage;

@@ -1,13 +1,16 @@
-// Copyright (c) 2006-2010 The Chromium Authors. All rights reserved.
+// Copyright 2006-2010 The Chromium Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #include "sandbox/win/src/resolver.h"
 
+#include <windows.h>
+
+#include <ntstatus.h>
 #include <stddef.h>
+#include <winternl.h>
 
 #include "base/win/pe_image.h"
-#include "sandbox/win/src/sandbox_nt_util.h"
 
 namespace sandbox {
 
@@ -44,7 +47,6 @@ NTSTATUS ResolverThunk::Init(const void* target_module,
 NTSTATUS ResolverThunk::ResolveInterceptor(const void* interceptor_module,
                                            const char* interceptor_name,
                                            const void** address) {
-  DCHECK_NT(address);
   if (!interceptor_module)
     return STATUS_INVALID_PARAMETER;
 

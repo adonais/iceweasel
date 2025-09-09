@@ -192,6 +192,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         unicodeChar >= ' '
             ? unicodeChar
             : unmodifiedMetaState != metaState ? unmodifiedUnicodeChar : 0;
+    final boolean waitingReply = GeckoInputConnection.isMediaKeyEvent(event);
 
     // If a modifier (e.g. meta key) caused a different character to be entered, we
     // drop that modifier from the metastate for the generated keypress event.
@@ -219,6 +220,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         event.getRepeatCount(),
         event.getFlags(),
         isSynthesizedImeKey,
+        waitingReply,
         event);
   }
 
@@ -2089,6 +2091,12 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
     if (!binderCheckToken(token, /* allowNull */ false)) {
       return;
+    }
+
+    if (start != end && !causedOnlyByComposition) {
+      // selection isn't collapsed. This change is caused by web content side.
+      // So we have to update the selection in Java side.
+      mIgnoreSelectionChange = false;
     }
 
     if (mIgnoreSelectionChange) {

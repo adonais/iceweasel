@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -74,7 +76,9 @@ fun SearchSelector(
 
     Card(
         modifier = Modifier
-            .padding(horizontal = 8.dp)
+            .padding(horizontal = 4.dp)
+            .width(52.dp)
+            .height(40.dp)
             .semantics(mergeDescendants = true) {
                 this.contentDescription = contentDescription
             }
@@ -85,7 +89,7 @@ fun SearchSelector(
                     onInteraction(onClick)
                 }
             },
-        shape = RoundedCornerShape(4.dp),
+        shape = RoundedCornerShape(90.dp),
         colors = CardDefaults.cardColors(
             containerColor = AcornTheme.colors.layer2,
         ),
@@ -94,12 +98,8 @@ fun SearchSelector(
         ),
     ) {
         Row(
-            modifier = Modifier.padding(
-                start = 2.dp,
-                top = 2.dp,
-                end = 4.dp,
-                bottom = 2.dp,
-            ),
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Image(

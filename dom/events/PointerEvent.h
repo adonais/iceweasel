@@ -9,9 +9,9 @@
 #ifndef mozilla_dom_PointerEvent_h_
 #define mozilla_dom_PointerEvent_h_
 
+#include "mozilla/Maybe.h"
 #include "mozilla/dom/MouseEvent.h"
 #include "mozilla/dom/PointerEventBinding.h"
-#include "mozilla/Maybe.h"
 
 class nsPresContext;
 

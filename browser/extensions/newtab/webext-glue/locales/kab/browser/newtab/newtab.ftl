@@ -8,6 +8,9 @@
 newtab-page-title = Iccer amaynut
 newtab-settings-button =
     .title = Sagen asebter n yiccer-ik amaynut
+newtab-customize-panel-icon-button =
+    .title = Sagen asebter-a
+newtab-customize-panel-icon-button-label = Sagen
 newtab-personalize-settings-icon-label =
     .title = Sagen iccer amaynut
     .aria-label = Iɣewwaren
@@ -53,6 +56,9 @@ newtab-topsites-add-shortcut-header = Anegzum amaynut
 newtab-topsites-edit-topsites-header = Ẓreg asmel ifazen
 newtab-topsites-edit-shortcut-header = Ẓreg anegzum
 newtab-topsites-add-shortcut-label = Rnu anegzum
+newtab-topsites-add-shortcut-title =
+    .title = Rnu anegzum
+    .aria-label = Rnu anegzum
 newtab-topsites-title-label = Azwel
 newtab-topsites-title-input =
     .placeholder = Sekcem azwel
@@ -358,9 +364,6 @@ feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
 
-## Celestial
-
-
 ## New Tab Weather
 
 # Variables:
@@ -390,6 +393,7 @@ newtab-weather-menu-learn-more = Issin ugar
 newtab-topic-label-business = Amahil
 newtab-topic-label-career = Axeddim
 newtab-topic-label-education = Aselmed
+newtab-topic-label-arts = Asedhu
 newtab-topic-label-food = Tuččit
 newtab-topic-label-health = Tazmert
 newtab-topic-label-hobbies = Uraren
@@ -448,14 +452,15 @@ newtab-section-mangage-topics-blocked-topics = Iwḥel
 newtab-section-mangage-topics-blocked-topics-empty-state = Ur tesweḥleḍ ula d yiwen usentel akka ar tura.
 newtab-custom-wallpaper-cta = Ɛreḍ-it
 
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-cta = Ɛreḍ-it tura
+
 ## Strings for download mobile highlight
 
 newtab-download-mobile-highlight-title = Sader { -brand-product-name } i uziraz
 newtab-download-mobile-highlight-image =
     .aria-label = Tangalt QR i usader n { -brand-product-name } i uziraz
-
-## Strings for shortcuts highlight
-
 
 ## Strings for reporting ads and content
 
@@ -463,8 +468,11 @@ newtab-report-content-why-reporting-this =
     .label = Ayɣer i d-tuzneḍ aneqqis ɣef waya?
 newtab-report-content-wrong-category =
     .label = Yir taggayt
+newtab-report-content-outdated =
+    .label = Aqbuṛ
 newtab-report-cancel = Sefsex
 newtab-report-submit = Azen
 
 ## Strings for trending searches
 
+newtab-trending-searches-learn-more = Issin ugar

@@ -189,7 +189,7 @@ class Generator:
 
         # Save the documentation files
         frameworks = []
-        for framework_name in sorted(framework_docs.keys()):
+        for framework_name in sorted(framework_docs.keys(), key=str.lower):
             frameworks.append(framework_name)
             save_file(
                 framework_docs[framework_name]["dynamic"],

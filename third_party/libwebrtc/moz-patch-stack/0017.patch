@@ -14,7 +14,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/840c4edafa021eeac
  2 files changed, 42 insertions(+)
 
 diff --git a/modules/video_capture/windows/device_info_ds.cc b/modules/video_capture/windows/device_info_ds.cc
-index d0d274cb02..460ef3b7b9 100644
+index c4bef2d6ca..3e426d54ea 100644
 --- a/modules/video_capture/windows/device_info_ds.cc
 +++ b/modules/video_capture/windows/device_info_ds.cc
 @@ -20,6 +20,29 @@
@@ -48,7 +48,7 @@ index d0d274cb02..460ef3b7b9 100644
  DeviceInfoDS* DeviceInfoDS::Create() {
    DeviceInfoDS* dsInfo = new DeviceInfoDS();
 @@ -77,6 +100,18 @@ DeviceInfoDS::DeviceInfoDS()
-                         << rtc::ToHex(hr);
+                         << webrtc::ToHex(hr);
      }
    }
 +

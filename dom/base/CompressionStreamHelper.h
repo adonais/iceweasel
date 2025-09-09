@@ -8,9 +8,8 @@
 #define DOM_COMPRESSION_STREAM_HELPER_H_
 
 #include "js/TypeDecls.h"
-#include "zlib.h"
-
 #include "mozilla/dom/CompressionStreamBinding.h"
+#include "zlib.h"
 
 namespace mozilla::dom::compression {
 

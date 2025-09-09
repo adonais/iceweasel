@@ -5,6 +5,7 @@
 package org.mozilla.fenix.compose.snackbar
 
 import androidx.compose.material3.SnackbarDuration
+import androidx.compose.ui.text.style.TextOverflow
 import com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE
 import com.google.android.material.snackbar.Snackbar.LENGTH_LONG
 import com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
@@ -28,7 +29,7 @@ private val defaultOnDismiss: () -> Unit = {}
  */
 data class SnackbarState(
     val message: String,
-    val subMessage: String? = null,
+    val subMessage: SubMessage? = null,
     val duration: Duration = defaultDuration,
     val type: Type = defaultType,
     val action: Action? = defaultAction,
@@ -85,6 +86,17 @@ data class SnackbarState(
         Default,
         Warning,
     }
+
+    /**
+     * Represents a sub-message to be displayed within the Snackbar.
+     *
+     * @property text The actual content of the sub-message.
+     * @property textOverflow Defines how the sub-message text should be handled if it exceeds the available space.
+     */
+    data class SubMessage(
+        val text: String,
+        val textOverflow: TextOverflow = TextOverflow.Ellipsis,
+    )
 }
 
 /**

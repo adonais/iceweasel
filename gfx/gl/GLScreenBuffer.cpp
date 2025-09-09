@@ -100,16 +100,12 @@ SwapChainPresenter::~SwapChainPresenter() {
 std::shared_ptr<SharedSurface> SwapChainPresenter::SwapBackBuffer(
     std::shared_ptr<SharedSurface> back) {
   if (mBackBuffer) {
-    mBackBuffer->UnlockProd();
-    mBackBuffer->ProducerRelease();
-    mBackBuffer->Commit();
+    mBackBuffer->EndWrite();
   }
   auto old = mBackBuffer;
   mBackBuffer = back;
   if (mBackBuffer) {
-    mBackBuffer->WaitForBufferOwnership();
-    mBackBuffer->ProducerAcquire();
-    mBackBuffer->LockProd();
+    mBackBuffer->BeginWrite();
   }
   return old;
 }

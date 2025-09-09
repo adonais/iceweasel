@@ -8,9 +8,9 @@
 #define mozilla_dom_HTMLDNSPrefetch_h___
 
 #include "nsCOMPtr.h"
+#include "nsIDNSService.h"
 #include "nsIRequest.h"
 #include "nsString.h"
-#include "nsIDNSService.h"
 
 class nsITimer;
 class nsIURI;

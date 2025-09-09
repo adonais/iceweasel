@@ -7,8 +7,10 @@
 #include "WorkerError.h"
 
 #include <stdio.h>
+
 #include <algorithm>
 #include <utility>
+
 #include "MainThreadUtils.h"
 #include "WorkerPrivate.h"
 #include "WorkerRunnable.h"

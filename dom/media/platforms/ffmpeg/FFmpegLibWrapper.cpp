@@ -3,18 +3,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FFmpegLibWrapper.h"
+
 #include "FFmpegLog.h"
 #include "mozilla/PodOperations.h"
 #ifdef MOZ_FFMPEG
 #  include "mozilla/StaticPrefs_media.h"
 #endif
-#include "mozilla/Types.h"
 #include "PlatformDecoderModule.h"
+#include "mozilla/Types.h"
 #include "prlink.h"
 #ifdef MOZ_WIDGET_GTK
+#  include "VALibWrapper.h"
 #  include "mozilla/gfx/gfxVars.h"
 #  include "mozilla/widget/DMABufDevice.h"
-#  include "VALibWrapper.h"
 #endif
 
 #define AV_LOG_QUIET -8
@@ -212,6 +213,10 @@ FFmpegLibWrapper::LinkResult FFmpegLibWrapper::Link() {
           (AV_FUNC_AVUTIL_55 | AV_FUNC_AVUTIL_56 | AV_FUNC_AVUTIL_57 |
            AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 | AV_FUNC_AVUTIL_60 |
            AV_FUNC_AVUTIL_61))
+  AV_FUNC(av_frame_clone,
+          (AV_FUNC_AVUTIL_55 | AV_FUNC_AVUTIL_56 | AV_FUNC_AVUTIL_57 |
+           AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 | AV_FUNC_AVUTIL_60 |
+           AV_FUNC_AVUTIL_61))
   AV_FUNC(av_frame_free,
           (AV_FUNC_AVUTIL_55 | AV_FUNC_AVUTIL_56 | AV_FUNC_AVUTIL_57 |
            AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 | AV_FUNC_AVUTIL_60 |
@@ -305,6 +310,11 @@ FFmpegLibWrapper::LinkResult FFmpegLibWrapper::Link() {
 
   AV_FUNC_OPTION(av_tx_init, AV_FUNC_AVUTIL_ALL)
   AV_FUNC_OPTION(av_tx_uninit, AV_FUNC_AVUTIL_ALL)
+
+#ifdef MOZ_WIDGET_ANDROID
+  AV_FUNC(av_mediacodec_release_buffer, AV_FUNC_AVCODEC_ALL);
+  AV_FUNC(moz_avcodec_mediacodec_is_eos, AV_FUNC_AVCODEC_ALL);
+#endif
 
 #undef AV_FUNC
 #undef AV_FUNC_OPTION

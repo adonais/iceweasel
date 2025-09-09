@@ -34,6 +34,10 @@ let gBrowserBrowser;
 let gIframeView;
 let gIframeIframe;
 let gToggle;
+let gComponentView;
+let gShadowRoot;
+let gShadowRootButtonA;
+let gShadowRootButtonB;
 
 async function openPopup() {
   let shown = BrowserTestUtils.waitForEvent(gMainView, "ViewShown");
@@ -206,6 +210,24 @@ add_setup(async function () {
   gIframeIframe.id = "gIframeIframe";
   gIframeIframe.setAttribute("src", kEmbeddedDocUrl);
   gIframeView.appendChild(gIframeIframe);
+
+  gComponentView = document.createXULElement("panelview");
+  gComponentView.id = "testComponentView";
+  gPanelMultiView.appendChild(gComponentView);
+  // Shadow root that delegates focus with multiple buttons
+  gShadowRoot = document.createElement("section");
+  gShadowRoot.id = "gShadowRoot";
+  gShadowRoot.dataset.navigableWithTabOnly = "true";
+  gShadowRoot.attachShadow({ mode: "open", delegatesFocus: true });
+  gShadowRootButtonA = document.createElement("moz-button");
+  gShadowRootButtonA.id = "gShadowRootButtonA";
+  gShadowRootButtonA.label = "Button A";
+  gShadowRootButtonB = document.createElement("moz-button");
+  gShadowRootButtonB.id = "gShadowRootButtonB";
+  gShadowRootButtonB.label = "Button B";
+  gShadowRoot.shadowRoot.appendChild(gShadowRootButtonA);
+  gShadowRoot.shadowRoot.appendChild(gShadowRootButtonB);
+  gComponentView.appendChild(gShadowRoot);
 
   registerCleanupFunction(() => {
     gAnchor.remove();
@@ -578,5 +600,30 @@ add_task(async function testMozToggle() {
   EventUtils.synthesizeKey("KEY_Enter");
   await gToggle.updateComplete;
   is(gToggle.pressed, false, "Toggle pressed state changes via enter.");
+  await hidePopup();
+});
+
+// Test that tab key is not overridden in elements that capture focus.
+add_task(async function testTabCapturesFocus() {
+  await openPopup();
+  await showSubView(gComponentView);
+
+  let backButton = gComponentView.querySelector(".subviewbutton-back");
+  backButton.id = "shadowBack";
+  await expectFocusAfterKey("Tab", backButton);
+
+  // Only Button A can be navigated to before looping to back button.
+  await expectFocusAfterKey("Tab", gShadowRootButtonA);
+
+  await expectFocusAfterKey("Tab", backButton);
+
+  gShadowRoot.dataset.capturesFocus = "true";
+
+  // Both buttons can be focused before looping.
+  await expectFocusAfterKey("Tab", gShadowRootButtonA);
+  await expectFocusAfterKey("Tab", gShadowRootButtonB);
+
+  await expectFocusAfterKey("Tab", backButton);
+
   await hidePopup();
 });

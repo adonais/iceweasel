@@ -620,7 +620,7 @@ void nsSHistory::WalkContiguousEntries(
 
 // static
 void nsSHistory::WalkContiguousEntriesInOrder(
-    nsISHEntry* aEntry, const std::function<void(nsISHEntry*)>& aCallback) {
+    nsISHEntry* aEntry, const std::function<bool(nsISHEntry*)>& aCallback) {
   MOZ_ASSERT(aEntry);
   MOZ_ASSERT(SessionHistoryInParent());
 
@@ -639,14 +639,14 @@ void nsSHistory::WalkContiguousEntriesInOrder(
     entry = previousEntry;
   }
 
-  aCallback(entry);
-  while ((entry = entry->getNext())) {
+  bool shouldContinue = aCallback(entry);
+  while (shouldContinue && (entry = entry->getNext())) {
     nsCOMPtr<nsIURI> uri = entry->GetURI();
     if (NS_FAILED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
             targetURI, uri, false, false))) {
       break;
     }
-    aCallback(entry);
+    shouldContinue = aCallback(entry);
   }
 }
 
@@ -1508,10 +1508,8 @@ static bool MaybeCheckUnloadingIsCanceled(
     return false;
   }
 
-  // Step 4.3.3
-  if (needsBeforeUnload) {
-    aLoadResults.RemoveElementAt(found);
-  }
+  // Step 4.3.3 isn't needed since that's what PermitUnloadChildNavigables
+  // achieves by skipping top level navigable.
 
   // Step 4.3.4
   // PermitUnloadTraversable only includes the process of the top level browsing

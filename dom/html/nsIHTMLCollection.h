@@ -7,11 +7,11 @@
 #ifndef nsIHTMLCollection_h___
 #define nsIHTMLCollection_h___
 
+#include "js/TypeDecls.h"
 #include "nsISupports.h"
 #include "nsStringFwd.h"
 #include "nsTArrayForwardDeclare.h"
 #include "nsWrapperCache.h"
-#include "js/TypeDecls.h"
 
 class nsINode;
 

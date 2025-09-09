@@ -6,9 +6,9 @@
 #ifndef GPU_RenderBundle_H_
 #define GPU_RenderBundle_H_
 
-#include "nsWrapperCache.h"
 #include "CanvasContext.h"
 #include "ObjectModel.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla::webgpu {
 

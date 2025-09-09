@@ -107,7 +107,7 @@ sealed interface DownloadUIAction : Action {
     data class ResumeDownload(val downloadId: String) : DownloadUIAction
 
     /**
-     * [DownloadUIAction] to cancel a downloading file.
+     * [DownloadUIAction] to cancel an incomplete download file.
      */
     data class CancelDownload(val downloadId: String) : DownloadUIAction
 

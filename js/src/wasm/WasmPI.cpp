@@ -191,11 +191,15 @@ static JitActivation* FindSuspendableStackActivation(
   JitActivation* activation =
       trc->runtime()->mainContextFromAnyThread()->jitActivation.refNoCheck();
   while (activation) {
-    // Scan all JitActivations to find one that starts with suspended stack
-    // frame pointer.
-    WasmFrameIter iter(activation);
-    if (!iter.done() && data.hasFramePointer(iter.frame())) {
-      return activation;
+    // Skip activations without Wasm exit FP -- they are mostly debugger
+    // related.
+    if (activation->hasWasmExitFP()) {
+      // Scan all JitActivations to find one that starts with suspended stack
+      // frame pointer.
+      WasmFrameIter iter(activation);
+      if (!iter.done() && data.hasFramePointer(iter.frame())) {
+        return activation;
+      }
     }
     activation = activation->prevJitActivation();
   }

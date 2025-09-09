@@ -79,7 +79,7 @@ const PREFS_FOR_DISPLAY = [
   "javascript.",
   "keyword.",
   "layers.",
-  "layout.css.dpi",
+  "layout.css.",
   "layout.display-list.",
   "layout.frame_rate",
   "media.",

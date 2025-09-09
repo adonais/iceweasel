@@ -92,6 +92,27 @@
             ]
           },
           {
+            "name": "getKeys",
+            "type": "function",
+            "description": "Gets the keys of all items in storage.",
+            "async": "callback",
+            "parameters": [
+              {
+                "name": "callback",
+                "type": "function",
+                "description": "Callback with the keys of all items in storage, or on failure (in which case $(ref:runtime.lastError) will be set).",
+                "parameters": [
+                  {
+                    "name": "keys",
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "The keys of all items in storage."
+                  }
+                ]
+              }
+            ]
+          },
+          {
             "name": "set",
             "type": "function",
             "description": "Sets multiple items.",
@@ -230,6 +251,27 @@
                     "name": "bytesInUse",
                     "type": "integer",
                     "description": "Amount of space being used in storage, in bytes."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "getKeys",
+            "type": "function",
+            "description": "Gets the keys of all items in storage.",
+            "async": "callback",
+            "parameters": [
+              {
+                "name": "callback",
+                "type": "function",
+                "description": "Callback with the keys of all items in storage, or on failure (in which case $(ref:runtime.lastError) will be set).",
+                "parameters": [
+                  {
+                    "name": "keys",
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "The keys of all items in storage."
                   }
                 ]
               }

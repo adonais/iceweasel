@@ -5,17 +5,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WorkletGlobalScope.h"
+
+#include "js/RealmOptions.h"
 #include "mozilla/SchedulerGroup.h"
+#include "mozilla/dom/Console.h"
 #include "mozilla/dom/WorkletGlobalScopeBinding.h"
 #include "mozilla/dom/WorkletImpl.h"
 #include "mozilla/dom/WorkletThread.h"
 #include "mozilla/dom/worklet/WorkletModuleLoader.h"
-#include "mozilla/dom/Console.h"
-#include "js/RealmOptions.h"
 #include "nsContentUtils.h"
 #include "nsJSUtils.h"
-#include "nsThreadUtils.h"
 #include "nsRFPService.h"
+#include "nsThreadUtils.h"
 
 using JS::loader::ModuleLoaderBase;
 using mozilla::dom::loader::WorkletModuleLoader;

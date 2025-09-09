@@ -11,6 +11,8 @@ import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHig
 import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.AutoPlayInAudibleBlockingAction
 import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.AutoPlayInAudibleChangedAction
 import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.CameraChangedAction
+import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.LocalDeviceAccessChangedAction
+import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.LocalNetworkAccessChangedAction
 import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.LocationChangedAction
 import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.MediaKeySystemAccesChangedAction
 import mozilla.components.browser.state.action.ContentAction.UpdatePermissionHighlightsStateAction.MicrophoneChangedAction
@@ -791,6 +793,24 @@ class ContentActionTest {
         store.dispatch(MediaKeySystemAccesChangedAction(tab.id, true)).joinBlocking()
 
         assertTrue(tab.content.permissionHighlights.mediaKeySystemAccessChanged)
+    }
+
+    @Test
+    fun `WHEN dispatching LocalDeviceAccessChangedAction THEN localDeviceAccessChanged state will be updated`() {
+        assertFalse(tab.content.permissionHighlights.localDeviceAccessChanged)
+
+        store.dispatch(LocalDeviceAccessChangedAction(tab.id, true)).joinBlocking()
+
+        assertTrue(tab.content.permissionHighlights.localDeviceAccessChanged)
+    }
+
+    @Test
+    fun `WHEN dispatching LocalNetworkAccessChangedAction THEN localNetworkAccessChanged state will be updated`() {
+        assertFalse(tab.content.permissionHighlights.localNetworkAccessChanged)
+
+        store.dispatch(LocalNetworkAccessChangedAction(tab.id, true)).joinBlocking()
+
+        assertTrue(tab.content.permissionHighlights.localNetworkAccessChanged)
     }
 
     @Test

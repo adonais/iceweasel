@@ -4,62 +4,63 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "nsCSPContext.h"
+
 #include <string>
 #include <unordered_set>
 #include <utility>
 
-#include "nsCOMPtr.h"
-#include "nsContentPolicyUtils.h"
-#include "nsContentSecurityUtils.h"
-#include "nsContentUtils.h"
-#include "nsCSPContext.h"
-#include "nsCSPParser.h"
-#include "nsCSPService.h"
-#include "nsCSPUtils.h"
-#include "nsGlobalWindowOuter.h"
-#include "nsError.h"
-#include "nsIAsyncVerifyRedirectCallback.h"
-#include "nsIClassInfoImpl.h"
-#include "mozilla/dom/Document.h"
-#include "nsIHttpChannel.h"
-#include "nsIInterfaceRequestor.h"
-#include "nsIInterfaceRequestorUtils.h"
-#include "nsIObjectInputStream.h"
-#include "nsIObjectOutputStream.h"
-#include "nsIObserver.h"
-#include "nsIObserverService.h"
-#include "nsIStringStream.h"
-#include "nsISupportsPrimitives.h"
-#include "nsIUploadChannel.h"
-#include "nsIURIMutator.h"
-#include "nsIScriptError.h"
-#include "nsMimeTypes.h"
-#include "nsNetUtil.h"
-#include "nsIContentPolicy.h"
-#include "nsSupportsPrimitives.h"
-#include "nsThreadUtils.h"
-#include "nsScriptSecurityManager.h"
-#include "nsStreamUtils.h"
-#include "nsString.h"
-#include "nsStringStream.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/CSPDictionariesBinding.h"
 #include "mozilla/dom/CSPReportBinding.h"
 #include "mozilla/dom/CSPViolationReportBody.h"
+#include "mozilla/dom/DocGroup.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/dom/ReportingUtils.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/glean/DomSecurityMetrics.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
-#include "nsINetworkInterceptController.h"
-#include "nsSandboxFlags.h"
-#include "nsIScriptElement.h"
+#include "nsCOMPtr.h"
+#include "nsCSPParser.h"
+#include "nsCSPService.h"
+#include "nsCSPUtils.h"
+#include "nsContentPolicyUtils.h"
+#include "nsContentSecurityUtils.h"
+#include "nsContentUtils.h"
+#include "nsError.h"
+#include "nsGlobalWindowOuter.h"
+#include "nsIAsyncVerifyRedirectCallback.h"
+#include "nsIClassInfoImpl.h"
+#include "nsIContentPolicy.h"
 #include "nsIEventTarget.h"
-#include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/Element.h"
-#include "nsXULAppAPI.h"
+#include "nsIHttpChannel.h"
+#include "nsIInterfaceRequestor.h"
+#include "nsIInterfaceRequestorUtils.h"
+#include "nsINetworkInterceptController.h"
+#include "nsIObjectInputStream.h"
+#include "nsIObjectOutputStream.h"
+#include "nsIObserver.h"
+#include "nsIObserverService.h"
+#include "nsIScriptElement.h"
+#include "nsIScriptError.h"
+#include "nsIStringStream.h"
+#include "nsISupportsPrimitives.h"
+#include "nsIURIMutator.h"
+#include "nsIUploadChannel.h"
 #include "nsJSUtils.h"
+#include "nsMimeTypes.h"
+#include "nsNetUtil.h"
+#include "nsSandboxFlags.h"
+#include "nsScriptSecurityManager.h"
+#include "nsStreamUtils.h"
+#include "nsString.h"
+#include "nsStringStream.h"
+#include "nsSupportsPrimitives.h"
+#include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -1180,17 +1181,16 @@ nsresult nsCSPContext::GatherSecurityPolicyViolationEventData(
 
 bool nsCSPContext::ShouldThrottleReport(
     const mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit) {
-  // Fetch rate limiting preferences
+  // Fetch the rate limit preference.
   const uint32_t kLimitCount =
       StaticPrefs::security_csp_reporting_limit_count();
-  const uint32_t kTimeSpanSeconds =
-      StaticPrefs::security_csp_reporting_limit_timespan();
 
-  // Disable throttling if either of the preferences is set to 0.
-  if (kLimitCount == 0 || kTimeSpanSeconds == 0) {
+  // Disable throttling if the preference is set to 0.
+  if (kLimitCount == 0) {
     return false;
   }
 
+  const uint32_t kTimeSpanSeconds = 2;
   TimeDuration throttleSpan = TimeDuration::FromSeconds(kTimeSpanSeconds);
   if (mSendReportLimitSpanStart.IsNull() ||
       ((TimeStamp::Now() - mSendReportLimitSpanStart) > throttleSpan)) {

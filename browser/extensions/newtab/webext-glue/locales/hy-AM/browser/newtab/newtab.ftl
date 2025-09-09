@@ -53,6 +53,9 @@ newtab-topsites-add-shortcut-header = Նոր դյուրանցում
 newtab-topsites-edit-topsites-header = Խմբագրել Լավագույն կայքերը
 newtab-topsites-edit-shortcut-header = Խմբագրել դյուրանցումը
 newtab-topsites-add-shortcut-label = Ավելացնել դյուրանցում
+newtab-topsites-add-shortcut-title =
+    .title = Ավելացնել դյուրանցում
+    .aria-label = Ավելացնել դյուրանցում
 newtab-topsites-title-label = Անվանում
 newtab-topsites-title-input =
     .placeholder = Մուտքագրեք անվանում
@@ -374,9 +377,6 @@ feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
 
-## Celestial
-
-
 ## New Tab Weather
 
 # Variables:
@@ -478,12 +478,6 @@ newtab-section-mangage-topics-followed-topics = Հետևված
 newtab-section-mangage-topics-blocked-topics = Արգելափակված
 newtab-custom-wallpaper-cta = Փորձել
 
-## Strings for download mobile highlight
-
-
-## Strings for shortcuts highlight
-
-
 ## Strings for reporting ads and content
 
 newtab-report-ads-reason-inappropriate =
@@ -502,6 +496,3 @@ newtab-report-cancel = Չեղարկել
 newtab-report-submit = Ուղարկել
 newtab-toast-thanks-for-reporting =
     .message = Շնորհակալություն հայտնելու համար:
-
-## Strings for trending searches
-

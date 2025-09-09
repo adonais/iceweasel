@@ -10,24 +10,22 @@
 
 #include <map>
 
-#include "transport/sigslot.h"
-#include "transport/transportlayer.h"  // For TransportLayer::State
-
-#include "libwebrtcglue/MediaConduitControl.h"
-#include "mozilla/ReentrantMonitor.h"
-#include "mozilla/Atomics.h"
-#include "mozilla/StateMirroring.h"
-#include "transport/mediapacket.h"
-#include "transport/runnable_utils.h"
 #include "AudioPacketizer.h"
 #include "MediaEventSource.h"
 #include "MediaPipelineFilter.h"
 #include "MediaSegment.h"
+#include "PerformanceRecorder.h"
 #include "PrincipalChangeObserver.h"
 #include "jsapi/PacketDumper.h"
-#include "PerformanceRecorder.h"
-
+#include "libwebrtcglue/MediaConduitControl.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/ReentrantMonitor.h"
+#include "mozilla/StateMirroring.h"
 #include "rtc_base/copy_on_write_buffer.h"
+#include "transport/mediapacket.h"
+#include "transport/runnable_utils.h"
+#include "transport/sigslot.h"
+#include "transport/transportlayer.h"  // For TransportLayer::State
 
 // Should come from MediaEngine.h, but that's a pain to include here
 // because of the MOZILLA_EXTERNAL_LINKAGE stuff.
@@ -248,7 +246,7 @@ class MediaPipeline : public sigslot::has_slots<> {
 
   MediaEventProducerExc<webrtc::RtpPacketReceived, webrtc::RTPHeader>
       mRtpReceiveEvent;
-  MediaEventProducerExc<rtc::CopyOnWriteBuffer> mRtcpReceiveEvent;
+  MediaEventProducerExc<webrtc::CopyOnWriteBuffer> mRtcpReceiveEvent;
 
   MediaEventListener mRtpSendEventListener;
   MediaEventListener mSenderRtcpSendEventListener;

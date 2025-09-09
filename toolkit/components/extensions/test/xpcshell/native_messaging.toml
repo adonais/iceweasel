@@ -12,11 +12,18 @@ tags = "webextensions"
 ["test_ext_native_messaging.js"]
 run-sequentially = "very high failure rate in parallel"
 
+["test_ext_native_messaging_concurrent.js"]
+
 ["test_ext_native_messaging_perf.js"]
 skip-if = ["tsan"] # Unreasonably slow, bug 1612707
 
 ["test_ext_native_messaging_portal.js"]
-environment = ["XPCSHELL_TEST=1"]
+environment = [
+  "XPCSHELL_TEST=1",
+  # The following prevents gsettings from initializing dbus before our mock is
+  # ready.
+  "GSETTINGS_BACKEND=memory",
+]
 run-if = ["os == 'linux' && toolkit == 'gtk' && dbus_enabled"]
 tags = "portal"
 

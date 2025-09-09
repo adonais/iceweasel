@@ -11,7 +11,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::u32;
 use api::{MinimapData, SnapshotImageKey};
-use time::precise_time_ns;
 use crate::api::channel::{Sender, single_msg_channel, unbounded_channel};
 use crate::api::{BuiltDisplayList, IdNamespace, ExternalScrollId, Parameter, BoolParameter};
 use crate::api::{FontKey, FontInstanceKey, NativeFontHandle};
@@ -223,7 +222,7 @@ impl Transaction {
             notifications: Vec::new(),
             use_scene_builder_thread: true,
             generate_frame: GenerateFrame::No,
-            creation_time: precise_time_ns(),
+            creation_time: zeitstempel::now(),
             invalidate_rendered_frame: false,
             low_priority: false,
             render_reasons: RenderReasons::empty(),
@@ -311,7 +310,7 @@ impl Transaction {
         epoch: Epoch,
         (pipeline_id, mut display_list): (PipelineId, BuiltDisplayList),
     ) {
-        display_list.set_send_time_ns(precise_time_ns());
+        display_list.set_send_time_ns(zeitstempel::now());
         self.scene_ops.push(
             SceneMsg::SetDisplayList {
                 display_list,

@@ -42,6 +42,7 @@
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CharacterData.h"
+#include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
@@ -103,7 +104,6 @@
 #include "nsTableRowFrame.h"
 #include "nsTableRowGroupFrame.h"
 #include "nsTableWrapperFrame.h"
-#include "nsTextFragment.h"
 #include "nsTextNode.h"
 #include "nsTransitionManager.h"
 #include "nsUnicharUtils.h"
@@ -1079,6 +1079,14 @@ void nsFrameConstructorState::ConstructBackdropFrameFor(nsIContent* aContent,
   }
 
   ComputedStyle* parentStyle = nsLayoutUtils::GetStyleFrame(aFrame)->Style();
+  if (parentStyle->GetPseudoType() != PseudoStyleType::NotPseudo) {
+    // ::backdrop only applies to actual elements in the top layer, for now at
+    // least. Prevent creating it for internal pseudos like
+    // ::-moz-snapshot-containing-block.
+    // https://drafts.csswg.org/css-position-4/#backdrop
+    return;
+  }
+
   RefPtr<ComputedStyle> style =
       mPresShell->StyleSet()->ResolvePseudoElementStyle(
           *aContent->AsElement(), PseudoStyleType::backdrop, nullptr,
@@ -3241,35 +3249,6 @@ nsIFrame* nsCSSFrameConstructor::ConstructFieldSetFrame(
   return fieldsetFrame;
 }
 
-// We always obey display for h1, but this is a convenient place for our
-// counters.
-const nsCSSFrameConstructor::FrameConstructionData*
-nsCSSFrameConstructor::FindH1Data(const Element& aElement,
-                                  ComputedStyle& aStyle) {
-  constexpr auto kCounter =
-      UseCounter::eUseCounter_custom_SectioningH1WithNoFontSizeOrMargins;
-  if (aStyle.HasAuthorSpecifiedMarginAndFontSize()) {
-    return nullptr;
-  }
-  auto* doc = aElement.OwnerDoc();
-  if (doc->HasUseCounter(kCounter)) {
-    return nullptr;
-  }
-  for (auto* ancestor = aElement.GetParent(); ancestor;
-       ancestor = ancestor->GetParent()) {
-    if (ancestor->IsAnyOfHTMLElements(nsGkAtoms::section, nsGkAtoms::aside,
-                                      nsGkAtoms::article, nsGkAtoms::nav)) {
-      doc->SetUseCounter(kCounter);
-      nsContentUtils::ReportToConsole(
-          nsIScriptError::warningFlag, "DOM"_ns, doc,
-          nsContentUtils::eDOM_PROPERTIES,
-          "SectioningH1WithNoFontSizeOrMargins",
-          {u"https://developer.mozilla.org/docs/Web/HTML/Element/Heading_Elements#specifying_a_uniform_font_size_for_h1"_ns});
-    }
-  }
-  return nullptr;
-}
-
 const nsCSSFrameConstructor::FrameConstructionData*
 nsCSSFrameConstructor::FindDetailsData(const Element& aElement,
                                        ComputedStyle& aStyle) {
@@ -3538,7 +3517,6 @@ nsCSSFrameConstructor::FindHTMLData(const Element& aElement,
       SIMPLE_TAG_CREATE(progress, NS_NewProgressFrame),
       SIMPLE_TAG_CREATE(meter, NS_NewMeterFrame),
       SIMPLE_TAG_CHAIN(details, nsCSSFrameConstructor::FindDetailsData),
-      SIMPLE_TAG_CHAIN(h1, nsCSSFrameConstructor::FindH1Data),
   };
 
   return FindDataByTag(aElement, aStyle, sHTMLData, std::size(sHTMLData));
@@ -4125,9 +4103,6 @@ nsCSSFrameConstructor::FindXULTagData(const Element& aElement,
                        nsCSSFrameConstructor::FindXULLabelOrDescriptionData),
       SIMPLE_TAG_CHAIN(description,
                        nsCSSFrameConstructor::FindXULLabelOrDescriptionData),
-#ifdef XP_MACOSX
-      SIMPLE_TAG_CHAIN(menubar, nsCSSFrameConstructor::FindXULMenubarData),
-#endif /* XP_MACOSX */
       SIMPLE_TAG_CREATE(iframe, NS_NewSubDocumentFrame),
       SIMPLE_TAG_CREATE(editor, NS_NewSubDocumentFrame),
       SIMPLE_TAG_CREATE(browser, NS_NewSubDocumentFrame),
@@ -4165,26 +4140,6 @@ nsCSSFrameConstructor::FindXULLabelOrDescriptionData(const Element& aElement,
       NS_NewMiddleCroppingLabelFrame);
   return &sMiddleCroppingData;
 }
-
-#ifdef XP_MACOSX
-/* static */
-const nsCSSFrameConstructor::FrameConstructionData*
-nsCSSFrameConstructor::FindXULMenubarData(const Element& aElement,
-                                          ComputedStyle&) {
-  if (aElement.OwnerDoc()->IsInChromeDocShell()) {
-    BrowsingContext* bc = aElement.OwnerDoc()->GetBrowsingContext();
-    bool isRoot = bc && !bc->GetParent();
-    if (isRoot) {
-      // This is the root.  Suppress the menubar, since on Mac
-      // window menus are not attached to the window.
-      static constexpr FrameConstructionData sSuppressData = SUPPRESS_FCDATA();
-      return &sSuppressData;
-    }
-  }
-
-  return nullptr;
-}
-#endif /* XP_MACOSX */
 
 already_AddRefed<ComputedStyle>
 nsCSSFrameConstructor::BeginBuildingScrollContainerFrame(
@@ -5033,10 +4988,6 @@ void nsCSSFrameConstructor::AddFrameConstructionItems(
     ItemFlags aFlags) {
   nsContainerFrame* parentFrame = aInsertion.mParentFrame;
   if (!ShouldCreateItemsForChild(aState, aContent, parentFrame)) {
-    return;
-  }
-  if (MOZ_UNLIKELY(aParentStyle.StyleContent()->mContent.IsNone()) &&
-      StaticPrefs::layout_css_element_content_none_enabled()) {
     return;
   }
 
@@ -9418,14 +9369,6 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
     nsContainerFrame* aParentFrame, bool aParentIsWrapperAnonBox,
     nsFrameList& aFrameList) {
 #ifdef DEBUG
-  if (aParentFrame->StyleContent()->mContent.IsNone() &&
-      StaticPrefs::layout_css_element_content_none_enabled()) {
-    for (FCItemIterator iter(aItems); !iter.IsDone(); iter.Next()) {
-      MOZ_ASSERT(iter.item().mContent->IsInNativeAnonymousSubtree() ||
-                 iter.item().mComputedStyle->IsPseudoOrAnonBox());
-    }
-  }
-
   // The assertion condition should match the logic in
   // MaybePushFloatContainingBlock().
   MOZ_ASSERT(!(ShouldSuppressFloatingOfDescendants(aParentFrame) ||
@@ -9955,13 +9898,14 @@ void nsCSSFrameConstructor::CheckForFirstLineInsertion(
 
 // Determine how many characters in the text fragment apply to the
 // first letter
-static int32_t FirstLetterCount(const nsTextFragment* aFragment) {
+static int32_t FirstLetterCount(
+    const CharacterDataBuffer* aCharacterDataBuffer) {
   int32_t count = 0;
   int32_t firstLetterLength = 0;
 
-  const uint32_t n = aFragment->GetLength();
+  const uint32_t n = aCharacterDataBuffer->GetLength();
   for (uint32_t i = 0; i < n; i++) {
-    const char16_t ch = aFragment->CharAt(i);
+    const char16_t ch = aCharacterDataBuffer->CharAt(i);
     // FIXME: take content language into account when deciding whitespace.
     if (dom::IsSpaceCharacter(ch)) {
       if (firstLetterLength) {
@@ -9988,7 +9932,7 @@ static int32_t FirstLetterCount(const nsTextFragment* aFragment) {
 
 static bool NeedFirstLetterContinuation(Text* aText) {
   MOZ_ASSERT(aText, "null ptr");
-  int32_t flc = FirstLetterCount(&aText->TextFragment());
+  int32_t flc = FirstLetterCount(&aText->DataBuffer());
   int32_t tl = aText->TextDataLength();
   return flc < tl;
 }

@@ -1559,6 +1559,10 @@ JS_PUBLIC_API void JS_SetNativeStackQuota(
   SetNativeStackSize(cx, JS::StackForTrustedScript, trustedScriptStackSize);
   SetNativeStackSize(cx, JS::StackForUntrustedScript, untrustedScriptStackSize);
 
+  if (cx->runtime()->isMainRuntime()) {
+    js::gc::MapStack(systemCodeStackSize);
+  }
+
   cx->initJitStackLimit();
 }
 
@@ -2168,7 +2172,14 @@ JS_PUBLIC_API void JS_SetAllNonReservedSlotsToUndefined(JS::HandleObject obj) {
   }
 
   NativeObject& nobj = obj->as<NativeObject>();
-  MOZ_RELEASE_ASSERT(!Watchtower::watchesPropertyValueChange(&nobj));
+
+  // XPConnect calls this for global objects that won't be used anymore. Globals
+  // can have an associated ObjectFuse but we can ignore that here because the
+  // global is effectively dead (after clearing all slots below it'd be hard to
+  // execute JS code in this global without breaking JS semantics).
+  MOZ_RELEASE_ASSERT(nobj.is<GlobalObject>() ||
+                     !Watchtower::watchesPropertyValueChange(&nobj));
+
   const JSClass* clasp = obj->getClass();
   unsigned numReserved = JSCLASS_RESERVED_SLOTS(clasp);
   unsigned numSlots = nobj.slotSpan();
@@ -2183,7 +2194,6 @@ JS_PUBLIC_API void JS_SetReservedSlot(JSObject* obj, uint32_t index,
   // objects. See NativeObject::getReservedSlotRef comment.
   NativeObject& nobj = obj->as<NativeObject>();
   MOZ_ASSERT(index < JSCLASS_RESERVED_SLOTS(obj->getClass()));
-  MOZ_ASSERT(!Watchtower::watchesPropertyValueChange(&nobj));
   nobj.setSlot(index, value);
 }
 

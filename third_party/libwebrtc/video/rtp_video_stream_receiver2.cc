@@ -381,7 +381,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
 
   if (frame_transformer) {
     frame_transformer_delegate_ =
-        rtc::make_ref_counted<RtpVideoStreamReceiverFrameTransformerDelegate>(
+        make_ref_counted<RtpVideoStreamReceiverFrameTransformerDelegate>(
             this, &env_.clock(), std::move(frame_transformer),
             TaskQueueBase::Current(), config_.rtp.remote_ssrc);
     frame_transformer_delegate_->Init();
@@ -402,7 +402,7 @@ void RtpVideoStreamReceiver2::AddReceiveCodec(
     const webrtc::CodecParameterMap& codec_params,
     bool raw_payload) {
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
-  if (codec_params.count(cricket::kH264FmtpSpsPpsIdrInKeyframe) > 0 ||
+  if (codec_params.count(kH264FmtpSpsPpsIdrInKeyframe) > 0 ||
       env_.field_trials().IsEnabled("WebRTC-SpsPpsIdrIsH264Keyframe")) {
     packet_buffer_.ForceSpsPpsIdrIsH264Keyframe();
     sps_pps_idr_is_h264_keyframe_ = true;
@@ -570,7 +570,7 @@ void RtpVideoStreamReceiver2::SetLastCorruptionDetectionIndex(
 }
 
 bool RtpVideoStreamReceiver2::OnReceivedPayloadData(
-    rtc::CopyOnWriteBuffer codec_payload,
+    CopyOnWriteBuffer codec_payload,
     const RtpPacketReceived& rtp_packet,
     const RTPVideoHeader& video,
     int times_nacked) {
@@ -763,7 +763,7 @@ bool RtpVideoStreamReceiver2::OnReceivedPayloadData(
       !UseH26xPacketBuffer(packet->codec())) {
     video_coding::H264SpsPpsTracker::FixedBitstream fixed =
         tracker_.CopyAndFixBitstream(
-            rtc::MakeArrayView(codec_payload.cdata(), codec_payload.size()),
+            MakeArrayView(codec_payload.cdata(), codec_payload.size()),
             &packet->video_header);
 
     switch (fixed.action) {
@@ -873,7 +873,7 @@ void RtpVideoStreamReceiver2::OnInsertedPacket(
   int64_t min_recv_time;
   int64_t max_recv_time;
   std::optional<int64_t> absolute_capture_time_ms;
-  std::vector<rtc::ArrayView<const uint8_t>> payloads;
+  std::vector<ArrayView<const uint8_t>> payloads;
   RtpPacketInfos::vector_type packet_infos;
 
   bool skip_frame = false;
@@ -927,7 +927,7 @@ void RtpVideoStreamReceiver2::OnInsertedPacket(
       RTC_CHECK(depacketizer_it != payload_type_map_.end());
       RTC_CHECK(depacketizer_it->second);
 
-      rtc::scoped_refptr<EncodedImageBuffer> bitstream =
+      scoped_refptr<EncodedImageBuffer> bitstream =
           depacketizer_it->second->AssembleFrame(payloads);
       if (!bitstream) {
         // Failed to assemble a frame. Discard and continue.
@@ -1062,7 +1062,7 @@ void RtpVideoStreamReceiver2::OnDecryptionStatusChange(
 }
 
 void RtpVideoStreamReceiver2::SetFrameDecryptor(
-    rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
+    scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
   // TODO(bugs.webrtc.org/11993): Update callers or post the operation over to
   // the network thread.
   RTC_DCHECK_RUN_ON(&packet_sequence_checker_);
@@ -1074,10 +1074,10 @@ void RtpVideoStreamReceiver2::SetFrameDecryptor(
 }
 
 void RtpVideoStreamReceiver2::SetDepacketizerToDecoderFrameTransformer(
-    rtc::scoped_refptr<FrameTransformerInterface> frame_transformer) {
+    scoped_refptr<FrameTransformerInterface> frame_transformer) {
   RTC_DCHECK_RUN_ON(&worker_task_checker_);
   frame_transformer_delegate_ =
-      rtc::make_ref_counted<RtpVideoStreamReceiverFrameTransformerDelegate>(
+      make_ref_counted<RtpVideoStreamReceiverFrameTransformerDelegate>(
           this, &env_.clock(), std::move(frame_transformer), Thread::Current(),
           config_.rtp.remote_ssrc);
   frame_transformer_delegate_->Init();
@@ -1348,8 +1348,7 @@ bool RtpVideoStreamReceiver2::DeliverRtcp(const uint8_t* rtcp_packet,
     return false;
   }
 
-  rtp_rtcp_->IncomingRtcpPacket(
-      rtc::MakeArrayView(rtcp_packet, rtcp_packet_length));
+  rtp_rtcp_->IncomingRtcpPacket(MakeArrayView(rtcp_packet, rtcp_packet_length));
 
   std::optional<TimeDelta> rtt = rtp_rtcp_->LastRtt();
   if (!rtt.has_value()) {
@@ -1466,7 +1465,7 @@ void RtpVideoStreamReceiver2::InsertSpsPpsIntoTracker(uint8_t payload_type) {
 
   H264SpropParameterSets sprop_decoder;
   auto sprop_base64_it =
-      codec_params_it->second.find(cricket::kH264FmtpSpropParameterSets);
+      codec_params_it->second.find(kH264FmtpSpropParameterSets);
 
   if (sprop_base64_it == codec_params_it->second.end())
     return;

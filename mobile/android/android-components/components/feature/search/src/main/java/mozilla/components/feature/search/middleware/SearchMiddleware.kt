@@ -7,6 +7,7 @@ package mozilla.components.feature.search.middleware
 import android.content.Context
 import android.graphics.BitmapFactory
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -127,8 +128,11 @@ class SearchMiddleware(
         val migrationValues = migration?.getValuesToMigrate()
         performCustomSearchEnginesMigration(migrationValues)
 
-        val regionBundle = if (searchEngineSelectorRepository != null) {
-            async(ioDispatcher) {
+        val regionBundle: Deferred<BundleStorage.Bundle>
+        val allAdditionalSearchEngines: Deferred<List<SearchEngine>>
+
+        if (searchEngineSelectorRepository != null) {
+            val result = async(ioDispatcher) {
                 searchEngineSelectorRepository.load(
                     region = region,
                     distribution = distribution,
@@ -136,11 +140,24 @@ class SearchMiddleware(
                     coroutineContext = ioDispatcher,
                 )
             }
+            regionBundle = async {
+                result.await().copy(
+                    list = result.await().list.filter { !it.isOptional },
+                )
+            }
+            allAdditionalSearchEngines = async { result.await().list.filter { it.isOptional } }
         } else {
-            async(ioDispatcher) {
+            regionBundle = async(ioDispatcher) {
                 bundleStorage.load(
                     region = region,
                     distribution = distribution,
+                    searchExtraParams = searchExtraParams,
+                    coroutineContext = ioDispatcher,
+                )
+            }
+            allAdditionalSearchEngines = async(ioDispatcher) {
+                bundleStorage.load(
+                    ids = additionalBundledSearchEngineIds,
                     searchExtraParams = searchExtraParams,
                     coroutineContext = ioDispatcher,
                 )
@@ -151,21 +168,6 @@ class SearchMiddleware(
         val hiddenSearchEngineIds = async(ioDispatcher) { metadataStorage.getHiddenSearchEngines() }
         val disabledSearchEngineIds = async(ioDispatcher) { metadataStorage.getDisabledSearchEngineIds() }
         val additionalSearchEngineIds = async(ioDispatcher) { metadataStorage.getAdditionalSearchEngines() }
-        val allAdditionalSearchEngines = if (searchEngineSelectorRepository != null) {
-            async(ioDispatcher) {
-                regionBundle.await().list.filter { searchEngine ->
-                    !searchEngine.isGeneral
-                }
-            }
-        } else {
-            async(ioDispatcher) {
-                bundleStorage.load(
-                    ids = additionalBundledSearchEngineIds,
-                    searchExtraParams = searchExtraParams,
-                    coroutineContext = ioDispatcher,
-                )
-            }
-        }
 
         val hiddenSearchEngines = mutableListOf<SearchEngine>()
         val filteredRegionSearchEngines = regionBundle.await().list.filter { searchEngine ->

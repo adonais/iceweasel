@@ -53,6 +53,7 @@ dependencies {
     implementation libs.androidx.compose.ui.tooling.preview
     implementation libs.androidx.constraintlayout
     implementation libs.androidx.core.ktx
+    implementation libs.androidx.fragment.compose
     implementation libs.google.material
 
     debugImplementation libs.androidx.compose.ui.tooling

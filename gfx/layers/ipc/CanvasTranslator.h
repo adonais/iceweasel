@@ -8,6 +8,7 @@
 #define mozilla_layers_CanvasTranslator_h
 
 #include <deque>
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -25,11 +26,18 @@
 #include "mozilla/Monitor.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
+#include "mozilla/WeakPtr.h"
 
 namespace mozilla {
 
 using EventType = gfx::RecordedEvent::EventType;
 class TaskQueue;
+
+class WebGLContext;
+
+namespace gl {
+class SharedSurface;
+}  // namespace gl
 
 namespace gfx {
 class DataSourceSurfaceWrapper;
@@ -202,7 +210,10 @@ class CanvasTranslator final : public gfx::InlineTranslator,
    * Resolves the given sync-id from the recording stream to a snapshot from
    * an external canvas that was received from an IPDL message.
    */
-  already_AddRefed<gfx::SourceSurface> LookupExternalSnapshot(uint64_t aSyncId);
+  bool ResolveExternalSnapshot(uint64_t aSyncId, gfx::ReferencePtr aRefPtr,
+                               const gfx::IntSize& aSize,
+                               gfx::SurfaceFormat aFormat,
+                               gfx::DrawTarget* aDT);
 
   /**
    * Removes the texture and other objects associated with a texture ID.
@@ -322,21 +333,26 @@ class CanvasTranslator final : public gfx::InlineTranslator,
    * This should only be called from within the canvas task queue thread
    * so that it can force event processing to occur if necessary.
    */
-  already_AddRefed<gfx::DataSourceSurface> WaitForSurface(uintptr_t aId);
+  already_AddRefed<gfx::SourceSurface> WaitForSurface(
+      uintptr_t aId, Maybe<layers::SurfaceDescriptor>* aDesc = nullptr);
 
   static void Shutdown();
 
+  struct ExportSurface {
+    RefPtr<gfx::SourceSurface> mData;
+    std::shared_ptr<gl::SharedSurface> mSharedSurface;
+  };
+
   void AddExportSurface(gfx::ReferencePtr aRefPtr,
                         gfx::SourceSurface* aSurface) {
-    mExportSurfaces.InsertOrUpdate(aRefPtr, RefPtr{aSurface});
+    mExportSurfaces[aRefPtr].mData = aSurface;
   }
 
-  void RemoveExportSurface(gfx::ReferencePtr aRefPtr) {
-    mExportSurfaces.Remove(aRefPtr);
-  }
+  void RemoveExportSurface(gfx::ReferencePtr aRefPtr);
 
-  gfx::SourceSurface* LookupExportSurface(gfx::ReferencePtr aRefPtr) {
-    return mExportSurfaces.GetWeak(aRefPtr);
+  ExportSurface* LookupExportSurface(gfx::ReferencePtr aRefPtr) {
+    auto it = mExportSurfaces.find(aRefPtr);
+    return it != mExportSurfaces.end() ? &it->second : nullptr;
   }
 
  private:
@@ -524,7 +540,14 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   // The last sync-id that was actually encountered.
   uint64_t mLastSyncId = 0;
   // A table of external canvas snapshots associated with a given sync-id.
-  nsRefPtrHashtable<nsUint64HashKey, gfx::SourceSurface> mExternalSnapshots;
+  struct ExternalSnapshot {
+    std::shared_ptr<gl::SharedSurface> mSharedSurface;
+    WeakPtr<WebGLContext> mWebgl;
+    Maybe<layers::SurfaceDescriptor> mDescriptor;
+    RefPtr<gfx::SourceSurface> mData;
+  };
+  // Surface decriptors, if available, associated with a given sync-id.
+  std::unordered_map<uint64_t, ExternalSnapshot> mExternalSnapshots;
 
   // Signal that translation should pause because it is still awaiting a sync-id
   // that has not been encountered yet.
@@ -589,7 +612,7 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   RefPtr<nsIRunnable> mCanvasTranslatorEventsRunnable;
   std::deque<UniquePtr<CanvasTranslatorEvent>> mPendingCanvasTranslatorEvents;
 
-  nsRefPtrHashtable<nsPtrHashKey<void>, gfx::SourceSurface> mExportSurfaces;
+  std::unordered_map<gfx::ReferencePtr, ExportSurface> mExportSurfaces;
 };
 
 }  // namespace layers

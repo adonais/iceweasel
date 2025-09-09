@@ -15,27 +15,26 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/HTMLInputElementBinding.h"
-#include "mozilla/dom/Promise.h"
-#include "mozilla/dom/SingleLineTextInputTypes.h"
-#include "mozilla/dom/NumericInputTypes.h"
-#include "mozilla/dom/CheckableInputTypes.h"
 #include "mozilla/dom/ButtonInputTypes.h"
-#include "mozilla/dom/DateTimeInputTypes.h"
+#include "mozilla/dom/CheckableInputTypes.h"
 #include "mozilla/dom/ColorInputType.h"
 #include "mozilla/dom/ConstraintValidation.h"
+#include "mozilla/dom/DateTimeInputTypes.h"
 #include "mozilla/dom/FileInputType.h"
+#include "mozilla/dom/HTMLInputElementBinding.h"
 #include "mozilla/dom/HiddenInputType.h"
+#include "mozilla/dom/NumericInputTypes.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RadioGroupContainer.h"
-#include "nsGenericHTMLElement.h"
-#include "nsImageLoadingContent.h"
+#include "mozilla/dom/SingleLineTextInputTypes.h"
 #include "nsCOMPtr.h"
-#include "nsIFilePicker.h"
-#include "nsIContentPrefService2.h"
 #include "nsContentUtils.h"
+#include "nsGenericHTMLElement.h"
+#include "nsIContentPrefService2.h"
+#include "nsIFilePicker.h"
+#include "nsImageLoadingContent.h"
 
 class nsIEditor;
-class nsIRadioVisitor;
 
 namespace mozilla {
 
@@ -295,6 +294,7 @@ class HTMLInputElement final : public TextControlElement,
   void AddToRadioGroup();
   void RemoveFromRadioGroup();
   void DisconnectRadioGroupContainer();
+  void UpdateRadioGroupState();
 
   /**
    * Helper function returning the currently selected button in the radio group.
@@ -992,15 +992,10 @@ class HTMLInputElement final : public TextControlElement,
 
   /**
    * Visit the group of radio buttons this radio belongs to
-   * @param aVisitor the visitor to visit with
-   */
-  nsresult VisitGroup(nsIRadioVisitor* aVisitor);
-
-  /**
-   * Visit the group of radio buttons this radio belongs to
    * @param aCallback the callback function to visit the node
    */
-  void VisitGroup(const RadioGroupContainer::VisitCallback& aCallback);
+  template <typename VisitCallback>
+  void VisitGroup(VisitCallback&& aCallback, bool aSkipThis = true);
 
   /**
    * Do all the work that |SetChecked| does (radio button handling, etc.), but
@@ -1008,13 +1003,6 @@ class HTMLInputElement final : public TextControlElement,
    */
   void DoSetChecked(bool aValue, bool aNotify, bool aSetValueChanged,
                     bool aUpdateOtherElement = true);
-
-  /**
-   * Do all the work that |SetCheckedChanged| does (radio button handling,
-   * etc.), but take an |aNotify| parameter that lets it avoid flushing content
-   * when it can.
-   */
-  void DoSetCheckedChanged(bool aCheckedChanged, bool aNotify);
 
   /**
    * Actually set checked and notify the frame of the change.
@@ -1138,14 +1126,6 @@ class HTMLInputElement final : public TextControlElement,
    * should be added into, if one exists.
    */
   RadioGroupContainer* FindTreeRadioGroupContainer() const;
-
-  /**
-   * Parse a color string of the form #XXXXXX where X should be hexa characters
-   * @param the string to be parsed.
-   * @return whether the string is a valid simple color.
-   * Note : this function does not consider the empty string as valid.
-   */
-  bool IsValidSimpleColor(const nsAString& aValue) const;
 
   /**
    * Parse a week string of the form yyyy-Www

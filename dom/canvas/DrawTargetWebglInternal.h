@@ -8,7 +8,6 @@
 #define _MOZILLA_GFX_DRAWTARGETWEBGL_INTERNAL_H
 
 #include "DrawTargetWebgl.h"
-
 #include "mozilla/HashFunctions.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/gfx/Etagere.h"

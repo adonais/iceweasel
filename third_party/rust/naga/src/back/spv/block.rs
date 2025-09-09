@@ -675,7 +675,7 @@ impl BlockContext<'_> {
                         load_id
                     }
                     ref other => {
-                        log::error!("Unable to access index of {:?}", other);
+                        log::error!("Unable to access index of {other:?}");
                         return Err(Error::FeatureNotImplemented("access index for type"));
                     }
                 }
@@ -1893,7 +1893,7 @@ impl BlockContext<'_> {
             crate::TypeInner::Scalar(scalar) => (scalar, None),
             crate::TypeInner::Vector { scalar, size } => (scalar, Some(size)),
             ref other => {
-                log::error!("As source {:?}", other);
+                log::error!("As source {other:?}");
                 return Err(Error::Validation("Unexpected Expression::As source"));
             }
         };
@@ -2979,62 +2979,69 @@ impl BlockContext<'_> {
                     ref accept,
                     ref reject,
                 } => {
-                    let condition_id = self.cached[condition];
+                    // In spirv 1.6, in a conditional branch the two block ids
+                    // of the branches can't have the same label. If `accept`
+                    // and `reject` are both empty (e.g. in `if (condition) {}`)
+                    // merge id will be both labels. Because both branches are
+                    // empty, we can skip the if statement.
+                    if !(accept.is_empty() && reject.is_empty()) {
+                        let condition_id = self.cached[condition];
 
-                    let merge_id = self.gen_id();
-                    block.body.push(Instruction::selection_merge(
-                        merge_id,
-                        spirv::SelectionControl::NONE,
-                    ));
+                        let merge_id = self.gen_id();
+                        block.body.push(Instruction::selection_merge(
+                            merge_id,
+                            spirv::SelectionControl::NONE,
+                        ));
 
-                    let accept_id = if accept.is_empty() {
-                        None
-                    } else {
-                        Some(self.gen_id())
-                    };
-                    let reject_id = if reject.is_empty() {
-                        None
-                    } else {
-                        Some(self.gen_id())
-                    };
+                        let accept_id = if accept.is_empty() {
+                            None
+                        } else {
+                            Some(self.gen_id())
+                        };
+                        let reject_id = if reject.is_empty() {
+                            None
+                        } else {
+                            Some(self.gen_id())
+                        };
 
-                    self.function.consume(
-                        block,
-                        Instruction::branch_conditional(
-                            condition_id,
-                            accept_id.unwrap_or(merge_id),
-                            reject_id.unwrap_or(merge_id),
-                        ),
-                    );
+                        self.function.consume(
+                            block,
+                            Instruction::branch_conditional(
+                                condition_id,
+                                accept_id.unwrap_or(merge_id),
+                                reject_id.unwrap_or(merge_id),
+                            ),
+                        );
 
-                    if let Some(block_id) = accept_id {
-                        // We can ignore the `BlockExitDisposition` returned here because,
-                        // even if `merge_id` is not actually reachable, it is always
-                        // referred to by the `OpSelectionMerge` instruction we emitted
-                        // earlier.
-                        let _ = self.write_block(
-                            block_id,
-                            accept,
-                            BlockExit::Branch { target: merge_id },
-                            loop_context,
-                            debug_info,
-                        )?;
+                        if let Some(block_id) = accept_id {
+                            // We can ignore the `BlockExitDisposition` returned here because,
+                            // even if `merge_id` is not actually reachable, it is always
+                            // referred to by the `OpSelectionMerge` instruction we emitted
+                            // earlier.
+                            let _ = self.write_block(
+                                block_id,
+                                accept,
+                                BlockExit::Branch { target: merge_id },
+                                loop_context,
+                                debug_info,
+                            )?;
+                        }
+                        if let Some(block_id) = reject_id {
+                            // We can ignore the `BlockExitDisposition` returned here because,
+                            // even if `merge_id` is not actually reachable, it is always
+                            // referred to by the `OpSelectionMerge` instruction we emitted
+                            // earlier.
+                            let _ = self.write_block(
+                                block_id,
+                                reject,
+                                BlockExit::Branch { target: merge_id },
+                                loop_context,
+                                debug_info,
+                            )?;
+                        }
+
+                        block = Block::new(merge_id);
                     }
-                    if let Some(block_id) = reject_id {
-                        // We can ignore the `BlockExitDisposition` returned here because,
-                        // even if `merge_id` is not actually reachable, it is always
-                        // referred to by the `OpSelectionMerge` instruction we emitted
-                        // earlier.
-                        let _ = self.write_block(
-                            block_id,
-                            reject,
-                            BlockExit::Branch { target: merge_id },
-                            loop_context,
-                            debug_info,
-                        )?;
-                    }
-
-                    block = Block::new(merge_id);
                 }
                 Statement::Switch {
                     selector,

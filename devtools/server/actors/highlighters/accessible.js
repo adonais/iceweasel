@@ -72,12 +72,14 @@ loader.lazyRequireGetter(
 class AccessibleHighlighter extends AutoRefreshHighlighter {
   constructor(highlighterEnv) {
     super(highlighterEnv);
-    this.ID_CLASS_PREFIX = "accessible-";
     this.accessibleInfobar = new Infobar(this);
 
     this.markup = new CanvasFrameAnonymousContentHelper(
       this.highlighterEnv,
-      this._buildMarkup.bind(this)
+      this._buildMarkup.bind(this),
+      {
+        contentRootHostClassName: "devtools-highlighter-accessible",
+      }
     );
     this.isReady = this.markup.initialize();
 
@@ -115,44 +117,41 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
       },
     });
 
-    const root = this.markup.createNode({
+    this.rootEl = this.markup.createNode({
       parent: container,
       attributes: {
-        id: "root",
+        id: "accessible-root",
         class:
-          "root" +
+          "accessible-root" +
           (this.highlighterEnv.useSimpleHighlightersForReducedMotion
             ? " use-simple-highlighters"
             : ""),
       },
-      prefix: this.ID_CLASS_PREFIX,
     });
 
     // Build the SVG element.
     const svg = this.markup.createSVGNode({
       nodeType: "svg",
-      parent: root,
+      parent: this.rootEl,
       attributes: {
-        id: "elements",
+        id: "accessible-elements",
         width: "100%",
         height: "100%",
         hidden: "true",
       },
-      prefix: this.ID_CLASS_PREFIX,
     });
 
     this.markup.createSVGNode({
       nodeType: "path",
       parent: svg,
       attributes: {
-        class: "bounds",
-        id: "bounds",
+        class: "accessible-bounds",
+        id: "accessible-bounds",
       },
-      prefix: this.ID_CLASS_PREFIX,
     });
 
     // Build the accessible's infobar markup.
-    this.accessibleInfobar.buildMarkup(root);
+    this.accessibleInfobar.buildMarkup(this.rootEl);
 
     return container;
   }
@@ -175,6 +174,7 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
     this.accessibleInfobar.destroy();
     this.accessibleInfobar = null;
     this.markup.destroy();
+    this.rootEl = null;
   }
 
   /**
@@ -185,7 +185,7 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
    * @return {DOMNode} Element in the highlighter markup.
    */
   getElement(id) {
-    return this.markup.getElement(this.ID_CLASS_PREFIX + id);
+    return this.markup.getElement(id);
   }
 
   /**
@@ -275,7 +275,7 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
    * color contrast calculation.
    */
   hideAccessibleBounds() {
-    if (this.getElement("elements").hasAttribute("hidden")) {
+    if (this.getElement("accessible-elements").hasAttribute("hidden")) {
       return;
     }
 
@@ -299,7 +299,7 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
   _hideAccessibleBounds() {
     this._shouldRestoreBoundsVisibility = null;
     setIgnoreLayoutChanges(true);
-    this.getElement("elements").setAttribute("hidden", "true");
+    this.getElement("accessible-elements").setAttribute("hidden", "true");
     setIgnoreLayoutChanges(
       false,
       this.highlighterEnv.window.document.documentElement
@@ -316,7 +316,7 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
     }
 
     setIgnoreLayoutChanges(true);
-    this.getElement("elements").removeAttribute("hidden");
+    this.getElement("accessible-elements").removeAttribute("hidden");
     setIgnoreLayoutChanges(
       false,
       this.highlighterEnv.window.document.documentElement
@@ -359,14 +359,13 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
       return false;
     }
 
-    const boundsEl = this.getElement("bounds");
+    const boundsEl = this.getElement("accessible-bounds");
     const { left, right, top, bottom } = bounds;
     const path = `M${left},${top} L${right},${top} L${right},${bottom} L${left},${bottom} L${left},${top}`;
     boundsEl.setAttribute("d", path);
 
     // Un-zoom the root wrapper if the page was zoomed.
-    const rootId = this.ID_CLASS_PREFIX + "elements";
-    this.markup.scaleRootElement(this.currentNode, rootId);
+    this.markup.scaleRootElement(this.currentNode, "accessible-elements");
 
     return true;
   }

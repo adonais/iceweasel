@@ -133,3 +133,5 @@ GFXINFO_FEATURE(WMF_HW_DRM, "WMF_HW_DRM", "wmf.hw-drm")
 GFXINFO_FEATURE(GL_NORM16_TEXTURES, "GL_NORM16", "gl.norm16-textures")
 /* Whether hardware accelerated video encoding is supported, starting in 141. */
 GFXINFO_FEATURE(HARDWARE_VIDEO_ENCODING, "HARDWARE_VIDEO_ENCODING", "hardwarevideoencoding")
+/* Whether WebGPU's GPUExternalTexture API is supported, starting in 143. */
+GFXINFO_FEATURE(WEBGPU_EXTERNAL_TEXTURE, "WEBGPU_EXTERNAL_TEXTURE", "webgpu.external-texture")

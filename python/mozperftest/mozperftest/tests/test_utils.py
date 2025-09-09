@@ -138,10 +138,12 @@ def test_install_package_failures():
 
 @mock.patch("mozperftest.utils.requests.get", requests_content())
 def test_build_test_list():
-    tests = [EXAMPLE_TESTS_DIR, "https://some/location/perftest_one.js"]
+    http_filename = "perftest_one.js"
+    tests = [EXAMPLE_TESTS_DIR, f"https://some/location/{http_filename}"]
     try:
         files, tmp_dir = build_test_list(tests)
-        assert len(files) == 2
+        assert any(f.startswith(str(EXAMPLE_TESTS_DIR)) for f in files)
+        assert any(http_filename in Path(f).name for f in files)
     finally:
         shutil.rmtree(tmp_dir)
 

@@ -388,6 +388,48 @@ TEST_F(APZCBasicTester, MultipleSmoothScrollsSmooth) {
   }
 }
 
+TEST_F(APZCBasicTester, NotifyLayersUpdate_WithScrollUpdates) {
+  // Set an empty metadata as if the APZC is now newly created.
+  // This replicates when a document in a background tab now becomes forground.
+  ScrollMetadata metadata;
+  apzc->SetScrollMetadata(metadata);
+  ASSERT_TRUE(apzc->GetScrollMetadata().IsDefault());
+
+  FrameMetrics& metrics = metadata.GetMetrics();
+  metrics.SetDisplayPort(CSSRect(0, 0, 10, 10));
+  metrics.SetCompositionBounds(ParentLayerRect(0, 0, 10, 10));
+  metrics.SetScrollableRect(CSSRect(0, 0, 100, 100));
+
+  // Set layout/visual scroll offsets as if the document has scrolled when the
+  // document was foregound.
+  metrics.SetVisualScrollOffset(CSSPoint(10, 10));
+  metrics.SetLayoutViewport(CSSRect(10, 10, 10, 10));
+  metrics.SetScrollId(ScrollableLayerGuid::START_SCROLL_ID);
+
+  // Add a new relative scroll update (10, 10) -> (15, 15).
+  AutoTArray<ScrollPositionUpdate, 1> scrollUpdates;
+  scrollUpdates.AppendElement(ScrollPositionUpdate::NewRelativeScroll(
+      CSSPoint::ToAppUnits(CSSPoint(10, 10)),
+      CSSPoint::ToAppUnits(CSSPoint(15, 15))));
+  metadata.SetScrollUpdates(scrollUpdates);
+  metrics.SetScrollGeneration(scrollUpdates.LastElement().GetGeneration());
+  // With the above scroll updates, now the layout/visual scroll offsets (on the
+  // main-thread) need to be updated.
+  metrics.SetVisualScrollOffset(CSSPoint(15, 15));
+  metrics.SetLayoutViewport(CSSRect(15, 15, 10, 10));
+
+  // It's not first-paint when switching tab.
+  apzc->NotifyLayersUpdated(metadata, /*isFirstPaint=*/false,
+                            /*thisLayerTreeUpdated=*/true);
+
+  // The layout/visual scroll ofsets and the relative scroll update need to be
+  // reflected.
+  ASSERT_EQ(apzc->GetFrameMetrics().GetLayoutScrollOffset(), CSSPoint(20, 20))
+      << "If the actual value is (15, 15), you fixed bug 1978682, thanks!";
+  ASSERT_EQ(apzc->GetFrameMetrics().GetVisualScrollOffset(), CSSPoint(20, 20))
+      << "If the actual value is (15, 15), you fixed bug 1978682, thanks!";
+}
+
 class APZCSmoothScrollTester : public APZCBasicTester {
  public:
   // Test that a smooth scroll animation correctly handles its destination

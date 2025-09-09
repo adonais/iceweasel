@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = ทางลัดใหม่
 newtab-topsites-edit-topsites-header = แก้ไขไซต์เด่น
 newtab-topsites-edit-shortcut-header = แก้ไขทางลัด
 newtab-topsites-add-shortcut-label = เพิ่มทางลัด
+newtab-topsites-add-shortcut-title =
+    .title = เพิ่มทางลัด
+    .aria-label = เพิ่มทางลัด
 newtab-topsites-title-label = ชื่อเรื่อง
 newtab-topsites-title-input =
     .placeholder = ป้อนชื่อเรื่อง
@@ -544,9 +547,6 @@ newtab-download-mobile-highlight-body-variant-b = ท่องเว็บต่
 newtab-download-mobile-highlight-body-variant-c = คุณรู้ไหมว่าคุณสามารถใช้ { -brand-product-name } ขณะเดินทางได้? นำเบราว์เซอร์ตัวเดียวกันนี้มาไว้ในกระเป๋าของคุณ
 newtab-download-mobile-highlight-image =
     .aria-label = คิวอาร์โค้ดสำหรับดาวน์โหลด { -brand-product-name } สำหรับมือถือ
-
-## Strings for shortcuts highlight
-
 
 ## Strings for reporting ads and content
 

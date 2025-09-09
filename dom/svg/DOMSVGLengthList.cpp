@@ -6,12 +6,13 @@
 
 #include "DOMSVGLengthList.h"
 
-#include "SVGElement.h"
-#include "DOMSVGLength.h"
-#include "nsError.h"
-#include "SVGAnimatedLengthList.h"
-#include "mozilla/dom/SVGLengthListBinding.h"
 #include <algorithm>
+
+#include "DOMSVGLength.h"
+#include "SVGAnimatedLengthList.h"
+#include "SVGElement.h"
+#include "mozilla/dom/SVGLengthListBinding.h"
+#include "nsError.h"
 
 // See the comment in this file's header.
 

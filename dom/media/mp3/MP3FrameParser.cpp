@@ -6,16 +6,17 @@
 
 #include "MP3FrameParser.h"
 
-#include <algorithm>
 #include <inttypes.h>
 
+#include <algorithm>
+
 #include "TimeUnits.h"
+#include "VideoUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Try.h"
-#include "VideoUtils.h"
 
 extern mozilla::LazyLogModule gMediaDemuxerLog;
 #define MP3LOG(msg, ...) \

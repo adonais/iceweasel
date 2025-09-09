@@ -31,6 +31,7 @@ const ELEMENT_NODE = 1;
 const ORDERED_NODE_SNAPSHOT_TYPE = 7;
 
 class BrowsingContextModule extends WindowGlobalBiDiModule {
+  #contextCreatedHandled;
   #loadListener;
   #subscribedEvents;
 
@@ -44,6 +45,7 @@ class BrowsingContextModule extends WindowGlobalBiDiModule {
 
     // Set of event names which have active subscriptions.
     this.#subscribedEvents = new Set();
+    this.contextCreatedHandled = false;
   }
 
   destroy() {
@@ -399,6 +401,27 @@ class BrowsingContextModule extends WindowGlobalBiDiModule {
 
       // Subscribe to all events, which have an item in SessionData.
       for (const { value } of filteredSessionData) {
+        /**
+         * We only want to emit backfill events when subscribing to the contextCreated
+         * event. We also do not want to emit a backfill when creating the context
+         * initially as this is already emitted elsewhere, so backfilling it would
+         * cause a duplicate event to be emitted.
+         */
+        if (value === "browsingContext.contextCreated") {
+          /**
+           * We check for contextCreatedHandled so we do not replay any contextCreated events we
+           * have seen before. This can happen when navigating within a browser session as
+           * navigation will cause _applySessionData to be called with params.initial = false.
+           */
+          if (!params.initial && !this.#contextCreatedHandled) {
+            this.emitEvent("browsingContext.contextCreated", {
+              context: this.messageHandler.context,
+            });
+          }
+
+          this.#contextCreatedHandled = true;
+        }
+
         this.#subscribeEvent(value);
       }
     }

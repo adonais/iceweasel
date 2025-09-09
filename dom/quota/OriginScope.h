@@ -8,6 +8,7 @@
 #define mozilla_dom_quota_originorpatternstring_h__
 
 #include <utility>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/UniquePtr.h"

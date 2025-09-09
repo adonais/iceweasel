@@ -5,9 +5,9 @@
 #ifndef MEDIAENGINEFAKE_H_
 #define MEDIAENGINEFAKE_H_
 
-#include "nsTArrayForwardDeclare.h"
 #include "MediaEngine.h"
 #include "MediaEventSource.h"
+#include "nsTArrayForwardDeclare.h"
 
 namespace mozilla {
 

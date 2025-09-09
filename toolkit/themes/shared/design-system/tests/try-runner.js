@@ -29,7 +29,7 @@ function buildFilesWithTestConfig() {
   let testConfig = Object.assign({}, config);
   testConfig.source = [path.join(__dirname, "../design-tokens.json")];
   testConfig.platforms.css.buildPath = TEST_BUILD_PATH;
-  testConfig.platforms.storybook.buildPath = TEST_BUILD_PATH;
+  testConfig.platforms.tables.buildPath = TEST_BUILD_PATH;
   testConfig.platforms.figma.buildPath = TEST_BUILD_PATH;
 
   // This is effectively the same as running `npm run build` and allows us to

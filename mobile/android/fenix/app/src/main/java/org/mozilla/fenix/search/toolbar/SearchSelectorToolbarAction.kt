@@ -26,6 +26,7 @@ import mozilla.components.support.ktx.android.view.toScope
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.UnifiedSearch
 import org.mozilla.fenix.R
+import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.search.SearchDialogFragmentStore
 
@@ -75,7 +76,7 @@ class SearchSelectorToolbarAction(
                 )
             }
 
-            val topPadding = resources.getDimensionPixelSize(R.dimen.search_engine_engine_icon_top_margin)
+            val topPadding = pixelSizeFor(R.dimen.search_engine_engine_icon_top_margin)
             setPadding(0, topPadding, 0, 0)
 
             setBackgroundResource(
@@ -122,7 +123,7 @@ class SearchSelectorToolbarAction(
 @VisibleForTesting
 internal fun SearchEngine.getScaledIcon(context: Context): BitmapDrawable {
     val iconSize =
-        context.resources.getDimensionPixelSize(R.dimen.preference_icon_drawable_size)
+        context.pixelSizeFor(R.dimen.preference_icon_drawable_size)
     val scaledIcon = icon.scale(iconSize, iconSize, filter = true)
 
     return scaledIcon.toDrawable(context.resources)

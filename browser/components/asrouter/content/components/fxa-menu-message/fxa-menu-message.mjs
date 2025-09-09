@@ -8,8 +8,9 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import "chrome://global/content/elements/moz-button.mjs";
 
 /**
- * This widget is for a message that can be displayed in panelview menus when
- * the user is signed out to encourage them to sign in.
+ * This widget is for messages that can be displayed in panelview menus.
+ * Can be used to message signed out users encouraging them to sign in or
+ * asking users to set firefox as default.
  */
 export default class FxAMenuMessage extends MozLitElement {
   static shadowRootOptions = {
@@ -18,19 +19,22 @@ export default class FxAMenuMessage extends MozLitElement {
   };
   static properties = {
     imageURL: { type: String },
+    logoURL: { type: String },
     buttonText: { type: String },
+    primaryButtonSize: { type: String, reflect: true },
     primaryText: { type: String },
     secondaryText: { type: String },
     layout: { type: String, reflect: true },
   };
   static queries = {
-    signUpButton: "#sign-up-button",
+    primaryButton: "#primary-button",
     closeButton: "#close-button",
   };
 
   constructor() {
     super();
     this.layout = "column"; // Default layout
+    this.primaryButtonSize = "default"; // Default button size
     this.addEventListener(
       "keydown",
       event => {
@@ -43,10 +47,10 @@ export default class FxAMenuMessage extends MozLitElement {
           case "ArrowUp":
           // Intentional fall-through
           case "ArrowDown": {
-            if (this.shadowRoot.activeElement === this.signUpButton) {
+            if (this.shadowRoot.activeElement === this.primaryButton) {
               this.closeButton.focus();
             } else {
-              this.signUpButton.focus();
+              this.primaryButton.focus();
             }
             break;
           }
@@ -60,13 +64,13 @@ export default class FxAMenuMessage extends MozLitElement {
     // Keep the menu open by stopping the click event from
     // propagating up.
     event.stopPropagation();
-    this.dispatchEvent(new CustomEvent("FxAMenuMessage:Close"), {
+    this.dispatchEvent(new CustomEvent("MenuMessage:Close"), {
       bubbles: true,
     });
   }
 
-  handleSignUp() {
-    this.dispatchEvent(new CustomEvent("FxAMenuMessage:SignUp"), {
+  handlePrimaryButton() {
+    this.dispatchEvent(new CustomEvent("MenuMessage:PrimaryButton"), {
       bubbles: true,
     });
   }
@@ -80,10 +84,18 @@ export default class FxAMenuMessage extends MozLitElement {
         rel="stylesheet"
         href="chrome://browser/content/asrouter/components/fxa-menu-message.css"
       />
-      <div id="container" layout=${this.layout} ?has-image=${this.imageURL}>
+      <div
+        id="container"
+        layout=${this.layout}
+        ?has-image=${this.imageURL}
+        ?has-logo=${this.logoURL}
+      >
         ${this.isRowLayout
           ? html`
               <div id="top-row">
+                <div id="logo-container">
+                  <img id="logo" role="presentation" src=${this.logoURL} />
+                </div>
                 <moz-button
                   id="close-button"
                   @click=${this.handleClose}
@@ -93,15 +105,16 @@ export default class FxAMenuMessage extends MozLitElement {
                   data-l10n-id="fxa-menu-message-close-button"
                 >
                 </moz-button>
-                <div id="primary">${this.primaryText}</div>
               </div>
               <div id="bottom-row">
-                <div id="body-container">
-                  <div id="secondary">${this.secondaryText}</div>
+                <div id="primary">${this.primaryText}</div>
+                <div id="secondary">${this.secondaryText}</div>
+                <div id="illustration-button-container">
                   <moz-button
-                    id="sign-up-button"
-                    @click=${this.handleSignUp}
+                    id="primary-button"
+                    @click=${this.handlePrimaryButton}
                     type="primary"
+                    size=${this.primaryButtonSize}
                     tabindex="1"
                     autofocus
                     title=${this.buttonText}
@@ -109,26 +122,31 @@ export default class FxAMenuMessage extends MozLitElement {
                   >
                     ${this.buttonText}
                   </moz-button>
-                </div>
-                <div id="illustration-container">
-                  <img
-                    id="illustration"
-                    role="presentation"
-                    src=${this.imageURL}
-                  />
+                  <div id="illustration-container">
+                    <img
+                      id="illustration"
+                      role="presentation"
+                      src=${this.imageURL}
+                    />
+                  </div>
                 </div>
               </div>
             `
           : html`
-              <moz-button
-                id="close-button"
-                @click=${this.handleClose}
-                type="ghost"
-                iconsrc="resource://content-accessible/close-12.svg"
-                tabindex="2"
-                data-l10n-id="fxa-menu-message-close-button"
-              >
-              </moz-button>
+              <div id="top-row">
+                <div id="logo-container">
+                  <img id="logo" role="presentation" src=${this.logoURL} />
+                </div>
+                <moz-button
+                  id="close-button"
+                  @click=${this.handleClose}
+                  type="ghost"
+                  iconsrc="resource://content-accessible/close-12.svg"
+                  tabindex="2"
+                  data-l10n-id="fxa-menu-message-close-button"
+                >
+                </moz-button>
+              </div>
               <div id="illustration-container">
                 <img
                   id="illustration"
@@ -139,9 +157,10 @@ export default class FxAMenuMessage extends MozLitElement {
               <div id="primary">${this.primaryText}</div>
               <div id="secondary">${this.secondaryText}</div>
               <moz-button
-                id="sign-up-button"
-                @click=${this.handleSignUp}
+                id="primary-button"
+                @click=${this.handlePrimaryButton}
                 type="primary"
+                size=${this.primaryButtonSize}
                 tabindex="1"
                 autofocus
                 title=${this.buttonText}

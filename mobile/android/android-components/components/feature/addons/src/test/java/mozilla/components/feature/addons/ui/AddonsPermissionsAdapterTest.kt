@@ -8,7 +8,6 @@ import android.view.View
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mozilla.components.feature.addons.ui.AddonPermissionsAdapter.PermissionViewHolder
 import mozilla.components.feature.addons.ui.AddonPermissionsAdapter.Style
 import mozilla.components.support.test.mock
@@ -19,7 +18,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.verify
 
-@ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class AddonsPermissionsAdapterTest {
 

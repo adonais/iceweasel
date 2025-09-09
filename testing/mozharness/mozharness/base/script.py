@@ -2211,7 +2211,7 @@ class BaseScript(ScriptMixin, LogMixin):
         if not cfg_files:
             cfg_files = []
         self.info("Total config files: %d" % (len(cfg_files)))
-        if len(cfg_files):
+        if cfg_files:
             self.info("cfg files used from lowest precedence to highest:")
         for i, (target_file, target_dict) in enumerate(cfg_files):
             unique_keys = set(target_dict.keys())

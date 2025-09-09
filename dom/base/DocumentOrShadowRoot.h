@@ -7,10 +7,10 @@
 #ifndef mozilla_dom_DocumentOrShadowRoot_h__
 #define mozilla_dom_DocumentOrShadowRoot_h__
 
-#include "mozilla/dom/NameSpaceConstants.h"
 #include "mozilla/IdentifierMapEntry.h"
 #include "mozilla/RelativeTo.h"
 #include "mozilla/ReverseIterator.h"
+#include "mozilla/dom/NameSpaceConstants.h"
 #include "nsClassHashtable.h"
 #include "nsContentListDeclarations.h"
 #include "nsTArray.h"

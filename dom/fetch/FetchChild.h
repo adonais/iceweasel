@@ -5,8 +5,8 @@
 #ifndef mozilla_dom_fetchChild_h__
 #define mozilla_dom_fetchChild_h__
 
-#include "mozilla/dom/AbortSignal.h"
 #include "mozilla/dom/AbortFollower.h"
+#include "mozilla/dom/AbortSignal.h"
 #include "mozilla/dom/FlippedOnce.h"
 #include "mozilla/dom/PFetchChild.h"
 #include "mozilla/dom/SerializedStackHolder.h"

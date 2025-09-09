@@ -7,8 +7,8 @@
 #ifndef DirectionalityUtils_h___
 #define DirectionalityUtils_h___
 
-#include "nscore.h"
 #include "nsStringFwd.h"
+#include "nscore.h"
 
 class nsIContent;
 class nsINode;

@@ -7,17 +7,17 @@
 #ifndef mozilla_dom_ElementInternals_h
 #define mozilla_dom_ElementInternals_h
 
+#include "AttrArray.h"
 #include "js/TypeDecls.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/dom/CustomStateSet.h"
 #include "mozilla/dom/ElementInternalsBinding.h"
 #include "mozilla/dom/UnionTypes.h"
-#include "mozilla/dom/CustomStateSet.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsGkAtoms.h"
 #include "nsIConstraintValidation.h"
 #include "nsIFormControl.h"
 #include "nsWrapperCache.h"
-#include "AttrArray.h"
-#include "nsGkAtoms.h"
 
 #define ARIA_REFLECT_ATTR(method, attr)                             \
   void Get##method(nsAString& aValue) const {                       \

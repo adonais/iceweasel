@@ -13,11 +13,10 @@
 
 #include "nsPropertyTable.h"
 
-#include "mozilla/MemoryReporting.h"
-
 #include "PLDHashTable.h"
-#include "nsError.h"
+#include "mozilla/MemoryReporting.h"
 #include "nsAtom.h"
+#include "nsError.h"
 
 struct PropertyListMapEntry : public PLDHashEntryHdr {
   const void* key;

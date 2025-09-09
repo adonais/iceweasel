@@ -7,11 +7,10 @@
 #ifndef WebBrowserPersistSerializeChild_h__
 #define WebBrowserPersistSerializeChild_h__
 
-#include "mozilla/PWebBrowserPersistSerializeChild.h"
-
 #include "mozilla/PWebBrowserPersistDocument.h"
-#include "nsIWebBrowserPersistDocument.h"
+#include "mozilla/PWebBrowserPersistSerializeChild.h"
 #include "nsIOutputStream.h"
+#include "nsIWebBrowserPersistDocument.h"
 
 namespace mozilla {
 

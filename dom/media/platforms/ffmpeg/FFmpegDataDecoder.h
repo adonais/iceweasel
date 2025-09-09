@@ -15,6 +15,10 @@
 #include "FFmpegLibs.h"
 
 namespace mozilla {
+#if defined(MOZ_WIDGET_ANDROID) && defined(FFVPX_VERSION)
+class MediaDrmCrypto;
+class MediaDrmRemoteCDMParent;
+#endif
 
 template <int V>
 class FFmpegDataDecoder : public MediaDataDecoder {};
@@ -30,7 +34,8 @@ class FFmpegDataDecoder<LIBAV_VER>
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FFmpegDataDecoder, final);
 
-  FFmpegDataDecoder(FFmpegLibWrapper* aLib, AVCodecID aCodecID);
+  FFmpegDataDecoder(FFmpegLibWrapper* aLib, AVCodecID aCodecID,
+                    PRemoteCDMActor* aCDM);
 
   static bool Link();
 
@@ -52,11 +57,16 @@ class FFmpegDataDecoder<LIBAV_VER>
   virtual RefPtr<FlushPromise> ProcessFlush();
   virtual void ProcessShutdown();
   virtual void InitCodecContext() MOZ_REQUIRES(sMutex) {}
+  void ReleaseCodecContext() MOZ_REQUIRES(sMutex);
   AVFrame* PrepareFrame();
   MediaResult InitSWDecoder(AVDictionary** aOptions);
+  MediaResult InitDecoder(AVCodec* aCodec, AVDictionary** aOptions);
   MediaResult AllocateExtraData();
   MediaResult DoDecode(MediaRawData* aSample, bool* aGotFrame,
                        DecodedData& aResults);
+
+  MediaResult MaybeAttachCDM();
+  void MaybeDetachCDM();
 
   FFmpegLibWrapper* mLib;  // set in constructor
 
@@ -65,6 +75,10 @@ class FFmpegDataDecoder<LIBAV_VER>
   AVCodecParserContext* mCodecParser;
   AVFrame* mFrame;
   RefPtr<MediaByteBuffer> mExtraData;
+#if defined(MOZ_WIDGET_ANDROID) && defined(FFVPX_VERSION)
+  RefPtr<MediaDrmCrypto> mCrypto;
+  RefPtr<MediaDrmRemoteCDMParent> mCDM;
+#endif
   AVCodecID mCodecID;  // set in constructor
   bool mVideoCodec;
 
@@ -75,9 +89,11 @@ class FFmpegDataDecoder<LIBAV_VER>
                               // for calls into ffmpeg
   const RefPtr<TaskQueue> mTaskQueue;  // set in constructor
 
+  RefPtr<DecodePromise> ProcessDrain();
+  MozPromiseHolder<DecodePromise> mDrainPromise;
+
  private:
   RefPtr<DecodePromise> ProcessDecode(MediaRawData* aSample);
-  RefPtr<DecodePromise> ProcessDrain();
   virtual MediaResult DoDecode(MediaRawData* aSample, uint8_t* aData, int aSize,
                                bool* aGotFrame,
                                MediaDataDecoder::DecodedData& aOutResults) = 0;

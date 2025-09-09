@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "RemoteWorkerNonLifeCycleOpControllerChild.h"
+
 #include "mozilla/dom/ServiceWorkerOp.h"
 #include "mozilla/dom/SharedWorkerOp.h"
 #include "mozilla/dom/WorkerCommon.h"

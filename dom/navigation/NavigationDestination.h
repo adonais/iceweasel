@@ -7,12 +7,10 @@
 #ifndef mozilla_dom_NavigationDestination_h___
 #define mozilla_dom_NavigationDestination_h___
 
+#include "mozilla/dom/BindingDeclarations.h"
 #include "nsISupports.h"
-
 #include "nsStructuredCloneContainer.h"
 #include "nsWrapperCache.h"
-
-#include "mozilla/dom/BindingDeclarations.h"
 
 class nsIGlobalObject;
 class nsIURI;

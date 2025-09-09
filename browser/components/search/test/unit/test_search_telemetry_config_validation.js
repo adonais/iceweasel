@@ -47,7 +47,7 @@ function disallowAdditionalProperties(section) {
     return;
   }
 
-  if (section.type == "object") {
+  if (section.type == "object" && (!"additionalProperties") in section) {
     section.additionalProperties = false;
   }
   for (let value of Object.values(section)) {

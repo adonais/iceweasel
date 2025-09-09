@@ -9,23 +9,21 @@
 #endif
 
 #include "BrowserChild.h"
-#include "nsNSSComponent.h"
 #include "ContentChild.h"
+#include "GMPServiceChild.h"
 #include "GeckoProfiler.h"
+#include "Geolocation.h"
 #include "HandlerServiceChild.h"
-#include "nsXPLookAndFeel.h"
+#include "ScrollingMetrics.h"
+#include "imgLoader.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BackgroundHangMonitor.h"
-#include "mozilla/FOGIPC.h"
-#include "GMPServiceChild.h"
-#include "Geolocation.h"
-#include "imgLoader.h"
-#include "ScrollingMetrics.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClipboardContentAnalysisChild.h"
 #include "mozilla/ClipboardReadRequestChild.h"
 #include "mozilla/Components.h"
+#include "mozilla/FOGIPC.h"
 #include "mozilla/HangDetails.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/Logging.h"
@@ -35,12 +33,11 @@
 #include "mozilla/PerfStats.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProcessHangMonitorIPC.h"
-#include "mozilla/RemoteMediaManagerChild.h"
 #include "mozilla/RemoteLazyInputStreamChild.h"
+#include "mozilla/RemoteMediaManagerChild.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/SharedStyleSheetCache.h"
-#include "mozilla/dom/SharedScriptCache.h"
 #include "mozilla/SimpleEnumerator.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/StaticPrefs_browser.h"
@@ -63,8 +60,8 @@
 #include "mozilla/dom/ChildProcessMessageManager.h"
 #include "mozilla/dom/ClientManager.h"
 #include "mozilla/dom/ContentParent.h"
-#include "mozilla/dom/ContentProcessManager.h"
 #include "mozilla/dom/ContentPlaybackController.h"
+#include "mozilla/dom/ContentProcessManager.h"
 #include "mozilla/dom/ContentProcessMessageManager.h"
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/DocGroup.h"
@@ -86,6 +83,7 @@
 #include "mozilla/dom/ScreenOrientation.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/dom/SessionStorageManager.h"
+#include "mozilla/dom/SharedScriptCache.h"
 #include "mozilla/dom/URLClassifierChild.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/WindowGlobalChild.h"
@@ -109,9 +107,12 @@
 #include "mozilla/layers/CompositorManagerChild.h"
 #include "mozilla/layers/ContentProcessController.h"
 #include "mozilla/layers/ImageBridgeChild.h"
+#include "nsNSSComponent.h"
+#include "nsXPLookAndFeel.h"
 #ifdef NS_PRINTING
 #  include "mozilla/layout/RemotePrintJobChild.h"
 #endif
+#include "ChildProfilerController.h"
 #include "mozilla/loader/ScriptCacheActors.h"
 #include "mozilla/media/MediaChild.h"
 #include "mozilla/net/CaptivePortalService.h"
@@ -122,6 +123,7 @@
 #include "mozilla/widget/RemoteLookAndFeel.h"
 #include "mozilla/widget/ScreenManager.h"
 #include "mozilla/widget/WidgetMessageUtils.h"
+#include "mozmemory.h"
 #include "nsBaseDragService.h"
 #include "nsDocShellLoadTypes.h"
 #include "nsFocusManager.h"
@@ -137,15 +139,12 @@
 #include "nsQueryObject.h"
 #include "nsRefreshDriver.h"
 #include "nsSandboxFlags.h"
-#include "mozmemory.h"
-
-#include "ChildProfilerController.h"
 
 #if defined(MOZ_SANDBOX)
 #  include "mozilla/SandboxSettings.h"
 #  if defined(XP_WIN)
-#    include "mozilla/sandboxTarget.h"
 #    include "mozilla/ProcInfo.h"
+#    include "mozilla/sandboxTarget.h"
 #  elif defined(XP_LINUX)
 #    include "CubebUtils.h"
 #    include "mozilla/Sandbox.h"
@@ -153,6 +152,7 @@
 #    include "mozilla/SandboxProfilerObserver.h"
 #  elif defined(XP_MACOSX)
 #    include <CoreGraphics/CGError.h>
+
 #    include "mozilla/Sandbox.h"
 #  elif defined(__OpenBSD__)
 #    include <err.h>
@@ -163,19 +163,28 @@
 
 #    include "BinaryPath.h"
 #    include "SpecialSystemDirectory.h"
-#    include "nsILineInputStream.h"
 #    include "mozilla/ipc/UtilityProcessSandboxing.h"
+#    include "nsILineInputStream.h"
 #  endif
 #  if defined(MOZ_DEBUG) && defined(ENABLE_TESTS)
 #    include "mozilla/SandboxTestingChild.h"
 #  endif
 #endif
 
+#include "IHistory.h"
+#include "ReferrerInfo.h"
 #include "SandboxHal.h"
+#include "base/message_loop.h"
+#include "base/process_util.h"
+#include "base/task.h"
 #include "mozInlineSpellChecker.h"
 #include "mozilla/GlobalStyleSheetCache.h"
+#include "mozilla/dom/BlobURLProtocolHandler.h"
+#include "mozilla/dom/PCycleCollectWithLogsChild.h"
+#include "mozilla/dom/PerformanceStorage.h"
 #include "nsAnonymousTemporaryFile.h"
 #include "nsCategoryManagerUtils.h"
+#include "nsChromeRegistryContent.h"
 #include "nsClipboardProxy.h"
 #include "nsContentPermissionHelper.h"
 #include "nsDebugImpl.h"
@@ -184,6 +193,7 @@
 #include "nsDirectoryServiceUtils.h"
 #include "nsDocShell.h"
 #include "nsDocShellLoadState.h"
+#include "nsFrameMessageManager.h"
 #include "nsHashPropertyBag.h"
 #include "nsIConsoleListener.h"
 #include "nsICycleCollectorListener.h"
@@ -193,29 +203,19 @@
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIMemoryInfoDumper.h"
 #include "nsIMemoryReporter.h"
-#include "nsIObserverService.h"
 #include "nsIOService.h"
+#include "nsIObserverService.h"
 #include "nsIScriptError.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsJSEnvironment.h"
 #include "nsJSUtils.h"
 #include "nsMemoryInfoDumper.h"
+#include "nsNetUtil.h"
 #include "nsServiceManagerUtils.h"
 #include "nsStyleSheetService.h"
 #include "nsThreadManager.h"
-#include "nsXULAppAPI.h"
-#include "IHistory.h"
-#include "ReferrerInfo.h"
-#include "base/message_loop.h"
-#include "base/process_util.h"
-#include "base/task.h"
-#include "mozilla/dom/BlobURLProtocolHandler.h"
-#include "mozilla/dom/PCycleCollectWithLogsChild.h"
-#include "mozilla/dom/PerformanceStorage.h"
-#include "nsChromeRegistryContent.h"
-#include "nsFrameMessageManager.h"
-#include "nsNetUtil.h"
 #include "nsWindowMemoryReporter.h"
+#include "nsXULAppAPI.h"
 
 #ifdef MOZ_WEBRTC
 #  include "jsapi/WebrtcGlobalChild.h"
@@ -226,8 +226,9 @@
 #include "mozilla/PermissionManager.h"
 
 #if defined(MOZ_WIDGET_ANDROID)
-#  include "APKOpen.h"
 #  include <sched.h>
+
+#  include "APKOpen.h"
 #endif
 
 #ifdef XP_WIN
@@ -237,8 +238,9 @@
 #endif
 
 #if defined(XP_MACOSX)
-#  include "nsMacUtilsImpl.h"
 #  include <sys/qos.h>
+
+#  include "nsMacUtilsImpl.h"
 #endif /* XP_MACOSX */
 
 #ifdef MOZ_X11
@@ -266,8 +268,6 @@
 #include "DomainPolicy.h"
 #include "GfxInfoBase.h"
 #include "MMPrinter.h"
-#include "mozilla/ipc/ProcessUtils.h"
-#include "mozilla/ipc/URIUtils.h"
 #include "VRManagerChild.h"
 #include "gfxPlatform.h"
 #include "gfxPlatformFontList.h"
@@ -275,6 +275,8 @@
 #include "mozilla/dom/TabContext.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
 #include "mozilla/ipc/CrashReporterClient.h"
+#include "mozilla/ipc/ProcessUtils.h"
+#include "mozilla/ipc/URIUtils.h"
 #include "mozilla/net/NeckoMessageUtils.h"
 #include "mozilla/widget/PuppetBidiKeyboard.h"
 #include "nsContentUtils.h"
@@ -284,9 +286,10 @@
 #include "private/pprio.h"
 
 #ifdef MOZ_WIDGET_GTK
+#  include <gtk/gtk.h>
+
 #  include "mozilla/WidgetUtilsGtk.h"
 #  include "nsAppRunner.h"
-#  include <gtk/gtk.h>
 #endif
 
 #ifdef MOZ_CODE_COVERAGE
@@ -2228,7 +2231,8 @@ mozilla::ipc::IPCResult ContentChild::RecvPreferenceUpdate(const Pref& aPref) {
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult ContentChild::RecvVarUpdate(const GfxVarUpdate& aVar) {
+mozilla::ipc::IPCResult ContentChild::RecvVarUpdate(
+    const nsTArray<GfxVarUpdate>& aVar) {
   gfx::gfxVars::ApplyUpdate(aVar);
   return IPC_OK();
 }

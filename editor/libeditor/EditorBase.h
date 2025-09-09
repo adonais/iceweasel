@@ -1203,6 +1203,7 @@ class EditorBase : public nsIEditor,
      * ranges to selection ranges.
      */
     void AppendTargetRange(dom::StaticRange& aTargetRange);
+    void AppendTargetRange(RefPtr<dom::StaticRange>&& aTargetRange);
 
     /**
      * Make dispatching `beforeinput` forcibly non-cancelable.
@@ -1289,7 +1290,6 @@ class EditorBase : public nsIEditor,
         case EditSubAction::eCreatePaddingBRElementForEmptyEditor:
         case EditSubAction::eMaintainWhiteSpaceVisibility:
         case EditSubAction::eNone:
-        case EditSubAction::eReplaceHeadWithHTMLSource:
           MOZ_ASSERT(aDirection == eNone);
           mDirectionOfTopLevelEditSubAction = eNone;
           break;
@@ -3074,12 +3074,13 @@ class EditorBase : public nsIEditor,
                                                // ToGenericNSResult
   friend class ListItemElementSelectionState;  // AutoEditActionDataSetter,
                                                // ToGenericNSResult
-  friend class MoveNodeTransaction;            // ToGenericNSResult
-  friend class ParagraphStateAtSelection;      // AutoEditActionDataSetter,
-                                               // ToGenericNSResult
-  friend class PendingStyles;                  // GetEditAction,
-                                               // GetFirstSelectionStartPoint,
-                                               // SelectionRef
+  friend class MoveNodeTransaction;      // MarkElementDirty, ToGenericNSResult
+  friend class MoveSiblingsTransaction;  // MarkElementDirty, ToGenericNSResult
+  friend class ParagraphStateAtSelection;  // AutoEditActionDataSetter,
+                                           // ToGenericNSResult
+  friend class PendingStyles;              // GetEditAction,
+                                           // GetFirstSelectionStartPoint,
+                                           // SelectionRef
   friend class ReplaceTextTransaction;  // AllowsTransactionsToChangeSelection,
                                         // CollapseSelectionTo, DoReplaceText,
                                         // RangeUpdaterRef

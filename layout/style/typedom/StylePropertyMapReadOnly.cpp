@@ -6,15 +6,20 @@
 
 #include "mozilla/dom/StylePropertyMapReadOnly.h"
 
+#include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/CSSStyleValue.h"
 #include "mozilla/dom/StylePropertyMapReadOnlyBinding.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsReadableUtils.h"
 
 namespace mozilla::dom {
 
 StylePropertyMapReadOnly::StylePropertyMapReadOnly(
     nsCOMPtr<nsISupports> aParent)
-    : mParent(std::move(aParent)) {}
+    : mParent(std::move(aParent)) {
+  MOZ_ASSERT(mParent);
+}
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(StylePropertyMapReadOnly)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(StylePropertyMapReadOnly)

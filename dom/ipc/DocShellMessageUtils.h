@@ -8,11 +8,11 @@
 #define mozilla_dom_docshell_message_utils_h__
 
 #include "ipc/EnumSerializer.h"
+#include "mozilla/ScrollbarPreferences.h"
+#include "mozilla/ipc/IPDLParamTraits.h"
 #include "nsCOMPtr.h"
 #include "nsDocShellLoadState.h"
 #include "nsIDocumentViewer.h"
-#include "mozilla/ScrollbarPreferences.h"
-#include "mozilla/ipc/IPDLParamTraits.h"
 
 namespace IPC {
 

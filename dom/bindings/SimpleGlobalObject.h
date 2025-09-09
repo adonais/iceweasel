@@ -13,14 +13,14 @@
 #ifndef mozilla_dom_SimpleGlobalObject_h__
 #define mozilla_dom_SimpleGlobalObject_h__
 
-#include "nsThreadUtils.h"
+#include "js/TypeDecls.h"
+#include "js/Value.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIGlobalObject.h"
 #include "nsISupportsImpl.h"
+#include "nsThreadUtils.h"
 #include "nsWrapperCache.h"
-#include "js/TypeDecls.h"
-#include "js/Value.h"
 
 namespace mozilla::dom {
 

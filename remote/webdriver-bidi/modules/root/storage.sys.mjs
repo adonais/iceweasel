@@ -900,7 +900,7 @@ class StorageModule extends RootBiDiModule {
 
       let storedCookieValue = storedCookie[fieldName];
 
-      // The platform represantation of cookie doesn't contain a size field,
+      // The platform representation of cookie doesn't contain a size field,
       // so we have to calculate it to match.
       if (fieldName === "size") {
         storedCookieValue = this.#getCookieSize(storedCookie);

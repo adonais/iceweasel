@@ -1729,7 +1729,7 @@ void FilterInstance::ComputeNeededBoxes() {
       mFilterDescription, mPostFilterDirtyRegion, sourceGraphicNeededRegion,
       fillPaintNeededRegion, strokePaintNeededRegion);
 
-  sourceGraphicNeededRegion.And(sourceGraphicNeededRegion, mTargetBounds);
+  sourceGraphicNeededRegion.AndWith(mTargetBounds);
 
   UpdateNeededBounds(sourceGraphicNeededRegion, mSourceGraphic.mNeededBounds);
   UpdateNeededBounds(fillPaintNeededRegion, mFillPaint.mNeededBounds);
@@ -1989,7 +1989,7 @@ nsIntRegion FilterInstance::FrameSpaceToFilterSpace(
   for (auto iter = aRegion->RectIter(); !iter.Done(); iter.Next()) {
     // FrameSpaceToFilterSpace rounds out, so this works.
     nsRect rect = iter.Get();
-    result.Or(result, FrameSpaceToFilterSpace(&rect));
+    result.OrWith(FrameSpaceToFilterSpace(&rect));
   }
   return result;
 }
@@ -1999,7 +1999,7 @@ nsRegion FilterInstance::FilterSpaceToFrameSpace(
   nsRegion result;
   for (auto iter = aRegion.RectIter(); !iter.Done(); iter.Next()) {
     // FilterSpaceToFrameSpace rounds out, so this works.
-    result.Or(result, FilterSpaceToFrameSpace(iter.Get()));
+    result.OrWith(FilterSpaceToFrameSpace(iter.Get()));
   }
   return result;
 }

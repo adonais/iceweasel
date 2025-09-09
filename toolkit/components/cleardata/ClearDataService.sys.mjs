@@ -9,6 +9,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   Downloads: "resource://gre/modules/Downloads.sys.mjs",
+  ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   ServiceWorkerCleanUp: "resource://gre/modules/ServiceWorkerCleanUp.sys.mjs",
 });
@@ -415,16 +416,89 @@ const CookieBannerExecutedRecordCleaner = {
 
 // A cleaner for cleaning fingerprinting protection states.
 const FingerprintingProtectionStateCleaner = {
+  async _maybeClearSiteSpecificZoom(
+    deleteAll,
+    aSchemelessSite,
+    aOriginAttributes = {}
+  ) {
+    if (
+      !ChromeUtils.shouldResistFingerprinting("SiteSpecificZoom", null, true)
+    ) {
+      return;
+    }
+
+    const cps2 = Cc["@mozilla.org/content-pref/service;1"].getService(
+      Ci.nsIContentPrefService2
+    );
+    const ZOOM_PREF_NAME = "browser.content.full-zoom";
+
+    await new Promise((aResolve, aReject) => {
+      if (deleteAll) {
+        cps2.removeByName(ZOOM_PREF_NAME, null, {
+          handleCompletion: aReason => {
+            if (aReason === cps2.COMPLETE_ERROR) {
+              aReject();
+            } else {
+              aResolve();
+            }
+          },
+        });
+      } else {
+        aOriginAttributes =
+          ChromeUtils.fillNonDefaultOriginAttributes(aOriginAttributes);
+
+        let loadContext;
+        if (
+          aOriginAttributes.privateBrowsingId ==
+          Services.scriptSecurityManager.DEFAULT_PRIVATE_BROWSING_ID
+        ) {
+          loadContext = Cu.createLoadContext();
+        } else {
+          loadContext = Cu.createPrivateLoadContext();
+        }
+
+        cps2.removeBySubdomainAndName(
+          aSchemelessSite,
+          ZOOM_PREF_NAME,
+          loadContext,
+          {
+            handleCompletion: aReason => {
+              if (aReason === cps2.COMPLETE_ERROR) {
+                aReject();
+              } else {
+                aResolve();
+              }
+            },
+          }
+        );
+      }
+    });
+  },
+
   async deleteAll() {
     Services.rfp.cleanAllRandomKeys();
+
+    await this._maybeClearSiteSpecificZoom(true);
   },
 
   async deleteByPrincipal(aPrincipal) {
     Services.rfp.cleanRandomKeyByPrincipal(aPrincipal);
+
+    await this._maybeClearSiteSpecificZoom(
+      false,
+      aPrincipal.host,
+      aPrincipal.originAttributes
+    );
   },
 
   async deleteBySite(aSchemelessSite, aOriginAttributesPattern) {
     Services.rfp.cleanRandomKeyBySite(
+      aSchemelessSite,
+      aOriginAttributesPattern
+    );
+
+    await this._maybeClearSiteSpecificZoom(
+      false,
       aSchemelessSite,
       aOriginAttributesPattern
     );
@@ -435,12 +509,21 @@ const FingerprintingProtectionStateCleaner = {
       aHost,
       JSON.stringify(aOriginAttributesPattern)
     );
+
+    await this._maybeClearSiteSpecificZoom(
+      false,
+      aHost,
+      aOriginAttributesPattern
+    );
   },
 
   async deleteByOriginAttributes(aOriginAttributesString) {
     Services.rfp.cleanRandomKeyByOriginAttributesPattern(
       aOriginAttributesString
     );
+
+    // For deleteByOriginAttributes, we only receive userContextId which is not enough to target specific
+    // site-specific zooms. So we don't clear site-specific zooms here.
   },
 };
 
@@ -2176,7 +2259,7 @@ const StoragePermissionsCleaner = {
       // AddonPolicy() returns a WebExtensionPolicy that has been registered before,
       // typically during extension startup. Since Disabled or uninstalled add-ons
       // don't appear there, we should use schemeIs instead
-      aPrincipal.schemeIs("moz-extension")
+      lazy.ExtensionUtils.isExtensionUrl(aPrincipal)
     );
   },
 };

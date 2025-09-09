@@ -20,27 +20,34 @@
 #include "absl/algorithm/container.h"
 #include "absl/base/macros.h"
 #include "absl/base/nullability.h"
-#include "absl/strings/match.h"
+#include "absl/container/inlined_vector.h"
 #include "api/environment/environment.h"
 #include "api/field_trials_view.h"
 #include "api/scoped_refptr.h"
 #include "api/video/encoded_image.h"
-#include "api/video/i420_buffer.h"
+#include "api/video/render_resolution.h"
+#include "api/video/video_codec_constants.h"
+#include "api/video/video_codec_type.h"
+#include "api/video/video_content_type.h"
 #include "api/video/video_frame.h"
+#include "api/video/video_frame_buffer.h"
+#include "api/video/video_frame_type.h"
+#include "api/video/video_timing.h"
 #include "api/video_codecs/scalability_mode.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
+#include "common_video/generic_frame_descriptor/generic_frame_info.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/svc/create_scalability_structure.h"
 #include "modules/video_coding/svc/scalable_video_controller.h"
-#include "modules/video_coding/svc/scalable_video_controller_no_layering.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/encoder_info_settings.h"
 #include "rtc_base/logging.h"
 #include "third_party/libaom/source/libaom/aom/aom_codec.h"
 #include "third_party/libaom/source/libaom/aom/aom_encoder.h"
+#include "third_party/libaom/source/libaom/aom/aom_image.h"
 #include "third_party/libaom/source/libaom/aom/aomcx.h"
 
 #if (defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64)) && \
@@ -570,11 +577,11 @@ int32_t LibaomAv1Encoder::Encode(
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  rtc::scoped_refptr<VideoFrameBuffer> buffer = frame.video_frame_buffer();
+  scoped_refptr<VideoFrameBuffer> buffer = frame.video_frame_buffer();
   absl::InlinedVector<VideoFrameBuffer::Type, kMaxPreferredPixelFormats>
       supported_formats = {VideoFrameBuffer::Type::kI420,
                            VideoFrameBuffer::Type::kNV12};
-  rtc::scoped_refptr<VideoFrameBuffer> mapped_buffer;
+  scoped_refptr<VideoFrameBuffer> mapped_buffer;
   if (buffer->type() != VideoFrameBuffer::Type::kNative) {
     // `buffer` is already mapped.
     mapped_buffer = buffer;
@@ -588,7 +595,7 @@ int32_t LibaomAv1Encoder::Encode(
       (absl::c_find(supported_formats, mapped_buffer->type()) ==
            supported_formats.end() &&
        mapped_buffer->type() != VideoFrameBuffer::Type::kI420A)) {
-    rtc::scoped_refptr<I420BufferInterface> converted_buffer(buffer->ToI420());
+    scoped_refptr<I420BufferInterface> converted_buffer(buffer->ToI420());
     if (!converted_buffer) {
       RTC_LOG(LS_ERROR) << "Failed to convert "
                         << VideoFrameBufferTypeToString(
@@ -860,7 +867,7 @@ VideoEncoder::EncoderInfo LibaomAv1Encoder::GetEncoderInfo() const {
 
 }  // namespace
 
-absl::Nonnull<std::unique_ptr<VideoEncoder>> CreateLibaomAv1Encoder(
+absl_nonnull std::unique_ptr<VideoEncoder> CreateLibaomAv1Encoder(
     const Environment& env,
     LibaomAv1EncoderSettings settings) {
   return std::make_unique<LibaomAv1Encoder>(env, std::move(settings));

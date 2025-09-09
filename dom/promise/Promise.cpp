@@ -5,10 +5,16 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/Promise.h"
-#include "mozilla/dom/Promise-inl.h"
 
+#include "PromiseDebugging.h"
+#include "PromiseNativeHandler.h"
+#include "PromiseWorkerProxy.h"
+#include "WrapperFactory.h"
 #include "js/Debug.h"
-
+#include "js/Exception.h"  // JS::ExceptionStack
+#include "js/Object.h"     // JS::GetCompartment
+#include "js/StructuredClone.h"
+#include "jsfriendapi.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/CycleCollectedJSContext.h"
@@ -17,26 +23,22 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Unused.h"
-
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/Exceptions.h"
 #include "mozilla/dom/MediaStreamError.h"
+#include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/PromiseBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/WorkerPrivate.h"
-#include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkerRef.h"
-#include "mozilla/dom/WorkletImpl.h"
+#include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkletGlobalScope.h"
-
-#include "jsfriendapi.h"
-#include "js/Exception.h"  // JS::ExceptionStack
-#include "js/Object.h"     // JS::GetCompartment
-#include "js/StructuredClone.h"
+#include "mozilla/dom/WorkletImpl.h"
+#include "mozilla/webgpu/PipelineError.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
@@ -47,12 +49,8 @@
 #include "nsJSPrincipals.h"
 #include "nsJSUtils.h"
 #include "nsPIDOMWindow.h"
-#include "PromiseDebugging.h"
-#include "PromiseNativeHandler.h"
-#include "PromiseWorkerProxy.h"
-#include "WrapperFactory.h"
-#include "xpcpublic.h"
 #include "xpcprivate.h"
+#include "xpcpublic.h"
 
 namespace mozilla::dom {
 
@@ -707,6 +705,12 @@ void Promise::MaybeResolveWithUndefined() {
 }
 
 void Promise::MaybeReject(const RefPtr<MediaStreamError>& aArg) {
+  NS_ASSERT_OWNINGTHREAD(Promise);
+
+  MaybeSomething(aArg, &Promise::MaybeReject);
+}
+
+void Promise::MaybeReject(const RefPtr<webgpu::PipelineError>& aArg) {
   NS_ASSERT_OWNINGTHREAD(Promise);
 
   MaybeSomething(aArg, &Promise::MaybeReject);

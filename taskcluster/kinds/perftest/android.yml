@@ -26,7 +26,7 @@ task-defaults:
             --output $MOZ_FETCHES_DIR/../artifacts
 
 hw-a55-aarch64-shippable-startup-chrome-m-newssite-applink-startup:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     description: Run android cold_view_nav_end (newssite) perftest on Chrome on a Samsung A55
     treeherder:
         symbol: perftest-chrome(newssite-applink-startup)
@@ -46,7 +46,7 @@ hw-a55-aarch64-shippable-startup-chrome-m-newssite-applink-startup:
             --output $MOZ_FETCHES_DIR/../artifacts
 
 hw-a55-aarch64-shippable-startup-fenix-newssite-applink-startup:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     description: Run android cold_view_nav_end (newssite) perftest on Fenix on a Samsung A55
     treeherder:
         symbol: perftest-fenix(newssite-applink-startup)
@@ -74,7 +74,7 @@ hw-a55-aarch64-shippable-startup-fenix-newssite-applink-startup:
             --output $MOZ_FETCHES_DIR/../artifacts
 
 hw-a55-aarch64-shippable-startup-fenix-newssite-applink-startup-simpleperf:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     description: Profile android cold_view_nav_end perftest on Fenix on a Samsung A55
     treeherder:
         symbol: perftest-fenix(newssite-applink-profile)
@@ -287,7 +287,7 @@ hw-s24-aarch64-shippable-startup-fenix-newssite-applink-startup:
             --output $MOZ_FETCHES_DIR/../artifacts
 
 hw-a55-aarch64-shippable-startup-chrome-m-shopify-applink-startup:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     description: Run android cold_view_nav_end (shopify) perftest on Chrome on a Samsung A55
     treeherder:
         symbol: perftest-chrome(shopify-applink-startup)
@@ -307,7 +307,7 @@ hw-a55-aarch64-shippable-startup-chrome-m-shopify-applink-startup:
             --output $MOZ_FETCHES_DIR/../artifacts
 
 hw-a55-aarch64-shippable-startup-fenix-shopify-applink-startup:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     description: Run android cold_view_nav_end (shopify) perftest on Fenix on a Samsung A55
     treeherder:
         symbol: perftest-fenix(shopify-applink-startup)
@@ -335,7 +335,7 @@ hw-a55-aarch64-shippable-startup-fenix-shopify-applink-startup:
             --output $MOZ_FETCHES_DIR/../artifacts
 
 hw-a55-aarch64-shippable-startup-fenix-shopify-applink-startup-simpleperf:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     description: Profile android cold_view_nav_end perftest on Fenix on a Samsung A55
     treeherder:
         symbol: perftest-fenix(shopify-applink-profile)
@@ -449,7 +449,7 @@ hw-s24-aarch64-shippable-startup-fenix-shopify-applink-startup-simpleperf:
             --simpleperf-path $MOZ_FETCHES_DIR/android-simpleperf
 
 hw-a55-aarch64-shippable-startup-chrome-m-tab-restore-shopify:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     description: Run android startup restore perftest on Chrome on a Samsung A55
     treeherder:
         symbol: perftest-chrome(tab-restore-shopify)
@@ -470,7 +470,7 @@ hw-a55-aarch64-shippable-startup-chrome-m-tab-restore-shopify:
              --output $MOZ_FETCHES_DIR/../artifacts
 
 hw-a55-aarch64-shippable-startup-fenix-tab-restore-shopify:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     description: Run android startup restore perftest on Fenix on a Samsung A55
     treeherder:
         symbol: perftest-fenix(tab-restore-shopify)
@@ -596,7 +596,7 @@ hw-s24-aarch64-shippable-startup-fenix-tab-restore-shopify:
             --output $MOZ_FETCHES_DIR/../artifacts
 
 hw-a55-aarch64-shippable-startup-fenix-tab-restore-simpleperf:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     description: Profile android tab restore startup on Fenix on a Samsung A55
     treeherder:
         symbol: perftest-fenix(tab-restore-profile)
@@ -710,7 +710,7 @@ hw-s24-aarch64-shippable-startup-fenix-tab-restore-simpleperf:
             --simpleperf-path $MOZ_FETCHES_DIR/android-simpleperf
 
 hw-a55-aarch64-shippable-startup-chrome-m-homeview-startup:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     description: Run android homeview startup perftest on Chrome on a Samsung A55
     treeherder:
         symbol: perftest-chrome(homeview-startup)
@@ -730,7 +730,7 @@ hw-a55-aarch64-shippable-startup-chrome-m-homeview-startup:
             --output $MOZ_FETCHES_DIR/../artifacts
 
 hw-a55-aarch64-shippable-startup-fenix-homeview-startup:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     description: Run android homeview startup perftest on Fenix on a Samsung A55
     treeherder:
         symbol: perftest-fenix(homeview-startup)
@@ -758,7 +758,7 @@ hw-a55-aarch64-shippable-startup-fenix-homeview-startup:
             --output $MOZ_FETCHES_DIR/../artifacts
 
 hw-a55-aarch64-shippable-startup-fenix-homeview-startup-simpleperf:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     description: Profile android homeview startup perftest on Fenix on a Samsung A55
     treeherder:
         symbol: perftest-fenix(homeview-startup-profile)
@@ -880,7 +880,7 @@ hw-a55-aarch64:
     platform: android-hw-a55-14-0-aarch64-shippable/opt
 
 hw-a55-aarch64-shippable-startup-fenix-cold-main-first-frame:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     run-on-projects: [trunk-only]
     description: Run android startup perftest on Fenix on a Samsung A55
     treeherder:
@@ -908,7 +908,7 @@ hw-a55-aarch64-shippable-startup-fenix-cold-main-first-frame:
             --perfherder
 
 hw-a55-aarch64-shippable-startup-fenix-cold-view-nav-start:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     run-on-projects: [trunk-only]
     description: Run android startup perftest on Fenix on a Samsung A55
     treeherder:
@@ -936,7 +936,7 @@ hw-a55-aarch64-shippable-startup-fenix-cold-view-nav-start:
             --perfherder
 
 hw-a55-aarch64-shippable-startup-focus-cold-main-first-frame:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     description: Run android startup perftest on Focus on a Samsung A55
     treeherder:
         symbol: perftest-focus(startup-first-frame)
@@ -964,7 +964,7 @@ hw-a55-aarch64-shippable-startup-focus-cold-main-first-frame:
             --perfherder
 
 hw-a55-aarch64-shippable-startup-focus-cold-view-nav-start:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     description: Run android startup perftest on Focus on a Samsung A55
     treeherder:
         symbol: perftest-focus(startup-navigation-start)
@@ -992,7 +992,7 @@ hw-a55-aarch64-shippable-startup-focus-cold-view-nav-start:
             --perfherder
 
 hw-a55-aarch64-shippable-startup-geckoview-cold-main-first-frame:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     run-on-projects: [trunk-only]
     description: Run android startup perftest on Geckoview on a Samsung A55
     treeherder:
@@ -1020,7 +1020,7 @@ hw-a55-aarch64-shippable-startup-geckoview-cold-main-first-frame:
             --perfherder
 
 hw-a55-aarch64-shippable-startup-geckoview-cold-view-nav-start:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     run-on-projects: [trunk-only]
     description: Run android startup perftest on Geckoview_example on a Samsung A55
     treeherder:
@@ -1048,7 +1048,7 @@ hw-a55-aarch64-shippable-startup-geckoview-cold-view-nav-start:
             --perfherder
 
 hw-a55-aarch64-shippable-startup-chrome-m-cold-main-first-frame:
-    worker-type: t-bitbar-gw-perf-a55
+    worker-type: t-lambda-perf-a55
     description: Run android startup perftest on Chrome on a Samsung A55
     treeherder:
         symbol: perftest-chrome(startup-first-frame)

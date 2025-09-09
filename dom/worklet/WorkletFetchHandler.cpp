@@ -5,25 +5,25 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "WorkletFetchHandler.h"
 
-#include "js/loader/ModuleLoadRequest.h"
 #include "js/ContextOptions.h"
+#include "js/loader/ModuleLoadRequest.h"
+#include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/ScopeExit.h"
+#include "mozilla/TaskQueue.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Fetch.h"
 #include "mozilla/dom/Request.h"
 #include "mozilla/dom/RequestBinding.h"
 #include "mozilla/dom/Response.h"
 #include "mozilla/dom/RootedDictionary.h"
-#include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ScriptLoadHandler.h"  // ScriptDecoder
+#include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/Worklet.h"
 #include "mozilla/dom/WorkletBinding.h"
 #include "mozilla/dom/WorkletGlobalScope.h"
 #include "mozilla/dom/WorkletImpl.h"
 #include "mozilla/dom/WorkletThread.h"
 #include "mozilla/dom/worklet/WorkletModuleLoader.h"
-#include "mozilla/CycleCollectedJSContext.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/TaskQueue.h"
 #include "nsIInputStreamPump.h"
 #include "nsIThreadRetargetableRequest.h"
 #include "xpcpublic.h"
@@ -112,15 +112,11 @@ NS_IMETHODIMP StartModuleLoadRunnable::RunOnWorkletThread() {
 
   RefPtr<WorkletLoadContext> loadContext = new WorkletLoadContext(mHandlerRef);
 
-  RefPtr<JS::loader::VisitedURLSet> visitedSet =
-      ModuleLoadRequest::NewVisitedSetForTopLevelImport(
-          mURI, JS::ModuleType::JavaScript);
-
   // Part of Step 2. This sets the Top-level flag to true
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
       mURI, JS::ModuleType::JavaScript, ReferrerPolicy::_empty, fetchOptions,
       SRIMetadata(), mReferrer, loadContext, ModuleLoadRequest::Kind::TopLevel,
-      moduleLoader, visitedSet, nullptr);
+      moduleLoader, nullptr);
 
   request->mURL = request->mURI->GetSpecOrDefault();
   request->NoCacheEntryFound();

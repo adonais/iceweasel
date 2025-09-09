@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <utility>
+
 #include "ErrorList.h"
 
 namespace mozilla::dom::quota {

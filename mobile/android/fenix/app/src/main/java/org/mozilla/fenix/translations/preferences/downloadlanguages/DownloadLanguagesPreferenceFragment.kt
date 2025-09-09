@@ -10,9 +10,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
+import androidx.fragment.compose.content
 import androidx.navigation.findNavController
+import androidx.navigation.fragment.findNavController
 import mozilla.components.browser.state.action.TranslationsAction
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.translate.LanguageModel
@@ -53,79 +54,77 @@ class DownloadLanguagesPreferenceFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View = ComposeView(requireContext()).apply {
-        setContent {
-            FirefoxTheme {
-                val learnMoreUrl = SupportUtils.getSumoURLForTopic(
-                    requireContext(),
-                    SupportUtils.SumoTopic.TRANSLATIONS,
-                )
-                val downloadLanguageItemsPreference = getDownloadLanguageItemsPreference()
+    ) = content {
+        FirefoxTheme {
+            val learnMoreUrl = SupportUtils.getSumoURLForTopic(
+                requireContext(),
+                SupportUtils.SumoTopic.TRANSLATIONS,
+            )
+            val downloadLanguageItemsPreference = getDownloadLanguageItemsPreference()
 
-                val engineError = browserStore.observeAsComposableState { state ->
-                    state.translationEngine.engineError
-                }.value
+            val engineError = browserStore.observeAsComposableState { state ->
+                state.translationEngine.engineError
+            }.value
 
-                DownloadLanguagesPreference(
-                    downloadLanguageItemPreferences = downloadLanguageItemsPreference,
-                    learnMoreUrl = learnMoreUrl,
-                    fileSizeFormatter = requireComponents.core.fileSizeFormatter,
-                    downloadLanguagesError = engineError as? TranslationError.ModelCouldNotRetrieveError,
-                    onLearnMoreClicked = { openBrowserAndLoad(learnMoreUrl) },
-                    onItemClick = { downloadLanguageItemPreference ->
-                        if (downloadLanguageItemPreference.languageModel.status ==
-                            ModelState.DOWNLOADED ||
-                            shouldShowPrefDownloadLanguageFileDialog(
-                                downloadLanguageItemPreference,
-                            )
+            DownloadLanguagesPreference(
+                downloadLanguageItemPreferences = downloadLanguageItemsPreference,
+                learnMoreUrl = learnMoreUrl,
+                fileSizeFormatter = requireComponents.core.fileSizeFormatter,
+                downloadLanguagesError = engineError as? TranslationError.ModelCouldNotRetrieveError,
+                onLearnMoreClicked = { openBrowserAndLoad(learnMoreUrl) },
+                onItemClick = { downloadLanguageItemPreference ->
+                    if (downloadLanguageItemPreference.languageModel.status ==
+                        ModelState.DOWNLOADED ||
+                        shouldShowPrefDownloadLanguageFileDialog(
+                            downloadLanguageItemPreference,
+                        )
+                    ) {
+                        var size = 0L
+                        downloadLanguageItemPreference.languageModel.size?.let { size = it }
+
+                        findNavController().navigate(
+                            DownloadLanguagesPreferenceFragmentDirections
+                                .actionDownloadLanguagesPreferenceToDownloadLanguagesDialogPreference(
+                                    modelState = downloadLanguageItemPreference.languageModel.status,
+                                    itemType = downloadLanguageItemPreference.type,
+                                    languageCode = downloadLanguageItemPreference.languageModel.language?.code,
+                                    languageDisplayName =
+                                    downloadLanguageItemPreference.languageModel.language?.localizedDisplayName,
+                                    modelSize = size,
+                                ),
+                        )
+                    } else {
+                        if (
+                            downloadLanguageItemPreference.type ==
+                            DownloadLanguageItemTypePreference.AllLanguages
                         ) {
-                            var size = 0L
-                            downloadLanguageItemPreference.languageModel.size?.let { size = it }
-
-                            findNavController().navigate(
-                                DownloadLanguagesPreferenceFragmentDirections
-                                    .actionDownloadLanguagesPreferenceToDownloadLanguagesDialogPreference(
-                                        modelState = downloadLanguageItemPreference.languageModel.status,
-                                        itemType = downloadLanguageItemPreference.type,
-                                        languageCode = downloadLanguageItemPreference.languageModel.language?.code,
-                                        languageDisplayName =
-                                        downloadLanguageItemPreference.languageModel.language?.localizedDisplayName,
-                                        modelSize = size,
-                                    ),
+                            val options = ModelManagementOptions(
+                                operation = if (
+                                    downloadLanguageItemPreference.languageModel.status ==
+                                    ModelState.NOT_DOWNLOADED
+                                ) {
+                                    ModelOperation.DOWNLOAD
+                                } else {
+                                    ModelOperation.DELETE
+                                },
+                                operationLevel = OperationLevel.ALL,
+                            )
+                            browserStore.dispatch(
+                                TranslationsAction.ManageLanguageModelsAction(
+                                    options = options,
+                                ),
                             )
                         } else {
-                            if (
-                                downloadLanguageItemPreference.type ==
-                                DownloadLanguageItemTypePreference.AllLanguages
-                            ) {
-                                val options = ModelManagementOptions(
-                                    operation = if (
-                                        downloadLanguageItemPreference.languageModel.status ==
-                                        ModelState.NOT_DOWNLOADED
-                                    ) {
-                                        ModelOperation.DOWNLOAD
-                                    } else {
-                                        ModelOperation.DELETE
-                                    },
-                                    operationLevel = OperationLevel.ALL,
-                                )
-                                browserStore.dispatch(
-                                    TranslationsAction.ManageLanguageModelsAction(
-                                        options = options,
-                                    ),
-                                )
-                            } else {
-                                deleteOrDownloadModel(downloadLanguageItemPreference)
-                            }
-
-                            val activity = activity as? AppCompatActivity
-                            if (activity != null) {
-                                moveFocusToBackNavButton(activity)
-                            }
+                            deleteOrDownloadModel(downloadLanguageItemPreference)
                         }
-                    },
-                )
-            }
+
+                        val activity = activity as? AppCompatActivity
+                        if (activity != null) {
+                            moveFocusToBackNavButton(activity)
+                        }
+                    }
+                },
+            )
         }
     }
 

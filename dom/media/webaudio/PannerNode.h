@@ -7,13 +7,14 @@
 #ifndef PannerNode_h_
 #define PannerNode_h_
 
-#include "AudioNode.h"
-#include "AudioParam.h"
-#include "nsPrintfCString.h"
-#include "mozilla/dom/PannerNodeBinding.h"
-#include "ThreeDPoint.h"
 #include <limits>
 #include <set>
+
+#include "AudioNode.h"
+#include "AudioParam.h"
+#include "ThreeDPoint.h"
+#include "mozilla/dom/PannerNodeBinding.h"
+#include "nsPrintfCString.h"
 
 namespace mozilla::dom {
 

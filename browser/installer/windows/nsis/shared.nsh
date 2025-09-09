@@ -290,19 +290,46 @@ ${RemoveDefaultBrowserAgentShortcut}
 !macroend
 !define HideShortcuts "!insertmacro HideShortcuts"
 
-; Adds shortcuts for this installation. This should also add the application
-; to Open With for the file types the application handles (bug 370480).
-!macro ShowShortcuts
-  ; Find the correct registry path to set IconsVisible.
-  StrCpy $R1 "Software\Clients\StartMenuInternet\${AppRegName}-$AppUserModelID\InstallInfo"
-  ReadRegDWORD $0 HKLM "$R1" "ShowIconsCommand"
-  ${If} ${Errors}
-    ${StrFilter} "${FileMainEXE}" "+" "" "" $0
-    StrCpy $R1 "Software\Clients\StartMenuInternet\$0\InstallInfo"
-  ${EndIf}
-  WriteRegDWORD HKLM "$R1" "IconsVisible" 1
-  WriteRegDWORD HKCU "$R1" "IconsVisible" 1
+; Installs a copy of the desktop launcher app into the current user's Desktop directory.
+Function InstallDesktopLauncherApp
+  ; We need the shell var context to be "current", but we'll restore it if we change it
+  var /GLOBAL IDLA_ResetShellVarCtxToAll
+  var /GLOBAL IDLA_IsInstalled
+  IfShellVarContextAll 0 context_is_current
+  StrCpy $IDLA_ResetShellVarCtxToAll 1
+  SetShellVarContext current
+context_is_current:
+  ; At this point, we know that the shell variable context is "current"
 
+  ; If there is an existing install of the file, update it
+  IfFileExists "$DESKTOP\${BrandShortName}.exe" do_install
+
+  ; We want to respect the user's preferences, which means that if they have deleted
+  ; the desktop launcher app, we should not install it again. If the regkey indicates
+  ; that we have installed the app, but it is not present in the install location,
+  ; we assume that the user has deleted it
+  ReadRegDWORD $IDLA_IsInstalled HKCU "Software\Mozilla\${BrandFullNameInternal}" DesktopLauncherAppInstalled
+  ; If IsInstalled is 1, we assume the user has deleted this file and jump to clean_up.
+  ; Otherwise, we continue
+  StrCmp $IDLA_IsInstalled "1" clean_up do_install
+do_install:
+  ClearErrors
+  Call DeleteDesktopShortcuts
+  SetShellVarContext current
+  CopyFiles /SILENT /FILESONLY "$INSTDIR\desktop-launcher\desktop-launcher.exe" "$DESKTOP\${BrandShortName}.exe"
+  ; If there was an error copying the file, don't set the reg key
+  IfErrors clean_up
+  WriteRegDWORD HKCU "Software\Mozilla\${BrandFullNameInternal}" DesktopLauncherAppInstalled 1
+clean_up:
+  ; Restore shell var context
+  StrCmp $IDLA_ResetShellVarCtxToAll 1 0 done
+  SetShellVarContext all
+done:
+  ; All done
+FunctionEnd
+
+
+Function CreateDesktopShortcuts
   SetShellVarContext all  ; Set $DESKTOP to All Users
   ${Unless} ${FileExists} "$DESKTOP\${BrandShortName}.lnk"
     CreateShortCut "$DESKTOP\${BrandShortName}.lnk" "$INSTDIR\${FileMainEXE}"
@@ -325,6 +352,31 @@ ${RemoveDefaultBrowserAgentShortcut}
       ${EndUnless}
     ${EndIf}
   ${EndUnless}
+FunctionEnd
+
+Function DeleteDesktopShortcuts
+  SetShellVarContext all  ; Set $DESKTOP to All Users
+  ${If} ${FileExists} "$DESKTOP\${BrandShortName}.lnk"
+    Delete "$DESKTOP\${BrandShortName}.lnk"
+  ${EndIf}
+  SetShellVarContext current  ; Set $DESKTOP to the current user's desktop
+  ${If} ${FileExists} "$DESKTOP\${BrandShortName}.lnk"
+    Delete "$DESKTOP\${BrandShortName}.lnk"
+  ${EndIf}
+FunctionEnd
+
+; Adds shortcuts for this installation. This should also add the application
+; to Open With for the file types the application handles (bug 370480).
+!macro ShowShortcuts
+  ; Find the correct registry path to set IconsVisible.
+  StrCpy $R1 "Software\Clients\StartMenuInternet\${AppRegName}-$AppUserModelID\InstallInfo"
+  ReadRegDWORD $0 HKLM "$R1" "ShowIconsCommand"
+  ${If} ${Errors}
+    ${StrFilter} "${FileMainEXE}" "+" "" "" $0
+    StrCpy $R1 "Software\Clients\StartMenuInternet\$0\InstallInfo"
+  ${EndIf}
+  WriteRegDWORD HKLM "$R1" "IconsVisible" 1
+  WriteRegDWORD HKCU "$R1" "IconsVisible" 1
 
   SetShellVarContext all  ; Set $SMPROGRAMS to All Users
   ${Unless} ${FileExists} "$SMPROGRAMS\${BrandShortName}.lnk"
@@ -1565,8 +1617,13 @@ ${RemoveDefaultBrowserAgentShortcut}
   ${Unless} ${FileExists} "$0"
     ${LogStartMenuShortcut} "${BrandShortName}.lnk"
     ${LogQuickLaunchShortcut} "${BrandShortName}.lnk"
+!ifndef DESKTOP_LAUNCHER_ENABLED
     ${LogDesktopShortcut} "${BrandShortName}.lnk"
+!endif
   ${EndUnless}
+!ifdef DESKTOP_LAUNCHER_ENABLED
+  Call InstallDesktopLauncherApp
+!endif
 !macroend
 !define CreateShortcutsLog "!insertmacro CreateShortcutsLog"
 

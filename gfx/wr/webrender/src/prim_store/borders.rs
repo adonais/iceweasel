@@ -260,7 +260,7 @@ impl ImageBorderData {
             );
 
             let task_id = frame_state.rg_builder.add().init(
-                RenderTask::new_image(size, self.request)
+                RenderTask::new_image(size, self.request, false)
             );
 
             self.src_color = Some(task_id);

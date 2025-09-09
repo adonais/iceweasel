@@ -501,7 +501,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvCaretMoveEvent(
   }
 
   PlatformCaretMoveEvent(proxy, aOffset, aIsSelectionCollapsed, aGranularity,
-                         aCaretRect, aFromUser);
+                         aFromUser);
 
   if (!nsCoreUtils::AccEventObserversExist()) {
     return IPC_OK();
@@ -1164,7 +1164,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvFocusEvent(
 
   mFocus = aID;
   mCaretRect = aCaretRect;
-  PlatformFocusEvent(proxy, aCaretRect);
+  PlatformFocusEvent(proxy);
 
   if (!nsCoreUtils::AccEventObserversExist()) {
     return IPC_OK();

@@ -7,11 +7,12 @@
 #ifndef WMFMediaDataEncoder_h_
 #define WMFMediaDataEncoder_h_
 
+#include <comdef.h>
+
 #include "MFTEncoder.h"
 #include "PlatformEncoderModule.h"
 #include "WMFDataEncoderUtils.h"
 #include "WMFUtils.h"
-#include <comdef.h>
 #include "mozilla/WindowsProcessMitigations.h"
 
 namespace mozilla {
@@ -70,11 +71,12 @@ class WMFMediaDataEncoder final : public MediaDataEncoder {
   void SetConfigData(const nsTArray<UINT8>& aHeader);
 
   RefPtr<EncodePromise> ProcessEncode(RefPtr<const VideoData>&& aSample);
+  RefPtr<EncodePromise> ProcessDrain();
 
   already_AddRefed<IMFSample> ConvertToNV12InputSample(
       RefPtr<const VideoData>&& aData);
 
-  RefPtr<EncodePromise> ProcessOutputSamples(
+  EncodedData ProcessOutputSamples(
       nsTArray<MFTEncoder::OutputSample>&& aSamples);
   already_AddRefed<MediaRawData> OutputSampleToMediaData(
       MFTEncoder::OutputSample& aSample);
@@ -92,6 +94,12 @@ class WMFMediaDataEncoder final : public MediaDataEncoder {
   RefPtr<MFTEncoder> mEncoder;
   // SPS/PPS NALUs when encoding in AnnexB usage, avcC otherwise.
   RefPtr<MediaByteBuffer> mConfigData;
+
+  MozPromiseHolder<EncodePromise> mEncodePromise;
+  MozPromiseRequestHolder<MFTEncoder::EncodePromise> mEncodeRequest;
+
+  MozPromiseHolder<EncodePromise> mDrainPromise;
+  MozPromiseRequestHolder<MFTEncoder::EncodePromise> mDrainRequest;
 };
 
 }  // namespace mozilla

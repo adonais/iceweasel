@@ -6,16 +6,16 @@
 
 #include "SVGMotionSMILAnimationFunction.h"
 
-#include "mozilla/dom/SVGAnimationElement.h"
-#include "mozilla/dom/SVGPathElement.h"
-#include "mozilla/dom/SVGMPathElement.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/SMILParserUtils.h"
-#include "nsAttrValue.h"
-#include "nsAttrValueInlines.h"
 #include "SVGAnimatedOrient.h"
 #include "SVGMotionSMILPathUtils.h"
 #include "SVGMotionSMILType.h"
+#include "mozilla/SMILParserUtils.h"
+#include "mozilla/dom/SVGAnimationElement.h"
+#include "mozilla/dom/SVGMPathElement.h"
+#include "mozilla/dom/SVGPathElement.h"
+#include "mozilla/gfx/2D.h"
+#include "nsAttrValue.h"
+#include "nsAttrValueInlines.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::dom::SVGAngle_Binding;

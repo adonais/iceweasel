@@ -15,6 +15,23 @@ support-files = ["do_work_500ms.html"]
 support-files = ["tracing.html"]
 skip-if = ["!nightly_build"] # This features is only enabled on nightly via MOZ_EXECUTION_TRACING build flag
 
+["browser_test_feature_jstracing_objtestutils.js"]
+support-files = [
+  "browser_test_feature_jstracing_objtestutils.snapshot.mjs",
+  "value_summary_reader.mjs"
+]
+skip-if = [
+  # This features is only enabled on nightly via MOZ_EXECUTION_TRACING build flag
+  "!nightly_build"
+]
+
+["browser_test_feature_jstracing_values.js"]
+support-files = ["tracing_values.html"]
+skip-if = [
+  # This features is only enabled on nightly via MOZ_EXECUTION_TRACING build flag
+  "!nightly_build"
+]
+
 ["browser_test_feature_multiprocess_capture_with_signal.js"]
 support-files = ["do_work_500ms.html"]
 skip-if = [

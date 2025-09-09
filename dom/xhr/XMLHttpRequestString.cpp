@@ -5,9 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "XMLHttpRequestString.h"
+
 #include "js/String.h"
-#include "nsISupportsImpl.h"
 #include "mozilla/dom/DOMString.h"
+#include "nsISupportsImpl.h"
 
 namespace mozilla::dom {
 

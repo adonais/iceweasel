@@ -196,7 +196,7 @@ export const presets = {
       },
       devtools: {
         label: "perftools-presets-ml-label",
-        description: "perftools-presets-ml-description",
+        description: "perftools-presets-ml-description2",
       },
     },
   },
@@ -324,7 +324,8 @@ export function getPrefPostfix(pageContext) {
       return ".remote";
     default: {
       const { UnhandledCaseError } = ChromeUtils.importESModule(
-        "resource://devtools/shared/performance-new/errors.sys.mjs"
+        "resource://devtools/shared/performance-new/errors.sys.mjs",
+        { global: "contextual" }
       );
       throw new UnhandledCaseError(pageContext, "Page Context");
     }

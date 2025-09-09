@@ -108,10 +108,14 @@
         PictureInPicture: "resource://gre/modules/PictureInPicture.sys.mjs",
         SmartTabGroupingManager:
           "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
+        SponsorProtection:
+          "moz-src:///browser/components/newtab/SponsorProtection.sys.mjs",
         TabMetrics:
           "moz-src:///browser/components/tabbrowser/TabMetrics.sys.mjs",
         TabStateFlusher:
           "resource:///modules/sessionstore/TabStateFlusher.sys.mjs",
+        TaskbarTabsUtils:
+          "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs",
         UrlbarProviderOpenTabs:
           "resource:///modules/UrlbarProviderOpenTabs.sys.mjs",
       });
@@ -184,6 +188,7 @@
       window.addEventListener("framefocusrequested", this);
       window.addEventListener("activate", this);
       window.addEventListener("deactivate", this);
+      window.addEventListener("TabGroupCollapse", this);
       window.addEventListener("TabGroupCreateByUser", this);
       window.addEventListener("TabGrouped", this);
       window.addEventListener("TabUngrouped", this);
@@ -1181,6 +1186,15 @@
         title += tab.getAttribute("label").replace(/\0/g, "");
       }
 
+      if (this.TaskbarTabsUtils.isTaskbarTabWindow(window)) {
+        let userContextId = gBrowser.getTabForBrowser(aBrowser)?.userContextId;
+        if (userContextId) {
+          let container =
+            ContextualIdentityService.getUserContextLabel(userContextId);
+          title += (title && container ? " — " : "") + container;
+        }
+      }
+
       if (title) {
         // We're using a function rather than just using `title` as the
         // new substring to avoid `$$`, `$'` etc. having a special
@@ -2026,11 +2040,16 @@
       // Unhook our progress listener.
       let filter = this._tabFilters.get(tab);
       let listener = this._tabListeners.get(tab);
-      aBrowser.webProgress.removeProgressListener(filter);
-      filter.removeProgressListener(listener);
+      // We should always have a filter, but if we fail to create a content
+      // process when creating a new tab, we can end up here trying to switch
+      // remoteness to load about:tabcrashed, without a filter/listener.
+      if (filter) {
+        aBrowser.webProgress.removeProgressListener(filter);
+        filter.removeProgressListener(listener);
+      }
 
       // We'll be creating a new listener, so destroy the old one.
-      listener.destroy();
+      listener?.destroy();
 
       let oldDroppedLinkHandler = aBrowser.droppedLinkHandler;
       let oldUserTypedValue = aBrowser.userTypedValue;
@@ -2078,6 +2097,12 @@
       // load
       listener = new TabProgressListener(tab, aBrowser, true, false);
       this._tabListeners.set(tab, listener);
+      if (!filter) {
+        filter = Cc[
+          "@mozilla.org/appshell/component/browser-status-filter;1"
+        ].createInstance(Ci.nsIWebProgress);
+        this._tabFilters.set(tab, filter);
+      }
       filter.addProgressListener(listener, Ci.nsIWebProgress.NOTIFY_ALL);
 
       // Restore the progress listener.
@@ -6237,7 +6262,6 @@
         return;
       }
 
-      aGroup.collapsed = false;
       this.#handleTabMove(aTab, () => aGroup.appendChild(aTab), metricsContext);
       this.removeFromMultiSelectedTabs(aTab);
       this.tabContainer._notifyBackgroundTab(aTab);
@@ -7105,6 +7129,10 @@
           debugStringArray.push("[A]");
         }
 
+        if (this.SponsorProtection.isProtectedBrowser(tab.linkedBrowser)) {
+          debugStringArray.push("[S]");
+        }
+
         if (debugStringArray.length) {
           labelArray.push(debugStringArray.join(" "));
         }
@@ -7234,6 +7262,11 @@
           }
           break;
         }
+        case "TabGroupCollapse":
+          aEvent.target.tabs.forEach(tab => {
+            this.removeFromMultiSelectedTabs(tab);
+          });
+          break;
         case "TabGroupCreateByUser":
           this.tabGroupMenu.openCreateModal(aEvent.target);
           break;
@@ -8623,6 +8656,10 @@
       { loadFlags, globalHistoryOptions }
     ) {
       if (globalHistoryOptions?.triggeringSponsoredURL) {
+        if (globalHistoryOptions.triggeringSource == "newtab") {
+          gBrowser.SponsorProtection.addProtectedBrowser(browser);
+        }
+
         try {
           // Browser may access URL after fixing it up, then store the URL into DB.
           // To match with it, fix the link up explicitly.
@@ -8638,7 +8675,13 @@
             globalHistoryOptions.triggeringSponsoredURLVisitTimeMS ||
             Date.now();
           browser.setAttribute("triggeringSponsoredURLVisitTimeMS", time);
+          browser.setAttribute(
+            "triggeringSource",
+            globalHistoryOptions.triggeringSource
+          );
         } catch (e) {}
+      } else {
+        gBrowser.SponsorProtection.removeProtectedBrowser(browser);
       }
 
       if (globalHistoryOptions?.triggeringSearchEngine) {
@@ -9346,9 +9389,10 @@ var TabContextMenu = {
       document.l10n.setAttributes(item, "tab-context-unnamed-group");
     }
 
-    let iconClass = isSaved ? "tab-group-icon-closed" : "tab-group-icon";
-    item.classList.add("menuitem-iconic");
-    item.classList.add(iconClass);
+    item.classList.add("menuitem-iconic", "tab-group-icon");
+    if (isSaved) {
+      item.classList.add("tab-group-icon-closed");
+    }
 
     item.style.setProperty(
       "--tab-group-color",

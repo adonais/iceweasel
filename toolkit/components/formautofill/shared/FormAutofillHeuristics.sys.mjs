@@ -13,7 +13,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FieldScanner: "resource://gre/modules/shared/FieldScanner.sys.mjs",
   FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
   LabelUtils: "resource://gre/modules/shared/LabelUtils.sys.mjs",
-  MLAutofill: "resource://autofill/MLAutofill.sys.mjs",
 });
 
 /**
@@ -831,13 +830,6 @@ export const FormAutofillHeuristics = {
       lazy.FormAutofillUtils.isCreditCardOrAddressFieldType(element)
     );
 
-    let closestHeaders;
-    let closestButtons;
-    if (FormAutofill.isMLExperimentEnabled && elements.length) {
-      closestHeaders = lazy.MLAutofill.closestHeaderAbove(elements);
-      closestButtons = lazy.MLAutofill.closestButtonBelow(elements);
-    }
-
     const fieldDetails = [];
     for (let idx = 0; idx < elements.length; idx++) {
       const element = elements[idx];
@@ -859,29 +851,11 @@ export const FormAutofillHeuristics = {
       const [fieldName, inferInfo] = this.inferFieldInfo(element, elements);
       const attributes = this.parseAdditionalAttributes(element, fieldName);
 
-      // For cases where the heuristic has determined the field name without
-      // running Fathom, still run Fathom so we can compare the results between
-      // Fathom and the ML model. Note that this is only enabled when the ML experiment
-      // is enabled.
-      if (
-        FormAutofill.isMLExperimentEnabled &&
-        inferInfo.fathomConfidence == undefined
-      ) {
-        let fields = this._getPossibleFieldNames(element);
-        fields = fields.filter(r => lazy.CreditCardRulesets.types.includes(r));
-        const [label, score] = this.getFathomField(element, fields, elements);
-        inferInfo.fathomLabel = label;
-        inferInfo.fathomConfidence = score;
-      }
-
       fieldDetails.push(
         lazy.FieldDetail.create(element, formLike, fieldName, {
           autocompleteInfo: inferInfo.autocompleteInfo,
-          fathomLabel: inferInfo.fathomLabel,
           fathomConfidence: inferInfo.fathomConfidence,
           isVisible,
-          mlHeaderInput: closestHeaders?.[idx] ?? null,
-          mlButtonInput: closestButtons?.[idx] ?? null,
           isLookup: attributes.isLookup,
         })
       );
@@ -1021,7 +995,7 @@ export const FormAutofillHeuristics = {
    * @returns {Array} - An array containing:
    *                    [0]the inferred field name
    *                    [1]information collected during the inference process. The possible values includes:
-   *                       'autocompleteInfo', 'fathomLabel', and 'fathomConfidence'.
+   *                       'autocompleteInfo' and 'fathomConfidence'.
    */
   inferFieldInfo(element, elements = []) {
     const inferredInfo = {};
@@ -1058,7 +1032,6 @@ export const FormAutofillHeuristics = {
         elements
       );
       if (confidence != null) {
-        inferredInfo.fathomLabel = matchedFieldName;
         inferredInfo.fathomConfidence = confidence;
       }
       // At this point, use fathom's recommendation if it has one

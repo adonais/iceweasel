@@ -245,14 +245,6 @@ This controls if newtab story personalization includes regular stories or not. S
 
 This controls if newtab story personalization includes sponsored content or not. See recs.personalized for regular stories.
 
-### `browser.newtabpage.activity-stream.discoverystream.isCollectionDismissible`
-
-- Type: `boolean`
-- Default: true
-- Pref Type: Firefox
-
-This controls if newtab story collections are dismissible or not.
-
 ### `browser.newtabpage.activity-stream.feeds.section.topstories`
 
 - Type: `boolean`

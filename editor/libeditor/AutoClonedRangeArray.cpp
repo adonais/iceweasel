@@ -13,14 +13,15 @@
 #include "TextEditor.h"       // for TextEditor
 #include "WSRunScanner.h"     // for WSRunScanner
 
-#include "mozilla/CaretAssociationHint.h"  // for CaretAssociationHint
-#include "mozilla/IntegerRange.h"          // for IntegerRange
-#include "mozilla/OwningNonNull.h"         // for OwningNonNull
-#include "mozilla/PresShell.h"             // for PresShell
-#include "mozilla/dom/Document.h"          // for dom::Document
-#include "mozilla/dom/HTMLBRElement.h"     // for dom HTMLBRElement
-#include "mozilla/dom/Selection.h"         // for dom::Selection
-#include "mozilla/dom/Text.h"              // for dom::Text
+#include "mozilla/CaretAssociationHint.h"     // for CaretAssociationHint
+#include "mozilla/IntegerRange.h"             // for IntegerRange
+#include "mozilla/OwningNonNull.h"            // for OwningNonNull
+#include "mozilla/PresShell.h"                // for PresShell
+#include "mozilla/dom/CharacterDataBuffer.h"  // for CharacterDataBuffer
+#include "mozilla/dom/Document.h"             // for dom::Document
+#include "mozilla/dom/HTMLBRElement.h"        // for dom HTMLBRElement
+#include "mozilla/dom/Selection.h"            // for dom::Selection
+#include "mozilla/dom/Text.h"                 // for dom::Text
 
 #include "gfxFontUtils.h"      // for gfxFontUtils
 #include "nsError.h"           // for NS_SUCCESS_* and NS_ERROR_*
@@ -28,7 +29,6 @@
 #include "nsIContent.h"        // for nsIContent
 #include "nsINode.h"           // for nsINode
 #include "nsRange.h"           // for nsRange
-#include "nsTextFragment.h"    // for nsTextFragment
 
 namespace mozilla {
 
@@ -1447,8 +1447,8 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
         return aDirectionAndAmount;
       }
 
-      const nsTextFragment* data =
-          &insertionPoint.ContainerAs<Text>()->TextFragment();
+      const CharacterDataBuffer* data =
+          &insertionPoint.ContainerAs<Text>()->DataBuffer();
       uint32_t offset = insertionPoint.Offset();
       if (!(offset > 1 &&
             data->IsLowSurrogateFollowingHighSurrogateAt(offset - 1)) &&

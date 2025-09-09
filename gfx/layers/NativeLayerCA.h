@@ -25,8 +25,10 @@
 
 #ifdef __OBJC__
 @class CALayer;
+@class CARenderer;
 #else
 typedef void CALayer;
+typedef void CARenderer;
 #endif
 
 namespace mozilla {
@@ -142,6 +144,11 @@ class NativeLayerRootCA : public NativeLayerRoot {
       bool aIsOpaque) override;
   already_AddRefed<NativeLayer> CreateLayerForColor(
       gfx::DeviceColor aColor) override;
+
+  // A macOS-specific layer creation method, which uses no
+  // SurfacePoolHandle, because it will be handed surfaces directly.
+  already_AddRefed<NativeLayerCA> CreateLayerForSurfacePresentation(
+      const gfx::IntSize& aSize, bool aIsOpaque);
 
   void SetWindowIsFullscreen(bool aFullscreen);
 
@@ -266,8 +273,13 @@ class NativeLayerCA : public NativeLayer {
   void SetRoundedClipRect(const Maybe<gfx::RoundedRect>& aClip) override;
   Maybe<gfx::RoundedRect> RoundedClipRect() override;
   gfx::IntRect CurrentSurfaceDisplayRect() override;
+  void SetDisplayRect(const gfx::IntRect& aDisplayRect);
   void SetSurfaceIsFlipped(bool aIsFlipped) override;
   bool SurfaceIsFlipped() override;
+
+  // Used to force a specific IOSurfaceRef to be used.
+  void SetSurfaceToPresent(CFTypeRefPtr<IOSurfaceRef> aSurfaceRef,
+                           gfx::IntSize& aSize, bool aIsDRM, bool aIsHDR);
 
   void DumpLayer(std::ostream& aOutputStream);
 
@@ -283,17 +295,11 @@ class NativeLayerCA : public NativeLayer {
                 SurfacePoolHandleCA* aSurfacePoolHandle);
   explicit NativeLayerCA(bool aIsOpaque);
   explicit NativeLayerCA(gfx::DeviceColor aColor);
-  ~NativeLayerCA() override;
+  // This constructor is used for surfaces being directly supplied
+  // to the layer.
+  explicit NativeLayerCA(const gfx::IntSize& aSize, bool aIsOpaque);
 
-  // Gets the next surface for drawing from our swap chain and stores it in
-  // mInProgressSurface. Returns whether this was successful.
-  // mInProgressSurface is guaranteed to be not in use by the window server.
-  // After a call to NextSurface, NextSurface must not be called again until
-  // after NotifySurfaceReady has been called. Can be called on any thread. When
-  // used from multiple threads, callers need to make sure that they still only
-  // call NextSurface and NotifySurfaceReady alternatingly and not in any other
-  // order.
-  bool NextSurface(const MutexAutoLock& aProofOfLock);
+  ~NativeLayerCA() override;
 
   // To be called by NativeLayerRootCA:
   typedef NativeLayerRootCA::WhichRepresentation WhichRepresentation;
@@ -409,6 +415,8 @@ class NativeLayerCA : public NativeLayer {
   // Controls access to all fields of this class.
   Mutex mMutex MOZ_UNANNOTATED;
 
+  CFTypeRefPtr<IOSurfaceRef> mSurfaceToPresent;
+
   Maybe<NativeLayerMacSurfaceHandler> mSurfaceHandler;
 
   RefPtr<wr::RenderMacIOSurfaceTextureHost> mTextureHost;
@@ -432,6 +440,7 @@ class NativeLayerCA : public NativeLayer {
   bool mSpecializeVideo = false;
   bool mHasExtent = false;
   bool mIsDRM = false;
+  bool mIsHDR = false;
 
 #ifdef NIGHTLY_BUILD
   // Track the consistency of our caller's API usage. Layers that are drawn

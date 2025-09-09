@@ -222,7 +222,7 @@ class NavigationToolbarRobot {
         mDevice.findObject(
             By.desc(buttonDescription)
                 .enabled(true)
-                .hasAncestor(By.res("$packageName:id/toolbar_navbar_container")),
+                .hasAncestor(By.res("$packageName:id/navigation_bar")),
         )
             .click(LONG_CLICK_DURATION)
         Log.i(TAG, "longTapNavButton: Long clicked the nav bar $buttonDescription button.")
@@ -245,7 +245,7 @@ class NavigationToolbarRobot {
     // Verifies that the address bar is displayed separately, or merged with the navbar in landscape mode.
     fun verifyAddressBarIsDisplayedSeparately(isSeparate: Boolean, isAtTop: Boolean) {
         val addressBar = "$packageName:id/toolbar"
-        val navBar = "$packageName:id/toolbar_navbar_container"
+        val navBar = "$packageName:id/navigation_bar"
 
         if (isSeparate) {
             assertUIObjectExists(itemWithResId(addressBar), itemWithResId(navBar))
@@ -269,7 +269,7 @@ class NavigationToolbarRobot {
 
     fun verifyNavBarBarPosition(isAtBottom: Boolean) {
         Log.i(TAG, "verifyNavBarBarPosition: Trying to verify the toolbar navbar position is at the bottom: $isAtBottom.")
-        onView(allOf(withId(R.id.toolbar_navbar_container), isCompletelyDisplayed())).check(
+        onView(allOf(withId(R.id.navigation_bar), isCompletelyDisplayed())).check(
             if (isAtBottom) {
                 isPartiallyBelow(withId(R.id.engineView))
             } else {

@@ -9,6 +9,7 @@
 
 #include "DecoderDoctorLogger.h"
 #include "Intervals.h"
+#include "MediaChannelStatistics.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Result.h"
 #include "mozilla/UniquePtr.h"
@@ -17,8 +18,6 @@
 #include "nsHashKeys.h"
 #include "nsTArray.h"
 #include "nsTHashtable.h"
-
-#include "MediaChannelStatistics.h"
 
 class nsIEventTarget;
 class nsIPrincipal;

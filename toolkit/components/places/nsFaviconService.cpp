@@ -453,7 +453,7 @@ nsFaviconService::GetFaviconForPage(nsIURI* aPageURI, uint16_t aPreferredWidth,
 }
 
 RefPtr<FaviconPromise> nsFaviconService::AsyncGetFaviconForPage(
-    nsIURI* aPageURI, uint16_t aPreferredWidth) {
+    nsIURI* aPageURI, uint16_t aPreferredWidth, bool aOnConcurrentConn) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aPageURI);
 
@@ -468,16 +468,23 @@ RefPtr<FaviconPromise> nsFaviconService::AsyncGetFaviconForPage(
       new FaviconPromise::Private(__func__);
 
   RefPtr<AsyncGetFaviconForPageRunnable> runnable =
-      new AsyncGetFaviconForPageRunnable(pageURI, aPreferredWidth, promise);
-  RefPtr<Database> DB = Database::GetDatabase();
-  if (MOZ_UNLIKELY(!DB)) {
-    promise->Reject(NS_ERROR_UNEXPECTED, __func__);
-    return promise;
-  }
+      new AsyncGetFaviconForPageRunnable(pageURI, aPreferredWidth, promise,
+                                         aOnConcurrentConn);
 
-  nsresult rv = DB->DispatchToAsyncThread(runnable);
-  if (NS_FAILED(rv)) {
-    promise->Reject(rv, __func__);
+  if (!aOnConcurrentConn) {
+    RefPtr<Database> DB = Database::GetDatabase();
+    if (MOZ_UNLIKELY(!DB)) {
+      promise->Reject(NS_ERROR_UNEXPECTED, __func__);
+    } else {
+      DB->DispatchToAsyncThread(runnable);
+    }
+  } else {
+    auto conn = ConcurrentConnection::GetInstance();
+    if (MOZ_UNLIKELY(!conn.isSome())) {
+      promise->Reject(NS_ERROR_UNEXPECTED, __func__);
+    } else {
+      conn.value()->Queue(runnable);
+    }
   }
 
   return promise;
@@ -724,29 +731,6 @@ nsresult nsFaviconService::OptimizeIconSizes(IconData& aIcon) {
   }
 
   return aIcon.payloads.IsEmpty() ? NS_ERROR_FILE_TOO_BIG : NS_OK;
-}
-
-nsresult nsFaviconService::GetFaviconDataAsync(
-    const nsCString& aFaviconSpec, mozIStorageStatementCallback* aCallback) {
-  MOZ_ASSERT(aCallback, "Doesn't make sense to call this without a callback");
-
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = NS_NewURI(getter_AddRefs(uri), aFaviconSpec);
-  NS_ENSURE_SUCCESS(rv, rv);
-  uri = GetExposableURI(uri);
-
-  nsCOMPtr<mozIStorageAsyncStatement> stmt = mDB->GetAsyncStatement(
-      "/*Do not warn (bug no: not worth adding an index */ "
-      "SELECT data, width FROM moz_icons "
-      "WHERE fixed_icon_url_hash = hash(fixup_url(:url)) AND icon_url = :url "
-      "ORDER BY width DESC");
-  NS_ENSURE_STATE(stmt);
-
-  rv = URIBinder::Bind(stmt, "url"_ns, uri);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  nsCOMPtr<mozIStoragePendingStatement> pendingStatement;
-  return stmt->ExecuteAsync(aCallback, getter_AddRefs(pendingStatement));
 }
 
 NS_IMETHODIMP

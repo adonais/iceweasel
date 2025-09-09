@@ -18,13 +18,12 @@
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/RemoteDragStartData.h"
 #include "mozilla/Logging.h"
+#include "mozilla/widget/WidgetLogging.h"
 #include "nsTArray.h"
 #include "nsRegion.h"
 #include "Units.h"
 
-extern mozilla::LazyLogModule sWidgetDragServiceLog;
-#define MOZ_DRAGSERVICE_LOG(...) \
-  MOZ_LOG(sWidgetDragServiceLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
+#define MOZ_DRAGSERVICE_LOG DRAGSERVICE_LOGD
 #define MOZ_DRAGSERVICE_LOG_ENABLED() \
   MOZ_LOG_TEST(sWidgetDragServiceLog, mozilla::LogLevel::Debug)
 

@@ -1693,20 +1693,39 @@ static bool BaseURIsArePathCompatible(nsIURI* aA, nsIURI* aB) {
   return resultA == resultB;
 }
 
-static bool CanReuseInlineSheet(StyleSheet* aSheet, nsIURI* aNewBaseURI) {
-  nsIURI* oldBase = aSheet->GetBaseURI();
+static bool CanReuseInlineSheet(SharedStyleSheetCache::InlineSheetEntry& aEntry,
+                                nsIURI* aNewBaseURI, bool aIsImage) {
+  auto dependency = aEntry.mSheet->OriginalContentsUriDependency();
+  if (dependency == StyleNonLocalUriDependency::No) {
+    // If there are no non-local uris, then we can reuse.
+    return true;
+  }
+  if (aIsImage != aEntry.mWasLoadedAsImage) {
+    // Even with the same base uri, if the document was loaded as an image on
+    // one document, but wasn't on another, we can't cache the sheet, since
+    // non-local URIs should not load in those, see bug 1982344.
+    return false;
+  }
+  if (dependency == StyleNonLocalUriDependency::Absolute) {
+    // If there are only absolute uris, then we don't need to worry about the
+    // base.
+    return true;
+  }
+  nsIURI* oldBase = aEntry.mSheet->GetBaseURI();
   if (URIsEqual(oldBase, aNewBaseURI)) {
     return true;
   }
-  switch (aSheet->OriginalContentsBaseUriDependency()) {
-    case StyleLikelyBaseUriDependency::No:
+  switch (dependency) {
+    case StyleNonLocalUriDependency::Absolute:
+    case StyleNonLocalUriDependency::No:
+      MOZ_ASSERT_UNREACHABLE("How?");
       break;
-    case StyleLikelyBaseUriDependency::Path:
+    case StyleNonLocalUriDependency::Path:
       if (BaseURIsArePathCompatible(oldBase, aNewBaseURI)) {
         break;
       }
       [[fallthrough]];
-    case StyleLikelyBaseUriDependency::Full:
+    case StyleNonLocalUriDependency::Full:
       LOG(("  Can't reuse due to base URI dependency"));
       return false;
   }
@@ -1715,23 +1734,29 @@ static bool CanReuseInlineSheet(StyleSheet* aSheet, nsIURI* aNewBaseURI) {
 
 RefPtr<StyleSheet> Loader::LookupInlineSheetInCache(
     const nsAString& aBuffer, nsIPrincipal* aSheetPrincipal, nsIURI* aBaseURI) {
+  MOZ_ASSERT(mDocument);
   MOZ_ASSERT(mSheets, "Document associated loader should have sheet cache");
   auto result = mSheets->LookupInline(LoaderPrincipal(), aBuffer);
   if (!result) {
     return nullptr;
   }
-  StyleSheet* sheet = result.Data();
-  MOZ_ASSERT(!sheet->HasModifiedRules(),
-             "How did we end up with a dirty sheet?");
-  if (NS_WARN_IF(!sheet->Principal()->Equals(aSheetPrincipal))) {
-    // If the sheet is going to have different access rights, don't return it
-    // from the cache. XXX can this happen now that we eagerly clone?
-    return nullptr;
+  MOZ_ASSERT(!result.Data().IsEmpty());
+  const bool asImage = mDocument->IsBeingUsedAsImage();
+  for (auto& candidate : result.Data()) {
+    auto* sheet = candidate.mSheet.get();
+    MOZ_ASSERT(!sheet->HasModifiedRules(),
+               "How did we end up with a dirty sheet?");
+    if (NS_WARN_IF(!sheet->Principal()->Equals(aSheetPrincipal))) {
+      // If the sheet is going to have different access rights, don't return it
+      // from the cache. XXX can this happen now that we eagerly clone?
+      continue;
+    }
+    if (!CanReuseInlineSheet(candidate, aBaseURI, asImage)) {
+      continue;
+    }
+    return sheet->Clone(nullptr, nullptr);
   }
-  if (!CanReuseInlineSheet(sheet, aBaseURI)) {
-    return nullptr;
-  }
-  return sheet->Clone(nullptr, nullptr);
+  return nullptr;
 }
 
 void Loader::MaybeNotifyPreloadUsed(SheetLoadData& aData) {
@@ -1844,7 +1869,9 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadInlineStyle(
                                                       true));
     completed = ParseSheet(utf8, holder, AllowAsyncParse::No);
     if (completed == Completed::Yes) {
-      mSheets->InsertInline(LoaderPrincipal(), aBuffer, data->ValueForCache());
+      mSheets->InsertInline(
+          LoaderPrincipal(), aBuffer,
+          {data->ValueForCache(), mDocument->IsBeingUsedAsImage()});
     } else {
       data->mMustNotify = true;
     }

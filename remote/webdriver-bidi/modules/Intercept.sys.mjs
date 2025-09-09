@@ -12,7 +12,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 /**
  * The serialization of JavaScript objects in the content process might produce
- * extra data that needs to be transfered and then processed by the parent
+ * extra data that needs to be transferred and then processed by the parent
  * process. This extra data is part of the payload as returned by commands
  * and events and can contain the following:
  *

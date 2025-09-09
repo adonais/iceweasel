@@ -5,12 +5,12 @@
 #include "CCGCScheduler.h"
 
 #include "js/GCAPI.h"
-#include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
+#include "mozilla/PerfStats.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/glean/DomMetrics.h"
-#include "mozilla/PerfStats.h"
 #include "nsRefreshDriver.h"
 
 /* Globally initialized constants

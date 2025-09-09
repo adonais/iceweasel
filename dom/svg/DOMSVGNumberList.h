@@ -8,13 +8,13 @@
 #define DOM_SVG_DOMSVGNUMBERLIST_H_
 
 #include "DOMSVGAnimatedNumberList.h"
+#include "SVGNumberList.h"
 #include "mozAutoDocUpdate.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/RefPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDebug.h"
 #include "nsTArray.h"
-#include "SVGNumberList.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/RefPtr.h"
 
 namespace mozilla {
 class ErrorResult;

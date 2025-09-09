@@ -34,7 +34,8 @@ class TRRServiceBase : public nsIProxyConfigChangedCallback {
   already_AddRefed<nsHttpConnectionInfo> TRRConnectionInfo();
   // Called to initialize the connection info. Once the connection info is
   // created first time, mTRRConnectionInfoInited will be set to true.
-  virtual void InitTRRConnectionInfo();
+  // When aForceReinit is true, we always create the conncetion info again.
+  virtual void InitTRRConnectionInfo(bool aForceReinit = false);
   bool TRRConnectionInfoInited() const { return mTRRConnectionInfoInited; }
 
  protected:

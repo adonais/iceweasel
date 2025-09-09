@@ -4,8 +4,9 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 #include "URLPattern.h"
-#include "mozilla/net/MozURL.h"
+
 #include "mozilla/ErrorResult.h"
+#include "mozilla/net/MozURL.h"
 
 namespace mozilla::dom {
 

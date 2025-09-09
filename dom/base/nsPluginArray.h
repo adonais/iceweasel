@@ -7,12 +7,12 @@
 #ifndef nsPluginArray_h___
 #define nsPluginArray_h___
 
-#include "nsWeakReference.h"
-#include "nsWrapperCache.h"
+#include "mozilla/Array.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "mozilla/Array.h"
+#include "nsWeakReference.h"
+#include "nsWrapperCache.h"
 
 class nsPIDOMWindowInner;
 class nsPluginElement;

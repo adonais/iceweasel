@@ -755,7 +755,7 @@ bool CodeGeneratorShared::createNativeToBytecodeScriptList(
     // Add script from current tree.
     bool found = false;
     for (uint32_t i = 0; i < scripts.length(); i++) {
-      if (scripts[i].script == tree->script()) {
+      if (scripts[i].sourceAndExtent.matches(tree->script())) {
         found = true;
         break;
       }
@@ -883,30 +883,8 @@ void CodeGeneratorShared::verifyCompactNativeToBytecodeMap(
     // Ensure native code offset for region falls within jitcode.
     MOZ_ASSERT(entry.nativeOffset() <= code->instructionsSize());
 
-    // Read out script/pc stack and verify.
-    JitcodeRegionEntry::ScriptPcIterator scriptPcIter =
-        entry.scriptPcIterator();
-    while (scriptPcIter.hasMore()) {
-      uint32_t scriptIdx = 0, pcOffset = 0;
-      scriptPcIter.readNext(&scriptIdx, &pcOffset);
-
-      // Ensure scriptIdx refers to a valid script in the list.
-      JSScript* script = scripts[scriptIdx].script;
-
-      // Ensure pcOffset falls within the script.
-      MOZ_ASSERT(pcOffset < script->length());
-    }
-
-    // Obtain the original nativeOffset and pcOffset and script.
+    // Obtain the original nativeOffset.
     uint32_t curNativeOffset = entry.nativeOffset();
-    JSScript* script = nullptr;
-    uint32_t curPcOffset = 0;
-    {
-      uint32_t scriptIdx = 0;
-      scriptPcIter.reset();
-      scriptPcIter.readNext(&scriptIdx, &curPcOffset);
-      script = scripts[scriptIdx].script;
-    }
 
     // Read out nativeDeltas and pcDeltas and verify.
     JitcodeRegionEntry::DeltaIterator deltaIter = entry.deltaIterator();
@@ -916,13 +894,9 @@ void CodeGeneratorShared::verifyCompactNativeToBytecodeMap(
       deltaIter.readNext(&nativeDelta, &pcDelta);
 
       curNativeOffset += nativeDelta;
-      curPcOffset = uint32_t(int32_t(curPcOffset) + pcDelta);
 
       // Ensure that nativeOffset still falls within jitcode after delta.
       MOZ_ASSERT(curNativeOffset <= code->instructionsSize());
-
-      // Ensure that pcOffset still falls within bytecode after delta.
-      MOZ_ASSERT(curPcOffset < script->length());
     }
   }
 #endif  // DEBUG
@@ -1066,18 +1040,11 @@ bool CodeGeneratorShared::omitOverRecursedCheck() const {
          !gen->needsOverrecursedCheck();
 }
 
-void CodeGeneratorShared::emitPreBarrier(Register elements,
-                                         const LAllocation* index) {
-  if (index->isConstant()) {
-    Address address(elements, ToInt32(index) * sizeof(Value));
-    masm.guardedCallPreBarrier(address, MIRType::Value);
-  } else {
-    BaseObjectElementIndex address(elements, ToRegister(index));
-    masm.guardedCallPreBarrier(address, MIRType::Value);
-  }
+void CodeGeneratorShared::emitPreBarrier(Address address) {
+  masm.guardedCallPreBarrier(address, MIRType::Value);
 }
 
-void CodeGeneratorShared::emitPreBarrier(Address address) {
+void CodeGeneratorShared::emitPreBarrier(BaseObjectElementIndex address) {
   masm.guardedCallPreBarrier(address, MIRType::Value);
 }
 

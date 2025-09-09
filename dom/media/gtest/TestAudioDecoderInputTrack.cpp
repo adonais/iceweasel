@@ -7,14 +7,14 @@
 #include <utility>
 
 #include "AudioDecoderInputTrack.h"
-#include "gmock/gmock.h"
 #include "GraphDriver.h"
-#include "gtest/gtest.h"
 #include "MediaInfo.h"
 #include "MediaTrackGraphImpl.h"
+#include "VideoUtils.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "mozilla/gtest/WaitFor.h"
 #include "nsThreadUtils.h"
-#include "VideoUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::media;

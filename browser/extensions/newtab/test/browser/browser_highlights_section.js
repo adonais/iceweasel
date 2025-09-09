@@ -31,6 +31,7 @@ function test_highlights(bookmarkCount, test) {
     test,
     async after() {
       await clearHistoryAndBookmarks();
+      await clearHighlightsBookmarks();
     },
   });
 }

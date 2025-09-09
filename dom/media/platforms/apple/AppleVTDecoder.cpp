@@ -8,6 +8,7 @@
 
 #include <CoreVideo/CVPixelBufferIOSurface.h>
 #include <IOSurface/IOSurfaceRef.h>
+
 #include <limits>
 
 #include "AOMDecoder.h"
@@ -91,6 +92,7 @@ AppleVTDecoder::AppleVTDecoder(const VideoInfo& aConfig,
 AppleVTDecoder::~AppleVTDecoder() { MOZ_COUNT_DTOR(AppleVTDecoder); }
 
 RefPtr<MediaDataDecoder::InitPromise> AppleVTDecoder::Init() {
+  AUTO_PROFILER_LABEL("AppleVTDecoder::Init", MEDIA_PLAYBACK);
   MediaResult rv = InitializeSession();
 
   if (NS_SUCCEEDED(rv)) {
@@ -151,6 +153,7 @@ static CMSampleTimingInfo TimingInfoFromSample(MediaRawData* aSample) {
 }
 
 void AppleVTDecoder::ProcessDecode(MediaRawData* aSample) {
+  AUTO_PROFILER_LABEL("AppleVTDecoder::ProcessDecode", MEDIA_PLAYBACK);
   AssertOnTaskQueue();
   PROCESS_DECODE_LOG(aSample);
 
@@ -251,6 +254,7 @@ void AppleVTDecoder::ProcessDecode(MediaRawData* aSample) {
 }
 
 void AppleVTDecoder::ProcessShutdown() {
+  AUTO_PROFILER_LABEL("AppleVTDecoder::ProcessShutdown", MEDIA_PLAYBACK);
   if (mSession) {
     LOG("%s: cleaning up session", __func__);
     VTDecompressionSessionInvalidate(mSession);
@@ -263,6 +267,7 @@ void AppleVTDecoder::ProcessShutdown() {
 }
 
 RefPtr<MediaDataDecoder::FlushPromise> AppleVTDecoder::ProcessFlush() {
+  AUTO_PROFILER_LABEL("AppleVTDecoder::ProcessFlush", MEDIA_PLAYBACK);
   AssertOnTaskQueue();
   nsresult rv = WaitForAsynchronousFrames();
   if (NS_FAILED(rv)) {
@@ -281,6 +286,7 @@ RefPtr<MediaDataDecoder::FlushPromise> AppleVTDecoder::ProcessFlush() {
 }
 
 RefPtr<MediaDataDecoder::DecodePromise> AppleVTDecoder::ProcessDrain() {
+  AUTO_PROFILER_LABEL("AppleVTDecoder::ProcessDrain", MEDIA_PLAYBACK);
   AssertOnTaskQueue();
   nsresult rv = WaitForAsynchronousFrames();
   if (NS_FAILED(rv)) {

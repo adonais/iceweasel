@@ -239,6 +239,11 @@ NetAddr::NetAddr(const PRNetAddr* prAddr) { PRNetAddrToNetAddr(prAddr, this); }
 
 nsILoadInfo::IPAddressSpace NetAddr::GetIpAddressSpace() const {
   const NetAddr* addr = this;
+  if (addr->raw.family != AF_INET && addr->raw.family != AF_INET6) {
+    // We don't know the address space for non-IP addresses.
+    return nsILoadInfo::IPAddressSpace::Unknown;
+  }
+
   nsILoadInfo::IPAddressSpace overriddenIpAddressSpace;
 
   if (NS_SUCCEEDED(gIOService->GetOverridenIpAddressSpace(

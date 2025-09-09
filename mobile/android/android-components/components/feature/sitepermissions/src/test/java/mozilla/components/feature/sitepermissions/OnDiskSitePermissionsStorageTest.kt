@@ -126,6 +126,8 @@ class OnDiskSitePermissionsStorageTest {
                 autoplayAudible = AutoplayStatus.BLOCKED,
                 autoplayInaudible = AutoplayStatus.BLOCKED,
                 mediaKeySystemAccess = NO_DECISION,
+                localDeviceAccess = NO_DECISION,
+                localNetworkAccess = NO_DECISION,
                 savedAt = 0,
             )
 
@@ -222,6 +224,8 @@ class OnDiskSitePermissionsStorageTest {
                 autoplayAudible = AutoplayStatus.BLOCKED,
                 autoplayInaudible = AutoplayStatus.BLOCKED,
                 mediaKeySystemAccess = NO_DECISION,
+                localDeviceAccess = NO_DECISION,
+                localNetworkAccess = NO_DECISION,
                 savedAt = 0,
             ),
             SitePermissionsEntity(
@@ -236,6 +240,8 @@ class OnDiskSitePermissionsStorageTest {
                 autoplayAudible = AutoplayStatus.BLOCKED,
                 autoplayInaudible = AutoplayStatus.BLOCKED,
                 mediaKeySystemAccess = NO_DECISION,
+                localDeviceAccess = NO_DECISION,
+                localNetworkAccess = NO_DECISION,
                 savedAt = 0,
             ),
         )

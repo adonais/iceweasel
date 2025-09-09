@@ -4,17 +4,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsGlobalWindowInner.h"
-#include "nsDocShell.h"
+#include "mozilla/dom/NavigateEvent.h"
 
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/PresShell.h"
-
 #include "mozilla/dom/AbortController.h"
-#include "mozilla/dom/NavigateEvent.h"
 #include "mozilla/dom/NavigateEventBinding.h"
 #include "mozilla/dom/Navigation.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
+#include "nsDocShell.h"
+#include "nsGlobalWindowInner.h"
 
 namespace mozilla::dom {
 

@@ -7,13 +7,13 @@
 #include <iterator>
 #include <thread>
 
-#include "gmock/gmock-matchers.h"
-#include "gtest/gtest.h"
-#include "mozilla/gtest/WaitFor.h"
 #include "MediaEventSource.h"
 #include "VideoFrameConverter.h"
 #include "VideoUtils.h"
 #include "YUVBufferGenerator.h"
+#include "gmock/gmock-matchers.h"
+#include "gtest/gtest.h"
+#include "mozilla/gtest/WaitFor.h"
 #include "rtc_base/ref_counted_object.h"
 
 using namespace mozilla;
@@ -21,7 +21,7 @@ using testing::Not;
 
 class VideoFrameConverterTest;
 
-class FrameListener : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
+class FrameListener : public webrtc::VideoSinkInterface<webrtc::VideoFrame> {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FrameListener)
 
@@ -40,7 +40,7 @@ class FrameListener : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
     mVideoFrameConvertedEvent.Notify(frame, TimeStamp::Now());
   }
 
-  void SetWants(const rtc::VideoSinkWants& aWants) {
+  void SetWants(const webrtc::VideoSinkWants& aWants) {
     mSource->AddOrUpdateSink(this, aWants);
   }
 
@@ -56,12 +56,12 @@ class FrameListener : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
 };
 
 class DebugVideoFrameConverter
-    : public rtc::RefCountedObject<
+    : public webrtc::RefCountedObject<
           VideoFrameConverterImpl<FrameDroppingPolicy::Disabled>> {
  public:
   explicit DebugVideoFrameConverter(
       const dom::RTCStatsTimestampMaker& aTimestampMaker)
-      : rtc::RefCountedObject<VideoFrameConverterImpl>(
+      : webrtc::RefCountedObject<VideoFrameConverterImpl>(
             do_AddRef(GetMainThreadSerialEventTarget()), aTimestampMaker,
             /* aLockScaling= */ false) {}
 
@@ -682,7 +682,7 @@ TEST_F(VideoFrameConverterTest, SinkWantsResolutionAlignment) {
   TimeStamp now = TimeStamp::Now();
   TimeDuration interval = TimeDuration::FromMilliseconds(1);
   mConverter->SetActive(true);
-  rtc::VideoSinkWants wants;
+  webrtc::VideoSinkWants wants;
   for (uint32_t i = 0; i < alignments.size(); ++i) {
     const TimeStamp t = now + interval * (i + 1);
     // Test that requesting specific alignment always results in the expected

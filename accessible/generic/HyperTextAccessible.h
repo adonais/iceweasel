@@ -55,6 +55,8 @@ class HyperTextAccessible : public AccessibleWrap,
   virtual void Shutdown() override;
   virtual bool RemoveChild(LocalAccessible* aAccessible) override;
   virtual bool InsertChildAt(uint32_t aIndex, LocalAccessible* aChild) override;
+  virtual void RelocateChild(uint32_t aNewIndex,
+                             LocalAccessible* aChild) override;
   virtual Relation RelationByType(RelationType aType) const override;
 
   /**

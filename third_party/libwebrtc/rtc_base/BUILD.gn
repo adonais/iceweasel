@@ -404,7 +404,7 @@ rtc_library("rtc_event") {
     deps = [
       ":checks",
       "../api/units:time_delta",
-      "system:rtc_export",  # Only Chromium's rtc::Event use RTC_EXPORT.
+      "system:rtc_export",  # Only Chromium's webrtc::Event use RTC_EXPORT.
       "//base",  # Dependency on chromium's waitable_event.
     ]
   } else {
@@ -605,19 +605,9 @@ rtc_library("stringutils") {
     ":macromagic",
     ":safe_minmax",
     "../api:array_view",
+    "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/strings:string_view",
-  ]
-}
-
-rtc_library("audio_format_to_string") {
-  sources = [
-    "strings/audio_format_to_string.cc",
-    "strings/audio_format_to_string.h",
-  ]
-  deps = [
-    ":stringutils",
-    "../api/audio_codecs:audio_codecs_api",
   ]
 }
 
@@ -849,7 +839,10 @@ rtc_library("net_test_helpers") {
     "net_test_helpers.cc",
     "net_test_helpers.h",
   ]
-  deps = [ "system:rtc_export" ]
+  deps = [
+    ":net_helpers",
+    "system:rtc_export",
+  ]
   if (is_android) {
     deps += [ ":ifaddrs_android" ]
   }
@@ -1010,7 +1003,9 @@ rtc_library("threading") {
     "../api:sequence_checker",
     "../api/task_queue",
     "../api/task_queue:pending_task_safety_flag",
+    "../api/transport:ecn_marking",
     "../api/units:time_delta",
+    "../api/units:timestamp",
     "../system_wrappers:field_trial",
     "./network:ecn_marking",
     "synchronization:mutex",
@@ -1191,6 +1186,7 @@ if (!build_with_mozilla) {
     ":logging",
     ":macromagic",
     ":mdns_responder_interface",
+    ":net_helpers",
     ":network_constants",
     ":socket",
     ":socket_address",
@@ -1203,10 +1199,8 @@ if (!build_with_mozilla) {
     "../api:sequence_checker",
     "../api/environment",
     "../api/task_queue:pending_task_safety_flag",
-    "../api/transport:field_trial_based_config",
     "../api/units:time_delta",
     "experiments:field_trial_parser",
-    "memory:always_valid_pointer",
     "system:rtc_export",
     "third_party/sigslot",
     "//third_party/abseil-cpp/absl/algorithm:container",
@@ -1260,6 +1254,8 @@ if (!build_with_mozilla) {
     ":byte_buffer",
     ":checks",
     ":logging",
+    ":socket",
+    ":socket_address",
     ":stringutils",
     ":zero_memory",
     "../api:array_view",
@@ -1571,6 +1567,7 @@ if (!build_with_mozilla) {
   ]
 
   deps = [
+    ":base64",
     ":buffer",
     ":checks",
     ":copy_on_write_buffer",
@@ -1585,7 +1582,6 @@ if (!build_with_mozilla) {
     "../api:refcountedbase",
     "../api:scoped_refptr",
     "system:rtc_export",
-    "third_party/base64",
     "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/memory",
@@ -1775,7 +1771,9 @@ rtc_library("rtc_base_tests_utils") {
     ":logging",
     ":macromagic",
     ":mdns_responder_interface",
+    ":net_helpers",
     ":network",
+    ":network_constants",
     ":rtc_event",
     ":socket",
     ":socket_adapters",
@@ -1836,14 +1834,25 @@ rtc_library("base64") {
     "base64.h",
   ]
   deps = [
-    ":checks",
     "../api:array_view",
-    "third_party/base64",
+    "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }
 
 if (rtc_include_tests) {
+  if (rtc_enable_google_benchmarks) {
+    rtc_test("base64_benchmark") {
+      sources = [ "base64_benchmark.cc" ]
+      deps = [
+        ":base64",
+        "../test:benchmark_main",
+        "//third_party/google_benchmark",
+      ]
+    }
+  }
+
   rtc_library("sigslot_unittest") {
     testonly = true
     sources = [ "sigslot_unittest.cc" ]
@@ -1919,6 +1928,7 @@ if (rtc_include_tests) {
         ":threading",
         ":timeutils",
         "../api:rtc_error_matchers",
+        "../api/transport:ecn_marking",
         "../api/units:time_delta",
         "../api/units:timestamp",
         "../system_wrappers",
@@ -1928,6 +1938,7 @@ if (rtc_include_tests) {
         "../test:test_support",
         "../test:wait_until",
         "network:ecn_marking",
+        "system:file_wrapper",
         "third_party/sigslot",
         "//testing/gtest",
         "//third_party/abseil-cpp/absl/memory",
@@ -2057,7 +2068,6 @@ if (rtc_include_tests) {
         "network:received_packet",
         "synchronization:mutex",
         "task_utils:repeating_task",
-        "third_party/base64:base64_unittest",
         "third_party/sigslot",
         "//third_party/abseil-cpp/absl/base:core_headers",
         "//third_party/abseil-cpp/absl/memory",

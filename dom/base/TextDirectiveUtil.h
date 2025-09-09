@@ -7,14 +7,14 @@
 #ifndef DOM_TEXTDIRECTIVEUTIL_H_
 #define DOM_TEXTDIRECTIVEUTIL_H_
 
-#include "mozilla/dom/AbstractRange.h"
-#include "mozilla/dom/Text.h"
-#include "mozilla/intl/WordBreaker.h"
 #include "mozilla/Logging.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/dom/AbstractRange.h"
+#include "mozilla/dom/Text.h"
+#include "mozilla/intl/WordBreaker.h"
 #include "nsStringFwd.h"
 
 class nsIURI;
@@ -205,6 +205,9 @@ class TextDirectiveUtil final {
    * used, and the distances are based off the begin of the string.
    * The returned array is always sorted and contains monotonically increasing
    * values.
+   *
+   * This function is guaranteed to return at least one word boundary distance,
+   * the last element always being the length of the string.
    */
   template <TextScanDirection direction>
   static nsTArray<uint32_t> ComputeWordBoundaryDistances(
@@ -532,6 +535,10 @@ template <TextScanDirection direction>
                                             ? aString.Length() - wordBegin
                                             : wordEnd);
   }
+  if (wordBoundaryDistances.IsEmpty() ||
+      wordBoundaryDistances.LastElement() != aString.Length()) {
+    wordBoundaryDistances.AppendElement(aString.Length());
+  }
   return std::move(wordBoundaryDistances);
 }
 
@@ -540,6 +547,7 @@ template <TextScanDirection direction>
     const nsAString& aReferenceString, const RangeBoundary& aBoundaryPoint) {
   MOZ_ASSERT(aBoundaryPoint.IsSetAndValid());
   if (aReferenceString.IsEmpty()) {
+    TEXT_FRAGMENT_LOG("Reference string is empty.");
     return 0;
   }
 
@@ -547,6 +555,8 @@ template <TextScanDirection direction>
   MOZ_ASSERT(!nsContentUtils::IsHTMLWhitespace(aReferenceString.Last()));
   uint32_t referenceStringPosition =
       direction == TextScanDirection::Left ? aReferenceString.Length() - 1 : 0;
+
+  bool foundMismatch = false;
 
   // `aReferenceString` is expected to have its whitespace compressed.
   // The raw text from the DOM nodes does not have compressed whitespace.
@@ -585,12 +595,13 @@ template <TextScanDirection direction>
       }
       textContentForLogging.AppendElement(std::move(textContent));
     }
-    const nsTextFragment* textData = text->GetText();
-    MOZ_DIAGNOSTIC_ASSERT(textData);
-    const uint32_t textLength = textData->GetLength();
+    const CharacterDataBuffer* characterDataBuffer =
+        text->GetCharacterDataBuffer();
+    MOZ_DIAGNOSTIC_ASSERT(characterDataBuffer);
+    const uint32_t textLength = characterDataBuffer->GetLength();
     while (offset < textLength &&
            referenceStringPosition < aReferenceString.Length()) {
-      char16_t ch = textData->CharAt(offset);
+      char16_t ch = characterDataBuffer->CharAt(offset);
       char16_t refCh = aReferenceString.CharAt(referenceStringPosition);
       const bool chIsWhitespace = nsContentUtils::IsHTMLWhitespace(ch);
       const bool refChIsWhitespace = nsContentUtils::IsHTMLWhitespace(refCh);
@@ -612,22 +623,26 @@ template <TextScanDirection direction>
         referenceStringPosition += int(direction);
         continue;
       }
-      uint32_t commonLength = 0;
-      if constexpr (direction == TextScanDirection::Left) {
-        ++referenceStringPosition;
-        commonLength = aReferenceString.Length() - referenceStringPosition;
-        if (TextDirectiveUtil::ShouldLog()) {
-          textContentForLogging.Reverse();
-        }
-      } else {
-        commonLength = referenceStringPosition;
-      }
-      LogCommonSubstringLengths<direction>(__FUNCTION__, aReferenceString,
-                                           textContentForLogging, commonLength);
-      return commonLength;
+      foundMismatch = true;
+      break;
+    }
+    if (foundMismatch) {
+      break;
     }
   }
-  return aReferenceString.Length();
+  uint32_t commonLength = 0;
+  if constexpr (direction == TextScanDirection::Left) {
+    ++referenceStringPosition;
+    commonLength = aReferenceString.Length() - referenceStringPosition;
+    if (TextDirectiveUtil::ShouldLog()) {
+      textContentForLogging.Reverse();
+    }
+  } else {
+    commonLength = referenceStringPosition;
+  }
+  LogCommonSubstringLengths<direction>(__FUNCTION__, aReferenceString,
+                                       textContentForLogging, commonLength);
+  return commonLength;
 }
 
 }  // namespace mozilla::dom

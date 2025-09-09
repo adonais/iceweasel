@@ -25,6 +25,7 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toDrawable
 import mozilla.components.support.base.log.logger.Logger
+import mozilla.components.support.ktx.kotlin.ifNullOrEmpty
 import mozilla.components.support.ktx.util.PromptAbuserDetector
 
 internal const val KEY_SESSION_ID = "KEY_SESSION_ID"
@@ -39,6 +40,8 @@ private const val KEY_POSITIVE_BUTTON_TEXT_COLOR = "KEY_POSITIVE_BUTTON_TEXT_COL
 private const val KEY_SHOULD_SHOW_LEARN_MORE_LINK = "KEY_SHOULD_SHOW_LEARN_MORE_LINK"
 private const val KEY_SHOULD_SHOW_DO_NOT_ASK_AGAIN_CHECKBOX = "KEY_SHOULD_SHOW_DO_NOT_ASK_AGAIN_CHECKBOX"
 private const val KEY_SHOULD_PRESELECT_DO_NOT_ASK_AGAIN_CHECKBOX = "KEY_SHOULD_PRESELECT_DO_NOT_ASK_AGAIN_CHECKBOX"
+
+private const val KEY_DO_NOT_ASK_AGAIN_CHECKBOX_LABEL = "KEY_DO_NOT_ASK_AGAIN_CHECKBOX_LABEL"
 private const val KEY_IS_NOTIFICATION_REQUEST = "KEY_IS_NOTIFICATION_REQUEST"
 private const val DEFAULT_VALUE = Int.MAX_VALUE
 private const val KEY_PERMISSION_ID = "KEY_PERMISSION_ID"
@@ -84,6 +87,8 @@ internal open class SitePermissionsDialogFragment : AppCompatDialogFragment() {
         safeArguments.getBoolean(KEY_SHOULD_SHOW_DO_NOT_ASK_AGAIN_CHECKBOX, true)
     internal val shouldPreselectDoNotAskAgainCheckBox: Boolean get() =
         safeArguments.getBoolean(KEY_SHOULD_PRESELECT_DO_NOT_ASK_AGAIN_CHECKBOX, false)
+    internal val doNotAskAgainCheckBoxLabel: String? get() =
+        safeArguments.getString(KEY_DO_NOT_ASK_AGAIN_CHECKBOX_LABEL, null)
     internal val permissionRequestId: String get() =
         safeArguments.getString(KEY_PERMISSION_ID, "")
 
@@ -209,16 +214,27 @@ internal open class SitePermissionsDialogFragment : AppCompatDialogFragment() {
         }
 
         if (shouldShowDoNotAskAgainCheckBox) {
-            showDoNotAskAgainCheckbox(rootView, checked = shouldPreselectDoNotAskAgainCheckBox)
+            showDoNotAskAgainCheckbox(
+                containerView = rootView,
+                checked = shouldPreselectDoNotAskAgainCheckBox,
+                checkboxLabel = doNotAskAgainCheckBoxLabel.ifNullOrEmpty {
+                    getString(R.string.mozac_feature_sitepermissions_do_not_ask_again_on_this_site2)
+                },
+            )
         }
 
         return rootView
     }
 
-    private fun showDoNotAskAgainCheckbox(containerView: View, checked: Boolean) {
+    private fun showDoNotAskAgainCheckbox(
+        containerView: View,
+        checked: Boolean,
+        checkboxLabel: String,
+    ) {
         containerView.findViewById<CheckBox>(R.id.do_not_ask_again).apply {
             visibility = VISIBLE
             isChecked = checked
+            text = checkboxLabel
             setOnCheckedChangeListener { _, isChecked ->
                 userSelectionCheckBox = isChecked
             }
@@ -234,6 +250,7 @@ internal open class SitePermissionsDialogFragment : AppCompatDialogFragment() {
             feature: SitePermissionsFeature,
             shouldShowDoNotAskAgainCheckBox: Boolean,
             shouldSelectDoNotAskAgainCheckBox: Boolean = false,
+            doNotAskAgainCheckBoxLabel: String? = null,
             isNotificationRequest: Boolean = false,
             message: String? = null,
             negativeButtonText: String? = null,
@@ -258,6 +275,7 @@ internal open class SitePermissionsDialogFragment : AppCompatDialogFragment() {
                 } else {
                     putBoolean(KEY_SHOULD_SHOW_DO_NOT_ASK_AGAIN_CHECKBOX, shouldShowDoNotAskAgainCheckBox)
                     putBoolean(KEY_SHOULD_PRESELECT_DO_NOT_ASK_AGAIN_CHECKBOX, shouldSelectDoNotAskAgainCheckBox)
+                    putString(KEY_DO_NOT_ASK_AGAIN_CHECKBOX_LABEL, doNotAskAgainCheckBoxLabel)
                 }
 
                 feature.promptsStyling?.apply {

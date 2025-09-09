@@ -7,20 +7,18 @@
 #ifndef mozilla_dom_workers_runtimeservice_h__
 #define mozilla_dom_workers_runtimeservice_h__
 
-#include "mozilla/dom/WorkerCommon.h"
-
-#include "nsIObserver.h"
-
-#include "js/ContextOptions.h"
 #include "MainThreadUtils.h"
-#include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/SafeRefPtr.h"
-#include "mozilla/dom/workerinternals/JSSettings.h"
+#include "js/ContextOptions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/SafeRefPtr.h"
+#include "mozilla/dom/WorkerCommon.h"
+#include "mozilla/dom/workerinternals/JSSettings.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
+#include "nsIObserver.h"
 #include "nsTArray.h"
 
 class nsPIDOMWindowInner;
@@ -167,7 +165,8 @@ class RuntimeService final : public nsIObserver {
 
   void MemoryPressureAllWorkers();
 
-  uint32_t ClampedHardwareConcurrency(bool aShouldResistFingerprinting) const;
+  uint32_t ClampedHardwareConcurrency(bool aRFPHardcoded,
+                                      bool aRFPTiered) const;
 
   void CrashIfHanging();
 

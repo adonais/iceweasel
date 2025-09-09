@@ -79,7 +79,7 @@ add_task(async function test_selector_get_reentry() {
   let promise = Promise.withResolvers();
   getStub.resetHistory();
   getStub.onFirstCall().returns(promise.promise);
-  delete engineSelector._configuration;
+  engineSelector.clearCachedConfigurationForTests();
 
   let firstResult;
   let secondResult;

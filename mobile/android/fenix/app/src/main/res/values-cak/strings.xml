@@ -54,13 +54,7 @@
   <string name="home_bookmarks_menu_item_remove">Tiyuj</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s b\'anon ruma Mozilla.</string>
-  <!--
-    Private Browsing
-
-    Explanation for private browsing displayed to users on home view when they first enable private mode.
-    %1$s is the name of the app (for example "Firefox").
-  -->
-  <string name="private_browsing_placeholder_description_2" moz:removedIn="141" tools:ignore="UnusedResources">%1$s nuyüj ri akanoxik chuqa\' runatab\'al awokem pa k\'amaya\'l toq yatel pa ri chokoy o ri ichinan taq wi\'. Estape\' re re\' man yatrewaj ta pan ajk\'amaya\'l o chuwäch ri niya\'on ak\'amaya\'l, yatruto\' richin nichinäx ronojel ri nab\'än pan k\'amab\'ey chuwäch jun chik winäq nrokisaj ri awokisab\'al.</string>
+  <!-- Private Browsing -->
   <string name="private_browsing_common_myths">Ch\'ob\'on taq tzij chi rij ri ichinan okem pa k\'amaya\'l</string>
   <!--
     True Private Browsing Mode
@@ -91,12 +85,8 @@
   <string name="open_in_app_cfr_positive_button_text">Tib\'e pa taq nuk\'ulem</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Tewäx</string>
-  <!--
-    Private browsing erase action "contextual feature recommendation" (CFR)
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
 
-    Text for the message displayed in the contextual feature recommendation popup promoting the erase private browsing feature.
-  -->
-  <string name="erase_action_cfr_message" moz:removedIn="141" tools:ignore="UnusedResources">Tapitz\'a\' wawe\' richin natikirisaj jun k\'ak\'a\' ichinan moloj. Ke\'ayuju\' ri anatab\'al, taq acookie — ronojel.</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Najowäx okem pa elesäy wachib\'äl. Jät pa runuk\'ulem Android, tachapa\' pa ya\'oj q\'ij k\'a ri\' pa tiya\' q\'ij.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -183,12 +173,8 @@
   <string name="browser_menu_stop">Tiq\'at</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Taq k\'amal</string>
-  <!-- Browser menu banner link text for learning more about extensions -->
-  <string name="browser_menu_extensions_banner_learn_more" moz:removedIn="141" tools:ignore="UnusedResources">Tetamäx ch\'aqa\' chik</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Kinuk\'samajixik taq k\'amal</string>
-  <!-- Content description (not visible, for screen readers etc.): Section heading for recommended extensions. -->
-  <string name="browser_menu_recommended_section_content_description" moz:removedIn="141" tools:ignore="UnusedResources">Chilab\'en taq k\'amal</string>
   <!--
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
@@ -214,8 +200,6 @@
   <string name="resync_button_content_description">Tixim chik</string>
   <!-- Browser menu button that opens the find in page menu -->
   <string name="browser_menu_find_in_page">Tikanöx pa ruxaq</string>
-  <!-- Browser menu button that opens the find in page menu -->
-  <string name="browser_menu_find_in_page_2" moz:removedIn="141" tools:ignore="UnusedResources">Tikanöx pa ruxaq…</string>
   <!-- Browser menu button that opens the translations dialog, which has options to translate the current browser page. -->
   <string name="browser_menu_translations">Titzalq\'omïx ruxaq</string>
   <!-- Browser menu button that saves the current tab to a collection -->
@@ -253,8 +237,6 @@
   <string name="browser_menu_customize_home_1">Tawichinaj ri ruxaq atikirib\'al</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Titikirisäx molojri\'ïl</string>
-  <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
-  <string name="browser_menu_sign_in_caption" moz:removedIn="141" tools:ignore="UnusedResources">Kexim ewan taq tzij, taq ruwi\', chuqa\' ch\'aqa\' chik</string>
   <!-- Browser menu label to sign back in to sync on the device when the user's account needs to be reauthenticated -->
   <string name="browser_menu_sign_back_in_to_sync">Titikirisäx chik molojri\'ïl richin ximojri\'ïl</string>
   <!-- Browser menu caption label for the "Sign back in to sync" browser menu item described in `browser_menu_sign_back_in_to_sync` when there is an error in syncing -->
@@ -263,20 +245,6 @@
   <string name="browser_menu_new_private_tab">K\'ak\'a\' ichinan ruwi\'</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Ewan taq tzij</string>
-  <!--
-    Browser menu label that navigates to the SUMO page for the Firefox for Android release notes.
-    %1$s is the name of the app (for example "Firefox").
-  -->
-  <string name="browser_menu_new_in_firefox" moz:removedIn="141" tools:ignore="UnusedResources">K\'ak\'a\' pa %1$s</string>
-  <!-- Browser menu label that toggles the request for the desktop site of the currently visited page -->
-  <string name="browser_menu_switch_to_desktop_site" moz:removedIn="141" tools:ignore="UnusedResources">Tik\'ex rik\'in ruxaq kematz\'ib\'</string>
-  <!-- Browser menu label that navigates to the page tools sub-menu -->
-  <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">Samajib\'äl</string>
-  <!--
-    Browser menu label that navigates to the save sub-menu, which contains various save related menu items such as
-    bookmarking a page, saving to collection, shortcut or as a PDF, and adding to home screen
-  -->
-  <string name="browser_menu_save" moz:removedIn="141" tools:ignore="UnusedResources">Tiyak</string>
   <!--
     Extensions management fragment
 
@@ -289,11 +257,6 @@
     Content description for the Home screen button on the browser toolbar
   -->
   <string name="browser_toolbar_home">Rutikirib\'al ruwäch</string>
-  <!--
-    Content description (not visible, for screen readers etc.): Erase button: Erase the browsing
-    history and go back to the home screen.
-  -->
-  <string name="browser_toolbar_erase" moz:removedIn="141" tools:ignore="UnusedResources">Tiyuj runatab\'al okem pa k\'amaya\'l</string>
   <!-- Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred. -->
   <string name="browser_toolbar_translate">Titzalq\'omïx ruxaq</string>
   <!--
@@ -335,22 +298,8 @@
   <!--
     Home onboarding
 
-    Home onboarding dialog welcome screen title text.
+    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
   -->
-  <string name="onboarding_home_welcome_title_2" moz:removedIn="141" tools:ignore="UnusedResources">Ütz apetik pa jun k\'amaya\'l awichin</string>
-  <!-- Home onboarding dialog welcome screen description text. -->
-  <string name="onboarding_home_welcome_description" moz:removedIn="141" tools:ignore="UnusedResources">K\'ïy b\'onil. Ütz ichinanem. Nuya\' rutzij chi kiwäch ri winäq stape\' janipe\' na ri ch\'akoj.</string>
-  <!-- Home onboarding dialog sign into sync screen title text. -->
-  <string name="onboarding_home_sync_title_3" moz:removedIn="141" tools:ignore="UnusedResources">Najäl ruwäch wakami man k\'ayew ta</string>
-  <!-- Home onboarding dialog sign into sync screen description text. -->
-  <string name="onboarding_home_sync_description" moz:removedIn="141" tools:ignore="UnusedResources">Tasamajij chik el akuchi\' xya\' wi kan pa jun chik ruwi\' jun okisaxel, wakami ruxaq atikirib\'al.</string>
-  <!-- Text for the button to continue the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_get_started_button" moz:removedIn="141" tools:ignore="UnusedResources">Titikirisäx</string>
-  <!-- Text for the button to navigate to the sync sign in screen on the home onboarding dialog. -->
-  <string name="onboarding_home_sign_in_button" moz:removedIn="141" tools:ignore="UnusedResources">Titikirisäx molojri\'ïl</string>
-  <!-- Text for the button to skip the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_skip_button" moz:removedIn="141" tools:ignore="UnusedResources">Tik\'o</string>
-  <!-- Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section. -->
   <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">¡Najin yexim ri taq ruwi\'! Kasamäj chik el akuchi\' xaya\' wi kan pa jun chik okisaxel.</string>
   <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">Titz\'apïx</string>
@@ -557,8 +506,6 @@
   <string name="preferences_account_sync_error">Tokisäx chik richin nitikirisäx chik ri ximoj</string>
   <!-- Preference for language -->
   <string name="preferences_language">Ch\'ab\'äl</string>
-  <!-- Preference for data choices -->
-  <string name="preferences_data_choices" tools:ignore="UnusedResources" moz:removedIn="141">Rucha\'ik tzij</string>
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">Rucha\'ik tzij</string>
   <!-- Preference for developers -->
@@ -598,8 +545,6 @@
   <string name="preferences_open_links_in_apps_ask">Tik\'utüx toq nijaq</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Majub\'ey</string>
-  <!-- Preference for open download with an external download manager app -->
-  <string name="preferences_external_download_manager" tools:ignore="UnusedResources" moz:removedIn="141">Runuk\'samajel chi rij qasanïk</string>
   <!-- Preference for enabling gecko engine logs -->
   <string name="preferences_enable_gecko_logs">Titzij taq rutz\'ib\'axik Gecko</string>
   <!-- Message to indicate users that we are quitting the application to apply the changes -->
@@ -614,12 +559,6 @@
   <string name="notifications_allowed_summary">Xya\' q\'ij</string>
   <!-- Summary for notification preference indicating notifications are not allowed -->
   <string name="notifications_not_allowed_summary">Man ya\'on ta q\'ij chi re</string>
-  <!--
-    Add-on Permissions
-
-    The title of the required permissions section from addon's permissions screen
-  -->
-  <string name="addons_permissions_heading_required" tools:ignore="UnusedResources" moz:removedIn="141">Rajowaxik</string>
   <!-- Button caption to confirm the add-on collection configuration -->
   <string name="customize_addon_collection_ok">ÜTZ</string>
   <!-- Button caption to abort the add-on collection configuration -->
@@ -652,9 +591,9 @@
   -->
   <string name="wallpapers_item_name_content_description">Retal rupam ruwäch: %1$s</string>
   <!-- Snackbar message for when wallpaper is selected -->
-  <string name="wallpaper_updated_snackbar_message">¡Xk\'ex ri rupam ruwäch!</string>
+  <string name="wallpaper_updated_snackbar_message" tools:ignore="UnusedResources" moz:removedIn="144">¡Xk\'ex ri rupam ruwäch!</string>
   <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action">Titz\'et</string>
+  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">Titz\'et</string>
   <!-- Snackbar message for when wallpaper couldn't be downloaded -->
   <string name="wallpaper_download_error_snackbar_message">Man tikirel ta niqasäx rupam ruwäch</string>
   <!-- Snackbar label for action to retry downloading the wallpaper -->
@@ -1338,8 +1277,6 @@
     Text shown in snackbar when user deletes a collection
   -->
   <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Xyuj ri mol</string>
-  <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Xjal rub\'i\' mol</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Ruwi\' xtz\'apïx</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -1348,14 +1285,12 @@
   <string name="snackbar_added_to_shortcuts">¡Xtz\'aqatisäx pa ruq\'a\'!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">Ichinan ruwi\' xtz\'apïx</string>
-  <!-- Text shown in snackbar when user closes all private tabs -->
-  <string name="snackbar_private_tabs_closed" moz:removedIn="141" tools:ignore="UnusedResources">Ichinan taq ruwi\' xetz\'apïx</string>
   <!-- Text shown in snackbar when user erases their private browsing data -->
   <string name="snackbar_private_data_deleted">Xeyuj ri taq rutzij ichinan okem</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">TITZOLÏX</string>
   <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed">Ruxaq xyuj</string>
+  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">Ruxaq xyuj</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -1982,8 +1917,6 @@
   <string name="action_bar_up_description">Tib\'an okem ajsik</string>
   <!-- Content description for privacy content close button -->
   <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">Titz\'apïx</string>
-  <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
-  <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">Tilitäj ch\'aqa\' chik</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">To\'on</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->

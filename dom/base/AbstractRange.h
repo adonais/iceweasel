@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <ostream>
+
 #include "ErrorList.h"
 #include "js/RootingAPI.h"
 #include "mozilla/Assertions.h"

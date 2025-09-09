@@ -16,7 +16,7 @@ NESTED_ATTR_MAP = {
 }
 
 # Each element of this list is the IPDL source representation of a priority.
-priorityList = ["normal", "input", "vsync", "mediumhigh", "control"]
+priorityList = ["normal", "input", "vsync", "mediumhigh", "control", "low"]
 
 priorityAttrMap = {src: idx for idx, src in enumerate(priorityList)}
 

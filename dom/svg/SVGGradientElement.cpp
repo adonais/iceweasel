@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/SVGGradientElement.h"
 
+#include "DOMSVGAnimatedTransformList.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/SVGElement.h"
@@ -14,7 +15,6 @@
 #include "mozilla/dom/SVGLinearGradientElementBinding.h"
 #include "mozilla/dom/SVGRadialGradientElementBinding.h"
 #include "mozilla/dom/SVGUnitTypesBinding.h"
-#include "DOMSVGAnimatedTransformList.h"
 #include "nsGkAtoms.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(LinearGradient)

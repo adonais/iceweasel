@@ -7,11 +7,12 @@
 #ifndef MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCENCODEDFRAMEBASE_H_
 #define MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCENCODEDFRAMEBASE_H_
 
-#include "js/TypeDecls.h"
-#include "mozilla/dom/TypedArray.h"  // ArrayBuffer
-#include "mozilla/Assertions.h"
-#include "api/frame_transformer_interface.h"
 #include <memory>
+
+#include "api/frame_transformer_interface.h"
+#include "js/TypeDecls.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/dom/TypedArray.h"  // ArrayBuffer
 
 class nsIGlobalObject;
 

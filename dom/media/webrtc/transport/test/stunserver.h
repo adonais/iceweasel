@@ -11,8 +11,9 @@
 
 #include <map>
 #include <string>
-#include "nsError.h"
+
 #include "mozilla/UniquePtr.h"
+#include "nsError.h"
 
 typedef struct nr_stun_server_ctx_ nr_stun_server_ctx;
 typedef struct nr_socket_ nr_socket;

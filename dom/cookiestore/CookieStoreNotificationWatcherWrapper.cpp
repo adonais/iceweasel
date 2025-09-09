@@ -5,8 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CookieStoreNotificationWatcherWrapper.h"
-#include "CookieStoreNotificationWatcher.h"
+
 #include "CookieStore.h"
+#include "CookieStoreNotificationWatcher.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WorkerPrivate.h"

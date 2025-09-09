@@ -150,7 +150,7 @@ FunctionEnd
 ; Expect installation to abort on processor without SSE, WIndows 10+ version
 Function TestDontInstallOnNewWindowsWithoutSSE
     StrCpy $MockAtLeastWin10 'true'
-    StrCpy $MockCpuHasSSE '0' 
+    StrCpy $MockCpuHasSSE '0'
     StrCpy $AbortInstallation ''
     StrCpy $ExitCode "Unknown"
     Call CommonOnInit
@@ -161,7 +161,7 @@ FunctionEnd
 ; Expect installation to abort on processor without SSE, Windows <10 version
 Function TestDontInstallOnOldWindowsWithoutSSE
     StrCpy $MockAtLeastWin10 'false'
-    StrCpy $MockCpuHasSSE '0' 
+    StrCpy $MockCpuHasSSE '0'
     StrCpy $AbortInstallation ''
     StrCpy $ExitCode "Unknown"
     Call CommonOnInit

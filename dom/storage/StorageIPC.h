@@ -10,7 +10,6 @@
 #include "LocalStorageCache.h"
 #include "StorageDBThread.h"
 #include "StorageObserver.h"
-
 #include "mozilla/Mutex.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/FlippedOnce.h"

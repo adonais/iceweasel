@@ -6,20 +6,20 @@
 
 #include "mozilla/dom/JSActorManager.h"
 
-#include "mozilla/dom/AutoEntryScript.h"
-#include "mozilla/dom/JSActorService.h"
-#include "mozilla/dom/MessagePort.h"
-#include "mozilla/dom/PWindowGlobal.h"
-#include "mozilla/dom/JSProcessActorProtocol.h"
-#include "mozilla/dom/JSWindowActorProtocol.h"
-#include "mozilla/ipc/ProtocolUtils.h"
+#include "js/CallAndConstruct.h"    // JS::Construct
+#include "js/PropertyAndElement.h"  // JS_GetProperty
+#include "jsapi.h"
+#include "mozJSModuleLoader.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/ScopeExit.h"
-#include "mozJSModuleLoader.h"
-#include "jsapi.h"
-#include "js/CallAndConstruct.h"    // JS::Construct
-#include "js/PropertyAndElement.h"  // JS_GetProperty
+#include "mozilla/dom/AutoEntryScript.h"
+#include "mozilla/dom/JSActorService.h"
+#include "mozilla/dom/JSProcessActorProtocol.h"
+#include "mozilla/dom/JSWindowActorProtocol.h"
+#include "mozilla/dom/MessagePort.h"
+#include "mozilla/dom/PWindowGlobal.h"
+#include "mozilla/ipc/ProtocolUtils.h"
 #include "nsContentUtils.h"
 
 namespace mozilla::dom {

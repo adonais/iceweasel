@@ -60,6 +60,11 @@ class WaylandSurface final {
       const std::function<void(wl_callback*, uint32_t)>& aFrameCallbackHandler,
       bool aEmulateFrameCallback = false);
 
+  // Clears frame callback handler. It's used if frame callback handler
+  // contains strong reference to WaylandSurface class owner
+  // which we want to clear.
+  void ClearFrameCallbackHandlerLocked(const WaylandSurfaceLock& aProofOfLock);
+
   // Enable/Disable any frame callback emission (includes emulated ones).
   void SetFrameCallbackStateLocked(const WaylandSurfaceLock& aProofOfLock,
                                    bool aEnabled);
@@ -257,6 +262,9 @@ class WaylandSurface final {
                        RefPtr<WaylandSurface> aParent);
 
   bool EnableColorManagementLocked(const WaylandSurfaceLock& aProofOfLock);
+  void SetColorRepresentationLocked(const WaylandSurfaceLock& aProofOfLock,
+                                    mozilla::gfx::YUVColorSpace aColorSpace,
+                                    bool aFullRange);
 
   static void ImageDescriptionFailed(
       void* aData, struct wp_image_description_v1* aImageDescription,
@@ -268,6 +276,10 @@ class WaylandSurface final {
   void AssertCurrentThreadOwnsMutex();
 
   void ForceCommit() { mSurfaceNeedsCommit = true; }
+  void SetCommitStateLocked(const WaylandSurfaceLock& aProofOfLock,
+                            bool aCommitAllowed) {
+    mCommitAllowed = aCommitAllowed;
+  }
 
  private:
   ~WaylandSurface();
@@ -342,6 +354,7 @@ class WaylandSurface final {
   // wl_surface setup/states
   wl_surface* mSurface = nullptr;
   mozilla::Atomic<bool, mozilla::Relaxed> mSurfaceNeedsCommit{false};
+  bool mCommitAllowed = true;
 
   // When subsurface is desynced, we need to commit to parent surface
   // to see the change in subsurface (this one).
@@ -468,6 +481,7 @@ class WaylandSurface final {
   // HDR support
   bool mHDRSet = false;
   wp_color_management_surface_v1* mColorSurface = nullptr;
+  wp_color_representation_surface_v1* mColorRepresentationSurface = nullptr;
   wp_image_description_v1* mImageDescription = nullptr;
 };
 

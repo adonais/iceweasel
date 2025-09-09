@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -118,7 +118,7 @@ private fun ComponentOnBoardingSecondScreenButtons(
             .padding(top = 33.dp, start = 16.dp, end = 16.dp)
             .fillMaxWidth(),
         colors = ButtonDefaults.textButtonColors(
-            backgroundColor = colorResource(R.color.onboardingButtonOneColor),
+            containerColor = colorResource(R.color.onboardingButtonOneColor),
         ),
     ) {
         Text(
@@ -136,7 +136,7 @@ private fun ComponentOnBoardingSecondScreenButtons(
             .padding(top = 8.dp, start = 16.dp, end = 16.dp, bottom = 74.dp)
             .fillMaxWidth(),
         colors = ButtonDefaults.textButtonColors(
-            backgroundColor = colorResource(R.color.onboardingButtonTwoColor),
+            containerColor = colorResource(R.color.onboardingButtonTwoColor),
         ),
     ) {
         Text(

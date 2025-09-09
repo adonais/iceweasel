@@ -20,6 +20,7 @@ import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.UnifiedSearch
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.increaseTapAreaVertically
+import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.search.toolbar.SearchSelectorMenu
 
@@ -63,7 +64,7 @@ internal class SearchSelectorBinding(
                 val name = searchEngine?.name
                 val icon = searchEngine?.let {
                     val iconSize =
-                        context.resources.getDimensionPixelSize(R.dimen.preference_icon_drawable_size)
+                        context.pixelSizeFor(R.dimen.preference_icon_drawable_size)
                     searchEngine.icon.toDrawable(context.resources).apply {
                         setBounds(0, 0, iconSize, iconSize)
                         // Setting tint manually for icons that were converted from Drawable

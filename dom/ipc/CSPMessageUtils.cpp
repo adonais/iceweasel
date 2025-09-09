@@ -5,9 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/CSPMessageUtils.h"
+
+#include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsSerializationHelper.h"
-#include "mozilla/ipc/BackgroundUtils.h"
 
 namespace IPC {
 

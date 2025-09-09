@@ -13,18 +13,18 @@
 #ifndef nsImageLoadingContent_h__
 #define nsImageLoadingContent_h__
 
+#include "Units.h"
 #include "imgINotificationObserver.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/TimeStamp.h"
-#include "nsCOMPtr.h"
-#include "nsIContentPolicy.h"
-#include "nsIImageLoadingContent.h"
-#include "nsIRequest.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RustTypes.h"
 #include "nsAttrValue.h"
-#include "Units.h"
+#include "nsCOMPtr.h"
+#include "nsIContentPolicy.h"
+#include "nsIImageLoadingContent.h"
+#include "nsIRequest.h"
 
 class nsINode;
 class nsIURI;

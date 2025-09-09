@@ -13,10 +13,10 @@
 #include "mozilla/ContentEvents.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/Variant.h"
 #include "mozilla/dom/AnimationPlaybackEvent.h"
 #include "mozilla/dom/KeyframeEffect.h"
-#include "mozilla/ProfilerMarkers.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsPresContext.h"
 

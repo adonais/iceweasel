@@ -6,12 +6,12 @@
 #ifndef TEX_UNPACK_BLOB_H_
 #define TEX_UNPACK_BLOB_H_
 
+#include <memory>
+
 #include "GLContextTypes.h"
-#include "mozilla/RefPtr.h"
 #include "WebGLStrongTypes.h"
 #include "WebGLTypes.h"
-
-#include <memory>
+#include "mozilla/RefPtr.h"
 
 namespace mozilla {
 
@@ -32,6 +32,7 @@ class DataSourceSurface;
 namespace layers {
 class Image;
 class ImageContainer;
+class SurfaceDescriptor;
 }  // namespace layers
 
 bool IsTarget3D(TexImageTarget target);
@@ -41,13 +42,12 @@ namespace webgl {
 struct PackingInfo;
 struct DriverUnpackInfo;
 
-Maybe<std::string> BlitPreventReason(int32_t level, const ivec3& offset,
-                                     GLenum internalFormat,
-                                     const webgl::PackingInfo&,
-                                     const TexUnpackBlobDesc&,
-                                     OptionalRenderableFormatBits,
-                                     bool sameColorSpace,
-                                     bool allowConversion = false);
+const char* BlitPreventReason(GLenum target, int32_t level, const ivec3& offset,
+                              GLenum internalFormat, const webgl::PackingInfo&,
+                              const TexUnpackBlobDesc&,
+                              OptionalRenderableFormatBits, bool sameColorSpace,
+                              bool allowConversion = false,
+                              bool allowSRGB = false, bool allow3D = false);
 
 class TexUnpackBlob {
  public:
@@ -109,22 +109,6 @@ class TexUnpackBytes final : public TexUnpackBlob {
                              GLenum* const out_error) const override;
 };
 
-class TexUnpackImage final : public TexUnpackBlob {
- public:
-  explicit TexUnpackImage(const TexUnpackBlobDesc& desc)
-      : TexUnpackBlob(desc) {}
-  ~TexUnpackImage();  // Prevent needing to define layers::Image in the header.
-
-  virtual bool Validate(const WebGLContext*,
-                        const webgl::PackingInfo& pi) override;
-  virtual bool TexOrSubImage(bool isSubImage, bool needsRespec,
-                             WebGLTexture* tex, GLint level,
-                             const webgl::DriverUnpackInfo* dui, GLint xOffset,
-                             GLint yOffset, GLint zOffset,
-                             const webgl::PackingInfo& dstPI,
-                             GLenum* const out_error) const override;
-};
-
 class TexUnpackSurface final : public TexUnpackBlob {
  public:
   explicit TexUnpackSurface(const TexUnpackBlobDesc& desc)
@@ -139,6 +123,16 @@ class TexUnpackSurface final : public TexUnpackBlob {
                              GLint yOffset, GLint zOffset,
                              const webgl::PackingInfo& dstPI,
                              GLenum* const out_error) const override;
+  bool AllowBlitSd(WebGLContext* const webgl, const GLenum target,
+                   const int32_t level, const ivec3& offset,
+                   const GLenum internalFormat, const webgl::PackingInfo& pi,
+                   bool allowConversion, bool allowSRGB, bool allow3D,
+                   bool warn) const;
+  bool BlitSd(const layers::SurfaceDescriptor& sd, bool isSubImage,
+              bool needsRespec, WebGLTexture* tex, GLint level,
+              const webgl::DriverUnpackInfo* dui, GLint xOffset, GLint yOffset,
+              GLint zOffset, const webgl::PackingInfo& dstPI,
+              GLenum* const out_error, bool allowFallback = false) const;
 };
 
 }  // namespace webgl

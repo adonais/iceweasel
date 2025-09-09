@@ -77,6 +77,7 @@ if CONFIG["OS_ARCH"] == "WINNT":
     RCINCLUDE = "splash.rc"
     DIRS += [
         "installation_dir_layout",
+        "desktop-launcher",
         "pbproxy",
         "winlauncher",
     ]
@@ -135,6 +136,7 @@ if CONFIG["MOZ_SANDBOX"] and CONFIG["OS_ARCH"] == "WINNT":
     DELAYLOAD_DLLS += [
         "winmm.dll",
         "user32.dll",
+        "userenv.dll",
         "usp10.dll",
     ]
 

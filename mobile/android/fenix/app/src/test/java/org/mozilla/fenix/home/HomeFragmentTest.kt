@@ -8,6 +8,7 @@ import android.content.Context
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
+import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -24,6 +25,7 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.ext.application
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.home.toolbar.HomeToolbarView
 import org.mozilla.fenix.reviewprompt.ReviewPromptState
 import org.mozilla.fenix.reviewprompt.ReviewPromptState.Eligible.Type
 import org.mozilla.fenix.utils.Settings
@@ -165,5 +167,64 @@ class HomeFragmentTest {
             assertFalse(promptShown)
             assertEquals(emptyList<AppAction>(), actions)
         }
+    }
+
+    @Test
+    fun `GIVEN canShowCFR and shouldShowCFR are true WHEN maybeShowEncourageSearchCfr is called THEN the cfr is shown and exposure recorded`() {
+        var cfrShown = false
+        var exposureRecorded = false
+
+        homeFragment.maybeShowEncourageSearchCfr(
+            canShowCfr = true,
+            shouldShowCFR = true,
+            showCfr = { cfrShown = true },
+            recordExposure = { exposureRecorded = true },
+        )
+
+        assertTrue(cfrShown)
+        assertTrue(exposureRecorded)
+    }
+
+    @Test
+    fun `GIVEN canShowCFR is false WHEN maybeShowEncourageSearchCfr is called THEN the cfr is not shown and exposure is not recorded`() {
+        var cfrShown = false
+        var exposureRecorded = false
+
+        homeFragment.maybeShowEncourageSearchCfr(
+            canShowCfr = false,
+            shouldShowCFR = true,
+            showCfr = { cfrShown = true },
+            recordExposure = { exposureRecorded = true },
+        )
+
+        assertFalse(cfrShown)
+        assertFalse(exposureRecorded)
+    }
+
+    @Test
+    fun `GIVEN exposureRecorded is false WHEN maybeShowEncourageSearchCfr is called THEN the cfr is not shown and exposure is not recorded`() {
+        var cfrShown = false
+        var exposureRecorded = false
+
+        homeFragment.maybeShowEncourageSearchCfr(
+            canShowCfr = true,
+            shouldShowCFR = false,
+            showCfr = { cfrShown = true },
+            recordExposure = { exposureRecorded = true },
+        )
+
+        assertFalse(cfrShown)
+        assertFalse(exposureRecorded)
+    }
+
+    @Test
+    fun `WHEN configuration changed THEN menu is dismissed`() {
+        val toolbarView: HomeToolbarView = mockk(relaxed = true)
+
+        homeFragment.nullableToolbarView = toolbarView
+
+        homeFragment.onConfigurationChanged(mockk(relaxed = true))
+
+        verify(exactly = 1) { toolbarView.dismissMenu() }
     }
 }

@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MessagePortChild.h"
+
 #include "MessagePort.h"
 #include "mozilla/dom/MessageEvent.h"
 #include "mozilla/ipc/PBackgroundChild.h"

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <!-- The button that appears at the bottom of an error page. -->
-  <string name="mozac_browser_errorpages_page_refresh">A\'ngô ñû</string>
+  <string name="mozac_browser_errorpages_page_refresh">Ginùn huin ñûn</string>
   <!-- The document title and heading of an error page shown when a website cannot be loaded for an unknown reason. -->
   <string name="mozac_browser_errorpages_generic_title">Na\'ue gārayinaj sa achín nì\'iát</string>
   <!-- The error message shown when a website cannot be loaded for an unknown reason. -->
@@ -82,6 +82,12 @@
   <string name="mozac_browser_errorpages_unknown_host_title">Nu nārì\'ìj dīreksiûn</string>
   <!-- In the example, the two URLs in markup do not need to be translated. -->
   <string name="mozac_browser_errorpages_unknown_host_message"><![CDATA[<p>Nu ga\'ue narì\' riña sā nana\'uî\'t \'ngō servidor guendâ direksiûn gachrûnt.</p> <ul> <li>Gīni\'iāj si nu gāchrūn hue\'êt, dàj rû\': <strong>ww</strong>.example.com luguâ gāchrūnt <strong>www</strong>.example.com.</li> <li>Sisī na\'ue nāyi\'nïn riña gà\' si \'ngō pâjina, ni\'iāj si huā internet riña si āgà\'t li.</li> </ul>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_no_internet_title_2">Rû’ huaj sisī huā ‘ngō sa ‘hiaj chì’ ngà koneksiôn internet</string>
+  <!-- The main body text of this error page. It will be shown beneath the title -->
+  <string name="mozac_browser_errorpages_no_internet_message_2">Ginùn huin nāchrûnt ngà a’ngô aga’ huā ‘hiát. Nātsij modem asi enrutador. Gāhui nī gānatū ñûn riña internet ni’hiājt dà gī’hia.</string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_no_internet_error_code">Si da’nga’ sa huā a’nan’an: NS_ERROR_OFFLINE</string>
   <!-- Text that will show up on the button at the bottom of the error page -->
   <string name="mozac_browser_errorpages_no_internet_refresh_button">Nā\'nïn ñû</string>
   <!-- The document title and heading of an error page. -->

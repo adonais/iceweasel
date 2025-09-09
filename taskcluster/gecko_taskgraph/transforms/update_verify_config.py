@@ -150,4 +150,10 @@ def add_command(config, tasks):
             }
         )
 
+        if task.get("index"):
+            task["index"].setdefault(
+                "job-name",
+                f"update-verify-config-{task['name']}-{task['extra']['channel']}",
+            )
+
         yield task

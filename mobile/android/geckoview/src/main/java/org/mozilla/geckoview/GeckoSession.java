@@ -5955,15 +5955,6 @@ public class GeckoSession {
       /** The X.500 Distinguished Names the server specified as acceptable issuers. */
       public final @Nullable Principal[] issuers;
 
-      @Deprecated
-      @DeprecationSchedule(id = "CertificateRequest-CertificateRequest", version = 143)
-      protected CertificateRequest(
-          final @NonNull String id, final Observer observer, final String host) {
-        super(id, null, observer);
-        this.host = host;
-        this.issuers = null;
-      }
-
       protected CertificateRequest(
           final @NonNull String id,
           final Observer observer,
@@ -6694,6 +6685,12 @@ public class GeckoSession {
      */
     int PERMISSION_STORAGE_ACCESS = 8;
 
+    /** Permission for local device (localhost) access */
+    int PERMISSION_LOCAL_DEVICE_ACCESS = 9;
+
+    /** Permission for local network access */
+    int PERMISSION_LOCAL_NETWORK_ACCESS = 10;
+
     /**
      * Represents a content permission -- including the type of permission, the present value of the
      * permission, the URL the permission pertains to, and other information.
@@ -6828,6 +6825,10 @@ public class GeckoSession {
             || type.startsWith("3rdPartyStorage^")
             || type.startsWith("3rdPartyFrameStorage^")) {
           return PERMISSION_STORAGE_ACCESS;
+        } else if ("localhost".equals(type)) {
+          return PERMISSION_LOCAL_DEVICE_ACCESS;
+        } else if ("local-network".equals(type)) {
+          return PERMISSION_LOCAL_NETWORK_ACCESS;
         } else {
           return -1;
         }
@@ -6854,6 +6855,10 @@ public class GeckoSession {
             return privateMode ? "trackingprotection-pb" : "trackingprotection";
           case PERMISSION_STORAGE_ACCESS:
             return "storage-access";
+          case PERMISSION_LOCAL_DEVICE_ACCESS:
+            return "localhost";
+          case PERMISSION_LOCAL_NETWORK_ACCESS:
+            return "local-network";
           default:
             return "";
         }

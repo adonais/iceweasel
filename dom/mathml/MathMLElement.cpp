@@ -6,29 +6,28 @@
 
 #include "mozilla/dom/MathMLElement.h"
 
-#include "mozilla/FocusModel.h"
-#include "mozilla/dom/BindContext.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/EventListenerManager.h"
+#include "mozilla/FocusModel.h"
 #include "mozilla/StaticPrefs_mathml.h"
 #include "mozilla/TextUtils.h"
+#include "mozilla/dom/BindContext.h"
+#include "mozilla/dom/Document.h"
+#include "nsCSSValue.h"
+#include "nsContentUtils.h"
 #include "nsGkAtoms.h"
 #include "nsIContentInlines.h"
-#include "nsITableCellLayout.h"  // for MAX_COLSPAN / MAX_ROWSPAN
-#include "nsCSSValue.h"
-#include "nsStyleConsts.h"
-#include "mozilla/dom/Document.h"
-#include "nsPresContext.h"
 #include "nsIScriptError.h"
-#include "nsContentUtils.h"
+#include "nsITableCellLayout.h"  // for MAX_COLSPAN / MAX_ROWSPAN
 #include "nsIURI.h"
+#include "nsPresContext.h"
+#include "nsStyleConsts.h"
 
 // used for parsing CSS units
-#include "mozilla/dom/SVGLength.h"
-
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/dom/MathMLElementBinding.h"
+#include "mozilla/dom/SVGLength.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

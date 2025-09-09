@@ -7,12 +7,14 @@ package org.mozilla.fenix.settings.trustpanel
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.content.PermissionHighlightsState
 import mozilla.components.concept.engine.permission.SitePermissions
+import mozilla.components.concept.engine.permission.SitePermissions.Status.ALLOWED
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action.ASK_TO_ALLOW
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.whenever
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.settings.PhoneFeature
@@ -106,6 +108,76 @@ class TrustPanelStoreTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun `WHEN LNA blocking disabled THEN LNA permissions are not visible in website permission state`() {
+        val settings: Settings = mock()
+        val sitePermissions: SitePermissions = mock()
+        val permissionHighlights: PermissionHighlightsState = mock()
+
+        initializeSitePermissions(sitePermissions)
+
+        whenever(sitePermissions.localDeviceAccess).thenReturn(ALLOWED)
+        whenever(sitePermissions.localNetworkAccess).thenReturn(ALLOWED)
+
+        whenever(permissionHighlights.isAutoPlayBlocking).thenReturn(true)
+        whenever(settings.isLnaBlockingEnabled).thenReturn(false)
+
+        val state = TrustPanelStore.createWebsitePermissionState(
+            settings = settings,
+            sitePermissions = sitePermissions,
+            permissionHighlights = permissionHighlights,
+            isPermissionBlockedByAndroid = { phoneFeature: PhoneFeature ->
+                phoneFeature == PhoneFeature.CAMERA // Only the camera permission is blocked
+            },
+        )
+
+        val localDeviceAccessPermission = state[PhoneFeature.LOCAL_DEVICE_ACCESS]!!
+        val localNetworkAccessPermission = state[PhoneFeature.LOCAL_NETWORK_ACCESS]!!
+
+        assertFalse(
+            "Expected local device access permission to be invisible",
+            localDeviceAccessPermission.isVisible,
+        )
+        assertFalse(
+            "Expected local network access permission to be invisible",
+            localNetworkAccessPermission.isVisible,
+        )
+    }
+
+    @Test
+    fun `WHEN LNA blocking is enabled THEN LNA permissions are visible in website permission state`() {
+        val settings: Settings = mock()
+        val sitePermissions: SitePermissions = mock()
+        val permissionHighlights: PermissionHighlightsState = mock()
+
+        initializeSitePermissions(sitePermissions)
+        whenever(sitePermissions.localDeviceAccess).thenReturn(ALLOWED)
+        whenever(sitePermissions.localNetworkAccess).thenReturn(ALLOWED)
+        whenever(permissionHighlights.isAutoPlayBlocking).thenReturn(true)
+        whenever(settings.isLnaBlockingEnabled).thenReturn(true)
+
+        val state = TrustPanelStore.createWebsitePermissionState(
+            settings = settings,
+            sitePermissions = sitePermissions,
+            permissionHighlights = permissionHighlights,
+            isPermissionBlockedByAndroid = { phoneFeature: PhoneFeature ->
+                phoneFeature == PhoneFeature.CAMERA // Only the camera permission is blocked
+            },
+        )
+
+        val localDeviceAccessPermission = state[PhoneFeature.LOCAL_DEVICE_ACCESS]!!
+        val localNetworkAccessPermission = state[PhoneFeature.LOCAL_NETWORK_ACCESS]!!
+
+        assertTrue(
+            "Expected local device access permission to be visible",
+            localDeviceAccessPermission.isVisible,
+        )
+        assertTrue(
+            "Expected local network access permission to be visible",
+            localNetworkAccessPermission.isVisible,
+        )
     }
 
     @Test
@@ -246,9 +318,11 @@ class TrustPanelStoreTest {
         whenever(sitePermissions.camera).thenReturn(SitePermissions.Status.NO_DECISION)
         whenever(sitePermissions.microphone).thenReturn(SitePermissions.Status.NO_DECISION)
         whenever(sitePermissions.notification).thenReturn(SitePermissions.Status.NO_DECISION)
-        whenever(sitePermissions.location).thenReturn(SitePermissions.Status.ALLOWED) // Only location allowed
+        whenever(sitePermissions.location).thenReturn(ALLOWED) // Only location allowed
         whenever(sitePermissions.localStorage).thenReturn(SitePermissions.Status.NO_DECISION)
         whenever(sitePermissions.crossOriginStorageAccess).thenReturn(SitePermissions.Status.NO_DECISION)
         whenever(sitePermissions.mediaKeySystemAccess).thenReturn(SitePermissions.Status.NO_DECISION)
+        whenever(sitePermissions.localDeviceAccess).thenReturn(SitePermissions.Status.NO_DECISION)
+        whenever(sitePermissions.localNetworkAccess).thenReturn(SitePermissions.Status.NO_DECISION)
     }
 }

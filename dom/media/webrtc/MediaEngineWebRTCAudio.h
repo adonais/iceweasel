@@ -6,12 +6,12 @@
 #ifndef MediaEngineWebRTCAudio_h
 #define MediaEngineWebRTCAudio_h
 
+#include "AudioDeviceInfo.h"
 #include "AudioPacketizer.h"
 #include "AudioSegment.h"
-#include "AudioDeviceInfo.h"
 #include "DeviceInputTrack.h"
-#include "MediaEngineWebRTC.h"
 #include "MediaEnginePrefs.h"
+#include "MediaEngineWebRTC.h"
 #include "MediaTrackListener.h"
 #include "modules/audio_processing/include/audio_processing.h"
 

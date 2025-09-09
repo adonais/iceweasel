@@ -30,7 +30,7 @@ vendored:third_party/python/mako
 vendored:third_party/python/markdown_it_py
 vendored:third_party/python/mdurl
 vendored:third_party/python/mohawk
-vendored:third_party/python/moz.l10n
+vendored:third_party/python/moz_l10n
 vendored:third_party/python/mozilla_repo_urls
 vendored:third_party/python/mozilla_taskgraph
 vendored:third_party/python/multidict

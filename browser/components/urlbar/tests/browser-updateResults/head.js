@@ -22,6 +22,8 @@ ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
   return module;
 });
 
+const MAX_RESULTS = 10;
+
 add_setup(async function headInit() {
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();
@@ -35,7 +37,7 @@ add_setup(async function headInit() {
       ["ui.popup.disable_autohide", true],
 
       // Make sure maxRichResults is 10 for sanity.
-      ["browser.urlbar.maxRichResults", 10],
+      ["browser.urlbar.maxRichResults", MAX_RESULTS],
     ],
   });
 
@@ -386,7 +388,15 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
   // update and delaying resolving the provider's finishQueryPromise.
   let mutationPromise = new Promise(resolve => {
     let lastRowState = duringUpdate[duringUpdate.length - 1];
-    let observer = new MutationObserver(() => {
+    let observer = new MutationObserver(mutations => {
+      let visibleChildren = Array.from(mutations[0].target.children).filter(
+        child => BrowserTestUtils.isVisible(child)
+      );
+      Assert.lessOrEqual(
+        visibleChildren.length,
+        MAX_RESULTS,
+        `There must be less than ${MAX_RESULTS} visible rows during update`
+      );
       observer.disconnect();
       resolve();
     });

@@ -875,7 +875,7 @@ div[name="customtheme"] {
 }
 
 .color-scheme-buttons > label {
-  height: 48px;
+  height: var(--size-item-xlarge);
   width: calc(50% - 21px);
   font-size: 15px;
   color: var(--popup-button-foreground);

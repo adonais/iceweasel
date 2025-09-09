@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = 新しいショートカット
 newtab-topsites-edit-topsites-header = トップサイトを編集
 newtab-topsites-edit-shortcut-header = ショートカットを編集
 newtab-topsites-add-shortcut-label = ショートカット追加
+newtab-topsites-add-shortcut-title =
+    .title = ショートカット追加
+    .aria-label = ショートカット追加
 newtab-topsites-title-label = タイトル
 newtab-topsites-title-input =
     .placeholder = タイトルを入力
@@ -376,7 +379,7 @@ newtab-wallpaper-abstract-purple-green = 紫色と緑色の明るいグラデー
 newtab-wallpaper-abstract-blue-purple-waves = 青色と紫色の波形の形状
 newtab-wallpaper-abstract-black-waves = 黒色の波形の形状
 
-## Photographs
+## Celestial
 
 newtab-wallpaper-category-title-photographs = 写真
 newtab-wallpaper-beach-at-sunrise = 早朝の砂浜
@@ -491,11 +494,6 @@ newtab-topic-selection-privacy-link = ユーザーデータの保護と管理に
 newtab-topic-selection-button-update-interests = 関心事を更新
 newtab-topic-selection-button-pick-interests = 関心事を選ぶ
 
-## Button to block/unblock listed topics
-## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
-## e.g. Blocked the politics section of stories.
-
-
 ## Content Feed Sections
 ## "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 ## e.g. Following the travel section of stories.
@@ -538,15 +536,26 @@ newtab-custom-wallpaper-title = カスタム壁紙が利用できます
 newtab-custom-wallpaper-subtitle = 壁紙をアップロードするかお好みの色を選んで、あなただけの { -brand-product-name } にカスタマイズしましょう。
 newtab-custom-wallpaper-cta = 壁紙を試す
 
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = 壁紙を選んであなただけの { -brand-product-name } に彩りましょう
+newtab-new-user-custom-wallpaper-subtitle = お好みの壁紙と配色ですべての新しいタブを自宅のようにカスタマイズできます。
+newtab-new-user-custom-wallpaper-cta = 今すぐ試す
+
 ## Strings for download mobile highlight
 
 newtab-download-mobile-highlight-title = モバイル版 { -brand-product-name } をダウンロード
 # "Scan the code" refers to scanning the QR code that appears above the body text that leads to Firefox for mobile download.
 newtab-download-mobile-highlight-body-variant-a = QR コードをスキャンして安全にダウンロード。
 newtab-download-mobile-highlight-body-variant-b = タブやパスワード、他のデータを同期しておけば、中断したところからピックアップできます。
-newtab-download-mobile-highlight-body-variant-c = 同じ { -brand-product-name } ブラウザーをポケットに入れてを持ち出せることをご存じですか？ 
+newtab-download-mobile-highlight-body-variant-c = 同じ { -brand-product-name } ブラウザーをポケットに入れてを持ち出せることをご存じですか？
 newtab-download-mobile-highlight-image =
     .aria-label = モバイル版 { -brand-product-name } をダウンロードするための QR コード
+
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = 指先一つでお気に入りに追加
+newtab-shortcuts-highlight-subtitle = ショートカットを追加してお気に入りのサイトに 1 クリックでアクセスできます。
 
 ## Strings for reporting ads and content
 

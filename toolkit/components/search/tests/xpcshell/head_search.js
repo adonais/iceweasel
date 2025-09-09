@@ -634,53 +634,51 @@ async function assertSelectorEnginesEqualsExpected(
   expectedEngines,
   message
 ) {
-  engineSelector._configuration = null;
+  engineSelector.clearCachedConfigurationForTests();
   SearchTestUtils.setRemoteSettingsConfig(config);
 
   if (expectedEngines.length) {
     let { engines } = await engineSelector.fetchEngineConfiguration(userEnv);
 
-    if (SearchUtils.rustSelectorFeatureGate) {
-      // Add default parameters to match the selector output.
-      for (let i = 0; i < expectedEngines.length; i++) {
-        expectedEngines[i] = {
-          aliases: [],
-          charset: "UTF-8",
-          optional: false,
-          partnerCode: "",
-          telemetrySuffix: "",
-          orderHint: null,
-          clickUrl: null,
-          isNewUntil: null,
-          ...expectedEngines[i],
-        };
-        expectedEngines[i].classification =
-          expectedEngines[i].classification == "general"
-            ? SearchEngineClassification.GENERAL
-            : SearchEngineClassification.UNKNOWN;
+    // Add default parameters to match the selector output.
+    for (let i = 0; i < expectedEngines.length; i++) {
+      expectedEngines[i] = {
+        aliases: [],
+        charset: "UTF-8",
+        optional: false,
+        partnerCode: "",
+        telemetrySuffix: "",
+        orderHint: null,
+        clickUrl: null,
+        isNewUntil: null,
+        ...expectedEngines[i],
+      };
+      expectedEngines[i].classification =
+        expectedEngines[i].classification == "general"
+          ? SearchEngineClassification.GENERAL
+          : SearchEngineClassification.UNKNOWN;
 
-        expectedEngines[i].urls = {
-          suggestions: null,
-          trending: null,
-          searchForm: null,
-          visualSearch: null,
-          ...expectedEngines[i].urls,
+      expectedEngines[i].urls = {
+        suggestions: null,
+        trending: null,
+        searchForm: null,
+        visualSearch: null,
+        ...expectedEngines[i].urls,
+      };
+      expectedEngines[i].urls.search = {
+        method: "GET",
+        ...expectedEngines[i].urls.search,
+      };
+      if (!expectedEngines[i].urls.search.params) {
+        expectedEngines[i].urls.search.params = [];
+      }
+      for (let j = 0; j < expectedEngines[i].urls.search.params.length; j++) {
+        expectedEngines[i].urls.search.params[j] = {
+          enterpriseValue: null,
+          experimentConfig: null,
+          value: null,
+          ...expectedEngines[i].urls.search.params[j],
         };
-        expectedEngines[i].urls.search = {
-          method: "GET",
-          ...expectedEngines[i].urls.search,
-        };
-        if (!expectedEngines[i].urls.search.params) {
-          expectedEngines[i].urls.search.params = [];
-        }
-        for (let j = 0; j < expectedEngines[i].urls.search.params.length; j++) {
-          expectedEngines[i].urls.search.params[j] = {
-            enterpriseValue: null,
-            experimentConfig: null,
-            value: null,
-            ...expectedEngines[i].urls.search.params[j],
-          };
-        }
       }
     }
 

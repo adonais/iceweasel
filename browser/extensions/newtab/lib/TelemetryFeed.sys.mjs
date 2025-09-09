@@ -10,7 +10,6 @@
 // environment already stubs out XPCOMUtils, AppConstants and RemoteSettings,
 // and overrides importESModule to be a no-op (which can't be done for a static
 // import statement).
-
 // eslint-disable-next-line mozilla/use-static-import
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -33,6 +32,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ContextId: "moz-src:///browser/modules/ContextId.sys.mjs",
   ExtensionSettingsStore:
     "resource://gre/modules/ExtensionSettingsStore.sys.mjs",
+  ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
   ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
@@ -104,7 +104,7 @@ const ONBOARDING_ALLOWED_PAGE_VALUES = [
 
 const PREF_SURFACE_ID = "telemetry.surfaceId";
 
-const CONTENT_PING_VERSION = 1;
+const CONTENT_PING_VERSION = 2;
 
 const ACTIVITY_STREAM_PREF_BRANCH = "browser.newtabpage.activity-stream.";
 const NEWTAB_PING_PREFS = {
@@ -363,6 +363,21 @@ export class TelemetryFeed {
       result.content_redacted = true;
       return result;
     }
+    // For spocs we need to retain the tile id.
+    if (this.redactNewTabPingEnabled && isSponsored) {
+      const {
+        // eslint-disable-next-line no-unused-vars
+        section,
+        // eslint-disable-next-line no-unused-vars
+        selected_topics,
+        // eslint-disable-next-line no-unused-vars
+        topic,
+        ...result
+      } = pingDict;
+      result.content_redacted = true;
+      return result;
+    }
+
     return pingDict; // No modification
   }
 
@@ -784,7 +799,7 @@ export class TelemetryFeed {
             newtab_visit_id: session.session_id,
           });
 
-          if (this.privatePingEnabled && !is_sponsored) {
+          if (this.privatePingEnabled) {
             this.newtabContentPing.recordEvent("click", gleanData);
           }
           if (shim) {
@@ -1033,7 +1048,9 @@ export class TelemetryFeed {
         newtabCategory = "enabled";
         if (
           lazy.AboutNewTab.newTabURLOverridden &&
-          !lazy.AboutNewTab.newTabURL.startsWith("moz-extension://")
+          ((Object.hasOwn(lazy.ExtensionUtils, "isExtensionUrl") &&
+            !lazy.ExtensionUtils.isExtensionUrl(lazy.AboutNewTab.newTabURL)) ||
+            !lazy.AboutNewTab.newTabURL.startsWith("moz-extension://"))
         ) {
           value.newtab_url_category = await this._classifySite(
             lazy.AboutNewTab.newTabURL
@@ -1057,7 +1074,9 @@ export class TelemetryFeed {
         !["about:home", "about:blank", BLANK_HOMEPAGE_URL].includes(
           homePageURL
         ) &&
-        !homePageURL.startsWith("moz-extension://")
+        ((Object.hasOwn(lazy.ExtensionUtils, "isExtensionUrl") &&
+          !lazy.ExtensionUtils.isExtensionUrl(homePageURL)) ||
+          !homePageURL.startsWith("moz-extension://"))
       ) {
         value.home_url_category = await this._classifySite(homePageURL);
         homeAffected = true;
@@ -1258,6 +1277,68 @@ export class TelemetryFeed {
         if (!action.data.collapsed) {
           this.handleTrendingSearchUserEvent(action);
         }
+        break;
+      case at.WIDGETS_LISTS_USER_EVENT:
+      case at.WIDGETS_LISTS_USER_IMPRESSION:
+      case at.WIDGETS_TIMER_USER_EVENT:
+      case at.WIDGETS_TIMER_USER_IMPRESSION:
+        this.handleWidgetsUserEvent(action);
+        break;
+      case at.PROMO_CARD_CLICK:
+      case at.PROMO_CARD_DISMISS:
+      case at.PROMO_CARD_IMPRESSION:
+        this.handlePromoCardUserEvent(action);
+        break;
+    }
+  }
+
+  handlePromoCardUserEvent(action) {
+    const session = this.sessions.get(au.getPortIdOfSender(action));
+    if (session) {
+      const payload = {
+        newtab_visit_id: session.visit_id,
+      };
+
+      switch (action.type) {
+        case at.PROMO_CARD_CLICK:
+          Glean.newtab.promoCardClick.record(payload);
+          break;
+        case at.PROMO_CARD_DISMISS:
+          Glean.newtab.promoCardDismiss.record(payload);
+          break;
+        case at.PROMO_CARD_IMPRESSION:
+          Glean.newtab.promoCardImpression.record(payload);
+          break;
+      }
+    }
+  }
+
+  handleWidgetsUserEvent(action) {
+    const session = this.sessions.get(au.getPortIdOfSender(action));
+    if (session) {
+      const payload = {
+        newtab_visit_id: session.visit_id,
+      };
+      switch (action.type) {
+        case "WIDGETS_LISTS_USER_EVENT":
+          Glean.newtab.widgetsListsUserEvent.record({
+            ...payload,
+            user_action: action.data.userAction,
+          });
+          break;
+        case "WIDGETS_LISTS_USER_IMPRESSION":
+          Glean.newtab.widgetsListsImpression.record(payload);
+          break;
+        case "WIDGETS_TIMER_USER_EVENT":
+          Glean.newtab.widgetsTimerUserEvent.record({
+            ...payload,
+            user_action: action.data.userAction,
+          });
+          break;
+        case "WIDGETS_TIMER_USER_IMPRESSION":
+          Glean.newtab.widgetsTimerImpression.record(payload);
+          break;
+      }
     }
   }
 
@@ -1525,6 +1606,18 @@ export class TelemetryFeed {
           });
         }
         break;
+      case "widgets.lists.enabled":
+        Glean.newtab.widgetsListsChangeDisplay.record({
+          newtab_visit_id: session.session_id,
+          display_status: action.data.value,
+        });
+        break;
+      case "widgets.focusTimer.enabled":
+        Glean.newtab.widgetsTimerChangeDisplay.record({
+          newtab_visit_id: session.session_id,
+          display_status: action.data.value,
+        });
+        break;
     }
   }
 
@@ -1746,7 +1839,6 @@ export class TelemetryFeed {
           ...this.redactNewTabPing(gleanData, is_sponsored),
           newtab_visit_id: session.session_id,
         });
-
         if (this.privatePingEnabled) {
           this.newtabContentPing.recordEvent("impression", gleanData);
         }

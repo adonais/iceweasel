@@ -6,12 +6,14 @@
 
 #include "SVGLengthListSMILType.h"
 
+#include <math.h>
+
+#include <algorithm>
+
+#include "SVGLengthList.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/SMILValue.h"
 #include "nsMathUtils.h"
-#include "SVGLengthList.h"
-#include <math.h>
-#include <algorithm>
 
 namespace mozilla {
 

@@ -23,6 +23,8 @@
       let message = document.createElement("fxa-menu-message");
       const TEST_IMAGE_URL = "chrome://activity-stream/content/data/content/assets/fox-doodle-waving-static.png";
       message.imageURL = TEST_IMAGE_URL;
+      const TEST_LOGO_URL = "chrome://branding/content/about-logo.svg";
+      message.logoURL = TEST_LOGO_URL;
       const TEST_BUTTON_TEXT = "Howdy, partner! Sign up!";
       message.buttonText = TEST_BUTTON_TEXT;
       const PRIMARY_TEXT = "This is the primary text";
@@ -35,11 +37,14 @@
       await message.updateComplete;
 
       let shadow = message.shadowRoot;
-      let image = shadow.querySelector("img");
-      is(image.src, TEST_IMAGE_URL, "The img element got the expected URL");
+      let image = shadow.querySelector("#illustration");
+      is(image.src, TEST_IMAGE_URL, "The illustration img element got the expected URL");
 
-      let button = shadow.querySelector("#sign-up-button");
-      is(button.textContent.trim(), TEST_BUTTON_TEXT, "The sign-up button got the right text.");
+      let logo = shadow.querySelector("#logo");
+      is(logo.src, TEST_LOGO_URL, "The logo element got the expected URL");
+
+      let button = shadow.querySelector("#primary-button");
+      is(button.textContent.trim(), TEST_BUTTON_TEXT, "The primary button got the right text.");
 
       let primaryText = shadow.querySelector("#primary");
       is(primaryText.textContent, PRIMARY_TEXT, "The primary text was correct.");
@@ -73,26 +78,26 @@
 
       let shadow = message.shadowRoot;
 
-      let signUpEventPromise = BrowserTestUtils.waitForEvent(message, "FxAMenuMessage:SignUp");
-      let signUpButton = shadow.querySelector("#sign-up-button");
-      signUpButton.click();
-      await signUpEventPromise;
-      ok(true, "Got the FxAMenuMessage:SignUp event");
+      let primaryEventPromise = BrowserTestUtils.waitForEvent(message, "MenuMessage:PrimaryButton");
+      let primaryButton = shadow.querySelector("#primary-button");
+      primaryButton.click();
+      await primaryEventPromise;
+      ok(true, "Got the MenuMessage:PrimaryButton event");
 
-      let closeEventPromise = BrowserTestUtils.waitForEvent(message, "FxAMenuMessage:Close");
+      let closeEventPromise = BrowserTestUtils.waitForEvent(message, "MenuMessage:Close");
       let closeButton = shadow.querySelector("#close-button");
       closeButton.click();
       await closeEventPromise;
-      ok(true, "Got the FxAMenuMessage:Close event");
+      ok(true, "Got the MenuMessage:Close event");
 
       message.remove();
     });
 
     /**
-     * Tests that the sign-up button is focused by default, and that focus
+     * Tests that the primary button is focused by default, and that focus
      * can be changed via the keyboard.
      */
-    add_task(async function test_signup_focus() {
+    add_task(async function test_primary_button_focus() {
       let message = document.createElement("fxa-menu-message");
       const TEST_BUTTON_TEXT = "Howdy, partner! Sign up!";
       message.buttonText = TEST_BUTTON_TEXT;
@@ -104,8 +109,8 @@
       message.focus();
 
       let shadow = message.shadowRoot;
-      let signUpButton = shadow.querySelector("#sign-up-button");
-      is(shadow.activeElement, signUpButton, "Sign-up button is focused by default.");
+      let primaryButton = shadow.querySelector("#primary-button");
+      is(shadow.activeElement, primaryButton, "primary button is focused by default.");
 
       let closeButton = shadow.querySelector("#close-button");
       const FOCUS_CHANGING_KEYS = [
@@ -121,9 +126,9 @@
         is(shadow.activeElement, closeButton, "Close button is now focused.");
 
         synthesizeKey(`KEY_${keyName}`);
-        // And pressing the same key should swap focus back to the sign-up
+        // And pressing the same key should swap focus back to the primary
         // button.
-        is(shadow.activeElement, signUpButton, "Sign-up button is now focused.");
+        is(shadow.activeElement, primaryButton, "primary button is now focused.");
       }
 
       message.remove();
@@ -242,6 +247,80 @@
         checkContainerOffset: true,
       });
     });
+
+    /**
+     * Tests that the primary button supports a 'small' size and defaults to 'default'.
+     */
+     add_task(async function test_primary_button_size() {
+      let message = document.createElement("fxa-menu-message");
+      message.buttonText = "Test button";
+      document.getElementById("content").appendChild(message);
+      await message.updateComplete;
+
+      let shadow = message.shadowRoot;
+      let btn = shadow.querySelector("#primary-button");
+      is(btn.getAttribute("size"), "default", "Button size defaults to 'default'.");
+
+      message.primaryButtonSize = "small";
+      await message.updateComplete;
+      is(btn.getAttribute("size"), "small", "Button size updates to 'small'.");
+
+      message.remove();
+    });
+
+    /**
+     * Tests "simple" layout, which only displays primary text and primary button.
+     */
+    add_task(async function test_simple_layout() {
+      let message = document.createElement("fxa-menu-message");
+      message.layout = "simple";
+      message.buttonText = "Set as default";
+      message.primaryText = "Firefox is not your default browser";
+      message.secondaryText = "You should not see me!";
+      // Provide URLs to ensure imgage exist but are hidden by the CSS
+      message.logoURL =
+        "chrome://branding/content/about-logo.svg";
+      message.imageURL =
+        "chrome://browser/content/asrouter/assets/fox-with-devices.svg";
+
+      document.getElementById("content").appendChild(message);
+      await message.updateComplete;
+      const shadow = message.shadowRoot;
+      const container = shadow.querySelector("#container");
+      is(
+        container.getAttribute("layout"),
+        "simple",
+        "Layout for container is 'simple'."
+      );
+
+      const primary = shadow.querySelector("#primary");
+      ok(!isHidden(primary), "Primary text is visible.");
+      const btn = shadow.querySelector("#primary-button");
+      ok(!isHidden(btn), "Primary button is visible.");
+
+      const closeBtn = shadow.querySelector("#close-button");
+      is(
+        getComputedStyle(closeBtn).display,
+        "none",
+        "Close button is hidden."
+      );
+
+      const secondary = shadow.querySelector("#secondary");
+      is(
+        getComputedStyle(secondary).display,
+        "none",
+        "Secondary text is hidden."
+      );
+
+      for (const img of shadow.querySelectorAll("img")) {
+        is(
+          getComputedStyle(img).display,
+          "none",
+          "Images are hidden."
+        );
+      }
+      message.remove();
+   });
   </script>
 </head>
 <body>

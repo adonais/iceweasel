@@ -6,21 +6,19 @@
 
 #include "Link.h"
 
-#include "mozilla/dom/Element.h"
+#include "mozilla/Components.h"
+#include "mozilla/IHistory.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/SVGAElement.h"
+#include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLDNSPrefetch.h"
-#include "mozilla/IHistory.h"
-#include "nsLayoutUtils.h"
-#include "nsIURIMutator.h"
-#include "nsISizeOf.h"
-
-#include "nsGkAtoms.h"
-#include "nsString.h"
-
-#include "mozilla/Components.h"
+#include "mozilla/dom/SVGAElement.h"
 #include "nsAttrValueInlines.h"
+#include "nsGkAtoms.h"
+#include "nsISizeOf.h"
+#include "nsIURIMutator.h"
+#include "nsLayoutUtils.h"
+#include "nsString.h"
 
 namespace mozilla::dom {
 

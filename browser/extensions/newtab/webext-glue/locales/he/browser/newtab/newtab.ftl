@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = קיצור דרך חדש
 newtab-topsites-edit-topsites-header = עריכת אתר מוביל
 newtab-topsites-edit-shortcut-header = עריכת קיצור דרך
 newtab-topsites-add-shortcut-label = הוספת קיצור דרך
+newtab-topsites-add-shortcut-title =
+    .title = הוספת קיצור דרך
+    .aria-label = הוספת קיצור דרך
 newtab-topsites-title-label = כותרת
 newtab-topsites-title-input =
     .placeholder = נא להזין כותרת
@@ -84,6 +87,14 @@ newtab-confirm-delete-history-p2 = לא ניתן לבטל פעולה זו.
 ## Top Sites - Sponsored label
 
 newtab-topsite-sponsored = ממומן
+
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = ‏{ $title } (נעוץ)
+    .title = { $title }
 
 ## Context Menu - Action Tooltips.
 
@@ -533,6 +544,12 @@ newtab-custom-wallpaper-title = טפטים מותאמים אישית נמצאי�
 newtab-custom-wallpaper-subtitle = ניתן להעלות טפט משלך או לבחור בצבע מותאם אישית כדי להפוך את { -brand-product-name } לשלך.
 newtab-custom-wallpaper-cta = בואו ננסה
 
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = ניתן לבחור בטפט כדי להפוך את { -brand-product-name } לשלך
+newtab-new-user-custom-wallpaper-subtitle = כל לשונית חדשה יכולה לקבל תחושה של בית עם טפטים וצבעים מותאמים אישית.
+newtab-new-user-custom-wallpaper-cta = לנסות עכשיו
+
 ## Strings for download mobile highlight
 
 newtab-download-mobile-highlight-title = הורדת { -brand-product-name } לנייד
@@ -545,6 +562,8 @@ newtab-download-mobile-highlight-image =
 
 ## Strings for shortcuts highlight
 
+newtab-shortcuts-highlight-title = המועדפים שלך בקצות האצבעות
+newtab-shortcuts-highlight-subtitle = ניתן להוסיף קיצור דרך כדי לשמור את האתרים המועדפים עליך במרחק קליק אחד.
 
 ## Strings for reporting ads and content
 

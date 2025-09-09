@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_WindowsUtilsParent_h__
 #define mozilla_dom_WindowsUtilsParent_h__
 
-#include "mozilla/dom/PWindowsUtilsParent.h"
 #include "mozilla/ProcInfo.h"
+#include "mozilla/dom/PWindowsUtilsParent.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/UtilityProcessParent.h"
 

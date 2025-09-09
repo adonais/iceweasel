@@ -222,7 +222,11 @@ class WebRenderCommandBuilder final {
 
   bool mComputingOpaqueRegion;
 
-  nsPoint mOpaqueRegionOffset;
+  // The wrapping items we compute opaque regions against. The point is the
+  // offset from the item to the global coordinate space (since we only support
+  // translations).
+  AutoTArray<std::pair<nsDisplayItem*, nsPoint>, 3> mOpaqueRegionWrappers;
+  struct AutoOpaqueRegionStateTracker;
 
  public:
   // Whether consecutive inactive display items should be grouped into one

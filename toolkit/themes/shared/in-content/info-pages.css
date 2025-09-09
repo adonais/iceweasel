@@ -127,7 +127,7 @@ tree {
 
 table {
   background-color: var(--in-content-table-background);
-  color: var(--in-content-text-color);
+  color: var(--text-color);
   font: message-box;
   text-align: start;
   width: 100%;

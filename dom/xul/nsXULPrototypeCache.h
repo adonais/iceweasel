@@ -6,18 +6,17 @@
 #ifndef nsXULPrototypeCache_h__
 #define nsXULPrototypeCache_h__
 
+#include "js/experimental/JSStencil.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/scache/StartupCache.h"
 #include "nsBaseHashtable.h"
 #include "nsCOMPtr.h"
 #include "nsIObserver.h"
+#include "nsIStorageStream.h"
 #include "nsInterfaceHashtable.h"
 #include "nsRefPtrHashtable.h"
 #include "nsURIHashKey.h"
 #include "nsXULPrototypeDocument.h"
-#include "nsIStorageStream.h"
-
-#include "mozilla/scache/StartupCache.h"
-#include "js/experimental/JSStencil.h"
-#include "mozilla/RefPtr.h"
 
 class nsIHandleReportCallback;
 namespace mozilla {

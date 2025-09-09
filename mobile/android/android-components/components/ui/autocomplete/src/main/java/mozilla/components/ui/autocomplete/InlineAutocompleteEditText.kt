@@ -153,7 +153,12 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
         get() = getNonAutocompleteText(text)
 
     override val originalText: String
-        get() = text.subSequence(0, autoCompletePrefixLength).toString()
+        get() = try {
+            text.subSequence(0, autoCompletePrefixLength).toString()
+        } catch (_: IndexOutOfBoundsException) {
+            autoCompletePrefixLength = text.length
+            text.toString()
+        }
 
     /**
      * The background color used for the autocomplete suggestion.

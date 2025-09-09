@@ -15,10 +15,10 @@
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "mozilla/ipc/UtilityMediaService.h"
 #include "mozilla/ipc/PUtilityMediaServiceChild.h"
+#include "mozilla/gfx/gfxVarReceiver.h"
 
 #ifdef MOZ_WMF_MEDIA_ENGINE
 #  include "mozilla/gfx/GPUProcessListener.h"
-#  include "mozilla/gfx/gfxVarReceiver.h"
 #endif
 
 #include "PDMFactory.h"
@@ -43,10 +43,10 @@ class UtilityMediaServiceChildShutdownObserver : public nsIObserver {
 
 // This controls performing audio decoding on the utility process and it is
 // intended to live on the main process side
-class UtilityMediaServiceChild final : public PUtilityMediaServiceChild
+class UtilityMediaServiceChild final : public PUtilityMediaServiceChild,
+                                       public gfx::gfxVarReceiver
 #ifdef MOZ_WMF_MEDIA_ENGINE
     ,
-                                       public gfx::gfxVarReceiver,
                                        public gfx::GPUProcessListener
 #endif
 {
@@ -68,10 +68,10 @@ class UtilityMediaServiceChild final : public PUtilityMediaServiceChild
 
   static RefPtr<UtilityMediaServiceChild> GetSingleton(SandboxingKind aKind);
 
+  void OnVarChanged(const nsTArray<gfx::GfxVarUpdate>& aVar) override;
+
 #ifdef MOZ_WMF_MEDIA_ENGINE
   mozilla::ipc::IPCResult RecvCompleteCreatedVideoBridge();
-
-  void OnVarChanged(const gfx::GfxVarUpdate& aVar) override;
 
   void OnCompositorUnexpectedShutdown() override;
 

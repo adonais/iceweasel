@@ -2465,6 +2465,19 @@ def check_task_dependencies(config, tasks):
         yield task
 
 
+@transforms.add
+def check_perf_task_fission_filtering(config, tasks):
+    for task in tasks:
+        if (
+            ("chrome-m" in task["label"] or "cstm-car-m" in task["label"])
+            and "nofis" not in task["label"]
+            and "android" in task["label"]
+            and "startup" not in task["label"]
+        ):
+            continue
+        yield task
+
+
 def check_caches_are_volumes(task):
     """Ensures that all cache paths are defined as volumes.
 

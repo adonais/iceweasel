@@ -7,12 +7,12 @@
 #ifndef nsContentPermissionHelper_h
 #define nsContentPermissionHelper_h
 
-#include "nsIContentPermissionPrompt.h"
-#include "nsTArray.h"
-#include "nsIMutableArray.h"
+#include "mozilla/PermissionDelegateHandler.h"
 #include "mozilla/dom/PContentPermissionRequestChild.h"
 #include "mozilla/dom/ipc/IdType.h"
-#include "mozilla/PermissionDelegateHandler.h"
+#include "nsIContentPermissionPrompt.h"
+#include "nsIMutableArray.h"
+#include "nsTArray.h"
 
 // Microsoft's API Name hackery sucks
 // XXXbz Doing this in a header is a gigantic footgun. See

@@ -8,7 +8,6 @@
 #define mozilla_dom_HTMLPreElement_h
 
 #include "mozilla/Attributes.h"
-
 #include "nsGenericHTMLElement.h"
 
 namespace mozilla::dom {

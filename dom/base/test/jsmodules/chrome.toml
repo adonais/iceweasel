@@ -47,6 +47,8 @@ support-files = [
 
 ["test_cyclicImport.html"]
 
+["test_dynamicImport_link_failure.html"]
+
 ["test_dynamicImportErrorMessage.html"]
 
 ["test_importIntroType.html"]

@@ -6,14 +6,14 @@
 
 #include "ClientManagerParent.h"
 
-#include "mozilla/ipc/BackgroundParent.h"
 #include "ClientHandleParent.h"
 #include "ClientManagerOpParent.h"
 #include "ClientManagerService.h"
 #include "ClientSourceParent.h"
 #include "ClientValidation.h"
-#include "mozilla/dom/PClientNavigateOpParent.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/PClientNavigateOpParent.h"
+#include "mozilla/ipc/BackgroundParent.h"
 
 namespace mozilla::dom {
 

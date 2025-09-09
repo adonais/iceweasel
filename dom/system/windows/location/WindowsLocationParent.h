@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_WindowsLocationParent_h__
 #define mozilla_dom_WindowsLocationParent_h__
 
-#include "nsCOMPtr.h"
 #include "mozilla/dom/PWindowsLocationParent.h"
+#include "nsCOMPtr.h"
 
 class nsGeoPosition;
 class nsIGeolocationUpdate;

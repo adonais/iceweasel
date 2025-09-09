@@ -6,38 +6,38 @@
 
 #include "nsTreeSanitizer.h"
 
+#include <iterator>
+
 #include "mozilla/Algorithm.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/DeclarationBlock.h"
+#include "mozilla/NullPrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StyleSheetInlines.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/HTMLFormElement.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
 #include "mozilla/dom/HTMLUnknownElement.h"
 #include "mozilla/dom/Link.h"
+#include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/dom/SanitizerBinding.h"
 #include "mozilla/dom/ShadowIncludingTreeIterator.h"
-#include "mozilla/dom/SRIMetadata.h"
-#include "mozilla/NullPrincipal.h"
 #include "nsAtom.h"
-#include "nsCSSPropertyID.h"
-#include "nsHashtablesFwd.h"
-#include "nsString.h"
-#include "nsTHashtable.h"
-#include "nsUnicharInputStream.h"
 #include "nsAttrName.h"
+#include "nsCSSPropertyID.h"
+#include "nsComponentManagerUtils.h"
+#include "nsContentUtils.h"
+#include "nsHashtablesFwd.h"
+#include "nsIParserUtils.h"
 #include "nsIScriptError.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsNameSpaceManager.h"
 #include "nsNetUtil.h"
-#include "nsComponentManagerUtils.h"
-#include "nsContentUtils.h"
-#include "nsIParserUtils.h"
-#include "mozilla/dom/Document.h"
 #include "nsQueryObject.h"
-
-#include <iterator>
+#include "nsString.h"
+#include "nsTHashtable.h"
+#include "nsUnicharInputStream.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

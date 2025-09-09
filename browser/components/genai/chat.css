@@ -24,7 +24,7 @@ browser {
 #header {
   align-items: center;
   background-color: var(--sidebar-background-color);
-  border-bottom: 1px solid var(--in-content-border-color);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   flex-direction: row;
   padding-inline: var(--space-large);
@@ -83,6 +83,10 @@ browser {
   }
 }
 
+#message-container {
+  padding: var(--space-xsmall);
+}
+
 #multi-stage-message-root {
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
@@ -137,11 +141,11 @@ browser {
         z-index: 1;
       }
       &::after {
-        background: linear-gradient(transparent, var(--in-content-page-background));
+        background: linear-gradient(transparent, var(--background-color-canvas));
         bottom: 0;
       }
       &::before {
-        background: linear-gradient(var(--in-content-page-background), transparent);
+        background: linear-gradient(var(--background-color-canvas), transparent);
         top: 0;
       }
     }
@@ -196,7 +200,7 @@ browser {
     &.chatgpt {
       background-image: url(assets/brands/chatgpt.svg);
       -moz-context-properties: fill;
-      fill: var(--in-content-page-color);
+      fill: var(--text-color);
     }
     &.copilot {
       background-image: url(assets/brands/copilot.svg);
@@ -287,7 +291,7 @@ browser {
 }
 
 #summarize-btn-container {
-  border-top: 1px solid var(--in-content-border-color);
+  border-top: 1px solid var(--border-color);
   padding: var(--space-large);
   position: relative;
 

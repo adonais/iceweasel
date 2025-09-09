@@ -807,14 +807,13 @@ class WellKnownChecker {
   nsresult MakeChannel(nsHttpChannel* chan, TransactionObserver* obs,
                        nsHttpConnectionInfo* ci, nsIURI* uri, uint32_t caps,
                        nsILoadInfo* loadInfo) {
-    uint64_t channelId;
     nsLoadFlags flags;
 
     ExtContentPolicyType contentPolicyType =
         loadInfo->GetExternalContentPolicyType();
 
-    if (NS_FAILED(gHttpHandler->NewChannelId(channelId)) ||
-        NS_FAILED(chan->Init(uri, caps, nullptr, 0, nullptr, channelId,
+    uint64_t channelId = gHttpHandler->NewChannelId();
+    if (NS_FAILED(chan->Init(uri, caps, nullptr, 0, nullptr, channelId,
                              contentPolicyType, loadInfo)) ||
         NS_FAILED(chan->SetAllowAltSvc(false)) ||
         NS_FAILED(chan->SetRedirectMode(

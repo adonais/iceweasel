@@ -61,7 +61,7 @@ add_task(async function test_getDirectorySize() {
 
 /**
  * Tests that bytesToFuzzyKilobytes will convert bytes to kilobytes
- * and round up to the nearest tenth kilobyte.
+ * and round to the nearest tenth kilobyte.
  */
 add_task(async function test_bytesToFuzzyKilobytes() {
   let largeSize = bytesToFuzzyKilobytes(1234000);
@@ -69,7 +69,7 @@ add_task(async function test_bytesToFuzzyKilobytes() {
   Assert.equal(
     largeSize,
     1230,
-    "1234 bytes is rounded up to the nearest tenth kilobyte, 1230"
+    "1234 bytes is rounded to the nearest mulitple of ten kilobytes, 1230"
   );
 
   let smallSize = bytesToFuzzyKilobytes(3);

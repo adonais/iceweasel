@@ -32,6 +32,9 @@ var gDeclaration = document.getElementById("testnode").style;
 function check_consistency(sproperty, valFromGetPropertyValue, messagePrefix)
 {
   var sinfo = gCSSProperties[sproperty];
+  if (sinfo.domPropDisabled) {
+    return;
+  }
   is(valFromGetPropertyValue, gDeclaration[sinfo.domProp],
      `(${messagePrefix}) consistency between ` +
      `decl.getPropertyValue(${sproperty}) and decl.${sinfo.domProp}`);

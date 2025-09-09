@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -194,6 +195,7 @@ enum class InfoType {
 
     val cardBackgroundColor: Color
         @Composable
+        @ReadOnlyComposable
         get() = when (this) {
             Warning -> FirefoxTheme.colors.layerWarning
             Confirmation -> FirefoxTheme.colors.layerSuccess
@@ -204,6 +206,7 @@ enum class InfoType {
 
     val buttonBackgroundColor: Color
         @Composable
+        @ReadOnlyComposable
         get() = when (this) {
             Warning -> FirefoxTheme.colors.actionWarning
             Confirmation -> FirefoxTheme.colors.actionSuccess
@@ -214,6 +217,7 @@ enum class InfoType {
 
     val buttonTextColor: Color
         @Composable
+        @ReadOnlyComposable
         get() = when {
             this == Info && !isSystemInDarkTheme() -> FirefoxTheme.colors.textOnColorPrimary
             this == InfoPlain -> FirefoxTheme.colors.textActionSecondary

@@ -8,11 +8,11 @@
 
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/FetchPriority.h"
-#include "nsGkAtoms.h"
-#include "nsNetUtil.h"
-#include "nsContentUtils.h"
 #include "mozilla/dom/SVGScriptElementBinding.h"
+#include "nsContentUtils.h"
+#include "nsGkAtoms.h"
 #include "nsIScriptError.h"
+#include "nsNetUtil.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT_CHECK_PARSER(Script)
 

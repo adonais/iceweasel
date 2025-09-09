@@ -6,12 +6,12 @@
 #ifndef MOZILLA_SCRATCHBUFFER_H_
 #define MOZILLA_SCRATCHBUFFER_H_
 
+#include <algorithm>
+
 #include "AudioSegment.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/UniquePtr.h"
 #include "nsDebug.h"
-
-#include <algorithm>
 
 namespace mozilla {
 

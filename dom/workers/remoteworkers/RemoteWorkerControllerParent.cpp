@@ -8,17 +8,16 @@
 
 #include <utility>
 
-#include "nsCOMPtr.h"
-#include "nsDebug.h"
-#include "nsError.h"
-#include "nsThreadUtils.h"
-
 #include "mozilla/Assertions.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/FetchEventOpParent.h"
 #include "mozilla/dom/RemoteWorkerParent.h"
 #include "mozilla/dom/ServiceWorkerOpPromise.h"
 #include "mozilla/ipc/BackgroundParent.h"
+#include "nsCOMPtr.h"
+#include "nsDebug.h"
+#include "nsError.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 

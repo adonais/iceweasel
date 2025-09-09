@@ -215,6 +215,10 @@ nsDisplayWrapList* ViewportFrame::MaybeWrapTopLayerList(
 
 nsDisplayWrapList* ViewportFrame::BuildDisplayListForContentTopLayer(
     nsDisplayListBuilder* aBuilder, bool* aIsOpaque) {
+  if (aBuilder->AvoidBuildingDuplicateOofs()) {
+    return nullptr;
+  }
+
   nsDisplayList topLayerList(aBuilder);
   auto* doc = PresContext()->Document();
 
@@ -222,6 +226,12 @@ nsDisplayWrapList* ViewportFrame::BuildDisplayListForContentTopLayer(
   for (dom::Element* elem : topLayer) {
     nsIFrame* frame = elem->GetPrimaryFrame();
     if (!frame) {
+      continue;
+    }
+    if (frame->GetContent() != elem->AsContent()) {
+      // area elements in image maps point to the image frame as their primary
+      // frame but we should treat them like they don't have their own frame
+      // here. See also bug 135040.
       continue;
     }
 
@@ -279,6 +289,10 @@ nsDisplayWrapList* ViewportFrame::BuildDisplayListForContentTopLayer(
 nsDisplayWrapList*
 ViewportFrame::BuildDisplayListForViewTransitionsAndNACTopLayer(
     nsDisplayListBuilder* aBuilder) {
+  if (aBuilder->AvoidBuildingDuplicateOofs()) {
+    return nullptr;
+  }
+
   nsDisplayList topLayerList(aBuilder);
   auto* doc = PresContext()->Document();
   if (dom::ViewTransition* vt = doc->GetActiveViewTransition()) {
@@ -338,7 +352,7 @@ nscoord ViewportFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
 }
 
 nsPoint ViewportFrame::AdjustReflowInputForScrollbars(
-    ReflowInput* aReflowInput) const {
+    ReflowInput& aReflowInput) const {
   // Get our prinicpal child frame and see if we're scrollable
   nsIFrame* kidFrame = mFrames.FirstChild();
 
@@ -346,16 +360,16 @@ nsPoint ViewportFrame::AdjustReflowInputForScrollbars(
     // Note: In ReflowInput::CalculateHypotheticalPosition(), we exclude the
     // scrollbar or scrollbar-gutter area when computing the offset to
     // ViewportFrame. Ensure the code there remains in sync with the logic here.
-    WritingMode wm = aReflowInput->GetWritingMode();
+    WritingMode wm = aReflowInput.GetWritingMode();
     LogicalMargin scrollbars(wm,
                              scrollContainerFrame->GetActualScrollbarSizes());
-    aReflowInput->SetComputedISize(
-        aReflowInput->ComputedISize() - scrollbars.IStartEnd(wm),
+    aReflowInput.SetComputedISize(
+        aReflowInput.ComputedISize() - scrollbars.IStartEnd(wm),
         ReflowInput::ResetResizeFlags::No);
-    aReflowInput->SetAvailableISize(aReflowInput->AvailableISize() -
-                                    scrollbars.IStartEnd(wm));
-    aReflowInput->SetComputedBSize(
-        aReflowInput->ComputedBSize() - scrollbars.BStartEnd(wm),
+    aReflowInput.SetAvailableISize(aReflowInput.AvailableISize() -
+                                   scrollbars.IStartEnd(wm));
+    aReflowInput.SetComputedBSize(
+        aReflowInput.ComputedBSize() - scrollbars.BStartEnd(wm),
         ReflowInput::ResetResizeFlags::No);
     return nsPoint(scrollbars.Left(wm), scrollbars.Top(wm));
   }
@@ -363,9 +377,39 @@ nsPoint ViewportFrame::AdjustReflowInputForScrollbars(
 }
 
 nsRect ViewportFrame::AdjustReflowInputAsContainingBlock(
-    ReflowInput* aReflowInput) const {
+    ReflowInput& aReflowInput) const {
   const nsPoint origin = AdjustReflowInputForScrollbars(aReflowInput);
-  nsRect rect(origin, aReflowInput->ComputedPhysicalSize());
+  nsRect rect(origin, aReflowInput.ComputedPhysicalSize());
+  rect.SizeTo(AdjustViewportSizeForFixedPosition(rect));
+
+  return rect;
+}
+
+nsRect ViewportFrame::GetContainingBlockAdjustedForScrollbars(
+    const ReflowInput& aReflowInput) const {
+  const WritingMode wm = aReflowInput.GetWritingMode();
+
+  LogicalSize computedSize = aReflowInput.ComputedSize();
+  const nsPoint& origin = [&]() {
+    // Get our prinicpal child frame and see if we're scrollable
+    nsIFrame* kidFrame = mFrames.FirstChild();
+    if (ScrollContainerFrame* scrollContainerFrame = do_QueryFrame(kidFrame)) {
+      // Note: In ReflowInput::CalculateHypotheticalPosition(), we exclude the
+      // scrollbar or scrollbar-gutter area when computing the offset to
+      // ViewportFrame. Ensure the code there remains in sync with the logic
+      // here.
+      LogicalMargin scrollbars(wm,
+                               scrollContainerFrame->GetActualScrollbarSizes());
+      computedSize.ISize(wm) =
+          std::max(0, aReflowInput.ComputedISize() - scrollbars.IStartEnd(wm));
+      computedSize.BSize(wm) =
+          std::max(0, aReflowInput.ComputedBSize() - scrollbars.BStartEnd(wm));
+      return nsPoint(scrollbars.Left(wm), scrollbars.Top(wm));
+    }
+    return nsPoint(0, 0);
+  }();
+
+  nsRect rect(origin, computedSize.GetPhysicalSize(wm));
   rect.SizeTo(AdjustViewportSizeForFixedPosition(rect));
 
   return rect;
@@ -445,8 +489,8 @@ void ViewportFrame::Reflow(nsPresContext* aPresContext,
   aDesiredSize.SetOverflowAreasToDesiredBounds();
 
   if (HasAbsolutelyPositionedChildren()) {
-    // Make a copy of the reflow input and change the computed width and height
-    // to reflect the available space for the fixed items
+    // Make a copy of the reflow input and change the computed block size to
+    // reflect the available space for the fixed items
     ReflowInput reflowInput(aReflowInput);
 
     if (reflowInput.AvailableBSize() == NS_UNCONSTRAINEDSIZE) {
@@ -460,11 +504,17 @@ void ViewportFrame::Reflow(nsPresContext* aPresContext,
       reflowInput.SetComputedBSize(maxSize.BSize(wm));
     }
 
-    nsRect rect = AdjustReflowInputAsContainingBlock(&reflowInput);
-    AbsPosReflowFlags flags =
-        AbsPosReflowFlags::CBWidthAndHeightChanged;  // XXX could be optimized
+    // The containing block for children. We intentionally not take scrollbar
+    // size and dynamic toolbar into account because
+    // ::-moz-snapshot-containing-block should include those areas.
+    //
+    // We will take them into account in nsAbsoluteContainingBlock::Reflow(),
+    // for kid frames other than ::-moz-snapshot-containing-block.
+    const nsRect cb(nsPoint(), reflowInput.ComputedPhysicalSize());
+    // XXX could be optimized
+    AbsPosReflowFlags flags = AbsPosReflowFlags::CBWidthAndHeightChanged;
     GetAbsoluteContainingBlock()->Reflow(this, aPresContext, reflowInput,
-                                         aStatus, rect, flags,
+                                         aStatus, cb, flags,
                                          /* aOverflowAreas = */ nullptr);
   }
 

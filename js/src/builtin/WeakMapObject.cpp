@@ -9,6 +9,7 @@
 #include "builtin/WeakSetObject.h"
 #include "gc/GC.h"
 #include "gc/GCContext.h"
+#include "jit/InlinableNatives.h"
 #include "js/friend/ErrorMessages.h"  // JSMSG_*
 #include "js/PropertySpec.h"
 #include "js/WeakMap.h"
@@ -56,6 +57,13 @@ bool WeakMapObject::has(JSContext* cx, unsigned argc, Value* vp) {
                                                                           args);
 }
 
+// static
+bool WeakMapObject::hasObject(WeakMapObject* weakMap, JSObject* obj) {
+  AutoUnsafeCallWithABI unsafe;
+  ValueValueWeakMap* map = weakMap->getMap();
+  return map && map->has(ObjectValue(*obj));
+}
+
 /* static */ MOZ_ALWAYS_INLINE bool WeakMapObject::get_impl(
     JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(WeakMapObject::is(args.thisv()));
@@ -83,6 +91,19 @@ bool WeakMapObject::get(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return CallNonGenericMethod<WeakMapObject::is, WeakMapObject::get_impl>(cx,
                                                                           args);
+}
+
+// static
+void WeakMapObject::getObject(WeakMapObject* weakMap, JSObject* obj,
+                              Value* result) {
+  AutoUnsafeCallWithABI unsafe;
+  if (ValueValueWeakMap* map = weakMap->getMap()) {
+    if (ValueValueWeakMap::Ptr ptr = map->lookup(ObjectValue(*obj))) {
+      *result = ptr->value();
+      return;
+    }
+  }
+  *result = UndefinedValue();
 }
 
 /* static */ MOZ_ALWAYS_INLINE bool WeakMapObject::delete_impl(
@@ -411,7 +432,7 @@ const ClassSpec WeakMapObject::classSpec_ = {
     nullptr,
     WeakMapObject::methods,
     WeakMapObject::properties,
-    GenericFinishInit<WhichHasFuseProperty::Proto>,
+    GenericFinishInit<WhichHasRealmFuseProperty::Proto>,
 };
 
 const JSClass WeakMapObject::class_ = {
@@ -435,8 +456,8 @@ const JSPropertySpec WeakMapObject::properties[] = {
 };
 
 const JSFunctionSpec WeakMapObject::methods[] = {
-    JS_FN("has", has, 1, 0),
-    JS_FN("get", get, 1, 0),
+    JS_INLINABLE_FN("has", has, 1, 0, WeakMapHas),
+    JS_INLINABLE_FN("get", get, 1, 0, WeakMapGet),
     JS_FN("delete", delete_, 1, 0),
     JS_FN("set", set, 2, 0),
 #ifdef NIGHTLY_BUILD

@@ -56,11 +56,11 @@ MDefinition* MWasmTruncateToInt32::foldsTo(TempAllocator& alloc) {
     }
 
     if (!isUnsigned() && d <= double(INT32_MAX) && d >= double(INT32_MIN)) {
-      return MConstant::New(alloc, Int32Value(ToInt32(d)));
+      return MConstant::NewInt32(alloc, ToInt32(d));
     }
 
     if (isUnsigned() && d <= double(UINT32_MAX) && d >= 0) {
-      return MConstant::New(alloc, Int32Value(ToInt32(d)));
+      return MConstant::NewInt32(alloc, ToInt32(d));
     }
   }
 
@@ -71,11 +71,11 @@ MDefinition* MWasmTruncateToInt32::foldsTo(TempAllocator& alloc) {
     }
 
     if (!isUnsigned() && f <= double(INT32_MAX) && f >= double(INT32_MIN)) {
-      return MConstant::New(alloc, Int32Value(ToInt32(f)));
+      return MConstant::NewInt32(alloc, ToInt32(f));
     }
 
     if (isUnsigned() && f <= double(UINT32_MAX) && f >= 0) {
-      return MConstant::New(alloc, Int32Value(ToInt32(f)));
+      return MConstant::NewInt32(alloc, ToInt32(f));
     }
   }
 
@@ -95,8 +95,8 @@ MDefinition* MWasmExtendU32Index::foldsTo(TempAllocator& alloc) {
 MDefinition* MWasmWrapU32Index::foldsTo(TempAllocator& alloc) {
   MDefinition* input = this->input();
   if (input->isConstant()) {
-    return MConstant::New(
-        alloc, Int32Value(int32_t(uint32_t(input->toConstant()->toInt64()))));
+    return MConstant::NewInt32(
+        alloc, int32_t(uint32_t(input->toConstant()->toInt64())));
   }
 
   return this;
@@ -136,8 +136,7 @@ static MDefinition* ToIntegralConstant(TempAllocator& alloc, MIRType ty,
                                        uint64_t val) {
   switch (ty) {
     case MIRType::Int32:
-      return MConstant::New(alloc,
-                            Int32Value(int32_t(uint32_t(val & Low32Mask))));
+      return MConstant::NewInt32(alloc, int32_t(uint32_t(val & Low32Mask)));
     case MIRType::Int64:
       return MConstant::NewInt64(alloc, int64_t(val));
     default:
@@ -264,7 +263,7 @@ MDefinition* MWasmAddOffset::foldsTo(TempAllocator& alloc) {
     if (!ptr.isValid()) {
       return this;
     }
-    return MConstant::New(alloc, Int32Value(ptr.value()));
+    return MConstant::NewInt32(alloc, ptr.value());
   }
 
   MOZ_ASSERT(baseArg->type() == MIRType::Int64);
@@ -741,7 +740,7 @@ MDefinition* MWasmReduceSimd128::foldsTo(TempAllocator& alloc) {
 #  endif
         return this;
     }
-    return MConstant::New(alloc, Int32Value(i32Result), MIRType::Int32);
+    return MConstant::NewInt32(alloc, i32Result);
   }
 #  ifdef DEBUG
   logging.release();
@@ -752,8 +751,8 @@ MDefinition* MWasmReduceSimd128::foldsTo(TempAllocator& alloc) {
 
 MDefinition* MWasmUnsignedToDouble::foldsTo(TempAllocator& alloc) {
   if (input()->isConstant()) {
-    return MConstant::New(
-        alloc, DoubleValue(uint32_t(input()->toConstant()->toInt32())));
+    return MConstant::NewDouble(alloc,
+                                uint32_t(input()->toConstant()->toInt32()));
   }
 
   return this;
@@ -946,13 +945,13 @@ static MDefinition* FoldTrivialWasmTests(TempAllocator& alloc,
                                          wasm::RefType destType) {
   // Upcasts are trivially valid.
   if (wasm::RefType::isSubTypeOf(sourceType, destType)) {
-    return MConstant::New(alloc, Int32Value(1), MIRType::Int32);
+    return MConstant::NewInt32(alloc, 1);
   }
 
   // If two types are completely disjoint, then all casts between them are
   // impossible.
   if (!wasm::RefType::castPossible(destType, sourceType)) {
-    return MConstant::New(alloc, Int32Value(0), MIRType::Int32);
+    return MConstant::NewInt32(alloc, 0);
   }
 
   return nullptr;

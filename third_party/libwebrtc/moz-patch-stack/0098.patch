@@ -11,10 +11,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/2185cab977988fd4a
  3 files changed, 16 insertions(+)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index f68dfb07f0..1f8090613a 100644
+index 81521f249b..67934fb234 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -609,6 +609,7 @@ if (!build_with_chromium) {
+@@ -613,6 +613,7 @@ if (!build_with_chromium) {
  
      if (build_with_mozilla) {
        deps += [
@@ -23,7 +23,7 @@ index f68dfb07f0..1f8090613a 100644
          "api/video:video_rtp_headers",
          "test:rtp_test_utils",
 diff --git a/api/environment/environment_factory.cc b/api/environment/environment_factory.cc
-index 293ef6cf8a..b9cb6b4f53 100644
+index 692ecc09c2..5fc8c83b8a 100644
 --- a/api/environment/environment_factory.cc
 +++ b/api/environment/environment_factory.cc
 @@ -102,12 +102,22 @@ Environment EnvironmentFactory::CreateWithDefaults() && {

@@ -13,7 +13,6 @@ import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.state.state.SecurityInfoState
@@ -45,7 +44,6 @@ import org.mockito.MockitoAnnotations.openMocks
 import org.robolectric.util.ReflectionHelpers.setStaticField
 import kotlin.reflect.jvm.javaField
 
-@ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class WebAppShortcutManagerTest {
     private lateinit var context: Context

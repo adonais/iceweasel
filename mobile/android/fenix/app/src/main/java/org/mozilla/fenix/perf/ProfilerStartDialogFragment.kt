@@ -25,13 +25,13 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.compose.content
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
@@ -61,10 +61,8 @@ class ProfilerStartDialogFragment : AppCompatDialogFragment() {
         viewScope = MainScope()
 
         profiler = requireContext().components.core.engine.profiler!!
-        return ComposeView(requireContext()).apply {
-            setContent {
-                StartProfileDialog(context.components.core.engine.profiler!!::startProfiler)
-            }
+        return content {
+            StartProfileDialog(requireContext().components.core.engine.profiler!!::startProfiler)
         }
     }
 

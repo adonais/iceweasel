@@ -6,20 +6,19 @@
 
 #include "mozilla/dom/DecompressionStream.h"
 
+#include "CompressionStreamHelper.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/dom/BufferSourceBindingFwd.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BufferSourceBinding.h"
+#include "mozilla/dom/BufferSourceBindingFwd.h"
 #include "mozilla/dom/DecompressionStreamBinding.h"
 #include "mozilla/dom/ReadableStream.h"
-#include "mozilla/dom/WritableStream.h"
 #include "mozilla/dom/TextDecoderStream.h"
 #include "mozilla/dom/TransformStream.h"
 #include "mozilla/dom/TransformerCallbackHelpers.h"
 #include "mozilla/dom/UnionTypes.h"
-#include "mozilla/StaticPrefs_dom.h"
-
-#include "CompressionStreamHelper.h"
+#include "mozilla/dom/WritableStream.h"
 #include "zstd/zstd.h"
 
 namespace mozilla::dom {

@@ -7,14 +7,14 @@
 #ifndef mozilla_dom_MediaKeyMessageEvent_h__
 #define mozilla_dom_MediaKeyMessageEvent_h__
 
+#include "js/TypeDecls.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/dom/Event.h"
+#include "mozilla/dom/MediaKeyMessageEventBinding.h"
+#include "mozilla/dom/TypedArray.h"
+#include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
-#include "nsCOMPtr.h"
-#include "mozilla/dom/Event.h"
-#include "mozilla/dom/TypedArray.h"
-#include "js/TypeDecls.h"
-#include "mozilla/dom/MediaKeyMessageEventBinding.h"
 
 namespace mozilla {
 class ErrorResult;

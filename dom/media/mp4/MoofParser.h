@@ -5,15 +5,15 @@
 #ifndef MOOF_PARSER_H_
 #define MOOF_PARSER_H_
 
-#include "mozilla/ResultExtensions.h"
-#include "TimeUnits.h"
-#include "mozilla/Variant.h"
 #include "Atom.h"
 #include "AtomType.h"
-#include "SinfParser.h"
 #include "ByteStream.h"
 #include "MP4Interval.h"
 #include "MediaResource.h"
+#include "SinfParser.h"
+#include "TimeUnits.h"
+#include "mozilla/ResultExtensions.h"
+#include "mozilla/Variant.h"
 
 namespace mozilla {
 

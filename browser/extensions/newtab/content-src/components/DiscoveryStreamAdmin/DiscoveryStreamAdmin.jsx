@@ -435,7 +435,7 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
     return (
       <div>
         {" "}
-        Inferred Intrests:
+        Inferred Interests:
         <pre>{JSON.stringify(inferredInterests, null, 2)}</pre> Coarse Inferred
         Interests:
         <pre>{JSON.stringify(coarseInferredInterests, null, 2)}</pre> Coarse

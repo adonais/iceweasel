@@ -33,9 +33,7 @@ add_task(async function visibility_of_elements() {
   let urlbar = window.gURLBar;
 
   Assert.equal(
-    BrowserTestUtils.isVisible(
-      urlbar.querySelector("#urlbar-searchmode-switcher")
-    ),
+    BrowserTestUtils.isVisible(urlbar.querySelector(".searchmode-switcher")),
     true,
     "Unified Search Button is visible."
   );

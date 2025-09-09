@@ -6,9 +6,9 @@
 
 #include "mozilla/EMEUtils.h"
 
-#include "jsfriendapi.h"
-#include "MediaData.h"
 #include "KeySystemConfig.h"
+#include "MediaData.h"
+#include "jsfriendapi.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/dom/BufferSourceBinding.h"
 #include "mozilla/dom/Document.h"

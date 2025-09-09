@@ -9,12 +9,11 @@
 
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
-
 #include "mozilla/dom/BindingIPCUtils.h"
-#include "mozilla/dom/indexedDB/Key.h"
-#include "mozilla/dom/indexedDB/KeyPath.h"
 #include "mozilla/dom/IDBCursor.h"
 #include "mozilla/dom/IDBTransaction.h"
+#include "mozilla/dom/indexedDB/Key.h"
+#include "mozilla/dom/indexedDB/KeyPath.h"
 
 namespace IPC {
 

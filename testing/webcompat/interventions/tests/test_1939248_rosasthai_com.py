@@ -1,41 +1,34 @@
-import asyncio
-
 import pytest
+from webdriver.error import NoSuchElementException
 
 URL = "https://rosasthai.com/locations"
 
-NEAR_ME_CSS = "#near-me"
+COOKIES_CSS = "#ccc"
+VIEW_ALL_CSS = "#view-all"
 LOADING_CSS = ".loading-location"
+SUCCESSFUL_LOAD_CSS = "#panel > [id]"
 
 
-async def is_geoloc_checked(client):
-    await client.make_preload_script(
-        """
-        const { prototype } = EventTarget;
-        const { addEventListener } = prototype;
-        prototype.addEventListener = function (type, b, c, d) {
-          if (!b?.toString().includes("Delay loading immediately to prevent booking popup from breaking")) {
-            return addEventListener.call(this, type, b, c, d);
-          }
-        };
-        navigator.geolocation.getCurrentPosition = function() {
-          window.geolocCalled = true;
-        };
-    """
-    )
-    await client.navigate(URL)
-    client.await_css(NEAR_ME_CSS, is_displayed=True).click()
-    await asyncio.sleep(2)
-    return client.execute_script("return !!window.geolocCalled")
+async def does_clicking_work(client):
+    await client.navigate(URL, wait="none")
+    client.hide_elements(COOKIES_CSS)
+    client.await_css(VIEW_ALL_CSS, is_displayed=True).click()
+    try:
+        client.await_css(LOADING_CSS, is_displayed=True, timeout=3)
+    except NoSuchElementException:
+        return False
+    client.await_element_hidden(client.css(LOADING_CSS))
+    client.await_css(SUCCESSFUL_LOAD_CSS, is_displayed=True)
+    return True
 
 
 @pytest.mark.asyncio
 @pytest.mark.with_interventions
 async def test_enabled(client):
-    assert await is_geoloc_checked(client)
+    assert await does_clicking_work(client)
 
 
 @pytest.mark.asyncio
 @pytest.mark.without_interventions
 async def test_disabled(client):
-    assert not await is_geoloc_checked(client)
+    assert not await does_clicking_work(client)

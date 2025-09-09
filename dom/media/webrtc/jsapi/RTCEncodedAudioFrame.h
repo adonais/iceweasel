@@ -7,10 +7,10 @@
 #ifndef MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCENCODEDAUDIOFRAME_H_
 #define MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCENCODEDAUDIOFRAME_H_
 
-#include "mozilla/RefPtr.h"
-#include "nsIGlobalObject.h"
 #include "jsapi/RTCEncodedFrameBase.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/RTCEncodedAudioFrameBinding.h"
+#include "nsIGlobalObject.h"
 
 namespace mozilla::dom {
 

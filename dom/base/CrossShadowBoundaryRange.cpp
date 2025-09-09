@@ -5,10 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/CrossShadowBoundaryRange.h"
+
 #include "nsContentUtils.h"
+#include "nsIContentInlines.h"
 #include "nsINode.h"
 #include "nsRange.h"
-#include "nsIContentInlines.h"
 
 namespace mozilla::dom {
 template already_AddRefed<CrossShadowBoundaryRange>

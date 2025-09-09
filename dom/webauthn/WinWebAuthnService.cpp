@@ -4,23 +4,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/dom/PWebAuthnTransactionParent.h"
-#include "mozilla/ipc/BackgroundParent.h"
+#include "WinWebAuthnService.h"
+
+#include "WebAuthnAutoFillEntry.h"
+#include "WebAuthnEnumStrings.h"
+#include "WebAuthnResult.h"
+#include "WebAuthnTransportIdentifiers.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/Unused.h"
-
+#include "mozilla/dom/PWebAuthnTransactionParent.h"
+#include "mozilla/ipc/BackgroundParent.h"
 #include "nsTextFormatter.h"
 #include "nsWindowsHelpers.h"
-#include "WebAuthnAutoFillEntry.h"
-#include "WebAuthnEnumStrings.h"
-#include "WebAuthnResult.h"
-#include "WebAuthnTransportIdentifiers.h"
 #include "winwebauthn/webauthn.h"
-#include "WinWebAuthnService.h"
 
 namespace mozilla::dom {
 

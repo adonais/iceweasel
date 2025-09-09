@@ -18,6 +18,7 @@ lint.ignore = [
   "PLR09",     # too-many-return-statements, too-many-branches, too-many-arguments, too-many-statements
   "PLR2004",   # magic-value-comparison
   "PLC0206",   # dict-index-missing-items
+  "PLC0415",   # `import` should be at the top-level of a file
 
   # These are handled by black.
   "E1", "E4", "E5", "W2", "W5",

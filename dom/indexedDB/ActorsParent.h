@@ -8,8 +8,8 @@
 #define mozilla_dom_indexeddb_actorsparent_h__
 
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/dom/PBrowserParent.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/PBrowserParent.h"
 #include "nsIPermissionManager.h"
 
 class nsIPrincipal;

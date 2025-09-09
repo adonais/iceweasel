@@ -7,6 +7,7 @@
 #include "LocalStorageCommon.h"
 
 #include <cstdint>
+
 #include "MainThreadUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"

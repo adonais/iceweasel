@@ -1672,3 +1672,8 @@ def target_tasks_os_integration(full_task_graph, parameters, graph_config):
 
         labels.append(label)
     return labels
+
+
+@register_target_task("weekly-test-info")
+def target_tasks_weekly_test_info(full_task_graph, parameters, graph_config):
+    return ["source-test-file-metadata-test-info-all"]

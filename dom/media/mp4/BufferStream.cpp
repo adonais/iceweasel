@@ -3,9 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "BufferStream.h"
+
+#include <algorithm>
+
 #include "MediaData.h"
 #include "MediaResource.h"
-#include <algorithm>
 
 namespace mozilla {
 

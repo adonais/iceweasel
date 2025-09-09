@@ -290,6 +290,7 @@ class ProviderTopSites extends UrlbarProvider {
           }
           payload.sendAttributionRequest = site.sendAttributionRequest;
 
+          /** @type {Values<typeof UrlbarUtils.RESULT_SOURCE>} */
           let resultSource = UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL;
           if (lazy.UrlbarPrefs.get("suggest.bookmark")) {
             let bookmark = await lazy.PlacesUtils.bookmarks.fetch({
@@ -343,7 +344,6 @@ class ProviderTopSites extends UrlbarProvider {
             ...lazy.UrlbarResult.payloadAndSimpleHighlights(
               queryContext.tokens,
               {
-                title: site.title,
                 keyword: site.title,
                 providesSearchMode: true,
                 engine: engine.name,
@@ -401,6 +401,13 @@ class ProviderTopSites extends UrlbarProvider {
       }
     }
   }
+
+  /**
+   * The number of top site rows to display by default.
+   *
+   * @type {number|undefined}
+   */
+  topSitesRows = undefined;
 }
 
 export var UrlbarProviderTopSites = new ProviderTopSites();

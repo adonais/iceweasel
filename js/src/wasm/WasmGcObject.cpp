@@ -356,6 +356,16 @@ static void WriteValTo(const Val& val, StorageType ty, void* dest) {
 // WasmArrayObject
 
 /* static */
+void js::WasmArrayObject::addSizeOfExcludingThis(
+    JSObject* obj, mozilla::MallocSizeOf mallocSizeOf, JS::ClassInfo* info,
+    JS::RuntimeSizes* runtimeSizes) {
+  const WasmArrayObject& a = obj->as<WasmArrayObject>();
+  if (!a.isDataInline()) {
+    info->objectsMallocHeapElementsNormal += mallocSizeOf(a.dataHeader());
+  }
+}
+
+/* static */
 void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
   WasmArrayObject& arrayObj = object->as<WasmArrayObject>();
   uint8_t* data = arrayObj.data_;
@@ -511,6 +521,16 @@ js::gc::AllocKind js::WasmStructObject::allocKindForTypeDef(
   nbytes = sizeOfIncludingInlineData(nbytes);
 
   return gc::GetGCObjectKindForBytes(nbytes);
+}
+
+/* static */
+void js::WasmStructObject::addSizeOfExcludingThis(
+    JSObject* obj, mozilla::MallocSizeOf mallocSizeOf, JS::ClassInfo* info,
+    JS::RuntimeSizes* runtimeSizes) {
+  const WasmStructObject& s = obj->as<WasmStructObject>();
+  if (s.outlineData_) {
+    info->objectsMallocHeapSlots += mallocSizeOf(s.outlineData_);
+  }
 }
 
 bool WasmStructObject::getField(JSContext* cx, uint32_t index,

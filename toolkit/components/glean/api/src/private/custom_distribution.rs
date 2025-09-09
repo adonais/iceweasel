@@ -32,7 +32,7 @@ pub enum CustomDistributionMetric {
     Child(ChildMetricMeta),
 }
 
-crate::define_metric_namer!(CustomDistributionMetric);
+define_metric_namer!(CustomDistributionMetric);
 
 impl CustomDistributionMetric {
     /// Create a new custom distribution metric.

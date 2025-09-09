@@ -95,31 +95,75 @@ export class PasswordCard extends MozLitElement {
 
   #handleKeydown(e) {
     const element = e.composedTarget;
+    const index = this.#focusableElementsMap.get(element);
+    const numElements = this.#focusableElementsList.length;
 
     const focusInternal = offset => {
-      const index = this.#focusableElementsMap.get(element);
-      this.#focusableElementsList[index + offset].focus();
+      const newIndex = index + offset;
+
+      if (index == null) {
+        return;
+      }
+
+      if (newIndex < 0 || newIndex >= numElements) {
+        return;
+      }
+
+      this.#focusableElementsList[newIndex]?.focus();
     };
+
+    const isLoginLine = element === this.passwordLine.loginLine;
+    const isRevealBtn = element === this.passwordLine.revealBtn.buttonEl;
 
     switch (e.code) {
       case "ArrowUp":
         e.preventDefault();
-        if (this.#focusableElementsMap.get(element) === 0) {
+
+        if (isRevealBtn) {
+          this.usernameLine?.focus();
+          return;
+        }
+
+        if (index === 0) {
           this.#getPrevFocusableElement()?.focus();
         } else {
           focusInternal(DIRECTIONS[e.code]);
         }
+
         break;
+
       case "ArrowDown":
         e.preventDefault();
-        if (
-          this.#focusableElementsMap.get(element) ===
-          this.#focusableElementsList.length - 1
-        ) {
+
+        if (isLoginLine || isRevealBtn) {
+          this.editBtn?.focus();
+          return;
+        }
+
+        if (index === numElements - 1) {
           this.#getNextFocusableElement()?.focus();
         } else {
           focusInternal(DIRECTIONS[e.code]);
         }
+
+        break;
+
+      case "ArrowLeft":
+        if (isRevealBtn) {
+          e.preventDefault();
+          focusInternal(DIRECTIONS[e.code]);
+        }
+
+        break;
+
+      case "ArrowRight":
+        if (isLoginLine) {
+          e.preventDefault();
+          focusInternal(DIRECTIONS[e.code]);
+        } else if (isRevealBtn) {
+          e.preventDefault();
+        }
+
         break;
     }
   }
@@ -257,6 +301,7 @@ export class PasswordCard extends MozLitElement {
   renderButton() {
     return html`<div class="edit-line-container" role="option">
       <moz-button
+        tabindex="-1"
         data-l10n-id="contextual-manager-edit-login-button"
         class="edit-button"
         @click=${this.onEditButtonClick}
@@ -289,6 +334,7 @@ export class PasswordCard extends MozLitElement {
           class="view-alert-button"
           data-l10n-id="contextual-manager-view-alert-button-2"
           data-l10n-args=${alertCountArg}
+          tabindex="-1"
           slot="actions"
           type="icon"
           iconSrc=${getIconSrc()}

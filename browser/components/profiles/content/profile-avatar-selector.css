@@ -50,7 +50,7 @@
   --button-icon-stroke: currentColor;
 
   /* Scale up 16x16 icon (12x12 + 4x4 padding) to 24px for normal display size */
-  --icon-size-default: 24px;
+  --icon-size: 24px;
 }
 
 #avatar-selector {

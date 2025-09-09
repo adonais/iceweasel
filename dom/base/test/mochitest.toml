@@ -1415,6 +1415,7 @@ support-files = ["file_location_href_unknown_protocol.html"]
 
 ["test_lock_orientation_after_fullscreen.html"]
 run-if = ["os == 'android'"] # Only run on Android.
+skip-if = ["os == 'android' && android_version == '34' && processor == 'x86_64'"] # Bug 1982947
 
 ["test_lock_orientation_with_pending_fullscreen.html"]
 skip-if = [

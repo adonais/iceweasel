@@ -264,17 +264,32 @@ using Tracing = mozilla::baseprofiler::markers::Tracing;
     }                                                                         \
   } while (false)
 
+// Template specializations for Gecko-specific types
+namespace mozilla {
+template <>
+constexpr MarkerSchema::InputType
+MarkerSchema::getDefaultInputTypeForType<nsCString>() {
+  return InputType::CString;
+}
+
+template <>
+constexpr MarkerSchema::Format
+MarkerSchema::getDefaultFormatForType<nsCString>() {
+  return Format::SanitizedString;
+}
+}  // namespace mozilla
+
 namespace geckoprofiler::markers {
 // This allows us to bundle the argument name and its type into a single class
 // so they may be passed to the SimplePayloadMarkerTemplate class.
 template <const char* ArgName, typename ArgType>
 struct FieldDescription {
   static constexpr const char* name = ArgName;
-  static constexpr ArgType var = {};
+  using type = ArgType;
 };
 
 // This is a template class at the compile unit scope because function scope
-// classes cannot have static members. (Event when constexpr)
+// classes cannot have static members. (Even when constexpr)
 template <const char ArgName[], const char ArgTableLabel[],
           typename... ArgTypes>
 struct SimplePayloadMarkerTemplate
@@ -284,11 +299,13 @@ struct SimplePayloadMarkerTemplate
 
   using MS = mozilla::MarkerSchema;
 
-  static constexpr MS::PayloadField PayloadFields[] = {
+  // This needs to be explicitly sized due to:
+  // https://github.com/llvm/llvm-project/issues/150426
+  static constexpr MS::PayloadField PayloadFields[sizeof...(ArgTypes)] = {
       {ArgTypes::name,
-       MS::getDefaultInputTypeForType<decltype(ArgTypes::var)>(),
+       MS::getDefaultInputTypeForType<typename ArgTypes::type>(),
        ArgTypes::name,
-       MS::getDefaultFormatForType<decltype(ArgTypes::var)>()}...};
+       MS::getDefaultFormatForType<typename ArgTypes::type>()}...};
 
   static constexpr const char* TableLabel = ArgTableLabel;
 
@@ -297,7 +314,7 @@ struct SimplePayloadMarkerTemplate
 
   static void StreamJSONMarkerData(
       mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
-      const decltype(ArgTypes::var)&... args) {
+      const typename ArgTypes::type&... args) {
     mozilla::BaseMarkerType<
         SimplePayloadMarkerTemplate<ArgName, ArgTableLabel, ArgTypes...>>::
         StreamJSONMarkerDataImpl(aWriter, args...);
@@ -328,8 +345,9 @@ struct SimplePayloadMarkerTemplate
 // Example: PROFILER_MARKER_SIMPLE_PAYLOAD("My Marker", DOM, mOpaque, mCount)
 //
 // Alternatively a label for the marker table can be specified:
-// Example: PROFILER_MARKET_SIMPLE_PAYLOAD("My Marker", DOM, "This is element
-// number {marker.data.mCount}. Opaque: {marker.data.mOpaque}", mOpaque, mCount)
+// Example: PROFILER_MARKER_SIMPLE_PAYLOAD_WITH_LABEL("My Marker", DOM,
+// "This is element number {marker.data.mCount}. Opaque: {marker.data.mOpaque}",
+// mOpaque, mCount)
 #define PROFILER_MARKER_SIMPLE_PAYLOAD_WITH_LABEL(markerName, categoryName,  \
                                                   label, ...)                \
   do {                                                                       \

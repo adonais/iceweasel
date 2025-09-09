@@ -329,6 +329,7 @@ async def session(driver, request, test_config):
         {
             "acceptInsecureCerts": True,
             "webSocketUrl": True,
+            "unhandledPromptBehavior": "dismiss",
         }
     )
     caps = {"alwaysMatch": caps}

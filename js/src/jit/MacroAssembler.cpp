@@ -50,6 +50,7 @@
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmCodegenConstants.h"
 #include "wasm/WasmCodegenTypes.h"
+#include "wasm/WasmInstance.h"
 #include "wasm/WasmInstanceData.h"
 #include "wasm/WasmMemory.h"
 #include "wasm/WasmTypeDef.h"
@@ -862,9 +863,55 @@ static std::pair<uint32_t, uint32_t> FindStartOfUninitializedAndUndefinedSlots(
 }
 
 void MacroAssembler::initTypedArraySlots(
-    Register obj, Register temp, Register lengthReg, LiveRegisterSet liveRegs,
-    Label* fail, FixedLengthTypedArrayObject* templateObj,
-    TypedArrayLength lengthKind) {
+    Register obj, Register length, Register temp1, Register temp2,
+    LiveRegisterSet liveRegs, Label* fail,
+    const FixedLengthTypedArrayObject* templateObj) {
+  MOZ_ASSERT(!templateObj->hasBuffer());
+
+  constexpr size_t dataSlotOffset = ArrayBufferViewObject::dataOffset();
+  constexpr size_t dataOffset = dataSlotOffset + sizeof(HeapSlot);
+
+  static_assert(
+      FixedLengthTypedArrayObject::FIXED_DATA_START ==
+          FixedLengthTypedArrayObject::DATA_SLOT + 1,
+      "fixed inline element data assumed to begin after the data slot");
+
+  static_assert(
+      FixedLengthTypedArrayObject::INLINE_BUFFER_LIMIT ==
+          JSObject::MAX_BYTE_SIZE - dataOffset,
+      "typed array inline buffer is limited by the maximum object byte size");
+
+  MOZ_ASSERT(templateObj->tenuredSizeOfThis() >= dataOffset);
+
+  // Capacity for inline elements.
+  size_t inlineCapacity = templateObj->tenuredSizeOfThis() - dataOffset;
+  movePtr(ImmWord(inlineCapacity), temp2);
+
+  // Ensure volatile |obj| is saved across the call.
+  if (obj.volatile_()) {
+    liveRegs.addUnchecked(obj);
+  }
+
+  // Allocate a buffer on the heap to store the data elements.
+  PushRegsInMask(liveRegs);
+  using Fn =
+      void (*)(JSContext*, FixedLengthTypedArrayObject*, int32_t, size_t);
+  setupUnalignedABICall(temp1);
+  loadJSContext(temp1);
+  passABIArg(temp1);
+  passABIArg(obj);
+  passABIArg(length);
+  passABIArg(temp2);
+  callWithABI<Fn, AllocateAndInitTypedArrayBuffer>();
+  PopRegsInMask(liveRegs);
+
+  // Fail when data slot is UndefinedValue.
+  branchTestUndefined(Assembler::Equal, Address(obj, dataSlotOffset), fail);
+}
+
+void MacroAssembler::initTypedArraySlotsInline(
+    Register obj, Register temp,
+    const FixedLengthTypedArrayObject* templateObj) {
   MOZ_ASSERT(!templateObj->hasBuffer());
 
   constexpr size_t dataSlotOffset = ArrayBufferViewObject::dataOffset();
@@ -881,56 +928,36 @@ void MacroAssembler::initTypedArraySlots(
       "typed array inline buffer is limited by the maximum object byte size");
 
   // Initialise data elements to zero.
-  size_t length = templateObj->length();
-  MOZ_ASSERT(length <= INT32_MAX,
-             "Template objects are only created for int32 lengths");
-  size_t nbytes = length * templateObj->bytesPerElement();
+  size_t nbytes = templateObj->byteLength();
+  MOZ_ASSERT(nbytes <= FixedLengthTypedArrayObject::INLINE_BUFFER_LIMIT);
 
-  if (lengthKind == TypedArrayLength::Fixed &&
-      nbytes <= FixedLengthTypedArrayObject::INLINE_BUFFER_LIMIT) {
-    MOZ_ASSERT(dataOffset + nbytes <= templateObj->tenuredSizeOfThis());
+  MOZ_ASSERT(dataOffset + nbytes <= templateObj->tenuredSizeOfThis());
+  MOZ_ASSERT(templateObj->tenuredSizeOfThis() > dataOffset,
+             "enough inline capacity to tag with ZeroLengthArrayData");
 
-    // Store data elements inside the remaining JSObject slots.
-    computeEffectiveAddress(Address(obj, dataOffset), temp);
-    storePrivateValue(temp, Address(obj, dataSlotOffset));
+  // Store data elements inside the remaining JSObject slots.
+  computeEffectiveAddress(Address(obj, dataOffset), temp);
+  storePrivateValue(temp, Address(obj, dataSlotOffset));
 
-    // Write enough zero pointers into fixed data to zero every
-    // element.  (This zeroes past the end of a byte count that's
-    // not a multiple of pointer size.  That's okay, because fixed
-    // data is a count of 8-byte HeapSlots (i.e. <= pointer size),
-    // and we won't inline unless the desired memory fits in that
-    // space.)
-    static_assert(sizeof(HeapSlot) == 8, "Assumed 8 bytes alignment");
+  // Write enough zero pointers into fixed data to zero every
+  // element.  (This zeroes past the end of a byte count that's
+  // not a multiple of pointer size.  That's okay, because fixed
+  // data is a count of 8-byte HeapSlots (i.e. <= pointer size),
+  // and we won't inline unless the desired memory fits in that
+  // space.)
+  static_assert(sizeof(HeapSlot) == 8, "Assumed 8 bytes alignment");
 
-    size_t numZeroPointers = ((nbytes + 7) & ~0x7) / sizeof(char*);
-    for (size_t i = 0; i < numZeroPointers; i++) {
-      storePtr(ImmWord(0), Address(obj, dataOffset + i * sizeof(char*)));
-    }
-    MOZ_ASSERT(nbytes > 0, "Zero-length TypedArrays need ZeroLengthArrayData");
-  } else {
-    if (lengthKind == TypedArrayLength::Fixed) {
-      move32(Imm32(length), lengthReg);
-    }
-
-    // Ensure volatile |obj| is saved across the call.
-    if (obj.volatile_()) {
-      liveRegs.addUnchecked(obj);
-    }
-
-    // Allocate a buffer on the heap to store the data elements.
-    PushRegsInMask(liveRegs);
-    using Fn = void (*)(JSContext* cx, TypedArrayObject* obj, int32_t count);
-    setupUnalignedABICall(temp);
-    loadJSContext(temp);
-    passABIArg(temp);
-    passABIArg(obj);
-    passABIArg(lengthReg);
-    callWithABI<Fn, AllocateAndInitTypedArrayBuffer>();
-    PopRegsInMask(liveRegs);
-
-    // Fail when data slot is UndefinedValue.
-    branchTestUndefined(Assembler::Equal, Address(obj, dataSlotOffset), fail);
+  size_t numZeroPointers = ((nbytes + 7) & ~0x7) / sizeof(char*);
+  for (size_t i = 0; i < numZeroPointers; i++) {
+    storePtr(ImmWord(0), Address(obj, dataOffset + i * sizeof(char*)));
   }
+
+#ifdef DEBUG
+  if (nbytes == 0) {
+    store8(Imm32(ArrayBufferViewObject::ZeroLengthArrayData),
+           Address(obj, dataOffset));
+  }
+#endif
 }
 
 void MacroAssembler::initGCSlots(Register obj, Register temp,
@@ -3361,7 +3388,7 @@ template void MacroAssembler::emitMegamorphicCachedSetSlot<ValueOperand>(
 void MacroAssembler::guardNonNegativeIntPtrToInt32(Register reg, Label* fail) {
 #ifdef DEBUG
   Label ok;
-  branchPtr(Assembler::NotSigned, reg, reg, &ok);
+  branchTestPtr(Assembler::NotSigned, reg, reg, &ok);
   assumeUnreachable("Unexpected negative value");
   bind(&ok);
 #endif
@@ -3449,31 +3476,6 @@ void MacroAssembler::loadResizableArrayBufferViewLengthIntPtr(
     // Compute the array length from the byte length.
     resizableTypedArrayElementShiftBy(obj, output, scratch);
   }
-
-  bind(&done);
-}
-
-void MacroAssembler::loadResizableTypedArrayByteOffsetMaybeOutOfBoundsIntPtr(
-    Register obj, Register output, Register scratch) {
-  // Inline implementation of TypedArrayObject::byteOffsetMaybeOutOfBounds(),
-  // when the input is guaranteed to be a resizable typed array object.
-
-  loadArrayBufferViewByteOffsetIntPtr(obj, output);
-
-  // TypedArray is neither detached nor out-of-bounds when byteOffset non-zero.
-  Label done;
-  branchPtr(Assembler::NotEqual, output, ImmWord(0), &done);
-
-  // We're done when the initial byteOffset is zero.
-  loadPrivate(Address(obj, ArrayBufferViewObject::initialByteOffsetOffset()),
-              output);
-  branchPtr(Assembler::Equal, output, ImmWord(0), &done);
-
-  // If the buffer is attached, return initialByteOffset.
-  branchIfHasAttachedArrayBuffer(obj, scratch, &done);
-
-  // Otherwise return zero to match the result for fixed-length TypedArrays.
-  movePtr(ImmWord(0), output);
 
   bind(&done);
 }
@@ -4866,6 +4868,39 @@ void MacroAssembler::passABIArg(const MoveOperand& from, ABIType type) {
     return;
   }
   propagateOOM(moveResolver_.addMove(from, to, moveType));
+}
+
+void MacroAssembler::passABIArg(Register64 reg) {
+  MOZ_ASSERT(inCall_);
+  appendSignatureType(ABIType::Int64);
+
+  ABIArg arg = abiArgs_.next(MIRType::Int64);
+  MoveOperand to(*this, arg);
+
+  auto addMove = [&](const MoveOperand& from, const MoveOperand& to) {
+    if (from == to) {
+      return;
+    }
+    if (oom()) {
+      return;
+    }
+    propagateOOM(moveResolver_.addMove(from, to, MoveOp::GENERAL));
+  };
+
+#ifdef JS_PUNBOX64
+  addMove(MoveOperand(reg.reg), to);
+#else
+  if (to.isMemory()) {
+    Address addr(to.base(), to.disp());
+    addMove(MoveOperand(reg.high), MoveOperand(HighWord(addr)));
+    addMove(MoveOperand(reg.low), MoveOperand(LowWord(addr)));
+  } else if (to.isGeneralRegPair()) {
+    addMove(MoveOperand(reg.high), MoveOperand(to.oddReg()));
+    addMove(MoveOperand(reg.low), MoveOperand(to.evenReg()));
+  } else {
+    MOZ_CRASH("Unsupported move operand");
+  }
+#endif
 }
 
 void MacroAssembler::callWithABINoProfiler(void* fun, ABIType result,
@@ -6341,9 +6376,7 @@ CodeOffset MacroAssembler::asmCallIndirect(const wasm::CallSiteDesc& desc,
 
 void MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
                                       const wasm::CalleeDesc& callee,
-                                      Label* boundsCheckFailedLabel,
                                       Label* nullCheckFailedLabel,
-                                      mozilla::Maybe<uint32_t> tableSize,
                                       CodeOffset* fastCallOffset,
                                       CodeOffset* slowCallOffset) {
   static_assert(sizeof(wasm::FunctionTableElem) == 2 * sizeof(void*),
@@ -6353,28 +6386,6 @@ void MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
   const int shift = sizeof(wasm::FunctionTableElem) == 8 ? 3 : 4;
   const Register calleeScratch = WasmTableCallScratchReg0;
   const Register index = WasmTableCallIndexReg;
-
-  // Check the table index and throw if out-of-bounds.
-  //
-  // Frequently the table size is known, so optimize for that.  Otherwise
-  // compare with a memory operand when that's possible.  (There's little sense
-  // in hoisting the load of the bound into a register at a higher level and
-  // reusing that register, because a hoisted value would either have to be
-  // spilled and re-loaded before the next call_indirect, or would be abandoned
-  // because we could not trust that a hoisted value would not have changed.)
-
-  if (boundsCheckFailedLabel) {
-    if (tableSize.isSome()) {
-      branch32(Assembler::Condition::AboveOrEqual, index, Imm32(*tableSize),
-               boundsCheckFailedLabel);
-    } else {
-      branch32(
-          Assembler::Condition::BelowOrEqual,
-          Address(InstanceReg, wasm::Instance::offsetInData(
-                                   callee.tableLengthInstanceDataOffset())),
-          index, boundsCheckFailedLabel);
-    }
-  }
 
   // Write the functype-id into the ABI functype-id register.
 
@@ -6479,9 +6490,7 @@ void MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
 
 void MacroAssembler::wasmReturnCallIndirect(
     const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee,
-    Label* boundsCheckFailedLabel, Label* nullCheckFailedLabel,
-    mozilla::Maybe<uint32_t> tableSize,
-    const ReturnCallAdjustmentInfo& retCallInfo) {
+    Label* nullCheckFailedLabel, const ReturnCallAdjustmentInfo& retCallInfo) {
   static_assert(sizeof(wasm::FunctionTableElem) == 2 * sizeof(void*),
                 "Exactly two pointers or index scaling won't work correctly");
   MOZ_ASSERT(callee.which() == wasm::CalleeDesc::WasmTable);
@@ -6489,28 +6498,6 @@ void MacroAssembler::wasmReturnCallIndirect(
   const int shift = sizeof(wasm::FunctionTableElem) == 8 ? 3 : 4;
   const Register calleeScratch = WasmTableCallScratchReg0;
   const Register index = WasmTableCallIndexReg;
-
-  // Check the table index and throw if out-of-bounds.
-  //
-  // Frequently the table size is known, so optimize for that.  Otherwise
-  // compare with a memory operand when that's possible.  (There's little sense
-  // in hoisting the load of the bound into a register at a higher level and
-  // reusing that register, because a hoisted value would either have to be
-  // spilled and re-loaded before the next call_indirect, or would be abandoned
-  // because we could not trust that a hoisted value would not have changed.)
-
-  if (boundsCheckFailedLabel) {
-    if (tableSize.isSome()) {
-      branch32(Assembler::Condition::AboveOrEqual, index, Imm32(*tableSize),
-               boundsCheckFailedLabel);
-    } else {
-      branch32(
-          Assembler::Condition::BelowOrEqual,
-          Address(InstanceReg, wasm::Instance::offsetInData(
-                                   callee.tableLengthInstanceDataOffset())),
-          index, boundsCheckFailedLabel);
-    }
-  }
 
   // Write the functype-id into the ABI functype-id register.
 
@@ -7259,7 +7246,8 @@ void MacroAssembler::branchValueConvertsToWasmAnyRefInline(
   bind(&checkDouble);
   {
     unboxDouble(src, scratchFloat);
-    convertDoubleToInt32(scratchFloat, scratchInt, &fallthrough);
+    convertDoubleToInt32(scratchFloat, scratchInt, &fallthrough,
+                         /*negativeZeroCheck=*/false);
     branch32(Assembler::GreaterThan, scratchInt,
              Imm32(wasm::AnyRef::MaxI31Value), &fallthrough);
     branch32(Assembler::LessThan, scratchInt, Imm32(wasm::AnyRef::MinI31Value),
@@ -7288,7 +7276,8 @@ void MacroAssembler::convertValueToWasmAnyRef(ValueOperand src, Register dest,
   bind(&doubleValue);
   {
     unboxDouble(src, scratchFloat);
-    convertDoubleToInt32(scratchFloat, dest, oolConvert);
+    convertDoubleToInt32(scratchFloat, dest, oolConvert,
+                         /*negativeZeroCheck=*/false);
     branch32(Assembler::GreaterThan, dest, Imm32(wasm::AnyRef::MaxI31Value),
              oolConvert);
     branch32(Assembler::LessThan, dest, Imm32(wasm::AnyRef::MinI31Value),
@@ -7367,6 +7356,13 @@ void MacroAssembler::wasmNewStructObject(Register instance, Register result,
   jump(fail);
 #endif
 
+  // Don't execute the inline path if there is an allocation metadata builder
+  // on the realm.
+  branchPtr(
+      Assembler::NotEqual,
+      Address(instance, wasm::Instance::offsetOfAllocationMetadataBuilder()),
+      ImmWord(0), fail);
+
 #ifdef JS_GC_ZEAL
   // Don't execute the inline path if gc zeal or tracing are active.
   loadPtr(Address(instance, wasm::Instance::offsetOfAddressOfGCZealModeBits()),
@@ -7416,6 +7412,13 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
 #ifdef JS_GC_PROBES
   jump(fail);
 #endif
+
+  // Don't execute the inline path if there is an allocation metadata builder
+  // on the realm.
+  branchPtr(
+      Assembler::NotEqual,
+      Address(instance, wasm::Instance::offsetOfAllocationMetadataBuilder()),
+      ImmWord(0), fail);
 
 #ifdef JS_GC_ZEAL
   // Don't execute the inline path if gc zeal or tracing are active.
@@ -7573,6 +7576,13 @@ void MacroAssembler::wasmNewArrayObjectFixed(
 #ifdef JS_GC_PROBES
   jump(fail);
 #endif
+
+  // Don't execute the inline path if there is an allocation metadata builder
+  // on the realm.
+  branchPtr(
+      Assembler::NotEqual,
+      Address(instance, wasm::Instance::offsetOfAllocationMetadataBuilder()),
+      ImmWord(0), fail);
 
 #ifdef JS_GC_ZEAL
   // Don't execute the inline path if gc zeal or tracing are active.

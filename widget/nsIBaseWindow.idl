@@ -6,14 +6,13 @@
 
 #include "nsISupports.idl"
 #include "nsrootidl.idl"
-/*#include "nsIWidget.idl"  Boy this would be nice.*/
 
 [ptr] native nsIWidget(nsIWidget);
 %{C++
 #include "Units.h"
 #include "mozilla/DimensionRequest.h"
-
-class nsIWidget;
+#include "nsCOMPtr.h"
+#include "nsIWidget.h"
 %}
 
 typedef voidPtr nativeWindow;
@@ -229,6 +228,13 @@ interface nsIBaseWindow : nsISupports
   lives if it has not had to create its own widget.
   */
   [noscript] readonly attribute nsIWidget mainWidget;
+%{C++
+  already_AddRefed<nsIWidget> GetMainWidget() {
+    nsCOMPtr<nsIWidget> widget;
+    GetMainWidget(getter_AddRefs(widget));
+    return widget.forget();
+  }
+%}
 
   /*
   The number of device pixels per CSS pixel used by this window's widget at the

@@ -234,3 +234,69 @@ def set_expiry(config, jobs):
 
         job["expiration-policy"] = expiration_policy
         yield job
+
+
+@transforms.add
+def add_signing_artifacts(config, jobs):
+    """
+    Add signing artifacts to macOS build jobs.
+    """
+    is_prod_project = release_level(config.params["project"]) == "production"
+    for job in jobs:
+        if "macosx" not in job["name"] or "searchfox" in job["name"]:
+            # Not macosx build or no artifacts defined, so skip
+            yield job
+            continue
+        assert (
+            "artifacts" in job["worker"]
+        ), "macosx build jobs must have worker.artifacts defined."
+        is_shippable = (
+            ("shippable" in job["attributes"] and job["attributes"]["shippable"])
+            # Instrumented builds don't have attributes.shippable set
+            or "shippable" in job["name"]
+        )
+
+        entitlement_directory = "developer"
+        if is_shippable and is_prod_project:
+            entitlement_directory = "production"
+
+        # Decide which browser entitlement to use
+        if entitlement_directory == "developer":
+            # Try/debug builds
+            browser_entitlement = "browser"
+        elif "devedition" in job.get("shipping-product", ""):
+            # Devedition
+            browser_entitlement = "firefoxdeveloperedition.browser"
+        elif "mozilla-central" == config.params["project"]:
+            # Nightly
+            browser_entitlement = "nightly.browser"
+        else:
+            # Release and Beta
+            browser_entitlement = "firefox.browser"
+
+        for entry in job.get("worker", {}).get("artifacts", []):
+            for key in ("name", "path"):
+                if key in entry:
+                    entry[key] = entry[key].format(
+                        entitlement_directory=entitlement_directory,
+                        browser_entitlement=browser_entitlement,
+                    )
+        # Add utility.xml if not prod
+        if not is_prod_project:
+            job["worker"]["artifacts"].append(
+                {
+                    "name": "public/build/security/utility.xml",
+                    "path": "checkouts/gecko/security/mac/hardenedruntime/developer/utility.xml",
+                    "type": "file",
+                }
+            )
+        impl, _ = worker_type_implementation(
+            config.graph_config, config.params, job["worker-type"]
+        )
+        if impl == "docker-worker":
+            # For builds using docker-worker we can't use relative paths
+            # Once we switch builds to generic-worker, this can be removed
+            for entry in job.get("worker", {}).get("artifacts", []):
+                if entry.get("path", "").startswith("checkouts/gecko/security"):
+                    entry["path"] = "/builds/worker/" + entry["path"]
+        yield job

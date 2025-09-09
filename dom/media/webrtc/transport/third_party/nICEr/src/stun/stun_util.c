@@ -113,39 +113,6 @@ nr_stun_xor_mapped_address(UINT4 magicCookie, UINT12 transactionId, nr_transport
 }
 
 int
-nr_stun_filter_local_addresses(nr_local_addr addrs[], int *count)
-{
-    int r,_status;
-    char allow_loopback = 0;
-    char allow_link_local = 0;
-
-    if ((r=NR_reg_get_char(NR_STUN_REG_PREF_ALLOW_LOOPBACK_ADDRS,
-                           &allow_loopback))) {
-        if (r != R_NOT_FOUND) {
-            ABORT(r);
-        }
-    }
-
-    if ((r=NR_reg_get_char(NR_STUN_REG_PREF_ALLOW_LINK_LOCAL_ADDRS,
-                           &allow_link_local))) {
-        if (r != R_NOT_FOUND) {
-            ABORT(r);
-        }
-    }
-
-    if ((r=nr_stun_filter_addrs(addrs,
-                                !allow_loopback,
-                                !allow_link_local,
-                                count))) {
-        ABORT(r);
-    }
-
-    _status=0;
- abort:
-    return _status;
-}
-
-int
 nr_stun_find_local_addresses(nr_local_addr addrs[], int maxaddrs, int *count)
 {
     int r,_status;

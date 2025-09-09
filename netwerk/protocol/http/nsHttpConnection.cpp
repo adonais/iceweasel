@@ -79,9 +79,10 @@ nsHttpConnection::~nsHttpConnection() {
     }
 
     MOZ_ASSERT(ci);
-    if (ci->GetIsTrrServiceChannel()) {
-      mozilla::glean::networking::trr_request_count_per_conn.Get("h1"_ns).Add(
-          static_cast<int32_t>(mHttp1xTransactionCount));
+    if (ci->GetIsTrrServiceChannel() && mHttp1xTransactionCount) {
+      mozilla::glean::networking::trr_request_count_per_conn
+          .Get(nsPrintfCString("%s_h1", ci->Origin()))
+          .Add(static_cast<int32_t>(mHttp1xTransactionCount));
     }
   }
 
@@ -1546,7 +1547,9 @@ void nsHttpConnection::CloseTransaction(nsAHttpTransaction* trans,
 
   if (mTransaction) {
     LOG(("  closing associated mTransaction"));
-    mHttp1xTransactionCount += mTransaction->Http1xTransactionCount();
+    if (NS_SUCCEEDED(reason)) {
+      mHttp1xTransactionCount += mTransaction->Http1xTransactionCount();
+    }
 
     mTransaction->Close(reason);
     mTransaction = nullptr;

@@ -6,11 +6,14 @@
 
 #include "MediaCache.h"
 
+#include <algorithm>
+
 #include "ChannelMediaResource.h"
 #include "FileBlockCache.h"
 #include "MediaBlockCacheBase.h"
 #include "MediaResource.h"
 #include "MemoryBlockCache.h"
+#include "VideoUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ErrorNames.h"
@@ -18,9 +21,9 @@
 #include "mozilla/Monitor.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/StaticPtr.h"
 #include "nsContentUtils.h"
 #include "nsINetworkLinkService.h"
 #include "nsIObserverService.h"
@@ -29,8 +32,6 @@
 #include "nsTHashSet.h"
 #include "nsThreadUtils.h"
 #include "prio.h"
-#include "VideoUtils.h"
-#include <algorithm>
 
 namespace mozilla {
 

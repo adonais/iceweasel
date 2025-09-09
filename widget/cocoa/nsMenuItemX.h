@@ -98,6 +98,7 @@ class nsMenuItemX final : public nsChangeObserver,
   nsMenuX* mMenuParent = nullptr;                // [weak]
   nsMenuGroupOwnerX* mMenuGroupOwner = nullptr;  // [weak]
   RefPtr<mozilla::dom::Element> mCommandElement;
+  RefPtr<mozilla::dom::Element> mImageElement;
   mozilla::UniquePtr<nsMenuItemIconX> mIcon;  // always non-null
   bool mIsChecked = false;
   bool mIsVisible = false;

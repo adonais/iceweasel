@@ -36,6 +36,7 @@ import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.R
 import org.mozilla.fenix.addons.AddonsManagementFragmentDirections
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.theme.ThemeManager
 
@@ -302,8 +303,7 @@ class WebExtensionPromptFeature(
                     R.attr.textActionPrimaryDisabled,
                     context,
                 ),
-                confirmButtonRadius =
-                (context.resources.getDimensionPixelSize(R.dimen.tab_corner_radius)).toFloat(),
+                confirmButtonRadius = context.pixelSizeFor(R.dimen.tab_corner_radius).toFloat(),
                 learnMoreLinkTextColor = ThemeManager.resolveAttribute(
                     R.attr.textAccent,
                     context,
@@ -455,8 +455,7 @@ class WebExtensionPromptFeature(
                         R.attr.textActionPrimary,
                         context,
                     ),
-                    confirmButtonRadius =
-                    (context.resources.getDimensionPixelSize(R.dimen.tab_corner_radius)).toFloat(),
+                    confirmButtonRadius = context.pixelSizeFor(R.dimen.tab_corner_radius).toFloat(),
                 ),
                 onDismissed = {
                     consumePromptRequest()

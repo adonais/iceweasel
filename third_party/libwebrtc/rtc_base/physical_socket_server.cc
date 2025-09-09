@@ -9,9 +9,20 @@
  */
 #include "rtc_base/physical_socket_server.h"
 
+#include <array>
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <utility>
+
+#include "api/async_dns_resolver.h"
+#include "api/transport/ecn_marking.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
+#include "rtc_base/deprecated/recursive_critical_section.h"
+#include "rtc_base/socket.h"
+#include "rtc_base/socket_address.h"
+#include "rtc_base/thread_annotations.h"
 
 #if defined(_MSC_VER) && _MSC_VER < 1300
 #pragma warning(disable : 4786)
@@ -53,7 +64,6 @@
 #include "rtc_base/network_monitor.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/time_utils.h"
-#include "system_wrappers/include/field_trial.h"
 
 #if defined(WEBRTC_LINUX)
 #include <linux/sockios.h>
@@ -119,7 +129,7 @@ static constexpr uint8_t kEcnMask = 0x03;
 
 #if defined(WEBRTC_POSIX)
 
-rtc::EcnMarking EcnFromDs(uint8_t ds) {
+webrtc::EcnMarking EcnFromDs(uint8_t ds) {
   // RFC-3168, Section 5.
   constexpr uint8_t ECN_ECT1 = 0x01;
   constexpr uint8_t ECN_ECT0 = 0x02;
@@ -127,15 +137,15 @@ rtc::EcnMarking EcnFromDs(uint8_t ds) {
   const uint8_t ecn = ds & kEcnMask;
 
   if (ecn == ECN_ECT1) {
-    return rtc::EcnMarking::kEct1;
+    return webrtc::EcnMarking::kEct1;
   }
   if (ecn == ECN_ECT0) {
-    return rtc::EcnMarking::kEct0;
+    return webrtc::EcnMarking::kEct0;
   }
   if (ecn == ECN_CE) {
-    return rtc::EcnMarking::kCe;
+    return webrtc::EcnMarking::kCe;
   }
-  return rtc::EcnMarking::kNotEct;
+  return webrtc::EcnMarking::kNotEct;
 }
 
 #endif
@@ -1317,7 +1327,7 @@ Socket* PhysicalSocketServer::WrapSocket(SOCKET s) {
 }
 
 void PhysicalSocketServer::Add(Dispatcher* pdispatcher) {
-  rtc::CritScope cs(&crit_);
+  CritScope cs(&crit_);
   if (key_by_dispatcher_.count(pdispatcher)) {
     RTC_LOG(LS_WARNING)
         << "PhysicalSocketServer asked to add a duplicate dispatcher.";
@@ -1334,7 +1344,7 @@ void PhysicalSocketServer::Add(Dispatcher* pdispatcher) {
 }
 
 void PhysicalSocketServer::Remove(Dispatcher* pdispatcher) {
-  rtc::CritScope cs(&crit_);
+  CritScope cs(&crit_);
   if (!key_by_dispatcher_.count(pdispatcher)) {
     RTC_LOG(LS_WARNING)
         << "PhysicalSocketServer asked to remove a unknown "
@@ -1358,7 +1368,7 @@ void PhysicalSocketServer::Update([[maybe_unused]] Dispatcher* pdispatcher) {
   }
 
   // Don't update dispatchers that haven't yet been added.
-  rtc::CritScope cs(&crit_);
+  CritScope cs(&crit_);
   if (!key_by_dispatcher_.count(pdispatcher)) {
     return;
   }
@@ -1537,7 +1547,7 @@ bool PhysicalSocketServer::WaitSelect(int cmsWait, bool process_io) {
     FD_ZERO(&fdsWrite);
     int fdmax = -1;
     {
-      rtc::CritScope cr(&crit_);
+      CritScope cr(&crit_);
       current_dispatcher_keys_.clear();
       for (auto const& kv : dispatcher_by_key_) {
         uint64_t key = kv.first;
@@ -1581,7 +1591,7 @@ bool PhysicalSocketServer::WaitSelect(int cmsWait, bool process_io) {
       return true;
     } else {
       // We have signaled descriptors
-      rtc::CritScope cr(&crit_);
+      CritScope cr(&crit_);
       // Iterate only on the dispatchers whose file descriptors were passed into
       // select; this avoids the ABA problem (a socket being destroyed and a new
       // one created with the same file descriptor).
@@ -1730,7 +1740,7 @@ bool PhysicalSocketServer::WaitEpoll(int cmsWait) {
       return true;
     } else {
       // We have signaled descriptors
-      rtc::CritScope cr(&crit_);
+      CritScope cr(&crit_);
       for (int i = 0; i < n; ++i) {
         const epoll_event& event = epoll_events_[i];
         uint64_t key = event.data.u64;
@@ -1819,7 +1829,7 @@ bool PhysicalSocketServer::WaitPoll(int cmsWait, bool process_io) {
   int64_t msStop = -1;
   if (cmsWait != kForeverMs) {
     msWait = cmsWait;
-    msStop = rtc::TimeAfter(cmsWait);
+    msStop = webrtc::TimeAfter(cmsWait);
   }
 
   std::vector<pollfd> pollfds;
@@ -1827,7 +1837,7 @@ bool PhysicalSocketServer::WaitPoll(int cmsWait, bool process_io) {
 
   while (fWait_) {
     {
-      rtc::CritScope cr(&crit_);
+      webrtc::CritScope cr(&crit_);
       current_dispatcher_keys_.clear();
       pollfds.clear();
       pollfds.reserve(dispatcher_by_key_.size());
@@ -1861,7 +1871,7 @@ bool PhysicalSocketServer::WaitPoll(int cmsWait, bool process_io) {
       return true;
     } else {
       // We have signaled descriptors
-      rtc::CritScope cr(&crit_);
+      webrtc::CritScope cr(&crit_);
       // Iterate only on the dispatchers whose file descriptors were passed into
       // poll; this avoids the ABA problem (a socket being destroyed and a new
       // one created with the same file descriptor).
@@ -1874,7 +1884,7 @@ bool PhysicalSocketServer::WaitPoll(int cmsWait, bool process_io) {
     }
 
     if (cmsWait != kForeverMs) {
-      msWait = rtc::TimeDiff(msStop, rtc::TimeMillis());
+      msWait = webrtc::TimeDiff(msStop, webrtc::TimeMillis());
       if (msWait < 0) {
         // Return success on timeout.
         return true;
@@ -1899,7 +1909,7 @@ bool PhysicalSocketServer::Wait(webrtc::TimeDelta max_wait_duration,
   int cmsWait = ToCmsWait(max_wait_duration);
   int64_t cmsTotal = cmsWait;
   int64_t cmsElapsed = 0;
-  int64_t msStart = rtc::Time();
+  int64_t msStart = webrtc::Time();
 
   fWait_ = true;
   while (fWait_) {
@@ -1909,7 +1919,7 @@ bool PhysicalSocketServer::Wait(webrtc::TimeDelta max_wait_duration,
     events.push_back(socket_ev_);
 
     {
-      rtc::CritScope cr(&crit_);
+      webrtc::CritScope cr(&crit_);
       // Get a snapshot of all current dispatchers; this is used to avoid the
       // ABA problem (see later comment) and avoids the dispatcher_by_key_
       // iterator being invalidated by calling CheckSignalClose, which may
@@ -1965,7 +1975,7 @@ bool PhysicalSocketServer::Wait(webrtc::TimeDelta max_wait_duration,
       return true;
     } else {
       // Figure out which one it is and call it
-      rtc::CritScope cr(&crit_);
+      webrtc::CritScope cr(&crit_);
       int index = dw - WSA_WAIT_EVENT_0;
       if (index > 0) {
         --index;  // The first event is the socket event
@@ -2058,7 +2068,7 @@ bool PhysicalSocketServer::Wait(webrtc::TimeDelta max_wait_duration,
     // Break?
     if (!fWait_)
       break;
-    cmsElapsed = rtc::TimeSince(msStart);
+    cmsElapsed = webrtc::TimeSince(msStart);
     if ((cmsWait != kForeverMs) && (cmsElapsed >= cmsWait)) {
       break;
     }

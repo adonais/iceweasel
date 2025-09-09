@@ -58,7 +58,6 @@ CertVerifier::CertVerifier(OcspDownloadConfig odc, OcspStrictConfig osc,
                            mozilla::TimeDuration ocspTimeoutSoft,
                            mozilla::TimeDuration ocspTimeoutHard,
                            uint32_t certShortLifetimeInDays,
-                           NetscapeStepUpPolicy netscapeStepUpPolicy,
                            CertificateTransparencyConfig&& ctConfig,
                            CRLiteMode crliteMode,
                            const nsTArray<EnterpriseCert>& thirdPartyCerts)
@@ -67,7 +66,6 @@ CertVerifier::CertVerifier(OcspDownloadConfig odc, OcspStrictConfig osc,
       mOCSPTimeoutSoft(ocspTimeoutSoft),
       mOCSPTimeoutHard(ocspTimeoutHard),
       mCertShortLifetimeInDays(certShortLifetimeInDays),
-      mNetscapeStepUpPolicy(netscapeStepUpPolicy),
       mCTConfig(std::move(ctConfig)),
       mCRLiteMode(crliteMode),
       mSignatureCache(
@@ -569,9 +567,8 @@ Result CertVerifier::VerifyCert(
       NSSCertDBTrustDomain trustDomain(
           trustEmail, defaultOCSPFetching, mOCSPCache, mSignatureCache.get(),
           mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
-          mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK,
-          ValidityCheckingMode::CheckingOff, NetscapeStepUpPolicy::NeverMatch,
-          mCRLiteMode, originAttributes, mThirdPartyRootInputs,
+          mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK, mCRLiteMode,
+          originAttributes, mThirdPartyRootInputs,
           mThirdPartyIntermediateInputs, extraCertificates, builtChain, nullptr,
           nullptr);
       rv = BuildCertChain(
@@ -603,9 +600,8 @@ Result CertVerifier::VerifyCert(
         NSSCertDBTrustDomain trustDomain(
             trustSSL, evOCSPFetching, mOCSPCache, mSignatureCache.get(),
             mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
-            mCertShortLifetimeInDays, MIN_RSA_BITS,
-            ValidityCheckingMode::CheckForEV, mNetscapeStepUpPolicy,
-            mCRLiteMode, originAttributes, mThirdPartyRootInputs,
+            mCertShortLifetimeInDays, MIN_RSA_BITS, mCRLiteMode,
+            originAttributes, mThirdPartyRootInputs,
             mThirdPartyIntermediateInputs, extraCertificates, builtChain,
             pinningTelemetryInfo, hostname);
         rv = BuildCertChainForOneKeyUsage(
@@ -666,9 +662,8 @@ Result CertVerifier::VerifyCert(
         NSSCertDBTrustDomain trustDomain(
             trustSSL, defaultOCSPFetching, mOCSPCache, mSignatureCache.get(),
             mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
-            mCertShortLifetimeInDays, keySizeOptions[i],
-            ValidityCheckingMode::CheckingOff, mNetscapeStepUpPolicy,
-            mCRLiteMode, originAttributes, mThirdPartyRootInputs,
+            mCertShortLifetimeInDays, keySizeOptions[i], mCRLiteMode,
+            originAttributes, mThirdPartyRootInputs,
             mThirdPartyIntermediateInputs, extraCertificates, builtChain,
             pinningTelemetryInfo, hostname);
         rv = BuildCertChainForOneKeyUsage(
@@ -729,8 +724,7 @@ Result CertVerifier::VerifyCert(
       NSSCertDBTrustDomain trustDomain(
           trustType, defaultOCSPFetching, mOCSPCache, mSignatureCache.get(),
           mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
-          mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK,
-          ValidityCheckingMode::CheckingOff, mNetscapeStepUpPolicy, mCRLiteMode,
+          mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK, mCRLiteMode,
           originAttributes, mThirdPartyRootInputs,
           mThirdPartyIntermediateInputs, extraCertificates, builtChain, nullptr,
           nullptr);
@@ -748,9 +742,8 @@ Result CertVerifier::VerifyCert(
       NSSCertDBTrustDomain trustDomain(
           trustEmail, defaultOCSPFetching, mOCSPCache, mSignatureCache.get(),
           mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
-          mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK,
-          ValidityCheckingMode::CheckingOff, NetscapeStepUpPolicy::NeverMatch,
-          mCRLiteMode, originAttributes, mThirdPartyRootInputs,
+          mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK, mCRLiteMode,
+          originAttributes, mThirdPartyRootInputs,
           mThirdPartyIntermediateInputs, extraCertificates, builtChain, nullptr,
           nullptr);
       rv = BuildCertChain(
@@ -777,9 +770,8 @@ Result CertVerifier::VerifyCert(
       NSSCertDBTrustDomain trustDomain(
           trustEmail, defaultOCSPFetching, mOCSPCache, mSignatureCache.get(),
           mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
-          mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK,
-          ValidityCheckingMode::CheckingOff, NetscapeStepUpPolicy::NeverMatch,
-          mCRLiteMode, originAttributes, mThirdPartyRootInputs,
+          mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK, mCRLiteMode,
+          originAttributes, mThirdPartyRootInputs,
           mThirdPartyIntermediateInputs, extraCertificates, builtChain, nullptr,
           nullptr);
       rv = BuildCertChain(trustDomain, certDER, time,

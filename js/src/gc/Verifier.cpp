@@ -126,11 +126,6 @@ inline bool IgnoreForPreBarrierVerifier(JSRuntime* runtime,
     return true;
   }
 
-  // Ignore buffers as these don't escape and are not barriered.
-  if (thing.kind() == JS::TraceKind::SmallBuffer) {
-    return true;
-  }
-
   return false;
 }
 
@@ -1271,12 +1266,8 @@ bool GCRuntime::isPointerWithinTenuredCell(void* ptr, JS::TraceKind traceKind) {
 }
 
 bool GCRuntime::isPointerWithinBufferAlloc(void* ptr) {
-  if (isPointerWithinTenuredCell(ptr, JS::TraceKind::SmallBuffer)) {
-    return true;
-  }
-
   for (AllZonesIter zone(this); !zone.done(); zone.next()) {
-    if (zone->bufferAllocator.isPointerWithinMediumOrLargeBuffer(ptr)) {
+    if (zone->bufferAllocator.isPointerWithinBuffer(ptr)) {
       return true;
     }
   }

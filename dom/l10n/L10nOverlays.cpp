@@ -5,14 +5,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "L10nOverlays.h"
+
+#include "HTMLSplitOnSpacesTokenizer.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/HTMLInputElement.h"
-#include "HTMLSplitOnSpacesTokenizer.h"
 #include "nsHtml5StringParser.h"
-#include "nsTextNode.h"
-#include "nsIParserUtils.h"
 #include "nsINodeList.h"
+#include "nsIParserUtils.h"
+#include "nsTextNode.h"
 
 using namespace mozilla::dom;
 using namespace mozilla;

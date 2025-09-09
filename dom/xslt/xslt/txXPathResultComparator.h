@@ -8,11 +8,11 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/intl/Collator.h"
 #include "mozilla/UniquePtr.h"
-#include "txCore.h"
+#include "mozilla/intl/Collator.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
+#include "txCore.h"
 
 class Expr;
 class txIEvalContext;

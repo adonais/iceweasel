@@ -10,11 +10,11 @@
 #ifndef mediapipelinefilter_h__
 #define mediapipelinefilter_h__
 
-#include <cstddef>
 #include <stdint.h>
-#include <string>
 
+#include <cstddef>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "api/rtp_parameters.h"

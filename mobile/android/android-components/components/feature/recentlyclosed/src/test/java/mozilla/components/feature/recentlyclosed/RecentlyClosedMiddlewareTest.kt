@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.recentlyclosed
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flow
 import mozilla.components.browser.state.action.RecentlyClosedAction
 import mozilla.components.browser.state.action.TabListAction
@@ -32,7 +31,6 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoMoreInteractions
 
-@ExperimentalCoroutinesApi
 class RecentlyClosedMiddlewareTest {
     lateinit var store: BrowserStore
     lateinit var engine: Engine

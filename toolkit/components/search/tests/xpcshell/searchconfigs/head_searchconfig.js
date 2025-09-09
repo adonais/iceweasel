@@ -403,9 +403,7 @@ class SearchConfigTest {
 
     for (const rule of details) {
       this._assertCorrectDomains(location, engine, rule);
-      if ("searchUrlCode" in rule || "suggestUrlCode" in rule) {
-        this._assertCorrectUrlCode(location, engine, rule);
-      }
+      this._assertCorrectUrlCode(location, engine, rule);
       if ("aliases" in rule) {
         this.assertDeepEqual(
           engine.aliases,
@@ -497,7 +495,7 @@ class SearchConfigTest {
     if (rule.searchUrlCodeNotInQuery) {
       const submission = engine.getSubmission("test", URLTYPE_SEARCH_HTML);
       this.assertOk(
-        submission.uri.includes(rule.searchUrlCodeNotInQuery),
+        submission.uri.query.includes(rule.searchUrlCodeNotInQuery),
         `Expected "${rule.searchUrlCodeNotInQuery}" in search url "${submission.uri.spec}"`
       );
     }

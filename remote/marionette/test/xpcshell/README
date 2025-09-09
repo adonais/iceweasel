@@ -1,5 +1,5 @@
 To run the tests in this directory, from the top source directory,
-either invoke the test despatcher in mach:
+either invoke the test dispatcher in mach:
 
 	% ./mach test remote/marionette/test/xpcshell
 

@@ -7,22 +7,22 @@
 #ifndef mozilla_dom_PrototypeDocumentContentSink_h__
 #define mozilla_dom_PrototypeDocumentContentSink_h__
 
+#include "js/experimental/JSStencil.h"
 #include "mozilla/Attributes.h"
-#include "nsIContentSink.h"
-#include "nsTArray.h"
+#include "mozilla/Logging.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/dom/FromParser.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
 #include "nsCycleCollectionNoteChild.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsIDTD.h"
-#include "mozilla/dom/FromParser.h"
-#include "nsXULPrototypeDocument.h"
-#include "nsIStreamLoader.h"
-#include "nsIScriptContext.h"
 #include "nsICSSLoaderObserver.h"
-#include "mozilla/Logging.h"
-#include "js/experimental/JSStencil.h"
-#include "mozilla/RefPtr.h"
+#include "nsIContentSink.h"
+#include "nsIDTD.h"
+#include "nsIScriptContext.h"
+#include "nsIStreamLoader.h"
+#include "nsTArray.h"
+#include "nsXULPrototypeDocument.h"
 
 class nsIURI;
 class nsIChannel;

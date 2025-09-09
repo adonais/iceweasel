@@ -13,9 +13,9 @@
 #include "Intervals.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/IntegerPrintfMacros.h"
 #include "nsPrintfCString.h"
 
 namespace mozilla::media {

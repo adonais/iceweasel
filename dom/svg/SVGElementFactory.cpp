@@ -5,14 +5,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SVGElementFactory.h"
-#include "nsGkAtoms.h"
-#include "nsIContent.h"
-#include "mozilla/dom/NodeInfo.h"
+
+#include "mozilla/StaticPtr.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FromParser.h"
-#include "mozilla/StaticPtr.h"
-#include "nsTHashMap.h"
+#include "mozilla/dom/NodeInfo.h"
+#include "nsGkAtoms.h"
 #include "nsHashKeys.h"
+#include "nsIContent.h"
+#include "nsTHashMap.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

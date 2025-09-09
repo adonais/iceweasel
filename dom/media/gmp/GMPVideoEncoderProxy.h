@@ -6,13 +6,12 @@
 #ifndef GMPVideoEncoderProxy_h_
 #define GMPVideoEncoderProxy_h_
 
-#include "nsTArray.h"
-#include "gmp-video-encode.h"
-#include "gmp-video-frame-i420.h"
-#include "gmp-video-frame-encoded.h"
-
 #include "GMPCallbackBase.h"
 #include "GMPUtils.h"
+#include "gmp-video-encode.h"
+#include "gmp-video-frame-encoded.h"
+#include "gmp-video-frame-i420.h"
+#include "nsTArray.h"
 
 class GMPVideoEncoderCallbackProxy : public GMPCallbackBase {
  public:

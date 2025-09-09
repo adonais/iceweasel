@@ -7,14 +7,14 @@
 #ifndef DOM_SVG_SVGFILTERS_H_
 #define DOM_SVG_SVGFILTERS_H_
 
-#include "mozilla/Attributes.h"
-#include "mozilla/dom/SVGElement.h"
 #include "FilterDescription.h"
-#include "nsImageLoadingContent.h"
 #include "SVGAnimatedLength.h"
 #include "SVGAnimatedNumber.h"
 #include "SVGAnimatedNumberPair.h"
 #include "SVGAnimatedString.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/dom/SVGElement.h"
+#include "nsImageLoadingContent.h"
 
 namespace mozilla {
 class SVGFilterInstance;

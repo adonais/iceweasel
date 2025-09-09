@@ -4,25 +4,26 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/dom/XULPopupElement.h"
+
 #include "XULMenuParentElement.h"
-#include "nsCOMPtr.h"
-#include "nsICSSDeclaration.h"
-#include "nsIContent.h"
-#include "nsNameSpaceManager.h"
-#include "nsGkAtoms.h"
-#include "nsMenuPopupFrame.h"
-#include "nsStringFwd.h"
-#include "nsView.h"
 #include "mozilla/AppUnits.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/dom/DOMRect.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
-#include "mozilla/dom/XULPopupElement.h"
 #include "mozilla/dom/XULButtonElement.h"
 #include "mozilla/dom/XULMenuElement.h"
 #include "mozilla/dom/XULPopupElementBinding.h"
+#include "nsCOMPtr.h"
+#include "nsGkAtoms.h"
+#include "nsICSSDeclaration.h"
+#include "nsIContent.h"
+#include "nsMenuPopupFrame.h"
+#include "nsNameSpaceManager.h"
+#include "nsStringFwd.h"
+#include "nsView.h"
 #ifdef MOZ_WAYLAND
 #  include "mozilla/WidgetUtilsGtk.h"
 #endif

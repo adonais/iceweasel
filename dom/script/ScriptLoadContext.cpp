@@ -4,20 +4,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "GeckoProfiler.h"
+#include "ScriptLoadContext.h"
 
-#include "mozilla/dom/Document.h"
+#include "GeckoProfiler.h"
+#include "ModuleLoadRequest.h"
+#include "js/SourceText.h"
+#include "js/loader/LoadContextBase.h"
+#include "js/loader/ModuleLoadRequest.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Unused.h"
 #include "mozilla/Utf8.h"  // mozilla::Utf8Unit
-
-#include "js/SourceText.h"
-#include "js/loader/LoadContextBase.h"
-#include "js/loader/ModuleLoadRequest.h"
-
-#include "ScriptLoadContext.h"
-#include "ModuleLoadRequest.h"
+#include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
 #include "nsICacheInfoChannel.h"
 #include "nsIClassOfService.h"

@@ -470,6 +470,8 @@ struct RectCornerRadii final {
 struct RoundedRect {
   typedef mozilla::gfx::RectCornerRadii RectCornerRadii;
 
+  RoundedRect() = default;
+
   RoundedRect(const Rect& aRect, const RectCornerRadii& aCorners)
       : rect(aRect), corners(aCorners) {}
 

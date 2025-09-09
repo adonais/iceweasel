@@ -42,7 +42,7 @@ export class RootTransport {
     this._messageHandler = messageHandler;
 
     // RootTransport will rely on the MessageHandlerFrame JSWindow actors.
-    // Make sure they are registered when instanciating a RootTransport.
+    // Make sure they are registered when instantiating a RootTransport.
     lazy.MessageHandlerFrameActor.register();
   }
 
@@ -222,7 +222,7 @@ export class RootTransport {
     let browsingContexts = [];
 
     // Fetch all tab related browsing contexts for top-level windows.
-    for (const { browsingContext } of lazy.TabManager.browsers) {
+    for (const { browsingContext } of lazy.TabManager.getBrowsers()) {
       if (
         lazy.isBrowsingContextCompatible(browsingContext, {
           browserId,

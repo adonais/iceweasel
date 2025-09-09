@@ -323,6 +323,7 @@ class StoreBuffer {
   using ObjectPtrEdge = CellPtrEdge<JSObject>;
   using StringPtrEdge = CellPtrEdge<JSString>;
   using BigIntPtrEdge = CellPtrEdge<JS::BigInt>;
+  using GetterSetterPtrEdge = CellPtrEdge<js::GetterSetter>;
 
   struct ValueEdge {
     JS::Value* edge;
@@ -500,6 +501,7 @@ class StoreBuffer {
   MonoTypeBuffer<ValueEdge> bufferVal;
   MonoTypeBuffer<StringPtrEdge> bufStrCell;
   MonoTypeBuffer<BigIntPtrEdge> bufBigIntCell;
+  MonoTypeBuffer<GetterSetterPtrEdge> bufGetterSetterCell;
   MonoTypeBuffer<ObjectPtrEdge> bufObjCell;
   MonoTypeBuffer<SlotsEdge> bufferSlot;
   MonoTypeBuffer<WasmAnyRefEdge> bufferWasmAnyRef;
@@ -570,6 +572,14 @@ class StoreBuffer {
   }
   void unputCell(JSObject** strp) { unput(bufObjCell, ObjectPtrEdge(strp)); }
 
+  void putCell(js::GetterSetter** gsp) {
+    put(bufGetterSetterCell, GetterSetterPtrEdge(gsp),
+        JS::GCReason::FULL_CELL_PTR_GETTER_SETTER_BUFFER);
+  }
+  void unputCell(js::GetterSetter** gsp) {
+    unput(bufGetterSetterCell, GetterSetterPtrEdge(gsp));
+  }
+
   void putSlot(NativeObject* obj, int kind, uint32_t start, uint32_t count) {
     SlotsEdge edge(obj, kind, start, count);
     if (bufferSlot.last_.touches(edge)) {
@@ -607,6 +617,7 @@ class StoreBuffer {
   void traceCells(TenuringTracer& mover) {
     bufStrCell.trace(mover, this);
     bufBigIntCell.trace(mover, this);
+    bufGetterSetterCell.trace(mover, this);
     bufObjCell.trace(mover, this);
   }
   void traceSlots(TenuringTracer& mover) { bufferSlot.trace(mover, this); }

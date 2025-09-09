@@ -50,6 +50,26 @@
     <span id="afterEmptyTextNode">after empty text node</span>
   </p>
   <div id="nbsp">&nbsp;</div>
+  <div id="punctuationStartsRangeBasedTextDirective">"</div>
+  <div id="punctuationEndsRangeBasedTextDirective">text preceded by punctuation in a different block</div>
+  <!-- Test case for Bug 1976869. -->
+  <div>Foo Bar</div>
+  <div id="rangeBasedWithPrefixAtBlockBoundaries">Some text Foo Bar more text</div>
+  <div id="rangeBasedWithPrefixAtBlockBoundariesEnd">End of Range</div>
+  <!-- Test case for Bug 1976480. -->
+  <div id="quotationMark">"Quotation mark"</div>
+  LongSpacerWord
+  <!-- Test case for Bug 1979474 -->
+  <table>
+    <tr id="trWithEmptyTdInside">
+      <td id="tdFollowedByEmptyTd">}</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>foo</td>
+    </tr>
+  </table>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const empty = document.createTextNode("");
@@ -354,6 +374,61 @@
           content: "node",
           textDirective: "text=node"
         },
+        {
+          name: "Range-based text directive with punctuation as start",
+          startContainer: punctuationStartsRangeBasedTextDirective.firstChild,
+          startOffset: 0,
+          endContainer: punctuationEndsRangeBasedTextDirective.firstChild,
+          endOffset: 4,
+          content: '"\n  text',
+          textDirective: "text=%22,text"
+        },
+        {
+          name: "Test for Bug 1976869 (edge cases for common string length computation)",
+          startContainer: rangeBasedWithPrefixAtBlockBoundaries.firstChild,
+          startOffset: 14,
+          endContainer: rangeBasedWithPrefixAtBlockBoundariesEnd.firstChild,
+          endOffset: 3,
+          content: "Bar more text\n  End",
+          textDirective: "text=Bar%20more,End"
+        },
+        {
+          name: "Test for Bug 1976480: Selected quotation mark should not be extended to the next word",
+          startContainer: quotationMark.firstChild,
+          startOffset: 0,
+          endContainer: quotationMark.firstChild,
+          endOffset: 1,
+          content: "\"",
+          textDirective: "text=Range-,%22"
+        },
+        {
+          name: "Test for Bug 1976480: Selected quotation mark should not be extended to the previous word",
+          startContainer: quotationMark.firstChild,
+          startOffset: 15,
+          endContainer: quotationMark.firstChild,
+          endOffset: 16,
+          content: "\"",
+          textDirective: "text=mark-,%22"
+        },
+        {
+          name: "Test for Bug 1976480: Text inside quotation marks should not have the selection extended to the quotation marks",
+          startContainer: quotationMark.firstChild,
+          startOffset: 1,
+          endContainer: quotationMark.firstChild,
+          endOffset: 15,
+          content: "Quotation mark",
+          textDirective: "text=Quotation%20mark"
+        },
+        {
+          name: "Test for Bug 1979474: Text directive with empty table cell",
+          startContainer: tdFollowedByEmptyTd.firstChild,
+          startOffset: 0,
+          endContainer: tdFollowedByEmptyTd.nextSibling,
+          endOffset: 0,
+          content: "}",
+          textDirective: "text=%7D",
+          dontCompareRangeBoundaries: true,
+        },
       ]) {
         const range = document.createRange();
         range.setStart(testCase.startContainer, testCase.startOffset);
@@ -362,11 +437,8 @@
           range.toString(), testCase.content,
           `${testCase.name}: Precondition - Range has expected value`
         );
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
 
-        const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
+        const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForRanges([range]);
         is(
           textDirective, testCase.textDirective,
           `${testCase.name}: text directive has expected value '${testCase.textDirective}'`
@@ -386,10 +458,15 @@
           ranges[0].toString(), range.toString(),
           `${testCase.name}: Ranges have the same content`
         );
-        ok(
-          rangeBoundariesAreEqual(range, ranges[0]),
-          `${testCase.name}: Ranges have the same boundary points`
-        );
+        if(!testCase.dontCompareRangeBoundaries) {
+          // For some test cases it's necessary that the range boundaries in the test case
+          // and the range boundaries of the created match are _not_ the same,
+          // e.g. if the test requires that the range contains empty nodes.
+          ok(
+            rangeBoundariesAreEqual(range, ranges[0]),
+            `${testCase.name}: Ranges have the same boundary points`
+          );
+        }
 
         // finally, remove all text directives to clean up for the next test.
         SpecialPowers.wrap(document).fragmentDirective.removeAllTextDirectives();
@@ -406,9 +483,7 @@
      */
     async function testEmptyRange() {
 
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      let textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
+      let textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForRanges([]);
       is(
         textDirective, null,
         "Empty input range: Produces empty text directive"
@@ -416,21 +491,20 @@
       const range = document.createRange();
       range.selectNode(abc);
       range.collapse(true);
-      selection.addRange(range);
-      textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
+      textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForRanges([range]);
       is(
         textDirective, null,
         "Collapsed input range: Produces empty text directive"
       );
       range.selectNode(image);
-      textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
+      textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForRanges([range]);
       is(
         textDirective, null,
         "Input range contains image only: Produces empty text directive"
       );
 
       range.selectNode(nbsp);
-      textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
+      textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForRanges([range]);
       is(
         textDirective, null,
         "Input range contains nbsp only: Produces empty text directive"
@@ -521,10 +595,8 @@
           range.toString().trim(), testCase.content,
           `${testCase.name}: Precondition - Range has expected value`
         );
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
-        const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
+
+        const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForRanges([range]);
         is(
           textDirective, testCase.textDirective,
           `${testCase.name}: text directive has expected value '${textDirective}'`
@@ -566,10 +638,7 @@
       range.setStart(surroundedByBlockBoundaries.firstChild, 4);
       range.setEnd(surroundedByBlockBoundaries.firstChild, 7);
       is(range.toString(), "def", `${testCase}: Range has expected value`);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-      const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
+      const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForRanges([range]);
       is(textDirective, null, `${testCase}: It's not possible to create a unique text directive`);
 
       const createDirectiveTime = await GleanTest.domTextfragment.createDirective.testGetValue() ?? {count: 0};
@@ -584,10 +653,7 @@
       const content = "AfterEmptyBlock\n  BeforeEmptyBlock";
       const textDirectiveString = "text=AfterEmptyBlock,BeforeEmptyBlock";
       is(range.toString(), content, `${testCase}: Range has expected value`);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-      const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
+      const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForRanges([range]);
       is(textDirective, textDirectiveString, `${testCase}: text directive has expected value '${textDirectiveString}'`);
       location.hash = `:~:${textDirective}`;
       await rAF();
@@ -595,15 +661,13 @@
       is(ranges.length, 1, `${testCase}: There is one text fragment range on the document`);
       is(ranges[0].toString(), range.toString(), `${testCase}: Ranges have the same content`);
     }
+
     async function testRangeBasedWithNonBreakableWord() {
       const testCase = "Range-based text directive with non-breakable word";
       const range = document.createRange();
       range.setStart(longWord.firstChild, 0);
       range.setEnd(longWord.firstChild, longWord.firstChild.length);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-      const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
+      const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForRanges([range]);
       is(textDirective, null, `${testCase}: This test case should not produce a text directive`);
     }
 
@@ -615,11 +679,7 @@
       const range2 = document.createRange();
       range2.setStart(foo.firstChild, 0);
       range2.setEnd(foo.firstChild, 3);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range1);
-      selection.addRange(range2);
-      const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForSelection();
+      const textDirective = await SpecialPowers.wrap(document).fragmentDirective.createTextDirectiveForRanges([range1, range2]);
       is(textDirective, "text=abc&text=foo", `${testCase}: The text fragment has the expected value`);
     }
 

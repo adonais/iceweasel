@@ -30,6 +30,7 @@ namespace js {
 class AbstractGeneratorObject;
 class ArrayObject;
 class DateObject;
+class FixedLengthTypedArrayObject;
 class GlobalObject;
 class InterpreterFrame;
 class LexicalScope;
@@ -605,8 +606,9 @@ bool IsPossiblyWrappedTypedArray(JSContext* cx, JSObject* obj, bool* result);
 void* AllocateDependentString(JSContext* cx);
 void* AllocateFatInlineString(JSContext* cx);
 void* AllocateBigIntNoGC(JSContext* cx, bool requestMinorGC);
-void AllocateAndInitTypedArrayBuffer(JSContext* cx, TypedArrayObject* obj,
-                                     int32_t count);
+void AllocateAndInitTypedArrayBuffer(JSContext* cx,
+                                     FixedLengthTypedArrayObject* obj,
+                                     int32_t count, size_t inlineCapacity);
 
 #ifdef JS_GC_PROBES
 void TraceCreateObject(JSObject* obj);

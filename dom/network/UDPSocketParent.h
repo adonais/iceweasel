@@ -7,11 +7,11 @@
 #ifndef mozilla_dom_UDPSocketParent_h__
 #define mozilla_dom_UDPSocketParent_h__
 
+#include "mozilla/dom/PermissionMessageUtils.h"
 #include "mozilla/net/PUDPSocketParent.h"
 #include "nsCOMPtr.h"
-#include "nsIUDPSocket.h"
 #include "nsISocketFilter.h"
-#include "mozilla/dom/PermissionMessageUtils.h"
+#include "nsIUDPSocket.h"
 
 namespace mozilla {
 namespace net {

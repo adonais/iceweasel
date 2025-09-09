@@ -180,6 +180,8 @@ skip-if = ["!debug"] # Bug 1838577
 
 ["test_bug1803209.html"]
 
+["test_bug1847329.html"]
+
 ["test_crash_on_mouse_move.html"]
 
 ["test_dynamic_reflow_root_disallowal.html"]
@@ -250,9 +252,7 @@ skip-if = [
 ]
 
 ["test_scroll_position_iframe.html"]
-skip-if = [
-  "os == 'android' && android_version == '24' && processor == 'x86_64'", # Bug 1971645
-]
+support-files = ["file_scroll_position_iframe.html"]
 
 ["test_scroll_position_restore.html"]
 support-files = ["file_scroll_position_restore.html"]

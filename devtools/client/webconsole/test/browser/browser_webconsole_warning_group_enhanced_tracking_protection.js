@@ -40,7 +40,7 @@ registerCleanupFunction(function () {
 });
 
 pushPref("privacy.trackingprotection.enabled", true);
-pushPref("devtools.webconsole.groupWarningMessages", true);
+pushPref("devtools.webconsole.groupSimilarMessages", true);
 
 async function cleanUp() {
   await new Promise(resolve => {

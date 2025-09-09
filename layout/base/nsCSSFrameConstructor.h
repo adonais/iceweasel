@@ -1447,8 +1447,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   // restriction (based on old spec-text) and we're planning to remove it.
   static const FrameConstructionData* FindDetailsData(const Element&,
                                                       ComputedStyle&);
-  static const FrameConstructionData* FindH1Data(const Element&,
-                                                 ComputedStyle&);
 
   /* Construct a frame from the given FrameConstructionItem.  This function
      will handle adding the frame to frame lists, processing children, setting

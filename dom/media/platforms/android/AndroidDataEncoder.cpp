@@ -6,10 +6,9 @@
 
 #include "AnnexB.h"
 #include "H264.h"
+#include "ImageContainer.h"
 #include "MediaData.h"
 #include "MediaInfo.h"
-
-#include "ImageContainer.h"
 #include "libyuv/convert_from.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Unused.h"

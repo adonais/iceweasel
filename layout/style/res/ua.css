@@ -133,7 +133,9 @@
 }
 
 /* https://drafts.csswg.org/css-lists-3/#ua-stylesheet */
-::marker {
+::marker,
+::before::marker,
+::after::marker {
   text-align: end;
   text-transform: none;
   unicode-bidi: isolate;

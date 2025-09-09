@@ -13,7 +13,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   OsEnvironment: "resource://gre/modules/OsEnvironment.sys.mjs",
   PlacesDBUtils: "resource://gre/modules/PlacesDBUtils.sys.mjs",
-  ShellService: "resource:///modules/ShellService.sys.mjs",
+  ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
   TelemetryReportingPolicy:
     "resource://gre/modules/TelemetryReportingPolicy.sys.mjs",
   UsageReporting: "resource://gre/modules/UsageReporting.sys.mjs",
@@ -103,7 +103,6 @@ export let StartupTelemetry = {
   bestEffortIdleStartup() {
     let tasks = [
       () => this.primaryPasswordEnabled(),
-      () => this.trustObjectCount(),
       () => lazy.OsEnvironment.reportAllowedAppSources(),
     ];
     if (AppConstants.platform == "win" && this._willUseExpensiveTelemetry) {
@@ -359,6 +358,15 @@ export let StartupTelemetry = {
     _checkGPCPref();
   },
 
+  // check if the launcher was used to open firefox
+  isUsingLauncher() {
+    if (Services.env.get("FIREFOX_LAUNCHED_BY_DESKTOP_LAUNCHER") == "TRUE") {
+      return true;
+    }
+
+    return false;
+  },
+
   async pinningStatus() {
     let shellService = Cc["@mozilla.org/browser/shell-service;1"].getService(
       Ci.nsIWindowsShellService
@@ -404,6 +412,8 @@ export let StartupTelemetry = {
         classification = "Autostart";
       } else if (shortcut) {
         classification = "OtherShortcut";
+      } else if (this.isUsingLauncher()) {
+        classification = "DesktopLauncher";
       } else {
         classification = "Other";
       }
@@ -454,14 +464,6 @@ export let StartupTelemetry = {
     );
     let token = tokenDB.getInternalKeyToken();
     Glean.primaryPassword.enabled.set(token.hasPassword);
-  },
-
-  trustObjectCount() {
-    let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
-      Ci.nsIX509CertDB
-    );
-    // countTrustObjects also logs the number of trust objects for telemetry purposes
-    certdb.countTrustObjects();
   },
 
   pipEnabled() {

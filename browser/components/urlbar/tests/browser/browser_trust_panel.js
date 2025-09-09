@@ -31,15 +31,7 @@ let urlbarIcon = win =>
     .getComputedStyle(urlbarBtn(win))
     .getPropertyValue("list-style-image");
 
-add_task(async function basic_test() {
-  const tab = await BrowserTestUtils.openNewForegroundTab({
-    gBrowser,
-    opening: "https://example.com",
-    waitForLoad: true,
-  });
-
-  Assert.equal(urlbarIcon(window), ETP_ACTIVE_ICON, "Showing trusted icon");
-
+async function toggleETP(tab) {
   let popupShown = BrowserTestUtils.waitForEvent(window.document, "popupshown");
   EventUtils.synthesizeMouseAtCenter(urlbarBtn(window), {}, window);
   await popupShown;
@@ -51,14 +43,27 @@ add_task(async function basic_test() {
     window
   );
   await waitForReload;
+}
 
+add_task(async function basic_test() {
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: "https://example.com",
+    waitForLoad: true,
+  });
+
+  Assert.equal(urlbarIcon(window), ETP_ACTIVE_ICON, "Showing trusted icon");
+
+  await toggleETP(tab);
   Assert.equal(
     urlbarIcon(window),
     ETP_DISABLED_ICON,
     "Showing ETP disabled icon"
   );
 
-  ContentBlockingAllowList.remove(window.gBrowser.selectedBrowser);
+  await toggleETP(tab);
+  Assert.equal(urlbarIcon(window), ETP_ACTIVE_ICON, "Showing trusted icon");
+
   await BrowserTestUtils.removeTab(tab);
   await PlacesUtils.history.clear();
 });

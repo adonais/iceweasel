@@ -3,11 +3,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "AudioNodeExternalInputTrack.h"
+
 #include "AlignedTArray.h"
 #include "AlignmentUtils.h"
-#include "AudioNodeEngine.h"
-#include "AudioNodeExternalInputTrack.h"
 #include "AudioChannelFormat.h"
+#include "AudioNodeEngine.h"
 #include "mozilla/dom/MediaStreamAudioSourceNode.h"
 
 using namespace mozilla::dom;

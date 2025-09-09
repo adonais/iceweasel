@@ -7,9 +7,9 @@
 #include "ServiceWorkerInfo.h"
 
 #include "ServiceWorkerManager.h"
-#include "ServiceWorkerUtils.h"
 #include "ServiceWorkerPrivate.h"
 #include "ServiceWorkerScriptCache.h"
+#include "ServiceWorkerUtils.h"
 #include "mozilla/dom/ClientIPCTypes.h"
 #include "mozilla/dom/ClientState.h"
 #include "mozilla/dom/Promise.h"

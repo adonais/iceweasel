@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- Title of a dialog for a notification permission request. %1$s is the domain name of the website. -->
   <string name="mozac_feature_sitepermissions_notification_title">Czy odbierać powiadomienia od witryny „%1$s”?</string>
   <!-- Title of a dialog for a camera permission request. %1$s is the domain name of the website. -->
@@ -10,6 +10,10 @@
   <string name="mozac_feature_sitepermissions_location_title">Czy udostępnić witrynie „%1$s” informacje o\u00a0położeniu?</string>
   <!-- Title of a dialog for a camera and microphone permission request. %1$s is the domain name of the website. -->
   <string name="mozac_feature_sitepermissions_camera_and_microphone">Czy udostępnić obraz z\u00a0aparatu i\u00a0dźwięk z\u00a0mikrofonu witrynie „%1$s”?</string>
+  <!-- Title of a dialog for a local network access request. %1$s is the domain name of the website -->
+  <string name="mozac_feature_sitepermissions_local_network_access_title">Czy zezwolić witrynie „%1$s” na dostęp do aplikacji i\u00a0usług na urządzeniach podłączonych do lokalnej sieci?</string>
+  <!-- Title of a dialog for a local device access request. %1$s is the domain name of the website -->
+  <string name="mozac_feature_sitepermissions_local_device_access_title">Czy zezwolić witrynie „%1$s” na dostęp do innych aplikacji i\u00a0usług na tym urządzeniu?</string>
   <!--
     Option in a dialog for requesting a microphone permission, this option will give access to
     the first microphone
@@ -35,8 +39,17 @@
     access to this permission
   -->
   <string name="mozac_feature_sitepermissions_not_allow">Nie zezwalaj</string>
+  <!--
+    Alternate variant of the text for a negative button in a permission request dialog,
+    this button will not give access to this permission
+  -->
+  <string name="mozac_feature_sitepermissions_block">Zablokuj</string>
   <!-- Text for a checkbox in a permission request dialog, this will allow to not show again the prompt -->
   <string name="mozac_feature_sitepermissions_do_not_ask_again_on_this_site2">Nie pytaj ponownie na tej witrynie</string>
+  <!-- Text for a checkbox in a permission request dialog, this will allow to not show again the prompt -->
+  <string name="mozac_feature_sitepermissions_do_not_ask_again_on_this_site3" moz:removedIn="144" tools:ignore="UnusedResources">Nie pytaj ponownie dla tej witryny</string>
+  <!-- Text for a checkbox in a permission request dialog, this will allow to not show again the prompt -->
+  <string name="mozac_feature_sitepermissions_do_not_ask_again_on_this_site4">Zapamiętaj dla tej witryny</string>
   <!-- Text for a positive button in a permission request dialog. This will always allow and remember the decision of the user, this is the special case of the notification permission, that is only ask one time -->
   <string name="mozac_feature_sitepermissions_always_allow">Zawsze</string>
   <!-- Text for a negative button in a permission request dialog. This will never allow and remember the decision of the user, this is the special case of the notification permission, that is only ask one time -->

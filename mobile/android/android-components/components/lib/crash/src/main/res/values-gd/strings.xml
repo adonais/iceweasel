@@ -26,4 +26,10 @@
   <string name="mozac_lib_crash_no_crashes">Cha deach aithisg air tuisleadh a chur.</string>
   <!-- Text link that will show an app chooser to share a crash report with a third-party app (e.g. gmail) -->
   <string name="mozac_lib_crash_share">Co-roinn</string>
+  <!-- String for Ask before sending crash reports radio button in Data Collection Screen -->
+  <string name="crash_reporting_ask">Faighnich dhìom mus tèid a chur</string>
+  <!-- String for Send crash reports automatically radio button in Data Collection Screen -->
+  <string name="crash_reporting_auto">Cuir gu fèin-obrachail</string>
+  <!-- String for Never sending crash reports radio button in Data Collection Screen -->
+  <string name="crash_reporting_never">Na cuir idir</string>
 </resources>

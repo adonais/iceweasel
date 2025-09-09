@@ -5,13 +5,12 @@
 #ifndef _mozilla_dom_fetch_FetchStreamUtils_h
 #define _mozilla_dom_fetch_FetchStreamUtils_h
 
+#include <cstdint>
+
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/dom/FetchTypes.h"
-
 #include "nsIInputStream.h"
-
-#include <cstdint>
 
 namespace mozilla {
 

@@ -636,6 +636,44 @@ add_task(async function addSpeakerPermission() {
   doc.querySelector("dialog").getButton("cancel").click();
 });
 
+add_task(async function testLocalNetworkAccessPermissionVisibility() {
+  let enabled = Services.prefs.getBoolPref("network.lna.blocking", false);
+  let localHostSettingsRow = gBrowser.contentDocument.getElementById(
+    "localHostSettingsRow"
+  );
+  let localNetworkSettingsRow = gBrowser.contentDocument.getElementById(
+    "localNetworkSettingsRow"
+  );
+
+  Assert.equal(
+    BrowserTestUtils.isVisible(localNetworkSettingsRow),
+    enabled,
+    "localhost permissions visible"
+  );
+  Assert.equal(
+    BrowserTestUtils.isVisible(localHostSettingsRow),
+    enabled,
+    "localhost permissions visible"
+  );
+
+  enabled = !enabled;
+  Services.prefs.setBoolPref("network.lna.blocking", enabled);
+
+  Assert.equal(
+    BrowserTestUtils.isVisible(localHostSettingsRow),
+    enabled,
+    "localhost permissions toggle"
+  );
+
+  Assert.equal(
+    BrowserTestUtils.isVisible(localNetworkSettingsRow),
+    enabled,
+    "localhost permissions toggle"
+  );
+
+  Services.prefs.setBoolPref("network.lna.blocking", !enabled);
+});
+
 add_task(async function removeTab() {
   gBrowser.removeCurrentTab();
 });

@@ -187,6 +187,35 @@ bool Message::ConsumeMachSendRight(PickleIterator* iter,
 uint32_t Message::num_send_rights() const {
   return attached_send_rights_.Length();
 }
+
+bool Message::WriteMachReceiveRight(mozilla::UniqueMachReceiveRight port) {
+  uint32_t index = attached_receive_rights_.Length();
+  WriteUInt32(index);
+  if (index == MAX_DESCRIPTORS_PER_MESSAGE) {
+    return false;
+  }
+  attached_receive_rights_.AppendElement(std::move(port));
+  return true;
+}
+
+bool Message::ConsumeMachReceiveRight(
+    PickleIterator* iter, mozilla::UniqueMachReceiveRight* port) const {
+  uint32_t index;
+  if (!ReadUInt32(iter, &index)) {
+    return false;
+  }
+  if (index >= attached_receive_rights_.Length()) {
+    return false;
+  }
+  // NOTE: This mutates the underlying array, replacing the receive right with a
+  // null right.
+  *port = std::exchange(attached_receive_rights_[index], nullptr);
+  return true;
+}
+
+uint32_t Message::num_receive_rights() const {
+  return attached_receive_rights_.Length();
+}
 #endif
 
 bool Message::WillBeRoutedExternally(

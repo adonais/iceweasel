@@ -60,6 +60,28 @@ struct ReferencePtr {
 
   explicit operator uintptr_t() const { return uintptr_t(mLongPtr); }
 
+  // Implement some operators so this class can be used as a key in
+  // stdlib classes.
+  bool operator<(const ReferencePtr& aOther) const {
+    return mLongPtr < aOther.mLongPtr;
+  }
+
+  bool operator>(const ReferencePtr& aOther) const {
+    return mLongPtr > aOther.mLongPtr;
+  }
+
+  bool operator==(const ReferencePtr& aOther) const {
+    return mLongPtr == aOther.mLongPtr;
+  }
+
+  bool operator!=(const ReferencePtr& aOther) const {
+    return !(*this == aOther);
+  }
+
+  bool operator>=(const ReferencePtr& aOther) const {
+    return mLongPtr >= aOther.mLongPtr;
+  }
+
   uint64_t mLongPtr;
 };
 
@@ -546,5 +568,14 @@ class RecordedEventDerived : public RecordedEvent {
 
 }  // namespace gfx
 }  // namespace mozilla
+
+// Helper struct that allows ReferencePtr to be used as a key in
+// std::unordered_map
+template <>
+struct std::hash<mozilla::gfx::ReferencePtr> {
+  std::size_t operator()(const mozilla::gfx::ReferencePtr& aRef) const {
+    return std::hash<uint64_t>{}(aRef.mLongPtr);
+  }
+};
 
 #endif

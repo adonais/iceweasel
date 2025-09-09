@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_SharedMessageBody_h
 #define mozilla_dom_SharedMessageBody_h
 
-#include "mozilla/dom/ipc/StructuredCloneData.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/dom/ipc/StructuredCloneData.h"
 
 namespace mozilla {
 

@@ -17,6 +17,9 @@
 // Globals
 
 const kDeleteTempFileOnExit = "browser.helperApps.deleteTempFileOnExit";
+// TODO (bug 1986365): we should replace the setting of this pref with an actual
+// test for the "new" behaviour (introduced in bug 1790641).
+const kDeletePrivateFileFeature = "browser.download.enableDeletePrivate";
 
 ChromeUtils.defineESModuleGetters(this, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
@@ -2874,6 +2877,7 @@ add_task(async function test_launchWhenSucceeded_deleteTempFileOnExit() {
   let autoDeleteTargetPathTwo = getTempFile(TEST_TARGET_FILE_NAME).path;
   let noAutoDeleteTargetPath = getTempFile(TEST_TARGET_FILE_NAME).path;
 
+  Services.prefs.setBoolPref(kDeletePrivateFileFeature, false);
   let autoDeleteDownloadOne = await Downloads.createDownload({
     source: { url: httpUrl("source.txt"), isPrivate: true },
     target: autoDeleteTargetPathOne,
@@ -2902,13 +2906,27 @@ add_task(async function test_launchWhenSucceeded_deleteTempFileOnExit() {
 
   Services.prefs.clearUserPref(kDeleteTempFileOnExit);
 
-  Assert.ok(await IOUtils.exists(autoDeleteTargetPathOne));
-  Assert.ok(await IOUtils.exists(autoDeleteTargetPathTwo));
-  Assert.ok(await IOUtils.exists(noAutoDeleteTargetPath));
+  Assert.ok(
+    await IOUtils.exists(autoDeleteTargetPathOne),
+    "Auto-delete target one should exist"
+  );
+  Assert.ok(
+    await IOUtils.exists(autoDeleteTargetPathTwo),
+    "Auto-delete target two should exist"
+  );
+  Assert.ok(
+    await IOUtils.exists(noAutoDeleteTargetPath),
+    "No auto-delete target should exist"
+  );
 
   // Simulate leaving private browsing mode
   Services.obs.notifyObservers(null, "last-pb-context-exited");
-  Assert.equal(false, await IOUtils.exists(autoDeleteTargetPathOne));
+  Assert.equal(
+    false,
+    await IOUtils.exists(autoDeleteTargetPathOne),
+    "Auto-delete target one should not exist after exiting pb"
+  );
+  Services.prefs.clearUserPref(kDeletePrivateFileFeature);
 
   // Simulate browser shutdown
   let expire = Cc[
@@ -2917,8 +2935,14 @@ add_task(async function test_launchWhenSucceeded_deleteTempFileOnExit() {
   expire.observe(null, "profile-before-change", null);
 
   // The file should still exist following the simulated shutdown.
-  Assert.ok(await IOUtils.exists(autoDeleteTargetPathTwo));
-  Assert.ok(await IOUtils.exists(noAutoDeleteTargetPath));
+  Assert.ok(
+    await IOUtils.exists(autoDeleteTargetPathTwo),
+    "Auto-delete target two should exist"
+  );
+  Assert.ok(
+    await IOUtils.exists(noAutoDeleteTargetPath),
+    "No auto-delete target should exist"
+  );
 });
 
 /**
@@ -2933,6 +2957,8 @@ add_task(
     let autoDeleteTargetPathOne = getTempFile(TEST_TARGET_FILE_NAME).path;
     let autoDeleteTargetPathTwo = getTempFile(TEST_TARGET_FILE_NAME).path;
     let noAutoDeleteTargetPath = getTempFile(TEST_TARGET_FILE_NAME).path;
+
+    Services.prefs.setBoolPref(kDeletePrivateFileFeature, false);
 
     let autoDeleteDownloadOne = await Downloads.createDownload({
       source: { url: httpUrl("source.txt"), isPrivate: true },
@@ -2962,13 +2988,28 @@ add_task(
 
     Services.prefs.clearUserPref(kDeleteTempFileOnExit);
 
-    Assert.ok(await IOUtils.exists(autoDeleteTargetPathOne));
-    Assert.ok(await IOUtils.exists(autoDeleteTargetPathTwo));
-    Assert.ok(await IOUtils.exists(noAutoDeleteTargetPath));
+    Assert.ok(
+      await IOUtils.exists(autoDeleteTargetPathOne),
+      "Auto-delete target one should exist"
+    );
+    Assert.ok(
+      await IOUtils.exists(autoDeleteTargetPathTwo),
+      "Auto-delete target two should exist"
+    );
+    Assert.ok(
+      await IOUtils.exists(noAutoDeleteTargetPath),
+      "No auto-delete target should exist"
+    );
 
     // Simulate leaving private browsing mode
     Services.obs.notifyObservers(null, "last-pb-context-exited");
-    Assert.equal(false, await IOUtils.exists(autoDeleteTargetPathOne));
+    Assert.equal(
+      false,
+      await IOUtils.exists(autoDeleteTargetPathOne),
+      "Auto-delete target one should not exist after exiting pb"
+    );
+
+    Services.prefs.clearUserPref(kDeletePrivateFileFeature);
 
     // Simulate browser shutdown
     let expire = Cc[

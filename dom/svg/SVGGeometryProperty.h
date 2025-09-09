@@ -7,14 +7,15 @@
 #ifndef DOM_SVG_SVGGEOMETRYPROPERTY_H_
 #define DOM_SVG_SVGGEOMETRYPROPERTY_H_
 
-#include "mozilla/SVGImageFrame.h"
-#include "mozilla/dom/SVGElement.h"
+#include <type_traits>
+
 #include "ComputedStyle.h"
 #include "SVGAnimatedLength.h"
+#include "mozilla/SVGImageFrame.h"
+#include "mozilla/dom/SVGElement.h"
 #include "nsComputedDOMStyle.h"
 #include "nsGkAtoms.h"
 #include "nsIFrame.h"
-#include <type_traits>
 
 namespace mozilla::dom::SVGGeometryProperty {
 namespace ResolverTypes {

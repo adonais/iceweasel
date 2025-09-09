@@ -7,16 +7,17 @@
 #ifndef FILE_BLOCK_CACHE_H_
 #define FILE_BLOCK_CACHE_H_
 
+#include <deque>
+
+#include "MediaBlockCacheBase.h"
+#include "mozilla/AbstractThread.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/AbstractThread.h"
-#include "nsTArray.h"
-#include "MediaBlockCacheBase.h"
 #include "nsDeque.h"
+#include "nsTArray.h"
 #include "nsThreadUtils.h"
-#include <deque>
 
 struct PRFileDesc;
 

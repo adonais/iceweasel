@@ -16,7 +16,7 @@ body {
 
 @media (prefers-contrast) {
   body {
-    --warning-color: var(--in-content-page-color);
+    --warning-color: var(--text-color);
   }
 }
 
@@ -135,7 +135,7 @@ button:disabled {
 }
 
 #cert_domain_link:not([href]) {
-  color: var(--in-content-page-color);
+  color: var(--text-color);
   text-decoration: none;
 }
 

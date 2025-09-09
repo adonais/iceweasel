@@ -5,11 +5,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/ImageDecoder.h"
+
 #include <algorithm>
 #include <cstdint>
+
 #include "ImageContainer.h"
 #include "ImageDecoderReadRequest.h"
 #include "MediaResult.h"
+#include "mozilla/Logging.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/ImageTrack.h"
 #include "mozilla/dom/ImageTrackList.h"
 #include "mozilla/dom/Promise.h"
@@ -19,8 +23,6 @@
 #include "mozilla/dom/WebCodecsUtils.h"
 #include "mozilla/image/ImageUtils.h"
 #include "mozilla/image/SourceBuffer.h"
-#include "mozilla/Logging.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "nsComponentManagerUtils.h"
 #include "nsTHashSet.h"
 

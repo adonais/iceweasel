@@ -7,8 +7,8 @@
 
 #include "imgIContainer.h"
 #include "imgITools.h"
-#include "mozilla/dom/MediaSessionBinding.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/dom/MediaSessionBinding.h"
 
 namespace mozilla::dom {
 /**

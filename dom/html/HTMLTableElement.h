@@ -7,9 +7,9 @@
 #define mozilla_dom_HTMLTableElement_h
 
 #include "mozilla/Attributes.h"
-#include "nsGenericHTMLElement.h"
 #include "mozilla/dom/HTMLTableCaptionElement.h"
 #include "mozilla/dom/HTMLTableSectionElement.h"
+#include "nsGenericHTMLElement.h"
 
 namespace mozilla::dom {
 

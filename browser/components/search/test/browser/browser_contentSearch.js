@@ -475,7 +475,7 @@ var currentStateObj = async function (hiddenEngine = "") {
       name: engine.name,
       iconData: await iconDataFromURI(uri),
       hidden: engine.name == hiddenEngine,
-      isAppProvided: engine.isAppProvided,
+      isConfigEngine: engine.isConfigEngine,
     });
   }
   return state;
@@ -486,7 +486,7 @@ async function constructEngineObj(engine) {
   return {
     name: engine.name,
     iconData: await iconDataFromURI(uriFavicon),
-    isAppProvided: engine.isAppProvided,
+    isConfigEngine: engine.isConfigEngine,
   };
 }
 

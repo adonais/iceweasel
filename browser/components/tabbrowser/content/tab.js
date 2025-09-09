@@ -72,17 +72,13 @@
        */
       this.muteReason = undefined;
 
-      this.mOverCloseButton = false;
-
-      this.mCorrespondingMenuitem = null;
-
       this.closing = false;
     }
 
     static get inheritedAttributes() {
       return {
         ".tab-background":
-          "selected=visuallyselected,fadein,multiselected,dragover-createGroup",
+          "selected=visuallyselected,fadein,multiselected,dragover-groupTarget",
         ".tab-group-line": "selected=visuallyselected,multiselected",
         ".tab-loading-burst": "pinned,bursting,notselectedsinceload",
         ".tab-content":
@@ -225,7 +221,9 @@
 
     get visible() {
       return (
-        this.isOpen && !this.hidden && (!this.group?.collapsed || this.selected)
+        this.isOpen &&
+        !this.hidden &&
+        (!this.group || this.group.isTabVisibleInGroup(this))
       );
     }
 
@@ -407,15 +405,11 @@
     }
 
     on_mouseover(event) {
-      if (event.target.classList.contains("tab-close-button")) {
-        this.mOverCloseButton = true;
-      }
-
       if (!this.visible) {
         return;
       }
 
-      let tabToWarm = this.mOverCloseButton
+      let tabToWarm = event.target.classList.contains("tab-close-button")
         ? gBrowser._findTabToBlurTo(this)
         : this;
       gBrowser.warmupTab(tabToWarm);
@@ -427,10 +421,6 @@
     }
 
     on_mouseout(event) {
-      if (event.target.classList.contains("tab-close-button")) {
-        this.mOverCloseButton = false;
-      }
-
       // If the new target is not part of this tab then this is a mouseleave event.
       if (!this.contains(event.relatedTarget)) {
         this._mouseleave();
@@ -446,7 +436,7 @@
       if (event.eventPhase == Event.CAPTURING_PHASE) {
         this.style.MozUserFocus = "";
       } else if (
-        this.mOverCloseButton ||
+        event.target.classList?.contains("tab-close-button") ||
         gSharedTabWarning.willShowSharedTabWarning(this)
       ) {
         event.stopPropagation();

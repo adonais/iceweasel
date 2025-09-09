@@ -5,16 +5,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FormData.h"
-#include "nsIInputStream.h"
-#include "mozilla/dom/CustomElementTypes.h"
-#include "mozilla/dom/File.h"
-#include "mozilla/dom/Directory.h"
-#include "mozilla/dom/HTMLFormElement.h"
-#include "mozilla/Encoding.h"
-#include "nsGenericHTMLElement.h"
-#include "nsQueryObject.h"
 
 #include "MultipartBlobImpl.h"
+#include "mozilla/Encoding.h"
+#include "mozilla/dom/CustomElementTypes.h"
+#include "mozilla/dom/Directory.h"
+#include "mozilla/dom/File.h"
+#include "mozilla/dom/HTMLFormElement.h"
+#include "nsGenericHTMLElement.h"
+#include "nsIInputStream.h"
+#include "nsQueryObject.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

@@ -41,6 +41,9 @@ class WeakMapObject : public WeakCollectionObject {
   [[nodiscard]] static bool get(JSContext* cx, unsigned argc, Value* vp);
   [[nodiscard]] static bool set(JSContext* cx, unsigned argc, Value* vp);
 
+  static void getObject(WeakMapObject* weakMap, JSObject* obj, Value* result);
+  static bool hasObject(WeakMapObject* weakMap, JSObject* obj);
+
  private:
   static const ClassSpec classSpec_;
 

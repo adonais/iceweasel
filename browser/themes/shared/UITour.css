@@ -104,8 +104,8 @@
 }
 
 #UITourTooltipIcon {
-  width: 48px;
-  height: 48px;
+  width: var(--size-item-xlarge);
+  height: var(--size-item-xlarge);
   margin-inline-end: 10px;
 }
 

@@ -8,9 +8,9 @@
 #define mozilla_dom_URLPattern_h
 
 #include "mozilla/dom/URLPatternBinding.h"
+#include "mozilla/net/URLPatternGlue.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
-#include "mozilla/net/URLPatternGlue.h"
 
 namespace mozilla::dom {
 

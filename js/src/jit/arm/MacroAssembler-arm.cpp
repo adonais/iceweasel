@@ -4831,16 +4831,17 @@ FaultingCodeOffset MacroAssembler::wasmTrapInstruction() {
 }
 
 void MacroAssembler::wasmBoundsCheck32(Condition cond, Register index,
-                                       Register boundsCheckLimit, Label* ok) {
+                                       Register boundsCheckLimit,
+                                       Label* label) {
   as_cmp(index, O2Reg(boundsCheckLimit));
-  as_b(ok, cond);
+  as_b(label, cond);
   if (JitOptions.spectreIndexMasking) {
     ma_mov(boundsCheckLimit, index, LeaveCC, cond);
   }
 }
 
 void MacroAssembler::wasmBoundsCheck32(Condition cond, Register index,
-                                       Address boundsCheckLimit, Label* ok) {
+                                       Address boundsCheckLimit, Label* label) {
   ScratchRegisterScope scratch(*this);
   // We want to do a word load from
   //   [boundsCheckLimit.base, #+boundsCheckLimit.offset],
@@ -4852,28 +4853,29 @@ void MacroAssembler::wasmBoundsCheck32(Condition cond, Register index,
                    boundsCheckLimit.base, Imm32(boundsCheckLimit.offset),
                    scratch, scratch);
   as_cmp(index, O2Reg(scratch));
-  as_b(ok, cond);
+  as_b(label, cond);
   if (JitOptions.spectreIndexMasking) {
     ma_mov(scratch, index, LeaveCC, cond);
   }
 }
 
 void MacroAssembler::wasmBoundsCheck64(Condition cond, Register64 index,
-                                       Register64 boundsCheckLimit, Label* ok) {
-  Label notOk;
+                                       Register64 boundsCheckLimit,
+                                       Label* label) {
+  Label ifFalse;
   cmp32(index.high, Imm32(0));
-  j(Assembler::NonZero, &notOk);
-  wasmBoundsCheck32(cond, index.low, boundsCheckLimit.low, ok);
-  bind(&notOk);
+  j(Assembler::NonZero, &ifFalse);
+  wasmBoundsCheck32(cond, index.low, boundsCheckLimit.low, label);
+  bind(&ifFalse);
 }
 
 void MacroAssembler::wasmBoundsCheck64(Condition cond, Register64 index,
-                                       Address boundsCheckLimit, Label* ok) {
-  Label notOk;
+                                       Address boundsCheckLimit, Label* label) {
+  Label ifFalse;
   cmp32(index.high, Imm32(0));
-  j(Assembler::NonZero, &notOk);
-  wasmBoundsCheck32(cond, index.low, boundsCheckLimit, ok);
-  bind(&notOk);
+  j(Assembler::NonZero, &ifFalse);
+  wasmBoundsCheck32(cond, index.low, boundsCheckLimit, label);
+  bind(&ifFalse);
 }
 
 void MacroAssembler::wasmTruncateDoubleToUInt32(FloatRegister input,

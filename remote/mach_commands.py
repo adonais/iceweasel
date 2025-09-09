@@ -435,7 +435,7 @@ class PuppeteerRunner(MozbuildObject):
         env = {
             # Checked by Puppeteer's custom mocha config
             "CI": "1",
-            # Print browser process ouptut
+            # Print browser process output
             "DUMPIO": "1",
             # Run in headless mode if trueish, otherwise use headful
             "HEADLESS": str(headless),

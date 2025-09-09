@@ -9,6 +9,9 @@ support-files = [
   "worker.js",
   "blank.html",
 ]
+prefs = [
+  "sidebar.verticalTabs.dragToPinPromo.dismissed=true",
+]
 
 ["browser_aboutURLs.js"]
 

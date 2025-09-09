@@ -223,11 +223,19 @@ ConcurrentConnection::Complete(nsresult aRv, nsISupports* aData) {
   mConn = do_QueryInterface(aData);
   mIsOpening = false;
 
-  // First of all we must check schema version, if the schema is outdated, we
-  // must await for Places initialization.
-  nsCOMPtr<mozIStoragePendingStatement> ps;
+  // In some rare conditions WAL may return SQLITE_BUSY when the same database
+  // is used across multiple threads, we must handle that.
+  nsAutoCString busyTimeoutPragma("PRAGMA busy_timeout = ");
+  busyTimeoutPragma.AppendInt(DATABASE_BUSY_TIMEOUT_MS);
+  nsCOMPtr<mozIStoragePendingStatement> busyPs;
+  (void)mConn->ExecuteSimpleSQLAsync(busyTimeoutPragma, nullptr,
+                                     getter_AddRefs(busyPs));
+
+  // Verify the schema version. If outdated, wait for Places to finish
+  // initializing.
+  nsCOMPtr<mozIStoragePendingStatement> schemaPs;
   nsresult rv = mConn->ExecuteSimpleSQLAsync("PRAGMA user_version"_ns, this,
-                                             getter_AddRefs(ps));
+                                             getter_AddRefs(schemaPs));
   if (NS_FAILED(rv)) {
     CloseConnection();
     Shutdown();

@@ -5,7 +5,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/EncodedAudioChunk.h"
-#include "mozilla/dom/EncodedAudioChunkBinding.h"
 
 #include <utility>
 
@@ -15,6 +14,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/dom/BufferSourceBinding.h"
+#include "mozilla/dom/EncodedAudioChunkBinding.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
 #include "mozilla/dom/StructuredCloneTags.h"
 #include "mozilla/dom/WebCodecsUtils.h"

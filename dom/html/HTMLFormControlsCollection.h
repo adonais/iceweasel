@@ -7,9 +7,9 @@
 #ifndef mozilla_dom_HTMLFormControlsCollection_h
 #define mozilla_dom_HTMLFormControlsCollection_h
 
+#include "mozilla/dom/TreeOrderedArray.h"
 #include "nsIHTMLCollection.h"
 #include "nsInterfaceHashtable.h"
-#include "mozilla/dom/TreeOrderedArray.h"
 #include "nsTArray.h"
 #include "nsWrapperCache.h"
 

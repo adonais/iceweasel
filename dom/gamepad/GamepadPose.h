@@ -8,8 +8,8 @@
 #define mozilla_dom_gamepad_GamepadPose_h
 
 #include "mozilla/TypedEnumBits.h"
-#include "mozilla/dom/Pose.h"
 #include "mozilla/dom/GamepadPoseState.h"
+#include "mozilla/dom/Pose.h"
 #include "nsCOMPtr.h"
 
 namespace mozilla::dom {

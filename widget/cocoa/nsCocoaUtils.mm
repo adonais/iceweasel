@@ -266,9 +266,8 @@ nsIWidget* nsCocoaUtils::GetHiddenWindowWidget() {
     return nullptr;
   }
 
-  nsCOMPtr<nsIWidget> hiddenWindowWidget;
-  if (NS_FAILED(baseHiddenWindow->GetMainWidget(
-          getter_AddRefs(hiddenWindowWidget)))) {
+  nsCOMPtr<nsIWidget> hiddenWindowWidget = baseHiddenWindow->GetMainWidget();
+  if (!hiddenWindowWidget) {
     NS_WARNING("Couldn't get nsIWidget from hidden window (nsIBaseWindow)");
     return nullptr;
   }
@@ -1664,7 +1663,10 @@ NSString* nsCocoaUtils::GetStringForTypeFromPasteboardItem(
   NSString* availableType =
       [aItem availableTypeFromArray:[NSArray arrayWithObjects:(id)aType, nil]];
   if (availableType && IsValidPasteboardType(availableType, aAllowFileURL)) {
-    return [aItem stringForType:(id)availableType];
+    NSString* str = [aItem stringForType:(id)availableType];
+    // Sanitize (remove NULs, etc) to align with other platforms.
+    return [NSString stringWithCString:[str UTF8String]
+                              encoding:NSUTF8StringEncoding];
   }
 
   return nil;

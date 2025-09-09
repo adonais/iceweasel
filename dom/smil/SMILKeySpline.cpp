@@ -5,8 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SMILKeySpline.h"
-#include <stdint.h>
+
 #include <math.h>
+#include <stdint.h>
 
 namespace mozilla {
 

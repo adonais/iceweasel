@@ -183,11 +183,6 @@ pref("dom.ipc.keepProcessesAlive.extension", 1);
 // Keep empty content process alive on Android (bug 1447393)
 pref("dom.ipc.keepProcessesAlive.web", 1);
 
-// This value is derived from the calculation:
-// MOZ_ANDROID_CONTENT_SERVICE_COUNT - dom.ipc.processCount
-// (dom.ipc.processCount is set in GeckoRuntimeSettings.java) (bug 1619655)
-pref("dom.ipc.processCount.webCOOP+COEP", 38);
-
 // Disable the preallocated process on Android
 pref("dom.ipc.processPrelaunch.enabled", false);
 

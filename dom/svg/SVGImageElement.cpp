@@ -6,19 +6,19 @@
 
 #include "mozilla/dom/SVGImageElement.h"
 
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/gfx/2D.h"
-#include "nsCOMPtr.h"
-#include "nsIURI.h"
-#include "nsNetUtil.h"
+#include "SVGGeometryProperty.h"
 #include "imgINotificationObserver.h"
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/FetchPriority.h"
 #include "mozilla/dom/SVGImageElementBinding.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/UserActivation.h"
+#include "mozilla/gfx/2D.h"
+#include "nsCOMPtr.h"
 #include "nsContentUtils.h"
-#include "SVGGeometryProperty.h"
+#include "nsIURI.h"
+#include "nsNetUtil.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(Image)
 

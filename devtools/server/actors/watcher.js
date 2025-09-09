@@ -166,8 +166,8 @@ exports.WatcherActor = class WatcherActor extends Actor {
     return this._browserElement;
   }
 
-  getAllBrowsingContexts(options) {
-    return getAllBrowsingContextsForContext(this.sessionContext, options);
+  getAllBrowsingContexts() {
+    return getAllBrowsingContextsForContext(this.sessionContext);
   }
 
   /**

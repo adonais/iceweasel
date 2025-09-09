@@ -6,9 +6,9 @@
 
 #include "SourceBufferResource.h"
 
+#include "MediaData.h"
 #include "mozilla/Logging.h"
 #include "mozilla/TaskQueue.h"
-#include "MediaData.h"
 
 mozilla::LogModule* GetSourceBufferResourceLog() {
   static mozilla::LazyLogModule sLogModule("SourceBufferResource");

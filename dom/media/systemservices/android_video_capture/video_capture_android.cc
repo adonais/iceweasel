@@ -61,7 +61,7 @@ void JNICALL ProvideCameraFrame(JNIEnv* env, jobject, jint width, jint height,
   uint8_t* dataV =
       reinterpret_cast<uint8_t*>(env->GetDirectBufferAddress(javaDataV));
 
-  rtc::scoped_refptr<I420Buffer> i420Buffer = I420Buffer::Copy(
+  webrtc::scoped_refptr<I420Buffer> i420Buffer = I420Buffer::Copy(
       width, height, dataY, strideY, dataU, strideU, dataV, strideV);
 
   captureModule->OnIncomingFrame(i420Buffer, rotation, timeStamp);
@@ -130,19 +130,19 @@ int32_t SetCaptureAndroidVM(JavaVM* javaVM) {
 
 namespace videocapturemodule {
 
-rtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
+webrtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
     const char* deviceUniqueIdUTF8) {
-  rtc::scoped_refptr<VideoCaptureAndroid> implementation(
-      new rtc::RefCountedObject<VideoCaptureAndroid>());
+  webrtc::scoped_refptr<VideoCaptureAndroid> implementation(
+      new webrtc::RefCountedObject<VideoCaptureAndroid>());
   if (implementation->Init(deviceUniqueIdUTF8) != 0) {
     implementation = nullptr;
   }
   return implementation;
 }
 
-void VideoCaptureAndroid::OnIncomingFrame(rtc::scoped_refptr<I420Buffer> buffer,
-                                          int32_t degrees,
-                                          int64_t captureTime) {
+void VideoCaptureAndroid::OnIncomingFrame(
+    webrtc::scoped_refptr<I420Buffer> buffer, int32_t degrees,
+    int64_t captureTime) {
   MutexLock lock(&api_lock_);
 
   VideoRotation rotation =
@@ -154,7 +154,7 @@ void VideoCaptureAndroid::OnIncomingFrame(rtc::scoped_refptr<I420Buffer> buffer,
 
   // Historically, we have ignored captureTime. Why?
   VideoFrame captureFrame(I420Buffer::Rotate(*buffer, rotation), 0,
-                          rtc::TimeMillis(), rotation);
+                          webrtc::TimeMillis(), rotation);
 
   DeliverCapturedFrame(captureFrame);
 }

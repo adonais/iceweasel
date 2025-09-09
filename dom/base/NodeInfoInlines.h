@@ -8,9 +8,9 @@
 #define mozilla_dom_NodeInfoInlines_h___
 
 #include "nsAtom.h"
-#include "nsINode.h"
 #include "nsDOMString.h"
 #include "nsGkAtoms.h"
+#include "nsINode.h"
 
 namespace mozilla::dom {
 

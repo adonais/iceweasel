@@ -46,18 +46,14 @@
   <string name="home_bookmarks_show_all_content_description">सभी बुकमार्क दिखाएं</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s को Mozilla द्वारा निर्मित किया गया है।</string>
-  <!--
-    Private Browsing
-
-    Explanation for private browsing displayed to users on home view when they first enable private mode.
-    %1$s is the name of the app (for example "Firefox").
-  -->
-  <string name="private_browsing_placeholder_description_2" moz:removedIn="141" tools:ignore="UnusedResources">%1$s जब आप ऐप को बंद करते हैं तो निजी टैब से आपका खोज और ब्राउज़िंग इतिहास को मिटाता हैं। हालांकि यह आपको वेबसाइटों या आपके इंटरनेट सेवा प्रदाता के लिए अज्ञात नहीं बनाता है, लेकिन यह आसान बनाता है कि आप इस कंप्यूटर का उपयोग करने वाले किसी अन्य व्यक्ति से ऑनलाइन निजी काम करें।</string>
+  <!-- Private Browsing -->
   <string name="private_browsing_common_myths">निजी ब्राउज़िंग के बारे में आम कथा</string>
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">सेटिंग पर जाएं</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">खारिज</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">सेटिंग पर जाएं</string>
   <!-- Text for the negative action button to dismiss the dialog. -->
@@ -252,8 +248,6 @@
   <string name="preferences_account_sync_error">सिंक को पुनः प्रारंभ करने के लिए दोबारा कनेक्ट करें</string>
   <!-- Preference for language -->
   <string name="preferences_language">भाषा</string>
-  <!-- Preference for data choices -->
-  <string name="preferences_data_choices" tools:ignore="UnusedResources" moz:removedIn="141">डेटा विकल्प</string>
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">डेटा संग्रहण</string>
   <!-- Preference for developers -->
@@ -278,8 +272,6 @@
   <string name="preferences_enable_autocomplete_urls">स्वतः पूर्ण URL</string>
   <!-- Preference for open links in third party apps -->
   <string name="preferences_open_links_in_apps">ऐप में लिंक खोलें</string>
-  <!-- Preference for open download with an external download manager app -->
-  <string name="preferences_external_download_manager" tools:ignore="UnusedResources" moz:removedIn="141">बाहरी डाउनलोड प्रबंधक</string>
   <!-- Preference for notifications -->
   <string name="preferences_notifications">अधिसूचनाएं</string>
   <!-- Button caption to confirm the add-on collection configuration -->
@@ -302,9 +294,9 @@
   <!-- Title for the opening wallpaper settings screen -->
   <string name="customize_wallpapers">वॉलपेपर</string>
   <!-- Snackbar message for when wallpaper is selected -->
-  <string name="wallpaper_updated_snackbar_message">वॉलपेपर अपडेट किया गया!</string>
+  <string name="wallpaper_updated_snackbar_message" tools:ignore="UnusedResources" moz:removedIn="144">वॉलपेपर अपडेट किया गया!</string>
   <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action">देखें</string>
+  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">देखें</string>
   <!-- Preference for triggering sync -->
   <string name="preferences_sync_now">अब सिंक करें</string>
   <!-- Preference category for sync -->
@@ -826,20 +818,16 @@
     Text shown in snackbar when user deletes a collection
   -->
   <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">संग्रह बनाया गया</string>
-  <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">संग्रह का नाम बदला गया</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">टैब बंद हो गया</string>
   <!-- Text shown in snackbar when user closes all tabs -->
   <string name="snackbar_tabs_closed">टैब बंद हो गया</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">निजी टैब बंद हो गया</string>
-  <!-- Text shown in snackbar when user closes all private tabs -->
-  <string name="snackbar_private_tabs_closed" moz:removedIn="141" tools:ignore="UnusedResources">निजी टैब बंद हो गया</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">UNDO</string>
   <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed">साइट हटायी गई</string>
+  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">साइट हटायी गई</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -1259,8 +1247,6 @@
   <string name="action_bar_up_description">ऊपर जाएँ</string>
   <!-- Content description for privacy content close button -->
   <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">बंद करें</string>
-  <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
-  <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">और जानें</string>
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->

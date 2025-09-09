@@ -27,6 +27,17 @@ ChromeUtils.defineLazyGetter(lazy, "tpFlagsMask", () => {
         Ci.nsIClassifiedChannel.CLASSIFIED_ANY_STRICT_TRACKING;
 });
 
+// List of compression encodings that can be handled by the
+// NetworkResponseListener.
+const ACCEPTED_COMPRESSION_ENCODINGS = [
+  "gzip",
+  "deflate",
+  "br",
+  "x-gzip",
+  "x-deflate",
+  "zstd",
+];
+
 // These include types indicating the availability of data e.g responseCookies
 // or the networkEventOwner action which triggered the specific update e.g responseStart.
 // These types are specific to devtools and used by BiDi.
@@ -807,8 +818,144 @@ function setEventAsAvailable(resource, networkEvents) {
   }
 }
 
+/**
+ * Helper to decode the content of a response object built by a
+ * NetworkResponseListener.
+ *
+ * @param {Array<TypedArray>}
+ *     Array of response chunks read via NetUtil.readInputStream.
+ * @param {object} options
+ * @param {string} options.charset
+ *     Charset used for the response.
+ * @param {Array<string>} options.compressionEncodings
+ *     Array of compression encodings applied to the response.
+ * @param {number} encodedBodySize
+ *     The total size of the encoded response.
+ * @param {string} encoding
+ *     The "encoding" of the response as computed by NetworkResponseListener.
+ *     (can be either undefined or "base64" if the mime type is not text)
+ * @returns {string}
+ *     The decoded content, as a string.
+ */
+async function decodeResponseChunks(chunks, options) {
+  const charset = options.charset || null;
+  const { compressionEncodings = [], encodedBodySize, encoding } = options;
+
+  const bytes = new Uint8Array(encodedBodySize);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(new Uint8Array(chunk), offset);
+    offset += chunk.byteLength;
+  }
+
+  const ArrayBufferInputStream = Components.Constructor(
+    "@mozilla.org/io/arraybuffer-input-stream;1",
+    "nsIArrayBufferInputStream",
+    "setData"
+  );
+  const bodyStream = new ArrayBufferInputStream(
+    bytes.buffer,
+    0,
+    bytes.byteLength
+  );
+
+  let decodedContent;
+  if (compressionEncodings.length) {
+    decodedContent = await decodeCompressedStream(
+      bodyStream,
+      bytes.byteLength,
+      compressionEncodings,
+      charset
+    );
+  } else {
+    decodedContent = decodeUncompressedStream(
+      bodyStream,
+      bytes.byteLength,
+      charset
+    );
+  }
+
+  if (encoding === "base64") {
+    try {
+      decodedContent = btoa(decodedContent);
+    } catch {
+      // Ignore `btoa`` errors because encoding="base64" does not guarantee the
+      // content is actually base64 (loosely based on the mime type not being
+      // a text mime type).
+    }
+  }
+
+  return decodedContent;
+}
+
+function decodeUncompressedStream(stream, length, charset) {
+  if (charset) {
+    const cis = Cc["@mozilla.org/intl/converter-input-stream;1"].createInstance(
+      Ci.nsIConverterInputStream
+    );
+
+    cis.init(stream, charset, length, 0);
+    const str = {};
+    cis.readString(-1, str);
+    cis.close();
+
+    return str.value;
+  }
+
+  const sis = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(
+    Ci.nsIScriptableInputStream
+  );
+  sis.init(stream);
+  return sis.readBytes(length);
+}
+
+async function decodeCompressedStream(stream, length, encodings, charset) {
+  const listener = Cc["@mozilla.org/network/stream-loader;1"].createInstance(
+    Ci.nsIStreamLoader
+  );
+  const onDecodingComplete = new Promise(resolve => {
+    listener.init({
+      onStreamComplete: function onStreamComplete(
+        _loader,
+        _context,
+        _status,
+        _length,
+        data
+      ) {
+        resolve(String.fromCharCode.apply(this, data));
+      },
+    });
+  });
+
+  const scs = Cc["@mozilla.org/streamConverters;1"].getService(
+    Ci.nsIStreamConverterService
+  );
+
+  let converter;
+  let nextListener = listener;
+  for (const encoding of encodings) {
+    // There can be multiple compressions applied
+    converter = scs.asyncConvertData(
+      encoding,
+      "uncompressed",
+      nextListener,
+      null
+    );
+    nextListener = converter;
+  }
+
+  converter.onStartRequest(null, null);
+  converter.onDataAvailable(null, stream, 0, length);
+  converter.onStopRequest(null, null, null);
+
+  const result = await onDecodingComplete;
+  return lazy.NetworkHelper.convertToUnicode(result, charset);
+}
+
 export const NetworkUtils = {
+  ACCEPTED_COMPRESSION_ENCODINGS,
   causeTypeToString,
+  decodeResponseChunks,
   fetchRequestHeadersAndCookies,
   fetchResponseHeadersAndCookies,
   getBlockedReason,

@@ -13,6 +13,7 @@
 #define nsFrameLoader_h_
 
 #include <cstdint>
+
 #include "ErrorList.h"
 #include "Units.h"
 #include "js/RootingAPI.h"
@@ -22,6 +23,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/MessageManagerCallback.h"
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
@@ -31,7 +33,6 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDocShell.h"
-#include "mozilla/dom/MessageManagerCallback.h"
 #include "nsID.h"
 #include "nsIFrame.h"
 #include "nsIMutationObserver.h"

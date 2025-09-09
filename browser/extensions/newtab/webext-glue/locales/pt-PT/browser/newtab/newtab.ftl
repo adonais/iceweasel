@@ -8,6 +8,9 @@
 newtab-page-title = Novo separador
 newtab-settings-button =
     .title = Personalizar a sua página de novo separador
+newtab-customize-panel-icon-button =
+    .title = Personalizar esta página
+newtab-customize-panel-icon-button-label = Personalizar
 newtab-personalize-settings-icon-label =
     .title = Personalizar o novo separador
     .aria-label = Definições
@@ -53,6 +56,9 @@ newtab-topsites-add-shortcut-header = Novo atalho
 newtab-topsites-edit-topsites-header = Editar site mais visitado
 newtab-topsites-edit-shortcut-header = Editar atalho
 newtab-topsites-add-shortcut-label = Adicionar atalho
+newtab-topsites-add-shortcut-title =
+    .title = Adicionar atalho
+    .aria-label = Adicionar atalho
 newtab-topsites-title-label = Título
 newtab-topsites-title-input =
     .placeholder = Digite um título
@@ -501,6 +507,9 @@ newtab-topic-selection-button-pick-interests = Escolha os seus interesses
 newtab-section-follow-button = Seguir
 newtab-section-following-button = A seguir
 newtab-section-unfollow-button = Deixar de seguir
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Ajuste a sua feed
+newtab-section-follow-highlight-subtitle = Siga os seus interesses para ver mais do que gosta.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -545,6 +554,8 @@ newtab-download-mobile-highlight-image =
 
 ## Strings for shortcuts highlight
 
+newtab-shortcuts-highlight-title = Os seus favoritos na ponta dos seus dedos
+newtab-shortcuts-highlight-subtitle = Adicione um atalho para manter os seus sites favoritos a um clique de distância.
 
 ## Strings for reporting ads and content
 
@@ -579,3 +590,5 @@ newtab-trending-searches-hide-trending =
     .title = Ocultar pesquisas em alta
 newtab-trending-searches-learn-more = Saber mais
 newtab-trending-searches-dismiss = Ocultar pesquisas em alta
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Pesquisas populares

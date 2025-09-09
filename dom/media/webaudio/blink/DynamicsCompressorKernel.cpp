@@ -28,12 +28,12 @@
 
 #include "DynamicsCompressorKernel.h"
 
-#include "DenormalDisabler.h"
 #include <algorithm>
 #include <cmath>
 
-#include "mozilla/FloatingPoint.h"
+#include "DenormalDisabler.h"
 #include "WebAudioUtils.h"
+#include "mozilla/FloatingPoint.h"
 
 using namespace mozilla::dom;  // for WebAudioUtils
 using mozilla::MakeUnique;

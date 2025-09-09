@@ -62,6 +62,13 @@ Result<MoveNodeResult, nsresult> HTMLEditor::MoveNodeToEndWithTransaction(
                                  EditorDOMPoint::AtEndOf(aNewContainer));
 }
 
+Result<MoveNodeResult, nsresult> HTMLEditor::MoveSiblingsToEndWithTransaction(
+    nsIContent& aFirstContentToMove, nsIContent& aLastContentToMove,
+    nsINode& aNewContainer) {
+  return MoveSiblingsWithTransaction(aFirstContentToMove, aLastContentToMove,
+                                     EditorDOMPoint::AtEndOf(aNewContainer));
+}
+
 Element* HTMLEditor::GetTableCellElementAt(
     Element& aTableElement, const CellIndexes& aCellIndexes) const {
   return GetTableCellElementAt(aTableElement, aCellIndexes.mRow,

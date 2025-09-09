@@ -8,8 +8,8 @@
 #define DOM_MEDIA_GTEST_AUDIO_GENERATOR_H_
 
 #include "AudioSegment.h"
-#include "prtime.h"
 #include "SineWaveGenerator.h"
+#include "prtime.h"
 
 namespace mozilla {
 

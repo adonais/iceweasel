@@ -19,6 +19,7 @@
 #include <fontconfig/fontconfig.h>
 
 #include "GRefPtr.h"
+#include "GSettings.h"
 #include "GUniquePtr.h"
 #include "gtk/gtk.h"
 #include "nsGtkUtils.h"
@@ -1020,8 +1021,7 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
     } break;
     case IntID::ScrollArrowStyle: {
       aResult = eScrollArrowStyle_Single;
-      GtkSettings* settings = gtk_settings_get_default();
-      if (MOZ_LIKELY(settings)) {
+      if (MOZ_LIKELY(gtk_settings_get_default())) {
         GtkWidget* scrollbar = GtkWidgets::Get(GtkWidgets::Type::Scrollbar);
         aResult = ConvertGTKStepperStyleToMozillaScrollArrowStyle(scrollbar);
       }
@@ -1199,6 +1199,28 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
         // Though the X11 code just hides the native menubar without
         // communicating it to the front-end...
         return false;
+      }();
+      break;
+    case IntID::HourCycle:
+      aResult = []() {
+        if (MOZ_UNLIKELY(!gtk_settings_get_default())) {
+          // Avoid accessing gsettings early on startup on xpcshell, in order to
+          // avoid messing with tests that try to mock our session bus.
+          // FIXME(bug 1981011): Ideally we would be able to not have this
+          // special case.
+          return 0;
+        }
+
+        nsAutoCString result;
+        widget::GSettings::GetString("org.gnome.desktop.interface"_ns,
+                                     "clock-format"_ns, result);
+        if (result == "12h") {
+          return 12;
+        }
+        if (result == "24h") {
+          return 24;
+        }
+        return 0;
       }();
       break;
     default:
@@ -2144,8 +2166,8 @@ void nsLookAndFeel::PerThemeData::Init() {
   mName = GetGtkTheme();
 
   mFamily = [&] {
-    if (StringBeginsWith(mName, "Adw"_ns)) {
-      // This catches "Adwaita", "Adwaita-dark", and "Adw-gtk3" too.
+    if (StringBeginsWith(mName, "adw"_ns, nsCaseInsensitiveCStringComparator)) {
+      // This catches "Adwaita", "Adwaita-dark", and "{A,a}dw-gtk3" too.
       return ThemeFamily::Adwaita;
     }
     if (StringBeginsWith(mName, "Breeze"_ns)) {

@@ -324,6 +324,10 @@
 
   <menu id="profiles-menu" data-l10n-id="menu-profiles" hidden="true">
     <menupopup id="menu_ProfilesPopup">
+      <!-- Profile list gets inserted here -->
+      <menuitem id="menu_newProfile" class="menuitem-iconic" command="Profiles:CreateProfile" data-l10n-id="menu-profiles-new-profile" />
+      <menuseparator id="profilesSeparator" />
+      <menuitem id="menu_manageProfiles" command="Profiles:ManageProfiles" data-l10n-id="menu-profiles-manage-profiles" />
     </menupopup>
   </menu>
 

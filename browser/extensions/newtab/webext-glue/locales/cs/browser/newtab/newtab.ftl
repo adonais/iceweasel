@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Nová zkratka
 newtab-topsites-edit-topsites-header = Upravit top stránku
 newtab-topsites-edit-shortcut-header = Upravit zkratku
 newtab-topsites-add-shortcut-label = Přidat zkratku
+newtab-topsites-add-shortcut-title =
+    .title = Přidat zkratku
+    .aria-label = Přidat zkratku
 newtab-topsites-title-label = Název stránky
 newtab-topsites-title-input =
     .placeholder = Zadejte název
@@ -549,6 +552,10 @@ newtab-custom-wallpaper-subtitle =
        *[no-cases] Nahrajte si vlastní tapetu nebo si vyberte vlastní barvu, aby aplikace { -brand-product-name } byla podle vás.
     }
 newtab-custom-wallpaper-cta = Vyzkoušejte ho
+
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-cta = Vyzkoušejte nyní
 
 ## Strings for download mobile highlight
 

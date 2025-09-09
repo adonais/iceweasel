@@ -4,9 +4,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "ActorsChild.h"
+
+#include <mozIRemoteLazyInputStream.h>
+
 #include <type_traits>
 
-#include "ActorsChild.h"
 #include "BackgroundChildImpl.h"
 #include "IDBDatabase.h"
 #include "IDBEvents.h"
@@ -15,32 +18,34 @@
 #include "IDBObjectStore.h"
 #include "IDBRequest.h"
 #include "IDBTransaction.h"
+#include "IndexedDBCommon.h"
 #include "IndexedDatabase.h"
 #include "IndexedDatabaseInlines.h"
-#include "IndexedDBCommon.h"
+#include "ProfilerHelpers.h"
+#include "ReportInternalError.h"
+#include "ThreadLocal.h"
 #include "js/Array.h"               // JS::NewArrayObject, JS::SetArrayLength
 #include "js/Date.h"                // JS::NewDateObject, JS::TimeClip
 #include "js/PropertyAndElement.h"  // JS_DefineElement, JS_DefineProperty
-#include <mozIRemoteLazyInputStream.h>
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
+#include "mozilla/Encoding.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/ResultExtensions.h"
+#include "mozilla/TaskQueue.h"
 #include "mozilla/dom/BlobImpl.h"
+#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
-#include "mozilla/dom/PermissionMessageUtils.h"
-#include "mozilla/dom/BrowserChild.h"
-#include "mozilla/dom/indexedDB/PBackgroundIDBDatabaseFileChild.h"
 #include "mozilla/dom/IPCBlobUtils.h"
+#include "mozilla/dom/PermissionMessageUtils.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRunnable.h"
+#include "mozilla/dom/indexedDB/PBackgroundIDBDatabaseFileChild.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
-#include "mozilla/Encoding.h"
 #include "mozilla/ipc/BackgroundUtils.h"
-#include "mozilla/ProfilerLabels.h"
-#include "mozilla/TaskQueue.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsIAsyncInputStream.h"
@@ -50,9 +55,6 @@
 #include "nsPIDOMWindow.h"
 #include "nsThreadUtils.h"
 #include "nsTraceRefcnt.h"
-#include "ProfilerHelpers.h"
-#include "ReportInternalError.h"
-#include "ThreadLocal.h"
 
 #ifdef DEBUG
 #  include "IndexedDatabaseManager.h"

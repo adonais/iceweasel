@@ -6,8 +6,8 @@
 #ifndef VIDEOSTREAMTRACK_H_
 #define VIDEOSTREAMTRACK_H_
 
-#include "MediaStreamTrack.h"
 #include "DOMMediaStream.h"
+#include "MediaStreamTrack.h"
 
 namespace mozilla {
 

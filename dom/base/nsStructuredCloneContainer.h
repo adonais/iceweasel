@@ -8,6 +8,7 @@
 #define nsStructuredCloneContainer_h__
 
 #include <cstdint>
+
 #include "mozilla/dom/ipc/StructuredCloneData.h"
 #include "nsIStructuredCloneContainer.h"
 #include "nsISupports.h"

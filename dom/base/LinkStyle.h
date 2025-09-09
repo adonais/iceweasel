@@ -6,11 +6,11 @@
 #ifndef mozilla_dom_LinkStyle_h
 #define mozilla_dom_LinkStyle_h
 
-#include "nsINode.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/StyleSheet.h"
 #include "mozilla/Result.h"
+#include "mozilla/StyleSheet.h"
 #include "mozilla/Unused.h"
+#include "nsINode.h"
 #include "nsTArray.h"
 
 class nsIContent;

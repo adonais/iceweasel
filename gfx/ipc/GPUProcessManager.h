@@ -188,6 +188,10 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   // as well as for tests and diagnostics.
   void KillProcess(bool aGenerateMinidump = false);
 
+  // Invoked when we know we will shutdown (but before shutdown begins), to
+  // avoid races with other shutdown observers.
+  void StopObserving();
+
   // Causes the GPU process to crash. Used for tests and diagnostics
   void CrashProcess();
 

@@ -32,7 +32,6 @@ use std::fmt::{Write, Debug};
 use std::f32;
 use std::ops::Range;
 use std::time::Duration;
-use time::precise_time_ns;
 
 macro_rules! set_text {
     ($dst:expr, $($arg:tt)*) => {
@@ -522,7 +521,7 @@ impl Profiler {
             slow_scroll_frames: ProfilerFrameCollection::new(),
 
             counters,
-            start: precise_time_ns(),
+            start: zeitstempel::now(),
             avg_over_period: ONE_SECOND_NS / 2,
             slow_cpu_frame_threshold: 10.0,
 
@@ -632,7 +631,7 @@ impl Profiler {
 
     // Call at the end of every frame, after setting the counter values and before drawing the counters.
     pub fn update(&mut self) {
-        let now = precise_time_ns();
+        let now = zeitstempel::now();
         let update_avg = (now - self.start) > self.avg_over_period;
         if update_avg {
             self.start = now;
@@ -1801,7 +1800,7 @@ impl TransactionProfile {
     }
 
     pub fn start_time(&mut self, id: usize) {
-        let ns = precise_time_ns();
+        let ns = zeitstempel::now();
         self.events[id] = Event::Start(ns);
     }
 
@@ -1812,7 +1811,7 @@ impl TransactionProfile {
     /// Similar to end_time, but doesn't panic if not matched with start_time.
     pub fn end_time_if_started(&mut self, id: usize) -> Option<f64> {
         if let Event::Start(start) = self.events[id] {
-            let now = precise_time_ns();
+            let now = zeitstempel::now();
             let time_ns = now - start;
 
             let time_ms = ns_to_ms(time_ns);
@@ -1909,7 +1908,7 @@ impl TransactionProfile {
 impl GlyphRasterizeProfiler for TransactionProfile {
     fn start_time(&mut self) {
         let id = GLYPH_RESOLVE_TIME;
-        let ns = precise_time_ns();
+        let ns = zeitstempel::now();
         self.events[id] = Event::Start(ns);
     }
 

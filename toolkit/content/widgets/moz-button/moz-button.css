@@ -171,7 +171,7 @@ button {
   }
 
   &[type~="icon"]:not(.labelled) {
-    background-size: var(--icon-size-default);
+    background-size: var(--icon-size);
     background-position: center;
     background-repeat: no-repeat;
   }
@@ -196,8 +196,8 @@ button {
   }
 
   img {
-    width: var(--icon-size-default);
-    height: var(--icon-size-default);
+    width: var(--icon-size);
+    height: var(--icon-size);
     pointer-events: none;
   }
 }

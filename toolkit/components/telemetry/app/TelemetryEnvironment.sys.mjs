@@ -21,7 +21,8 @@ import {
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  AttributionCode: "resource:///modules/AttributionCode.sys.mjs",
+  AttributionCode:
+    "moz-src:///browser/components/attribution/AttributionCode.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
   WindowsRegistry: "resource://gre/modules/WindowsRegistry.sys.mjs",
   WindowsVersionInfo:
@@ -1632,7 +1633,7 @@ EnvironmentCache.prototype = {
 
     try {
       let { ShellService } = ChromeUtils.importESModule(
-        "resource:///modules/ShellService.sys.mjs"
+        "moz-src:///browser/components/shell/ShellService.sys.mjs"
       );
       // This uses the same set of flags used by the pref pane.
       return isDefault(ShellService, false, true);

@@ -5,10 +5,11 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MediaChild.h"
+
 #include "MediaParent.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/MediaManager.h"
 #include "mozilla/Logging.h"
+#include "mozilla/MediaManager.h"
+#include "mozilla/dom/ContentChild.h"
 #include "nsQueryObject.h"
 
 #undef LOG

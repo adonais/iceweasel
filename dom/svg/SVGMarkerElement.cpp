@@ -6,18 +6,18 @@
 
 #include "mozilla/dom/SVGMarkerElement.h"
 
-#include "nsGkAtoms.h"
 #include "DOMSVGAngle.h"
 #include "SVGAnimatedPreserveAspectRatio.h"
-#include "nsError.h"
+#include "SVGContentUtils.h"
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/FloatingPoint.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/SVGGeometryElement.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGMarkerElementBinding.h"
 #include "mozilla/gfx/Matrix.h"
-#include "mozilla/FloatingPoint.h"
-#include "mozilla/RefPtr.h"
-#include "SVGContentUtils.h"
+#include "nsError.h"
+#include "nsGkAtoms.h"
 
 using namespace mozilla::gfx;
 using namespace mozilla::dom::SVGMarkerElement_Binding;

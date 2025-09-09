@@ -80,6 +80,10 @@ export class DataSourceBase {
     this.#aggregatorApi.discardChangesConfirmed();
   }
 
+  setPrimaryPasswordAuthenticated(isAuthenticated) {
+    this.#aggregatorApi.setPrimaryPasswordAuthenticated(isAuthenticated);
+  }
+
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
   formatMessages = createFormatMessages("browser/contextual-manager.ftl");
   static ftl = new Localization([

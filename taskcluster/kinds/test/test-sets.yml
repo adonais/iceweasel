@@ -83,10 +83,6 @@ talos-profiling:
     - talos-realworld-webextensions-profiling
     - talos-webgl-profiling
 
-# Bug 1909894, windows 10 + sp3 temporarily
-browsertime-benchmark:
-    - browsertime-benchmark
-
 browsertime:
     - browsertime-tp6
     - browsertime-tp7
@@ -545,6 +541,7 @@ android-hw-browsertime:
     - browsertime-benchmark-jetstream3
     - browsertime-video-playback-latency-mobile
     - browsertime-youtube-playback-power-mobile
+    - browsertime-trr-performance-m
 
 android-hw-browsertime-profiling:
     - browsertime-tp6m-profiling

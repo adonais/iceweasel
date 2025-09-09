@@ -5,9 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/HTMLTableColElement.h"
+
+#include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/dom/HTMLTableColElementBinding.h"
 #include "nsAttrValueInlines.h"
-#include "mozilla/MappedDeclarationsBuilder.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(TableCol)
 

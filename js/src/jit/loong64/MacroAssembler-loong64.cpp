@@ -676,6 +676,34 @@ void MacroAssemblerLOONG64::ma_addPtrTestCarry(Condition cond, Register rd,
   }
 }
 
+void MacroAssemblerLOONG64::ma_addPtrTestSigned(Condition cond, Register rd,
+                                                Register rj, Register rk,
+                                                Label* taken) {
+  MOZ_ASSERT(cond == Assembler::Signed || cond == Assembler::NotSigned);
+
+  as_add_d(rd, rj, rk);
+  ma_b(rd, rd, taken, cond);
+}
+
+void MacroAssemblerLOONG64::ma_addPtrTestSigned(Condition cond, Register rd,
+                                                Register rj, Imm32 imm,
+                                                Label* taken) {
+  MOZ_ASSERT(cond == Assembler::Signed || cond == Assembler::NotSigned);
+
+  ma_add_d(rd, rj, imm);
+  ma_b(rd, rd, taken, cond);
+}
+
+void MacroAssemblerLOONG64::ma_addPtrTestSigned(Condition cond, Register rd,
+                                                Register rj, ImmWord imm,
+                                                Label* taken) {
+  MOZ_ASSERT(cond == Assembler::Signed || cond == Assembler::NotSigned);
+
+  SecondScratchRegisterScope scratch2(asMasm());
+  ma_li(scratch2, imm);
+  ma_addPtrTestSigned(cond, rd, rj, scratch2, taken);
+}
+
 // Subtract.
 void MacroAssemblerLOONG64::ma_sub_d(Register rd, Register rj, Imm32 imm) {
   if (is_intN(-imm.value, 12)) {
@@ -942,6 +970,20 @@ void MacroAssemblerLOONG64Compat::computeScaledAddress(const BaseIndex& address,
     as_alsl_d(dest, index, base, shift - 1);
   } else {
     as_add_d(dest, base, index);
+  }
+}
+
+void MacroAssemblerLOONG64Compat::computeScaledAddress32(
+    const BaseIndex& address, Register dest) {
+  Register base = address.base;
+  Register index = address.index;
+  int32_t shift = Imm32::ShiftOf(address.scale).value;
+
+  if (shift) {
+    MOZ_ASSERT(shift <= 4);
+    as_alsl_w(dest, index, base, shift - 1);
+  } else {
+    as_add_w(dest, base, index);
   }
 }
 
@@ -1289,13 +1331,26 @@ FaultingCodeOffset MacroAssemblerLOONG64::ma_fst_d(FloatRegister src,
 }
 
 void MacroAssemblerLOONG64::ma_pop(FloatRegister f) {
-  as_fld_d(f, StackPointer, 0);
+  if (f.isDouble()) {
+    as_fld_d(f, StackPointer, 0);
+  } else {
+    MOZ_ASSERT(f.isSingle(), "simd128 is not supported");
+    as_fld_s(f, StackPointer, 0);
+  }
+  // See also MacroAssemblerLOONG64::ma_push -- Free space for double even when
+  // storing a float.
   as_addi_d(StackPointer, StackPointer, sizeof(double));
 }
 
 void MacroAssemblerLOONG64::ma_push(FloatRegister f) {
+  // We allocate space for double even when storing a float.
   as_addi_d(StackPointer, StackPointer, -int32_t(sizeof(double)));
-  as_fst_d(f, StackPointer, 0);
+  if (f.isDouble()) {
+    as_fst_d(f, StackPointer, 0);
+  } else {
+    MOZ_ASSERT(f.isSingle(), "simd128 is not supported");
+    as_fst_s(f, StackPointer, 0);
+  }
 }
 
 void MacroAssemblerLOONG64::ma_li(Register dest, ImmGCPtr ptr) {
@@ -2615,6 +2670,8 @@ void MacroAssembler::Push(const ImmGCPtr ptr) {
 
 void MacroAssembler::Push(FloatRegister f) {
   push(f);
+  // See MacroAssemblerLOONG64::ma_push(FloatRegister) for why we use
+  // sizeof(double).
   adjustFrame(int32_t(sizeof(double)));
 }
 
@@ -2631,6 +2688,8 @@ void MacroAssembler::Pop(Register reg) {
 
 void MacroAssembler::Pop(FloatRegister f) {
   pop(f);
+  // See MacroAssemblerLOONG64::ma_pop(FloatRegister) for why we use
+  // sizeof(double).
   adjustFrame(-int32_t(sizeof(double)));
 }
 
@@ -3025,27 +3084,29 @@ FaultingCodeOffset MacroAssembler::wasmTrapInstruction() {
 }
 
 void MacroAssembler::wasmBoundsCheck32(Condition cond, Register index,
-                                       Register boundsCheckLimit, Label* ok) {
-  ma_b(index, boundsCheckLimit, ok, cond);
+                                       Register boundsCheckLimit,
+                                       Label* label) {
+  ma_b(index, boundsCheckLimit, label, cond);
 }
 
 void MacroAssembler::wasmBoundsCheck32(Condition cond, Register index,
-                                       Address boundsCheckLimit, Label* ok) {
+                                       Address boundsCheckLimit, Label* label) {
   SecondScratchRegisterScope scratch2(asMasm());
   load32(boundsCheckLimit, scratch2);
-  ma_b(index, Register(scratch2), ok, cond);
+  ma_b(index, Register(scratch2), label, cond);
 }
 
 void MacroAssembler::wasmBoundsCheck64(Condition cond, Register64 index,
-                                       Register64 boundsCheckLimit, Label* ok) {
-  ma_b(index.reg, boundsCheckLimit.reg, ok, cond);
+                                       Register64 boundsCheckLimit,
+                                       Label* label) {
+  ma_b(index.reg, boundsCheckLimit.reg, label, cond);
 }
 
 void MacroAssembler::wasmBoundsCheck64(Condition cond, Register64 index,
-                                       Address boundsCheckLimit, Label* ok) {
+                                       Address boundsCheckLimit, Label* label) {
   SecondScratchRegisterScope scratch2(asMasm());
   loadPtr(boundsCheckLimit, scratch2);
-  ma_b(index.reg, scratch2, ok, cond);
+  ma_b(index.reg, scratch2, label, cond);
 }
 
 // FTINTRZ behaves as follows:
@@ -3431,7 +3492,8 @@ static void CompareExchange(MacroAssembler& masm,
     }
 
     masm.as_ll_w(output, scratch, 0);
-    masm.ma_b(output, oldval, &end, Assembler::NotEqual, ShortJump);
+    masm.as_slli_w(scratch2, oldval, 0);
+    masm.ma_b(output, scratch2, &end, Assembler::NotEqual, ShortJump);
     masm.as_or(scratch2, newval, zero);
     masm.as_sc_w(scratch2, scratch, 0);
     masm.ma_b(scratch2, Register(scratch2), &again, Assembler::Zero, ShortJump);
@@ -3486,6 +3548,7 @@ static void CompareExchange(MacroAssembler& masm,
   masm.ma_b(output, valueTemp, &end, Assembler::NotEqual, ShortJump);
 
   masm.as_sll_w(valueTemp, newval, offsetTemp);
+  masm.as_andn(valueTemp, valueTemp, maskTemp);
   masm.as_and(scratch2, scratch2, maskTemp);
   masm.as_or(scratch2, scratch2, valueTemp);
 

@@ -107,10 +107,12 @@ static nscoord FontSizeInflationListMarginAdjustment(const nsIFrame* aFrame) {
   return 0;
 }
 
-SizeComputationInput::SizeComputationInput(nsIFrame* aFrame,
-                                           gfxContext* aRenderingContext)
+SizeComputationInput::SizeComputationInput(
+    nsIFrame* aFrame, gfxContext* aRenderingContext,
+    AnchorPosReferencedAnchors* aReferencedAnchors)
     : mFrame(aFrame),
       mRenderingContext(aRenderingContext),
+      mReferencedAnchors(aReferencedAnchors),
       mWritingMode(aFrame->GetWritingMode()),
       mIsThemed(aFrame->IsThemed()),
       mComputedMargin(mWritingMode),
@@ -177,8 +179,10 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
                          const Maybe<LogicalSize>& aContainingBlockSize,
                          InitFlags aFlags,
                          const StyleSizeOverrides& aSizeOverrides,
-                         ComputeSizeFlags aComputeSizeFlags)
-    : SizeComputationInput(aFrame, aParentReflowInput.mRenderingContext),
+                         ComputeSizeFlags aComputeSizeFlags,
+                         AnchorPosReferencedAnchors* aReferencedAnchors)
+    : SizeComputationInput(aFrame, aParentReflowInput.mRenderingContext,
+                           aReferencedAnchors),
       mParentReflowInput(&aParentReflowInput),
       mFloatManager(aParentReflowInput.mFloatManager),
       mLineLayout(mFrame->IsLineParticipant() ? aParentReflowInput.mLineLayout
@@ -208,6 +212,8 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
                                      bool* aFixed = nullptr) -> nscoord {
       nscoord limit = NS_UNCONSTRAINEDSIZE;
       const auto* pos = aFrame->StylePosition();
+      // Don't add to referenced anchors, since this function is called for
+      // other frames.
       const auto anchorResolutionParams =
           AnchorPosResolutionParams::From(aFrame);
       if (auto size = nsLayoutUtils::GetAbsoluteSize(
@@ -232,7 +238,15 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
     // See if the containing block has a fixed size we should respect:
     const nsIFrame* cb = mFrame->GetContainingBlock();
     bool isFixed = false;
-    nscoord cbLimit = GetISizeConstraint(cb, &isFixed);
+    nscoord cbLimit = aContainingBlockSize
+                          ? aContainingBlockSize->ISize(mWritingMode)
+                          : NS_UNCONSTRAINEDSIZE;
+    if (cbLimit != NS_UNCONSTRAINEDSIZE) {
+      isFixed = true;
+    } else {
+      cbLimit = GetISizeConstraint(cb, &isFixed);
+    }
+
     if (isFixed) {
       SetAvailableISize(cbLimit);
     } else {
@@ -351,12 +365,12 @@ nscoord SizeComputationInput::ComputeISizeValue(
       contentEdgeToBoxSizing.ISize(wm);
 
   return mFrame
-      ->ComputeISizeValue(mRenderingContext, wm, aContainingBlockSize,
-                          contentEdgeToBoxSizing, boxSizingToMarginEdgeISize,
-                          aSize,
-                          *mFrame->StylePosition()->BSize(
-                              wm, AnchorPosResolutionParams::From(mFrame)),
-                          mFrame->GetAspectRatio())
+      ->ComputeISizeValue(
+          mRenderingContext, wm, aContainingBlockSize, contentEdgeToBoxSizing,
+          boxSizingToMarginEdgeISize, aSize,
+          *mFrame->StylePosition()->BSize(
+              wm, AnchorPosResolutionParams::From(mFrame, mReferencedAnchors)),
+          mFrame->GetAspectRatio())
       .mISize;
 }
 
@@ -503,6 +517,7 @@ void ReflowInput::Init(nsPresContext* aPresContext,
       nsIFrame* containingBlk = mFrame;
       while (containingBlk) {
         const nsStylePosition* stylePos = containingBlk->StylePosition();
+        // It's for containing block, so don't add to referenced anchors
         const auto containingBlkAnchorResolutionParams =
             AnchorPosResolutionParams::From(containingBlk);
         const auto bSizeCoord =
@@ -931,7 +946,8 @@ bool ReflowInput::ShouldApplyAutomaticMinimumOnBlockAxis() const {
          !mStyleDisplay->IsScrollableOverflow() &&
          mStylePosition
              ->MinBSize(GetWritingMode(), AnchorPosResolutionParams::From(this))
-             ->IsAuto();
+             ->IsAuto() &&
+         !mFrame->GetContainSizeAxes().mBContained;
 }
 
 bool ReflowInput::IsInFragmentedContext() const {
@@ -2961,7 +2977,8 @@ bool SizeComputationInput::ComputeMargin(WritingMode aCBWM,
       aPercentBasis = 0;
     }
     LogicalMargin m(aCBWM);
-    const auto anchorResolutionParams = AnchorPosResolutionParams::From(mFrame);
+    const auto anchorResolutionParams =
+        AnchorPosResolutionParams::From(mFrame, mReferencedAnchors);
     for (const LogicalSide side : LogicalSides::All) {
       m.Side(side, aCBWM) = nsLayoutUtils::ComputeCBDependentValue(
           aPercentBasis,

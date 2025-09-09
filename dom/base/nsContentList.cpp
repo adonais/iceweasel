@@ -11,26 +11,27 @@
  */
 
 #include "nsContentList.h"
-#include "nsIContent.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/ContentIterator.h"
-#include "mozilla/dom/Element.h"
-#include "nsWrapperCacheInlines.h"
-#include "nsContentUtils.h"
-#include "nsCCUncollectableMarker.h"
-#include "nsGkAtoms.h"
-#include "mozilla/dom/HTMLCollectionBinding.h"
-#include "mozilla/dom/NodeListBinding.h"
-#include "mozilla/Likely.h"
-#include "nsGenericHTMLElement.h"
-#include "jsfriendapi.h"
+
 #include <algorithm>
-#include "mozilla/dom/NodeInfoInlines.h"
-#include "mozilla/MruCache.h"
-#include "mozilla/StaticPtr.h"
 
 #include "PLDHashTable.h"
+#include "jsfriendapi.h"
+#include "mozilla/ContentIterator.h"
+#include "mozilla/Likely.h"
+#include "mozilla/MruCache.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLCollectionBinding.h"
+#include "mozilla/dom/NodeInfoInlines.h"
+#include "mozilla/dom/NodeListBinding.h"
+#include "nsCCUncollectableMarker.h"
+#include "nsContentUtils.h"
+#include "nsGenericHTMLElement.h"
+#include "nsGkAtoms.h"
+#include "nsIContent.h"
 #include "nsTHashtable.h"
+#include "nsWrapperCacheInlines.h"
 
 #ifdef DEBUG_CONTENT_LIST
 #  define ASSERT_IN_SYNC AssertInSync()

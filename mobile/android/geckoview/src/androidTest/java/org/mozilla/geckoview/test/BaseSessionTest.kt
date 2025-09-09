@@ -97,8 +97,8 @@ open class BaseSessionTest(
         const val STORAGE_TITLE_HTML_PATH = "/assets/www/reflect_local_storage_into_title.html"
         const val HUNG_SCRIPT = "/assets/www/hungScript.html"
         const val PUSH_HTML_PATH = "/assets/www/push/push.html"
-        const val OPEN_WINDOW_PATH = "/assets/www/worker/open_window.html"
-        const val OPEN_WINDOW_TARGET_PATH = "/assets/www/worker/open_window_target.html"
+        const val OPEN_WINDOW_PATH = "https://example.org/tests/junit/open_window.html"
+        const val OPEN_WINDOW_TARGET_PATH = "https://example.org/tests/junit/open_window_target.html"
         const val CLICK_ACTION_PATH = "/assets/www/worker/click-action.html"
         const val DATA_URI_PATH = "/assets/www/data_uri.html"
         const val IFRAME_UNKNOWN_PROTOCOL = "/assets/www/iframe_unknown_protocol.html"
@@ -313,6 +313,10 @@ open class BaseSessionTest(
 
     fun GeckoSession.triggerLanguageStateChange(languageState: JSONObject) =
         sessionRule.triggerLanguageStateChange(this, languageState)
+
+    fun GeckoSession.teardownAlertsService() =
+        sessionRule.teardownAlertsService(this)
+
     var GeckoSession.active: Boolean
         get() = sessionRule.getActive(this)
         set(value) = setActive(value)

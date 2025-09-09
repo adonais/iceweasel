@@ -25,14 +25,14 @@ pub enum LabeledBooleanMetric {
     UnorderedChild { id: BaseMetricId, label: String },
 }
 
-crate::define_metric_metadata_getter!(
+define_metric_metadata_getter!(
     BooleanMetric,
     LabeledBooleanMetric,
     BOOLEAN_MAP,
     LABELED_BOOLEAN_MAP
 );
 
-crate::define_metric_namer!(LabeledBooleanMetric, LABELED);
+define_metric_namer!(LabeledBooleanMetric, LABELED);
 
 impl LabeledBooleanMetric {
     #[cfg(test)]

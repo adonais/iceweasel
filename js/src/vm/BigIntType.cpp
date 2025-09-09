@@ -111,6 +111,7 @@
 #include "vm/JSONPrinter.h"  // js::JSONPrinter
 #include "vm/StaticStrings.h"
 
+#include "gc/BufferAllocator-inl.h"
 #include "gc/GCContext-inl.h"
 #include "gc/Nursery-inl.h"
 #include "vm/JSContext-inl.h"
@@ -159,15 +160,13 @@ BigInt* BigInt::createUninitialized(JSContext* cx, size_t digitLength,
   MOZ_ASSERT(x->isNegative() == isNegative);
 
   if (digitLength > InlineDigitsLength) {
-    x->heapDigits_ = js::AllocNurseryOrMallocBuffer<Digit>(cx, x, digitLength);
+    x->heapDigits_ = js::AllocateCellBuffer<Digit>(cx, x, digitLength);
     if (!x->heapDigits_) {
       // |x| is partially initialized, expose it as a BigInt using inline digits
       // to the GC.
       x->setLengthAndFlags(0, 0);
       return nullptr;
     }
-
-    AddCellMemory(x, digitLength * sizeof(Digit), js::MemoryUse::BigIntDigits);
   }
 
   return x;
@@ -178,14 +177,6 @@ void BigInt::initializeDigitsToZero() {
   std::uninitialized_fill_n(digs.begin(), digs.Length(), 0);
 }
 
-void BigInt::finalize(JS::GCContext* gcx) {
-  MOZ_ASSERT(isTenured());
-  if (hasHeapDigits()) {
-    size_t size = digitLength() * sizeof(Digit);
-    gcx->free_(this, heapDigits_, size, js::MemoryUse::BigIntDigits);
-  }
-}
-
 js::HashNumber BigInt::hash() const {
   js::HashNumber h =
       mozilla::HashBytes(digits().data(), digitLength() * sizeof(Digit));
@@ -193,7 +184,7 @@ js::HashNumber BigInt::hash() const {
 }
 
 size_t BigInt::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-  return hasInlineDigits() ? 0 : mallocSizeOf(heapDigits_);
+  return hasInlineDigits() ? 0 : gc::GetAllocSize(zone(), heapDigits_);
 }
 
 size_t BigInt::sizeOfExcludingThisInNursery(
@@ -210,7 +201,7 @@ size_t BigInt::sizeOfExcludingThisInNursery(
     return RoundUp(digitLength() * sizeof(Digit), sizeof(Value));
   }
 
-  return mallocSizeOf(heapDigits_);
+  return gc::GetAllocSize(zone(), heapDigits_);
 }
 
 BigInt* BigInt::zero(JSContext* cx, gc::Heap heap) {
@@ -1458,16 +1449,6 @@ JSLinearString* BigInt::toStringGeneric(JSContext* cx, HandleBigInt x,
                                maximumCharactersRequired - writePos);
 }
 
-static void FreeDigits(JSContext* cx, BigInt* bi, BigInt::Digit* digits,
-                       size_t nbytes) {
-  if (bi->isTenured()) {
-    MOZ_ASSERT(!cx->nursery().isInside(digits));
-    js_free(digits);
-  } else {
-    cx->nursery().freeBuffer(digits, nbytes);
-  }
-}
-
 BigInt* BigInt::destructivelyTrimHighZeroDigits(JSContext* cx, BigInt* x) {
   if (x->isZero()) {
     MOZ_ASSERT(!x->isNegative());
@@ -1494,24 +1475,19 @@ BigInt* BigInt::destructivelyTrimHighZeroDigits(JSContext* cx, BigInt* x) {
     MOZ_ASSERT(x->hasHeapDigits());
 
     size_t oldLength = x->digitLength();
-    Digit* newdigits = js::ReallocNurseryOrMallocBuffer<Digit>(
-        cx, x, x->heapDigits_, oldLength, newLength, js::MallocArena);
+    Digit* newdigits = ReallocateCellBuffer<Digit>(cx, x, x->heapDigits_,
+                                                   oldLength, newLength);
     if (!newdigits) {
       return nullptr;
     }
     x->heapDigits_ = newdigits;
-
-    RemoveCellMemory(x, oldLength * sizeof(Digit), js::MemoryUse::BigIntDigits);
-    AddCellMemory(x, newLength * sizeof(Digit), js::MemoryUse::BigIntDigits);
   } else {
     if (x->hasHeapDigits()) {
       Digit digits[InlineDigitsLength];
       std::copy_n(x->heapDigits_, InlineDigitsLength, digits);
-
-      size_t nbytes = x->digitLength() * sizeof(Digit);
-      FreeDigits(cx, x, x->heapDigits_, nbytes);
-      RemoveCellMemory(x, nbytes, js::MemoryUse::BigIntDigits);
-
+      if (!cx->nursery().isInside(x->heapDigits_)) {
+        FreeBuffer(x->zone(), x->heapDigits_);
+      }
       std::copy_n(digits, InlineDigitsLength, x->inlineDigits_);
     }
   }

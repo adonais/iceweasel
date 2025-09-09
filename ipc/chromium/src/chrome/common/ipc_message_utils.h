@@ -13,6 +13,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include "ErrorList.h"
 #include "base/logging.h"
 #include "base/pickle.h"
@@ -122,6 +123,10 @@ class MOZ_STACK_CLASS MessageWriter final {
   bool WriteMachSendRight(mozilla::UniqueMachSendRight port) {
     return message_.WriteMachSendRight(std::move(port));
   }
+
+  bool WriteMachReceiveRight(mozilla::UniqueMachReceiveRight port) {
+    return message_.WriteMachReceiveRight(std::move(port));
+  }
 #endif
 
   void FatalError(const char* aErrorMsg) const {
@@ -215,6 +220,11 @@ class MOZ_STACK_CLASS MessageReader final {
 #if defined(XP_DARWIN)
   [[nodiscard]] bool ConsumeMachSendRight(mozilla::UniqueMachSendRight* port) {
     return message_.ConsumeMachSendRight(&iter_, port);
+  }
+
+  [[nodiscard]] bool ConsumeMachReceiveRight(
+      mozilla::UniqueMachReceiveRight* port) {
+    return message_.ConsumeMachReceiveRight(&iter_, port);
   }
 #endif
 
@@ -936,6 +946,55 @@ struct ParamTraitsStd<std::map<K, V>> {
   }
 };
 
+template <>
+struct ParamTraitsStd<std::monostate> {
+  using param_type = std::monostate;
+  static void Write(MessageWriter*, const param_type&) {}
+  static bool Read(MessageReader*, param_type*) { return true; }
+};
+
+template <class... Ts>
+struct ParamTraitsStd<std::variant<Ts...>> {
+  using param_type = std::variant<Ts...>;
+
+  template <class U>
+  static void Write(MessageWriter* writer, U&& p) {
+    WriteParam(writer, static_cast<uint64_t>(p.index()));
+    std::visit(
+        [&](auto&& param) {
+          WriteParam(writer, std::forward<decltype(param)>(param));
+        },
+        std::forward<U>(p));
+  }
+
+  static ReadResult<param_type> Read(MessageReader* reader) {
+    uint64_t index;
+    if (!ReadParam(reader, &index)) {
+      return {};
+    }
+    return ReadI<0>(reader, static_cast<size_t>(index));
+  }
+
+ private:
+  template <size_t I>
+  static ReadResult<param_type> ReadI(MessageReader* reader, size_t index) {
+    if constexpr (I >= std::variant_size_v<param_type>) {
+      return {};  // No matching variant index
+    } else {
+      if (index == I) {
+        using alt_type = std::variant_alternative_t<I, param_type>;
+        ReadResult<alt_type> alt = ReadParam<alt_type>(reader);
+        if (!alt) {
+          return {};
+        }
+        return ReadResult<param_type>{std::in_place, std::in_place_index<I>,
+                                      std::move(alt.get())};
+      }
+      return ReadI<I + 1>(reader, index);
+    }
+  }
+};
+
 // Windows-specific types.
 
 template <class P>
@@ -1053,6 +1112,49 @@ struct ParamTraitsIPC<mozilla::UniqueMachSendRight> {
 
     if (!reader->ConsumeMachSendRight(r)) {
       reader->FatalError("Mach send right not found in message!");
+      return false;
+    }
+    return true;
+  }
+};
+
+// `UniqueMachReceiveRight` may be serialized over IPC channels. On the
+// receiving side, the UniqueMachReceiveRight is the local name of the right
+// which was transmitted.
+//
+// When sending a UniqueMachReceiveRight, the right must be valid at the time of
+// transmission. As transmission is asynchronous, this requires passing
+// ownership of the handle to IPC.
+//
+// A UniqueMachReceiveRight may only be read once. After it has been read once,
+// it will be consumed, and future reads will return an invalid right.
+template <>
+struct ParamTraitsIPC<mozilla::UniqueMachReceiveRight> {
+  typedef mozilla::UniqueMachReceiveRight param_type;
+  static void Write(MessageWriter* writer, param_type&& p) {
+    const bool valid = p != nullptr;
+    WriteParam(writer, valid);
+    if (valid) {
+      if (!writer->WriteMachReceiveRight(std::move(p))) {
+        writer->FatalError("Too many mach receive rights for one message!");
+        NOTREACHED() << "Too many mach receive rights for one message!";
+      }
+    }
+  }
+  static bool Read(MessageReader* reader, param_type* r) {
+    bool valid;
+    if (!ReadParam(reader, &valid)) {
+      reader->FatalError("Error reading mach receive right validity");
+      return false;
+    }
+
+    if (!valid) {
+      *r = nullptr;
+      return true;
+    }
+
+    if (!reader->ConsumeMachReceiveRight(r)) {
+      reader->FatalError("Mach receive right not found in message!");
       return false;
     }
     return true;

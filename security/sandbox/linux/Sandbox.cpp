@@ -648,7 +648,7 @@ static void SetCurrentProcessSandbox(
     // currently the case for all callers.  (An intentionally leaked
     // heap allocation would also work.)
     return sandbox::bpf_dsl::Trap(
-        [](const sandbox::arch_seccomp_data&, void* aux) -> intptr_t {
+        [](const arch_seccomp_data&, void* aux) -> intptr_t {
           auto error = reinterpret_cast<const char*>(aux);
           SANDBOX_LOG("Panic: %s", error);
           MOZ_CRASH("Sandbox Panic");
@@ -815,7 +815,7 @@ void SetSocketProcessSandbox(SocketProcessSandboxParams&& aParams) {
 
   // FIXME(bug 1513773): merge this with the ones for content and RDD?
   static SandboxBrokerClient* sBroker;
-  MOZ_ASSERT(!sBroker); // This should only ever be called once.
+  MOZ_ASSERT(!sBroker);  // This should only ever be called once.
   if (aParams.mBroker) {
     sBroker = new SandboxBrokerClient(aParams.mBroker.release());
   }

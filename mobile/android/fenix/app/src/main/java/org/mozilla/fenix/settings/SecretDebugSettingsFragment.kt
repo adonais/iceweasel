@@ -6,7 +6,6 @@ package org.mozilla.fenix.settings
 
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -17,11 +16,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
+import androidx.fragment.compose.content
 import mozilla.components.browser.state.search.RegionState
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
@@ -43,13 +42,9 @@ class SecretDebugSettingsFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View {
-        return ComposeView(requireContext()).apply {
-            setContent {
-                FirefoxTheme {
-                    SecretDebugSettingsScreen()
-                }
-            }
+    ) = content {
+        FirefoxTheme {
+            SecretDebugSettingsScreen()
         }
     }
 }

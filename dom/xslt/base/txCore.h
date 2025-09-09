@@ -6,10 +6,10 @@
 #ifndef __txCore_h__
 #define __txCore_h__
 
-#include "nscore.h"
 #include "nsDebug.h"
 #include "nsISupportsImpl.h"
 #include "nsStringFwd.h"
+#include "nscore.h"
 
 class txObject {
  public:

@@ -7,16 +7,17 @@
 #ifdef MOZ_AV1
 #  include "AOMDecoder.h"
 #endif
-#include "DXVA2Manager.h"
 #include <d3d11.h>
+
+#include "DXVA2Manager.h"
 #include "DriverCrashGuard.h"
 #include "GfxDriverInfo.h"
 #include "ImageContainer.h"
 #include "MFTDecoder.h"
 #include "MediaTelemetryConstants.h"
 #include "PerformanceRecorder.h"
-#include "VideoUtils.h"
 #include "VPXDecoder.h"
+#include "VideoUtils.h"
 #include "WMFUtils.h"
 #include "gfxCrashReporterUtils.h"
 #include "gfxWindowsPlatform.h"
@@ -26,8 +27,8 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/glean/DomMediaPlatformsWmfMetrics.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
+#include "mozilla/glean/DomMediaPlatformsWmfMetrics.h"
 #include "mozilla/layers/CompositeProcessD3D11FencesHolderMap.h"
 #include "mozilla/layers/D3D11ShareHandleImage.h"
 #include "mozilla/layers/D3D11ZeroCopyTextureImage.h"

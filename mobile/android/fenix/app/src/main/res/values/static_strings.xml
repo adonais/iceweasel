@@ -69,8 +69,6 @@
     <string name="preferences_sync_debug_temporary_auth_error_button_title">Simulate temporary account auth error</string>
     <!-- Button title for simulating an FxA permanent auth error inside the Sync Debug menu -->
     <string name="preferences_sync_debug_permanent_auth_error_button_title">Simulate permanent account auth error</string>
-    <!-- Label for enabling the Compose Bookmarks -->
-    <string name="preferences_debug_settings_compose_bookmarks" translatable="false">Enable Compose Bookmarks</string>
     <!-- Label for enabling the Homepage Search Bar -->
     <string name="preferences_debug_settings_homepage_searchbar" translatable="false">Enable Homepage Search Bar</string>
     <!-- Label for overriding user specified homepage sections -->
@@ -87,10 +85,14 @@
     <string name="preferences_debug_settings_composable_toolbar" translatable="false">Enable Composable Toolbar</string>
     <!-- Label for enabling the redesigned toolbar options -->
     <string name="preferences_debug_settings_toolbar_redesign" translatable="false">Enable Redesigned Toolbar Options</string>
+    <!-- Label for a longer description of the redesigned toolbar depending on the composable toolbar feature -->
+    <string name="preferences_debug_settings_toolbar_redesign_summary" translatable="false">This needs the Composable Toolbar feature enabled</string>
     <!-- Label for toggling Remote Crash Pull -->
     <string name="preferences_crash_pull_never_show_again" translatable="false">Never show Crash Pull</string>
     <!-- Label for enabling the Debug Drawer -->
     <string name="preferences_debug_settings_debug_drawer" translatable="false">Enable Debug Drawer</string>
+    <!-- Label for enabling the Crash Dialog Preview -->
+    <string name="preferences_debug_crash_dialog_preview" translatable="false">Enable New Crash Dialog</string>
     <!-- Label for enabling the microsurvey feature -->
     <string name="preferences_debug_settings_microsurvey_feature" translatable="false">Enable Microsurvey Feature</string>
     <!-- Label for enabling Unified Trust Panel -->
@@ -108,7 +110,16 @@
 
     <!-- Label for enabling the DNS over HTTPS settings -->
     <string name="preferences_debug_settings_enable_doh_settings" translatable="false">Enable DNS over HTTPS settings</string>
-    
+
+    <!-- Label for toggling the Tab Manager enhancements -->
+    <string name="preferences_tab_manager_enhancements" translatable="false">Enable Tab Manager enhancements</string>
+
+    <string name="preferences_terms_of_use_accepted" translatable="false">Terms of Use accepted</string>
+    <string name="preferences_terms_of_use_debug_timer" translatable="false">30s ToU timer enabled</string>
+
+    <!-- Label for enabling LNA blocking -->
+    <string name="preferences_debug_settings_enable_lna_blocking" translatable="false">Enable LNA blocking</string>
+
     <!-- A secret menu option in the tabs tray for making a tab inactive for testing. -->
     <string name="inactive_tabs_menu_item">Make inactive</string>
 
@@ -168,8 +179,6 @@
     <string name="debug_drawer_cfr_tools_toolbar_cfr_title">Toolbar CFRs</string>
     <!-- The title of the other CFRs section in CFR Tools -->
     <string name="debug_drawer_cfr_tools_other_cfr_title">Other CFRs</string>
-    <!-- The homepage nav toolbar CFR description in CFR Tools -->
-    <string name="debug_drawer_cfr_tools_homepage_nav_toolbar_description" moz:removedIn="140" tools:ignore="UnusedResources">Displayed when the user is on the homepage and sees the new navigation bar for the first time. Note that this CFR must be displayed in order for the Homepage Sync CFR to be shown.</string>
     <!-- The homepage search bar CFR title in CFR Tools -->
     <string name="debug_drawer_cfr_tools_homepage_searchbar_title">Homepage Searchbar</string>
     <!-- The homepage searchbar CFR description in CFR Tools -->
@@ -182,10 +191,6 @@
     <string name="debug_drawer_cfr_tools_tab_auto_close_title">Tab Auto Close</string>
     <!-- The tab auto close banner description in CFR Tools -->
     <string name="debug_drawer_cfr_tools_tab_auto_close_description">Displayed the first time the user has at least 6 normal tabs or 6 private tabs open at once and a CFR has not been shown in at least 3 days.</string>
-    <!-- The navigation buttons CFR title in CFR Tools -->
-    <string name="debug_drawer_cfr_tools_navigation_buttons_title" moz:removedIn="140" tools:ignore="UnusedResources">Navigation Buttons</string>
-    <!-- The navigation buttons CFR description in CFR Tools -->
-    <string name="debug_drawer_cfr_tools_navigation_buttons_description" moz:removedIn="140" tools:ignore="UnusedResources">Displayed the first time the user double taps on the forward or backward navigation buttons within 5 seconds.</string>
     <!-- The open in app CFR title in CFR Tools -->
     <string name="debug_drawer_cfr_tools_open_in_app_title">Open in App</string>
     <!-- The open in app CFR description in CFR Tools -->
@@ -217,4 +222,16 @@
     <string name="glean_debug_tools_send_ping_button_text">Send Ping</string>
     <!-- The send pings toast message. The first parameter is the type of ping -->
     <string name="glean_debug_tools_send_ping_toast_message">Sent %1$s ping</string>
+
+
+    <!-- The title of the debug drawer tab to help debug the crash reporter-->
+    <string name="crash_debug_tools_title">Crash Debug Tools</string>
+    <!-- Button text to trigger a app parent process crash -->
+    <string name="crash_debug_generic_crash_trigger">Trigger Crash Report</string>
+    <!-- Button text to reset crash deferral period (the deferral period is set after clicking close on the dialog to 5 days in the settings) from it's future value to 0 -->
+    <string name="crash_debug_deferral_button">Reset deferral settings</string>
+    <!-- Subtitle warning text for crash button -->
+    <string name="crash_debug_crash_app_warning">This will crash the app to start crash reporting flow. Please also ensure that the crash report option is set to "Ask before sending" in the data collections settings if you want the dialog to pop up.</string>
+    <!-- Timer text for deferral period %s is the timer string -->
+    <string name="crash_debug_deferral_timer">Current deferral period: %s</string>
 </resources>

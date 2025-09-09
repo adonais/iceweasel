@@ -199,13 +199,9 @@ async function getElementNodeRectWithinTarget(selectors) {
   );
 
   // Then we need to offset the element bounds from a frame bounds
-  // When fission/EFT is enabled, the highlighter is only shown within the iframe bounds.
-  // So we only need to retrieve the element bounds within the iframe.
-  // Otherwise, we retrieve the top frame bounds
-  const relativeBrowsingContext =
-    isFissionEnabled() || isEveryFrameTargetEnabled()
-      ? bc
-      : gBrowser.selectedBrowser.browsingContext;
+  // The highlighter is only shown within the iframe bounds.  So we only need to
+  // retrieve the element bounds within the iframe.
+  const relativeBrowsingContext = bc;
   const relativeDocumentBounds = await SpecialPowers.spawn(
     relativeBrowsingContext,
     [],

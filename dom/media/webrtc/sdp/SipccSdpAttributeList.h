@@ -7,8 +7,8 @@
 #ifndef _SIPCCSDPATTRIBUTELIST_H_
 #define _SIPCCSDPATTRIBUTELIST_H_
 
-#include "sdp/SdpParser.h"
 #include "sdp/SdpAttributeList.h"
+#include "sdp/SdpParser.h"
 
 extern "C" {
 #include "sipcc_sdp.h"

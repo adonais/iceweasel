@@ -27,6 +27,9 @@ loader.lazyRequireGetter(
   "resource://devtools/shared/accessibility.js",
   true
 );
+loader.lazyGetter(this, "ColorPickerBundle", () => {
+  return new Localization(["devtools/client/inspector.ftl"], true);
+});
 
 const L10N = new MultiLocalizationHelper(
   "devtools/client/locales/accessibility.properties",
@@ -86,7 +89,7 @@ class Spectrum {
       <div class="spectrum-color spectrum-box"
            tabindex="0"
            role="slider"
-           title="${L10N.getStr("colorPickerTooltip.spectrumDraggerTitle")}"
+           title="${ColorPickerBundle.formatValueSync("colorpicker-tooltip-spectrum-dragger-title")}"
            aria-describedby="spectrum-dragger">
         <div class="spectrum-sat">
           <div class="spectrum-val">
@@ -142,7 +145,7 @@ class Spectrum {
     eyedropper.style.pointerEvents = "auto";
     eyedropper.setAttribute(
       "aria-label",
-      L10N.getStr("colorPickerTooltip.eyedropperTitle")
+      ColorPickerBundle.formatValueSync("colorpicker-tooltip-eyedropper-title")
     );
     this.controls.insertBefore(eyedropper, this.colorPreview);
 
@@ -232,7 +235,10 @@ class Spectrum {
     const colorName = labColorEntries[deltaEs.indexOf(minDeltaE)][0];
     return minDeltaE === 0
       ? colorName
-      : L10N.getFormatStr("colorPickerTooltip.colorNameTitle", colorName);
+      : ColorPickerBundle.formatValueSync(
+          "colorpicker-tooltip-color-name-title",
+          { colorName }
+        );
   }
 
   get rgbNoSatVal() {
@@ -302,7 +308,9 @@ class Spectrum {
     slider.min = SLIDER[sliderType].MIN;
     slider.max = SLIDER[sliderType].MAX;
     slider.step = SLIDER[sliderType].STEP;
-    slider.title = L10N.getStr(`colorPickerTooltip.${sliderType}SliderTitle`);
+    slider.title = ColorPickerBundle.formatValueSync(
+      `colorpicker-tooltip-${sliderType}-slider-title`
+    );
     slider.addEventListener("input", onSliderMove);
 
     container.appendChild(slider);

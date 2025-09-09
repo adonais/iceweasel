@@ -8,12 +8,13 @@
 #ifdef MOZ_USE_WIFI_TICKLER
 #  include "nsComponentManagerUtils.h"
 #  include "nsINamed.h"
+#  include "nsIPrefService.h"
 #  include "nsServiceManagerUtils.h"
 #  include "nsThreadUtils.h"
 #  include "prnetdb.h"
-
 #  include "mozilla/java/GeckoAppShellWrappers.h"
 #  include "mozilla/jni/Utils.h"
+#  include "nsXULAppAPI.h"
 
 namespace mozilla {
 namespace net {

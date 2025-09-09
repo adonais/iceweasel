@@ -6,14 +6,14 @@
 
 #include "SVGAnimatedIntegerPair.h"
 
-#include "nsCharSeparatedTokenizer.h"
-#include "nsError.h"
-#include "nsMathUtils.h"
 #include "SVGAttrTearoffTable.h"
 #include "SVGIntegerPairSMILType.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/SMILValue.h"
 #include "mozilla/SVGContentUtils.h"
+#include "nsCharSeparatedTokenizer.h"
+#include "nsError.h"
+#include "nsMathUtils.h"
 
 using namespace mozilla::dom;
 

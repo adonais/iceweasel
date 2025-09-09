@@ -10,8 +10,8 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  AppProvidedSearchEngine:
-    "moz-src:///toolkit/components/search/AppProvidedSearchEngine.sys.mjs",
+  AppProvidedConfigEngine:
+    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
 });
 
 const BASE_CONFIG = [
@@ -212,7 +212,7 @@ async function checkTelemetry(
   }
 
   // additionalEventsExpected should be true whenever we expect something
-  // stored in AppProvidedSearchEngine.#prevEngineInfo to have changed.
+  // stored in AppProvidedConfigEngine.#prevEngineInfo to have changed.
   if (additionalEventsExpected) {
     delete snapshot[0].timestamp;
     Assert.deepEqual(
@@ -496,12 +496,12 @@ add_task(async function test_only_notify_on_relevant_engine_property_change() {
   // engine topics, `resetPrevEngineInfo` is a better way to track
   // notifications in this case.
   let notificationSpy = sinon.spy(
-    AppProvidedSearchEngine.prototype,
+    AppProvidedConfigEngine.prototype,
     "_resetPrevEngineInfo"
   );
 
   // Change an engine property that is not stored in
-  // AppProvidedSearchEngine.#prevEngineInfo.
+  // AppProvidedConfigEngine.#prevEngineInfo.
   let reloadObserved =
     SearchTestUtils.promiseSearchNotification("engines-reloaded");
   await SearchTestUtils.updateRemoteSettingsConfig(
@@ -527,12 +527,12 @@ add_task(
     // engine topics, `resetPrevEngineInfo` is a better way to track
     // notifications in this case.
     let notificationSpy = sinon.spy(
-      AppProvidedSearchEngine.prototype,
+      AppProvidedConfigEngine.prototype,
       "_resetPrevEngineInfo"
     );
 
     // Change an engine property that is not stored in
-    // AppProvidedSearchEngine.#prevEngineInfo.
+    // AppProvidedConfigEngine.#prevEngineInfo.
     let reloadObserved1 =
       SearchTestUtils.promiseSearchNotification("engines-reloaded");
     await SearchTestUtils.updateRemoteSettingsConfig(
@@ -547,7 +547,7 @@ add_task(
     );
 
     // Now change an engine property that is stored in
-    // AppProvidedSearchEngine.#prevEngineInfo.
+    // AppProvidedConfigEngine.#prevEngineInfo.
     let reloadObserved2 =
       SearchTestUtils.promiseSearchNotification("engines-reloaded");
     await SearchTestUtils.updateRemoteSettingsConfig(CONFIG_WITH_MODIFIED_NAME);

@@ -6,12 +6,12 @@
 
 #include "MFTDecoder.h"
 
+#include "PlatformDecoderModule.h"
 #include "WMFUtils.h"
 #include "mozilla/Logging.h"
-#include "nsThreadUtils.h"
 #include "mozilla/mscom/COMWrappers.h"
 #include "mozilla/mscom/Utils.h"
-#include "PlatformDecoderModule.h"
+#include "nsThreadUtils.h"
 
 #define LOG(...) MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
 #define LOGV(...) MOZ_LOG(sPDMLog, mozilla::LogLevel::Verbose, (__VA_ARGS__))

@@ -16,6 +16,8 @@
   }
   --tab-group-label-height: max(1.5em, var(--tab-min-height) - 14px);
   --tab-group-label-padding: 4px;
+  --tab-group-label-highlight-thickness: 3px;
+  --tab-group-label-animation-duration: 150ms;
   --tab-group-line-thickness: 2px;
   --tab-group-line-toolbar-border-distance: 1px;
   /* Collapsed tabs should be square, so set width to match the min height */
@@ -126,8 +128,6 @@
   flex: 1000 1000;
 
   &[orient="horizontal"] {
-    --tab-overflow-pinned-tabs-width: 0px;
-    padding-inline: var(--tab-overflow-pinned-tabs-width) 0;
     min-height: var(--tabstrip-min-height);
 
     --tab-min-width: 76px;
@@ -168,6 +168,10 @@
   #tabbrowser-arrowscrollbox:not(:hover) > #tabbrowser-arrowscrollbox-periphery > & {
     transition: width 0.15s ease-out;
   }
+}
+
+#tabbrowser-arrowscrollbox-periphery {
+  position: relative;
 }
 
 .tabbrowser-tab {
@@ -722,7 +726,7 @@
 .tab-audio-button {
   display: none;
   margin-inline-end: var(--tab-icon-end-margin);
-  --icon-size-default: 12px;
+  --icon-size: var(--icon-size-xsmall);
   --button-size-icon-small: 24px;
   --button-min-height-small: 24px;
   --button-border-radius: var(--border-radius-small);
@@ -867,13 +871,15 @@
     }
   }
 
-  #tabbrowser-tabs[movingtab-createGroup] & {
+  #tabbrowser-tabs[movingtab] & {
     transition:
       background-color 50ms ease,
       color 50ms ease,
       outline-color 50ms ease;
+  }
 
-    &[dragover-createGroup] {
+  #tabbrowser-tabs[movingtab-group] & {
+    &[dragover-groupTarget] {
       background-color: light-dark(var(--dragover-tab-group-color-pale), var(--dragover-tab-group-color));
       color: light-dark(var(--dragover-tab-group-color), var(--dragover-tab-group-color-pale));
       outline-color: light-dark(var(--dragover-tab-group-color), var(--dragover-tab-group-color-pale));
@@ -907,10 +913,10 @@
 
   #tabbrowser-tabs[orient="vertical"] & {
     background-position-y: 6px;
-    background-position-x: calc(var(--tab-inline-padding) + var(--icon-size-default) + 1px);
+    background-position-x: calc(var(--tab-inline-padding) + var(--icon-size) + 1px);
 
     &:-moz-locale-dir(rtl) {
-      background-position-x: right calc(var(--tab-inline-padding) + var(--icon-size-default) + 1px);
+      background-position-x: right calc(var(--tab-inline-padding) + var(--icon-size) + 1px);
     }
 
     :root:not([sidebar-expand-on-hover]) &[pinned] {
@@ -936,10 +942,98 @@
 }
 
 #pinned-tabs-container[orient="horizontal"] {
-  margin-inline-end: 12px;
+  max-width: 60vw;
 
   &:empty {
     display: none;
+  }
+}
+
+#pinned-drop-indicator-icon,
+#pinned-drop-indicator-text {
+  display: none;
+}
+
+#pinned-drop-indicator {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--toolbarbutton-icon-fill-attention);
+  outline: 1px dashed currentColor;
+
+  @media not (prefers-reduced-motion) {
+    transition-duration: 0.25s;
+    transition-timing-function: ease-in-out;
+  }
+
+  &[visible] {
+    display: flex;
+    border-radius: var(--border-radius-small);
+    background: color-mix(in srgb, currentColor 12%, transparent);
+
+    #pinned-drop-indicator-icon {
+      width: var(--size-item-small);
+      height: var(--size-item-small);
+      -moz-context-properties: fill;
+      fill: currentColor;
+      display: inline;
+    }
+  }
+
+  &[interactive] {
+    outline-style: solid;
+  }
+}
+
+#tabbrowser-tabs[orient="vertical"] > #pinned-drop-indicator {
+  transition-property: height;
+
+  &[visible] {
+    height: 70px;
+    width: calc(100% - 2 * var(--tab-inner-inline-margin));
+    gap: var(--space-small);
+    margin: var(--space-small) var(--tab-inner-inline-margin) 0;
+
+    @starting-style {
+      height: 0;
+    }
+
+    > #pinned-drop-indicator-text {
+      display: inline;
+      text-align: center;
+    }
+
+    #tabbrowser-tabs:not([expanded]) > & {
+      width: var(--tab-collapsed-background-width);
+      height: var(--size-item-large);
+
+      /* stylelint-disable max-nesting-depth */
+      > #pinned-drop-indicator-text {
+        display: none;
+      }
+    }
+  }
+}
+
+#tabbrowser-tabs[orient="horizontal"] > #pinned-drop-indicator {
+  transition-property: width;
+
+  &[visible] {
+    margin-inline: var(--space-small);
+    align-self: center;
+    align-items: flex-start;
+    width: calc(2 * var(--size-item-large));
+    height: var(--tab-min-height);
+    padding-inline-start: var(--space-small);
+
+    @starting-style {
+      width: 0;
+    }
+
+    > #pinned-drop-indicator-text {
+      display: none;
+    }
   }
 }
 
@@ -1002,13 +1096,13 @@
   }
 
   /* prettier-ignore */
-  #tabbrowser-tabs[movingtab]:not([movingtab-createGroup],[movingtab-ungroup]) .tabbrowser-tab:is(:active,[multiselected]) > .tab-stack > .tab-background > & {
+  #tabbrowser-tabs[movingtab]:not([movingtab-group],[movingtab-ungroup]) .tabbrowser-tab:is(:active,[multiselected]) > .tab-stack > .tab-background > & {
     display: flex;
     background-color: light-dark(var(--dragover-tab-group-color), var(--dragover-tab-group-color-invert));
     border-radius: 1px;
   }
 
-  #tabbrowser-tabs:is([movingtab-createGroup], [movingtab-ungroup]) &:is([selected], [multiselected]) {
+  #tabbrowser-tabs:is([movingtab-group], [movingtab-ungroup]) &:is([selected], [multiselected]) {
     display: none;
   }
 }
@@ -1022,6 +1116,7 @@ tab-group {
 
   --tab-group-line-color: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
 
+  #tabbrowser-tabs[orient="horizontal"] &[movingtabgroup][collapsed] > .tabbrowser-tab[visuallyselected],
   #tabbrowser-tabs[orient="horizontal"] &[collapsed] > .tabbrowser-tab:not([visuallyselected]) {
     min-width: 0 !important;
     max-width: 0 !important;
@@ -1029,18 +1124,21 @@ tab-group {
     overflow-clip-margin: 0;
   }
 
+  #tabbrowser-tabs[orient="vertical"] &[movingtabgroup][collapsed] > .tabbrowser-tab[visuallyselected],
   #tabbrowser-tabs[orient="vertical"] &[collapsed] > .tabbrowser-tab:not([visuallyselected]) {
     display: none;
   }
 
   &[collapsed] {
     --tab-group-line-color: light-dark(var(--tab-group-color), var(--tab-group-color-pale));
+    /* Override xul.css, we're using the collapsed attribute for our own purposes */
+    visibility: inherit;
   }
 }
 
 #tabbrowser-tabs[orient="vertical"][expanded] {
   tab-group > :is(.tab-group-label-container, .tabbrowser-tab),
-  &[movingtab][movingtab-addToGroup]:not([movingtab-createGroup], [movingtab-ungroup]) .tabbrowser-tab:is(:active, [multiselected]) {
+  &[movingtab][movingtab-addToGroup]:not([movingtab-group], [movingtab-ungroup]) .tabbrowser-tab:is(:active, [multiselected]) {
     margin-inline-start: var(--space-medium);
   }
 }
@@ -1100,14 +1198,16 @@ tab-group {
     }
   }
 
-  #tabbrowser-tabs[orient="horizontal"] tab-group:is(:not([collapsed]), [hasactivetab]) > &::after {
+  #tabbrowser-tabs[orient="horizontal"] tab-group:not([collapsed]) > &::after,
+  #tabbrowser-tabs[orient="horizontal"] tab-group[collapsed][hasactivetab]:not([movingtabgroup]) > &::after {
     height: var(--tab-group-line-thickness);
     inset: auto 0 var(--tab-group-line-toolbar-border-distance);
     border-start-start-radius: 1px;
     border-end-start-radius: 1px;
   }
 
-  #tabbrowser-tabs[orient="vertical"] tab-group:is(:not([collapsed]), [hasactivetab]) > &::after {
+  #tabbrowser-tabs[orient="vertical"] tab-group:not([collapsed]) > &::after,
+  #tabbrowser-tabs[orient="vertical"] tab-group[collapsed][hasactivetab]:not([movingtabgroup]) > &::after {
     width: var(--tab-group-line-thickness);
     inset-block: 0;
     inset-inline: 2px auto;
@@ -1132,8 +1232,6 @@ tab-group {
     margin-inline-end: 3px;
   }
   #tabbrowser-tabs[orient="vertical"] & {
-    padding-block-start: var(--space-small);
-
     #tabbrowser-tabs[expanded] & {
       margin-inline-start: var(--space-medium);
     }
@@ -1166,6 +1264,10 @@ tab-group {
   color: var(--tab-group-line-color);
   margin: 0;
   padding: var(--space-small);
+
+  #tabbrowser-tabs[orient="vertical"] & {
+    margin-inline-start: var(--tab-inner-inline-margin);
+  }
 }
 
 .tab-group-label {
@@ -1185,6 +1287,16 @@ tab-group {
   color: light-dark(var(--tab-group-color-pale), var(--tab-group-label-text-dark));
   background-color: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
   margin: auto 0;
+
+  /* Animations for hovering a tab(s) over a collapsed tab group. Indicates to
+   * the user that they can drop the tab(s) into the tab group.
+   */
+  transition: box-shadow var(--tab-group-label-animation-duration);
+
+  &[dragover-groupTarget] {
+    box-shadow: color-mix(in oklab, light-dark(var(--tab-group-color), var(--tab-group-color-pale)) 30%, transparent) 0 0 0
+      var(--tab-group-label-highlight-thickness);
+  }
 
   tab-group[collapsed] > .tab-group-label-container > & {
     background-color: light-dark(var(--tab-group-color-pale), var(--tab-group-color));
@@ -1236,7 +1348,7 @@ tab-group {
 .tab-group-editor-panel {
   --panel-width: 22em;
   --panel-padding: var(--space-large);
-  --panel-separator-margin: var(--panel-separator-margin-vertical) 0;
+  --panel-separator-padding: var(--space-medium) 0;
   font: menu;
 
   .panel-header {
@@ -1244,10 +1356,6 @@ tab-group {
     > h1 {
       margin-top: 0;
     }
-  }
-
-  toolbarseparator {
-    margin-block: var(--space-medium);
   }
 
   .panel-body {
@@ -1336,14 +1444,9 @@ tab-group {
 
 /* Tab Overflow */
 
-#tabbrowser-arrowscrollbox {
+#tabbrowser-arrowscrollbox,
+#pinned-tabs-container {
   &[orient="horizontal"] {
-    min-width: 1px;
-
-    &::part(scrollbox) {
-      contain: inline-size;
-    }
-
     &:not([scrolledtostart])::part(overflow-start-indicator),
     &:not([scrolledtoend])::part(overflow-end-indicator) {
       width: 7px; /* The width is the sum of the inline margins */
@@ -1395,16 +1498,6 @@ tab-group {
     }
   }
 
-  &[scrolledtostart]::part(overflow-start-indicator),
-  &[scrolledtoend]::part(overflow-end-indicator) {
-    opacity: 0;
-  }
-
-  &::part(overflow-start-indicator),
-  &::part(overflow-end-indicator) {
-    transition: opacity 150ms ease;
-  }
-
   /* Scroll arrows */
 
   &::part(scrollbutton-up),
@@ -1415,7 +1508,6 @@ tab-group {
     border-radius: calc(var(--tab-border-radius) + 4px);
     fill: var(--toolbarbutton-icon-fill);
     margin: 0;
-    padding: 0 calc(var(--toolbarbutton-inner-padding) - 6px);
   }
 
   #navigator-toolbox:not(:hover) &:not([highlight])::part(scrollbutton-down) {
@@ -1436,6 +1528,24 @@ tab-group {
   &:not([scrolledtoend])::part(scrollbutton-down):hover:active {
     background-color: var(--toolbarbutton-active-background);
     color: inherit;
+  }
+
+  &[scrolledtostart]::part(overflow-start-indicator),
+  &[scrolledtoend]::part(overflow-end-indicator) {
+    opacity: 0;
+  }
+
+  &::part(overflow-start-indicator),
+  &::part(overflow-end-indicator) {
+    transition: opacity 150ms ease;
+  }
+}
+
+#tabbrowser-arrowscrollbox[orient="horizontal"] {
+  min-width: 20vw;
+
+  &::part(scrollbox) {
+    contain: inline-size;
   }
 }
 
@@ -1535,25 +1645,6 @@ tab-group {
     overflow-y: auto;
   }
 
-  &:not([scrolledtostart])::part(overflow-start-indicator),
-  &:not([scrolledtoend])::part(overflow-end-indicator) {
-    background-image: linear-gradient(to top, transparent 0%, light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.05)));
-    background-repeat: no-repeat;
-    pointer-events: none;
-    position: relative;
-    height: 16px;
-    z-index: 1;
-  }
-
-  &::part(overflow-start-indicator) {
-    margin-block: 0 -16px;
-  }
-
-  &::part(overflow-end-indicator) {
-    transform: scaleY(-1);
-    margin-block: -16px 0;
-  }
-
   .tab-background {
     border-radius: var(--border-radius-medium);
 
@@ -1567,7 +1658,7 @@ tab-group {
   }
 
   :root:not([sidebar-expand-on-hover]) & {
-    --tab-inline-padding: calc((var(--tab-collapsed-background-width) + 2 * var(--tab-pinned-margin-inline-expanded) - var(--icon-size-default)) / 2);
+    --tab-inline-padding: calc((var(--tab-collapsed-background-width) + 2 * var(--tab-pinned-margin-inline-expanded) - var(--icon-size)) / 2);
     /* stylelint-disable-next-line media-query-no-invalid */
     @media not -moz-pref("sidebar.visibility", "expand-on-hover") {
       /* We need these rules to apply at all times when the sidebar.visibility
@@ -1650,7 +1741,7 @@ tab-group {
 
 #tabbrowser-tabs[orient="vertical"] {
   --tab-min-width: unset;
-  --tab-inline-padding: calc((var(--tab-collapsed-width) - var(--icon-size-default)) / 2);
+  --tab-inline-padding: calc((var(--tab-collapsed-width) - var(--icon-size)) / 2);
 
   min-height: 0;
   display: flex;
@@ -1658,10 +1749,25 @@ tab-group {
   align-content: flex-start;
   grid-gap: var(--space-small);
 
-  &[overflow]::after {
+  &::after {
     content: "";
     border-bottom: var(--tabstrip-inner-border);
     margin-inline: var(--tab-inner-inline-margin);
+  }
+
+  &:not([overflow])::after {
+    border-color: transparent;
+  }
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media not -moz-pref("sidebar.visibility", "expand-on-hover") {
+    /* We need these rules to apply at all times when the sidebar.visibility
+    pref is not set to "expand-on-hover" as opposed to when the "sidebar-expand-on-hover" attribute
+    has not been added to root. There are certain scenarios when that attribute is temporarily
+    removed from root such as when toggling the sidebar to expand with the toolbar button. */
+    &:not([expanded])::after {
+      border-color: transparent;
+    }
   }
 
   .tabbrowser-tab {
@@ -1787,8 +1893,8 @@ tab-group {
 /* Tab drag and drop */
 
 .tab-drop-indicator {
-  width: 12px;
-  margin-inline-start: -12px;
+  width: var(--icon-size-xsmall);
+  margin-inline-start: calc(var(--icon-size-xsmall) * -1);
   background: url(chrome://browser/skin/tabbrowser/tab-drag-indicator.svg) no-repeat center;
   position: relative;
   z-index: 2;
@@ -1814,7 +1920,7 @@ tab-group {
 :root:not([privatebrowsingmode]) :is(toolbarbutton, toolbarpaletteitem) ~ #tabbrowser-tabs,
 :root[privatebrowsingmode] :is(toolbarbutton:not(#firefox-view-button), toolbarpaletteitem:not(#wrapper-firefox-view-button)) ~ #tabbrowser-tabs {
   border-inline-start: var(--tabstrip-inner-border);
-  padding-inline-start: calc(var(--tab-overflow-pinned-tabs-width) + 2px);
+  padding-inline-start: 2px;
   margin-inline-start: 2px;
 }
 
@@ -1877,8 +1983,8 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
     /* "!important" is necessary to override the rule in toolbarbutton.css */
     margin: -7px 0 0 !important;
     margin-inline-end: -4px !important;
-    min-width: 12px;
-    min-height: 12px;
+    min-width: var(--icon-size-xsmall);
+    min-height: var(--icon-size-xsmall);
   }
 }
 
@@ -1903,7 +2009,7 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
   display: block;
   position: absolute;
   transform: rotate(-90deg);
-  width: 12px;
+  width: var(--icon-size-xsmall);
   height: 29px;
   inset-inline-start: 8px;
   top: 0;
@@ -2012,31 +2118,24 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
   }
 }
 
-.menu-iconic.tab-group-icon,
-.menuitem-iconic.tab-group-icon,
-.subviewbutton-iconic.tab-group-icon {
+/* NOTE(emilio): The double class is an specificity hack to win over the
+ * .subviewbutton-iconic rules */
+.tab-group-icon.tab-group-icon {
   list-style-image: url("chrome://browser/skin/tabbrowser/tab-group-chicklet.svg");
+  --menuitem-icon: url("chrome://browser/skin/tabbrowser/tab-group-chicklet.svg");
   -moz-context-properties: fill, stroke;
   fill: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
   stroke: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
-}
 
-.menu-iconic.tab-group-icon-collapsed,
-.menuitem-iconic.tab-group-icon-collapsed,
-.subviewbutton-iconic.tab-group-icon-collapsed {
-  list-style-image: url("chrome://browser/skin/tabbrowser/tab-group-chicklet.svg");
-  -moz-context-properties: fill, stroke;
-  fill: light-dark(var(--tab-group-color-pale), var(--tab-group-color));
-  stroke: light-dark(var(--tab-group-color), var(--tab-group-color-pale));
-}
+  &.tab-group-icon-collapsed {
+    fill: light-dark(var(--tab-group-color-pale), var(--tab-group-color));
+    stroke: light-dark(var(--tab-group-color), var(--tab-group-color-pale));
+  }
 
-.menu-iconic.tab-group-icon-closed,
-.menuitem-iconic.tab-group-icon-closed,
-.subviewbutton-iconic.tab-group-icon-closed {
-  list-style-image: url("chrome://browser/skin/tabbrowser/tab-group-chicklet.svg");
-  -moz-context-properties: fill, stroke;
-  fill: transparent;
-  stroke: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
+  &.tab-group-icon-closed {
+    fill: transparent;
+    stroke: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
+  }
 }
 
 #tab-group-suggestions-heading,

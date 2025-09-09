@@ -5,10 +5,10 @@
 
 #include "WebrtcTaskQueueWrapper.h"
 
+#include "VideoUtils.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "mozilla/TaskQueue.h"
 #include "nsThreadUtils.h"
-#include "VideoUtils.h"
 
 #ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
 #  include "fmt/format.h"

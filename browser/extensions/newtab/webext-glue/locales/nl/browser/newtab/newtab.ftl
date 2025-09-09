@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Nieuwe snelkoppeling
 newtab-topsites-edit-topsites-header = Topwebsite bewerken
 newtab-topsites-edit-shortcut-header = Snelkoppeling bewerken
 newtab-topsites-add-shortcut-label = Snelkoppeling toevoegen
+newtab-topsites-add-shortcut-title =
+    .title = Snelkoppeling toevoegen
+    .aria-label = Snelkoppeling toevoegen
 newtab-topsites-title-label = Titel
 newtab-topsites-title-input =
     .placeholder = Voer een titel in
@@ -84,6 +87,14 @@ newtab-confirm-delete-history-p2 = Deze actie kan niet ongedaan worden gemaakt.
 ## Top Sites - Sponsored label
 
 newtab-topsite-sponsored = Gesponsord
+
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (vastgemaakt)
+    .title = { $title }
 
 ## Context Menu - Action Tooltips.
 
@@ -538,6 +549,12 @@ newtab-custom-wallpaper-title = Hier vindt u aangepaste achtergronden
 # 'Make firefox yours" means to customize or personalize
 newtab-custom-wallpaper-subtitle = Upload uw eigen achtergrond of kies een aangepaste kleur om { -brand-product-name } van uzelf te maken.
 newtab-custom-wallpaper-cta = Uitproberen
+
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Kies een achtergrond om { -brand-product-name } van u te maken
+newtab-new-user-custom-wallpaper-subtitle = Laat elk nieuw tabblad als thuis voelen met aangepaste achtergronden en kleuren.
+newtab-new-user-custom-wallpaper-cta = Nu proberen
 
 ## Strings for download mobile highlight
 

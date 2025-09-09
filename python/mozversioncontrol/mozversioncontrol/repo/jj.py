@@ -43,6 +43,11 @@ class JjVersionError(Exception):
 class JujutsuRepository(Repository):
     """An implementation of `Repository` for JJ repositories using the git backend."""
 
+    # Revset for a "HEAD-like" change. Use @ (the working copy commit) unless it
+    # would be discarded when switching away (because it's empty and has no
+    # description.)
+    HEAD_REVSET = "latest((@ ~ (empty() & description(exact:'')) ~ bookmarks()) | @-)"
+
     def __init__(self, path: Path, jj="jj", git="git"):
         super(JujutsuRepository, self).__init__(path, tool=jj)
         self._git = GitRepository(path, git=git)
@@ -102,12 +107,15 @@ class JujutsuRepository(Repository):
 
     @property
     def head_ref(self):
-        # This is not really a defined concept in jj. Map it to @, or rather the
-        # persistent change id for the current @. Warning: this cannot be passed
-        # directly to a git command, it must be converted to a commit id first
-        # (eg via resolve_to_commit). This isn't done here because
-        # callers should be aware when they're dropping down to git semantics.
-        return self._resolve_to_change("@")
+        # This is not really a defined concept in jj. Map it to the persistent
+        # change id for @. Unless that's empty, in which case use @- instead.
+        #
+        # Note that this returns a JJ change id, not a git commit id. That's
+        # because I want it to fail if something tries to use it as a git commit
+        # directly rather than going through the generic vcs interface.
+        # (VCS-specific code can use _resolve_to_commit if it is necessary to
+        # drop down to git semantics.)
+        return self._resolve_to_change(self.HEAD_REVSET)
 
     def is_cinnabar_repo(self) -> bool:
         return self._git.is_cinnabar_repo()
@@ -193,7 +201,7 @@ class JujutsuRepository(Repository):
 
     def diff_stream(self, rev=None, extensions=(), exclude_file=None, context=8):
         if rev is None:
-            rev = "latest((@ ~ empty()) | @-)"
+            rev = self.HEAD_REVSET
         rev = self._resolve_to_commit(rev)
         return self._git.diff_stream(
             rev=rev, extensions=extensions, exclude_file=exclude_file, context=context
@@ -383,7 +391,7 @@ class JujutsuRepository(Repository):
             "operation", "log", "-n1", "--no-graph", "-T", "id.short(16)"
         ).rstrip()
         try:
-            self._run("new", "-m", commit_message, "latest((@ ~ empty()) | @-)")
+            self._run("new", "-m", commit_message, self.HEAD_REVSET)
             for path, content in (changed_files or {}).items():
                 p = self.path / Path(path)
                 p.parent.mkdir(parents=True, exist_ok=True)

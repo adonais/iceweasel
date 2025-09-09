@@ -596,6 +596,9 @@ var AddonManagerInternal = {
       }
 
       this.recordTimestamp("AMI_startup_begin");
+      Glean.addonsManager.startupTimeline.AMI_startup_begin.set(
+        Services.telemetry.msSinceProcessStart()
+      );
 
       // Enable the AMRemoteSettings client.
       AMRemoteSettings.init();
@@ -765,6 +768,9 @@ var AddonManagerInternal = {
       gStartupComplete = true;
       gStartedPromise.resolve();
       this.recordTimestamp("AMI_startup_end");
+      Glean.addonsManager.startupTimeline.AMI_startup_end.set(
+        Services.telemetry.msSinceProcessStart()
+      );
     } catch (e) {
       logger.error("startup failed", e);
       AddonManagerPrivate.recordException("AMI", "startup failed", e);
@@ -3891,6 +3897,7 @@ export var AddonManagerPrivate = {
       }
     }
 
+    Glean.addonsManager.exception.set(report);
     this._simpleMeasures.exception = report;
   },
 
@@ -5120,8 +5127,9 @@ AMTelemetry = {
     });
     Glean.addonsManager.installStats.record(
       this.formatExtraVars({
-        addon_id: extra.addon_id,
+        addon_id: addonId,
         addon_type: object,
+        hashed_addon_id: install.hashedAddonId,
         taar_based: extra.taar_based,
         utm_campaign: extra.utm_campaign,
         utm_content: extra.utm_content,

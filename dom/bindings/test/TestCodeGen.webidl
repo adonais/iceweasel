@@ -1364,7 +1364,7 @@ interface TestNamedDeleterInterface {
 
 [Exposed=Window]
 interface TestNamedDeleterWithRetvalInterface {
-  deleter boolean delNamedItem(DOMString name);
+  deleter undefined delNamedItem(DOMString name);
   getter long (DOMString name);
 };
 

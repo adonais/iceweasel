@@ -123,6 +123,7 @@ TEST_PKGS_TARGZ := \
   jittest \
   perftests \
   fuzztest \
+  trainhop \
   $(NULL)
 
 ifdef LINK_GTEST_DURING_COMPILE

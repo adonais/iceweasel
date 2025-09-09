@@ -7,13 +7,11 @@
 #ifndef IntegrityPolicy_h___
 #define IntegrityPolicy_h___
 
-#include "nsIIntegrityPolicy.h"
-
-#include "nsIContentPolicy.h"
-
 #include "mozilla/EnumSet.h"
 #include "mozilla/EnumTypeTraits.h"
 #include "mozilla/Maybe.h"
+#include "nsIContentPolicy.h"
+#include "nsIIntegrityPolicy.h"
 #include "nsTArray.h"
 
 #define NS_INTEGRITYPOLICY_CONTRACTID "@mozilla.org/integritypolicy;1"

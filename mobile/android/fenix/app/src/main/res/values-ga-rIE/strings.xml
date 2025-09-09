@@ -14,7 +14,10 @@
   <string name="search_hint">Cuardaigh nó cuir seoladh isteach</string>
   <!-- No Open Tabs Message Description -->
   <string name="no_open_tabs_description">Taispeánfar do chluaisíní oscailte anseo.</string>
+  <!-- Private Browsing -->
   <string name="private_browsing_common_myths">Gnáthmhiotais maidir le brabhsáil phríobháideach</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!--
     Home screen icons - Long press shortcuts
 
@@ -139,8 +142,6 @@
   <string name="preferences_account_sync_error">Athcheangail chun sioncronú a thosú arís</string>
   <!-- Preference for language -->
   <string name="preferences_language">Teanga</string>
-  <!-- Preference for data choices -->
-  <string name="preferences_data_choices" tools:ignore="UnusedResources" moz:removedIn="141">Roghanna sonraí</string>
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">Bailiú sonraí</string>
   <!-- Preference for developers -->
@@ -491,20 +492,16 @@
     Text shown in snackbar when user deletes a collection
   -->
   <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Scriosadh an bailiúchán</string>
-  <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Athainmníodh an bailiúchán</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Dúnadh an cluaisín</string>
   <!-- Text shown in snackbar when user closes all tabs -->
   <string name="snackbar_tabs_closed">Dúnadh na cluaisíní</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">Dúnadh an cluaisín príobháideach</string>
-  <!-- Text shown in snackbar when user closes all private tabs -->
-  <string name="snackbar_private_tabs_closed" moz:removedIn="141" tools:ignore="UnusedResources">Dúnadh na cluaisíní príobháideacha</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">CEALAIGH</string>
   <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed">Baineadh an suíomh</string>
+  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">Baineadh an suíomh</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned

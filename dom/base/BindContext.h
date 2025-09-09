@@ -81,12 +81,19 @@ struct MOZ_STACK_CLASS BindContext final {
     MOZ_ASSERT(mInComposedDoc, "Binding NAC in a disconnected subtree?");
   }
 
+  void SetIsMove(bool aIsMove) { mIsMove = aIsMove; }
+
+  bool IsMove() const { return mIsMove; }
+
  private:
   // Returns true iff the document is in the same origin as the top level
   // document.
   bool IsSameOriginAsTop() const;
 
   Document& mDoc;
+
+  // If set, we're moving the shadow-including inclusive ancestor.
+  bool mIsMove = false;
 
   const bool mInComposedDoc;
   const bool mInUncomposedDoc;

@@ -7,14 +7,14 @@
 #ifndef DOM_SVG_SVGLENGTHLIST_H_
 #define DOM_SVG_SVGLENGTHLIST_H_
 
+#include "SVGElement.h"
+#include "SVGLength.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
 #include "nsIContent.h"
 #include "nsINode.h"
 #include "nsIWeakReferenceUtils.h"
-#include "SVGElement.h"
 #include "nsTArray.h"
-#include "SVGLength.h"
 
 namespace mozilla {
 

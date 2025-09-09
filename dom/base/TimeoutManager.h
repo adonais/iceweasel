@@ -8,9 +8,9 @@
 #define mozilla_dom_TimeoutManager_h__
 
 #include "mozilla/dom/Timeout.h"
-#include "nsTArray.h"
-#include "nsISerialEventTarget.h"
 #include "mozilla/dom/TimeoutBudgetManager.h"
+#include "nsISerialEventTarget.h"
+#include "nsTArray.h"
 
 class nsIEventTarget;
 class nsITimer;

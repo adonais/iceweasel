@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Novi prečac
 newtab-topsites-edit-topsites-header = Uredi najbolju stranicu
 newtab-topsites-edit-shortcut-header = Uredi prečac
 newtab-topsites-add-shortcut-label = Dodaj prečac
+newtab-topsites-add-shortcut-title =
+    .title = Dodaj prečac
+    .aria-label = Dodaj prečac
 newtab-topsites-title-label = Naslov
 newtab-topsites-title-input =
     .placeholder = Upiši naslov
@@ -549,9 +552,6 @@ newtab-download-mobile-highlight-body-variant-b = Nastavi tamo gdje si stao/la p
 newtab-download-mobile-highlight-body-variant-c = Znaš li da { -brand-product-name } možeš ponijeti sa sobom? Isti preglednik. U tvom džepu.
 newtab-download-mobile-highlight-image =
     .aria-label = QR kod za preuzimanje { -brand-product-name }a za mobilne uređaje
-
-## Strings for shortcuts highlight
-
 
 ## Strings for reporting ads and content
 

@@ -21,8 +21,8 @@
 #  include "mozilla/StateMirroring.h"
 #  include "mozilla/StaticPrefs_media.h"
 #  include "mozilla/TaskQueue.h"
-#  include "mozilla/TimeStamp.h"
 #  include "mozilla/ThreadSafeWeakPtr.h"
+#  include "mozilla/TimeStamp.h"
 #  include "mozilla/dom/MediaDebugInfoBinding.h"
 
 namespace mozilla {

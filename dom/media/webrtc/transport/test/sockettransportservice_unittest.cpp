@@ -7,16 +7,13 @@
 // Original author: ekr@rtfm.com
 #include <iostream>
 
-#include "prio.h"
-
-#include "nsCOMPtr.h"
-#include "nsNetCID.h"
-
-#include "nsISocketTransportService.h"
-
 #include "nsASocketHandler.h"
+#include "nsCOMPtr.h"
+#include "nsISocketTransportService.h"
+#include "nsNetCID.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
+#include "prio.h"
 
 #define GTEST_HAS_RTTI 0
 #include "gtest/gtest.h"

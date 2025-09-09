@@ -5,14 +5,14 @@
 
 #include "nsICanvasRenderingContextInternal.h"
 
+#include "mozilla/ErrorResult.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/dom/CanvasUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/gfx/DrawTargetRecording.h"
-#include "mozilla/ErrorResult.h"
-#include "mozilla/PresShell.h"
 #include "nsContentUtils.h"
 #include "nsPIDOMWindow.h"
 #include "nsRefreshDriver.h"

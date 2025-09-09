@@ -11,9 +11,9 @@ import SourceIcon from "../shared/SourceIcon";
 import AccessibleImage from "../shared/AccessibleImage";
 
 import {
-  getGeneratedSourceByURL,
   getHideIgnoredSources,
   isSourceOverridden,
+  getGeneratedSourceByURL,
 } from "../../selectors/index";
 import actions from "../../actions/index";
 

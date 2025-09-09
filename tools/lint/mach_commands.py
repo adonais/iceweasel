@@ -191,11 +191,18 @@ def prettier(command_context, paths, extra_args=[], **kwargs):
     description="Format files, alternative to 'lint --fix' ",
     parser=setup_argument_parser,
 )
+@CommandArgument(
+    "--skip-android",
+    default=False,
+    action="store_true",
+    help="Skips checking if android formatters are valid in this context.",
+)
 def format_files(command_context, paths, extra_args=[], **kwargs):
     linters = kwargs["linters"]
+    skip_android = kwargs["skip_android"]
 
     formatters = VALID_FORMATTERS
-    if conditions.is_android(command_context):
+    if not skip_android and conditions.is_android(command_context):
         formatters |= VALID_ANDROID_FORMATTERS
 
     if not linters:

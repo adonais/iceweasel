@@ -3,12 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-import os
 import sys
 from pathlib import PurePath
 
 from gecko_taskgraph.target_tasks import filter_by_uncommon_try_tasks
-from mach.util import get_state_dir
 
 from ..cli import BaseTryParser
 from ..push import check_working_directory, generate_try_task_config, push_to_try
@@ -20,10 +18,6 @@ from ..util.fzf import (
     fzf_bootstrap,
     fzf_shortcuts,
     run_fzf,
-)
-from ..util.manage_estimates import (
-    download_task_history_data,
-    make_trimmed_taskgraph_cache,
 )
 
 
@@ -83,14 +77,6 @@ class FuzzyParser(BaseTryParser):
             },
         ],
         [
-            ["-s", "--show-estimates"],
-            {
-                "action": "store_true",
-                "default": False,
-                "help": "Show task duration estimates.",
-            },
-        ],
-        [
             ["--disable-target-task-filter", "--all-tasks"],
             {
                 "action": "store_true",
@@ -145,7 +131,6 @@ def run(
     test_tag=None,
     exact=False,
     closed_tree=False,
-    show_estimates=False,
     disable_target_task_filter=False,
     push_to_vcs=False,
     show_chunk_numbers=False,
@@ -171,23 +156,6 @@ def run(
         target_tasks_method=target_tasks_method,
     )
     all_tasks = tg.tasks
-
-    # graph_Cache created by generate_tasks, recreate the path to that file.
-    cache_dir = os.path.join(
-        get_state_dir(specific_to_topsrcdir=True), "cache", "taskgraph"
-    )
-    if full:
-        graph_cache = os.path.join(cache_dir, "full_task_graph")
-        dep_cache = os.path.join(cache_dir, "full_task_dependencies")
-        target_set = os.path.join(cache_dir, "full_task_set")
-    else:
-        graph_cache = os.path.join(cache_dir, "target_task_graph")
-        dep_cache = os.path.join(cache_dir, "target_task_dependencies")
-        target_set = os.path.join(cache_dir, "target_task_set")
-
-    if show_estimates:
-        download_task_history_data(cache_dir=cache_dir)
-        make_trimmed_taskgraph_cache(graph_cache, dep_cache, target_file=target_set)
 
     if not full and not disable_target_task_filter:
         all_tasks = {
@@ -216,22 +184,9 @@ def run(
         format_header(),
         "--preview-window=right:30%",
         "--print-query",
+        "--preview",
+        f'{str(PurePath(sys.executable))} {PREVIEW_SCRIPT} -t "{{+f}}"',
     ]
-
-    if show_estimates:
-        base_cmd.extend(
-            [
-                "--preview",
-                f'{str(PurePath(sys.executable))} {PREVIEW_SCRIPT} -g {dep_cache} -s -c {cache_dir} -t "{{+f}}"',
-            ]
-        )
-    else:
-        base_cmd.extend(
-            [
-                "--preview",
-                f'{str(PurePath(sys.executable))} {PREVIEW_SCRIPT} -t "{{+f}}"',
-            ]
-        )
 
     if exact:
         base_cmd.append("--exact")

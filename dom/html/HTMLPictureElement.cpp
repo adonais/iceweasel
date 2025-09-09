@@ -5,8 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/HTMLPictureElement.h"
-#include "mozilla/dom/HTMLPictureElementBinding.h"
+
 #include "mozilla/dom/HTMLImageElement.h"
+#include "mozilla/dom/HTMLPictureElementBinding.h"
 #include "mozilla/dom/HTMLSourceElement.h"
 
 // Expand NS_IMPL_NS_NEW_HTML_ELEMENT(Picture) to add pref check.
@@ -29,7 +30,8 @@ HTMLPictureElement::~HTMLPictureElement() = default;
 NS_IMPL_ELEMENT_CLONE(HTMLPictureElement)
 
 void HTMLPictureElement::RemoveChildNode(nsIContent* aKid, bool aNotify,
-                                         const BatchRemovalState* aState) {
+                                         const BatchRemovalState* aState,
+                                         nsINode* aNewParent) {
   MOZ_ASSERT(aKid);
 
   if (auto* img = HTMLImageElement::FromNode(aKid)) {
@@ -46,13 +48,15 @@ void HTMLPictureElement::RemoveChildNode(nsIContent* aKid, bool aNotify,
     }
   }
 
-  nsGenericHTMLElement::RemoveChildNode(aKid, aNotify, aState);
+  nsGenericHTMLElement::RemoveChildNode(aKid, aNotify, aState, aNewParent);
 }
 
 void HTMLPictureElement::InsertChildBefore(nsIContent* aKid,
                                            nsIContent* aBeforeThis,
-                                           bool aNotify, ErrorResult& aRv) {
-  nsGenericHTMLElement::InsertChildBefore(aKid, aBeforeThis, aNotify, aRv);
+                                           bool aNotify, ErrorResult& aRv,
+                                           nsINode* aOldParent) {
+  nsGenericHTMLElement::InsertChildBefore(aKid, aBeforeThis, aNotify, aRv,
+                                          aOldParent);
   if (aRv.Failed() || !aKid) {
     return;
   }

@@ -337,9 +337,8 @@ DataChannelConnectionUsrsctp::DataChannelConnectionUsrsctp(
     nsISerialEventTarget* aTarget, MediaTransportHandler* aHandler)
     : DataChannelConnection(aListener, aTarget, aHandler) {}
 
-bool DataChannelConnectionUsrsctp::Init(
-    const uint16_t aLocalPort, const uint16_t aNumStreams,
-    const Maybe<uint64_t>& aMaxMessageSize) {
+bool DataChannelConnectionUsrsctp::Init(const uint16_t aLocalPort,
+                                        const uint16_t aNumStreams) {
   MOZ_ASSERT(NS_IsMainThread());
 
   struct sctp_initmsg initmsg = {};
@@ -353,8 +352,6 @@ bool DataChannelConnectionUsrsctp::Init(
       SCTP_ADAPTATION_INDICATION, SCTP_PARTIAL_DELIVERY_EVENT,
       SCTP_SEND_FAILED_EVENT,     SCTP_STREAM_RESET_EVENT,
       SCTP_STREAM_CHANGE_EVENT};
-
-  SetMaxMessageSize(aMaxMessageSize.isSome(), aMaxMessageSize.valueOr(0));
 
   mId = DataChannelRegistry::Register(this);
 
@@ -571,9 +568,6 @@ void DataChannelConnectionUsrsctp::OnTransportReady() {
       return;
     }
   }
-  // Note: currently this doesn't actually notify the application
-  Dispatch(do_AddRef(new DataChannelOnMessageAvailable(
-      DataChannelOnMessageAvailable::EventType::OnConnection, this)));
 }
 
 void DataChannelConnectionUsrsctp::OnSctpPacketReceived(
@@ -900,7 +894,7 @@ void DataChannelConnectionUsrsctp::HandleDCEPMessageChunk(const void* buffer,
   }
 
   if (!ReassembleMessageChunk(*mRecvBuffer, buffer, length, ppid, stream)) {
-    Stop();
+    CloseAll_s();
     return;
   }
 
@@ -961,8 +955,6 @@ void DataChannelConnectionUsrsctp::HandleAssociationChangeEvent(
             mNegotiatedIdLimit,
             std::max(sac->sac_outbound_streams, sac->sac_inbound_streams));
 
-        Dispatch(do_AddRef(new DataChannelOnMessageAvailable(
-            DataChannelOnMessageAvailable::EventType::OnConnection, this)));
         DC_DEBUG(("DTLS connect() succeeded!  Entering connected mode"));
 
         // Open any streams pending...
@@ -976,16 +968,15 @@ void DataChannelConnectionUsrsctp::HandleAssociationChangeEvent(
       break;
     case SCTP_COMM_LOST:
       DC_DEBUG(("Association change: SCTP_COMM_LOST"));
-      // This association is toast, so also close all the channels -- from
-      // mainthread!
-      Stop();
+      // This association is toast, so also close all the channels
+      CloseAll_s();
       break;
     case SCTP_RESTART:
       DC_DEBUG(("Association change: SCTP_RESTART"));
       break;
     case SCTP_SHUTDOWN_COMP:
       DC_DEBUG(("Association change: SCTP_SHUTDOWN_COMP"));
-      Stop();
+      CloseAll_s();
       break;
     case SCTP_CANT_STR_ASSOC:
       DC_DEBUG(("Association change: SCTP_CANT_STR_ASSOC"));

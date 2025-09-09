@@ -6,26 +6,25 @@
 
 #include "WebrtcTCPSocket.h"
 
+#include "WebrtcTCPSocketCallback.h"
+#include "WebrtcTCPSocketLog.h"
+#include "mozilla/StaticPrefs_media.h"
+#include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/ContentProcessManager.h"
 #include "nsHttpChannel.h"
+#include "nsICancelable.h"
 #include "nsIChannel.h"
 #include "nsIClassOfService.h"
 #include "nsIContentPolicy.h"
+#include "nsICookieJarSettings.h"
 #include "nsIIOService.h"
 #include "nsILoadInfo.h"
 #include "nsIProtocolProxyService.h"
-#include "nsIURIMutator.h"
-#include "nsICookieJarSettings.h"
-#include "nsProxyRelease.h"
-#include "nsString.h"
-#include "mozilla/dom/ContentProcessManager.h"
-#include "mozilla/dom/BrowserParent.h"
-#include "mozilla/StaticPrefs_media.h"
 #include "nsISocketTransportService.h"
-#include "nsICancelable.h"
+#include "nsIURIMutator.h"
+#include "nsProxyRelease.h"
 #include "nsSocketTransportService2.h"
-
-#include "WebrtcTCPSocketCallback.h"
-#include "WebrtcTCPSocketLog.h"
+#include "nsString.h"
 
 namespace mozilla::net {
 

@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import {
   UrlbarProvider,
   UrlbarUtils,
@@ -328,7 +329,7 @@ export class QueryScorer {
     minDistanceByDoc = new Map(),
     queryWordsIndex = 0,
     phraseDistance = 0,
-  } = {}) {
+  }) {
     if (!node.childrenByWord.size) {
       // We reached a leaf node.  The query has matched a phrase.  If the query
       // and the phrase have the same number of words, then queryWordsIndex ==
@@ -431,13 +432,9 @@ function getPayloadForTip(tip) {
  * a search related to those actions.
  */
 class ProviderInterventions extends UrlbarProvider {
-  constructor() {
-    super();
-    // The tip we should currently show.
-    this.currentTip = TIPS.NONE;
-
+  #lazy = XPCOMUtils.declareLazy({
     // This object is used to match the user's queries to tips.
-    ChromeUtils.defineLazyGetter(this, "queryScorer", () => {
+    queryScorer: () => {
       let queryScorer = new QueryScorer({
         variations: new Map([
           // Recognize "fire fox", "fox fire", and "foxfire" as "firefox".
@@ -452,7 +449,13 @@ class ProviderInterventions extends UrlbarProvider {
         queryScorer.addDocument({ id, phrases });
       }
       return queryScorer;
-    });
+    },
+  });
+
+  constructor() {
+    super();
+    // The tip we should currently show.
+    this.currentTip = TIPS.NONE;
   }
 
   /**
@@ -504,7 +507,7 @@ class ProviderInterventions extends UrlbarProvider {
     this.currentTip = TIPS.NONE;
 
     // Get the scores and the top score.
-    let docScores = this.queryScorer.score(queryContext.searchString);
+    let docScores = this.#lazy.queryScorer.score(queryContext.searchString);
     let topDocScore = docScores[0];
 
     // Multiple docs may have the top score, so collect them all.
@@ -699,7 +702,7 @@ class ProviderInterventions extends UrlbarProvider {
 
   onEngagement(queryContext, controller, details) {
     // `selType` is "tip" when the tip's main button is picked. Ignore clicks on
-    // the help command ("tiphelp"), which is handled by UrlbarInput since we
+    // the help command ("help"), which is handled by UrlbarInput since we
     // set `helpUrl` on the result payload. Currently there aren't any other
     // buttons or commands but this will ignore clicks on them too.
     if (details.selType == "tip") {

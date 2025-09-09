@@ -45,6 +45,7 @@ import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.eq
 import mozilla.components.support.test.mock
+import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.whenever
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -200,6 +201,8 @@ class QrFragmentTest {
         val textureView: AutoFitTextureView = mock()
         val viewFinder: CustomViewFinder = mock()
         val cameraErrorView: TextView = mock()
+
+        whenever(view.getContext()).thenReturn(testContext)
 
         whenever(view.findViewById<AutoFitTextureView>(R.id.texture)).thenReturn(textureView)
         whenever(view.findViewById<CustomViewFinder>(R.id.view_finder)).thenReturn(viewFinder)

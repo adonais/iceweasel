@@ -10,6 +10,8 @@
 #include <stdint.h>
 
 #include "js/TypeDecls.h"
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/dom/CSSStyleValueBindingFwd.h"
 #include "nsCOMPtr.h"
 #include "nsISupports.h"
 #include "nsISupportsImpl.h"
@@ -26,7 +28,6 @@ class ErrorResult;
 
 namespace dom {
 
-class CSSStyleValue;
 class OwningUndefinedOrCSSStyleValue;
 
 class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {

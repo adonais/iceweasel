@@ -15,7 +15,6 @@
 #include "mozilla/dom/QueuingStrategyBinding.h"
 #include "mozilla/dom/WritableStreamDefaultController.h"
 #include "mozilla/dom/WritableStreamDefaultWriter.h"
-
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
 

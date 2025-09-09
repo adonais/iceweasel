@@ -8,10 +8,10 @@
 #define mozilla_dom_HTMLEmbedElement_h
 
 #include "mozilla/Attributes.h"
-#include "nsGenericHTMLElement.h"
-#include "nsObjectLoadingContent.h"
-#include "nsGkAtoms.h"
 #include "nsError.h"
+#include "nsGenericHTMLElement.h"
+#include "nsGkAtoms.h"
+#include "nsObjectLoadingContent.h"
 
 namespace mozilla::dom {
 

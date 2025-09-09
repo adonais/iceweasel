@@ -3,21 +3,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
+#include <algorithm>
 
 #include "AnnexB.h"
 #include "BufferReader.h"
 #include "H264.h"
 #include "ImageContainer.h"
+#include "PEMFactory.h"
+#include "TimeUnits.h"
+#include "VPXDecoder.h"
+#include "VideoUtils.h"
+#include "gtest/gtest.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/media/MediaUtils.h"  // For media::Await
-#include "PEMFactory.h"
-#include "TimeUnits.h"
-#include "VideoUtils.h"
-#include "VPXDecoder.h"
-#include <algorithm>
 
 #ifdef MOZ_WIDGET_ANDROID
 // Create/init a H.264 encoder and check if it's SW.
@@ -86,12 +86,16 @@ class MediaDataEncoderTest : public testing::Test {
 
  public:
   struct FrameSource final {
+    gfx::IntSize mSize = gfx::IntSize(0, 0);
     layers::PlanarYCbCrData mYUV;
     UniquePtr<uint8_t[]> mBuffer;
     RefPtr<layers::BufferRecycleBin> mRecycleBin;
     int16_t mColorStep = 4;
 
+    gfx::IntSize GetSize() const { return mSize; }
+
     void Init(const gfx::IntSize& aSize) {
+      mSize = aSize;
       mYUV.mPictureRect = gfx::IntRect(0, 0, aSize.width, aSize.height);
       mYUV.mYStride = aSize.width;
       mYUV.mCbCrStride = (aSize.width + 1) / 2;
@@ -112,6 +116,7 @@ class MediaDataEncoderTest : public testing::Test {
     void Deinit() {
       mBuffer.reset();
       mRecycleBin = nullptr;
+      mSize = gfx::IntSize(0, 0);
     }
 
     already_AddRefed<MediaData> GetFrame(const size_t aIndex) {
@@ -210,16 +215,17 @@ already_AddRefed<MediaDataEncoder> CreateVideoEncoder(
   return e.forget();
 }
 
-static already_AddRefed<MediaDataEncoder> CreateH264Encoder(
-    Usage aUsage = Usage::Realtime,
-    EncoderConfig::SampleFormat aFormat =
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-    gfx::IntSize aSize = kImageSize,
-    ScalabilityMode aScalabilityMode = ScalabilityMode::None,
-    const EncoderConfig::CodecSpecific& aSpecific =
-        AsVariant(kH264SpecificAnnexB)) {
-  return CreateVideoEncoder(CodecType::H264, aUsage, aFormat, aSize,
-                            aScalabilityMode, aSpecific);
+static bool EnsureInit(const RefPtr<MediaDataEncoder>& aEncoder) {
+  if (!aEncoder) {
+    return false;
+  }
+
+  bool succeeded;
+  media::Await(
+      GetMediaThreadPool(MediaThreadType::SUPERVISOR), aEncoder->Init(),
+      [&succeeded](bool) { succeeded = true; },
+      [&succeeded](const MediaResult& r) { succeeded = false; });
+  return succeeded;
 }
 
 void WaitForShutdown(const RefPtr<MediaDataEncoder>& aEncoder) {
@@ -239,41 +245,27 @@ void WaitForShutdown(const RefPtr<MediaDataEncoder>& aEncoder) {
                      [&result]() { return result; });
 }
 
-TEST_F(MediaDataEncoderTest, H264Create) {
-  RUN_IF_SUPPORTED(CodecType::H264, []() {
-    RefPtr<MediaDataEncoder> e = CreateH264Encoder();
-    EXPECT_TRUE(e);
-    WaitForShutdown(e);
-  });
-}
-
-static bool EnsureInit(const RefPtr<MediaDataEncoder>& aEncoder) {
-  if (!aEncoder) {
-    return false;
-  }
-
+static MediaDataEncoder::EncodedData Drain(
+    const RefPtr<MediaDataEncoder>& aEncoder) {
+  size_t pending = 0;
+  MediaDataEncoder::EncodedData output;
   bool succeeded;
-  media::Await(
-      GetMediaThreadPool(MediaThreadType::SUPERVISOR), aEncoder->Init(),
-      [&succeeded](bool) { succeeded = true; },
-      [&succeeded](const MediaResult& r) { succeeded = false; });
-  return succeeded;
-}
+  do {
+    media::Await(
+        GetMediaThreadPool(MediaThreadType::SUPERVISOR), aEncoder->Drain(),
+        [&pending, &output, &succeeded](MediaDataEncoder::EncodedData encoded) {
+          pending = encoded.Length();
+          output.AppendElements(std::move(encoded));
+          succeeded = true;
+        },
+        [&succeeded](const MediaResult& r) { succeeded = false; });
+    EXPECT_TRUE(succeeded);
+    if (!succeeded) {
+      return output;
+    }
+  } while (pending > 0);
 
-TEST_F(MediaDataEncoderTest, H264Inits) {
-  RUN_IF_SUPPORTED(CodecType::H264, []() {
-    // w/o codec specific: should fail for h264.
-    RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Realtime,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize, ScalabilityMode::None, AsVariant(void_t{}));
-    EXPECT_FALSE(e);
-
-    // w/ codec specific
-    e = CreateH264Encoder();
-    EXPECT_TRUE(EnsureInit(e));
-    WaitForShutdown(e);
-  });
+  return output;
 }
 
 static MediaDataEncoder::EncodedData Encode(
@@ -297,22 +289,7 @@ static MediaDataEncoder::EncodedData Encode(
     }
   }
 
-  size_t pending = 0;
-  do {
-    media::Await(
-        GetMediaThreadPool(MediaThreadType::SUPERVISOR), aEncoder->Drain(),
-        [&pending, &output, &succeeded](MediaDataEncoder::EncodedData encoded) {
-          pending = encoded.Length();
-          output.AppendElements(std::move(encoded));
-          succeeded = true;
-        },
-        [&succeeded](const MediaResult& r) { succeeded = false; });
-    EXPECT_TRUE(succeeded);
-    if (!succeeded) {
-      return output;
-    }
-  } while (pending > 0);
-
+  output.AppendElements(Drain(aEncoder));
   return output;
 }
 
@@ -350,271 +327,243 @@ Result<Ok, nsresult> IsValidAVCC(const mozilla::MediaRawData* aSample,
   return Ok();
 }
 
-TEST_F(MediaDataEncoderTest, H264EncodesAnnexBRecord) {
-  RUN_IF_SUPPORTED(CodecType::H264, [this]() {
-    // Encode one frame and output in AnnexB format.
-    RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Record,
+static already_AddRefed<MediaDataEncoder> CreateH264Encoder(
+    Usage aUsage = Usage::Realtime,
+    EncoderConfig::SampleFormat aFormat =
         EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize, ScalabilityMode::None, AsVariant(kH264SpecificAnnexB));
-    EnsureInit(e);
-    MediaDataEncoder::EncodedData output = Encode(e, 1UL, mData);
-    EXPECT_EQ(output.Length(), 1UL);
-    EXPECT_TRUE(AnnexB::IsAnnexB(output[0]));
-    WaitForShutdown(e);
+    gfx::IntSize aSize = kImageSize,
+    ScalabilityMode aScalabilityMode = ScalabilityMode::None,
+    const EncoderConfig::CodecSpecific& aSpecific =
+        AsVariant(kH264SpecificAnnexB)) {
+  return CreateVideoEncoder(CodecType::H264, aUsage, aFormat, aSize,
+                            aScalabilityMode, aSpecific);
+}
 
-    // Encode multiple frames and output in AnnexB format.
-    e = CreateH264Encoder(
-        Usage::Record,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize, ScalabilityMode::None, AsVariant(kH264SpecificAnnexB));
-    EnsureInit(e);
-    output = Encode(e, NUM_FRAMES, mData);
-    EXPECT_EQ(output.Length(), NUM_FRAMES);
-    for (auto frame : output) {
-      EXPECT_TRUE(AnnexB::IsAnnexB(frame));
-    }
+TEST_F(MediaDataEncoderTest, H264Create) {
+  RUN_IF_SUPPORTED(CodecType::H264, []() {
+    RefPtr<MediaDataEncoder> e = CreateH264Encoder();
+    EXPECT_TRUE(e);
     WaitForShutdown(e);
   });
+}
+
+TEST_F(MediaDataEncoderTest, H264Inits) {
+  RUN_IF_SUPPORTED(CodecType::H264, []() {
+    // w/o codec specific: should fail for h264.
+    RefPtr<MediaDataEncoder> e = CreateH264Encoder(
+        Usage::Realtime,
+        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
+        kImageSize, ScalabilityMode::None, AsVariant(void_t{}));
+    EXPECT_FALSE(e);
+
+    // w/ codec specific
+    e = CreateH264Encoder();
+    EXPECT_TRUE(EnsureInit(e));
+    WaitForShutdown(e);
+  });
+}
+
+static void H264EncodesTest(Usage aUsage,
+                            const EncoderConfig::CodecSpecific& aSpecific,
+                            MediaDataEncoderTest::FrameSource& aFrameSource) {
+  ASSERT_TRUE(aSpecific.is<H264Specific>());
+  ASSERT_TRUE(aSpecific.as<H264Specific>().mFormat ==
+                  H264BitStreamFormat::ANNEXB ||
+              aSpecific.as<H264Specific>().mFormat == H264BitStreamFormat::AVC);
+
+  RUN_IF_SUPPORTED(CodecType::H264, [&]() {
+    bool isAVCC =
+        aSpecific.as<H264Specific>().mFormat == H264BitStreamFormat::AVC;
+
+    // Encode one frame and output in AnnexB/AVCC format.
+    RefPtr<MediaDataEncoder> e = CreateH264Encoder(
+        aUsage, EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
+        aFrameSource.GetSize(), ScalabilityMode::None, aSpecific);
+    EnsureInit(e);
+    MediaDataEncoder::EncodedData output = Encode(e, 1UL, aFrameSource);
+    EXPECT_EQ(output.Length(), 1UL);
+    EXPECT_TRUE(isAVCC ? AnnexB::IsAVCC(output[0])
+                       : AnnexB::IsAnnexB(output[0]));
+    WaitForShutdown(e);
+
+    // Encode multiple frames and output in AnnexB/AVCC format.
+    e = CreateH264Encoder(
+        aUsage, EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
+        aFrameSource.GetSize(), ScalabilityMode::None, aSpecific);
+    EnsureInit(e);
+    output = Encode(e, NUM_FRAMES, aFrameSource);
+    if (aUsage == Usage::Realtime && kImageSize4K <= aFrameSource.GetSize()) {
+      // Realtime encoding may drop frames for large frame sizes.
+      EXPECT_LE(output.Length(), NUM_FRAMES);
+    } else {
+      EXPECT_EQ(output.Length(), NUM_FRAMES);
+    }
+    if (isAVCC) {
+      uint8_t naluSize = GetNALUSize(output[0]).unwrapOr(0);
+      EXPECT_GT(naluSize, 0);
+      EXPECT_LE(naluSize, 4);
+      for (auto frame : output) {
+        if (frame->mExtraData && !frame->mExtraData->IsEmpty()) {
+          naluSize = GetNALUSize(frame).unwrapOr(0);
+          EXPECT_GT(naluSize, 0);
+          EXPECT_LE(naluSize, 4);
+        }
+        EXPECT_TRUE(IsValidAVCC(frame, naluSize).isOk());
+      }
+    } else {
+      for (auto frame : output) {
+        EXPECT_TRUE(AnnexB::IsAnnexB(frame));
+      }
+    }
+
+    WaitForShutdown(e);
+  });
+};
+
+TEST_F(MediaDataEncoderTest, H264EncodesAnnexBRecord) {
+  H264EncodesTest(Usage::Record, AsVariant(kH264SpecificAnnexB), mData);
 }
 
 TEST_F(MediaDataEncoderTest, H264EncodesAnnexBRealtime) {
-  RUN_IF_SUPPORTED(CodecType::H264, [this]() {
-    // Encode one frame and output in AnnexB format.
-    RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Realtime,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize, ScalabilityMode::None, AsVariant(kH264SpecificAnnexB));
-    EnsureInit(e);
-    MediaDataEncoder::EncodedData output = Encode(e, 1UL, mData);
-    EXPECT_EQ(output.Length(), 1UL);
-    EXPECT_TRUE(AnnexB::IsAnnexB(output[0]));
-    WaitForShutdown(e);
-
-    // Encode multiple frames and output in AnnexB format.
-    e = CreateH264Encoder(
-        Usage::Realtime,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize, ScalabilityMode::None, AsVariant(kH264SpecificAnnexB));
-    EnsureInit(e);
-    output = Encode(e, NUM_FRAMES, mData);
-    EXPECT_EQ(output.Length(), NUM_FRAMES);
-    for (auto frame : output) {
-      EXPECT_TRUE(AnnexB::IsAnnexB(frame));
-    }
-    WaitForShutdown(e);
-  });
+  H264EncodesTest(Usage::Realtime, AsVariant(kH264SpecificAnnexB), mData);
 }
 
 TEST_F(MediaDataEncoderTest, H264EncodesAVCCRecord) {
-  RUN_IF_SUPPORTED(CodecType::H264, [this]() {
-    // Encode one frame and output in avcC format.
-    RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Record,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize, ScalabilityMode::None, AsVariant(kH264SpecificAVCC));
-    EnsureInit(e);
-    MediaDataEncoder::EncodedData output = Encode(e, 1UL, mData);
-    EXPECT_EQ(output.Length(), 1UL);
-    EXPECT_TRUE(AnnexB::IsAVCC(output[0]));
-    WaitForShutdown(e);
-
-    // Encode multiple frames and output in avcC format.
-    e = CreateH264Encoder(
-        Usage::Record,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize, ScalabilityMode::None, AsVariant(kH264SpecificAVCC));
-    EnsureInit(e);
-    output = Encode(e, NUM_FRAMES, mData);
-    EXPECT_EQ(output.Length(), NUM_FRAMES);
-    EXPECT_TRUE(AnnexB::IsAVCC(output[0]));
-    uint8_t naluSize = GetNALUSize(output[0]).unwrapOr(0);
-    EXPECT_GT(naluSize, 0);
-    EXPECT_LE(naluSize, 4);
-    for (auto frame : output) {
-      if (frame->mExtraData && !frame->mExtraData->IsEmpty()) {
-        naluSize = GetNALUSize(frame).unwrapOr(0);
-        EXPECT_GT(naluSize, 0);
-        EXPECT_LE(naluSize, 4);
-      }
-      EXPECT_TRUE(IsValidAVCC(frame, naluSize).isOk());
-    }
-    WaitForShutdown(e);
-  });
+  H264EncodesTest(Usage::Record, AsVariant(kH264SpecificAVCC), mData);
 }
 
 TEST_F(MediaDataEncoderTest, H264EncodesAVCCRealtime) {
-  RUN_IF_SUPPORTED(CodecType::H264, [this]() {
-    // Encode one frame and output in avcC format.
-    RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Realtime,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize, ScalabilityMode::None, AsVariant(kH264SpecificAVCC));
-    EnsureInit(e);
-    MediaDataEncoder::EncodedData output = Encode(e, 1UL, mData);
-    EXPECT_EQ(output.Length(), 1UL);
-    EXPECT_TRUE(AnnexB::IsAVCC(output[0]));
-    WaitForShutdown(e);
-
-    // Encode multiple frames and output in avcC format.
-    e = CreateH264Encoder(
-        Usage::Realtime,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize, ScalabilityMode::None, AsVariant(kH264SpecificAVCC));
-    EnsureInit(e);
-    output = Encode(e, NUM_FRAMES, mData);
-    EXPECT_EQ(output.Length(), NUM_FRAMES);
-    EXPECT_TRUE(AnnexB::IsAVCC(output[0]));
-    uint8_t naluSize = GetNALUSize(output[0]).unwrapOr(0);
-    EXPECT_GT(naluSize, 0);
-    EXPECT_LE(naluSize, 4);
-    for (auto frame : output) {
-      if (frame->mExtraData && !frame->mExtraData->IsEmpty()) {
-        naluSize = GetNALUSize(frame).unwrapOr(0);
-        EXPECT_GT(naluSize, 0);
-        EXPECT_LE(naluSize, 4);
-      }
-      EXPECT_TRUE(IsValidAVCC(frame, naluSize).isOk());
-    }
-    WaitForShutdown(e);
-  });
+  H264EncodesTest(Usage::Realtime, AsVariant(kH264SpecificAVCC), mData);
 }
 
 TEST_F(MediaDataEncoderTest, H264Encodes4KAnnexBRecord) {
   SKIP_IF_ANDROID_SW();  // Android SW can't encode 4K.
-  RUN_IF_SUPPORTED(CodecType::H264, [this]() {
-    // Encode one frame and output in AnnexB format.
-    RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Record,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize4K, ScalabilityMode::None, AsVariant(kH264SpecificAnnexB));
-    EnsureInit(e);
-    MediaDataEncoder::EncodedData output = Encode(e, 1UL, mData4K);
-    EXPECT_EQ(output.Length(), 1UL);
-    EXPECT_TRUE(AnnexB::IsAnnexB(output[0]));
-    WaitForShutdown(e);
-
-    // Encode multiple frames and output in AnnexB format.
-    e = CreateH264Encoder(
-        Usage::Record,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize4K, ScalabilityMode::None, AsVariant(kH264SpecificAnnexB));
-    EnsureInit(e);
-    output = Encode(e, NUM_FRAMES, mData4K);
-    EXPECT_EQ(output.Length(), NUM_FRAMES);
-    for (auto frame : output) {
-      EXPECT_TRUE(AnnexB::IsAnnexB(frame));
-    }
-    WaitForShutdown(e);
-  });
+  H264EncodesTest(Usage::Record, AsVariant(kH264SpecificAnnexB), mData4K);
 }
 
 TEST_F(MediaDataEncoderTest, H264Encodes4KAnnexBRealtime) {
   SKIP_IF_ANDROID_SW();  // Android SW can't encode 4K.
-  RUN_IF_SUPPORTED(CodecType::H264, [this]() {
-    // Encode one frame and output in AnnexB format.
-    RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Realtime,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize4K, ScalabilityMode::None, AsVariant(kH264SpecificAnnexB));
-    EnsureInit(e);
-    MediaDataEncoder::EncodedData output = Encode(e, 1UL, mData4K);
-    EXPECT_EQ(output.Length(), 1UL);
-    EXPECT_TRUE(AnnexB::IsAnnexB(output[0]));
-    WaitForShutdown(e);
-
-    // Encode multiple frames and output in AnnexB format.
-    e = CreateH264Encoder(
-        Usage::Realtime,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize4K, ScalabilityMode::None, AsVariant(kH264SpecificAnnexB));
-    EnsureInit(e);
-    output = Encode(e, NUM_FRAMES, mData4K);
-    EXPECT_LE(output.Length(),
-              NUM_FRAMES);  // Frames can be dropped in realtime usage.
-    for (auto frame : output) {
-      EXPECT_TRUE(AnnexB::IsAnnexB(frame));
-    }
-    WaitForShutdown(e);
-  });
+  H264EncodesTest(Usage::Realtime, AsVariant(kH264SpecificAnnexB), mData4K);
 }
 
 TEST_F(MediaDataEncoderTest, H264Encodes4KAVCCRecord) {
   SKIP_IF_ANDROID_SW();  // Android SW can't encode 4K.
-  RUN_IF_SUPPORTED(CodecType::H264, [this]() {
-    // Encode one frame and output in avcC format.
-    RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Record,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize4K, ScalabilityMode::None, AsVariant(kH264SpecificAVCC));
-    EnsureInit(e);
-    MediaDataEncoder::EncodedData output = Encode(e, 1UL, mData4K);
-    EXPECT_EQ(output.Length(), 1UL);
-    EXPECT_TRUE(AnnexB::IsAVCC(output[0]));
-    WaitForShutdown(e);
-
-    // Encode multiple frames and output in avcC format.
-    e = CreateH264Encoder(
-        Usage::Record,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize4K, ScalabilityMode::None, AsVariant(kH264SpecificAVCC));
-    EnsureInit(e);
-    output = Encode(e, NUM_FRAMES, mData4K);
-    EXPECT_EQ(output.Length(), NUM_FRAMES);
-    EXPECT_TRUE(AnnexB::IsAVCC(output[0]));
-    uint8_t naluSize = GetNALUSize(output[0]).unwrapOr(0);
-    EXPECT_GT(naluSize, 0);
-    EXPECT_LE(naluSize, 4);
-    for (auto frame : output) {
-      if (frame->mExtraData && !frame->mExtraData->IsEmpty()) {
-        naluSize = GetNALUSize(frame).unwrapOr(0);
-        EXPECT_GT(naluSize, 0);
-        EXPECT_LE(naluSize, 4);
-      }
-      EXPECT_TRUE(IsValidAVCC(frame, naluSize).isOk());
-    }
-    WaitForShutdown(e);
-  });
+  H264EncodesTest(Usage::Record, AsVariant(kH264SpecificAVCC), mData4K);
 }
 
 TEST_F(MediaDataEncoderTest, H264Encodes4KAVCCRealtime) {
   SKIP_IF_ANDROID_SW();  // Android SW can't encode 4K.
-  RUN_IF_SUPPORTED(CodecType::H264, [this]() {
-    // Encode one frame and output in avcC format.
-    RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Realtime,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize4K, ScalabilityMode::None, AsVariant(kH264SpecificAVCC));
-    EnsureInit(e);
-    MediaDataEncoder::EncodedData output = Encode(e, 1UL, mData4K);
-    EXPECT_EQ(output.Length(), 1UL);
-    EXPECT_TRUE(AnnexB::IsAVCC(output[0]));
-    WaitForShutdown(e);
+  H264EncodesTest(Usage::Realtime, AsVariant(kH264SpecificAVCC), mData4K);
+}
 
-    // Encode multiple frames and output in avcC format.
-    e = CreateH264Encoder(
-        Usage::Realtime,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
-        kImageSize4K, ScalabilityMode::None, AsVariant(kH264SpecificAVCC));
+#if !defined(ANDROID)
+static void H264EncodeAfterDrainTest(
+    Usage aUsage, const EncoderConfig::CodecSpecific& aSpecific,
+    MediaDataEncoderTest::FrameSource& aFrameSource) {
+  ASSERT_TRUE(aSpecific.is<H264Specific>());
+  ASSERT_TRUE(aSpecific.as<H264Specific>().mFormat ==
+                  H264BitStreamFormat::ANNEXB ||
+              aSpecific.as<H264Specific>().mFormat == H264BitStreamFormat::AVC);
+
+  RUN_IF_SUPPORTED(CodecType::H264, [&]() {
+    RefPtr<MediaDataEncoder> e = CreateH264Encoder(
+        aUsage, EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
+        aFrameSource.GetSize(), ScalabilityMode::None, aSpecific);
+
     EnsureInit(e);
-    output = Encode(e, NUM_FRAMES, mData4K);
-    EXPECT_LE(output.Length(),
-              NUM_FRAMES);  // Frames can be dropped in realtime usage.
-    EXPECT_TRUE(AnnexB::IsAVCC(output[0]));
-    uint8_t naluSize = GetNALUSize(output[0]).unwrapOr(0);
-    EXPECT_GT(naluSize, 0);
-    EXPECT_LE(naluSize, 4);
-    for (auto frame : output) {
-      if (frame->mExtraData && !frame->mExtraData->IsEmpty()) {
-        naluSize = GetNALUSize(frame).unwrapOr(0);
-        EXPECT_GT(naluSize, 0);
-        EXPECT_LE(naluSize, 4);
-      }
-      EXPECT_TRUE(IsValidAVCC(frame, naluSize).isOk());
-    }
+
+    MediaDataEncoder::EncodedData output = Encode(e, NUM_FRAMES, aFrameSource);
+    EXPECT_EQ(output.Length(), NUM_FRAMES);
+
+    output = Encode(e, NUM_FRAMES, aFrameSource);
+    EXPECT_EQ(output.Length(), NUM_FRAMES);
+
     WaitForShutdown(e);
   });
 }
+
+TEST_F(MediaDataEncoderTest, H264EncodeAfterDrainAnnexBRecord) {
+  H264EncodeAfterDrainTest(Usage::Record, AsVariant(kH264SpecificAnnexB),
+                           mData);
+}
+
+TEST_F(MediaDataEncoderTest, H264EncodeAfterDrainAnnexBRealtime) {
+  H264EncodeAfterDrainTest(Usage::Realtime, AsVariant(kH264SpecificAnnexB),
+                           mData);
+}
+
+TEST_F(MediaDataEncoderTest, H264EncodeAfterDrainAVCCRecord) {
+  H264EncodeAfterDrainTest(Usage::Record, AsVariant(kH264SpecificAVCC), mData);
+}
+
+TEST_F(MediaDataEncoderTest, H264EncodeAfterDrainAVCCRealtime) {
+  H264EncodeAfterDrainTest(Usage::Realtime, AsVariant(kH264SpecificAVCC),
+                           mData);
+}
+
+static void H264InterleavedEncodeAndDrainTest(
+    Usage aUsage, const EncoderConfig::CodecSpecific& aSpecific,
+    MediaDataEncoderTest::FrameSource& aFrameSource) {
+  ASSERT_TRUE(aSpecific.is<H264Specific>());
+  ASSERT_TRUE(aSpecific.as<H264Specific>().mFormat ==
+                  H264BitStreamFormat::ANNEXB ||
+              aSpecific.as<H264Specific>().mFormat == H264BitStreamFormat::AVC);
+
+  RUN_IF_SUPPORTED(CodecType::H264, [&]() {
+    RefPtr<MediaDataEncoder> e = CreateH264Encoder(
+        aUsage, EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
+        aFrameSource.GetSize(), ScalabilityMode::None, aSpecific);
+
+    EnsureInit(e);
+
+    MediaDataEncoder::EncodedData output;
+    bool succeeded = false;
+    for (size_t i = 0; i < NUM_FRAMES; i++) {
+      RefPtr<MediaData> frame = aFrameSource.GetFrame(i);
+      media::Await(
+          GetMediaThreadPool(MediaThreadType::SUPERVISOR), e->Encode(frame),
+          [&output, &succeeded](MediaDataEncoder::EncodedData encoded) {
+            output.AppendElements(std::move(encoded));
+            succeeded = true;
+          },
+          [&succeeded](const MediaResult& r) { succeeded = false; });
+      EXPECT_TRUE(succeeded);
+      if (!succeeded) {
+        break;
+      }
+
+      if (i % 5 == 0) {
+        output.AppendElements(Drain(e));
+      }
+    }
+
+    output.AppendElements(Drain(e));
+    EXPECT_EQ(output.Length(), NUM_FRAMES);
+
+    WaitForShutdown(e);
+  });
+}
+
+TEST_F(MediaDataEncoderTest, H264InterleavedEncodeAndDrainAnnexBRecord) {
+  H264InterleavedEncodeAndDrainTest(Usage::Record,
+                                    AsVariant(kH264SpecificAnnexB), mData);
+}
+
+TEST_F(MediaDataEncoderTest, H264InterleavedEncodeAndDrainAnnexBRealtime) {
+  H264InterleavedEncodeAndDrainTest(Usage::Realtime,
+                                    AsVariant(kH264SpecificAnnexB), mData);
+}
+
+TEST_F(MediaDataEncoderTest, H264InterleavedEncodeAndDrainAVCCRecord) {
+  H264InterleavedEncodeAndDrainTest(Usage::Record, AsVariant(kH264SpecificAVCC),
+                                    mData);
+}
+
+TEST_F(MediaDataEncoderTest, H264InterleavedEncodeAndDrainAVCCRealtime) {
+  H264InterleavedEncodeAndDrainTest(Usage::Realtime,
+                                    AsVariant(kH264SpecificAVCC), mData);
+}
+#endif
 
 TEST_F(MediaDataEncoderTest, H264Duration) {
   RUN_IF_SUPPORTED(CodecType::H264, [this]() {
@@ -629,7 +578,7 @@ TEST_F(MediaDataEncoderTest, H264Duration) {
   });
 }
 
-TEST_F(MediaDataEncoderTest, InvalidSize) {
+TEST_F(MediaDataEncoderTest, H264InvalidSize) {
   RUN_IF_SUPPORTED(CodecType::H264, []() {
     RefPtr<MediaDataEncoder> e0x0 = CreateH264Encoder(
         Usage::Realtime,
@@ -650,21 +599,6 @@ TEST_F(MediaDataEncoderTest, InvalidSize) {
     EXPECT_EQ(e1x0, nullptr);
   });
 }
-
-// For Android HW encoder only.
-#ifdef MOZ_WIDGET_ANDROID
-TEST_F(MediaDataEncoderTest, AndroidNotSupportedSize) {
-  SKIP_IF_ANDROID_SW();
-  RUN_IF_SUPPORTED(CodecType::H264, []() {
-    RefPtr<MediaDataEncoder> e = CreateH264Encoder(
-        Usage::Realtime,
-        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P), {1, 1},
-        ScalabilityMode::None, AsVariant(kH264SpecificAnnexB));
-    EXPECT_NE(e, nullptr);
-    EXPECT_FALSE(EnsureInit(e));
-  });
-}
-#endif
 
 #if !defined(ANDROID)
 TEST_F(MediaDataEncoderTest, H264AVCC) {
@@ -695,6 +629,21 @@ TEST_F(MediaDataEncoderTest, H264AVCC) {
       }
     }
     WaitForShutdown(e);
+  });
+}
+#endif
+
+// For Android HW encoder only.
+#ifdef MOZ_WIDGET_ANDROID
+TEST_F(MediaDataEncoderTest, AndroidNotSupportedSize) {
+  SKIP_IF_ANDROID_SW();
+  RUN_IF_SUPPORTED(CodecType::H264, []() {
+    RefPtr<MediaDataEncoder> e = CreateH264Encoder(
+        Usage::Realtime,
+        EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P), {1, 1},
+        ScalabilityMode::None, AsVariant(kH264SpecificAnnexB));
+    EXPECT_NE(e, nullptr);
+    EXPECT_FALSE(EnsureInit(e));
   });
 }
 #endif

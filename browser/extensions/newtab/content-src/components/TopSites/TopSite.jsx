@@ -269,7 +269,6 @@ export class TopSiteLink extends React.PureComponent {
       onClick,
       title,
       isAddButton,
-      shortcutsRefresh,
     } = this.props;
 
     const topSiteOuterClassName = `top-site-outer${
@@ -291,6 +290,10 @@ export class TopSiteLink extends React.PureComponent {
     };
     const addButtonTitlel10n = {
       "data-l10n-id": "newtab-topsites-add-shortcut-title",
+    };
+    const addPinnedTitlel10n = {
+      "data-l10n-id": "topsite-label-pinned",
+      "data-l10n-args": JSON.stringify({ title }),
     };
 
     let draggableProps = {};
@@ -380,12 +383,13 @@ export class TopSiteLink extends React.PureComponent {
             draggable={true}
             data-is-sponsored-link={!!link.sponsored_tile_id}
             onFocus={this.props.onFocus}
+            aria-label={link.isPinned ? undefined : title}
             {...(isAddButton && { ...addButtonTitlel10n })}
             {...(!isAddButton && { title })}
+            {...(link.isPinned && { ...addPinnedTitlel10n })}
+            data-l10n-args={JSON.stringify({ title })}
           >
-            {shortcutsRefresh && link.isPinned && (
-              <div className="icon icon-pin-small" />
-            )}
+            {link.isPinned && <div className="icon icon-pin-small" />}
             <div className="tile" aria-hidden={true}>
               <div
                 className={
@@ -405,9 +409,6 @@ export class TopSiteLink extends React.PureComponent {
                   />
                 )}
               </div>
-              {!shortcutsRefresh && link.searchTopSite && (
-                <div className="top-site-icon search-topsite" />
-              )}
             </div>
             <div
               className={`title${link.isPinned ? " has-icon pinned" : ""}${
@@ -421,10 +422,7 @@ export class TopSiteLink extends React.PureComponent {
                 dir="auto"
                 {...(isAddButton && { ...addButtonLabell10n })}
               >
-                {!shortcutsRefresh && link.isPinned && (
-                  <div className="icon icon-pin-small" />
-                )}
-                {shortcutsRefresh && link.searchTopSite && (
+                {link.searchTopSite && (
                   <div className="top-site-icon search-topsite" />
                 )}
                 {title || <br />}
@@ -516,6 +514,7 @@ export class TopSite extends React.PureComponent {
           type: at.OPEN_LINK,
           data: Object.assign(this.props.link, {
             event: { altKey, button, ctrlKey, metaKey, shiftKey },
+            is_sponsored: !!this.props.link.sponsored_tile_id,
           }),
         })
       );
@@ -948,8 +947,6 @@ export class _TopSiteList extends React.PureComponent {
 
   render() {
     const { props } = this;
-    const prefs = props.Prefs.values;
-    const shortcutsRefresh = prefs["newtabShortcuts.refresh"];
     const topSites = this.state.topSitesPreview || this._getTopSites();
     const topSitesUI = [];
     const commonProps = {
@@ -1019,7 +1016,6 @@ export class _TopSiteList extends React.PureComponent {
             {...slotProps}
             {...commonProps}
             colors={props.colors}
-            shortcutsRefresh={shortcutsRefresh}
             setRef={
               i === this.state.focusedIndex
                 ? el => {

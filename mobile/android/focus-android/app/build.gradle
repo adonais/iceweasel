@@ -182,16 +182,6 @@ android {
         klarNightly.root = 'src/klarNightly'
     }
 
-    // https://issuetracker.google.com/issues/379732901
-    packaging {
-        resources {
-            pickFirsts += ['META-INF/versions/9/OSGI-INF/MANIFEST.MF']
-        }
-        jniLibs {
-            useLegacyPackaging = true
-        }
-    }
-
     namespace = 'org.mozilla.focus'
 }
 
@@ -236,10 +226,6 @@ nimbus {
     experimenterManifest = ".experimenter.yaml"
 }
 
-tasks.withType(KotlinCompile).configureEach {
-    kotlinOptions.freeCompilerArgs += "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
-}
-
 dependencies {
     implementation libs.androidx.activity
     implementation libs.androidx.appcompat
@@ -252,6 +238,7 @@ dependencies {
     implementation libs.androidx.compose.foundation
     implementation libs.androidx.compose.material
     implementation libs.androidx.compose.material.icons
+    implementation libs.androidx.compose.material3
     implementation libs.androidx.compose.runtime.livedata
     implementation libs.androidx.compose.ui
     implementation libs.androidx.compose.ui.tooling

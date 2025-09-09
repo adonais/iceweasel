@@ -487,7 +487,7 @@ add_task(async function test_settings_write() {
       delete engine.description;
     }
     if ("_urls" in engine) {
-      // Only app-provided engines support purpose, others do not,
+      // Only app-provided engines supported purpose, others never did,
       // so filter them out of the expected template.
       for (let urls of engine._urls) {
         urls.params = urls.params.filter(p => !p.purpose);
@@ -593,6 +593,45 @@ add_task(async function test_correct_change_reason_when_no_default_engine() {
 
   removeSettingsFile();
   sinon.restore();
+});
+
+add_task(async function test_markAsUsed_affects_settings() {
+  let ss = Services.search.wrappedJSObject;
+  await loadSettingsFile("settings/settings-loading.json");
+
+  let settingsFileWritten = promiseAfterSettings();
+  await ss.reset();
+  await Services.search.init();
+  await settingsFileWritten;
+
+  let engines = await ss.getEngines();
+  let appEngine = engines.find(e => e.isAppProvided);
+
+  Assert.equal(
+    ss._settings.getEngineMetaDataAttribute(appEngine.name, "hasBeenUsed"),
+    undefined,
+    "hasBeenUsed should not be set initially."
+  );
+
+  settingsFileWritten = promiseAfterSettings();
+  appEngine.markAsUsed();
+  await settingsFileWritten;
+
+  Assert.equal(
+    appEngine.hasBeenUsed,
+    true,
+    "Engine should be marked as used after markAsUsed()."
+  );
+
+  let updatedSettings = await promiseSettingsData();
+  let updatedEngine = updatedSettings.engines.find(
+    e => e._name == appEngine.name
+  );
+  Assert.equal(
+    updatedEngine._metaData.hasBeenUsed,
+    true,
+    "hasBeenUsed should be set to true in settings after markAsUsed()."
+  );
 });
 
 var EXPECTED_ENGINE = {

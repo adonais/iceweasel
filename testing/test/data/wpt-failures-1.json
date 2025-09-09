@@ -14,7 +14,7 @@
         "opt": false,
         "path": {
           "testing/web-platform/tests/css/mediaqueries/mq-non-matching-lazy-load.tentative.html": {
-            "classification": "disable_recommended",
+            "classification": "intermittent",
             "runs": {
               "AKYqxtoWStigj_5yHVqAeg": {
                 "result": true
@@ -23,18 +23,18 @@
                 "result": false
               },
               "W5uCyxXeQIa2dwJOZtLYgg": {
-                "result": false
+                "result": true
               },
               "fyZfG_PJSse7jeiDteDJpQ": {
                 "result": true
               }
             },
-            "runs_failed": 2,
+            "runs_failed": 1,
             "runs_total": 4
           }
         },
         "sum_by_label": {
-          "disable_recommended": 1
+          "intermittent": 1
         }
       }
     }

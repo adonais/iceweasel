@@ -32,8 +32,9 @@
 #  define __restrict
 #endif
 
-#include "WebGLTypes.h"
 #include <stdint.h>
+
+#include "WebGLTypes.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Casting.h"
 

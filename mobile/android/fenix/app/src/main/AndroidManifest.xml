@@ -529,9 +529,6 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".home.mozonline.PrivacyContentDisplayActivity"
-                android:exported="false"/>
-
         <activity
             android:name=".customtabs.ExternalAppBrowserActivity"
             android:autoRemoveFromRecents="false"

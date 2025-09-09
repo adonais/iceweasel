@@ -705,7 +705,7 @@ fn prepare_interned_prim_for_render(
                 return;
             }
         }
-        PrimitiveInstanceKind::YuvImage { data_handle, segment_instance_index, .. } => {
+        PrimitiveInstanceKind::YuvImage { data_handle, segment_instance_index, compositor_surface_kind, .. } => {
             profile_scope!("YuvImage");
             let prim_data = &mut data_stores.yuv_image[*data_handle];
             let common_data = &mut prim_data.common;
@@ -715,7 +715,11 @@ fn prepare_interned_prim_for_render(
 
             // Update the template this instane references, which may refresh the GPU
             // cache with any shared template data.
-            yuv_image_data.update(common_data, frame_state);
+            yuv_image_data.update(
+                common_data,
+                compositor_surface_kind.is_composited(),
+                frame_state,
+            );
 
             write_segment(
                 *segment_instance_index,

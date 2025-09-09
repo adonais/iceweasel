@@ -6,16 +6,17 @@
 
 #include "HLSDemuxer.h"
 
+#include <stdint.h>
+
 #include <algorithm>
 #include <limits>
-#include <stdint.h>
 
 #include "HLSUtils.h"
 #include "MediaCodec.h"
+#include "mozilla/Unused.h"
 #include "mozilla/java/GeckoAudioInfoWrappers.h"
 #include "mozilla/java/GeckoHLSDemuxerWrapperNatives.h"
 #include "mozilla/java/GeckoVideoInfoWrappers.h"
-#include "mozilla/Unused.h"
 #include "nsPrintfCString.h"
 
 namespace mozilla {

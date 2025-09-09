@@ -4,20 +4,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsContentUtils.h"
 #include "nsScreen.h"
+
+#include "mozilla/GeckoBindings.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/widget/ScreenManager.h"
+#include "nsCOMPtr.h"
+#include "nsContentUtils.h"
+#include "nsDeviceContext.h"
 #include "nsGlobalWindowInner.h"
 #include "nsGlobalWindowOuter.h"
 #include "nsIDocShell.h"
-#include "nsPresContext.h"
-#include "nsCOMPtr.h"
 #include "nsIDocShellTreeItem.h"
 #include "nsLayoutUtils.h"
-#include "nsDeviceContext.h"
-#include "mozilla/GeckoBindings.h"
-#include "mozilla/widget/ScreenManager.h"
+#include "nsPresContext.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

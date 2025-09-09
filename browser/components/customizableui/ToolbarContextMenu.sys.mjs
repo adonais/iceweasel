@@ -7,7 +7,8 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
-  CustomizableUI: "resource:///modules/CustomizableUI.sys.mjs",
+  CustomizableUI:
+    "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   ExtensionsUI: "resource:///modules/ExtensionsUI.sys.mjs",
   SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
 });
@@ -217,7 +218,7 @@ export var ToolbarContextMenu = {
               : "collapsed";
           menuItem.setAttribute(
             "checked",
-            toolbar.getAttribute(hidingAttribute) != "true"
+            !toolbar.hasAttribute(hidingAttribute)
           );
           menuItem.setAttribute("accesskey", toolbar.getAttribute("accesskey"));
           if (popup.id != "toolbar-context-menu") {

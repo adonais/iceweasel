@@ -154,10 +154,8 @@ class LIRGeneratorShared {
   inline LAllocation useAnyOrInt32Constant(MDefinition* mir);
 
   // Like useRegisterOrInt32Constant, but uses a constant only if
-  // |int32val * Scalar::byteSize(type) + offsetAdjustment| doesn't overflow
-  // int32.
-  LAllocation useRegisterOrIndexConstant(MDefinition* mir, Scalar::Type type,
-                                         int32_t offsetAdjustment = 0);
+  // |int32val * Scalar::byteSize(type)| doesn't overflow int32.
+  LAllocation useRegisterOrIndexConstant(MDefinition* mir, Scalar::Type type);
 
   inline LUse useRegisterForTypedLoad(MDefinition* mir, MIRType type);
 

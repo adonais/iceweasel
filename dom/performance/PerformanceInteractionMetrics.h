@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_PerformanceInteractionMetrics_h__
 #define mozilla_dom_PerformanceInteractionMetrics_h__
 
-#include "nsHashtablesFwd.h"
 #include "PerformanceEventTiming.h"
+#include "nsHashtablesFwd.h"
 
 namespace mozilla::dom {
 

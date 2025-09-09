@@ -10,8 +10,8 @@
 #ifndef txNodeSet_h__
 #define txNodeSet_h__
 
-#include "txExprResult.h"
 #include "nsError.h"
+#include "txExprResult.h"
 #include "txXPathNode.h"
 
 class txNodeSet : public txAExprResult {

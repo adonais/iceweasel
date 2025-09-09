@@ -36,7 +36,7 @@ index b802fe580c..db2a3c7099 100644
      return -1;
  
 diff --git a/modules/video_capture/linux/device_info_pipewire.h b/modules/video_capture/linux/device_info_pipewire.h
-index 8a33d75892..00715c94bc 100644
+index 1e75f35909..eb5d7a8e30 100644
 --- a/modules/video_capture/linux/device_info_pipewire.h
 +++ b/modules/video_capture/linux/device_info_pipewire.h
 @@ -30,7 +30,8 @@ class DeviceInfoPipeWire : public DeviceInfoImpl {
@@ -78,7 +78,7 @@ index 0bec3eb765..55415845ad 100644
     * Fills the membervariable _captureCapabilities with capabilites for the
     * given device name.
 diff --git a/modules/video_capture/video_capture.h b/modules/video_capture/video_capture.h
-index 43a6a7f832..f59c34f8b2 100644
+index c9d277d69d..eef2302589 100644
 --- a/modules/video_capture/video_capture.h
 +++ b/modules/video_capture/video_capture.h
 @@ -74,7 +74,8 @@ class VideoCaptureModule : public RefCountInterface {
@@ -92,7 +92,7 @@ index 43a6a7f832..f59c34f8b2 100644
      // Returns the number of capabilities this device.
      virtual int32_t NumberOfCapabilities(const char* deviceUniqueIdUTF8) = 0;
 diff --git a/modules/video_capture/windows/device_info_ds.cc b/modules/video_capture/windows/device_info_ds.cc
-index f6927281f3..8ca741239c 100644
+index 03acfaedcf..d3845139a4 100644
 --- a/modules/video_capture/windows/device_info_ds.cc
 +++ b/modules/video_capture/windows/device_info_ds.cc
 @@ -173,7 +173,8 @@ int32_t DeviceInfoDS::GetDeviceName(uint32_t deviceNumber,

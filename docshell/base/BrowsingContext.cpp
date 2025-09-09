@@ -39,6 +39,7 @@
 #include "mozilla/dom/MediaDevices.h"
 #include "mozilla/dom/Navigation.h"
 #include "mozilla/dom/PopupBlocker.h"
+#include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SessionStoreChild.h"
 #include "mozilla/dom/SessionStorageManager.h"
@@ -276,7 +277,11 @@ LogModule* BrowsingContext::GetSyncLog() { return gBrowsingContextSyncLog; }
 
 /* static */
 already_AddRefed<BrowsingContext> BrowsingContext::Get(uint64_t aId) {
-  return do_AddRef(sBrowsingContexts->Get(aId));
+  if (sBrowsingContexts) {
+    return do_AddRef(sBrowsingContexts->Get(aId));
+  }
+
+  return nullptr;
 }
 
 /* static */
@@ -1181,7 +1186,11 @@ void BrowsingContext::SetOpener(BrowsingContext* aOpener) {
 }
 
 bool BrowsingContext::HasOpener() const {
-  return sBrowsingContexts->Contains(GetOpenerId());
+  if (sBrowsingContexts) {
+    return sBrowsingContexts->Contains(GetOpenerId());
+  }
+
+  return false;
 }
 
 bool BrowsingContext::AncestorsAreCurrent() const {
@@ -2184,6 +2193,172 @@ nsresult BrowsingContext::InternalLoad(nsDocShellLoadState* aLoadState) {
   return NS_OK;
 }
 
+already_AddRefed<nsDocShellLoadState>
+BrowsingContext::CheckURLAndCreateLoadState(nsIURI* aURI,
+                                            nsIPrincipal& aSubjectPrincipal,
+                                            ErrorResult& aRv) {
+  nsCOMPtr<nsIPrincipal> triggeringPrincipal;
+  nsCOMPtr<nsIURI> sourceURI;
+  ReferrerPolicy referrerPolicy = ReferrerPolicy::_empty;
+  nsCOMPtr<nsIReferrerInfo> referrerInfo;
+
+  // Get security manager.
+  nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
+  if (NS_WARN_IF(!ssm)) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return nullptr;
+  }
+
+  // Check to see if URI is allowed.  We're not going to worry about a
+  // window ID here because it's not 100% clear which window's id we
+  // would want, and we're throwing a content-visible exception
+  // anyway.
+  nsresult rv = ssm->CheckLoadURIWithPrincipal(
+      &aSubjectPrincipal, aURI, nsIScriptSecurityManager::STANDARD, 0);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    nsAutoCString spec;
+    aURI->GetSpec(spec);
+    aRv.ThrowTypeError<MSG_URL_NOT_LOADABLE>(spec);
+    return nullptr;
+  }
+
+  // Make the load's referrer reflect changes to the document's URI caused by
+  // push/replaceState, if possible.  First, get the document corresponding to
+  // fp.  If the document's original URI (i.e. its URI before
+  // push/replaceState) matches the principal's URI, use the document's
+  // current URI as the referrer.  If they don't match, use the principal's
+  // URI.
+  //
+  // The triggering principal for this load should be the principal of the
+  // incumbent document (which matches where the referrer information is
+  // coming from) when there is an incumbent document, and the subject
+  // principal otherwise.  Note that the URI in the triggering principal
+  // may not match the referrer URI in various cases, notably including
+  // the cases when the incumbent document's document URI was modified
+  // after the document was loaded.
+
+  nsCOMPtr<nsPIDOMWindowInner> incumbent =
+      do_QueryInterface(mozilla::dom::GetIncumbentGlobal());
+  nsCOMPtr<Document> doc = incumbent ? incumbent->GetDoc() : nullptr;
+
+  // Create load info
+  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(aURI);
+
+  if (!doc) {
+    // No document; just use our subject principal as the triggering principal.
+    loadState->SetTriggeringPrincipal(&aSubjectPrincipal);
+    return loadState.forget();
+  }
+
+  nsCOMPtr<nsIURI> docOriginalURI, docCurrentURI, principalURI;
+  docOriginalURI = doc->GetOriginalURI();
+  docCurrentURI = doc->GetDocumentURI();
+  nsCOMPtr<nsIPrincipal> principal = doc->NodePrincipal();
+
+  triggeringPrincipal = doc->NodePrincipal();
+  referrerPolicy = doc->GetReferrerPolicy();
+
+  bool urisEqual = false;
+  if (docOriginalURI && docCurrentURI && principal) {
+    principal->EqualsURI(docOriginalURI, &urisEqual);
+  }
+  if (urisEqual) {
+    referrerInfo = new ReferrerInfo(docCurrentURI, referrerPolicy);
+  } else {
+    principal->CreateReferrerInfo(referrerPolicy, getter_AddRefs(referrerInfo));
+  }
+  loadState->SetTriggeringPrincipal(triggeringPrincipal);
+  loadState->SetTriggeringSandboxFlags(doc->GetSandboxFlags());
+  loadState->SetPolicyContainer(doc->GetPolicyContainer());
+  if (referrerInfo) {
+    loadState->SetReferrerInfo(referrerInfo);
+  }
+  loadState->SetHasValidUserGestureActivation(
+      doc->HasValidTransientUserGestureActivation());
+
+  loadState->SetTextDirectiveUserActivation(
+      doc->ConsumeTextDirectiveUserActivation() ||
+      loadState->HasValidUserGestureActivation());
+  loadState->SetTriggeringWindowId(doc->InnerWindowID());
+  loadState->SetTriggeringStorageAccess(doc->UsingStorageAccess());
+  loadState->SetTriggeringClassificationFlags(doc->GetScriptTrackingFlags());
+
+  return loadState.forget();
+}
+
+// https://html.spec.whatwg.org/#navigate
+// In its current state, this method is not closely following the spec.
+// https://bugzil.la/1974717 tracks the work to align this method with the spec.
+void BrowsingContext::Navigate(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal,
+                               ErrorResult& aRv,
+                               NavigationHistoryBehavior aHistoryHandling) {
+  CallerType callerType = aSubjectPrincipal.IsSystemPrincipal()
+                              ? CallerType::System
+                              : CallerType::NonSystem;
+
+  nsresult rv = CheckNavigationRateLimit(callerType);
+  if (NS_FAILED(rv)) {
+    aRv.Throw(rv);
+    return;
+  }
+
+  RefPtr<nsDocShellLoadState> loadState =
+      CheckURLAndCreateLoadState(aURI, aSubjectPrincipal, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  // The steps 12 and 13 of #navigate are handled later in
+  // nsDocShell::InternalLoad().
+  if (aHistoryHandling == NavigationHistoryBehavior::Replace) {
+    loadState->SetLoadType(LOAD_STOP_CONTENT_AND_REPLACE);
+  } else {
+    loadState->SetLoadType(LOAD_STOP_CONTENT);
+  }
+
+  // Get the incumbent script's browsing context to set as source.
+  nsCOMPtr<nsPIDOMWindowInner> sourceWindow =
+      nsContentUtils::IncumbentInnerWindow();
+  if (sourceWindow) {
+    WindowContext* context = sourceWindow->GetWindowContext();
+    loadState->SetSourceBrowsingContext(sourceWindow->GetBrowsingContext());
+    loadState->SetHasValidUserGestureActivation(
+        context && context->HasValidTransientUserGestureActivation());
+  }
+
+  loadState->SetLoadFlags(nsIWebNavigation::LOAD_FLAGS_NONE);
+  loadState->SetFirstParty(true);
+
+  rv = LoadURI(loadState);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    if (rv == NS_ERROR_DOM_BAD_CROSS_ORIGIN_URI &&
+        loadState->URI()->SchemeIs("javascript")) {
+      // Per spec[1], attempting to load a javascript: URI into a cross-origin
+      // BrowsingContext is a no-op, and should not raise an exception.
+      // Technically, Location setters run with exceptions enabled should only
+      // throw an exception[2] when the caller is not allowed to navigate[3] the
+      // target browsing context due to sandboxing flags or not being
+      // closely-related enough, though in practice we currently throw for other
+      // reasons as well.
+      //
+      // [1]:
+      // https://html.spec.whatwg.org/multipage/browsing-the-web.html#javascript-protocol
+      // [2]:
+      // https://html.spec.whatwg.org/multipage/browsing-the-web.html#navigate
+      // [3]:
+      // https://html.spec.whatwg.org/multipage/browsers.html#allowed-to-navigate
+      return;
+    }
+    aRv.Throw(rv);
+    return;
+  }
+
+  Document* doc = GetDocument();
+  if (doc && nsContentUtils::IsExternalProtocol(aURI)) {
+    doc->EnsureNotEnteringAndExitFullscreen();
+  }
+}
+
 void BrowsingContext::DisplayLoadError(const nsAString& aURI) {
   MOZ_LOG(GetLog(), LogLevel::Debug, ("DisplayLoadError"));
   MOZ_DIAGNOSTIC_ASSERT(!IsDiscarded());
@@ -2919,9 +3094,6 @@ void BrowsingContext::DidSet(FieldIndex<IDX_ForcedColorsOverride>,
 void BrowsingContext::DidSet(FieldIndex<IDX_LanguageOverride>,
                              nsString&& aOldValue) {
   MOZ_ASSERT(IsTop());
-  if (GetLanguageOverride() == aOldValue) {
-    return;
-  }
 
   PreOrderWalk([&](BrowsingContext* aBrowsingContext) {
     RefPtr<WindowContext> windowContext =
@@ -3606,9 +3778,7 @@ void BrowsingContext::AddDeprioritizedLoadRunner(nsIRunnable* aRunner) {
 
   RefPtr<DeprioritizedLoadRunner> runner = new DeprioritizedLoadRunner(aRunner);
   mDeprioritizedLoadRunner.insertBack(runner);
-  NS_DispatchToCurrentThreadQueue(
-      runner.forget(), StaticPrefs::page_load_deprioritization_period(),
-      EventQueuePriority::Idle);
+  NS_DispatchToCurrentThreadQueue(runner.forget(), EventQueuePriority::Low);
 }
 
 bool BrowsingContext::IsDynamic() const {
@@ -4035,27 +4205,6 @@ void BrowsingContext::LocationCreated(dom::Location* aLocation) {
 void BrowsingContext::ClearCachedValuesOfLocations() {
   for (dom::Location* loc = mLocations.getFirst(); loc; loc = loc->getNext()) {
     loc->ClearCachedValues();
-  }
-}
-
-void BrowsingContext::GetContiguousHistoryEntries(
-    SessionHistoryInfo& aActiveEntry, Navigation* aNavigation) {
-  MOZ_LOG(GetLog(), LogLevel::Verbose,
-          ("GetContiguousHistoryEntries for aNavigation=%p", aNavigation));
-  if (!aNavigation) {
-    return;
-  }
-  if (XRE_IsContentProcess()) {
-    MOZ_ASSERT(ContentChild::GetSingleton());
-    ContentChild::GetSingleton()->SendGetContiguousSessionHistoryInfos(
-        this,
-        [aActiveEntry, navigation = RefPtr(aNavigation)](auto aInfos) mutable {
-          navigation->InitializeHistoryEntries(aInfos, &aActiveEntry);
-        },
-        [](auto aReason) { MOZ_ASSERT(false, "How did this happen?"); });
-  } else {
-    auto infos = Canonical()->GetContiguousSessionHistoryInfos();
-    aNavigation->InitializeHistoryEntries(infos, &aActiveEntry);
   }
 }
 

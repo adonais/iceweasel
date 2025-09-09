@@ -57,6 +57,18 @@ GeneratedFile(
     inputs=["geckoview/src/main/java/org/mozilla/gecko/util/XPCOMError.jinja"],
 )
 
+GeneratedFile(
+    "geckoview/src/main/java/org/mozilla/geckoview/CrashReport.java",
+    script="/toolkit/crashreporter/generate_crash_reporter_sources.py",
+    entry_point="emit_java",
+)
+
+GeneratedFile(
+    "android-components/components/lib/crash/src/main/java/mozilla/components/lib/crash/service/CrashReport.java",
+    script="/toolkit/crashreporter/generate_crash_reporter_sources.py",
+    entry_point="emit_java",
+)
+
 CONFIGURE_SUBST_FILES += ["installer/Makefile"]
 
 DIRS += [
@@ -82,6 +94,10 @@ TEST_HARNESS_FILES.testing.mochitest.tests.junit += [
     "geckoview/src/androidTest/assets/www/iframe_http_only.html",
     "geckoview/src/androidTest/assets/www/simple_redirect.sjs",
     "geckoview/src/androidTest/assets/www/update_manifest.json",
+    "geckoview/src/androidTest/assets/www/worker/open_window.html",
+    "geckoview/src/androidTest/assets/www/worker/open_window.js",
+    "geckoview/src/androidTest/assets/www/worker/open_window_target.html",
+    "geckoview/src/androidTest/assets/www/worker/service-worker.js",
 ]
 
 SPHINX_TREES["/mobile/android"] = "docs"

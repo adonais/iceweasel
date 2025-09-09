@@ -867,6 +867,18 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
     if (ipcDoc) {
       uint64_t id = aEvent->GetAccessible()->ID();
 
+      auto getCaretRect = [aEvent] {
+        HyperTextAccessible* ht = aEvent->GetAccessible()->AsHyperText();
+        if (ht) {
+          auto [rect, widget] = ht->GetCaretRect();
+          // Remove doc offset and reapply in parent.
+          LayoutDeviceIntRect docBounds = ht->Document()->Bounds();
+          rect.MoveBy(-docBounds.X(), -docBounds.Y());
+          return rect;
+        }
+        return LayoutDeviceIntRect();
+      };
+
       switch (aEvent->GetEventType()) {
         case nsIAccessibleEvent::EVENT_SHOW:
           ipcDoc->ShowEvent(downcast_accEvent(aEvent));
@@ -913,9 +925,9 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
         case nsIAccessibleEvent::EVENT_TEXT_CARET_MOVED: {
           AccCaretMoveEvent* event = downcast_accEvent(aEvent);
           ipcDoc->SendCaretMoveEvent(
-              id, event->GetCaretOffset(), event->IsSelectionCollapsed(),
-              event->IsAtEndOfLine(), event->GetGranularity(),
-              event->IsFromUserInput());
+              id, getCaretRect(), event->GetCaretOffset(),
+              event->IsSelectionCollapsed(), event->IsAtEndOfLine(),
+              event->GetGranularity(), event->IsFromUserInput());
           break;
         }
         case nsIAccessibleEvent::EVENT_TEXT_INSERTED:
@@ -936,7 +948,7 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
           break;
         }
         case nsIAccessibleEvent::EVENT_FOCUS:
-          ipcDoc->SendFocusEvent(id);
+          ipcDoc->SendFocusEvent(id, getCaretRect());
           break;
         case nsIAccessibleEvent::EVENT_SCROLLING_END:
         case nsIAccessibleEvent::EVENT_SCROLLING: {
@@ -1037,16 +1049,9 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
     }
     case nsIAccessibleEvent::EVENT_TEXT_CARET_MOVED: {
       AccCaretMoveEvent* event = downcast_accEvent(aEvent);
-      LayoutDeviceIntRect rect;
-      // The caret rect is only used on Windows, so just pass an empty rect on
-      // other platforms.
-      // XXX We pass an empty rect on Windows as well because
-      // AccessibleWrap::UpdateSystemCaretFor currently needs to call
-      // HyperTextAccessible::GetCaretRect again to get the widget and there's
-      // no point calling it twice.
-      PlatformCaretMoveEvent(
-          target, event->GetCaretOffset(), event->IsSelectionCollapsed(),
-          event->GetGranularity(), rect, event->IsFromUserInput());
+      PlatformCaretMoveEvent(target, event->GetCaretOffset(),
+                             event->IsSelectionCollapsed(),
+                             event->GetGranularity(), event->IsFromUserInput());
       break;
     }
     case nsIAccessibleEvent::EVENT_TEXT_INSERTED:
@@ -1067,11 +1072,7 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
       break;
     }
     case nsIAccessibleEvent::EVENT_FOCUS: {
-      LayoutDeviceIntRect rect;
-      if (HyperTextAccessible* text = target->AsHyperText()) {
-        rect = text->GetCaretRect().first;
-      }
-      PlatformFocusEvent(target, rect);
+      PlatformFocusEvent(target);
       break;
     }
 #if defined(ANDROID)
@@ -1312,6 +1313,7 @@ bool LocalAccessible::AttributeChangesState(nsAtom* aAttribute) {
          aAttribute == nsGkAtoms::aria_multiline ||
          aAttribute == nsGkAtoms::aria_multiselectable ||
          // We track this for focusable state update
+         aAttribute == nsGkAtoms::commandfor ||
          aAttribute == nsGkAtoms::contenteditable ||
          aAttribute == nsGkAtoms::popovertarget;
 }
@@ -1502,6 +1504,11 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
   }
 
   if (aAttribute == nsGkAtoms::popovertarget) {
+    mDoc->QueueCacheUpdate(this, CacheDomain::Relations);
+    return;
+  }
+
+  if (aAttribute == nsGkAtoms::commandfor) {
     mDoc->QueueCacheUpdate(this, CacheDomain::Relations);
     return;
   }
@@ -2126,6 +2133,34 @@ nsIContent* LocalAccessible::GetAtomicRegion() const {
   return atomic.EqualsLiteral("true") ? loopContent : nullptr;
 }
 
+LocalAccessible* LocalAccessible::GetCommandForDetailsRelation() const {
+  dom::Element* targetEl = mContent->GetEffectiveCommandForElement();
+  if (!targetEl) {
+    return nullptr;
+  }
+  LocalAccessible* targetAcc = mDoc->GetAccessible(targetEl);
+  if (!targetAcc) {
+    return nullptr;
+  }
+  // Relations on Command/CommandFor should only be for ShowPopover &
+  // TogglePopover commands.
+  if (const nsAttrValue* actionVal = Elm()->GetParsedAttr(nsGkAtoms::command)) {
+    if (actionVal && actionVal->Type() != nsAttrValue::eEnum) {
+      return nullptr;
+    }
+    auto command =
+        static_cast<dom::Element::Command>(actionVal->GetEnumValue());
+    if (command != dom::Element::Command::ShowPopover &&
+        command != dom::Element::Command::TogglePopover) {
+      return nullptr;
+    }
+  }
+  if (targetAcc->NextSibling() == this || targetAcc->PrevSibling() == this) {
+    return nullptr;
+  }
+  return targetAcc;
+}
+
 LocalAccessible* LocalAccessible::GetPopoverTargetDetailsRelation() const {
   dom::Element* targetEl = mContent->GetEffectivePopoverTargetElement();
   if (!targetEl) {
@@ -2459,6 +2494,9 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
         return Relation(new AssociatedElementsIterator(
             mDoc, mContent, nsGkAtoms::aria_details));
       }
+      if (LocalAccessible* target = GetCommandForDetailsRelation()) {
+        return Relation(target);
+      }
       if (LocalAccessible* target = GetPopoverTargetDetailsRelation()) {
         return Relation(target);
       }
@@ -2468,15 +2506,27 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
     case RelationType::DETAILS_FOR: {
       Relation rel(
           new RelatedAccIterator(mDoc, mContent, nsGkAtoms::aria_details));
-      RelatedAccIterator invokers(mDoc, mContent, nsGkAtoms::popovertarget);
-      while (Accessible* invoker = invokers.Next()) {
+      RelatedAccIterator popover_invokers(mDoc, mContent,
+                                          nsGkAtoms::popovertarget);
+      while (Accessible* invoker = popover_invokers.Next()) {
         // We should only expose DETAILS_FOR if DETAILS was exposed on the
         // invoker. However, DETAILS exposure on popover invokers is
         // conditional.
-        LocalAccessible* popoverTarget =
-            invoker->AsLocal()->GetPopoverTargetDetailsRelation();
-        if (popoverTarget) {
-          MOZ_ASSERT(popoverTarget == this);
+        if (invoker->AsLocal()->GetPopoverTargetDetailsRelation()) {
+          MOZ_ASSERT(invoker->AsLocal()->GetPopoverTargetDetailsRelation() ==
+                     this);
+          rel.AppendTarget(invoker);
+        }
+      }
+      RelatedAccIterator command_invokers(mDoc, mContent,
+                                          nsGkAtoms::commandfor);
+      while (Accessible* invoker = command_invokers.Next()) {
+        // We should only expose DETAILS_FOR if DETAILS was exposed on the
+        // invoker. However, DETAILS exposure on popover invokers is
+        // conditional.
+        if (invoker->AsLocal()->GetCommandForDetailsRelation()) {
+          MOZ_ASSERT(invoker->AsLocal()->GetCommandForDetailsRelation() ==
+                     this);
           rel.AppendTarget(invoker);
         }
       }
@@ -3820,8 +3870,9 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
                 // this character isn't in the rendered text. We do have
                 // a way to convert between content and rendered offsets, but
                 // doing this for every character is expensive.
-                const char16_t contentChar = mContent->GetText()->CharAt(
-                    charData.Length() / kNumbersInRect);
+                const char16_t contentChar =
+                    mContent->GetCharacterDataBuffer()->CharAt(
+                        charData.Length() / kNumbersInRect);
                 if (contentChar == u' ' || contentChar == u'\t' ||
                     contentChar == u'\n') {
                   continue;

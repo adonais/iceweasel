@@ -8,9 +8,9 @@
 #define DOMIntersectionObserver_h
 
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/IntersectionObserverBinding.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/Variant.h"
+#include "mozilla/dom/IntersectionObserverBinding.h"
 #include "nsDOMNavigationTiming.h"
 #include "nsTArray.h"
 #include "nsTHashSet.h"

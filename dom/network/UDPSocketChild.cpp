@@ -5,16 +5,17 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "UDPSocketChild.h"
+
 #include "UDPSocket.h"
 #include "mozilla/Unused.h"
-#include "mozilla/ipc/IPCStreamUtils.h"
-#include "mozilla/net/NeckoChild.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/PermissionMessageUtils.h"
 #include "mozilla/ipc/BackgroundChild.h"
-#include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/ipc/BackgroundUtils.h"
+#include "mozilla/ipc/IPCStreamUtils.h"
+#include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
+#include "mozilla/net/NeckoChild.h"
 
 using mozilla::net::gNeckoChild;
 

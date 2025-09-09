@@ -122,6 +122,7 @@ interface nsIGfxInfo : nsISupports
   Array<ACString> getFailures(out Array<long> indices);
 
   [noscript, notxpcom] void logFailure(in ACString failure);
+  [noscript, notxpcom] void setCodecSupportInfo(in ACString supportInfo);
 
 %{C++
   /*

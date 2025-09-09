@@ -146,6 +146,15 @@ void LIRGeneratorX86Shared::lowerForALU(LInstructionHelper<1, 2, 0>* ins,
   ins->setOperand(1, willHaveDifferentLIRNodes(lhs, rhs)
                          ? useOrConstant(rhs)
                          : useOrConstantAtStart(rhs));
+  if (MOZ_UNLIKELY(mir->isAdd() && mir->type() == MIRType::Int32 &&
+                   mir->getOperand(1)->isConstant() &&
+                   !mir->toAdd()->fallible())) {
+    // Special case instruction that is widely used in Wasm during address
+    // calculation. And x86 platform has LEA instruction for it.
+    // See CodeGenerator::visitAddI for codegen.
+    define(ins, mir);
+    return;
+  }
   defineReuseInput(ins, mir, 0);
 }
 

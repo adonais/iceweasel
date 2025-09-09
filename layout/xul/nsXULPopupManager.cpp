@@ -2152,8 +2152,7 @@ bool nsXULPopupManager::MayShowPopup(nsMenuPopupFrame* aPopup) {
 
   // platforms respond differently when an popup is opened in a minimized
   // window, so this is always disabled.
-  nsCOMPtr<nsIWidget> mainWidget;
-  baseWin->GetMainWidget(getter_AddRefs(mainWidget));
+  nsCOMPtr<nsIWidget> mainWidget = baseWin->GetMainWidget();
   if (mainWidget && mainWidget->SizeMode() == nsSizeMode_Minimized) {
     return false;
   }

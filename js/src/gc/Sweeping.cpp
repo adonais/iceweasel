@@ -105,10 +105,6 @@ static constexpr AllocKinds BackgroundTrivialFinalizePhase = {
     AllocKind::OBJECT8,
     AllocKind::OBJECT12,
     AllocKind::OBJECT16,
-    AllocKind::BUFFER16,
-    AllocKind::BUFFER32,
-    AllocKind::BUFFER64,
-    AllocKind::BUFFER128,
     AllocKind::SCOPE,
     AllocKind::REGEXP_SHARED,
     AllocKind::FAT_INLINE_STRING,
@@ -458,18 +454,13 @@ Arena* GCRuntime::releaseSomeEmptyArenas(Zone* zone, Arena* emptyArenas) {
   size_t count = 0;
 
   size_t gcHeapBytesFreed = 0;
-  size_t mallocHeapBytesFreed = 0;
 
   // Take up to ArenaReleaseBatchSize arenas from emptyArenas list.
   for (size_t i = 0; emptyArenas && i < ArenaReleaseBatchSize; i++) {
     Arena* arena = emptyArenas;
     emptyArenas = arena->next;
 
-    if (IsBufferAllocKind(arena->getAllocKind())) {
-      mallocHeapBytesFreed += ArenaSize - arena->getFirstThingOffset();
-    } else {
-      gcHeapBytesFreed += ArenaSize;
-    }
+    gcHeapBytesFreed += ArenaSize;
 
     if (isAtomsZone) {
       atomsBitmapIndexes[i] = arena->atomBitmapStart();
@@ -483,7 +474,6 @@ Arena* GCRuntime::releaseSomeEmptyArenas(Zone* zone, Arena* emptyArenas) {
     count++;
   }
 
-  zone->mallocHeapSize.removeBytes(mallocHeapBytesFreed, true);
   zone->gcHeapSize.removeBytes(gcHeapBytesFreed, true, heapSize);
 
   AutoLockGC lock(this);

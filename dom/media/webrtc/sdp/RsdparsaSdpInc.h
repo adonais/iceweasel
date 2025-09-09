@@ -6,11 +6,11 @@
 #ifndef _RUSTSDPINC_H_
 #define _RUSTSDPINC_H_
 
-#include "nsError.h"
-#include "mozilla/Maybe.h"
-
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+
+#include "mozilla/Maybe.h"
+#include "nsError.h"
 
 struct BandwidthVec;
 struct RustSdpSession;

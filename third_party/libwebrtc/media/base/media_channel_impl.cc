@@ -36,14 +36,7 @@
 #include "rtc_base/dscp.h"
 #include "rtc_base/socket.h"
 
-namespace cricket {
-using webrtc::FrameDecryptorInterface;
-using webrtc::FrameEncryptorInterface;
-using webrtc::FrameTransformerInterface;
-using webrtc::PendingTaskSafetyFlag;
-using webrtc::SafeTask;
-using webrtc::TaskQueueBase;
-using webrtc::VideoTrackInterface;
+namespace webrtc {
 
 VideoOptions::VideoOptions()
     : content_hint(VideoTrackInterface::ContentHint::kNone) {}
@@ -63,13 +56,13 @@ int MediaChannelUtil::GetRtpSendTimeExtnId() const {
   return -1;
 }
 
-bool MediaChannelUtil::SendPacket(rtc::CopyOnWriteBuffer* packet,
-                                  const rtc::PacketOptions& options) {
+bool MediaChannelUtil::SendPacket(CopyOnWriteBuffer* packet,
+                                  const AsyncSocketPacketOptions& options) {
   return transport_.DoSendPacket(packet, false, options);
 }
 
-bool MediaChannelUtil::SendRtcp(rtc::CopyOnWriteBuffer* packet,
-                                const rtc::PacketOptions& options) {
+bool MediaChannelUtil::SendRtcp(CopyOnWriteBuffer* packet,
+                                const AsyncSocketPacketOptions& options) {
   return transport_.DoSendPacket(packet, true, options);
 }
 
@@ -99,7 +92,7 @@ bool MediaChannelUtil::DscpEnabled() const {
   return transport_.DscpEnabled();
 }
 
-void MediaChannelUtil::SetPreferredDscp(rtc::DiffServCodePoint new_dscp) {
+void MediaChannelUtil::SetPreferredDscp(webrtc::DiffServCodePoint new_dscp) {
   transport_.SetPreferredDscp(new_dscp);
 }
 
@@ -172,10 +165,10 @@ MediaChannelUtil::TransportForMediaChannels::~TransportForMediaChannels() {
 }
 
 bool MediaChannelUtil::TransportForMediaChannels::SendRtcp(
-    rtc::ArrayView<const uint8_t> packet) {
-  auto send = [this, packet = rtc::CopyOnWriteBuffer(
-                         packet, kMaxRtpPacketLen)]() mutable {
-    rtc::PacketOptions rtc_options;
+    ArrayView<const uint8_t> packet) {
+  auto send = [this, packet = CopyOnWriteBuffer(
+                         packet, webrtc::kMaxRtpPacketLen)]() mutable {
+    AsyncSocketPacketOptions rtc_options;
     if (DscpEnabled()) {
       rtc_options.dscp = PreferredDscp();
     }
@@ -191,7 +184,7 @@ bool MediaChannelUtil::TransportForMediaChannels::SendRtcp(
 }
 
 bool MediaChannelUtil::TransportForMediaChannels::SendRtp(
-    rtc::ArrayView<const uint8_t> packet,
+    ArrayView<const uint8_t> packet,
     const webrtc::PacketOptions& options) {
   auto send = [this, packet_id = options.packet_id,
                included_in_feedback = options.included_in_feedback,
@@ -199,9 +192,9 @@ bool MediaChannelUtil::TransportForMediaChannels::SendRtp(
                batchable = options.batchable,
                last_packet_in_batch = options.last_packet_in_batch,
                is_media = options.is_media, ect_1 = options.send_as_ect1,
-               packet =
-                   rtc::CopyOnWriteBuffer(packet, kMaxRtpPacketLen)]() mutable {
-    rtc::PacketOptions rtc_options;
+               packet = CopyOnWriteBuffer(packet,
+                                          webrtc::kMaxRtpPacketLen)]() mutable {
+    AsyncSocketPacketOptions rtc_options;
     rtc_options.packet_id = packet_id;
     if (DscpEnabled()) {
       rtc_options.dscp = PreferredDscp();
@@ -238,8 +231,8 @@ void MediaChannelUtil::TransportForMediaChannels::SetInterface(
 }
 
 void MediaChannelUtil::TransportForMediaChannels::UpdateDscp() {
-  rtc::DiffServCodePoint value =
-      enable_dscp_ ? preferred_dscp_ : rtc::DSCP_DEFAULT;
+  webrtc::DiffServCodePoint value =
+      enable_dscp_ ? preferred_dscp_ : webrtc::DSCP_DEFAULT;
   int ret = SetOptionLocked(MediaChannelNetworkInterface::ST_RTP,
                             webrtc::Socket::OPT_DSCP, value);
   if (ret == 0)
@@ -248,9 +241,9 @@ void MediaChannelUtil::TransportForMediaChannels::UpdateDscp() {
 }
 
 bool MediaChannelUtil::TransportForMediaChannels::DoSendPacket(
-    rtc::CopyOnWriteBuffer* packet,
+    CopyOnWriteBuffer* packet,
     bool rtcp,
-    const rtc::PacketOptions& options) {
+    const AsyncSocketPacketOptions& options) {
   RTC_DCHECK_RUN_ON(network_thread_);
   if (!network_interface_)
     return false;
@@ -277,7 +270,7 @@ int MediaChannelUtil::TransportForMediaChannels::SetOptionLocked(
 }
 
 void MediaChannelUtil::TransportForMediaChannels::SetPreferredDscp(
-    rtc::DiffServCodePoint new_dscp) {
+    webrtc::DiffServCodePoint new_dscp) {
   if (!network_thread_->IsCurrent()) {
     // This is currently the common path as the derived channel classes
     // get called on the worker thread. There are still some tests though
@@ -295,4 +288,4 @@ void MediaChannelUtil::TransportForMediaChannels::SetPreferredDscp(
   UpdateDscp();
 }
 
-}  // namespace cricket
+}  // namespace webrtc

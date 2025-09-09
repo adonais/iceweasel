@@ -396,6 +396,7 @@ UNIFIED_SOURCES += [
     "vm/MemoryMetrics.cpp",
     "vm/Modules.cpp",
     "vm/NativeObject.cpp",
+    "vm/ObjectFuse.cpp",
     "vm/ObjectWithStashedPointer.cpp",
     "vm/OffThreadPromiseRuntimeState.cpp",
     "vm/PlainObject.cpp",

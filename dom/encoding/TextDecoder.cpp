@@ -6,13 +6,13 @@
 
 #include "mozilla/dom/TextDecoder.h"
 
-#include "mozilla/dom/BufferSourceBinding.h"
-#include "mozilla/dom/UnionTypes.h"
+#include <stdint.h>
+
 #include "mozilla/Encoding.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/dom/BufferSourceBinding.h"
+#include "mozilla/dom/UnionTypes.h"
 #include "nsContentUtils.h"
-
-#include <stdint.h>
 
 namespace mozilla::dom {
 

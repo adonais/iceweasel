@@ -5,20 +5,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AudioBufferSourceNode.h"
-#include "nsDebug.h"
-#include "mozilla/dom/AudioBufferSourceNodeBinding.h"
-#include "mozilla/dom/AudioParam.h"
-#include "mozilla/FloatingPoint.h"
-#include "nsContentUtils.h"
-#include "nsMathUtils.h"
+
+#include <algorithm>
+#include <limits>
+
 #include "AlignmentUtils.h"
+#include "AudioDestinationNode.h"
 #include "AudioNodeEngine.h"
 #include "AudioNodeTrack.h"
-#include "AudioDestinationNode.h"
 #include "AudioParamTimeline.h"
-#include <limits>
-#include <algorithm>
 #include "Tracing.h"
+#include "mozilla/FloatingPoint.h"
+#include "mozilla/dom/AudioBufferSourceNodeBinding.h"
+#include "mozilla/dom/AudioParam.h"
+#include "nsContentUtils.h"
+#include "nsDebug.h"
+#include "nsMathUtils.h"
 
 namespace mozilla::dom {
 

@@ -34,11 +34,14 @@
   <string name="tab_tray_collection_button_multiselect_content_description">بازدەرە دیاریکراوەکان هەڵبگرە لە کۆمەڵەکە</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s بەرهەم هێنراوە لە لایەن مۆزیلاوە.</string>
+  <!-- Private Browsing -->
   <string name="private_browsing_common_myths">چەند ئەفسانەییەک دەربارەی گەڕانی تایبەتیی</string>
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">بڕۆ بۆ ڕێکخستن</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">پشتگوێخستن</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">داواکاری کامێرا چالاک کرا. بڕۆ بۆ ڕێکخستنەکانی ئاندرۆید، پەنجەبنێ بە دەسەڵاتەکان و ئینجا ڕێگەپێدان هەڵبژێرە.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -199,8 +202,6 @@
   <string name="preferences_account_sync_error">دووبارە پەیوەندی بکەرەوە بۆ هێنانەوەی هاوکاتگەری</string>
   <!-- Preference for language -->
   <string name="preferences_language">زمان</string>
-  <!-- Preference for data choices -->
-  <string name="preferences_data_choices" tools:ignore="UnusedResources" moz:removedIn="141">هەڵبژاردنەکانی زانیاری</string>
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">کۆمەڵی زانیاری</string>
   <!-- Preference for developers -->
@@ -223,8 +224,6 @@
   <string name="preferences_enable_autocomplete_urls">تەواوکەری خۆکاری URLs</string>
   <!-- Preference for open links in third party apps -->
   <string name="preferences_open_links_in_apps">کردنەوەی بەستەر لە بەرنامەکان</string>
-  <!-- Preference for open download with an external download manager app -->
-  <string name="preferences_external_download_manager" tools:ignore="UnusedResources" moz:removedIn="141">بەڕێوەبردنی داگرتنی دەرەکی</string>
   <!-- Preference for notifications -->
   <string name="preferences_notifications">ئاگانامەکان</string>
   <!-- Button caption to confirm the add-on collection configuration -->
@@ -730,20 +729,16 @@
     Text shown in snackbar when user deletes a collection
   -->
   <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">کۆکەرەوە سڕایەوە</string>
-  <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">کۆکەرەوە ناولێنرایەوە</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">بازدەر داخرا</string>
   <!-- Text shown in snackbar when user closes all tabs -->
   <string name="snackbar_tabs_closed">بازدەرەکان داخران</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">بازدەری تایبەت داخرا</string>
-  <!-- Text shown in snackbar when user closes all private tabs -->
-  <string name="snackbar_private_tabs_closed" moz:removedIn="141" tools:ignore="UnusedResources">بازدەرە تایبەتەکان داخران</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">گێڕانەوە</string>
   <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed">ماڵپەڕ سڕایەوە</string>
+  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">ماڵپەڕ سڕایەوە</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned

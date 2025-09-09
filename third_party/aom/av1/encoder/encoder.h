@@ -834,6 +834,11 @@ typedef struct {
   int sharpness;
 
   /*!
+   * Indicates if sharpness is adapted based on frame QP
+   */
+  bool enable_adaptive_sharpness;
+
+  /*!
    * Indicates the trellis optimization mode of quantized coefficients.
    * 0: disabled
    * 1: enabled

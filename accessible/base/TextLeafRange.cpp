@@ -451,7 +451,8 @@ static nsTArray<std::pair<nsTArray<dom::AbstractRange*>, nsStaticAtom*>>
 FindDOMTextOffsetAttributes(LocalAccessible* aAcc, int32_t aRenderedStart,
                             int32_t aRenderedEnd, bool aAllowAdjacent = false) {
   nsTArray<std::pair<nsTArray<dom::AbstractRange*>, nsStaticAtom*>> result;
-  if (!aAcc->IsTextLeaf() || !aAcc->HasOwnContent()) {
+  if (!aAcc->IsTextLeaf() || !aAcc->HasOwnContent() ||
+      !aAcc->GetContent()->IsText()) {
     return result;
   }
   nsIFrame* frame = aAcc->GetFrame();

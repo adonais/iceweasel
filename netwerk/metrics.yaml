@@ -1614,9 +1614,24 @@ networking:
       - necko@mozilla.com
     expires: never
     labels:
-      - h1
-      - h2
-      - h3
+      - mozilla.cloudflare-dns.com_h1
+      - firefox.dns.nextdns.io_h1
+      - private.canadianshield.cira.ca_h1
+      - doh.xfinity.com_h1
+      - dns.shaw.ca_h1
+      - dooh.cloudflare-dns.com_h1
+      - mozilla.cloudflare-dns.com_h2
+      - firefox.dns.nextdns.io_h2
+      - private.canadianshield.cira.ca_h2
+      - doh.xfinity.com_h2
+      - dns.shaw.ca_h2
+      - dooh.cloudflare-dns.com_h2
+      - mozilla.cloudflare-dns.com_h3
+      - firefox.dns.nextdns.io_h3
+      - private.canadianshield.cira.ca_h3
+      - doh.xfinity.com_h3
+      - dns.shaw.ca_h3
+      - dooh.cloudflare-dns.com_h3
 
   http_redirect_to_scheme_top_level: &http_redirect_to_scheme_top_level
     type: labeled_counter
@@ -3170,85 +3185,6 @@ predictor:
       - necko@mozilla.com
     expires: never
     telemetry_mirror: PREDICTOR_PREFETCH_IGNORE_REASON
-
-sts:
-  poll_and_events_cycle:
-    type: timing_distribution
-    description: >
-      The duraion of a socketThread cycle, including polls and pending events.
-      (ms)
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram STS_POLL_AND_EVENTS_CYCLE.
-    time_unit: millisecond
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: STS_POLL_AND_EVENTS_CYCLE
-    no_lint:
-      - COMMON_PREFIX
-
-  poll_cycle:
-    type: timing_distribution
-    description: >
-      The duration of poll. (ms)
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram STS_POLL_CYCLE.
-    time_unit: millisecond
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: STS_POLL_CYCLE
-    no_lint:
-      - COMMON_PREFIX
-
-  poll_and_event_the_last_cycle:
-    type: timing_distribution
-    description: >
-      The duraion of the socketThread cycle during shutdown, including polls and
-      pending events. (ms)
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram STS_POLL_AND_EVENT_THE_LAST_CYCLE.
-    time_unit: millisecond
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: STS_POLL_AND_EVENT_THE_LAST_CYCLE
-    no_lint:
-      - COMMON_PREFIX
-
-  poll_block_time:
-    type: timing_distribution
-    description: >
-      Time spent blocked on poll (ms).
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram STS_POLL_BLOCK_TIME.
-    time_unit: millisecond
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: STS_POLL_BLOCK_TIME
-    no_lint:
-      - COMMON_PREFIX
 
 glam_experiment:
   http_content_html5parser_ondatafinished_to_onstop_delay:

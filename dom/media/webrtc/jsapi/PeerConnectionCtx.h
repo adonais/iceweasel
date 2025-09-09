@@ -8,14 +8,14 @@
 #include <map>
 #include <string>
 
+#include "MediaTransportHandler.h"  // Mostly for IceLogPromise
+#include "PeerConnectionImpl.h"
 #include "api/field_trials_view.h"
 #include "call/audio_state.h"
-#include "MediaTransportHandler.h"  // Mostly for IceLogPromise
 #include "mozIGeckoMediaPluginService.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPtr.h"
 #include "nsIRunnable.h"
-#include "PeerConnectionImpl.h"
 
 class WebrtcLogSinkHandle;
 

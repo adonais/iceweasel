@@ -2,13 +2,106 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.discovery-stream.ds-layout.ds-layout-widgets {
+  margin-inline: 0;
+  margin-block-end: var(--space-xlarge);
+}
+
+.widgets-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+
+  .widgets-scroll-message {
+    @include wallpaper-contrast-fix;
+
+    color: var(--newtab-text-primary-color);
+    position: absolute;
+    bottom: calc(var(--space-xxlarge) * -2);
+    animation: fade-in 0.25s ease-out 0.7s both;
+    border-radius: var(--button-border-radius);
+    background: var(--button-background-color);
+    padding: var(--space-small) var(--space-xlarge);
+
+    p {
+      margin: 0;
+      font-weight: var(--font-weight-bold);
+    }
+  }
+}
+
 .widgets-container {
   &:has(.lists),
   &:has(.focus-timer) {
     display: grid;
-    border: 1px solid var(--border-color-card);
-    grid-template-columns: 1fr 1fr;
-    column-gap: var(--space-large);
+    align-items: flex-start;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 300px));
+    gap: var(--space-large);
+    justify-content: center;
     width: 100%;
+
+    // Mirrors the grid-gap spacing used on
+    // .ds-outer-wrapper-breakpoint-override .ds-card-grid
+    @media(min-width: $break-point-widest) {
+      gap: var(--space-xlarge);
+    }
+  }
+
+  // Sections Layout Override
+  .has-sections-grid & {
+    @media(min-width: $break-point-widest) {
+      gap: var(--space-large);
+    }
+  }
+}
+
+.feature-highlight .feature-highlight-modal.widget-highlight-wrapper {
+  width: auto;
+  border-radius: var(--border-radius-medium);
+
+  .content-wrapper {
+    margin: 0;
+    padding: var(--space-medium);
+  }
+
+  .widget-highlight {
+    img {
+      border-radius: var(--border-radius-medium);
+      margin-block-end: var(--space-small);
+    }
+
+    h3 {
+      margin-block: 0 var(--space-xsmall);
+      font-size: var(--font-size-root);
+    }
+
+    p {
+      margin-block: 0;
+      font-size: var(--font-size-root);
+    }
+  }
+
+  .message-icon {
+    display: none;
+  }
+
+  moz-button {
+    position: absolute;
+    inset-inline-end: var(--space-medium);
+    inset-block-start: var(--space-medium);
   }
 }

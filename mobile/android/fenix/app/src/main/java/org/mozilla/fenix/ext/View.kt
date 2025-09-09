@@ -4,10 +4,12 @@
 
 package org.mozilla.fenix.ext
 
+import android.content.res.Resources
 import android.graphics.Rect
 import android.os.Build
 import android.view.TouchDelegate
 import android.view.View
+import androidx.annotation.DimenRes
 import androidx.annotation.Dimension
 import androidx.annotation.Dimension.Companion.DP
 import androidx.annotation.VisibleForTesting
@@ -103,7 +105,7 @@ fun View.isKeyboardVisible(): Boolean {
     val minimumKeyboardHeight = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         0
     } else {
-        resources.getDimensionPixelSize(R.dimen.minimum_keyboard_height)
+        pixelSizeFor(R.dimen.minimum_keyboard_height)
     }
     return getKeyboardHeight() > minimumKeyboardHeight
 }
@@ -127,3 +129,14 @@ fun View.getKeyboardHeight(): Int {
 
     return keyboardHeight
 }
+
+/**
+ * Returns the pixel size for the given dimension resource ID.
+ *
+ * This is a wrapper around [Resources.getDimensionPixelSize], reducing verbosity when accessing
+ * dimension values from a [View].
+ *
+ * @param resId Resource ID of the dimension.
+ * @return The pixel size corresponding to the given dimension resource.
+ */
+fun View.pixelSizeFor(@DimenRes resId: Int) = resources.getDimensionPixelSize(resId)

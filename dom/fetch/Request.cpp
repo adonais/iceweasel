@@ -7,24 +7,22 @@
 #include "Request.h"
 
 #include "js/Value.h"
+#include "mozilla/ErrorResult.h"
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/Unused.h"
+#include "mozilla/dom/Fetch.h"
+#include "mozilla/dom/FetchUtil.h"
+#include "mozilla/dom/Headers.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/ReadableStreamDefaultReader.h"
+#include "mozilla/dom/URL.h"
+#include "mozilla/dom/WindowContext.h"
+#include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/dom/WorkerRunnable.h"
+#include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsIURI.h"
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
-
-#include "mozilla/ErrorResult.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "mozilla/dom/Headers.h"
-#include "mozilla/dom/Fetch.h"
-#include "mozilla/dom/FetchUtil.h"
-#include "mozilla/dom/Promise.h"
-#include "mozilla/dom/URL.h"
-#include "mozilla/dom/WorkerPrivate.h"
-#include "mozilla/dom/WorkerRunnable.h"
-#include "mozilla/dom/WindowContext.h"
-#include "mozilla/ipc/PBackgroundSharedTypes.h"
-#include "mozilla/Unused.h"
-
-#include "mozilla/dom/ReadableStreamDefaultReader.h"
 
 namespace mozilla::dom {
 

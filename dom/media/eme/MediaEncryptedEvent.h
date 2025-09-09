@@ -8,6 +8,7 @@
 #define mozilla_dom_MediaKeyNeededEvent_h__
 
 #include <cstdint>
+
 #include "js/RootingAPI.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"

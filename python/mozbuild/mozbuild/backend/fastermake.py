@@ -209,7 +209,7 @@ class FasterMakeBackend(MakeBackend, PartialBackend):
 
         # This is not great, but it's better to have some dependencies on this Python file.
         python_deps = [
-            "$(TOPSRCDIR)/third_party/python/moz.l10n/moz/l10n/bin/build_file.py",
+            "$(TOPSRCDIR)/third_party/python/moz_l10n/moz/l10n/bin/build_file.py",
         ]
         # Add l10n dependencies we inferred:
         for target, deps in sorted(self._l10n_dependencies.items()):

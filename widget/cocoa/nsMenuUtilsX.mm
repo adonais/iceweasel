@@ -202,12 +202,9 @@ NSMenuItem* nsMenuUtilsX::GetStandardEditMenuItem() {
 }
 
 bool nsMenuUtilsX::NodeIsHiddenOrCollapsed(nsIContent* aContent) {
-  return aContent->IsElement() && (aContent->AsElement()->AttrValueIs(
-                                       kNameSpaceID_None, nsGkAtoms::hidden,
-                                       nsGkAtoms::_true, eCaseMatters) ||
-                                   aContent->AsElement()->AttrValueIs(
-                                       kNameSpaceID_None, nsGkAtoms::collapsed,
-                                       nsGkAtoms::_true, eCaseMatters));
+  return aContent->IsElement() &&
+         (aContent->AsElement()->GetBoolAttr(nsGkAtoms::hidden) ||
+          aContent->AsElement()->GetBoolAttr(nsGkAtoms::collapsed));
 }
 
 NSMenuItem* nsMenuUtilsX::NativeMenuItemWithLocation(NSMenu* aRootMenu,

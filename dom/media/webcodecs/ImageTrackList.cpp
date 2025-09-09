@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/ImageTrackList.h"
+
 #include "MediaResult.h"
 #include "mozilla/dom/ImageDecoder.h"
 #include "mozilla/dom/ImageTrack.h"

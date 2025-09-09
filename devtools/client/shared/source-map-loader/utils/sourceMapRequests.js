@@ -88,9 +88,22 @@ function setSourceMap(generatedId, request) {
   );
 }
 
+/**
+ * Clear any existing SourceMapConsumer or WasmRemap instance for a given list of generated source.
+ *
+ * @param {Array<String>} generatedIds
+ *        The generated source ID's.
+ */
+function clearSourceMapForSources(generatedIds) {
+  for (const generatedId of generatedIds) {
+    sourceMapRequests.delete(generatedId);
+  }
+}
+
 module.exports = {
   clearSourceMaps,
   getSourceMapWithMetadata,
   getSourceMap,
   setSourceMap,
+  clearSourceMapForSources,
 };

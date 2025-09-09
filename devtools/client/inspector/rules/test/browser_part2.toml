@@ -55,11 +55,6 @@ support-files = [
   "!/devtools/client/shared/test/highlighter-test-actor.js",
   "!/devtools/client/webconsole/test/browser/shared-head.js",
 ]
-prefs = [
-  # This pref has to be set for all tests since calls to InspectorUtils.getCSSPseudoElementNames
-  # is cached and the cache is populated by other tests before the one that is checking ::details-content
-  "layout.css.details-content.enabled=true",
-]
 
 ["browser_rules_css-compatibility-add-rename-rule.js"]
 
@@ -129,8 +124,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_rules_gridline-names-autocomplete.js"]
 
 ["browser_rules_guessIndentation.js"]
-
-["browser_rules_highlight-element-rule.js"]
 
 ["browser_rules_highlight-property.js"]
 

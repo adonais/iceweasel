@@ -6,9 +6,9 @@
 #ifndef GPU_CompilationInfo_H_
 #define GPU_CompilationInfo_H_
 
-#include "nsWrapperCache.h"
-#include "ObjectModel.h"
 #include "CompilationMessage.h"
+#include "ObjectModel.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla::webgpu {
 class ShaderModule;

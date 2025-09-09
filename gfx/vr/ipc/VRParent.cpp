@@ -47,9 +47,7 @@ IPCResult VRParent::RecvInit(nsTArray<GfxVarUpdate>&& vars,
                              const DevicePrefs& devicePrefs) {
   Unused << SendInitComplete();
 
-  for (const auto& var : vars) {
-    gfxVars::ApplyUpdate(var);
-  }
+  gfxVars::ApplyUpdate(vars);
 
   // Inherit device preferences.
   gfxConfig::Inherit(Feature::HW_COMPOSITING, devicePrefs.hwCompositing());
@@ -66,7 +64,7 @@ IPCResult VRParent::RecvInit(nsTArray<GfxVarUpdate>&& vars,
   return IPC_OK();
 }
 
-IPCResult VRParent::RecvUpdateVar(const GfxVarUpdate& aUpdate) {
+IPCResult VRParent::RecvUpdateVar(const nsTArray<GfxVarUpdate>& aUpdate) {
   gfxVars::ApplyUpdate(aUpdate);
   return IPC_OK();
 }

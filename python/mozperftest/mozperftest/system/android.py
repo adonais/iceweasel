@@ -201,7 +201,7 @@ class AndroidDevice(Layer):
         for apks in applications:
             apk = apks
             self.info("Uninstalling old version")
-            self.device.uninstall_app(self.get_arg("android-app-name"))
+            self.device.uninstall_app(self.app_name)
             self.info("Installing %s" % apk)
             if str(apk) in _PERMALINKS:
                 apk = _PERMALINKS[apk]

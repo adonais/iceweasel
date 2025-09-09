@@ -22,6 +22,7 @@
 
 extern "C" {
 #include <csi_platform.h>
+
 #include "r_log.h"
 #include "registry.h"
 }

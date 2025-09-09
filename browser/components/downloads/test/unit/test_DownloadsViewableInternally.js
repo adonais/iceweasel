@@ -19,7 +19,7 @@ const {
   PREF_BRANCH_PREVIOUS_ACTION,
   PREF_BRANCH_PREVIOUS_ASK,
 } = ChromeUtils.importESModule(
-  "resource:///modules/DownloadsViewableInternally.sys.mjs"
+  "moz-src:///browser/components/downloads/DownloadsViewableInternally.sys.mjs"
 );
 
 /* global DownloadIntegration */

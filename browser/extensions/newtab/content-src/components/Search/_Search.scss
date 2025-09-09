@@ -1,9 +1,9 @@
-$search-height: 48px;
+$search-height: var(--size-item-xlarge);
 $search-height-new: 52px;
 $search-icon-size: 24px;
 $search-icon-padding: 16px;
 $search-icon-width: 2 * $search-icon-padding + $search-icon-size - 4px; // 52px
-$search-button-width: 48px;
+$search-button-width: var(--size-item-xlarge);
 $glyph-forward: url('chrome://browser/skin/forward.svg');
 
 .search-wrapper {

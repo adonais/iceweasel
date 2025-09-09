@@ -414,10 +414,7 @@ fun PocketStories(
                                     .apply {
                                         // Check if this is in a preview because `.settings()` breaks previews
                                         if (!inComposePreview) {
-                                            val verticalOffset =
-                                                LocalContext.current.resources.getDimensionPixelSize(
-                                                    R.dimen.browser_toolbar_height,
-                                                )
+                                            val verticalOffset = LocalContext.current.settings().browserToolbarHeight
 
                                             if (LocalContext.current.settings().shouldUseBottomToolbar) {
                                                 bottom -= verticalOffset
@@ -472,10 +469,7 @@ fun PocketStories(
                                     .apply {
                                         // Check if this is in a preview because `settings()` breaks previews
                                         if (!inComposePreview) {
-                                            val verticalOffset =
-                                                LocalContext.current.resources.getDimensionPixelSize(
-                                                    R.dimen.browser_toolbar_height,
-                                                )
+                                            val verticalOffset = LocalContext.current.settings().browserToolbarHeight
 
                                             if (LocalContext.current.settings().shouldUseBottomToolbar) {
                                                 bottom -= verticalOffset

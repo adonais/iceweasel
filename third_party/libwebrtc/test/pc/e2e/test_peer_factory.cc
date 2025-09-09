@@ -18,7 +18,6 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "api/audio/audio_device.h"
-#include "api/audio/audio_processing.h"
 #include "api/peer_connection_interface.h"
 #include "api/rtc_event_log/rtc_event_log_factory.h"
 #include "api/scoped_refptr.h"
@@ -127,7 +126,7 @@ std::unique_ptr<TestAudioDeviceModule::Capturer> CreateAudioCapturer(
   }
 }
 
-rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule(
+scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule(
     std::optional<AudioConfig> audio_config,
     std::optional<RemotePeerAudioConfig> remote_audio_config,
     std::optional<EchoEmulationConfig> echo_emulation_config,
@@ -196,7 +195,7 @@ void WrapVideoDecoderFactory(
 PeerConnectionFactoryDependencies CreatePCFDependencies(
     std::unique_ptr<PeerConnectionFactoryComponents> pcf_dependencies,
     TimeController& time_controller,
-    rtc::scoped_refptr<AudioDeviceModule> audio_device_module,
+    scoped_refptr<AudioDeviceModule> audio_device_module,
     Thread* signaling_thread,
     Thread* worker_thread,
     Thread* network_thread) {
@@ -227,10 +226,8 @@ PeerConnectionFactoryDependencies CreatePCFDependencies(
 
   // Media dependencies
   pcf_deps.adm = std::move(audio_device_module);
-  if (pcf_dependencies->audio_processing != nullptr) {
-    pcf_deps.audio_processing_builder =
-        CustomAudioProcessing(pcf_dependencies->audio_processing);
-  }
+  pcf_deps.audio_processing_builder =
+      std::move(pcf_dependencies->audio_processing);
   pcf_deps.audio_mixer = pcf_dependencies->audio_mixer;
   pcf_deps.video_encoder_factory =
       std::move(pcf_dependencies->video_encoder_factory);
@@ -300,7 +297,7 @@ std::unique_ptr<TestPeer> TestPeerFactory::CreateTestPeer(
   params->rtc_configuration.sdp_semantics = SdpSemantics::kUnifiedPlan;
 
   // Create peer connection factory.
-  rtc::scoped_refptr<AudioDeviceModule> audio_device_module =
+  scoped_refptr<AudioDeviceModule> audio_device_module =
       CreateAudioDeviceModule(params->audio_config, remote_audio_config,
                               echo_emulation_config,
                               time_controller_.GetTaskQueueFactory());
@@ -325,7 +322,7 @@ std::unique_ptr<TestPeer> TestPeerFactory::CreateTestPeer(
       std::move(components->pcf_dependencies), time_controller_,
       std::move(audio_device_module), signaling_thread_,
       components->worker_thread, components->network_thread);
-  rtc::scoped_refptr<PeerConnectionFactoryInterface> peer_connection_factory =
+  scoped_refptr<PeerConnectionFactoryInterface> peer_connection_factory =
       CreateModularPeerConnectionFactory(std::move(pcf_deps));
   peer_connection_factory->SetOptions(params->peer_connection_factory_options);
   if (params->aec_dump_path) {
@@ -339,7 +336,7 @@ std::unique_ptr<TestPeer> TestPeerFactory::CreateTestPeer(
 
   params->rtc_configuration.port_allocator_config.flags =
       params->port_allocator_flags;
-  rtc::scoped_refptr<PeerConnectionInterface> peer_connection =
+  scoped_refptr<PeerConnectionInterface> peer_connection =
       peer_connection_factory
           ->CreatePeerConnectionOrError(params->rtc_configuration,
                                         std::move(pc_deps))

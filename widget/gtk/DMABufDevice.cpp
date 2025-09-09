@@ -7,6 +7,7 @@
 
 #include "DMABufDevice.h"
 #include "DMABufFormats.h"
+#include "DMABufSurface.h"
 #ifdef MOZ_WAYLAND
 #  include "nsWaylandDisplay.h"
 #endif
@@ -259,6 +260,8 @@ bool DMABufDevice::Init() {
     mFailureId = "FEATURE_FAILURE_NO_DRM_DEVICE";
     return false;
   }
+
+  DMABufSurface::InitMemoryReporting();
 
   LOGDMABUF(("DMABuf is enabled"));
   return true;

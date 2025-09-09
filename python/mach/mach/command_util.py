@@ -224,6 +224,7 @@ MACH_COMMANDS = {
     "uniffi": MachCommandReference(
         "toolkit/components/uniffi-bindgen-gecko-js/mach_commands.py"
     ),
+    "update": MachCommandReference("tools/update-programs/mach_commands.py"),
     "update-glean": MachCommandReference(
         "toolkit/components/glean/build_scripts/mach_commands.py"
     ),

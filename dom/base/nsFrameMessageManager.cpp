@@ -12,17 +12,15 @@
 #include <cstdint>
 #include <new>
 #include <utility>
+
 #include "ContentChild.h"
 #include "ErrorList.h"
-#include "mozilla/ProfilerLabels.h"
-#include "mozilla/Unused.h"
 #include "base/process_util.h"
 #include "chrome/common/ipc_channel.h"
 #include "js/CallAndConstruct.h"  // JS::IsCallable, JS_CallFunctionValue
 #include "js/CompilationAndEvaluation.h"
 #include "js/CompileOptions.h"
 #include "js/EnvironmentChain.h"  // JS::EnvironmentChain
-#include "js/experimental/JSStencil.h"
 #include "js/GCVector.h"
 #include "js/JSON.h"
 #include "js/PropertyAndElement.h"  // JS_GetProperty
@@ -32,6 +30,7 @@
 #include "js/TypeDecls.h"
 #include "js/Utility.h"  // JS::FreePolicy
 #include "js/Wrapper.h"
+#include "js/experimental/JSStencil.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "mozilla/AlreadyAddRefed.h"
@@ -41,6 +40,7 @@
 #include "mozilla/MacroForEach.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/OwningNonNull.h"
+#include "mozilla/ProfilerLabels.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScriptPreloader.h"
 #include "mozilla/Services.h"
@@ -48,6 +48,7 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CallbackObject.h"
@@ -58,6 +59,7 @@
 #include "mozilla/dom/MessageBroadcaster.h"
 #include "mozilla/dom/MessageListenerManager.h"
 #include "mozilla/dom/MessageManagerBinding.h"
+#include "mozilla/dom/MessageManagerCallback.h"
 #include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/ParentProcessMessageManager.h"
 #include "mozilla/dom/ProcessMessageManager.h"
@@ -66,7 +68,6 @@
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ToJSValue.h"
-#include "mozilla/dom/MessageManagerCallback.h"
 #include "mozilla/dom/ipc/SharedMap.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
 #include "mozilla/scache/StartupCacheUtils.h"
@@ -78,7 +79,6 @@
 #include "nsContentUtils.h"
 #include "nsCycleCollectionNoteChild.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsTHashMap.h"
 #include "nsDebug.h"
 #include "nsError.h"
 #include "nsHashKeys.h"
@@ -108,6 +108,7 @@
 #include "nsStringFlags.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
+#include "nsTHashMap.h"
 #include "nsTLiteralString.h"
 #include "nsTObserverArray.h"
 #include "nsTPromiseFlatString.h"

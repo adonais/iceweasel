@@ -63,6 +63,7 @@ namespace gfx {
   _(HEVC_HW_ENCODE, Feature, "HEVC hardware encoding")                       \
   _(WMF_HW_DRM, Feature, "Windows Media Foundation hardware DRM")            \
   _(GL_NORM16_TEXTURES, Feature, "OpenGL normalized 16-bit texture formats") \
+  _(WEBGPU_EXTERNAL_TEXTURE, Feature, "WebGPU external textures")            \
   /* Add new entries above this comment */
 
 enum class Feature : uint32_t {

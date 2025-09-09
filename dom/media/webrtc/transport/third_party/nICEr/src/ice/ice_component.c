@@ -1515,9 +1515,17 @@ int nr_ice_component_setup_consent(nr_ice_component *comp)
 
     nr_ice_component_consent_destroy(comp);
 
-    if (r=nr_stun_client_ctx_create("consent", comp->active->local->osock,
-                                    &comp->active->remote->addr, 0,
-                                    &comp->consent_ctx))
+    int flags = NR_STUN_TRANSPORT_ADDR_CHECK_WILDCARD;
+    if (!(comp->ctx->flags & NR_ICE_CTX_FLAGS_ALLOW_LOOPBACK)) {
+      flags |= NR_STUN_TRANSPORT_ADDR_CHECK_LOOPBACK;
+    }
+    if (!(comp->ctx->flags & NR_ICE_CTX_FLAGS_ALLOW_LINK_LOCAL)) {
+      flags |= NR_STUN_TRANSPORT_ADDR_CHECK_LINK_LOCAL;
+    }
+
+    if (r = nr_stun_client_ctx_create("consent", comp->active->local->osock,
+                                      &comp->active->remote->addr, 0, flags,
+                                      &comp->consent_ctx))
       ABORT(r);
     /* Consent request get send only once. */
     comp->consent_ctx->maximum_transmits = 1;

@@ -31,7 +31,12 @@ ChromeUtils.defineLazyGetter(lazy, "l10n", function () {
 });
 
 /**
- * Mapping of error code -> [error-id, local-error-id]
+ * Mapping of error code -> [
+ *   error-id,
+ *   local-error-id,
+ *   (optional) error-id-when-addon-name-is-missing,
+ *   (optional) local-error-id-when-addon-name-is-missing,
+ * ]
  *
  * error-id is used for errors in DownloadedAddonInstall,
  * local-error-id for errors in LocalAddonInstall.
@@ -68,6 +73,8 @@ const ERROR_L10N_IDS = new Map([
     [
       "addon-install-error-file-access",
       "addon-local-install-error-file-access",
+      "addon-install-error-no-addon-name-file-access",
+      "addon-local-install-error-no-addon-name-file-access",
     ],
   ],
   [
@@ -1591,7 +1598,11 @@ var gXPInstallObserver = {
           } else {
             // TODO bug 1834484: simplify computation of isLocal.
             const isLocal = !host;
-            let errorId = ERROR_L10N_IDS.get(install.error)?.[isLocal ? 1 : 0];
+            const fluentIds = ERROR_L10N_IDS.get(install.error);
+            // We need to find the group of fluent IDs to use (error-id, local-error-id),
+            // depending on whether we have the add-on name or not.
+            const offset = fluentIds?.length === 4 && !install.name ? 2 : 0;
+            let errorId = fluentIds?.[offset + isLocal ? 1 : 0];
             const args = {
               addonName: install.name,
               appVersion: Services.appinfo.version,
@@ -2000,8 +2011,7 @@ var gUnifiedExtensions = {
     this._buttonAttrObs = new MutationObserver(() => this.onButtonOpenChange());
     this._buttonAttrObs.observe(this._button, { attributeFilter: ["open"] });
     this._button.addEventListener("PopupNotificationsBeforeAnchor", this);
-    this._navbar.addEventListener("mouseenter", this);
-    this._navbar.addEventListener("mouseleave", this);
+    this._updateButtonBarListeners();
 
     gBrowser.addTabsProgressListener(this);
     window.addEventListener("TabSelect", () => this.updateAttention());
@@ -2040,6 +2050,28 @@ var gUnifiedExtensions = {
     gNavToolbox.removeEventListener("aftercustomization", this);
     CustomizableUI.removeListener(this);
     AddonManager.removeManagerListener(this);
+  },
+
+  _updateButtonBarListeners() {
+    // Called from init() and when the buttonAlwaysVisible flag changes.
+    //
+    // We don't expect the user to be interacting with the Extensions Button or
+    // the navbar when the buttonAlwaysVisible flag changes. Still, we reset
+    // the _buttonBarHasMouse flag to false to make sure that the button can be
+    // hidden eventually if there are no other triggers:
+    // - on registration, we don't know whether the mouse is on the navbar.
+    // - after unregistration, the flag is no longer maintained, and false is a
+    //   safe default value.
+    this._buttonBarHasMouse = false;
+    // We need mouse listeners on _navbar to maintain _buttonBarHasMouse,
+    // but only if the button is conditionally visible/hidden.
+    if (this.buttonAlwaysVisible) {
+      this._navbar.removeEventListener("mouseover", this);
+      this._navbar.removeEventListener("mouseout", this);
+    } else {
+      this._navbar.addEventListener("mouseover", this);
+      this._navbar.addEventListener("mouseout", this);
+    }
   },
 
   onBlocklistAttentionUpdated() {
@@ -2275,13 +2307,18 @@ var gUnifiedExtensions = {
         }
         break;
 
-      case "mouseenter":
+      case "mouseover":
         this._buttonBarHasMouse = true;
         break;
 
-      case "mouseleave":
-        this._buttonBarHasMouse = false;
-        this.updateButtonVisibility();
+      case "mouseout":
+        if (
+          this._buttonBarHasMouse &&
+          !this._navbar.contains(event.relatedTarget)
+        ) {
+          this._buttonBarHasMouse = false;
+          this.updateButtonVisibility();
+        }
         break;
 
       case "customizationstarting":
@@ -3086,6 +3123,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   true,
   (prefName, oldValue, newValue) => {
     if (gUnifiedExtensions._initialized) {
+      gUnifiedExtensions._updateButtonBarListeners();
       gUnifiedExtensions.updateButtonVisibility();
       Glean.extensionsButton.prefersHiddenButton.set(!newValue);
     }
@@ -3105,7 +3143,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   () => {
     if (
       gUnifiedExtensions._initialized &&
-      gUnifiedExtensions.buttonAlwaysVisible
+      !gUnifiedExtensions.buttonAlwaysVisible
     ) {
       gUnifiedExtensions.updateButtonVisibility();
     }

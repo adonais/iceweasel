@@ -183,7 +183,7 @@ class AddonsManagementFragment : Fragment(R.layout.fragment_add_ons_management) 
     internal fun installAddon(addon: Addon) {
         binding?.addonProgressOverlay?.overlayCardView?.visibility = View.VISIBLE
 
-        if (browsingModeManager.mode == BrowsingMode.Private) {
+        if (requireComponents.appStore.state.mode.isPrivate) {
             binding?.addonProgressOverlay?.overlayCardView?.setBackgroundColor(
                 ContextCompat.getColor(
                     requireContext(),

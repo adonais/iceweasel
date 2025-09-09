@@ -3,17 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MFMediaEngineStream.h"
+
 #include <vcruntime.h>
 
 #include "AudioConverter.h"
-#include "MFMediaSource.h"
 #include "MFMediaEngineUtils.h"
+#include "MFMediaSource.h"
 #include "TimeUnits.h"
+#include "WMF.h"
+#include "WMFUtils.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkerTypes.h"
 #include "mozilla/ScopeExit.h"
-#include "WMF.h"
-#include "WMFUtils.h"
 
 namespace mozilla {
 

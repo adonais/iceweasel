@@ -7,6 +7,9 @@
 #ifndef mozilla_glean_GleanMetric_h
 #define mozilla_glean_GleanMetric_h
 
+// The following include provides GleanWebidlEnabled(), used by generated
+// GleanMetricsBinding.cpp
+#include "mozilla/glean/bindings/GleanWebIDL.h"
 #include "nsWrapperCache.h"
 #include "nsClassHashtable.h"
 #include "nsTHashMap.h"

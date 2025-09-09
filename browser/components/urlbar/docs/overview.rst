@@ -231,9 +231,11 @@ indicated by the UrlbarQueryContext.muxer property.
     /**
      * Sorts UrlbarQueryContext results in-place.
      * @param {UrlbarQueryContext} queryContext the context to sort results for.
+     * @param {Array} unsortedResults
+     *   The array of UrlbarResult that is not sorted yet.
      * @abstract
      */
-    sort(queryContext) {
+    sort(queryContext, unsortedResults) {
       throw new Error("Trying to access the base class, must be overridden");
     }
   }

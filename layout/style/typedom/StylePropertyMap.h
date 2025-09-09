@@ -8,10 +8,9 @@
 #define LAYOUT_STYLE_TYPEDOM_STYLEPROPERTYMAP_H_
 
 #include "js/TypeDecls.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/StylePropertyMapReadOnly.h"
-#include "nsISupportsImpl.h"
 #include "nsStringFwd.h"
-#include "nsWrapperCache.h"
 
 template <class T>
 class nsCOMPtr;
@@ -30,10 +29,6 @@ class Sequence;
 class StylePropertyMap final : public StylePropertyMapReadOnly {
  public:
   explicit StylePropertyMap(nsCOMPtr<nsISupports> aParent);
-
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(StylePropertyMap,
-                                           StylePropertyMapReadOnly)
 
   JSObject* WrapObject(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 

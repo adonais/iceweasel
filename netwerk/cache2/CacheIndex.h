@@ -22,6 +22,7 @@
 #include "mozilla/EndianUtils.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
+#include "gtest/MozGtestFriend.h"
 
 class nsIFile;
 class nsIDirectoryEnumerator;
@@ -701,6 +702,11 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   NS_DECL_NSIRUNNABLE
 
   CacheIndex();
+  FRIEND_TEST(FrecencyStorageTest, AppendRemoveRecordTest);
+  FRIEND_TEST(FrecencyStorageTest, ReplaceRecordTest);
+  FRIEND_TEST(FrecencyStorageTest, ClearTest);
+  FRIEND_TEST(FrecencyStorageTest, GetSortedSnapshotForEvictionTest);
+  FRIEND_TEST(FrecencyStorageTest, PerformanceTest);
 
   static nsresult Init(nsIFile* aCacheDirectory);
   static nsresult PreShutdown();
@@ -747,6 +753,9 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
 
   enum EntryStatus { EXISTS = 0, DOES_NOT_EXIST = 1, DO_NOT_KNOW = 2 };
 
+  // Used to store a snapshot of the frecency storage
+  using EvictionSortedSnapshot = nsTArray<RefPtr<CacheIndexRecordWrapper>>;
+
   // Returns status of the entry in index for the given key. It can be called
   // on any thread.
   // If the optional aCB callback is given, the it will be called with a
@@ -762,8 +771,12 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   // cache size is over limit and also returns a total number of all entries in
   // the index minus the number of forced valid entries and unpinned entries
   // that we encounter when searching (see below)
-  static nsresult GetEntryForEviction(bool aIgnoreEmptyEntries,
+  static nsresult GetEntryForEviction(EvictionSortedSnapshot& aSnapshot,
+                                      bool aIgnoreEmptyEntries,
                                       SHA1Sum::Hash* aHash, uint32_t* aCnt);
+
+  // Returns a sorted snapshot of the frecency storage.
+  static EvictionSortedSnapshot GetSortedSnapshotForEviction();
 
   // Checks if a cache entry is currently forced valid. Used to prevent an entry
   // (that has been forced valid) from being evicted when the cache size reaches
@@ -1173,76 +1186,48 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   // of the journal fails or the hash does not match.
   nsTHashtable<CacheIndexEntry> mTmpJournal MOZ_GUARDED_BY(sLock);
 
-  // FrecencyArray maintains order of entry records for eviction. Ideally, the
-  // records would be ordered by frecency all the time, but since this would be
-  // quite expensive, we allow certain amount of entries to be out of order.
-  // When the frecency is updated the new value is always bigger than the old
-  // one. Instead of keeping updated entries at the same position, we move them
-  // at the end of the array. This protects recently updated entries from
-  // eviction. The array is sorted once we hit the limit of maximum unsorted
-  // entries.
-  class FrecencyArray {
-    class Iterator {
-     public:
-      explicit Iterator(nsTArray<RefPtr<CacheIndexRecordWrapper>>* aRecs)
-          : mRecs(aRecs), mIdx(0) {
-        while (!Done() && !(*mRecs)[mIdx]) {
-          mIdx++;
-        }
-      }
-
-      bool Done() const { return mIdx == mRecs->Length(); }
-
-      CacheIndexRecordWrapper* Get() const {
-        MOZ_ASSERT(!Done());
-        return (*mRecs)[mIdx];
-      }
-
-      void Next() {
-        MOZ_ASSERT(!Done());
-        ++mIdx;
-        while (!Done() && !(*mRecs)[mIdx]) {
-          mIdx++;
-        }
-      }
-
-     private:
-      nsTArray<RefPtr<CacheIndexRecordWrapper>>* mRecs;
-      uint32_t mIdx;
-    };
+  // FrecencyStorage maintains records for eviction. Due to the massive amount
+  // of calls at startup to the "Contains" method,
+  // we keep the records in a hashtable for faster lookup. Sorting is always
+  // done during eviction. This allows us to keep the hashtable fast and
+  // efficient, while still being able to evict entries based on frecency.
+  class FrecencyStorage final {
+    FRIEND_TEST(FrecencyStorageTest, AppendRemoveRecordTest);
+    FRIEND_TEST(FrecencyStorageTest, ReplaceRecordTest);
+    FRIEND_TEST(FrecencyStorageTest, ClearTest);
+    FRIEND_TEST(FrecencyStorageTest, GetSortedSnapshotForEvictionTest);
+    FRIEND_TEST(FrecencyStorageTest, PerformanceTest);
 
    public:
-    Iterator Iter() { return Iterator(&mRecs); }
+    FrecencyStorage() = default;
 
-    FrecencyArray() = default;
-
-    // Methods used by CacheIndexEntryAutoManage to keep the array up to date.
+    // Methods used by CacheIndexEntryAutoManage to keep the storage up to date.
     void AppendRecord(CacheIndexRecordWrapper* aRecord,
                       const StaticMutexAutoLock& aProofOfLock);
+
     void RemoveRecord(CacheIndexRecordWrapper* aRecord,
                       const StaticMutexAutoLock& aProofOfLock);
+
     void ReplaceRecord(CacheIndexRecordWrapper* aOldRecord,
                        CacheIndexRecordWrapper* aNewRecord,
                        const StaticMutexAutoLock& aProofOfLock);
-    void SortIfNeeded(const StaticMutexAutoLock& aProofOfLock);
+
     bool RecordExistedUnlocked(CacheIndexRecordWrapper* aRecord);
 
-    size_t Length() const { return mRecs.Length() - mRemovedElements; }
+    // EvictionSortedSnapshot is used to transform FrecencyStorage into a sorted
+    // array which is then used for eviction.
+    EvictionSortedSnapshot GetSortedSnapshotForEviction();
+
+    size_t Length() const { return mRecs.Count(); }
+
     void Clear(const StaticMutexAutoLock& aProofOfLock) { mRecs.Clear(); }
 
    private:
     friend class CacheIndex;
-
-    nsTArray<RefPtr<CacheIndexRecordWrapper>> mRecs;
-    uint32_t mUnsortedElements{0};
-    // Instead of removing elements from the array immediately, we null them out
-    // and the iterator skips them when accessing the array. The null pointers
-    // are placed at the end during sorting and we strip them out all at once.
-    // This saves moving a lot of memory in nsTArray::RemoveElementsAt.
-    uint32_t mRemovedElements{0};
+    nsTHashtable<nsRefPtrHashKey<CacheIndexRecordWrapper>> mRecs;
   };
 
-  FrecencyArray mFrecencyArray MOZ_GUARDED_BY(sLock);
+  FrecencyStorage mFrecencyStorage MOZ_GUARDED_BY(sLock);
 
   nsTArray<CacheIndexIterator*> mIterators MOZ_GUARDED_BY(sLock);
 

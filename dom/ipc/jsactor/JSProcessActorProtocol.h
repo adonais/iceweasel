@@ -9,10 +9,10 @@
 
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/JSActorService.h"
+#include "nsIObserver.h"
 #include "nsIURI.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "nsIObserver.h"
 
 namespace mozilla {
 class ErrorResult;

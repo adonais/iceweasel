@@ -32,6 +32,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.bookmarks.BookmarksUseCase
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.home.mars.MARSUseCases
+import org.mozilla.fenix.pbmlock.PrivateBrowsingLockUseCases
 import org.mozilla.fenix.perf.StrictModeManager
 import org.mozilla.fenix.perf.lazyMonitored
 import org.mozilla.fenix.wallpapers.WallpapersUseCases
@@ -137,5 +138,9 @@ class UseCases(
             homepageTitle = context.getString(R.string.tab_tray_homepage_tab),
             profiler = engine.value.profiler,
         )
+    }
+
+    val privateBrowsingLockUseCases by lazyMonitored {
+        PrivateBrowsingLockUseCases(appStore.value)
     }
 }

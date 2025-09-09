@@ -9,14 +9,13 @@
 #include <utility>
 
 #include "MainThreadUtils.h"
-#include "nsError.h"
-#include "nsThreadUtils.h"
-
 #include "ServiceWorkerPrivate.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/PFetchEventOpChild.h"
+#include "nsError.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 

@@ -8,21 +8,16 @@ import android.os.StrictMode
 import androidx.fragment.app.FragmentManager
 import io.mockk.MockKAnnotations
 import io.mockk.confirmVerified
-import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.slot
-import io.mockk.unmockkStatic
+import io.mockk.spyk
 import io.mockk.verify
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.Config
-import org.mozilla.fenix.ReleaseChannel
 import org.mozilla.fenix.components.Components
 import org.robolectric.RobolectricTestRunner
 
@@ -35,39 +30,34 @@ class StrictModeManagerTest {
     @MockK(relaxUnitFun = true)
     private lateinit var fragmentManager: FragmentManager
 
+    @MockK(relaxed = true)
+    private lateinit var components: Components
+
     @Before
     fun setup() {
         MockKAnnotations.init(this)
-        mockkStatic(StrictMode::class)
 
-        val components: Components = mockk(relaxed = true)
+        debugManager = spyk(
+            StrictModeManager(true, components, mockk()),
+        )
 
-        // These tests log a warning that mockk couldn't set the backing field of Config.channel
-        // but it doesn't seem to impact their correctness so I'm ignoring it.
-        val debugConfig: Config = mockk { every { channel } returns ReleaseChannel.Debug }
-        debugManager = StrictModeManager(debugConfig, components, mockk())
-
-        val releaseConfig: Config = mockk { every { channel } returns ReleaseChannel.Release }
-        releaseManager = StrictModeManager(releaseConfig, components, mockk())
-    }
-
-    @After
-    fun teardown() {
-        unmockkStatic(StrictMode::class)
+        releaseManager = spyk(
+            StrictModeManager(false, components, mockk()),
+        )
     }
 
     @Test
     fun `GIVEN we're in a release build WHEN we enable strict mode THEN we don't set policies`() {
         releaseManager.enableStrictMode(false)
-        verify(exactly = 0) { StrictMode.setThreadPolicy(any()) }
-        verify(exactly = 0) { StrictMode.setVmPolicy(any()) }
+        verify(exactly = 0) { releaseManager.applyThreadPolicy(any()) }
+        verify(exactly = 0) { releaseManager.applyVmPolicy(any()) }
     }
 
     @Test
     fun `GIVEN we're in a debug build WHEN we enable strict mode THEN we set policies`() {
         debugManager.enableStrictMode(false)
-        verify { StrictMode.setThreadPolicy(any()) }
-        verify { StrictMode.setVmPolicy(any()) }
+        verify { debugManager.applyThreadPolicy(any()) }
+        verify { debugManager.applyVmPolicy(any()) }
     }
 
     @Test
@@ -99,14 +89,14 @@ class StrictModeManagerTest {
     @Test
     fun `GIVEN we're in a release build WHEN resetAfter is called THEN the old policy is not set`() {
         releaseManager.resetAfter(StrictMode.allowThreadDiskReads()) { "" }
-        verify(exactly = 0) { StrictMode.setThreadPolicy(any()) }
+        verify(exactly = 0) { releaseManager.applyThreadPolicy(any()) }
     }
 
     @Test
     fun `GIVEN we're in a debug build WHEN resetAfter is called THEN the old policy is set`() {
         val expectedPolicy = StrictMode.allowThreadDiskReads()
         debugManager.resetAfter(expectedPolicy) { "" }
-        verify { StrictMode.setThreadPolicy(expectedPolicy) }
+        verify { debugManager.applyThreadPolicy(expectedPolicy) }
     }
 
     @Test
@@ -123,7 +113,7 @@ class StrictModeManagerTest {
             // Expected
         }
 
-        verify { StrictMode.setThreadPolicy(expectedPolicy) }
+        verify { debugManager.applyThreadPolicy(expectedPolicy) }
     }
 
     @Test

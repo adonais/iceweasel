@@ -48,7 +48,7 @@ enum class BitrateMode { Constant, Variable };
 // https://www.w3.org/TR/webrtc-svc/
 enum class ScalabilityMode { None, L1T2, L1T3 };
 
-enum class HardwarePreference { RequireHardware, RequireSoftware, None };
+enum class HardwarePreference { None, RequireHardware, RequireSoftware };
 
 // TODO: Automatically generate this (Bug 1865896)
 const char* GetCodecTypeString(const CodecType& aCodecType);
@@ -167,7 +167,6 @@ class EncoderConfig final {
         : mPixelFormat(aPixelFormat), mColorSpace(aColorSpace) {}
     explicit SampleFormat(const dom::ImageBitmapFormat& aPixelFormat)
         : mPixelFormat(aPixelFormat) {}
-    SampleFormat() = default;
 
     bool operator==(const SampleFormat& aOther) const {
       return mPixelFormat == aOther.mPixelFormat &&
@@ -238,6 +237,7 @@ class EncoderConfig final {
   static CodecType CodecTypeForMime(const nsACString& aMimeType);
 
   nsCString ToString() const;
+  const char* CodecString() const;
 
   bool IsVideo() const {
     return mCodec > CodecType::_BeginVideo_ && mCodec < CodecType::_EndVideo_;
@@ -255,8 +255,8 @@ class EncoderConfig final {
   uint32_t mMaxBitrate{};
   Usage mUsage{};
   // Video-only
-  HardwarePreference mHardwarePreference{};
-  SampleFormat mFormat{};
+  HardwarePreference mHardwarePreference{HardwarePreference::None};
+  SampleFormat mFormat{dom::ImageBitmapFormat::YUV420P};
   ScalabilityMode mScalabilityMode{};
   uint32_t mFramerate{};
   size_t mKeyframeInterval{};

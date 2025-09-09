@@ -132,6 +132,7 @@ public class WebAuthnUtils {
     public final byte[] attestationObject;
     public final String[] transports;
     public final String authenticatorAttachment;
+    public final Boolean credProps;
 
     public static final class Builder {
       private byte[] mClientDataJson;
@@ -139,6 +140,7 @@ public class WebAuthnUtils {
       private byte[] mAttestationObject;
       private String[] mTransports;
       private String mAuthenticatorAttachment;
+      private Boolean mCredProps;
 
       public Builder() {}
 
@@ -167,6 +169,11 @@ public class WebAuthnUtils {
         return this;
       }
 
+      public Builder setCredProps(final boolean credProps) {
+        this.mCredProps = new Boolean(credProps);
+        return this;
+      }
+
       public MakeCredentialResponse build() {
         return new MakeCredentialResponse(this);
       }
@@ -179,6 +186,7 @@ public class WebAuthnUtils {
       this.attestationObject = builder.mAttestationObject;
       this.transports = builder.mTransports;
       this.authenticatorAttachment = builder.mAuthenticatorAttachment;
+      this.credProps = builder.mCredProps;
     }
 
     @WrapForJNI(skip = true)
@@ -200,8 +208,11 @@ public class WebAuthnUtils {
           .append(", transports=")
           .append(String.join(", ", this.transports))
           .append(", authenticatorAttachment=")
-          .append(this.authenticatorAttachment)
-          .append("}");
+          .append(this.authenticatorAttachment);
+      if (this.credProps != null) {
+        sb.append(", credProps=").append(this.credProps.booleanValue());
+      }
+      sb.append("}");
       return sb.toString();
     }
   }
@@ -320,7 +331,8 @@ public class WebAuthnUtils {
       final byte[] challenge,
       final int[] algs,
       final WebAuthnPublicCredential[] excludeList,
-      final GeckoBundle authenticatorSelection)
+      final GeckoBundle authenticatorSelection,
+      final GeckoBundle extensions)
       throws JSONException {
     final JSONObject json = credentialBundle.toJSONObject();
     // origin is unnecessary for requestJSON.
@@ -351,12 +363,21 @@ public class WebAuthnUtils {
     json.put("excludeCredentials", excludeCredentials);
 
     final JSONObject authenticatorSelectionJSON = authenticatorSelection.toJSONObject();
-    authenticatorSelectionJSON.put("requireResidentKey", true);
+    /*
+    dom/webauthn/WebAuthnHandler.cpp: WebAuthnHandler::MakeCredential set `residentKey`
+    to "required" if there is no `residentKey` and `requireResidentKey` is true, and
+    `requireResidentKey` should be true if `residentKey` is "required". So we can retrieve
+    `requireResidentKey`'s value from `residentKey`.
+    `requireResidentKey` is only used if `residentKey` isn't set, so it shouldn't be used by any
+    authenticator that follows the specs.
+     */
+    authenticatorSelectionJSON.put(
+        "requireResidentKey",
+        authenticatorSelection.getString("residentKey", "").equals("required"));
     json.put("authenticatorSelection", authenticatorSelectionJSON);
 
-    final JSONObject extensions = new JSONObject();
-    extensions.put("credProps", true);
-    json.put("extensions", extensions);
+    final JSONObject extensionsJSON = extensions.toJSONObject();
+    json.put("extensions", extensionsJSON);
 
     if (DEBUG) {
       Log.d(LOGTAG, "getJSONObjectForMakeCredential: JSON=\"" + json.toString() + "\"");
@@ -410,6 +431,16 @@ public class WebAuthnUtils {
       transports[i] = transportsArray.getString(i);
     }
 
+    final MakeCredentialResponse.Builder builder = new MakeCredentialResponse.Builder();
+
+    try {
+      final JSONObject clientExtensionResults = json.getJSONObject("clientExtensionResults");
+      final JSONObject credProps = clientExtensionResults.getJSONObject("credProps");
+      builder.setCredProps(credProps.getBoolean("rk"));
+    } catch (final JSONException e) {
+      // clientExtensionResults is an optional. Ignore exception if nothing.
+    }
+
     // TODO(m_kato):
     // PublicKey and PublicKeyAlgorithm are also put in easy accessors fields.
     // Chromium checks whether this value is same as the value into attestationObject.
@@ -417,7 +448,7 @@ public class WebAuthnUtils {
 
     // This response has clientDataJson value, but origin in clientDataJson may be package's
     // fingerprint. So we don't use it into the response.
-    return new MakeCredentialResponse.Builder()
+    return builder
         .setKeyHandle(Base64.decode(json.getString("rawId"), Base64.URL_SAFE))
         .setAttestationObject(
             Base64.decode(response.getString("attestationObject"), Base64.URL_SAFE))

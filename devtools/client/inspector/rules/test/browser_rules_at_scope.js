@@ -23,6 +23,8 @@ const TEST_URI = `
         @scope (:scope section) {
           :scope, [data-test="nested-scoped-inline-style"] {
             background: gold;
+            color: tomato;
+            color: green;
           }
         }
       }
@@ -72,6 +74,20 @@ add_task(async function () {
       ancestorRulesData: ["@scope {", "  @scope (:scope section) {"],
     },
   ]);
+
+  ok(
+    getTextProperty(view, 1, {
+      color: "tomato",
+    }).editor.element.classList.contains("ruleview-overridden"),
+    `"color: tomato" is overridden`
+  );
+
+  ok(
+    !getTextProperty(view, 1, {
+      color: "green",
+    }).editor.element.classList.contains("ruleview-overridden"),
+    `"color: green" is not overridden`
+  );
 
   await assertRules("aside #b", [
     { selector: `element`, ancestorRulesData: null },

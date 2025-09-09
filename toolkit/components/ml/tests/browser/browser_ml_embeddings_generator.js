@@ -201,3 +201,13 @@ add_task(async function test_embed_invalid_input_empty_string() {
 
   sinon.restore();
 });
+
+add_task(async function test_default_backend_is_onnx_native() {
+  const embeddingsGenerator = new EmbeddingsGenerator();
+
+  Assert.equal(
+    embeddingsGenerator.options.backend,
+    "onnx-native",
+    "Default backend should be onnx-native"
+  );
+});

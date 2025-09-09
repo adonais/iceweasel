@@ -388,7 +388,7 @@ class nsLayoutUtils {
 
   static int32_t CompareTreePosition(
       const nsIFrame* aFrame1, const nsIFrame* aFrame2,
-      nsTArray<const nsIFrame*>& aFrame2Ancestors,
+      const nsTArray<const nsIFrame*>& aFrame2Ancestors,
       const nsIFrame* aCommonAncestor = nullptr) {
     return DoCompareTreePosition(aFrame1, aFrame2, aFrame2Ancestors,
                                  aCommonAncestor);
@@ -403,7 +403,7 @@ class nsLayoutUtils {
                                        const nsIFrame* aCommonAncestor);
   static int32_t DoCompareTreePosition(
       const nsIFrame* aFrame1, const nsIFrame* aFrame2,
-      nsTArray<const nsIFrame*>& aFrame2Ancestors,
+      const nsTArray<const nsIFrame*>& aFrame2Ancestors,
       const nsIFrame* aCommonAncestor);
 
   /**
@@ -1495,7 +1495,6 @@ class nsLayoutUtils {
   enum {
     IGNORE_PADDING = 0x01,
     BAIL_IF_REFLOW_NEEDED = 0x02,  // returns NS_INTRINSIC_ISIZE_UNKNOWN if so
-    MIN_INTRINSIC_ISIZE = 0x04,  // use min-width/height instead of width/height
   };
   static nscoord IntrinsicForAxis(
       mozilla::PhysicalAxis aAxis, gfxContext* aRenderingContext,

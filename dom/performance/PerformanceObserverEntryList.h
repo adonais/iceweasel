@@ -7,11 +7,11 @@
 #ifndef mozilla_dom_PerformanceObserverEntryList_h__
 #define mozilla_dom_PerformanceObserverEntryList_h__
 
+#include "mozilla/dom/PerformanceEntryBinding.h"
 #include "nsCOMPtr.h"
 #include "nsISupports.h"
 #include "nsTArray.h"
 #include "nsWrapperCache.h"
-#include "mozilla/dom/PerformanceEntryBinding.h"
 
 namespace mozilla::dom {
 

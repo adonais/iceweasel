@@ -34,18 +34,14 @@
   <string name="tab_tray_collection_button_multiselect_content_description">सङ्कलनमा चयन गरिएका ट्याबहरू बचत गर्नुहोस्</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s Mozilla द्वारा निर्माण गरिएको हो।</string>
-  <!--
-    Private Browsing
-
-    Explanation for private browsing displayed to users on home view when they first enable private mode.
-    %1$s is the name of the app (for example "Firefox").
-  -->
-  <string name="private_browsing_placeholder_description_2" moz:removedIn="141" tools:ignore="UnusedResources">%1$s ले तपाइँको खोज र ब्राउजिङ्ग इतिहासलाई निजी ट्याबहरूबाट खाली गर्दछ जब, तपाइँ तिनीहरूलाई बन्द गर्नुहुन्छ वा एप छोड्नुहुन्छ। यद्यपि यसले तपाइँलाई वेबसाइटहरू वा तपाइँको इन्टरनेट सेवा प्रदायकको लागि गुमनाम बनाउँदैन, यसले तपाइँलाई यो यन्त्र प्रयोग गर्ने अरू कसैबाट तपाइँ अनलाइन गर्ने कुरालाई गोप्य राख्न सजिलो बनाउँछ।</string>
+  <!-- Private Browsing -->
   <string name="private_browsing_common_myths">निजी ब्राउजिङ्ग बारे सामान्य मिथकहरू</string>
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">सेटिङ्गहरुमा जानुहोस्</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">खारेज गर्नुहोस्</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">क्यामरा पहुँच आवश्यक छ। एन्ड्रोइड सेटिङ्गहरूमा जानुहोस्, अनुमतिमा ट्याप गर्नुहोस्, र अनुमति दिन ट्याप गर्नुहोस्।</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -209,8 +205,6 @@
   <string name="preferences_account_sync_error">सिङ्क पुन: सुचारु गर्न पुन: जडान गर्नुहोस्</string>
   <!-- Preference for language -->
   <string name="preferences_language">भाषा</string>
-  <!-- Preference for data choices -->
-  <string name="preferences_data_choices" tools:ignore="UnusedResources" moz:removedIn="141">डाटा बिकल्पहरु</string>
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">डाटा सङ्कलन</string>
   <!-- Preference title for switch preference to show search suggestions -->
@@ -233,8 +227,6 @@
   <string name="preferences_enable_autocomplete_urls">स्वतः पुर्ण URLs</string>
   <!-- Preference for open links in third party apps -->
   <string name="preferences_open_links_in_apps">एपहरुमा लिङ्कहरु खोल्नुहोस्</string>
-  <!-- Preference for open download with an external download manager app -->
-  <string name="preferences_external_download_manager" tools:ignore="UnusedResources" moz:removedIn="141">बाहिरी डाउनलोड प्रबन्धक</string>
   <!-- Preference for notifications -->
   <string name="preferences_notifications">सूचनाहरु</string>
   <!-- Button caption to confirm the add-on collection configuration -->

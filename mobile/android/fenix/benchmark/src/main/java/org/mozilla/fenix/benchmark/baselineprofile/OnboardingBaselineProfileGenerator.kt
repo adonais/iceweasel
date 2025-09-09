@@ -8,13 +8,13 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.benchmark.macro.junit4.BaselineProfileRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.benchmark.utils.TARGET_PACKAGE
 import org.mozilla.fenix.benchmark.utils.clearPackageData
 import org.mozilla.fenix.benchmark.utils.completeOnboarding
+import org.mozilla.fenix.benchmark.utils.revokeNotificationPermission
 
 /**
  * This test class generates a baseline profile on a critical user journey, that goes through
@@ -44,7 +44,6 @@ import org.mozilla.fenix.benchmark.utils.completeOnboarding
 @RequiresApi(Build.VERSION_CODES.P)
 @RunWith(AndroidJUnit4::class)
 @BaselineProfileGenerator
-@Ignore("Disabled: https://bugzilla.mozilla.org/show_bug.cgi?id=1971317")
 class OnboardingBaselineProfileGenerator {
 
     @get:Rule
@@ -56,11 +55,9 @@ class OnboardingBaselineProfileGenerator {
             packageName = TARGET_PACKAGE,
         ) {
             device.clearPackageData(packageName = packageName)
+            device.revokeNotificationPermission(packageName = packageName)
             startActivityAndWait()
             device.completeOnboarding()
-
-            pressHome()
-            device.clearPackageData(packageName = packageName)
         }
     }
 }

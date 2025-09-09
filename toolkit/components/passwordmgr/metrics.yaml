@@ -871,14 +871,16 @@ pwmgr:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1749882
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1777397
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1850888
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1978988
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1688653
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1749882
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1777397
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1850888
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1978988
     notification_emails:
       - passwords-dev@mozilla.org
-    expires: 144
+    expires: 150
     telemetry_mirror: h#PWMGR_IMPORT_LOGINS_FROM_FILE_CATEGORICAL
 
   login_page_safety:

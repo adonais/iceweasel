@@ -320,6 +320,7 @@ class BookmarksTest : TestSetup() {
         browserScreen {
         }.openThreeDotMenu {
         }.openBookmarksMenu(composeTestRule) {
+            verifyFolderTitle(bookmarkFolderName)
             selectFolder(bookmarkFolderName)
             verifyBookmarkedURL(defaultWebPage.url.toString())
         }

@@ -1627,3 +1627,27 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
+
+oskeystore:
+  return_codes:
+    type: event
+    description: >
+      Collects return codes from the different implementations of the key store
+      API. These are sometimes poorly documented and collection is the only way
+      to discover them.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1958791
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1958791
+    notification_emails:
+      - simon@mozilla.com
+    expires: 150
+    extra_keys:
+      function:
+        description: >
+          Which function returned the value.
+        type: string
+      result:
+        description: >
+          The error code, converted to a string.
+        type: string

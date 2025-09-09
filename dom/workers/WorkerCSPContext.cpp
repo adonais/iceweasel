@@ -4,11 +4,11 @@
 
 #include "WorkerCSPContext.h"
 
-#include "nsNetUtil.h"
+#include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/nsCSPParser.h"
 #include "mozilla/dom/nsCSPUtils.h"
-#include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/ipc/BackgroundUtils.h"
+#include "nsNetUtil.h"
 
 namespace mozilla::dom {
 

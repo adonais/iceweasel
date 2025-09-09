@@ -11,9 +11,9 @@
 #include "mozilla/Result.h"
 #include "mozilla/Types.h"
 #include "mozilla/Vector.h"
+#include "mp4parse.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "mp4parse.h"
 
 namespace mozilla {
 

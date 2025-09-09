@@ -7,18 +7,19 @@
 #ifndef _MOZILLA_GFX_DRAWTARGETWEBGL_H
 #define _MOZILLA_GFX_DRAWTARGETWEBGL_H
 
+#include <memory>
+#include <vector>
+
 #include "GLTypes.h"
 #include "mozilla/Array.h"
+#include "mozilla/LinkedList.h"
+#include "mozilla/ThreadLocal.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/PathSkia.h"
-#include "mozilla/LinkedList.h"
-#include "mozilla/WeakPtr.h"
-#include "mozilla/ThreadLocal.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
 #include "mozilla/ipc/SharedMemoryMapping.h"
 #include "mozilla/layers/LayersTypes.h"
-
-#include <vector>
 
 namespace WGR {
 struct OutputVertex;
@@ -38,6 +39,7 @@ class WebGLVertexArray;
 
 namespace gl {
 class GLContext;
+class SharedSurface;
 }  // namespace gl
 
 namespace layers {
@@ -97,6 +99,13 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   void OnMemoryPressure();
 
   void ClearCaches();
+
+  std::shared_ptr<gl::SharedSurface> ExportSharedSurface(
+      layers::TextureType aTextureType, SourceSurface* aSurface);
+
+  already_AddRefed<SourceSurface> ImportSurfaceDescriptor(
+      const layers::SurfaceDescriptor& aDesc, const gfx::IntSize& aSize,
+      SurfaceFormat aFormat);
 
  private:
   SharedContextWebgl();
@@ -200,6 +209,8 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   RefPtr<WebGLFramebuffer> mScratchFramebuffer;
   // Scratch framebuffer used to wrap textures for sub-targets.
   RefPtr<WebGLFramebuffer> mTargetFramebuffer;
+  // Scratch framebuffer used to wrap textures for export.
+  RefPtr<WebGLFramebuffer> mExportFramebuffer;
   // Buffer filled with zero data for initializing textures.
   RefPtr<WebGLBuffer> mZeroBuffer;
   size_t mZeroSize = 0;
@@ -318,7 +329,8 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
       const IntRect& aRect, TextureHandle* aHandle = nullptr);
 
   already_AddRefed<WebGLTexture> GetCompatibleSnapshot(
-      SourceSurface* aSurface, RefPtr<TextureHandle>* aHandle = nullptr) const;
+      SourceSurface* aSurface, RefPtr<TextureHandle>* aHandle = nullptr,
+      bool aCheckTarget = true) const;
   bool IsCompatibleSurface(SourceSurface* aSurface) const;
 
   bool UploadSurface(DataSourceSurface* aData, SurfaceFormat aFormat,
@@ -685,6 +697,10 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
       layers::TextureType aTextureType, layers::RemoteTextureId aId,
       layers::RemoteTextureOwnerId aOwnerId,
       layers::RemoteTextureOwnerClient* aOwnerClient = nullptr);
+
+  already_AddRefed<SourceSurface> ImportSurfaceDescriptor(
+      const layers::SurfaceDescriptor& aDesc, const gfx::IntSize& aSize,
+      SurfaceFormat aFormat) override;
 
   void OnMemoryPressure() { mSharedContext->OnMemoryPressure(); }
 

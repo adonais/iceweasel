@@ -49,7 +49,6 @@ pub enum PseudoElement {
     // our property_restriction implementation to do property filtering for
     // them.  Also, make sure the UA sheet has the !important rules some of the
     // APPLIES_TO_PLACEHOLDER properties expect!
-
     Backdrop,
 
     // Non-eager pseudos.
@@ -219,7 +218,9 @@ impl PseudoElement {
             PseudoElement::After | PseudoElement::Before | PseudoElement::Selection => {
                 PseudoElementCascadeType::Eager
             },
-            PseudoElement::Backdrop | PseudoElement::DetailsSummary => PseudoElementCascadeType::Lazy,
+            PseudoElement::Backdrop | PseudoElement::DetailsSummary => {
+                PseudoElementCascadeType::Lazy
+            },
             PseudoElement::DetailsContent |
             PseudoElement::ServoAnonymousBox |
             PseudoElement::ServoAnonymousTable |
@@ -384,7 +385,7 @@ impl ToCss for NonTSPseudoClass {
             Self::UserValid => ":user-valid",
             Self::Valid => ":valid",
             Self::Visited => ":visited",
-            Self::Lang(_) | Self::CustomState(_) | Self::Heading(_) => unreachable!(),
+            Self::Lang(_) | Self::CustomState(_) => unreachable!(),
         })
     }
 }
@@ -427,7 +428,9 @@ impl NonTSPseudoClass {
             Self::UserValid => ElementState::USER_VALID,
             Self::Valid => ElementState::VALID,
             Self::Visited => ElementState::VISITED,
-            Self::CustomState(_) | Self::Lang(_) | Self::Heading(_) | Self::ServoNonZeroBorder => ElementState::empty(),
+            Self::CustomState(_) | Self::Lang(_) | Self::ServoNonZeroBorder => {
+                ElementState::empty()
+            },
         }
     }
 

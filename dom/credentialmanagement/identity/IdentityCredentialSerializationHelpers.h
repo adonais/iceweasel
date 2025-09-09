@@ -8,9 +8,9 @@
 #define mozilla_dom_identitycredentialserializationhelpers_h__
 
 #include "mozilla/dom/BindingIPCUtils.h"
+#include "mozilla/dom/CredentialManagementBinding.h"
 #include "mozilla/dom/IdentityCredential.h"
 #include "mozilla/dom/IdentityCredentialBinding.h"
-#include "mozilla/dom/CredentialManagementBinding.h"
 #include "mozilla/dom/LoginStatusBinding.h"
 
 namespace IPC {

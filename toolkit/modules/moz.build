@@ -151,6 +151,7 @@ EXTRA_JS_MODULES += [
     "AboutPagesUtils.sys.mjs",
     "ActorManagerParent.sys.mjs",
     "AppMenuNotifications.sys.mjs",
+    "AppServicesTracing.sys.mjs",
     "AsyncPrefs.sys.mjs",
     "BinarySearch.sys.mjs",
     "BrowserTelemetryUtils.sys.mjs",

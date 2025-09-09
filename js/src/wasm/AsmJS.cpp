@@ -6837,7 +6837,7 @@ static bool CheckBuffer(JSContext* cx, const CodeMetadata& codeMeta,
   // because heap loads and stores start on an aligned boundary and the heap
   // byteLength has larger alignment.
   uint64_t minMemoryLength = codeMeta.memories.length() != 0
-                                 ? codeMeta.memories[0].initialLength32()
+                                 ? codeMeta.memories[0].initialLength()
                                  : 0;
   MOZ_ASSERT((minMemoryLength - 1) <= INT32_MAX);
   if (memoryLength < minMemoryLength) {

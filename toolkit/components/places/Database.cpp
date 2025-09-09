@@ -87,9 +87,6 @@
 
 #define BYTES_PER_KIBIBYTE 1024
 
-// How much time Sqlite can wait before returning a SQLITE_BUSY error.
-#define DATABASE_BUSY_TIMEOUT_MS 100
-
 // This annotation is no longer used & is obsolete, but here for migration.
 #define LAST_USED_ANNO "bookmarkPropertiesDialog/folderLastUsed"_ns
 // This is key in the meta table that the LAST_USED_ANNO is migrated to.

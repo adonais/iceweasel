@@ -374,6 +374,8 @@ export class LoginDataSource extends DataSourceBase {
   #addObservers() {
     Services.obs.addObserver(this, "passwordmgr-storage-changed");
     Services.obs.addObserver(this, "passwordmgr-crypto-login");
+    Services.obs.addObserver(this, "passwordmgr-crypto-loginCanceled");
+
     Services.prefs.addObserver("signon.rememberSignons", this);
     Services.prefs.addObserver(
       "signon.management.page.breach-alerts.enabled",
@@ -388,6 +390,7 @@ export class LoginDataSource extends DataSourceBase {
   #removeObservers() {
     Services.obs.removeObserver(this, "passwordmgr-storage-changed");
     Services.obs.removeObserver(this, "passwordmgr-crypto-login");
+    Services.obs.addObserver(this, "passwordmgr-crypto-loginCanceled");
 
     Services.prefs.removeObserver("signon.rememberSignons", this);
     Services.prefs.removeObserver(
@@ -917,6 +920,12 @@ export class LoginDataSource extends DataSourceBase {
       message == "signon.management.page.vulnerable-passwords.enabled"
     ) {
       this.#reloadDataSource();
+
+      if (topic === "passwordmgr-crypto-login") {
+        this.setPrimaryPasswordAuthenticated(true);
+      }
+    } else if (topic == "passwordmgr-crypto-loginCanceled") {
+      this.setPrimaryPasswordAuthenticated(false);
     }
   }
 }

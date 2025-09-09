@@ -5,9 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "PerformanceResourceTiming.h"
+
 #include "mozilla/dom/PerformanceResourceTimingBinding.h"
-#include "nsNetUtil.h"
 #include "nsArrayUtils.h"
+#include "nsNetUtil.h"
 
 using namespace mozilla::dom;
 

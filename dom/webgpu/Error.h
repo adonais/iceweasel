@@ -6,11 +6,11 @@
 #ifndef GPU_Error_H_
 #define GPU_Error_H_
 
+#include "ObjectModel.h"
 #include "js/Value.h"
 #include "mozilla/WeakPtr.h"
 #include "nsIGlobalObject.h"
 #include "nsString.h"
-#include "ObjectModel.h"
 
 namespace mozilla {
 class ErrorResult;

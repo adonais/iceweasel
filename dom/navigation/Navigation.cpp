@@ -6,19 +6,6 @@
 
 #include "mozilla/dom/Navigation.h"
 
-#include "mozilla/dom/DOMException.h"
-#include "mozilla/dom/ErrorEvent.h"
-#include "mozilla/dom/RootedDictionary.h"
-#include "nsContentUtils.h"
-#include "nsCycleCollectionParticipant.h"
-#include "nsDocShell.h"
-#include "nsGlobalWindowInner.h"
-#include "nsIPrincipal.h"
-#include "nsIStructuredCloneContainer.h"
-#include "nsIXULRuntime.h"
-#include "nsNetUtil.h"
-#include "nsTHashtable.h"
-
 #include "jsapi.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/CycleCollectedUniquePtr.h"
@@ -26,8 +13,9 @@
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/UniquePtr.h"
-
+#include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/ErrorEvent.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/FeaturePolicy.h"
 #include "mozilla/dom/NavigationActivation.h"
@@ -35,9 +23,20 @@
 #include "mozilla/dom/NavigationHistoryEntry.h"
 #include "mozilla/dom/NavigationTransition.h"
 #include "mozilla/dom/NavigationUtils.h"
+#include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalChild.h"
+#include "nsContentUtils.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsDocShell.h"
+#include "nsGlobalWindowInner.h"
+#include "nsIPrincipal.h"
+#include "nsISHistory.h"
+#include "nsIStructuredCloneContainer.h"
+#include "nsIXULRuntime.h"
+#include "nsNetUtil.h"
+#include "nsTHashtable.h"
 
 mozilla::LazyLogModule gNavigationLog("Navigation");
 
@@ -251,8 +250,10 @@ bool Navigation::HasEntriesAndEventsDisabled() const {
 void Navigation::InitializeHistoryEntries(
     mozilla::Span<const SessionHistoryInfo> aNewSHInfos,
     const SessionHistoryInfo* aInitialSHInfo) {
-  MOZ_LOG(gNavigationLog, LogLevel::Debug,
-          ("Attempting to initialize history entries."));
+  LOG_FMT("Attempting to initialize history entries for {}.",
+          aInitialSHInfo->GetURI()
+              ? aInitialSHInfo->GetURI()->GetSpecOrDefault()
+              : "<no uri>"_ns)
 
   mEntries.Clear();
   mCurrentEntryIndex.reset();
@@ -468,6 +469,103 @@ Navigation::CreateSerializedStateAndMaybeSetEarlyErrorResult(
     return nullptr;
   }
   return serializedState.forget();
+}
+
+// https://html.spec.whatwg.org/#dom-navigation-navigate
+void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
+                          const NavigationNavigateOptions& aOptions,
+                          NavigationResult& aResult) {
+  // 3. Let document be this's relevant global object's associated Document.
+  const RefPtr<Document> document = GetAssociatedDocument();
+  if (!document) {
+    return;
+  }
+  // 1. Let urlRecord be the result of parsing a URL given url, relative to
+  //    this's relevant settings object.
+  RefPtr<nsIURI> urlRecord;
+  nsresult res = NS_NewURI(getter_AddRefs(urlRecord), aUrl, nullptr,
+                           document->GetDocBaseURI());
+  if (NS_FAILED(res)) {
+    // 2. If urlRecord is failure, then return an early error result for a
+    //    "SyntaxError" DOMException.
+    ErrorResult rv;
+    rv.ThrowSyntaxError("URL given to navigate() is invalid");
+    SetEarlyErrorResult(aCx, aResult, std::move(rv));
+    return;
+  }
+  // 4. If options["history"] is "push", and the navigation must be a replace
+  //    given urlRecord and document, then return an early error result for a
+  //    "NotSupportedError" DOMException.
+  if (aOptions.mHistory == NavigationHistoryBehavior::Push &&
+      nsContentUtils::NavigationMustBeAReplace(*urlRecord, *document)) {
+    ErrorResult rv;
+    rv.ThrowNotSupportedError("Navigation must be a replace navigation");
+    SetEarlyErrorResult(aCx, aResult, std::move(rv));
+    return;
+  }
+
+  // 5. Let state be options["state"], if it exists; otherwise, undefined.
+  // 6. Let serializedState be StructuredSerializeForStorage(state). If this
+  //    throws an exception, then return an early error result for that
+  //    exception.
+  nsCOMPtr<nsIStructuredCloneContainer> serializedState =
+      CreateSerializedStateAndMaybeSetEarlyErrorResult(aCx, aOptions.mState,
+                                                       aResult);
+  if (!serializedState) {
+    return;
+  }
+
+  // 7. If document is not fully active, then return an early error result for
+  //    an "InvalidStateError" DOMException.
+  if (!CheckIfDocumentIsFullyActiveAndMaybeSetEarlyErrorResult(aCx, document,
+                                                               aResult)) {
+    return;
+  }
+
+  // 8. If document's unload counter is greater than 0, then return an early
+  //    error result for an "InvalidStateError" DOMException.
+  if (!CheckDocumentUnloadCounterAndMaybeSetEarlyErrorResult(aCx, document,
+                                                             aResult)) {
+    return;
+  }
+
+  // 9. Let info be options["info"], if it exists; otherwise, undefined.
+  // 10. Let apiMethodTracker be the result of maybe setting the upcoming
+  //    non-traverse API method tracker for this given info and serializedState.
+  JS::Rooted<JS::Value> info(aCx, aOptions.mInfo);
+  RefPtr<NavigationAPIMethodTracker> apiMethodTracker =
+      MaybeSetUpcomingNonTraverseAPIMethodTracker(info, serializedState);
+  MOZ_ASSERT(apiMethodTracker);
+
+  // 11. Navigate document's node navigable to urlRecord using document, with
+  //     historyHandling set to options["history"] and navigationAPIState set to
+  //     serializedState.
+
+  RefPtr bc = document->GetBrowsingContext();
+  MOZ_DIAGNOSTIC_ASSERT(bc);
+  bc->Navigate(urlRecord, *document->NodePrincipal(),
+               /* per spec, error handling defaults to false */ IgnoreErrors(),
+               aOptions.mHistory);
+
+  // 12. If this's upcoming non-traverse API method tracker is apiMethodTracker,
+  //     then:
+  if (mUpcomingNonTraverseAPIMethodTracker == apiMethodTracker) {
+    // Note: If the upcoming non-traverse API method tracker is still
+    //       apiMethodTracker, this means that the navigate algorithm bailed out
+    //       before ever getting to the inner navigate event firing algorithm
+    //       which would promote that upcoming API method tracker to ongoing.
+    //
+    // 12.1 Set this's upcoming non-traverse API method tracker to null.
+    mUpcomingNonTraverseAPIMethodTracker = nullptr;
+    // 12.2 Return an early error result for an "AbortError" DOMException.
+    ErrorResult rv;
+    rv.ThrowAbortError("Navigation aborted.");
+    SetEarlyErrorResult(aCx, aResult, std::move(rv));
+    return;
+  }
+  // 13. Return a navigation API method tracker-derived result for
+  //     apiMethodTracker.
+  CreateResultFromAPIMethodTracker(apiMethodTracker, aResult);
 }
 
 // https://html.spec.whatwg.org/#dom-navigation-reload
@@ -796,6 +894,8 @@ bool Navigation::InnerFireNavigateEvent(
     already_AddRefed<FormData> aFormDataEntryList,
     nsIStructuredCloneContainer* aClassicHistoryAPIState,
     const nsAString& aDownloadRequestFilename) {
+  nsCOMPtr<nsIGlobalObject> globalObject = GetOwnerGlobal();
+
   // Step 1
   if (HasEntriesAndEventsDisabled()) {
     // Step 1.1 to step 1.3
@@ -876,8 +976,7 @@ bool Navigation::InnerFireNavigateEvent(
   init.mSourceElement = aSourceElement;
 
   // Step 19
-  RefPtr<AbortController> abortController =
-      new AbortController(GetOwnerGlobal());
+  RefPtr<AbortController> abortController = new AbortController(globalObject);
 
   // Step 20
   init.mSignal = abortController->Signal();
@@ -957,9 +1056,9 @@ bool Navigation::InnerFireNavigateEvent(
     MOZ_DIAGNOSTIC_ASSERT(fromNHE);
 
     // Step 33.4
-    RefPtr<Promise> promise = Promise::CreateInfallible(GetOwnerGlobal());
+    RefPtr<Promise> promise = Promise::CreateInfallible(globalObject);
     mTransition = MakeAndAddRef<NavigationTransition>(
-        GetOwnerGlobal(), aNavigationType, fromNHE, promise);
+        globalObject, aNavigationType, fromNHE, promise);
 
     // Step 33.5
     MOZ_ALWAYS_TRUE(promise->SetAnyPromiseIsHandled());
@@ -999,17 +1098,22 @@ bool Navigation::InnerFireNavigateEvent(
     // Step 34.2
     for (auto& handler : event->NavigationHandlerList().Clone()) {
       // Step 34.2.1
-      promiseList.AppendElement(MOZ_KnownLive(handler)->Call());
+      RefPtr promise = MOZ_KnownLive(handler)->Call();
+      if (promise) {
+        promiseList.AppendElement(promise);
+      }
     }
 
     // Step 34.3
     if (promiseList.IsEmpty()) {
-      promiseList.AppendElement(Promise::CreateResolvedWithUndefined(
-          GetOwnerGlobal(), IgnoredErrorResult()));
+      RefPtr promise = Promise::CreateResolvedWithUndefined(
+          globalObject, IgnoredErrorResult());
+      if (promise) {
+        promiseList.AppendElement(promise);
+      }
     }
 
     // Step 34.4
-    nsCOMPtr<nsIGlobalObject> globalObject = GetOwnerGlobal();
     // We capture the scope which we wish to keep alive in the lambdas passed to
     // Promise::WaitForAll. We pass it as the cycle collected argument to
     // Promise::WaitForAll, which makes it stay alive until all promises
@@ -1215,7 +1319,9 @@ void Navigation::AbortOngoingNavigation(JSContext* aCx,
 
   // Step 6
   if (event->IsBeingDispatched()) {
-    event->PreventDefault();
+    // Here NonSystem is needed since it needs to be the same as what we
+    // dispatch with.
+    event->PreventDefault(aCx, CallerType::NonSystem);
   }
 
   // Step 7

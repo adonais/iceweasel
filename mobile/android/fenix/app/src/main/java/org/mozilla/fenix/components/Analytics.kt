@@ -32,6 +32,7 @@ import org.mozilla.fenix.components.metrics.InstallReferrerMetricsService
 import org.mozilla.fenix.components.metrics.MetricController
 import org.mozilla.fenix.components.metrics.MetricsStorage
 import org.mozilla.fenix.crashes.CrashFactCollector
+import org.mozilla.fenix.crashes.NimbusExperimentsRuntimeTagProvider
 import org.mozilla.fenix.crashes.ReleaseRuntimeTagProvider
 import org.mozilla.fenix.crashes.crashReportOption
 import org.mozilla.fenix.ext.settings
@@ -46,6 +47,7 @@ import org.mozilla.geckoview.BuildConfig.MOZ_UPDATE_CHANNEL
  */
 class Analytics(
     private val context: Context,
+    private val nimbusComponents: NimbusComponents,
     private val runWhenReadyQueue: RunWhenReadyQueue,
 ) {
     val crashReporter: CrashReporter by lazyMonitored {
@@ -132,7 +134,12 @@ class Analytics(
             useLegacyReporting =
                 context.settings().crashReportOption() != CrashReportOption.Auto &&
                 !context.settings().useNewCrashReporterDialog,
-            runtimeTagProviders = listOf(ReleaseRuntimeTagProvider()),
+            runtimeTagProviders = listOf(
+                ReleaseRuntimeTagProvider(),
+                NimbusExperimentsRuntimeTagProvider(
+                    nimbusApi = lazyMonitored { nimbusComponents.sdk },
+                ),
+            ),
         )
     }
 

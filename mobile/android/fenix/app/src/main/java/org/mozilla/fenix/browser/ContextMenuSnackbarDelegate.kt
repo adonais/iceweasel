@@ -6,6 +6,7 @@ package org.mozilla.fenix.browser
 
 import android.view.View
 import androidx.annotation.StringRes
+import androidx.compose.ui.text.style.TextOverflow
 import mozilla.components.ui.widgets.SnackbarDelegate
 import org.mozilla.fenix.compose.core.Action
 import org.mozilla.fenix.compose.snackbar.Snackbar
@@ -21,6 +22,7 @@ class ContextMenuSnackbarDelegate : SnackbarDelegate {
         snackBarParentView: View,
         @StringRes text: Int,
         subText: String?,
+        subTextOverflow: TextOverflow?,
         duration: Int,
         isError: Boolean,
         @StringRes action: Int,
@@ -28,6 +30,8 @@ class ContextMenuSnackbarDelegate : SnackbarDelegate {
     ) = show(
         snackBarParentView,
         text = snackBarParentView.context.getString(text),
+        subText = subText,
+        subTextOverflow = subTextOverflow,
         duration = duration,
         action = when (action != 0 && listener != null) {
             true -> snackBarParentView.context.getString(action)
@@ -40,6 +44,7 @@ class ContextMenuSnackbarDelegate : SnackbarDelegate {
         snackBarParentView: View,
         text: String,
         subText: String?,
+        subTextOverflow: TextOverflow?,
         duration: Int,
         isError: Boolean,
         action: String?,
@@ -56,10 +61,18 @@ class ContextMenuSnackbarDelegate : SnackbarDelegate {
             null
         }
 
+        val subMessage = subText?.let {
+            SnackbarState.SubMessage(
+                text = it,
+                textOverflow = subTextOverflow ?: TextOverflow.Ellipsis,
+            )
+        }
+
         Snackbar.make(
             snackBarParentView = snackBarParentView,
             snackbarState = SnackbarState(
                 message = text,
+                subMessage = subMessage,
                 duration = SnackbarState.Duration.Preset.Short,
                 action = snackbarAction,
             ),

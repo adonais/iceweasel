@@ -5,6 +5,8 @@ support-files = [
 
 ["test_setting_control_checkbox.html"]
 
-["test_setting_control_select.html"]
+["test_setting_control_controlAttrs.html"]
+
+["test_setting_control_options.html"]
 
 ["test_setting_group.html"]

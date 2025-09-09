@@ -123,11 +123,13 @@ addon-install-error-corrupt-file = The add-on downloaded from this site could no
 addon-install-error-file-access = { $addonName } could not be installed because { -brand-short-name } cannot modify the needed file.
 addon-install-error-not-signed = { -brand-short-name } has prevented this site from installing an unverified add-on.
 addon-install-error-invalid-domain = The add-on { $addonName } can not be installed from this location.
+addon-install-error-no-addon-name-file-access = The add-on could not be installed because { -brand-short-name } cannot modify the needed file.
 addon-local-install-error-network-failure = This add-on could not be installed because of a filesystem error.
 addon-local-install-error-incorrect-hash = This add-on could not be installed because it does not match the add-on { -brand-short-name } expected.
 addon-local-install-error-corrupt-file = This add-on could not be installed because it appears to be corrupt.
 addon-local-install-error-file-access = { $addonName } could not be installed because { -brand-short-name } cannot modify the needed file.
 addon-local-install-error-not-signed = This add-on could not be installed because it has not been verified.
+addon-local-install-no-addon-name-error-file-access = The add-on could not be installed because { -brand-short-name } cannot modify the needed file.
 # Variables:
 #   $appVersion (String): the application version.
 addon-install-error-incompatible = { $addonName } could not be installed because it is not compatible with { -brand-short-name } { $appVersion }.

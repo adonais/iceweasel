@@ -5,11 +5,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "XULBroadcastManager.h"
-#include "nsCOMPtr.h"
-#include "nsContentUtils.h"
+
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/Logging.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "nsCOMPtr.h"
+#include "nsContentUtils.h"
 #include "nsXULElement.h"
 
 struct BroadcastListener {

@@ -9,8 +9,8 @@ origin:
   description: The OpenTelemetry C++ Client
   url: https://opentelemetry.io/
 
-  release: v1.21.0 (2025-05-29T11:30:28+02:00).
-  revision: v1.21.0
+  release: v1.22.0 (2025-07-12T00:11:41+02:00).
+  revision: v1.22.0
 
   license: Apache-2.0
   license-file: LICENSE
@@ -40,11 +40,9 @@ vendoring:
    - api/include/opentelemetry/semconv/telemetry_attributes.h
    - api/include/opentelemetry/std/*.h
    - api/include/opentelemetry/trace/*.h
-   - exporters/ostream/include/opentelemetry/exporters/ostream/common_utils.h
-   - exporters/ostream/include/opentelemetry/exporters/ostream/span_exporter.h
-   - exporters/ostream/include/opentelemetry/exporters/ostream/span_exporter_factory.h
-   - exporters/ostream/src/span_exporter.cc
-   - exporters/ostream/src/span_exporter_factory.cc
+   - exporters/memory/include/opentelemetry/exporters/memory/in_memory_data.h
+   - exporters/memory/include/opentelemetry/exporters/memory/in_memory_span*.h
+   - exporters/memory/src/in_memory_span_exporter_factory.cc
    - sdk/include/opentelemetry/*.h
    - sdk/include/opentelemetry/sdk/common/*.h
    - sdk/include/opentelemetry/sdk/instrumentationscope/*.h

@@ -312,11 +312,10 @@ Address CodeGeneratorShared::ToAddress(const LInt64Allocation& a) const {
 // static
 Address CodeGeneratorShared::ToAddress(Register elements,
                                        const LAllocation* index,
-                                       Scalar::Type type,
-                                       int32_t offsetAdjustment) {
+                                       Scalar::Type type) {
   int32_t idx = ToInt32(index);
   int32_t offset;
-  MOZ_ALWAYS_TRUE(ArrayOffsetFitsInInt32(idx, type, offsetAdjustment, &offset));
+  MOZ_ALWAYS_TRUE(ArrayOffsetFitsInInt32(idx, type, &offset));
   return Address(elements, offset);
 }
 

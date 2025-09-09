@@ -811,6 +811,11 @@ void ToastNotificationHandler::SendFinished() {
   mSentFinished = true;
 }
 
+void ToastNotificationHandler::HandleCloseFromSystem() {
+  SendFinished();
+  mBackend->RemoveHandler(mName, this);
+}
+
 HRESULT
 ToastNotificationHandler::OnActivate(
     const ComPtr<IToastNotification>& notification,
@@ -914,8 +919,7 @@ ToastNotificationHandler::OnActivate(
       mAlertListener->Observe(alertAction, "alertclickcallback", mCookie.get());
     }
   }
-  SendFinished();
-  mBackend->RemoveHandler(mName, this);
+  HandleCloseFromSystem();
   return S_OK;
 }
 
@@ -1002,8 +1006,7 @@ ToastNotificationHandler::OnDismiss(
     return S_OK;
   }
 
-  SendFinished();
-  mBackend->RemoveHandler(mName, this);
+  HandleCloseFromSystem();
   return S_OK;
 }
 
@@ -1015,15 +1018,13 @@ ToastNotificationHandler::OnFail(const ComPtr<IToastNotification>& notification,
   MOZ_LOG(sWASLog, LogLevel::Error,
           ("Error creating notification, error: %ld", err));
 
-  SendFinished();
-  mBackend->RemoveHandler(mName, this);
+  HandleCloseFromSystem();
   return S_OK;
 }
 
 nsresult ToastNotificationHandler::TryShowAlert() {
   if (NS_WARN_IF(!ShowAlert())) {
-    SendFinished();
-    mBackend->RemoveHandler(mName, this);
+    HandleCloseFromSystem();
     return NS_ERROR_FAILURE;
   }
   return NS_OK;

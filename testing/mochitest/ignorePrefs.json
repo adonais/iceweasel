@@ -6,6 +6,8 @@
   "app.update.lastUpdateTime.*",
   "browser.bookmarks.restore_default_bookmarks",
   "browser.contentblocking.category",
+  "browser.contextual-services.contextId",
+  "browser.contextual-services.contextId.timestamp-in-seconds",
   "browser.download.lastDir",
   "browser.firefox-view.view-count",
   "browser.newtabpage.activity-stream.discoverystream.endpointSpocsClear",

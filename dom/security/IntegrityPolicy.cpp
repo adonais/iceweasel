@@ -6,17 +6,16 @@
 
 #include "IntegrityPolicy.h"
 
+#include "mozilla/Logging.h"
+#include "mozilla/StaticPrefs_security.h"
+#include "mozilla/dom/RequestBinding.h"
+#include "mozilla/ipc/PBackgroundSharedTypes.h"
+#include "mozilla/net/SFVService.h"
 #include "nsCOMPtr.h"
 #include "nsIClassInfoImpl.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
 #include "nsString.h"
-
-#include "mozilla/dom/RequestBinding.h"
-#include "mozilla/ipc/PBackgroundSharedTypes.h"
-#include "mozilla/Logging.h"
-#include "mozilla/net/SFVService.h"
-#include "mozilla/StaticPrefs_security.h"
 
 using namespace mozilla;
 

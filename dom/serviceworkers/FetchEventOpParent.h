@@ -7,10 +7,9 @@
 #ifndef mozilla_dom_fetcheventopparent_h__
 #define mozilla_dom_fetcheventopparent_h__
 
-#include "nsISupports.h"
-
 #include "mozilla/dom/FetchEventOpProxyParent.h"
 #include "mozilla/dom/PFetchEventOpParent.h"
+#include "nsISupports.h"
 
 namespace mozilla::dom {
 

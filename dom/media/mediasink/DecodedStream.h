@@ -12,7 +12,6 @@
 #include "MediaInfo.h"
 #include "MediaSegment.h"
 #include "MediaSink.h"
-
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"

@@ -6,11 +6,21 @@
 #ifndef GPU_RenderBundleEncoder_H_
 #define GPU_RenderBundleEncoder_H_
 
-#include "mozilla/dom/TypedArray.h"
 #include "CanvasContext.h"
 #include "ObjectModel.h"
+#include "mozilla/dom/TypedArray.h"
+
+namespace mozilla::dom {
+struct GPURenderBundleEncoderDescriptor;
+struct GPURenderBundleDescriptor;
+enum class GPUIndexFormat : uint8_t;
+}  // namespace mozilla::dom
 
 namespace mozilla::webgpu {
+class BindGroup;
+class Buffer;
+class RenderPipeline;
+
 namespace ffi {
 struct WGPURenderBundleEncoder;
 }  // namespace ffi
@@ -50,7 +60,7 @@ class RenderBundleEncoder final : public ObjectBase, public ChildOf<Device> {
  private:
   void SetBindGroup(uint32_t aSlot, BindGroup* const aBindGroup,
                     const uint32_t* aDynamicOffsets,
-                    uint64_t aDynamicOffsetsLength);
+                    size_t aDynamicOffsetsLength);
 
  public:
   void SetBindGroup(uint32_t aSlot, BindGroup* const aBindGroup,

@@ -10,13 +10,7 @@
 #include "GeolocationSystem.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/CycleCollectedJSContext.h"  // for nsAutoMicroTask
-#include "mozilla/dom/BrowserChild.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/PermissionMessageUtils.h"
-#include "mozilla/dom/GeolocationPositionError.h"
-#include "mozilla/dom/GeolocationPositionErrorBinding.h"
-#include "mozilla/glean/DomGeolocationMetrics.h"
-#include "mozilla/ipc/MessageChannel.h"
+#include "mozilla/EventStateManager.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_geo.h"
@@ -24,12 +18,18 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/WeakPtr.h"
-#include "mozilla/EventStateManager.h"
+#include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/GeolocationPositionError.h"
+#include "mozilla/dom/GeolocationPositionErrorBinding.h"
+#include "mozilla/dom/PermissionMessageUtils.h"
+#include "mozilla/glean/DomGeolocationMetrics.h"
+#include "mozilla/ipc/MessageChannel.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentPermissionHelper.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
-#include "mozilla/dom/Document.h"
 #include "nsINamed.h"
 #include "nsIObserverService.h"
 #include "nsIPromptService.h"
@@ -46,9 +46,9 @@ class nsIPrincipal;
 #endif
 
 #ifdef MOZ_ENABLE_DBUS
-#  include "mozilla/WidgetUtilsGtk.h"
 #  include "GeoclueLocationProvider.h"
 #  include "PortalLocationProvider.h"
+#  include "mozilla/WidgetUtilsGtk.h"
 #endif
 
 #ifdef MOZ_WIDGET_COCOA

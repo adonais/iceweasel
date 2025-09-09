@@ -7,6 +7,7 @@
 #include "mozilla/dom/StructuredCloneHolder.h"
 
 #include <new>
+
 #include "ErrorList.h"
 #include "MainThreadUtils.h"
 #include "js/CallArgs.h"
@@ -21,6 +22,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/AudioData.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Blob.h"
@@ -29,10 +31,10 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/ClonedErrorHolder.h"
 #include "mozilla/dom/ClonedErrorHolderBinding.h"
-#include "mozilla/dom/DirectoryBinding.h"
 #include "mozilla/dom/DOMJSClass.h"
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/dom/Directory.h"
+#include "mozilla/dom/DirectoryBinding.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/EncodedAudioChunk.h"
 #include "mozilla/dom/EncodedAudioChunkBinding.h"
@@ -60,13 +62,12 @@
 #include "mozilla/dom/TransformStream.h"
 #include "mozilla/dom/TransformStreamBinding.h"
 #include "mozilla/dom/VideoFrame.h"
-#include "mozilla/dom/AudioData.h"
 #include "mozilla/dom/VideoFrameBinding.h"
 #include "mozilla/dom/WebIDLSerializable.h"
-#include "mozilla/dom/WritableStream.h"
-#include "mozilla/dom/WritableStreamBinding.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/dom/WritableStream.h"
+#include "mozilla/dom/WritableStreamBinding.h"
 #include "mozilla/fallible.h"
 #include "mozilla/gfx/2D.h"
 #include "nsContentUtils.h"
@@ -1110,7 +1111,7 @@ JSObject* StructuredCloneHolder::CustomReadHandler(
     return ClonedErrorHolder::ReadStructuredClone(aCx, aReader, this);
   }
 
-  if (VideoFrame::PrefEnabled() && aTag == SCTAG_DOM_VIDEOFRAME &&
+  if (VideoFrame::PrefEnabled(aCx) && aTag == SCTAG_DOM_VIDEOFRAME &&
       CloneScope() == StructuredCloneScope::SameProcess &&
       aCloneDataPolicy.areIntraClusterClonableSharedObjectsAllowed()) {
     JS::Rooted<JSObject*> global(aCx, mGlobal->GetGlobalJSObject());
@@ -1250,7 +1251,7 @@ bool StructuredCloneHolder::CustomWriteHandler(
   }
 
   // See if this is a VideoFrame object.
-  if (VideoFrame::PrefEnabled()) {
+  if (VideoFrame::PrefEnabled(aCx)) {
     VideoFrame* videoFrame = nullptr;
     if (NS_SUCCEEDED(UNWRAP_OBJECT(VideoFrame, &obj, videoFrame))) {
       SameProcessScopeRequired(aSameProcessScopeRequired);
@@ -1446,7 +1447,7 @@ StructuredCloneHolder::CustomReadTransferHandler(
                                             aReturnObject);
   }
 
-  if (VideoFrame::PrefEnabled() && aTag == SCTAG_DOM_VIDEOFRAME &&
+  if (VideoFrame::PrefEnabled(aCx) && aTag == SCTAG_DOM_VIDEOFRAME &&
       CloneScope() == StructuredCloneScope::SameProcess &&
       aCloneDataPolicy.areIntraClusterClonableSharedObjectsAllowed()) {
     MOZ_ASSERT(aContent);
@@ -1591,7 +1592,7 @@ StructuredCloneHolder::CustomWriteTransferHandler(
         return true;
       }
 
-      if (VideoFrame::PrefEnabled()) {
+      if (VideoFrame::PrefEnabled(aCx)) {
         VideoFrame* videoFrame = nullptr;
         rv = UNWRAP_OBJECT(VideoFrame, &obj, videoFrame);
         if (NS_SUCCEEDED(rv)) {
@@ -1758,7 +1759,7 @@ void StructuredCloneHolder::CustomFreeTransferHandler(
     return;
   }
 
-  if (VideoFrame::PrefEnabled() && aTag == SCTAG_DOM_VIDEOFRAME &&
+  if (aTag == SCTAG_DOM_VIDEOFRAME &&
       CloneScope() == StructuredCloneScope::SameProcess) {
     if (aContent) {
       VideoFrame::TransferredData* data =
@@ -1767,8 +1768,7 @@ void StructuredCloneHolder::CustomFreeTransferHandler(
     }
     return;
   }
-  if (StaticPrefs::dom_media_webcodecs_enabled() &&
-      aTag == SCTAG_DOM_AUDIODATA &&
+  if (aTag == SCTAG_DOM_AUDIODATA &&
       CloneScope() == StructuredCloneScope::SameProcess) {
     if (aContent) {
       AudioData::TransferredData* data =
@@ -1851,7 +1851,7 @@ bool StructuredCloneHolder::CustomCanTransferHandler(
     }
   }
 
-  if (VideoFrame::PrefEnabled()) {
+  if (VideoFrame::PrefEnabled(aCx)) {
     VideoFrame* videoframe = nullptr;
     nsresult rv = UNWRAP_OBJECT(VideoFrame, &obj, videoframe);
     if (NS_SUCCEEDED(rv)) {

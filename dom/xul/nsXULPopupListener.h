@@ -11,9 +11,8 @@
 #define nsXULPopupListener_h___
 
 #include "nsCOMPtr.h"
-
-#include "nsIDOMEventListener.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIDOMEventListener.h"
 
 class nsIContent;
 

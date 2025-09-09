@@ -6,3 +6,4 @@ package org.mozilla.fenix.benchmark.utils
 
 const val TARGET_PACKAGE = "org.mozilla.fenix"
 const val DEFAULT_ITERATIONS = 5
+const val EXTRA_COMPOSABLE_TOOLBAR = "EXTRA_COMPOSABLE_TOOLBAR"

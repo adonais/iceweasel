@@ -1407,7 +1407,7 @@ class PerfParser(CompareParser):
             print(f"Removing cached {cache_file} file")
             cache_file.unlink(missing_ok=True)
 
-        all_tasks, dep_cache, cache_dir = setup_tasks_for_fzf(
+        all_tasks, cache_dir = setup_tasks_for_fzf(
             not dry_run,
             parameters,
             full=True,
@@ -1415,9 +1415,6 @@ class PerfParser(CompareParser):
         )
         base_cmd = build_base_cmd(
             fzf,
-            dep_cache,
-            cache_dir,
-            show_estimates=False,
             preview_script=PREVIEW_SCRIPT,
         )
         full_task_graph = pathlib.Path(cache_dir, "full_task_graph")

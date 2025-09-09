@@ -12,7 +12,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -108,7 +107,6 @@ fun <S : State, A : Action> Store<S, A>.observeForever(
  * [Lifecycle] switches back to at least STARTED state then the latest [State] and further updates
  * will be received.
  */
-@ExperimentalCoroutinesApi
 @MainThread
 fun <S : State, A : Action> Store<S, A>.channel(
     owner: LifecycleOwner = ProcessLifecycleOwner.get(),

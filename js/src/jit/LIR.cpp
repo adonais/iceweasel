@@ -152,14 +152,38 @@ LMoveGroup* LBlock::getExitMoveGroup(TempAllocator& alloc) {
   return exitMoveGroup_;
 }
 
+LBlock* LBlock::isMoveGroupsThenGoto() {
+  if (mir()->isLoopHeader()) {
+    return nullptr;
+  }
+  auto riter = rbegin();
+  if (!riter->isGoto()) {
+    return nullptr;
+  }
+  riter++;
+  // This loop doesn't iterate much.  Its highest trip-count for all of
+  // JetStream3 is 3.
+  while (riter != rend()) {
+    if (!(*riter)->isMoveGroup()) {
+      return nullptr;
+    }
+    riter++;
+  }
+  LGoto* ins = rbegin()->toGoto();
+  MOZ_ASSERT(ins->numSuccessors() == 1);
+  return ins->getSuccessor(0)->lir();
+}
+
 #ifdef JS_JITSPEW
 void LBlock::dump(GenericPrinter& out) {
   out.printf("block%u:\n", mir()->id());
   for (size_t i = 0; i < numPhis(); ++i) {
+    out.printf("  ");
     getPhi(i)->dump(out);
     out.printf("\n");
   }
   for (LInstructionIterator iter = begin(); iter != end(); iter++) {
+    out.printf("  ");
     iter->dump(out);
     if (iter->safepoint()) {
       out.printf(" SAFEPOINT(0x%p) ", iter->safepoint());

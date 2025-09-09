@@ -218,8 +218,7 @@ StyleDisplayMode Gecko_MediaFeatures_GetDisplayMode(const Document* aDocument) {
 
   nsCOMPtr<nsISupports> container = rootDocument->GetContainer();
   if (nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(container)) {
-    nsCOMPtr<nsIWidget> mainWidget;
-    baseWindow->GetMainWidget(getter_AddRefs(mainWidget));
+    nsCOMPtr<nsIWidget> mainWidget = baseWindow->GetMainWidget();
     if (mainWidget && mainWidget->SizeMode() == nsSizeMode_Fullscreen) {
       return StyleDisplayMode::Fullscreen;
     }
@@ -349,6 +348,11 @@ StyleDynamicRange Gecko_MediaFeatures_VideoDynamicRange(
     return StyleDynamicRange::Standard;
   }
 #ifdef MOZ_WAYLAND
+  // Wayland compositors allow to process HDR content even without HDR monitor
+  // attached.
+  if (StaticPrefs::gfx_wayland_hdr_force_enabled_AtStartup()) {
+    return StyleDynamicRange::High;
+  }
   if (!StaticPrefs::gfx_wayland_hdr_AtStartup()) {
     return StyleDynamicRange::Standard;
   }

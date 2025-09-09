@@ -129,6 +129,7 @@
   MACRO_(dollar_RegExpFlagsGetter_, "$RegExpFlagsGetter")                      \
   MACRO_(dollar_RegExpToString_, "$RegExpToString")                            \
   MACRO_(dollar_SharedArrayBufferSpecies_, "$SharedArrayBufferSpecies")        \
+  MACRO_(dollar_TypedArraySpecies_, "$TypedArraySpecies")                      \
   MACRO_(domNode, "domNode")                                                   \
   MACRO_(done, "done")                                                         \
   MACRO_(dotAll, "dotAll")                                                     \

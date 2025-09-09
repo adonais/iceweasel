@@ -6,11 +6,11 @@
 
 #include "SVGAnimatedInteger.h"
 
-#include "nsError.h"
 #include "SMILIntegerType.h"
 #include "SVGAttrTearoffTable.h"
 #include "mozilla/SMILValue.h"
 #include "mozilla/SVGContentUtils.h"
+#include "nsError.h"
 
 using namespace mozilla::dom;
 

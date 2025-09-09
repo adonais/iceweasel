@@ -5,19 +5,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WindowsLocationProvider.h"
+
+#include "GeolocationPosition.h"
+#include "MLSFallback.h"
 #include "WindowsLocationParent.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/FloatingPoint.h"
+#include "mozilla/Logging.h"
+#include "mozilla/dom/GeolocationPositionErrorBinding.h"
 #include "mozilla/dom/WindowsUtilsParent.h"
 #include "mozilla/glean/DomGeolocationMetrics.h"
-#include "GeolocationPosition.h"
-#include "nsComponentManagerUtils.h"
 #include "mozilla/ipc/UtilityProcessManager.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
+#include "nsComponentManagerUtils.h"
 #include "prtime.h"
-#include "MLSFallback.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/Logging.h"
-#include "mozilla/FloatingPoint.h"
-#include "mozilla/dom/GeolocationPositionErrorBinding.h"
 
 namespace mozilla::dom {
 

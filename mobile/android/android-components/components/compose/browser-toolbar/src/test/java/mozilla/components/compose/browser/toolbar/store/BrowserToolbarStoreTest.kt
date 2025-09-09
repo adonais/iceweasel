@@ -13,7 +13,10 @@ import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAct
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.PageActionsEndUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.PageActionsStartUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.PageOriginUpdated
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ToolbarGravityUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
+import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Bottom
+import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Top
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -179,6 +182,16 @@ class BrowserToolbarStoreTest {
 
         store.dispatch(BrowserActionsEndUpdated(listOf(action2, action3)))
         assertEquals(listOf(action2, action3), store.state.displayState.browserActionsEnd)
+    }
+
+    @Test
+    fun `WHEN the toolbar gravity is updated THEN replace the old details with the new ones`() {
+        val store = BrowserToolbarStore()
+        assertEquals(Top, store.state.gravity)
+
+        store.dispatch(ToolbarGravityUpdated(Bottom))
+
+        assertEquals(Bottom, store.state.gravity)
     }
 
     private fun fakeActionButton() = ActionButtonRes(

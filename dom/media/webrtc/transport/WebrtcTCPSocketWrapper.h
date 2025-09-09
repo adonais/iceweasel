@@ -9,10 +9,9 @@
 
 #include <memory>
 
+#include "mozilla/net/WebrtcTCPSocketCallback.h"
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
-
-#include "mozilla/net/WebrtcTCPSocketCallback.h"
 
 class nsIEventTarget;
 

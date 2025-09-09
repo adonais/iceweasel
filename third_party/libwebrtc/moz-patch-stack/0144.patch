@@ -1,24 +1,69 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Tue, 13 May 2025 22:39:00 +0000
-Subject: Bug 1966238 - (fix-bf85c38fb3) fix build for our added 'pid' field in
- DesktopCapturer::Source r?pehrsons!
+Date: Fri, 18 Jul 2025 16:07:00 -0500
+Subject: Bug 1971201 - (fix-70fb834e8c) most all of libwebrtc has converted
+ from rtc:: to webrtc::
 
-Differential Revision: https://phabricator.services.mozilla.com/D249164
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b6b37905a574e7706d98eb683e6800c9525815e7
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d51a82971b9e755d5514572fcd8ddc557153c8ef
 ---
- modules/desktop_capture/mac/screen_capturer_sck.mm | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ modules/rtp_rtcp/source/rtp_header_extensions.h | 4 ++--
+ modules/video_capture/video_capture.h           | 2 +-
+ modules/video_capture/video_capture_impl.cc     | 2 +-
+ modules/video_capture/video_capture_impl.h      | 2 +-
+ 4 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/modules/desktop_capture/mac/screen_capturer_sck.mm b/modules/desktop_capture/mac/screen_capturer_sck.mm
-index f180d3bc62..a664c013bc 100644
---- a/modules/desktop_capture/mac/screen_capturer_sck.mm
-+++ b/modules/desktop_capture/mac/screen_capturer_sck.mm
-@@ -434,7 +434,7 @@ bool ScreenCapturerSck::GetSourceList(SourceList* sources) {
-   RTC_DCHECK_RUN_ON(&api_checker_);
-   sources->clear();
-   if (capture_options_.allow_sck_system_picker() && picker_handle_) {
--    sources->push_back({picker_handle_->Source(), std::string()});
-+    sources->push_back({picker_handle_->Source(), 0, std::string()});
-   }
-   return true;
+diff --git a/modules/rtp_rtcp/source/rtp_header_extensions.h b/modules/rtp_rtcp/source/rtp_header_extensions.h
+index cc811cae3a..46d80e424a 100644
+--- a/modules/rtp_rtcp/source/rtp_header_extensions.h
++++ b/modules/rtp_rtcp/source/rtp_header_extensions.h
+@@ -321,10 +321,10 @@ class CsrcAudioLevel {
+   static constexpr const char* kUri =
+       "urn:ietf:params:rtp-hdrext:csrc-audio-level";
+ 
+-  static bool Parse(rtc::ArrayView<const uint8_t> data,
++  static bool Parse(webrtc::ArrayView<const uint8_t> data,
+                     CsrcAudioLevelList* csrcAudioLevels);
+   static size_t ValueSize(const CsrcAudioLevelList& csrcAudioLevels);
+-  static bool Write(rtc::ArrayView<uint8_t> data,
++  static bool Write(webrtc::ArrayView<uint8_t> data,
+                     const CsrcAudioLevelList& csrcAudioLevels);
+ };
+ #endif
+diff --git a/modules/video_capture/video_capture.h b/modules/video_capture/video_capture.h
+index eef2302589..e2022fe378 100644
+--- a/modules/video_capture/video_capture.h
++++ b/modules/video_capture/video_capture.h
+@@ -120,7 +120,7 @@ class VideoCaptureModule : public RefCountInterface {
+ 
+   //  Remove capture data callback
+   virtual void DeRegisterCaptureDataCallback(
+-      rtc::VideoSinkInterface<VideoFrame> *dataCallback) = 0;
++      webrtc::VideoSinkInterface<VideoFrame> *dataCallback) = 0;
+ 
+   // Start capture device
+   virtual int32_t StartCapture(const VideoCaptureCapability& capability) = 0;
+diff --git a/modules/video_capture/video_capture_impl.cc b/modules/video_capture/video_capture_impl.cc
+index d265101f32..7d9f32c4e9 100644
+--- a/modules/video_capture/video_capture_impl.cc
++++ b/modules/video_capture/video_capture_impl.cc
+@@ -109,7 +109,7 @@ void VideoCaptureImpl::RegisterCaptureDataCallback(
  }
+ 
+ void VideoCaptureImpl::DeRegisterCaptureDataCallback(
+-    rtc::VideoSinkInterface<VideoFrame>* dataCallBack) {
++    webrtc::VideoSinkInterface<VideoFrame>* dataCallBack) {
+   MutexLock lock(&api_lock_);
+   auto it = _dataCallBacks.find(dataCallBack);
+   if (it != _dataCallBacks.end()) {
+diff --git a/modules/video_capture/video_capture_impl.h b/modules/video_capture/video_capture_impl.h
+index 627a2cf05d..d26362ecd0 100644
+--- a/modules/video_capture/video_capture_impl.h
++++ b/modules/video_capture/video_capture_impl.h
+@@ -65,7 +65,7 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
+   virtual void RegisterCaptureDataCallback(
+       RawVideoSinkInterface* dataCallback) override;
+   void DeRegisterCaptureDataCallback(
+-      rtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
++      webrtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
+ 
+   int32_t StopCaptureIfAllClientsClose() override;
+   int32_t SetCaptureRotation(VideoRotation rotation) override;

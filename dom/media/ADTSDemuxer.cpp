@@ -6,12 +6,13 @@
 
 #include "ADTSDemuxer.h"
 
+#include <inttypes.h>
+
+#include "Adts.h"
 #include "TimeUnits.h"
 #include "VideoUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/UniquePtr.h"
-#include "Adts.h"
-#include <inttypes.h>
 
 extern mozilla::LazyLogModule gMediaDemuxerLog;
 #define LOG(msg, ...) \

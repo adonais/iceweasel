@@ -8,8 +8,8 @@
 #define mozilla_MutationEvent_h__
 
 #include "mozilla/BasicEvents.h"
-#include "nsCOMPtr.h"
 #include "nsAtom.h"
+#include "nsCOMPtr.h"
 #include "nsINode.h"
 
 namespace mozilla {

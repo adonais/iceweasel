@@ -700,7 +700,7 @@ IonScript* IonScript::New(JSContext* cx, IonCompilationId compilationId,
                 "IonScript has wrong size for SafepointIndex");
 
   CheckedInt<Offset> allocSize = sizeof(IonScript);
-  allocSize += CheckedInt<Offset>(constants) * sizeof(Value);
+  allocSize += CheckedInt<Offset>(constants) * sizeof(HeapPtr<Value>);
   allocSize += CheckedInt<Offset>(runtimeSize);
   allocSize += CheckedInt<Offset>(nurseryObjects) * sizeof(HeapPtr<JSObject*>);
   allocSize += CheckedInt<Offset>(osiIndices) * sizeof(OsiIndex);
@@ -726,9 +726,10 @@ IonScript* IonScript::New(JSContext* cx, IonCompilationId compilationId,
 
   Offset offsetCursor = sizeof(IonScript);
 
-  MOZ_ASSERT(offsetCursor % alignof(Value) == 0);
+  MOZ_ASSERT(offsetCursor % alignof(HeapPtr<Value>) == 0);
+  script->initElements<HeapPtr<Value>>(offsetCursor, constants);
   script->constantTableOffset_ = offsetCursor;
-  offsetCursor += constants * sizeof(Value);
+  offsetCursor += constants * sizeof(HeapPtr<Value>);
 
   MOZ_ASSERT(offsetCursor % alignof(uint64_t) == 0);
   script->runtimeDataOffset_ = offsetCursor;
@@ -934,20 +935,24 @@ const OsiIndex* IonScript::getOsiIndex(uint8_t* retAddr) const {
 }
 
 void IonScript::Destroy(JS::GCContext* gcx, IonScript* script) {
-  // Make sure there are no pointers into the IonScript's nursery objects list
-  // in the store buffer. Because this can be called during sweeping when
-  // discarding JIT code, we have to lock the store buffer when we find an
-  // object that's (still) in the nursery.
+  // Destroy the HeapPtrs to ensure there are no pointers into the IonScript's
+  // nursery objects list or constants list in the store buffer. Because this
+  // can be called during sweeping when discarding JIT code, we have to lock the
+  // store buffer when we find a pointer that's (still) in the nursery.
   mozilla::Maybe<gc::AutoLockStoreBuffer> lock;
   for (size_t i = 0, len = script->numNurseryObjects(); i < len; i++) {
     JSObject* obj = script->nurseryObjects()[i];
-    if (!IsInsideNursery(obj)) {
-      continue;
-    }
-    if (lock.isNothing()) {
+    if (lock.isNothing() && IsInsideNursery(obj)) {
       lock.emplace(gcx->runtimeFromAnyThread());
     }
-    script->nurseryObjects()[i] = HeapPtr<JSObject*>();
+    script->nurseryObjects()[i].~HeapPtr<JSObject*>();
+  }
+  for (size_t i = 0, len = script->numConstants(); i < len; i++) {
+    Value v = script->getConstant(i);
+    if (lock.isNothing() && v.isGCThing() && IsInsideNursery(v.toGCThing())) {
+      lock.emplace(gcx->runtimeFromAnyThread());
+    }
+    script->getConstant(i).~HeapPtr<Value>();
   }
 
   // This allocation is tracked by JSScript::setIonScriptImpl.
@@ -1355,7 +1360,8 @@ bool OptimizeMIR(MIRGenerator* mir) {
     }
   }
 
-  if (mir->optimizationInfo().eaaEnabled()) {
+  // EAA, but only for wasm; it appears to be of minimal benefit for JS inputs.
+  if (mir->compilingWasm() && mir->optimizationInfo().eaaEnabled()) {
     EffectiveAddressAnalysis eaa(mir, graph);
     JitSpewCont(JitSpew_EAA, "\n");
     if (!eaa.analyze()) {

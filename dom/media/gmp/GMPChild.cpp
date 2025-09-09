@@ -5,19 +5,17 @@
 
 #include "GMPChild.h"
 
-#include "base/command_line.h"
-#include "base/task.h"
 #include "ChildProfilerController.h"
 #include "ChromiumCDMAdapter.h"
 #include "GeckoProfiler.h"
+#include "base/command_line.h"
+#include "base/task.h"
 #ifdef XP_LINUX
 #  include "dlfcn.h"
 #  if defined(MOZ_SANDBOX)
 #    include "mozilla/Sandbox.h"
 #  endif  // defined(MOZ_SANDBOX)
 #endif    // defined (XP_LINUX)
-#include "gmp-video-decode.h"
-#include "gmp-video-encode.h"
 #include "GMPContentChild.h"
 #include "GMPLoader.h"
 #include "GMPLog.h"
@@ -28,30 +26,33 @@
 #include "GMPVideoDecoderChild.h"
 #include "GMPVideoEncoderChild.h"
 #include "GMPVideoHost.h"
+#include "gmp-video-decode.h"
+#include "gmp-video-encode.h"
 #include "mozilla/Algorithm.h"
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/FOGIPC.h"
+#include "mozilla/TextUtils.h"
 #include "mozilla/glean/GleanTestsTestMetrics.h"
 #include "mozilla/ipc/CrashReporterClient.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/ProcessChild.h"
-#include "mozilla/TextUtils.h"
 #include "nsDebugImpl.h"
 #include "nsExceptionHandler.h"
 #include "nsIFile.h"
+#include "nsIXULRuntime.h"
 #include "nsReadableUtils.h"
 #include "nsThreadManager.h"
-#include "nsXULAppAPI.h"
-#include "nsIXULRuntime.h"
 #include "nsXPCOM.h"
 #include "nsXPCOMPrivate.h"  // for XUL_DLL
+#include "nsXULAppAPI.h"
 #include "prio.h"
 #ifdef XP_WIN
 #  include <stdlib.h>  // for _exit()
-#  include "nsIObserverService.h"
+
+#  include "WinUtils.h"
 #  include "mozilla/Services.h"
 #  include "mozilla/WinDllServices.h"
-#  include "WinUtils.h"
+#  include "nsIObserverService.h"
 #else
 #  include <unistd.h>  // for _exit()
 #endif

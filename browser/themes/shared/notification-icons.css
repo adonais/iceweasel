@@ -93,6 +93,22 @@
   }
 }
 
+.localhost-icon {
+  list-style-image: url(chrome://browser/skin/notification-icons/local-host.svg);
+
+  &.blocked-permission-icon {
+    list-style-image: url(chrome://browser/skin/notification-icons/local-host-blocked.svg);
+  }
+}
+
+.local-network-icon {
+  list-style-image: url(chrome://browser/skin/notification-icons/local-network.svg);
+
+  &.blocked-permission-icon {
+    list-style-image: url(chrome://browser/skin/notification-icons/local-network-blocked.svg);
+  }
+}
+
 .open-protocol-handler-icon {
   list-style-image: url(chrome://global/skin/icons/open-in-new.svg);
 
@@ -195,14 +211,6 @@
 #identity-credential-notification-icon,
 #credential-chooser-notification-icon {
   list-style-image: url(chrome://browser/skin/login.svg);
-}
-
-#webRTC-previewVideo {
-  border-radius: var(--border-radius-small);
-  border: 1px solid var(--panel-separator-color);
-  min-width: 0;
-  min-height: 10em;
-  max-height: 250px;
 }
 
 #webRTC-all-windows-shared,

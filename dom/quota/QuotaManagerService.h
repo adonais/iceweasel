@@ -8,6 +8,7 @@
 #define mozilla_dom_quota_QuotaManagerService_h
 
 #include <cstdint>
+
 #include "ErrorList.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/HalBatteryInformation.h"

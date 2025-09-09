@@ -813,11 +813,6 @@ class OCSPExtensionTrustDomain : public TrustDomain {
     return pkix::Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
 
-  pkix::Result NetscapeStepUpMatchesServerAuth(Time, bool&) override {
-    ADD_FAILURE();
-    return pkix::Result::FATAL_ERROR_LIBRARY_FAILURE;
-  }
-
   void NoteAuxiliaryExtension(AuxiliaryExtension extension,
                               Input data) override {
     if (extension != AuxiliaryExtension::SCTListFromOCSPResponse) {

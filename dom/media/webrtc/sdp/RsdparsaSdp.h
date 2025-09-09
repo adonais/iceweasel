@@ -8,13 +8,11 @@
 #define _RSDPARSA_SDP_H_
 
 #include "mozilla/UniquePtr.h"
-
-#include "sdp/Sdp.h"
-
-#include "sdp/RsdparsaSdpMediaSection.h"
 #include "sdp/RsdparsaSdpAttributeList.h"
-#include "sdp/RsdparsaSdpInc.h"
 #include "sdp/RsdparsaSdpGlue.h"
+#include "sdp/RsdparsaSdpInc.h"
+#include "sdp/RsdparsaSdpMediaSection.h"
+#include "sdp/Sdp.h"
 
 namespace mozilla {
 

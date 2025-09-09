@@ -4,8 +4,8 @@
 
 #include "MFMediaEngineUtils.h"
 
-#include "mozilla/UniquePtr.h"
 #include "WMFUtils.h"
+#include "mozilla/UniquePtr.h"
 
 namespace mozilla {
 

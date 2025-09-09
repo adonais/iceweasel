@@ -3,11 +3,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/dom/WebGPUBinding.h"
 #include "Sampler.h"
-#include "ipc/WebGPUChild.h"
 
 #include "Device.h"
+#include "ipc/WebGPUChild.h"
+#include "mozilla/dom/WebGPUBinding.h"
 
 namespace mozilla::webgpu {
 
@@ -33,8 +33,6 @@ void Sampler::Cleanup() {
   }
 
   ffi::wgpu_client_drop_sampler(bridge->GetClient(), mId);
-
-  wgpu_client_free_sampler_id(bridge->GetClient(), mId);
 }
 
 }  // namespace mozilla::webgpu

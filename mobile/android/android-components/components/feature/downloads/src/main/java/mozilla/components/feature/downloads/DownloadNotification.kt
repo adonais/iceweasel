@@ -273,6 +273,7 @@ internal object DownloadNotification {
             0,
             AbstractFetchDownloadService.createOpenFileIntent(
                 context = context,
+                packageName = context.packageName,
                 downloadFileName = downloadState.fileName,
                 downloadFilePath = downloadState.filePath,
                 downloadContentType = downloadState.contentType,

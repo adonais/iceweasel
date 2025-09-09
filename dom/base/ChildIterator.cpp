@@ -5,13 +5,14 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ChildIterator.h"
-#include "nsContentUtils.h"
+
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/ShadowRoot.h"
+#include "nsCSSAnonBoxes.h"
+#include "nsContentUtils.h"
 #include "nsIAnonymousContentCreator.h"
 #include "nsIFrame.h"
-#include "nsCSSAnonBoxes.h"
 #include "nsLayoutUtils.h"
 
 namespace mozilla::dom {

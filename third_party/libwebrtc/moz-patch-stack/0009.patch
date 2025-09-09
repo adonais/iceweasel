@@ -16,10 +16,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/9314046d89ebc0836
  2 files changed, 4 insertions(+), 3 deletions(-)
 
 diff --git a/modules/desktop_capture/mac/screen_capturer_mac.mm b/modules/desktop_capture/mac/screen_capturer_mac.mm
-index 21a9c1ca4a..01a8f04daa 100644
+index 82c07d777a..955a13f435 100644
 --- a/modules/desktop_capture/mac/screen_capturer_mac.mm
 +++ b/modules/desktop_capture/mac/screen_capturer_mac.mm
-@@ -286,7 +286,8 @@ bool ScreenCapturerMac::GetSourceList(SourceList* screens) {
+@@ -287,7 +287,8 @@ DesktopRect GetExcludedWindowPixelBounds(CGWindowID window,
    for (MacDisplayConfigurations::iterator it = desktop_config_.displays.begin();
         it != desktop_config_.displays.end();
         ++it) {
@@ -30,7 +30,7 @@ index 21a9c1ca4a..01a8f04daa 100644
    return true;
  }
 diff --git a/modules/desktop_capture/mac/window_list_utils.cc b/modules/desktop_capture/mac/window_list_utils.cc
-index 5d881662ea..989ec7ea54 100644
+index 3aeb8dd02b..f1485cf085 100644
 --- a/modules/desktop_capture/mac/window_list_utils.cc
 +++ b/modules/desktop_capture/mac/window_list_utils.cc
 @@ -198,7 +198,7 @@ bool GetWindowList(DesktopCapturer::SourceList* windows,

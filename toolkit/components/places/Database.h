@@ -22,6 +22,9 @@
 #define DATABASE_FAVICONS_FILENAME u"favicons.sqlite"_ns
 #define DATABASE_FAVICONS_SCHEMANAME "favicons"_ns
 
+// How much time Sqlite can wait before returning a SQLITE_BUSY error.
+#define DATABASE_BUSY_TIMEOUT_MS 100
+
 // Fired after Places inited.
 #define TOPIC_PLACES_INIT_COMPLETE "places-init-complete"
 // This topic is received when the profile is about to be lost.  Places does

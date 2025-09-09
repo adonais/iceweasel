@@ -13,9 +13,9 @@
 #import "components/capturer/RTCCameraVideoCapturer.h"
 #import "helpers/NSString+StdString.h"
 
+#include "CallbackThreadRegistry.h"
 #include "api/scoped_refptr.h"
 #include "api/video/video_rotation.h"
-#include "CallbackThreadRegistry.h"
 #include "device_info_avfoundation.h"
 #include "modules/video_capture/video_capture_defines.h"
 #include "mozilla/Assertions.h"
@@ -121,7 +121,7 @@ VideoCaptureAvFoundation::~VideoCaptureAvFoundation() {
 }
 
 /* static */
-rtc::scoped_refptr<VideoCaptureModule> VideoCaptureAvFoundation::Create(
+webrtc::scoped_refptr<VideoCaptureModule> VideoCaptureAvFoundation::Create(
     const char* _Nullable aDeviceUniqueIdUTF8) {
   std::string uniqueId(aDeviceUniqueIdUTF8);
 
@@ -129,8 +129,8 @@ rtc::scoped_refptr<VideoCaptureModule> VideoCaptureAvFoundation::Create(
            captureDevicesWithDeviceTypes:[RTCCameraVideoCapturer
                                              defaultCaptureDeviceTypes]]) {
     if ([NSString stdStringForString:device.uniqueID] == uniqueId) {
-      rtc::scoped_refptr<VideoCaptureModule> module(
-          new rtc::RefCountedObject<VideoCaptureAvFoundation>(device));
+      webrtc::scoped_refptr<VideoCaptureModule> module(
+          new webrtc::RefCountedObject<VideoCaptureAvFoundation>(device));
       return module;
     }
   }
@@ -286,12 +286,12 @@ int32_t VideoCaptureAvFoundation::OnFrame(
   }
 
   const int64_t timestamp_us =
-      aFrame.timeStampNs / rtc::kNumNanosecsPerMicrosec;
+      aFrame.timeStampNs / webrtc::kNumNanosecsPerMicrosec;
   RTCI420Buffer* buffer = [aFrame.buffer toI420];
   mConversionRecorder.Record(0);
   // Accessing the (intended-to-be-private) native buffer directly is hacky but
   // lets us skip two copies
-  rtc::scoped_refptr<webrtc::I420BufferInterface> nativeBuffer =
+  webrtc::scoped_refptr<webrtc::I420BufferInterface> nativeBuffer =
       buffer.nativeI420Buffer;
   auto frame = webrtc::VideoFrame::Builder()
                    .set_video_frame_buffer(nativeBuffer)

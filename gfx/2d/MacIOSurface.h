@@ -75,6 +75,8 @@ class MacIOSurface final
       IOSurfaceID aSurfaceID, bool aHasAlpha = true,
       mozilla::gfx::YUVColorSpace aColorSpace =
           mozilla::gfx::YUVColorSpace::Identity);
+  static mozilla::gfx::SurfaceFormat SurfaceFormatForPixelFormat(
+      OSType aPixelFormat, bool aHasAlpha);
 
   explicit MacIOSurface(CFTypeRefPtr<IOSurfaceRef> aIOSurfaceRef,
                         bool aHasAlpha = true,

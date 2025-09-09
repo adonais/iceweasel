@@ -8,13 +8,14 @@
 #define mozilla_dom_workernavigator_h__
 
 #include <stdint.h>
+
 #include "js/RootingAPI.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/workerinternals/RuntimeService.h"
-#include "mozilla/StaticPrefs_privacy.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"
 #include "nsStringFwd.h"

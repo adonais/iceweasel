@@ -8,11 +8,7 @@ import android.content.Context
 import androidx.lifecycle.LifecycleOwner
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
-import org.junit.After
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Test
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.toolbar.interactor.BrowserToolbarInteractor
@@ -23,19 +19,6 @@ import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.utils.Settings
 
 class ToolbarMenuBuilderTest {
-    @Before
-    fun setup() {
-        mockkStatic(Context::components)
-        mockkStatic(Context::bookmarkStorage)
-        mockkStatic(Context::settings)
-    }
-
-    @After
-    fun teardown() {
-        unmockkStatic(Context::components)
-        unmockkStatic(Context::bookmarkStorage)
-        unmockkStatic(Context::settings)
-    }
 
     @Test
     fun `GIVEN a valid custom tab id WHEN asked to build a toolbar menu THEN build a menu suited for custom tabs`() {

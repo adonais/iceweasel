@@ -255,7 +255,7 @@ TEST(PHC, TestPHCInfo)
 {
   mozilla::phc::SetPHCState(phc::PHCState::Enabled);
 
-  int stackVar;
+  int stackVar = 0;
   phc::AddrInfo phcInfo;
 
   // Test a default AddrInfo.

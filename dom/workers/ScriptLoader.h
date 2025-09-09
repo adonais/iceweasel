@@ -7,15 +7,15 @@
 #ifndef mozilla_dom_workers_scriptloader_h__
 #define mozilla_dom_workers_scriptloader_h__
 
-#include "js/loader/ScriptLoadRequest.h"
 #include "js/loader/ModuleLoadRequest.h"
 #include "js/loader/ModuleLoaderBase.h"
+#include "js/loader/ScriptLoadRequest.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/dom/WorkerBinding.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerLoadContext.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/workerinternals/WorkerModuleLoader.h"
-#include "mozilla/Maybe.h"
 #include "nsIContentPolicy.h"
 #include "nsStringFwd.h"
 #include "nsTArrayForwardDeclare.h"

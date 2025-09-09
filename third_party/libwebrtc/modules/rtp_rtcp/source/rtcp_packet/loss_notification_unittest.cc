@@ -10,6 +10,11 @@
 
 #include "modules/rtp_rtcp/source/rtcp_packet/loss_notification.h"
 
+#include <cstddef>
+#include <cstdint>
+
+#include "rtc_base/buffer.h"
+#include "rtc_base/checks.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/rtcp_packet_parser.h"
@@ -58,7 +63,7 @@ TEST(RtcpPacketLossNotificationTest, CreateProducesExpectedWireFormat) {
   ASSERT_TRUE(
       loss_notification.Set(kLastDecoded, kLastReceived, kDecodabilityFlag));
 
-  rtc::Buffer packet = loss_notification.Build();
+  Buffer packet = loss_notification.Build();
 
   EXPECT_THAT(make_tuple(packet.data(), packet.size()),
               ElementsAreArray(kPacket));

@@ -19,7 +19,7 @@ XPIDL_MODULE = "toolkit_search"
 
 MOZ_SRC_FILES += [
     "AddonSearchEngine.sys.mjs",
-    "AppProvidedSearchEngine.sys.mjs",
+    "ConfigSearchEngine.sys.mjs",
     "OpenSearchEngine.sys.mjs",
     "OpenSearchLoader.sys.mjs",
     "PolicySearchEngine.sys.mjs",

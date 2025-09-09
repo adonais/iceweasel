@@ -55,12 +55,12 @@ class TestInitializeVerticalTabs(MarionetteTestCase):
         if orientation == "vertical":
             self.assertEqual(
                 h_collapsed,
-                "true",
+                "",
                 "Horizontal tab strip has expected collapsed attribute value",
             )
             self.assertEqual(
                 v_collapsed,
-                "false",
+                None,
                 "Vertical tab strip has expected collapsed attribute value",
             )
 
@@ -77,7 +77,7 @@ class TestInitializeVerticalTabs(MarionetteTestCase):
         else:
             self.assertEqual(
                 v_collapsed,
-                "true",
+                "",
                 "Vertical tab strip has expected collapsed attribute value",
             )
 

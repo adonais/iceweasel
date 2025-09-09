@@ -7,11 +7,11 @@
 #ifndef nsCommandParams_h
 #define nsCommandParams_h
 
-#include "mozilla/ErrorResult.h"
-#include "nsString.h"
-#include "nsICommandParams.h"
-#include "nsCOMPtr.h"
 #include "PLDHashTable.h"
+#include "mozilla/ErrorResult.h"
+#include "nsCOMPtr.h"
+#include "nsICommandParams.h"
+#include "nsString.h"
 
 class nsCommandParams : public nsICommandParams {
   using ErrorResult = mozilla::ErrorResult;

@@ -9,23 +9,24 @@
 #endif
 
 #include "DOMIntersectionObserver.h"
-#include "nsCSSPropertyID.h"
-#include "nsIFrame.h"
-#include "nsContainerFrame.h"
-#include "nsContentUtils.h"
-#include "nsLayoutUtils.h"
-#include "nsRefreshDriver.h"
+
+#include "Units.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/ServoBindings.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/ServoBindings.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/DocumentInlines.h"
-#include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
-#include "Units.h"
+#include "mozilla/dom/HTMLImageElement.h"
+#include "nsCSSPropertyID.h"
+#include "nsContainerFrame.h"
+#include "nsContentUtils.h"
+#include "nsIFrame.h"
+#include "nsLayoutUtils.h"
+#include "nsRefreshDriver.h"
 
 namespace mozilla::dom {
 

@@ -8,10 +8,10 @@
 #define _RUSTSDPMEDIASECTION_H_
 
 #include "mozilla/UniquePtr.h"
-#include "sdp/RsdparsaSdpInc.h"
-#include "sdp/RsdparsaSdpGlue.h"
-#include "sdp/SdpMediaSection.h"
 #include "sdp/RsdparsaSdpAttributeList.h"
+#include "sdp/RsdparsaSdpGlue.h"
+#include "sdp/RsdparsaSdpInc.h"
+#include "sdp/SdpMediaSection.h"
 
 namespace mozilla {
 

@@ -6,12 +6,12 @@
 
 #include "ChromeWorker.h"
 
+#include "WorkerPrivate.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/WorkerBinding.h"
 #include "nsContentUtils.h"
 #include "nsIXPConnect.h"
-#include "WorkerPrivate.h"
 
 namespace mozilla::dom {
 

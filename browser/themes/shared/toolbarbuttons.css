@@ -85,7 +85,6 @@
   #forward-button,
   #stop-reload-button,
   #customizableui-special-spring1,
-  #vertical-spacer,
   #customizableui-special-spring2,
   #downloads-button,
   #unified-extensions-button,
@@ -99,6 +98,7 @@
   #email-link-button,
   #screenshot-button,
   #nav-bar-overflow-button,
+  #taskbar-tabs-audio:is([soundplaying], [muted]),
   #fullscreen-button {
     display: revert;
   }
@@ -578,31 +578,14 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 
 /* Separators */
 
-/* Override the toolkit styles, and make sure separators are draggable by
- * making them wider, and using a pseudo-element for the visual separator.
- * TODO(bug 1971526): consider actually pushing this down to toolkit */
-#PlacesToolbarItems > toolbarseparator {
-  margin: 0;
-  padding-inline: 4px;
+toolbarseparator {
+  color: var(--toolbarseparator-color);
+  padding-block: var(--toolbarbutton-inner-padding);
 
-  /* When adjacent to the bookmarks items, give the bookmarks items a leading separator. */
-  &::before {
-    content: "";
-    display: block;
-    border-inline-start: 1px solid;
-    border-image-source: linear-gradient(
-      transparent 3.75px,
-      var(--toolbarseparator-color) 3.75px,
-      var(--toolbarseparator-color) calc(100% - 3.75px),
-      transparent calc(100% - 3.75px)
-    );
-    border-image-slice: 1;
-  }
-
-  @media (resolution >= 2x) {
-    &::before {
-      border-inline-start-width: 0.5px;
-    }
+  #PlacesToolbarItems > & {
+    /* Make separators wider so they're easier to drag. Make them also a bit
+     * smaller visually on the vertical axis */
+    padding: 4px;
   }
 }
 
@@ -648,7 +631,7 @@ toolbarspring {
   min-width: 28px;
   max-width: 112px;
 
-  #nav-bar &:not(#vertical-spacer) {
+  #nav-bar &:where(:not(#vertical-spacer)) {
     flex: 80 80;
     /* Ensure flexible spacers don't shrink to nothing so they can be
      * manipulated in customize mode. */
@@ -663,8 +646,14 @@ toolbarspring {
 
 /* Keyboard navigation */
 
-toolbar[keyNav]:not([collapsed="true"], [customizing]) toolbartabstop,
+toolbar[keyNav]:not([collapsed], [customizing]) toolbartabstop,
 #tabbrowser-tabs[orient="vertical"] #tabs-newtab-button,
 #vertical-tabs-newtab-button {
   -moz-user-focus: normal;
+}
+
+/* IP Protection */
+#ipprotection-button.toolbarbutton-1 > .toolbarbutton-icon {
+  width: calc(2 * var(--toolbarbutton-inner-padding) + 35px);
+  padding-block: 0;
 }

@@ -14,6 +14,7 @@
 
 #include "gtest/gtest.h"
 
+#include "config/aom_config.h"
 #include "config/av1_rtcd.h"
 
 #include "test/acm_random.h"

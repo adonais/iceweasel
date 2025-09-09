@@ -6,13 +6,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/JSActorService.h"
-#include "mozilla/dom/ChromeUtilsBinding.h"
+
+#include "mozilla/ArrayAlgorithm.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Services.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowserParent.h"
-#include "mozilla/dom/EventListenerBinding.h"
+#include "mozilla/dom/ChromeUtilsBinding.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Event.h"
-#include "mozilla/dom/EventTargetBinding.h"
+#include "mozilla/dom/EventListenerBinding.h"
 #include "mozilla/dom/EventTarget.h"
+#include "mozilla/dom/EventTargetBinding.h"
 #include "mozilla/dom/InProcessChild.h"
 #include "mozilla/dom/InProcessParent.h"
 #include "mozilla/dom/JSActorManager.h"
@@ -24,14 +31,8 @@
 #include "mozilla/dom/JSWindowActorProtocol.h"
 #include "mozilla/dom/MessageManagerBinding.h"
 #include "mozilla/dom/PContent.h"
-#include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/WindowGlobalParent.h"
-#include "mozilla/ArrayAlgorithm.h"
-#include "mozilla/Services.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/Logging.h"
 #include "nsIObserverService.h"
 
 namespace mozilla::dom {

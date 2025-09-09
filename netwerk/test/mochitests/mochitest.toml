@@ -79,7 +79,10 @@ skip-if = [
 # test_142* fail with xorigin if 3pc are rejected by default (Bug 1873998).
 
 ["test_1421324.html"]
-skip-if = ["xorigin"]
+skip-if = [
+  "xorigin",
+  "os == 'android' && android_version == '34' && processor == 'x86_64'", # Bug 1981321
+]
 
 ["test_1425031.html"]
 skip-if = ["xorigin"]

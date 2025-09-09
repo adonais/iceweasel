@@ -43,6 +43,14 @@ class CookieServiceChild final : public PCookieServiceChild,
 
   RefPtr<GenericPromise> TrackCookieLoad(nsIChannel* aChannel);
 
+  mozilla::ipc::IPCResult RecvRemoveCookie(const CookieStruct& aCookie,
+                                           const OriginAttributes& aAttrs,
+                                           const Maybe<nsID>& aOperationID);
+
+  mozilla::ipc::IPCResult RecvAddCookie(const CookieStruct& aCookie,
+                                        const OriginAttributes& aAttrs,
+                                        const Maybe<nsID>& aOperationID);
+
  private:
   ~CookieServiceChild();
 
@@ -70,14 +78,6 @@ class CookieServiceChild final : public PCookieServiceChild,
   mozilla::ipc::IPCResult RecvRemoveBatchDeletedCookies(
       nsTArray<CookieStruct>&& aCookiesList,
       nsTArray<OriginAttributes>&& aAttrsList);
-
-  mozilla::ipc::IPCResult RecvRemoveCookie(const CookieStruct& aCookie,
-                                           const OriginAttributes& aAttrs,
-                                           const Maybe<nsID>& aOperationID);
-
-  mozilla::ipc::IPCResult RecvAddCookie(const CookieStruct& aCookie,
-                                        const OriginAttributes& aAttrs,
-                                        const Maybe<nsID>& aOperationID);
 
   void RemoveSingleCookie(const CookieStruct& aCookie,
                           const OriginAttributes& aAttrs,

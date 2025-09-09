@@ -6,27 +6,27 @@
 
 #include "WMFUtils.h"
 
+#include <initguid.h>
 #include <mfidl.h>
 #include <shlobj.h>
 #include <shlwapi.h>
-#include <initguid.h>
 #include <stdint.h>
 
 #ifdef MOZ_AV1
 #  include "AOMDecoder.h"
 #endif
 #include "MP4Decoder.h"
-#include "VideoUtils.h"
 #include "VPXDecoder.h"
+#include "VideoUtils.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/mscom/EnsureMTA.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
 #include "nsWindowsHelpers.h"
 #include "prenv.h"
-#include "mozilla/mscom/EnsureMTA.h"
 
 #ifndef WAVE_FORMAT_OPUS
 #  define WAVE_FORMAT_OPUS 0x704F

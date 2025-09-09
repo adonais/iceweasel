@@ -215,7 +215,9 @@ class CrashMiddleware(
                     sendUnsentCrashReports()
                 }
             }
-            is CrashAction.ShowPrompt -> {} // noop
+            is CrashAction.PromptShown,
+            is CrashAction.ShowPrompt,
+            -> {} // noop
         }
     }
 

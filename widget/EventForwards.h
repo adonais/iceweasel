@@ -523,6 +523,8 @@ inline MouseButtonsFlag MouseButtonsFlagToChange(MouseButton aMouseButton) {
   }
 }
 
+nsCString InputSourceToString(uint16_t aInputSource);
+
 enum class TextRangeType : RawTextRangeType;
 
 // IMEData.h

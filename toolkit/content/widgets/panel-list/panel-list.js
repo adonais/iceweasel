@@ -186,6 +186,7 @@
 
     async setAlign() {
       const hostElement = this.parentElement || this.getRootNode().host;
+
       if (!hostElement) {
         // This could get called before we're added to the DOM.
         // Nothing to do in that case.
@@ -297,9 +298,19 @@
         this.setAttribute("align", align);
         this.setAttribute("valign", valign);
         hostElement.style.overflow = "";
-
-        this.style.left = `${leftOffset + winScrollX}px`;
-        this.style.top = `${topOffset + winScrollY}px`;
+        // Decide positioning based on where this panel will be rendered
+        const offsetParentIsBody =
+          this.offsetParent === document?.body || !this.offsetParent;
+        if (offsetParentIsBody) {
+          // viewport-based
+          this.style.left = `${leftOffset + winScrollX}px`;
+          this.style.top = `${topOffset + winScrollY}px`;
+        } else {
+          // container-relative
+          const offsetParentRect = this.offsetParent.getBoundingClientRect();
+          this.style.left = `${leftOffset - offsetParentRect.left}px`;
+          this.style.top = `${topOffset - offsetParentRect.top}px`;
+        }
       }
 
       this.style.minWidth = this.hasAttribute("min-width-from-anchor")

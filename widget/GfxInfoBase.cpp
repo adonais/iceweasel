@@ -1693,8 +1693,13 @@ GfxInfoBase::GetTargetFrameRate(uint32_t* aTargetFrameRate) {
 
 NS_IMETHODIMP
 GfxInfoBase::GetCodecSupportInfo(nsACString& aCodecSupportInfo) {
-  aCodecSupportInfo.Assign(gfx::gfxVars::CodecSupportInfo());
+  aCodecSupportInfo.Assign(mCodecSupportInfo);
   return NS_OK;
+}
+
+NS_IMETHODIMP_(void)
+GfxInfoBase::SetCodecSupportInfo(const nsACString& aCodecSupportInfo) {
+  mCodecSupportInfo.Assign(aCodecSupportInfo);
 }
 
 NS_IMETHODIMP

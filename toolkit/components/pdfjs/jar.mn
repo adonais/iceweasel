@@ -38,4 +38,5 @@ pdfjs.jar:
  content/web/images/	(content/web/images/altText*.svg)
  content/web/images/	(content/web/images/editor-toolbar-*.svg)
  content/web/images/	(content/web/images/messageBar_*.svg)
+ content/web/images/	(content/web/images/comment-*.svg)
 #endif

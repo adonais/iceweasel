@@ -5,12 +5,12 @@
 
 #include "MediaTrackConstraints.h"
 
-#include <limits>
 #include <algorithm>
 #include <iterator>
+#include <limits>
 
-#include "mozilla/dom/MediaStreamTrackBinding.h"
 #include "mozilla/MediaManager.h"
+#include "mozilla/dom/MediaStreamTrackBinding.h"
 
 #ifdef MOZ_WEBRTC
 namespace mozilla {

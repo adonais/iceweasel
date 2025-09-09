@@ -6,12 +6,12 @@
 
 #include "mozilla/dom/cache/ReadStream.h"
 
+#include "mozilla/SnappyUncompressInputStream.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/cache/CacheStreamControlChild.h"
 #include "mozilla/dom/cache/CacheStreamControlParent.h"
 #include "mozilla/dom/cache/CacheTypes.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
-#include "mozilla/SnappyUncompressInputStream.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIThread.h"
 #include "nsStringStream.h"

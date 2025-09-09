@@ -6,8 +6,8 @@
 
 #include "mozilla/dom/cache/Connection.h"
 
-#include "mozilla/dom/cache/DBSchema.h"
 #include "mozStorageHelper.h"
+#include "mozilla/dom/cache/DBSchema.h"
 
 namespace mozilla::dom::cache {
 

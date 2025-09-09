@@ -285,7 +285,7 @@
   # Throws if length is negative.
   alias_set: custom
   generate_lir: true
-  lir_temps: 1
+  lir_temps: 2
 
 # Create a new TypedArray from an Array (or Array-like object) or a TypedArray.
 - name: NewTypedArrayFromArray
@@ -1767,7 +1767,7 @@
   compute_range: custom
   generate_lir: true
 
-# Read the length of an array buffer view.
+# Read the elements of an array buffer view.
 - name: ArrayBufferViewElements
   operands:
     object: Object
@@ -1778,18 +1778,19 @@
   clone: true
   generate_lir: true
 
-# Implements the TypedArrayByteOffset intrinsic for resizable typed arrays,
-# which calls TypedArrayObject::byteOffsetMaybeOutOfBounds().
-- name: ResizableTypedArrayByteOffsetMaybeOutOfBounds
+# Read the elements of an array buffer view and adjust it with the given offset.
+- name: ArrayBufferViewElementsWithOffset
   operands:
     object: Object
-  result_type: IntPtr
+    offset: IntPtr
+  arguments:
+    elementType: Scalar::Type
+  result_type: Elements
   movable: true
   congruent_to: if_operands_equal
   alias_set: custom
-  compute_range: custom
+  clone: true
   generate_lir: true
-  lir_temps: 1
 
 # Read the length of a resizable typed array.
 - name: ResizableTypedArrayLength
@@ -1870,6 +1871,72 @@
   movable: true
   congruent_to: if_operands_equal
   alias_set: custom
+
+# Inline TypedArray.prototype.fill
+- name: TypedArrayFill
+  gen_boilerplate: false
+
+# Inlined TypedArray.prototype.set
+- name: TypedArraySet
+  operands:
+    target: Object
+    source: Object
+    offset: IntPtr
+  arguments:
+    canUseBitwiseCopy: bool
+  alias_set: custom
+  possibly_calls: true
+  generate_lir: true
+
+- name: TypedArraySetFromSubarray
+  operands:
+    target: Object
+    source: Object
+    offset: IntPtr
+    sourceOffset: IntPtr
+    sourceLength: IntPtr
+  arguments:
+    canUseBitwiseCopy: bool
+  alias_set: custom
+  possibly_calls: true
+  generate_lir: true
+
+- name: GuardTypedArraySetOffset
+  operands:
+    offset: IntPtr
+    targetLength: IntPtr
+    sourceLength: IntPtr
+  result_type: IntPtr
+  guard: true
+  movable: true
+  congruent_to: if_operands_equal
+  alias_set: none
+  generate_lir: true
+  lir_temps: 1
+
+# Inlined TypedArray.prototype.subarray
+- name: TypedArraySubarray
+  operands:
+    object: Object
+    start: IntPtr
+    length: IntPtr
+  arguments:
+    templateObject: JSObject*
+    initialHeap: gc::Heap
+  result_type: Object
+  alias_set: none
+  can_recover: true
+  possibly_calls: true
+  generate_lir: true
+
+- name: ToIntegerIndex
+  operands:
+    index: IntPtr
+    length: IntPtr
+  result_type: IntPtr
+  alias_set: none
+  folds_to: custom
+  generate_lir: true
 
 - name: GuardNumberToIntPtrIndex
   gen_boilerplate: false
@@ -2052,7 +2119,10 @@
 - name: StoreTypedArrayElementHole
   gen_boilerplate: false
 
-- name: EffectiveAddress
+- name: EffectiveAddress3
+  gen_boilerplate: false
+
+- name: EffectiveAddress2
   gen_boilerplate: false
 
 - name: ClampToUint8
@@ -2430,7 +2500,7 @@
 - name: NurseryObject
   arguments:
     # Index in the Vector of objects stored in the WarpSnapshot.
-    nurseryIndex: uint32_t
+    nurseryObjectIndex: uint32_t
   result_type: Object
   movable: true
   congruent_to: custom
@@ -3312,7 +3382,7 @@
     object: Object
   arguments:
     propId: jsid
-    getterSetter: GetterSetter*
+    getterSetterValue: ValueOrNurseryValueIndex
   result_type: Object
   guard: true
   movable: true
@@ -3338,6 +3408,17 @@
   congruent_to: if_operands_equal
   folds_to: custom
   alias_set: none
+
+- name: GuardIntPtrIsNonNegative
+  operands:
+    index: IntPtr
+  result_type: IntPtr
+  guard: true
+  movable: true
+  congruent_to: if_operands_equal
+  folds_to: custom
+  alias_set: none
+  generate_lir: true
 
 - name: GuardInt32Range
   operands:
@@ -3746,6 +3827,39 @@
   movable: true
   congruent_to: if_operands_equal
   alias_set: custom
+  generate_lir: true
+
+# Note: for now these WeakMap/WeakSet instructions are non-movable and don't
+# override congruentTo, but it'd probably be fine to change this in the future.
+- name: WeakMapGetObject
+  operands:
+    weakMap: Object
+    object: Object
+  result_type: Value
+  alias_set: custom
+  movable: false
+  possibly_calls: true
+  generate_lir: true
+  lir_temps: 1
+
+- name: WeakMapHasObject
+  operands:
+    weakMap: Object
+    object: Object
+  result_type: Boolean
+  alias_set: custom
+  movable: false
+  possibly_calls: true
+  generate_lir: true
+
+- name: WeakSetHasObject
+  operands:
+    weakSet: Object
+    object: Object
+  result_type: Boolean
+  alias_set: custom
+  movable: false
+  possibly_calls: true
   generate_lir: true
 
 - name: DateFillLocalTimeSlots

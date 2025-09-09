@@ -8,6 +8,9 @@
 newtab-page-title = Новая картка
 newtab-settings-button =
     .title = Наладзіць вашу старонку новай карткі
+newtab-customize-panel-icon-button =
+    .title = Уладкаваць гэту старонку
+newtab-customize-panel-icon-button-label = Уладкаваць
 newtab-personalize-settings-icon-label =
     .title = Персаналізаваць новую картку
     .aria-label = Налады
@@ -53,6 +56,9 @@ newtab-topsites-add-shortcut-header = Новы цэтлік
 newtab-topsites-edit-topsites-header = Рэдагаваць папулярны сайт
 newtab-topsites-edit-shortcut-header = Рэдагаваць цэтлік
 newtab-topsites-add-shortcut-label = Дадаць цэтлік
+newtab-topsites-add-shortcut-title =
+    .title = Дадаць цэтлік
+    .aria-label = Дадаць цэтлік
 newtab-topsites-title-label = Загаловак
 newtab-topsites-title-input =
     .placeholder = Увядзіце назву
@@ -81,6 +87,14 @@ newtab-confirm-delete-history-p2 = Гэта дзеянне немагчыма а
 ## Top Sites - Sponsored label
 
 newtab-topsite-sponsored = Спонсарскі
+
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (замацавана)
+    .title = { $title }
 
 ## Context Menu - Action Tooltips.
 
@@ -502,6 +516,9 @@ newtab-topic-selection-button-pick-interests = Выберыце свае зац�
 newtab-section-follow-button = Падпісацца
 newtab-section-following-button = Падпісаны
 newtab-section-unfollow-button = Адпісацца
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Наладзьце сваю стужку навін
+newtab-section-follow-highlight-subtitle = Падпішыцеся на свае зацікаўленасці, каб бачыць больш таго, што вам падабаецца.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -534,6 +551,12 @@ newtab-custom-wallpaper-title = Карыстальніцкія шпалеры т
 newtab-custom-wallpaper-subtitle = Зацягніце свае шпалеры або выберыце ўласны колер, каб зрабіць { -brand-product-name } сваім.
 newtab-custom-wallpaper-cta = Паспрабаваць
 
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Выберыце шпалеры, каб зрабіць { -brand-product-name } сваім
+newtab-new-user-custom-wallpaper-subtitle = Зрабіце кожную новую картку як дома з дапамогай карыстальніцкіх шпалер і колераў.
+newtab-new-user-custom-wallpaper-cta = Паспрабаваць зараз
+
 ## Strings for download mobile highlight
 
 newtab-download-mobile-highlight-title = Сцягнуць { -brand-product-name } для мабільных прылад
@@ -546,6 +569,8 @@ newtab-download-mobile-highlight-image =
 
 ## Strings for shortcuts highlight
 
+newtab-shortcuts-highlight-title = Вашы любімыя рэчы ў вас пад рукой
+newtab-shortcuts-highlight-subtitle = Дадайце цэтлік, каб вашы любімыя сайты былі на адлегласці дотыку.
 
 ## Strings for reporting ads and content
 
@@ -580,3 +605,5 @@ newtab-trending-searches-hide-trending =
     .title = Схаваць папулярныя пошукавыя запыты
 newtab-trending-searches-learn-more = Падрабязней
 newtab-trending-searches-dismiss = Схаваць папулярныя пошукавыя запыты
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Папулярныя пошукавыя запыты

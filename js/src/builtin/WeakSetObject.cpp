@@ -7,6 +7,7 @@
 #include "builtin/WeakSetObject.h"
 
 #include "builtin/MapObject.h"
+#include "jit/InlinableNatives.h"
 #include "js/friend/ErrorMessages.h"  // JSMSG_*
 #include "js/PropertySpec.h"
 #include "vm/GlobalObject.h"
@@ -132,6 +133,13 @@ bool WeakSetObject::has(JSContext* cx, unsigned argc, Value* vp) {
                                                                           args);
 }
 
+// static
+bool WeakSetObject::hasObject(WeakSetObject* weakSet, JSObject* obj) {
+  AutoUnsafeCallWithABI unsafe;
+  ValueValueWeakMap* map = weakSet->getMap();
+  return map && map->has(ObjectValue(*obj));
+}
+
 const ClassSpec WeakSetObject::classSpec_ = {
     GenericCreateConstructor<WeakSetObject::construct, 0,
                              gc::AllocKind::FUNCTION>,
@@ -140,7 +148,7 @@ const ClassSpec WeakSetObject::classSpec_ = {
     nullptr,
     WeakSetObject::methods,
     WeakSetObject::properties,
-    GenericFinishInit<WhichHasFuseProperty::Proto>,
+    GenericFinishInit<WhichHasRealmFuseProperty::Proto>,
 };
 
 const JSClass WeakSetObject::class_ = {
@@ -166,7 +174,7 @@ const JSPropertySpec WeakSetObject::properties[] = {
 const JSFunctionSpec WeakSetObject::methods[] = {
     JS_FN("add", add, 1, 0),
     JS_FN("delete", delete_, 1, 0),
-    JS_FN("has", has, 1, 0),
+    JS_INLINABLE_FN("has", has, 1, 0, WeakSetHas),
     JS_FS_END,
 };
 

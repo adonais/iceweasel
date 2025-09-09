@@ -30,8 +30,8 @@ pub enum NumeratorMetric {
     Child(ChildMetricMeta),
 }
 
-crate::define_metric_metadata_getter!(NumeratorMetric, NUMERATOR_MAP);
-crate::define_metric_namer!(NumeratorMetric);
+define_metric_metadata_getter!(NumeratorMetric, NUMERATOR_MAP);
+define_metric_namer!(NumeratorMetric);
 
 impl NumeratorMetric {
     /// The public constructor used by automatically generated metrics.

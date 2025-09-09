@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.tabstray.syncedtabs
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -19,7 +18,6 @@ import org.mozilla.fenix.tabstray.TabsTrayStore
  *
  * This binding is useful for connecting with [SyncedTabsView.Listener].
  */
-@OptIn(ExperimentalCoroutinesApi::class)
 class SyncButtonBinding(
     tabsTrayStore: TabsTrayStore,
     private val onSyncNow: () -> Unit,

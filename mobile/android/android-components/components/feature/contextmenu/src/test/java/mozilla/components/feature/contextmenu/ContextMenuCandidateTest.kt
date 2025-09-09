@@ -8,6 +8,7 @@ import android.content.ActivityNotFoundException
 import android.content.ClipboardManager
 import android.content.Context
 import android.view.View
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.MainScope
@@ -2132,6 +2133,7 @@ private class TestSnackbarDelegate : SnackbarDelegate {
         snackBarParentView: View,
         text: Int,
         subText: String?,
+        subTextOverflow: TextOverflow?,
         duration: Int,
         isError: Boolean,
         action: Int,
@@ -2145,9 +2147,10 @@ private class TestSnackbarDelegate : SnackbarDelegate {
         snackBarParentView: View,
         text: String,
         subText: String?,
+        subTextOverflow: TextOverflow?,
         duration: Int,
         isError: Boolean,
         action: String?,
         listener: ((v: View) -> Unit)?,
-    ) = show(snackBarParentView, 0, "", duration, isError, 0, listener)
+    ) = show(snackBarParentView, 0, "", null, duration, isError, 0, listener)
 }

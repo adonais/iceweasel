@@ -15,8 +15,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.fragment.compose.content
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import mozilla.components.concept.storage.Login
@@ -65,24 +64,21 @@ internal class PasswordGeneratorDialogFragment : PromptDialogFragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View = ComposeView(requireContext()).apply {
-        setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-        setContent {
-            val colors = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
-            MaterialTheme(colors) {
-                if (generatedPassword.isNotEmpty() && currentUrl.isNotEmpty()) {
-                    PasswordGeneratorBottomSheet(
-                        generatedStrongPassword = generatedPassword,
-                        onUsePassword = {
-                            onUsePassword(
-                                generatedPassword = generatedPassword,
-                                currentUrl = currentUrl,
-                            )
-                        },
-                        onCancelDialog = { onCancelDialog() },
-                        colors = colorsProvider.provideColors(),
-                    )
-                }
+    ) = content {
+        val colors = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
+        MaterialTheme(colors) {
+            if (generatedPassword.isNotEmpty() && currentUrl.isNotEmpty()) {
+                PasswordGeneratorBottomSheet(
+                    generatedStrongPassword = generatedPassword,
+                    onUsePassword = {
+                        onUsePassword(
+                            generatedPassword = generatedPassword,
+                            currentUrl = currentUrl,
+                        )
+                    },
+                    onCancelDialog = { onCancelDialog() },
+                    colors = colorsProvider.provideColors(),
+                )
             }
         }
     }

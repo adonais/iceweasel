@@ -38,6 +38,7 @@ import org.mozilla.fenix.downloads.DownloadService
 import org.mozilla.fenix.downloads.dialog.createDownloadAppDialog
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getPreferenceKey
+import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.theme.ThemeManager
 
@@ -102,12 +103,12 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
                         R.attr.textOnColorPrimary,
                         requireContext(),
                     ),
-                    positiveButtonRadius = (resources.getDimensionPixelSize(R.dimen.tab_corner_radius)).toFloat(),
+                    positiveButtonRadius = pixelSizeFor(R.dimen.tab_corner_radius).toFloat(),
                 ),
-                onDownloadStartedListener = {
+                onDownloadStartedListener = { downloadId ->
                     requireComponents.appStore.dispatch(
                         AppAction.DownloadAction.DownloadInProgress(
-                            session?.id,
+                             downloadId,
                         ),
                     )
                 },
@@ -322,6 +323,7 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
             if (downloadState.openInApp && downloadJobStatus == Status.COMPLETED) {
                 val fileWasOpened = AbstractFetchDownloadService.openFile(
                     applicationContext = safeContext.applicationContext,
+                    packageName = safeContext.applicationContext.packageName,
                     downloadFileName = downloadState.fileName,
                     downloadFilePath = downloadState.filePath,
                     downloadContentType = downloadState.contentType,

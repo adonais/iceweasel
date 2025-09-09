@@ -2893,6 +2893,34 @@ nsresult ProcessXCTO(HttpBaseChannel* aChannel, nsIURI* aURI,
   return NS_OK;
 }
 
+nsresult EnsureMIMEOfJSONModule(HttpBaseChannel* aChannel, nsIURI* aURI,
+                                nsHttpResponseHead* aResponseHead,
+                                nsILoadInfo* aLoadInfo) {
+  if (!aURI || !aResponseHead || !aLoadInfo) {
+    // if there is no uri, no response head or no loadInfo, then there is
+    // nothing to do
+    return NS_OK;
+  }
+
+  if (aLoadInfo->GetExternalContentPolicyType() !=
+      ExtContentPolicy::TYPE_JSON) {
+    // if this is not a JSON load, then there is nothing to do
+    return NS_OK;
+  }
+
+  nsAutoCString contentType;
+  aResponseHead->ContentType(contentType);
+  NS_ConvertUTF8toUTF16 typeString(contentType);
+
+  if (nsContentUtils::IsJsonMimeType(typeString)) {
+    return NS_OK;
+  }
+
+  ReportMimeTypeMismatch(aChannel, "BlockJsonModuleWithWrongMimeType", aURI,
+                         contentType, Report::Error);
+  return NS_ERROR_CORRUPTED_CONTENT;
+}
+
 // Ensure that a load of type script has correct MIME type
 nsresult EnsureMIMEOfScript(HttpBaseChannel* aChannel, nsIURI* aURI,
                             nsHttpResponseHead* aResponseHead,
@@ -2915,18 +2943,6 @@ nsresult EnsureMIMEOfScript(HttpBaseChannel* aChannel, nsIURI* aURI,
 
   if (nsContentUtils::IsJavascriptMIMEType(typeString)) {
     // script load has type script
-    glean::http::script_block_incorrect_mime
-        .EnumGet(glean::http::ScriptBlockIncorrectMimeLabel::eJavascript)
-        .Add();
-    return NS_OK;
-  }
-
-  nsContentPolicyType internalType = aLoadInfo->InternalContentPolicyType();
-  bool isModule =
-      internalType == nsIContentPolicy::TYPE_INTERNAL_MODULE ||
-      internalType == nsIContentPolicy::TYPE_INTERNAL_MODULE_PRELOAD;
-
-  if (isModule && nsContentUtils::IsJsonMimeType(typeString)) {
     glean::http::script_block_incorrect_mime
         .EnumGet(glean::http::ScriptBlockIncorrectMimeLabel::eJavascript)
         .Add();
@@ -3091,6 +3107,8 @@ nsresult EnsureMIMEOfScript(HttpBaseChannel* aChannel, nsIURI* aURI,
         .Add();
   }
 
+  nsContentPolicyType internalType = aLoadInfo->InternalContentPolicyType();
+
   // We restrict importScripts() in worker code to JavaScript MIME types.
   if (internalType == nsIContentPolicy::TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS ||
       internalType == nsIContentPolicy::TYPE_INTERNAL_WORKER_STATIC_MODULE) {
@@ -3112,7 +3130,8 @@ nsresult EnsureMIMEOfScript(HttpBaseChannel* aChannel, nsIURI* aURI,
   }
 
   // ES6 modules require a strict MIME type check.
-  if (isModule) {
+  if (internalType == nsIContentPolicy::TYPE_INTERNAL_MODULE ||
+      internalType == nsIContentPolicy::TYPE_INTERNAL_MODULE_PRELOAD) {
     ReportMimeTypeMismatch(aChannel, "BlockModuleWithWrongMimeType", aURI,
                            contentType, Report::Error);
     return NS_ERROR_CORRUPTED_CONTENT;
@@ -3153,20 +3172,17 @@ void WarnWrongMIMEOfScript(HttpBaseChannel* aChannel, nsIURI* aURI,
     return;
   }
 
-  nsContentPolicyType internalType = aLoadInfo->InternalContentPolicyType();
-  bool isModule =
-      internalType == nsIContentPolicy::TYPE_INTERNAL_MODULE ||
-      internalType == nsIContentPolicy::TYPE_INTERNAL_MODULE_PRELOAD;
-  if (isModule && nsContentUtils::IsJsonMimeType(typeString)) {
-    return;
-  }
-
   ReportMimeTypeMismatch(aChannel, "WarnScriptWithWrongMimeType", aURI,
                          contentType, Report::Warning);
 }
 
 nsresult HttpBaseChannel::ValidateMIMEType() {
   nsresult rv = EnsureMIMEOfScript(this, mURI, mResponseHead.get(), mLoadInfo);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  rv = EnsureMIMEOfJSONModule(this, mURI, mResponseHead.get(), mLoadInfo);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -3577,7 +3593,14 @@ NS_IMETHODIMP
 HttpBaseChannel::SetCookieHeaders(const nsTArray<nsCString>& aCookieHeaders) {
   if (mLoadFlags & LOAD_ANONYMOUS) return NS_OK;
 
-  if (IsBrowsingContextDiscarded()) {
+  // The loadGroup of the channel in the parent process could be null in the
+  // XPCShell content process test, see test_cookiejars_wrap.js. In this case,
+  // we cannot explicitly set the loadGroup for the parent channel because it's
+  // created from the content process. To workaround this, we add a testing pref
+  // to skip this check.
+  if (!StaticPrefs::
+          network_cookie_skip_browsing_context_check_in_parent_for_testing() &&
+      IsBrowsingContextDiscarded()) {
     return NS_OK;
   }
 

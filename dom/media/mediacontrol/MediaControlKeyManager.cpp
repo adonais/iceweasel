@@ -4,8 +4,8 @@
 
 #include "MediaControlKeyManager.h"
 
-#include "MediaControlUtils.h"
 #include "MediaControlService.h"
+#include "MediaControlUtils.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Logging.h"

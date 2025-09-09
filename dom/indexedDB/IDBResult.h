@@ -5,12 +5,12 @@
 #ifndef mozilla_dom_indexeddb_idbresult_h__
 #define mozilla_dom_indexeddb_idbresult_h__
 
+#include <type_traits>
+#include <utility>
+
 #include "mozilla/ErrorResult.h"
 #include "mozilla/ResultVariant.h"
 #include "mozilla/Variant.h"
-
-#include <type_traits>
-#include <utility>
 
 namespace mozilla::dom::indexedDB {
 

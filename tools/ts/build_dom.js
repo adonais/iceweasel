@@ -12,6 +12,7 @@
  */
 
 const fs = require("fs");
+const { RESERVED_WORDS } = require("peggy");
 
 const TAGLIST = require.resolve("../../parser/htmlparser/nsHTMLTagList.h");
 const BINDINGS = require.resolve("../../dom/bindings/Bindings.conf");
@@ -84,6 +85,29 @@ function customize(all, baseTypes) {
       baseTypes.delete(name);
     }
   }
+
+  // Some namespaces have methods that use reserved words. Prefix them with
+  // `_` and keep a list, so that we can export them properly later.
+  let additionalExports = new Map();
+  for (let namespace of all.namespaces) {
+    if (!namespace.methods) {
+      continue;
+    }
+    for (let reserved of RESERVED_WORDS) {
+      if (reserved in namespace.methods.method) {
+        namespace.methods.method["_" + reserved] =
+          namespace.methods.method[reserved];
+        namespace.methods.method["_" + reserved].name = "_" + reserved;
+        delete namespace.methods.method[reserved];
+        if (additionalExports.has(namespace.name)) {
+          additionalExports.get(namespace.name).push(reserved);
+        } else {
+          additionalExports.set(namespace.name, [reserved]);
+        }
+      }
+    }
+  }
+  return additionalExports;
 }
 
 // Preprocess, convert, merge and customize webidl, emit and postprocess dts.
@@ -135,20 +159,30 @@ async function emitDom(webidls, builtin = "builtin.webidl") {
     }
   }
 
-  customize(all, baseTypeConversionMap);
+  let additionalExports = customize(all, baseTypeConversionMap);
   let exposed = getExposedTypes(all, ["Window"], new Set());
   let dts = await Promise.all([
     emitWebIdl(exposed, "Window", "", {}),
     emitWebIdl(exposed, "Window", "sync", {}),
     emitWebIdl(exposed, "Window", "async", {}),
   ]);
-  return postprocess(dts.join("\n"));
+  return postprocess(additionalExports, dts.join("\n"));
 }
 exports.emitDom = emitDom;
 
 // Post-process dom.generated.d.ts into lib.gecko.dom.d.ts.
-function postprocess(generated) {
+function postprocess(additionalExports, generated) {
   let text = `${HEADER}\n${generated}`;
+
+  // Re-export any reserved word functions.
+  for (let [namespace, functions] of additionalExports) {
+    text += `\ndeclare namespace ${namespace} {\n  export {`;
+    for (let functionName of functions) {
+      text += `\n    _${functionName} as ${functionName},\n`;
+    }
+    text += "  };\n}\n";
+  }
+
   return text
     .replaceAll(/declare var isInstance: /g, "// @ts-ignore\n$&")
     .replace(/interface BeforeUnloadEvent /, "// @ts-ignore\n$&")

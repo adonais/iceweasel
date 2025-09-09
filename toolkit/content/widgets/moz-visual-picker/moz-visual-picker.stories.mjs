@@ -114,8 +114,8 @@ const Template = ({
         width: 50px;
 
         img {
-          height: var(--icon-size-default);
-          width: var(--icon-size-default);
+          height: var(--icon-size);
+          width: var(--icon-size);
           -moz-context-properties: fill;
           fill: var(--icon-color);
         }

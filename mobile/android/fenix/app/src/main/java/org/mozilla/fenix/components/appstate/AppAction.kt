@@ -287,6 +287,10 @@ sealed class AppAction : Action {
      * [AppAction] implementations related to the application lifecycle.
      */
     sealed class AppLifecycleAction : AppAction() {
+        /**
+         * The application has started.
+         */
+        object StartAction : AppLifecycleAction()
 
         /**
          * The application has received an ON_RESUME event.
@@ -345,10 +349,12 @@ sealed class AppAction : Action {
          *
          * @property guidToEdit The guid of the newly added bookmark or null.
          * @property parentNode The [BookmarkNode] representing the folder the bookmark was added to, if any.
+         * @property source Describes where the action was called from.
          */
         data class BookmarkAdded(
             val guidToEdit: String?,
             val parentNode: BookmarkNode?,
+            val source: MetricsUtils.BookmarkAction.Source,
         ) : BookmarkAction()
 
         /**
@@ -357,6 +363,36 @@ sealed class AppAction : Action {
          * @property title The title of the bookmark that was removed.
          */
         data class BookmarkDeleted(val title: String?) : BookmarkAction()
+    }
+
+    /**
+     * [AppAction]s related to Qr Scanner.
+     */
+    sealed class QrScannerAction : AppAction() {
+        /**
+         * [QrScannerAction] dispatched when the QR Scanner is requested.
+         */
+        data object QrScannerRequested : QrScannerAction()
+
+        /**
+         * [QrScannerAction] dispatched when the QR Scanner request is consumed.
+         */
+        data object QrScannerRequestConsumed : QrScannerAction()
+
+        /**
+         * [QrScannerAction] dispatched when the QR Scanner is dismissed.
+         */
+        data object QrScannerDismissed : QrScannerAction()
+
+        /**
+         * [QrScannerAction] dispatched when the QR scanner loads a QR code.
+         */
+        data class QrScannerInputAvailable(val data: String?) : QrScannerAction()
+
+        /**
+         * [QrScannerAction] dispatched when the loaded QR code is consumed.
+         */
+        data object QrScannerInputConsumed : QrScannerAction()
     }
 
     /**
@@ -640,9 +676,9 @@ sealed class AppAction : Action {
         /**
          * Dispatched when a download is in progress.
          *
-         * @property sessionId The ID of the session associated with the download.
+         * @property downloadId The unique identifier for the ongoing download.
          */
-        data class DownloadInProgress(val sessionId: String?) : DownloadAction()
+        data class DownloadInProgress(val downloadId: String) : DownloadAction()
 
         /**
          * Dispatched when a download has failed.

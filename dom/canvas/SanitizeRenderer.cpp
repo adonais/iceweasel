@@ -3,12 +3,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/IntegerRange.h"
-
 #include <functional>
 #include <regex>
 #include <string>
+
+#include "mozilla/IntegerRange.h"
+#include "mozilla/gfx/Logging.h"
 
 namespace mozilla {
 namespace webgl {

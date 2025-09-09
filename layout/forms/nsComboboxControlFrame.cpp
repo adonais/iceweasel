@@ -174,7 +174,7 @@ nscoord nsComboboxControlFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
   }
 
   nscoord displayISize = 0;
-  if (!containISize && !StyleContent()->mContent.IsNone()) {
+  if (!containISize) {
     auto optionType = StyleUIReset()->mFieldSizing == StyleFieldSizing::Content
                           ? Type::Current
                           : Type::Longest;
@@ -308,7 +308,7 @@ void nsComboboxControlFrame::GetLabelText(nsAString& aLabel) {
   if (!aLabel.IsEmpty()) {
     return;
   }
-  if (mDisplayedIndex != -1 && !StyleContent()->mContent.IsNone()) {
+  if (mDisplayedIndex != -1) {
     GetOptionText(mDisplayedIndex, aLabel);
   }
   EnsureNonEmptyLabel(aLabel);

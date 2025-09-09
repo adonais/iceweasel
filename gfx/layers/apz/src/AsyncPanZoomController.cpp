@@ -5647,19 +5647,33 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     // that was just painted is something we knew nothing about previously
     CancelAnimation();
 
-    // Keep our existing scroll generation and existing scroll offsets, if there
-    // are scroll updates. In this case we'll update our scroll generation and
-    // offsets when processing the scroll update array below. If there are no
-    // scroll updates, take the generation from the incoming metrics. Bug
-    // 1662019 will simplify this later.
+    // Keep our existing scroll generation, if there are scroll updates. In this
+    // case we'll update our scroll generation. If there are no scroll updates,
+    // take the generation from the incoming metrics. Bug 1662019 will simplify
+    // this later.
     ScrollGeneration oldScrollGeneration = Metrics().GetScrollGeneration();
     CSSPoint oldLayoutScrollOffset = Metrics().GetLayoutScrollOffset();
     CSSPoint oldVisualScrollOffset = Metrics().GetVisualScrollOffset();
     mScrollMetadata = aScrollMetadata;
     if (!aScrollMetadata.GetScrollUpdates().IsEmpty()) {
       Metrics().SetScrollGeneration(oldScrollGeneration);
-      Metrics().SetLayoutScrollOffset(oldLayoutScrollOffset);
-      Metrics().SetVisualScrollOffset(oldVisualScrollOffset);
+      // Keep existing scroll offsets only if it's not default metrics.
+      //
+      // NOTE: The above scroll generation is used to tell whether we need to
+      // apply the scroll updates or not so that the old generation needs to be
+      // preserved. Whereas the old scroll offsets don't need to be preserved in
+      // the case of default since the new metrics have valid scroll offsets on
+      // the main-thread.
+      //
+      // Bug 1978682: In the case of default metrics, the original layout/visual
+      // scroll offsets on the main-thread (e.g the
+      // ScrollPositionUpdate::mSource in the case of relative update) need to
+      // be reflected to this new APZC because the first ScrollPositionUpdate is
+      // supposed to be applied upon the original offsets.
+      if (!isDefault) {
+        Metrics().SetLayoutScrollOffset(oldLayoutScrollOffset);
+        Metrics().SetVisualScrollOffset(oldVisualScrollOffset);
+      }
     }
 
     mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);

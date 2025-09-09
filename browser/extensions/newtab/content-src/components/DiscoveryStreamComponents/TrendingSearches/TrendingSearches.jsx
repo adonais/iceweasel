@@ -9,6 +9,7 @@ import { LinkMenu } from "../../LinkMenu/LinkMenu";
 import { useIntersectionObserver } from "../../../lib/utils";
 
 const PREF_TRENDING_VARIANT = "trendingSearch.variant";
+const PREF_REFINED_CARDS_LAYOUT = "discoverystream.refinedCardsLayout.enabled";
 
 function TrendingSearches() {
   const [showContextMenu, setShowContextMenu] = useState(false);
@@ -20,6 +21,7 @@ function TrendingSearches() {
   const { values: prefs } = Prefs;
   const { suggestions, collapsed } = TrendingSearch;
   const variant = prefs[PREF_TRENDING_VARIANT];
+  const refinedCards = prefs[PREF_REFINED_CARDS_LAYOUT];
   let resultRef = useRef([]);
   let contextMenuHost = useRef(null);
 
@@ -239,7 +241,7 @@ function TrendingSearches() {
             return (
               <li
                 key={result.suggestion}
-                className="trending-searches-list-item"
+                className={`trending-searches-list-item ${refinedCards ? "compact" : ""}`}
                 onKeyDown={e => handleResultKeyDown(e, index)}
               >
                 <SafeAnchor

@@ -20,8 +20,8 @@ async function do_test_invalid_cookies(options) {
       let failure = true;
       try {
         await browser.cookies.set({
-          ...message.cookie,
           url: "https://example.com",
+          ...message.cookie,
         });
         failure = false;
       } catch (e) {
@@ -42,7 +42,11 @@ async function do_test_invalid_cookies(options) {
   const extension = ExtensionTestUtils.loadExtension({
     background: backgroundScript,
     manifest: {
-      permissions: ["cookies", "https://example.com/*"],
+      permissions: [
+        "cookies",
+        "https://example.com/*",
+        "https://example..com/*",
+      ],
     },
   });
 
@@ -126,10 +130,30 @@ async function do_test_invalid_cookies(options) {
       errorString:
         "Cookie “a” has been rejected because its path attribute is too big.",
     },
+    {
+      cookie: {
+        url: "https://example..com",
+        domain: ".example.com",
+        name: "test",
+      },
+      title: "Invalid url",
+      errorString: `Invalid domain url: "https://example..com"`,
+      failure: true,
+    },
+    {
+      cookie: {
+        url: "https://example..com",
+        name: "test",
+      },
+      title: "Invalid url and no domain",
+      errorString: `Invalid domain: "example..com"`,
+      failure: true,
+    },
   ];
 
   for (const test of tests) {
-    extension.sendMessage({ ...test, ...options });
+    extension.sendMessage({ ...options, ...test });
+
     await extension.awaitMessage("completed");
   }
 

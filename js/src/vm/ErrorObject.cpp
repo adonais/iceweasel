@@ -266,7 +266,11 @@ static ErrorObject* CreateErrorObject(JSContext* cx, const CallArgs& args,
   // non-standard fileName and lineNumber arguments when we have an options
   // object argument and the exception type is not SuppressedError.
   bool hasOptions =
+#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
       args.get(messageArg + 1).isObject() && exnType != JSEXN_SUPPRESSEDERR;
+#else
+      args.get(messageArg + 1).isObject();
+#endif
 
   Rooted<mozilla::Maybe<Value>> cause(cx, mozilla::Nothing());
   if (hasOptions) {

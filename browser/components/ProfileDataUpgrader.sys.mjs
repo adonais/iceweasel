@@ -263,7 +263,7 @@ export let ProfileDataUpgrader = {
       // from default placement. This is done early enough that it doesn't
       // impact adding new managed bookmarks.
       const { CustomizableUI } = ChromeUtils.importESModule(
-        "resource:///modules/CustomizableUI.sys.mjs"
+        "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs"
       );
       CustomizableUI.removeWidgetFromArea("managed-bookmarks");
     }
@@ -903,6 +903,24 @@ export let ProfileDataUpgrader = {
     if (AppConstants.NIGHTLY_BUILD && existingDataVersion === 158) {
       lazy.LoginHelper.setOSAuthEnabled(false);
       lazy.FormAutofillUtils.setOSAuthEnabled(false);
+    }
+
+    if (existingDataVersion < 159) {
+      // Bug 1979014 / bug 1980398 - autohide attribute becomes a real boolean attribute.
+      let menubarWasEnabled =
+        Services.xulStore.getValue(
+          BROWSER_DOCURL,
+          "toolbar-menubar",
+          "autohide"
+        ) == "false";
+      if (menubarWasEnabled) {
+        Services.xulStore.setValue(
+          BROWSER_DOCURL,
+          "toolbar-menubar",
+          "autohide",
+          "-moz-missing\n"
+        );
+      }
     }
 
     // Update the migration version.

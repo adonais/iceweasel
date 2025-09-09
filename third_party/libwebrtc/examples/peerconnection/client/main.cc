@@ -61,7 +61,7 @@ WindowsCommandLineArguments::WindowsCommandLineArguments() {
 
   // iterate over the returned wide strings;
   for (int i = 0; i < argc; ++i) {
-    args_.push_back(rtc::ToUtf8(wide_argv[i], wcslen(wide_argv[i])));
+    args_.push_back(webrtc::ToUtf8(wide_argv[i], wcslen(wide_argv[i])));
     // make sure the argv array points to the string data.
     argv_.push_back(const_cast<char*>(args_.back().c_str()));
   }
@@ -73,9 +73,9 @@ int PASCAL wWinMain(HINSTANCE instance,
                     HINSTANCE prev_instance,
                     wchar_t* cmd_line,
                     int cmd_show) {
-  rtc::WinsockInitializer winsock_init;
-  rtc::PhysicalSocketServer ss;
-  rtc::AutoSocketServerThread main_thread(&ss);
+  webrtc::WinsockInitializer winsock_init;
+  webrtc::PhysicalSocketServer ss;
+  webrtc::AutoSocketServerThread main_thread(&ss);
 
   WindowsCommandLineArguments win_args;
   int argc = win_args.argc();
@@ -104,9 +104,9 @@ int PASCAL wWinMain(HINSTANCE instance,
     return -1;
   }
 
-  rtc::InitializeSSL();
+  webrtc::InitializeSSL();
   PeerConnectionClient client;
-  auto conductor = rtc::make_ref_counted<Conductor>(&client, &wnd);
+  auto conductor = webrtc::make_ref_counted<Conductor>(&client, &wnd);
 
   // Main loop.
   MSG msg;
@@ -128,6 +128,6 @@ int PASCAL wWinMain(HINSTANCE instance,
     }
   }
 
-  rtc::CleanupSSL();
+  webrtc::CleanupSSL();
   return 0;
 }

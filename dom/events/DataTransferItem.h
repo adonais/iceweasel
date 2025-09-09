@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_DataTransferItem_h
 #define mozilla_dom_DataTransferItem_h
 
-#include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/DOMString.h"
+#include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/File.h"
 
 namespace mozilla {

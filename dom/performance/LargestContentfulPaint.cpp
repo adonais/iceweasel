@@ -3,23 +3,21 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-#include "mozilla/dom/Element.h"
-#include "nsContentUtils.h"
-#include "nsLayoutUtils.h"
-#include "nsRFPService.h"
-#include "Performance.h"
-#include "imgRequest.h"
-#include "PerformanceMainThread.h"
 #include "LargestContentfulPaint.h"
 
+#include "Performance.h"
+#include "PerformanceMainThread.h"
+#include "imgRequest.h"
+#include "mozilla/Logging.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
-
-#include "mozilla/PresShell.h"
-#include "mozilla/Logging.h"
 #include "mozilla/nsVideoFrame.h"
+#include "nsContentUtils.h"
+#include "nsLayoutUtils.h"
+#include "nsRFPService.h"
 
 namespace mozilla::dom {
 

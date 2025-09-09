@@ -351,9 +351,6 @@ enum class EditAction {
   // HTMLInputElement.value.
   eSetText,
 
-  // eSetHTML indicates to set body of HTMLEditor.
-  eSetHTML,
-
   // eInsertHTML indicates to insert HTML source code.
   eInsertHTML,
 
@@ -485,10 +482,6 @@ enum class EditSubAction : int32_t {
   // eInsertHTMLSource indicates to create a document fragment from given HTML
   // source and insert into the DOM tree.  So, this is similar to innerHTML.
   eInsertHTMLSource,
-
-  // eReplaceHeadWithHTMLSource indicates to create a document fragment from
-  // given HTML source and replace content of <head> with it.
-  eReplaceHeadWithHTMLSource,
 
   // eSetPositionToAbsolute and eSetPositionToStatic indicates to set position
   // property to absolute or static.
@@ -828,7 +821,6 @@ inline bool MayEditActionDeleteSelection(const EditAction aEditAction) {
 
     case EditAction::eRewrap:
     case EditAction::eSetText:
-    case EditAction::eSetHTML:
     case EditAction::eInsertHTML:
       return true;
 

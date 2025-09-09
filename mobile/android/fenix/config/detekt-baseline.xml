@@ -72,29 +72,7 @@
     <ID>UndocumentedPublicClass:BaseBrowserFragment.kt$BaseBrowserFragment$Companion</ID>
     <ID>UndocumentedPublicClass:BiometricPromptFeature.kt$BiometricPromptFeature$Companion</ID>
     <ID>UndocumentedPublicClass:BlankDragShadowBuilder.kt$BlankDragShadowBuilder : DragShadowBuilder</ID>
-    <ID>UndocumentedPublicClass:BookmarkAdapter.kt$BookmarkAdapter : Adapter</ID>
-    <ID>UndocumentedPublicClass:BookmarkController.kt$DefaultBookmarkController : BookmarkController</ID>
-    <ID>UndocumentedPublicClass:BookmarkDeselectNavigationListener.kt$BookmarkDeselectNavigationListener : OnDestinationChangedListenerDefaultLifecycleObserver</ID>
-    <ID>UndocumentedPublicClass:BookmarkFragmentInteractor.kt$BookmarkFragmentInteractor$Companion</ID>
-    <ID>UndocumentedPublicClass:BookmarkFragmentStore.kt$BookmarkFragmentAction$Change : BookmarkFragmentAction</ID>
-    <ID>UndocumentedPublicClass:BookmarkFragmentStore.kt$BookmarkFragmentAction$Deselect : BookmarkFragmentAction</ID>
-    <ID>UndocumentedPublicClass:BookmarkFragmentStore.kt$BookmarkFragmentAction$DeselectAll : BookmarkFragmentAction</ID>
-    <ID>UndocumentedPublicClass:BookmarkFragmentStore.kt$BookmarkFragmentAction$FinishSync : BookmarkFragmentAction</ID>
-    <ID>UndocumentedPublicClass:BookmarkFragmentStore.kt$BookmarkFragmentAction$Select : BookmarkFragmentAction</ID>
-    <ID>UndocumentedPublicClass:BookmarkFragmentStore.kt$BookmarkFragmentAction$StartSync : BookmarkFragmentAction</ID>
-    <ID>UndocumentedPublicClass:BookmarkFragmentStore.kt$BookmarkFragmentState$Mode : SelectionHolder</ID>
-    <ID>UndocumentedPublicClass:BookmarkFragmentStore.kt$BookmarkFragmentState.Mode$Normal : Mode</ID>
-    <ID>UndocumentedPublicClass:BookmarkFragmentStore.kt$BookmarkFragmentState.Mode$Selecting : Mode</ID>
-    <ID>UndocumentedPublicClass:BookmarkFragmentStore.kt$BookmarkFragmentState.Mode$Syncing : Mode</ID>
-    <ID>UndocumentedPublicClass:BookmarkFragmentStore.kt$BookmarkFragmentStore : Store</ID>
-    <ID>UndocumentedPublicClass:BookmarkItemMenu.kt$BookmarkItemMenu</ID>
-    <ID>UndocumentedPublicClass:BookmarkItemMenu.kt$BookmarkItemMenu$Item</ID>
-    <ID>UndocumentedPublicClass:BookmarkNodeViewHolder.kt$BookmarkNodeViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:BookmarkSeparatorViewHolder.kt$BookmarkSeparatorViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:BookmarkView.kt$BookmarkView : LibraryPageViewUserInteractionHandler</ID>
-    <ID>UndocumentedPublicClass:BookmarksHeaderViewHolder.kt$BookmarksHeaderViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:BookmarksUseCase.kt$BookmarksUseCase$Companion</ID>
-    <ID>UndocumentedPublicClass:BookmarksViewHolder.kt$BookmarksViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:BottomSpacerViewHolder.kt$BottomSpacerViewHolder : ViewHolder</ID>
     <ID>UndocumentedPublicClass:BottomSpacerViewHolder.kt$BottomSpacerViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:BrowserAnimator.kt$BrowserAnimator$Companion</ID>
@@ -310,7 +288,6 @@
     <ID>UndocumentedPublicClass:MetricController.kt$MetricController$Companion</ID>
     <ID>UndocumentedPublicClass:MetricsService.kt$MetricServiceType</ID>
     <ID>UndocumentedPublicClass:MetricsService.kt$MetricsService</ID>
-    <ID>UndocumentedPublicClass:MetricsUtils.kt$MetricsUtils</ID>
     <ID>UndocumentedPublicClass:MozillaProductDetector.kt$MozillaProductDetector</ID>
     <ID>UndocumentedPublicClass:MozillaProductDetector.kt$MozillaProductDetector$MozillaProducts</ID>
     <ID>UndocumentedPublicClass:NewTabShortcutIntentProcessor.kt$NewTabShortcutIntentProcessor : IntentProcessor</ID>
@@ -340,9 +317,6 @@
     <ID>UndocumentedPublicClass:PocketRecommendationsHeaderViewHolder.kt$PocketRecommendationsHeaderViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:PocketStoriesViewHolder.kt$PocketStoriesViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:PoweredByNotification.kt$PoweredByNotification$Companion</ID>
-    <ID>UndocumentedPublicClass:PrivacyContentSpan.kt$ADDR</ID>
-    <ID>UndocumentedPublicClass:PrivacyContentSpan.kt$Position</ID>
-    <ID>UndocumentedPublicClass:PrivacyContentSpan.kt$PrivacyContentSpan : ClickableSpan</ID>
     <ID>UndocumentedPublicClass:PrivateBrowserPageViewHolder.kt$PrivateBrowserPageViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:PrivateBrowserTrayList.kt$PrivateBrowserTrayList : AbstractBrowserTrayList</ID>
     <ID>UndocumentedPublicClass:PrivateBrowsingButtonView.kt$PrivateBrowsingButtonView$Companion</ID>
@@ -416,11 +390,6 @@
     <ID>UndocumentedPublicClass:SecretDebugMenuTrigger.kt$SecretDebugMenuTrigger$Companion</ID>
     <ID>UndocumentedPublicClass:SecretDebugSettingsFragment.kt$SecretDebugSettingsFragment : Fragment</ID>
     <ID>UndocumentedPublicClass:SecretSettingsFragment.kt$SecretSettingsFragment : PreferenceFragmentCompat</ID>
-    <ID>UndocumentedPublicClass:SelectBookmarkFolderAdapter.kt$SelectBookmarkFolderAdapter : ListAdapter</ID>
-    <ID>UndocumentedPublicClass:SelectBookmarkFolderAdapter.kt$SelectBookmarkFolderAdapter$BookmarkFolderViewHolder : ViewHolder</ID>
-    <ID>UndocumentedPublicClass:SelectBookmarkFolderAdapter.kt$SelectBookmarkFolderAdapter$Companion</ID>
-    <ID>UndocumentedPublicClass:SelectBookmarkFolderAdapter.kt$SelectBookmarkFolderAdapter.BookmarkFolderViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:SelectBookmarkFolderFragment.kt$SelectBookmarkFolderFragment : FragmentMenuProvider</ID>
     <ID>UndocumentedPublicClass:SelectionMenu.kt$SelectionMenu</ID>
     <ID>UndocumentedPublicClass:SelectionMenu.kt$SelectionMenu$Item</ID>
     <ID>UndocumentedPublicClass:SelectionMenu.kt$SelectionMenu.Item$BookmarkTabs : Item</ID>
@@ -488,7 +457,6 @@
     <ID>UndocumentedPublicClass:StartupPathProvider.kt$StartupPathProvider$StartupPathLifecycleObserver : DefaultLifecycleObserver</ID>
     <ID>UndocumentedPublicClass:StartupTypeTelemetry.kt$StartupTypeTelemetry$StartupTypeLifecycleObserver : DefaultLifecycleObserver</ID>
     <ID>UndocumentedPublicClass:StoreProvider.kt$StoreProvider$Companion</ID>
-    <ID>UndocumentedPublicClass:StrictModeManager.kt$StrictModeManager$DisableStrictModeFragmentLifecycleCallbacks : FragmentLifecycleCallbacks</ID>
     <ID>UndocumentedPublicClass:StudiesInteractor.kt$DefaultStudiesInteractor : StudiesInteractor</ID>
     <ID>UndocumentedPublicClass:StudiesInteractor.kt$StudiesInteractor</ID>
     <ID>UndocumentedPublicClass:StudiesView.kt$StudiesView : StudiesAdapterDelegate</ID>
@@ -625,26 +593,6 @@
     <ID>UndocumentedPublicFunction:AppViewHolder.kt$AppViewHolder$fun bind(item: AppShareOption)</ID>
     <ID>UndocumentedPublicFunction:BackgroundServices.kt$BackgroundServices$@VisibleForTesting(otherwise = PRIVATE) fun makeAccountManager( context: Context, serverConfig: ServerConfig, deviceConfig: DeviceConfig, syncConfig: SyncConfig?, crashReporter: CrashReporter?, )</ID>
     <ID>UndocumentedPublicFunction:BackgroundServices.kt$BackgroundServices$fun defaultDeviceName(context: Context): String</ID>
-    <ID>UndocumentedPublicFunction:BookmarkAdapter.kt$BookmarkAdapter$fun updateData(tree: BookmarkNode?, mode: BookmarkFragmentState.Mode)</ID>
-    <ID>UndocumentedPublicFunction:BookmarkController.kt$BookmarkController$fun handleAllBookmarksDeselected()</ID>
-    <ID>UndocumentedPublicFunction:BookmarkController.kt$BookmarkController$fun handleBackPressed()</ID>
-    <ID>UndocumentedPublicFunction:BookmarkController.kt$BookmarkController$fun handleBookmarkChanged(item: BookmarkNode)</ID>
-    <ID>UndocumentedPublicFunction:BookmarkController.kt$BookmarkController$fun handleBookmarkDeselected(node: BookmarkNode)</ID>
-    <ID>UndocumentedPublicFunction:BookmarkController.kt$BookmarkController$fun handleBookmarkEdit(node: BookmarkNode)</ID>
-    <ID>UndocumentedPublicFunction:BookmarkController.kt$BookmarkController$fun handleBookmarkExpand(folder: BookmarkNode)</ID>
-    <ID>UndocumentedPublicFunction:BookmarkController.kt$BookmarkController$fun handleBookmarkFolderDeletion(nodes: Set&lt;BookmarkNode&gt;)</ID>
-    <ID>UndocumentedPublicFunction:BookmarkController.kt$BookmarkController$fun handleBookmarkSelected(node: BookmarkNode)</ID>
-    <ID>UndocumentedPublicFunction:BookmarkController.kt$BookmarkController$fun handleBookmarkSharing(item: BookmarkNode)</ID>
-    <ID>UndocumentedPublicFunction:BookmarkController.kt$BookmarkController$fun handleBookmarkTapped(item: BookmarkNode)</ID>
-    <ID>UndocumentedPublicFunction:BookmarkController.kt$BookmarkController$fun handleCopyUrl(item: BookmarkNode)</ID>
-    <ID>UndocumentedPublicFunction:BookmarkController.kt$BookmarkController$fun handleOpeningBookmark(item: BookmarkNode, mode: BrowsingMode)</ID>
-    <ID>UndocumentedPublicFunction:BookmarkController.kt$BookmarkController$fun handleOpeningFolderBookmarks(folder: BookmarkNode, mode: BrowsingMode)</ID>
-    <ID>UndocumentedPublicFunction:BookmarkController.kt$BookmarkController$fun handleRequestSync()</ID>
-    <ID>UndocumentedPublicFunction:BookmarkController.kt$BookmarkController$fun handleSearch()</ID>
-    <ID>UndocumentedPublicFunction:BookmarkController.kt$BookmarkController$fun handleSelectionModeSwitch()</ID>
-    <ID>UndocumentedPublicFunction:BookmarkFragmentStore.kt$operator fun BookmarkNode.contains(item: BookmarkNode): Boolean</ID>
-    <ID>UndocumentedPublicFunction:BookmarkNodeViewHolder.kt$BookmarkNodeViewHolder$fun bind( item: BookmarkNode, mode: BookmarkFragmentState.Mode, payload: BookmarkPayload, )</ID>
-    <ID>UndocumentedPublicFunction:BookmarkView.kt$BookmarkView$fun update(state: BookmarkFragmentState)</ID>
     <ID>UndocumentedPublicFunction:BrowserAnimator.kt$BrowserAnimator$fun beginAnimateInIfNecessary()</ID>
     <ID>UndocumentedPublicFunction:BrowserAnimator.kt$BrowserAnimator.Companion$fun getToolbarNavOptions(context: Context): NavOptions</ID>
     <ID>UndocumentedPublicFunction:BrowserIcons.kt$fun BrowserIcons.loadIntoView(view: ImageView, url: String)</ID>
@@ -804,7 +752,6 @@
     <ID>UndocumentedPublicFunction:PhoneFeature.kt$PhoneFeature$fun isAndroidPermissionGranted(context: Context): Boolean</ID>
     <ID>UndocumentedPublicFunction:PhoneFeature.kt$PhoneFeature.Companion$fun findFeatureBy(permissions: Array&lt;out String&gt;): PhoneFeature?</ID>
     <ID>UndocumentedPublicFunction:PocketStoriesViewHolder.kt$@Composable @Preview fun PocketStoriesViewHolderPreview()</ID>
-    <ID>UndocumentedPublicFunction:PrivacyContentDisplayHelper.kt$fun showPrivacyPopWindow(context: Context, activity: Activity)</ID>
     <ID>UndocumentedPublicFunction:PrivateShortcutCreateManager.kt$PrivateShortcutCreateManager$fun createPrivateShortcut(context: Context)</ID>
     <ID>UndocumentedPublicFunction:ProfilerMarkerFactProcessor.kt$ProfilerMarkerFactProcessor.Companion$fun create(profilerProvider: () -&gt; Profiler?)</ID>
     <ID>UndocumentedPublicFunction:ProfilerMarkers.kt$ProfilerMarkers$fun addForDispatchTouchEvent(profiler: Profiler?, ev: MotionEvent?)</ID>
@@ -870,8 +817,6 @@
     <ID>UndocumentedPublicFunction:SearchDialogController.kt$SearchDialogController$@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) fun buildDialog(): AlertDialog.Builder</ID>
     <ID>UndocumentedPublicFunction:SearchDialogInteractor.kt$SearchDialogInteractor$fun onCameraPermissionsNeeded()</ID>
     <ID>UndocumentedPublicFunction:SearchStringValidator.kt$SearchStringValidator$fun isSearchStringValid(client: Client, searchString: String): Result</ID>
-    <ID>UndocumentedPublicFunction:SelectBookmarkFolderAdapter.kt$SelectBookmarkFolderAdapter$fun updateData(tree: BookmarkNode?, hideFolderGuid: String?)</ID>
-    <ID>UndocumentedPublicFunction:SelectBookmarkFolderAdapter.kt$SelectBookmarkFolderAdapter.BookmarkFolderViewHolder$fun bind(folder: BookmarkNodeWithDepth, selected: Boolean, onSelect: (BookmarkNode) -&gt; Unit)</ID>
     <ID>UndocumentedPublicFunction:SessionControlAdapter.kt$AdapterItem$open fun contentsSameAs(other: AdapterItem)</ID>
     <ID>UndocumentedPublicFunction:SessionControlView.kt$SessionControlView$fun update(state: AppState, shouldReportMetrics: Boolean = false)</ID>
     <ID>UndocumentedPublicFunction:Settings.kt$Settings$@VisibleForTesting(otherwise = PRIVATE) fun setStrictETP()</ID>

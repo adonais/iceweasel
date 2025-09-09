@@ -141,12 +141,6 @@ class DocAccessibleChild : public PDocAccessibleChild {
                                                     const int32_t& aX,
                                                     const int32_t& aY) override;
 
-  bool SendCaretMoveEvent(const uint64_t& aID, const int32_t& aOffset,
-                          const bool& aIsSelectionCollapsed,
-                          const bool& aIsAtEndOfLine,
-                          const int32_t& aGranularity, bool aFromUser);
-  bool SendFocusEvent(const uint64_t& aID);
-
 #if !defined(XP_WIN)
   virtual mozilla::ipc::IPCResult RecvAnnounce(
       const uint64_t& aID, const nsAString& aAnnouncement,
@@ -161,8 +155,6 @@ class DocAccessibleChild : public PDocAccessibleChild {
   virtual mozilla::ipc::IPCResult RecvAckMutationEvents() override;
 
  private:
-  LayoutDeviceIntRect GetCaretRectFor(const uint64_t& aID);
-
   // Set to true if we have sent mutation events that have not yet been
   // acknowledged by the parent process. We only request and receive one ACK per
   // tick, regardless of how many mutation events we send. Additional ticks

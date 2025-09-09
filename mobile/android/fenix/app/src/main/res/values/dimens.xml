@@ -61,10 +61,12 @@
 
     <!-- Bottom Sheet Fragment card -->
     <dimen name="bottom_sheet_corner_radius">8dp</dimen>
+    <dimen name="bottom_sheet_corner_radius_28dp">28dp</dimen>
     <dimen name="bottom_sheet_handle_height">3dp</dimen>
     <dimen name="bottom_sheet_handle_top_margin">8dp</dimen>
 
     <!-- Browser Toolbar -->
+    <dimen name="composable_browser_toolbar_height">64dp</dimen>
     <dimen name="browser_toolbar_height">56dp</dimen>
     <dimen name="browser_navbar_height">60dp</dimen>
     <dimen name="tab_strip_height">56dp</dimen>
@@ -72,7 +74,6 @@
 
     <!-- Bookmark Edit Fragment  -->
     <dimen name="bookmark_edit_text_height">48dp</dimen>
-    <dimen name="bookmark_select_folder_indent">10dp</dimen>
 
     <!-- Home Fragment -->
     <dimen name="home_fragment_top_toolbar_header_margin">60dp</dimen>

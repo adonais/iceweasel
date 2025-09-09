@@ -12,14 +12,14 @@
 #include "DOMSVGAnimatedAngle.h"
 #include "SVGAttrTearoffTable.h"
 #include "SVGOrientSMILType.h"
+#include "mozAutoDocUpdate.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/SMILValue.h"
 #include "mozilla/dom/SVGMarkerElement.h"
-#include "mozAutoDocUpdate.h"
 #include "nsContentUtils.h"
-#include "nsTextFormatter.h"
 #include "nsPrintfCString.h"
+#include "nsTextFormatter.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::dom::SVGAngle_Binding;

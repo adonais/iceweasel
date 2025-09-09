@@ -8,7 +8,7 @@
   grid-template-areas: "icon title action" "icon content content";
   grid-template-columns: min-content 1fr auto;
   padding: 16px 32px;
-  color: var(--in-content-text-color);
+  color: var(--text-color);
   background-color: var(--background-color-box);
   border-radius: 4px;
   border: 1px solid var(--in-content-border-color);

@@ -549,6 +549,12 @@ export namespace schema {
                     type: string;
                     enum: string[];
                 };
+                BaselineExceptions: {
+                    type: string;
+                };
+                ConvenienceExceptions: {
+                    type: string;
+                };
             };
         };
         EncryptedMediaExtensions: {
@@ -1055,6 +1061,31 @@ export namespace schema {
                     };
                 };
                 VirtualReality: {
+                    type: string;
+                    properties: {
+                        Allow: {
+                            type: string;
+                            strict: boolean;
+                            items: {
+                                type: string;
+                            };
+                        };
+                        Block: {
+                            type: string;
+                            strict: boolean;
+                            items: {
+                                type: string;
+                            };
+                        };
+                        BlockNewRequests: {
+                            type: string;
+                        };
+                        Locked: {
+                            type: string;
+                        };
+                    };
+                };
+                ScreenShare: {
                     type: string;
                     properties: {
                         Allow: {

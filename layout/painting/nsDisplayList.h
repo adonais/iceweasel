@@ -278,12 +278,17 @@ class RetainedDisplayList;
 
 // Bits to track the state of items inside a single stacking context.
 enum class StackingContextBits : uint8_t {
+  // Empty bitfield.
+  None = 0,
   // True if we processed a display item that has a blend mode attached.
   // We do this so we can insert a nsDisplayBlendContainer in the parent
   // stacking context.
   ContainsMixBlendMode = 1 << 0,
   // Similar, but for backdrop-filter.
   ContainsBackdropFilter = 1 << 1,
+  // Whether we can contain a non-isolated 3d or perspective transform that
+  // might need explicit flattening.
+  MayContainNonIsolated3DTransform = 1 << 2,
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(StackingContextBits);
 
@@ -1297,22 +1302,27 @@ class nsDisplayListBuilder {
   };
 
   /**
-   * A helper class to temporarily set mBuildingExtraPagesForPageNum.
+   * A helper class to temporarily set mPageNum.
    */
   class MOZ_RAII AutoPageNumberSetter {
    public:
-    AutoPageNumberSetter(nsDisplayListBuilder* aBuilder, const uint8_t aPageNum)
+    AutoPageNumberSetter(nsDisplayListBuilder* aBuilder, int32_t aPageNum,
+                         bool aAvoidBuildingDuplicateOofs = false)
         : mBuilder(aBuilder),
-          mOldPageNum(aBuilder->GetBuildingExtraPagesForPageNum()) {
-      mBuilder->SetBuildingExtraPagesForPageNum(aPageNum);
+          mOldPageNum(aBuilder->GetBuildingPageNum()),
+          mOldAvoid(aBuilder->AvoidBuildingDuplicateOofs()) {
+      mBuilder->SetBuildingPageNum(
+          uint8_t(std::min(aPageNum, 255)),
+          aAvoidBuildingDuplicateOofs || aPageNum > 255);
     }
     ~AutoPageNumberSetter() {
-      mBuilder->SetBuildingExtraPagesForPageNum(mOldPageNum);
+      mBuilder->SetBuildingPageNum(mOldPageNum, mOldAvoid);
     }
 
    private:
     nsDisplayListBuilder* mBuilder;
     uint8_t mOldPageNum;
+    bool mOldAvoid;
   };
 
   /**
@@ -1528,6 +1538,10 @@ class nsDisplayListBuilder {
     return bool(mStackingContextBits &
                 StackingContextBits::ContainsMixBlendMode);
   }
+  bool MayContainNonIsolated3DTransform() const {
+    return bool(mStackingContextBits &
+                StackingContextBits::MayContainNonIsolated3DTransform);
+  }
   bool ContainsBackdropFilter() const {
     return bool(mStackingContextBits &
                 StackingContextBits::ContainsBackdropFilter);
@@ -1622,12 +1636,16 @@ class nsDisplayListBuilder {
     mBuildingInvisibleItems = aBuildingInvisibleItems;
   }
 
-  void SetBuildingExtraPagesForPageNum(uint8_t aPageNum) {
-    mBuildingExtraPagesForPageNum = aPageNum;
+  void SetBuildingPageNum(uint8_t aPageNum, bool aAvoidBuildingDuplicateOofs) {
+    mBuildingPageNum = aPageNum;
+    mAvoidBuildingDuplicateOofs = aAvoidBuildingDuplicateOofs;
   }
-  uint8_t GetBuildingExtraPagesForPageNum() const {
-    return mBuildingExtraPagesForPageNum;
+
+  bool AvoidBuildingDuplicateOofs() const {
+    return mAvoidBuildingDuplicateOofs;
   }
+
+  uint8_t GetBuildingPageNum() const { return mBuildingPageNum; }
 
   bool HitTestIsForVisibility() const { return mVisibleThreshold.isSome(); }
 
@@ -1915,7 +1933,7 @@ class nsDisplayListBuilder {
 
   Preserves3DContext mPreserves3DCtx;
 
-  uint8_t mBuildingExtraPagesForPageNum;
+  uint8_t mBuildingPageNum = 0;
 
   nsDisplayListBuilderMode mMode;
   static uint32_t sPaintSequenceNumber;
@@ -1967,6 +1985,15 @@ class nsDisplayListBuilder {
 
   bool mIsReusingStackingContextItems;
   bool mIsDestroying;
+  // We need to build display items for the same frame in a bunch of situations
+  // in paged mode:
+  //  * When building overflow from a previous page.
+  //  * When building the top layer.
+  // In those cases, we can't deal with building them past the 255th page,
+  // because we use the page number as a differentiator in a uint8_t. When we go
+  // over that page, we set this flag to avoid building potentially duplicate
+  // display items.
+  bool mAvoidBuildingDuplicateOofs = false;
 
   Maybe<layers::ScrollDirection> mCurrentScrollbarDirection;
 };
@@ -2045,7 +2072,7 @@ MOZ_ALWAYS_INLINE T* MakeDisplayItemWithIndex(nsDisplayListBuilder* aBuilder,
   }
 
   item->SetPerFrameIndex(aIndex);
-  item->SetExtraPageForPageNum(aBuilder->GetBuildingExtraPagesForPageNum());
+  item->SetPageNum(aBuilder->GetBuildingPageNum());
 
   nsPaintedDisplayItem* paintedItem = item->AsPaintedDisplayItem();
   if (paintedItem) {
@@ -2225,7 +2252,7 @@ class nsDisplayItem {
     // The middle 16 bits of the per frame key uniquely identify the display
     // item when there are more than one item of the same type for a frame.
     // The low 8 bits are the display item type.
-    return (static_cast<uint32_t>(mExtraPageForPageNum)
+    return (static_cast<uint32_t>(mPageNum)
             << (TYPE_BITS + (sizeof(mPerFrameIndex) * 8))) |
            (static_cast<uint32_t>(mPerFrameIndex) << TYPE_BITS) |
            static_cast<uint32_t>(mType);
@@ -2337,7 +2364,7 @@ class nsDisplayItem {
       : mFrame(aOther.mFrame),
         mItemFlags(aOther.mItemFlags),
         mType(aOther.mType),
-        mExtraPageForPageNum(aOther.mExtraPageForPageNum),
+        mPageNum(aOther.mPageNum),
         mPerFrameIndex(aOther.mPerFrameIndex),
         mBuildingRect(aOther.mBuildingRect),
         mToReferenceFrame(aOther.mToReferenceFrame),
@@ -2367,9 +2394,7 @@ class nsDisplayItem {
   // OOF and normal content that is spread across multiple
   // pages. We include the page number for the duplicates
   // to make our GetPerFrameKey unique.
-  void SetExtraPageForPageNum(const uint8_t aPageNum) {
-    mExtraPageForPageNum = aPageNum;
-  }
+  void SetPageNum(uint8_t aPageNum) { mPageNum = aPageNum; }
 
   void SetDeletedFrame();
 
@@ -2899,7 +2924,7 @@ class nsDisplayItem {
 
   EnumSet<ItemFlag, uint16_t> mItemFlags;              // 2
   DisplayItemType mType = DisplayItemType::TYPE_ZERO;  // 1
-  uint8_t mExtraPageForPageNum = 0;                    // 1
+  uint8_t mPageNum = 0;                                // 1
   uint16_t mPerFrameIndex = 0;                         // 2
   ReuseState mReuseState = ReuseState::None;
   OldListIndex mOldListIndex;  // 4
@@ -5137,7 +5162,7 @@ class nsDisplayOpacity final : public nsDisplayWrapList {
                    nsDisplayList* aList,
                    const ActiveScrolledRoot* aActiveScrolledRoot,
                    bool aForEventsOnly, bool aNeedsActiveLayer,
-                   bool aWrapsBackdropFilter, bool aForceBackdropRoot);
+                   bool aWrapsBackdropFilter, bool aForceIsolation);
 
   nsDisplayOpacity(nsDisplayListBuilder* aBuilder,
                    const nsDisplayOpacity& aOther)
@@ -5147,7 +5172,7 @@ class nsDisplayOpacity final : public nsDisplayWrapList {
         mNeedsActiveLayer(aOther.mNeedsActiveLayer),
         mChildOpacityState(ChildOpacityState::Unknown),
         mWrapsBackdropFilter(aOther.mWrapsBackdropFilter),
-        mForceBackdropRoot(aOther.mForceBackdropRoot) {
+        mForceIsolation(aOther.mForceIsolation) {
     MOZ_COUNT_CTOR(nsDisplayOpacity);
     // We should not try to merge flattened opacities.
     MOZ_ASSERT(aOther.mChildOpacityState != ChildOpacityState::Applied);
@@ -5256,8 +5281,8 @@ class nsDisplayOpacity final : public nsDisplayWrapList {
 #else
   ChildOpacityState mChildOpacityState;
 #endif
-  bool mWrapsBackdropFilter;
-  bool mForceBackdropRoot;
+  bool mWrapsBackdropFilter : 1;
+  bool mForceIsolation : 1;
 };
 
 class nsDisplayBlendMode : public nsDisplayWrapList {
@@ -5367,9 +5392,9 @@ class nsDisplayBlendContainer : public nsDisplayWrapList {
       nsIFrame* aSecondaryFrame, nsDisplayList* aList,
       const ActiveScrolledRoot* aActiveScrolledRoot);
 
-  static nsDisplayBlendContainer* CreateForBackdropRoot(
+  static nsDisplayBlendContainer* CreateForIsolation(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
-      const ActiveScrolledRoot* aActiveScrolledRoot, bool aNeedsBackdropRoot);
+      const ActiveScrolledRoot* aActiveScrolledRoot, bool aNeedsIsolation);
 
   MOZ_COUNTED_DTOR_OVERRIDE(nsDisplayBlendContainer)
 
@@ -5383,10 +5408,7 @@ class nsDisplayBlendContainer : public nsDisplayWrapList {
       nsDisplayListBuilder* aDisplayListBuilder) override;
 
   bool CanMerge(const nsDisplayItem* aItem) const override {
-    // Items for the same content element should be merged into a single
-    // compositing group.
-    return HasDifferentFrame(aItem) && HasSameTypeAndClip(aItem) &&
-           HasSameContent(aItem) &&
+    return nsDisplayWrapList::CanMerge(aItem) &&
            mBlendContainerType ==
                static_cast<const nsDisplayBlendContainer*>(aItem)
                    ->mBlendContainerType;
@@ -5397,7 +5419,7 @@ class nsDisplayBlendContainer : public nsDisplayWrapList {
   }
 
   bool CreatesStackingContextHelper() override {
-    return mBlendContainerType != BlendContainerType::BackdropRootNothing;
+    return mBlendContainerType != BlendContainerType::NeedsIsolationNothing;
   }
 
  protected:
@@ -5409,9 +5431,9 @@ class nsDisplayBlendContainer : public nsDisplayWrapList {
     // doesn't create a stacking context helper, just flattens away (necessary
     // because we need to create a display item of same display item type and
     // toggle between these last two types without invalidating the frame)
-    BackdropRootNothing,
+    NeedsIsolationNothing,
     // creates stacking context helper for backdrop root
-    BackdropRootNeedsContainer,
+    NeedsIsolationNeedsContainer,
   };
 
   nsDisplayBlendContainer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
@@ -5535,7 +5557,17 @@ class nsDisplayOwnLayer : public nsDisplayWrapList {
       wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
       const StackingContextHelper& aSc,
       layers::RenderRootStateManager* aManager,
-      nsDisplayListBuilder* aDisplayListBuilder) override;
+      nsDisplayListBuilder* aDisplayListBuilder) override {
+    return CreateWebRenderCommands(aBuilder, aResources, aSc, aManager,
+                                   aDisplayListBuilder,
+                                   /* aForceIsolation = */ false);
+  }
+  bool CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
+                               wr::IpcResourceUpdateQueue& aResources,
+                               const StackingContextHelper& aSc,
+                               layers::RenderRootStateManager* aManager,
+                               nsDisplayListBuilder* aDisplayListBuilder,
+                               bool aForceIsolation);
   bool UpdateScrollData(layers::WebRenderScrollData* aData,
                         layers::WebRenderLayerScrollData* aLayerData) override;
   void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override {
@@ -5769,12 +5801,14 @@ class nsDisplayFixedPosition : public nsDisplayOwnLayer {
   nsDisplayFixedPosition(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                          nsDisplayList* aList,
                          const ActiveScrolledRoot* aActiveScrolledRoot,
-                         const ActiveScrolledRoot* aScrollTargetASR);
+                         const ActiveScrolledRoot* aScrollTargetASR,
+                         bool aForceIsolation);
   nsDisplayFixedPosition(nsDisplayListBuilder* aBuilder,
                          const nsDisplayFixedPosition& aOther)
       : nsDisplayOwnLayer(aBuilder, aOther),
         mScrollTargetASR(aOther.mScrollTargetASR),
-        mIsFixedBackground(aOther.mIsFixedBackground) {
+        mIsFixedBackground(aOther.mIsFixedBackground),
+        mForceIsolation(aOther.mForceIsolation) {
     MOZ_COUNT_CTOR(nsDisplayFixedPosition);
   }
 
@@ -5811,6 +5845,7 @@ class nsDisplayFixedPosition : public nsDisplayOwnLayer {
 
   RefPtr<const ActiveScrolledRoot> mScrollTargetASR;
   bool mIsFixedBackground;
+  bool mForceIsolation;
 
  private:
   NS_DISPLAY_ALLOW_CLONING()
@@ -6254,7 +6289,7 @@ class nsDisplayTransform final : public nsPaintedDisplayItem {
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                      nsDisplayList* aList, const nsRect& aChildrenBuildingRect,
                      PrerenderDecision aPrerenderDecision,
-                     bool aWrapsBackdropFilter);
+                     bool aWrapsBackdropFilter, bool aForceIsolation);
 
   nsDisplayTransform(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                      nsDisplayList* aList, const nsRect& aChildrenBuildingRect,
@@ -6613,6 +6648,7 @@ class nsDisplayTransform final : public nsPaintedDisplayItem {
   bool mHasAssociatedPerspective : 1;
   bool mContainsASRs : 1;
   bool mWrapsBackdropFilter : 1;
+  bool mForceIsolation : 1;
 };
 
 /* A display item that applies a perspective transformation to a single

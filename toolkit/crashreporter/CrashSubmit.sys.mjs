@@ -303,6 +303,7 @@ Submitter.prototype = {
         break;
       case FAILED:
         this.rejectSubmitStatusPromise(`${FAILED}: ${ret}`);
+        Glean.crashSubmission.failureEvent.record({ id: this.id, reason: ret });
         Glean.crashSubmission.failure.add(1);
         break;
       default:

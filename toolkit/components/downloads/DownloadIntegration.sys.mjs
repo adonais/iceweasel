@@ -18,10 +18,12 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
-  DownloadSpamProtection: "resource:///modules/DownloadSpamProtection.sys.mjs",
+  DownloadSpamProtection:
+    "moz-src:///browser/components/downloads/DownloadSpamProtection.sys.mjs",
   DownloadStore: "resource://gre/modules/DownloadStore.sys.mjs",
   DownloadUIHelper: "resource://gre/modules/DownloadUIHelper.sys.mjs",
-  DownloadsCommon: "resource:///modules/DownloadsCommon.sys.mjs",
+  DownloadsCommon:
+    "moz-src:///browser/components/downloads/DownloadsCommon.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
 });
@@ -351,7 +353,7 @@ export var DownloadIntegration = {
     let directoryPath = null;
     let prefValue = Services.prefs.getIntPref(
       "browser.screenshots.folderList",
-      1
+      4
     );
 
     switch (prefValue) {
@@ -372,6 +374,9 @@ export var DownloadIntegration = {
         } catch {
           directoryPath = await this.getSystemDownloadsDirectory();
         }
+        break;
+      case 4: // Fallback to preferred downloads
+        directoryPath = this.getPreferredDownloadsDirectory();
         break;
       default:
         directoryPath = await this.getSystemDownloadsDirectory();

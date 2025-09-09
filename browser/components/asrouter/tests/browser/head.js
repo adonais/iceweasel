@@ -22,6 +22,9 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
+const BROWSER_GLUE =
+  Cc["@mozilla.org/browser/browserglue;1"].getService().wrappedJSObject;
+
 // Feature callout constants
 const calloutId = "feature-callout";
 const calloutSelector = `#${calloutId}.featureCallout`;

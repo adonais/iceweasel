@@ -581,10 +581,11 @@ gfxRect SVGPatternFrame::GetPatternRect(uint16_t aPatternUnits,
   tmpWidth = GetLengthValue(SVGPatternElement::ATTR_WIDTH);
 
   if (aPatternUnits == SVG_UNIT_TYPE_OBJECTBOUNDINGBOX) {
-    x = SVGUtils::ObjectSpace(aTargetBBox, tmpX);
-    y = SVGUtils::ObjectSpace(aTargetBBox, tmpY);
-    width = SVGUtils::ObjectSpace(aTargetBBox, tmpWidth);
-    height = SVGUtils::ObjectSpace(aTargetBBox, tmpHeight);
+    SVGElementMetrics metrics(SVGElement::FromNode(GetContent()));
+    x = SVGUtils::ObjectSpace(aTargetBBox, metrics, tmpX);
+    y = SVGUtils::ObjectSpace(aTargetBBox, metrics, tmpY);
+    width = SVGUtils::ObjectSpace(aTargetBBox, metrics, tmpWidth);
+    height = SVGUtils::ObjectSpace(aTargetBBox, metrics, tmpHeight);
   } else {
     if (aTarget->IsTextFrame()) {
       aTarget = aTarget->GetParent();
@@ -629,7 +630,7 @@ gfxMatrix SVGPatternFrame::ConstructCTM(const SVGAnimatedViewBox& aViewBox,
   const SVGViewBox& viewBox =
       aViewBox.GetAnimValue() * Style()->EffectiveZoom().ToFloat();
 
-  if (viewBox.height <= 0.0f || viewBox.width <= 0.0f) {
+  if (!viewBox.IsValid()) {
     return gfxMatrix(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);  // singular
   }
 

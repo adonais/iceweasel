@@ -32,7 +32,7 @@ data class BrowserToolbarEnvironment(
     val viewLifecycleOwner: LifecycleOwner,
     val navController: NavController,
     val browsingModeManager: BrowsingModeManager,
-    val browserAnimator: BrowserAnimator,
-    val thumbnailsFeature: BrowserThumbnails?,
-    val readerModeController: ReaderModeController,
+    val browserAnimator: BrowserAnimator? = null,
+    val thumbnailsFeature: BrowserThumbnails? = null,
+    val readerModeController: ReaderModeController? = null,
 ) : Environment

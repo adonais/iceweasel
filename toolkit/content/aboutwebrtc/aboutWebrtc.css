@@ -191,12 +191,12 @@ div.fold-trigger {
 }
 
 .tab-button {
-  color: var(--in-content-button-text-color);
+  color: var(--button-text-color);
 }
 
 .active-tab-button {
-  color: var(--in-content-button-text-color-active);
-  background: var(--in-content-button-background-active);
+  color: var(--button-text-color-active);
+  background: var(--button-background-color-active);
 }
 
 .sdp-history {

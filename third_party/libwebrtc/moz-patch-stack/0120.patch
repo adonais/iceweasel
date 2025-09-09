@@ -62,7 +62,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a342f5eca8622c8b9
  46 files changed, 121 insertions(+), 121 deletions(-)
 
 diff --git a/.gn b/.gn
-index fe7020cb97..4c9b95c31b 100644
+index 940244f9af..fa6a5e85d8 100644
 --- a/.gn
 +++ b/.gn
 @@ -6,10 +6,10 @@
@@ -79,7 +79,7 @@ index fe7020cb97..4c9b95c31b 100644
  # The python interpreter to use by default. On Windows, this will look
  # for vpython3.exe and vpython3.bat.
 diff --git a/BUILD.gn b/BUILD.gn
-index ca973787ee..6f68d7ecad 100644
+index 6508557150..6da9ceab1e 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -21,15 +21,15 @@
@@ -102,7 +102,7 @@ index ca973787ee..6f68d7ecad 100644
    import("//third_party/jni_zero/jni_zero.gni")
  }
  
-@@ -535,7 +535,7 @@ if (!build_with_chromium) {
+@@ -539,7 +539,7 @@ if (!build_with_chromium) {
  
      sources = []
      complete_static_lib = true
@@ -111,7 +111,7 @@ index ca973787ee..6f68d7ecad 100644
      defines = []
  
      deps = [
-@@ -842,7 +842,7 @@ rtc_static_library("dcsctp") {
+@@ -846,7 +846,7 @@ rtc_static_library("dcsctp") {
    visibility = [ "//:default" ]
    sources = []
    complete_static_lib = true
@@ -121,7 +121,7 @@ index ca973787ee..6f68d7ecad 100644
    deps = [
      "net/dcsctp/public:factory",
 diff --git a/api/BUILD.gn b/api/BUILD.gn
-index 357f2c82bc..6cb9ab8688 100644
+index b6a0a3afff..37492e6740 100644
 --- a/api/BUILD.gn
 +++ b/api/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -136,7 +136,7 @@ index 357f2c82bc..6cb9ab8688 100644
  
  group("api") {
 diff --git a/api/audio/test/BUILD.gn b/api/audio/test/BUILD.gn
-index 91b8d3195c..8d66ee1abb 100644
+index b1060faae3..c567b6b0f3 100644
 --- a/api/audio/test/BUILD.gn
 +++ b/api/audio/test/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -151,7 +151,7 @@ index 91b8d3195c..8d66ee1abb 100644
  
  if (rtc_include_tests) {
 diff --git a/api/audio_codecs/BUILD.gn b/api/audio_codecs/BUILD.gn
-index 0da1fe4fed..dd636fd158 100644
+index 492a44aa2f..3b41660148 100644
 --- a/api/audio_codecs/BUILD.gn
 +++ b/api/audio_codecs/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -211,7 +211,7 @@ index a3ee0d4e0c..322c52ac64 100644
  
  rtc_source_set("audio_encoder_g722_config") {
 diff --git a/api/audio_codecs/opus/BUILD.gn b/api/audio_codecs/opus/BUILD.gn
-index fad98a9619..5fd83d4aa0 100644
+index 2035a791be..c5936ac39f 100644
 --- a/api/audio_codecs/opus/BUILD.gn
 +++ b/api/audio_codecs/opus/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -241,7 +241,7 @@ index 40714b196e..2c6b39f59e 100644
  
  if (rtc_include_tests) {
 diff --git a/api/video/BUILD.gn b/api/video/BUILD.gn
-index c98fb3017f..1e95af2f3e 100644
+index 98591e6050..7468539145 100644
 --- a/api/video/BUILD.gn
 +++ b/api/video/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -256,7 +256,7 @@ index c98fb3017f..1e95af2f3e 100644
  
  rtc_library("video_rtp_headers") {
 diff --git a/api/video_codecs/BUILD.gn b/api/video_codecs/BUILD.gn
-index 4692207be7..9bf7a34a1b 100644
+index 8351ae424b..5e8259826f 100644
 --- a/api/video_codecs/BUILD.gn
 +++ b/api/video_codecs/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -271,7 +271,7 @@ index 4692207be7..9bf7a34a1b 100644
  
  rtc_source_set("scalability_mode") {
 diff --git a/audio/BUILD.gn b/audio/BUILD.gn
-index 412d51e288..e15971e8af 100644
+index 702a8d839d..6fd0767fb8 100644
 --- a/audio/BUILD.gn
 +++ b/audio/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -286,10 +286,10 @@ index 412d51e288..e15971e8af 100644
  
  rtc_library("audio") {
 diff --git a/build_overrides/build.gni b/build_overrides/build.gni
-index 57e8900e3e..e2d0a8ce72 100644
+index 04f5c86306..e3171daf53 100644
 --- a/build_overrides/build.gni
 +++ b/build_overrides/build.gni
-@@ -41,7 +41,7 @@ enable_perfetto_trace_processor = true
+@@ -39,7 +39,7 @@ enable_perfetto_trace_processor = true
  # except for local iOS builds where it's unsupported.
  # Allow for mac cross compile on linux machines.
  if (host_os == "mac" || host_os == "linux") {
@@ -334,10 +334,10 @@ index 3f674f8e58..f00a081f4f 100644
  # Disable partition_alloc for WebRTC standalone builds.
  use_partition_alloc_as_malloc_default = false
 diff --git a/common_audio/BUILD.gn b/common_audio/BUILD.gn
-index 82fceb8ead..f859612711 100644
+index c909b8458d..39ce883687 100644
 --- a/common_audio/BUILD.gn
 +++ b/common_audio/BUILD.gn
-@@ -291,7 +291,7 @@ if (rtc_build_with_neon) {
+@@ -292,7 +292,7 @@ if (rtc_build_with_neon) {
  
      if (target_cpu != "arm64") {
        # Enable compilation for the NEON instruction set.
@@ -346,7 +346,7 @@ index 82fceb8ead..f859612711 100644
        cflags = [ "-mfpu=neon" ]
      }
  
-@@ -314,7 +314,7 @@ if (rtc_build_with_neon) {
+@@ -315,7 +315,7 @@ if (rtc_build_with_neon) {
  
      if (target_cpu != "arm64") {
        # Enable compilation for the NEON instruction set.
@@ -369,7 +369,7 @@ index a0ddf777db..cf15513e18 100644
      }
    }
 diff --git a/examples/BUILD.gn b/examples/BUILD.gn
-index b4c2bd766b..5673934238 100644
+index 69022724e4..f6131841f0 100644
 --- a/examples/BUILD.gn
 +++ b/examples/BUILD.gn
 @@ -9,15 +9,15 @@
@@ -455,7 +455,7 @@ index 05bccd7f77..4292004919 100644
      deps = [
        ":generated_jni",
 diff --git a/logging/BUILD.gn b/logging/BUILD.gn
-index c87d3b2f9a..a4a5889301 100644
+index ea483b29a1..d670a1a6d3 100644
 --- a/logging/BUILD.gn
 +++ b/logging/BUILD.gn
 @@ -11,8 +11,8 @@ if (rtc_enable_protobuf) {
@@ -470,7 +470,7 @@ index c87d3b2f9a..a4a5889301 100644
  
  group("logging") {
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index 3b5bf148dc..d404cd381b 100644
+index 585cbed768..6387ca64c6 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -6,7 +6,7 @@
@@ -537,7 +537,7 @@ index 14b75f1229..626997322e 100644
      }
    }
 diff --git a/modules/audio_processing/agc2/BUILD.gn b/modules/audio_processing/agc2/BUILD.gn
-index 5da168a292..c37c525f15 100644
+index 3808a92ca2..1d887efc22 100644
 --- a/modules/audio_processing/agc2/BUILD.gn
 +++ b/modules/audio_processing/agc2/BUILD.gn
 @@ -255,7 +255,7 @@ rtc_library("vad_wrapper") {
@@ -603,7 +603,7 @@ index 6587fd14f3..a3b3be86b6 100644
    }
  
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index d508767753..0e3ea6cec0 100644
+index 9754cccab1..4e63bd2371 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
 @@ -6,8 +6,8 @@
@@ -618,7 +618,7 @@ index d508767753..0e3ea6cec0 100644
  
  use_desktop_capture_differ_sse2 = target_cpu == "x86" || target_cpu == "x64"
 diff --git a/modules/portal/BUILD.gn b/modules/portal/BUILD.gn
-index 4db7816bc4..7993e482f4 100644
+index a693604389..72972d18e1 100644
 --- a/modules/portal/BUILD.gn
 +++ b/modules/portal/BUILD.gn
 @@ -6,7 +6,7 @@
@@ -631,7 +631,7 @@ index 4db7816bc4..7993e482f4 100644
  import("../../webrtc.gni")
  
 diff --git a/modules/video_coding/BUILD.gn b/modules/video_coding/BUILD.gn
-index 096e1b87ad..695b7dd145 100644
+index 522db89170..4e04e4e98c 100644
 --- a/modules/video_coding/BUILD.gn
 +++ b/modules/video_coding/BUILD.gn
 @@ -6,7 +6,7 @@
@@ -644,7 +644,7 @@ index 096e1b87ad..695b7dd145 100644
  import("../../webrtc.gni")
  
 diff --git a/pc/BUILD.gn b/pc/BUILD.gn
-index 1b7ef662d2..3432363e49 100644
+index d6b0acbe56..4d967b5377 100644
 --- a/pc/BUILD.gn
 +++ b/pc/BUILD.gn
 @@ -30,8 +30,8 @@
@@ -659,7 +659,7 @@ index 1b7ef662d2..3432363e49 100644
  
  if (rtc_build_libsrtp) {
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 303d51ea03..a88fc71c97 100644
+index f9b6967a3d..6f807ddf57 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
 @@ -9,8 +9,8 @@
@@ -674,7 +674,7 @@ index 303d51ea03..a88fc71c97 100644
  
  rtc_source_set("protobuf_utils") {
 diff --git a/rtc_base/memory/BUILD.gn b/rtc_base/memory/BUILD.gn
-index 0037851b1f..66a1acc6a7 100644
+index 9a55af3ea9..3d272ba975 100644
 --- a/rtc_base/memory/BUILD.gn
 +++ b/rtc_base/memory/BUILD.gn
 @@ -8,8 +8,8 @@
@@ -719,10 +719,10 @@ index 3ca6994c81..f248ce40da 100644
  
  rtc_source_set("arch") {
 diff --git a/rtc_tools/network_tester/BUILD.gn b/rtc_tools/network_tester/BUILD.gn
-index 2ad4abd328..c1a19c0cd1 100644
+index 0947186878..c53c12acc1 100644
 --- a/rtc_tools/network_tester/BUILD.gn
 +++ b/rtc_tools/network_tester/BUILD.gn
-@@ -176,8 +176,8 @@ if (is_android) {
+@@ -177,8 +177,8 @@ if (is_android) {
        "../../rtc_base:threading",
      ]
  
@@ -786,7 +786,7 @@ index 786c469689..62e1694729 100644
  import("../webrtc.gni")
  
 diff --git a/test/BUILD.gn b/test/BUILD.gn
-index de26d6abff..f1b470b913 100644
+index 649f762fb8..138d2060ee 100644
 --- a/test/BUILD.gn
 +++ b/test/BUILD.gn
 @@ -6,10 +6,10 @@
@@ -874,7 +874,7 @@ index fb107ef1a3..b718fa583d 100644
  
  declare_args() {
 diff --git a/webrtc.gni b/webrtc.gni
-index 33d81920f4..7e6602dfd7 100644
+index 3cc7d4777a..62faaeb211 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -5,12 +5,12 @@
@@ -922,7 +922,7 @@ index 33d81920f4..7e6602dfd7 100644
  }
  
  if (build_with_chromium) {
-@@ -379,8 +379,8 @@ rtc_common_configs = [ webrtc_root + ":common_config" ]
+@@ -384,8 +384,8 @@ rtc_common_configs = [ webrtc_root + ":common_config" ]
  
  if (is_mac || is_ios) {
    if (filter_include(default_compiler_configs,
@@ -933,7 +933,7 @@ index 33d81920f4..7e6602dfd7 100644
    }
  }
  
-@@ -398,7 +398,7 @@ rtc_common_inherited_config = webrtc_root + ":common_inherited_config"
+@@ -403,7 +403,7 @@ rtc_common_inherited_config = webrtc_root + ":common_inherited_config"
  # Common configs to remove or add in all rtc targets.
  rtc_remove_configs = []
  if (!build_with_chromium && is_clang) {

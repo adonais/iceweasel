@@ -6,8 +6,8 @@
 
 #ifndef XPATHGENERATOR_H__
 #define XPATHGENERATOR_H__
-#include "nsString.h"
 #include "nsINode.h"
+#include "nsString.h"
 
 class XPathGenerator {
  public:

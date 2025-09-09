@@ -6,6 +6,7 @@ package org.mozilla.focus.navigation
 
 import android.os.Build
 import android.os.Bundle
+import androidx.fragment.app.commit
 import org.mozilla.focus.R
 import org.mozilla.focus.activity.MainActivity
 import org.mozilla.focus.autocomplete.AutocompleteAddFragment
@@ -256,21 +257,14 @@ class MainActivityNavigation(
             return
         }
 
-        val transaction = fragmentManager
-            .beginTransaction()
-
-        fragmentManager.fragments.withEach { fragment ->
-            transaction.remove(fragment)
-        }
-
-        fragmentManager
-            .beginTransaction()
-            .replace(
+        fragmentManager.commit {
+            fragmentManager.fragments.forEach { remove(it) }
+            replace(
                 R.id.container,
                 BiometricAuthenticationFragment.createWithDestinationData(bundle),
                 BiometricAuthenticationFragment.FRAGMENT_TAG,
             )
-            .commit()
+        }
     }
 
     @Suppress("ComplexMethod")

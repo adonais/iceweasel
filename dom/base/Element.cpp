@@ -11,12 +11,13 @@
  */
 
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/ElementInlines.h"
+
+#include <inttypes.h>
 
 #include <cstddef>
-#include <inttypes.h>
 #include <initializer_list>
 #include <utility>
+
 #include "DOMMatrix.h"
 #include "ExpandedPrincipal.h"
 #include "PresShellInlines.h"
@@ -53,8 +54,8 @@
 #include "mozilla/PointerLockManager.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellForwards.h"
-#include "mozilla/ReflowOutput.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ReflowOutput.h"
 #include "mozilla/RelativeTo.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ScrollTypes.h"
@@ -77,10 +78,10 @@
 #include "mozilla/dom/Attr.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/CSPViolationData.h"
 #include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/CloseWatcher.h"
 #include "mozilla/dom/CustomElementRegistry.h"
-#include "mozilla/dom/CSPViolationData.h"
 #include "mozilla/dom/DOMRect.h"
 #include "mozilla/dom/DirectionalityUtils.h"
 #include "mozilla/dom/Document.h"
@@ -88,6 +89,7 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/ElementBinding.h"
+#include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/Flex.h"
 #include "mozilla/dom/FragmentOrElement.h"
 #include "mozilla/dom/FromParser.h"
@@ -106,25 +108,25 @@
 #include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/NodeInfo.h"
-#include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/dom/Sanitizer.h"
 #include "mozilla/dom/SVGElement.h"
+#include "mozilla/dom/Sanitizer.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/StylePropertyMapReadOnly.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/dom/TreeIterator.h"
 #include "mozilla/dom/TrustedHTML.h"
-#include "mozilla/dom/TrustedTypesConstants.h"
 #include "mozilla/dom/TrustedTypeUtils.h"
+#include "mozilla/dom/TrustedTypesConstants.h"
 #include "mozilla/dom/UnbindContext.h"
 #include "mozilla/dom/ViewTransition.h"
 #include "mozilla/dom/WindowBinding.h"
 #include "mozilla/dom/XULCommandEvent.h"
 #include "mozilla/dom/nsCSPContext.h"
+#include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/gfx/BasePoint.h"
 #include "mozilla/gfx/BaseRect.h"
 #include "mozilla/gfx/BaseSize.h"
@@ -137,12 +139,12 @@
 #include "nsBaseHashtable.h"
 #include "nsBlockFrame.h"
 #include "nsCOMPtr.h"
-#include "nsContentUtils.h"
 #include "nsCSSPseudoElements.h"
 #include "nsCompatibility.h"
 #include "nsContainerFrame.h"
 #include "nsContentList.h"
 #include "nsContentListDeclarations.h"
+#include "nsContentUtils.h"
 #include "nsCoord.h"
 #include "nsDOMAttributeMap.h"
 #include "nsDOMCSSAttrDeclaration.h"
@@ -158,10 +160,10 @@
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
 #include "nsGridContainerFrame.h"
-#include "nsIContentSecurityPolicy.h"
 #include "nsIAutoCompletePopup.h"
 #include "nsIBrowser.h"
 #include "nsIContentInlines.h"
+#include "nsIContentSecurityPolicy.h"
 #include "nsIDOMXULButtonElement.h"
 #include "nsIDOMXULContainerElement.h"
 #include "nsIDOMXULControlElement.h"
@@ -205,7 +207,6 @@
 #include "nsThreadUtils.h"
 #include "nsViewManager.h"
 #include "nsWindowSizes.h"
-
 #include "nsXULElement.h"
 
 #ifdef DEBUG
@@ -1537,7 +1538,7 @@ void Element::UnattachShadow() {
     // can only call ClearFocus when removing iframes and so on...)
     [&]() MOZ_CAN_RUN_SCRIPT_BOUNDARY {
       if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
-        fm->ContentRemoved(doc, shadowRoot);
+        fm->ContentRemoved(doc, shadowRoot, {});
       }
     }();
   }
@@ -2201,7 +2202,8 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   }
   MOZ_ASSERT(!!GetParent() == aParent.IsContent());
 
-  MOZ_ASSERT(!HasAnyOfFlags(Element::kAllServoDescendantBits));
+  MOZ_ASSERT_IF(!aContext.IsMove(),
+                !HasAnyOfFlags(Element::kAllServoDescendantBits));
 
   // Finally, set the document
   if (aParent.IsInUncomposedDoc() || aParent.IsInShadowTree()) {
@@ -2236,7 +2238,9 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
     if (CustomElementData* data = GetCustomElementData()) {
       if (data->mState == CustomElementData::State::eCustom) {
         nsContentUtils::EnqueueLifecycleCallback(
-            ElementCallbackType::eConnected, this, {});
+            aContext.IsMove() ? ElementCallbackType::eConnectedMove
+                              : ElementCallbackType::eConnected,
+            this, {});
       } else {
         // Step 7.7.2.2 https://dom.spec.whatwg.org/#concept-node-insert
         nsContentUtils::TryToUpgradeElement(this);
@@ -2355,7 +2359,7 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
   if (HasPointerLock()) {
     PointerLockManager::Unlock("Element::UnbindFromTree");
   }
-  if (mState.HasState(ElementState::FULLSCREEN)) {
+  if (!aContext.IsMove() && mState.HasState(ElementState::FULLSCREEN)) {
     // The element being removed is an ancestor of the fullscreen element,
     // exit fullscreen state.
     nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
@@ -2366,8 +2370,9 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
   }
 
   MOZ_ASSERT_IF(HasServoData(), document);
-  MOZ_ASSERT_IF(HasServoData(), IsInNativeAnonymousSubtree());
-  if (document) {
+  MOZ_ASSERT_IF(HasServoData() && !aContext.IsMove(),
+                IsInNativeAnonymousSubtree());
+  if (document && !aContext.IsMove()) {
     ClearServoData(document);
   }
 
@@ -2382,8 +2387,10 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
   //
   // FIXME(bug 522599): Need a test for this.
   // FIXME(emilio): Why not clearing the effect set as well?
-  if (auto* data = GetAnimationData()) {
-    data->ClearAllAnimationCollections();
+  if (!aContext.IsMove()) {
+    if (auto* data = GetAnimationData()) {
+      data->ClearAllAnimationCollections();
+    }
   }
 
   if (nullParent) {
@@ -2440,8 +2447,10 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
     // disconnected.
     if (CustomElementData* data = GetCustomElementData()) {
       if (data->mState == CustomElementData::State::eCustom) {
-        nsContentUtils::EnqueueLifecycleCallback(
-            ElementCallbackType::eDisconnected, this, {});
+        if (!aContext.IsMove()) {
+          nsContentUtils::EnqueueLifecycleCallback(
+              ElementCallbackType::eDisconnected, this, {});
+        }
       } else {
         // Remove an unresolved custom element that is a candidate for upgrade
         // when a custom element is disconnected.
@@ -2479,8 +2488,9 @@ void Element::UnbindFromTree(UnbindContext& aContext) {
     shadowRoot->Unbind();
   }
 
-  MOZ_ASSERT(!HasAnyOfFlags(kAllServoDescendantBits));
-  MOZ_ASSERT(!document || document->GetServoRestyleRoot() != this);
+  MOZ_ASSERT_IF(!aContext.IsMove(), !HasAnyOfFlags(kAllServoDescendantBits));
+  MOZ_ASSERT_IF(!aContext.IsMove(),
+                !document || document->GetServoRestyleRoot() != this);
 }
 
 UniquePtr<SMILAttr> Element::GetAnimatedAttr(int32_t aNamespaceID,

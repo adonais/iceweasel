@@ -8,6 +8,7 @@
 #define mozilla_dom_FileList_h
 
 #include <cstdint>
+
 #include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"
 #include "nsCOMPtr.h"

@@ -8,15 +8,16 @@
 #define mozilla_dom_AsyncLogger_h
 
 #include <atomic>
-#include <thread>
 #include <cinttypes>
+#include <thread>
+
+#include "GeckoProfiler.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BaseProfilerMarkerTypes.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/TimeStamp.h"
-#include "GeckoProfiler.h"
 #include "mozilla/dom/MPSCQueue.h"
 
 #if defined(_WIN32)

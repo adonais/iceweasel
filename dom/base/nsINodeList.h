@@ -7,9 +7,9 @@
 #ifndef nsINodeList_h___
 #define nsINodeList_h___
 
-#include "nsWrapperCache.h"
-#include "nsISupports.h"
 #include "nsIContent.h"
+#include "nsISupports.h"
+#include "nsWrapperCache.h"
 
 // IID for the nsINodeList interface
 #define NS_INODELIST_IID \

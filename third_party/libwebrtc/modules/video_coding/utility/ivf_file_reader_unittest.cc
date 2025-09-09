@@ -10,10 +10,18 @@
 
 #include "modules/video_coding/utility/ivf_file_reader.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <memory>
+#include <optional>
 #include <string>
 
+#include "api/scoped_refptr.h"
+#include "api/video/encoded_image.h"
+#include "api/video/video_codec_type.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
+#include "rtc_base/system/file_wrapper.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 
@@ -44,7 +52,7 @@ class IvfFileReaderTest : public ::testing::Test {
                             int spatial_layers_count) {
     EncodedImage frame;
     frame.SetSpatialIndex(spatial_layers_count);
-    rtc::scoped_refptr<EncodedImageBuffer> payload = EncodedImageBuffer::Create(
+    scoped_refptr<EncodedImageBuffer> payload = EncodedImageBuffer::Create(
         sizeof(kDummyPayload) * spatial_layers_count);
     for (int i = 0; i < spatial_layers_count; ++i) {
       memcpy(&payload->data()[i * sizeof(kDummyPayload)], kDummyPayload,

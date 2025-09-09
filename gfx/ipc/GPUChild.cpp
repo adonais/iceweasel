@@ -83,7 +83,9 @@ void GPUChild::Init() {
   Unused << SendInitProfiler(ProfilerParent::CreateForProcess(OtherPid()));
 }
 
-void GPUChild::OnVarChanged(const GfxVarUpdate& aVar) { SendUpdateVar(aVar); }
+void GPUChild::OnVarChanged(const nsTArray<GfxVarUpdate>& aVar) {
+  SendUpdateVar(aVar);
+}
 
 bool GPUChild::EnsureGPUReady() {
   // On our initial process launch, we want to block on the GetDeviceStatus

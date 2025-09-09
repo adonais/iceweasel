@@ -4,13 +4,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "ComputedStyle.h"
 #include "mozilla/dom/SVGCircleElement.h"
-#include "mozilla/gfx/2D.h"
-#include "nsGkAtoms.h"
+
+#include "ComputedStyle.h"
+#include "SVGGeometryProperty.h"
 #include "mozilla/dom/SVGCircleElementBinding.h"
 #include "mozilla/dom/SVGLengthBinding.h"
-#include "SVGGeometryProperty.h"
+#include "mozilla/gfx/2D.h"
+#include "nsGkAtoms.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(Circle)
 

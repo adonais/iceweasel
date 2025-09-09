@@ -116,6 +116,7 @@ class TenuringTracer final : public JSTracer {
   JSObject* promoteOrForward(JSObject* obj);
   JSString* promoteOrForward(JSString* str);
   JS::BigInt* promoteOrForward(JS::BigInt* bip);
+  GetterSetter* promoteOrForward(GetterSetter* gs);
 
   // Returns whether any cells in the arena require sweeping.
   template <typename T>
@@ -146,12 +147,15 @@ class TenuringTracer final : public JSTracer {
   JSObject* promoteObjectSlow(JSObject* src);
   JSString* promoteString(JSString* src);
   JS::BigInt* promoteBigInt(JS::BigInt* src);
+  GetterSetter* promoteGetterSetter(GetterSetter* src);
 
   size_t moveElements(NativeObject* dst, NativeObject* src,
                       gc::AllocKind dstKind);
   size_t moveSlots(NativeObject* dst, NativeObject* src);
   size_t moveString(JSString* dst, JSString* src, gc::AllocKind dstKind);
   size_t moveBigInt(JS::BigInt* dst, JS::BigInt* src, gc::AllocKind dstKind);
+  size_t moveGetterSetter(GetterSetter* dst, GetterSetter* src,
+                          gc::AllocKind dstKind);
 
   void traceSlots(JS::Value* vp, JS::Value* end);
 };

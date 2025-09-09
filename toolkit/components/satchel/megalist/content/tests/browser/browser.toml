@@ -11,6 +11,14 @@ support-files = [
 ]
 
 ["browser_passwords_create_login.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && opt", # Bug 1974508
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && asan", # Bug 1974508
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && opt", # Bug 1974508
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && debug", # Bug 1974508
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1974508
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && ccov", # Bug 1974508
+]
 
 ["browser_passwords_delete_login.js"]
 

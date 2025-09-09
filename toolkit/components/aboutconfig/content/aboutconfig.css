@@ -38,7 +38,7 @@
   z-index: 1;
   box-sizing: border-box;
   width: 100%;
-  background-color: var(--in-content-page-background);
+  background-color: var(--background-color-canvas);
   padding: 10px;
   padding-bottom: 0;
   min-width: 644px;
@@ -99,7 +99,7 @@
 
 #prefs {
   background-color: var(--table-row-background-color);
-  color: var(--in-content-text-color);
+  color: var(--text-color);
   margin: 10px;
   table-layout: fixed;
   width: calc(100% - 20px);
@@ -270,7 +270,7 @@ td.cell-value > form > input[type="number"] {
   /* Make it wider by the border width so the border-inline is hidden. */
   inset-inline: calc(var(--prefs-table-border-width) * -1);
   height: 12px;
-  background-color: var(--in-content-page-background);
+  background-color: var(--background-color-canvas);
   /* This is visually the top border on the add row. */
   border-bottom: var(--prefs-table-border);
 }

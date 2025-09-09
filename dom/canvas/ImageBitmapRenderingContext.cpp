@@ -4,13 +4,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ImageBitmapRenderingContext.h"
-#include "gfxPlatform.h"
+
+#include "ImageContainer.h"
 #include "gfx2DGlue.h"
+#include "gfxPlatform.h"
 #include "mozilla/dom/ImageBitmapRenderingContextBinding.h"
 #include "mozilla/gfx/Types.h"
 #include "nsComponentManagerUtils.h"
 #include "nsRegion.h"
-#include "ImageContainer.h"
 
 namespace mozilla::dom {
 
@@ -164,7 +165,8 @@ ImageBitmapRenderingContext::MatchWithIntrinsicSize() {
 }
 
 mozilla::UniquePtr<uint8_t[]> ImageBitmapRenderingContext::GetImageBuffer(
-    int32_t* aFormat, gfx::IntSize* aImageSize) {
+    mozilla::CanvasUtils::ImageExtraction aExtractionBehavior, int32_t* aFormat,
+    gfx::IntSize* aImageSize) {
   *aFormat = 0;
   *aImageSize = {};
 
@@ -204,9 +206,10 @@ mozilla::UniquePtr<uint8_t[]> ImageBitmapRenderingContext::GetImageBuffer(
 }
 
 NS_IMETHODIMP
-ImageBitmapRenderingContext::GetInputStream(const char* aMimeType,
-                                            const nsAString& aEncoderOptions,
-                                            nsIInputStream** aStream) {
+ImageBitmapRenderingContext::GetInputStream(
+    const char* aMimeType, const nsAString& aEncoderOptions,
+    mozilla::CanvasUtils::ImageExtraction aExtractionBehavior,
+    nsIInputStream** aStream) {
   nsCString enccid("@mozilla.org/image/encoder;2?type=");
   enccid += aMimeType;
   nsCOMPtr<imgIEncoder> encoder = do_CreateInstance(enccid.get());
@@ -216,7 +219,8 @@ ImageBitmapRenderingContext::GetInputStream(const char* aMimeType,
 
   int32_t format = 0;
   gfx::IntSize imageSize = {};
-  UniquePtr<uint8_t[]> imageBuffer = GetImageBuffer(&format, &imageSize);
+  UniquePtr<uint8_t[]> imageBuffer =
+      GetImageBuffer(aExtractionBehavior, &format, &imageSize);
   if (!imageBuffer) {
     return NS_ERROR_FAILURE;
   }

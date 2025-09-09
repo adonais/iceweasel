@@ -503,10 +503,6 @@ richlistitem[selected] .actionsMenu:focus-visible {
   margin-inline-end: var(--space-small);
 }
 
-.addon-with-favicon .menu-icon {
-  margin-inline-start: 0;
-}
-
 a[is="moz-support-link"]:not(.sidebar-footer-link, [hidden]) {
   display: inline-block;
   white-space: initial;
@@ -630,9 +626,9 @@ html|dialog,
 }
 
 .dialogBox {
-  background-color: var(--in-content-page-background);
+  background-color: var(--background-color-canvas);
   background-clip: content-box;
-  color: var(--in-content-page-color);
+  color: var(--text-color);
   /* `transparent` will use the dialogText color in high-contrast themes and
      when page colors are disabled */
   display: flex;
@@ -645,7 +641,7 @@ html|dialog,
   @media not (forced-colors) {
     html|dialog,
     .dialogBox {
-      --in-content-page-background: #42414d;
+      --background-color-canvas: #42414d;
     }
   }
 }
@@ -1018,7 +1014,7 @@ dialog > .sync-engines-list + hbox {
 
 .sticky-container {
   position: sticky;
-  background-color: var(--in-content-page-background);
+  background-color: var(--background-color-canvas);
   top: 0;
   z-index: 1;
   /* The sticky-container should have the capability to cover all spotlight area. */
@@ -1409,23 +1405,23 @@ richlistitem .text-link:hover {
 .web-appearance-choice {
   width: 100%;
   border: 1px solid var(--in-content-box-border-color);
-  background-color: var(--in-content-box-background-color);
-  color: var(--in-content-text-color);
+  background-color: var(--background-color-box);
+  color: var(--text-color);
   border-radius: 4px;
   overflow: clip;
 }
 
 .web-appearance-choice-image-container {
-  background-color: var(--in-content-button-background);
+  background-color: var(--button-background-color);
   padding: var(--space-medium) 0;
-}
 
-.web-appearance-choice:hover > .web-appearance-choice-image-container {
-  background-color: var(--in-content-button-background-hover);
-}
+  .web-appearance-choice:hover > & {
+    background-color: var(--button-background-color-hover);
+  }
 
-.web-appearance-choice:hover:active > .web-appearance-choice-image-container {
-  background-color: var(--in-content-button-background-active);
+  .web-appearance-choice:hover:active > & {
+    background-color: var(--button-background-color-active);
+  }
 }
 
 .web-appearance-choice img {

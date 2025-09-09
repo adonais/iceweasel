@@ -28,6 +28,7 @@ import org.mozilla.fenix.compose.snackbar.SnackbarState
 import org.mozilla.fenix.databinding.BrowserToolbarPopupWindowBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.isToolbarAtBottom
+import org.mozilla.fenix.ext.pixelSizeFor
 import java.lang.ref.WeakReference
 
 /**
@@ -66,7 +67,7 @@ object ToolbarPopupWindow {
         val popupWindow = PopupWindow(
             binding.root,
             LinearLayout.LayoutParams.WRAP_CONTENT,
-            context.resources.getDimensionPixelSize(R.dimen.context_menu_height),
+            context.pixelSizeFor(R.dimen.context_menu_height),
             true,
         )
         popupWindow.elevation =
@@ -130,7 +131,7 @@ object ToolbarPopupWindow {
         toolbarLayout.get()?.let {
             popupWindow.showAsDropDown(
                 it,
-                context.resources.getDimensionPixelSize(R.dimen.context_menu_x_offset),
+                context.pixelSizeFor(R.dimen.context_menu_x_offset),
                 popupVerticalOffset,
                 Gravity.START,
             )

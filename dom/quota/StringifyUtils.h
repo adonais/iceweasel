@@ -8,8 +8,8 @@
 #define mozilla_dom_quota_stringifyutils_h__
 
 #include "mozilla/ThreadLocal.h"
-#include "nsTHashSet.h"
 #include "nsLiteralString.h"
+#include "nsTHashSet.h"
 
 namespace mozilla {
 

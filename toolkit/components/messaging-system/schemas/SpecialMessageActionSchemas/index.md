@@ -390,9 +390,9 @@ Sets the visibility of the bookmarks toolbar.
 ```
 
 
-### `DATAREPORTING_NOTIFY_DATA_POLICY_INTERACTED`
+### `SET_TERMS_OF_USE_INTERACTED`
 
-Notify Firefox that the notification policy was interacted with.
+Notify Firefox that the Terms of Use policy was interacted with.
 
 - args: (none)
 
@@ -455,3 +455,27 @@ interface SearchMode {
 Summarize current page content.
 
 * args: optional `string` entry value to identify initiator default "message"
+
+### `OPEN_PANEL`
+
+Open a panel associated with a given widget.
+
+* args:
+```ts
+{
+  data: {
+    // id of the anchor or widget to attach the panel to
+    anchor_id: string,
+    widget_id: string,
+    // id of the panel to open
+    panel_id: string,
+  }
+}
+```
+
+
+### `CREATE_TASKBAR_TAB`
+
+Creates a taskbar tab from the current URL and asks to pin it to the taskbar. Windows only.
+
+- args: (none)

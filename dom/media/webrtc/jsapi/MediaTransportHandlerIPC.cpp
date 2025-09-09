@@ -3,14 +3,15 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MediaTransportHandlerIPC.h"
-#include "mozilla/dom/MediaTransportChild.h"
-#include "nsThreadUtils.h"
-#include "mozilla/net/SocketProcessBridgeChild.h"
+
+#include "common/browser_logging/CSFLog.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/MediaTransportChild.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/PBackgroundChild.h"
-#include "common/browser_logging/CSFLog.h"
+#include "mozilla/net/SocketProcessBridgeChild.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 

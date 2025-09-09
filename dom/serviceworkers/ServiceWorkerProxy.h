@@ -7,8 +7,8 @@
 #ifndef moz_dom_ServiceWorkerProxy_h
 #define moz_dom_ServiceWorkerProxy_h
 
-#include "nsProxyRelease.h"
 #include "ServiceWorkerDescriptor.h"
+#include "nsProxyRelease.h"
 
 namespace mozilla::dom {
 

@@ -9,7 +9,7 @@ UNSUPPORTED_CSS = "[class*=bannerBrowser]"
 
 async def try_visit_site(client):
     try:
-        await client.navigate(URL, no_skip=True, timeout=30)
+        await client.navigate(URL, no_skip=True, timeout=10)
     except TimeoutError:
         pytest.skip("Could not connect to site. Try using a VPN set to Israel.")
 

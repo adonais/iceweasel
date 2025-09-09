@@ -19,12 +19,15 @@ namespace mozilla::dom::cache {
 using mozilla::ipc::FileDescriptor;
 
 // declared in ActorUtils.h
-already_AddRefed<PCacheStreamControlChild> AllocPCacheStreamControlChild() {
-  return MakeAndAddRef<CacheStreamControlChild>();
+already_AddRefed<PCacheStreamControlChild> AllocPCacheStreamControlChild(
+    ActorChild* aParentActor) {
+  return MakeAndAddRef<CacheStreamControlChild>(aParentActor);
 }
 
-CacheStreamControlChild::CacheStreamControlChild()
-    : mDestroyStarted(false), mDestroyDelayed(false) {
+CacheStreamControlChild::CacheStreamControlChild(ActorChild* aParentActor)
+    : mParentActor(aParentActor),
+      mDestroyStarted(false),
+      mDestroyDelayed(false) {
   MOZ_COUNT_CTOR(cache::CacheStreamControlChild);
 }
 
@@ -130,6 +133,11 @@ void CacheStreamControlChild::AssertOwningThread() {
 void CacheStreamControlChild::ActorDestroy(ActorDestroyReason aReason) {
   NS_ASSERT_OWNINGTHREAD(CacheStreamControlChild);
   CloseAllReadStreamsWithoutReporting();
+
+  if (mParentActor) {
+    mParentActor->NoteDeletedActor();
+  }
+
   RemoveWorkerRef();
 }
 

@@ -5,8 +5,8 @@
 #ifndef RESOURCESTREAM_H_
 #define RESOURCESTREAM_H_
 
-#include "MediaResource.h"
 #include "ByteStream.h"
+#include "MediaResource.h"
 #include "mozilla/RefPtr.h"
 
 namespace mozilla {

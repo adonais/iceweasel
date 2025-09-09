@@ -15,10 +15,6 @@ namespace mozilla::dom {
 StylePropertyMap::StylePropertyMap(nsCOMPtr<nsISupports> aParent)
     : StylePropertyMapReadOnly(std::move(aParent)) {}
 
-NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(StylePropertyMap,
-                                               StylePropertyMapReadOnly)
-NS_IMPL_CYCLE_COLLECTION_INHERITED(StylePropertyMap, StylePropertyMapReadOnly)
-
 JSObject* StylePropertyMap::WrapObject(JSContext* aCx,
                                        JS::Handle<JSObject*> aGivenProto) {
   return StylePropertyMap_Binding::Wrap(aCx, this, aGivenProto);

@@ -44,10 +44,14 @@ skip-if = ["os == 'android'"] # Bug 1545439
 
 ["test_ext_background_api_injection.js"]
 
+["test_ext_background_early_quit.js"]
+
 ["test_ext_background_early_shutdown.js"]
 skip-if = ["isolated_process"] # Bug 1709961
 
 ["test_ext_background_empty.js"]
+
+["test_ext_background_file_invalid.js"]
 
 ["test_ext_background_generated_load_events.js"]
 
@@ -336,6 +340,8 @@ skip-if = ["os == 'android'"]
 
 ["test_ext_experiments.js"]
 skip-if = ["isolated_process"] # Bug 1709961
+
+["test_ext_experiments_console.js"]
 
 ["test_ext_extension.js"]
 
@@ -706,6 +712,8 @@ run-sequentially = "very high failure rate in parallel"
 ["test_ext_xhr_cors.js"]
 run-sequentially = "very high failure rate in parallel"
 
+["test_extensionUtils.js"]
+
 ["test_native_manifests.js"]
 subprocess = true
 skip-if = ["os == 'android'"]
@@ -731,6 +739,6 @@ skip-if = ["appname == 'thunderbird'"]
 
 ["test_webRequest_filtering.js"]
 
-["test_wpt_test_onMessage.js"]
+["test_wpt_test_events.js"]
 prefs = ["extensions.wpt.enabled=true"]
 skip-if = ["!nightly_build"]

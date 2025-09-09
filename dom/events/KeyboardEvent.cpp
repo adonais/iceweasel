@@ -7,10 +7,10 @@
 #include "mozilla/dom/KeyboardEvent.h"
 
 #include "mozilla/BasicEvents.h"
+#include "mozilla/LookAndFeel.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/LookAndFeel.h"
 #include "nsContentUtils.h"
 #include "nsIPrincipal.h"
 #include "nsRFPService.h"

@@ -143,7 +143,14 @@ support-files = [
   "test-network-exceptions.html",
   "test-network-request.html",
   "test-network.html",
-  "test-json-mime.html",
+  "test-script-json-mime.html",
+  "test-script-json-module-mime.html",
+  "test-json-module-mime.html",
+  "test-js-json-module-mime.html",
+  "test-js-mime.mjs",
+  "test-js-mime.mjs^headers^",
+  "test-js-json-module.mjs",
+  "test-json-module.mjs",
   "test-json-mime.json",
   "test-json-mime.json^headers^",
   "test-non-javascript-mime.html",
@@ -481,7 +488,7 @@ skip-if = [
 ["browser_webconsole_inspect_cross_domain_object.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 
-["browser_webconsole_json_mime_warning.js"]
+["browser_webconsole_json_mime.js"]
 
 ["browser_webconsole_keyboard_accessibility.js"]
 

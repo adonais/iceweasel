@@ -9,17 +9,17 @@
 
 #include <list>
 
+#include "mozilla/net/WebrtcProxyConfig.h"
 #include "nsCOMPtr.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
 #include "nsIAuthPromptProvider.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIInterfaceRequestor.h"
+#include "nsIProtocolProxyCallback.h"
 #include "nsIStreamListener.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
-#include "nsIProtocolProxyCallback.h"
-#include "mozilla/net/WebrtcProxyConfig.h"
 
 class nsISocketTransport;
 

@@ -54,7 +54,7 @@ class TestReopenFromLibrary(WindowManagerMixin, MarionetteTestCase):
         star_image = self.marionette.find_element("id", "star-button")
 
         def check(_):
-            return "true" in star_image.get_attribute("starred")
+            return "" == star_image.get_attribute("starred")
 
         Wait(self.marionette).until(check, message="Failed to star the page")
 

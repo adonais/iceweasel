@@ -370,7 +370,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
         break;
       case RESULT_MENU_COMMANDS.TRENDING_BLOCK:
         lazy.UrlbarPrefs.set("suggest.trending", false);
-        this.#recordTrendingBlockedTelemetry(details.selType);
+        this.#recordTrendingBlockedTelemetry();
         this.#replaceTrendingResultWithAcknowledgement(controller);
         break;
     }

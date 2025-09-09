@@ -44,3 +44,37 @@ add_task(async function test_appmenu_updates_on_edit() {
   Assert.equal(view.label, UPDATED_NAME, "expected the name to be updated");
   PanelUI.hide();
 });
+
+add_task(async function test_profiles_panel_keyboard_focus() {
+  await SelectableProfileService.createNewProfile();
+
+  await promiseAppMenuOpened();
+  let profilesButton = PanelMultiView.getViewNode(
+    document,
+    "appMenu-profiles-button"
+  );
+
+  let panelView = PanelView.forNode(PanelUI.mainView);
+  panelView.selectedElement = profilesButton;
+  panelView.focusSelectedElement(true);
+
+  let profilesPanel = PanelMultiView.getViewNode(document, "PanelUI-profiles");
+  let viewShown = BrowserTestUtils.waitForEvent(profilesPanel, "ViewShown");
+
+  EventUtils.synthesizeKey("KEY_Enter");
+
+  await viewShown;
+
+  let focusedButton = PanelMultiView.getViewNode(
+    document,
+    "profiles-edit-this-profile-button"
+  );
+
+  is(
+    document.activeElement,
+    focusedButton,
+    "The edit button should be focused"
+  );
+
+  PanelUI.hide();
+});

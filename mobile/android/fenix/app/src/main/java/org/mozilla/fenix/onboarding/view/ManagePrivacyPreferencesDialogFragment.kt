@@ -6,10 +6,9 @@ package org.mozilla.fenix.onboarding.view
 
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.compose.content
 import org.mozilla.fenix.components.lazyStore
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.onboarding.ManagePrivacyPreferencesDialog
@@ -52,22 +51,20 @@ class ManagePrivacyPreferencesDialogFragment : DialogFragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View = ComposeView(requireContext()).apply {
-        setContent {
-            FirefoxTheme {
-                ManagePrivacyPreferencesDialog(
-                    store = store,
-                    onDismissRequest = { dismiss() },
-                    onCrashReportingLinkClick = {
-                        store.dispatch(PrivacyPreferencesAction.CrashReportingLearnMore)
-                        launchSandboxCustomTab(requireContext(), crashReportingUrl)
-                    },
-                    onUsageDataLinkClick = {
-                        store.dispatch(PrivacyPreferencesAction.UsageDataUserLearnMore)
-                        launchSandboxCustomTab(requireContext(), usageDataUrl)
-                    },
-                )
-            }
+    ) = content {
+        FirefoxTheme {
+            ManagePrivacyPreferencesDialog(
+                store = store,
+                onDismissRequest = { dismiss() },
+                onCrashReportingLinkClick = {
+                    store.dispatch(PrivacyPreferencesAction.CrashReportingLearnMore)
+                    launchSandboxCustomTab(requireContext(), crashReportingUrl)
+                },
+                onUsageDataLinkClick = {
+                    store.dispatch(PrivacyPreferencesAction.UsageDataUserLearnMore)
+                    launchSandboxCustomTab(requireContext(), usageDataUrl)
+                },
+            )
         }
     }
 

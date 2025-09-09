@@ -1,9 +1,6 @@
 import pytest
 from webdriver import NoSuchElementException
-from webdriver.error import (
-    ElementClickInterceptedException,
-    UnexpectedAlertOpenException,
-)
+from webdriver.error import ElementClickInterceptedException
 
 URL = "https://www.cleanrider.com/catalogue/velo-electrique/velos-pliants-electriques/"
 
@@ -58,12 +55,12 @@ async def can_interact_with_slider(client):
 
     client.scroll_into_view(min_thumb)
     try:
-        min_thumb.click()
-        client.await_css("wait for exception", timeout=5)
+        for _ in range(5):
+            min_thumb.click()
+            await client.stall(0.5)
     except ElementClickInterceptedException:
         return True
-    except UnexpectedAlertOpenException:
-        return False
+    assert await client.find_alert("bad")
 
 
 @pytest.mark.asyncio

@@ -9,7 +9,7 @@ const CONFIG = [
     base: {
       urls: {
         searchForm: {
-          base: "https://example.com/searchform",
+          base: "https://searchform.com/searchform",
           params: [{ name: "foo", value: "bar" }],
         },
       },
@@ -20,7 +20,7 @@ const CONFIG = [
     base: {
       urls: {
         search: {
-          base: "https://example.com/search",
+          base: "https://no.searchform.com/search",
           searchTermParamName: "q",
         },
       },
@@ -36,25 +36,25 @@ add_setup(async function () {
 
   await SearchTestUtils.installSearchExtension({
     name: "AddonEngine",
-    search_url: "https://example.com/search",
+    search_url: "https://addon.com/search",
     search_url_get_params: "q={searchTerms}",
   });
 });
 
-add_task(async function test_appProvidedEngineSearchform() {
+add_task(async function test_configEngineSearchform() {
   let engine = Services.search.getEngineById(`engine_searchform`);
   Assert.equal(
     engine.searchForm,
-    "https://example.com/searchform?foo=bar",
+    "https://searchform.com/searchform?foo=bar",
     "Used specified searchForm with parameters."
   );
 });
 
-add_task(async function test_appProvidedEngineNoSearchform() {
+add_task(async function test_configEngineNoSearchform() {
   let engine = Services.search.getEngineById(`engine_no_searchform`);
   Assert.equal(
     engine.searchForm,
-    "https://example.com",
+    "https://no.searchform.com",
     "Used pre path of search URL."
   );
 });
@@ -63,7 +63,7 @@ add_task(async function test_addonEngine() {
   let engine2 = Services.search.getEngineByName(`AddonEngine`);
   Assert.equal(
     engine2.searchForm,
-    "https://example.com",
+    "https://addon.com",
     "Used pre path of search URL."
   );
 });

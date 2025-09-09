@@ -5,9 +5,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Sanitizer.h"
+
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/Span.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DocumentFragment.h"

@@ -178,7 +178,7 @@ class SharingUtilsCls {
       item.classList.add("menuitem-iconic");
       item.setAttribute("label", share.menuItemTitle);
       item.setAttribute("share-name", share.name);
-      item.setAttribute("image", share.image);
+      item.setAttribute("image", encodeURI(share.image));
       if (!shouldEnable) {
         item.setAttribute("disabled", "true");
       }

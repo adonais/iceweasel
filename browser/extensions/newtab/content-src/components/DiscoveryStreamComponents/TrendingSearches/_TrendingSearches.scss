@@ -206,6 +206,15 @@
       }
     }
 
+    // Refined cards are a bit smaller, so we recover a bit of space on the list items.
+    .trending-searches-list-item.compact a {
+      padding: var(--space-small);
+    }
+
+    .trending-searches-list-item.compact:first-child a {
+      padding-block-start: var(--space-medium);
+    }
+
     .trending-searches-list-item a img {
       height: var(--icon-size-xlarge);
       width: var(--icon-size-xlarge);

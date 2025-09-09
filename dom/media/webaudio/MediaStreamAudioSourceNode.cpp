@@ -5,16 +5,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MediaStreamAudioSourceNode.h"
-#include "mozilla/dom/MediaStreamAudioSourceNodeBinding.h"
+
 #include "AudioNodeEngine.h"
 #include "AudioNodeExternalInputTrack.h"
 #include "AudioStreamTrack.h"
-#include "mozilla/dom/Document.h"
-#include "nsContentUtils.h"
-#include "nsIScriptError.h"
-#include "nsID.h"
-#include "nsGlobalWindowInner.h"
 #include "Tracing.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/MediaStreamAudioSourceNodeBinding.h"
+#include "nsContentUtils.h"
+#include "nsGlobalWindowInner.h"
+#include "nsID.h"
+#include "nsIScriptError.h"
 
 namespace mozilla::dom {
 

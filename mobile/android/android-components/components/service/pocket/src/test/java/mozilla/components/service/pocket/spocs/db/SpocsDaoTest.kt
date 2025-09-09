@@ -7,7 +7,6 @@ package mozilla.components.service.pocket.spocs.db
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import mozilla.components.service.pocket.helpers.PocketTestResources
 import mozilla.components.service.pocket.stories.db.PocketRecommendationsDatabase
@@ -22,7 +21,6 @@ import org.junit.runner.RunWith
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class SpocsDaoTest {
     private lateinit var database: PocketRecommendationsDatabase

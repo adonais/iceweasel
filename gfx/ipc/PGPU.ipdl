@@ -80,7 +80,7 @@ parent:
   // Forward GPU process its endpoints to the VR process.
   async InitVR(Endpoint<PVRGPUChild> endpoint);
   // Called to update a gfx variable.
-  async UpdateVar(GfxVarUpdate var);
+  async UpdateVar(GfxVarUpdate[] var);
 
   async PreferenceUpdate(Pref pref);
   async ScreenInformationChanged();

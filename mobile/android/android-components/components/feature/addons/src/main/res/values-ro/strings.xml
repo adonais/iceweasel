@@ -34,7 +34,7 @@
     When an add-on requires access to more than 4 domains, for example the add-on requires access for 5 domains. We will show the first 4 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description,
     then we will show another collapsed entry saying "Access your data on another domain.
   -->
-  <string name="mozac_feature_addons_permissions_one_extra_domain_description_2">Să îți acceseze datele într-un alt domeniu</string>
+  <string name="mozac_feature_addons_permissions_one_extra_domain_description_2">Să îți acceseze datele pe alt domeniu</string>
   <!--
     When an add-on requires access to more than 4 domains, for example the add-on requires access for 6 domains. We will show the first 4 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description,
     then we will show another collapsed entry saying "Access your data on 2 other domains". This entry it's for the plural case, when the add-on is accessing more than one extra domain.
@@ -47,7 +47,7 @@
   -->
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">Să îți acceseze datele pe alte domenii</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
-  <string name="mozac_feature_addons_permissions_all_domain_count_description" tools:ignore="PluralsCandidate">Să-ți acceseze datele pentru site-uri din %1$d domenii</string>
+  <string name="mozac_feature_addons_permissions_all_domain_count_description" tools:ignore="PluralsCandidate">Să îți acceseze datele pentru site-uri din %1$d domenii</string>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s, %2$d din %3$d</string>
   <!-- Description for the "privacy" WebExtensions API permission. -->
@@ -65,13 +65,13 @@
   <!-- Description for the "browsingData" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_browser_data_description">Să șteargă istoricul recent de navigare, cookie-urile și datele asociate</string>
   <!-- Description for the "clipboardRead" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_clipboard_read_description">Să obțină date din clipboard</string>
+  <string name="mozac_feature_addons_permissions_clipboard_read_description">Să ia date din clipboard</string>
   <!-- Description for the "clipboardWrite" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_clipboard_write_description">Să introducă date în clipboard</string>
   <!-- Description for the "declarativeNetRequest" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_declarative_net_request_description">Blochează conținutul pe orice pagină</string>
+  <string name="mozac_feature_addons_permissions_declarative_net_request_description">Să blocheze conținut pe orice pagină</string>
   <!-- Description for the "declarativeNetRequestFeedback" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_declarative_net_request_feedback_description">Citește istoricul de navigare</string>
+  <string name="mozac_feature_addons_permissions_declarative_net_request_feedback_description">Să îți citească istoricul de navigare</string>
   <!-- Description for the "downloads" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_downloads_description">Să descarce fișiere și să citească sau să modifice istoricul descărcărilor din browser</string>
   <!-- Description for the "downloads.open" WebExtensions API permission. -->
@@ -99,65 +99,65 @@
   <!-- Description for the "topSites" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_top_sites_description">Să acceseze istoricul de navigare</string>
   <!-- Description for the "trialML" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_trial_ml_description">Descarcă și rulează modele de inteligență artificială pe dispozitivul tău</string>
+  <string name="mozac_feature_addons_permissions_trial_ml_description">Să descarce și să ruleze modele IA pe dispozitivul tău</string>
   <!-- Description for the "userScripts" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_user_scripts_description">Acordă accesul scripturilor terțe neverificate la datele tale</string>
+  <string name="mozac_feature_addons_permissions_user_scripts_description">Să acorde acces la datele tale unor scripturi neverificate de la terți</string>
   <!-- Description for the "devtools" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_devtools_description">Să extindă instrumentele pentru dezvoltatori pentru a-ți accesa datele în filele deschise</string>
   <!-- Description for the "privacy" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_privacy_description_for_update">Citește și modifică setările de confidențialitate.</string>
+  <string name="mozac_feature_addons_permissions_privacy_description_for_update">Să citească și să modifice setările de confidențialitate.</string>
   <!-- Description for the "<all_urls>" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_all_urls_description_for_update">Acces la datele tale pentru toate site-urile web.</string>
+  <string name="mozac_feature_addons_permissions_all_urls_description_for_update">Să îți acceseze datele pentru toate site-urile.</string>
   <!-- Description for the "tabs" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_tabs_description_for_update">Acces la filele browserului.</string>
+  <string name="mozac_feature_addons_permissions_tabs_description_for_update">Să îți acceseze filele browserului.</string>
   <!-- Description for the "webNavigation" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_web_navigation_description_for_update">Acces la activitatea browserului în timpul navigării.</string>
+  <string name="mozac_feature_addons_permissions_web_navigation_description_for_update">Să îți acceseze activitatea în browser în timpul navigării.</string>
   <!-- Description for the "bookmarks" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_bookmarks_description_for_update">Citirea și modificarea marcajelor.</string>
+  <string name="mozac_feature_addons_permissions_bookmarks_description_for_update">Să citească și să modifice marcaje.</string>
   <!-- Description for the "browserSettings" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_browser_settings_description_for_update">Citirea și modificarea setărilor din browser.</string>
+  <string name="mozac_feature_addons_permissions_browser_settings_description_for_update">Să citească și să modifice setările din browser.</string>
   <!-- Description for the "browsingData" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_browsing_data_description_for_update">Ștergerea istoricului recent de navigare, cookie-urile și datele aferente.</string>
+  <string name="mozac_feature_addons_permissions_browsing_data_description_for_update">Să șteargă istoricul recent de navigare, cookie-urile și datele aferente.</string>
   <!-- Description for the "clipboardRead" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_clipboard_read_description_for_update">Obținerea datelor din clipboard.</string>
+  <string name="mozac_feature_addons_permissions_clipboard_read_description_for_update">Să ia date din clipboard.</string>
   <!-- Description for the "clipboardWrite" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_clipboard_write_description_for_update">Introducerea datelor în clipboard.</string>
+  <string name="mozac_feature_addons_permissions_clipboard_write_description_for_update">Să introducă date în clipboard.</string>
   <!-- Description for the "declarativeNetRequest" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_declarative_net_request_description_for_update">Blochează conținutul de pe orice pagină.</string>
+  <string name="mozac_feature_addons_permissions_declarative_net_request_description_for_update">Să blocheze conținut pe orice pagină.</string>
   <!-- Description for the "declarativeNetRequestFeedback" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_declarative_net_request_feedback_description_for_update">Citește istoricul de navigare.</string>
+  <string name="mozac_feature_addons_permissions_declarative_net_request_feedback_description_for_update">Să îți citească istoricul de navigare.</string>
   <!-- Description for the "downloads" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_downloads_description_for_update">Descarcă fișiere și citește și modifică istoricul descărcărilor browserului.</string>
+  <string name="mozac_feature_addons_permissions_downloads_description_for_update">Să descarce fișiere și să citească și să modifice istoricul descărcărilor din browser.</string>
   <!-- Description for the "downloads.open" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_downloads_open_description_for_update">Deschide fișierele descărcate pe dispozitiv.</string>
+  <string name="mozac_feature_addons_permissions_downloads_open_description_for_update">Să deschidă fișiere descărcate pe dispozitiv.</string>
   <!-- Description for the "find" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_find_description_for_update">Citește textul tuturor filelor deschise.</string>
+  <string name="mozac_feature_addons_permissions_find_description_for_update">Să citească textul tuturor filelor deschise.</string>
   <!-- Description for the "geolocation" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_geolocation_description_for_update">Acces la locație.</string>
+  <string name="mozac_feature_addons_permissions_geolocation_description_for_update">Să îți acceseze locația.</string>
   <!-- Description for the "history" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_history_description_for_update">Acces la istoricul de navigare.</string>
+  <string name="mozac_feature_addons_permissions_history_description_for_update">Să îți acceseze istoricul de navigare.</string>
   <!-- Description for the "management" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_management_description_for_update">Monitorizarea utilizării extensiilor și gestionarea temelor.</string>
+  <string name="mozac_feature_addons_permissions_management_description_for_update">Să îți monitorizeze utilizarea extensiei și să îți gestioneze temele.</string>
   <!-- Description for the "nativeMessaging" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_native_messaging_description_for_update">Schimbă mesaje cu alte aplicații decât aceasta.</string>
+  <string name="mozac_feature_addons_permissions_native_messaging_description_for_update">Să facă schimb de mesaje cu alte aplicații în afară de aceasta.</string>
   <!-- Description for the "notifications" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_notifications_description_for_update">Afișarea de notificări.</string>
+  <string name="mozac_feature_addons_permissions_notifications_description_for_update">Să îți afișeze notificări.</string>
   <!-- Description for the "pkcs11" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_pkcs11_description_for_update">Furnizează servicii de autentificare criptografică.</string>
+  <string name="mozac_feature_addons_permissions_pkcs11_description_for_update">Să ofere servicii de autentificare criptografică.</string>
   <!-- Description for the "proxy" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_proxy_description_for_update">Controlează setările proxy ale browserului.</string>
+  <string name="mozac_feature_addons_permissions_proxy_description_for_update">Să controleze setările proxy ale browserului.</string>
   <!-- Description for the "sessions" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_sessions_description_for_update">Accesează filele închise recent.</string>
+  <string name="mozac_feature_addons_permissions_sessions_description_for_update">Să acceseze file închise recent.</string>
   <!-- Description for the "tabHide" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_tab_hide_description_for_update">Să ascundă şi să afișeze filele browserului.</string>
   <!-- Description for the "topSites" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_top_sites_description_for_update">Acces la istoricul de navigare.</string>
+  <string name="mozac_feature_addons_permissions_top_sites_description_for_update">Să îți acceseze istoricul de navigare.</string>
   <!-- Description for the "trialML" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_trial_ml_description_for_update">Descarcă și rulează modele de inteligență artificială pe dispozitivul tău.</string>
   <!-- Description for the "userScripts" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_user_scripts_description_for_update">Acordă accesul scripturilor terțe neverificate la datele tale.</string>
+  <string name="mozac_feature_addons_permissions_user_scripts_description_for_update">Să acorde acces la datele tale unor scripturi neverificate de la terți.</string>
   <!-- Description for the "devtools" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_devtools_description_for_update">Extinde instrumentele pentru dezvoltatori pentru a accesa datele în filele deschise.</string>
+  <string name="mozac_feature_addons_permissions_devtools_description_for_update">Să extindă instrumentele pentru dezvoltatori pentru a-ți accesa datele în filele deschise.</string>
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
   <string name="mozac_feature_addons_permissions_one_site_description_for_update">Să îți acceseze datele pentru %1$s.</string>
   <!-- Description for giving an add-on access to users's data in multiple sites in the domain %1$s. %1$s will be replaced by the DNS domain for which a web extension is requesting access (e.g., mozilla.org). -->
@@ -185,13 +185,11 @@
   <!-- The text shown when an extension requests the userScripts permission, near the usual description of the userScripts permission -->
   <string name="mozac_feature_addons_permissions_user_scripts_extra_warning">Scripturile neverificate pot prezenta riscuri de securitate și confidențialitate. Rulează scripturi doar din extensii sau surse în care ai încredere.</string>
   <!-- The sentence used when the extension has data collection permissions. %1$s is a formatted list of permissions. -->
-  <string name="mozac_feature_addons_permissions_required_data_collection_description" moz:removedIn="141" tools:ignore="UnusedResources">Dezvoltatorul spune că această extensie colectează: %1$s.</string>
-  <!-- The sentence used when the extension has data collection permissions. %1$s is a formatted list of permissions. -->
   <string name="mozac_feature_addons_permissions_required_data_collection_description_2">Dezvoltatorul spune că această extensie colectează: %1$s</string>
   <!-- The sentence used when the developer of an extension has explicitly stated that they do not collect any data collection. -->
-  <string name="mozac_feature_addons_permissions_none_required_data_collection_description">Dezvoltatorul spune că această extensie nu necesită colectarea de date.</string>
+  <string name="mozac_feature_addons_permissions_none_required_data_collection_description">Dezvoltatorul spune că această extensie nu necesită colectare de date.</string>
   <!-- The sentence used when the extension requests new data collection permissions. %1$s is a formatted list of permissions. -->
-  <string name="mozac_feature_addons_permissions_data_collection_optional_description">Dezvoltatorul spune că extensia dorește să colecteze: %1$s</string>
+  <string name="mozac_feature_addons_permissions_data_collection_optional_description">Dezvoltatorul spune că extensia vrea să colecteze: %1$s</string>
   <!-- Description for text button that expands the list of domain permissions -->
   <string name="mozac_feature_addons_permissions_show_all_sites">Afișează toate site-urile</string>
   <!-- Description for text button that hides the majority of the list of domain permissions -->
@@ -201,7 +199,7 @@
   <!-- Short description for the bookmarksInfo data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_bookmarksInfo_short_description">marcaje</string>
   <!-- Short description for the browsingActivity data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_browsingActivity_short_description">activitatea de navigare</string>
+  <string name="mozac_feature_addons_permissions_data_collection_browsingActivity_short_description">activitate de navigare</string>
   <!-- Short description for the financialAndPaymentInfo data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_financialAndPaymentInfo_short_description">informații financiare și de plată</string>
   <!-- Short description for the healthInfo data collection permission -->
@@ -217,31 +215,31 @@
   <!-- Short description for the technicalAndInteraction data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_technicalAndInteraction_short_description">date tehnice și de interacțiune</string>
   <!-- Short description for the websiteActivity data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_websiteActivity_short_description">activitatea site-ului web</string>
+  <string name="mozac_feature_addons_permissions_data_collection_websiteActivity_short_description">activitate pe site-uri</string>
   <!-- Short description for the websiteContent data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_websiteContent_short_description">conținutul site-ului web</string>
+  <string name="mozac_feature_addons_permissions_data_collection_websiteContent_short_description">conținut site-uri</string>
   <!-- Long description for the authenticationInfo data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_authenticationInfo_long_description">Oferă acces la informațiile de autentificare dezvoltatorului extensiei</string>
+  <string name="mozac_feature_addons_permissions_data_collection_authenticationInfo_long_description">Să partajeze informații de autentificare cu dezvoltatorul extensiei</string>
   <!-- Long description for the bookmarksInfo data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_bookmarksInfo_long_description">Distribuie informații despre marcaje dezvoltatorului extensiei</string>
+  <string name="mozac_feature_addons_permissions_data_collection_bookmarksInfo_long_description">Să partajeze informații despre marcaje cu dezvoltatorul extensiei</string>
   <!-- Long description for the browsingActivity data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_browsingActivity_long_description">Distribuie activitatea de navigare dezvoltatorului extensiei</string>
+  <string name="mozac_feature_addons_permissions_data_collection_browsingActivity_long_description">Să îți partajeze activitatea de navigare cu dezvoltatorul extensiei</string>
   <!-- Long description for the financialAndPaymentInfo data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_financialAndPaymentInfo_long_description">Partajează informații financiare și de plată cu dezvoltatorul extensiei</string>
+  <string name="mozac_feature_addons_permissions_data_collection_financialAndPaymentInfo_long_description">Să partajeze informații financiare și de plată cu dezvoltatorul extensiei</string>
   <!-- Long description for the healthInfo data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_healthInfo_long_description">Distribuie informații despre sănătate dezvoltatorului extensiei</string>
+  <string name="mozac_feature_addons_permissions_data_collection_healthInfo_long_description">Să partajeze informații despre sănătatea ta cu dezvoltatorul extensiei</string>
   <!-- Long description for the locationInfo data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_locationInfo_long_description">Distribuie informațiile despre locație dezvoltatorului extensiei</string>
+  <string name="mozac_feature_addons_permissions_data_collection_locationInfo_long_description">Să partajeze informații despre locație cu dezvoltatorul extensiei</string>
   <!-- Long description for the personalCommunications data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_personalCommunications_long_description">Distribuie comunicări personale dezvoltatorului extensiei</string>
+  <string name="mozac_feature_addons_permissions_data_collection_personalCommunications_long_description">Să partajeze comunicări personale cu dezvoltatorul extensiei</string>
   <!-- Long description for the personallyIdentifyingInfo data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_personallyIdentifyingInfo_long_description">Distribuie informații de identificare personală dezvoltatorului extensiei</string>
+  <string name="mozac_feature_addons_permissions_data_collection_personallyIdentifyingInfo_long_description">Să partajeze informații de identificare personală cu dezvoltatorul extensiei</string>
   <!-- Long description for the searchTerms data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_searchTerms_long_description">Distribuie termenii de căutare dezvoltatorului extensiei</string>
+  <string name="mozac_feature_addons_permissions_data_collection_searchTerms_long_description">Să partajeze termeni de căutare cu dezvoltatorul extensiei</string>
   <!-- Long description for the technicalAndInteraction data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_technicalAndInteraction_long_description">Distribuie date tehnice și de interacțiune cu dezvoltatorul extensiei</string>
+  <string name="mozac_feature_addons_permissions_data_collection_technicalAndInteraction_long_description">Să partajeze date tehnice și de interacțiune cu dezvoltatorul extensiei</string>
   <!-- Long description for the websiteActivity data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_websiteActivity_long_description">Distribuie activitatea site-ului web dezvoltatorului extensiei</string>
+  <string name="mozac_feature_addons_permissions_data_collection_websiteActivity_long_description">Să partajeze activitatea pe site-uri web cu dezvoltatorul extensiei</string>
   <!-- Long description for the websiteContent data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_websiteContent_long_description">Distribuie conținutul site-ului web către dezvoltatorul extensiei</string>
   <!-- The version on of add-on. -->
@@ -263,9 +261,7 @@
   <!-- Indicates the add-on is enabled. -->
   <string name="mozac_feature_addons_settings_on">Activat</string>
   <!-- Indicates the add-on is allowed in private browsing mode. -->
-  <string name="mozac_feature_addons_settings_allow_in_private_browsing" moz:removedIn="141" tools:ignore="UnusedResources">Permite în navigare privată</string>
-  <!-- Indicates the add-on is allowed in private browsing mode. -->
-  <string name="mozac_feature_addons_settings_allow_in_private_browsing_2">Permite rularea extensiei în navigarea privată</string>
+  <string name="mozac_feature_addons_settings_allow_in_private_browsing_2">Să ruleze în navigarea privată</string>
   <!-- Indicates the add-on is allowed in private browsing mode. -->
   <string name="mozac_feature_addons_settings_run_in_private_browsing">Execută în navigare privată</string>
   <!-- This is displayed when the add-on is not allowed to run in private browsing. -->
@@ -291,8 +287,6 @@
   <!-- This is a button to report an add-on. -->
   <string name="mozac_feature_addons_report">Raportează</string>
   <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
-  <string name="mozac_feature_addons_permissions_dialog_title" moz:removedIn="141" tools:ignore="UnusedResources">Adaugi %1$s?</string>
-  <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_permissions_dialog_title_2">Adaugă %1$s</string>
   <!-- This is the title of a dialog that asks the users to grant optional permissions. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_optional_permissions_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%1$s solicită permisiuni suplimentare.</string>
@@ -300,8 +294,6 @@
   <string name="mozac_feature_addons_optional_permissions_with_data_collection_dialog_title">%1$s solicită setări suplimentare</string>
   <!-- This is the title of a dialog that asks the users to grant optional data collection permissions only. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_optional_permissions_with_data_collection_only_dialog_title">%1$s solicită colectarea de date suplimentare</string>
-  <!-- This is the subtitle of a dialog that asks the users if they want to install or not an add-on, the subtitle lists the permissions that this add-on requires, the permissions will dynamically be listed after the ":". -->
-  <string name="mozac_feature_addons_permissions_dialog_subtitle" moz:removedIn="141" tools:ignore="UnusedResources">Îți cere permisiunea:</string>
   <!-- Heading for the permissions section in the add-on install dialog. -->
   <string name="mozac_feature_addons_permissions_dialog_heading_required_permissions">Permisiuni necesare:</string>
   <!-- Heading for the data collection permissions section in the add-on install dialog. -->
@@ -309,7 +301,7 @@
   <!-- Heading for the optional settings section in the add-on install dialog. -->
   <string name="mozac_feature_addons_permissions_dialog_heading_optional_settings">Setări opționale:</string>
   <!-- This is the subtitle of a dialog that asks the users to grant optional permissions, the subtitle lists the permissions that this add-on requests, the permissions will dynamically be listed after the ":". -->
-  <string name="mozac_feature_addons_optional_permissions_dialog_subtitle" moz:removedIn="142" tools:ignore="UnusedResources">Dorește să:</string>
+  <string name="mozac_feature_addons_optional_permissions_dialog_subtitle" moz:removedIn="142" tools:ignore="UnusedResources">Vrea:</string>
   <!-- Heading for the permissions section in the optional permissions request dialog. -->
   <string name="mozac_feature_addons_permissions_dialog_heading_optional_permissions">Permisiuni noi:</string>
   <!-- Heading for the data collection permissions section in the optional permissions request dialog. -->

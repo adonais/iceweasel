@@ -7,14 +7,14 @@
 #ifndef DOM_SECURITY_CSPVIOLATION_H_
 #define DOM_SECURITY_CSPVIOLATION_H_
 
+#include <cstdint>
+
+#include "mozilla/RefPtr.h"
+#include "mozilla/Variant.h"
 #include "nsCOMPtr.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsIURI.h"
 #include "nsString.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/Variant.h"
-
-#include <cstdint>
 
 class nsIURI;
 

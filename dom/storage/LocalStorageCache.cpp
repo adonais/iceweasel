@@ -6,18 +6,17 @@
 
 #include "LocalStorageCache.h"
 
+#include "LocalStorageManager.h"
 #include "Storage.h"
 #include "StorageDBThread.h"
 #include "StorageIPC.h"
 #include "StorageUtils.h"
-#include "LocalStorageManager.h"
-
-#include "nsDOMString.h"
-#include "nsXULAppAPI.h"
 #include "mozilla/Unused.h"
 #include "mozilla/glean/DomStorageMetrics.h"
+#include "nsDOMString.h"
 #include "nsProxyRelease.h"
 #include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"
 
 namespace mozilla::dom {
 

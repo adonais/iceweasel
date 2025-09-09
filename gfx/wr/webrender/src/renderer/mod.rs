@@ -115,7 +115,6 @@ use std::{
 };
 #[cfg(any(feature = "capture", feature = "replay"))]
 use std::collections::hash_map::Entry;
-use time::precise_time_ns;
 
 mod debug;
 mod gpu_buffer;
@@ -1354,7 +1353,7 @@ impl Renderer {
                 result
             }
             None => {
-                self.last_time = precise_time_ns();
+                self.last_time = zeitstempel::now();
                 Ok(RenderResults::default())
             }
         };
@@ -1689,7 +1688,7 @@ impl Renderer {
         let t = self.profile.end_time(profiler::RENDERER_TIME);
         self.profile.end_time_if_started(profiler::TOTAL_FRAME_CPU_TIME);
 
-        let current_time = precise_time_ns();
+        let current_time = zeitstempel::now();
         if device_size.is_some() {
             let time = profiler::ns_to_ms(current_time - self.last_time);
             self.profile.set(profiler::FRAME_TIME, time);
@@ -2008,12 +2007,12 @@ impl Renderer {
 
             // Now that we've saved as many deletions for reuse as we can, actually delete whatever is left.
             if !pending_deletes.is_empty() {
-                let delete_texture_start = precise_time_ns();
+                let delete_texture_start = zeitstempel::now();
                 for (texture, _) in pending_deletes {
                     add_event_marker("TextureCacheFree");
                     self.device.delete_texture(texture);
                 }
-                delete_cache_texture_time += precise_time_ns() - delete_texture_start;
+                delete_cache_texture_time += zeitstempel::now() - delete_texture_start;
             }
 
             for allocation in update_list.allocations {
@@ -2025,7 +2024,7 @@ impl Renderer {
                 match allocation.kind {
                     TextureCacheAllocationKind::Alloc(ref info) |
                     TextureCacheAllocationKind::Reset(ref info) => {
-                        let create_cache_texture_start = precise_time_ns();
+                        let create_cache_texture_start = zeitstempel::now();
                         // Create a new native texture, as requested by the texture cache.
                         // If we managed to reuse a deleted texture, then prefer that instead.
                         //
@@ -2065,7 +2064,7 @@ impl Renderer {
                             }
                         }
 
-                        create_cache_texture_time += precise_time_ns() - create_cache_texture_start;
+                        create_cache_texture_time += zeitstempel::now() - create_cache_texture_start;
 
                         self.texture_resolver.texture_cache_map.insert(allocation.id, CacheTexture {
                             texture,
@@ -3852,16 +3851,13 @@ impl Renderer {
         assert_eq!(swapchain_layers.len(), input_layers.len());
 
         if window_is_opaque {
-            match input_layers.first_mut() {
-                Some(_layer) => {
-                    // If the window is opaque, and the first layer is a content layer
-                    // then mark that as opaque.
-                    // TODO(gw): This causes flickering in some cases when changing
-                    //           layer count. We need to find out why so we can enable
-                    //           selecting an opaque swapchain where possible.
-                    // if let CompositorSurfaceUsage::Content = layer.usage {
-                    //     layer.is_opaque = true;
-                    // }
+            match input_layers.last_mut() {
+                Some(layer) => {
+                    // If the window is opaque, and the last(back) layer is
+                    //  a content layer then mark that as opaque.
+                    if let CompositorSurfaceUsage::Content = layer.usage {
+                        layer.is_opaque = true;
+                    }
                 }
                 None => {
                     // If no tiles were present, and we expect an opaque window,
@@ -4859,7 +4855,7 @@ impl Renderer {
                 .external_image
                 .expect("BUG: Deferred resolves must be external images!");
             // Provide rendering information for NativeTexture external images.
-            let image = handler.lock(ext_image.id, ext_image.channel_index);
+            let image = handler.lock(ext_image.id, ext_image.channel_index, deferred_resolve.is_composited);
             let texture_target = match ext_image.image_type {
                 ExternalImageType::TextureHandle(target) => target,
                 ExternalImageType::Buffer => {
@@ -5416,7 +5412,6 @@ impl Renderer {
             self.device.delete_texture(gpu_buffer_texture_i);
         }
 
-        self.force_redraw = false;
         frame.has_been_rendered = true;
     }
 
@@ -5492,10 +5487,12 @@ impl Renderer {
                     );
                 }
             }
+            // Reset force_redraw. It was used in composite_simple() with layer compositor.
+            self.force_redraw = false;
         } else {
             // Rendering a frame without presenting it will confuse the partial
             // present logic, so force a full present for the next frame.
-            self.force_redraw();
+            self.force_redraw = true;
         }
     }
 
@@ -6198,7 +6195,7 @@ struct DummyExternalImageHandler {
 
 #[cfg(feature = "replay")]
 impl ExternalImageHandler for DummyExternalImageHandler {
-    fn lock(&mut self, key: ExternalImageId, channel_index: u8) -> ExternalImage {
+    fn lock(&mut self, key: ExternalImageId, channel_index: u8, _is_composited: bool) -> ExternalImage {
         let (ref captured_data, ref uv) = self.data[&(key, channel_index)];
         ExternalImage {
             uv: *uv,
@@ -6333,7 +6330,7 @@ impl Renderer {
                 info!("\t{}", def.short_path);
                 let ExternalImageData { id, channel_index, image_type, .. } = def.external;
                 // The image rendering parameter is irrelevant because no filtering happens during capturing.
-                let ext_image = handler.lock(id, channel_index);
+                let ext_image = handler.lock(id, channel_index, false);
                 let (data, short_path) = match ext_image.source {
                     ExternalImageSource::RawData(data) => {
                         let arc_id = arc_map.len() + 1;

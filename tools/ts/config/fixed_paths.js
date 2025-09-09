@@ -28,9 +28,6 @@ exports.fixed = {
   "chrome://remote/content/webdriver-bidi/modules/ModuleRegistry.sys.mjs": [
     "remote/webdriver-bidi/modules/ModuleRegistry.sys.mjs",
   ],
-  "resource:///modules/CustomizeMode.sys.mjs": [
-    "browser/components/customizableui/CustomizeMode.sys.mjs",
-  ],
   "resource:///modules/ExtensionBrowsingData.sys.mjs": [
     "browser/components/extensions/ExtensionBrowsingData.sys.mjs",
   ],

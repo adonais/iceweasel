@@ -1293,10 +1293,14 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     nsIFrame::RenderedText text = frame->GetRenderedText(
         0, UINT32_MAX, nsIFrame::TextOffsetType::OffsetsInContentText,
         nsIFrame::TrailingWhitespace::DontTrim);
+    auto cssAlt = CssAltContent(content);
     // Ignore not rendered text nodes and whitespace text nodes between table
     // cells.
     if (text.mString.IsEmpty() ||
-        nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(frame) ||
+        (nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(frame) &&
+         // If there is CSS alt text, it's okay if the text itself is just
+         // whitespace; e.g. content: " " / "alt"
+         !cssAlt) ||
         (aContext->IsTableRow() &&
          nsCoreUtils::IsWhitespaceString(text.mString))) {
       if (aIsSubtreeHidden) *aIsSubtreeHidden = true;
@@ -1307,7 +1311,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     newAcc = CreateAccessibleByFrameType(frame, content, aContext);
     MOZ_ASSERT(newAcc, "Accessible not created for text node!");
     document->BindToDocument(newAcc, nullptr);
-    if (auto cssAlt = CssAltContent(content)) {
+    if (cssAlt) {
       nsAutoString text;
       cssAlt.AppendToString(text);
       newAcc->AsTextLeaf()->SetText(text);
@@ -1468,6 +1472,17 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       if (aIsSubtreeHidden) {
         *aIsSubtreeHidden = true;
       }
+    } else if (auto cssAlt = CssAltContent(content)) {
+      // This is a pseudo-element without children that has CSS alt text. This
+      // only happens when there is alt text with an empty content string; e.g.
+      // content: "" / "alt"
+      // In this case, we need to expose the alt text on the pseudo-element
+      // itself, since we don't have a child to use. We create a
+      // TextLeafAccessible with the pseudo-element as the backing DOM node.
+      newAcc = new TextLeafAccessible(content, document);
+      nsAutoString text;
+      cssAlt.AppendToString(text);
+      newAcc->AsTextLeaf()->SetText(text);
     }
   }
 
@@ -1707,7 +1722,11 @@ nsAccessibilityService::CreateAccessibleByFrameType(nsIFrame* aFrame,
       newAcc = new HTMLSelectListAccessible(aContent, document);
       break;
     case eHTMLMediaType:
-      newAcc = new EnumRoleAccessible<roles::GROUPING>(aContent, document);
+      // The video Accessible can have TextLeafAccessibles as direct children;
+      // e.g. if there are captions. Therefore, it must be a
+      // HyperTextAccessible.
+      newAcc =
+          new EnumRoleHyperTextAccessible<roles::GROUPING>(aContent, document);
       break;
     case eHTMLRadioButtonType:
       newAcc = new HTMLRadioButtonAccessible(aContent, document);

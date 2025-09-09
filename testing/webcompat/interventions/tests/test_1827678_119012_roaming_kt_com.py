@@ -18,9 +18,9 @@ async def shows_unsupported_alert(client):
          }, 100);
     """
     )
-    which_alert = await client.await_alert([SUPPORTED_ALERT, UNSUPPORTED_ALERT])
     await client.navigate(URL, wait="none")
-    return UNSUPPORTED_ALERT in await which_alert
+    which_alert = await client.await_alert([SUPPORTED_ALERT, UNSUPPORTED_ALERT])
+    return UNSUPPORTED_ALERT in which_alert
 
 
 @pytest.mark.skip_platforms("android")

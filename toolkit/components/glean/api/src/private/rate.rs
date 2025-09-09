@@ -29,8 +29,8 @@ pub enum RateMetric {
     Child(ChildMetricMeta),
 }
 
-crate::define_metric_metadata_getter!(RateMetric, RATE_MAP);
-crate::define_metric_namer!(RateMetric);
+define_metric_metadata_getter!(RateMetric, RATE_MAP);
+define_metric_namer!(RateMetric);
 
 impl RateMetric {
     /// The public constructor used by automatically generated metrics.

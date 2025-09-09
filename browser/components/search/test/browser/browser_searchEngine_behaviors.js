@@ -95,21 +95,18 @@ add_setup(async function () {
   await gCUITestUtils.addSearchBar();
   registerCleanupFunction(() => {
     gCUITestUtils.removeSearchBar();
+    Services.prefs.clearUserPref("browser.search.widget.lastUsed");
   });
 });
 
 for (let engine of SEARCH_ENGINE_DETAILS) {
   add_task(async function () {
     let previouslySelectedEngine = await Services.search.getDefault();
-
-    registerCleanupFunction(async function () {
-      await Services.search.setDefault(
-        previouslySelectedEngine,
-        Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-      );
-    });
-
     await testSearchEngine(engine);
+    await Services.search.setDefault(
+      previouslySelectedEngine,
+      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    );
   });
 }
 
@@ -141,13 +138,13 @@ async function testSearchEngine(engineDetails) {
       run() {
         // Simulate a contextmenu search
         // FIXME: This is a bit "low-level"...
-        SearchUIUtils._loadSearch(
+        SearchUIUtils._loadSearch({
           window,
-          "foo",
-          false,
-          false,
-          Services.scriptSecurityManager.getSystemPrincipal()
-        );
+          searchText: "foo",
+          usePrivate: false,
+          triggeringPrincipal:
+            Services.scriptSecurityManager.getSystemPrincipal(),
+        });
       },
     },
     {

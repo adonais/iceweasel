@@ -54,8 +54,8 @@ namespace webrtc {
 DesktopCaptureImpl* DesktopCaptureImpl::Create(const int32_t aModuleId,
                                                const char* aUniqueId,
                                                const CaptureDeviceType aType) {
-  return new rtc::RefCountedObject<DesktopCaptureImpl>(aModuleId, aUniqueId,
-                                                       aType);
+  return new webrtc::RefCountedObject<DesktopCaptureImpl>(aModuleId, aUniqueId,
+                                                          aType);
 }
 
 static DesktopCaptureOptions CreateDesktopCaptureOptions() {
@@ -281,13 +281,13 @@ DesktopCaptureImpl::~DesktopCaptureImpl() {
 }
 
 void DesktopCaptureImpl::RegisterCaptureDataCallback(
-    rtc::VideoSinkInterface<VideoFrame>* aDataCallback) {
+    webrtc::VideoSinkInterface<VideoFrame>* aDataCallback) {
   auto callbacks = mCallbacks.Lock();
   callbacks->insert(aDataCallback);
 }
 
 void DesktopCaptureImpl::DeRegisterCaptureDataCallback(
-    rtc::VideoSinkInterface<VideoFrame>* aDataCallback) {
+    webrtc::VideoSinkInterface<VideoFrame>* aDataCallback) {
   auto callbacks = mCallbacks.Lock();
   auto it = callbacks->find(aDataCallback);
   if (it != callbacks->end()) {
@@ -434,7 +434,7 @@ void DesktopCaptureImpl::OnCaptureResult(DesktopCapturer::Result aResult,
     return;
   }
 
-  const auto startProcessTime = Timestamp::Micros(rtc::TimeMicros());
+  const auto startProcessTime = Timestamp::Micros(webrtc::TimeMicros());
   auto frameTime = startProcessTime;
   if (auto diff = startProcessTime - mNextFrameMinimumTime;
       diff < TimeDelta::Zero()) {
@@ -482,7 +482,7 @@ void DesktopCaptureImpl::OnCaptureResult(DesktopCapturer::Result aResult,
   mozilla::PerformanceRecorder<mozilla::CopyVideoStage> rec(
       "DesktopCaptureImpl::ConvertToI420"_ns, mTrackingId, width, abs(height));
   // TODO(nisse): Use a pool?
-  rtc::scoped_refptr<I420Buffer> buffer =
+  webrtc::scoped_refptr<I420Buffer> buffer =
       I420Buffer::Create(width, abs(height), stride_y, stride_uv, stride_uv);
 
   const int conversionResult = libyuv::ConvertToI420(
@@ -504,7 +504,7 @@ void DesktopCaptureImpl::OnCaptureResult(DesktopCapturer::Result aResult,
                     .build());
 
   const TimeDelta processTime =
-      Timestamp::Micros(rtc::TimeMicros()) - startProcessTime;
+      Timestamp::Micros(webrtc::TimeMicros()) - startProcessTime;
 
   if (processTime > TimeDelta::Millis(10)) {
     RTC_LOG(LS_WARNING)

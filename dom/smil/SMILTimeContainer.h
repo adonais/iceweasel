@@ -7,11 +7,11 @@
 #ifndef DOM_SMIL_SMILTIMECONTAINER_H_
 #define DOM_SMIL_SMILTIMECONTAINER_H_
 
-#include "mozilla/dom/SVGAnimationElement.h"
 #include "mozilla/SMILMilestone.h"
 #include "mozilla/SMILTypes.h"
-#include "nscore.h"
+#include "mozilla/dom/SVGAnimationElement.h"
 #include "nsTPriorityQueue.h"
+#include "nscore.h"
 
 namespace mozilla {
 

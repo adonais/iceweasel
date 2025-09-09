@@ -27,11 +27,11 @@
 #include "mozilla/mozalloc.h"
 #include "nsDebug.h"
 #include "nsError.h"
+#include "nsGlobalWindowInner.h"
 #include "nsIRunnable.h"
 #include "nsIScriptObjectPrincipal.h"
 #include "nsMimeTypes.h"
 #include "nsPIDOMWindow.h"
-#include "nsGlobalWindowInner.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
 

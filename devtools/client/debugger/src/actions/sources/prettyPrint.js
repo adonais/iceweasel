@@ -13,19 +13,23 @@ import {
 
 import { getPrettySourceURL, isJavaScript } from "../../utils/source";
 import { isFulfilled, fulfilled } from "../../utils/async-value";
-import { getOriginalLocation } from "../../utils/source-maps";
+import {
+  getOriginalLocation,
+  getGeneratedLocation,
+} from "../../utils/source-maps";
 import { prefs } from "../../utils/prefs";
 import {
   loadGeneratedSourceText,
   loadOriginalSourceText,
 } from "./loadSourceText";
+import { removeSources } from "./removeSources";
 import { mapFrames } from "../pause/index";
 import { selectSpecificLocation } from "../sources/index";
 import { createPrettyPrintOriginalSource } from "../../client/firefox/create";
 
 import {
   getFirstSourceActorForGeneratedSource,
-  getSourceFromId,
+  getSource,
   getSelectedLocation,
 } from "../../selectors/index";
 
@@ -246,7 +250,7 @@ function createPrettySource(source, sourceActor) {
   return async ({ dispatch }) => {
     const url = getPrettyOriginalSourceURL(source);
     const id = generatedToOriginalId(source.id, url);
-    const prettySource = createPrettyPrintOriginalSource(id, url);
+    const prettySource = createPrettyPrintOriginalSource(id, url, source);
 
     dispatch({
       type: "ADD_ORIGINAL_SOURCES",
@@ -347,7 +351,7 @@ export const prettyPrintSource = memoizeableAction("prettyPrintSource", {
     // Lookup for an already existing pretty source
     const url = getPrettyOriginalSourceURL(source);
     const id = generatedToOriginalId(source.id, url);
-    const s = getSourceFromId(getState(), id);
+    const s = getSource(getState(), id);
     // Avoid returning it if doTogglePrettyPrint isn't completed.
     if (!s || !s._loaded) {
       return undefined;
@@ -377,5 +381,43 @@ export function prettyPrintAndSelectSource(source) {
     await dispatch(selectPrettyLocation(prettySource));
 
     return prettySource;
+  };
+}
+
+export function removePrettyPrintedSource(source) {
+  return async thunkArgs => {
+    const { getState, dispatch } = thunkArgs;
+    const { generatedSource } = source;
+
+    let location = getSelectedLocation(getState());
+    // If we were selecting a particular line in the pretty printed source
+    // try to select the matching line in the minimized source.
+    // Map the original to generated location before removing the source as it would clear the mappings.
+    if (location && location.line >= 1 && location.source == source) {
+      // Note that it requires to have called `prettyPrintSourceTextContent` and `sourceMapLoader.setSourceMapForGeneratedSources`
+      // to be functional and so to be called after `loadOriginalSourceText` completed.
+      location = await getGeneratedLocation(location, thunkArgs);
+    }
+
+    // Prevent resetting the currently selected source to avoid blinking.
+    // The minimized source will be selected right after the reducers are cleaned up
+    await dispatch(
+      removeSources([source], [], { resetSelectedLocation: false })
+    );
+
+    const sourceActor = getFirstSourceActorForGeneratedSource(
+      getState(),
+      generatedSource.id
+    );
+    // In case we are paused, update frames to remove references to the pretty printed sources
+    await dispatch(mapFrames(sourceActor.thread));
+
+    // If the precise line/column correctly mapped to the minimized source, select that precise location.
+    // Otherwise fallback to selectSource in order to select the first line instead of the current line within the pretty version.
+    if (location.source == generatedSource) {
+      await dispatch(selectSpecificLocation(location));
+    }
+
+    await dispatch(selectSource(generatedSource));
   };
 }

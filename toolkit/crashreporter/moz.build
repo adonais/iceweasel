@@ -147,10 +147,6 @@ GeneratedFile(
     "CrashAnnotations.h",
     script="generate_crash_reporter_sources.py",
     entry_point="emit_header",
-    inputs=[
-        "CrashAnnotations.h.in",
-        "CrashAnnotations.yaml",
-    ],
 )
 
 with Files("**"):

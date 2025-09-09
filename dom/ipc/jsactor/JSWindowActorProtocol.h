@@ -10,11 +10,11 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/JSActorService.h"
 #include "mozilla/extensions/MatchPattern.h"
+#include "nsIDOMEventListener.h"
+#include "nsIObserver.h"
 #include "nsIURI.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "nsIObserver.h"
-#include "nsIDOMEventListener.h"
 
 namespace mozilla {
 class ErrorResult;

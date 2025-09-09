@@ -1,6 +1,6 @@
 ChromeUtils.defineESModuleGetters(this, {
-  AppProvidedSearchEngine:
-    "moz-src:///toolkit/components/search/AppProvidedSearchEngine.sys.mjs",
+  AppProvidedConfigEngine:
+    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   HttpServer: "resource://testing-common/httpd.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
@@ -164,7 +164,7 @@ async function installPersistTestEngines(globalDefault = "Example") {
   let persistSandbox = sinon.createSandbox();
   // Mostly to prevent warnings about missing icon urls for these engines.
   persistSandbox
-    .stub(AppProvidedSearchEngine.prototype, "getIconURL")
+    .stub(AppProvidedConfigEngine.prototype, "getIconURL")
     .returns(
       Promise.resolve(
         "data:image/x-icon;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA="

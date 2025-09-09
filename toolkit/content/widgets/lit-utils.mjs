@@ -427,8 +427,11 @@ export class MozBaseInputElement extends MozLitElement {
       return "";
     }
     return html`<span class="text-container"
-      >${this.iconTemplate()}<span class="text">${this.label}</span></span
-    >`;
+      >${this.iconTemplate()}<span
+        class="text"
+        .textContent=${this.label}
+      ></span
+    ></span>`;
   }
 
   descriptionTemplate() {

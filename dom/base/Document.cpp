@@ -9,11 +9,11 @@
  */
 
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/DocumentInlines.h"
 
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -21,6 +21,7 @@
 #include <iterator>
 #include <limits>
 #include <type_traits>
+
 #include "Attr.h"
 #include "ErrorList.h"
 #include "ExpandedPrincipal.h"
@@ -36,8 +37,8 @@
 #include "imgIContainer.h"
 #include "imgLoader.h"
 #include "imgRequestProxy.h"
-#include "js/Value.h"
 #include "js/TelemetryTimers.h"
+#include "js/Value.h"
 #include "jsapi.h"
 #include "mozAutoDocUpdate.h"
 #include "mozIDOMWindow.h"
@@ -46,23 +47,21 @@
 #include "mozilla/ArrayIterator.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/AsyncEventDispatcher.h"
+#include "mozilla/AttributeStyles.h"
 #include "mozilla/Base64.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/BounceTrackingProtection.h"
 #include "mozilla/CSSEnabledState.h"
+#include "mozilla/Components.h"
 #include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/ContentBlockingUserInteraction.h"
 #include "mozilla/ContentPrincipal.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "mozilla/AttributeStyles.h"
 #include "mozilla/DocumentStyleRootIterator.h"
 #include "mozilla/EditorBase.h"
 #include "mozilla/EditorCommands.h"
-#include "mozilla/dom/BindContext.h"
-#include "mozilla/Encoding.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
@@ -71,7 +70,6 @@
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/FullscreenChange.h"
 #include "mozilla/GlobalStyleSheetCache.h"
-#include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/IdentifierMapEntry.h"
@@ -82,6 +80,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MacroForEach.h"
+#include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MediaFeatureChange.h"
 #include "mozilla/MediaManager.h"
@@ -98,19 +97,19 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellForwards.h"
 #include "mozilla/PresShellInlines.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/PseudoStyleType.h"
 #include "mozilla/RefCountType.h"
 #include "mozilla/RelativeTo.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ReverseIterator.h"
-#include "mozilla/SchedulerGroup.h"
-#include "mozilla/ScrollTimelineAnimationTracker.h"
 #include "mozilla/SMILAnimationController.h"
 #include "mozilla/SMILTimeContainer.h"
+#include "mozilla/SVGUtils.h"
+#include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ScrollContainerFrame.h"
-#include "mozilla/Components.h"
-#include "mozilla/SVGUtils.h"
+#include "mozilla/ScrollTimelineAnimationTracker.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/ServoTypes.h"
 #include "mozilla/SizeOfState.h"
@@ -146,32 +145,33 @@
 #include "mozilla/css/SheetParsingMode.h"
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/AnonymousContent.h"
+#include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
-#include "mozilla/dom/CanonicalBrowsingContext.h"
-#include "mozilla/dom/CanvasRenderingContextHelper.h"
 #include "mozilla/dom/CDATASection.h"
 #include "mozilla/dom/CSPDictionariesBinding.h"
+#include "mozilla/dom/CSSBinding.h"
+#include "mozilla/dom/CSSCustomPropertyRegisteredEvent.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/CanvasRenderingContextHelper.h"
 #include "mozilla/dom/ChromeObserver.h"
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/ClientState.h"
 #include "mozilla/dom/CloseWatcherManager.h"
 #include "mozilla/dom/Comment.h"
 #include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/CSSBinding.h"
-#include "mozilla/dom/CSSCustomPropertyRegisteredEvent.h"
 #include "mozilla/dom/DOMImplementation.h"
 #include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/DOMStringList.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/DocumentBinding.h"
 #include "mozilla/dom/DocumentFragment.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocumentL10n.h"
 #include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/DocumentType.h"
-#include "mozilla/dom/Sanitizer.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/ErrorEvent.h"
 #include "mozilla/dom/Event.h"
@@ -181,10 +181,7 @@
 #include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/FontFaceSet.h"
 #include "mozilla/dom/FragmentDirective.h"
-#include "mozilla/dom/NavigationBinding.h"
-#include "mozilla/dom/fragmentdirectives_ffi_generated.h"
 #include "mozilla/dom/FromParser.h"
-#include "mozilla/dom/HighlightRegistry.h"
 #include "mozilla/dom/HTMLAllCollection.h"
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/HTMLCollectionBinding.h"
@@ -200,18 +197,20 @@
 #include "mozilla/dom/HTMLObjectElement.h"
 #include "mozilla/dom/HTMLSharedElement.h"
 #include "mozilla/dom/HTMLTextAreaElement.h"
+#include "mozilla/dom/HighlightRegistry.h"
 #include "mozilla/dom/InspectorUtils.h"
+#include "mozilla/dom/IntegrityPolicy.h"
 #include "mozilla/dom/InteractiveWidget.h"
 #include "mozilla/dom/Link.h"
 #include "mozilla/dom/MediaQueryList.h"
 #include "mozilla/dom/MediaSource.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/NameSpaceConstants.h"
+#include "mozilla/dom/NavigationBinding.h"
 #include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/NetErrorInfoBinding.h"
 #include "mozilla/dom/NodeInfo.h"
 #include "mozilla/dom/NodeIterator.h"
-#include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/dom/PContentChild.h"
 #include "mozilla/dom/PWindowGlobalChild.h"
 #include "mozilla/dom/PageLoadEventUtils.h"
@@ -227,10 +226,11 @@
 #include "mozilla/dom/RemoteBrowser.h"
 #include "mozilla/dom/ResizeObserver.h"
 #include "mozilla/dom/RustTypes.h"
-#include "mozilla/dom/SVGElement.h"
 #include "mozilla/dom/SVGDocument.h"
+#include "mozilla/dom/SVGElement.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/SVGUseElement.h"
+#include "mozilla/dom/Sanitizer.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/Selection.h"
@@ -267,9 +267,12 @@
 #include "mozilla/dom/WorkerDocumentListener.h"
 #include "mozilla/dom/XPathEvaluator.h"
 #include "mozilla/dom/XPathExpression.h"
+#include "mozilla/dom/XULBroadcastManager.h"
+#include "mozilla/dom/XULPersist.h"
+#include "mozilla/dom/fragmentdirectives_ffi_generated.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/nsCSPUtils.h"
-#include "mozilla/dom/IntegrityPolicy.h"
+#include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
 #include "mozilla/fallible.h"
 #include "mozilla/gfx/BaseCoord.h"
@@ -292,7 +295,6 @@
 #include "mozilla/net/RequestContextService.h"
 #include "nsAboutProtocolUtils.h"
 #include "nsAttrValue.h"
-#include "nsMenuPopupFrame.h"
 #include "nsAttrValueInlines.h"
 #include "nsBaseHashtable.h"
 #include "nsBidiUtils.h"
@@ -334,6 +336,7 @@
 #include "nsHtml5Module.h"
 #include "nsHtml5Parser.h"
 #include "nsHtml5TreeOpExecutor.h"
+#include "nsIAppWindow.h"
 #include "nsIAsyncShutdown.h"
 #include "nsIAuthPrompt.h"
 #include "nsIAuthPrompt2.h"
@@ -352,15 +355,16 @@
 #include "nsIContentSink.h"
 #include "nsICookieJarSettings.h"
 #include "nsICookieService.h"
+#include "nsIDNSService.h"
 #include "nsIDOMXULCommandDispatcher.h"
 #include "nsIDocShell.h"
 #include "nsIDocShellTreeItem.h"
+#include "nsIDocShellTreeOwner.h"
 #include "nsIDocumentActivity.h"
 #include "nsIDocumentEncoder.h"
 #include "nsIDocumentLoader.h"
 #include "nsIDocumentLoaderFactory.h"
 #include "nsIDocumentObserver.h"
-#include "nsIDNSService.h"
 #include "nsIEditingSession.h"
 #include "nsIEditor.h"
 #include "nsIEffectiveTLDService.h"
@@ -369,6 +373,7 @@
 #include "nsIFrame.h"
 #include "nsIGlobalObject.h"
 #include "nsIHTMLCollection.h"
+#include "nsIHTMLContentSink.h"
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIIOService.h"
@@ -418,11 +423,11 @@
 #include "nsIX509Cert.h"
 #include "nsIX509CertValidity.h"
 #include "nsIXMLContentSink.h"
-#include "nsIHTMLContentSink.h"
 #include "nsIXULRuntime.h"
 #include "nsImageLoadingContent.h"
 #include "nsImportModule.h"
 #include "nsLayoutUtils.h"
+#include "nsMenuPopupFrame.h"
 #include "nsMimeTypes.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
@@ -442,12 +447,12 @@
 #include "nsSerializationHelper.h"
 #include "nsServiceManagerUtils.h"
 #include "nsStringFlags.h"
-#include "nsStyleUtil.h"
 #include "nsStringIterator.h"
 #include "nsStyleSheetService.h"
 #include "nsStyleStruct.h"
-#include "nsTextControlFrame.h"
+#include "nsStyleUtil.h"
 #include "nsSubDocumentFrame.h"
+#include "nsTextControlFrame.h"
 #include "nsTextNode.h"
 #include "nsURLHelper.h"
 #include "nsUnicharUtils.h"
@@ -455,21 +460,18 @@
 #include "nsWrapperCacheInlines.h"
 #include "nsXPCOMCID.h"
 #include "nsXULAppAPI.h"
+#include "nsXULCommandDispatcher.h"
+#include "nsXULPopupManager.h"
+#include "nsXULPrototypeDocument.h"
 #include "prthread.h"
 #include "prtime.h"
 #include "prtypes.h"
 #include "xpcpublic.h"
 
-// XXX Must be included after mozilla/Encoding.h
+// clang-format off
+#include "mozilla/Encoding.h"
 #include "encoding_rs.h"
-
-#include "mozilla/dom/XULBroadcastManager.h"
-#include "mozilla/dom/XULPersist.h"
-#include "nsIAppWindow.h"
-#include "nsXULPrototypeDocument.h"
-#include "nsXULCommandDispatcher.h"
-#include "nsXULPopupManager.h"
-#include "nsIDocShellTreeOwner.h"
+// clang-format on
 
 #define XML_DECLARATION_BITS_DECLARATION_EXISTS (1 << 0)
 #define XML_DECLARATION_BITS_ENCODING_EXISTS (1 << 1)
@@ -486,6 +488,8 @@ mozilla::LazyLogModule gUseCountersLog("UseCounters");
 namespace mozilla {
 
 using namespace net;
+
+using performance::pageload_event::PageloadEventType;
 
 namespace dom {
 
@@ -2044,15 +2048,11 @@ void Document::ConstructUbiNode(void* storage) {
 }
 
 void Document::LoadEventFired() {
-  // Object used to collect some telemetry data so we don't need to query for it
-  // twice.
-  glean::perf::PageLoadExtra pageLoadEventData;
-
   // Collect page load timings
-  AccumulatePageLoadTelemetry(pageLoadEventData);
+  AccumulatePageLoadTelemetry();
 
   // Record page load event
-  RecordPageLoadEventTelemetry(pageLoadEventData);
+  RecordPageLoadEventTelemetry();
 
   // Release the JS bytecode cache from its wait on the load event, and
   // potentially dispatch the encoding of the bytecode.
@@ -2061,11 +2061,10 @@ void Document::LoadEventFired() {
   }
 }
 
-void Document::RecordPageLoadEventTelemetry(
-    glean::perf::PageLoadExtra& aEventTelemetryData) {
+void Document::RecordPageLoadEventTelemetry() {
   // If the page load time is empty, then the content wasn't something we want
   // to report (i.e. not a top level document).
-  if (!aEventTelemetryData.loadTime) {
+  if (!mPageloadEventData.HasLoadTime()) {
     return;
   }
   MOZ_ASSERT(IsTopLevelContentDocument());
@@ -2078,6 +2077,42 @@ void Document::RecordPageLoadEventTelemetry(
   nsIDocShell* docshell = window->GetDocShell();
   if (!docshell) {
     return;
+  }
+
+  // Don't send any event telemetry for private browsing.
+  if (IsInPrivateBrowsing()) {
+    return;
+  }
+
+  if (!GetChannel()) {
+    return;
+  }
+
+  auto pageloadEventType = performance::pageload_event::GetPageloadEventType();
+
+  // Return if we are not sending an event for this pageload.
+  if (pageloadEventType == mozilla::PageloadEventType::kNone) {
+    return;
+  }
+
+#ifdef ACCESSIBILITY
+  if (GetAccService() != nullptr) {
+    mPageloadEventData.SetUserFeature(
+        performance::pageload_event::UserFeature::USING_A11Y);
+  }
+#endif
+
+  if (GetChannel()) {
+    nsCOMPtr<nsICacheInfoChannel> cacheInfoChannel =
+        do_QueryInterface(GetChannel());
+    if (cacheInfoChannel) {
+      nsICacheInfoChannel::CacheDisposition disposition =
+          nsICacheInfoChannel::kCacheUnknown;
+      nsresult rv = cacheInfoChannel->GetCacheDisposition(&disposition);
+      if (NS_SUCCEEDED(rv)) {
+        mPageloadEventData.set_cacheDisposition(disposition);
+      }
+    }
   }
 
   nsAutoCString loadTypeStr;
@@ -2117,25 +2152,35 @@ void Document::RecordPageLoadEventTelemetry(
       loadTypeStr.Append("OTHER");
       break;
   }
+  mPageloadEventData.set_loadType(loadTypeStr);
 
   nsCOMPtr<nsIEffectiveTLDService> tldService =
       mozilla::components::EffectiveTLD::Service();
-  if (tldService && mReferrerInfo &&
-      (docshell->GetLoadType() & nsIDocShell::LOAD_CMD_NORMAL)) {
-    nsAutoCString currentBaseDomain, referrerBaseDomain;
-    nsCOMPtr<nsIURI> referrerURI = mReferrerInfo->GetComputedReferrer();
-    if (referrerURI) {
-      auto result = NS_SUCCEEDED(
-          tldService->GetBaseDomain(referrerURI, 0, referrerBaseDomain));
-      if (result) {
-        bool sameOrigin = false;
-        NodePrincipal()->IsSameOrigin(referrerURI, &sameOrigin);
-        aEventTelemetryData.sameOriginNav = mozilla::Some(sameOrigin);
+
+  nsresult rv = NS_OK;
+  if (tldService) {
+    if (mReferrerInfo &&
+        (docshell->GetLoadType() & nsIDocShell::LOAD_CMD_NORMAL)) {
+      nsAutoCString currentBaseDomain, referrerBaseDomain;
+      nsCOMPtr<nsIURI> referrerURI = mReferrerInfo->GetComputedReferrer();
+      if (referrerURI) {
+        rv = tldService->GetBaseDomain(referrerURI, 0, referrerBaseDomain);
+        if (NS_SUCCEEDED(rv)) {
+          bool sameOrigin = false;
+          NodePrincipal()->IsSameOrigin(referrerURI, &sameOrigin);
+          mPageloadEventData.set_sameOriginNav(sameOrigin);
+        }
       }
     }
   }
 
-  aEventTelemetryData.loadType = mozilla::Some(loadTypeStr);
+  if (pageloadEventType == PageloadEventType::kDomain) {
+    // Do not record anything if we failed to assign the domain.
+    if (!mPageloadEventData.MaybeSetPublicRegistrableDomain(GetDocumentURI(),
+                                                            GetChannel())) {
+      return;
+    }
+  }
 
   // Collect any JS timers that were measured during pageload.
   if (GetScopeObject() && GetScopeObject()->GetGlobalJSObject()) {
@@ -2145,19 +2190,19 @@ void Document::RecordPageLoadEventTelemetry(
     JS::JSTimers timers = JS::GetJSTimers(cx);
 
     if (!timers.executionTime.IsZero()) {
-      aEventTelemetryData.jsExecTime = mozilla::Some(
+      mPageloadEventData.set_jsExecTime(
           static_cast<uint32_t>(timers.executionTime.ToMilliseconds()));
     }
 
     if (!timers.delazificationTime.IsZero()) {
-      aEventTelemetryData.delazifyTime = mozilla::Some(
+      mPageloadEventData.set_delazifyTime(
           static_cast<uint32_t>(timers.delazificationTime.ToMilliseconds()));
     }
   }
 
   // Sending a glean ping must be done on the parent process.
   if (ContentChild* cc = ContentChild::GetSingleton()) {
-    cc->SendRecordPageLoadEvent(aEventTelemetryData);
+    cc->SendRecordPageLoadEvent(mPageloadEventData);
   }
 }
 
@@ -2189,8 +2234,7 @@ static void AccumulatePriorityFcpGleanPref(
 }
 #endif
 
-void Document::AccumulatePageLoadTelemetry(
-    glean::perf::PageLoadExtra& aEventTelemetryDataOut) {
+void Document::AccumulatePageLoadTelemetry() {
   // Interested only in top level documents for real websites that are in the
   // foreground.
   if (!ShouldIncludeInTelemetry() || !IsTopLevelContentDocument() ||
@@ -2221,15 +2265,14 @@ void Document::AccumulatePageLoadTelemetry(
   uint8_t redirectCount;
   timedChannel->GetRedirectCount(&redirectCount);
   if (redirectCount) {
-    aEventTelemetryDataOut.redirectCount =
-        mozilla::Some(static_cast<uint32_t>(redirectCount));
+    mPageloadEventData.set_redirectCount(static_cast<uint32_t>(redirectCount));
   }
 
   if (!redirectStart.IsNull() && !redirectEnd.IsNull()) {
     TimeDuration redirectTime = redirectEnd - redirectStart;
     if (redirectTime > zeroDuration) {
-      aEventTelemetryDataOut.redirectTime =
-          mozilla::Some(static_cast<uint32_t>(redirectTime.ToMilliseconds()));
+      mPageloadEventData.set_redirectTime(
+          static_cast<uint32_t>(redirectTime.ToMilliseconds()));
     }
   }
 
@@ -2240,16 +2283,21 @@ void Document::AccumulatePageLoadTelemetry(
   if (!dnsLookupStart.IsNull() && !dnsLookupEnd.IsNull()) {
     TimeDuration dnsLookupTime = dnsLookupEnd - dnsLookupStart;
     if (dnsLookupTime > zeroDuration) {
-      aEventTelemetryDataOut.dnsLookupTime =
-          mozilla::Some(static_cast<uint32_t>(dnsLookupTime.ToMilliseconds()));
+      mPageloadEventData.set_dnsLookupTime(
+          static_cast<uint32_t>(dnsLookupTime.ToMilliseconds()));
     }
   }
 
   TimeStamp navigationStart =
       GetNavigationTiming()->GetNavigationStartTimeStamp();
 
-  if (!responseStart || !navigationStart) {
+  if (!navigationStart) {
     return;
+  }
+
+  if (!responseStart) {
+    // This happens when getting a response from the cache.
+    responseStart = navigationStart;
   }
 
   nsAutoCString dnsKey("Native");
@@ -2269,7 +2317,7 @@ void Document::AccumulatePageLoadTelemetry(
         // Failed to get the DNS service.
         dnsKey = "(fail)"_ns;
       }
-      aEventTelemetryDataOut.trrDomain = mozilla::Some(dnsKey);
+      mPageloadEventData.set_trrDomain(dnsKey);
     }
 
     uint32_t major;
@@ -2297,7 +2345,7 @@ void Document::AccumulatePageLoadTelemetry(
         }
       }
 
-      aEventTelemetryDataOut.httpVer = mozilla::Some(major);
+      mPageloadEventData.set_httpVer(major);
     }
 
     uint32_t earlyHintType = 0;
@@ -2350,8 +2398,8 @@ void Document::AccumulatePageLoadTelemetry(
 
     TimeDuration fcpTime = firstContentfulComposite - navigationStart;
     if (fcpTime > zeroDuration) {
-      aEventTelemetryDataOut.fcpTime =
-          mozilla::Some(static_cast<uint32_t>(fcpTime.ToMilliseconds()));
+      mPageloadEventData.set_fcpTime(
+          static_cast<uint32_t>(fcpTime.ToMilliseconds()));
     }
   }
 
@@ -2359,7 +2407,7 @@ void Document::AccumulatePageLoadTelemetry(
   // this on page unload.
   if (TimeStamp lcpTime =
           GetNavigationTiming()->GetLargestContentfulRenderTimeStamp()) {
-    aEventTelemetryDataOut.lcpTime = mozilla::Some(
+    mPageloadEventData.set_lcpTime(
         static_cast<uint32_t>((lcpTime - navigationStart).ToMilliseconds()));
   }
 
@@ -2383,14 +2431,14 @@ void Document::AccumulatePageLoadTelemetry(
 
     TimeDuration responseTime = responseStart - navigationStart;
     if (responseTime > zeroDuration) {
-      aEventTelemetryDataOut.responseTime =
-          mozilla::Some(static_cast<uint32_t>(responseTime.ToMilliseconds()));
+      mPageloadEventData.set_responseTime(
+          static_cast<uint32_t>(responseTime.ToMilliseconds()));
     }
 
     TimeDuration loadTime = loadEventStart - navigationStart;
     if (loadTime > zeroDuration) {
-      aEventTelemetryDataOut.loadTime =
-          mozilla::Some(static_cast<uint32_t>(loadTime.ToMilliseconds()));
+      mPageloadEventData.set_loadTime(
+          static_cast<uint32_t>(loadTime.ToMilliseconds()));
     }
 
     TimeStamp requestStart;
@@ -2398,7 +2446,7 @@ void Document::AccumulatePageLoadTelemetry(
     if (requestStart) {
       TimeDuration timeToRequestStart = requestStart - navigationStart;
       if (timeToRequestStart > zeroDuration) {
-        aEventTelemetryDataOut.timeToRequestStart = mozilla::Some(
+        mPageloadEventData.set_timeToRequestStart(
             static_cast<uint32_t>(timeToRequestStart.ToMilliseconds()));
       }
     }
@@ -2410,19 +2458,11 @@ void Document::AccumulatePageLoadTelemetry(
     if (secureConnectStart && connectEnd) {
       TimeDuration tlsHandshakeTime = connectEnd - secureConnectStart;
       if (tlsHandshakeTime > zeroDuration) {
-        aEventTelemetryDataOut.tlsHandshakeTime = mozilla::Some(
+        mPageloadEventData.set_tlsHandshakeTime(
             static_cast<uint32_t>(tlsHandshakeTime.ToMilliseconds()));
       }
     }
   }
-
-#ifdef ACCESSIBILITY
-  if (GetAccService() != nullptr) {
-    SetPageloadEventFeature(pageload_event::FeatureBits::USING_A11Y);
-  }
-#endif
-
-  aEventTelemetryDataOut.features = mozilla::Some(mPageloadEventFeatures);
 }
 
 Document::~Document() {
@@ -6200,24 +6240,16 @@ nsresult Document::TurnEditingOff() {
     return NS_ERROR_FAILURE;
   }
 
-  nsIDocShell* docshell = window->GetDocShell();
-  if (!docshell) {
-    return NS_ERROR_FAILURE;
-  }
-
-  bool isBeingDestroyed = false;
-  docshell->IsBeingDestroyed(&isBeingDestroyed);
-  if (isBeingDestroyed) {
+  nsIDocShell* docshell = GetDocShell();
+  if (!docshell || docshell->IsBeingDestroyed()) {
     return NS_ERROR_FAILURE;
   }
 
   nsCOMPtr<nsIEditingSession> editSession;
-  nsresult rv = docshell->GetEditingSession(getter_AddRefs(editSession));
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(docshell->GetEditingSession(getter_AddRefs(editSession)));
 
   // turn editing off
-  rv = editSession->TearDownEditorOnWindow(window);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(editSession->TearDownEditorOnWindow(window));
 
   mEditingState = EditingState::eOff;
 
@@ -6232,14 +6264,6 @@ nsresult Document::TurnEditingOff() {
   }
 
   return NS_OK;
-}
-
-static bool HasPresShell(nsPIDOMWindowOuter* aWindow) {
-  nsIDocShell* docShell = aWindow->GetDocShell();
-  if (!docShell) {
-    return false;
-  }
-  return docShell->GetPresShell() != nullptr;
 }
 
 HTMLEditor* Document::GetHTMLEditor() const {
@@ -6325,24 +6349,15 @@ nsresult Document::EditingStateChanged() {
     return NS_ERROR_FAILURE;
   }
 
-  nsIDocShell* docshell = window->GetDocShell();
-  if (!docshell) {
-    return NS_ERROR_FAILURE;
-  }
-
-  // FlushPendingNotifications might destroy our docshell.
-  bool isBeingDestroyed = false;
-  docshell->IsBeingDestroyed(&isBeingDestroyed);
-  if (isBeingDestroyed) {
+  nsIDocShell* docshell = GetDocShell();
+  if (!docshell || docshell->IsBeingDestroyed()) {
     return NS_ERROR_FAILURE;
   }
 
   nsCOMPtr<nsIEditingSession> editSession;
-  nsresult rv = docshell->GetEditingSession(getter_AddRefs(editSession));
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(docshell->GetEditingSession(getter_AddRefs(editSession)));
 
-  RefPtr<HTMLEditor> htmlEditor = editSession->GetHTMLEditorForWindow(window);
-  if (htmlEditor) {
+  if (RefPtr<HTMLEditor> htmlEditor = docshell->GetHTMLEditor()) {
     // We might already have an editor if it was set up for mail, let's see
     // if this is actually the case.
     uint32_t flags = 0;
@@ -6354,7 +6369,8 @@ nsresult Document::EditingStateChanged() {
     }
   }
 
-  if (!HasPresShell(window)) {
+  RefPtr<PresShell> presShell = GetPresShell();
+  if (!presShell) {
     // We should not make the window editable or setup its editor.
     // It's probably style=display:none.
     return NS_OK;
@@ -6363,13 +6379,10 @@ nsresult Document::EditingStateChanged() {
   bool makeWindowEditable = mEditingState == EditingState::eOff;
   bool spellRecheckAll = false;
   bool putOffToRemoveScriptBlockerUntilModifyingEditingState = false;
-  htmlEditor = nullptr;
 
+  RefPtr<HTMLEditor> htmlEditor;
   {
     nsAutoEditingState push(this, EditingState::eSettingUp);
-
-    RefPtr<PresShell> presShell = GetPresShell();
-    NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
 
     // If we're entering the design mode from non-editable state, put the
     // selection at the beginning of the document for compatibility reasons.
@@ -6429,8 +6442,8 @@ nsresult Document::EditingStateChanged() {
       // Turn on editor.
       // XXX This can cause flushing which can change the editing state, so make
       //     sure to avoid recursing.
-      rv = editSession->MakeWindowEditable(window, "html", false, false, true);
-      NS_ENSURE_SUCCESS(rv, rv);
+      MOZ_TRY(
+          editSession->MakeWindowEditable(window, "html", false, false, true));
     }
 
     // XXX Need to call TearDownEditorOnWindow for all failures.
@@ -7444,6 +7457,9 @@ already_AddRefed<PresShell> Document::CreatePresShell(
     presShell->SetAuthorStyleDisabled(bc->Top()->AuthorStyleDisabledDefault());
   }
 
+  // We may need to set up the editor now if we haven't earlier, since we avoid
+  // setting up the editor without a pres shell.
+  MaybeEditingStateChanged();
   return presShell.forget();
 }
 
@@ -7493,11 +7509,6 @@ void Document::TakeVideoFrameRequestCallbacks(
     nsTArray<RefPtr<HTMLVideoElement>>& aVideoCallbacks) {
   MOZ_ASSERT(aVideoCallbacks.IsEmpty());
   mFrameRequestManager.Take(aVideoCallbacks);
-}
-
-void Document::TakeFrameRequestCallbacks(nsTArray<FrameRequest>& aCallbacks) {
-  MOZ_ASSERT(aCallbacks.IsEmpty());
-  mFrameRequestManager.Take(aCallbacks);
 }
 
 bool Document::ShouldThrottleFrameRequests() const {
@@ -7761,7 +7772,8 @@ Element* Document::GetRootElementInternal() const {
 }
 
 void Document::InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
-                                 bool aNotify, ErrorResult& aRv) {
+                                 bool aNotify, ErrorResult& aRv,
+                                 nsINode* aOldParent) {
   const bool isElementInsertion = aKid->IsElement();
   if (isElementInsertion && GetRootElement()) {
     NS_WARNING("Inserting root element when we already have one");
@@ -7769,14 +7781,15 @@ void Document::InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
     return;
   }
 
-  nsINode::InsertChildBefore(aKid, aBeforeThis, aNotify, aRv);
+  nsINode::InsertChildBefore(aKid, aBeforeThis, aNotify, aRv, aOldParent);
   if (isElementInsertion && !aRv.Failed()) {
     CreateCustomContentContainerIfNeeded();
   }
 }
 
 void Document::RemoveChildNode(nsIContent* aKid, bool aNotify,
-                               const BatchRemovalState* aState) {
+                               const BatchRemovalState* aState,
+                               nsINode* aNewParent) {
   Maybe<mozAutoDocUpdate> updateBatch;
   const bool removingRoot = aKid->IsElement();
   if (removingRoot) {
@@ -7787,7 +7800,10 @@ void Document::RemoveChildNode(nsIContent* aKid, bool aNotify,
     // Notify early so that we can clear the cached element after notifying,
     // without having to slow down nsINode::RemoveChildNode.
     if (aNotify) {
-      MutationObservers::NotifyContentWillBeRemoved(this, aKid, {aState});
+      ContentRemoveInfo info;
+      info.mBatchRemovalState = aState;
+      info.mNewParent = aNewParent;
+      MutationObservers::NotifyContentWillBeRemoved(this, aKid, info);
       aNotify = false;
     }
 
@@ -7802,7 +7818,7 @@ void Document::RemoveChildNode(nsIContent* aKid, bool aNotify,
     mCachedRootElement = nullptr;
   }
 
-  nsINode::RemoveChildNode(aKid, aNotify);
+  nsINode::RemoveChildNode(aKid, aNotify, nullptr, aNewParent);
   MOZ_ASSERT(mCachedRootElement != aKid,
              "Stale pointer in mCachedRootElement, after we tried to clear it "
              "(maybe somebody called GetRootElement() too early?)");
@@ -12116,7 +12132,7 @@ void Document::Destroy() {
   RemoveCustomContentContainer();
 
   ReportDocumentUseCounters();
-  ReportShadowedHTMLDocumentProperties();
+  ReportShadowedProperties();
   ReportLCP();
   SetDevToolsWatchingDOMMutations(false);
 
@@ -14188,10 +14204,6 @@ nsresult Document::ScheduleFrameRequestCallback(FrameRequestCallback& aCallback,
 
 void Document::CancelFrameRequestCallback(uint32_t aHandle) {
   mFrameRequestManager.Cancel(aHandle);
-}
-
-bool Document::IsCanceledFrameRequestCallback(uint32_t aHandle) const {
-  return mFrameRequestManager.IsCanceled(aHandle);
 }
 
 void Document::ScheduleVideoFrameCallbacks(HTMLVideoElement* aElement) {
@@ -17074,6 +17086,13 @@ void Document::PropagateImageUseCounters(Document* aReferencingDocument) {
   aReferencingDocument->mChildDocumentUseCounters |= mChildDocumentUseCounters;
 }
 
+void Document::CollectShadowedHTMLFormElementProperty(const nsAString& aName) {
+  if (mShadowedHTMLFormElementProperties.Length() <= 10 &&
+      !mShadowedHTMLFormElementProperties.Contains(aName)) {
+    mShadowedHTMLFormElementProperties.AppendElement(aName);
+  }
+}
+
 bool Document::HasScriptsBlockedBySandbox() const {
   return mSandboxFlags & SANDBOXED_SCRIPTS;
 }
@@ -17209,7 +17228,7 @@ void Document::ReportDocumentUseCounters() {
   }
 }
 
-void Document::ReportShadowedHTMLDocumentProperties() {
+void Document::ReportShadowedProperties() {
   if (!ShouldIncludeInTelemetry()) {
     return;
   }
@@ -17219,9 +17238,22 @@ void Document::ReportShadowedHTMLDocumentProperties() {
     extra.name = Some(NS_ConvertUTF16toUTF8(property));
     glean::security::shadowed_html_document_property_access.Record(Some(extra));
   }
+
+  for (const nsString& property : mShadowedHTMLFormElementProperties) {
+    glean::security::ShadowedHtmlFormElementPropertyAccessExtra extra = {};
+    extra.name = Some(NS_ConvertUTF16toUTF8(property));
+    glean::security::shadowed_html_form_element_property_access.Record(
+        Some(extra));
+  }
 }
 
 void Document::ReportLCP() {
+  // Do not record LCP in any histogram if the same value is being recorded
+  // in the domain pageload event.
+  if (mPageloadEventData.HasDomain()) {
+    return;
+  }
+
   const nsDOMNavigationTiming* timing = GetNavigationTiming();
 
   if (!ShouldIncludeInTelemetry() || !IsTopLevelContentDocument() || !timing ||
@@ -17257,11 +17289,13 @@ void Document::ReportLCP() {
   timedChannel->GetResponseStart(&responseStart);
 
   if (!responseStart) {
-    return;
+    // This happens when getting a response from the cache.
+    mozilla::glean::perf::largest_contentful_paint_from_response_start
+        .AccumulateRawDuration(lcpTime - timing->GetNavigationStartTimeStamp());
+  } else {
+    mozilla::glean::perf::largest_contentful_paint_from_response_start
+        .AccumulateRawDuration(lcpTime - responseStart);
   }
-
-  mozilla::glean::perf::largest_contentful_paint_from_response_start
-      .AccumulateRawDuration(lcpTime - responseStart);
 
   if (profiler_thread_is_being_profiled_for_markers()) {
     MarkerInnerWindowId innerWindowID =
@@ -17952,9 +17986,22 @@ bool Document::HasScrollLinkedEffect() const {
 
 void Document::SetSHEntryHasUserInteraction(bool aHasInteraction) {
   if (RefPtr<WindowContext> topWc = GetTopLevelWindowContext()) {
-    // Setting has user interction on a discarded browsing context has
+    // Setting has user interaction on a discarded browsing context has
     // no effect.
     Unused << topWc->SetSHEntryHasUserInteraction(aHasInteraction);
+  }
+
+  // For when SHIP is not enabled, we need to get the current entry
+  // directly from the docshell.
+  nsIDocShell* docShell = GetDocShell();
+  if (docShell) {
+    nsCOMPtr<nsISHEntry> currentEntry;
+    bool oshe;
+    nsresult rv =
+        docShell->GetCurrentSHEntry(getter_AddRefs(currentEntry), &oshe);
+    if (!NS_WARN_IF(NS_FAILED(rv)) && currentEntry) {
+      currentEntry->SetHasUserInteraction(aHasInteraction);
+    }
   }
 }
 
@@ -17982,16 +18029,6 @@ void Document::SetUserHasInteracted() {
   // Thus, whenever we create a new SH entry for this document,
   // this flag is reset.
   if (!GetSHEntryHasUserInteraction()) {
-    nsIDocShell* docShell = GetDocShell();
-    if (docShell) {
-      nsCOMPtr<nsISHEntry> currentEntry;
-      bool oshe;
-      nsresult rv =
-          docShell->GetCurrentSHEntry(getter_AddRefs(currentEntry), &oshe);
-      if (!NS_WARN_IF(NS_FAILED(rv)) && currentEntry) {
-        currentEntry->SetHasUserInteraction(true);
-      }
-    }
     SetSHEntryHasUserInteraction(true);
   }
 
@@ -18064,8 +18101,8 @@ void Document::NotifyUserGestureActivation(
     wc->NotifyUserGestureActivation(aModifiers);
   });
 
-  // If there has been a user activation, mark the current session history
-  // entry as having been interacted with.
+  // If there has been a user activation, mark the current session history entry
+  // as having been interacted with.
   SetSHEntryHasUserInteraction(true);
 }
 

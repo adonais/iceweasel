@@ -44,6 +44,8 @@ const OS_PARAM_COUNT_DEF = "20"; // 20 results
 const OS_PARAM_START_INDEX_DEF = "1"; // start at 1st result
 const OS_PARAM_START_PAGE_DEF = "1"; // 1st page
 
+const PARAM_ACCEPT_LANGUAGES = "acceptLanguages";
+
 // A array of arrays containing parameters that we don't fully support, and
 // their default values. We will only send values for these parameters if
 // required, since our values are just really arbitrary "guesses" that should
@@ -73,6 +75,23 @@ function limitURILength(str, len = 140) {
     return str.slice(0, len) + "...";
   }
   return str;
+}
+
+/**
+ * Returns whether a date string represents a date that's either today or in the
+ * future.
+ *
+ * @param {string} dateStr
+ *   An `isNewUntil`-type string with the format "YYYY-MM-DD".
+ * @returns {boolean}
+ *   Whether the date is today or in the future.
+ */
+function isDateStringTodayOrFuture(dateStr) {
+  if (!dateStr) {
+    return false;
+  }
+  let today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD" format
+  return today <= dateStr;
 }
 
 /**
@@ -146,6 +165,15 @@ function paramSubstitution(paramValue, searchTerms, queryCharset) {
       return queryCharset;
     }
 
+    // Handle languages for URL results.
+    if (name == PARAM_ACCEPT_LANGUAGES) {
+      let languages = Services.prefs
+        .getComplexValue("intl.accept_languages", Ci.nsIPrefLocalizedString)
+        .data.replace(/\s+/g, "");
+
+      return languages || "";
+    }
+
     // Handle the less common OpenSearch parameters we're confident about.
     if (name == OS_PARAM_LANGUAGE) {
       return Services.locale.requestedLocale || OS_PARAM_LANGUAGE_DEF;
@@ -181,6 +209,14 @@ export class EngineURL {
   rels = [];
   /** @type {string} */
   template;
+  /** @type {string} */
+  displayName;
+  /** @type {string} */
+  isNewUntil;
+  /** @type {boolean} */
+  excludePartnerCodeFromTelemetry;
+  /** @type {?string[]} */
+  acceptedContentTypes;
 
   /**
    * The name of the parameter used for the search term.
@@ -192,40 +228,61 @@ export class EngineURL {
   /**
    * Creates an EngineURL.
    *
-   * @param {string} mimeType
-   *   The name of the MIME type of the search results returned by this URL.
-   * @param {string} requestMethod
-   *   The HTTP request method. Must be a case insensitive value of either
-   *   "GET" or "POST".
-   * @param {string} template
+   * @param {object} options
+   *   Options object.
+   * @param {string} options.type
+   *   The MIME type of the search results returned by this URL.
+   * @param {string} options.template
    *   The URL to which search queries should be sent. For GET requests,
    *   must contain the string "{searchTerms}", to indicate where the user
    *   entered search terms should be inserted.
+   * @param {string} [options.method]
+   *   The HTTP request method. Must be a case insensitive value of either
+   *   "GET" or "POST".
+   * @param {string} [options.displayName]
+   *   The display name of the URL, if any. This is useful if the URL
+   *   corresponds to a brand name distinct from the engine's brand name.
+   * @param {string} [options.isNewUntil]
+   *   Indicates the date until which the URL is considered new
+   *   (format: YYYY-MM-DD).
+   * @param {boolean} [options.excludePartnerCodeFromTelemetry]
+   *   Whether the engine's partner code should be excluded from telemetry when
+   *   this URL is visited.
+   * @param {?string[]} [options.acceptedContentTypes]
+   *   If this URL performs searches only for certain MIME types, they should be
+   *   listed here. If this value is null, then it's assumed the content type is
+   *   irrelevant. This field is intended to be used for URLs like visual
+   *   search, which might support certain image types and not others. Consumers
+   *   can use it to determine whether search UI corresponding to the URL should
+   *   be shown to the user in a given context.
    *
    * @see https://web.archive.org/web/20060203040832/http://opensearch.a9.com/spec/1.1/querysyntax/#urltag
    *
    * @throws NS_ERROR_NOT_IMPLEMENTED if aType is unsupported.
    */
-  constructor(mimeType, requestMethod, template) {
-    if (!mimeType || !requestMethod || !template) {
+  constructor({
+    type,
+    template,
+    method = "GET",
+    displayName = "",
+    isNewUntil = "",
+    excludePartnerCodeFromTelemetry = false,
+    acceptedContentTypes = null,
+  }) {
+    if (!type || !method || !template) {
       throw Components.Exception(
-        "missing mimeType, method or template for EngineURL!",
+        "missing type, method or template for EngineURL!",
         Cr.NS_ERROR_INVALID_ARG
       );
     }
 
-    var method = requestMethod.toUpperCase();
-    var type = mimeType.toLowerCase();
-
-    if (method != "GET" && method != "POST") {
+    this.method = method.toUpperCase();
+    if (this.method != "GET" && this.method != "POST") {
       throw Components.Exception(
         'method passed to EngineURL must be "GET" or "POST"',
         Cr.NS_ERROR_INVALID_ARG
       );
     }
-
-    this.type = type;
-    this.method = method;
 
     var templateURI = lazy.SearchUtils.makeURI(template);
     if (!templateURI) {
@@ -257,6 +314,12 @@ export class EngineURL {
         this.#searchTermParam = name;
       }
     }
+
+    this.type = type.toLowerCase();
+    this.displayName = displayName ?? "";
+    this.isNewUntil = isNewUntil ?? "";
+    this.excludePartnerCodeFromTelemetry = !!excludePartnerCodeFromTelemetry;
+    this.acceptedContentTypes = acceptedContentTypes;
   }
 
   /**
@@ -396,6 +459,16 @@ export class EngineURL {
   }
 
   /**
+   * Returns whether the URL is considered new, which which is determined by the
+   * `isNewUntil` value in its search config.
+   *
+   * @returns {boolean}
+   */
+  isNew() {
+    return isDateStringTodayOrFuture(this.isNewUntil);
+  }
+
+  /**
    * Returns a application/x-www-form-urlencoded representation of the params
    * using the specified search term (name=value&name=value&name=value).
    * Can be used for GET and POST.
@@ -435,7 +508,7 @@ export class EngineURL {
     this.rels = json.rels;
 
     for (let param of json.params) {
-      // mozparam and purpose were only supported for app-provided engines.
+      // mozparam and purpose were only supported for config engines.
       // Always ignore them for engines loaded from JSON.
       if (!param.mozparam && !param.purpose) {
         this.addParam(param.name, param.value);
@@ -476,11 +549,21 @@ export class SearchEngine {
   QueryInterface = ChromeUtils.generateQI(["nsISearchEngine"]);
   // Data set by the user.
   _metaData = {};
-  // Anonymized path of where we initially loaded the engine from.
-  // This will stay null for engines installed in the profile before we moved
-  // to a JSON storage.
+
+  /**
+   * Anonymized path of where we initially loaded the engine from.
+   * This will stay null for engines installed in the profile before we moved
+   * to a JSON storage.
+   *
+   * @type {string}
+   */
   _loadPath = null;
-  // The engine's name.
+
+  /**
+   *The engine's name.
+   *
+   * @type {string}
+   */
   _name = null;
   // The name of the charset used to submit the search terms.
   _queryCharset = null;
@@ -513,6 +596,9 @@ export class SearchEngine {
    */
   clickUrl = null;
 
+  /** @type {string} */
+  isNewUntil;
+
   /**
    *  Creates a Search Engine.
    *
@@ -544,7 +630,7 @@ export class SearchEngine {
    * @returns {EngineURL|null}
    *   Returns the first matching URL found, null otherwise.
    */
-  _getURLOfType(type, rel) {
+  getURLOfType(type, rel) {
     for (let url of this._urls) {
       if (url.type == type && (!rel || url._hasRelation(rel))) {
         return url;
@@ -687,7 +773,7 @@ export class SearchEngine {
    *   The newly created EngineURL.
    */
   _getEngineURLFromMetaData(type, params) {
-    let url = new EngineURL(type, params.method || "GET", params.template);
+    let url = new EngineURL({ ...params, type });
 
     if (params.postParams) {
       if (Array.isArray(params.postParams)) {
@@ -820,7 +906,7 @@ export class SearchEngine {
   }
 
   checkSearchUrlMatchesManifest(details) {
-    let existingUrl = this._getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH);
+    let existingUrl = this.getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH);
 
     let newUrl = this._getEngineURLFromMetaData(
       lazy.SearchUtils.URL_TYPE.SEARCH,
@@ -954,11 +1040,10 @@ export class SearchEngine {
 
     for (let i = 0; i < json._urls.length; ++i) {
       let url = json._urls[i];
-      let engineURL = new EngineURL(
-        url.type || lazy.SearchUtils.URL_TYPE.SEARCH,
-        url.method || "GET",
-        url.template
-      );
+      let engineURL = new EngineURL({
+        ...url,
+        type: url.type || lazy.SearchUtils.URL_TYPE.SEARCH,
+      });
       engineURL._initWithJSON(url);
       this._urls.push(engineURL);
     }
@@ -1092,8 +1177,7 @@ export class SearchEngine {
    *
    * - telemetryId: The telemetry id from the configuration, or derived from
    *                the WebExtension name.
-   * - other-<name>: The engine name prefixed by `other-` for non-app-provided
-   *                 engines.
+   * - other-<name>: The engine name prefixed by `other-` for non-config-engines.
    *
    * @returns {string}
    */
@@ -1106,14 +1190,13 @@ export class SearchEngine {
   }
 
   /**
-   * Return the built-in identifier of app-provided engines.
+   * Return the built-in identifier of config engines.
    *
-   * @returns {string|null}
+   * @returns {?string}
    *   Returns a valid if this is a built-in engine, null otherwise.
    */
   get identifier() {
-    // No identifier if If the engine isn't app-provided
-    return this.isAppProvided ? this._telemetryId : null;
+    return null;
   }
 
   get hidden() {
@@ -1134,14 +1217,24 @@ export class SearchEngine {
   }
 
   /**
-   * Whether or not this engine is provided by the application, e.g. it is
-   * in the list of configured search engines.
+   * This method should be overridden by app provided config engines.
    *
    * @returns {boolean}
-   *   This returns false for most engines, but may be overridden by particular
-   *   engine types, such as add-on engines which are used by the application.
+   *   Whether this engine is an app provided config engine, i.e. it comes
+   *   from the search-config-v2 and active in the user's environment.
    */
   get isAppProvided() {
+    return false;
+  }
+
+  /**
+   * This method should be overridden by config search engines.
+   *
+   * @returns {boolean}
+   *   Whether this engine is a config search engine, i.e. it comes from
+   *   the search-config-v2.
+   */
+  get isConfigEngine() {
     return false;
   }
 
@@ -1215,7 +1308,7 @@ export class SearchEngine {
       responseType = lazy.SearchUtils.URL_TYPE.SEARCH;
     }
 
-    var url = this._getURLOfType(responseType);
+    var url = this.getURLOfType(responseType);
 
     if (!url) {
       return null;
@@ -1240,7 +1333,7 @@ export class SearchEngine {
    * @returns {nsIURI}
    */
   get searchURLWithNoTerms() {
-    return this._getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH).getSubmission(
+    return this.getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH).getSubmission(
       "",
       this.queryCharset
     ).uri;
@@ -1262,7 +1355,7 @@ export class SearchEngine {
    *   or an empty string if the URI isn't matched to the engine.
    */
   searchTermFromResult(uri) {
-    let url = this._getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH);
+    let url = this.getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH);
     if (!url) {
       return "";
     }
@@ -1338,8 +1431,8 @@ export class SearchEngine {
 
   get searchUrlQueryParamName() {
     return (
-      this._getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH)
-        .searchTermParamName || ""
+      this.getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH).searchTermParamName ||
+      ""
     );
   }
 
@@ -1355,12 +1448,12 @@ export class SearchEngine {
 
   // from nsISearchEngine
   supportsResponseType(type) {
-    return this._getURLOfType(type) != null;
+    return this.getURLOfType(type) != null;
   }
 
   // from nsISearchEngine
   get searchUrlDomain() {
-    let url = this._getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH);
+    let url = this.getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH);
     if (url) {
       return url.templateHost;
     }
@@ -1374,7 +1467,7 @@ export class SearchEngine {
    *   of the search URL as a fallback if no such URL exists.
    */
   get searchForm() {
-    let url = this._getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH_FORM);
+    let url = this.getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH_FORM);
     if (url) {
       return url.getSubmission("", this.queryCharset).uri.spec;
     }
@@ -1386,7 +1479,7 @@ export class SearchEngine {
    *   URL parsing properties used by _buildParseSubmissionMap.
    */
   getURLParsingInfo() {
-    let url = this._getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH);
+    let url = this.getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH);
     if (!url || url.method != "GET") {
       return null;
     }
@@ -1504,6 +1597,16 @@ export class SearchEngine {
 
   get id() {
     return this.#id;
+  }
+
+  /**
+   * Returns whether the engine is considered new, which which is determined by
+   * the `isNewUntil` value in its search config.
+   *
+   * @returns {boolean}
+   */
+  isNew() {
+    return isDateStringTodayOrFuture(this.isNewUntil);
   }
 
   /**

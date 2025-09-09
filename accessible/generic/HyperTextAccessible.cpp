@@ -898,6 +898,16 @@ bool HyperTextAccessible::InsertChildAt(uint32_t aIndex,
   return AccessibleWrap::InsertChildAt(aIndex, aChild);
 }
 
+void HyperTextAccessible::RelocateChild(uint32_t aNewIndex,
+                                        LocalAccessible* aChild) {
+  const int32_t smallestChildIndex =
+      std::min(aChild->IndexInParent(), static_cast<int32_t>(aNewIndex));
+  if (smallestChildIndex < static_cast<int32_t>(mOffsets.Length())) {
+    mOffsets.RemoveLastElements(mOffsets.Length() - smallestChildIndex);
+  }
+  AccessibleWrap::RelocateChild(aNewIndex, aChild);
+}
+
 Relation HyperTextAccessible::RelationByType(RelationType aType) const {
   Relation rel = LocalAccessible::RelationByType(aType);
 

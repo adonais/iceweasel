@@ -7,12 +7,12 @@
 #ifndef DOM_SVG_SVGIMAGEELEMENT_H_
 #define DOM_SVG_SVGIMAGEELEMENT_H_
 
-#include "nsImageLoadingContent.h"
 #include "mozilla/dom/SVGAnimatedLength.h"
+#include "mozilla/dom/SVGAnimatedPreserveAspectRatio.h"
 #include "mozilla/dom/SVGAnimatedString.h"
 #include "mozilla/dom/SVGGeometryElement.h"
-#include "mozilla/dom/SVGAnimatedPreserveAspectRatio.h"
 #include "mozilla/gfx/2D.h"
+#include "nsImageLoadingContent.h"
 
 nsresult NS_NewSVGImageElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);

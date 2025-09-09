@@ -10,6 +10,8 @@
 
 #include "Selection.h"
 
+#include <algorithm>
+
 #include "ErrorList.h"
 #include "LayoutConstants.h"
 #include "mozilla/AccessibleCaretEventHub.h"
@@ -21,17 +23,9 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/CaretAssociationHint.h"
 #include "mozilla/ContentIterator.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/ChildIterator.h"
-#include "mozilla/dom/SelectionBinding.h"
-#include "mozilla/dom/ShadowRoot.h"
-#include "mozilla/dom/StaticRange.h"
-#include "mozilla/dom/TreeIterator.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/IntegerRange.h"
-#include "mozilla/intl/Bidi.h"
-#include "mozilla/intl/BidiEmbeddingLevel.h"
 #include "mozilla/Logging.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RangeBoundary.h"
@@ -41,52 +35,51 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/ToString.h"
 #include "mozilla/Try.h"
-
+#include "mozilla/dom/CharacterDataBuffer.h"
+#include "mozilla/dom/ChildIterator.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/SelectionBinding.h"
+#include "mozilla/dom/ShadowRoot.h"
+#include "mozilla/dom/StaticRange.h"
+#include "mozilla/dom/TreeIterator.h"
+#include "mozilla/intl/Bidi.h"
+#include "mozilla/intl/BidiEmbeddingLevel.h"
+#include "nsBidiPresUtils.h"
+#include "nsCCUncollectableMarker.h"
 #include "nsCOMPtr.h"
+#include "nsCaret.h"
+#include "nsContentUtils.h"
+#include "nsCopySupport.h"
 #include "nsDebug.h"
-#include "nsDirection.h"
-#include "nsFmtString.h"
-#include "nsFrameSelection.h"
-#include "nsISelectionListener.h"
 #include "nsDeviceContext.h"
+#include "nsDirection.h"
+#include "nsError.h"
+#include "nsFmtString.h"
+#include "nsFocusManager.h"
+#include "nsFrameSelection.h"
+#include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
-#include "nsRange.h"
-#include "nsITableCellLayout.h"
-#include "nsTArray.h"
-#include "nsTableWrapperFrame.h"
-#include "nsTableCellFrame.h"
-#include "nsCCUncollectableMarker.h"
 #include "nsIDocumentEncoder.h"
-#include "nsString.h"
-#include "nsTextFragment.h"
-#include <algorithm>
-#include "nsContentUtils.h"
-
-#include "nsGkAtoms.h"
-#include "nsLayoutUtils.h"
-#include "nsBidiPresUtils.h"
-#include "nsTextFrame.h"
-
-#include "nsThreadUtils.h"
-
-#include "nsPresContext.h"
-#include "nsCaret.h"
-
-#include "nsITimer.h"
-#include "mozilla/dom/Document.h"
-#include "nsINamed.h"
-
-#include "nsISelectionController.h"  //for the enums
-#include "nsCopySupport.h"
 #include "nsIFrameInlines.h"
-#include "nsRefreshDriver.h"
-
-#include "nsError.h"
-#include "nsViewManager.h"
-
-#include "nsFocusManager.h"
+#include "nsINamed.h"
+#include "nsISelectionController.h"  //for the enums
+#include "nsISelectionListener.h"
+#include "nsITableCellLayout.h"
+#include "nsITimer.h"
+#include "nsLayoutUtils.h"
 #include "nsPIDOMWindow.h"
+#include "nsPresContext.h"
+#include "nsRange.h"
+#include "nsRefreshDriver.h"
+#include "nsString.h"
+#include "nsTArray.h"
+#include "nsTableCellFrame.h"
+#include "nsTableWrapperFrame.h"
+#include "nsTextFrame.h"
+#include "nsThreadUtils.h"
+#include "nsViewManager.h"
 
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
@@ -1902,8 +1895,9 @@ void Selection::SelectFramesOf(nsIContent* aContent, bool aSelected) const {
   // as a text frame.
   if (frame->IsTextFrame()) {
     nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
-    textFrame->SelectionStateChanged(0, textFrame->TextFragment()->GetLength(),
-                                     aSelected, mSelectionType);
+    textFrame->SelectionStateChanged(
+        0, textFrame->CharacterDataBuffer()->GetLength(), aSelected,
+        mSelectionType);
   } else {
     frame->SelectionStateChanged();
   }

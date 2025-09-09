@@ -14,6 +14,8 @@
 #ifndef nsPlainTextSerializer_h__
 #define nsPlainTextSerializer_h__
 
+#include <stack>
+
 #include "mozilla/Maybe.h"
 #include "nsAtom.h"
 #include "nsCycleCollectionParticipant.h"
@@ -21,8 +23,6 @@
 #include "nsIDocumentEncoder.h"
 #include "nsString.h"
 #include "nsTArray.h"
-
-#include <stack>
 
 class nsIContent;
 

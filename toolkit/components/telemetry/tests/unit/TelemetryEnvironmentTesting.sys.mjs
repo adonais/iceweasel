@@ -9,7 +9,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   Assert: "resource://testing-common/Assert.sys.mjs",
   // AttributionCode is only needed for Firefox
-  AttributionCode: "resource:///modules/AttributionCode.sys.mjs",
+  AttributionCode:
+    "moz-src:///browser/components/attribution/AttributionCode.sys.mjs",
 
   MockRegistrar: "resource://testing-common/MockRegistrar.sys.mjs",
 });
@@ -157,7 +158,7 @@ export var TelemetryEnvironmentTesting = {
     } else if (gIsMac) {
       lazy.AttributionCode._clearCache();
       const { MacAttribution } = ChromeUtils.importESModule(
-        "resource:///modules/MacAttribution.sys.mjs"
+        "moz-src:///browser/components/attribution/MacAttribution.sys.mjs"
       );
       await MacAttribution.setAttributionString(ATTRIBUTION_CODE);
     }
@@ -169,7 +170,7 @@ export var TelemetryEnvironmentTesting = {
       lazy.AttributionCode._clearCache();
     } else if (gIsMac) {
       const { MacAttribution } = ChromeUtils.importESModule(
-        "resource:///modules/MacAttribution.sys.mjs"
+        "moz-src:///browser/components/attribution/MacAttribution.sys.mjs"
       );
       await MacAttribution.delAttributionString();
     }

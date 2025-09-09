@@ -5,14 +5,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SharedWorkerManager.h"
+
 #include "SharedWorkerParent.h"
 #include "SharedWorkerService.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/PSharedWorker.h"
+#include "mozilla/dom/RemoteWorkerController.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/URIUtils.h"
-#include "mozilla/dom/RemoteWorkerController.h"
 #include "nsIConsoleReportCollector.h"
 #include "nsIPrincipal.h"
 #include "nsProxyRelease.h"

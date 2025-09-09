@@ -9,6 +9,8 @@
 
 #include "gc/Heap.h"
 
+#include "mozilla/MathAlgorithms.h"
+
 #include "gc/StoreBuffer.h"
 #include "gc/Zone.h"
 #include "util/Poison.h"

@@ -9,16 +9,16 @@
 
 #include "js/ColumnNumber.h"  // JS::ColumnNumberOneOrigin
 #include "mozilla/Attributes.h"
-#include "nsContentSink.h"
-#include "nsIXMLContentSink.h"
-#include "nsIExpatSink.h"
-#include "nsIDocumentTransformer.h"
-#include "nsTArray.h"
+#include "mozilla/dom/FromParser.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
+#include "nsContentSink.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIDTD.h"
-#include "mozilla/dom/FromParser.h"
+#include "nsIDocumentTransformer.h"
+#include "nsIExpatSink.h"
+#include "nsIXMLContentSink.h"
+#include "nsTArray.h"
 
 class nsIURI;
 class nsIContent;

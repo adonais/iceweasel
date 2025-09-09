@@ -6,9 +6,9 @@
 #ifndef __GMPTestMonitor_h__
 #define __GMPTestMonitor_h__
 
-#include "nsThreadUtils.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/SpinEventLoopUntil.h"
+#include "nsThreadUtils.h"
 
 class GMPTestMonitor {
  public:

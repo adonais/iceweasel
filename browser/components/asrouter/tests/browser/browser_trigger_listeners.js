@@ -15,6 +15,10 @@ ChromeUtils.defineLazyGetter(this, "SearchTestUtils", () => {
   return module;
 });
 
+ChromeUtils.defineESModuleGetters(this, {
+  IPProtection: "resource:///modules/ipprotection/IPProtection.sys.mjs",
+});
+
 const mockIdleService = {
   _observers: new Set(),
   _fireObservers(state) {
@@ -662,4 +666,23 @@ add_task(async function test_elementClicked_trigger() {
 
   buttonClickTrigger.uninit();
   document.documentElement.removeChild(button);
+});
+
+add_task(async function test_ipprotection_ready() {
+  const sandbox = sinon.createSandbox();
+  const receivedTrigger = new Promise(resolve => {
+    sandbox.stub(ASRouter, "sendTriggerMessage").callsFake(({ id }) => {
+      if (id === "ipProtectionReady") {
+        resolve(true);
+      }
+    });
+  });
+
+  IPProtection.init();
+
+  let ipProtectionReadyTrigger = await receivedTrigger;
+  Assert.ok(ipProtectionReadyTrigger, "ipProtectionReady trigger sent");
+
+  IPProtection.uninit();
+  sandbox.restore();
 });

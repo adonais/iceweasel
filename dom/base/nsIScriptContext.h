@@ -7,13 +7,13 @@
 #ifndef nsIScriptContext_h__
 #define nsIScriptContext_h__
 
-#include "nscore.h"
-#include "nsString.h"
-#include "nsISupports.h"
-#include "nsCOMPtr.h"
-#include "jspubtd.h"
 #include "js/experimental/JSStencil.h"
+#include "jspubtd.h"
 #include "mozilla/RefPtr.h"
+#include "nsCOMPtr.h"
+#include "nsISupports.h"
+#include "nsString.h"
+#include "nscore.h"
 
 class nsIScriptGlobalObject;
 

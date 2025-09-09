@@ -11,18 +11,20 @@
 // in ActorsParent.cpp
 
 #include <stdint.h>
+
 #include <tuple>
 #include <utility>
+
 #include "ErrorList.h"
 #include "mozilla/Result.h"
 #include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/dom/indexedDB/Key.h"
-#include "nscore.h"
 #include "nsISupports.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
+#include "nscore.h"
 
 struct JSContext;
 class JSObject;

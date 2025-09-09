@@ -12,9 +12,10 @@
  */
 
 #include "nsStubMutationObserver.h"
+
 #include "mozilla/RefCountType.h"
-#include "nsISupports.h"
 #include "nsINode.h"
+#include "nsISupports.h"
 
 /******************************************************************************
  * nsStubMutationObserver

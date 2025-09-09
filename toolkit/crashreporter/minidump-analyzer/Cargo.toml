@@ -32,6 +32,7 @@ features = [
 
 [dev-dependencies]
 crash-handler = "0.6"
+env_logger = "0.10"
 minidumper = "0.8"
 json = "0.12.4"
 sadness-generator = "0.5.0"

@@ -64,7 +64,7 @@ add_task(async function test_adjustWindowGeometry_invalid_values() {
   const originalWidth = testWin.outerWidth;
   const originalHeight = testWin.outerHeight;
   const originalX = testWin.screenX;
-  const originalY = testWin.screenY;
+  const originalY = testWin.screenY; // codespell:ignore
 
   let minWidth, minHeight;
 
@@ -78,7 +78,7 @@ add_task(async function test_adjustWindowGeometry_invalid_values() {
       originalWidth,
       originalHeight,
       originalX,
-      originalY
+      originalY // codespell:ignore
     );
 
     await windowManager.adjustWindowGeometry(testWin, 100, 100, 100, 100);

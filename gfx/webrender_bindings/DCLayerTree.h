@@ -135,7 +135,7 @@ class DCLayerTree {
   bool UseNativeCompositor() const;
   bool UseLayerCompositor() const;
   void DisableNativeCompositor();
-  void EnableAsyncScreenshot();
+  bool EnableAsyncScreenshot();
   bool GetAsyncScreenshotEnabled() const { return mEnableAsyncScreenshot; }
 
   // Interface for wr::Compositor
@@ -215,6 +215,7 @@ class DCLayerTree {
 
   bool mUseNativeCompositor = true;
   bool mEnableAsyncScreenshot = false;
+  bool mEnableAsyncScreenshotInNextFrame = false;
   int mAsyncScreenshotLastFrameUsed = 0;
 
   RefPtr<gl::GLContext> mGL;
@@ -352,6 +353,12 @@ class DCSurface {
   virtual DCLayerSurface* AsDCLayerSurface() { return nullptr; }
   virtual DCSwapChain* AsDCSwapChain() { return nullptr; }
 
+  bool IsUpdated(const wr::CompositorSurfaceTransform& aTransform,
+                 const wr::DeviceIntRect& aClipRect,
+                 const wr::ImageRendering aImageRendering,
+                 const wr::DeviceIntRect& aRoundedClipRect,
+                 const wr::ClipRadius& aClipRadius);
+
  protected:
   DCLayerTree* mDCLayerTree;
 
@@ -359,6 +366,25 @@ class DCSurface {
     std::size_t operator()(const TileKey& aId) const {
       return HashGeneric(aId.mX, aId.mY);
     }
+  };
+
+  struct DCSurfaceData {
+    DCSurfaceData(const wr::CompositorSurfaceTransform& aTransform,
+                  const wr::DeviceIntRect& aClipRect,
+                  const wr::ImageRendering aImageRendering,
+                  const wr::DeviceIntRect& aRoundedClipRect,
+                  const wr::ClipRadius& aClipRadius)
+        : mTransform(aTransform),
+          mClipRect(aClipRect),
+          mImageRendering(aImageRendering),
+          mRoundedClipRect(aRoundedClipRect),
+          mClipRadius(aClipRadius) {}
+
+    wr::CompositorSurfaceTransform mTransform;
+    wr::DeviceIntRect mClipRect;
+    wr::ImageRendering mImageRendering;
+    wr::DeviceIntRect mRoundedClipRect;
+    wr::ClipRadius mClipRadius;
   };
 
   // Each surface creates two visuals. The root is where it gets attached
@@ -384,6 +410,7 @@ class DCSurface {
   std::unordered_map<TileKey, UniquePtr<DCTile>, TileKeyHashFn> mDCTiles;
   wr::DeviceIntPoint mVirtualOffset;
   RefPtr<IDCompositionVirtualSurface> mVirtualSurface;
+  Maybe<DCSurfaceData> mDCSurfaceData;
 };
 
 class DCLayerSurface : public DCSurface {

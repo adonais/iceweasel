@@ -7,10 +7,10 @@
 #ifndef nsChildContentList_h__
 #define nsChildContentList_h__
 
-#include "mozilla/RefPtr.h"
-#include "nsISupportsImpl.h"
-#include "nsINodeList.h"   // base class
 #include "js/TypeDecls.h"  // for Handle, Value, JSObject, JSContext
+#include "mozilla/RefPtr.h"
+#include "nsINodeList.h"  // base class
+#include "nsISupportsImpl.h"
 
 class nsIContent;
 class nsINode;

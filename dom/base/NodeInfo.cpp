@@ -11,25 +11,24 @@
  */
 
 #include "mozilla/dom/NodeInfo.h"
-#include "mozilla/dom/NodeInfoInlines.h"
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Likely.h"
-
-#include "nsNodeInfoManager.h"
-#include "nsCOMPtr.h"
-#include "nsString.h"
-#include "nsAtom.h"
-#include "nsDOMString.h"
-#include "nsCRT.h"
-#include "nsINode.h"
-#include "nsContentUtils.h"
-#include "nsReadableUtils.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/dom/Document.h"
-#include "nsGkAtoms.h"
+#include "mozilla/dom/NodeInfoInlines.h"
+#include "nsAtom.h"
 #include "nsCCUncollectableMarker.h"
+#include "nsCOMPtr.h"
+#include "nsCRT.h"
+#include "nsContentUtils.h"
+#include "nsDOMString.h"
+#include "nsGkAtoms.h"
+#include "nsINode.h"
 #include "nsNameSpaceManager.h"
+#include "nsNodeInfoManager.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
 
 using namespace mozilla;
 using mozilla::dom::NodeInfo;

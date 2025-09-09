@@ -367,13 +367,19 @@ HTMLEditor::AutoInsertLineBreakHandler::InsertLinefeed(
   // boundary.  Note that it should always be <br> for avoiding padding line
   // breaks appear in `.textContent` value.
   if (pointToPutCaret.IsInContentNode() && pointToPutCaret.IsEndOfContainer()) {
-    const WSRunScanner wsScannerAtCaret(
-        WSRunScanner::Scan::EditableNodes, pointToPutCaret,
-        BlockInlineCheck::UseComputedDisplayStyle);
-    if (wsScannerAtCaret.StartsFromPreformattedLineBreak() &&
-        (wsScannerAtCaret.EndsByBlockBoundary() ||
-         wsScannerAtCaret.EndsByInlineEditingHostBoundary()) &&
-        HTMLEditUtils::CanNodeContain(*wsScannerAtCaret.GetEndReasonContent(),
+    const WSRunScanner scannerAtCaret(WSRunScanner::Scan::All, pointToPutCaret,
+                                      BlockInlineCheck::UseComputedDisplayStyle,
+                                      &aEditingHost);
+    const WSScanResult prevVisibleThing =
+        scannerAtCaret.ScanPreviousVisibleNodeOrBlockBoundaryFrom(
+            pointToPutCaret);
+    const WSScanResult nextVisibleThing =
+        scannerAtCaret.ScanInclusiveNextVisibleNodeOrBlockBoundaryFrom(
+            pointToPutCaret);
+    if (prevVisibleThing.ReachedPreformattedLineBreak() &&
+        (nextVisibleThing.ReachedCurrentBlockBoundary() ||
+         nextVisibleThing.ReachedInlineEditingHostBoundary()) &&
+        HTMLEditUtils::CanNodeContain(*nextVisibleThing.ElementPtr(),
                                       *nsGkAtoms::br)) {
       AutoTrackDOMPoint trackingInsertedPosition(aHTMLEditor.RangeUpdaterRef(),
                                                  &pointToInsert);

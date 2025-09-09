@@ -3,17 +3,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/WebGPUBinding.h"
 #include "Adapter.h"
 
 #include <algorithm>
+
 #include "Device.h"
 #include "Instance.h"
 #include "SupportedFeatures.h"
 #include "SupportedLimits.h"
 #include "ipc/WebGPUChild.h"
+#include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/WebGPUBinding.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
 
 namespace mozilla::webgpu {
@@ -508,6 +509,11 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
+  RefPtr<dom::Promise> lost_promise =
+      dom::Promise::Create(GetParentObject(), aRv);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return nullptr;
+  }
 
   ffi::WGPULimits deviceLimits = *mLimits->mFfi;
   for (const auto limit : MakeInclusiveEnumeratedRange(Limit::_LAST)) {
@@ -532,7 +538,7 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
           (void)featureStr;
           nsPrintfCString msg(
               "`GPUAdapter.requestDevice`: '%s' was requested in "
-              "`requiredFeatures`, but it is not supported by Firefox."
+              "`requiredFeatures`, but it is not supported by Firefox. "
               "Follow <%s> for updates.",
               featureStr.get(), status.value.unimplemented.bugzillaUrlAscii);
           promise->MaybeRejectWithTypeError(msg);
@@ -648,19 +654,16 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
 
     RefPtr<SupportedLimits> limits = new SupportedLimits(this, deviceLimits);
 
-    ffi::WGPUDeviceQueueId ids =
-        ffi::wgpu_client_make_device_queue_id(mBridge->GetClient());
-
     ffi::WGPUFfiDeviceDescriptor ffiDesc = {};
     ffiDesc.required_features = featureBits;
     ffiDesc.required_limits = deviceLimits;
 
-    ffi::wgpu_client_request_device(mBridge->GetClient(), mId, ids.device,
-                                    ids.queue, &ffiDesc);
+    ffi::WGPUDeviceQueueId ids =
+        ffi::wgpu_client_request_device(mBridge->GetClient(), mId, &ffiDesc);
 
     auto pending_promise = WebGPUChild::PendingRequestDevicePromise{
-        RefPtr(promise), ids.device, ids.queue, aDesc.mLabel,
-        RefPtr(this),    features,   limits,    mInfo};
+        RefPtr(promise), ids.device, ids.queue, aDesc.mLabel, RefPtr(this),
+        features,        limits,     mInfo,     lost_promise};
     mBridge->mPendingRequestDevicePromises.push_back(
         std::move(pending_promise));
 

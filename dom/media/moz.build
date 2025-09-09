@@ -41,6 +41,7 @@ DIRS += [
     "ipc",
     "mediacapabilities",
     "mediacontrol",
+    "mediaelement",
     "mediasink",
     "mediasource",
     "mediasession",
@@ -371,6 +372,7 @@ LOCAL_INCLUDES += [
 
 if CONFIG["MOZ_WEBRTC"]:
     LOCAL_INCLUDES += [
+        "!/dist/include/libwebrtc_overrides",
         "/dom/media/webrtc/common",
         "/third_party/abseil-cpp",
         "/third_party/libwebrtc",

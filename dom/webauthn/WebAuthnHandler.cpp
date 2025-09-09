@@ -4,25 +4,26 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "hasht.h"
-#include "nsHTMLDocument.h"
-#include "nsIURIMutator.h"
-#include "nsThreadUtils.h"
+#include "mozilla/dom/WebAuthnHandler.h"
+
 #include "WebAuthnCoseIdentifiers.h"
 #include "WebAuthnEnumStrings.h"
 #include "WebAuthnTransportIdentifiers.h"
+#include "hasht.h"
 #include "mozilla/Base64.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/BounceTrackingProtection.h"
-#include "mozilla/glean/DomWebauthnMetrics.h"
 #include "mozilla/dom/AuthenticatorAssertionResponse.h"
 #include "mozilla/dom/AuthenticatorAttestationResponse.h"
-#include "mozilla/dom/PublicKeyCredential.h"
 #include "mozilla/dom/PWebAuthnTransaction.h"
-#include "mozilla/dom/WebAuthnHandler.h"
+#include "mozilla/dom/PublicKeyCredential.h"
 #include "mozilla/dom/WebAuthnTransactionChild.h"
 #include "mozilla/dom/WebAuthnUtil.h"
 #include "mozilla/dom/WindowGlobalChild.h"
+#include "mozilla/glean/DomWebauthnMetrics.h"
+#include "nsHTMLDocument.h"
+#include "nsIURIMutator.h"
+#include "nsThreadUtils.h"
 
 #ifdef XP_WIN
 #  include "WinWebAuthnService.h"

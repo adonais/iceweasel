@@ -26,14 +26,14 @@ pub enum LabeledCounterMetric {
     Child { id: BaseMetricId, label: String },
 }
 
-crate::define_metric_metadata_getter!(
+define_metric_metadata_getter!(
     CounterMetric,
     LabeledCounterMetric,
     COUNTER_MAP,
     LABELED_COUNTER_MAP
 );
 
-crate::define_metric_namer!(LabeledCounterMetric, LABELED);
+define_metric_namer!(LabeledCounterMetric, LABELED);
 
 impl LabeledCounterMetric {
     /// Create a new labeled counter submetric.

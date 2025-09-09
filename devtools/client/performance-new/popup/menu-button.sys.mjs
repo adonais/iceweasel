@@ -12,10 +12,12 @@ import { createLazyLoaders } from "resource://devtools/client/performance-new/sh
 
 const lazy = createLazyLoaders({
   CustomizableUI: () =>
-    ChromeUtils.importESModule("resource:///modules/CustomizableUI.sys.mjs"),
+    ChromeUtils.importESModule(
+      "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs"
+    ),
   CustomizableWidgets: () =>
     ChromeUtils.importESModule(
-      "resource:///modules/CustomizableWidgets.sys.mjs"
+      "moz-src:///browser/components/customizableui/CustomizableWidgets.sys.mjs"
     ),
   PopupLogic: () =>
     ChromeUtils.importESModule(

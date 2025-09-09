@@ -5,31 +5,27 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CacheLoadHandler.h"
+
 #include "ScriptResponseHeaderProcessor.h"  // ScriptResponseHeaderProcessor
 #include "WorkerLoadContext.h"              // WorkerLoadContext
-
-#include "nsIPrincipal.h"
-
-#include "nsIThreadRetargetableRequest.h"
-#include "nsIXPConnect.h"
-
 #include "jsapi.h"
-#include "nsNetUtil.h"
-
 #include "mozilla/Assertions.h"
 #include "mozilla/Encoding.h"
-#include "mozilla/dom/CacheBinding.h"
-#include "mozilla/dom/PolicyContainer.h"
-#include "mozilla/dom/cache/CacheTypes.h"
-#include "mozilla/dom/Response.h"
-#include "mozilla/dom/ServiceWorkerBinding.h"  // ServiceWorkerState
 #include "mozilla/Result.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/CacheBinding.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/PolicyContainer.h"
+#include "mozilla/dom/Response.h"
+#include "mozilla/dom/ServiceWorkerBinding.h"  // ServiceWorkerState
 #include "mozilla/dom/WorkerScope.h"
-
+#include "mozilla/dom/cache/CacheTypes.h"
 #include "mozilla/dom/workerinternals/ScriptLoader.h"  // WorkerScriptLoader
+#include "nsIPrincipal.h"
+#include "nsIThreadRetargetableRequest.h"
+#include "nsIXPConnect.h"
+#include "nsNetUtil.h"
 
 namespace mozilla {
 namespace dom {

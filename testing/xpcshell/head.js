@@ -13,7 +13,7 @@
 /* defined by the harness */
 /* globals _HEAD_FILES, _HEAD_JS_PATH, _JSDEBUGGER_PORT, _JSCOV_DIR,
     _MOZINFO_JS_PATH, _TEST_FILE, _TEST_NAME, _TEST_CWD, _TESTING_MODULES_DIR:true,
-    _PREFS_FILE */
+    _PREFS_FILE, _EXPECTED */
 
 /* defined by XPCShellImpl.cpp */
 /* globals load, sendCommand, changeTestShellDir */
@@ -516,6 +516,38 @@ function _initDebugging(port) {
   info("Debugger connected, starting test execution");
 }
 
+function _do_upload_profile() {
+  let name = _TEST_NAME.replace(/.*\//, "");
+  let filename = `profile_${name}.json`;
+  let path = Services.env.get("MOZ_UPLOAD_DIR");
+  let profilePath = PathUtils.join(path, filename);
+  let done = false;
+  (async function _save_profile() {
+    const { profile } =
+      await Services.profiler.getProfileDataAsGzippedArrayBuffer();
+    await IOUtils.write(profilePath, new Uint8Array(profile));
+    _testLogger.testStatus(
+      _TEST_NAME,
+      "Found unexpected failures during the test; profile uploaded in " +
+        filename,
+      "FAIL"
+    );
+  })()
+    .catch(e => {
+      // If the profile is large, we may encounter out of memory errors.
+      _testLogger.error(
+        "Found unexpected failures during the test; failed to upload profile: " +
+          e
+      );
+    })
+    .then(() => (done = true));
+  _Services.tm.spinEventLoopUntil(
+    "Test(xpcshell/head.js:_save_profile)",
+    () => done
+  );
+}
+
+// eslint-disable-next-line complexity
 function _execute_test() {
   if (typeof _TEST_CWD != "undefined") {
     try {
@@ -590,6 +622,28 @@ function _execute_test() {
 
   if (runningInParent) {
     PerTestCoverageUtils.beforeTestSync();
+  }
+
+  let timer;
+  if (
+    Services.profiler.IsActive() &&
+    !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
+    Services.env.exists("MOZ_UPLOAD_DIR") &&
+    Services.env.exists("MOZ_TEST_TIMEOUT_INTERVAL")
+  ) {
+    timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+    timer.initWithCallback(
+      function upload_test_timeout_profile() {
+        ChromeUtils.addProfilerMarker(
+          "xpcshell-test",
+          { category: "Test", startTime },
+          _TEST_NAME
+        );
+        _do_upload_profile();
+      },
+      parseInt(Services.env.get("MOZ_TEST_TIMEOUT_INTERVAL")) * 1000 * 0.9, // Keep 10% of the time to gather the profile.
+      timer.TYPE_ONE_SHOT
+    );
   }
 
   try {
@@ -737,6 +791,28 @@ function _execute_test() {
     _PromiseTestUtils.uninit();
   }
 
+  if (timer) {
+    timer.cancel();
+  }
+
+  // If MOZ_PROFILER_SHUTDOWN is set, the profiler got started from --profiler
+  // and a profile will be shown even if there's no test failure.
+  if (
+    !_passed &&
+    runningInParent &&
+    Services.env.exists("MOZ_UPLOAD_DIR") &&
+    !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
+    Services.profiler.IsActive()
+  ) {
+    if (_EXPECTED != "pass") {
+      _testLogger.error(
+        "Not uploading the profile as the test is expected to fail."
+      );
+    } else {
+      _do_upload_profile();
+    }
+  }
+
   // Skip the normal shutdown path for optimized builds that don't do leak checking.
   if (
     runningInParent &&
@@ -833,6 +909,7 @@ function executeSoon(callback, aName) {
             _exception_message(e),
             stack
           );
+          _passed = false;
           _do_quit();
         }
       } finally {

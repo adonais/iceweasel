@@ -885,6 +885,57 @@ newtab:
     send_in_pings:
       - newtab
 
+  promo_card_impression:
+    type: event
+    description: Recorded when the promo card is visible
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1981817
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1981817
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - achurchwell@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+    send_in_pings:
+      - newtab
+
+  promo_card_click:
+    type: event
+    description: Recorded when there is a click on the promo card cta
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1981817
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1981817
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - achurchwell@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+    send_in_pings:
+      - newtab
+
+  promo_card_dismiss:
+    type: event
+    description: Recorded when the promo card is dismissed
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1981817
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1981817
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - achurchwell@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+    send_in_pings:
+      - newtab
+
   abouthome_cache_construction:
     type: timing_distribution
     description: >
@@ -1114,6 +1165,186 @@ newtab:
     send_in_pings:
       - newtab
 
+  widgets_lists_user_event:
+    type: event
+    description: >
+      Details which user action has occurred. It can be one of
+      the following: list_copy, list_create, list_edit, list_delete,
+      task_create, task_edit task_delete and task_completed
+    bugs:
+      - https://bugzil.la/1979704
+    data_reviews:
+      - https://bugzil.la/1979704
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - nbarrett@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      user_action:
+        description: >
+          user action. One of list_copy, list_create, list_edit, list_delete,
+          task_create, task_edit task_delete and task_completed
+        type: string
+    send_in_pings:
+      - newtab
+
+  widgets_lists_impression:
+    type: event
+    description: >
+      Recorded when the list widget is viewable on a users screen
+    bugs:
+      - https://bugzil.la/1979704
+    data_reviews:
+      - https://bugzil.la/1979704
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - nbarrett@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+    send_in_pings:
+      - newtab
+
+  widgets_lists_change_display:
+    type: event
+    description: >
+      Whether the lists widget is enabled. Matches
+      the `widgets.lists.enabled` pref
+    bugs:
+      - https://bugzil.la/1979704
+    data_reviews:
+      - https://bugzil.la/1979704
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - nbarrett@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      display_status:
+        description: boolean value if the lists widget is being visible/enabled
+        type: boolean
+    send_in_pings:
+      - newtab
+
+  widgets_timer_user_event:
+    type: event
+    description: >
+      Details which user action has occurred. It can be one of
+      the following: timer_set, timer_play, timer_pause, timer_reset,
+      timer_toggle_focus, timer_toggle_break, timer_end
+    bugs:
+      - https://bugzil.la/1977301
+    data_reviews:
+      - https://bugzil.la/1977301
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - rhamoui@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      user_action:
+        description: >
+          user action. timer_set, timer_play, timer_pause, timer_reset,
+          timer_toggle_focus, timer_toggle_break, timer_end
+        type: string
+    send_in_pings:
+      - newtab
+
+  widgets_timer_impression:
+    type: event
+    description: >
+      Recorded when the timer widget is viewable on a users screen
+    bugs:
+      - https://bugzil.la/1977301
+    data_reviews:
+      - https://bugzil.la/1977301
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - rhamoui@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+    send_in_pings:
+      - newtab
+
+  widgets_timer_change_display:
+    type: event
+    description: >
+      Whether the timer widget is enabled. Matches
+      the `widgets.focusTimer.enabled` pref
+    bugs:
+      - https://bugzil.la/1977301
+    data_reviews:
+      - https://bugzil.la/1977301
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - rhamoui@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      display_status:
+        description: boolean value if the timer widget is being visible/enabled
+        type: boolean
+    send_in_pings:
+      - newtab
+
+  widgets_timer_toggle_notification:
+    type: event
+    description: >
+      Whether the timer widget's notification pref is enabled. Matches
+      the `widgets.focusTimer.showSystemNotifications` pref
+    bugs:
+      - https://bugzil.la/1982516
+    data_reviews:
+      - https://bugzil.la/1982516
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - rhamoui@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      display_status:
+        description: boolean value if the timer widget notification is enabled
+        type: boolean
+    send_in_pings:
+      - newtab
+
+  spons_nav_traffic_sent:
+    type: memory_distribution
+    memory_unit: kilobyte
+    description: >
+      The volume of traffic sent through browsers that were link targets for
+      sponsored topsite or content navigations.
+    bugs:
+      - https://bugzil.la/1978161
+    data_reviews:
+      - https://bugzil.la/1978161
+    notification_emails:
+      - mconley@mozilla.com
+    expires: never
+
+  spons_nav_traffic_recvd:
+    type: memory_distribution
+    memory_unit: kilobyte
+    description: >
+      The volume of traffic received through browsers that were link targets
+      for sponsored topsite or content navigations.
+    bugs:
+      - https://bugzil.la/1978161
+    data_reviews:
+      - https://bugzil.la/1978161
+    notification_emails:
+      - mconley@mozilla.com
+    expires: never
+
 newtab.search:
   enabled:
     lifetime: application
@@ -1152,13 +1383,15 @@ newtab.handoff_preference:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1864496
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892148
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1940643
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1978995
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1864496
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892148
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1940643
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1978995
     data_sensitivity:
       - interaction
-    expires: 144
+    expires: 151
     notification_emails:
       - fx-search-telemetry@mozilla.com
 

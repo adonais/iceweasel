@@ -231,6 +231,16 @@ class MOZ_STACK_CLASS WSScanResult final {
   }
 
   /**
+   * Return the next position of found visible content node.  So, this should
+   * not be used if it reached a visible character middle of a `Text`.
+   */
+  template <typename EditorDOMPointType>
+  EditorDOMPointType PointAfterReachedContentNode() const {
+    MOZ_ASSERT(mContent);
+    return EditorDOMPointType::After(*mContent);
+  }
+
+  /**
    * The scanner reached <img> or something which is inline and is not a
    * container.
    */
@@ -575,100 +585,6 @@ class MOZ_STACK_CLASS WSRunScanner final {
   }
 
   const EditorDOMPoint& ScanStartRef() const { return mScanStartPoint; }
-
-  /**
-   * GetStartReasonContent() and GetEndReasonContent() return a node which
-   * was found by scanning from mScanStartPoint backward or  forward.  If there
-   * was white-spaces or text from the point, returns the text node.  Otherwise,
-   * returns an element which is explained by the following methods.  Note that
-   * when the reason is WSType::CurrentBlockBoundary, In most cases, it's
-   * current block element which is editable, but also may be non-element and/or
-   * non-editable.  See MOZ_ASSERT_IF()s in WSScanResult::AssertIfInvalidData()
-   * for the detail.
-   */
-  nsIContent* GetStartReasonContent() const {
-    return TextFragmentDataAtStartRef().GetStartReasonContent();
-  }
-  nsIContent* GetEndReasonContent() const {
-    return TextFragmentDataAtStartRef().GetEndReasonContent();
-  }
-
-  bool StartsFromNonCollapsibleCharacters() const {
-    return TextFragmentDataAtStartRef().StartsFromNonCollapsibleCharacters();
-  }
-  bool StartsFromSpecialContent() const {
-    return TextFragmentDataAtStartRef().StartsFromSpecialContent();
-  }
-  bool StartsFromBRElement() const {
-    return TextFragmentDataAtStartRef().StartsFromBRElement();
-  }
-  bool StartsFromVisibleBRElement() const {
-    return TextFragmentDataAtStartRef().StartsFromVisibleBRElement();
-  }
-  bool StartsFromInvisibleBRElement() const {
-    return TextFragmentDataAtStartRef().StartsFromInvisibleBRElement();
-  }
-  bool StartsFromPreformattedLineBreak() const {
-    return TextFragmentDataAtStartRef().StartsFromPreformattedLineBreak();
-  }
-  bool StartsFromCurrentBlockBoundary() const {
-    return TextFragmentDataAtStartRef().StartsFromCurrentBlockBoundary();
-  }
-  bool StartsFromOtherBlockElement() const {
-    return TextFragmentDataAtStartRef().StartsFromOtherBlockElement();
-  }
-  bool StartsFromBlockBoundary() const {
-    return TextFragmentDataAtStartRef().StartsFromBlockBoundary();
-  }
-  bool StartsFromInlineEditingHostBoundary() const {
-    return TextFragmentDataAtStartRef().StartsFromInlineEditingHostBoundary();
-  }
-  bool StartsFromHardLineBreak() const {
-    return TextFragmentDataAtStartRef().StartsFromHardLineBreak();
-  }
-  bool EndsByNonCollapsibleCharacters() const {
-    return TextFragmentDataAtStartRef().EndsByNonCollapsibleCharacters();
-  }
-  bool EndsBySpecialContent() const {
-    return TextFragmentDataAtStartRef().EndsBySpecialContent();
-  }
-  bool EndsByBRElement() const {
-    return TextFragmentDataAtStartRef().EndsByBRElement();
-  }
-  bool EndsByVisibleBRElement() const {
-    return TextFragmentDataAtStartRef().EndsByVisibleBRElement();
-  }
-  bool EndsByInvisibleBRElement() const {
-    return TextFragmentDataAtStartRef().EndsByInvisibleBRElement();
-  }
-  bool EndsByPreformattedLineBreak() const {
-    return TextFragmentDataAtStartRef().EndsByPreformattedLineBreak();
-  }
-  bool EndsByCurrentBlockBoundary() const {
-    return TextFragmentDataAtStartRef().EndsByCurrentBlockBoundary();
-  }
-  bool EndsByOtherBlockElement() const {
-    return TextFragmentDataAtStartRef().EndsByOtherBlockElement();
-  }
-  bool EndsByBlockBoundary() const {
-    return TextFragmentDataAtStartRef().EndsByBlockBoundary();
-  }
-  bool EndsByInlineEditingHostBoundary() const {
-    return TextFragmentDataAtStartRef().EndsByInlineEditingHostBoundary();
-  }
-
-  MOZ_NEVER_INLINE_DEBUG Element* StartReasonOtherBlockElementPtr() const {
-    return TextFragmentDataAtStartRef().StartReasonOtherBlockElementPtr();
-  }
-  MOZ_NEVER_INLINE_DEBUG HTMLBRElement* StartReasonBRElementPtr() const {
-    return TextFragmentDataAtStartRef().StartReasonBRElementPtr();
-  }
-  MOZ_NEVER_INLINE_DEBUG Element* EndReasonOtherBlockElementPtr() const {
-    return TextFragmentDataAtStartRef().EndReasonOtherBlockElementPtr();
-  }
-  MOZ_NEVER_INLINE_DEBUG HTMLBRElement* EndReasonBRElementPtr() const {
-    return TextFragmentDataAtStartRef().EndReasonBRElementPtr();
-  }
 
  protected:
   using EditorType = EditorBase::EditorType;
@@ -1029,6 +945,8 @@ class MOZ_STACK_CLASS WSRunScanner final {
     constexpr BlockInlineCheck BlockInlineCheckMode() const {
       return mBlockInlineCheck;
     }
+
+    const Element* GetAncestorLimiter() const { return mAncestorLimiter; }
 
     nsIContent* GetStartReasonContent() const {
       return mStart.GetReasonContent();
@@ -1450,6 +1368,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
    private:
     EditorDOMPoint mScanStartPoint;
+    RefPtr<const Element> mAncestorLimiter;
     BoundaryData mStart;
     BoundaryData mEnd;
     NoBreakingSpaceData mNBSPData;

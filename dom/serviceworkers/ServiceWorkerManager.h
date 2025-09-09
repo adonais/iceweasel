@@ -8,6 +8,7 @@
 #define mozilla_dom_workers_serviceworkermanager_h
 
 #include <cstdint>
+
 #include "ErrorList.h"
 #include "ServiceWorkerShutdownState.h"
 #include "js/ErrorReport.h"

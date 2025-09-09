@@ -8,11 +8,11 @@
 #include "WebrtcIPCTraits.h"
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
-#include "mozilla/dom/BindingIPCUtils.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/BindingIPCUtils.h"
 #include "mozilla/dom/RTCDataChannelBinding.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
-#include "mozilla/UniquePtr.h"
 
 typedef mozilla::dom::RTCStatsReportInternal StatsReport;
 typedef nsTArray<mozilla::UniquePtr<StatsReport>> RTCReports;

@@ -8,10 +8,11 @@
 #define GMP_LOADER_H__
 
 #include <stdint.h>
-#include "prlink.h"
+
 #include "gmp-entrypoints.h"
 #include "mozilla/UniquePtr.h"
 #include "nsString.h"
+#include "prlink.h"
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 #  include "mozilla/Sandbox.h"

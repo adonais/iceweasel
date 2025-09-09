@@ -154,6 +154,32 @@ addAccessibleTask(
 );
 
 /**
+ * Test embeds while a modal dialog is displayed which blocks all UI and
+ * documents behind it.
+ */
+addAccessibleTask(`test`, async function testEmbedsModal(browser, tabDoc) {
+  const root = getRootAccessible(document);
+  testRelation(root, RELATION_EMBEDS, tabDoc);
+  ok(tabDoc.parent, "tabDoc has a parent");
+
+  info("Showing modal");
+  const modal = document.createElement("dialog");
+  let shown = waitForEvent(EVENT_SHOW, modal);
+  document.body.append(modal);
+  modal.showModal();
+  await shown;
+  ok(!tabDoc.parent, "tabDoc has no parent");
+  testRelation(root, RELATION_EMBEDS, null);
+
+  info("Removing modal");
+  let hidden = waitForEvent(EVENT_HIDE, modal);
+  modal.remove();
+  await hidden;
+  ok(tabDoc.parent, "tabDoc has a parent");
+  testRelation(root, RELATION_EMBEDS, tabDoc);
+});
+
+/**
  * Test CONTAINING_TAB_PANE
  */
 addAccessibleTask(

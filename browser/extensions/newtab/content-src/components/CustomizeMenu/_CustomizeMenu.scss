@@ -160,29 +160,14 @@
     padding-block-start: var(--space-large);
     background-color: var(--newtab-background-color-secondary);
     z-index: 1;
+
+    moz-button {
+      margin-inline-start: auto;
+      margin-inline-end: var(--space-large);
+      display: block;
+    }
   }
 
-  .close-button {
-    margin-inline-start: auto;
-    margin-inline-end: var(--space-large);
-    white-space: nowrap;
-    display: block;
-    background-color: var(--newtab-element-secondary-color);
-    padding: var(--space-small) var(--space-medium);
-    border: $customize-menu-border-tint;
-    border-radius: var(--border-radius-small);
-    color: var(--newtab-text-primary-color);
-    font-size: var(--font-size-small);
-    font-weight: var(--font-weight-bold);
-  }
-
-  .close-button:hover {
-    background-color: var(--newtab-element-secondary-hover-color);
-  }
-
-  .close-button:hover:active {
-    background-color: var(--newtab-element-secondary-active-color);
-  }
 }
 
 .grid-skip {
@@ -194,16 +179,32 @@
   grid-template-columns: 1fr;
   grid-template-rows: repeat(4, auto);
   grid-row-gap: var(--space-xxlarge);
-  padding: var(--space-large);
+  padding-block: var(--space-xsmall) var(--space-large);
+  padding-inline: var(--space-large);
 
   .wallpapers-section h2 {
     font-size: inherit;
   }
 
+  .widgets-section h2 {
+    font-size: inherit;
+    margin-block-start: 0;
+    font-weight: var(--font-weight-bold);
+  }
+
+  .settings-widgets,
   .settings-toggles {
     display: flex;
     flex-direction: column;
     gap: var(--space-xlarge);
+  }
+
+  .settings-widgets {
+    gap: var(--space-large);
+
+    .divider {
+      margin-block-start: var(--space-large);
+    }
   }
 
   [slot='nested'] {

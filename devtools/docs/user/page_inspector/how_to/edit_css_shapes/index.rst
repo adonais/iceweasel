@@ -101,4 +101,4 @@ If your shape is a polygon, you also get the ability to rotate it around an axis
 Browser support
 ***************
 
-The Shape Path Editor currently works for shapes generated via `clip-path <https://developer.mozilla.org/en-US/docs/Web/CSS/clip-path>`_; it will also work for shapes generated via `shape-outside <https://developer.mozilla.org/en-US/docs/Web/CSS/shape-outside>`_ as of Firefox 62.
+The Shape Path Editor currently works for shapes generated via `clip-path <https://developer.mozilla.org/en-US/docs/Web/CSS/clip-path>`_ and `shape-outside <https://developer.mozilla.org/en-US/docs/Web/CSS/shape-outside>`_.

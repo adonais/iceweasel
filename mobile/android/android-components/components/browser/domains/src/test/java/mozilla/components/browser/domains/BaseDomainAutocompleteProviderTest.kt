@@ -8,7 +8,6 @@ import android.content.Context
 import android.os.Looper.getMainLooper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.domains.autocomplete.BaseDomainAutocompleteProvider
 import mozilla.components.browser.domains.autocomplete.DomainList
@@ -106,7 +105,6 @@ class BaseDomainAutocompleteProviderTest {
     }
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
 private fun assertCompletion(
     provider: AutocompleteProvider,
     domainSource: DomainList,
@@ -127,7 +125,6 @@ private fun assertCompletion(
     assertEquals("Autocompletion source list size", sourceSize, result.totalItems)
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
 private fun assertNoCompletion(provider: AutocompleteProvider, input: String) = runTest {
     val result = provider.getAutocompleteSuggestion(input)
 

@@ -5,9 +5,12 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CallbackRunnables.h"
+
+#include "../GetFileOrDirectoryTask.h"
+#include "mozilla/Unused.h"
+#include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/Directory.h"
 #include "mozilla/dom/DirectoryBinding.h"
-#include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FileBinding.h"
 #include "mozilla/dom/FileSystem.h"
@@ -15,12 +18,9 @@
 #include "mozilla/dom/FileSystemFileEntry.h"
 #include "mozilla/dom/FileSystemUtils.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/Unused.h"
-#include "nsIGlobalObject.h"
 #include "nsIFile.h"
+#include "nsIGlobalObject.h"
 #include "nsPIDOMWindow.h"
-
-#include "../GetFileOrDirectoryTask.h"
 
 namespace mozilla::dom {
 

@@ -9,9 +9,9 @@
 
 #include <type_traits>
 
-#include "ipc/EnumSerializer.h"
 #include "TexUnpackBlob.h"
 #include "WebGLTypes.h"
+#include "ipc/EnumSerializer.h"
 
 namespace mozilla {
 namespace webgl {

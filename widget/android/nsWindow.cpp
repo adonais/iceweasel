@@ -3082,6 +3082,18 @@ InputContext nsWindow::GetInputContext() {
   return acc->GetInputContext();
 }
 
+void nsWindow::PostHandleKeyEvent(mozilla::WidgetKeyboardEvent* aEvent) {
+  nsWindow* top = FindTopLevel();
+  MOZ_ASSERT(top);
+
+  auto acc(top->mEditableSupport.Access());
+  if (!acc) {
+    return;
+  }
+
+  return acc->PostHandleKeyEvent(aEvent);
+}
+
 nsresult nsWindow::SynthesizeNativeTouchPoint(
     uint32_t aPointerId, TouchPointerState aPointerState,
     LayoutDeviceIntPoint aPoint, double aPointerPressure,

@@ -8,8 +8,10 @@
 
 #include <utility>
 
-#include "nsDebug.h"
-
+#include "RemoteWorkerControllerParent.h"
+#include "RemoteWorkerManager.h"
+#include "RemoteWorkerNonLifeCycleOpControllerParent.h"
+#include "RemoteWorkerParent.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
@@ -21,10 +23,7 @@
 #include "mozilla/dom/ServiceWorkerCloneData.h"
 #include "mozilla/dom/ServiceWorkerShutdownState.h"
 #include "mozilla/ipc/BackgroundParent.h"
-#include "RemoteWorkerControllerParent.h"
-#include "RemoteWorkerManager.h"
-#include "RemoteWorkerNonLifeCycleOpControllerParent.h"
-#include "RemoteWorkerParent.h"
+#include "nsDebug.h"
 
 namespace mozilla {
 

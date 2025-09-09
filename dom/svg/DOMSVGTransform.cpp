@@ -6,17 +6,17 @@
 
 #include "DOMSVGTransform.h"
 
+#include "SVGAnimatedTransformList.h"
+#include "SVGAttrTearoffTable.h"
 #include "mozAutoDocUpdate.h"
+#include "mozilla/DebugOnly.h"
+#include "mozilla/FloatingPoint.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/dom/DOMMatrix.h"
 #include "mozilla/dom/DOMMatrixBinding.h"
 #include "mozilla/dom/SVGMatrix.h"
 #include "mozilla/dom/SVGTransformBinding.h"
-#include "mozilla/DebugOnly.h"
-#include "mozilla/FloatingPoint.h"
-#include "mozilla/Maybe.h"
 #include "nsError.h"
-#include "SVGAnimatedTransformList.h"
-#include "SVGAttrTearoffTable.h"
 
 namespace {
 const double kRadPerDegree = 2.0 * M_PI / 360.0;

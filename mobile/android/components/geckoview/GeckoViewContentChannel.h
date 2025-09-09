@@ -9,12 +9,12 @@
 
 #include "nsBaseChannel.h"
 
-class GeckoViewContentChannel final : public nsBaseChannel {
+class GeckoViewContentChannel : public nsBaseChannel {
  public:
   explicit GeckoViewContentChannel(nsIURI* aUri);
 
- private:
-  ~GeckoViewContentChannel() = default;
+ protected:
+  virtual ~GeckoViewContentChannel() = default;
 
   nsresult OpenContentStream(bool async, nsIInputStream** result,
                              nsIChannel** channel) override;

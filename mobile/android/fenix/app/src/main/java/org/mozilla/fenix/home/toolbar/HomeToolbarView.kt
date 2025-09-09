@@ -7,7 +7,6 @@ package org.mozilla.fenix.home.toolbar
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AnimationUtils
 import androidx.annotation.DrawableRes
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.content.res.AppCompatResources
@@ -25,8 +24,10 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.databinding.FragmentHomeBinding
 import org.mozilla.fenix.databinding.FragmentHomeToolbarViewLayoutBinding
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.increaseTapAreaVertically
 import org.mozilla.fenix.ext.isLargeWindow
+import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.HomeFragment
 import org.mozilla.fenix.home.HomeMenuView
@@ -64,11 +65,11 @@ internal class HomeToolbarView(
         initLayoutParameters()
     }
 
-    override fun build(browserState: BrowserState) {
+    override fun build(browserState: BrowserState, middleSearchEnabled: Boolean) {
         initLayoutParameters()
 
         toolbarBinding.toolbarText.compoundDrawablePadding =
-            context.resources.getDimensionPixelSize(R.dimen.search_bar_search_engine_icon_padding)
+            context.pixelSizeFor(R.dimen.search_bar_search_engine_icon_padding)
 
         toolbarBinding.toolbarWrapper.setOnClickListener {
             interactor.onNavigateSearch()
@@ -90,6 +91,7 @@ internal class HomeToolbarView(
         )
 
         updateButtonVisibility(browserState)
+        updateAddressBarVisibility(!middleSearchEnabled)
     }
 
     override fun updateButtonVisibility(browserState: BrowserState) {
@@ -157,6 +159,7 @@ internal class HomeToolbarView(
         lifecycleOwner = homeFragment.viewLifecycleOwner,
         homeActivity = homeActivity,
         navController = homeFragment.findNavController(),
+        fenixBrowserUseCases = context.components.useCases.fenixBrowserUseCases,
         menuButton = WeakReference(toolbarBinding.menuButton),
     ).also { it.build() }
 
@@ -167,6 +170,7 @@ internal class HomeToolbarView(
         navController = homeFragment.findNavController(),
         tabCounter = toolbarBinding.tabButton,
         showLongPressMenu = !context.isLargeWindow(),
+        settings = context.settings(),
     )
 
     private fun initLayoutParameters() {
@@ -222,9 +226,9 @@ internal class HomeToolbarView(
 
                 homeBinding.homeAppBar.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                     topMargin =
-                        context.resources.getDimensionPixelSize(R.dimen.home_fragment_top_toolbar_header_margin) +
+                        context.pixelSizeFor(R.dimen.home_fragment_top_toolbar_header_margin) +
                         if (isTabletAndTabStripEnabled) {
-                            context.resources.getDimensionPixelSize(R.dimen.tab_strip_height)
+                            context.pixelSizeFor(R.dimen.tab_strip_height)
                         } else {
                             0
                         }
@@ -237,10 +241,8 @@ internal class HomeToolbarView(
 
     override fun updateAddressBarVisibility(isVisible: Boolean) {
         if (isVisible) {
-            toolbarBinding.toolbarWrapper.startAnimation(AnimationUtils.loadAnimation(context, R.anim.fade_in))
             toolbarBinding.toolbarWrapper.visibility = View.VISIBLE
         } else {
-            toolbarBinding.toolbarWrapper.startAnimation(AnimationUtils.loadAnimation(context, R.anim.fade_out))
             toolbarBinding.toolbarWrapper.visibility = View.INVISIBLE
         }
     }

@@ -4,16 +4,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "DOMLocalization.h"
+
 #include "js/ForOfIterator.h"  // JS::ForOfIterator
 #include "json/json.h"
-#include "nsContentUtils.h"
-#include "nsIScriptError.h"
-#include "DOMLocalization.h"
-#include "mozilla/intl/L10nRegistry.h"
-#include "mozilla/intl/LocaleService.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/L10nOverlays.h"
+#include "mozilla/intl/L10nRegistry.h"
+#include "mozilla/intl/LocaleService.h"
+#include "nsContentUtils.h"
+#include "nsIScriptError.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

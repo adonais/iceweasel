@@ -33,7 +33,7 @@ class BottomToolbarContainerView(
 ) {
 
     val toolbarContainerView = ToolbarContainerView(context).apply {
-        id = R.id.toolbar_navbar_container
+        id = R.id.navigation_bar
     }
     private val composeView = ComposeView(context).apply {
         setContent {

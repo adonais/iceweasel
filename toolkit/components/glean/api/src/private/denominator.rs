@@ -30,8 +30,8 @@ pub enum DenominatorMetric {
     Child(ChildMetricMeta),
 }
 
-crate::define_metric_metadata_getter!(DenominatorMetric, DENOMINATOR_MAP);
-crate::define_metric_namer!(DenominatorMetric);
+define_metric_metadata_getter!(DenominatorMetric, DENOMINATOR_MAP);
+define_metric_namer!(DenominatorMetric);
 
 impl DenominatorMetric {
     /// The constructor used by automatically generated metrics.

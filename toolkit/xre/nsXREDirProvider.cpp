@@ -43,6 +43,7 @@
 #ifdef MOZ_BACKGROUNDTASKS
 #  include "mozilla/BackgroundTasks.h"
 #endif
+#include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/Components.h"
 #include "mozilla/Services.h"
 #include "mozilla/Omnijar.h"
@@ -1153,6 +1154,9 @@ nsresult nsXREDirProvider::GetSystemExtensionsDirectory(nsIFile** aFile) {
 
 nsresult nsXREDirProvider::GetUserDataDirectory(nsIFile** aFile, bool aLocal) {
   nsCOMPtr<nsIFile> localDir;
+  nsCOMPtr<nsIFile> customDir = mozilla::GetFileFromEnv("MOZ_APP_DATA");
+  nsCOMPtr<nsIFile> customLocalDir =
+      mozilla::GetFileFromEnv("MOZ_LOCAL_APP_DATA");
 
   if (aLocal && gDataDirProfileLocal) {
     return gDataDirProfileLocal->Clone(aFile);
@@ -1161,8 +1165,15 @@ nsresult nsXREDirProvider::GetUserDataDirectory(nsIFile** aFile, bool aLocal) {
     return gDataDirProfile->Clone(aFile);
   }
 
-  nsresult rv = GetUserDataDirectoryHome(getter_AddRefs(localDir), aLocal);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv;
+  if (aLocal && customLocalDir) {
+    localDir = customLocalDir;
+  } else if (!aLocal && customDir) {
+    localDir = customDir;
+  } else {
+    rv = GetUserDataDirectoryHome(getter_AddRefs(localDir), aLocal);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   rv = AppendProfilePath(localDir, aLocal);
   NS_ENSURE_SUCCESS(rv, rv);

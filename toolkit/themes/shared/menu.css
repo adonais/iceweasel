@@ -2,15 +2,29 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
-
 menupopup,
 panel {
-  --menu-icon-opacity: 1;
+  --menu-arrow-opacity: 1;
   --menu-arrow-size: 1em;
   --menuitem-border-radius: 3px;
   --menuitem-margin: 0px;
   --menuitem-padding: 0.5em 1em;
+
+  --badge-text-color: var(--text-color-deemphasized);
+  --badge-background-color: transparent;
+  --badge-border-color: currentColor;
+
+  --badge-filled-text-color: light-dark(var(--color-white), var(--color-gray-100));
+  --badge-filled-background-color: light-dark(var(--color-green-70), var(--color-green-40));
+  --badge-filled-border-color: light-dark(rgba(251, 251, 254, 0.4), rgba(21, 20, 26, 0.4));
+
+  @media (forced-colors) {
+    --badge-text-color: CanvasText;
+    --badge-background-color: Canvas;
+    --badge-filled-border-color: CanvasText;
+    --badge-filled-text-color: AccentColorText;
+    --badge-filled-background-color: AccentColor;
+  }
 
   @media (-moz-platform: linux) {
     --menuitem-padding: 0.25em 0.5em;
@@ -23,7 +37,7 @@ panel {
     --menu-arrow-size: max(1em, 16px);
 
     @media (prefers-color-scheme: light) {
-      --menu-icon-opacity: 0.7;
+      --menu-arrow-opacity: 0.7;
     }
   }
 }
@@ -165,17 +179,8 @@ menubar > menu {
     padding-block: 2px;
     padding-inline: 7px 5px;
     margin: 1px 0;
-
-    &[_moz-menuactive] {
-      color: inherit;
-      background-color: transparent;
-    }
-
-    &[open] {
-      color: -moz-menuhovertext;
-      background-color: -moz-menuhover;
-    }
   }
+
   @media (-moz-platform: windows) {
     padding: 1px 6px 2px;
 
@@ -214,6 +219,8 @@ menucaption {
   flex-shrink: 0;
   list-style-image: none;
   max-width: 42em;
+  /* Prevents the icon from being inherited to submenus. */
+  --menuitem-icon: normal;
 }
 
 menu,
@@ -257,7 +264,7 @@ menupopup > menu::after {
 
   -moz-context-properties: fill, fill-opacity;
   fill: currentColor;
-  fill-opacity: var(--menu-icon-opacity);
+  fill-opacity: var(--menu-arrow-opacity);
 
   margin-inline: 1em 0;
   @media (-moz-platform: linux) {
@@ -319,6 +326,13 @@ menuitem[highlightable] > .menu-text {
 .menu-icon {
   width: 16px;
   height: 16px;
+  box-sizing: border-box;
+
+  /* Empty icons shouldn't take up any space */
+  display: none;
+  /* This avoids showing the broken image border for non-iconic items when
+   * adding a gutter */
+  visibility: hidden;
 
   @media (-moz-platform: linux) {
     /* Matches inline menuitem padding */
@@ -332,10 +346,14 @@ menuitem[highlightable] > .menu-text {
     margin-block: -2px;
     margin-inline-end: 6px;
   }
-  /* Empty icons shouldn't take up any space */
-  menuitem:not(.menuitem-iconic, [image]) > &,
-  menu:not(.menu-iconic) > & {
-    display: none;
+
+  menuitem:where(.menuitem-iconic, [image]) > &,
+  menu:where(.menu-iconic) > & {
+    &:where(:not([srcset])) {
+      content: var(--menuitem-icon);
+    }
+    display: revert;
+    visibility: inherit;
   }
 }
 
@@ -343,12 +361,14 @@ menuitem[highlightable] > .menu-text {
 
 /* On linux, we use regular checkboxes and radio buttons */
 @media (-moz-platform: linux) {
-  menuitem:is([type="checkbox"], [checked="true"]) .menu-icon {
+  menuitem:is([type="checkbox"], [checked="true"]) > .menu-icon {
+    visibility: inherit;
     appearance: auto;
     -moz-default-appearance: checkbox;
   }
 
-  menuitem[type="radio"] .menu-icon {
+  menuitem[type="radio"] > .menu-icon {
+    visibility: inherit;
     appearance: auto;
     -moz-default-appearance: radio;
   }
@@ -361,10 +381,11 @@ menuitem[highlightable] > .menu-text {
      Windows versions looks pretty bad with the Win10 styles, so for now we'll
      insert a generic checkmark icon for both types. */
   menuitem[checked="true"] > .menu-icon {
+    visibility: inherit;
     -moz-context-properties: fill, fill-opacity;
     fill: currentColor;
-    fill-opacity: var(--menu-icon-opacity);
-    list-style-image: url("chrome://global/skin/icons/menu-check.svg");
+    fill-opacity: var(--menu-arrow-opacity);
+    content: url("chrome://global/skin/icons/menu-check.svg");
   }
 }
 
@@ -402,9 +423,16 @@ menupopup[needsgutter] {
 
 menuitem[badge]::after {
   border-radius: var(--border-radius-small);
-  border: 1px solid;
-  color: var(--text-color-deemphasized);
+  border: 1px solid var(--badge-border-color);
+  color: var(--badge-text-color);
+  background-color: var(--badge-background-color);
   content: attr(badge);
   margin-inline-start: var(--space-small);
   padding: var(--space-xxsmall) var(--space-small);
+}
+
+menuitem.badge-new::after {
+  border-color: var(--badge-filled-border-color);
+  color: var(--badge-filled-text-color);
+  background-color: var(--badge-filled-background-color);
 }

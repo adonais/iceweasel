@@ -35,6 +35,7 @@ import mozilla.components.lib.crash.GleanMetrics.Pings
 import mozilla.components.lib.crash.MinidumpAnalyzer
 import mozilla.components.lib.crash.db.Breadcrumb
 import mozilla.components.lib.crash.db.toBreadcrumb
+import mozilla.components.lib.crash.service.CrashReport.Annotation
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.content.isMainProcess
 import mozilla.telemetry.glean.private.BooleanMetricType
@@ -130,43 +131,47 @@ class GleanCrashReporterService(
                     // We ignore RemoteType and UptimeTS from extras as we have that information in
                     // the Crash object or tracked manually (respectively).
 
-                    GleanCrash.appChannel.setIfNonNull(extras["ReleaseChannel"])
-                    GleanCrash.appDisplayVersion.setIfNonNull(extras["Version"])
-                    GleanCrash.appBuild.setIfNonNull(extras["BuildID"])
-                    GleanCrash.asyncShutdownTimeout.setAsyncShutdownTimeoutIfNonNull(extras["AsyncShutdownTimeout"])
-                    GleanCrash.backgroundTaskName.setIfNonNull(extras["BackgroundTaskName"])
-                    GleanCrash.eventLoopNestingLevel.setIfNonNull(extras["EventLoopNestingLevel"])
-                    GleanCrash.fontName.setIfNonNull(extras["FontName"])
-                    GleanCrash.gpuProcessLaunch.setIfNonNull(extras["GPUProcessLaunchCount"])
-                    GleanCrash.ipcChannelError.setIfNonNull(extras["ipc_channel_error"])
-                    GleanCrash.isGarbageCollecting.setIfNonNull(extras["IsGarbageCollecting"])
-                    GleanCrash.mainThreadRunnableName.setIfNonNull(extras["MainThreadRunnableName"])
-                    GleanCrash.mozCrashReason.setIfNonNull(extras["MozCrashReason"])
-                    GleanCrash.profilerChildShutdownPhase.setIfNonNull(extras["ProfilerChildShutdownPhase"])
-                    GleanCrash.quotaManagerShutdownTimeout.setQuotaManagerShutdownTimeoutIfNonNull(
-                        extras["QuotaManagerShutdownTimeout"],
+                    val read: (Annotation) -> JsonElement? = { a -> extras[a.toString()] }
+
+                    GleanCrash.appChannel.setIfNonNull(read(Annotation.ReleaseChannel))
+                    GleanCrash.appDisplayVersion.setIfNonNull(read(Annotation.Version))
+                    GleanCrash.appBuild.setIfNonNull(read(Annotation.BuildID))
+                    GleanCrash.asyncShutdownTimeout.setAsyncShutdownTimeoutIfNonNull(
+                        read(Annotation.AsyncShutdownTimeout),
                     )
-                    GleanCrash.shutdownProgress.setIfNonNull(extras["ShutdownProgress"])
-                    GleanCrash.stackTraces.setStackTracesIfNonNull(extras["StackTraces"])
+                    GleanCrash.backgroundTaskName.setIfNonNull(read(Annotation.BackgroundTaskName))
+                    GleanCrash.eventLoopNestingLevel.setIfNonNull(read(Annotation.EventLoopNestingLevel))
+                    GleanCrash.fontName.setIfNonNull(read(Annotation.FontName))
+                    GleanCrash.gpuProcessLaunch.setIfNonNull(read(Annotation.GPUProcessLaunchCount))
+                    GleanCrash.ipcChannelError.setIfNonNull(read(Annotation.ipc_channel_error))
+                    GleanCrash.isGarbageCollecting.setIfNonNull(read(Annotation.IsGarbageCollecting))
+                    GleanCrash.mainThreadRunnableName.setIfNonNull(read(Annotation.MainThreadRunnableName))
+                    GleanCrash.mozCrashReason.setIfNonNull(read(Annotation.MozCrashReason))
+                    GleanCrash.profilerChildShutdownPhase.setIfNonNull(read(Annotation.ProfilerChildShutdownPhase))
+                    GleanCrash.quotaManagerShutdownTimeout.setQuotaManagerShutdownTimeoutIfNonNull(
+                        read(Annotation.QuotaManagerShutdownTimeout),
+                    )
+                    GleanCrash.shutdownProgress.setIfNonNull(read(Annotation.ShutdownProgress))
+                    GleanCrash.stackTraces.setStackTracesIfNonNull(read(Annotation.StackTraces))
                     // Overrides the original `startup` parameter to `Ping` when present
-                    GleanCrash.startup.setIfNonNull(extras["StartupCrash"])
+                    GleanCrash.startup.setIfNonNull(read(Annotation.StartupCrash))
 
-                    GleanEnvironment.headlessMode.setIfNonNull(extras["HeadlessMode"])
+                    GleanEnvironment.headlessMode.setIfNonNull(read(Annotation.HeadlessMode))
 
-                    GleanMemory.availableCommit.setIfNonNull(extras["AvailablePageFile"])
-                    GleanMemory.availablePhysical.setIfNonNull(extras["AvailablePhysicalMemory"])
-                    GleanMemory.availableSwap.setIfNonNull(extras["AvailableSwapMemory"])
-                    GleanMemory.availableVirtual.setIfNonNull(extras["AvailableVirtualMemory"])
-                    GleanMemory.jsLargeAllocationFailure.setIfNonNull(extras["JSLargeAllocationFailure"])
-                    GleanMemory.jsOutOfMemory.setIfNonNull(extras["JSOutOfMemory"])
-                    GleanMemory.lowPhysical.setIfNonNull(extras["LowPhysicalMemoryEvents"])
-                    GleanMemory.oomAllocationSize.setIfNonNull(extras["OOMAllocationSize"])
-                    GleanMemory.purgeablePhysical.setIfNonNull(extras["PurgeablePhysicalMemory"])
-                    GleanMemory.systemUsePercentage.setIfNonNull(extras["SystemMemoryUsePercentage"])
-                    GleanMemory.texture.setIfNonNull(extras["TextureUsage"])
-                    GleanMemory.totalPageFile.setIfNonNull(extras["TotalPageFile"])
-                    GleanMemory.totalPhysical.setIfNonNull(extras["TotalPhysicalMemory"])
-                    GleanMemory.totalVirtual.setIfNonNull(extras["TotalVirtualMemory"])
+                    GleanMemory.availableCommit.setIfNonNull(read(Annotation.AvailablePageFile))
+                    GleanMemory.availablePhysical.setIfNonNull(read(Annotation.AvailablePhysicalMemory))
+                    GleanMemory.availableSwap.setIfNonNull(read(Annotation.AvailableSwapMemory))
+                    GleanMemory.availableVirtual.setIfNonNull(read(Annotation.AvailableVirtualMemory))
+                    GleanMemory.jsLargeAllocationFailure.setIfNonNull(read(Annotation.JSLargeAllocationFailure))
+                    GleanMemory.jsOutOfMemory.setIfNonNull(read(Annotation.JSOutOfMemory))
+                    GleanMemory.lowPhysical.setIfNonNull(read(Annotation.LowPhysicalMemoryEvents))
+                    GleanMemory.oomAllocationSize.setIfNonNull(read(Annotation.OOMAllocationSize))
+                    GleanMemory.purgeablePhysical.setIfNonNull(read(Annotation.PurgeablePhysicalMemory))
+                    GleanMemory.systemUsePercentage.setIfNonNull(read(Annotation.SystemMemoryUsePercentage))
+                    GleanMemory.texture.setIfNonNull(read(Annotation.TextureUsage))
+                    GleanMemory.totalPageFile.setIfNonNull(read(Annotation.TotalPageFile))
+                    GleanMemory.totalPhysical.setIfNonNull(read(Annotation.TotalPhysicalMemory))
+                    GleanMemory.totalVirtual.setIfNonNull(read(Annotation.TotalVirtualMemory))
                 }
 
                 private fun StringMetricType.setIfNonNull(element: JsonElement?) {

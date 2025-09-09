@@ -5,19 +5,21 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ContentProcess.h"
+
 #include "mozilla/Preferences.h"
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 #  include <stdlib.h>
+
 #  include "mozilla/Sandbox.h"
 #  include "mozilla/SandboxSettings.h"
 #endif
 
-#include "nsAppRunner.h"
-#include "mozilla/ipc/BackgroundChild.h"
-#include "mozilla/ipc/ProcessUtils.h"
 #include "mozilla/GeckoArgs.h"
 #include "mozilla/Omnijar.h"
+#include "mozilla/ipc/BackgroundChild.h"
+#include "mozilla/ipc/ProcessUtils.h"
+#include "nsAppRunner.h"
 #include "nsCategoryManagerUtils.h"
 
 namespace mozilla::dom {

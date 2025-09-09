@@ -18,6 +18,7 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/AbortSignal.h"
 #include "mozilla/dom/BindingCallContext.h"
+#include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/QueueWithSizes.h"
 #include "mozilla/dom/QueuingStrategyBinding.h"
 #include "mozilla/dom/ReadRequest.h"
@@ -27,8 +28,6 @@
 #include "mozilla/dom/WritableStreamDefaultController.h"
 #include "mozilla/dom/WritableStreamDefaultWriter.h"
 #include "nsCOMPtr.h"
-
-#include "mozilla/dom/Promise-inl.h"
 #include "nsIGlobalObject.h"
 #include "nsISupports.h"
 

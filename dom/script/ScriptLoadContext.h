@@ -10,23 +10,21 @@
 #include "js/AllocPolicy.h"
 #include "js/ColumnNumber.h"    // JS::ColumnNumberOneOrigin
 #include "js/CompileOptions.h"  // JS::OwningCompileOptions
-#include "js/experimental/JSStencil.h"  // JS::FrontendContext, JS::Stencil, JS::InstantiationStorage
 #include "js/RootingAPI.h"
 #include "js/SourceText.h"
 #include "js/Transcoding.h"  // JS::TranscodeResult
 #include "js/TypeDecls.h"
+#include "js/experimental/JSStencil.h"  // JS::FrontendContext, JS::Stencil, JS::InstantiationStorage
 #include "js/loader/LoadContextBase.h"
 #include "js/loader/ScriptKind.h"
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/CORSMode.h"
-#include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/net/UrlClassifierCommon.h"
 #include "mozilla/PreloaderBase.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -34,6 +32,8 @@
 #include "mozilla/Utf8.h"            // mozilla::Utf8Unit
 #include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
+#include "mozilla/dom/SRIMetadata.h"
+#include "mozilla/net/UrlClassifierCommon.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIClassifiedChannel.h"

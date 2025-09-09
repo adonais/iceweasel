@@ -817,11 +817,7 @@
       }
 
       var style = document.defaultView.getComputedStyle(aItem);
-      return (
-        style.display != "none" &&
-        style.visibility == "visible" &&
-        style.MozUserInput != "none"
-      );
+      return style.display != "none" && style.visibility == "visible";
     }
 
     _selectTimeoutHandler(aMe) {

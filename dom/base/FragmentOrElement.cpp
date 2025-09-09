@@ -8,98 +8,90 @@
  * Base class for all element classes and DocumentFragment.
  */
 
-#include "mozilla/ArrayUtils.h"
-#include "mozilla/Likely.h"
-#include "mozilla/MemoryReporting.h"
-#include "mozilla/StaticPtr.h"
-
 #include "mozilla/dom/FragmentOrElement.h"
-#include "mozilla/dom/AncestorIterator.h"
+
 #include "DOMIntersectionObserver.h"
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/AsyncEventDispatcher.h"
+#include "mozilla/DeclarationBlock.h"
 #include "mozilla/EffectSet.h"
+#include "mozilla/ElementAnimationData.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
-#include "mozilla/ElementAnimationData.h"
-#include "mozilla/DeclarationBlock.h"
 #include "mozilla/HTMLEditor.h"
-#include "mozilla/mozInlineSpellChecker.h"
+#include "mozilla/InternalMutationEvent.h"
+#include "mozilla/Likely.h"
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RestyleManager.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/TouchEvents.h"
 #include "mozilla/URLExtraData.h"
+#include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/Attr.h"
-#include "mozilla/dom/RadioGroupContainer.h"
-#include "mozilla/dom/UnbindContext.h"
-#include "nsDOMAttributeMap.h"
-#include "nsAtom.h"
-#include "mozilla/dom/NodeInfo.h"
+#include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/CloseWatcher.h"
-#include "mozilla/dom/Event.h"
-#include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/Event.h"
+#include "mozilla/dom/NodeInfo.h"
+#include "mozilla/dom/RadioGroupContainer.h"
+#include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/StylePropertyMap.h"
 #include "mozilla/dom/StylePropertyMapReadOnly.h"
-#include "nsIControllers.h"
-#include "nsIDocumentEncoder.h"
-#include "nsFocusManager.h"
-#include "nsNetUtil.h"
-#include "nsIFrame.h"
-#include "nsIAnonymousContentCreator.h"
-#include "nsPresContext.h"
-#include "nsString.h"
-#include "nsDOMCSSAttrDeclaration.h"
-#include "nsNameSpaceManager.h"
+#include "mozilla/dom/UnbindContext.h"
+#include "mozilla/mozInlineSpellChecker.h"
+#include "nsAtom.h"
 #include "nsContentList.h"
+#include "nsDOMAttributeMap.h"
+#include "nsDOMCSSAttrDeclaration.h"
 #include "nsDOMTokenList.h"
 #include "nsError.h"
+#include "nsFocusManager.h"
+#include "nsIAnonymousContentCreator.h"
+#include "nsIControllers.h"
+#include "nsIDocumentEncoder.h"
+#include "nsIFrame.h"
+#include "nsNameSpaceManager.h"
+#include "nsNetUtil.h"
+#include "nsPresContext.h"
+#include "nsString.h"
 #include "nsXULElement.h"
-#include "mozilla/InternalMutationEvent.h"
-#include "mozilla/MouseEvents.h"
 #ifdef DEBUG
 #  include "nsRange.h"
 #endif
 
-#include "nsFrameLoader.h"
-#include "nsPIDOMWindow.h"
-#include "nsLayoutUtils.h"
-#include "nsGkAtoms.h"
-#include "nsContentUtils.h"
-#include "nsTextFragment.h"
-#include "nsWindowSizes.h"
-
-#include "nsIWidget.h"
-
-#include "nsNodeInfoManager.h"
-#include "nsGenericHTMLElement.h"
-#include "nsContentCreatorFunctions.h"
-#include "nsView.h"
 #include "ChildIterator.h"
-#include "mozilla/dom/NodeListBinding.h"
-#include "mozilla/dom/MutationObservers.h"
-#include "nsCCUncollectableMarker.h"
-
+#include "NodeUbiReporting.h"
 #include "mozAutoDocUpdate.h"
-
+#include "mozilla/BloomFilter.h"
 #include "mozilla/Sprintf.h"
-#include "nsDOMMutationObserver.h"
-#include "nsWrapperCacheInlines.h"
-#include "nsCycleCollector.h"
-#include "xpcpublic.h"
-
-#include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
+#include "mozilla/dom/MutationObservers.h"
+#include "mozilla/dom/NodeListBinding.h"
 #include "mozilla/dom/SVGUseElement.h"
-
-#include "nsIContentInlines.h"
+#include "mozilla/dom/ShadowRoot.h"
+#include "nsCCUncollectableMarker.h"
 #include "nsChildContentList.h"
-#include "mozilla/BloomFilter.h"
-
-#include "NodeUbiReporting.h"
+#include "nsContentCreatorFunctions.h"
+#include "nsContentUtils.h"
+#include "nsCycleCollector.h"
+#include "nsDOMMutationObserver.h"
+#include "nsFrameLoader.h"
+#include "nsGenericHTMLElement.h"
+#include "nsGkAtoms.h"
+#include "nsIWidget.h"
+#include "nsLayoutUtils.h"
+#include "nsNodeInfoManager.h"
+#include "nsPIDOMWindow.h"
+#include "nsView.h"
+#include "nsWindowSizes.h"
+#include "nsWrapperCacheInlines.h"
+#include "xpcpublic.h"
 
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
@@ -155,8 +147,9 @@ nsIContent* nsIContent::FindFirstNonChromeOnlyAccessContent() const {
   return nullptr;
 }
 
-void nsIContent::UnbindFromTree() {
+void nsIContent::UnbindFromTree(nsINode* aNewParent) {
   UnbindContext context(*this);
+  context.SetIsMove(aNewParent != nullptr);
   UnbindFromTree(context);
 }
 
@@ -1837,7 +1830,9 @@ NS_INTERFACE_MAP_END_INHERITING(nsIContent)
 
 //----------------------------------------------------------------------
 
-const nsTextFragment* FragmentOrElement::GetText() { return nullptr; }
+const CharacterDataBuffer* FragmentOrElement::GetCharacterDataBuffer() const {
+  return nullptr;
+}
 
 uint32_t FragmentOrElement::TextLength() const {
   // We can remove this assertion if it turns out to be useful to be able

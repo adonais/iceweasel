@@ -747,3 +747,8 @@ void* chunk_alloc(size_t aSize, size_t aAlignment, bool aBase) {
 // it is used.
 template <>
 extent_node_t* ExtentAlloc::sFirstFree = nullptr;
+
+bool arena_chunk_t::IsEmpty() {
+  return (mPageMap[gChunkHeaderNumPages].bits &
+          (~gPageSizeMask | CHUNK_MAP_ALLOCATED)) == gMaxLargeClass;
+}

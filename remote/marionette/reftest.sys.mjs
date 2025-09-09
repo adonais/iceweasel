@@ -71,6 +71,7 @@ reftest.Runner = class {
     this.lastURL = null;
     this.useRemoteTabs = lazy.AppInfo.browserTabsRemoteAutostart;
     this.useRemoteSubframes = lazy.AppInfo.fissionAutostart;
+    this.cacheScreenshots = true;
   }
 
   /**
@@ -86,7 +87,7 @@ reftest.Runner = class {
    * @param {string} screenshotMode
    *     String enum representing when screenshots should be taken
    */
-  setup(urlCount, screenshotMode, isPrint = false) {
+  setup(urlCount, screenshotMode, isPrint = false, cacheScreenshots = true) {
     this.isPrint = isPrint;
 
     lazy.assert.open(this.driver.getBrowsingContext({ top: true }));
@@ -103,6 +104,8 @@ reftest.Runner = class {
     if (isPrint) {
       this.loadPdfJs();
     }
+
+    this.cacheScreenshots = cacheScreenshots;
 
     ChromeUtils.registerWindowActor("MarionetteReftest", {
       kind: "JSWindowActor",
@@ -703,7 +706,7 @@ reftest.Runner = class {
     let browserRect = win.gBrowser.getBoundingClientRect();
     let canvas = null;
     let remainingCount = this.urlCount.get(url) || 1;
-    let cache = remainingCount > 1;
+    let cache = this.cacheScreenshots && remainingCount > 1;
     let cacheKey = browserRect.width + "x" + browserRect.height;
     lazy.logger.debug(
       `screenshot ${url} remainingCount: ` +

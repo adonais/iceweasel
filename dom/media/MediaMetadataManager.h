@@ -7,12 +7,11 @@
 #if !defined(MediaMetadataManager_h__)
 #  define MediaMetadataManager_h__
 
-#  include "mozilla/AbstractThread.h"
-#  include "mozilla/LinkedList.h"
-
 #  include "MediaEventSource.h"
 #  include "TimeUnits.h"
 #  include "VideoUtils.h"
+#  include "mozilla/AbstractThread.h"
+#  include "mozilla/LinkedList.h"
 
 namespace mozilla {
 

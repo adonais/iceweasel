@@ -1173,7 +1173,7 @@ static hb_bool_t HBUnicodeCompose(hb_unicode_funcs_t* ufuncs, hb_codepoint_t a,
 static hb_bool_t HBUnicodeDecompose(hb_unicode_funcs_t* ufuncs,
                                     hb_codepoint_t ab, hb_codepoint_t* a,
                                     hb_codepoint_t* b, void* user_data) {
-#ifdef MOZ_WIDGET_ANDROID
+#if defined(MOZ_WIDGET_ANDROID) && !defined(NIGHTLY_BUILD)
   // Hack for the SamsungDevanagari font, bug 1012365:
   // support U+0972 by decomposing it.
   if (ab == 0x0972) {

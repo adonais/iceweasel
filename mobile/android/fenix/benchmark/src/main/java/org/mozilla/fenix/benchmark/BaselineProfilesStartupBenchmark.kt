@@ -5,6 +5,7 @@
 package org.mozilla.fenix.benchmark
 
 import android.os.Build
+import android.os.SystemClock
 import androidx.annotation.RequiresApi
 import androidx.benchmark.macro.BaselineProfileMode
 import androidx.benchmark.macro.CompilationMode
@@ -67,6 +68,8 @@ class BaselineProfilesStartupBenchmark {
             },
         ) {
             startActivityAndWait()
+
+            SystemClock.sleep(1000)
             killProcess()
         }
 }

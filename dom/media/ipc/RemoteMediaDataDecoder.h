@@ -5,9 +5,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #ifndef include_dom_media_ipc_RemoteMediaDataDecoder_h
 #define include_dom_media_ipc_RemoteMediaDataDecoder_h
-#include "PlatformDecoderModule.h"
-
 #include "MediaData.h"
+#include "PlatformDecoderModule.h"
 
 namespace mozilla {
 

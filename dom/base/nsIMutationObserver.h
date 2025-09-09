@@ -7,10 +7,9 @@
 #ifndef nsIMutationObserver_h
 #define nsIMutationObserver_h
 
-#include "nsISupports.h"
-
 #include "mozilla/Assertions.h"
 #include "mozilla/DoublyLinkedList.h"
+#include "nsISupports.h"
 
 class nsAttrValue;
 class nsAtom;
@@ -104,6 +103,7 @@ struct CharacterDataChangeInfo {
 struct ContentAppendInfo {
   MutationEffectOnScript mMutationEffectOnScript =
       MutationEffectOnScript::DropTrustWorthiness;
+  nsINode* mOldParent = nullptr;
 };
 
 /**
@@ -121,6 +121,7 @@ struct ContentRemoveInfo {
 
   MutationEffectOnScript mMutationEffectOnScript =
       MutationEffectOnScript::DropTrustWorthiness;
+  nsINode* mNewParent = nullptr;
 };
 
 /**

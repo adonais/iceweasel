@@ -5,9 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "StorageAccessPermissionRequest.h"
-#include "nsGlobalWindowInner.h"
-#include "mozilla/StaticPrefs_dom.h"
+
 #include <cstdlib>
+
+#include "mozilla/StaticPrefs_dom.h"
+#include "nsGlobalWindowInner.h"
 
 namespace mozilla::dom {
 

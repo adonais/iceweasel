@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FetchChild.h"
+
 #include "FetchLog.h"
 #include "FetchObserver.h"
 #include "FetchUtil.h"
@@ -11,8 +12,8 @@
 #include "Response.h"
 #include "mozilla/ConsoleReportCollector.h"
 #include "mozilla/SchedulerGroup.h"
-#include "mozilla/dom/PerformanceTiming.h"
 #include "mozilla/dom/PerformanceStorage.h"
+#include "mozilla/dom/PerformanceTiming.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RemoteWorkerChild.h"
 #include "mozilla/dom/SecurityPolicyViolationEventBinding.h"

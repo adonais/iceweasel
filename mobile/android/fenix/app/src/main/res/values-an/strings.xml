@@ -34,13 +34,7 @@
   <string name="tab_tray_collection_button_multiselect_content_description">Alzar las pestanyas triadas en a colección</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s ye produciu per Mozilla.</string>
-  <!--
-    Private Browsing
-
-    Explanation for private browsing displayed to users on home view when they first enable private mode.
-    %1$s is the name of the app (for example "Firefox").
-  -->
-  <string name="private_browsing_placeholder_description_2" moz:removedIn="141" tools:ignore="UnusedResources">%1$s limpia lo tuyo historial de busquedas y de navegación en as pestanyas privadas quan las zarras u en salir de l’aplicación. Encara que no te fa invisible debant d’os puestos web u d’o tuyo furnidor de servicios, ye mas facil salvaguardar la tuya vida privada de qualsequier persona que faga servir este dispositivo.</string>
+  <!-- Private Browsing -->
   <string name="private_browsing_common_myths">Mitos comuns sobre la navegación privada</string>
   <!--
     Open in App "contextual feature recommendation" (CFR)
@@ -52,6 +46,8 @@
   <string name="open_in_app_cfr_positive_button_text">Ir ta los achustes</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Descartar</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">La camara precisa acceso. Ves ta los achustes d\'Android, toca \"permisos\" y toca \"permitir\".</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -276,8 +272,6 @@
   <string name="preferences_account_sync_error">Reconnectar pa reprener la sincronización</string>
   <!-- Preference for language -->
   <string name="preferences_language">Idioma</string>
-  <!-- Preference for data choices -->
-  <string name="preferences_data_choices" tools:ignore="UnusedResources" moz:removedIn="141">Tría de datos</string>
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">Replega de datos</string>
   <!-- Preference for developers -->
@@ -302,8 +296,6 @@
   <string name="preferences_enable_autocomplete_urls">Autocompletar URLs</string>
   <!-- Preference for open links in third party apps -->
   <string name="preferences_open_links_in_apps">Ubrir vinclos en aplicacions</string>
-  <!-- Preference for open download with an external download manager app -->
-  <string name="preferences_external_download_manager" tools:ignore="UnusedResources" moz:removedIn="141">Chestor de descargas externo</string>
   <!-- Preference for notifications -->
   <string name="preferences_notifications">Notificacions</string>
   <!-- Button caption to confirm the add-on collection configuration -->
@@ -326,7 +318,7 @@
   -->
   <string name="customize_toggle_recently_visited">Visitadas fa poco</string>
   <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action">Veyer</string>
+  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">Veyer</string>
   <!-- Preference for triggering sync -->
   <string name="preferences_sync_now">Sincronizar agora</string>
   <!-- Preference category for sync -->
@@ -854,20 +846,16 @@
     Text shown in snackbar when user deletes a collection
   -->
   <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Colección borrada</string>
-  <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Se cambió lo nombre a la colección</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Pestanya zarrada</string>
   <!-- Text shown in snackbar when user closes all tabs -->
   <string name="snackbar_tabs_closed">Pestanyas zarradas</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">Pestanya privada zarrada</string>
-  <!-- Text shown in snackbar when user closes all private tabs -->
-  <string name="snackbar_private_tabs_closed" moz:removedIn="141" tools:ignore="UnusedResources">Pestanyas privada zarradas</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">DESFER</string>
   <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed">Puesto borrau</string>
+  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">Puesto borrau</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned

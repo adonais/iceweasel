@@ -361,7 +361,7 @@ async function doDismissTest(command, allDismissed) {
   let title = details.element.row.querySelector(".urlbarView-title");
   let titleL10nId = title.dataset.l10nId;
   if (allDismissed) {
-    Assert.equal(titleL10nId, "firefox-suggest-dismissal-acknowledgment-all");
+    Assert.equal(titleL10nId, "urlbar-result-dismissal-acknowledgment-all");
   } else {
     Assert.equal(titleL10nId, "firefox-suggest-dismissal-acknowledgment-one");
   }

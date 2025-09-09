@@ -5,10 +5,11 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/XRRigidTransform.h"
-#include "mozilla/dom/DOMPoint.h"
-#include "mozilla/dom/Pose.h"
-#include "mozilla/dom/DOMPointBinding.h"
+
 #include "mozilla/HoldDropJSObjects.h"
+#include "mozilla/dom/DOMPoint.h"
+#include "mozilla/dom/DOMPointBinding.h"
+#include "mozilla/dom/Pose.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla::dom {

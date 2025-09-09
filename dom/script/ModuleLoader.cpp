@@ -4,38 +4,38 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "ScriptLoader.h"
 #include "ModuleLoader.h"
 
-#include "jsapi.h"
+#include "GeckoProfiler.h"
+#include "ScriptLoader.h"
 #include "js/CompileOptions.h"  // JS::CompileOptions, JS::InstantiateOptions
 #include "js/ContextOptions.h"  // JS::ContextOptionsRef
-#include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
-#include "js/experimental/JSStencil.h"  // JS::Stencil, JS::CompileModuleScriptToStencil, JS::InstantiateModuleStencil
 #include "js/MemoryFunctions.h"
 #include "js/Modules.h"  // JS::FinishDynamicModuleImport, JS::{G,S}etModuleResolveHook, JS::Get{ModulePrivate,ModuleScript,RequestedModule{s,Specifier,SourcePos}}, JS::SetModule{DynamicImport,Metadata}Hook
 #include "js/PropertyAndElement.h"  // JS_DefineProperty
 #include "js/Realm.h"
 #include "js/SourceText.h"
+#include "js/experimental/JSStencil.h"  // JS::Stencil, JS::CompileModuleScriptToStencil, JS::InstantiateModuleStencil
+#include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/loader/LoadedScript.h"
-#include "js/loader/ScriptLoadRequest.h"
-#include "js/loader/ModuleLoaderBase.h"
 #include "js/loader/ModuleLoadRequest.h"
-#include "mozilla/dom/RequestBinding.h"
+#include "js/loader/ModuleLoaderBase.h"
+#include "js/loader/ScriptLoadRequest.h"
+#include "jsapi.h"
 #include "mozilla/Assertions.h"
-#include "nsError.h"
-#include "xpcpublic.h"
-#include "GeckoProfiler.h"
-#include "nsContentSecurityManager.h"
-#include "nsIContent.h"
-#include "nsJSUtils.h"
 #include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/LoadInfo.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/RequestBinding.h"
+#include "nsContentSecurityManager.h"
+#include "nsError.h"
+#include "nsIContent.h"
 #include "nsIPrincipal.h"
-#include "mozilla/LoadInfo.h"
-#include "mozilla/Maybe.h"
+#include "nsJSUtils.h"
+#include "xpcpublic.h"
 
 using JS::SourceText;
 using namespace JS::loader;
@@ -362,14 +362,10 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateTopLevel(
     ScriptFetchOptions* aFetchOptions, const SRIMetadata& aIntegrity,
     nsIURI* aReferrer, ScriptLoadContext* aContext,
     ScriptLoadRequestType aRequestType) {
-  RefPtr<VisitedURLSet> visitedSet =
-      ModuleLoadRequest::NewVisitedSetForTopLevelImport(
-          aURI, JS::ModuleType::JavaScript);
-
-  RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, JS::ModuleType::JavaScript, aReferrerPolicy, aFetchOptions,
-      aIntegrity, aReferrer, aContext, ModuleLoadRequest::Kind::TopLevel, this,
-      visitedSet, nullptr);
+  RefPtr<ModuleLoadRequest> request =
+      new ModuleLoadRequest(aURI, JS::ModuleType::JavaScript, aReferrerPolicy,
+                            aFetchOptions, aIntegrity, aReferrer, aContext,
+                            ModuleLoadRequest::Kind::TopLevel, this, nullptr);
 
   GetScriptLoader()->TryUseCache(request, aElement, aFetchOptions->mNonce,
                                  aRequestType);
@@ -378,19 +374,22 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateTopLevel(
 }
 
 already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateStaticImport(
-    nsIURI* aURI, JS::ModuleType aModuleType, ModuleLoadRequest* aParent,
-    const mozilla::dom::SRIMetadata& aSriMetadata) {
+    nsIURI* aURI, JS::ModuleType aModuleType, ModuleScript* aReferrerScript,
+    const mozilla::dom::SRIMetadata& aSriMetadata,
+    JS::loader::LoadContextBase* aLoadContext,
+    JS::loader::ModuleLoaderBase* aLoader) {
   RefPtr<ScriptLoadContext> newContext = new ScriptLoadContext();
   newContext->mIsInline = false;
   // Propagated Parent values. TODO: allow child modules to use root module's
   // script mode.
-  newContext->mScriptMode = aParent->GetScriptLoadContext()->mScriptMode;
+  newContext->mScriptMode = aLoadContext->AsWindowContext()->mScriptMode;
 
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, aModuleType, aParent->ReferrerPolicy(), aParent->mFetchOptions,
-      aSriMetadata, aParent->mURI, newContext,
-      ModuleLoadRequest::Kind::StaticImport, aParent->mLoader,
-      aParent->mVisitedSet, aParent->GetRootModule());
+      aURI, aModuleType, aReferrerScript->ReferrerPolicy(),
+      aReferrerScript->GetFetchOptions(), aSriMetadata,
+      aReferrerScript->GetURI(), newContext,
+      ModuleLoadRequest::Kind::StaticImport, aLoader,
+      aLoadContext->mRequest->AsModuleRequest()->GetRootModule());
 
   GetScriptLoader()->TryUseCache(request);
 
@@ -398,10 +397,9 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateStaticImport(
 }
 
 already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateDynamicImport(
-    JSContext* aCx, nsIURI* aURI, JS::ModuleType aModuleType,
-    LoadedScript* aMaybeActiveScript, JS::Handle<JSString*> aSpecifier,
-    JS::Handle<JSObject*> aPromise) {
-  MOZ_ASSERT(aSpecifier);
+    JSContext* aCx, nsIURI* aURI, LoadedScript* aMaybeActiveScript,
+    JS::Handle<JSObject*> aModuleRequestObj, JS::Handle<JSObject*> aPromise) {
+  MOZ_ASSERT(aModuleRequestObj);
   MOZ_ASSERT(aPromise);
 
   RefPtr<ScriptFetchOptions> options = nullptr;
@@ -447,21 +445,18 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateDynamicImport(
   context->mIsInline = false;
   context->mScriptMode = ScriptLoadContext::ScriptMode::eAsync;
 
-  RefPtr<VisitedURLSet> visitedSet =
-      ModuleLoadRequest::NewVisitedSetForTopLevelImport(aURI, aModuleType);
-
+  JS::ModuleType moduleType = JS::GetModuleRequestType(aCx, aModuleRequestObj);
   SRIMetadata sriMetadata;
   GetImportMapSRI(aURI, baseURL, mLoader->GetConsoleReportCollector(),
                   &sriMetadata);
 
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, aModuleType, referrerPolicy, options, sriMetadata, baseURL, context,
-      ModuleLoadRequest::Kind::DynamicImport, this, visitedSet, nullptr);
+      aURI, moduleType, referrerPolicy, options, sriMetadata, baseURL, context,
+      ModuleLoadRequest::Kind::DynamicImport, this, nullptr);
 
-  request->SetDynamicImport(aMaybeActiveScript, aSpecifier, aPromise);
+  request->SetDynamicImport(aMaybeActiveScript, aModuleRequestObj, aPromise);
 
   GetScriptLoader()->TryUseCache(request);
-
   return request.forget();
 }
 

@@ -6,7 +6,6 @@ package mozilla.components.lib.state.helpers
 
 import androidx.annotation.CallSuper
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import mozilla.components.lib.state.Action
@@ -19,7 +18,6 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
  * Helper class for creating small binding classes that are responsible for reacting to state
  * changes.
  */
-@ExperimentalCoroutinesApi // Flow
 abstract class AbstractBinding<in S : State>(
     private val store: Store<S, out Action>,
 ) : LifecycleAwareFeature {

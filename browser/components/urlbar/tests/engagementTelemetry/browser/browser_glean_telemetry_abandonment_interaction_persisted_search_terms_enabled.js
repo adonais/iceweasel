@@ -20,7 +20,7 @@ add_setup(async function () {
     ],
   });
 
-  // Persisted Search requires app-provided engines.
+  // Persisted Search requires config search engines.
   let cleanup = await installPersistTestEngines("MochiSearch");
   let engine = Services.search.getEngineByName("MochiSearch");
   await Services.search.setDefault(

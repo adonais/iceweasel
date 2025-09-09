@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <utility>
+
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Maybe.h"
 

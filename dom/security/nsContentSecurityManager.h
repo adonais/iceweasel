@@ -8,9 +8,9 @@
 #define nsContentSecurityManager_h___
 
 #include "mozilla/CORSMode.h"
-#include "nsIContentSecurityManager.h"
 #include "nsIChannel.h"
 #include "nsIChannelEventSink.h"
+#include "nsIContentSecurityManager.h"
 #include "nsILoadInfo.h"
 
 class nsILoadInfo;

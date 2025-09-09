@@ -9,6 +9,7 @@ skip-if = [
 ]
 prefs = [
   "app.normandy.run_interval_seconds=0", # This turns off the update interval for fetching recipes from Remote Settings
+  "messaging-system.log=all", # Enable all Nimbus logging.
 ]
 run-sequentially = "very high failure rate in parallel"
 
@@ -46,7 +47,7 @@ run-sequentially = "very high failure rate in parallel"
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt", # Bug 1973051
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && opt", # Bug 1973051
-  "os == 'mac' && os_version == '15.00' && processor == 'aarch64'", # Bug 1973051
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1973051
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && opt", # Bug 1973051
 ]
 

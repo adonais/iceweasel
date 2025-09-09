@@ -11,7 +11,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/02c038eca65c1218b
  3 files changed, 12 insertions(+), 2 deletions(-)
 
 diff --git a/modules/desktop_capture/mac/screen_capturer_mac.h b/modules/desktop_capture/mac/screen_capturer_mac.h
-index d9a5966efa..7be05cc639 100644
+index 127cf5ee24..28f0510e3d 100644
 --- a/modules/desktop_capture/mac/screen_capturer_mac.h
 +++ b/modules/desktop_capture/mac/screen_capturer_mac.h
 @@ -114,6 +114,13 @@ class ScreenCapturerMac final : public DesktopCapturer {
@@ -29,10 +29,10 @@ index d9a5966efa..7be05cc639 100644
  
  }  // namespace webrtc
 diff --git a/modules/desktop_capture/mac/screen_capturer_mac.mm b/modules/desktop_capture/mac/screen_capturer_mac.mm
-index 2bb5e13378..21a9c1ca4a 100644
+index 5f36971ea9..82c07d777a 100644
 --- a/modules/desktop_capture/mac/screen_capturer_mac.mm
 +++ b/modules/desktop_capture/mac/screen_capturer_mac.mm
-@@ -189,6 +189,7 @@ void ScreenCapturerMac::Start(Callback* callback) {
+@@ -189,6 +189,7 @@ DesktopRect GetExcludedWindowPixelBounds(CGWindowID window,
                         current_display_);
  
    callback_ = callback;
@@ -40,7 +40,7 @@ index 2bb5e13378..21a9c1ca4a 100644
    // Start and operate CGDisplayStream handler all from capture thread.
    if (!RegisterRefreshAndMoveHandlers()) {
      RTC_LOG(LS_ERROR) << "Failed to register refresh and move handlers.";
-@@ -210,7 +211,8 @@ void ScreenCapturerMac::CaptureFrame() {
+@@ -210,7 +211,8 @@ DesktopRect GetExcludedWindowPixelBounds(CGWindowID window,
  
    MacDesktopConfiguration new_config =
        desktop_config_monitor_->desktop_configuration();
@@ -51,10 +51,10 @@ index 2bb5e13378..21a9c1ca4a 100644
      // If the display configuraiton has changed then refresh capturer data
      // structures. Occasionally, the refresh and move handlers are lost when
 diff --git a/modules/desktop_capture/mouse_cursor_monitor_mac.mm b/modules/desktop_capture/mouse_cursor_monitor_mac.mm
-index 3ab6fdc1f8..e86d9210cf 100644
+index 248a782762..6ed2c56706 100644
 --- a/modules/desktop_capture/mouse_cursor_monitor_mac.mm
 +++ b/modules/desktop_capture/mouse_cursor_monitor_mac.mm
-@@ -133,7 +133,8 @@ void MouseCursorMonitorMac::CaptureImage(float scale) {
+@@ -133,7 +133,8 @@ void DisplaysReconfigured(CGDirectDisplayID display,
    NSSize nssize = [nsimage size];  // DIP size
  
    // No need to caputre cursor image if it's unchanged since last capture.

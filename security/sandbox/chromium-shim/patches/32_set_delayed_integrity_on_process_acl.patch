@@ -11,31 +11,31 @@ level on our access token is dropped.
 
 Differential Revision: https://phabricator.services.mozilla.com/D206784
 
-diff --git a/sandbox/win/src/restricted_token_utils.cc b/sandbox/win/src/restricted_token_utils.cc
---- a/sandbox/win/src/restricted_token_utils.cc
-+++ b/sandbox/win/src/restricted_token_utils.cc
-@@ -302,16 +302,24 @@ DWORD SetTokenIntegrityLevel(HANDLE toke
- DWORD SetProcessIntegrityLevel(IntegrityLevel integrity_level) {
-   // We don't check for an invalid level here because we'll just let it
-   // fail on the SetTokenIntegrityLevel call later on.
-   if (integrity_level == INTEGRITY_LEVEL_LAST) {
+diff --git a/sandbox/win/src/target_services.cc b/sandbox/win/src/target_services.cc
+--- a/sandbox/win/src/target_services.cc
++++ b/sandbox/win/src/target_services.cc
+@@ -117,16 +117,24 @@ DWORD SetTokenIntegrityLevel(HANDLE toke
+ 
+ bool SetProcessIntegrityLevel(IntegrityLevel integrity_level) {
+   absl::optional<DWORD> rid = GetIntegrityLevelRid(integrity_level);
+   if (!rid) {
      // No mandatory level specified, we don't change it.
-     return ERROR_SUCCESS;
+     return true;
    }
  
 +  // Set integrity level for our process ACL, so we retain access to it.
 +  // We ignore failures because this is not a security measure, but some
 +  // functionality may fail later in the process.
-+  DWORD rv =
-+      SetObjectIntegrityLabel(::GetCurrentProcess(), SE_KERNEL_OBJECT, L"",
-+                              GetIntegrityLevelString(integrity_level));
++  DWORD rv = SetObjectIntegrityLabel(::GetCurrentProcess(),
++                                     base::win::SecurityObjectType::kKernel,
++                                     0, integrity_level);
 +  DCHECK(rv == ERROR_SUCCESS);
 +
-   HANDLE token_handle;
-   if (!::OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_DEFAULT,
-                           &token_handle))
-     return ::GetLastError();
- 
-   base::win::ScopedHandle token(token_handle);
- 
-   return SetTokenIntegrityLevel(token.Get(), integrity_level);
+   absl::optional<base::win::AccessToken> token =
+       base::win::AccessToken::FromCurrentProcess(/*impersonation=*/false,
+                                                  TOKEN_ADJUST_DEFAULT);
+   if (!token) {
+     return false;
+   }
+   return token->SetIntegrityLevel(*rid);
+ }

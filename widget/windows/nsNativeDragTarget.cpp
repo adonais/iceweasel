@@ -19,17 +19,14 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/MouseEvents.h"
-#include "mozilla/Logging.h"
+#include "mozilla/widget/WidgetLogging.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;
 
-extern mozilla::LazyLogModule sWidgetDragServiceLog;
-#define __DRAGSERVICE_LOG__(logLevel, ...) \
-  MOZ_LOG(sWidgetDragServiceLog, logLevel, __VA_ARGS__)
-#define LOGD(...) __DRAGSERVICE_LOG__(mozilla::LogLevel::Debug, (__VA_ARGS__))
-#define LOGI(...) __DRAGSERVICE_LOG__(mozilla::LogLevel::Info, (__VA_ARGS__))
-#define LOGE(...) __DRAGSERVICE_LOG__(mozilla::LogLevel::Error, (__VA_ARGS__))
+#define LOGD DRAGSERVICE_LOGD
+#define LOGI DRAGSERVICE_LOGI
+#define LOGE DRAGSERVICE_LOGE
 
 // This is cached for Leave notification
 static POINTL gDragLastPoint;

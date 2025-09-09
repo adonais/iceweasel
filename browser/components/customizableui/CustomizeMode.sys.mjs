@@ -18,7 +18,7 @@ const kDownloadAutohideCheckboxId = "downloads-button-autohide-checkbox";
 const kDownloadAutohidePanelId = "downloads-button-autohide-panel";
 const kDownloadAutoHidePref = "browser.download.autohideButton";
 
-import { CustomizableUI } from "resource:///modules/CustomizableUI.sys.mjs";
+import { CustomizableUI } from "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
@@ -26,7 +26,8 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUsageTelemetry: "resource:///modules/BrowserUsageTelemetry.sys.mjs",
-  DragPositionManager: "resource:///modules/DragPositionManager.sys.mjs",
+  DragPositionManager:
+    "moz-src:///browser/components/customizableui/DragPositionManager.sys.mjs",
   URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
 });
 ChromeUtils.defineLazyGetter(lazy, "gWidgetsBundle", function () {
@@ -511,7 +512,7 @@ export class CustomizeMode {
       this.#document.documentElement.toggleAttribute("customizing", true);
 
       let customizableToolbars = document.querySelectorAll(
-        "toolbar[customizable=true]:not([autohide=true], [collapsed=true])"
+        "toolbar[customizable=true]:not([autohide], [collapsed])"
       );
       for (let toolbar of customizableToolbars) {
         toolbar.toggleAttribute("customizing", true);
@@ -667,7 +668,7 @@ export class CustomizeMode {
       this._previousPanelContextMenuParent.appendChild(panelContextMenu);
 
       let customizableToolbars = document.querySelectorAll(
-        "toolbar[customizable=true]:not([autohide=true])"
+        "toolbar[customizable=true]:not([autohide])"
       );
       for (let toolbar of customizableToolbars) {
         toolbar.removeAttribute("customizing");

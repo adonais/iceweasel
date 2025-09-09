@@ -8,12 +8,12 @@
 #define DOM_SVG_SVGANIMATEDENUMERATION_H_
 
 #include "DOMSVGAnimatedEnumeration.h"
-#include "nsCycleCollectionParticipant.h"
-#include "nsError.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/SVGElement.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsError.h"
 
 class nsAtom;
 

@@ -272,3 +272,10 @@ long base64 URLs and other unexpectedly long text properties. */
   /* Force the long text to be rendered on a single line. */
   white-space: nowrap;
 }
+
+/* Used for both the computed view and the rule view, to style element that we put
+   at the same place as selectors but who aren't technically selectors, e.g. element
+   style attribute and pres-hint styles */
+.alternative-selector {
+  font-style: italic;
+}

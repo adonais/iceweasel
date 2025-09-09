@@ -56,7 +56,7 @@ export const GeckoViewTabUtil = {
     // load into. This isn't done from the Java side to align with the
     // ServiceWorkerOpenWindow infrastructure which this is built on top of.
     window.browser.fixupAndLoadURIString(url, {
-      flags: Ci.nsIWebNavigation.LOAD_FLAGS_NONE,
+      loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_NONE,
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     });
 

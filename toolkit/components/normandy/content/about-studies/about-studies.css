@@ -154,7 +154,7 @@ button > .button-box {
   background-color: rgb(128, 128, 128, 0.1);
   border-radius: 3px;
   box-sizing: border-box;
-  color: var(--in-content-text-color);
+  color: var(--text-color);
   font-size: 85%;
   font-family: "Fira Mono", "mono", monospace;
   padding: 0.05em 0.4em;

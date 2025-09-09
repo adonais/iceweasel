@@ -142,6 +142,7 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 skip-if = ["os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug"] # almost perma leaks
 
 ["browser_net_block-serviceworker.js"]
+skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64'"] # Bug 1980084
 
 ["browser_net_block.js"]
 
@@ -505,6 +506,8 @@ skip-if = [
 skip-if = [
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1767655
 ]
+
+["browser_net_statistics-content.js"]
 
 ["browser_net_statistics-edge-case.js"]
 

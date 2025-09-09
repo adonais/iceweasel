@@ -4,18 +4,16 @@
 
 package mozilla.components.feature.prompts.identitycredential
 
-import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.DialogInterface
 import android.os.Bundle
-import android.view.View
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.ui.platform.ComposeView
+import androidx.fragment.compose.content
 import mozilla.components.concept.identitycredential.Account
 import mozilla.components.concept.identitycredential.Provider
 import mozilla.components.feature.prompts.dialog.KEY_PROMPT_UID
@@ -59,20 +57,15 @@ internal class SelectAccountDialogFragment : PromptDialogFragment() {
         feature?.onCancel(sessionId, promptRequestUID)
     }
 
-    @SuppressLint("InflateParams")
-    internal fun createDialogContentView(): View {
-        return ComposeView(requireContext()).apply {
-            setContent {
-                val colors = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
-                MaterialTheme(colors) {
-                    SelectAccountDialog(
-                        provider = provider,
-                        accounts = accounts,
-                        colors = colorsProvider.provideColors(),
-                        onAccountClick = ::onAccountChange,
-                    )
-                }
-            }
+    internal fun createDialogContentView() = content {
+        val colors = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
+        MaterialTheme(colors) {
+            SelectAccountDialog(
+                provider = provider,
+                accounts = accounts,
+                colors = colorsProvider.provideColors(),
+                onAccountClick = ::onAccountChange,
+            )
         }
     }
 

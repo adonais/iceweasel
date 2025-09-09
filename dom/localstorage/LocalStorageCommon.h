@@ -8,6 +8,7 @@
 #define mozilla_dom_localstorage_LocalStorageCommon_h
 
 #include <cstdint>
+
 #include "ErrorList.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/quota/QuotaCommon.h"

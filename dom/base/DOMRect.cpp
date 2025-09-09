@@ -7,6 +7,7 @@
 #include "mozilla/dom/DOMRect.h"
 
 #include <cmath>
+
 #include "js/StructuredClone.h"
 #include "mozilla/AppUnits.h"
 #include "mozilla/Casting.h"

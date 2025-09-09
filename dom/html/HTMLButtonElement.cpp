@@ -7,30 +7,30 @@
 #include "mozilla/dom/HTMLButtonElement.h"
 
 #include "HTMLFormSubmissionConstants.h"
-#include "mozilla/dom/CommandEvent.h"
-#include "mozilla/dom/FormData.h"
-#include "mozilla/dom/HTMLButtonElementBinding.h"
-#include "nsAttrValueInlines.h"
-#include "nsIContentInlines.h"
-#include "nsGkAtoms.h"
-#include "nsPresContext.h"
-#include "nsIFormControl.h"
-#include "nsIFrame.h"
-#include "mozilla/dom/Document.h"
+#include "mozAutoDocUpdate.h"
 #include "mozilla/ContentEvents.h"
-#include "mozilla/FocusModel.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
+#include "mozilla/FocusModel.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/TextEvents.h"
-#include "nsUnicharUtils.h"
-#include "nsLayoutUtils.h"
 #include "mozilla/PresState.h"
+#include "mozilla/TextEvents.h"
+#include "mozilla/dom/CommandEvent.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/FormData.h"
+#include "mozilla/dom/HTMLButtonElementBinding.h"
+#include "mozilla/dom/HTMLFormElement.h"
+#include "nsAttrValueInlines.h"
 #include "nsError.h"
 #include "nsFocusManager.h"
-#include "mozilla/dom/HTMLFormElement.h"
-#include "mozAutoDocUpdate.h"
+#include "nsGkAtoms.h"
+#include "nsIContentInlines.h"
+#include "nsIFormControl.h"
+#include "nsIFrame.h"
+#include "nsLayoutUtils.h"
+#include "nsPresContext.h"
+#include "nsUnicharUtils.h"
 
 #define NS_IN_SUBMIT_CLICK (1 << 0)
 #define NS_OUTER_ACTIVATE_EVENT (1 << 1)
@@ -404,9 +404,11 @@ void HTMLButtonElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
     target->HandleCommandInternal(this, command, IgnoreErrors());
 
   } else {
+    nsCOMPtr<Element> eventTarget =
+        do_QueryInterface(aVisitor.mEvent->mOriginalTarget);
     // 6. Otherwise, run the popover target attribute activation behavior given
     // element and event's target.
-    HandlePopoverTargetAction();
+    HandlePopoverTargetAction(eventTarget);
   }
 }
 

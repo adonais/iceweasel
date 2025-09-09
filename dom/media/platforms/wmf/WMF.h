@@ -7,6 +7,7 @@
 #ifndef WMF_H_
 #define WMF_H_
 
+// clang-format off
 #include <windows.h>
 #include <mfapi.h>
 #include <mfidl.h>
@@ -21,9 +22,10 @@
 #include <dxva2api.h>
 #include <wmcodecdsp.h>
 #include <codecapi.h>
+// clang-format on
 
-#include "mozilla/Atomics.h"
 #include "mozilla/AppShutdown.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticMutex.h"
 #include "nsThreadUtils.h"

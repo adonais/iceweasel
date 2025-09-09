@@ -750,8 +750,7 @@ class FunctionCompiler {
     if (inDeadCode()) {
       return nullptr;
     }
-    MConstant* constant =
-        MConstant::New(alloc(), Int32Value(i), MIRType::Int32);
+    MConstant* constant = MConstant::NewInt32(alloc(), i);
     curBlock_->add(constant);
     return constant;
   }
@@ -1625,10 +1624,9 @@ class FunctionCompiler {
       actualBase = extended;
     }
 
-    auto target = memoryIndex == 0 ? MWasmBoundsCheck::Memory0
-                                   : MWasmBoundsCheck::Unknown;
     auto* ins = MWasmBoundsCheck::New(alloc(), actualBase, boundsCheckLimit,
-                                      trapSiteDesc(), target);
+                                      trapSiteDesc(), MWasmBoundsCheck::Memory,
+                                      memoryIndex);
     curBlock_->add(ins);
     actualBase = ins;
 
@@ -2153,8 +2151,17 @@ class FunctionCompiler {
   }
 
   MDefinition* loadTableLength(uint32_t tableIndex) {
+    const TableDesc& table = codeMeta().tables[tableIndex];
+    if (table.maximumLength().isSome() &&
+        table.initialLength() == *table.maximumLength()) {
+      return table.addressType() == AddressType::I64
+                 ? constantI64(int64_t(table.initialLength()))
+                 : constantI32(int32_t(table.initialLength()));
+    }
     return loadTableField(tableIndex, offsetof(TableInstanceData, length),
-                          MIRType::Int32);
+                          table.addressType() == AddressType::I64
+                              ? MIRType::Int64
+                              : MIRType::Int32);
   }
 
   MDefinition* loadTableElements(uint32_t tableIndex) {
@@ -2162,8 +2169,12 @@ class FunctionCompiler {
                           MIRType::Pointer);
   }
 
-  MDefinition* tableAddressToI32(AddressType addressType,
-                                 MDefinition* address) {
+  // Clamps a table address into i32 range. If the value is too large to fit in
+  // an i32, it will be replaced with UINT32_MAX so that it will always fail a
+  // 32-bit bounds check. Consider using an actual 64-bit bounds check if
+  // possible.
+  MDefinition* clampTableAddressToI32(AddressType addressType,
+                                      MDefinition* address) {
     switch (addressType) {
       case AddressType::I32:
         return address;
@@ -2178,23 +2189,39 @@ class FunctionCompiler {
     MOZ_CRASH("unknown address type");
   }
 
-  MDefinition* tableGetAnyRef(uint32_t tableIndex, MDefinition* address) {
+  MDefinition* boundsCheckAndWrapTableAddress(uint32_t tableIndex,
+                                              MDefinition* address) {
     const TableDesc& table = codeMeta().tables[tableIndex];
 
     // Load the table length and perform a bounds check with spectre index
     // masking
     auto* length = loadTableLength(tableIndex);
-    auto* check = MWasmBoundsCheck::New(
-        alloc(), address, length, trapSiteDesc(), MWasmBoundsCheck::Unknown);
+    auto* check =
+        MWasmBoundsCheck::New(alloc(), address, length, trapSiteDesc(),
+                              MWasmBoundsCheck::Table, tableIndex);
     curBlock_->add(check);
     if (JitOptions.spectreIndexMasking) {
       address = check;
     }
 
+    if (table.addressType() == AddressType::I64) {
+      auto* address32 =
+          MWrapInt64ToInt32::New(alloc(), address, /*bottomHalf=*/true);
+      curBlock_->add(address32);
+      return address32;
+    }
+    return address;
+  };
+
+  MDefinition* tableGetAnyRef(uint32_t tableIndex, MDefinition* address) {
+    const TableDesc& table = codeMeta().tables[tableIndex];
+
+    auto* address32 = boundsCheckAndWrapTableAddress(tableIndex, address);
+
     // Load the table elements and load the element
     auto* elements = loadTableElements(tableIndex);
-    auto* element =
-        MWasmLoadTableElement::New(alloc(), elements, address, table.elemType);
+    auto* element = MWasmLoadTableElement::New(alloc(), elements, address32,
+                                               table.elemType);
     curBlock_->add(element);
     return element;
   }
@@ -2204,27 +2231,19 @@ class FunctionCompiler {
                                     uint32_t lineOrBytecode) {
     const TableDesc& table = codeMeta().tables[tableIndex];
 
-    // Load the table length and perform a bounds check with spectre index
-    // masking
-    auto* length = loadTableLength(tableIndex);
-    auto* check = MWasmBoundsCheck::New(
-        alloc(), address, length, trapSiteDesc(), MWasmBoundsCheck::Unknown);
-    curBlock_->add(check);
-    if (JitOptions.spectreIndexMasking) {
-      address = check;
-    }
+    auto* address32 = boundsCheckAndWrapTableAddress(tableIndex, address);
 
     // Load the table elements
     auto* elements = loadTableElements(tableIndex);
 
     // Load the previous value
-    auto* prevValue =
-        MWasmLoadTableElement::New(alloc(), elements, address, table.elemType);
+    auto* prevValue = MWasmLoadTableElement::New(alloc(), elements, address32,
+                                                 table.elemType);
     curBlock_->add(prevValue);
 
     // Compute the value's location for the post barrier
-    auto* loc =
-        MWasmDerivedIndexPointer::New(alloc(), elements, address, ScalePointer);
+    auto* loc = MWasmDerivedIndexPointer::New(alloc(), elements, address32,
+                                              ScalePointer);
     curBlock_->add(loc);
 
     // Store the new value
@@ -2928,7 +2947,7 @@ class FunctionCompiler {
       return false;
     }
 
-    MDefinition* address32 = tableAddressToI32(table.addressType(), address);
+    auto* address32 = boundsCheckAndWrapTableAddress(tableIndex, address);
     if (!address32) {
       return false;
     }
@@ -2977,7 +2996,7 @@ class FunctionCompiler {
       const TableDesc& table = codeMeta().tables[tableIndex];
       callee =
           CalleeDesc::wasmTable(codeMeta(), table, tableIndex, callIndirectId);
-      address = tableAddressToI32(table.addressType(), address);
+      address = boundsCheckAndWrapTableAddress(tableIndex, address);
       if (!address) {
         return false;
       }
@@ -4853,7 +4872,7 @@ class FunctionCompiler {
       uint32_t lineOrBytecode, StorageType type, MDefinition* keepAlive,
       AliasSet::Flag aliasBitset, MDefinition* value, MDefinition* base,
       uint32_t offset, uint32_t fieldIndex, bool needsTrapInfo,
-      WasmPreBarrierKind preBarrierKind) {
+      WasmPreBarrierKind preBarrierKind, WasmPostBarrierKind postBarrierKind) {
     MOZ_ASSERT(aliasBitset != 0);
     MOZ_ASSERT(keepAlive->type() == MIRType::WasmAnyRef);
     MOZ_ASSERT(type.widenToValType().toMIRType() == value->type());
@@ -4896,7 +4915,16 @@ class FunctionCompiler {
     curBlock_->add(store);
 
     // Call the post-write barrier
-    return postBarrierWholeCell(lineOrBytecode, keepAlive, value);
+    switch (postBarrierKind) {
+      case WasmPostBarrierKind::WholeCell:
+        return postBarrierWholeCell(lineOrBytecode, keepAlive, value);
+      case WasmPostBarrierKind::Edge:
+        MOZ_CRASH("WasmPostBarrierKind::Edge not supported");
+      case WasmPostBarrierKind::None:
+        return true;
+      default:
+        MOZ_CRASH("Bad postBarrierKind");
+    }
   }
 
   // Generate a write of `value` at address `base + index * scale`, where
@@ -4907,7 +4935,8 @@ class FunctionCompiler {
   [[nodiscard]] bool writeGcValueAtBasePlusScaledIndex(
       uint32_t lineOrBytecode, StorageType type, MDefinition* keepAlive,
       AliasSet::Flag aliasBitset, MDefinition* value, MDefinition* base,
-      uint32_t scale, MDefinition* index, WasmPreBarrierKind preBarrierKind) {
+      uint32_t scale, MDefinition* index, WasmPreBarrierKind preBarrierKind,
+      WasmPostBarrierKind postBarrierKind) {
     MOZ_ASSERT(aliasBitset != 0);
     MOZ_ASSERT(keepAlive->type() == MIRType::WasmAnyRef);
     MOZ_ASSERT(type.widenToValType().toMIRType() == value->type());
@@ -4943,8 +4972,17 @@ class FunctionCompiler {
     }
     curBlock_->add(store);
 
-    return postBarrierEdgeAtIndex(lineOrBytecode, keepAlive, base, index,
-                                  sizeof(void*), value);
+    switch (postBarrierKind) {
+      case WasmPostBarrierKind::WholeCell:
+        return postBarrierWholeCell(lineOrBytecode, keepAlive, value);
+      case WasmPostBarrierKind::Edge:
+        return postBarrierEdgeAtIndex(lineOrBytecode, keepAlive, base, index,
+                                      sizeof(void*), value);
+      case WasmPostBarrierKind::None:
+        return true;
+      default:
+        MOZ_CRASH("Bad postBarrierKind");
+    }
   }
 
   // Generate a read from address `base + offset`, where `offset` is known at
@@ -5121,7 +5159,8 @@ class FunctionCompiler {
 
     return writeGcValueAtBasePlusOffset(
         lineOrBytecode, fieldType, structObject, fieldAliasSet, value, base,
-        areaOffset, fieldIndex, needsTrapInfo, preBarrierKind);
+        areaOffset, fieldIndex, needsTrapInfo, preBarrierKind,
+        WasmPostBarrierKind::WholeCell);
   }
 
   // Helper function for EmitStructGet: given a MIR pointer to a
@@ -5297,7 +5336,7 @@ class FunctionCompiler {
     // Create a bounds check.
     auto* boundsCheck =
         MWasmBoundsCheck::New(alloc(), index, numElements, trapSiteDesc(),
-                              MWasmBoundsCheck::Target::Unknown);
+                              MWasmBoundsCheck::Target::Other);
     if (!boundsCheck) {
       return nullptr;
     }
@@ -5311,7 +5350,8 @@ class FunctionCompiler {
                                const ArrayType& arrayType,
                                MDefinition* arrayObject, MDefinition* index,
                                MDefinition* numElements, MDefinition* val,
-                               WasmPreBarrierKind preBarrierKind) {
+                               WasmPreBarrierKind preBarrierKind,
+                               WasmPostBarrierKind postBarrierKind) {
     mozilla::DebugOnly<MIRType> valMIRType = val->type();
     StorageType elemType = arrayType.elementType();
     MOZ_ASSERT(elemType.widenToValType().toMIRType() == valMIRType);
@@ -5397,7 +5437,8 @@ class FunctionCompiler {
 
     if (!writeGcValueAtBasePlusScaledIndex(
             lineOrBytecode, elemType, arrayObject, AliasSet::WasmArrayDataArea,
-            val, arrayBase, elemSize, indexPhi, preBarrierKind)) {
+            val, arrayBase, elemSize, indexPhi, preBarrierKind,
+            postBarrierKind)) {
       return false;
     }
 
@@ -5427,36 +5468,6 @@ class FunctionCompiler {
 
     curBlock_ = afterBlock;
     return true;
-  }
-
-  // This routine generates all MIR required for `array.new`.  The returned
-  // value is for the newly created array.
-  [[nodiscard]] MDefinition* createArrayNewCallAndLoop(uint32_t lineOrBytecode,
-                                                       uint32_t typeIndex,
-                                                       uint32_t allocSiteIndex,
-                                                       MDefinition* numElements,
-                                                       MDefinition* fillValue) {
-    // Create the array object, uninitialized.
-    MDefinition* arrayObject =
-        createArrayObject(typeIndex, allocSiteIndex, numElements,
-                          /*zeroFields=*/false);
-    if (!arrayObject) {
-      return nullptr;
-    }
-
-    // Optimisation opportunity: if the fill value is zero, maybe we should
-    // likewise skip over the initialisation loop entirely (and, if the zero
-    // value is visible at JIT time, the loop will be removed).  For the
-    // reftyped case, that would be a big win since each iteration requires a
-    // call to the post-write barrier routine.
-
-    const ArrayType& arrayType = (*codeMeta().types)[typeIndex].arrayType();
-    if (!fillArray(lineOrBytecode, arrayType, arrayObject, constantI32(0),
-                   numElements, fillValue, WasmPreBarrierKind::None)) {
-      return nullptr;
-    }
-
-    return arrayObject;
   }
 
   [[nodiscard]] bool createArrayCopy(uint32_t lineOrBytecode,
@@ -5594,7 +5605,8 @@ class FunctionCompiler {
     curBlock_->add(boundsCheck);
 
     return fillArray(lineOrBytecode, arrayType, arrayObject, index, numElements,
-                     val, WasmPreBarrierKind::Normal);
+                     val, WasmPreBarrierKind::Normal,
+                     WasmPostBarrierKind::Edge);
   }
 
   /*********************************************** WasmGC: other helpers ***/
@@ -7770,17 +7782,17 @@ bool FunctionCompiler::emitTableCopy() {
           ? AddressType::I64
           : AddressType::I32;
 
-  MDefinition* dst32 = tableAddressToI32(dstAddressType, dst);
+  MDefinition* dst32 = clampTableAddressToI32(dstAddressType, dst);
   if (!dst32) {
     return false;
   }
 
-  MDefinition* src32 = tableAddressToI32(srcAddressType, src);
+  MDefinition* src32 = clampTableAddressToI32(srcAddressType, src);
   if (!src32) {
     return false;
   }
 
-  MDefinition* len32 = tableAddressToI32(lenAddressType, len);
+  MDefinition* len32 = clampTableAddressToI32(lenAddressType, len);
   if (!len32) {
     return false;
   }
@@ -7985,7 +7997,7 @@ bool FunctionCompiler::emitTableInit() {
   uint32_t bytecodeOffset = readBytecodeOffset();
   const TableDesc& table = codeMeta().tables[dstTableIndex];
 
-  MDefinition* dstOff32 = tableAddressToI32(table.addressType(), dstOff);
+  MDefinition* dstOff32 = clampTableAddressToI32(table.addressType(), dstOff);
   if (!dstOff32) {
     return false;
   }
@@ -8018,12 +8030,12 @@ bool FunctionCompiler::emitTableFill() {
   uint32_t bytecodeOffset = readBytecodeOffset();
   const TableDesc& table = codeMeta().tables[tableIndex];
 
-  MDefinition* start32 = tableAddressToI32(table.addressType(), start);
+  MDefinition* start32 = clampTableAddressToI32(table.addressType(), start);
   if (!start32) {
     return false;
   }
 
-  MDefinition* len32 = tableAddressToI32(table.addressType(), len);
+  MDefinition* len32 = clampTableAddressToI32(table.addressType(), len);
   if (!len32) {
     return false;
   }
@@ -8075,13 +8087,8 @@ bool FunctionCompiler::emitTableGet() {
 
   const TableDesc& table = codeMeta().tables[tableIndex];
 
-  MDefinition* address32 = tableAddressToI32(table.addressType(), address);
-  if (!address32) {
-    return false;
-  }
-
   if (table.elemType.tableRepr() == TableRepr::Ref) {
-    MDefinition* ret = tableGetAnyRef(tableIndex, address32);
+    MDefinition* ret = tableGetAnyRef(tableIndex, address);
     if (!ret) {
       return false;
     }
@@ -8090,6 +8097,11 @@ bool FunctionCompiler::emitTableGet() {
   }
 
   uint32_t bytecodeOffset = readBytecodeOffset();
+
+  MDefinition* address32 = clampTableAddressToI32(table.addressType(), address);
+  if (!address32) {
+    return false;
+  }
 
   MDefinition* tableIndexArg = constantI32(int32_t(tableIndex));
   if (!tableIndexArg) {
@@ -8123,7 +8135,7 @@ bool FunctionCompiler::emitTableGrow() {
   uint32_t bytecodeOffset = readBytecodeOffset();
   const TableDesc& table = codeMeta().tables[tableIndex];
 
-  MDefinition* delta32 = tableAddressToI32(table.addressType(), delta);
+  MDefinition* delta32 = clampTableAddressToI32(table.addressType(), delta);
   if (!delta32) {
     return false;
   }
@@ -8166,15 +8178,14 @@ bool FunctionCompiler::emitTableSet() {
 
   const TableDesc& table = codeMeta().tables[tableIndex];
 
-  MDefinition* address32 = tableAddressToI32(table.addressType(), address);
+  if (table.elemType.tableRepr() == TableRepr::Ref) {
+    return tableSetAnyRef(tableIndex, address, value, bytecodeOffset);
+  }
+
+  MDefinition* address32 = clampTableAddressToI32(table.addressType(), address);
   if (!address32) {
     return false;
   }
-
-  if (table.elemType.tableRepr() == TableRepr::Ref) {
-    return tableSetAnyRef(tableIndex, address32, value, bytecodeOffset);
-  }
-
   MDefinition* tableIndexArg = constantI32(int32_t(tableIndex));
   if (!tableIndexArg) {
     return false;
@@ -8197,13 +8208,6 @@ bool FunctionCompiler::emitTableSize() {
   MDefinition* length = loadTableLength(tableIndex);
   if (!length) {
     return false;
-  }
-
-  if (codeMeta().tables[tableIndex].addressType() == AddressType::I64) {
-    length = extendI32(length, true);
-    if (!length) {
-      return false;
-    }
   }
 
   iter().setResult(length);
@@ -8789,12 +8793,27 @@ bool FunctionCompiler::emitArrayNew() {
     return true;
   }
 
-  // If the requested size exceeds MaxArrayPayloadBytes, the MIR generated by
-  // this helper will trap.
-  MDefinition* arrayObject = createArrayNewCallAndLoop(
-      lineOrBytecode, typeIndex, allocSiteIndex, numElements, fillValue);
+  // Create the array object, uninitialized.
+  MDefinition* arrayObject =
+      createArrayObject(typeIndex, allocSiteIndex, numElements,
+                        /*zeroFields=*/false);
   if (!arrayObject) {
     return false;
+  }
+
+  const ArrayType& arrayType = (*codeMeta().types)[typeIndex].arrayType();
+  if (!fillArray(lineOrBytecode, arrayType, arrayObject, constantI32(0),
+                 numElements, fillValue, WasmPreBarrierKind::None,
+                 WasmPostBarrierKind::None)) {
+    return false;
+  }
+
+  if (arrayType.elementType().isRefRepr()) {
+    // Emit one whole-cell post barrier for the whole array, since there is just
+    // one object and one value.
+    if (!postBarrierWholeCell(lineOrBytecode, arrayObject, fillValue)) {
+      return false;
+    }
   }
 
   iter().setResult(arrayObject);
@@ -8887,7 +8906,7 @@ bool FunctionCompiler::emitArrayNewFixed() {
     if (!writeGcValueAtBasePlusOffset(
             lineOrBytecode, elemType, arrayObject, AliasSet::WasmArrayDataArea,
             values[numElements - 1 - i], base, i * elemSize, i, false,
-            WasmPreBarrierKind::None)) {
+            WasmPreBarrierKind::None, WasmPostBarrierKind::WholeCell)) {
       return false;
     }
   }
@@ -9094,7 +9113,8 @@ bool FunctionCompiler::emitArraySet() {
 
   return writeGcValueAtBasePlusScaledIndex(
       lineOrBytecode, elemType, arrayObject, AliasSet::WasmArrayDataArea, value,
-      base, elemSize, index, WasmPreBarrierKind::Normal);
+      base, elemSize, index, WasmPreBarrierKind::Normal,
+      WasmPostBarrierKind::Edge);
 }
 
 bool FunctionCompiler::emitArrayGet(FieldWideningOp wideningOp) {
@@ -10558,15 +10578,6 @@ bool FunctionCompiler::emitBodyExprs() {
 }  // end anonymous namespace
 
 bool RootCompiler::generate() {
-  // Initialize global information used for optimization
-  if (codeMeta_.numMemories() > 0) {
-    if (codeMeta_.memories[0].addressType() == AddressType::I32) {
-      mirGen_.initMinWasmMemory0Length(codeMeta_.memories[0].initialLength32());
-    } else {
-      mirGen_.initMinWasmMemory0Length(codeMeta_.memories[0].initialLength64());
-    }
-  }
-
   // Only activate branch hinting if the option is enabled and some hints were
   // parsed.
   if (codeMeta_.branchHintingEnabled() && !codeMeta_.branchHints.isEmpty()) {

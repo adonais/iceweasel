@@ -18,7 +18,7 @@ import org.mozilla.fenix.lifecycle.LifecycleHolder
  * @property lifecycleHolder a hack to box the references to objects that get recreated with the activity.
  */
 internal class LoginsStore(
-    initialState: LoginsState = LoginsState(),
+    initialState: LoginsState = LoginsState.default,
     reducer: Reducer<LoginsState, LoginsAction> = ::loginsReducer,
     middleware: List<Middleware<LoginsState, LoginsAction>> = listOf(),
     val lifecycleHolder: LifecycleHolder? = null,

@@ -251,72 +251,78 @@ object AppAndSystemHelper {
 
         when (enabled) {
             true -> {
-                Log.i(
-                    TAG,
-                    "setNetworkEnabled: Trying to enable the network connection.",
-                )
+                Log.i(TAG, "setNetworkEnabled: Trying to enable the network connection.")
                 mDevice.executeShellCommand("svc data enable")
-                Log.i(
-                    TAG,
-                    "setNetworkEnabled: Data network connection enable command sent.",
-                )
+                Log.i(TAG, "setNetworkEnabled: Data network connection enable command sent.")
                 mDevice.executeShellCommand("svc wifi enable")
-                Log.i(
-                    TAG,
-                    "setNetworkEnabled: Wifi network connection enable command sent.",
-                )
+                Log.i(TAG, "setNetworkEnabled: Wifi network connection enable command sent.")
 
                 // Wait for network connection to be completely enabled
                 Log.i(TAG, "setNetworkEnabled: Waiting for connection to be enabled.")
-                IdlingRegistry.getInstance().register(networkConnectedIdlingResource)
-                Espresso.onIdle {
-                    IdlingRegistry.getInstance().unregister(networkConnectedIdlingResource)
-                }
-                Log.i(TAG, "setNetworkEnabled: Network connection was enabled.")
 
-                // Register the TimerIdlingResource
-                IdlingRegistry.getInstance().register(enableNetworkTimerIdlingResource)
+                // Wait until both idling resources are idle
+                val registered = IdlingRegistry.getInstance().register(
+                    networkConnectedIdlingResource,
+                    enableNetworkTimerIdlingResource,
+                )
 
-                // Wait for the TimerIdlingResource to become idle
-                Espresso.onIdle {
-                    IdlingRegistry.getInstance().unregister(networkConnectedIdlingResource)
-                    // Check the active network state
-                    checkActiveNetworkState(enabled = true)
+                Log.i(TAG, "setNetworkEnabled: Trying to verify that the idling resources for enabling the connection are registered.")
+                if (registered) {
+                    Log.i(TAG, "setNetworkEnabled: Verified that the idling resources for enabling the connection are registered.")
+                    Espresso.onIdle {
+                        // Unregister resources after they become idle
+                        val unregistered = IdlingRegistry.getInstance().unregister(
+                            networkConnectedIdlingResource,
+                            enableNetworkTimerIdlingResource,
+                        )
+                        Log.i(TAG, "setNetworkEnabled: Trying to verify that the idling resources for enabling the connection are unregistered.")
+                        if (unregistered) {
+                            Log.i(TAG, "setNetworkEnabled: Verified that the idling resources for enabling the connection are unregistered.")
+                            Log.i(TAG, "setNetworkEnabled: Network connection was enabled.")
+                            checkActiveNetworkState(enabled = true)
+                        } else {
+                            Log.i(TAG, "setNetworkEnabled: Failed to unregister the idling resources for enabling the connection.")
+                        }
+                    }
+                } else {
+                    Log.i(TAG, "setNetworkEnabled: Failed to register idling resources for enabling the connection.")
                 }
             }
 
             false -> {
-                Log.i(
-                    TAG,
-                    "setNetworkEnabled: Trying to disable the network connection.",
-                )
+                Log.i(TAG, "setNetworkEnabled: Trying to disable the network connection.")
                 mDevice.executeShellCommand("svc data disable")
-                Log.i(
-                    TAG,
-                    "setNetworkEnabled: Data network connection disable command sent.",
-                )
+                Log.i(TAG, "setNetworkEnabled: Data network connection disable command sent.")
                 mDevice.executeShellCommand("svc wifi disable")
-                Log.i(
-                    TAG,
-                    "setNetworkEnabled: Wifi network connection disable command sent.",
-                )
+                Log.i(TAG, "setNetworkEnabled: Wifi network connection disable command sent.")
 
                 // Wait for network connection to be completely disabled
                 Log.i(TAG, "setNetworkEnabled: Waiting for connection to be disabled.")
-                IdlingRegistry.getInstance().register(networkDisconnectedIdlingResource)
-                Espresso.onIdle {
-                    IdlingRegistry.getInstance().unregister(networkDisconnectedIdlingResource)
-                }
-                Log.i(TAG, "setNetworkEnabled: Network connection was disabled.")
 
-                // Register the TimerIdlingResource
-                IdlingRegistry.getInstance().register(enableNetworkTimerIdlingResource)
+                val registered = IdlingRegistry.getInstance().register(
+                    networkDisconnectedIdlingResource,
+                    disableNetworkTimerIdlingResource,
+                )
 
-                // Wait for the TimerIdlingResource to become idle
-                Espresso.onIdle {
-                    IdlingRegistry.getInstance().unregister(disableNetworkTimerIdlingResource)
-                    // Check the active network state
-                    checkActiveNetworkState(enabled = false)
+                Log.i(TAG, "setNetworkEnabled: Trying to verify that the idling resources for disabling the connection are registered.")
+                if (registered) {
+                    Log.i(TAG, "setNetworkEnabled: Verified that the idling resources for disabling the connection are registered.")
+                    Espresso.onIdle {
+                        val unregistered = IdlingRegistry.getInstance().unregister(
+                            networkDisconnectedIdlingResource,
+                            disableNetworkTimerIdlingResource,
+                        )
+                        Log.i(TAG, "setNetworkEnabled: Trying to verify that the idling resources for disabling the connection are unregistered.")
+                        if (unregistered) {
+                            Log.i(TAG, "setNetworkEnabled: Verified that the idling resources for disabling the connection are unregistered.")
+                            Log.i(TAG, "setNetworkEnabled: Network connection was disabled.")
+                            checkActiveNetworkState(enabled = false)
+                        } else {
+                            Log.i(TAG, "setNetworkEnabled: Failed to unregister the idling resources for disabling the connection.")
+                        }
+                    }
+                } else {
+                    Log.i(TAG, "setNetworkEnabled: Failed to register idling resources for disabling the connection.")
                 }
             }
         }

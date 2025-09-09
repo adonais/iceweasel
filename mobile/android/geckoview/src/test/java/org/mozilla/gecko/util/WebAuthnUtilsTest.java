@@ -41,6 +41,9 @@ public class WebAuthnUtilsTest {
     authenticatorSelection.putString("authenticatorAttachment", "platform");
     authenticatorSelection.putString("residentKey", "required");
 
+    final GeckoBundle extensions = new GeckoBundle(1);
+    extensions.putBoolean("credProps", true);
+
     final byte[] userId = new byte[] {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7};
     final byte[] challenge =
         new byte[] {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
@@ -50,7 +53,13 @@ public class WebAuthnUtilsTest {
 
     final JSONObject request =
         WebAuthnUtils.getJSONObjectForMakeCredential(
-            credentialBundle, userId, challenge, algs, excludeList, authenticatorSelection);
+            credentialBundle,
+            userId,
+            challenge,
+            algs,
+            excludeList,
+            authenticatorSelection,
+            extensions);
 
     final JSONObject expected =
         new JSONObject(
@@ -119,7 +128,8 @@ public class WebAuthnUtilsTest {
             + "\"rawId\": \"AAECAwQFBgcICQoLDA0ODw\" ,"
             + "\"type\": \"public-key\" ,"
             + "\"authenticatorAttachment\": \"platform\", "
-            + "\"response\": {\"attestationObject\": \"AQIDBAUGBwgJCgsMDQ4PEA\", \"transports\": [ \"internal\" ]}"
+            + "\"response\": {\"attestationObject\": \"AQIDBAUGBwgJCgsMDQ4PEA\", \"transports\": [ \"internal\" ]},"
+            + "\"clientExtensionResults\": {\"credProps\": {\"rk\": true } }"
             + "}";
     final WebAuthnUtils.MakeCredentialResponse response =
         WebAuthnUtils.getMakeCredentialResponse(responseJSON);
@@ -135,6 +145,7 @@ public class WebAuthnUtilsTest {
         "attestationObject should be matched",
         Arrays.equals(response.attestationObject, attestationObject));
     assertEquals("No clientDataJson in response", response.clientDataJson, null);
+    assertTrue("handle credProps", response.credProps);
   }
 
   @Test(expected = JSONException.class)

@@ -15,8 +15,8 @@ extern "C" {
 #include "libavutil/avutil.h"
 #include "libavutil/mem.h"
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
-#  include "libavutil/hwcontext_vaapi.h"
 #  include "libavutil/hwcontext_drm.h"
+#  include "libavutil/hwcontext_vaapi.h"
 #endif
 #ifdef __GNUC__
 #  pragma GCC visibility pop

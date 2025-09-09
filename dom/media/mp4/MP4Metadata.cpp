@@ -2,21 +2,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "MP4Metadata.h"
+
+#include <stdint.h>
+
+#include <limits>
+#include <vector>
+
+#include "ByteStream.h"
+#include "MoofParser.h"
+#include "VideoUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
-#include "VideoUtils.h"
-#include "MoofParser.h"
-#include "MP4Metadata.h"
-#include "ByteStream.h"
 #include "mp4parse.h"
-
-#include <limits>
-#include <stdint.h>
-#include <vector>
 
 using mozilla::media::TimeUnit;
 
@@ -296,6 +298,9 @@ MP4Metadata::ResultAndTrackInfo MP4Metadata::GetTrackInfo(
         break;
       case MP4PARSE_CODEC_AAC:
         codecString = "aac";
+        break;
+      case MP4PARSE_CODEC_XHEAAC:
+        codecString = "xhe-aac";
         break;
       case MP4PARSE_CODEC_OPUS:
         codecString = "opus";

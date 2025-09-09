@@ -6,11 +6,12 @@
 
 #include "SVGNumberListSMILType.h"
 
+#include <math.h>
+
+#include "SVGNumberList.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/SMILValue.h"
 #include "nsMathUtils.h"
-#include "SVGNumberList.h"
-#include <math.h>
 
 /* The "identity" number list for a given number list attribute (the effective
  * number list that is used if an attribute value is not specified) varies

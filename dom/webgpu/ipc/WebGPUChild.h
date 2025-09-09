@@ -6,14 +6,17 @@
 #ifndef WEBGPU_CHILD_H_
 #define WEBGPU_CHILD_H_
 
-#include "mozilla/webgpu/PWebGPUChild.h"
-#include "mozilla/webgpu/Instance.h"
-#include "mozilla/webgpu/Adapter.h"
-#include "mozilla/webgpu/SupportedFeatures.h"
-#include "mozilla/webgpu/SupportedLimits.h"
-#include "mozilla/webgpu/Device.h"
+#include <deque>
+#include <unordered_map>
+
 #include "mozilla/MozPromise.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/webgpu/Adapter.h"
+#include "mozilla/webgpu/Device.h"
+#include "mozilla/webgpu/Instance.h"
+#include "mozilla/webgpu/PWebGPUChild.h"
+#include "mozilla/webgpu/SupportedFeatures.h"
+#include "mozilla/webgpu/SupportedLimits.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
 
 namespace mozilla {
@@ -34,12 +37,6 @@ using AdapterPromise =
     MozPromise<ipc::ByteBuf, Maybe<ipc::ResponseRejectReason>, true>;
 using PipelinePromise = MozPromise<RawId, ipc::ResponseRejectReason, true>;
 using DevicePromise = MozPromise<bool, ipc::ResponseRejectReason, true>;
-
-struct PipelineCreationContext {
-  RawId mParentId = 0;
-  RawId mImplicitPipelineLayoutId = 0;
-  nsTArray<RawId> mImplicitBindGroupLayoutIds;
-};
 
 ffi::WGPUByteBuf* ToFFI(ipc::ByteBuf* x);
 
@@ -77,17 +74,14 @@ class WebGPUChild final : public PWebGPUChild, public SupportsWeakPtr {
   virtual ~WebGPUChild();
 
   UniquePtr<ffi::WGPUClient> const mClient;
-  std::unordered_map<RawId, WeakPtr<Device>> mDeviceMap;
+  std::unordered_map<RawId, RefPtr<Device>> mDeviceMap;
   nsTArray<RawId> mSwapChainTexturesWaitingForSubmit;
-
-  bool ResolveLostForDeviceId(RawId aDeviceId, uint8_t aReason,
-                              const nsAString& aMessage);
 
   bool mScheduledFlushQueuedMessages = false;
   void ScheduledFlushQueuedMessages();
   nsTArray<ipc::ByteBuf> mQueuedDataBuffers;
   nsTArray<ipc::MutableSharedMemoryHandle> mQueuedHandles;
-  void ClearAllPendingPromises();
+  void ClearActorState();
 
  public:
   ipc::IPCResult RecvServerMessage(const ipc::ByteBuf& aByteBuf);
@@ -106,6 +100,7 @@ class WebGPUChild final : public PWebGPUChild, public SupportsWeakPtr {
   struct PendingRequestAdapterPromise {
     RefPtr<dom::Promise> promise;
     RefPtr<Instance> instance;
+    RawId adapter_id;
   };
 
   std::deque<PendingRequestAdapterPromise> mPendingRequestAdapterPromises;
@@ -119,9 +114,12 @@ class WebGPUChild final : public PWebGPUChild, public SupportsWeakPtr {
     RefPtr<SupportedFeatures> features;
     RefPtr<SupportedLimits> limits;
     RefPtr<AdapterInfo> adapter_info;
+    RefPtr<dom::Promise> lost_promise;
   };
 
   std::deque<PendingRequestDevicePromise> mPendingRequestDevicePromises;
+
+  std::unordered_map<RawId, RefPtr<dom::Promise>> mPendingDeviceLostPromises;
 
   struct PendingPopErrorScopePromise {
     RefPtr<dom::Promise> promise;
@@ -135,8 +133,6 @@ class WebGPUChild final : public PWebGPUChild, public SupportsWeakPtr {
     RefPtr<Device> device;
     bool is_render_pipeline;
     RawId pipeline_id;
-    RawId implicit_pipeline_layout_id;
-    nsTArray<RawId> implicit_bind_group_layout_ids;
     nsString label;
   };
 
@@ -159,7 +155,12 @@ class WebGPUChild final : public PWebGPUChild, public SupportsWeakPtr {
   std::unordered_map<RawId, std::deque<PendingBufferMapPromise>>
       mPendingBufferMapPromises;
 
-  std::deque<RefPtr<dom::Promise>> mPendingOnSubmittedWorkDonePromises;
+  // Pending submitted work done promises for each queue. We must track these
+  // separately for each queue because there are guarantees about the order
+  // different queues will complete their work in. For each queue individually
+  // we know these will be resolved FIFO.
+  std::unordered_map<ffi::WGPUQueueId, std::deque<RefPtr<dom::Promise>>>
+      mPendingOnSubmittedWorkDonePromises;
 };
 
 }  // namespace webgpu

@@ -7,6 +7,7 @@
 #include "mozilla/dom/ScriptSettings.h"
 
 #include <utility>
+
 #include "MainThreadUtils.h"
 #include "js/CharacterEncoding.h"
 #include "js/CompilationAndEvaluation.h"

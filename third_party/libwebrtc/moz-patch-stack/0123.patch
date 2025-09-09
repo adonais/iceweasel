@@ -10,7 +10,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/90a6b254783eaa91d
  2 files changed, 2 insertions(+)
 
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index 75eaf298b0..55e01677e1 100644
+index 8ae86e11e2..f07c584bed 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
 @@ -25,6 +25,7 @@
@@ -22,7 +22,7 @@ index 75eaf298b0..55e01677e1 100644
  #include "api/rtp_headers.h"
  #include "api/scoped_refptr.h"
 diff --git a/call/video_send_stream.h b/call/video_send_stream.h
-index d32191088a..336879fecb 100644
+index 2c46bb4641..3b766fe605 100644
 --- a/call/video_send_stream.h
 +++ b/call/video_send_stream.h
 @@ -21,6 +21,7 @@

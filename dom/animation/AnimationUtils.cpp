@@ -6,15 +6,15 @@
 
 #include "AnimationUtils.h"
 
+#include "mozilla/EffectSet.h"
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/KeyframeEffect.h"
-#include "mozilla/EffectSet.h"
-#include "nsDebug.h"
 #include "nsAtom.h"
+#include "nsDebug.h"
+#include "nsGlobalWindowInner.h"
 #include "nsIContent.h"
 #include "nsLayoutUtils.h"
-#include "nsGlobalWindowInner.h"
 #include "nsString.h"
 #include "xpcpublic.h"  // For xpc::NativeGlobal
 

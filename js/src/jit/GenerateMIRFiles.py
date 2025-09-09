@@ -85,6 +85,7 @@ mir_base_class = [
     "MBinaryInstruction",
     "MTernaryInstruction",
     "MQuaternaryInstruction",
+    "MQuinaryInstruction",
 ]
 
 
@@ -189,7 +190,7 @@ def gen_mir_class(
 
     class_name = "M" + name
 
-    assert len(mir_operands) < 5
+    assert len(mir_operands) < 6
     base_class = mir_base_class[len(mir_operands)]
     assert base_class
     if base_class != "MNullaryInstruction":

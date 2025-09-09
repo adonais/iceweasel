@@ -106,6 +106,34 @@ class AboutHomeBindingTest {
     }
 
     @Test
+    fun `GIVEN onboarding is the currently shown WHEN URL is updated to ABOUT_HOME THEN do not navigate to the homepage`() = runTestOnMain {
+        val mockDestination: NavDestination = mock()
+        whenever(mockDestination.id).thenReturn(R.id.onboardingFragment)
+        whenever(navController.currentDestination).thenReturn(mockDestination)
+
+        val binding = AboutHomeBinding(
+            browserStore = browserStore,
+            navController = navController,
+        )
+
+        binding.start()
+
+        browserStore.dispatch(
+            ContentAction.UpdateUrlAction(
+                sessionId = tabId,
+                url = ABOUT_HOME_URL,
+            ),
+        )
+
+        // Wait for ContentAction.UpdateUrlAction
+        browserStore.waitUntilIdle()
+
+        assertEquals(ABOUT_HOME_URL, tab.content.url)
+
+        verify(navController, never()).navigate(NavGraphDirections.actionGlobalHome())
+    }
+
+    @Test
     fun `WHEN URL is updated to a URL that is not ABOUT_HOME THEN do not navigate to the homepage`() = runTestOnMain {
         val binding = AboutHomeBinding(
             browserStore = browserStore,

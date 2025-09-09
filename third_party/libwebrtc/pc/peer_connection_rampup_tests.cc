@@ -38,7 +38,6 @@
 #include "api/video_codecs/video_encoder_factory_template_libvpx_vp8_adapter.h"
 #include "api/video_codecs/video_encoder_factory_template_libvpx_vp9_adapter.h"
 #include "api/video_codecs/video_encoder_factory_template_open_h264_adapter.h"
-#include "p2p/base/basic_packet_socket_factory.h"
 #include "p2p/base/port_interface.h"
 #include "p2p/test/test_turn_server.h"
 #include "pc/peer_connection.h"
@@ -105,8 +104,8 @@ class PeerConnectionWrapperForRampUpTest : public PeerConnectionWrapper {
   using PeerConnectionWrapper::PeerConnectionWrapper;
 
   PeerConnectionWrapperForRampUpTest(
-      rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory,
-      rtc::scoped_refptr<PeerConnectionInterface> pc,
+      scoped_refptr<PeerConnectionFactoryInterface> pc_factory,
+      scoped_refptr<PeerConnectionInterface> pc,
       std::unique_ptr<MockPeerConnectionObserver> observer)
       : PeerConnectionWrapper::PeerConnectionWrapper(pc_factory,
                                                      pc,
@@ -122,27 +121,26 @@ class PeerConnectionWrapperForRampUpTest : public PeerConnectionWrapper {
     return success;
   }
 
-  rtc::scoped_refptr<VideoTrackInterface> CreateLocalVideoTrack(
+  scoped_refptr<VideoTrackInterface> CreateLocalVideoTrack(
       FrameGeneratorCapturerVideoTrackSource::Config config,
       Clock* clock) {
     video_track_sources_.emplace_back(
-        rtc::make_ref_counted<FrameGeneratorCapturerVideoTrackSource>(
+        make_ref_counted<FrameGeneratorCapturerVideoTrackSource>(
             config, clock, /*is_screencast=*/false));
     video_track_sources_.back()->Start();
-    return rtc::scoped_refptr<VideoTrackInterface>(
-        pc_factory()->CreateVideoTrack(video_track_sources_.back(),
-                                       CreateRandomUuid()));
+    return scoped_refptr<VideoTrackInterface>(pc_factory()->CreateVideoTrack(
+        video_track_sources_.back(), CreateRandomUuid()));
   }
 
-  rtc::scoped_refptr<AudioTrackInterface> CreateLocalAudioTrack(
-      const cricket::AudioOptions options) {
-    rtc::scoped_refptr<AudioSourceInterface> source =
+  scoped_refptr<AudioTrackInterface> CreateLocalAudioTrack(
+      const AudioOptions options) {
+    scoped_refptr<AudioSourceInterface> source =
         pc_factory()->CreateAudioSource(options);
     return pc_factory()->CreateAudioTrack(CreateRandomUuid(), source.get());
   }
 
  private:
-  std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>
+  std::vector<scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>
       video_track_sources_;
 };
 
@@ -217,7 +215,7 @@ class PeerConnectionRampUpTest : public ::testing::Test {
     FrameGeneratorCapturerVideoTrackSource::Config config;
     caller_->AddTrack(caller_->CreateLocalVideoTrack(config, clock_));
     // Disable highpass filter so that we can get all the test audio frames.
-    cricket::AudioOptions options;
+    AudioOptions options;
     options.highpass_filter = false;
     caller_->AddTrack(caller_->CreateLocalAudioTrack(options));
 

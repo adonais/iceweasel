@@ -126,19 +126,12 @@ class JS_PUBLIC_API ReadOnlyDecodeOptions;
 class JS_PUBLIC_API PrefableCompileOptions {
  public:
   PrefableCompileOptions()
-      : importAttributes_(false),
-        sourcePragmas_(true),
+      : sourcePragmas_(true),
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
         explicitResourceManagement_(
             JS::Prefs::experimental_explicit_resource_management()),
 #endif
         throwOnAsmJSValidationFailure_(false) {
-  }
-
-  bool importAttributes() const { return importAttributes_; }
-  PrefableCompileOptions& setImportAttributes(bool enabled) {
-    importAttributes_ = enabled;
-    return *this;
   }
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
@@ -185,7 +178,6 @@ class JS_PUBLIC_API PrefableCompileOptions {
   template <typename Printer>
   void dumpWith(Printer& print) const {
 #  define PrintFields_(Name) print(#Name, Name)
-    PrintFields_(importAttributes_);
     PrintFields_(sourcePragmas_);
     PrintFields_(throwOnAsmJSValidationFailure_);
 #  ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
@@ -215,7 +207,6 @@ class JS_PUBLIC_API PrefableCompileOptions {
 
  private:
   // ==== Syntax-related options. ====
-  bool importAttributes_ : 1;
 
   // The context has specified that source pragmas should be parsed.
   bool sourcePragmas_ : 1;
@@ -396,7 +387,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
     return eagerDelazificationStrategy_;
   }
 
-  bool importAttributes() const { return prefableOptions_.importAttributes(); }
   bool sourcePragmas() const { return prefableOptions_.sourcePragmas(); }
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   bool explicitResourceManagement() const {

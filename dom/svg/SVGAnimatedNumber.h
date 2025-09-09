@@ -7,15 +7,15 @@
 #ifndef DOM_SVG_SVGANIMATEDNUMBER_H_
 #define DOM_SVG_SVGANIMATEDNUMBER_H_
 
-#include "nsCycleCollectionParticipant.h"
-#include "nsError.h"
-#include "nsMathUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/DOMSVGAnimatedNumber.h"
 #include "mozilla/dom/SVGElement.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsError.h"
+#include "nsMathUtils.h"
 
 namespace mozilla {
 

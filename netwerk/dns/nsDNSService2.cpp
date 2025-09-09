@@ -1430,7 +1430,7 @@ NS_IMETHODIMP
 nsDNSService::ClearCache(bool aTrrToo) {
   RefPtr<nsHostResolver> resolver = GetResolverLocked();
   NS_ENSURE_TRUE(resolver, NS_ERROR_NOT_INITIALIZED);
-  resolver->FlushCache(aTrrToo);
+  resolver->FlushCache(aTrrToo, true);
   return NS_OK;
 }
 

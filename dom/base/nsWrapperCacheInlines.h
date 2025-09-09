@@ -7,9 +7,9 @@
 #ifndef nsWrapperCacheInline_h___
 #define nsWrapperCacheInline_h___
 
-#include "nsWrapperCache.h"
 #include "js/RootingAPI.h"
 #include "js/TracingAPI.h"
+#include "nsWrapperCache.h"
 
 inline JSObject* nsWrapperCache::GetWrapperPreserveColor() const {
   JSObject* obj = GetWrapperMaybeDead();

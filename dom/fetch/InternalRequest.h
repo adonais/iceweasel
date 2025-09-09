@@ -7,19 +7,18 @@
 #ifndef mozilla_dom_InternalRequest_h
 #define mozilla_dom_InternalRequest_h
 
-#include "mozilla/dom/HeadersBinding.h"
-#include "mozilla/dom/InternalResponse.h"
-#include "mozilla/dom/InternalHeaders.h"
-#include "mozilla/dom/RequestBinding.h"
-#include "mozilla/dom/SafeRefPtr.h"
 #include "mozilla/LoadTainting.h"
 #include "mozilla/UniquePtr.h"
-
+#include "mozilla/dom/HeadersBinding.h"
+#include "mozilla/dom/InternalHeaders.h"
+#include "mozilla/dom/InternalResponse.h"
+#include "mozilla/dom/RequestBinding.h"
+#include "mozilla/dom/SafeRefPtr.h"
+#include "mozilla/net/NeckoChannelParams.h"
 #include "nsIChannelEventSink.h"
 #include "nsIInputStream.h"
 #include "nsISupportsImpl.h"
 #include "nsISupportsPriority.h"
-#include "mozilla/net/NeckoChannelParams.h"
 #ifdef DEBUG
 #  include "nsIURLParser.h"
 #  include "nsNetCID.h"

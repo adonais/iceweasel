@@ -64,13 +64,14 @@
 #define _SDP_H_
 
 #include <ostream>
-#include <vector>
 #include <sstream>
-#include "mozilla/UniquePtr.h"
+#include <vector>
+
 #include "mozilla/Maybe.h"
-#include "sdp/SdpMediaSection.h"
+#include "mozilla/UniquePtr.h"
 #include "sdp/SdpAttributeList.h"
 #include "sdp/SdpEnum.h"
+#include "sdp/SdpMediaSection.h"
 
 namespace mozilla {
 

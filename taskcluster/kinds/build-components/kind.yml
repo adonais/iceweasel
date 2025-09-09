@@ -41,7 +41,7 @@ task-defaults:
             - android-gradle-dependencies
             - linux64-jdk
         build-fat-aar:
-            - target.maven.tar.xz
+            - target.maven.zip
     attributes:
         build_platform: android
     dependencies:

@@ -4,16 +4,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "gtest/gtest.h"
-#include "mozilla/gtest/MozAssertions.h"
-#include "mozilla/StaticPtr.h"
+#include "GMPServiceParent.h"
 #include "GMPTestMonitor.h"
 #include "GMPVideoDecoderProxy.h"
 #include "GMPVideoEncoderProxy.h"
-#include "GMPServiceParent.h"
-#include "nsAppDirectoryServiceDefs.h"
+#include "gtest/gtest.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/gtest/MozAssertions.h"
+#include "nsAppDirectoryServiceDefs.h"
 #include "nsThreadUtils.h"
 
 using namespace mozilla;

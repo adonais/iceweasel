@@ -88,7 +88,6 @@
       - linux1804-64-shippable-qr/opt
       - macosx1400-64-shippable-qr/opt
       - macosx1470-64-shippable/opt
-      - windows10-64-shippable-qr/opt
       - windows11-64-24h2-shippable/opt
       - windows11-64-shippable-qr/opt
   unittest_suite: raptor

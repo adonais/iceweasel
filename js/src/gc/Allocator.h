@@ -69,6 +69,9 @@ class CellAllocator {
   template <typename T, AllowGC allowGC>
   static T* NewBigInt(JSContext* cx, Heap heap);
 
+  template <typename T, AllowGC allowGC, typename... Args>
+  static T* NewGetterSetter(JSContext* cx, Heap heap, Args&&... args);
+
   template <typename T, AllowGC allowGC>
   static T* NewObject(JSContext* cx, AllocKind kind, Heap heap,
                       const JSClass* clasp, AllocSite* site = nullptr);

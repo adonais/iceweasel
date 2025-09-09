@@ -29,7 +29,7 @@ import mozilla.components.feature.syncedtabs.storage.SyncedTabsStorage
 import mozilla.components.service.fxa.SyncEngine
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.SyncEnginesStorage
-import mozilla.components.service.fxa.manager.ext.withConstellation
+import mozilla.components.service.fxa.manager.ext.withConstellationIfExists
 import mozilla.components.service.fxa.store.Account
 import mozilla.components.service.fxa.store.SyncAction
 import mozilla.components.service.fxa.store.SyncStatus
@@ -140,7 +140,7 @@ class RecentSyncedTabFeatureTest {
         runCurrent()
 
         verify { appStore.dispatch(AppAction.RecentSyncedTabStateChange(RecentSyncedTabState.Loading)) }
-        coVerify { accountManager.withConstellation { refreshDevices() } }
+        coVerify { accountManager.withConstellationIfExists { refreshDevices() } }
         coVerify { accountManager.syncNow(reason = SyncReason.User, debounce = true, customEngineSubset = listOf(SyncEngine.Tabs)) }
     }
 

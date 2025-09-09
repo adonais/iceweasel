@@ -27,7 +27,13 @@ class MenuController {
     host.addController(this);
   }
 
+  hostConnected() {
+    this.hostUpdated();
+  }
+
   hostDisconnected() {
+    this.#menuId = null;
+    this.#menuEl = null;
     this.host.removeEventListener("click", this.openPanelList);
     this.host.removeEventListener("mousedown", this.openPanelList);
   }

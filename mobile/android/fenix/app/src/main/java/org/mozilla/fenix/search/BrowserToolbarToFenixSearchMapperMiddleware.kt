@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.Mode
 import mozilla.components.lib.state.Middleware
@@ -31,9 +33,11 @@ import mozilla.components.lib.state.Action as MVIAction
  * [SearchFragmentStore] [Middleware] to synchronize search related details from [BrowserToolbarStore].
  *
  * @param toolbarStore The [BrowserToolbarStore] to sync from.
+ * @param browserStore The [BrowserStore] to sync from.
  */
 class BrowserToolbarToFenixSearchMapperMiddleware(
     private val toolbarStore: BrowserToolbarStore,
+    private val browserStore: BrowserStore? = null,
 ) : Middleware<SearchFragmentState, SearchFragmentAction> {
     @VisibleForTesting
     internal var environment: Environment? = null
@@ -48,10 +52,10 @@ class BrowserToolbarToFenixSearchMapperMiddleware(
         if (action is EnvironmentRehydrated) {
             environment = action.environment
 
-            syncSearchStatus(context.store)
+            syncSearchStatus(context)
 
             if (toolbarStore.state.isEditMode()) {
-                syncUserQuery(context.store)
+                syncUserQuery(context)
             }
         } else if (action is EnvironmentCleared) {
             environment = null
@@ -60,21 +64,24 @@ class BrowserToolbarToFenixSearchMapperMiddleware(
         next(action)
     }
 
-    private fun syncSearchStatus(store: Store<SearchFragmentState, SearchFragmentAction>) {
+    private fun syncSearchStatus(context: MiddlewareContext<SearchFragmentState, SearchFragmentAction>) {
         syncSearchStartedJob?.cancel()
         syncSearchStartedJob = toolbarStore.observeWhileActive {
             distinctUntilChangedBy { it.mode }
                 .collect {
                     if (it.mode == Mode.EDIT) {
-                        store.dispatch(
+                        val editState = toolbarStore.state.editState
+                        context.dispatch(
                             SearchStarted(
                                 selectedSearchEngine = null,
                                 isUserSelected = true,
                                 inPrivateMode = environment?.browsingModeManager?.mode?.isPrivate == true,
+                                searchStartedForCurrentUrl = editState.isQueryPrefilled &&
+                                    browserStore?.state?.selectedTab?.content?.url == editState.query,
                             ),
                         )
 
-                        syncUserQuery(store)
+                        syncUserQuery(context)
                     } else {
                         stopSyncingUserQuery()
                     }
@@ -82,13 +89,22 @@ class BrowserToolbarToFenixSearchMapperMiddleware(
         }
     }
 
-    private fun syncUserQuery(store: Store<SearchFragmentState, SearchFragmentAction>) {
+    private fun syncUserQuery(context: MiddlewareContext<SearchFragmentState, SearchFragmentAction>) {
         syncSearchQueryJob?.cancel()
         syncSearchQueryJob = toolbarStore.observeWhileActive {
             map { it.editState.query }
                 .distinctUntilChanged()
                 .collect { query ->
-                    store.dispatch(SearchFragmentAction.UpdateQuery(query))
+                    val isSearchStartedForCurrentUrl = context.state.searchStartedForCurrentUrl
+                    val isQueryPrefilled = toolbarStore.state.editState.isQueryPrefilled
+                    context.dispatch(
+                        SearchFragmentAction.UpdateQuery(
+                            when (isSearchStartedForCurrentUrl && isQueryPrefilled) {
+                                true -> "" // consider a prefilled query for the current URL as not entered by user
+                                false -> query
+                            },
+                        ),
+                    )
                 }
         }
     }

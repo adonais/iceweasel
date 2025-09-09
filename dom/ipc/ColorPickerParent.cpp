@@ -5,11 +5,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ColorPickerParent.h"
-#include "nsComponentManagerUtils.h"
-#include "mozilla/dom/Document.h"
+
 #include "mozilla/Unused.h"
-#include "mozilla/dom/Element.h"
 #include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Element.h"
+#include "nsComponentManagerUtils.h"
 
 using mozilla::Unused;
 using namespace mozilla::dom;

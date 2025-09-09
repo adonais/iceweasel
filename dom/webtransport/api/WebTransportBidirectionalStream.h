@@ -7,15 +7,15 @@
 #ifndef DOM_WEBTRANSPORT_API_WEBTRANSPORTBIDIRECTIONALSTREAM__H_
 #define DOM_WEBTRANSPORT_API_WEBTRANSPORTBIDIRECTIONALSTREAM__H_
 
-#include "nsCOMPtr.h"
-#include "nsISupports.h"
-#include "nsWrapperCache.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/WebTransport.h"
-#include "mozilla/dom/WritableStream.h"
 #include "mozilla/dom/WebTransportSendReceiveStreamBinding.h"
+#include "mozilla/dom/WritableStream.h"
 #include "mozilla/ipc/DataPipe.h"
+#include "nsCOMPtr.h"
+#include "nsISupports.h"
+#include "nsWrapperCache.h"
 
 // #include "mozilla/dom/WebTransportReceiveStream.h"
 // #include "mozilla/dom/WebTransportSendStream.h"

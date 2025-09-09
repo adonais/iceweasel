@@ -2,7 +2,7 @@
 
 {
   let m = parseModule('');
-  assertEq(m.status, "Unlinked");
+  assertEq(m.status, "New");
 
   moduleLink(m);
   assertEq(m.isAsyncEvaluating, false);

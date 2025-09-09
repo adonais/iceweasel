@@ -843,15 +843,11 @@ struct MemoryDesc {
     return limits.maximum.map([](uint64_t x) { return Pages(x); });
   }
 
-  // The initial length of this memory in bytes. Only valid for memory32.
-  uint64_t initialLength32() const {
-    MOZ_ASSERT(addressType() == AddressType::I32);
-    // See static_assert after MemoryDesc for why this is safe.
-    return limits.initial * PageSize;
-  }
-
-  uint64_t initialLength64() const {
-    MOZ_ASSERT(addressType() == AddressType::I64);
+  // The initial length of this memory in bytes.
+  uint64_t initialLength() const {
+    // See static_assert after MemoryDesc for why this is safe for memory32.
+    MOZ_ASSERT_IF(addressType() == AddressType::I64,
+                  limits.initial <= UINT64_MAX / PageSize);
     return limits.initial * PageSize;
   }
 
@@ -864,7 +860,7 @@ WASM_DECLARE_CACHEABLE_POD(MemoryDesc);
 
 using MemoryDescVector = Vector<MemoryDesc, 1, SystemAllocPolicy>;
 
-// We don't need to worry about overflow with a Memory32 field when
+// We never need to worry about overflow with a Memory32 field when
 // using a uint64_t.
 static_assert(MaxMemory32PagesValidation <= UINT64_MAX / PageSize);
 

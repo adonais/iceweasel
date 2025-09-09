@@ -72,7 +72,9 @@ const lazy = createLazyLoaders({
       "resource://devtools/shared/performance-new/recording-utils.sys.mjs"
     ),
   CustomizableUI: () =>
-    ChromeUtils.importESModule("resource:///modules/CustomizableUI.sys.mjs"),
+    ChromeUtils.importESModule(
+      "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs"
+    ),
   PerfSymbolication: () =>
     ChromeUtils.importESModule(
       "resource://devtools/shared/performance-new/symbolication.sys.mjs"

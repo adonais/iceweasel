@@ -39,7 +39,7 @@ td.integer {
   --codec-bg-unsupported-odd: #ffbdc5;
   --codec-text-name-even: var(--table-row-background-color);
   --codec-text-name-odd: var(--table-row-background-color-alternate);
-  --codec-text-other: var(--in-content-text-color);
+  --codec-text-other: var(--text-color);
   --codec-text-supported: #15141a;
   --codec-text-unsupported: #15141a;
 }

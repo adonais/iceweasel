@@ -175,12 +175,13 @@ class NATSocketServer : public SocketServer, public NATInternalSocketFactory {
 size_t PackAddressForNAT(char* buf,
                          size_t buf_size,
                          const SocketAddress& remote_addr);
-size_t UnpackAddressFromNAT(rtc::ArrayView<const uint8_t> buf,
+size_t UnpackAddressFromNAT(ArrayView<const uint8_t> buf,
                             SocketAddress* remote_addr);
 }  //  namespace webrtc
 
 // Re-export symbols from the webrtc namespace for backwards compatibility.
 // TODO(bugs.webrtc.org/4222596): Remove once all references are updated.
+#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 namespace rtc {
 using ::webrtc::kNATEncodedIPv4AddressSize;
 using ::webrtc::kNATEncodedIPv6AddressSize;
@@ -190,5 +191,6 @@ using ::webrtc::NATSocketServer;
 using ::webrtc::PackAddressForNAT;
 using ::webrtc::UnpackAddressFromNAT;
 }  // namespace rtc
+#endif  // WEBRTC_ALLOW_DEPRECATED_NAMESPACES
 
 #endif  // P2P_TEST_NAT_SOCKET_FACTORY_H_

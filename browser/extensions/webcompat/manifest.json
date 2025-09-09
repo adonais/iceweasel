@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Web Compatibility Interventions",
   "description": "Urgent post-release fixes for web compatibility.",
-  "version": "142.9.0",
+  "version": "143.3.0",
   "browser_specific_settings": {
     "gecko": {
       "id": "webcompat@mozilla.org",
@@ -162,7 +162,6 @@
     "shims/twitter-embed.js",
     "shims/vast2.xml",
     "shims/vast3.xml",
-    "shims/vidible.js",
     "shims/vmad.xml",
     "shims/webtrends.js",
     "shims/x-logo.svg",

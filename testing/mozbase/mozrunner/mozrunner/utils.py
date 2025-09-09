@@ -170,7 +170,7 @@ def test_environment(
                 # lsanOptions.append("report_objects=1")
                 env["LSAN_OPTIONS"] = ":".join(lsanOptions)
 
-            if len(asanOptions):
+            if asanOptions:
                 env["ASAN_OPTIONS"] = ":".join(asanOptions)
 
         except OSError as err:

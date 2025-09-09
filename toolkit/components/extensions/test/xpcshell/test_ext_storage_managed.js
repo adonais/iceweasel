@@ -100,6 +100,11 @@ add_task(async function test_storage_managed() {
           browser.storage.managed.get({ str: "a", num: 2 }),
         ])
       );
+
+      browser.test.sendMessage(
+        "getKeysResults",
+        await browser.storage.managed.getKeys()
+      );
     },
   });
 
@@ -110,6 +115,10 @@ add_task(async function test_storage_managed() {
     { null: null, obj: MANIFEST.data.obj },
     { str: "hello", num: 2 },
   ]);
+  deepEqual(
+    await extension.awaitMessage("getKeysResults"),
+    Object.keys(MANIFEST.data)
+  );
   await extension.unload();
 });
 

@@ -88,6 +88,14 @@ newtab-confirm-delete-history-p2 = Questa operazione non può essere annullata.
 
 newtab-topsite-sponsored = Sponsorizzato
 
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (appuntato)
+    .title = { $title }
+
 ## Context Menu - Action Tooltips.
 
 # General tooltip for context menus.
@@ -600,3 +608,4 @@ newtab-trending-searches-learn-more = Ulteriori informazioni
 newtab-trending-searches-dismiss = Nascondi ricerche di tendenza
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Ricerche di tendenza
+

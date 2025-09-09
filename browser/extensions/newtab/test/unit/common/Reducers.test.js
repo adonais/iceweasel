@@ -769,18 +769,6 @@ describe("Reducers", () => {
         INITIAL_STATE.DiscoveryStream
       );
     });
-    it("should set isPrivacyInfoModalVisible to true with SHOW_PRIVACY_INFO", () => {
-      const state = DiscoveryStream(undefined, {
-        type: at.SHOW_PRIVACY_INFO,
-      });
-      assert.equal(state.isPrivacyInfoModalVisible, true);
-    });
-    it("should set isPrivacyInfoModalVisible to false with HIDE_PRIVACY_INFO", () => {
-      const state = DiscoveryStream(undefined, {
-        type: at.HIDE_PRIVACY_INFO,
-      });
-      assert.equal(state.isPrivacyInfoModalVisible, false);
-    });
     it("should set layout data with DISCOVERY_STREAM_LAYOUT_UPDATE", () => {
       const state = DiscoveryStream(undefined, {
         type: at.DISCOVERY_STREAM_LAYOUT_UPDATE,
@@ -821,20 +809,6 @@ describe("Reducers", () => {
         data: { enabled: true },
       });
       assert.deepEqual(state.config, { enabled: true });
-    });
-    it("should set recentSavesEnabled with DISCOVERY_STREAM_PREFS_SETUP", () => {
-      const state = DiscoveryStream(undefined, {
-        type: at.DISCOVERY_STREAM_PREFS_SETUP,
-        data: { recentSavesEnabled: true },
-      });
-      assert.isTrue(state.recentSavesEnabled);
-    });
-    it("should set recentSavesData with DISCOVERY_STREAM_RECENT_SAVES", () => {
-      const state = DiscoveryStream(undefined, {
-        type: at.DISCOVERY_STREAM_RECENT_SAVES,
-        data: { recentSaves: [1, 2, 3] },
-      });
-      assert.deepEqual(state.recentSavesData, [1, 2, 3]);
     });
     it("should set isUserLoggedIn with DISCOVERY_STREAM_POCKET_STATE_SET", () => {
       const state = DiscoveryStream(undefined, {
@@ -1198,18 +1172,6 @@ describe("Reducers", () => {
         newState.feeds.data["https://foo.com/feed1"].data.recommendations[0]
           .bookmarkTitle
       );
-    });
-    describe("PREF_CHANGED", () => {
-      it("should set isCollectionDismissible", () => {
-        const state = DiscoveryStream(undefined, {
-          type: at.PREF_CHANGED,
-          data: {
-            name: "discoverystream.isCollectionDismissible",
-            value: true,
-          },
-        });
-        assert.equal(state.isCollectionDismissible, true);
-      });
     });
   });
   describe("Search", () => {

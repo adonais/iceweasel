@@ -621,6 +621,13 @@ class InactivePropertyHelper {
         fixId: "learn-more",
         msgId: "inactive-css-no-width-height",
       },
+      // anchor-name used on element not creating a principal box.
+      {
+        invalidProperties: ["anchor-name"],
+        when: () => !this.hasPrincipalBox,
+        fixId: "inactive-css-no-principal-box-fix",
+        msgId: "inactive-css-no-principal-box",
+      },
     ];
   }
 

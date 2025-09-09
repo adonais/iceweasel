@@ -245,8 +245,13 @@ function createSourceObject({
   isPrettyPrinted = false,
   isOriginal = false,
   isHTML = false,
+  generatedSource = null,
 }) {
-  const displayURL = getDisplayURL(url, extensionName);
+  // Ensure removing the internal :formatted suffix for the display URL object.
+  const displayURL = getDisplayURL(
+    isPrettyPrinted ? url.replace(/:formatted$/, "") : url,
+    extensionName
+  );
   return {
     // The ID, computed by:
     // * `makeSourceId` for generated,
@@ -299,6 +304,9 @@ function createSourceObject({
 
     // True for source map original files, as well as pretty printed sources
     isOriginal,
+
+    // If this is an original/pretty printed source, reference to the related generated/minimized source
+    generatedSource,
   };
 }
 
@@ -313,12 +321,15 @@ function createSourceObject({
  *        The ID of the source, computed by source map codebase.
  * @param {String} url
  *        The URL of the original source file.
+ * @param {Object} generatedSource
+ *        The Source object for the related generated source this original source maps to.
  */
-export function createSourceMapOriginalSource(id, url) {
+export function createSourceMapOriginalSource(id, url, generatedSource) {
   return createSourceObject({
     id,
     url,
     isOriginal: true,
+    generatedSource,
   });
 }
 
@@ -334,13 +345,16 @@ export function createSourceMapOriginalSource(id, url) {
  * @param {String} url
  *        The URL of the pretty-printed source file.
  *        This URL doesn't work. It is the URL of the non-pretty-printed file with ":formated" suffix.
+ * @param {Object} generatedSource
+ *        The Source object for the related minimized source that related to this pretty printed source.
  */
-export function createPrettyPrintOriginalSource(id, url) {
+export function createPrettyPrintOriginalSource(id, url, generatedSource) {
   return createSourceObject({
     id,
     url,
     isOriginal: true,
     isPrettyPrinted: true,
+    generatedSource,
   });
 }
 

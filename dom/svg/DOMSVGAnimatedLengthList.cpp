@@ -9,9 +9,9 @@
 #include "DOMSVGLengthList.h"
 #include "SVGAnimatedLengthList.h"
 #include "SVGAttrTearoffTable.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/SVGAnimatedLengthListBinding.h"
 #include "mozilla/dom/SVGElement.h"
-#include "mozilla/RefPtr.h"
 
 // See the architecture comment in this file's header.
 

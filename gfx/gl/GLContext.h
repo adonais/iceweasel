@@ -296,6 +296,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   }
 
   bool HasPBOState() const { return (!IsGLES() || Version() >= 300); }
+  bool HasTexParamMipmapLevel() const { return HasPBOState(); }
 
   /**
    * If this context is double-buffered, returns TRUE.
@@ -1401,7 +1402,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   }
 
   GLint fGetUniformLocation(GLuint programObj, const GLchar* name) {
-    GLint retval = 0;
+    GLint retval = -1;
     BEFORE_GL_CALL;
     retval = mSymbols.fGetUniformLocation(programObj, name);
     OnSyncCall();
@@ -2447,6 +2448,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 
   GLenum fClientWaitSync(GLsync sync, GLbitfield flags, GLuint64 timeout) {
     GLenum ret = 0;
+    MOZ_ASSERT(sync);
     BEFORE_GL_CALL;
     ASSERT_SYMBOL_PRESENT(fClientWaitSync);
     ret = mSymbols.fClientWaitSync(sync, flags, timeout);
@@ -4003,7 +4005,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 
   // --
 
-  void TexParams_SetClampNoMips(GLenum target = LOCAL_GL_TEXTURE_2D) {
+  void TexParams_SetClampNoMips(GLenum target) {
     fTexParameteri(target, LOCAL_GL_TEXTURE_WRAP_S, LOCAL_GL_CLAMP_TO_EDGE);
     fTexParameteri(target, LOCAL_GL_TEXTURE_WRAP_T, LOCAL_GL_CLAMP_TO_EDGE);
     fTexParameteri(target, LOCAL_GL_TEXTURE_MAG_FILTER, LOCAL_GL_NEAREST);

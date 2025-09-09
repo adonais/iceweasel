@@ -54,6 +54,7 @@ internal class LoginsMiddleware(
         next: (LoginsAction) -> Unit,
         action: LoginsAction,
     ) {
+        val preReductionState = context.state
         next(action)
 
         when (action) {
@@ -72,14 +73,17 @@ internal class LoginsMiddleware(
             is DetailLoginMenuAction.EditLoginMenuItemClicked -> {
                 getNavController().navigate(LoginsDestinations.EDIT_LOGIN)
             }
-            is DetailLoginMenuAction.DeleteLoginMenuItemClicked -> {
+            is LoginDeletionDialogAction.DeleteTapped -> {
                 scope.launch {
-                    loginsStorage.delete(action.item.guid)
-
-                    context.store.refreshLoginsList()
-
-                    withContext(Dispatchers.Main) {
-                        getNavController().navigate(LoginsDestinations.LIST)
+                    preReductionState.loginsLoginDetailState?.login?.guid?.let {
+                        loginsStorage.delete(
+                            it,
+                        )
+                    }
+                    if (preReductionState.loginsLoginDetailState != null) {
+                        withContext(Dispatchers.Main) {
+                            getNavController().popBackStack()
+                        }
                     }
                 }
             }
@@ -126,6 +130,8 @@ internal class LoginsMiddleware(
             is AddLoginAction.HostChanged,
             is AddLoginAction.UsernameChanged,
             is AddLoginAction.PasswordChanged,
+            is DetailLoginMenuAction.DeleteLoginMenuItemClicked,
+            is LoginDeletionDialogAction.CancelTapped,
             is ViewDisposed,
             -> Unit
         }

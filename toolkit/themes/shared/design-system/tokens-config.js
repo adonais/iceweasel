@@ -405,7 +405,7 @@ function formatVariables({ format, dictionary, outputReferences, formatting }) {
 // Easy way to grab variable values later for display.
 let variableLookupTable = {};
 
-function storybookJSFormat(args) {
+function tokensTableFormat(args) {
   let dictionary = Object.assign({}, args.dictionary);
   let resolvedTokens = dictionary.allTokens.map(token => {
     let tokenVal = resolveReferences(dictionary, token.original);
@@ -426,10 +426,10 @@ function storybookJSFormat(args) {
       .trim()
       .replaceAll(/(^module\.exports\s*=\s*|\;$)/g, "")
   );
-  let storybookTables = formatTokensTablesData(parsedData);
+  let tokensTable = formatTokensTableData(parsedData);
 
-  return `${customFileHeader({ platform: "storybook" })}
-  export const storybookTables = ${JSON.stringify(storybookTables)};
+  return `${customFileHeader({ platform: "tokens-table" })}
+  export const tokensTable = ${JSON.stringify(tokensTable)};
 
   export const variableLookupTable = ${JSON.stringify(variableLookupTable)};
   `;
@@ -461,8 +461,8 @@ function getValueWithReferences(dictionary, value) {
   return valWithRefs;
 }
 
-function formatTokensTablesData(tokensData) {
-  let tokensTables = {};
+function formatTokensTableData(tokensData) {
+  let tokensTable = {};
   Object.entries(tokensData).forEach(([key, value]) => {
     variableLookupTable[key] = value;
     let formattedToken = {
@@ -471,13 +471,13 @@ function formatTokensTablesData(tokensData) {
     };
 
     let tableName = getTableName(key);
-    if (tokensTables[tableName]) {
-      tokensTables[tableName].push(formattedToken);
+    if (tokensTable[tableName]) {
+      tokensTable[tableName].push(formattedToken);
     } else {
-      tokensTables[tableName] = [formattedToken];
+      tokensTable[tableName] = [formattedToken];
     }
   });
-  return tokensTables;
+  return tokensTable;
 }
 
 const SINGULAR_TABLE_CATEGORIES = [
@@ -488,13 +488,19 @@ const SINGULAR_TABLE_CATEGORIES = [
   "space",
   "opacity",
   "outline",
-  "padding",
-  "margin",
 ];
 
 function getTableName(tokenName) {
-  if (tokenName.includes("page-main")) {
+  if (tokenName.includes("page-main") || tokenName.includes("min-height")) {
     return "size";
+  }
+
+  if (tokenName.includes("padding") || tokenName.includes("margin")) {
+    return "space";
+  }
+
+  if (tokenName.includes("icon-fill") || tokenName.includes("icon-stroke")) {
+    return "icon-color";
   }
 
   let replacePattern =
@@ -514,7 +520,7 @@ module.exports = {
     "css/variables/shared": createDesktopFormat(),
     "css/variables/brand": createDesktopFormat("brand"),
     "css/variables/platform": createDesktopFormat("platform"),
-    "javascript/storybook": storybookJSFormat,
+    "javascript/tokens-table": tokensTableFormat,
     ...figmaConfig.formats,
   },
   platforms: {
@@ -548,7 +554,7 @@ module.exports = {
         },
       ],
     },
-    storybook: {
+    tables: {
       options: {
         outputReferences: true,
         showFileHeader: false,
@@ -559,8 +565,8 @@ module.exports = {
       ],
       files: [
         {
-          destination: "tokens-storybook.mjs",
-          format: "javascript/storybook",
+          destination: "tokens-table.mjs",
+          format: "javascript/tokens-table",
         },
       ],
     },

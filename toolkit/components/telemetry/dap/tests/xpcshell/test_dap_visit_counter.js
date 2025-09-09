@@ -132,9 +132,9 @@ add_task(
     await lazy.DAPVisitCounter.startup();
 
     Assert.strictEqual(
-      lazy.DAPVisitCounter.dapReportContoller,
+      lazy.DAPVisitCounter.dapReportController,
       null,
-      "dapReportContoller should not exist before enrollment"
+      "dapReportController should not exist before enrollment"
     );
 
     // Enroll experiment
@@ -155,9 +155,9 @@ add_task(
     });
 
     Assert.notStrictEqual(
-      lazy.DAPVisitCounter.dapReportContoller,
+      lazy.DAPVisitCounter.dapReportController,
       null,
-      "dapReportContoller should be active"
+      "dapReportController should be active"
     );
 
     // Verify there are no pending reports to submit
@@ -179,7 +179,7 @@ add_task(
     Assert.equal(numRecords, 1, "Should be 1 pending report");
 
     // Trigger submission of the report
-    await lazy.DAPVisitCounter.dapReportContoller.submit(1000, "unit-test");
+    await lazy.DAPVisitCounter.dapReportController.submit(1000, "unit-test");
 
     // Verify there are 0 pending reports
     numRecords = await getReportCount(db);
@@ -215,9 +215,9 @@ add_task(
       "Should have one report on enrollment, second for triggered submission, third on unenrollment"
     );
     Assert.strictEqual(
-      lazy.DAPVisitCounter.dapReportContoller,
+      lazy.DAPVisitCounter.dapReportController,
       null,
-      "dapReportContoller should not exist after unenrollment"
+      "dapReportController should not exist after unenrollment"
     );
 
     await cleanup();

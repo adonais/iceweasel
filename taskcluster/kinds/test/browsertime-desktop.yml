@@ -49,10 +49,6 @@ task-defaults:
                     - raptor/linux_config.py
         extra-options:
             - --conditioned-profile=settled
-    use-caches:
-        by-test-platform:
-            windows.*: ["checkout"]
-            default: ["checkout", "pip", "uv"]
     fetches:
         toolchain:
             by-app:
@@ -85,9 +81,6 @@ task-defaults:
                         default: []
                 default:
                     by-test-platform:
-                        windows.*-32.*.:
-                            - win32-minidump-stackwalk
-                            - win32-fix-stacks
                         windows.*-64.*:
                             - win64-minidump-stackwalk
                             - win64-fix-stacks
@@ -136,7 +129,6 @@ browsertime-tp6:
                     by-app:
                         firefox:
                             by-test-platform:
-                                windows.*-32.*: []
                                 linux.*shippable.*: [trunk]
                                 windows.*-64.*shippable.*: [trunk]
                                 macosx1470.*shippable.*: [trunk]
@@ -146,7 +138,6 @@ browsertime-tp6:
                     by-app:
                         firefox:
                             by-test-platform:
-                                windows.*-32.*: []
                                 .*64(?!.*nightlyasrelease).*shippable.*: [trunk]
                                 default: []
                         default: []
@@ -215,7 +206,6 @@ browsertime-responsiveness:
         by-app:
             firefox:
                 by-test-platform:
-                    windows.*-32.*: []
                     .*64(?!.*nightlyasrelease).*shippable.*: [trunk]
                     default: []
             default: []
@@ -259,7 +249,6 @@ browsertime-tp6-essential:
             by-app:
                 firefox:
                     by-test-platform:
-                        windows.*-32.*: []
                         .*64(?!.*nightlyasrelease).*shippable.*: [trunk]
                         default: []
                 default: []
@@ -292,7 +281,6 @@ browsertime-tp6-bytecode:
         by-app:
             firefox:
                 by-test-platform:
-                    windows.*-32.*: []
                     .*64(?!.*nightlyasrelease).*shippable.*: [trunk]
                     default: []
             default: []
@@ -393,13 +381,6 @@ browsertime-benchmark:
                             - [motionmark-1-3, mm-1.3]
                             - [motionmark-htmlsuite-1-3, mm-h-1.3]
                             - [jetstream2, js2]
-                # Bug 1909894, windows 10 + sp3 temporarily
-                windows10-64.*shippable.*:
-                    by-app:
-                        safari: []
-                        safari-tp: []
-                        default:
-                            - [speedometer3, sp3]
                 windows11-64-.*-hw-ref.*:
                     by-app:
                         safari: []
@@ -513,9 +494,6 @@ browsertime-benchmark:
                 by-app:
                     firefox:
                         by-test-platform:
-                            windows.*-32.*: []
-                            # Bug 1909894, windows 10 + sp3 temporarily
-                            windows10-64.*shippable.*: [mozilla-central]
                             windows11-64-.*-hw-ref-shippable/opt: [mozilla-central]
                             windows11-64-shippable(-qr)?/opt: [trunk]
                             windows11-64-24h2-shippable/opt: [trunk]
@@ -541,7 +519,6 @@ browsertime-benchmark:
                 by-app:
                     firefox:
                         by-test-platform:
-                            windows.*-32.*: []
                             # Disabled on autoland due to bug 1720063, and bug 1795826
                             .*64.*shippable.*/.*: [mozilla-central]
                             default: []
@@ -550,7 +527,6 @@ browsertime-benchmark:
                 by-app:
                     firefox:
                         by-test-platform:
-                            windows.*-32.*: []
                             .*64.*shippable.*/.*: [trunk]
                             .*nightlyasrelease.*: [autoland]
                             default: []
@@ -564,7 +540,6 @@ browsertime-benchmark:
                 by-app:
                     firefox:
                         by-test-platform:
-                            windows.*-32.*: []
                             (?!macosx1400|macosx1500).*64.*shippable.*/.*: [trunk]
                             macosx1400.*shippable.*: [mozilla-central]
                             macosx1500.*shippable.*: [mozilla-central]
@@ -633,7 +608,6 @@ browsertime-benchmark-wasm:
         by-app:
             firefox:
                 by-test-platform:
-                    windows.*-32.*: []
                     .*64(?!.*nightlyasrelease).*shippable.*: [mozilla-central]
                     default: []
             default: []
@@ -664,7 +638,6 @@ browsertime-youtube-playback:
     treeherder-symbol: Btime()
     run-on-projects:
         by-test-platform:
-            windows.*-32.*: []
             .*64(?!.*nightlyasrelease).*shippable.*: [mozilla-central]
             default: []
     tier:
@@ -838,7 +811,6 @@ browsertime-tp6-live-sheriffed:
     run-on-projects:
         by-test-platform:
             linux.*: []
-            windows.*-32.*: []
             windows.*-64.*: []
             macosx.*: []
             default: []
@@ -891,7 +863,6 @@ browsertime-custom:
             - --extra-profiler-run
     run-on-projects:
         by-test-platform:
-            windows.*-32.*: []
             .*64(?!.*nightlyasrelease).*shippable.*: [mozilla-central]
             default: []
     tier: 1
@@ -910,7 +881,6 @@ browsertime-first-install:
             - --extra-profiler-run
     run-on-projects:
         by-test-platform:
-            windows.*-32.*: []
             .*64(?!.*nightlyasrelease).*shippable.*: [trunk]
             default: []
     tier: 1
@@ -951,7 +921,6 @@ browsertime-upload:
         by-app:
             firefox:
                 by-test-platform:
-                    windows.*-32.*: []
                     .*64.*shippable.*: [autoland, mozilla-central]
                     default: []
             default: []
@@ -1042,7 +1011,6 @@ browsertime-pageload-benchmark:
             - --browser-cycles=5
     run-on-projects:
         by-test-platform:
-            windows.*-32.*: []
             windows.*-64.*shippable.*: [autoland]
             linux.*shippable.*: [autoland]
             default: []
@@ -1086,7 +1054,6 @@ browsertime-video-playback-latency:
                 by-test-platform:
                     macosx1470.*shippable.*: [autoland, mozilla-central]
                     linux.*shippable.*: [autoland, mozilla-central]
-                    windows10-64.*shippable.*: [autoland, mozilla-central]
                     default: []
             default: []
     treeherder-symbol: Btime(vpl)
@@ -1162,7 +1129,6 @@ browsertime-speculative:
     max-run-time: 420
     run-on-projects:
         by-test-platform:
-            windows.*-32.*: []
             .*64.*shippable.*: [autoland]
             default: []
     tier:
@@ -1208,7 +1174,6 @@ browsertime-tp6-webextensions:
         by-app:
             firefox:
                 by-test-platform:
-                    windows.*-32.*: []
                     macosx1100.*shippable.*: [mozilla-central]
                     .*64(?!.*nightlyasrelease).*shippable.*: [trunk-only]
                     default: []
@@ -1269,7 +1234,6 @@ browsertime-indexeddb:
         by-app:
             firefox:
                 by-test-platform:
-                    windows.*-32.*: []
                     .*64.*shippable.*: [autoland, mozilla-central]
                     default: []
             default: []

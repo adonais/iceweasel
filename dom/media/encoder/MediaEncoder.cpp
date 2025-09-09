@@ -6,12 +6,27 @@
 #include "MediaEncoder.h"
 
 #include <algorithm>
+
 #include "AudioNodeEngine.h"
 #include "AudioNodeTrack.h"
 #include "DriftCompensation.h"
 #include "MediaDecoder.h"
 #include "MediaTrackGraph.h"
 #include "MediaTrackListener.h"
+#include "Muxer.h"
+#include "OggWriter.h"
+#include "OpusTrackEncoder.h"
+#include "TimeUnits.h"
+#include "Tracing.h"
+#include "VP8TrackEncoder.h"
+#include "WebMWriter.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/ProfilerLabels.h"
+#include "mozilla/StaticPrefs_media.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/TaskQueue.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/AudioNode.h"
 #include "mozilla/dom/AudioStreamTrack.h"
 #include "mozilla/dom/Blob.h"
@@ -20,23 +35,8 @@
 #include "mozilla/dom/MutableBlobStorage.h"
 #include "mozilla/dom/VideoStreamTrack.h"
 #include "mozilla/gfx/Point.h"  // IntSize
-#include "mozilla/Logging.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/ProfilerLabels.h"
-#include "mozilla/StaticPrefs_media.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/TaskQueue.h"
-#include "mozilla/Unused.h"
-#include "Muxer.h"
 #include "nsMimeTypes.h"
 #include "nsThreadUtils.h"
-#include "OggWriter.h"
-#include "OpusTrackEncoder.h"
-#include "TimeUnits.h"
-#include "Tracing.h"
-
-#include "VP8TrackEncoder.h"
-#include "WebMWriter.h"
 
 mozilla::LazyLogModule gMediaEncoderLog("MediaEncoder");
 #define LOG(type, msg) MOZ_LOG(gMediaEncoderLog, type, msg)

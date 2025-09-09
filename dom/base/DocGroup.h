@@ -7,14 +7,14 @@
 #ifndef DocGroup_h
 #define DocGroup_h
 
-#include "nsISupportsImpl.h"
-#include "nsIPrincipal.h"
-#include "nsThreadUtils.h"
-#include "nsTHashSet.h"
-#include "nsString.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/HTMLSlotElement.h"
+#include "nsIPrincipal.h"
+#include "nsISupportsImpl.h"
+#include "nsString.h"
+#include "nsTHashSet.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 class AbstractThread;

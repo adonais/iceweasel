@@ -119,6 +119,7 @@ add_task(async function testSupportedVdafs() {
     taskId: "QjMD4n8l_MHBoLrbCfLTFi8hC264fC59SKHPviPF0q8",
     vdaf: "histogram",
     length: 30,
+    timePrecision: 60,
     defaultMeasurement: 0,
   });
   const sumvec_task = new Task({
@@ -126,6 +127,7 @@ add_task(async function testSupportedVdafs() {
     vdaf: "sumvec",
     length: 20,
     bits: 8,
+    timePrecision: 60,
     defaultMeasurement: [
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ],
@@ -134,6 +136,7 @@ add_task(async function testSupportedVdafs() {
     taskId: "RnywY1X4s1vtspu6B8C1FOu_jJZhJO6V8L3PT3WepF4",
     vdaf: "sum",
     bits: 8,
+    timePrecision: 60,
     defaultMeasurement: 0,
   });
 
@@ -283,5 +286,25 @@ add_task(async function testSupportedVdafs() {
     server_requests.sort((a, b) => a - b),
     [886, 886, 886, 886, 1126, 1126, 1126, 1126, 3654, 3654, 3654, 3654],
     "Should have one report on dapReportContoller create, second for recorded measurement, third on cleanup"
+  );
+});
+
+add_task(async function testTaskMetadata() {
+  const task = new Task({
+    taskId: "task_id1",
+    vdaf: "sumvec",
+    length: 25,
+    timePrecision: 3600,
+    defaultMeasurement: 1,
+  });
+
+  Assert.equal(task._taskId, "task_id1", "taskId not correctly set");
+  Assert.equal(task._vdaf, "sumvec", "vdaf not correctly set");
+  Assert.equal(task._length, 25, "length not correctly set");
+  Assert.equal(task._timePrecision, 3600, "timePrecision not correctly set");
+  Assert.equal(
+    task._defaultMeasurement,
+    1,
+    "defaultMeasurement not correctly set"
   );
 });

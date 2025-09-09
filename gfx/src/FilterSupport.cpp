@@ -810,8 +810,8 @@ static already_AddRefed<FilterNode> FilterNodeFromPrimitiveDescription(
       MOZ_ASSERT(aComponentTransfer.mTypes[3] !=
                  SVG_FECOMPONENTTRANSFER_SAME_AS_R);
 
-      RefPtr<FilterNode> filters[4];  // one for each FILTER_*_TRANSFER type
-      for (int32_t i = 0; i < 4; i++) {
+      RefPtr<FilterNode> filters[std::size(aComponentTransfer.mTypes)];
+      for (size_t i = 0; i < std::size(aComponentTransfer.mTypes); i++) {
         int32_t inputIndex = (aComponentTransfer.mTypes[i] ==
                               SVG_FECOMPONENTTRANSFER_SAME_AS_R) &&
                                      (i < 3)
@@ -824,7 +824,7 @@ static already_AddRefed<FilterNode> FilterNodeFromPrimitiveDescription(
 
       // Connect all used filters nodes.
       RefPtr<FilterNode> lastFilter = mSources[0];
-      for (int32_t i = 0; i < 4; i++) {
+      for (size_t i = 0; i < std::size(aComponentTransfer.mTypes); i++) {
         if (filters[i]) {
           filters[i]->SetInput(0, lastFilter);
           lastFilter = filters[i];
@@ -1228,9 +1228,7 @@ already_AddRefed<FilterNode> FilterNodeGraphFromDescription(
   RefPtr<FilterCachedColorModels> sourceFilters[4];
   nsTArray<RefPtr<FilterCachedColorModels>> primitiveFilters;
 
-  for (size_t i = 0; i < primitives.Length(); ++i) {
-    const FilterPrimitiveDescription& descr = primitives[i];
-
+  for (const auto& descr : primitives) {
     nsTArray<RefPtr<FilterNode>> inputFilterNodes;
     nsTArray<IntRect> inputSourceRects;
     nsTArray<AlphaModel> inputAlphaModels;
@@ -1342,8 +1340,8 @@ void FilterSupport::RenderFilterDescription(
 
 static nsIntRegion UnionOfRegions(const nsTArray<nsIntRegion>& aRegions) {
   nsIntRegion result;
-  for (size_t i = 0; i < aRegions.Length(); i++) {
-    result.Or(result, aRegions[i]);
+  for (const auto& region : aRegions) {
+    result.OrWith(region);
   }
   return result;
 }
@@ -1460,7 +1458,7 @@ static nsIntRegion ResultChangeRegionForPrimitive(
       int32_t dy = InflateSizeForBlurStdDev(stdDeviation.height);
       nsIntRegion blurRegion =
           offsetRegion.Inflated(nsIntMargin(dy, dx, dy, dx));
-      blurRegion.Or(blurRegion, mInputChangeRegions[0]);
+      blurRegion.OrWith(mInputChangeRegions[0]);
       return blurRegion;
     }
 
@@ -1494,13 +1492,10 @@ nsIntRegion FilterSupport::ComputeResultChangeRegion(
 
   nsTArray<nsIntRegion> resultChangeRegions;
 
-  for (int32_t i = 0; i < int32_t(primitives.Length()); ++i) {
-    const FilterPrimitiveDescription& descr = primitives[i];
-
+  for (const auto& descr : primitives) {
     nsTArray<nsIntRegion> inputChangeRegions;
     for (size_t j = 0; j < descr.NumberOfInputs(); j++) {
       int32_t inputIndex = descr.InputPrimitiveIndex(j);
-      MOZ_ASSERT(inputIndex < i, "bad input index");
       nsIntRegion inputChangeRegion =
           ElementForIndex(inputIndex, resultChangeRegions, aSourceGraphicChange,
                           aFillPaintChange, aStrokePaintChange);
@@ -1508,12 +1503,12 @@ nsIntRegion FilterSupport::ComputeResultChangeRegion(
     }
     nsIntRegion changeRegion =
         ResultChangeRegionForPrimitive(descr, inputChangeRegions);
-    changeRegion.And(changeRegion, descr.PrimitiveSubregion());
+    changeRegion.AndWith(descr.PrimitiveSubregion());
     resultChangeRegions.AppendElement(changeRegion);
   }
 
   MOZ_RELEASE_ASSERT(!resultChangeRegions.IsEmpty());
-  return resultChangeRegions[resultChangeRegions.Length() - 1];
+  return resultChangeRegions.LastElement();
 }
 
 static float ResultOfZeroUnderTransferFunction(
@@ -1651,10 +1646,10 @@ nsIntRegion FilterSupport::PostFilterExtentsForPrimitive(
           region = mInputExtents[0].Intersect(mInputExtents[1]);
         }
         if (coefficients[1] > 0.0f) {
-          region.Or(region, mInputExtents[0]);
+          region.OrWith(mInputExtents[0]);
         }
         if (coefficients[2] > 0.0f) {
-          region.Or(region, mInputExtents[1]);
+          region.OrWith(mInputExtents[1]);
         }
         if (coefficients[3] > 0.0f) {
           region = mDescription.PrimitiveSubregion();
@@ -1704,26 +1699,24 @@ nsIntRegion FilterSupport::ComputePostFilterExtents(
   MOZ_RELEASE_ASSERT(!primitives.IsEmpty());
   nsTArray<nsIntRegion> postFilterExtents;
 
-  for (int32_t i = 0; i < int32_t(primitives.Length()); ++i) {
-    const FilterPrimitiveDescription& descr = primitives[i];
+  for (const auto& descr : primitives) {
     nsIntRegion filterSpace = descr.FilterSpaceBounds();
 
     nsTArray<nsIntRegion> inputExtents;
     for (size_t j = 0; j < descr.NumberOfInputs(); j++) {
       int32_t inputIndex = descr.InputPrimitiveIndex(j);
-      MOZ_ASSERT(inputIndex < i, "bad input index");
       nsIntRegion inputExtent =
           ElementForIndex(inputIndex, postFilterExtents, aSourceGraphicExtents,
                           filterSpace, filterSpace);
       inputExtents.AppendElement(inputExtent);
     }
     nsIntRegion extent = PostFilterExtentsForPrimitive(descr, inputExtents);
-    extent.And(extent, descr.PrimitiveSubregion());
+    extent.AndWith(descr.PrimitiveSubregion());
     postFilterExtents.AppendElement(extent);
   }
 
   MOZ_RELEASE_ASSERT(!postFilterExtents.IsEmpty());
-  return postFilterExtents[postFilterExtents.Length() - 1];
+  return postFilterExtents.LastElement();
 }
 
 static nsIntRegion SourceNeededRegionForPrimitive(
@@ -1837,7 +1830,7 @@ static nsIntRegion SourceNeededRegionForPrimitive(
       int32_t dy = InflateSizeForBlurStdDev(stdDeviation.height);
       nsIntRegion blurRegion =
           offsetRegion.Inflated(nsIntMargin(dy, dx, dy, dx));
-      blurRegion.Or(blurRegion, mResultNeededRegion);
+      blurRegion.OrWith(mResultNeededRegion);
       return blurRegion;
     }
 
@@ -1877,12 +1870,12 @@ void FilterSupport::ComputeSourceNeededRegions(
   nsTArray<nsIntRegion> primitiveNeededRegions;
   primitiveNeededRegions.AppendElements(primitives.Length());
 
-  primitiveNeededRegions[primitives.Length() - 1] = aResultNeededRegion;
+  primitiveNeededRegions.LastElement() = aResultNeededRegion;
 
   for (int32_t i = primitives.Length() - 1; i >= 0; --i) {
     const FilterPrimitiveDescription& descr = primitives[i];
     nsIntRegion neededRegion = primitiveNeededRegions[i];
-    neededRegion.And(neededRegion, descr.PrimitiveSubregion());
+    neededRegion.AndWith(descr.PrimitiveSubregion());
 
     for (size_t j = 0; j < descr.NumberOfInputs(); j++) {
       int32_t inputIndex = descr.InputPrimitiveIndex(j);
@@ -1898,8 +1891,7 @@ void FilterSupport::ComputeSourceNeededRegions(
 
   // Clip original SourceGraphic to first filter region.
   const FilterPrimitiveDescription& firstDescr = primitives[0];
-  aSourceGraphicNeededRegion.And(aSourceGraphicNeededRegion,
-                                 firstDescr.FilterSpaceBounds());
+  aSourceGraphicNeededRegion.AndWith(firstDescr.FilterSpaceBounds());
 }
 
 // FilterPrimitiveDescription

@@ -811,6 +811,10 @@ void MacroAssembler::branchAddPtr(Condition cond, T src, Register dest,
     case CarrySet:
       ma_addPtrTestCarry(cond, dest, dest, src, label);
       break;
+    case Signed:
+    case NotSigned:
+      ma_addPtrTestSigned(cond, dest, dest, src, label);
+      break;
     default:
       MOZ_CRASH("NYI");
   }

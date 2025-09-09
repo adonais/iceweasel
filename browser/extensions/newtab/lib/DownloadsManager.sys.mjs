@@ -8,10 +8,34 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
-  DownloadsCommon: "resource:///modules/DownloadsCommon.sys.mjs",
-  DownloadsViewUI: "resource:///modules/DownloadsViewUI.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
+});
+
+ChromeUtils.defineLazyGetter(lazy, "DownloadsCommon", () => {
+  try {
+    return ChromeUtils.importESModule(
+      "moz-src:///browser/components/downloads/DownloadsCommon.sys.mjs"
+    ).DownloadsCommon;
+  } catch {
+    // Fallback to URI format prior to FF 143.
+    return ChromeUtils.importESModule(
+      "resource:///modules/DownloadsCommon.sys.mjs"
+    ).DownloadsCommon;
+  }
+});
+
+ChromeUtils.defineLazyGetter(lazy, "DownloadsViewUI", () => {
+  try {
+    return ChromeUtils.importESModule(
+      "moz-src:///browser/components/downloads/DownloadsViewUI.sys.mjs"
+    ).DownloadsViewUI;
+  } catch {
+    // Fallback to URI format prior to FF 143.
+    return ChromeUtils.importESModule(
+      "resource:///modules/DownloadsViewUI.sys.mjs"
+    ).DownloadsViewUI;
+  }
 });
 
 const DOWNLOAD_CHANGED_DELAY_TIME = 1000; // time in ms to delay timer for downloads changed events

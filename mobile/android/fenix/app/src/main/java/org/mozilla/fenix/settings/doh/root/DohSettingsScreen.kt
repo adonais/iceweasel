@@ -496,9 +496,9 @@ private fun AlertDialogAddCustomProvider(
 
 @Composable
 private fun TextWithUnderline(
-    showCustomProviderDialog: () -> Unit = {},
     text: String,
     modifier: Modifier = Modifier,
+    showCustomProviderDialog: () -> Unit = {},
     textColor: Color = FirefoxTheme.colors.textPrimary,
     underlineColor: Color = FirefoxTheme.colors.formDefault,
 ) {

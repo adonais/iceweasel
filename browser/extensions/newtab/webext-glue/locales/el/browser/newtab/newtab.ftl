@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Νέα συντόμευση
 newtab-topsites-edit-topsites-header = Επεξεργασία κορυφαίου ιστοτόπου
 newtab-topsites-edit-shortcut-header = Επεξεργασία συντόμευσης
 newtab-topsites-add-shortcut-label = Προσθήκη συντόμευσης
+newtab-topsites-add-shortcut-title =
+    .title = Προσθήκη συντόμευσης
+    .aria-label = Προσθήκη συντόμευσης
 newtab-topsites-title-label = Τίτλος
 newtab-topsites-title-input =
     .placeholder = Εισαγωγή τίτλου
@@ -84,6 +87,14 @@ newtab-confirm-delete-history-p2 = Δεν είναι δυνατή η αναίρ�
 ## Top Sites - Sponsored label
 
 newtab-topsite-sponsored = Χορηγία
+
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (καρφιτσώθηκε)
+    .title = { $title }
 
 ## Context Menu - Action Tooltips.
 
@@ -538,6 +549,12 @@ newtab-custom-wallpaper-title = Οι προσαρμοσμένες ταπετσα
 # 'Make firefox yours" means to customize or personalize
 newtab-custom-wallpaper-subtitle = Μεταφορτώστε τη δική σας ταπετσαρία ή επιλέξτε ένα προσαρμοσμένο χρώμα για να κάνετε το { -brand-product-name } δικό σας.
 newtab-custom-wallpaper-cta = Δοκιμή
+
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Επιλέξτε μια ταπετσαρία για να κάνετε το { -brand-product-name } δικό σας
+newtab-new-user-custom-wallpaper-subtitle = Νιώστε άνετα σε κάθε νέα καρτέλα με προσαρμοσμένες ταπετσαρίες και χρώματα.
+newtab-new-user-custom-wallpaper-cta = Δοκιμή τώρα
 
 ## Strings for download mobile highlight
 

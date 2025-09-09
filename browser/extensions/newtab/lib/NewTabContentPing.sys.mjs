@@ -116,6 +116,8 @@ export class NewTabContentPing {
       received_rank,
       // eslint-disable-next-line no-unused-vars
       event_source,
+      // eslint-disable-next-line no-unused-vars
+      recommendation_id,
       ...result
     } = eventDataDict;
     return result;

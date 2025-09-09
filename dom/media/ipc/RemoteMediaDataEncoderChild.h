@@ -8,11 +8,11 @@
 
 #include <functional>
 
+#include "PlatformEncoderModule.h"
 #include "mozilla/MediaActorUtils.h"
 #include "mozilla/PRemoteEncoderChild.h"
 #include "mozilla/RemoteMediaManagerChild.h"
 #include "mozilla/ShmemRecycleAllocator.h"
-#include "PlatformEncoderModule.h"
 
 namespace mozilla {
 

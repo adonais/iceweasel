@@ -7,11 +7,12 @@
 #define WEBGLCOMMANDQUEUE_H_
 
 #include <type_traits>
+
+#include "QueueParamTraits.h"
+#include "WebGLTypes.h"
 #include "mozilla/FunctionTypeTraits.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/ipc/IPDLParamTraits.h"
-#include "QueueParamTraits.h"
-#include "WebGLTypes.h"
 
 namespace mozilla {
 

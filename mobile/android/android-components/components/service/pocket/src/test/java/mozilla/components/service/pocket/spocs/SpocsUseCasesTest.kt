@@ -6,7 +6,6 @@ package mozilla.components.service.pocket.spocs
 
 import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.fetch.Client
 import mozilla.components.service.pocket.PocketStoriesRequestConfig
@@ -36,7 +35,6 @@ import org.mockito.Mockito.verify
 import java.util.UUID
 import kotlin.reflect.KVisibility
 
-@OptIn(ExperimentalCoroutinesApi::class) // for runTest
 @RunWith(AndroidJUnit4::class)
 class SpocsUseCasesTest {
     private val fetchClient: Client = mock()

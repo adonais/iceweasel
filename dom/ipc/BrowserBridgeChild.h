@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_BrowserBridgeChild_h
 #define mozilla_dom_BrowserBridgeChild_h
 
-#include "mozilla/dom/PBrowserBridgeChild.h"
 #include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/PBrowserBridgeChild.h"
 #include "mozilla/dom/ipc/IdType.h"
 
 namespace mozilla::dom {

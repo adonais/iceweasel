@@ -6,14 +6,15 @@
 
 #include "DOMSVGStringList.h"
 
+#include <algorithm>
+
+#include "SVGAttrTearoffTable.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/dom/SVGStringListBinding.h"
 #include "mozilla/dom/SVGTests.h"
 #include "nsCOMPtr.h"
 #include "nsError.h"
 #include "nsQueryObject.h"
-#include "SVGAttrTearoffTable.h"
-#include <algorithm>
 
 // See the architecture comment in this file's header.
 

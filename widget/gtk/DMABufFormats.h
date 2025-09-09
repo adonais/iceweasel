@@ -9,6 +9,7 @@
 #define __MOZ_DMABUF_FORMATS_H__
 
 #include "nsTArray.h"
+#include "mozilla/gfx/Types.h"
 
 #ifdef MOZ_WAYLAND
 struct zwp_linux_dmabuf_v1;
@@ -113,7 +114,7 @@ class GlobalDMABufFormats final {
 
   GlobalDMABufFormats();
 
-  bool SupportsHDRComposition() { return !!mFormatP010 && !!mFormatNV12; }
+  bool SupportsDirectComposition(mozilla::gfx::SurfaceFormat aFormat) const;
 
  private:
   void LoadFormatModifiers();
@@ -127,6 +128,7 @@ class GlobalDMABufFormats final {
   RefPtr<DRMFormat> mFormatRGBX;
   RefPtr<DRMFormat> mFormatP010;
   RefPtr<DRMFormat> mFormatNV12;
+  RefPtr<DRMFormat> mFormatYUV420;
 };
 
 GlobalDMABufFormats* GetGlobalDMABufFormats();

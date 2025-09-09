@@ -8,7 +8,6 @@
 #define WebBrowserPersistSerializeParent_h__
 
 #include "mozilla/PWebBrowserPersistSerializeParent.h"
-
 #include "nsCOMPtr.h"
 #include "nsIOutputStream.h"
 #include "nsIWebBrowserPersistDocument.h"

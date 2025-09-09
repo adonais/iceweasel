@@ -5,9 +5,10 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/EndpointForReportParent.h"
+
+#include "mozilla/Unused.h"
 #include "mozilla/dom/ReportingHeader.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
-#include "mozilla/Unused.h"
 #include "nsIThread.h"
 #include "nsThreadUtils.h"
 

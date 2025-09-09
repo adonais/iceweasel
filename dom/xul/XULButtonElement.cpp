@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "XULButtonElement.h"
+
 #include "XULMenuParentElement.h"
 #include "XULPopupElement.h"
 #include "mozilla/Assertions.h"
@@ -14,22 +15,22 @@
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/NameSpaceConstants.h"
-#include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/XULMenuBarElement.h"
-#include "nsGkAtoms.h"
-#include "nsITimer.h"
-#include "nsLayoutUtils.h"
 #include "nsCaseTreatment.h"
 #include "nsChangeHint.h"
+#include "nsGkAtoms.h"
+#include "nsIDOMXULButtonElement.h"
+#include "nsISound.h"
+#include "nsITimer.h"
+#include "nsLayoutUtils.h"
 #include "nsMenuPopupFrame.h"
 #include "nsPlaceholderFrame.h"
 #include "nsPresContext.h"
 #include "nsXULPopupManager.h"
-#include "nsIDOMXULButtonElement.h"
-#include "nsISound.h"
 
 namespace mozilla::dom {
 

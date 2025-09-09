@@ -15,8 +15,8 @@
 #include "mozilla/dom/FunctionBinding.h"
 #include "mozilla/dom/QueuingStrategyBinding.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsWrapperCache.h"
 #include "nsIGlobalObject.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla::dom {
 class ByteLengthQueuingStrategy final : public BaseQueuingStrategy,

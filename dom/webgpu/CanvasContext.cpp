@@ -3,14 +3,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/dom/WebGPUBinding.h"
 #include "CanvasContext.h"
-#include "gfxUtils.h"
+
 #include "LayerUserData.h"
-#include "nsDisplayList.h"
+#include "Utility.h"
+#include "gfxUtils.h"
+#include "ipc/WebGPUChild.h"
+#include "mozilla/ProfilerMarkers.h"
+#include "mozilla/SVGObserverUtils.h"
+#include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
+#include "mozilla/dom/WebGPUBinding.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/CanvasManagerChild.h"
+#include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CanvasRenderer.h"
 #include "mozilla/layers/CompositableForwarder.h"
@@ -18,12 +24,7 @@
 #include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/layers/WebRenderCanvasRenderer.h"
-#include "mozilla/gfx/Logging.h"
-#include "mozilla/StaticPrefs_privacy.h"
-#include "mozilla/SVGObserverUtils.h"
-#include "mozilla/ProfilerMarkers.h"
-#include "ipc/WebGPUChild.h"
-#include "Utility.h"
+#include "nsDisplayList.h"
 
 namespace mozilla {
 
@@ -345,6 +346,7 @@ bool CanvasContext::InitializeCanvasRenderer(
 }
 
 mozilla::UniquePtr<uint8_t[]> CanvasContext::GetImageBuffer(
+    mozilla::CanvasUtils::ImageExtraction aExtractionBehavior,
     int32_t* out_format, gfx::IntSize* out_imageSize) {
   *out_format = 0;
   *out_imageSize = {};
@@ -369,9 +371,10 @@ mozilla::UniquePtr<uint8_t[]> CanvasContext::GetImageBuffer(
                                   &*out_format);
 }
 
-NS_IMETHODIMP CanvasContext::GetInputStream(const char* aMimeType,
-                                            const nsAString& aEncoderOptions,
-                                            nsIInputStream** aStream) {
+NS_IMETHODIMP CanvasContext::GetInputStream(
+    const char* aMimeType, const nsAString& aEncoderOptions,
+    mozilla::CanvasUtils::ImageExtraction aExtractionBehavior,
+    nsIInputStream** aStream) {
   gfxAlphaType any;
   RefPtr<gfx::SourceSurface> snapshot = GetSurfaceSnapshot(&any);
   if (!snapshot) {
@@ -429,12 +432,18 @@ already_AddRefed<gfx::SourceSurface> CanvasContext::GetSurfaceSnapshot(
 
   // The parent side needs to create a command encoder which will be submitted
   // and dropped right away so we create and release an encoder ID here.
-  RawId encoderId = ffi::wgpu_client_make_encoder_id(mBridge->GetClient());
-  RefPtr<gfx::DataSourceSurface> snapshot =
-      cm->GetSnapshot(cm->Id(), mBridge->Id(), mRemoteTextureOwnerId,
-                      Some(encoderId), snapshotFormat, /* aPremultiply */ false,
-                      /* aYFlip */ false);
-  ffi::wgpu_client_free_command_encoder_id(mBridge->GetClient(), encoderId);
+  RawId commandEncoderId =
+      ffi::wgpu_client_make_command_encoder_id(mBridge->GetClient());
+  RawId commandBufferId =
+      ffi::wgpu_client_make_command_buffer_id(mBridge->GetClient());
+  RefPtr<gfx::DataSourceSurface> snapshot = cm->GetSnapshot(
+      cm->Id(), mBridge->Id(), mRemoteTextureOwnerId, Some(commandEncoderId),
+      Some(commandBufferId), snapshotFormat, /* aPremultiply */ false,
+      /* aYFlip */ false);
+  ffi::wgpu_client_free_command_encoder_id(mBridge->GetClient(),
+                                           commandEncoderId);
+  ffi::wgpu_client_free_command_buffer_id(mBridge->GetClient(),
+                                          commandBufferId);
   if (!snapshot) {
     return nullptr;
   }

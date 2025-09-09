@@ -7,6 +7,7 @@
 #include <mfmediaengine.h>
 #include <unknwnbase.h>
 #include <wtypes.h>
+
 #include "mozilla/Likely.h"
 #define INITGUID          // Enable DEFINE_PROPERTYKEY()
 #include <propkeydef.h>   // For DEFINE_PROPERTYKEY() definition
@@ -19,8 +20,9 @@
 #include "WMFUtils.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/EMEUtils.h"
-#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/KeySystemConfig.h"
+#include "mozilla/ProfilerMarkers.h"
+#include "mozilla/RandomNum.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/WindowsVersion.h"
@@ -107,6 +109,19 @@ MOZ_RUNINIT static StaticDataMutex<ComPtr<IUnknown>> sMediaEngineClassFactory(
 
 #define ASSERT_CDM_ACCESS_ON_MANAGER_THREAD() \
   mCDMAccessLock.Target().AssertOnCurrentThread();
+
+// Generate a dummy session ID for resolving the new session promise during
+// GenerateRequest() when DRM_E_TEE_INVALID_HWDRM_STATE happens.
+// An example of the generated session ID is DUMMY_9F656F4D76BE30D4.
+static nsString GenerateDummySessionId() {
+  nsString sessionId;
+  sessionId.AppendLiteral(u"DUMMY_");
+  char buf[17];
+  uint64_t randomValue = mozilla::RandomUint64OrDie();
+  SprintfLiteral(buf, "%016" PRIX64, randomValue);
+  sessionId.AppendASCII(buf);
+  return sessionId;
+}
 
 // RAIIized PROPVARIANT. See
 // third_party/libwebrtc/modules/audio_device/win/core_audio_utility_win.h
@@ -407,6 +422,7 @@ MFCDMParent::MFCDMParent(const nsAString& aKeySystem,
       mKeyMessageEvents(aManagerThread),
       mKeyChangeEvents(aManagerThread),
       mExpirationEvents(aManagerThread),
+      mClosedEvents(aManagerThread),
       mCDMAccessLock("MFCDMParent", mManagerThread) {
   MOZ_ASSERT(IsPlayReadyKeySystemAndSupported(aKeySystem) ||
              IsWidevineExperimentKeySystemAndSupported(aKeySystem) ||
@@ -433,6 +449,8 @@ MFCDMParent::MFCDMParent(const nsAString& aKeySystem,
       mManagerThread, this, &MFCDMParent::SendOnSessionKeyStatusesChanged);
   mExpirationListener = mExpirationEvents.Connect(
       mManagerThread, this, &MFCDMParent::SendOnSessionKeyExpiration);
+  mClosedListener = mClosedEvents.Connect(mManagerThread, this,
+                                          &MFCDMParent::SendOnSessionClosed);
 
   RETURN_VOID_IF_FAILED(GetOrCreateFactory(mKeySystem, mFactory));
 }
@@ -463,9 +481,11 @@ void MFCDMParent::Destroy() {
   mKeyMessageEvents.DisconnectAll();
   mKeyChangeEvents.DisconnectAll();
   mExpirationEvents.DisconnectAll();
+  mClosedEvents.DisconnectAll();
   mKeyMessageListener.DisconnectIfExists();
   mKeyChangeListener.DisconnectIfExists();
   mExpirationListener.DisconnectIfExists();
+  mClosedListener.DisconnectIfExists();
   if (mPMPHostWrapper) {
     mPMPHostWrapper->Shutdown();
     mPMPHostWrapper = nullptr;
@@ -473,7 +493,7 @@ void MFCDMParent::Destroy() {
   ShutdownCDM();
   mFactory = nullptr;
   for (auto& iter : mSessions) {
-    iter.second->Close();
+    iter.second->Close(dom::MediaKeySessionClosedReason::Closed_by_application);
   }
   mSessions.clear();
   mIPDLSelfRef = nullptr;
@@ -1242,12 +1262,27 @@ mozilla::ipc::IPCResult MFCDMParent::RecvCreateSessionAndGenerateRequest(
     aResolver(NS_ERROR_DOM_MEDIA_CDM_NO_SESSION_ERR);
     return IPC_OK();
   }
-
-  MFCDM_REJECT_IF_FAILED(session->GenerateRequest(aParams.initDataType(),
-                                                  aParams.initData().Elements(),
-                                                  aParams.initData().Length()),
-                         NS_ERROR_DOM_MEDIA_CDM_SESSION_OPERATION_ERR);
   ConnectSessionEvents(session.get());
+
+  HRESULT hr = session->GenerateRequest(aParams.initDataType(),
+                                        aParams.initData().Elements(),
+                                        aParams.initData().Length());
+  if (hr == DRM_E_TEE_INVALID_HWDRM_STATE) {
+    MFCDM_PARENT_LOG(
+        "Failed to generate request due to DRM_E_TEE_INVALID_HWDRM_STATE");
+    mCDMProxy->OnHardwareContextReset();
+    session->Close(dom::MediaKeySessionClosedReason::Hardware_context_reset);
+    aResolver(GenerateDummySessionId());
+    return IPC_OK();
+  }
+
+  if (FAILED(hr)) {
+    MFCDM_PARENT_LOG("Failed to generate request (hr=%lx)!", hr);
+    aResolver(NS_ERROR_DOM_MEDIA_CDM_NO_SESSION_ERR);
+    // No need to call session's close() because this is not an unrecoverable
+    // error for CDM.
+    return IPC_OK();
+  }
 
   // TODO : now we assume all session ID is available after session is
   // created, but this is not always true. Need to remove this assertion and
@@ -1335,8 +1370,9 @@ mozilla::ipc::IPCResult MFCDMParent::RecvCloseSession(
     PROFILER_MARKER_TEXT("MFCDMParent::RecvCloseSession", MEDIA_PLAYBACK, {},
                          msg);
   }
-  MFCDM_REJECT_IF_FAILED(session->Close(),
-                         NS_ERROR_DOM_MEDIA_CDM_SESSION_OPERATION_ERR);
+  MFCDM_REJECT_IF_FAILED(
+      session->Close(dom::MediaKeySessionClosedReason::Closed_by_application),
+      NS_ERROR_DOM_MEDIA_CDM_SESSION_OPERATION_ERR);
   aResolver(rv);
   return IPC_OK();
 }
@@ -1404,6 +1440,7 @@ void MFCDMParent::ConnectSessionEvents(MFCDMSession* aSession) {
   mKeyMessageEvents.Forward(aSession->KeyMessageEvent());
   mKeyChangeEvents.Forward(aSession->KeyChangeEvent());
   mExpirationEvents.Forward(aSession->ExpirationEvent());
+  mClosedEvents.Forward(aSession->ClosedEvent());
 }
 
 MFCDMSession* MFCDMParent::GetSession(const nsString& aSessionId) {

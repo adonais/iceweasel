@@ -5,8 +5,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/Text.h"
-#include "nsTextNode.h"
+
 #include "mozAutoDocUpdate.h"
+#include "nsTextNode.h"
 
 namespace mozilla::dom {
 
@@ -139,7 +140,7 @@ void Text::UnbindFromTree(UnbindContext& aContext) {
 }
 
 bool Text::HasTextForTranslation() {
-  if (mText.Is2b()) {
+  if (mBuffer.Is2b()) {
     // The fragment contains non-8bit characters which means there
     // was at least one "interesting" character to trigger non-8bit.
     return true;
@@ -150,8 +151,8 @@ bool Text::HasTextForTranslation() {
     return false;
   }
 
-  const char* cp = mText.Get1b();
-  const char* end = cp + mText.GetLength();
+  const char* cp = mBuffer.Get1b();
+  const char* end = cp + mBuffer.GetLength();
 
   unsigned char ch;
   for (; cp < end; cp++) {

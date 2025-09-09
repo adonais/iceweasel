@@ -20,11 +20,13 @@ import mozilla.components.lib.state.State
  * @property mode The display [Mode] of the browser toolbar.
  * @property displayState Wrapper containing the toolbar display state.
  * @property editState Wrapper containing the toolbar edit state.
+ * @property gravity Where the toolbar is positioned on the screen.
  */
 data class BrowserToolbarState(
     val mode: Mode = Mode.DISPLAY,
     val displayState: DisplayState = DisplayState(),
     val editState: EditState = EditState(),
+    val gravity: ToolbarGravity = ToolbarGravity.Top,
 ) : State {
 
     /**
@@ -88,38 +90,11 @@ data class DisplayState(
 ) : State
 
 /**
- * @property progress `[0 - 100]` progress to show.
- * @property gravity Top/bottom gravity of the progress bar.
- * @property color List of colors to use for the progress bar.
- * If more are provided then the progress bar will show them as a gradient.
- * If `null` is provided the default colors will be used.
- */
-data class ProgressBarConfig(
-    @param:IntRange(from = 0, to = 100) val progress: Int,
-    val gravity: ProgressBarGravity,
-    val color: List<Color>? = null,
-)
-
-/**
- * Where should the progress bar be shown in relation to the browser toolbar.
- */
-sealed class ProgressBarGravity {
-    /**
-     * Show the progress bar at the top of the browser toolbar.
-     */
-    data object Top : ProgressBarGravity()
-
-    /**
-     * Show the progress bar at the bottom of the browser toolbar.
-     */
-    data object Bottom : ProgressBarGravity()
-}
-
-/**
  * Wrapper containing the toolbar edit state.
  *
  * @property query The text the user is editing in "edit" mode.
- * @property showQueryAsPreselected Whether or not [query] should be shown as selected.
+ * @property hint The hint to show in the edit toolbar.
+ * @property isQueryPrefilled Whether [query] is prefilled and not user entered.
  * @property editActionsStart List of [Action]s to be displayed at the start of the URL of
  * the edit toolbar.
  * @property editActionsEnd List of [Action]s to be displayed at the end of the URL of
@@ -128,8 +103,35 @@ sealed class ProgressBarGravity {
 data class EditState(
     val query: String = "",
     @param:StringRes val hint: Int = R.string.mozac_browser_toolbar_search_hint,
-    val showQueryAsPreselected: Boolean = false,
+    val isQueryPrefilled: Boolean = false,
     val autocompleteProviders: List<AutocompleteProvider> = emptyList(),
     val editActionsStart: List<Action> = emptyList(),
     val editActionsEnd: List<Action> = emptyList(),
 ) : State
+
+/**
+ * @property progress `[0 - 100]` progress to show.
+ * @property color List of colors to use for the progress bar.
+ * If more are provided then the progress bar will show them as a gradient.
+ * If `null` is provided the default colors will be used.
+ */
+data class ProgressBarConfig(
+    @param:IntRange(from = 0, to = 100) val progress: Int,
+    val color: List<Color>? = null,
+)
+
+/**
+ * Where is the toolbar positioned on the screen.
+ * Inner toolbar elements will be positioned to best support each toolbar gravity.
+ */
+sealed class ToolbarGravity {
+    /**
+     * The toolbar is shown at the top of the screen.
+     */
+    data object Top : ToolbarGravity()
+
+    /**
+     * The toolbar is shown at the bottom of the screen.
+     */
+    data object Bottom : ToolbarGravity()
+}

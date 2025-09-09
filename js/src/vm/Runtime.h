@@ -1092,17 +1092,12 @@ struct JSRuntime {
   // for use.
   js::MainThreadData<uint32_t> moduleAsyncEvaluatingPostOrder;
 
-  // The implementation-defined abstract operation HostResolveImportedModule.
-  js::MainThreadData<JS::ModuleResolveHook> moduleResolveHook;
+  // The implementation-defined abstract operation HostLoadImportedModule.
+  js::MainThreadData<JS::ModuleLoadHook> moduleLoadHook;
 
   // A hook that implements the abstract operations
   // HostGetImportMetaProperties and HostFinalizeImportMeta.
   js::MainThreadData<JS::ModuleMetadataHook> moduleMetadataHook;
-
-  // A hook that implements the abstract operation
-  // HostImportModuleDynamically. This is also used to enable/disable dynamic
-  // module import and can accessed by off-thread parsing.
-  mozilla::Atomic<JS::ModuleDynamicImportHook> moduleDynamicImportHook;
 
   // Hooks called when script private references are created and destroyed.
   js::MainThreadData<JS::ScriptPrivateReferenceHook> scriptPrivateAddRefHook;

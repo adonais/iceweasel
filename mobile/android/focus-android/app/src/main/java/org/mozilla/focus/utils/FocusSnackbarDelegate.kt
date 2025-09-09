@@ -5,19 +5,20 @@
 package org.mozilla.focus.utils
 
 import android.view.View
-import androidx.annotation.StringRes
+import androidx.compose.ui.text.style.TextOverflow
 import mozilla.components.ui.widgets.SnackbarDelegate
 
 class FocusSnackbarDelegate(private val view: View) : SnackbarDelegate {
 
     override fun show(
         snackBarParentView: View,
-        @StringRes text: Int,
+        text: Int,
         subText: String?,
+        subTextOverflow: TextOverflow?,
         duration: Int,
         isError: Boolean,
-        @StringRes action: Int,
-        listener: ((v: View) -> Unit)?,
+        action: Int,
+        listener: ((View) -> Unit)?,
     ) = show(
         snackBarParentView = snackBarParentView,
         text = snackBarParentView.context.getString(text),
@@ -31,6 +32,7 @@ class FocusSnackbarDelegate(private val view: View) : SnackbarDelegate {
         snackBarParentView: View,
         text: String,
         subText: String?,
+        subTextOverflow: TextOverflow?,
         duration: Int,
         isError: Boolean,
         action: String?,

@@ -55,7 +55,7 @@
 #include "rtc_base/thread.h"
 #include "rtc_base/trace_event.h"
 
-namespace cricket {
+namespace webrtc {
 namespace {
 using ::webrtc::CreateRandomId;
 using ::webrtc::IceCandidateType;
@@ -69,7 +69,7 @@ const int PHASE_TCP = 2;
 const int kNumPhases = 3;
 
 // Gets protocol priority: UDP > TCP > SSLTCP == TLS.
-int GetProtocolPriority(webrtc::ProtocolType protocol) {
+int GetProtocolPriority(ProtocolType protocol) {
   switch (protocol) {
     case webrtc::PROTO_UDP:
       return 2;
@@ -97,7 +97,7 @@ int GetAddressFamilyPriority(int ip_family) {
 }
 
 // Returns positive if a is better, negative if b is better, and 0 otherwise.
-int ComparePort(const cricket::Port* a, const cricket::Port* b) {
+int ComparePort(const Port* a, const Port* b) {
   int a_protocol = GetProtocolPriority(a->GetProtocol());
   int b_protocol = GetProtocolPriority(b->GetProtocol());
   int cmp_protocol = a_protocol - b_protocol;
@@ -111,16 +111,15 @@ int ComparePort(const cricket::Port* a, const cricket::Port* b) {
 }
 
 struct NetworkFilter {
-  using Predicate = std::function<bool(const rtc::Network*)>;
+  using Predicate = std::function<bool(const Network*)>;
   NetworkFilter(Predicate pred, absl::string_view description)
-      : predRemain(
-            [pred](const rtc::Network* network) { return !pred(network); }),
+      : predRemain([pred](const Network* network) { return !pred(network); }),
         description(description) {}
   Predicate predRemain;
   const std::string description;
 };
 
-void FilterNetworks(std::vector<const rtc::Network*>* networks,
+void FilterNetworks(std::vector<const Network*>* networks,
                     NetworkFilter filter) {
   auto start_to_remove =
       std::partition(networks->begin(), networks->end(), filter.predRemain);
@@ -134,7 +133,7 @@ void FilterNetworks(std::vector<const rtc::Network*>* networks,
   networks->erase(start_to_remove, networks->end());
 }
 
-bool IsAllowedByCandidateFilter(const webrtc::Candidate& c, uint32_t filter) {
+bool IsAllowedByCandidateFilter(const Candidate& c, uint32_t filter) {
   // When binding to any address, before sending packets out, the getsockname
   // returns all 0s, but after sending packets, it'll be the NIC used to
   // send. All 0s is not a valid ICE candidate address and should be filtered
@@ -168,8 +167,8 @@ bool IsAllowedByCandidateFilter(const webrtc::Candidate& c, uint32_t filter) {
   return false;
 }
 
-std::string NetworksToString(const std::vector<const rtc::Network*>& networks) {
-  rtc::StringBuilder ost;
+std::string NetworksToString(const std::vector<const Network*>& networks) {
+  StringBuilder ost;
   for (auto n : networks) {
     ost << n->name() << " ";
   }
@@ -183,13 +182,12 @@ const uint32_t DISABLE_ALL_PHASES =
     webrtc::PORTALLOCATOR_DISABLE_STUN | webrtc::PORTALLOCATOR_DISABLE_RELAY;
 
 BasicPortAllocator::BasicPortAllocator(
-    const webrtc::Environment& env,
-    absl::Nonnull<rtc::NetworkManager*> network_manager,
-    absl::Nonnull<rtc::PacketSocketFactory*> socket_factory,
-    absl::Nullable<webrtc::TurnCustomizer*> turn_customizer,
-    absl::Nullable<RelayPortFactoryInterface*> relay_port_factory)
+    const Environment& env,
+    NetworkManager* absl_nonnull network_manager,
+    PacketSocketFactory* absl_nonnull socket_factory,
+    TurnCustomizer* absl_nullable turn_customizer,
+    RelayPortFactoryInterface* absl_nullable relay_port_factory)
     : env_(env),
-      field_trials_(&env_->field_trials()),
       network_manager_(network_manager),
       socket_factory_(socket_factory),
       relay_port_factory_(relay_port_factory) {
@@ -197,22 +195,6 @@ BasicPortAllocator::BasicPortAllocator(
   RTC_DCHECK(network_manager_);
   SetConfiguration(ServerAddresses(), std::vector<RelayServerConfig>(), 0,
                    webrtc::NO_PRUNE, turn_customizer);
-}
-
-BasicPortAllocator::BasicPortAllocator(
-    rtc::NetworkManager* network_manager,
-    webrtc::PacketSocketFactory* socket_factory,
-    webrtc::TurnCustomizer* customizer,
-    RelayPortFactoryInterface* relay_port_factory,
-    const webrtc::FieldTrialsView* field_trials)
-    : field_trials_(field_trials),
-      network_manager_(network_manager),
-      socket_factory_(socket_factory),
-      relay_port_factory_(relay_port_factory) {
-  RTC_CHECK(socket_factory_);
-  RTC_DCHECK(network_manager_);
-  SetConfiguration(ServerAddresses(), std::vector<webrtc::RelayServerConfig>(),
-                   0, webrtc::NO_PRUNE, customizer);
 }
 
 BasicPortAllocator::~BasicPortAllocator() {
@@ -234,10 +216,10 @@ int BasicPortAllocator::GetNetworkIgnoreMask() const {
   CheckRunOnValidThreadIfInitialized();
   int mask = network_ignore_mask_;
   switch (vpn_preference_) {
-    case webrtc::VpnPreference::kOnlyUseVpn:
+    case VpnPreference::kOnlyUseVpn:
       mask |= ~static_cast<int>(webrtc::ADAPTER_TYPE_VPN);
       break;
-    case webrtc::VpnPreference::kNeverUseVpn:
+    case VpnPreference::kNeverUseVpn:
       mask |= static_cast<int>(webrtc::ADAPTER_TYPE_VPN);
       break;
     default:
@@ -246,7 +228,7 @@ int BasicPortAllocator::GetNetworkIgnoreMask() const {
   return mask;
 }
 
-webrtc::PortAllocatorSession* BasicPortAllocator::CreateSessionInternal(
+PortAllocatorSession* BasicPortAllocator::CreateSessionInternal(
     absl::string_view content_name,
     int component,
     absl::string_view ice_ufrag,
@@ -258,9 +240,9 @@ webrtc::PortAllocatorSession* BasicPortAllocator::CreateSessionInternal(
 }
 
 void BasicPortAllocator::AddTurnServerForTesting(
-    const webrtc::RelayServerConfig& turn_server) {
+    const RelayServerConfig& turn_server) {
   CheckRunOnValidThreadAndInitialized();
-  std::vector<webrtc::RelayServerConfig> new_turn_servers = turn_servers();
+  std::vector<RelayServerConfig> new_turn_servers = turn_servers();
   new_turn_servers.push_back(turn_server);
   SetConfiguration(stun_servers(), new_turn_servers, candidate_pool_size(),
                    turn_port_prune_policy(), turn_customizer());
@@ -273,13 +255,13 @@ BasicPortAllocatorSession::BasicPortAllocatorSession(
     int component,
     absl::string_view ice_ufrag,
     absl::string_view ice_pwd)
-    : webrtc::PortAllocatorSession(content_name,
-                                   component,
-                                   ice_ufrag,
-                                   ice_pwd,
-                                   allocator->flags()),
+    : PortAllocatorSession(content_name,
+                           component,
+                           ice_ufrag,
+                           ice_pwd,
+                           allocator->flags()),
       allocator_(allocator),
-      network_thread_(webrtc::Thread::Current()),
+      network_thread_(Thread::Current()),
       socket_factory_(allocator->socket_factory()),
       allocation_started_(false),
       network_manager_started_(false),
@@ -333,7 +315,7 @@ void BasicPortAllocatorSession::SetCandidateFilter(uint32_t filter) {
     PortData::State cur_state = port_data.state();
     bool found_signalable_candidate = false;
     bool found_pairable_candidate = false;
-    cricket::Port* port = port_data.port();
+    Port* port = port_data.port();
     for (const auto& c : port->Candidates()) {
       if (!IsStopped() && !IsAllowedByCandidateFilter(c, prev_filter) &&
           IsAllowedByCandidateFilter(c, filter)) {
@@ -424,11 +406,10 @@ bool BasicPortAllocatorSession::IsStopped() const {
   return state_ == SessionState::STOPPED;
 }
 
-std::vector<const rtc::Network*>
-BasicPortAllocatorSession::GetFailedNetworks() {
+std::vector<const Network*> BasicPortAllocatorSession::GetFailedNetworks() {
   RTC_DCHECK_RUN_ON(network_thread_);
 
-  std::vector<const rtc::Network*> networks = GetNetworks();
+  std::vector<const Network*> networks = GetNetworks();
   // A network interface may have both IPv4 and IPv6 networks. Only if
   // neither of the networks has any connections, the network interface
   // is considered failed and need to be regathered on.
@@ -442,7 +423,7 @@ BasicPortAllocatorSession::GetFailedNetworks() {
 
   networks.erase(
       std::remove_if(networks.begin(), networks.end(),
-                     [networks_with_connection](const rtc::Network* network) {
+                     [networks_with_connection](const Network* network) {
                        // If a network does not have any connection, it is
                        // considered failed.
                        return networks_with_connection.find(network->name()) !=
@@ -456,7 +437,7 @@ void BasicPortAllocatorSession::RegatherOnFailedNetworks() {
   RTC_DCHECK_RUN_ON(network_thread_);
 
   // Find the list of networks that have no connection.
-  std::vector<const rtc::Network*> failed_networks = GetFailedNetworks();
+  std::vector<const Network*> failed_networks = GetFailedNetworks();
   if (failed_networks.empty()) {
     return;
   }
@@ -475,13 +456,13 @@ void BasicPortAllocatorSession::RegatherOnFailedNetworks() {
 
   bool disable_equivalent_phases = true;
   Regather(failed_networks, disable_equivalent_phases,
-           webrtc::IceRegatheringReason::NETWORK_FAILURE);
+           IceRegatheringReason::NETWORK_FAILURE);
 }
 
 void BasicPortAllocatorSession::Regather(
-    const std::vector<const rtc::Network*>& networks,
+    const std::vector<const Network*>& networks,
     bool disable_equivalent_phases,
-    webrtc::IceRegatheringReason reason) {
+    IceRegatheringReason reason) {
   RTC_DCHECK_RUN_ON(network_thread_);
   // Remove ports from being used locally and send signaling to remove
   // the candidates on the remote side.
@@ -530,10 +511,9 @@ void BasicPortAllocatorSession::SetStunKeepaliveIntervalForReadyPorts(
   }
 }
 
-std::vector<webrtc::PortInterface*> BasicPortAllocatorSession::ReadyPorts()
-    const {
+std::vector<PortInterface*> BasicPortAllocatorSession::ReadyPorts() const {
   RTC_DCHECK_RUN_ON(network_thread_);
-  std::vector<webrtc::PortInterface*> ret;
+  std::vector<PortInterface*> ret;
   for (const PortData& data : ports_) {
     if (data.ready()) {
       ret.push_back(data.port());
@@ -542,10 +522,9 @@ std::vector<webrtc::PortInterface*> BasicPortAllocatorSession::ReadyPorts()
   return ret;
 }
 
-std::vector<webrtc::Candidate> BasicPortAllocatorSession::ReadyCandidates()
-    const {
+std::vector<Candidate> BasicPortAllocatorSession::ReadyCandidates() const {
   RTC_DCHECK_RUN_ON(network_thread_);
-  std::vector<webrtc::Candidate> candidates;
+  std::vector<Candidate> candidates;
   for (const PortData& data : ports_) {
     if (!data.ready()) {
       continue;
@@ -557,7 +536,7 @@ std::vector<webrtc::Candidate> BasicPortAllocatorSession::ReadyCandidates()
 
 void BasicPortAllocatorSession::GetCandidatesFromPort(
     const PortData& data,
-    std::vector<webrtc::Candidate>* candidates) const {
+    std::vector<Candidate>* candidates) const {
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_CHECK(candidates != nullptr);
   for (const Candidate& candidate : data.port()->Candidates()) {
@@ -607,7 +586,7 @@ void BasicPortAllocatorSession::GetPortConfigurations() {
 
   auto config = std::make_unique<PortConfiguration>(
       allocator_->stun_servers(), username(), password(),
-      allocator()->field_trials());
+      &allocator()->env().field_trials());
 
   for (const RelayServerConfig& turn_server : allocator_->turn_servers()) {
     config->AddRelay(turn_server);
@@ -691,15 +670,15 @@ void BasicPortAllocatorSession::OnAllocate(int allocation_epoch) {
   allocation_started_ = true;
 }
 
-std::vector<const rtc::Network*> BasicPortAllocatorSession::GetNetworks() {
+std::vector<const Network*> BasicPortAllocatorSession::GetNetworks() {
   RTC_DCHECK_RUN_ON(network_thread_);
-  std::vector<const rtc::Network*> networks;
-  rtc::NetworkManager* network_manager = allocator_->network_manager();
+  std::vector<const Network*> networks;
+  NetworkManager* network_manager = allocator_->network_manager();
   RTC_DCHECK(network_manager != nullptr);
   // If the network permission state is BLOCKED, we just act as if the flag has
   // been passed in.
   if (network_manager->enumeration_permission() ==
-      rtc::NetworkManager::ENUMERATION_BLOCKED) {
+      NetworkManager::ENUMERATION_BLOCKED) {
     set_flags(flags() | webrtc::PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION);
   }
   // If the adapter enumeration is disabled, we'll just bind to any address
@@ -716,20 +695,20 @@ std::vector<const rtc::Network*> BasicPortAllocatorSession::GetNetworks() {
     // set, we'll use ANY address candidates either way.
     if (networks.empty() ||
         (flags() & webrtc::PORTALLOCATOR_ENABLE_ANY_ADDRESS_PORTS)) {
-      std::vector<const rtc::Network*> any_address_networks =
+      std::vector<const Network*> any_address_networks =
           network_manager->GetAnyAddressNetworks();
       networks.insert(networks.end(), any_address_networks.begin(),
                       any_address_networks.end());
     }
     RTC_LOG(LS_INFO) << "Count of networks: " << networks.size();
-    for (const rtc::Network* network : networks) {
+    for (const Network* network : networks) {
       RTC_LOG(LS_INFO) << network->ToString();
     }
   }
   // Filter out link-local networks if needed.
   if (flags() & webrtc::PORTALLOCATOR_DISABLE_LINK_LOCAL_NETWORKS) {
     NetworkFilter link_local_filter(
-        [](const rtc::Network* network) {
+        [](const webrtc::Network* network) {
           return webrtc::IPIsLinkLocal(network->prefix());
         },
         "link-local");
@@ -738,14 +717,14 @@ std::vector<const rtc::Network*> BasicPortAllocatorSession::GetNetworks() {
   // Do some more filtering, depending on the network ignore mask and "disable
   // costly networks" flag.
   NetworkFilter ignored_filter(
-      [this](const rtc::Network* network) {
+      [this](const Network* network) {
         return allocator_->GetNetworkIgnoreMask() & network->type();
       },
       "ignored");
   FilterNetworks(&networks, ignored_filter);
   if (flags() & webrtc::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS) {
     uint16_t lowest_cost = webrtc::kNetworkCostMax;
-    for (const rtc::Network* network : networks) {
+    for (const Network* network : networks) {
       // Don't determine the lowest cost from a link-local network.
       // On iOS, a device connected to the computer will get a link-local
       // network for communicating with the computer, however this network can't
@@ -754,11 +733,11 @@ std::vector<const rtc::Network*> BasicPortAllocatorSession::GetNetworks() {
         continue;
       }
       lowest_cost = std::min<uint16_t>(
-          lowest_cost, network->GetCost(*allocator()->field_trials()));
+          lowest_cost, network->GetCost(allocator()->env().field_trials()));
     }
     NetworkFilter costly_filter(
-        [lowest_cost, this](const rtc::Network* network) {
-          return network->GetCost(*allocator()->field_trials()) >
+        [lowest_cost, this](const Network* network) {
+          return network->GetCost(allocator()->env().field_trials()) >
                  lowest_cost + webrtc::kNetworkCostLow;
         },
         "costly");
@@ -768,7 +747,7 @@ std::vector<const rtc::Network*> BasicPortAllocatorSession::GetNetworks() {
   // Lastly, if we have a limit for the number of IPv6 network interfaces (by
   // default, it's 5), pick IPv6 networks from different interfaces in a
   // priority order and stick to the limit.
-  std::vector<const rtc::Network*> ipv6_networks;
+  std::vector<const Network*> ipv6_networks;
   for (auto it = networks.begin(); it != networks.end();) {
     if ((*it)->prefix().family() == AF_INET6) {
       ipv6_networks.push_back(*it);
@@ -783,21 +762,21 @@ std::vector<const rtc::Network*> BasicPortAllocatorSession::GetNetworks() {
   return networks;
 }
 
-std::vector<const rtc::Network*> BasicPortAllocatorSession::SelectIPv6Networks(
-    std::vector<const rtc::Network*>& all_ipv6_networks,
+std::vector<const Network*> BasicPortAllocatorSession::SelectIPv6Networks(
+    std::vector<const Network*>& all_ipv6_networks,
     int max_ipv6_networks) {
   if (static_cast<int>(all_ipv6_networks.size()) <= max_ipv6_networks) {
     return all_ipv6_networks;
   }
   // Adapter types are placed in priority order. Cellular type is an alias of
   // cellular, 2G..5G types.
-  std::vector<webrtc::AdapterType> adapter_types = {
+  std::vector<AdapterType> adapter_types = {
       webrtc::ADAPTER_TYPE_ETHERNET, webrtc::ADAPTER_TYPE_LOOPBACK,
       webrtc::ADAPTER_TYPE_WIFI,     webrtc::ADAPTER_TYPE_CELLULAR,
       webrtc::ADAPTER_TYPE_VPN,      webrtc::ADAPTER_TYPE_UNKNOWN,
       webrtc::ADAPTER_TYPE_ANY};
   int adapter_types_cnt = adapter_types.size();
-  std::vector<const rtc::Network*> selected_networks;
+  std::vector<const Network*> selected_networks;
   int adapter_types_pos = 0;
 
   while (static_cast<int>(selected_networks.size()) < max_ipv6_networks &&
@@ -826,7 +805,7 @@ std::vector<const rtc::Network*> BasicPortAllocatorSession::SelectIPv6Networks(
 void BasicPortAllocatorSession::DoAllocate(bool disable_equivalent) {
   RTC_DCHECK_RUN_ON(network_thread_);
   bool done_signal_needed = false;
-  std::vector<const rtc::Network*> networks = GetNetworks();
+  std::vector<const Network*> networks = GetNetworks();
   if (networks.empty()) {
     RTC_LOG(LS_WARNING)
         << "Machine has no networks; no ports will be allocated";
@@ -894,8 +873,8 @@ void BasicPortAllocatorSession::DoAllocate(bool disable_equivalent) {
 
 void BasicPortAllocatorSession::OnNetworksChanged() {
   RTC_DCHECK_RUN_ON(network_thread_);
-  std::vector<const rtc::Network*> networks = GetNetworks();
-  std::vector<const rtc::Network*> failed_networks;
+  std::vector<const Network*> networks = GetNetworks();
+  std::vector<const Network*> failed_networks;
   for (AllocationSequence* sequence : sequences_) {
     // Mark the sequence as "network failed" if its network is not in
     // `networks`.
@@ -915,7 +894,7 @@ void BasicPortAllocatorSession::OnNetworksChanged() {
   if (allocation_started_ && !IsStopped()) {
     if (network_manager_started_) {
       // If the network manager has started, it must be regathering.
-      SignalIceRegathering(this, webrtc::IceRegatheringReason::NETWORK_CHANGE);
+      SignalIceRegathering(this, IceRegatheringReason::NETWORK_CHANGE);
     }
     bool disable_equivalent_phases = true;
     DoAllocate(disable_equivalent_phases);
@@ -928,7 +907,7 @@ void BasicPortAllocatorSession::OnNetworksChanged() {
 }
 
 void BasicPortAllocatorSession::DisableEquivalentPhases(
-    const rtc::Network* network,
+    const Network* network,
     PortConfiguration* config,
     uint32_t* flags) {
   RTC_DCHECK_RUN_ON(network_thread_);
@@ -978,7 +957,7 @@ void BasicPortAllocatorSession::OnAllocationSequenceObjectsCreated() {
 }
 
 void BasicPortAllocatorSession::OnCandidateReady(Port* port,
-                                                 const webrtc::Candidate& c) {
+                                                 const Candidate& c) {
   RTC_DCHECK_RUN_ON(network_thread_);
   PortData* data = FindPort(port);
   RTC_DCHECK(data != NULL);
@@ -1022,7 +1001,7 @@ void BasicPortAllocatorSession::OnCandidateReady(Port* port,
   }
 
   if (data->ready() && CheckCandidateFilter(c)) {
-    std::vector<webrtc::Candidate> candidates;
+    std::vector<Candidate> candidates;
     candidates.push_back(allocator_->SanitizeCandidate(c));
     SignalCandidatesReady(this, candidates);
   } else {
@@ -1161,14 +1140,13 @@ void BasicPortAllocatorSession::OnPortError(Port* port) {
   MaybeSignalCandidatesAllocationDone();
 }
 
-bool BasicPortAllocatorSession::CheckCandidateFilter(
-    const webrtc::Candidate& c) const {
+bool BasicPortAllocatorSession::CheckCandidateFilter(const Candidate& c) const {
   RTC_DCHECK_RUN_ON(network_thread_);
 
   return IsAllowedByCandidateFilter(c, candidate_filter_);
 }
 
-bool BasicPortAllocatorSession::CandidatePairable(const webrtc::Candidate& c,
+bool BasicPortAllocatorSession::CandidatePairable(const Candidate& c,
                                                   const Port* port) const {
   RTC_DCHECK_RUN_ON(network_thread_);
 
@@ -1182,7 +1160,7 @@ bool BasicPortAllocatorSession::CandidatePairable(const webrtc::Candidate& c,
   // both device enumeration and host candidates being disabled.
   bool network_enumeration_disabled = c.address().IsAnyIP();
   bool can_ping_from_candidate =
-      (port->SharedSocket() || c.protocol() == TCP_PROTOCOL_NAME);
+      (port->SharedSocket() || c.protocol() == webrtc::TCP_PROTOCOL_NAME);
   bool host_candidates_disabled = !(candidate_filter_ & webrtc::CF_HOST);
 
   return candidate_signalable ||
@@ -1213,7 +1191,7 @@ void BasicPortAllocatorSession::MaybeSignalCandidatesAllocationDone() {
   }
 }
 
-void BasicPortAllocatorSession::OnPortDestroyed(webrtc::PortInterface* port) {
+void BasicPortAllocatorSession::OnPortDestroyed(PortInterface* port) {
   RTC_DCHECK_RUN_ON(network_thread_);
   for (std::vector<PortData>::iterator iter = ports_.begin();
        iter != ports_.end(); ++iter) {
@@ -1241,7 +1219,7 @@ BasicPortAllocatorSession::PortData* BasicPortAllocatorSession::FindPort(
 
 std::vector<BasicPortAllocatorSession::PortData*>
 BasicPortAllocatorSession::GetUnprunedPorts(
-    const std::vector<const rtc::Network*>& networks) {
+    const std::vector<const Network*>& networks) {
   RTC_DCHECK_RUN_ON(network_thread_);
   std::vector<PortData*> unpruned_ports;
   for (PortData& port : ports_) {
@@ -1256,8 +1234,8 @@ BasicPortAllocatorSession::GetUnprunedPorts(
 void BasicPortAllocatorSession::PrunePortsAndRemoveCandidates(
     const std::vector<PortData*>& port_data_list) {
   RTC_DCHECK_RUN_ON(network_thread_);
-  std::vector<webrtc::PortInterface*> pruned_ports;
-  std::vector<webrtc::Candidate> removed_candidates;
+  std::vector<PortInterface*> pruned_ports;
+  std::vector<Candidate> removed_candidates;
   for (PortData* data : port_data_list) {
     // Prune the port so that it may be destroyed.
     data->Prune();
@@ -1279,8 +1257,7 @@ void BasicPortAllocatorSession::PrunePortsAndRemoveCandidates(
   }
 }
 
-void BasicPortAllocator::SetVpnList(
-    const std::vector<rtc::NetworkMask>& vpn_list) {
+void BasicPortAllocator::SetVpnList(const std::vector<NetworkMask>& vpn_list) {
   network_manager_->set_vpn_list(vpn_list);
 }
 
@@ -1288,7 +1265,7 @@ void BasicPortAllocator::SetVpnList(
 
 AllocationSequence::AllocationSequence(
     BasicPortAllocatorSession* session,
-    const rtc::Network* network,
+    const Network* network,
     PortConfiguration* config,
     uint32_t flags,
     std::function<void()> port_allocation_complete_callback)
@@ -1306,12 +1283,11 @@ AllocationSequence::AllocationSequence(
 void AllocationSequence::Init() {
   if (IsFlagSet(webrtc::PORTALLOCATOR_ENABLE_SHARED_SOCKET)) {
     udp_socket_.reset(session_->socket_factory()->CreateUdpSocket(
-        webrtc::SocketAddress(network_->GetBestIP(), 0),
+        SocketAddress(network_->GetBestIP(), 0),
         session_->allocator()->min_port(), session_->allocator()->max_port()));
     if (udp_socket_) {
       udp_socket_->RegisterReceivedPacketCallback(
-          [&](rtc::AsyncPacketSocket* socket,
-              const rtc::ReceivedPacket& packet) {
+          [&](AsyncPacketSocket* socket, const ReceivedIpPacket& packet) {
             OnReadPacket(socket, packet);
           });
     }
@@ -1333,7 +1309,7 @@ void AllocationSequence::OnNetworkFailed() {
   Stop();
 }
 
-void AllocationSequence::DisableEquivalentPhases(const rtc::Network* network,
+void AllocationSequence::DisableEquivalentPhases(const Network* network,
                                                  PortConfiguration* config,
                                                  uint32_t* flags) {
   if (network_failed_) {
@@ -1427,7 +1403,7 @@ void AllocationSequence::Stop() {
 }
 
 void AllocationSequence::Process(int epoch) {
-  RTC_DCHECK(webrtc::Thread::Current() == session_->network_thread());
+  RTC_DCHECK(Thread::Current() == session_->network_thread());
   const char* const PHASE_NAMES[kNumPhases] = {"Udp", "Relay", "Tcp"};
 
   if (epoch != epoch_)
@@ -1483,22 +1459,22 @@ void AllocationSequence::CreateUDPPorts() {
       !IsFlagSet(webrtc::PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE);
   if (IsFlagSet(webrtc::PORTALLOCATOR_ENABLE_SHARED_SOCKET) && udp_socket_) {
     port = UDPPort::Create(
-        {.network_thread = session_->network_thread(),
+        {.env = session_->allocator()->env(),
+         .network_thread = session_->network_thread(),
          .socket_factory = session_->socket_factory(),
          .network = network_,
          .ice_username_fragment = session_->username(),
-         .ice_password = session_->password(),
-         .field_trials = session_->allocator()->field_trials()},
+         .ice_password = session_->password()},
         udp_socket_.get(), emit_local_candidate_for_anyaddress,
         session_->allocator()->stun_candidate_keepalive_interval());
   } else {
     port = UDPPort::Create(
-        {.network_thread = session_->network_thread(),
+        {.env = session_->allocator()->env(),
+         .network_thread = session_->network_thread(),
          .socket_factory = session_->socket_factory(),
          .network = network_,
          .ice_username_fragment = session_->username(),
-         .ice_password = session_->password(),
-         .field_trials = session_->allocator()->field_trials()},
+         .ice_password = session_->password()},
         session_->allocator()->min_port(), session_->allocator()->max_port(),
         emit_local_candidate_for_anyaddress,
         session_->allocator()->stun_candidate_keepalive_interval());
@@ -1535,14 +1511,13 @@ void AllocationSequence::CreateTCPPorts() {
   }
 
   std::unique_ptr<Port> port = TCPPort::Create(
-      {.network_thread = session_->network_thread(),
+      {.env = session_->allocator()->env(),
+       .network_thread = session_->network_thread(),
        .socket_factory = session_->socket_factory(),
        .network = network_,
        .ice_username_fragment = session_->username(),
-       .ice_password = session_->password(),
-       .field_trials = session_->allocator()->field_trials()},
+       .ice_password = session_->password()},
       session_->allocator()->min_port(), session_->allocator()->max_port(),
-
       session_->allocator()->allow_tcp_listen());
   if (port) {
     port->SetIceTiebreaker(session_->allocator()->ice_tiebreaker());
@@ -1569,12 +1544,12 @@ void AllocationSequence::CreateStunPorts() {
   }
 
   std::unique_ptr<StunPort> port = StunPort::Create(
-      {.network_thread = session_->network_thread(),
+      {.env = session_->allocator()->env(),
+       .network_thread = session_->network_thread(),
        .socket_factory = session_->socket_factory(),
        .network = network_,
        .ice_username_fragment = session_->username(),
-       .ice_password = session_->password(),
-       .field_trials = session_->allocator()->field_trials()},
+       .ice_password = session_->password()},
       session_->allocator()->min_port(), session_->allocator()->max_port(),
       config_->StunServers(),
       session_->allocator()->stun_candidate_keepalive_interval());
@@ -1612,7 +1587,7 @@ void AllocationSequence::CreateRelayPorts() {
   }
 }
 
-void AllocationSequence::CreateTurnPort(const webrtc::RelayServerConfig& config,
+void AllocationSequence::CreateTurnPort(const RelayServerConfig& config,
                                         int relative_priority) {
   PortList::const_iterator relay_port;
   for (relay_port = config.ports.begin(); relay_port != config.ports.end();
@@ -1636,7 +1611,7 @@ void AllocationSequence::CreateTurnPort(const webrtc::RelayServerConfig& config,
       continue;
     }
 
-    CreateRelayPortArgs args;
+    CreateRelayPortArgs args = {.env = session_->allocator()->env()};
     args.network_thread = session_->network_thread();
     args.socket_factory = session_->socket_factory();
     args.network = network_;
@@ -1645,10 +1620,9 @@ void AllocationSequence::CreateTurnPort(const webrtc::RelayServerConfig& config,
     args.server_address = &(*relay_port);
     args.config = &config;
     args.turn_customizer = session_->allocator()->turn_customizer();
-    args.field_trials = session_->allocator()->field_trials();
     args.relative_priority = relative_priority;
 
-    std::unique_ptr<cricket::Port> port;
+    std::unique_ptr<Port> port;
     // Shared socket mode must be enabled only for UDP based ports. Hence
     // don't pass shared socket for ports which will create TCP sockets.
     // TODO(mallinath) - Enable shared socket mode for TURN ports. Disabled
@@ -1687,8 +1661,8 @@ void AllocationSequence::CreateTurnPort(const webrtc::RelayServerConfig& config,
   }
 }
 
-void AllocationSequence::OnReadPacket(webrtc::AsyncPacketSocket* socket,
-                                      const rtc::ReceivedPacket& packet) {
+void AllocationSequence::OnReadPacket(AsyncPacketSocket* socket,
+                                      const ReceivedIpPacket& packet) {
   RTC_DCHECK(socket == udp_socket_.get());
 
   bool turn_port_found = false;
@@ -1721,7 +1695,7 @@ void AllocationSequence::OnReadPacket(webrtc::AsyncPacketSocket* socket,
   }
 }
 
-void AllocationSequence::OnPortDestroyed(webrtc::PortInterface* port) {
+void AllocationSequence::OnPortDestroyed(PortInterface* port) {
   if (udp_port_ == port) {
     udp_port_ = NULL;
     return;
@@ -1736,11 +1710,10 @@ void AllocationSequence::OnPortDestroyed(webrtc::PortInterface* port) {
   }
 }
 
-PortConfiguration::PortConfiguration(
-    const ServerAddresses& stun_servers,
-    absl::string_view username,
-    absl::string_view password,
-    const webrtc::FieldTrialsView* field_trials)
+PortConfiguration::PortConfiguration(const ServerAddresses& stun_servers,
+                                     absl::string_view username,
+                                     absl::string_view password,
+                                     const FieldTrialsView* field_trials)
     : stun_servers(stun_servers), username(username), password(password) {
   if (!stun_servers.empty())
     stun_address = *(stun_servers.begin());
@@ -1765,7 +1738,7 @@ ServerAddresses PortConfiguration::StunServers() {
   // use_turn_server_as_stun_server is not disabled or the stun servers are
   // empty.
   ServerAddresses turn_servers = GetRelayServerAddresses(webrtc::PROTO_UDP);
-  for (const rtc::SocketAddress& turn_server : turn_servers) {
+  for (const SocketAddress& turn_server : turn_servers) {
     if (stun_servers.find(turn_server) == stun_servers.end()) {
       stun_servers.insert(turn_server);
     }
@@ -1773,12 +1746,12 @@ ServerAddresses PortConfiguration::StunServers() {
   return stun_servers;
 }
 
-void PortConfiguration::AddRelay(const webrtc::RelayServerConfig& config) {
+void PortConfiguration::AddRelay(const RelayServerConfig& config) {
   relays.push_back(config);
 }
 
-bool PortConfiguration::SupportsProtocol(const webrtc::RelayServerConfig& relay,
-                                         webrtc::ProtocolType type) const {
+bool PortConfiguration::SupportsProtocol(const RelayServerConfig& relay,
+                                         ProtocolType type) const {
   PortList::const_iterator relay_port;
   for (relay_port = relay.ports.begin(); relay_port != relay.ports.end();
        ++relay_port) {
@@ -1788,7 +1761,7 @@ bool PortConfiguration::SupportsProtocol(const webrtc::RelayServerConfig& relay,
   return false;
 }
 
-bool PortConfiguration::SupportsProtocol(webrtc::ProtocolType type) const {
+bool PortConfiguration::SupportsProtocol(ProtocolType type) const {
   for (size_t i = 0; i < relays.size(); ++i) {
     if (SupportsProtocol(relays[i], type))
       return true;
@@ -1797,7 +1770,7 @@ bool PortConfiguration::SupportsProtocol(webrtc::ProtocolType type) const {
 }
 
 ServerAddresses PortConfiguration::GetRelayServerAddresses(
-    webrtc::ProtocolType type) const {
+    ProtocolType type) const {
   ServerAddresses servers;
   for (size_t i = 0; i < relays.size(); ++i) {
     if (SupportsProtocol(relays[i], type)) {
@@ -1807,4 +1780,4 @@ ServerAddresses PortConfiguration::GetRelayServerAddresses(
   return servers;
 }
 
-}  // namespace cricket
+}  // namespace webrtc

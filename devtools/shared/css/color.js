@@ -61,6 +61,9 @@ class CssColor {
     // returned when needed.
     this.#lowerCased = colorValue.toLowerCase();
     this.#authored = colorValue;
+    this.specialValue = SPECIALVALUES.has(this.#lowerCased)
+      ? this.#authored
+      : null;
   }
 
   /**
@@ -127,10 +130,6 @@ class CssColor {
     } catch (e) {
       return false;
     }
-  }
-
-  get specialValue() {
-    return SPECIALVALUES.has(this.#lowerCased) ? this.#authored : null;
   }
 
   get name() {

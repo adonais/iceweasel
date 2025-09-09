@@ -725,5 +725,10 @@ RemoteAccessible* RootAccessible::GetPrimaryRemoteTopLevelContentDoc() const {
   }
 
   auto tab = static_cast<dom::BrowserHost*>(remoteTab.get());
-  return tab->GetTopLevelDocAccessible();
+  DocAccessibleParent* doc = tab->GetTopLevelDocAccessible();
+  // If doc has no parent, it isn't currently attached to the tree and isn't
+  // interactive. This happens when the Terms of Use modal is displayed, which
+  // blocks all other interaction with the browser. In this case, we should
+  // behave as if there is no primary remote top level content document.
+  return doc && doc->Parent() ? doc : nullptr;
 }

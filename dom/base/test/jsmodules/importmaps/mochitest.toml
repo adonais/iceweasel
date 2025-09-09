@@ -11,6 +11,10 @@ support-files = [
   "bug_1894631_module_3.mjs",
   "bug_1894631_module_4.mjs",
   "classic_script.js",
+  "bug_1820594_module1.mjs",
+  "bug_1820594_module2-1.mjs",
+  "bug_1820594_module2-2.mjs",
+  "bug_1820594_module2-3.mjs",
   "module_chain_1.mjs",
   "module_chain_2.mjs",
   "module_importMap_with_external_script_0.mjs",
@@ -36,6 +40,8 @@ support-files = [
   "good/module_7.mjs",
   "circular_dependency.mjs",
 ]
+
+["test_bug_1820594.html"]
 
 ["test_bug_1865410.html"]
 

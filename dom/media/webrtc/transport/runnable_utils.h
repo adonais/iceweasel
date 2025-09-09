@@ -9,13 +9,13 @@
 #ifndef runnable_utils_h__
 #define runnable_utils_h__
 
+#include <functional>
+#include <tuple>
+#include <type_traits>
 #include <utility>
 
 #include "mozilla/RefPtr.h"
 #include "nsThreadUtils.h"
-#include <functional>
-#include <tuple>
-#include <type_traits>
 
 // Abstract base class for all of our templates
 namespace mozilla {

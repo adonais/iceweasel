@@ -6,13 +6,8 @@
   /* Colors from common.css */
   --in-content-background-color: light-dark(#fff, rgb(28, 27, 34));
   --in-content-border-color: light-dark(#d7d7db, rgba(249, 249, 250, 0.2));
-  --in-content-primary-button-background: light-dark(rgb(0, 97, 224), #00ddff);
-  --in-content-primary-button-background-active: light-dark(rgb(5, 62, 148), rgb(170, 242, 255));
-  --in-content-primary-button-background-hover: light-dark(rgb(2, 80, 187), rgb(128, 235, 255));
-  --in-content-text-color: light-dark(#0c0c0d, #eee);
-
   --bg-color: var(--in-content-background-color);
-  --text-color: var(--in-content-text-color);
+  --text-color: light-dark(#0c0c0d, #eee);
   --secondary-text-color: light-dark(var(--grey-50), rgb(168, 168, 168));
 
   --border-color: var(--in-content-border-color);
@@ -38,7 +33,7 @@
 
   --category-background-hover: rgba(12, 12, 13, 0.1);
   --category-text: light-dark(rgba(12, 12, 13), var(--text-color));
-  --category-text-selected: var(--in-content-primary-button-background);
+  --category-text-selected: var(--button-background-color-primary);
 
   --fieldpair-text-color: light-dark(var(--grey-50), var(--text-color));
 
@@ -51,16 +46,12 @@
 
   /* Dimensions from common.css #categories > .category */
   /* TODO: Values are not based on photon's 4px base distance, see bug 1501638 */
-  --category-height: 48px;
+  --category-height: var(--size-item-xlarge);
   --category-padding: 10px;
   --category-transition-duration: 150ms;
 
   --icon-ok-color: light-dark(var(--green-70), var(--white-100));
   --icon-info-color: light-dark(var(--grey-90), var(--white-100));
-
-  --link-color: var(--in-content-primary-button-background);
-  --link-color-active: var(--in-content-primary-button-background-active);
-  --link-color-hover: var(--in-content-primary-button-background-hover);
 
   --primary-button-background-color: light-dark(var(--blue-60), #00ddff);
   --primary-button-color: light-dark(var(--white-100), rgb(43, 42, 51));
@@ -168,13 +159,13 @@ ul {
 }
 
 a {
-  color: var(--link-color);
+  color: var(--button-background-color-primary);
 }
 a:hover {
-  color: var(--link-color-hover);
+  color: var(--button-background-color-primary-hover);
 }
 a:active {
-  color: var(--link-color-active);
+  color: var(--button-background-color-primary-active);
 }
 
 p,

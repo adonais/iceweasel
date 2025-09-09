@@ -9,11 +9,11 @@
 #  include "mozilla/a11y/DocManager.h"
 #  include "mozilla/a11y/OuterDocAccessible.h"
 #endif
+#include "mozilla/PresShell.h"
 #include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/BrowserBridgeHost.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/MozFrameLoaderOwnerBinding.h"
-#include "mozilla/PresShell.h"
 #include "nsFocusManager.h"
 #include "nsFrameLoader.h"
 #include "nsFrameLoaderOwner.h"

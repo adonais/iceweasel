@@ -3,20 +3,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/dom/WebGPUBinding.h"
 #include "Buffer.h"
 
-#include "mozilla/dom/Promise.h"
-#include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/HoldDropJSObjects.h"
-#include "mozilla/ipc/Shmem.h"
+#include "Device.h"
 #include "ipc/WebGPUChild.h"
 #include "js/ArrayBuffer.h"
 #include "js/RootingAPI.h"
+#include "mozilla/HoldDropJSObjects.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/WebGPUBinding.h"
+#include "mozilla/ipc/Shmem.h"
+#include "mozilla/webgpu/ffi/wgpu.h"
 #include "nsContentUtils.h"
 #include "nsWrapperCache.h"
-#include "Device.h"
-#include "mozilla/webgpu/ffi/wgpu.h"
 
 namespace mozilla::webgpu {
 
@@ -58,7 +58,6 @@ already_AddRefed<Buffer> Buffer::Create(Device* aDevice, RawId aDeviceId,
                                         const dom::GPUBufferDescriptor& aDesc,
                                         ErrorResult& aRv) {
   RefPtr<WebGPUChild> bridge = aDevice->GetBridge();
-  RawId bufferId = ffi::wgpu_client_make_buffer_id(bridge->GetClient());
 
   ipc::MutableSharedMemoryHandle handle;
   ipc::SharedMemoryMapping mapping;
@@ -117,8 +116,8 @@ already_AddRefed<Buffer> Buffer::Create(Device* aDevice, RawId aDeviceId,
   desc.mapped_at_creation = aDesc.mMappedAtCreation;
 
   auto shmem_handle_index = bridge->QueueShmemHandle(std::move(handle));
-  ffi::wgpu_client_create_buffer(bridge->GetClient(), aDeviceId, bufferId,
-                                 &desc, shmem_handle_index);
+  RawId bufferId = ffi::wgpu_client_create_buffer(
+      bridge->GetClient(), aDeviceId, &desc, shmem_handle_index);
 
   RefPtr<Buffer> buffer = new Buffer(aDevice, bufferId, aDesc.mSize,
                                      aDesc.mUsage, std::move(mapping));
@@ -163,8 +162,6 @@ void Buffer::Cleanup() {
   }
 
   ffi::wgpu_client_drop_buffer(bridge->GetClient(), mId);
-
-  wgpu_client_free_buffer_id(bridge->GetClient(), mId);
 }
 
 void Buffer::SetMapped(BufferAddress aOffset, BufferAddress aSize,

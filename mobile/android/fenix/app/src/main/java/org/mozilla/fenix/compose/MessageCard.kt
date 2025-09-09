@@ -22,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -215,6 +216,7 @@ data class MessageCardColors(
          * Builder function used to construct an instance of [MessageCardColors].
          */
         @Composable
+        @ReadOnlyComposable
         fun buildMessageCardColors(
             backgroundColor: Color = FirefoxTheme.colors.layer2,
             titleTextColor: Color = FirefoxTheme.colors.textPrimary,
@@ -320,6 +322,7 @@ data class MessageCardState(
          * @param wallpaperState [WallpaperState] specifying the colors to be used.
          */
         @Composable
+        @ReadOnlyComposable
         fun build(message: Message, wallpaperState: WallpaperState): MessageCardState {
             val isWallpaperNotDefault =
                 !Wallpaper.nameIsDefault(wallpaperState.currentWallpaper.name)

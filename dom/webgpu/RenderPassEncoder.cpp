@@ -3,16 +3,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/dom/WebGPUBinding.h"
 #include "RenderPassEncoder.h"
+
 #include "BindGroup.h"
 #include "CommandEncoder.h"
+#include "ExternalTexture.h"
 #include "RenderBundle.h"
 #include "RenderPipeline.h"
 #include "TextureView.h"
 #include "Utility.h"
-#include "mozilla/webgpu/ffi/wgpu.h"
 #include "ipc/WebGPUChild.h"
+#include "mozilla/dom/WebGPUBinding.h"
+#include "mozilla/webgpu/ffi/wgpu.h"
 
 namespace mozilla::webgpu {
 
@@ -201,8 +203,7 @@ ffi::WGPURecordedRenderPass* BeginRenderPass(
     colorDescs.AppendElement(cd);
   }
 
-  desc.color_attachments = colorDescs.Elements();
-  desc.color_attachments_length = colorDescs.Length();
+  desc.color_attachments = {colorDescs.Elements(), colorDescs.Length()};
 
   if (aDesc.mOcclusionQuerySet.WasPassed()) {
     desc.occlusion_query_set = aDesc.mOcclusionQuerySet.Value().mId;
@@ -253,7 +254,7 @@ void RenderPassEncoder::Cleanup() {
 void RenderPassEncoder::SetBindGroup(uint32_t aSlot,
                                      BindGroup* const aBindGroup,
                                      const uint32_t* aDynamicOffsets,
-                                     uint64_t aDynamicOffsetsLength) {
+                                     size_t aDynamicOffsetsLength) {
   RawId bindGroup = 0;
   if (aBindGroup) {
     mUsedBindGroups.AppendElement(aBindGroup);
@@ -261,7 +262,7 @@ void RenderPassEncoder::SetBindGroup(uint32_t aSlot,
     bindGroup = aBindGroup->mId;
   }
   ffi::wgpu_recorded_render_pass_set_bind_group(
-      mPass.get(), aSlot, bindGroup, aDynamicOffsets, aDynamicOffsetsLength);
+      mPass.get(), aSlot, bindGroup, {aDynamicOffsets, aDynamicOffsetsLength});
 }
 
 void RenderPassEncoder::SetBindGroup(
@@ -432,7 +433,7 @@ void RenderPassEncoder::ExecuteBundles(
     renderBundles.AppendElement(bundle->mId);
   }
   ffi::wgpu_recorded_render_pass_execute_bundles(
-      mPass.get(), renderBundles.Elements(), renderBundles.Length());
+      mPass.get(), {renderBundles.Elements(), renderBundles.Length()});
 }
 
 void RenderPassEncoder::PushDebugGroup(const nsAString& aString) {
@@ -466,8 +467,12 @@ void RenderPassEncoder::End() {
   if (!mValid) {
     return;
   }
+  nsTArray<RefPtr<ExternalTexture>> externalTextures;
+  for (const auto& bindGroup : mUsedBindGroups) {
+    externalTextures.AppendElements(bindGroup->GetExternalTextures());
+  }
   MOZ_ASSERT(!!mPass);
-  mParent->EndRenderPass(*mPass, mUsedCanvasContexts);
+  mParent->EndRenderPass(*mPass, mUsedCanvasContexts, externalTextures);
   Cleanup();
 }
 

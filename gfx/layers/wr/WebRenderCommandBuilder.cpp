@@ -1003,17 +1003,23 @@ void Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem,
       break;
     }
     case DisplayItemType::TYPE_BLEND_CONTAINER: {
-      aContext->GetDrawTarget()->PushLayer(false, 1.0, nullptr,
-                                           mozilla::gfx::Matrix(), aItemBounds);
-      GP("beginGroup %s %p-%d\n", aItem->Name(), aItem->Frame(),
-         aItem->GetPerFrameKey());
-      aContext->GetDrawTarget()->FlushItem(aItemBounds);
+      auto* bc = static_cast<nsDisplayBlendContainer*>(aItem);
+      const bool flatten = bc->ShouldFlattenAway(mDisplayListBuilder);
+      if (!flatten) {
+        aContext->GetDrawTarget()->PushLayer(
+            false, 1.0, nullptr, mozilla::gfx::Matrix(), aItemBounds);
+        GP("beginGroup %s %p-%d\n", aItem->Name(), aItem->Frame(),
+           aItem->GetPerFrameKey());
+        aContext->GetDrawTarget()->FlushItem(aItemBounds);
+      }
       aGroup->PaintItemRange(this, aChildren->begin(), aChildren->end(),
                              aContext, aRecorder, aRootManager, aResources);
-      aContext->GetDrawTarget()->PopLayer();
-      GP("endGroup %s %p-%d\n", aItem->Name(), aItem->Frame(),
-         aItem->GetPerFrameKey());
-      aContext->GetDrawTarget()->FlushItem(aItemBounds);
+      if (!flatten) {
+        aContext->GetDrawTarget()->PopLayer();
+        GP("endGroup %s %p-%d\n", aItem->Name(), aItem->Frame(),
+           aItem->GetPerFrameKey());
+        aContext->GetDrawTarget()->FlushItem(aItemBounds);
+      }
       break;
     }
     case DisplayItemType::TYPE_MASK: {
@@ -1926,32 +1932,63 @@ struct NewLayerData {
   }
 };
 
-static bool AllowComputingOpaqueRegionAcross(nsDisplayItem* aWrappingItem,
-                                             nsDisplayListBuilder* aBuilder,
-                                             nsPoint& aOpaqueRegionOffset) {
-  if (!aWrappingItem) {
-    return true;
-  }
+static Maybe<nsPoint> AllowComputingOpaqueRegionAcross(
+    nsDisplayItem* aWrappingItem, nsDisplayListBuilder* aBuilder) {
+  MOZ_ASSERT(aWrappingItem);
   if (aWrappingItem->GetType() != DisplayItemType::TYPE_TRANSFORM) {
-    return false;
+    return {};
   }
   auto* transformItem = static_cast<nsDisplayTransform*>(aWrappingItem);
   if (transformItem->MayBeAnimated(aBuilder)) {
-    return false;
+    return {};
   }
   const auto& transform = transformItem->GetTransform();
   if (!transform.Is2D()) {
-    return false;
+    return {};
   }
   const auto transform2d = transform.GetMatrix().As2D();
   if (!transform2d.IsTranslation()) {
-    return false;
+    return {};
   }
-  aOpaqueRegionOffset += LayoutDevicePoint::ToAppUnits(
+  return Some(LayoutDevicePoint::ToAppUnits(
       LayoutDevicePoint::FromUnknownPoint(transform2d.GetTranslation()),
-      transformItem->Frame()->PresContext()->AppUnitsPerDevPixel());
-  return true;
+      transformItem->Frame()->PresContext()->AppUnitsPerDevPixel()));
 }
+
+struct MOZ_STACK_CLASS WebRenderCommandBuilder::AutoOpaqueRegionStateTracker {
+  WebRenderCommandBuilder& mBuilder;
+  const bool mWasComputingOpaqueRegion;
+  bool mThroughWrapper = false;
+
+  AutoOpaqueRegionStateTracker(WebRenderCommandBuilder& aBuilder,
+                               nsDisplayListBuilder* aDlBuilder,
+                               nsDisplayItem* aWrappingItem)
+      : mBuilder(aBuilder),
+        mWasComputingOpaqueRegion(aBuilder.mComputingOpaqueRegion) {
+    if (!mBuilder.mComputingOpaqueRegion || !aWrappingItem) {
+      return;
+    }
+    Maybe<nsPoint> offset =
+        AllowComputingOpaqueRegionAcross(aWrappingItem, aDlBuilder);
+    if (!offset) {
+      aBuilder.mComputingOpaqueRegion = false;
+    } else {
+      mThroughWrapper = true;
+      aBuilder.mOpaqueRegionWrappers.AppendElement(
+          std::make_pair(aWrappingItem, *offset));
+    }
+  }
+
+  ~AutoOpaqueRegionStateTracker() {
+    if (!mWasComputingOpaqueRegion) {
+      return;
+    }
+    if (mThroughWrapper) {
+      mBuilder.mOpaqueRegionWrappers.RemoveLastElement();
+    }
+    mBuilder.mComputingOpaqueRegion = mWasComputingOpaqueRegion;
+  }
+};
 
 void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
     nsDisplayList* aDisplayList, nsDisplayItem* aWrappingItem,
@@ -1987,13 +2024,8 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
     mClipManager.BeginList(aSc);
   }
 
-  AutoRestore<bool> restoreComputingOpaqueRegion(mComputingOpaqueRegion);
-  AutoRestore<nsPoint> restoreOpaqueRegionOffset(mOpaqueRegionOffset);
-  mComputingOpaqueRegion =
-      mComputingOpaqueRegion &&
-      AllowComputingOpaqueRegionAcross(aWrappingItem, aDisplayListBuilder,
-                                       mOpaqueRegionOffset);
-
+  AutoOpaqueRegionStateTracker tracker(*this, aDisplayListBuilder,
+                                       aWrappingItem);
   do {
     nsDisplayItem* item = iter.GetNextItem();
 
@@ -2044,11 +2076,19 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
       bool snap;
       nsRegion opaque = item->GetOpaqueRegion(aDisplayListBuilder, &snap);
       if (opaque.GetNumRects() == 1) {
-        const nsRect clippedOpaque =
+        nsRect result =
             item->GetClip().ApproximateIntersectInward(opaque.GetBounds());
-        if (!clippedOpaque.IsEmpty()) {
-          aDisplayListBuilder->AddWindowOpaqueRegion(
-              item->Frame(), clippedOpaque + mOpaqueRegionOffset);
+        if (!result.IsEmpty()) {
+          for (auto& [item, offset] : Reversed(mOpaqueRegionWrappers)) {
+            result =
+                item->GetClip().ApproximateIntersectInward(result + offset);
+            if (result.IsEmpty()) {
+              break;
+            }
+          }
+          if (!result.IsEmpty()) {
+            aDisplayListBuilder->AddWindowOpaqueRegion(item->Frame(), result);
+          }
         }
       }
     }

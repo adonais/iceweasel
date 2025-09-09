@@ -7,11 +7,10 @@
 #ifndef nsNameSpaceManager_h___
 #define nsNameSpaceManager_h___
 
-#include "nsTHashMap.h"
+#include "mozilla/StaticPtr.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
-
-#include "mozilla/StaticPtr.h"
+#include "nsTHashMap.h"
 
 /**
  * The Name Space Manager tracks the association between a NameSpace

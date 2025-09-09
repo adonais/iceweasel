@@ -31,10 +31,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.fragment.compose.content
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -120,231 +119,227 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View = ComposeView(requireContext()).apply {
-        setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+    ) = content {
+        FirefoxTheme {
+            val components = components
+            val trackingProtectionUseCases = components.useCases.trackingProtectionUseCases
+            val settings = components.settings
 
-        setContent {
-            FirefoxTheme {
-                val components = components
-                val trackingProtectionUseCases = components.useCases.trackingProtectionUseCases
-                val settings = components.settings
-
-                val coroutineScope = rememberCoroutineScope()
-                val store = remember {
-                    TrustPanelStore(
-                        isTrackingProtectionEnabled = args.isTrackingProtectionEnabled,
-                        websiteInfoState = WebsiteInfoState(
-                            isSecured = args.isSecured,
-                            websiteUrl = args.url,
-                            websiteTitle = args.title,
-                            certificateName = args.certificateName,
+            val coroutineScope = rememberCoroutineScope()
+            val store = remember {
+                TrustPanelStore(
+                    isTrackingProtectionEnabled = args.isTrackingProtectionEnabled,
+                    websiteInfoState = WebsiteInfoState(
+                        isSecured = args.isSecured,
+                        websiteUrl = args.url,
+                        websiteTitle = args.title,
+                        certificateName = args.certificateName,
+                    ),
+                    sessionState = components.core.store.state.findTabOrCustomTab(args.sessionId),
+                    settings = settings,
+                    sitePermissions = args.sitePermissions,
+                    permissionHighlights = args.permissionHighlights,
+                    isPermissionBlockedByAndroid = { phoneFeature ->
+                        !phoneFeature.isAndroidPermissionGranted(requireContext())
+                    },
+                    middleware = listOf(
+                        TrustPanelMiddleware(
+                            appStore = components.appStore,
+                            engine = components.core.engine,
+                            publicSuffixList = components.publicSuffixList,
+                            sessionUseCases = components.useCases.sessionUseCases,
+                            trackingProtectionUseCases = trackingProtectionUseCases,
+                            settings = settings,
+                            permissionStorage = components.core.permissionStorage,
+                            requestPermissionsLauncher = requestPermissionsLauncher,
+                            onDismiss = {
+                                withContext(Dispatchers.Main) {
+                                    this@TrustPanelFragment.dismiss()
+                                }
+                            },
+                            scope = coroutineScope,
                         ),
-                        sessionState = components.core.store.state.findTabOrCustomTab(args.sessionId),
-                        settings = settings,
-                        sitePermissions = args.sitePermissions,
-                        permissionHighlights = args.permissionHighlights,
-                        isPermissionBlockedByAndroid = { phoneFeature ->
-                            !phoneFeature.isAndroidPermissionGranted(requireContext())
-                        },
-                        middleware = listOf(
-                            TrustPanelMiddleware(
-                                appStore = components.appStore,
-                                engine = components.core.engine,
-                                publicSuffixList = components.publicSuffixList,
-                                sessionUseCases = components.useCases.sessionUseCases,
-                                trackingProtectionUseCases = trackingProtectionUseCases,
-                                settings = settings,
-                                permissionStorage = components.core.permissionStorage,
-                                requestPermissionsLauncher = requestPermissionsLauncher,
-                                onDismiss = {
-                                    withContext(Dispatchers.Main) {
-                                        this@TrustPanelFragment.dismiss()
-                                    }
+                        TrustPanelNavigationMiddleware(
+                            navController = findNavController(),
+                            privacySecurityPrefKey = requireContext().getString(
+                                R.string.pref_key_privacy_security_category,
+                            ),
+                            scope = coroutineScope,
+                        ),
+                        TrustPanelTelemetryMiddleware(),
+                    ),
+                )
+            }
+
+            MenuDialogBottomSheet(
+                modifier = Modifier
+                    .padding(top = 8.dp, bottom = 5.dp)
+                    .fillMaxWidth(0.1f)
+                    .verticalScroll(rememberScrollState()),
+                onRequestDismiss = ::dismiss,
+                handlebarContentDescription = "",
+            ) {
+                val baseDomain by store.observeAsState(initialValue = null) { state ->
+                    state.baseDomain
+                }
+                val isTrackingProtectionEnabled by store.observeAsState(initialValue = false) { state ->
+                    state.isTrackingProtectionEnabled
+                }
+                val numberOfTrackersBlocked by store.observeAsState(initialValue = 0) { state ->
+                    state.numberOfTrackersBlocked
+                }
+                val bucketedTrackers by store.observeAsState(initialValue = TrackerBuckets()) { state ->
+                    state.bucketedTrackers
+                }
+                val detailedTrackerCategory by store.observeAsState(initialValue = null) { state ->
+                    state.detailedTrackerCategory
+                }
+                val sessionState by store.observeAsState(initialValue = null) { state ->
+                    state.sessionState
+                }
+                val websitePermissions by store.observeAsState(initialValue = listOf()) { state ->
+                    state.websitePermissionsState.values
+                }
+
+                permissionsCallback = { isGranted: Map<String, Boolean> ->
+                    if (isGranted.values.all { it }) {
+                        val phoneFeature = PhoneFeature.findFeatureBy(isGranted.keys.toTypedArray())
+
+                        phoneFeature?.let {
+                            store.dispatch(
+                                TrustPanelAction.WebsitePermissionAction
+                                    .GrantPermissionBlockedByAndroid(phoneFeature),
+                            )
+                        }
+                    } else {
+                        if (isGranted.keys.any { !shouldShowRequestPermissionRationale(it) }) {
+                            // The user has permanently blocked these permissions and is trying to enable them.
+                            // At this point, we are not able to request these permissions; the only way to allow
+                            // them is to take the user to the system app setting page, and there the user can
+                            // choose to allow the permissions.
+                            startActivity(
+                                Intent().apply {
+                                    action = android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                                    data = Uri.fromParts("package", BuildConfig.APPLICATION_ID, null)
                                 },
-                                scope = coroutineScope,
-                            ),
-                            TrustPanelNavigationMiddleware(
-                                navController = findNavController(),
-                                privacySecurityPrefKey = requireContext().getString(
-                                    R.string.pref_key_privacy_security_category,
-                                ),
-                                scope = coroutineScope,
-                            ),
-                            TrustPanelTelemetryMiddleware(),
-                        ),
+                            )
+                        }
+                    }
+                }
+
+                val initRoute = Route.ProtectionPanel
+
+                var contentState: Route by remember { mutableStateOf(initRoute) }
+
+                BackHandler {
+                    when (contentState) {
+                        Route.TrackersPanel,
+                        Route.ConnectionSecurityPanel,
+                        -> contentState = Route.ProtectionPanel
+
+                        Route.TrackerCategoryDetailsPanel,
+                        -> contentState = Route.TrackersPanel
+
+                        else -> this@TrustPanelFragment.dismissAllowingStateLoss()
+                    }
+                }
+
+                observeTrackersChange(components.core.store) {
+                    trackingProtectionUseCases.fetchTrackingLogs(
+                        tabId = args.sessionId,
+                        onSuccess = { trackerLogs ->
+                            store.dispatch(TrustPanelAction.UpdateTrackersBlocked(trackerLogs))
+                        },
+                        onError = {
+                            Logger.error("TrackingProtectionUseCases - fetchTrackingLogs onError", it)
+                        },
                     )
                 }
 
-                MenuDialogBottomSheet(
-                    modifier = Modifier
-                        .padding(top = 8.dp, bottom = 5.dp)
-                        .fillMaxWidth(0.1f)
-                        .verticalScroll(rememberScrollState()),
-                    onRequestDismiss = ::dismiss,
-                    handlebarContentDescription = "",
-                ) {
-                    val baseDomain by store.observeAsState(initialValue = null) { state ->
-                        state.baseDomain
-                    }
-                    val isTrackingProtectionEnabled by store.observeAsState(initialValue = false) { state ->
-                        state.isTrackingProtectionEnabled
-                    }
-                    val numberOfTrackersBlocked by store.observeAsState(initialValue = 0) { state ->
-                        state.numberOfTrackersBlocked
-                    }
-                    val bucketedTrackers by store.observeAsState(initialValue = TrackerBuckets()) { state ->
-                        state.bucketedTrackers
-                    }
-                    val detailedTrackerCategory by store.observeAsState(initialValue = null) { state ->
-                        state.detailedTrackerCategory
-                    }
-                    val sessionState by store.observeAsState(initialValue = null) { state ->
-                        state.sessionState
-                    }
-                    val websitePermissions by store.observeAsState(initialValue = listOf()) { state ->
-                        state.websitePermissionsState.values
-                    }
-
-                    permissionsCallback = { isGranted: Map<String, Boolean> ->
-                        if (isGranted.values.all { it }) {
-                            val phoneFeature = PhoneFeature.findFeatureBy(isGranted.keys.toTypedArray())
-
-                            phoneFeature?.let {
-                                store.dispatch(
-                                    TrustPanelAction.WebsitePermissionAction
-                                        .GrantPermissionBlockedByAndroid(phoneFeature),
-                                )
-                            }
-                        } else {
-                            if (isGranted.keys.any { !shouldShowRequestPermissionRationale(it) }) {
-                                // The user has permanently blocked these permissions and is trying to enable them.
-                                // At this point, we are not able to request these permissions; the only way to allow
-                                // them is to take the user to the system app setting page, and there the user can
-                                // choose to allow the permissions.
-                                startActivity(
-                                    Intent().apply {
-                                        action = android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                                        data = Uri.fromParts("package", BuildConfig.APPLICATION_ID, null)
-                                    },
-                                )
-                            }
+                AnimatedContent(
+                    targetState = contentState,
+                    transitionSpec = trustPanelTransitionSpec(contentState),
+                    label = "MenuDialogAnimation",
+                ) { route ->
+                    when (route) {
+                        Route.ProtectionPanel -> {
+                            ProtectionPanel(
+                                icon = sessionState?.content?.icon,
+                                isTrackingProtectionEnabled = isTrackingProtectionEnabled,
+                                numberOfTrackersBlocked = numberOfTrackersBlocked,
+                                websiteInfoState = store.state.websiteInfoState,
+                                websitePermissions = websitePermissions.filter { it.isVisible },
+                                onTrackerBlockedMenuClick = {
+                                    contentState = Route.TrackersPanel
+                                },
+                                onTrackingProtectionToggleClick = {
+                                    store.dispatch(TrustPanelAction.ToggleTrackingProtection)
+                                },
+                                onClearSiteDataMenuClick = {
+                                    store.dispatch(TrustPanelAction.RequestClearSiteDataDialog)
+                                    contentState = Route.ClearSiteDataDialog
+                                },
+                                onConnectionSecurityClick = {
+                                    contentState = Route.ConnectionSecurityPanel
+                                },
+                                onPrivacySecuritySettingsClick = {
+                                    store.dispatch(TrustPanelAction.Navigate.PrivacySecuritySettings)
+                                },
+                                onAutoplayValueClick = { autoplayValue ->
+                                    store.dispatch(TrustPanelAction.UpdateAutoplayValue(autoplayValue))
+                                },
+                                onToggleablePermissionClick = { websitePermission: WebsitePermission.Toggleable ->
+                                    store.dispatch(TrustPanelAction.TogglePermission(websitePermission))
+                                },
+                            )
                         }
-                    }
 
-                    val initRoute = Route.ProtectionPanel
-
-                    var contentState: Route by remember { mutableStateOf(initRoute) }
-
-                    BackHandler {
-                        when (contentState) {
-                            Route.TrackersPanel,
-                            Route.ConnectionSecurityPanel,
-                            -> contentState = Route.ProtectionPanel
-
-                            Route.TrackerCategoryDetailsPanel,
-                            -> contentState = Route.TrackersPanel
-
-                            else -> this@TrustPanelFragment.dismissAllowingStateLoss()
+                        Route.TrackersPanel -> {
+                            TrackersBlockedPanel(
+                                title = args.title,
+                                numberOfTrackersBlocked = numberOfTrackersBlocked,
+                                bucketedTrackers = bucketedTrackers,
+                                onTrackerCategoryClick = { detailedTrackerCategory ->
+                                    store.dispatch(
+                                        TrustPanelAction.UpdateDetailedTrackerCategory(detailedTrackerCategory),
+                                    )
+                                    contentState = Route.TrackerCategoryDetailsPanel
+                                },
+                                onBackButtonClick = {
+                                    contentState = Route.ProtectionPanel
+                                },
+                            )
                         }
-                    }
 
-                    observeTrackersChange(components.core.store) {
-                        trackingProtectionUseCases.fetchTrackingLogs(
-                            tabId = args.sessionId,
-                            onSuccess = { trackerLogs ->
-                                store.dispatch(TrustPanelAction.UpdateTrackersBlocked(trackerLogs))
-                            },
-                            onError = {
-                                Logger.error("TrackingProtectionUseCases - fetchTrackingLogs onError", it)
-                            },
-                        )
-                    }
+                        Route.TrackerCategoryDetailsPanel -> {
+                            TrackerCategoryDetailsPanel(
+                                title = args.title,
+                                isTotalCookieProtectionEnabled = components.settings.enabledTotalCookieProtection,
+                                detailedTrackerCategory = detailedTrackerCategory,
+                                bucketedTrackers = bucketedTrackers,
+                                onBackButtonClick = {
+                                    contentState = Route.TrackersPanel
+                                },
+                            )
+                        }
 
-                    AnimatedContent(
-                        targetState = contentState,
-                        transitionSpec = trustPanelTransitionSpec(contentState),
-                        label = "MenuDialogAnimation",
-                    ) { route ->
-                        when (route) {
-                            Route.ProtectionPanel -> {
-                                ProtectionPanel(
-                                    icon = sessionState?.content?.icon,
-                                    isTrackingProtectionEnabled = isTrackingProtectionEnabled,
-                                    numberOfTrackersBlocked = numberOfTrackersBlocked,
-                                    websiteInfoState = store.state.websiteInfoState,
-                                    websitePermissions = websitePermissions.filter { it.isVisible },
-                                    onTrackerBlockedMenuClick = {
-                                        contentState = Route.TrackersPanel
-                                    },
-                                    onTrackingProtectionToggleClick = {
-                                        store.dispatch(TrustPanelAction.ToggleTrackingProtection)
-                                    },
-                                    onClearSiteDataMenuClick = {
-                                        store.dispatch(TrustPanelAction.RequestClearSiteDataDialog)
-                                        contentState = Route.ClearSiteDataDialog
-                                    },
-                                    onConnectionSecurityClick = {
-                                        contentState = Route.ConnectionSecurityPanel
-                                    },
-                                    onPrivacySecuritySettingsClick = {
-                                        store.dispatch(TrustPanelAction.Navigate.PrivacySecuritySettings)
-                                    },
-                                    onAutoplayValueClick = { autoplayValue ->
-                                        store.dispatch(TrustPanelAction.UpdateAutoplayValue(autoplayValue))
-                                    },
-                                    onToggleablePermissionClick = { websitePermission: WebsitePermission.Toggleable ->
-                                        store.dispatch(TrustPanelAction.TogglePermission(websitePermission))
-                                    },
-                                )
-                            }
+                        Route.ConnectionSecurityPanel -> {
+                            ConnectionSecurityPanel(
+                                websiteInfoState = store.state.websiteInfoState,
+                                onBackButtonClick = {
+                                    contentState = Route.ProtectionPanel
+                                },
+                            )
+                        }
 
-                            Route.TrackersPanel -> {
-                                TrackersBlockedPanel(
-                                    title = args.title,
-                                    numberOfTrackersBlocked = numberOfTrackersBlocked,
-                                    bucketedTrackers = bucketedTrackers,
-                                    onTrackerCategoryClick = { detailedTrackerCategory ->
-                                        store.dispatch(
-                                            TrustPanelAction.UpdateDetailedTrackerCategory(detailedTrackerCategory),
-                                        )
-                                        contentState = Route.TrackerCategoryDetailsPanel
-                                    },
-                                    onBackButtonClick = {
-                                        contentState = Route.ProtectionPanel
-                                    },
-                                )
-                            }
-
-                            Route.TrackerCategoryDetailsPanel -> {
-                                TrackerCategoryDetailsPanel(
-                                    title = args.title,
-                                    isTotalCookieProtectionEnabled = components.settings.enabledTotalCookieProtection,
-                                    detailedTrackerCategory = detailedTrackerCategory,
-                                    bucketedTrackers = bucketedTrackers,
-                                    onBackButtonClick = {
-                                        contentState = Route.TrackersPanel
-                                    },
-                                )
-                            }
-
-                            Route.ConnectionSecurityPanel -> {
-                                ConnectionSecurityPanel(
-                                    websiteInfoState = store.state.websiteInfoState,
-                                    onBackButtonClick = {
-                                        contentState = Route.ProtectionPanel
-                                    },
-                                )
-                            }
-
-                            Route.ClearSiteDataDialog -> {
-                                ClearSiteDataDialog(
-                                    baseDomain = baseDomain ?: "",
-                                    onClearSiteDataClick = {
-                                        store.dispatch(TrustPanelAction.ClearSiteData)
-                                    },
-                                    onCancelClick = { ::dismiss.invoke() },
-                                )
-                            }
+                        Route.ClearSiteDataDialog -> {
+                            ClearSiteDataDialog(
+                                baseDomain = baseDomain ?: "",
+                                onClearSiteDataClick = {
+                                    store.dispatch(TrustPanelAction.ClearSiteData)
+                                },
+                                onCancelClick = { ::dismiss.invoke() },
+                            )
                         }
                     }
                 }

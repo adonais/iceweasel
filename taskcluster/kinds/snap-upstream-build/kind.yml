@@ -19,7 +19,7 @@ task-defaults:
     treeherder:
         kind: build
         tier: 2
-    worker-type: b-linux-xlarge-gcp
+    worker-type: b-linux-xlarge-amd
     run:
         checkout: true
     worker:

@@ -176,6 +176,7 @@ export var SearchUtils = {
     OPENSEARCH: "application/opensearchdescription+xml",
     TRENDING_JSON: "application/x-trending+json",
     SEARCH_FORM: "searchform",
+    VISUAL_SEARCH: "application/x-visual-search+html",
   }),
 
   ENGINES_URLS: {
@@ -288,7 +289,7 @@ export var SearchUtils = {
    *   The current settings version.
    */
   get SETTINGS_VERSION() {
-    return 12;
+    return 13;
   },
 
   /**
@@ -609,13 +610,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   SearchUtils,
   "loggingEnabled",
   BROWSER_SEARCH_PREF + "log",
-  false
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  SearchUtils,
-  "rustSelectorFeatureGate",
-  BROWSER_SEARCH_PREF + "rustSelector.featureGate",
   false
 );
 

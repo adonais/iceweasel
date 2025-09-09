@@ -5,10 +5,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SharedMessageBody.h"
+
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/MessagePort.h"
-#include "mozilla/dom/RefMessageBodyService.h"
 #include "mozilla/dom/PMessagePort.h"
+#include "mozilla/dom/RefMessageBodyService.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "xpcpublic.h"

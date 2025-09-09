@@ -11,6 +11,9 @@
 #ifndef API_AUDIO_AUDIO_VIEW_H_
 #define API_AUDIO_AUDIO_VIEW_H_
 
+#include <cstddef>
+#include <iterator>
+
 #include "api/array_view.h"
 #include "api/audio/channel_layout.h"
 #include "rtc_base/checks.h"
@@ -29,7 +32,7 @@ namespace webrtc {
 //   buffer. Channels can be enumerated and accessing the individual channel
 //   data is done via MonoView<>.
 //
-// The views are comparable to and built on rtc::ArrayView<> but add
+// The views are comparable to and built on webrtc::ArrayView<> but add
 // audio specific properties for the dimensions of the buffer and the above
 // specialized [de]interleaved support.
 //
@@ -40,7 +43,7 @@ namespace webrtc {
 // can be either an single channel (mono) interleaved buffer (e.g. AudioFrame),
 // or a de-interleaved channel (e.g. from AudioBuffer).
 template <typename T>
-using MonoView = rtc::ArrayView<T>;
+using MonoView = ArrayView<T>;
 
 // InterleavedView<> is a view over an interleaved audio buffer (e.g. from
 // AudioFrame).
@@ -77,7 +80,7 @@ class InterleavedView {
 
   size_t num_channels() const { return num_channels_; }
   size_t samples_per_channel() const { return samples_per_channel_; }
-  rtc::ArrayView<T> data() const { return data_; }
+  ArrayView<T> data() const { return data_; }
   bool empty() const { return data_.empty(); }
   size_t size() const { return data_.size(); }
 
@@ -116,7 +119,7 @@ class InterleavedView {
   // construction.
   size_t num_channels_ = 0u;
   size_t samples_per_channel_ = 0u;
-  rtc::ArrayView<T> data_;
+  ArrayView<T> data_;
 };
 
 template <typename T>
@@ -148,7 +151,7 @@ class DeinterleavedView {
 
   size_t num_channels() const { return num_channels_; }
   size_t samples_per_channel() const { return samples_per_channel_; }
-  rtc::ArrayView<T> data() const { return data_; }
+  ArrayView<T> data() const { return data_; }
   bool empty() const { return data_.empty(); }
   size_t size() const { return data_.size(); }
 
@@ -163,7 +166,7 @@ class DeinterleavedView {
   // bytes per view. Use `dchecked_cast` to support size_t during construction.
   size_t num_channels_ = 0u;
   size_t samples_per_channel_ = 0u;
-  rtc::ArrayView<T> data_;
+  ArrayView<T> data_;
 };
 
 template <typename T>

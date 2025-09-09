@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_performancemark_h___
 #define mozilla_dom_performancemark_h___
 
-#include "mozilla/dom/PerformanceEntry.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/dom/PerformanceEntry.h"
 
 namespace mozilla::dom {
 

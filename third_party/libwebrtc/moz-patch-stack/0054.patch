@@ -8,7 +8,7 @@ Subject: Bug 1766646 - (fix-a0bb2ef2dc) add back VideoType enum values
  2 files changed, 12 insertions(+)
 
 diff --git a/common_video/libyuv/include/webrtc_libyuv.h b/common_video/libyuv/include/webrtc_libyuv.h
-index 68831c70ab..253a33294d 100644
+index 7d504bcb04..b18957b6be 100644
 --- a/common_video/libyuv/include/webrtc_libyuv.h
 +++ b/common_video/libyuv/include/webrtc_libyuv.h
 @@ -35,11 +35,14 @@ enum class VideoType {
@@ -27,7 +27,7 @@ index 68831c70ab..253a33294d 100644
    kNV12,
  };
 diff --git a/common_video/libyuv/webrtc_libyuv.cc b/common_video/libyuv/webrtc_libyuv.cc
-index 31ba1feca3..05a4b184c2 100644
+index 8524bcbb11..520e908ed7 100644
 --- a/common_video/libyuv/webrtc_libyuv.cc
 +++ b/common_video/libyuv/webrtc_libyuv.cc
 @@ -24,6 +24,7 @@ size_t CalcBufferSize(VideoType type, int width, int height) {

@@ -6,98 +6,99 @@
 
 #include <algorithm>
 #include <cmath>
-
-#include "WebrtcTaskQueueWrapper.h"
-#include "common/browser_logging/CSFLog.h"
-#include "common/YuvStamper.h"
-#include "MediaConduitControl.h"
-#include "nsIGfxInfo.h"
-#include "nsServiceManagerUtils.h"
-#include "RtpRtcpConfig.h"
-#include "transport/SrtpFlow.h"  // For SRTP_MAX_EXPANSION
-#include "Tracing.h"
-#include "VideoStreamFactory.h"
-#include "WebrtcCallWrapper.h"
-#include "libwebrtcglue/FrameTransformer.h"
-#include "libwebrtcglue/FrameTransformerProxy.h"
-#include "mozilla/StateMirroring.h"
-#include "mozilla/RefPtr.h"
-#include "nsThreadUtils.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/ErrorResult.h"
 #include <string>
 #include <utility>
 #include <vector>
 
-// libwebrtc includes
-#include "api/transport/bitrate_settings.h"
-#include "api/video_codecs/h264_profile_level_id.h"
-#include "api/video_codecs/sdp_video_format.h"
-#include "api/video_codecs/video_codec.h"
-#include "media/base/media_constants.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "rtc_base/ref_counted_object.h"
+#include "MediaConduitControl.h"
+#include "RtpRtcpConfig.h"
+#include "Tracing.h"
+#include "VideoStreamFactory.h"
+#include "WebrtcCallWrapper.h"
+#include "WebrtcTaskQueueWrapper.h"
+#include "common/YuvStamper.h"
+#include "common/browser_logging/CSFLog.h"
+#include "libwebrtcglue/FrameTransformer.h"
+#include "libwebrtcglue/FrameTransformerProxy.h"
+#include "mozilla/ErrorResult.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/StateMirroring.h"
+#include "nsIGfxInfo.h"
+#include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
+#include "transport/SrtpFlow.h"  // For SRTP_MAX_EXPANSION
 
+// libwebrtc includes
+#include <stdint.h>
+
+#include <iomanip>
+#include <ios>
+#include <limits>
+#include <map>
+#include <sstream>
+#include <utility>
+
+#include "CodecConfig.h"
+#include "MainThreadUtils.h"
+#include "MediaConduitErrors.h"
+#include "MediaConduitInterface.h"
+#include "MediaEventSource.h"
+#include "PerformanceRecorder.h"
+#include "VideoUtils.h"
+#include "WebrtcVideoCodecFactory.h"
 #include "api/call/transport.h"
 #include "api/media_types.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
+#include "api/transport/bitrate_settings.h"
 #include "api/transport/rtp/rtp_source.h"
-#include "api/video_codecs/video_encoder.h"
 #include "api/video/video_codec_constants.h"
 #include "api/video/video_codec_type.h"
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
-#include <utility>
+#include "api/video_codecs/h264_profile_level_id.h"
+#include "api/video_codecs/sdp_video_format.h"
+#include "api/video_codecs/video_codec.h"
+#include "api/video_codecs/video_encoder.h"
 #include "call/call.h"
 #include "call/rtp_config.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
-#include "CodecConfig.h"
 #include "common_video/include/video_frame_buffer_pool.h"
 #include "domstubs.h"
-#include <iomanip>
-#include <ios>
 #include "jsapi/RTCStatsReport.h"
-#include <limits>
-#include "MainThreadUtils.h"
-#include <map>
-#include "MediaConduitErrors.h"
-#include "MediaConduitInterface.h"
-#include "MediaEventSource.h"
-#include "VideoUtils.h"
+#include "media/base/media_constants.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/DataMutex.h"
-#include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/RTCStatsReportBinding.h"
-#include "mozilla/fallible.h"
-#include "mozilla/mozalloc_oom.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/ProfilerState.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/ReverseIterator.h"
 #include "mozilla/StateWatching.h"
-#include "mozilla/glean/DomMediaWebrtcMetrics.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/RTCStatsReportBinding.h"
+#include "mozilla/fallible.h"
+#include "mozilla/glean/DomMediaWebrtcMetrics.h"
+#include "mozilla/mozalloc_oom.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
 #include "nsError.h"
 #include "nsIDirectTaskDispatcher.h"
 #include "nsISerialEventTarget.h"
 #include "nsStringFwd.h"
-#include "PerformanceRecorder.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/network/sent_packet.h"
-#include <sstream>
-#include <stdint.h>
+#include "rtc_base/ref_counted_object.h"
 #include "transport/mediapacket.h"
 #include "video/config/video_encoder_config.h"
-#include "WebrtcVideoCodecFactory.h"
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "VideoEngine.h"
@@ -122,7 +123,7 @@ const char* vcLogTag = "WebrtcVideoSessionConduit";
 #endif
 #define LOGTAG vcLogTag
 
-using namespace cricket;
+using namespace webrtc;
 using LocalDirection = MediaSessionConduitLocalDirection;
 
 const int kNullPayloadType = -1;
@@ -174,7 +175,7 @@ webrtc::VideoCodecType SupportedCodecType(webrtc::VideoCodecType aType) {
 }
 
 // Call thread only.
-rtc::scoped_refptr<webrtc::VideoEncoderConfig::EncoderSpecificSettings>
+webrtc::scoped_refptr<webrtc::VideoEncoderConfig::EncoderSpecificSettings>
 ConfigureVideoEncoderSettings(const VideoCodecConfig& aConfig,
                               const WebrtcVideoConduit* aConduit,
                               webrtc::CodecParameterMap& aParameters) {
@@ -231,9 +232,9 @@ ConfigureVideoEncoderSettings(const VideoCodecConfig& aConfig,
     vp8_settings.automaticResizeOn = automatic_resize;
     // VP8 denoising is enabled by default.
     vp8_settings.denoisingOn = codec_default_denoising ? true : denoising;
-    return rtc::scoped_refptr<
+    return webrtc::scoped_refptr<
         webrtc::VideoEncoderConfig::EncoderSpecificSettings>(
-        new rtc::RefCountedObject<
+        new webrtc::RefCountedObject<
             webrtc::VideoEncoderConfig::Vp8EncoderSpecificSettings>(
             vp8_settings));
   }
@@ -248,9 +249,9 @@ ConfigureVideoEncoderSettings(const VideoCodecConfig& aConfig,
     }
     // VP9 denoising is disabled by default.
     vp9_settings.denoisingOn = codec_default_denoising ? false : denoising;
-    return rtc::scoped_refptr<
+    return webrtc::scoped_refptr<
         webrtc::VideoEncoderConfig::EncoderSpecificSettings>(
-        new rtc::RefCountedObject<
+        new webrtc::RefCountedObject<
             webrtc::VideoEncoderConfig::Vp9EncoderSpecificSettings>(
             vp9_settings));
   }
@@ -892,7 +893,7 @@ void WebrtcVideoConduit::OnControlConfigChange() {
           mControl.mFrameTransformerProxySend.Ref();
       if (!mSendStreamConfig.frame_transformer) {
         mSendStreamConfig.frame_transformer =
-            new rtc::RefCountedObject<FrameTransformer>(true);
+            new webrtc::RefCountedObject<FrameTransformer>(true);
         sendStreamRecreationNeeded = true;
       }
       static_cast<FrameTransformer*>(mSendStreamConfig.frame_transformer.get())
@@ -905,7 +906,7 @@ void WebrtcVideoConduit::OnControlConfigChange() {
           mControl.mFrameTransformerProxyRecv.Ref();
       if (!mRecvStreamConfig.frame_transformer) {
         mRecvStreamConfig.frame_transformer =
-            new rtc::RefCountedObject<FrameTransformer>(true);
+            new webrtc::RefCountedObject<FrameTransformer>(true);
       }
       static_cast<FrameTransformer*>(mRecvStreamConfig.frame_transformer.get())
           ->SetProxy(mControl.mConfiguredFrameTransformerProxyRecv);
@@ -1493,10 +1494,10 @@ void WebrtcVideoConduit::DetachRenderer() {
   }
 }
 
-rtc::RefCountedObject<mozilla::VideoStreamFactory>*
+webrtc::RefCountedObject<mozilla::VideoStreamFactory>*
 WebrtcVideoConduit::CreateVideoStreamFactory() {
   auto videoStreamFactory = mVideoStreamFactory.Lock();
-  *videoStreamFactory = new rtc::RefCountedObject<VideoStreamFactory>(
+  *videoStreamFactory = new webrtc::RefCountedObject<VideoStreamFactory>(
       *mCurSendCodecConfig, mMinBitrate, mStartBitrate, mPrefMaxBitrate,
       mNegotiatedMaxBitrate);
   return videoStreamFactory->get();
@@ -1574,7 +1575,7 @@ void WebrtcVideoConduit::SetTrackSource(
 
 // Transport Layer Callbacks
 
-void WebrtcVideoConduit::DeliverPacket(rtc::CopyOnWriteBuffer packet,
+void WebrtcVideoConduit::DeliverPacket(webrtc::CopyOnWriteBuffer packet,
                                        PacketType type) {
   // Currently unused.
   MOZ_ASSERT(false);
@@ -1647,12 +1648,12 @@ void WebrtcVideoConduit::OnRtpReceived(webrtc::RtpPacketReceived&& aPacket,
   }
 }
 
-void WebrtcVideoConduit::OnRtcpReceived(rtc::CopyOnWriteBuffer&& aPacket) {
+void WebrtcVideoConduit::OnRtcpReceived(webrtc::CopyOnWriteBuffer&& aPacket) {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
 
   if (mCall->Call()) {
     mCall->Call()->Receiver()->DeliverRtcpPacket(
-        std::forward<rtc::CopyOnWriteBuffer>(aPacket));
+        std::forward<webrtc::CopyOnWriteBuffer>(aPacket));
   }
 }
 

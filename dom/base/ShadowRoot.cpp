@@ -4,27 +4,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/ShadowRoot.h"
-#include "mozilla/dom/DocumentFragment.h"
+
 #include "ChildIterator.h"
-#include "nsContentUtils.h"
-#include "nsINode.h"
-#include "nsWindowSizes.h"
-#include "mozilla/dom/DirectionalityUtils.h"
-#include "mozilla/dom/Element.h"
-#include "mozilla/dom/ElementBinding.h"
-#include "mozilla/dom/HTMLDetailsElement.h"
-#include "mozilla/dom/HTMLSlotElement.h"
-#include "mozilla/dom/HTMLSummaryElement.h"
-#include "mozilla/dom/MutationObservers.h"
-#include "mozilla/dom/Text.h"
-#include "mozilla/dom/TreeOrderedArrayInlines.h"
-#include "mozilla/dom/TrustedTypeUtils.h"
-#include "mozilla/dom/TrustedTypesConstants.h"
-#include "mozilla/dom/UnbindContext.h"
-#include "mozilla/GlobalStyleSheetCache.h"
 #include "mozilla/EventDispatcher.h"
+#include "mozilla/GlobalStyleSheetCache.h"
 #include "mozilla/IdentifierMapEntry.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
@@ -32,7 +16,24 @@
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleRuleMap.h"
 #include "mozilla/StyleSheet.h"
+#include "mozilla/dom/BindContext.h"
+#include "mozilla/dom/DirectionalityUtils.h"
+#include "mozilla/dom/DocumentFragment.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/ElementBinding.h"
+#include "mozilla/dom/HTMLDetailsElement.h"
+#include "mozilla/dom/HTMLSlotElement.h"
+#include "mozilla/dom/HTMLSummaryElement.h"
+#include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/StyleSheetList.h"
+#include "mozilla/dom/Text.h"
+#include "mozilla/dom/TreeOrderedArrayInlines.h"
+#include "mozilla/dom/TrustedTypeUtils.h"
+#include "mozilla/dom/TrustedTypesConstants.h"
+#include "mozilla/dom/UnbindContext.h"
+#include "nsContentUtils.h"
+#include "nsINode.h"
+#include "nsWindowSizes.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -206,6 +207,13 @@ void ShadowRoot::InvalidateStyleAndLayoutOnSubtree(Element* aElement) {
   MOZ_ASSERT(aElement);
   Document* doc = GetComposedDoc();
   if (!doc) {
+    return;
+  }
+
+  if (!aElement->IsInComposedDoc()) {
+    // If RemoveSlot is called from UnbindFromTree while we're moving
+    // (moveBefore) the slot elsewhere, invalidating styles and layout tree
+    // is done explicitly elsewhere.
     return;
   }
 

@@ -57,7 +57,7 @@ class ChildProfilerController final {
   }
   [[nodiscard]] ProfileAndAdditionalInformation
   GrabShutdownProfileAndShutdown() {
-    return ProfileAndAdditionalInformation(std::move(EmptyCString()));
+    return ProfileAndAdditionalInformation();
   }
   void Shutdown() {}
 

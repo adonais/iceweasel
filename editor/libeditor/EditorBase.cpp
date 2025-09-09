@@ -3425,26 +3425,27 @@ Result<InsertTextResult, nsresult> EditorBase::InsertTextWithTransaction(
 }
 
 static bool TextFragmentBeginsWithStringAtOffset(
-    const nsTextFragment& aTextFragment, const uint32_t aOffset,
+    const CharacterDataBuffer& aCharacterDataBuffer, const uint32_t aOffset,
     const nsAString& aString) {
   const uint32_t stringLength = aString.Length();
 
-  if (aOffset + stringLength > aTextFragment.GetLength()) {
+  if (aOffset + stringLength > aCharacterDataBuffer.GetLength()) {
     return false;
   }
 
-  if (aTextFragment.Is2b()) {
-    return aString.Equals(aTextFragment.Get2b() + aOffset);
+  if (aCharacterDataBuffer.Is2b()) {
+    return aString.Equals(aCharacterDataBuffer.Get2b() + aOffset);
   }
 
-  return aString.EqualsLatin1(aTextFragment.Get1b() + aOffset, stringLength);
+  return aString.EqualsLatin1(aCharacterDataBuffer.Get1b() + aOffset,
+                              stringLength);
 }
 
 static std::tuple<EditorDOMPointInText, EditorDOMPointInText>
 AdjustTextInsertionRange(const EditorDOMPointInText& aInsertedPoint,
                          const nsAString& aInsertedString) {
   if (TextFragmentBeginsWithStringAtOffset(
-          aInsertedPoint.ContainerAs<Text>()->TextFragment(),
+          aInsertedPoint.ContainerAs<Text>()->DataBuffer(),
           aInsertedPoint.Offset(), aInsertedString)) {
     return {aInsertedPoint,
             EditorDOMPointInText(
@@ -3528,7 +3529,8 @@ EditorBase::InsertTextIntoTextNodeWithTransaction(
     auto [begin, end] = ComputeInsertedRange(pointToInsert, aStringToInsert);
     if (begin.IsSet() && end.IsSet()) {
       TopLevelEditSubActionDataRef().DidInsertText(
-          *this, begin.To<EditorRawDOMPoint>(), end.To<EditorRawDOMPoint>());
+          *this, begin.RefOrTo<EditorRawDOMPoint>(),
+          end.RefOrTo<EditorRawDOMPoint>());
     }
     if (isIMETransaction) {
       // Let's mark the text node as "modified frequently" if it interact with
@@ -5633,42 +5635,88 @@ nsresult EditorBase::ReplaceTextAsAction(
     editActionData.MakeBeforeInputEventNonCancelable();
   }
 
+  RefPtr<nsRange> targetRange = [&]() -> already_AddRefed<nsRange> {
+    if (aReplaceRange) {
+      RefPtr<nsRange> range = nsRange::Create(
+          aReplaceRange->GetStartContainer(), aReplaceRange->StartOffset(),
+          aReplaceRange->GetEndContainer(), aReplaceRange->EndOffset(),
+          IgnoreErrors());
+      NS_WARNING_ASSERTION(range && range->IsPositioned(),
+                           "nsRange::Create() failed");
+      return range.forget();
+    }
+    nsIContent* const rootContentToSelectAll =
+        IsTextEditor()
+            ? AsTextEditor()->GetTextNode()
+            : static_cast<nsIContent*>(AsHTMLEditor()->ComputeEditingHost());
+    if (NS_WARN_IF(!rootContentToSelectAll)) {
+      return nullptr;
+    }
+    RefPtr<nsRange> range =
+        nsRange::Create(rootContentToSelectAll, 0, rootContentToSelectAll,
+                        rootContentToSelectAll->Length(), IgnoreErrors());
+    NS_WARNING_ASSERTION(range && range->IsPositioned(),
+                         "nsRange::Create() failed");
+    return range.forget();
+  }();
+  if (NS_WARN_IF(!targetRange) || NS_WARN_IF(!targetRange->IsPositioned())) {
+    return NS_ERROR_FAILURE;
+  }
   if (IsTextEditor()) {
     editActionData.SetData(aString);
   } else {
     editActionData.InitializeDataTransfer(aString);
-    RefPtr<StaticRange> targetRange;
-    if (aReplaceRange) {
-      // Compute offset of the range before dispatching `beforeinput` event
-      // because it may be referred after the DOM tree is changed and the
-      // range may have not computed the offset yet.
-      targetRange = StaticRange::Create(
-          aReplaceRange->GetStartContainer(), aReplaceRange->StartOffset(),
-          aReplaceRange->GetEndContainer(), aReplaceRange->EndOffset(),
-          IgnoreErrors());
-      NS_WARNING_ASSERTION(targetRange && targetRange->IsPositioned(),
-                           "StaticRange::Create() failed");
-    } else {
-      Element* editingHost = AsHTMLEditor()->ComputeEditingHost();
-      NS_WARNING_ASSERTION(editingHost,
-                           "No active editing host, no target ranges");
-      if (editingHost) {
-        targetRange = StaticRange::Create(
-            editingHost, 0, editingHost, editingHost->Length(), IgnoreErrors());
-        NS_WARNING_ASSERTION(targetRange && targetRange->IsPositioned(),
-                             "StaticRange::Create() failed");
-      }
+    RefPtr<StaticRange> staticTargetRange = StaticRange::Create(
+        targetRange->StartRef(), targetRange->EndRef(), IgnoreErrors());
+    MOZ_ASSERT(staticTargetRange);
+    MOZ_ASSERT(staticTargetRange->IsPositioned());
+    editActionData.AppendTargetRange(std::move(staticTargetRange));
+  }
+
+  AutoSelectionRestorer restorer(
+      aPreventSetSelection == PreventSetSelection::Yes ? this : nullptr);
+  nsresult rv = NS_OK;
+  auto raii = MakeScopeExit([&] {
+    if (aPreventSetSelection == PreventSetSelection::Yes && NS_FAILED(rv)) {
+      restorer.Abort();
     }
-    if (targetRange && targetRange->IsPositioned()) {
-      editActionData.AppendTargetRange(*targetRange);
+  });
+
+  // Before dispatching eEditorBeforeInput, we should set `Selection` as the
+  // target range.  Then, we can expose the target range with
+  // .selectionStart and .selectionEnd, etc even on TextEditor too.
+  if (SelectionRef().RangeCount() != 1u ||
+      !targetRange->HasEqualBoundaries(*SelectionRef().GetRangeAt(0u))) {
+    IgnoredErrorResult error;
+    SelectionRef().RemoveAllRanges(error);
+    if (MOZ_UNLIKELY(error.Failed())) {
+      NS_WARNING("Selection::RemoveAllRanges() failed");
+      rv = error.StealNSResult();  // rv is used by `raii`.
+      return rv;
+    }
+    SelectionRef().AddRangeAndSelectFramesAndNotifyListeners(*targetRange,
+                                                             error);
+    if (MOZ_UNLIKELY(error.Failed())) {
+      NS_WARNING(
+          "Selection::AddRangeAndSelectFramesAndNotifyListeners() failed");
+      rv = error.StealNSResult();  // rv is used by `raii`.
+      return rv;
     }
   }
 
-  nsresult rv = editActionData.MaybeDispatchBeforeInputEvent();
+  rv = editActionData.MaybeDispatchBeforeInputEvent();
   if (NS_FAILED(rv)) {
     NS_WARNING_ASSERTION(rv == NS_ERROR_EDITOR_ACTION_CANCELED,
                          "MaybeDispatchBeforeInputEvent() failed");
     return EditorBase::ToGenericNSResult(rv);
+  }
+
+  // If a `beforeinput` event listener changed the `Selection`, we should should
+  // not restore the original one because restoring Selection may confuse the
+  // web app.
+  if (SelectionRef().RangeCount() != 1u ||
+      !targetRange->HasEqualBoundaries(*SelectionRef().GetRangeAt(0u))) {
+    restorer.Abort();
   }
 
   AutoPlaceholderBatch treatAsOneTransaction(
@@ -5679,7 +5727,8 @@ nsresult EditorBase::ReplaceTextAsAction(
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertText, nsIEditor::eNext, ignoredError);
   if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
-    return EditorBase::ToGenericNSResult(ignoredError.StealNSResult());
+    rv = NS_ERROR_EDITOR_DESTROYED;  // rv is used by `raii`.
+    return EditorBase::ToGenericNSResult(rv);
   }
   NS_WARNING_ASSERTION(
       !ignoredError.Failed(),
@@ -5688,6 +5737,7 @@ nsresult EditorBase::ReplaceTextAsAction(
   if (!aReplaceRange) {
     // Use fast path if we're `TextEditor` because it may be in a hot path.
     if (IsTextEditor()) {
+      restorer.Abort();  // XXX Is this intended?
       nsresult rv = MOZ_KnownLive(AsTextEditor())->SetTextAsSubAction(aString);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                            "TextEditor::SetTextAsSubAction() failed");
@@ -5695,48 +5745,15 @@ nsresult EditorBase::ReplaceTextAsAction(
     }
 
     MOZ_ASSERT_UNREACHABLE("Setting value of `HTMLEditor` isn't supported");
-    return EditorBase::ToGenericNSResult(NS_ERROR_FAILURE);
+    rv = NS_ERROR_FAILURE;  // rv is used by `raii`.
+    return EditorBase::ToGenericNSResult(rv);
   }
 
   if (aString.IsEmpty() && aReplaceRange->Collapsed()) {
+    restorer.Abort();  // XXX Is this intended?
+
     NS_WARNING("Setting value was empty and replaced range was empty");
     return NS_OK;
-  }
-
-  // Note that do not notify selectionchange caused by selecting all text
-  // because it's preparation of our delete implementation so web apps
-  // shouldn't receive such selectionchange before the first mutation.
-  AutoUpdateViewBatch preventSelectionChangeEvent(*this, __FUNCTION__);
-
-  ErrorResult error;
-
-  AutoSelectionRestorer restorer(
-      aPreventSetSelection == PreventSetSelection::Yes ? this : nullptr);
-
-  auto raii = MakeScopeExit([&] {
-    if (aPreventSetSelection == PreventSetSelection::Yes) {
-      if (error.Failed()) {
-        restorer.Abort();
-        return;
-      }
-      if (NS_FAILED(rv)) {
-        restorer.Abort();
-      }
-    }
-  });
-
-  // Select the range but as far as possible, we should not create new range
-  // even if it's part of special Selection.
-  SelectionRef().RemoveAllRanges(error);
-  if (error.Failed()) {
-    NS_WARNING("Selection::RemoveAllRanges() failed");
-    return error.StealNSResult();
-  }
-  SelectionRef().AddRangeAndSelectFramesAndNotifyListeners(*aReplaceRange,
-                                                           error);
-  if (error.Failed()) {
-    NS_WARNING("Selection::AddRangeAndSelectFramesAndNotifyListeners() failed");
-    return error.StealNSResult();
   }
 
   rv = ReplaceSelectionAsSubAction(aString);
@@ -6841,6 +6858,11 @@ void EditorBase::AutoEditActionDataSetter::InitializeDataTransferWithClipboard(
 void EditorBase::AutoEditActionDataSetter::AppendTargetRange(
     StaticRange& aTargetRange) {
   mTargetRanges.AppendElement(aTargetRange);
+}
+
+void EditorBase::AutoEditActionDataSetter::AppendTargetRange(
+    RefPtr<StaticRange>&& aTargetRange) {
+  mTargetRanges.AppendElement(std::move(aTargetRange));
 }
 
 bool EditorBase::AutoEditActionDataSetter::IsBeforeInputEventEnabled() const {

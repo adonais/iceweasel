@@ -274,6 +274,16 @@ internal object ContentStateReducer {
                     it.copy(persistentStorageChanged = action.value)
                 }
             }
+            is UpdatePermissionHighlightsStateAction.LocalDeviceAccessChangedAction -> {
+                updatePermissionHighlightsState(state, action.tabId) {
+                    it.copy(localDeviceAccessChanged = action.value)
+                }
+            }
+            is UpdatePermissionHighlightsStateAction.LocalNetworkAccessChangedAction -> {
+                updatePermissionHighlightsState(state, action.tabId) {
+                    it.copy(localNetworkAccessChanged = action.value)
+                }
+            }
             is UpdatePermissionHighlightsStateAction.AutoPlayAudibleBlockingAction -> {
                 updatePermissionHighlightsState(state, action.tabId) {
                     it.copy(autoPlayAudibleBlocking = action.value)

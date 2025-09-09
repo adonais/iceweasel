@@ -7,13 +7,11 @@
 #ifndef mozilla_dom_PushNotifier_h
 #define mozilla_dom_PushNotifier_h
 
-#include "nsIPushNotifier.h"
-
+#include "mozilla/Maybe.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIPrincipal.h"
+#include "nsIPushNotifier.h"
 #include "nsString.h"
-
-#include "mozilla/Maybe.h"
 
 namespace mozilla::dom {
 

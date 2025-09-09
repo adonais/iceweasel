@@ -5,12 +5,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "RemoteMediaDataEncoderChild.h"
-#include "RemoteMediaManagerChild.h"
+
 #include "RemoteDecodeUtils.h"
+#include "RemoteMediaManagerChild.h"
+#include "mozilla/dom/WebCodecsUtils.h"
 
 namespace mozilla {
 
 extern LazyLogModule sPEMLog;
+
+#define AUTO_MARKER(var, postfix) \
+  AutoWebCodecsMarker var("RemoteMediaDataEncoderChild", postfix);
 
 #define LOGE(fmt, ...)                           \
   MOZ_LOG_FMT(sPEMLog, mozilla::LogLevel::Error, \
@@ -247,8 +252,10 @@ RefPtr<MediaDataEncoder::EncodePromise> RemoteMediaDataEncoderChild::Encode(
                     size_t count = remoteSamples->Count();
                     samples.SetCapacity(count);
                     for (size_t i = 0; i < count; ++i) {
+                      AUTO_MARKER(marker, ".Encode.ElementAt");
                       if (RefPtr<MediaRawData> sample =
                               remoteSamples->ElementAt(i)) {
+                        marker.End();
                         samples.AppendElement(std::move(sample));
                       } else {
                         LOGE("[{}] Encode resolved, failed to buffer samples",
@@ -438,5 +445,7 @@ nsCString RemoteMediaDataEncoderChild::GetDescriptionName() const {
   MutexAutoLock lock(mMutex);
   return mDescription;
 }
+
+#undef AUTO_MARKER
 
 }  // namespace mozilla

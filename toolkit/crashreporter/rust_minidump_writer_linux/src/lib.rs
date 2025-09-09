@@ -214,7 +214,7 @@ where
         Ok(t) => Some(t),
         Err(e) => {
             if !error_msg.is_null() {
-                *error_msg = CString::new(e.to_string()).unwrap().into_raw();
+                *error_msg = CString::new(format!("{e:#?}")).unwrap().into_raw();
             }
             None
         }

@@ -155,7 +155,7 @@ html[dir="rtl"] .img.more-tabs {
   background-size: 14px 14px;
   background-color: transparent !important;
   fill: var(--theme-icon-color);
-  -moz-context-properties: fill;
+  -moz-context-properties: fill, stroke;
 }
 
 .img.removeAll {

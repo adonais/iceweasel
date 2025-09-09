@@ -7,7 +7,6 @@
 #include <stdint.h>
 
 #include "MediaSpan.h"
-
 #include "mozilla/ArrayUtils.h"
 
 using namespace mozilla;

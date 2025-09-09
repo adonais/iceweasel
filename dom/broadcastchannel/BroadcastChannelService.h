@@ -7,9 +7,9 @@
 #ifndef mozilla_dom_BroadcastChannelService_h
 #define mozilla_dom_BroadcastChannelService_h
 
-#include "nsISupportsImpl.h"
-#include "nsHashKeys.h"
 #include "nsClassHashtable.h"
+#include "nsHashKeys.h"
+#include "nsISupportsImpl.h"
 
 #ifdef XP_WIN
 #  undef PostMessage

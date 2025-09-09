@@ -7,8 +7,8 @@
 #ifndef mozilla_KeyframeEffectParams_h
 #define mozilla_KeyframeEffectParams_h
 
-#include "mozilla/dom/KeyframeEffectBinding.h"  // IterationCompositeOperation
 #include "mozilla/PseudoStyleType.h"            // PseudoStyleRequest
+#include "mozilla/dom/KeyframeEffectBinding.h"  // IterationCompositeOperation
 
 namespace mozilla {
 

@@ -6,8 +6,8 @@
 #ifndef AudioSink_h__
 #define AudioSink_h__
 
-#include "AudioStream.h"
 #include "AudibilityMonitor.h"
+#include "AudioStream.h"
 #include "MediaEventSource.h"
 #include "MediaInfo.h"
 #include "MediaQueue.h"

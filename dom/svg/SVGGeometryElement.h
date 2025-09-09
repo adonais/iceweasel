@@ -7,9 +7,9 @@
 #ifndef DOM_SVG_SVGGEOMETRYELEMENT_H_
 #define DOM_SVG_SVGGEOMETRYELEMENT_H_
 
+#include "mozilla/dom/SVGAnimatedNumber.h"
 #include "mozilla/dom/SVGGraphicsElement.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/dom/SVGAnimatedNumber.h"
 
 namespace mozilla {
 

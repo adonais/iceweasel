@@ -7,6 +7,35 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
+let reservedNames = [];
+if (AppConstants.platform === "win") {
+  reservedNames = [
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    "COM1",
+    "COM2",
+    "COM3",
+    "COM4",
+    "COM5",
+    "COM6",
+    "COM7",
+    "COM8",
+    "COM9",
+    "LPT1",
+    "LPT2",
+    "LPT3",
+    "LPT4",
+    "LPT5",
+    "LPT6",
+    "LPT7",
+    "LPT8",
+    "LPT9",
+    "CLOCK$",
+  ];
+}
+
 add_task(async function validate_filename_method() {
   let mimeService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
 
@@ -414,4 +443,32 @@ add_task(async function validate_filename_method() {
     "filename.DESKTOP_",
     "filename.DESKTOP allow invalid, sanitize only"
   );
+
+  for (const upper of reservedNames) {
+    let lower = upper.toLowerCase();
+
+    // with extension
+    Assert.equal(
+      mimeService.validateFileNameForSaving(`${upper}.fun`, "text/unknown", 0),
+      "Untitled.fun",
+      `${upper}.fun`
+    );
+    Assert.equal(
+      mimeService.validateFileNameForSaving(`${lower}.fun`, "text/unknown", 0),
+      "Untitled.fun",
+      `${lower}.fun`
+    );
+
+    // without extension
+    Assert.equal(
+      mimeService.validateFileNameForSaving(upper, "text/unknown", 0),
+      "Untitled",
+      upper
+    );
+    Assert.equal(
+      mimeService.validateFileNameForSaving(lower, "text/unknown", 0),
+      "Untitled",
+      lower
+    );
+  }
 });

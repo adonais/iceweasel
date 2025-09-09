@@ -4,6 +4,8 @@
   <string name="home_bookmarks_menu_item_remove">Tuupuk</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Ma’ ilbil</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->

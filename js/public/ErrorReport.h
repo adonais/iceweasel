@@ -409,6 +409,11 @@ struct MOZ_STACK_CLASS JS_PUBLIC_API ErrorReportBuilder {
   // Reports exceptions from add-on scopes to telemetry.
   void ReportAddonExceptionToTelemetry(JSContext* cx);
 
+  // Maybe create an (owned) JSErrorReport when obj is a DOM Exception object.
+  // Return the "toStringResult" str.
+  JSString* maybeCreateReportFromDOMException(JS::HandleObject obj,
+                                              JSContext* cx);
+
   // We may have a provided JSErrorReport, so need a way to represent that.
   JSErrorReport* reportp;
 

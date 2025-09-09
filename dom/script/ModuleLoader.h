@@ -7,10 +7,9 @@
 #ifndef mozilla_dom_ModuleLoader_h
 #define mozilla_dom_ModuleLoader_h
 
-#include "mozilla/dom/ScriptLoadContext.h"
 #include "js/loader/ModuleLoaderBase.h"
 #include "js/loader/ScriptLoadRequest.h"
-#include "ScriptLoader.h"
+#include "mozilla/dom/ScriptLoadContext.h"
 #include "mozilla/dom/ScriptLoadRequestType.h"
 
 class nsIURI;
@@ -69,13 +68,16 @@ class ModuleLoader final : public JS::loader::ModuleLoaderBase {
 
   // Create a module load request for a static module import.
   already_AddRefed<ModuleLoadRequest> CreateStaticImport(
-      nsIURI* aURI, JS::ModuleType aModuleType, ModuleLoadRequest* aParent,
-      const mozilla::dom::SRIMetadata& aSriMetadata) override;
+      nsIURI* aURI, JS::ModuleType aModuleType,
+      JS::loader::ModuleScript* aReferrerScript,
+      const mozilla::dom::SRIMetadata& aSriMetadata,
+      JS::loader::LoadContextBase* aLoadContext,
+      JS::loader::ModuleLoaderBase* aLoader) override;
 
   // Create a module load request for a dynamic module import.
   already_AddRefed<ModuleLoadRequest> CreateDynamicImport(
-      JSContext* aCx, nsIURI* aURI, JS::ModuleType aModuleType,
-      LoadedScript* aMaybeActiveScript, JS::Handle<JSString*> aSpecifier,
+      JSContext* aCx, nsIURI* aURI, LoadedScript* aMaybeActiveScript,
+      JS::Handle<JSObject*> aModuleRequestObj,
       JS::Handle<JSObject*> aPromise) override;
 
   static ModuleLoader* From(ModuleLoaderBase* aLoader) {

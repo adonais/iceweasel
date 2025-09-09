@@ -11,6 +11,7 @@ ChromeUtils.defineESModuleGetters(this, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
   WinTaskbarJumpList: "resource:///modules/WindowsJumpLists.sys.mjs",
+  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
 });
 
 const { NimbusTestUtils } = ChromeUtils.importESModule(
@@ -436,5 +437,240 @@ add_task(
       expectedSec,
       `Glean.termsofuse.date (in seconds) is ${metricSec} and matches expected ${expectedSec}`
     );
+
+    fakeResetAcceptedPolicy();
+  }
+);
+
+add_task(
+  skipIfNotBrowser(),
+  async function test_user_tou_ineligible_notification() {
+    // Simulate a user that is *ineligible* to see the ToU by enabling the
+    // bypass-notification pref.
+    Services.prefs.setBoolPref(TOU_BYPASS_NOTIFICATION_PREF, true);
+
+    let doCleanup = await enrollInPreonboardingExperiment(999);
+    TelemetryReportingPolicy.reset();
+    const modalStub = sinon.stub(Policy, "showModal").returns(true);
+
+    // We expect this event to fire before Policy.delayedSetup resolves,
+    // so any change in that is considered a change in behaviour, and we should catch that.
+    // This is why we don't await on this promise.
+    let notificationSeen = false;
+    TestUtils.topicObserved(
+      TelemetryReportingPolicy.TELEMETRY_TOU_ACCEPTED_OR_INELIGIBLE
+    ).then(() => (notificationSeen = true));
+
+    const p = Policy.delayedSetup();
+    Policy.fakeSessionRestoreNotification();
+    // Spin the event loop once – the notification should *not* have fired yet.
+    await TestUtils.waitForTick();
+    await p;
+
+    Assert.equal(
+      modalStub.callCount,
+      0,
+      "showModal should never be invoked when the user is ineligible"
+    );
+    Assert.ok(
+      notificationSeen,
+      "System is notified it is ok to continue to initialize"
+    );
+
+    // Clean-up.
+    // Avoid using clearUserPref here because the default in tests is `true`.
+    // Explicitly set the pref to `false` to override the default.
+    Services.prefs.setBoolPref(TOU_BYPASS_NOTIFICATION_PREF, false);
+    fakeResetAcceptedPolicy();
+    await doCleanup();
+    sinon.restore();
+  }
+);
+
+add_task(
+  skipIfNotBrowser(),
+  async function test_user_tou_accepted_previously_notification() {
+    // Pretend the user already accepted the ToU in a prior session.
+    const timestamp = Date.now();
+    const version = 999;
+    let doCleanup = await enrollInPreonboardingExperiment(999);
+    Services.prefs.setStringPref(TOU_ACCEPTED_DATE_PREF, timestamp.toString());
+    Services.prefs.setIntPref(TOU_ACCEPTED_VERSION_PREF, version);
+
+    TelemetryReportingPolicy.reset();
+    const modalStub = sinon.stub(Policy, "showModal").returns(true);
+
+    // We expect this event to fire before Policy.delayedSetup resolves,
+    // so any change in that is considered a change in behaviour, and we should catch that.
+    // This is why we don't await on this promise.
+    let notificationSeen = false;
+    TestUtils.topicObserved(
+      TelemetryReportingPolicy.TELEMETRY_TOU_ACCEPTED_OR_INELIGIBLE
+    ).then(() => (notificationSeen = true));
+
+    let p = Policy.delayedSetup();
+    Policy.fakeSessionRestoreNotification();
+    await p;
+
+    Assert.equal(
+      modalStub.callCount,
+      0,
+      "showModal should not be invoked when the user previously accepted the ToU"
+    );
+    Assert.ok(
+      notificationSeen,
+      "System is notified it is ok to continue to initialize"
+    );
+
+    // Clean-up.
+    fakeResetAcceptedPolicy();
+    await doCleanup();
+    sinon.restore();
+  }
+);
+
+add_task(
+  skipIfNotBrowser(),
+  async function test_user_tou_accepted_now_notification() {
+    // User has *not* accepted yet; they will accept via the modal we display.
+    const modalStub = sinon.stub(Policy, "showModal").returns(true);
+    let doCleanup = await enrollInPreonboardingExperiment(999);
+    TelemetryReportingPolicy.reset();
+
+    // We expect this event to fire before Policy.delayedSetup resolves,
+    // so any change in that is considered a change in behaviour, and we should catch that.
+    // This is why we don't await on this promise.
+    let notificationSeen = false;
+    TestUtils.topicObserved(
+      TelemetryReportingPolicy.TELEMETRY_TOU_ACCEPTED_OR_INELIGIBLE
+    ).then(() => (notificationSeen = true));
+
+    let p = Policy.delayedSetup();
+    Policy.fakeSessionRestoreNotification();
+    // Spin the event loop once – the notification should *not* have fired yet.
+    await TestUtils.waitForTick();
+    Assert.ok(
+      !notificationSeen,
+      "Notification should not be dispatched before the user interacts"
+    );
+
+    Assert.equal(
+      modalStub.callCount,
+      1,
+      "showModal should be invoked exactly once when prompting the user"
+    );
+
+    fakeInteractWithModal();
+    await TestUtils.waitForTick();
+    await p;
+
+    Assert.ok(
+      notificationSeen,
+      "Notification fires after the user accepts the ToU in this session"
+    );
+
+    // Clean-up.
+    fakeResetAcceptedPolicy();
+    await doCleanup();
+    sinon.restore();
+  }
+);
+
+add_task(
+  skipIfNotBrowser(),
+  async function test_user_tou_ignored_no_notification() {
+    // User has *not* accepted yet; they will accept via the modal we display.
+    const modalStub = sinon.stub(Policy, "showModal").returns(true);
+    let doCleanup = await enrollInPreonboardingExperiment(999);
+    TelemetryReportingPolicy.reset();
+
+    // We expect this event to fire before Policy.delayedSetup resolves,
+    // so any change in that is considered a change in behaviour, and we should catch that.
+    // This is why we don't await on this promise.
+    let notificationSeen = false;
+    TestUtils.topicObserved(
+      TelemetryReportingPolicy.TELEMETRY_TOU_ACCEPTED_OR_INELIGIBLE
+    ).then(() => (notificationSeen = true));
+
+    let p = Policy.delayedSetup();
+    Policy.fakeSessionRestoreNotification();
+    // Spin the event loop once – the notification should *not* have fired yet.
+    await TestUtils.waitForTick();
+    Assert.ok(
+      !notificationSeen,
+      "Notification should not be dispatched before the user interacts"
+    );
+
+    Assert.equal(
+      modalStub.callCount,
+      1,
+      "showModal should be invoked exactly once when prompting the user"
+    );
+
+    await TestUtils.waitForTick();
+    await p;
+
+    Assert.ok(
+      !notificationSeen,
+      "Notification should still not be dispatched if never interacted with"
+    );
+
+    // Clean-up.
+    fakeResetAcceptedPolicy();
+    await doCleanup();
+    sinon.restore();
+  }
+);
+
+add_task(
+  skipIfNotBrowser(),
+  async function test_user_tou_accept_later_notification() {
+    // User has *not* accepted yet; they will accept via the modal we display.
+    const modalStub = sinon.stub(Policy, "showModal").returns(true);
+    let doCleanup = await enrollInPreonboardingExperiment(999);
+    TelemetryReportingPolicy.reset();
+
+    // We expect this event to fire before Policy.delayedSetup resolves,
+    // so any change in that is considered a change in behaviour, and we should catch that.
+    // This is why we don't await on this promise.
+    let notificationSeen = false;
+    TestUtils.topicObserved(
+      TelemetryReportingPolicy.TELEMETRY_TOU_ACCEPTED_OR_INELIGIBLE
+    ).then(() => (notificationSeen = true));
+
+    let p = Policy.delayedSetup();
+    Policy.fakeSessionRestoreNotification();
+    // Spin the event loop once – the notification should *not* have fired yet.
+    await TestUtils.waitForTick();
+    Assert.ok(
+      !notificationSeen,
+      "Notification should not be dispatched before the user interacts"
+    );
+
+    Assert.equal(
+      modalStub.callCount,
+      1,
+      "showModal should be invoked exactly once when prompting the user"
+    );
+
+    await TestUtils.waitForTick();
+    await p;
+
+    Assert.ok(
+      !notificationSeen,
+      "Notification should still not be dispatched if never interacted with"
+    );
+    fakeInteractWithModal();
+    await TestUtils.waitForTick();
+
+    Assert.ok(
+      notificationSeen,
+      "Notification fires after the user accepts the ToU in this session"
+    );
+
+    // Clean-up.
+    fakeResetAcceptedPolicy();
+    await doCleanup();
+    sinon.restore();
   }
 );

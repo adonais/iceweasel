@@ -141,8 +141,6 @@ skip-if = [
 
 ["test_bug792324.xhtml"]
 
-["test_bug1048178.xhtml"]
-
 ["test_button.xhtml"]
 
 ["test_closemenu_attribute.xhtml"]
@@ -306,6 +304,8 @@ support-files = "window_panel_focus.xhtml"
 
 ["test_preferencesBindings_setting.html"]
 
+["test_preferencesBindings_setting_setup_teardown.html"]
+
 ["test_preferences_beforeaccept.xhtml"]
 support-files = ["window_preferences_beforeaccept.xhtml"]
 
@@ -319,8 +319,6 @@ support-files = ["window_preferences_onsyncfrompreference.xhtml"]
 ["test_richlistbox.xhtml"]
 
 ["test_screenPersistence.xhtml"]
-
-["test_scrollbar.xhtml"]
 
 ["test_showcaret.xhtml"]
 

@@ -117,7 +117,7 @@ class PeerConnectionDataChannelBaseTest : public ::testing::Test {
     auto factory_deps = CreatePeerConnectionFactoryDependencies();
     FakeSctpTransportFactory* fake_sctp_transport_factory =
         static_cast<FakeSctpTransportFactory*>(factory_deps.sctp_factory.get());
-    rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory =
+    scoped_refptr<PeerConnectionFactoryInterface> pc_factory =
         CreateModularPeerConnectionFactory(std::move(factory_deps));
     pc_factory->SetOptions(factory_options);
     auto observer = std::make_unique<MockPeerConnectionObserver>();
@@ -183,7 +183,7 @@ TEST_P(PeerConnectionDataChannelTest, InternalSctpTransportDeletedOnTeardown) {
   ASSERT_TRUE(caller->SetLocalDescription(caller->CreateOffer()));
   EXPECT_TRUE(caller->sctp_transport_factory()->last_fake_sctp_transport());
 
-  rtc::scoped_refptr<SctpTransportInterface> sctp_transport =
+  scoped_refptr<SctpTransportInterface> sctp_transport =
       caller->GetInternalPeerConnection()->GetSctpTransport();
 
   caller.reset();
@@ -244,8 +244,8 @@ TEST_P(PeerConnectionDataChannelTest,
   auto caller = CreatePeerConnection();
   auto offer = caller->CreateOffer();
 
-  EXPECT_FALSE(offer->description()->GetContentByName(cricket::CN_DATA));
-  EXPECT_FALSE(offer->description()->GetTransportInfoByName(cricket::CN_DATA));
+  EXPECT_FALSE(offer->description()->GetContentByName(CN_DATA));
+  EXPECT_FALSE(offer->description()->GetTransportInfoByName(CN_DATA));
 }
 
 TEST_P(PeerConnectionDataChannelTest,

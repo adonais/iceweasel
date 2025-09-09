@@ -26,6 +26,7 @@
   pref("pdfjs.enableSignatureEditor", true);
 
   #if defined(EARLY_BETA_OR_EARLIER)
+    pref("pdfjs.enableComment", true);
     pref("pdfjs.enableHighlightFloatingButton", true);
   #else
     pref("pdfjs.enableHighlightFloatingButton", false);

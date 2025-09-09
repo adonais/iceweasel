@@ -1006,6 +1006,91 @@ class XRPermissionPrompt extends PermissionPromptForRequest {
 
 /**
  * Creates a PermissionPrompt for a nsIContentPermissionRequest for
+ * the Local Host Access.
+ *
+ * @param request (nsIContentPermissionRequest)
+ *        The request for a permission from content.
+ */
+class LocalHostPermissionPrompt extends PermissionPromptForRequest {
+  constructor(request) {
+    super();
+    this.request = request;
+  }
+
+  get type() {
+    return "localhost";
+  }
+
+  get permissionKey() {
+    return "localhost";
+  }
+
+  get popupOptions() {
+    let options = {
+      learnMoreURL: Services.urlFormatter.formatURLPref(
+        "browser.lna.warning.infoURL"
+      ),
+      displayURI: false,
+      name: this.getPrincipalName(),
+    };
+
+    // Don't offer "always remember" action in PB mode
+    options.checkbox = {
+      show: !lazy.PrivateBrowsingUtils.isWindowPrivate(
+        this.browser.ownerGlobal
+      ),
+    };
+
+    if (this.request.isRequestDelegatedToUnsafeThirdParty) {
+      // Second name should be the third party origin
+      options.secondName = this.getPrincipalName(this.request.principal);
+      options.checkbox = { show: false };
+    }
+
+    if (options.checkbox.show) {
+      options.checkbox.label =
+        lazy.gBrowserBundle.GetStringFromName("localhost.remember");
+    }
+
+    return options;
+  }
+
+  get notificationID() {
+    return "localhost";
+  }
+
+  get anchorID() {
+    return "localhost-notification-icon";
+  }
+
+  get message() {
+    return lazy.gBrowserBundle.formatStringFromName("localhost.allowWithSite", [
+      "<>",
+    ]);
+  }
+
+  get promptActions() {
+    return [
+      {
+        label: lazy.gBrowserBundle.GetStringFromName("localhost.allowlabel"),
+        accessKey: lazy.gBrowserBundle.GetStringFromName(
+          "localhost.allow.accesskey"
+        ),
+        action: lazy.SitePermissions.ALLOW,
+      },
+      {
+        label: lazy.gBrowserBundle.GetStringFromName("localhost.blocklabel"),
+        accessKey: lazy.gBrowserBundle.GetStringFromName(
+          "localhost.block.accesskey"
+        ),
+        action: lazy.SitePermissions.BLOCK,
+      },
+    ];
+  }
+}
+
+/**
+ * Creates a PermissionPrompt for a nsIContentPermissionRequest for
  * the Desktop Notification API.
  *
  * @param request (nsIContentPermissionRequest)
@@ -1142,6 +1227,92 @@ class DesktopNotificationPermissionPrompt extends PermissionPromptForRequest {
   }
 }
 
+/**
+ * Creates a PermissionPrompt for a nsIContentPermissionRequest for
+ * the Local Network Access.
+ *
+ * @param request (nsIContentPermissionRequest)
+ *        The request for a permission from content.
+ */
+class LocalNetworkPermissionPrompt extends PermissionPromptForRequest {
+  constructor(request) {
+    super();
+    this.request = request;
+  }
+
+  get type() {
+    return "local-network";
+  }
+
+  get permissionKey() {
+    return "local-network";
+  }
+
+  get popupOptions() {
+    let options = {
+      learnMoreURL: Services.urlFormatter.formatURLPref(
+        "browser.lna.warning.infoURL"
+      ),
+      displayURI: false,
+      name: this.getPrincipalName(),
+    };
+
+    // Don't offer "always remember" action in PB mode
+    options.checkbox = {
+      show: !lazy.PrivateBrowsingUtils.isWindowPrivate(
+        this.browser.ownerGlobal
+      ),
+    };
+
+    if (this.request.isRequestDelegatedToUnsafeThirdParty) {
+      // Second name should be the third party origin
+      options.secondName = this.getPrincipalName(this.request.principal);
+      options.checkbox = { show: false };
+    }
+
+    if (options.checkbox.show) {
+      options.checkbox.label = lazy.gBrowserBundle.GetStringFromName(
+        "localNetwork.remember"
+      );
+    }
+
+    return options;
+  }
+
+  get notificationID() {
+    return "local-network";
+  }
+
+  get anchorID() {
+    return "local-network-notification-icon";
+  }
+
+  get message() {
+    return lazy.gBrowserBundle.formatStringFromName(
+      "localNetwork.allowWithSite",
+      ["<>"]
+    );
+  }
+
+  get promptActions() {
+    return [
+      {
+        label: lazy.gBrowserBundle.GetStringFromName("localNetwork.allowLabel"),
+        accessKey: lazy.gBrowserBundle.GetStringFromName(
+          "localNetwork.allow.accesskey"
+        ),
+        action: lazy.SitePermissions.ALLOW,
+      },
+      {
+        label: lazy.gBrowserBundle.GetStringFromName("localNetwork.blockLabel"),
+        accessKey: lazy.gBrowserBundle.GetStringFromName(
+          "localNetwork.block.accesskey"
+        ),
+        action: lazy.SitePermissions.BLOCK,
+      },
+    ];
+  }
+}
 /**
  * Creates a PermissionPrompt for a nsIContentPermissionRequest for
  * the persistent-storage API.
@@ -1466,4 +1637,6 @@ export const PermissionUI = {
   PersistentStoragePermissionPrompt,
   MIDIPermissionPrompt,
   StorageAccessPermissionPrompt,
+  LocalHostPermissionPrompt,
+  LocalNetworkPermissionPrompt,
 };

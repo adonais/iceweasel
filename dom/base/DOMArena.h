@@ -6,10 +6,9 @@
  */
 #ifndef DOM_Arena_h___
 #define DOM_Arena_h___
-#include "nsISupportsImpl.h"
-#include "mozmemory.h"
-
 #include "mozilla/mozalloc_oom.h"  // for mozalloc_handle_oom
+#include "mozmemory.h"
+#include "nsISupportsImpl.h"
 #include "nsString.h"
 
 #define NS_DECL_DOMARENA_DESTROY void Destroy(void);

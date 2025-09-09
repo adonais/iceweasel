@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_EndpointForReportChild_h
 #define mozilla_dom_EndpointForReportChild_h
 
-#include "mozilla/dom/ReportDeliver.h"
 #include "mozilla/dom/PEndpointForReportChild.h"
+#include "mozilla/dom/ReportDeliver.h"
 
 namespace mozilla::dom {
 

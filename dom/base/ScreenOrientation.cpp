@@ -5,21 +5,20 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ScreenOrientation.h"
-#include "nsIDocShell.h"
-#include "mozilla/dom/Document.h"
-#include "nsGlobalWindowInner.h"
-#include "nsSandboxFlags.h"
-#include "nsScreen.h"
 
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Hal.h"
 #include "mozilla/Preferences.h"
-
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/StaticPrefs_browser.h"
 #include "nsContentUtils.h"
+#include "nsGlobalWindowInner.h"
+#include "nsIDocShell.h"
+#include "nsSandboxFlags.h"
+#include "nsScreen.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

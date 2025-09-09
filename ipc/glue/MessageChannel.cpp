@@ -1521,6 +1521,8 @@ NS_IMPL_ISUPPORTS_INHERITED(MessageChannel::MessageTask, CancelableRunnable,
 
 static uint32_t ToRunnablePriority(IPC::Message::PriorityValue aPriority) {
   switch (aPriority) {
+    case IPC::Message::LOW_PRIORITY:
+      return nsIRunnablePriority::PRIORITY_LOW;
     case IPC::Message::NORMAL_PRIORITY:
       return nsIRunnablePriority::PRIORITY_NORMAL;
     case IPC::Message::INPUT_PRIORITY:

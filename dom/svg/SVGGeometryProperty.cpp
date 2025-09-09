@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "SVGGeometryProperty.h"
+
 #include "SVGCircleElement.h"
 #include "SVGEllipseElement.h"
 #include "SVGForeignObjectElement.h"

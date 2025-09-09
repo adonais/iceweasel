@@ -75,6 +75,7 @@ import org.mozilla.fenix.tabstray.browser.compose.createListReorderState
 import org.mozilla.fenix.tabstray.browser.compose.detectListPressAndDrag
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.GleanMetrics.TabStrip as TabStripMetrics
 
 private val minTabStripItemWidth = 130.dp
 private val maxTabStripItemWidth = 280.dp
@@ -88,7 +89,8 @@ private val tabStripHorizontalPadding = 16.dp
 /**
  * Top level composable for the tabs strip.
  *
- * @param onHome Whether or not the tabs strip is in the home screen.
+ * @param isSelectDisabled Whether or not the tabs can be shown as selected.
+ * @param showActionButtons Show the action buttons in the tabs strip when true.
  * @param browserStore The [BrowserStore] instance used to observe tabs state.
  * @param appStore The [AppStore] instance used to observe browsing mode.
  * @param tabsUseCases The [TabsUseCases] instance to perform tab actions.
@@ -100,20 +102,21 @@ private val tabStripHorizontalPadding = 16.dp
  */
 @Composable
 fun TabStrip(
-    onHome: Boolean = false,
+    isSelectDisabled: Boolean = false,
+    showActionButtons: Boolean = true,
     browserStore: BrowserStore = components.core.store,
     appStore: AppStore = components.appStore,
     tabsUseCases: TabsUseCases = components.useCases.tabsUseCases,
     onAddTabClick: () -> Unit,
     onCloseTabClick: (isPrivate: Boolean) -> Unit,
     onLastTabClose: (isPrivate: Boolean) -> Unit,
-    onSelectedTabClick: () -> Unit,
+    onSelectedTabClick: (url: String) -> Unit,
     onTabCounterClick: () -> Unit,
 ) {
     val isPossiblyPrivateMode by appStore.observeAsState(false) { it.mode.isPrivate }
     val state by browserStore.observeAsState(TabStripState.initial) {
         it.toTabStripState(
-            isSelectDisabled = onHome,
+            isSelectDisabled = isSelectDisabled,
             isPossiblyPrivateMode = isPossiblyPrivateMode,
             addTab = onAddTabClick,
             closeTab = { isPrivate, numberOfTabs ->
@@ -133,7 +136,11 @@ fun TabStrip(
 
     TabStripContent(
         state = state,
-        onAddTabClick = onAddTabClick,
+        showActionButtons = showActionButtons,
+        onAddTabClick = {
+            onAddTabClick()
+            TabStripMetrics.newTabTapped.record()
+        },
         onCloseTabClick = { tabId, isPrivate ->
             closeTab(
                 numberOfTabs = state.tabs.size,
@@ -144,9 +151,10 @@ fun TabStrip(
                 onCloseTabClick = onCloseTabClick,
             )
         },
-        onSelectedTabClick = {
-            tabsUseCases.selectTab(it)
-            onSelectedTabClick()
+        onSelectedTabClick = { tabId, url ->
+            tabsUseCases.selectTab(tabId)
+            onSelectedTabClick(url)
+            TabStripMetrics.selectTab.record()
         },
         onMove = { tabId, targetId, placeAfter ->
             if (tabId != targetId) {
@@ -160,9 +168,10 @@ fun TabStrip(
 @Composable
 private fun TabStripContent(
     state: TabStripState,
+    showActionButtons: Boolean = true,
     onAddTabClick: () -> Unit,
     onCloseTabClick: (id: String, isPrivate: Boolean) -> Unit,
-    onSelectedTabClick: (id: String) -> Unit,
+    onSelectedTabClick: (tabId: String, url: String) -> Unit,
     onMove: (tabId: String, targetId: String, placeAfter: Boolean) -> Unit,
     onTabCounterClick: () -> Unit,
 ) {
@@ -188,22 +197,26 @@ private fun TabStripContent(
                 onMove = onMove,
             )
 
-            IconButton(onClick = onAddTabClick) {
-                Icon(
-                    painter = painterResource(R.drawable.mozac_ic_plus_24),
-                    tint = FirefoxTheme.colors.iconPrimary,
-                    contentDescription = stringResource(R.string.add_tab),
-                )
+            if (showActionButtons) {
+                IconButton(onClick = onAddTabClick) {
+                    Icon(
+                        painter = painterResource(R.drawable.mozac_ic_plus_24),
+                        tint = FirefoxTheme.colors.iconPrimary,
+                        contentDescription = stringResource(R.string.add_tab),
+                    )
+                }
             }
         }
 
-        TabStripTabCounterButton(
-            tabCount = state.tabs.size,
-            size = dimensionResource(R.dimen.tab_strip_height),
-            menuItems = state.menuItems,
-            privacyBadgeVisible = state.isPrivateMode,
-            onClick = onTabCounterClick,
-        )
+        if (showActionButtons) {
+            TabStripTabCounterButton(
+                tabCount = state.tabs.size,
+                size = dimensionResource(R.dimen.tab_strip_height),
+                menuItems = state.menuItems,
+                privacyBadgeVisible = state.isPrivateMode,
+                onClick = onTabCounterClick,
+            )
+        }
     }
 }
 
@@ -216,7 +229,7 @@ private fun TabsList(
     state: TabStripState,
     modifier: Modifier = Modifier,
     onCloseTabClick: (id: String, isPrivate: Boolean) -> Unit,
-    onSelectedTabClick: (id: String) -> Unit,
+    onSelectedTabClick: (tabId: String, url: String) -> Unit,
     onMove: (tabId: String, targetId: String, placeAfter: Boolean) -> Unit,
 ) {
     BoxWithConstraints(modifier = modifier) {
@@ -312,7 +325,7 @@ private fun TabItem(
     state: TabStripItem,
     modifier: Modifier = Modifier,
     onCloseTabClick: (id: String, isPrivate: Boolean) -> Unit,
-    onSelectedTabClick: (id: String) -> Unit,
+    onSelectedTabClick: (id: String, url: String) -> Unit,
 ) {
     val backgroundColor = if (state.isSelected) {
         FirefoxTheme.colors.tabActive
@@ -333,7 +346,7 @@ private fun TabItem(
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .clickable { onSelectedTabClick(state.id) }
+                .clickable { onSelectedTabClick(state.id, state.url) }
                 .semantics {
                     role = Role.Tab
                     selected = state.isSelected
@@ -456,6 +469,7 @@ private fun closeTab(
     }
     tabsUseCases.removeTab(tabId)
     onCloseTabClick(isPrivate)
+    TabStripMetrics.closeTab.record()
 }
 
 private class TabUIStateParameterProvider : PreviewParameterProvider<TabStripState> {
@@ -551,7 +565,7 @@ private fun TabStripContentPreview(tabs: List<TabStripItem>) {
             ),
             onAddTabClick = {},
             onCloseTabClick = { _, _ -> },
-            onSelectedTabClick = {},
+            onSelectedTabClick = { _, _ -> },
             onMove = { _, _, _ -> },
             onTabCounterClick = {},
         )

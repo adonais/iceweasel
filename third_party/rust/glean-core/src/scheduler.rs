@@ -13,7 +13,7 @@ use crate::storage::INTERNAL_STORAGE;
 use crate::util::local_now_with_offset;
 use crate::{CommonMetricData, Glean, Lifetime};
 use chrono::prelude::*;
-use chrono::Duration;
+use chrono::Days;
 use once_cell::sync::Lazy;
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread::JoinHandle;
@@ -134,12 +134,21 @@ fn schedule_internal(
     // 3. The ping was NOT collected on the current calendar day BUT we still have
     //    some time to the due time; schedule for submitting the current calendar day.
 
-    let already_sent_today = last_sent_time.is_some_and(|d| d.date() == now.date());
+    let already_sent_today = last_sent_time.is_some_and(|d| d.date_naive() == now.date_naive());
+    // Today's 04:00 in local time
+    let cutoff_time = now
+        .naive_local()
+        .date()
+        .and_hms_opt(SCHEDULED_HOUR, 0, 0)
+        .unwrap()
+        .and_local_timezone(now.timezone())
+        .unwrap();
+
     if already_sent_today {
         // Case #1
         log::info!("The 'metrics' ping was already sent today, {}", now);
         scheduler.start_scheduler(submitter, now, When::Tomorrow);
-    } else if now > now.date().and_hms(SCHEDULED_HOUR, 0, 0) {
+    } else if now > cutoff_time {
         // Case #2
         log::info!("Sending the 'metrics' ping immediately, {}", now);
         submitter.submit_metrics_ping(glean, Some("overdue"), now);
@@ -164,18 +173,24 @@ impl When {
     /// Note that std::time::Duration doesn't do negative time spans, so if
     /// our deadline has passed, this will return zero.
     fn until(&self, now: DateTime<FixedOffset>) -> std::time::Duration {
+        let now_local = now.naive_local();
+
         let fire_date = match self {
-            Self::Today => now.date().and_hms(SCHEDULED_HOUR, 0, 0),
+            Self::Today => now_local.date().and_hms_opt(SCHEDULED_HOUR, 0, 0).unwrap(),
             // Doesn't actually save us from being an hour off on DST because
             // chrono doesn't know when DST changes. : (
             Self::Tomorrow | Self::Reschedule => {
-                (now.date() + Duration::days(1)).and_hms(SCHEDULED_HOUR, 0, 0)
+                let next_day = now_local.checked_add_days(Days::new(1)).unwrap();
+                let next_day_date = next_day.date();
+                next_day_date.and_hms_opt(SCHEDULED_HOUR, 0, 0).unwrap()
             }
         };
-        // After rust-lang/rust#73544 can use std::time::Duration::ZERO
-        (fire_date - now)
-            .to_std()
-            .unwrap_or_else(|_| std::time::Duration::from_millis(0))
+
+        (fire_date - now_local).to_std().unwrap_or_else(|_| {
+            // If we're somehow out of range schedule 24 hours into the future.
+            // We do NOT want to schedule a ping submission immediately.
+            std::time::Duration::from_secs(24 * 60 * 60)
+        })
     }
 
     /// The "metrics" ping reason corresponding to our deadline.
@@ -272,6 +287,8 @@ mod test {
     use crate::tests::new_glean;
     use std::sync::atomic::{AtomicU32, Ordering};
 
+    use chrono::Duration;
+
     struct ValidatingSubmitter<F: Fn(DateTime<FixedOffset>, Option<&str>)> {
         submit_validator: F,
         validator_run_count: Arc<AtomicU32>,
@@ -338,9 +355,10 @@ mod test {
         let lsb_metric = get_last_sent_build_metric();
         assert_eq!(None, lsb_metric.get_value(&glean, Some(INTERNAL_STORAGE)));
 
-        let fake_now = FixedOffset::east(0)
-            .ymd(2022, 11, 15)
-            .and_hms(SCHEDULED_HOUR, 0, 1);
+        let fake_now = FixedOffset::east_opt(0)
+            .unwrap()
+            .with_ymd_and_hms(2022, 11, 15, SCHEDULED_HOUR, 0, 1)
+            .unwrap();
 
         let (submitter, submitter_count, scheduler, scheduler_count) = new_proxies(
             |_, reason| assert_eq!(reason, Some("overdue")),
@@ -382,7 +400,10 @@ mod test {
     fn case_1_no_submit_but_schedule_tomorrow() {
         let (glean, _t) = new_glean(None);
 
-        let fake_now = FixedOffset::east(0).ymd(2021, 4, 30).and_hms(14, 36, 14);
+        let fake_now = FixedOffset::east_opt(0)
+            .unwrap()
+            .with_ymd_and_hms(2021, 4, 30, 14, 36, 14)
+            .unwrap();
         get_last_sent_time_metric().set_sync_chrono(&glean, fake_now);
 
         let (submitter, submitter_count, scheduler, scheduler_count) = new_proxies(
@@ -401,9 +422,10 @@ mod test {
     fn case_2_submit_ping_and_reschedule() {
         let (glean, _t) = new_glean(None);
 
-        let fake_yesterday = FixedOffset::east(0)
-            .ymd(2021, 4, 29)
-            .and_hms(SCHEDULED_HOUR, 0, 1);
+        let fake_yesterday = FixedOffset::east_opt(0)
+            .unwrap()
+            .with_ymd_and_hms(2021, 4, 29, SCHEDULED_HOUR, 0, 1)
+            .unwrap();
         get_last_sent_time_metric().set_sync_chrono(&glean, fake_yesterday);
         let fake_now = fake_yesterday + Duration::days(1);
 
@@ -423,10 +445,10 @@ mod test {
     fn case_3_no_submit_but_schedule_today() {
         let (glean, _t) = new_glean(None);
 
-        let fake_yesterday =
-            FixedOffset::east(0)
-                .ymd(2021, 4, 29)
-                .and_hms(SCHEDULED_HOUR - 1, 0, 1);
+        let fake_yesterday = FixedOffset::east_opt(0)
+            .unwrap()
+            .with_ymd_and_hms(2021, 4, 29, SCHEDULED_HOUR - 1, 0, 1)
+            .unwrap();
         get_last_sent_time_metric().set_sync_chrono(&glean, fake_yesterday);
         let fake_now = fake_yesterday + Duration::days(1);
 
@@ -442,14 +464,20 @@ mod test {
     // `When` is responsible for date math. Let's make sure it's correct.
     #[test]
     fn when_gets_at_least_some_date_math_correct() {
-        let now = FixedOffset::east(0).ymd(2021, 4, 30).and_hms(15, 2, 10);
-        // `now` is after `SCHEDULED_HOUR` so should be zero:
-        assert_eq!(std::time::Duration::from_secs(0), When::Today.until(now));
+        let now = FixedOffset::east_opt(0)
+            .unwrap()
+            .with_ymd_and_hms(2021, 4, 30, 15, 2, 10)
+            .unwrap();
+        // `now` is after `SCHEDULED_HOUR` but we should never schedule immediately:
+        assert_ne!(std::time::Duration::from_secs(0), When::Today.until(now));
         // If we bring it back before `SCHEDULED_HOUR` it should give us the duration:
-        let earlier = now.date().and_hms(SCHEDULED_HOUR - 1, 0, 0);
+        let earlier = now
+            .date_naive()
+            .and_hms_opt(SCHEDULED_HOUR - 1, 0, 0)
+            .unwrap();
         assert_eq!(
             std::time::Duration::from_secs(3600),
-            When::Today.until(earlier)
+            When::Today.until(Utc.from_utc_datetime(&earlier).into())
         );
 
         // `Tomorrow` and `Reschedule` should differ only in their `reason()`
@@ -465,6 +493,34 @@ mod test {
         );
         assert_eq!(When::Tomorrow.until(now), When::Reschedule.until(now));
         assert_ne!(When::Tomorrow.reason(), When::Reschedule.reason());
+    }
+
+    #[test]
+    fn datetime_offset_doesnt_cause_rapid_rescheduling() {
+        let now = FixedOffset::west_opt(3600 * 7)
+            .unwrap()
+            .with_ymd_and_hms(2025, 7, 27, 22, 27, 59)
+            .unwrap();
+
+        let next_schedule = When::Reschedule.until(now);
+
+        // 22:27:59 -> (next day) 04:00 is 5h 32min 1s = 19921 seconds
+        let expected_duration = std::time::Duration::from_secs(19921);
+        assert_eq!(expected_duration, next_schedule);
+    }
+
+    #[test]
+    fn todays_scheduling_is_in_localtime() {
+        let now = FixedOffset::west_opt(3600 * 7)
+            .unwrap()
+            .with_ymd_and_hms(2025, 7, 27, 3, 30, 0)
+            .unwrap();
+
+        let next_schedule = When::Today.until(now);
+
+        // 03:30:00 -> 04:00 is 30min
+        let expected_duration = std::time::Duration::from_secs(30 * 60);
+        assert_eq!(expected_duration, next_schedule);
     }
 
     // Scheduler tests mutate global state and thus must not be run in parallel.
@@ -483,9 +539,10 @@ mod test {
 
         // Pick a time at least two hours from the next scheduled submission.
         // (So that this test will time out if cancellation fails).
-        let now = FixedOffset::east(0)
-            .ymd(2021, 4, 30)
-            .and_hms(SCHEDULED_HOUR - 2, 0, 0);
+        let now = FixedOffset::east_opt(0)
+            .unwrap()
+            .with_ymd_and_hms(2021, 4, 30, SCHEDULED_HOUR - 2, 0, 0)
+            .unwrap();
 
         let proxy_factory = || {
             new_proxies(
@@ -526,6 +583,7 @@ mod test {
     // We're not keen to wait like the scheduler is, but we can test a quick schedule.
     #[test]
     fn immediate_task_runs_immediately() {
+        let _ = env_logger::builder().try_init();
         // First and foremost, all scheduler tests must ensure they start uncancelled.
         // Perils of having shared state.
         let _test_lock = SCHEDULER_TEST_MUTEX.lock().unwrap();
@@ -540,8 +598,11 @@ mod test {
         );
         assert!(crate::core::setup_glean(glean).is_ok());
 
-        // We're choosing a time after SCHEDULED_HOUR so `When::Today` will give us a duration of 0.
-        let now = FixedOffset::east(0).ymd(2021, 4, 20).and_hms(15, 42, 0);
+        // We're choosing the exact `SCHEDULED_HOUR` to give us a duration of 0.
+        let now = FixedOffset::east_opt(0)
+            .unwrap()
+            .with_ymd_and_hms(2021, 4, 21, 4, 0, 0)
+            .unwrap();
 
         let (submitter, submitter_count, _, _) = new_proxies(
             move |_, reason| {

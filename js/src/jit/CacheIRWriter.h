@@ -204,10 +204,6 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
     assertSameZone(shape);
     addStubField(uintptr_t(shape), StubField::Type::WeakShape);
   }
-  void writeWeakGetterSetterField(GetterSetter* gs) {
-    MOZ_ASSERT(gs);
-    addStubField(uintptr_t(gs), StubField::Type::WeakGetterSetter);
-  }
   void writeObjectField(JSObject* obj) {
     MOZ_ASSERT(obj);
     assertSameCompartment(obj);
@@ -245,6 +241,10 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
   }
   void writeValueField(const Value& val) {
     addStubField(val.asRawBits(), StubField::Type::Value);
+  }
+  void writeWeakValueField(const Value& val) {
+    MOZ_ASSERT(val.isGCThing());
+    addStubField(val.asRawBits(), StubField::Type::WeakValue);
   }
   void writeRawInt64Field(uint64_t val) {
     addStubField(val, StubField::Type::RawInt64);

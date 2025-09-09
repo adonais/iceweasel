@@ -90,7 +90,7 @@ class CameraPortalNotifier : public CameraPortal::PortalNotifier {
   PipeWireSession* session_;
 };
 
-class PipeWireSession : public rtc::RefCountedNonVirtual<PipeWireSession> {
+class PipeWireSession : public webrtc::RefCountedNonVirtual<PipeWireSession> {
  public:
   PipeWireSession();
   ~PipeWireSession();

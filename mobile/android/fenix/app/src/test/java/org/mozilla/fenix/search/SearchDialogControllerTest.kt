@@ -8,14 +8,10 @@ import androidx.appcompat.app.AlertDialog
 import androidx.navigation.NavController
 import androidx.navigation.NavDirections
 import io.mockk.MockKAnnotations
-import io.mockk.Runs
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkObject
 import io.mockk.spyk
-import io.mockk.unmockkObject
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.test.runTest
@@ -30,7 +26,6 @@ import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.robolectric.testContext
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -46,7 +41,6 @@ import org.mozilla.fenix.GleanMetrics.UnifiedSearch
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
-import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.search.BOOKMARKS_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.HISTORY_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.TABS_SEARCH_ENGINE_ID
@@ -92,7 +86,6 @@ class SearchDialogControllerTest {
     @Before
     fun setUp() {
         MockKAnnotations.init(this)
-        mockkObject(MetricsUtils)
         middleware = CaptureActionsMiddleware()
         browserStore = BrowserStore(
             middleware = listOf(middleware),
@@ -100,16 +93,13 @@ class SearchDialogControllerTest {
         every { store.state.tabId } returns "test-tab-id"
         every { store.state.searchEngineSource.searchEngine } returns searchEngine
         every { searchEngine.type } returns SearchEngine.Type.BUNDLED
+        every { searchEngine.id } returns "test-search-engine-id"
+        every { searchEngine.telemetrySuffix } returns "test-telemetry-suffix"
+
         every { navController.currentDestination } returns mockk {
             every { id } returns R.id.searchDialogFragment
         }
-        every { activity.components.nimbus.events } returns mockk()
-        every { MetricsUtils.recordSearchMetrics(searchEngine, any(), any(), any()) } just Runs
-    }
-
-    @After
-    fun teardown() {
-        unmockkObject(MetricsUtils)
+        every { activity.components.nimbus.events } returns mockk(relaxUnitFun = true)
     }
 
     @Test

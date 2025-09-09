@@ -6,72 +6,72 @@
 
 #include "RuntimeService.h"
 
-#include "nsContentSecurityUtils.h"
-#include "nsIContentSecurityPolicy.h"
-#include "mozilla/dom/Document.h"
-#include "nsIObserverService.h"
-#include "nsIScriptContext.h"
-#include "nsIStreamTransportService.h"
-#include "nsISupportsPriority.h"
-#include "nsITimer.h"
-#include "nsIURI.h"
-#include "nsIXULRuntime.h"
-#include "nsPIDOMWindow.h"
-
 #include <algorithm>
-#include "mozilla/ipc/BackgroundChild.h"
+
 #include "GeckoProfiler.h"
+#include "XPCSelfHostedShmem.h"
 #include "js/ColumnNumber.h"  // JS::ColumnNumberOneOrigin
-#include "js/experimental/CTypes.h"  // JS::CTypesActivityType, JS::SetCTypesActivityCallback
-#include "jsfriendapi.h"
-#include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/ContextOptions.h"
 #include "js/GCVector.h"
 #include "js/Initialization.h"
 #include "js/LocaleSensitive.h"
 #include "js/Value.h"
 #include "js/WasmFeatures.h"
+#include "js/experimental/CTypes.h"  // JS::CTypesActivityType, JS::SetCTypesActivityCallback
+#include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
+#include "jsfriendapi.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
-#include "mozilla/glean/DomWorkersMetrics.h"
-#include "mozilla/glean/DomServiceworkersMetrics.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/FlowMarkers.h"
+#include "mozilla/Monitor.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/AtomList.h"
 #include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/ErrorEventBinding.h"
 #include "mozilla/dom/EventTargetBinding.h"
 #include "mozilla/dom/FetchUtil.h"
+#include "mozilla/dom/IndexedDatabaseManager.h"
 #include "mozilla/dom/MessageChannel.h"
 #include "mozilla/dom/MessageEventBinding.h"
+#include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/PerformanceService.h"
 #include "mozilla/dom/RemoteWorkerChild.h"
-#include "mozilla/dom/WorkerBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ShadowRealmGlobalScope.h"
 #include "mozilla/dom/TrustedTypeUtils.h"
-#include "mozilla/dom/IndexedDatabaseManager.h"
+#include "mozilla/dom/WorkerBinding.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
-#include "mozilla/DebugOnly.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/ScopeExit.h"
-#include "mozilla/dom/Navigator.h"
-#include "mozilla/Monitor.h"
+#include "mozilla/glean/DomServiceworkersMetrics.h"
+#include "mozilla/glean/DomWorkersMetrics.h"
+#include "mozilla/ipc/BackgroundChild.h"
+#include "nsContentSecurityUtils.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollector.h"
 #include "nsDOMJSUtils.h"
+#include "nsIContentSecurityPolicy.h"
+#include "nsIObserverService.h"
+#include "nsIScriptContext.h"
+#include "nsIStreamTransportService.h"
 #include "nsISupportsImpl.h"
+#include "nsISupportsPriority.h"
+#include "nsITimer.h"
+#include "nsIURI.h"
+#include "nsIXULRuntime.h"
 #include "nsLayoutStatics.h"
 #include "nsNetUtil.h"
+#include "nsPIDOMWindow.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
 #include "nsXPCOM.h"
 #include "nsXPCOMPrivate.h"
 #include "xpcpublic.h"
-#include "XPCSelfHostedShmem.h"
 
 #if defined(XP_MACOSX)
 #  include "nsMacUtilsImpl.h"
@@ -1983,13 +1983,18 @@ void RuntimeService::MemoryPressureAllWorkers() {
   BroadcastAllWorkers([](auto& worker) { worker.MemoryPressure(); });
 }
 
-uint32_t RuntimeService::ClampedHardwareConcurrency(
-    bool aShouldResistFingerprinting) const {
-  // The Firefox Hardware Report says 70% of Firefox users have exactly 2 cores.
+uint32_t RuntimeService::ClampedHardwareConcurrency(bool aRFPHardcoded,
+                                                    bool aRFPTiered) const {
+  // The Firefox Hardware Report says 34% of Firefox users have exactly 4 cores.
   // When the resistFingerprinting pref is set, we want to blend into the crowd
-  // so spoof navigator.hardwareConcurrency = 2 to reduce user uniqueness.
-  if (MOZ_UNLIKELY(aShouldResistFingerprinting)) {
-    return 2;
+  // so spoof navigator.hardwareConcurrency = 4 to reduce user uniqueness. On
+  // OSX, the majority of Macs have 8 cores.
+  if (MOZ_UNLIKELY(aRFPHardcoded)) {
+#ifdef XP_MACOSX
+    return 8;
+#else
+    return 4;
+#endif
   }
 
   // This needs to be atomic, because multiple workers, and even mainthread,
@@ -2015,6 +2020,13 @@ uint32_t RuntimeService::ClampedHardwareConcurrency(
     }
     Unused << unclampedHardwareConcurrency.compareExchange(0,
                                                            numberOfProcessors);
+  }
+
+  if (MOZ_UNLIKELY(aRFPTiered)) {
+    if (unclampedHardwareConcurrency >= 8) {
+      return 8;
+    }
+    return 4;
   }
 
   return std::min(uint32_t(unclampedHardwareConcurrency),

@@ -5,14 +5,17 @@
 package mozilla.components.support.utils.ext
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
 import android.os.Build
 import android.provider.Settings
+import android.view.Window
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
@@ -86,4 +89,20 @@ fun Context.registerReceiverCompat(
  */
 fun Context.isLandscape(): Boolean {
     return resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+}
+
+/**
+ * Try getting the activity window from the current context.
+ *
+ * @return The current [Activity]'s [Window] or null if it cannot be found.
+ */
+fun Context.getActivityWindow(): Window? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) {
+            return context.window
+        }
+        context = context.baseContext
+    }
+    return null
 }

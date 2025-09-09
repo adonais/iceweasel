@@ -62,12 +62,16 @@ add_task(async function () {
           }
 
           is(
-            infobar.getTextContent("keyboard"),
+            infobar.getTextContent("accessible-keyboard"),
             expected,
             "infobar keyboard audit text content is correct"
           );
           if (score) {
-            ok(infobar.getElement("keyboard").classList.contains(score));
+            ok(
+              infobar
+                .getElement("accessible-keyboard")
+                .classList.contains(score)
+            );
           }
         }
 

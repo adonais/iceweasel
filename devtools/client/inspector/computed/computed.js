@@ -9,7 +9,7 @@ const ToolDefinitions =
   require("resource://devtools/client/definitions.js").Tools;
 const CssLogic = require("resource://devtools/shared/inspector/css-logic.js");
 const {
-  style: { ELEMENT_STYLE },
+  style: { ELEMENT_STYLE, PRES_HINTS },
 } = require("resource://devtools/shared/constants.js");
 const OutputParser = require("resource://devtools/client/shared/output-parser.js");
 const { PrefObserver } = require("resource://devtools/client/shared/prefs.js");
@@ -234,7 +234,7 @@ class CssComputedView {
       );
     }
 
-    if (!this.inspector.is3PaneModeEnabled) {
+    if (!this.inspector.isThreePaneModeEnabled) {
       // When the rules view is added in 3 pane mode, refresh the Computed view whenever
       // the rules are changed.
       this.inspector.once(
@@ -266,6 +266,9 @@ class CssComputedView {
 
     // The PageStyle front related to the currently selected element
     this.viewedElementPageStyle = null;
+    // Flag that is set when the selected element style was updated. This will force
+    // clearing the page style cssLogic cache the next time we're calling getComputed().
+    this.elementStyleUpdated = false;
 
     this.createStyleViews();
 
@@ -602,9 +605,12 @@ class CssComputedView {
           filter: this.#sourceFilter,
           onlyMatched: !this.includeBrowserStyles,
           markMatched: true,
+          clearCache: !!this.elementStyleUpdated,
         }),
         this.#createPropertyViews(),
       ]);
+
+      this.elementStyleUpdated = false;
 
       if (viewedElement !== this.#viewedElement) {
         return;
@@ -1394,20 +1400,22 @@ class PropertyView {
         class: "rule-link",
       });
 
-      const link = createChild(span, "a", {
-        target: "_blank",
-        class: "computed-link theme-link",
-        title: selector.longSource,
-        sourcelocation: selector.source,
-        tabindex: "0",
-        textContent: selector.source,
-      });
-      link.addEventListener("click", selector.openStyleEditor);
-      const shortcuts = new KeyShortcuts({
-        window: this.#tree.styleWindow,
-        target: link,
-      });
-      shortcuts.on("Return", () => selector.openStyleEditor());
+      if (selector.source) {
+        const link = createChild(span, "a", {
+          target: "_blank",
+          class: "computed-link theme-link",
+          title: selector.longSource,
+          sourcelocation: selector.source,
+          tabindex: "0",
+          textContent: selector.source,
+        });
+        link.addEventListener("click", selector.openStyleEditor);
+        const shortcuts = new KeyShortcuts({
+          window: this.#tree.styleWindow,
+          target: link,
+        });
+        shortcuts.on("Return", () => selector.openStyleEditor());
+      }
 
       const status = createChild(p, "span", {
         dir: "ltr",
@@ -1423,10 +1431,16 @@ class PropertyView {
         textContent: selector.statusText + " ",
       });
 
-      createChild(status, "div", {
-        class: "fix-get-selection",
+      const selectorEl = createChild(status, "div", {
+        class: "fix-get-selection computed-other-property-selector",
         textContent: selector.sourceText,
       });
+      if (
+        selector.selectorInfo.rule.type === ELEMENT_STYLE ||
+        selector.selectorInfo.rule.type === PRES_HINTS
+      ) {
+        selectorEl.classList.add("alternative-selector");
+      }
 
       const valueDiv = createChild(status, "div", {
         class:
@@ -1591,10 +1605,7 @@ class SelectorView {
     this.openStyleEditor = this.openStyleEditor.bind(this);
 
     const rule = this.selectorInfo.rule;
-    if (!rule || !rule.parentStyleSheet || rule.type == ELEMENT_STYLE) {
-      this.source = CssLogic.l10n("rule.sourceElement");
-      this.longSource = this.source;
-    } else {
+    if (rule?.parentStyleSheet) {
       // This always refers to the generated location.
       const sheet = rule.parentStyleSheet;
       const sourceSuffix = rule.line > 0 ? ":" + rule.line : "";
@@ -1783,7 +1794,17 @@ class ComputedViewTool {
       this.onPanelSelected,
       opts
     );
-    this.inspector.styleChangeTracker.on("style-changed", this.refresh, opts);
+    this.inspector.styleChangeTracker.on(
+      "style-changed",
+      () => {
+        // `refresh` may not actually update the styles if the computed panel is hidden
+        // so use a flag to force updating the element styles the next time the computed
+        // panel refreshes.
+        this.computedView.elementStyleUpdated = true;
+        this.refresh();
+      },
+      opts
+    );
 
     this.computedView.selectElement(null);
 

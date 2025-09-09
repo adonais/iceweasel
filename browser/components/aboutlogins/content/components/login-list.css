@@ -26,11 +26,12 @@
   --logical-padding: 0px;
   margin: 0;
   background-color: transparent;
-  color: var(--in-content-text-color) !important;
+  color: var(--button-text-color-ghost);
 }
 
 #login-sort:hover:not([disabled]) {
-  background-color: var(--in-content-button-background);
+  color: var(--button-text-color-ghost-hover);
+  background-color: var(--button-background-color-ghost-hover);
 }
 
 #login-sort > option {
@@ -85,7 +86,7 @@
 }
 
 ol {
-  outline-offset: var(--in-content-focus-outline-inset);
+  outline-offset: var(--focus-outline-inset);
   margin-block: 0;
   padding-inline-start: 0;
   overflow: hidden auto;
@@ -116,23 +117,23 @@ ol {
 }
 
 .login-list-item:not(.selected):hover {
-  background-color: var(--in-content-button-background-hover);
-  color: var(--in-content-button-text-color-hover);
+  background-color: var(--button-background-color-hover);
+  color: var(--button-text-color-hover);
 }
 
 .login-list-item:not(.selected):hover:active {
-  background-color: var(--in-content-button-background-active);
-  color: var(--in-content-button-text-color-active);
+  background-color: var(--button-background-color-active);
+  color: var(--button-text-color-active);
 }
 
 .login-list-item.keyboard-selected {
   border-inline-start-color: var(--in-content-border-color);
-  background-color: var(--in-content-button-background-hover);
+  background-color: var(--button-background-color-hover);
 }
 
 .login-list-item.selected {
   border-inline-start-color: var(--color-accent-primary);
-  background-color: var(--in-content-page-background);
+  background-color: var(--background-color-canvas);
 }
 
 .login-list-item.selected .title {

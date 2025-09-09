@@ -6,6 +6,7 @@ package org.mozilla.fenix.components.menu.compose
 
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.Divider
@@ -71,36 +73,36 @@ internal fun MenuScaffold(
  * A frame for the main menu UI that implements the basic layout structure with [header] and [content].
  *
  * @param modifier [Modifier] to be applied to the layout.
+ * @param contentModifier [Modifier] to be applied to the content layout.
  * @param scrollState The [ScrollState] used for vertical scrolling.
  * @param header The Composable header block to render.
+ * @param footer The Composable footer block to render.
  * @param content The Composable content block to render.
  */
 @Composable
 internal fun MenuFrame(
     modifier: Modifier = Modifier,
+    contentModifier: Modifier = Modifier,
     scrollState: ScrollState = rememberScrollState(),
-    header: @Composable ColumnScope.() -> Unit,
+    header: @Composable () -> Unit = {},
+    footer: @Composable () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Column(modifier = modifier) {
-        header()
-
-        if (scrollState.value != 0) {
-            Divider(color = FirefoxTheme.colors.borderPrimary)
+    Box(modifier = modifier) {
+        Column {
+            header()
+            Column(
+                modifier = Modifier
+                    .verticalScroll(scrollState)
+                    .then(contentModifier),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                content()
+            }
         }
 
-        Column(
-            modifier = Modifier
-                .verticalScroll(scrollState)
-                .padding(
-                    start = 8.dp,
-                    top = 8.dp,
-                    end = 8.dp,
-                    bottom = 12.dp,
-                ),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            content()
+        Column(modifier = Modifier.align(Alignment.BottomCenter)) {
+            footer()
         }
     }
 }

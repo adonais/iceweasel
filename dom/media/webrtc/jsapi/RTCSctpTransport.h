@@ -5,10 +5,10 @@
 #ifndef _RTCSctpTransport_h_
 #define _RTCSctpTransport_h_
 
+#include "RTCDtlsTransport.h"
+#include "js/RootingAPI.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/RefPtr.h"
-#include "js/RootingAPI.h"
-#include "RTCDtlsTransport.h"
 
 class nsPIDOMWindowInner;
 

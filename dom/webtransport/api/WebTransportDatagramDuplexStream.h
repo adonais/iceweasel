@@ -8,15 +8,16 @@
 #define DOM_WEBTRANSPORT_API_WEBTRANSPORTDATAGRAMDUPLEXSTREAM__H_
 
 #include <utility>
-#include "nsCOMPtr.h"
-#include "nsISupports.h"
-#include "nsWrapperCache.h"
+
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/TypedArray.h"
-#include "mozilla/dom/WritableStream.h"
 #include "mozilla/dom/WebTransport.h"
 #include "mozilla/dom/WebTransportDatagramDuplexStreamBinding.h"
+#include "mozilla/dom/WritableStream.h"
+#include "nsCOMPtr.h"
+#include "nsISupports.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla::dom {
 

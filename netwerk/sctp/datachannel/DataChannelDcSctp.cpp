@@ -74,8 +74,7 @@ void DataChannelConnectionDcSctp::OnTransportReady() {
 }
 
 bool DataChannelConnectionDcSctp::Init(const uint16_t aLocalPort,
-                                       const uint16_t aNumStreams,
-                                       const Maybe<uint64_t>& aMaxMessageSize) {
+                                       const uint16_t aNumStreams) {
   return true;
 }
 
@@ -149,7 +148,7 @@ void DataChannelConnectionDcSctp::OnSctpPacketReceived(
   if (!mDcSctp) {
     return;
   }
-  rtc::ArrayView<const uint8_t> data(aPacket.data(), aPacket.len());
+  webrtc::ArrayView<const uint8_t> data(aPacket.data(), aPacket.len());
   mDcSctp->ReceivePacket(data);
 }
 
@@ -164,7 +163,7 @@ void DataChannelConnectionDcSctp::ResetStreams(nsTArray<uint16_t>& aStreams) {
     DC_DEBUG(("%s: %p Resetting %u", __func__, this, id));
     converted.push_back(StreamID(id));
   }
-  mDcSctp->ResetStreams(rtc::ArrayView<const StreamID>(converted));
+  mDcSctp->ResetStreams(webrtc::ArrayView<const StreamID>(converted));
   aStreams.Clear();
 }
 
@@ -182,7 +181,7 @@ void DataChannelConnectionDcSctp::OnStreamOpen(uint16_t aStream) {
 }
 
 SendPacketStatus DataChannelConnectionDcSctp::SendPacketWithStatus(
-    rtc::ArrayView<const uint8_t> aData) {
+    webrtc::ArrayView<const uint8_t> aData) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   DC_DEBUG(("%s: %p", __func__, this));
   std::unique_ptr<MediaPacket> packet(new MediaPacket);
@@ -295,7 +294,7 @@ void DataChannelConnectionDcSctp::OnAborted(ErrorKind aError,
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   DC_ERROR(("%s: %p %d %s", __func__, this, static_cast<int>(aError),
             std::string(aMessage).c_str()));
-  Stop();
+  CloseAll_s();
 }
 
 void DataChannelConnectionDcSctp::OnConnected() {
@@ -306,8 +305,7 @@ void DataChannelConnectionDcSctp::OnConnected() {
   if (state == DataChannelConnectionState::Connecting) {
     SetState(DataChannelConnectionState::Open);
 
-    Dispatch(do_AddRef(new DataChannelOnMessageAvailable(
-        DataChannelOnMessageAvailable::EventType::OnConnection, this)));
+    OnConnected();
     DC_DEBUG(("%s: %p DTLS connect() succeeded!  Entering connected mode",
               __func__, this));
 
@@ -328,7 +326,7 @@ void DataChannelConnectionDcSctp::OnConnected() {
 void DataChannelConnectionDcSctp::OnClosed() {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   DC_DEBUG(("%s: %p", __func__, this));
-  Stop();
+  CloseAll_s();
 }
 
 void DataChannelConnectionDcSctp::OnConnectionRestarted() {
@@ -337,7 +335,7 @@ void DataChannelConnectionDcSctp::OnConnectionRestarted() {
 }
 
 void DataChannelConnectionDcSctp::OnStreamsResetFailed(
-    rtc::ArrayView<const StreamID> aOutgoingStreams,
+    webrtc::ArrayView<const StreamID> aOutgoingStreams,
     absl::string_view aReason) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   DC_ERROR(("%s: %p", __func__, this));
@@ -348,14 +346,14 @@ void DataChannelConnectionDcSctp::OnStreamsResetFailed(
 }
 
 void DataChannelConnectionDcSctp::OnStreamsResetPerformed(
-    rtc::ArrayView<const StreamID> aOutgoingStreams) {
+    webrtc::ArrayView<const StreamID> aOutgoingStreams) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   DC_DEBUG(("%s: %p", __func__, this));
   Unused << aOutgoingStreams;
 }
 
 void DataChannelConnectionDcSctp::OnIncomingStreamsReset(
-    rtc::ArrayView<const StreamID> aIncomingStreams) {
+    webrtc::ArrayView<const StreamID> aIncomingStreams) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   DC_DEBUG(("%s: %p", __func__, this));
   std::vector<uint16_t> streamsReset;

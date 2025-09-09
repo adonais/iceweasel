@@ -7,11 +7,11 @@
 #ifndef mozilla_dom_CSSTransition_h
 #define mozilla_dom_CSSTransition_h
 
-#include "mozilla/ComputedTiming.h"
-#include "mozilla/dom/Animation.h"
-#include "mozilla/AnimatedPropertyID.h"
-#include "mozilla/StyleAnimationValue.h"
 #include "AnimationCommon.h"
+#include "mozilla/AnimatedPropertyID.h"
+#include "mozilla/ComputedTiming.h"
+#include "mozilla/StyleAnimationValue.h"
+#include "mozilla/dom/Animation.h"
 
 class nsIGlobalObject;
 

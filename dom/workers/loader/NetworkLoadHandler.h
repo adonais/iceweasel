@@ -7,10 +7,10 @@
 #ifndef mozilla_dom_workers_NetworkLoadHandler_h__
 #define mozilla_dom_workers_NetworkLoadHandler_h__
 
-#include "nsIStreamLoader.h"
-#include "mozilla/dom/WorkerLoadContext.h"
 #include "mozilla/dom/ScriptLoadHandler.h"
+#include "mozilla/dom/WorkerLoadContext.h"
 #include "mozilla/dom/WorkerRef.h"
+#include "nsIStreamLoader.h"
 
 namespace mozilla::dom::workerinternals::loader {
 

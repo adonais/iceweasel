@@ -16,6 +16,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
+  UrlbarProviderGlobalActions:
+    "resource:///modules/UrlbarProviderGlobalActions.sys.mjs",
   UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarProviderQuickSuggest:
     "resource:///modules/UrlbarProviderQuickSuggest.sys.mjs",
@@ -237,7 +239,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
    * Search for group in rootGroup and return it.
    *
    * @param {object} rootGroup Root group definition.
-   * @param {UrlbarUtils.RESULT_GROUP} group The group to search for.
+   * @param {Values<typeof UrlbarUtils.RESULT_GROUP>} group The group to search for.
    * @returns {object|null} Group object from the root group. The
    *   SUGGESTED_INDEX group is not included in the rootGroup, so this
    *   will return null for it.
@@ -661,7 +663,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
    * Adds results to a group using the results from its `RESULT_GROUP` in
    * `state.resultsByGroup`.
    *
-   * @param {UrlbarUtils.RESULT_GROUP} groupConst
+   * @param {Values<typeof UrlbarUtils.RESULT_GROUP>} groupConst
    *   The group's `RESULT_GROUP`.
    * @param {object} limits
    *   An object defining the group's limits as described in `_fillGroup`.
@@ -745,6 +747,14 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     if (result.providerName == lazy.UrlbarProviderQuickSuggest.name) {
       if (result.isHiddenExposure) {
         // Always allow hidden exposure Suggest results.
+        return true;
+      }
+      if (
+        result.payload.suggestionObject?.suggestionType == "important_dates"
+      ) {
+        // Always allow important date results since they are considered
+        // utility suggestions rather than typical suggestions.
+        // We assume that there will be at most one.
         return true;
       }
 
@@ -1235,7 +1245,10 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       state.canShowTailSuggestions = false;
     }
 
-    if (result.providerName == lazy.UrlbarProviderQuickSuggest.name) {
+    if (
+      result.providerName == lazy.UrlbarProviderQuickSuggest.name &&
+      result.payload.suggestionObject?.suggestionType != "important_dates"
+    ) {
       state.quickSuggestResult ??= result;
     }
 
@@ -1378,16 +1391,31 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       }
 
       if (a.providerName === b.providerName) {
+        if (a.providerName === lazy.UrlbarProviderQuickSuggest.name) {
+          // The important dates suggestion should be before the other suggestion.
+          let aIsDate =
+            a.payload.suggestionObject?.suggestionType === "important_dates";
+          let bIsDate =
+            b.payload.suggestionObject?.suggestionType === "important_dates";
+          return Number(aIsDate) - Number(bIsDate);
+        }
+
         return 0;
       }
 
       // If same suggestedIndex, change the displaying order along to following
       // provider priority.
-      // TabToSearch > QuickSuggest > Other providers
-      if (a.providerName === lazy.UrlbarProviderTabToSearch.name) {
+      // GlobalActions == TabToSearch (legacy) > QuickSuggest > Other providers
+      if (
+        a.providerName === lazy.UrlbarProviderTabToSearch.name ||
+        a.providerName === lazy.UrlbarProviderGlobalActions.name
+      ) {
         return 1;
       }
-      if (b.providerName === lazy.UrlbarProviderTabToSearch.name) {
+      if (
+        b.providerName === lazy.UrlbarProviderTabToSearch.name ||
+        b.providerName === lazy.UrlbarProviderGlobalActions.name
+      ) {
         return -1;
       }
       if (a.providerName === lazy.UrlbarProviderQuickSuggest.name) {

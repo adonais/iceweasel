@@ -17,9 +17,9 @@
 #ifndef mozilla_RootedOwningNonNull_h__
 #define mozilla_RootedOwningNonNull_h__
 
-#include "mozilla/OwningNonNull.h"
 #include "js/GCPolicyAPI.h"
 #include "js/TypeDecls.h"
+#include "mozilla/OwningNonNull.h"
 
 namespace JS {
 template <typename T>

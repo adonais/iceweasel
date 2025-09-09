@@ -22,3 +22,6 @@ skip-if = ["os == 'win'"] # Bug 1411118
 ["browser_notification_tab_switching.js"]
 https_first_disabled = true
 skip-if = ["os == 'win'"] # Bug 1243263
+
+["browser_notification_unexpected_script.js"]
+skip-if = ["debug"] # Debug has a MOZ_CRASH on this code path

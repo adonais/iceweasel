@@ -37,9 +37,11 @@ namespace js {
 
 class BoundFunctionObject;
 class NativeObject;
+class ObjectFuse;
 class PropertyResult;
 class ProxyObject;
 enum class UnaryMathFunction : uint8_t;
+enum class SetSlotOptimizable;
 
 namespace jit {
 
@@ -116,6 +118,24 @@ class MOZ_RAII IRGenerator {
                                     ValOperandId receiverId);
   void emitCallDOMGetterResultNoGuards(NativeObject* holder, PropertyInfo prop,
                                        ObjOperandId objId);
+
+  void emitCallAccessorGuards(NativeObject* obj, NativeObject* holder,
+                              HandleId id, PropertyInfo prop,
+                              ObjOperandId objId, AccessorKind accessorKind);
+
+  bool canOptimizeConstantDataProperty(NativeObject* holder, PropertyInfo prop,
+                                       ObjectFuse** objFuse);
+  void emitConstantDataPropertyResult(NativeObject* holder,
+                                      ObjOperandId holderId, PropertyKey key,
+                                      PropertyInfo prop, ObjectFuse* objFuse);
+
+  bool canOptimizeConstantAccessorProperty(NativeObject* holder,
+                                           PropertyInfo prop,
+                                           ObjectFuse** objFuse);
+  void emitGuardConstantAccessorProperty(NativeObject* holder,
+                                         ObjOperandId holderId, PropertyKey key,
+                                         PropertyInfo prop,
+                                         ObjectFuse* objFuse);
 
   gc::AllocSite* maybeCreateAllocSite();
 
@@ -337,6 +357,9 @@ class MOZ_RAII SetPropIRGenerator : public IRGenerator {
   // If this is a SetElem cache, emit instructions to guard the incoming Value
   // matches |id|.
   void maybeEmitIdGuard(jsid id);
+
+  SetSlotOptimizable canAttachNativeSetSlot(JSObject* obj, PropertyKey id,
+                                            mozilla::Maybe<PropertyInfo>* prop);
 
   AttachDecision tryAttachNativeSetSlot(HandleObject obj, ObjOperandId objId,
                                         HandleId id, ValOperandId rhsId);
@@ -783,12 +806,12 @@ class MOZ_RAII InlinableNativeIRGenerator {
   AttachDecision tryAttachMathPow();
   AttachDecision tryAttachMathMinMax(bool isMax);
   AttachDecision tryAttachSpreadMathMinMax(bool isMax);
+  AttachDecision tryAttachTypedArrayFill();
+  AttachDecision tryAttachTypedArraySet();
+  AttachDecision tryAttachTypedArraySubarray();
   AttachDecision tryAttachIsTypedArray(bool isPossiblyWrapped);
   AttachDecision tryAttachIsTypedArrayConstructor();
-  AttachDecision tryAttachTypedArrayByteOffset();
-  AttachDecision tryAttachTypedArrayElementSize();
-  AttachDecision tryAttachTypedArrayLength(bool isPossiblyWrapped,
-                                           bool allowOutOfBounds);
+  AttachDecision tryAttachTypedArrayLength(bool isPossiblyWrapped);
   AttachDecision tryAttachIsConstructing();
   AttachDecision tryAttachGetNextMapSetEntryForIterator(bool isMap);
   AttachDecision tryAttachNewArrayIterator();
@@ -799,6 +822,9 @@ class MOZ_RAII InlinableNativeIRGenerator {
   AttachDecision tryAttachObjectConstructor();
   AttachDecision tryAttachArrayConstructor();
   AttachDecision tryAttachTypedArrayConstructor();
+  AttachDecision tryAttachTypedArrayConstructorFromLength();
+  AttachDecision tryAttachTypedArrayConstructorFromArrayBuffer();
+  AttachDecision tryAttachTypedArrayConstructorFromArray();
   AttachDecision tryAttachMapSetConstructor(InlinableNative native);
   AttachDecision tryAttachNumber();
   AttachDecision tryAttachNumberParseInt();
@@ -836,6 +862,9 @@ class MOZ_RAII InlinableNativeIRGenerator {
   AttachDecision tryAttachMapSet();
   AttachDecision tryAttachDateGetTime();
   AttachDecision tryAttachDateGet(DateComponent component);
+  AttachDecision tryAttachWeakMapHas();
+  AttachDecision tryAttachWeakMapGet();
+  AttachDecision tryAttachWeakSetHas();
 #ifdef FUZZING_JS_FUZZILLI
   AttachDecision tryAttachFuzzilliHash();
 #endif

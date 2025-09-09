@@ -7,51 +7,50 @@
 #ifndef nsGlobalWindowInner_h___
 #define nsGlobalWindowInner_h___
 
-#include "nsPIDOMWindow.h"
-
 #include "nsHashKeys.h"
+#include "nsPIDOMWindow.h"
 
 // Local Includes
 // Helper Classes
 #include "mozilla/WeakPtr.h"
 #include "nsCOMPtr.h"
-#include "nsWeakReference.h"
-#include "nsTHashMap.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsTHashMap.h"
+#include "nsWeakReference.h"
 
 // Interfaces Needed
-#include "nsIBrowserDOMWindow.h"
-#include "nsIInterfaceRequestor.h"
-#include "nsIScriptGlobalObject.h"
-#include "nsIScriptObjectPrincipal.h"
+#include "Units.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/CallState.h"
 #include "mozilla/EventListenerManager.h"
-#include "nsIPrincipal.h"
-#include "nsSize.h"
 #include "mozilla/FlushType.h"
-#include "prclist.h"
+#include "mozilla/LinkedList.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/StorageAccess.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/ChromeMessageBroadcaster.h"
 #include "mozilla/dom/DebuggerNotificationManager.h"
+#include "mozilla/dom/EventTarget.h"
 #include "mozilla/dom/GamepadHandle.h"
+#include "mozilla/dom/ImageBitmapBinding.h"
+#include "mozilla/dom/ImageBitmapSource.h"
 #include "mozilla/dom/Location.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/StorageEvent.h"
-#include "mozilla/CallState.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/LinkedList.h"
-#include "mozilla/StorageAccess.h"
-#include "mozilla/TimeStamp.h"
-#include "nsWrapperCacheInlines.h"
-#include "mozilla/dom/EventTarget.h"
 #include "mozilla/dom/WindowBinding.h"
 #include "mozilla/dom/WindowProxyHolder.h"
-#include "Units.h"
 #include "nsCheapSets.h"
-#include "mozilla/dom/ImageBitmapBinding.h"
-#include "mozilla/dom/ImageBitmapSource.h"
-#include "mozilla/UniquePtr.h"
+#include "nsIBrowserDOMWindow.h"
+#include "nsIInterfaceRequestor.h"
+#include "nsIPrincipal.h"
+#include "nsIScriptGlobalObject.h"
+#include "nsIScriptObjectPrincipal.h"
+#include "nsSize.h"
 #include "nsThreadUtils.h"
-#include "mozilla/MozPromise.h"
+#include "nsWrapperCacheInlines.h"
+#include "prclist.h"
 
 class nsIArray;
 class nsIBaseWindow;
@@ -1315,7 +1314,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   // Indicates that the current document has never received a document focus
   // event.
   bool mNeedsFocus : 1;
-  bool mHasFocus : 1;
 
   // true if tab navigation has occurred for this window. Focus rings
   // should be displayed.

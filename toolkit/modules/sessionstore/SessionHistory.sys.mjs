@@ -293,8 +293,10 @@ var SessionHistoryInternal = {
       );
     }
 
-    if (shEntry.policyContainer?.csp) {
-      entry.csp = lazy.E10SUtils.serializeCSP(shEntry.policyContainer.csp);
+    if (shEntry.policyContainer) {
+      entry.policyContainer = lazy.E10SUtils.serializePolicyContainer(
+        shEntry.policyContainer
+      );
     }
 
     entry.docIdentifier = shEntry.bfcacheID;
@@ -587,7 +589,13 @@ var SessionHistoryInternal = {
         entry.principalToInherit_base64
       );
     }
-    if (entry.csp) {
+    if (entry.policyContainer) {
+      // Firefox 143 and later writes to policyContainer (bug 1974070).
+      shEntry.policyContainer = lazy.E10SUtils.deserializePolicyContainer(
+        entry.policyContainer
+      );
+    } else if (entry.csp) {
+      // Firefox 142 and earlier writes entry.csp;
       const csp = lazy.E10SUtils.deserializeCSP(entry.csp);
       shEntry.policyContainer = new lazy.PolicyContainer(csp);
     }

@@ -7,21 +7,21 @@
 #ifndef mozilla_dom_PerformanceTiming_h
 #define mozilla_dom_PerformanceTiming_h
 
+#include "CacheablePerformanceTimingData.h"
+#include "Performance.h"
+#include "ipc/IPCMessageUtils.h"
+#include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "nsContentUtils.h"
-#include "nsDOMNavigationTiming.h"
-#include "nsRFPService.h"
-#include "nsWrapperCache.h"
-#include "CacheablePerformanceTimingData.h"
-#include "Performance.h"
-#include "nsITimedChannel.h"
 #include "mozilla/dom/PerformanceTimingTypes.h"
 #include "mozilla/ipc/IPDLParamTraits.h"
-#include "ipc/IPCMessageUtils.h"
-#include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/net/nsServerTiming.h"
+#include "nsContentUtils.h"
+#include "nsDOMNavigationTiming.h"
+#include "nsITimedChannel.h"
+#include "nsRFPService.h"
+#include "nsWrapperCache.h"
 
 class nsIHttpChannel;
 

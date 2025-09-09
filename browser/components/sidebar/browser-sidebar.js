@@ -14,6 +14,7 @@ const { DeferredTask } = ChromeUtils.importESModule(
 
 const toolsNameMap = {
   viewGenaiChatSidebar: "aichat",
+  viewGenaiPageAssistSidebar: "aipageassist",
   viewTabsSidebar: "syncedtabs",
   viewHistorySidebar: "history",
   viewBookmarksSidebar: "bookmarks",
@@ -183,6 +184,20 @@ var SidebarController = {
         iconUrl: "chrome://global/skin/icons/highlights.svg",
         gleanClickEvent: Glean.sidebar.chatbotIconClick,
         toolContextMenuId: "aichat",
+      }
+    );
+
+    this.registerPrefSidebar(
+      "browser.ml.pageAssist.enabled",
+      "viewGenaiPageAssistSidebar",
+      {
+        name: "aipageassist",
+        elementId: "sidebar-switcher-genai-page-assist",
+        url: "chrome://browser/content/genai/pageAssist.html",
+        menuId: "menu_genaiPageAssistSidebar",
+        menuL10nId: "menu-view-genai-page-assist",
+        revampL10nId: "sidebar-menu-genai-page-assist-label",
+        iconUrl: "chrome://browser/skin/reader-mode.svg",
       }
     );
 
@@ -1359,7 +1374,15 @@ var SidebarController = {
         this.dismissSidebarBadge(commandID);
       }
 
-      if (this.sidebarRevampEnabled && badgePref && isSidebarClosed) {
+      // Show badge on toolbar if we would have shown it on a visible tool but sidebar is closed
+      const tool = this.toolsAndExtensions.get(commandID);
+      if (
+        this.sidebarRevampEnabled &&
+        badgePref &&
+        !tool.disabled &&
+        !tool.hidden &&
+        isSidebarClosed
+      ) {
         this._showToolbarButtonBadge();
       } else {
         this._clearToolbarButtonBadge();

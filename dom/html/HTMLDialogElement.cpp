@@ -5,15 +5,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/HTMLDialogElement.h"
-#include "mozilla/dom/ElementBinding.h"
+
+#include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/CloseWatcher.h"
 #include "mozilla/dom/CloseWatcherManager.h"
+#include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/HTMLButtonElement.h"
 #include "mozilla/dom/HTMLDialogElementBinding.h"
-
-#include "nsIDOMEventListener.h"
+#include "mozilla/dom/UnbindContext.h"
 #include "nsContentUtils.h"
 #include "nsFocusManager.h"
+#include "nsIDOMEventListener.h"
 #include "nsIFrame.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(Dialog)
@@ -328,7 +330,7 @@ nsresult HTMLDialogElement::BindToTree(BindContext& aContext,
 
   // https://whatpr.org/html/10954/interactive-elements.html#the-dialog-element:html-element-insertion-steps
   // 1. If insertedNode has an open attribute:
-  if (Open()) {
+  if (Open() && !aContext.IsMove()) {
     // 1.1 Run the dialog setup steps given insertedNode.
     SetupSteps();
   }
@@ -337,18 +339,20 @@ nsresult HTMLDialogElement::BindToTree(BindContext& aContext,
 }
 
 void HTMLDialogElement::UnbindFromTree(UnbindContext& aContext) {
-  // https://whatpr.org/html/10954/interactive-elements.html#the-dialog-element:html-element-removing-steps
-  // 1. If removedNode has an open attribute:
-  if (Open()) {
-    // 2. Run the dialog cleanup steps given removedNode.
-    CleanupSteps();
+  if (!aContext.IsMove()) {
+    // https://whatpr.org/html/10954/interactive-elements.html#the-dialog-element:html-element-removing-steps
+    // 1. If removedNode has an open attribute:
+    if (Open()) {
+      // 2. Run the dialog cleanup steps given removedNode.
+      CleanupSteps();
+    }
+
+    // 2. If removedNode's node document's top layer contains removedNode, then
+    // remove an element from the top layer immediately given removedNode.
+    RemoveFromTopLayerIfNeeded();
+
+    // 3. Set is modal of removedNode to false.
   }
-
-  // 2. If removedNode's node document's top layer contains removedNode, then
-  // remove an element from the top layer immediately given removedNode.
-  RemoveFromTopLayerIfNeeded();
-
-  // 3. Set is modal of removedNode to false.
 
   nsGenericHTMLElement::UnbindFromTree(aContext);
 }

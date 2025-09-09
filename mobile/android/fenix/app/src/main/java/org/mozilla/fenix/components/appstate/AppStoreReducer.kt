@@ -5,9 +5,11 @@
 package org.mozilla.fenix.components.appstate
 
 import androidx.annotation.VisibleForTesting
+import mozilla.components.lib.crash.store.CrashAction
 import mozilla.components.lib.crash.store.crashReducer
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.privatebrowsinglock.PrivateBrowsingLockReducer
+import org.mozilla.fenix.components.appstate.qrScanner.QrScannerReducer
 import org.mozilla.fenix.components.appstate.readerview.ReaderViewStateReducer
 import org.mozilla.fenix.components.appstate.recommendations.ContentRecommendationsReducer
 import org.mozilla.fenix.components.appstate.reducer.FindInPageStateReducer
@@ -22,6 +24,7 @@ import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryGroup
 import org.mozilla.fenix.messaging.state.MessagingReducer
 import org.mozilla.fenix.reviewprompt.ReviewPromptReducer
+import org.mozilla.fenix.search.VoiceSearchReducer
 import org.mozilla.fenix.share.ShareActionReducer
 
 /**
@@ -137,6 +140,7 @@ internal object AppStoreReducer {
             val wallpaperState = state.wallpaperState.copy(availableWallpapers = wallpapers)
             state.copy(wallpaperState = wallpaperState)
         }
+        is AppAction.AppLifecycleAction.StartAction -> { state } // noop
         is AppAction.AppLifecycleAction.ResumeAction -> {
             state.copy(isForeground = true)
         }
@@ -197,14 +201,25 @@ internal object AppStoreReducer {
             snackbarState = SnackbarState.UserAccountAuthenticated,
         )
 
+        is VoiceSearchAction -> state.copy(
+            voiceSearchState = VoiceSearchReducer.reduce(state.voiceSearchState, action),
+        )
+
         is AppAction.ShareAction -> ShareActionReducer.reduce(state, action)
         is AppAction.FindInPageAction -> FindInPageStateReducer.reduce(state, action)
         is AppAction.ReaderViewAction -> ReaderViewStateReducer.reduce(state, action)
         is AppAction.ShortcutAction -> ShortcutStateReducer.reduce(state, action)
-        is AppAction.CrashActionWrapper -> state.copy(
-            crashState = crashReducer(state.crashState, action.inner),
-        )
-
+        is AppAction.CrashActionWrapper -> {
+            val newSnackbarState = if (action.inner is CrashAction.ReportTapped) {
+                SnackbarState.ReportSent
+            } else {
+                state.snackbarState
+            }
+            state.copy(
+                crashState = crashReducer(state.crashState, action.inner),
+                snackbarState = newSnackbarState,
+            )
+        }
         is AppAction.SnackbarAction -> SnackbarStateReducer.reduce(state, action)
         is AppAction.UpdateWasNativeDefaultBrowserPromptShown -> {
             state.copy(wasNativeDefaultBrowserPromptShown = action.wasShown)
@@ -222,7 +237,7 @@ internal object AppStoreReducer {
         )
 
         is AppAction.DownloadAction.DownloadInProgress -> state.copy(
-            snackbarState = SnackbarState.DownloadInProgress(action.sessionId),
+            snackbarState = SnackbarState.DownloadInProgress(action.downloadId),
         )
 
         is AppAction.DownloadAction.DownloadFailed -> state.copy(
@@ -244,6 +259,8 @@ internal object AppStoreReducer {
         )
 
         is AppAction.PrivateBrowsingLockAction -> PrivateBrowsingLockReducer.reduce(state, action)
+
+        is AppAction.QrScannerAction -> QrScannerReducer.reduce(state, action)
 
         is AppAction.ReviewPromptAction -> ReviewPromptReducer.reduce(state, action)
 

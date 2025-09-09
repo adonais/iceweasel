@@ -4,40 +4,49 @@
 
 #include "ViewTransition.h"
 
+#include "Units.h"
 #include "WindowRenderer.h"
-#include "mozilla/layers/WebRenderLayerManager.h"
-#include "mozilla/layers/RenderRootStateManager.h"
+#include "mozilla/AnimationEventDispatcher.h"
+#include "mozilla/EffectSet.h"
+#include "mozilla/ElementAnimationData.h"
+#include "mozilla/FlowMarkers.h"
+#include "mozilla/SVGIntegrationUtils.h"
+#include "mozilla/ServoStyleConsts.h"
+#include "mozilla/WritingModes.h"
 #include "mozilla/dom/BindContext.h"
-#include "mozilla/layers/WebRenderBridgeChild.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/ViewTransitionBinding.h"
 #include "mozilla/image/WebRenderImageProvider.h"
+#include "mozilla/layers/RenderRootStateManager.h"
+#include "mozilla/layers/WebRenderBridgeChild.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/webrender/WebRenderAPI.h"
-#include "mozilla/FlowMarkers.h"
-#include "mozilla/AnimationEventDispatcher.h"
-#include "mozilla/EffectSet.h"
-#include "mozilla/ElementAnimationData.h"
-#include "mozilla/ServoStyleConsts.h"
-#include "mozilla/SVGIntegrationUtils.h"
-#include "mozilla/WritingModes.h"
+#include "nsCanvasFrame.h"
 #include "nsDisplayList.h"
 #include "nsFrameState.h"
 #include "nsITimer.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
-#include "nsCanvasFrame.h"
 #include "nsString.h"
 #include "nsViewManager.h"
-#include "Units.h"
 
 namespace mozilla::dom {
 
 LazyLogModule gViewTransitionsLog("ViewTransitions");
 
-static void SetCaptured(nsIFrame* aFrame, bool aCaptured) {
+NS_DECLARE_FRAME_PROPERTY_RELEASABLE(ViewTransitionCaptureName, nsAtom)
+
+static void SetCaptured(nsIFrame* aFrame, bool aCaptured,
+                        nsAtom* aNameIfCaptured) {
   aFrame->AddOrRemoveStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION, aCaptured);
+  if (aCaptured) {
+    aFrame->AddProperty(ViewTransitionCaptureName(),
+                        do_AddRef(aNameIfCaptured).take());
+  } else {
+    aFrame->RemoveProperty(ViewTransitionCaptureName());
+  }
   aFrame->InvalidateFrameSubtree();
   if (aFrame->Style()->IsRootElementStyle()) {
     aFrame->PresShell()->GetRootFrame()->InvalidateFrameSubtree();
@@ -62,22 +71,29 @@ static CSSToCSSMatrix4x4Flagged EffectiveTransform(nsIFrame* aFrame) {
           RelativeTo{aFrame},
           RelativeTo{nsLayoutUtils::GetContainingBlockForClientRect(aFrame)},
           nsIFrame::IN_CSS_UNITS, nullptr));
-  auto inkOverflowRect =
-      CSSRect::FromAppUnits(aFrame->InkOverflowRectRelativeToSelf());
-  if (inkOverflowRect.TopLeft() != CSSPoint()) {
-    matrix.PostTranslate(inkOverflowRect.x, inkOverflowRect.y, 0.0f);
-  }
-  // Compensate for the default transform-origin of 50% 50%.
-  matrix.ChangeBasis(-inkOverflowRect.Width() / 2,
-                     -inkOverflowRect.Height() / 2, 0.0f);
+
+  // Compensate for the default transform-origin of 50% 50% using border box
+  // dimensions.
+  auto borderBoxRect = CSSRect::FromAppUnits(aFrame->GetRect());
+  matrix.ChangeBasis(-borderBoxRect.Width() / 2, -borderBoxRect.Height() / 2,
+                     0.0f);
   return matrix;
 }
 
+enum class CapturedSizeType { BorderBox, InkOverflowBox };
+
 static inline nsSize CapturedSize(const nsIFrame* aFrame,
-                                  const nsSize& aSnapshotContainingBlockSize) {
-  return aFrame->Style()->IsRootElementStyle()
-             ? aSnapshotContainingBlockSize
-             : aFrame->InkOverflowRectRelativeToSelf().Size();
+                                  const nsSize& aSnapshotContainingBlockSize,
+                                  CapturedSizeType aType) {
+  if (aFrame->Style()->IsRootElementStyle()) {
+    return aSnapshotContainingBlockSize;
+  }
+
+  if (aType == CapturedSizeType::BorderBox) {
+    return aFrame->GetRectRelativeToSelf().Size();
+  }
+
+  return aFrame->InkOverflowRectRelativeToSelf().Size();
 }
 
 // TODO(emilio): Bug 1970954. These aren't quite correct, per spec we're
@@ -147,9 +163,9 @@ static StyleViewTransitionClass DocumentScopedClassListFor(
 }
 
 static constexpr wr::ImageKey kNoKey{{0}, 0};
-
 struct OldSnapshotData {
   wr::ImageKey mImageKey = kNoKey;
+  // Snapshot size should match the captured element’s InkOverflowBox size.
   nsSize mSize;
   RefPtr<layers::RenderRootStateManager> mManager;
   bool mUsed = false;
@@ -158,7 +174,8 @@ struct OldSnapshotData {
 
   explicit OldSnapshotData(nsIFrame* aFrame,
                            const nsSize& aSnapshotContainingBlockSize)
-      : mSize(CapturedSize(aFrame, aSnapshotContainingBlockSize)) {}
+      : mSize(CapturedSize(aFrame, aSnapshotContainingBlockSize,
+                           CapturedSizeType::InkOverflowBox)) {}
 
   void EnsureKey(layers::RenderRootStateManager* aManager,
                  wr::IpcResourceUpdateQueue& aResources) {
@@ -189,8 +206,8 @@ struct CapturedElementOldState {
   // snapshot, so this might not be the same as !!mImage.
   bool mTriedImage = false;
 
-  // Encompasses width and height.
-  nsSize mSize;
+  nsSize mBorderBoxSize;
+  nsPoint mInkOverflowOffset;
   CSSToCSSMatrix4x4Flagged mTransform;
   StyleWritingModeProperty mWritingMode =
       StyleWritingModeProperty::HorizontalTb;
@@ -207,7 +224,9 @@ struct CapturedElementOldState {
                           const nsSize& aSnapshotContainingBlockSize)
       : mSnapshot(aFrame, aSnapshotContainingBlockSize),
         mTriedImage(true),
-        mSize(CapturedSize(aFrame, aSnapshotContainingBlockSize)),
+        mBorderBoxSize(CapturedSize(aFrame, aSnapshotContainingBlockSize,
+                                    CapturedSizeType::BorderBox)),
+        mInkOverflowOffset(aFrame->InkOverflowRectRelativeToSelf().TopLeft()),
         mTransform(EffectiveTransform(aFrame)),
         mWritingMode(aFrame->StyleVisibility()->mWritingMode),
         mDirection(aFrame->StyleVisibility()->mDirection),
@@ -224,7 +243,10 @@ struct ViewTransition::CapturedElement {
   CapturedElementOldState mOldState;
   RefPtr<Element> mNewElement;
   wr::SnapshotImageKey mNewSnapshotKey{kNoKey};
+  // Snapshot size should match the captured element’s InkOverflowBox size.
   nsSize mNewSnapshotSize;
+  nsSize mNewBorderBoxSize;
+  nsPoint mNewInkOverflowOffset;
 
   CapturedElement() = default;
 
@@ -294,7 +316,7 @@ Element* ViewTransition::GetViewTransitionTreeRoot() const {
              : nullptr;
 }
 
-Maybe<nsSize> ViewTransition::GetOldSize(nsAtom* aName) const {
+Maybe<nsSize> ViewTransition::GetOldInkOverflowBoxSize(nsAtom* aName) const {
   auto* el = mNamedElements.Get(aName);
   if (NS_WARN_IF(!el)) {
     return {};
@@ -302,12 +324,44 @@ Maybe<nsSize> ViewTransition::GetOldSize(nsAtom* aName) const {
   return Some(el->mOldState.mSnapshot.mSize);
 }
 
-Maybe<nsSize> ViewTransition::GetNewSize(nsAtom* aName) const {
+Maybe<nsSize> ViewTransition::GetNewInkOverflowBoxSize(nsAtom* aName) const {
   auto* el = mNamedElements.Get(aName);
   if (NS_WARN_IF(!el)) {
     return {};
   }
   return Some(el->mNewSnapshotSize);
+}
+
+Maybe<nsSize> ViewTransition::GetOldBorderBoxSize(nsAtom* aName) const {
+  auto* el = mNamedElements.Get(aName);
+  if (NS_WARN_IF(!el)) {
+    return {};
+  }
+  return Some(el->mOldState.mBorderBoxSize);
+}
+
+Maybe<nsSize> ViewTransition::GetNewBorderBoxSize(nsAtom* aName) const {
+  auto* el = mNamedElements.Get(aName);
+  if (NS_WARN_IF(!el)) {
+    return {};
+  }
+  return Some(el->mNewBorderBoxSize);
+}
+
+Maybe<nsPoint> ViewTransition::GetOldInkOverflowOffset(nsAtom* aName) const {
+  auto* el = mNamedElements.Get(aName);
+  if (NS_WARN_IF(!el)) {
+    return {};
+  }
+  return Some(el->mOldState.mInkOverflowOffset);
+}
+
+Maybe<nsPoint> ViewTransition::GetNewInkOverflowOffset(nsAtom* aName) const {
+  auto* el = mNamedElements.Get(aName);
+  if (NS_WARN_IF(!el)) {
+    return {};
+  }
+  return Some(el->mNewInkOverflowOffset);
 }
 
 const wr::ImageKey* ViewTransition::GetOrCreateOldImageKey(
@@ -347,9 +401,7 @@ const wr::ImageKey* ViewTransition::GetImageKeyForCapturedFrame(
   MOZ_ASSERT(aFrame);
   MOZ_ASSERT(aFrame->HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION));
 
-  RefPtr<nsAtom> name = DocumentScopedTransitionNameForWithGenerator(
-      aFrame,
-      [this](Element* aElement) { return GetElementIdentifier(aElement); });
+  nsAtom* name = aFrame->GetProperty(ViewTransitionCaptureName());
   if (NS_WARN_IF(!name)) {
     return nullptr;
   }
@@ -851,7 +903,8 @@ void ViewTransition::SetupTransitionPseudoElements() {
       // Moved around from "update pseudo-element styles" because it's a one
       // time operation.
       auto* rule = EnsureRule(capturedElement.mGroupRule);
-      auto oldRect = CSSPixel::FromAppUnits(capturedElement.mOldState.mSize);
+      auto oldRect =
+          CSSPixel::FromAppUnits(capturedElement.mOldState.mBorderBoxSize);
       SetProp(rule, mDocument, eCSSProperty_width, oldRect.width,
               eCSSUnit_Pixel);
       SetProp(rule, mDocument, eCSSProperty_height, oldRect.height,
@@ -879,7 +932,7 @@ void ViewTransition::SetupTransitionPseudoElements() {
 
       capturedElement.mGroupKeyframes =
           BuildGroupKeyframes(mDocument, capturedElement.mOldState.mTransform,
-                              capturedElement.mOldState.mSize,
+                              capturedElement.mOldState.mBorderBoxSize,
                               capturedElement.mOldState.mBackdropFilters);
       // Set capturedElement's group animation name rule to ...
       SetProp(EnsureRule(capturedElement.mGroupRule), mDocument,
@@ -942,9 +995,10 @@ bool ViewTransition::UpdatePseudoElementStyles(bool aNeedsInvalidation) {
     // Note: mInitialSnapshotContainingBlockSize should be the same as the
     // current snapshot containing block size because the caller checks it
     // before calling us.
-    const auto& newSize =
-        CapturedSize(frame, mInitialSnapshotContainingBlockSize);
-    auto size = CSSPixel::FromAppUnits(newSize);
+    const auto& newBorderBoxSize =
+        CapturedSize(frame, mInitialSnapshotContainingBlockSize,
+                     CapturedSizeType::BorderBox);
+    auto size = CSSPixel::FromAppUnits(newBorderBoxSize);
     // NOTE(emilio): Intentionally not short-circuiting. Int cast is needed to
     // silence warning.
     bool groupStyleChanged =
@@ -978,8 +1032,14 @@ bool ViewTransition::UpdatePseudoElementStyles(bool aNeedsInvalidation) {
 
     // 5. Live capturing (nothing to do here regarding the capture itself, but
     // if the size has changed, then we need to invalidate the new frame).
+    const auto& newSnapshotSize =
+        CapturedSize(frame, mInitialSnapshotContainingBlockSize,
+                     CapturedSizeType::InkOverflowBox);
     auto oldSize = capturedElement.mNewSnapshotSize;
-    capturedElement.mNewSnapshotSize = newSize;
+    capturedElement.mNewSnapshotSize = newSnapshotSize;
+    capturedElement.mNewBorderBoxSize = newBorderBoxSize;
+    capturedElement.mNewInkOverflowOffset =
+        frame->InkOverflowRectRelativeToSelf().TopLeft();
     if (oldSize != capturedElement.mNewSnapshotSize && aNeedsInvalidation) {
       frame->PresShell()->FrameNeedsReflow(
           frame, IntrinsicDirty::FrameAndAncestors, NS_FRAME_IS_DIRTY);
@@ -1291,14 +1351,14 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
           SkipTransitionReason::DuplicateTransitionNameCapturingOldState);
       return false;
     }
-    SetCaptured(aFrame, true);
+    SetCaptured(aFrame, true, name.get());
     captureElements.AppendElement(std::make_pair(aFrame, std::move(name)));
     return true;
   });
 
   if (result) {
     for (auto& [f, name] : captureElements) {
-      SetCaptured(f, false);
+      SetCaptured(f, false, nullptr);
     }
     return result;
   }
@@ -1333,7 +1393,7 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
   }
 
   for (auto& [f, name] : captureElements) {
-    SetCaptured(f, false);
+    SetCaptured(f, false, nullptr);
   }
   return result;
 }
@@ -1366,20 +1426,26 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
       return MakeUnique<CapturedElement>();
     });
     if (!wasPresent) {
-      mNames.AppendElement(std::move(name));
+      mNames.AppendElement(name);
     }
     capturedElement->mNewElement = aFrame->GetContent()->AsElement();
     // Note: mInitialSnapshotContainingBlockSize should be the same as the
     // current snapshot containing block size at this moment because the caller
     // checks it before calling us.
     capturedElement->mNewSnapshotSize =
-        CapturedSize(aFrame, mInitialSnapshotContainingBlockSize);
+        CapturedSize(aFrame, mInitialSnapshotContainingBlockSize,
+                     CapturedSizeType::InkOverflowBox);
+    capturedElement->mNewBorderBoxSize =
+        CapturedSize(aFrame, mInitialSnapshotContainingBlockSize,
+                     CapturedSizeType::BorderBox);
+    capturedElement->mNewInkOverflowOffset =
+        aFrame->InkOverflowRectRelativeToSelf().TopLeft();
     // Update its class list. This may override the existing class list because
     // the users may change view-transition-class in the callback function. We
     // have to use the latest one.
     // https://drafts.csswg.org/css-view-transitions-2/#vt-class-algorithms
     capturedElement->CaptureClassList(DocumentScopedClassListFor(aFrame));
-    SetCaptured(aFrame, true);
+    SetCaptured(aFrame, true, name);
     return true;
   });
   return result;
@@ -1560,7 +1626,7 @@ void ViewTransition::ClearNamedElements() {
   for (auto& entry : mNamedElements) {
     if (auto* element = entry.GetData()->mNewElement.get()) {
       if (nsIFrame* f = element->GetPrimaryFrame()) {
-        SetCaptured(f, false);
+        SetCaptured(f, false, nullptr);
       }
     }
   }
@@ -1703,6 +1769,10 @@ void ViewTransition::SkipTransition(
       case SkipTransitionReason::PseudoUpdateFailure:
         readyPromise->MaybeRejectWithInvalidStateError(
             "Skipped view transition due to hidden new element");
+        break;
+      case SkipTransitionReason::ResetRendering:
+        readyPromise->MaybeRejectWithInvalidStateError(
+            "Skipped view transition due to graphics process or device reset");
         break;
       case SkipTransitionReason::UpdateCallbackRejected:
         readyPromise->MaybeReject(aUpdateCallbackRejectReason);

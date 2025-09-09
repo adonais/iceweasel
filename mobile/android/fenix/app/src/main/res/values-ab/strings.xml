@@ -54,13 +54,7 @@
   <string name="home_bookmarks_menu_item_remove">Аныхра</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s еиқәнаршәеит Мозилла.</string>
-  <!--
-    Private Browsing
-
-    Explanation for private browsing displayed to users on home view when they first enable private mode.
-    %1$s is the name of the app (for example "Firefox").
-  -->
-  <string name="private_browsing_placeholder_description_2" moz:removedIn="141" tools:ignore="UnusedResources">%1$s иаԥнахуеит уԥшаарақәеи уԥшаарақәеи рҭоурых хатә ҭаӡҩырақәа рҿы урҭ аныркыло ма апрограма уаналҵуа. Уи асаитқәа рҿы ма уи-интернет-провайдер рҿаԥхьа анонимны уҟанаҵом, аха уара узы еиҳа имариахоит уара уинтернеттә усура егьырҭ ауаа рҟынтәи уи маӡаны рыхьчара.</string>
+  <!-- Private Browsing -->
   <string name="private_browsing_common_myths">Ахатә ԥшаара иазку еицырзеиԥшу амифқәа</string>
   <!--
     True Private Browsing Mode
@@ -91,12 +85,8 @@
   <string name="open_in_app_cfr_positive_button_text">Аиқәыршәарақәа рахь ацара</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Абжьажьра</string>
-  <!--
-    Private browsing erase action "contextual feature recommendation" (CFR)
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
 
-    Text for the message displayed in the contextual feature recommendation popup promoting the erase private browsing feature.
-  -->
-  <string name="erase_action_cfr_message" moz:removedIn="141" tools:ignore="UnusedResources">Ахатә сеанс ҿыц алагаразы абра шәақәыӷәӷәа. Уҭоурых, акукиқәа, зегьы ԥыхтәуп.</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Акамера анеира аҭахуп. Апрограмма асистематә еиқәыршәарақәа рахь шәца, иалышәх Азинқәа, нас иақәыӷәӷәа Акамера, насгьы иалышәх Азин.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -183,29 +173,10 @@
   <string name="browser_menu_stop">Аанкылара</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Аиҵыхрақәа</string>
-  <!--
-    Browser menu banner header text for extensions onboarding.
-    %s is the name of the app (for example "Firefox").
-  -->
-  <string name="browser_menu_extensions_banner_onboarding_header" moz:removedIn="141" tools:ignore="UnusedResources">Иҟаҵа %s уара иутәны</string>
   <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
   <string name="browser_menu_disabled_extensions_banner_onboarding_header">Анарҭбаарақәа шьақәыргылоуп аха аус ауӡом</string>
-  <!--
-    Browser menu banner body text for extensions onboarding.
-    %s is the name of the app (for example "Firefox").
-  -->
-  <string name="browser_menu_extensions_banner_onboarding_body" moz:removedIn="141" tools:ignore="UnusedResources">Анарҭбаарақәа шәвеб-сафинг егьи аҩаӡарахь иргоит, %s аԥшреи аусуреи рыԥсахра инаркны амаӡареи ашәарҭадареи рырӷәӷәара аҟынӡа.</string>
-  <!--
-    Browser menu banner body text for extensions onboarding when all installed extensions have been disabled.
-    %s is the label of the button that opens the extension manager (for example "Manage extensions").
-  -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_body" moz:removedIn="141" tools:ignore="UnusedResources">Анарҭбаарақәа рхархәаразы, урҭ аус арутәуп архиарақәа рҿы ма иалышәх «%s» ҵаҟа.</string>
-  <!-- Browser menu banner link text for learning more about extensions -->
-  <string name="browser_menu_extensions_banner_learn_more" moz:removedIn="141" tools:ignore="UnusedResources">Еиҳаны аилкаара</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Анарҭбаарақәа рнапхгара</string>
-  <!-- Content description (not visible, for screen readers etc.): Section heading for recommended extensions. -->
-  <string name="browser_menu_recommended_section_content_description" moz:removedIn="141" tools:ignore="UnusedResources">Иреиӷьу анарҭбаарақәа</string>
   <!--
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
@@ -231,26 +202,18 @@
   <string name="browser_menu_open_in_regular_tab">Иаабац абларҭаҿы иаарттәуп</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Ахатә екран ахь</string>
-  <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
-  <string name="browser_menu_add_to_homescreen_2" moz:removedIn="141" tools:ignore="UnusedResources">Ахатә екран ахь иацҵатәуп…</string>
   <!-- Text for notifying users that Xiaomi devices require additional permissions to add to home screen -->
   <string name="browser_menu_add_to_homescreen_xiaomi">Xiaomi ахархәагақәа ахатә екран аҿы аҿацәқәа рыцҵаразы иацҵаны азинқәа рҭаххар ауеит. Ҳаҳәоит, шәеиқәыршәарақәа гәашәҭ.</string>
   <!-- Content description (not visible, for screen readers etc.) for the Resync tabs button -->
   <string name="resync_button_content_description">Аиҭасинхронизациа</string>
   <!-- Browser menu button that opens the find in page menu -->
   <string name="browser_menu_find_in_page">Иԥшаатәуп адаҟьаҿы</string>
-  <!-- Browser menu button that opens the find in page menu -->
-  <string name="browser_menu_find_in_page_2" moz:removedIn="141" tools:ignore="UnusedResources">Адаҟьаҿы иԥшаатәуп…</string>
   <!-- Browser menu button that opens the translations dialog, which has options to translate the current browser page. -->
   <string name="browser_menu_translations">Адаҟьа аиҭагара</string>
-  <!-- Browser menu button that saves the current tab to a collection -->
-  <string name="browser_menu_save_to_collection" moz:removedIn="141" tools:ignore="UnusedResources">Аизгаҿы еиқәырхатәуп…</string>
   <!-- Browser menu button that saves the current tab to a collection -->
   <string name="browser_menu_save_to_collection_2">Аизгахь</string>
   <!-- Browser menu button that open a share menu to share the current site -->
   <string name="browser_menu_share">Ашара</string>
-  <!-- Browser menu button that open a share menu to share the current site -->
-  <string name="browser_menu_share_2" moz:removedIn="141" tools:ignore="UnusedResources">Ашара…</string>
   <!--
     Browser menu button shown in custom tabs that opens the current tab in Fenix
     %1$s is the name of the app (for example "Firefox").
@@ -284,8 +247,6 @@
   <string name="browser_menu_customize_home_1">Ахәаԥшышьа аԥсахра</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Аҭалара</string>
-  <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
-  <string name="browser_menu_sign_in_caption" moz:removedIn="141" tools:ignore="UnusedResources">Апарольқәа, абларҭақәа уҳәа убас иҵегьы рсинхронизациа</string>
   <!-- Browser menu label to sign back in to sync on the device when the user's account needs to be reauthenticated -->
   <string name="browser_menu_sign_back_in_to_sync">Асинхронизациазы даҽазнык аҭалара</string>
   <!-- Browser menu caption label for the "Sign back in to sync" browser menu item described in `browser_menu_sign_back_in_to_sync` when there is an error in syncing -->
@@ -294,19 +255,8 @@
   <string name="browser_menu_new_private_tab">Ахатә абӷьыц ҿыц</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Амаӡажәақәа</string>
-  <!--
-    Browser menu label that navigates to the SUMO page for the Firefox for Android release notes.
-    %1$s is the name of the app (for example "Firefox").
-  -->
-  <string name="browser_menu_new_in_firefox" moz:removedIn="141" tools:ignore="UnusedResources">Ҿыц %1$s аҟны</string>
-  <!-- Browser menu label that toggles the request for the desktop site of the currently visited page -->
-  <string name="browser_menu_switch_to_desktop_site" moz:removedIn="141" tools:ignore="UnusedResources">Акомпьютер аверсиахь ацара</string>
   <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
   <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Мобилтә саит ахь ацара</string>
-  <!-- Browser menu label that navigates to the page tools sub-menu -->
-  <string name="browser_menu_tools" moz:removedIn="141" tools:ignore="UnusedResources">Аинструментқәа</string>
-  <!-- Content description (not visible, for screen readers etc.): Back button for all menu redesign sub-menu -->
-  <string name="browser_menu_back_button_content_description" moz:removedIn="141" tools:ignore="UnusedResources">Амениу хада ахь ахынҳәра</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
   <string name="browser_main_menu_handlebar_content_description" moz:removedIn="142" tools:ignore="UnusedResources">Амениу хада адаҟьа арктәуп</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
@@ -317,32 +267,8 @@
   <string name="browser_tools_menu_handlebar_content_description">Иарктәуп амыругақәа рмениу адаҟьа</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Иарктәуп иҷыдоу абларҭа амениу адаҟьа</string>
-  <!--
-    Browser menu label that navigates to the save sub-menu, which contains various save related menu items such as
-    bookmarking a page, saving to collection, shortcut or as a PDF, and adding to home screen
-  -->
-  <string name="browser_menu_save" moz:removedIn="141" tools:ignore="UnusedResources">Ахьчара</string>
-  <!-- Browser menu description that describes the various save related menu items inside of the save sub-menu -->
-  <string name="browser_menu_save_description" moz:removedIn="141" tools:ignore="UnusedResources">Ацҵара Ҵәыӷәа, Аҿацә, Аҩны, Аизга, PDF</string>
-  <!-- Browser menu label that bookmarks the currently visited page -->
-  <string name="browser_menu_bookmark_this_page" moz:removedIn="141" tools:ignore="UnusedResources">Ари адаҟьа азгәаҭа</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
   <string name="browser_menu_edit_bookmark">Аҭыӡдырга аредакциа азутәуп</string>
-  <!-- Browser menu label that the saves the currently visited page as a PDF -->
-  <string name="browser_menu_save_as_pdf" moz:removedIn="141" tools:ignore="UnusedResources">PDF еиԥш еиқәырхатәуп…</string>
-  <!-- Browser menu label for turning ON reader view of the current visited page -->
-  <string name="browser_menu_turn_on_reader_view" moz:removedIn="141" tools:ignore="UnusedResources">Аԥхьара аҿаԥшыра аус арутәуп</string>
-  <!-- Browser menu label for turning OFF reader view of the current visited page -->
-  <string name="browser_menu_turn_off_reader_view" moz:removedIn="141" tools:ignore="UnusedResources">Аԥхьара аҿаԥшыра аҿыхтәуп</string>
-  <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
-  <string name="browser_menu_translate_page" moz:removedIn="141" tools:ignore="UnusedResources">Адаҟьа аиҭагара…</string>
-  <!--
-    Browser menu label that is displayed when the current page has been translated by the translation feature.
-    %1$s is the name of the language that page was translated to (e.g. English).
-  -->
-  <string name="browser_menu_translated_to" moz:removedIn="141" tools:ignore="UnusedResources">Ииагоуп %1$s ахь</string>
-  <!-- Browser menu label for the print feature -->
-  <string name="browser_menu_print" moz:removedIn="141" tools:ignore="UnusedResources">Атиулен…</string>
   <!--
     Browser menu label for the Delete browsing data on quit feature.
     %1$s is the name of the app (for example "Firefox").
@@ -368,11 +294,6 @@
     Content description for the Home screen button on the browser toolbar
   -->
   <string name="browser_toolbar_home">Ахатә екран</string>
-  <!--
-    Content description (not visible, for screen readers etc.): Erase button: Erase the browsing
-    history and go back to the home screen.
-  -->
-  <string name="browser_toolbar_erase" moz:removedIn="141" tools:ignore="UnusedResources">Ианыхтәуп ауеб аԥшаара аҭоурых</string>
   <!-- Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred. -->
   <string name="browser_toolbar_translate">Адаҟьа аиҭагара</string>
   <!--
@@ -425,22 +346,8 @@
   <!--
     Home onboarding
 
-    Home onboarding dialog welcome screen title text.
+    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
   -->
-  <string name="onboarding_home_welcome_title_2" moz:removedIn="141" tools:ignore="UnusedResources">Бзиала шәаабеит еиҳа ахатә интернет ахь</string>
-  <!-- Home onboarding dialog welcome screen description text. -->
-  <string name="onboarding_home_welcome_description" moz:removedIn="141" tools:ignore="UnusedResources">Еиҳаны аԥштәқәа. Еиӷьу амаӡара. Ахашәалахәы ашьҭашәарыцара акәымкәа, ауаа рзы аҽадцалара.</string>
-  <!-- Home onboarding dialog sign into sync screen title text. -->
-  <string name="onboarding_home_sync_title_3" moz:removedIn="141" tools:ignore="UnusedResources">Аекранқәа реиҭныԥсахлара еиҳа имариоуп</string>
-  <!-- Home onboarding dialog sign into sync screen description text. -->
-  <string name="onboarding_home_sync_description" moz:removedIn="141" tools:ignore="UnusedResources">Уааныжьны уца, даҽа ҳәагақәак рҟынтәи аҭаӡҩырақәа уажәы ухатә даҟьаҿы.</string>
-  <!-- Text for the button to continue the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_get_started_button" moz:removedIn="141" tools:ignore="UnusedResources">Алагара</string>
-  <!-- Text for the button to navigate to the sync sign in screen on the home onboarding dialog. -->
-  <string name="onboarding_home_sign_in_button" moz:removedIn="141" tools:ignore="UnusedResources">Аҭалара</string>
-  <!-- Text for the button to skip the onboarding on the home onboarding dialog. -->
-  <string name="onboarding_home_skip_button" moz:removedIn="141" tools:ignore="UnusedResources">Абжьажьра</string>
-  <!-- Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section. -->
   <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">Уара уҭаӡҩырақәа асинхронизациа ҟаҵоуп! Даҽа ҳәагак аҿы иахьаанужьыз иацҵа.</string>
   <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">Аркра</string>
@@ -664,8 +571,6 @@
   <string name="preferences_language">Абызшәа</string>
   <!-- Preference for translations -->
   <string name="preferences_translations">Аиҭагақәа</string>
-  <!-- Preference for data choices -->
-  <string name="preferences_data_choices" tools:ignore="UnusedResources" moz:removedIn="141">Адыррақәа ралхра</string>
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">Адыррақәа реизгара</string>
   <!-- Preference for developers -->
@@ -710,8 +615,6 @@
   <string name="preferences_open_links_in_apps_ask">Иаартаанӡа уазҵаа</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Ахаангьы</string>
-  <!-- Preference for open download with an external download manager app -->
-  <string name="preferences_external_download_manager" tools:ignore="UnusedResources" moz:removedIn="141">Адәныҟатәи аҭагалара анапхгаҩы</string>
   <!-- Preference for enabling gecko engine logs -->
   <string name="preferences_enable_gecko_logs">Агеко ажурналқәа аҿактәуп</string>
   <!-- Message to indicate users that we are quitting the application to apply the changes -->
@@ -729,12 +632,8 @@
   <!--
     Add-on Permissions
 
-    The title of the required permissions section from addon's permissions screen
+    The title of the origin permission option allowing a user to enable the extension to run on all sites
   -->
-  <string name="addons_permissions_heading_required" tools:ignore="UnusedResources" moz:removedIn="141">Хымԥада</string>
-  <!-- The title of the optional permissions section from addon's permissions screen -->
-  <string name="addons_permissions_heading_optional" tools:ignore="UnusedResources" moz:removedIn="141">Иҟоумҵар ҟало</string>
-  <!-- The title of the origin permission option allowing a user to enable the extension to run on all sites -->
   <string name="addons_permissions_allow_for_all_sites">Азин рыҭатәуп асаитқәа зегьы</string>
   <!-- The subtitle for the allow for all sites preference toggle -->
   <string name="addons_permissions_allow_for_all_sites_subtitle">Ари анарҭбаара уақәгәыӷуазар, иарбанзаалак асаит аҿы азин иуҭар улшоит.</string>
@@ -782,9 +681,9 @@
   -->
   <string name="wallpapers_item_name_content_description">Аҭӡамц аелемент: %1$s</string>
   <!-- Snackbar message for when wallpaper is selected -->
-  <string name="wallpaper_updated_snackbar_message">Аҭӡамц ҿыцуп!</string>
+  <string name="wallpaper_updated_snackbar_message" tools:ignore="UnusedResources" moz:removedIn="144">Аҭӡамц ҿыцуп!</string>
   <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action">Асахьа</string>
+  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">Асахьа</string>
   <!-- Snackbar message for when wallpaper couldn't be downloaded -->
   <string name="wallpaper_download_error_snackbar_message">Аҭӡамц аҭагалара алымшеит</string>
   <!-- Snackbar label for action to retry downloading the wallpaper -->
@@ -1572,8 +1471,6 @@
     Text shown in snackbar when user deletes a collection
   -->
   <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Аизга аныхуп</string>
-  <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Аизга ахьӡ ԥсахуп</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Абларҭа аркуп</string>
   <!-- Text shown in snackbar when user closes all tabs -->
@@ -1586,14 +1483,12 @@
   <string name="snackbar_added_to_shortcuts">Аҿацәқәа ирыцҵоуп!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">Ахатә абларҭа аркуп</string>
-  <!-- Text shown in snackbar when user closes all private tabs -->
-  <string name="snackbar_private_tabs_closed" moz:removedIn="141" tools:ignore="UnusedResources">Ахатә абларҭақәа аркуп</string>
   <!-- Text shown in snackbar when user erases their private browsing data -->
   <string name="snackbar_private_data_deleted">Ахатә ԥшааратә дыррақәа аныхуп</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">АԤЫХРА</string>
   <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed">Асаит аныхуп</string>
+  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">Асаит аныхуп</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -2325,10 +2220,6 @@
   <string name="action_bar_up_description">Ииастәуп хыхь</string>
   <!-- Content description for privacy content close button -->
   <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">Аркра</string>
-  <!-- Header text for a section on the home screen. -->
-  <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">Ажәабжьқәа темала</string>
-  <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
-  <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">Еиҳаны аилкаара</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Аспонсортә</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -2359,8 +2250,6 @@
   <string name="a11y_state_label_expanded">Еиҵыху</string>
   <!-- Action label for links to a website containing documentation about a wallpaper collection. Talkback will append this to say "Double tap to open link to learn more about this collection". -->
   <string name="a11y_action_label_wallpaper_collection_learn_more">ари аизга иазкны еиҳаны адырразы аҵаҩра аарттәуп</string>
-  <!-- Action label for links that point to an article. Talkback will append this to say "Double tap to read the article". -->
-  <string name="a11y_action_label_read_article" moz:removedIn="141" tools:ignore="UnusedResources">Астатиа уаԥхьа</string>
   <!-- Content description for headings announced by accessibility service. %s is the text of the heading. Talkback will announce the text and then speak the word "Heading" indicating to the user that this text is a heading for a section. -->
   <string name="a11y_heading">%s, Ахы</string>
   <!-- Title for dialog displayed when trying to access links present in a text. -->

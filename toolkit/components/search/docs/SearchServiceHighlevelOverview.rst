@@ -48,8 +48,8 @@ described by number 1 below.
    remote database when necessary. By connecting after startup, it avoids
    a potential network request that could delay startup.
 
-   b) Second, the ``SearchService`` `fetches a JSON file <https://searchfox.org/mozilla-central/rev/47db1be98f8069b387ce07dcbea22d09f1854515/toolkit/components/search/SearchService.sys.mjs#1368>`_
-   from the `SearchSettings <https://searchfox.org/mozilla-central/source/toolkit/components/search/SearchSettings.sys.mjs>`_.
+   b) Second, the ``SearchService`` `loads the JSON file <https://searchfox.org/mozilla-central/rev/47db1be98f8069b387ce07dcbea22d09f1854515/toolkit/components/search/SearchService.sys.mjs#1368>`_
+   containing the `SearchSettings <https://searchfox.org/mozilla-central/source/toolkit/components/search/SearchSettings.sys.mjs>`_.
    This JSON file contains Search Engine metadata that is saved on the user's
    computer. It's information that helps the ``SearchService`` remember the
    user's custom settings for the Search Engines.
@@ -63,8 +63,8 @@ described by number 1 below.
    ``Remote Settings``. Now the ``SearchService`` can build the different
    types of Search Engines.
 
-3. The ``SearchService`` creates new instances of :searchfox:`SearchEngines <toolkit/components/search/SearchEngine.sys.mjs>`
-   by making an `App-Provided, Add-on, Open Search, or Enterprise Policy Search Engine <https://firefox-source-docs.mozilla.org/toolkit/search/SearchEngines.html>`_.
+3. The ``SearchService`` creates new instances of the various
+`SearchEngine Subclasses <https://firefox-source-docs.mozilla.org/toolkit/search/SearchEngines.html>`_.
 
 4. The ``SearchService`` returns the engines to the caller that requested it.
    E.g. the ``SearchService`` passes the default Search Engine back to

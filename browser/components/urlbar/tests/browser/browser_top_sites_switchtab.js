@@ -198,12 +198,12 @@ async function addAsFirstTopSite(url) {
 }
 
 async function loadNewForegroundContainerTab(url, userContextId, win = window) {
-  let tab = BrowserTestUtils.addTab(win.gBrowser, url, {
-    userContextId,
+  return BrowserTestUtils.openNewForegroundTab({
+    gBrowser: win.gBrowser,
+    opening: () => {
+      win.gBrowser.selectedTab = BrowserTestUtils.addTab(win.gBrowser, url, {
+        userContextId,
+      });
+    },
   });
-  await Promise.all([
-    BrowserTestUtils.browserLoaded(tab.linkedBrowser),
-    BrowserTestUtils.switchTab(win.gBrowser, tab),
-  ]);
-  return tab;
 }

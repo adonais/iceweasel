@@ -3,50 +3,44 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "WebGLContext.h"
-#include "WebGL2Context.h"
-
-#include "WebGLContextUtils.h"
-#include "WebGLBuffer.h"
-#include "WebGLShader.h"
-#include "WebGLProgram.h"
-#include "WebGLFormats.h"
-#include "WebGLFramebuffer.h"
-#include "WebGLQuery.h"
-#include "WebGLRenderbuffer.h"
-#include "WebGLTexture.h"
-#include "WebGLVertexArray.h"
-
-#include "nsDebug.h"
-#include "nsReadableUtils.h"
-#include "nsString.h"
-
-#include "gfxContext.h"
-#include "gfxPlatform.h"
-#include "GLContext.h"
-
-#include "nsContentUtils.h"
-#include "nsError.h"
-#include "nsLayoutUtils.h"
-
-#include "CanvasUtils.h"
-#include "gfxUtils.h"
-#include "MozFramebuffer.h"
-
-#include "jsfriendapi.h"
-
-#include "WebGLTexelConversions.h"
-#include "WebGLValidateStrings.h"
-#include <algorithm>
 #include <fmt/format.h>
 
+#include <algorithm>
+
+#include "CanvasUtils.h"
+#include "GLContext.h"
+#include "MozFramebuffer.h"
+#include "WebGL2Context.h"
+#include "WebGLBuffer.h"
+#include "WebGLContext.h"
+#include "WebGLContextUtils.h"
+#include "WebGLFormats.h"
+#include "WebGLFramebuffer.h"
+#include "WebGLProgram.h"
+#include "WebGLQuery.h"
+#include "WebGLRenderbuffer.h"
+#include "WebGLShader.h"
+#include "WebGLTexelConversions.h"
+#include "WebGLTexture.h"
+#include "WebGLValidateStrings.h"
+#include "WebGLVertexArray.h"
+#include "gfxContext.h"
+#include "gfxPlatform.h"
+#include "gfxUtils.h"
+#include "jsfriendapi.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/ImageData.h"
-#include "mozilla/dom/WebGLRenderingContextBinding.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_webgl.h"
+#include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/ImageData.h"
+#include "mozilla/dom/WebGLRenderingContextBinding.h"
+#include "nsContentUtils.h"
+#include "nsDebug.h"
+#include "nsError.h"
+#include "nsLayoutUtils.h"
+#include "nsReadableUtils.h"
+#include "nsString.h"
 
 namespace mozilla {
 

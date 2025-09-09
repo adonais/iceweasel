@@ -6,7 +6,6 @@ package mozilla.components.feature.recentlyclosed
 
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import mozilla.components.browser.state.state.recover.RecoverableTab
 import mozilla.components.browser.state.state.recover.TabState
@@ -29,7 +28,6 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.verify
 import java.io.IOException
 
-@ExperimentalCoroutinesApi // for runTestOnMain
 @RunWith(AndroidJUnit4::class)
 class RecentlyClosedTabsStorageTest {
     @get:Rule

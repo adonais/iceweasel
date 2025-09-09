@@ -5,19 +5,19 @@
 #ifndef mozilla_dom_WebAuthnResult_h_
 #define mozilla_dom_WebAuthnResult_h_
 
+#include "mozilla/Maybe.h"
 #include "nsIWebAuthnResult.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
-#include "mozilla/Maybe.h"
-#include "nsString.h"
-
 #ifdef MOZ_WIDGET_ANDROID
+#  include "JavaBuiltins.h"
 #  include "mozilla/java/WebAuthnUtilsNatives.h"
 #endif
 
 #ifdef XP_WIN
 #  include <windows.h>
+
 #  include "mozilla/dom/PWebAuthnTransactionParent.h"
 #  include "winwebauthn/webauthn.h"
 #endif
@@ -80,6 +80,10 @@ class WebAuthnRegisterResult final : public nsIWebAuthnRegisterResult {
     }
     mAuthenticatorAttachment =
         Some(aResponse->AuthenticatorAttachment()->ToString());
+    if (aResponse->CredProps()) {
+      mCredPropsRk = Some(java::sdk::Boolean::Ref::From(aResponse->CredProps())
+                              ->BooleanValue());
+    }
   }
 #endif
 

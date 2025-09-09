@@ -471,8 +471,7 @@ nsresult nsAppShellService::JustCreateTopWindow(
   // full screen states. This way new browser windows open on top of fullscreen
   // windows normally.
   if (nsCOMPtr<nsIBaseWindow> baseWin = do_QueryInterface(aParent)) {
-    nsCOMPtr<nsIWidget> widget;
-    baseWin->GetMainWidget(getter_AddRefs(widget));
+    nsCOMPtr<nsIWidget> widget = baseWin->GetMainWidget();
     if (widget && widget->SizeMode() == nsSizeMode_Fullscreen) {
       window->IgnoreXULSizeMode(true);
     }

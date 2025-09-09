@@ -5,13 +5,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CookieStoreNotifier.h"
-#include "CookieStore.h"
+
 #include "CookieChangeEvent.h"
-#include "mozilla/net/Cookie.h"
-#include "mozilla/net/CookieCommons.h"
+#include "CookieStore.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/WorkerPrivate.h"
-#include "mozilla/Unused.h"
+#include "mozilla/net/Cookie.h"
+#include "mozilla/net/CookieCommons.h"
 #include "nsICookie.h"
 #include "nsICookieNotification.h"
 #include "nsISerialEventTarget.h"

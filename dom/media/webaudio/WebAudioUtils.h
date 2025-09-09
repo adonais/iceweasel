@@ -10,9 +10,10 @@
 #include <cmath>
 #include <limits>
 #include <type_traits>
+
+#include "MediaSegment.h"
 #include "fdlibm.h"
 #include "mozilla/Logging.h"
-#include "MediaSegment.h"
 
 // Forward declaration
 typedef struct SpeexResamplerState_ SpeexResamplerState;

@@ -686,6 +686,7 @@ def get_raptor_test_list(args, oskey):
             "interactive",
             "host_from_parent",
             "expose_browser_profiler",
+            "sparse_checkout",
         ]
         for setting in bool_settings:
             if next_test.get(setting, None) is not None:

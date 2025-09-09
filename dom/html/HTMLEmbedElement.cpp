@@ -4,17 +4,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/HTMLEmbedElement.h"
-#include "mozilla/dom/HTMLEmbedElementBinding.h"
-#include "mozilla/dom/ElementInlines.h"
 
+#include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/Document.h"
-#include "nsObjectLoadingContent.h"
-#include "nsThreadUtils.h"
-#include "nsIWidget.h"
+#include "mozilla/dom/ElementInlines.h"
+#include "mozilla/dom/HTMLEmbedElementBinding.h"
 #include "nsContentUtils.h"
 #include "nsFrameLoader.h"
+#include "nsIWidget.h"
+#include "nsObjectLoadingContent.h"
+#include "nsThreadUtils.h"
 #ifdef XP_MACOSX
 #  include "mozilla/EventDispatcher.h"
 #  include "mozilla/dom/Event.h"

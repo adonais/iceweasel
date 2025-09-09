@@ -12,22 +12,20 @@
 #include <string>
 #include <utility>
 
-#include "mozilla/StaticPrefs_media.h"
-#include "transport/logging.h"
+#include "api/rtp_parameters.h"
+#include "jsep/JsepTrack.h"
+#include "jsep/JsepTransport.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/net/DataChannelProtocol.h"
 #include "nsDebug.h"
 #include "nspr.h"
 #include "nss.h"
 #include "pk11pub.h"
-
-#include "api/rtp_parameters.h"
-
-#include "jsep/JsepTrack.h"
-#include "jsep/JsepTransport.h"
 #include "sdp/HybridSdpParser.h"
 #include "sdp/SipccSdp.h"
+#include "transport/logging.h"
 
 namespace mozilla {
 

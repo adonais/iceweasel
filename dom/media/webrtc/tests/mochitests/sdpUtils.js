@@ -318,11 +318,6 @@ var sdputils = {
     ok(desc.sdp.includes("a=ice-ufrag"), "ICE username is present in SDP");
     ok(desc.sdp.includes("a=ice-pwd"), "ICE password is present in SDP");
     ok(desc.sdp.includes("a=fingerprint"), "ICE fingerprint is present in SDP");
-    //TODO: update this for loopback support bug 1027350
-    ok(
-      !desc.sdp.includes(LOOPBACK_ADDR),
-      "loopback interface is absent from SDP"
-    );
     var requiresTrickleIce = !desc.sdp.includes("a=candidate");
     if (requiresTrickleIce) {
       info("No ICE candidate in SDP -> requiring trickle ICE");

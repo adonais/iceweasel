@@ -41,6 +41,7 @@ function startTest(test, token) {
 
   var noError = function(t, v) { return function() {
     ok(false, t.name + " should not fire 'error' event " + v.error.message);
+    finish();
   }}(test, video);
 
   var finish = function() {

@@ -6,11 +6,11 @@
 
 #include "SVGFragmentIdentifier.h"
 
+#include "SVGAnimatedTransformList.h"
+#include "mozilla/SVGOuterSVGFrame.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/SVGViewElement.h"
-#include "mozilla/SVGOuterSVGFrame.h"
 #include "nsCharSeparatedTokenizer.h"
-#include "SVGAnimatedTransformList.h"
 
 namespace mozilla {
 

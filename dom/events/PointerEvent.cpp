@@ -8,14 +8,14 @@
 
 #include "PointerEvent.h"
 
+#include "jsfriendapi.h"
+#include "mozilla/MouseEvents.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/PointerEventBinding.h"
 #include "mozilla/dom/PointerEventHandler.h"
-#include "mozilla/MouseEvents.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "nsContentUtils.h"
 #include "prtime.h"
-#include "jsfriendapi.h"
 
 namespace mozilla::dom {
 

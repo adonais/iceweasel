@@ -70,9 +70,6 @@ class AppTrustDomain final : public mozilla::pkix::TrustDomain {
       mozilla::pkix::Time notBefore, mozilla::pkix::Time notAfter,
       mozilla::pkix::EndEntityOrCA endEntityOrCA,
       mozilla::pkix::KeyPurposeId keyPurpose) override;
-  virtual Result NetscapeStepUpMatchesServerAuth(
-      mozilla::pkix::Time notBefore,
-      /*out*/ bool& matches) override;
   virtual void NoteAuxiliaryExtension(
       mozilla::pkix::AuxiliaryExtension extension,
       mozilla::pkix::Input extensionData) override;

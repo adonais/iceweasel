@@ -11,11 +11,11 @@
 #include "IndexedDatabase.h"
 #include "js/RootingAPI.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/InitializedOnce.h"
 #include "mozilla/dom/IDBCursorBinding.h"
 #include "mozilla/dom/IDBTransaction.h"
 #include "mozilla/dom/indexedDB/Key.h"
 #include "mozilla/dom/quota/CheckedUnsafePtr.h"
-#include "mozilla/InitializedOnce.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
 

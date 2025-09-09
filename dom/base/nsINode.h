@@ -7,26 +7,27 @@
 #ifndef nsINode_h___
 #define nsINode_h___
 
+#include <iosfwd>
+
+#include "js/TypeDecls.h"  // for Handle, Value, JSObject, JSContext
 #include "mozilla/DoublyLinkedList.h"
-#include "mozilla/Likely.h"
-#include "mozilla/UniquePtr.h"
-#include "nsCOMPtr.h"              // for member, local
-#include "nsGkAtoms.h"             // for nsGkAtoms::baseURIProperty
-#include "mozilla/dom/NodeInfo.h"  // member (in nsCOMPtr)
-#include "nsIWeakReference.h"
-#include "nsIMutationObserver.h"
-#include "nsNodeInfoManager.h"  // for use in NodePrincipal()
-#include "nsPropertyTable.h"    // for typedefs
 #include "mozilla/ErrorResult.h"
+#include "mozilla/Likely.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/dom/EventTarget.h"  // for base class
-#include "js/TypeDecls.h"             // for Handle, Value, JSObject, JSContext
-#include "mozilla/dom/DOMString.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/DOMString.h"
+#include "mozilla/dom/EventTarget.h"  // for base class
 #include "mozilla/dom/NodeBinding.h"
+#include "mozilla/dom/NodeInfo.h"  // member (in nsCOMPtr)
+#include "nsCOMPtr.h"              // for member, local
+#include "nsGkAtoms.h"             // for nsGkAtoms::baseURIProperty
+#include "nsIMutationObserver.h"
+#include "nsIWeakReference.h"
+#include "nsNodeInfoManager.h"  // for use in NodePrincipal()
+#include "nsPropertyTable.h"    // for typedefs
 #include "nsTHashtable.h"
-#include <iosfwd>
 
 // Including 'windows.h' will #define GetClassInfo to something else.
 #ifdef XP_WIN
@@ -476,6 +477,13 @@ class nsINode : public mozilla::dom::EventTarget {
   bool IsInclusiveDescendantOf(const nsINode* aNode) const;
 
   /**
+   * https://dom.spec.whatwg.org/#concept-shadow-including-descendant
+   *
+   * @param aNode must not be nullptr.
+   */
+  bool IsShadowIncludingDescendantOf(const nsINode* aNode) const;
+
+  /**
    * https://dom.spec.whatwg.org/#concept-shadow-including-inclusive-descendant
    *
    * @param aNode must not be nullptr.
@@ -556,7 +564,7 @@ class nsINode : public mozilla::dom::EventTarget {
    */
   mozilla::dom::Element* GetNearestInclusiveTargetPopoverForInvoker() const;
 
-  nsGenericHTMLElement* GetEffectiveInvokeTargetElement() const;
+  nsGenericHTMLElement* GetEffectiveCommandForElement() const;
 
   /**
    * https://html.spec.whatwg.org/multipage/popover.html#popover-target-element
@@ -1002,9 +1010,12 @@ class nsINode : public mozilla::dom::EventTarget {
    *        this one constraint, this doesn't do any checking on whether aKid is
    *        a valid child of |this|.
    *        Throw NS_ERROR_OUT_OF_MEMORY in some cases (from BindToTree).
+   * @param aOldParent In case the method is called as part of moveBefore,
+   *        the argument tells which node used to be the parent of aKid.
    */
   virtual void InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
-                                 bool aNotify, mozilla::ErrorResult& aRv);
+                                 bool aNotify, mozilla::ErrorResult& aRv,
+                                 nsINode* aOldParent = nullptr);
 
   /**
    * Append a content node to the end of the child list.  This method handles
@@ -1050,9 +1061,12 @@ class nsINode : public mozilla::dom::EventTarget {
    * @param aNotify whether to notify the document (current document for
    *        nsIContent, and |this| for Document) that the remove has occurred
    * @param BatchRemovalState The current state of our batch removal.
+   * @param aNewParent In case the method is called as part of moveBefore,
+   *        the argument tells which node will be aKid's new parent.
    */
   virtual void RemoveChildNode(nsIContent* aKid, bool aNotify,
-                               const BatchRemovalState* = nullptr);
+                               const BatchRemovalState* = nullptr,
+                               nsINode* aNewParent = nullptr);
 
   /**
    * Get a property associated with this node.
@@ -2413,6 +2427,9 @@ class nsINode : public mozilla::dom::EventTarget {
       const Sequence<OwningNodeOrString>& aNodes, ErrorResult& aRv);
   MOZ_CAN_RUN_SCRIPT void ReplaceChildren(nsINode* aNode, ErrorResult& aRv);
 
+  MOZ_CAN_RUN_SCRIPT void MoveBefore(nsINode& aNode, nsINode* aChild,
+                                     ErrorResult& aRv);
+
   void GetBoxQuads(const BoxQuadOptions& aOptions,
                    nsTArray<RefPtr<DOMQuad>>& aResult, CallerType aCallerType,
                    ErrorResult& aRv);
@@ -2468,10 +2485,7 @@ class nsINode : public mozilla::dom::EventTarget {
     return HasSlots() ? GetExistingSlots()->mWeakReference : nullptr;
   }
 
-  MOZ_CAN_RUN_SCRIPT
-  void RevealAncestorHiddenUntilFoundAndFireBeforematchEvent(ErrorResult& aRv);
-
-  void RevealAncestorClosedDetails();
+  MOZ_CAN_RUN_SCRIPT void AncestorRevealingAlgorithm(ErrorResult& aRv);
 
  protected:
   // Override this function to create a custom slots class.

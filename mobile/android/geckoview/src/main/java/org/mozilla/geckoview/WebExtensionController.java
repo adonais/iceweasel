@@ -252,30 +252,6 @@ public class WebExtensionController {
      * Called whenever a new extension is being installed. This is intended as an opportunity for
      * the app to prompt the user for the permissions required by this extension.
      *
-     * @deprecated Use onInstallPromptRequest(WebExtension, String[], String[], String[]) to account
-     *     for data collection permissions.
-     * @param extension The {@link WebExtension} that is about to be installed. You can use {@link
-     *     WebExtension#metaData} to gather information about this extension when building the user
-     *     prompt dialog.
-     * @param permissions The list of permissions that are granted during installation.
-     * @param origins The list of origins that are granted during installation.
-     * @return A {@link GeckoResult} that completes with a {@link
-     *     WebExtension.PermissionPromptResponse} containing all the details from the user response.
-     */
-    @Nullable
-    @Deprecated
-    @DeprecationSchedule(id = "web-extension-on-install-prompt-request", version = 143)
-    default GeckoResult<WebExtension.PermissionPromptResponse> onInstallPromptRequest(
-        @NonNull final WebExtension extension,
-        @NonNull final String[] permissions,
-        @NonNull final String[] origins) {
-      return null;
-    }
-
-    /**
-     * Called whenever a new extension is being installed. This is intended as an opportunity for
-     * the app to prompt the user for the permissions required by this extension.
-     *
      * @param extension The {@link WebExtension} that is about to be installed. You can use {@link
      *     WebExtension#metaData} to gather information about this extension when building the user
      *     prompt dialog.
@@ -812,27 +788,6 @@ public class WebExtensionController {
   /**
    * Add the provided permissions to the {@link WebExtension} with the given id.
    *
-   * @deprecated Use addOptionalPermissions(WebExtension, String[], String[], String[]) to account
-   *     for data collection permissions.
-   * @param extensionId the id of {@link WebExtension} instance to modify.
-   * @param permissions the permissions to add, pass an empty array to not update.
-   * @param origins the origins to add, pass an empty array to not update.
-   * @return the updated {@link WebExtension} instance.
-   */
-  @NonNull
-  @AnyThread
-  @Deprecated
-  @DeprecationSchedule(id = "web-extension-add-optional-permissions", version = 143)
-  public GeckoResult<WebExtension> addOptionalPermissions(
-      final @NonNull String extensionId,
-      @NonNull final String[] permissions,
-      @NonNull final String[] origins) {
-    return addOptionalPermissions(extensionId, permissions, origins, new String[0]);
-  }
-
-  /**
-   * Add the provided permissions to the {@link WebExtension} with the given id.
-   *
    * @param extensionId the id of {@link WebExtension} instance to modify.
    * @param permissions the permissions to add, pass an empty array to not update.
    * @param origins the origins to add, pass an empty array to not update.
@@ -857,27 +812,6 @@ public class WebExtensionController {
         .queryBundle("GeckoView:WebExtension:AddOptionalPermissions", bundle)
         .map(ext -> WebExtension.fromBundle(mDelegateControllerProvider, ext))
         .map(this::registerWebExtension);
-  }
-
-  /**
-   * Remove the provided permissions from the {@link WebExtension} with the given id.
-   *
-   * @deprecated Use removeOptionalPermissions(WebExtension String[], String[], String[]) to account
-   *     for data collection permissions.
-   * @param extensionId the id of {@link WebExtension} instance to modify.
-   * @param permissions the permissions to remove, pass an empty array to not update.
-   * @param origins the origins to remove, pass an empty array to not update.
-   * @return the updated {@link WebExtension} instance.
-   */
-  @NonNull
-  @AnyThread
-  @Deprecated
-  @DeprecationSchedule(id = "web-extension-remove-optional-permissions", version = 143)
-  public GeckoResult<WebExtension> removeOptionalPermissions(
-      final @NonNull String extensionId,
-      @NonNull final String[] permissions,
-      @NonNull final String[] origins) {
-    return removeOptionalPermissions(extensionId, permissions, origins, new String[0]);
   }
 
   /**
@@ -1305,21 +1239,12 @@ public class WebExtensionController {
       return;
     }
 
-    // TODO - Bug 1970214: remove the first call when we remove the deprecated
-    // `onInstallPromptRequest` method since this has been done to preserve
-    // backward compatibility.
-    GeckoResult<WebExtension.PermissionPromptResponse> promptResponse =
+    final GeckoResult<WebExtension.PermissionPromptResponse> promptResponse =
         mPromptDelegate.onInstallPromptRequest(
-            extension, message.getStringArray("permissions"), message.getStringArray("origins"));
-
-    if (promptResponse == null) {
-      promptResponse =
-          mPromptDelegate.onInstallPromptRequest(
-              extension,
-              message.getStringArray("permissions"),
-              message.getStringArray("origins"),
-              message.getStringArray("dataCollectionPermissions"));
-    }
+            extension,
+            message.getStringArray("permissions"),
+            message.getStringArray("origins"),
+            message.getStringArray("dataCollectionPermissions"));
 
     if (promptResponse == null) {
       return;

@@ -184,7 +184,7 @@ export class WebDriverBiDiConnection extends WebSocketConnection {
       // First check for mandatory field in the command packet
       lazy.assert.positiveInteger(
         id,
-        lazy.pprint`Expected "id" to be a postive integer, got ${id}`
+        lazy.pprint`Expected "id" to be a positive integer, got ${id}`
       );
       lazy.assert.string(
         method,

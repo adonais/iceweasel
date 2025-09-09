@@ -19,6 +19,10 @@ import { FluentOrText } from "../../FluentOrText/FluentOrText.jsx";
 import { connect } from "react-redux";
 import { LinkMenuOptions } from "content-src/lib/link-menu-options";
 const READING_WPM = 220;
+const PREF_OHTTP_MERINO = "discoverystream.merino-provider.ohttp.enabled";
+const PREF_OHTTP_UNIFIED_ADS = "unifiedAds.ohttp.enabled";
+const PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
+const PREF_FAVICONS_ENABLED = "discoverystream.publisherFavicon.enabled";
 
 /**
  * READ TIME FROM WORD COUNT
@@ -95,7 +99,6 @@ export const DefaultMeta = ({
   context_type,
   sponsor,
   sponsored_by_override,
-  saveToPocketCard,
   ctaButtonVariant,
   dispatch,
   spocMessageVariant,
@@ -211,11 +214,7 @@ export const DefaultMeta = ({
           newSponsoredLabel cards sponsored label is moved to just under the thumbnail,
           so we can display both, so we specifically don't pass in context. */}
       {newSponsoredLabel && (
-        <DSMessageFooter
-          context_type={context_type}
-          context={null}
-          saveToPocketCard={saveToPocketCard}
-        />
+        <DSMessageFooter context_type={context_type} context={null} />
       )}
     </div>
   );
@@ -262,26 +261,6 @@ export class _DSCard extends React.PureComponent {
     // The values chosen here were the dimensions of the card thumbnails as
     // computed by getBoundingClientRect() for each type of viewport width
     // across both high-density and normal-density displays.
-    this.dsImageSizes = [
-      {
-        mediaMatcher: "(min-width: 1122px)",
-        width: 296,
-        height: 148,
-      },
-
-      {
-        mediaMatcher: "(min-width: 866px)",
-        width: 218,
-        height: 109,
-      },
-
-      {
-        mediaMatcher: "(max-width: 610px)",
-        width: 202,
-        height: 101,
-      },
-    ];
-
     this.standardCardImageSizes = [
       {
         mediaMatcher: "default",
@@ -655,12 +634,19 @@ export class _DSCard extends React.PureComponent {
 
   onIdleCallback() {
     if (!this.state.isSeen) {
-      if (this.observer && this.placeholderElement) {
-        this.observer.unobserve(this.placeholderElement);
+      // To improve responsiveness without impacting performance,
+      // we start rendering stories on idle.
+      // To reduce the number of requests for secure OHTTP images,
+      // we skip idle-time loading.
+      if (!this.secureImage) {
+        if (this.observer && this.placeholderElement) {
+          this.observer.unobserve(this.placeholderElement);
+        }
+
+        this.setState({
+          isSeen: true,
+        });
       }
-      this.setState({
-        isSeen: true,
-      });
     }
   }
 
@@ -684,17 +670,112 @@ export class _DSCard extends React.PureComponent {
     }
   }
 
+  // Wraps the image URL with the moz-cached-ohttp:// protocol.
+  // This enables Firefox to load resources over Oblivious HTTP (OHTTP),
+  // providing privacy-preserving resource loading.
+  // Applied only when inferred personalization is enabled.
+  // See: https://firefox-source-docs.mozilla.org/browser/components/mozcachedohttp/docs/index.html
+  secureImageURL(url) {
+    return `moz-cached-ohttp://newtab-image/?url=${encodeURIComponent(url)}`;
+  }
+
+  getRawImageSrc() {
+    let rawImageSrc = "";
+    // There is no point in fetching images for startup cache.
+    if (!this.props.App.isForStartupCache.App) {
+      rawImageSrc = this.props.raw_image_src;
+    }
+    return rawImageSrc;
+  }
+
+  getFaviconSrc() {
+    let faviconSrc = "";
+    const faviconEnabled = this.props.Prefs.values[PREF_FAVICONS_ENABLED];
+    // There is no point in fetching favicons for startup cache.
+    if (
+      !this.props.App.isForStartupCache.App &&
+      faviconEnabled &&
+      this.props.icon_src
+    ) {
+      faviconSrc = this.props.icon_src;
+      if (this.secureImage) {
+        faviconSrc = this.secureImageURL(this.props.icon_src);
+      }
+    }
+    return faviconSrc;
+  }
+
+  get secureImage() {
+    const { Prefs, flightId } = this.props;
+
+    let ohttpEnabled = false;
+    if (flightId) {
+      ohttpEnabled = Prefs.values[PREF_OHTTP_UNIFIED_ADS];
+    } else {
+      ohttpEnabled = Prefs.values[PREF_OHTTP_MERINO];
+    }
+
+    const ohttpImagesEnabled = Prefs.values.ohttpImagesConfig?.enabled;
+    const includeTopStoriesSection =
+      Prefs.values.ohttpImagesConfig?.includeTopStoriesSection;
+
+    const nonPersonalizedSections = ["top_stories_section"];
+    const sectionPersonalized =
+      !nonPersonalizedSections.includes(this.props.section) ||
+      includeTopStoriesSection;
+
+    const secureImage =
+      ohttpImagesEnabled && ohttpEnabled && sectionPersonalized;
+
+    return secureImage;
+  }
+
+  renderImage({ sizes = [], classNames = "" } = {}) {
+    const { Prefs } = this.props;
+
+    const rawImageSrc = this.getRawImageSrc();
+    const smartCrop = Prefs.values["images.smart"];
+    return (
+      <DSImage
+        extraClassNames={`img ${classNames}`}
+        source={this.props.image_src}
+        rawSource={rawImageSrc}
+        sizes={sizes}
+        url={this.props.url}
+        title={this.props.title}
+        isRecentSave={this.props.isRecentSave}
+        alt_text={this.props.alt_text}
+        smartCrop={smartCrop}
+        secureImage={this.secureImage}
+      />
+    );
+  }
+
+  renderSectionCardImages() {
+    const { sectionsCardImageSizes } = this.props;
+
+    const columns = ["1", "2", "3", "4"];
+    const images = [];
+
+    for (const column of columns) {
+      const size = sectionsCardImageSizes[column];
+      const sizes = [this.getSectionImageSize(column, size)];
+      const image = this.renderImage({ sizes, classNames: `image-${column}` });
+      images.push(image);
+    }
+
+    return <>{images}</>;
+  }
+
   render() {
     const {
       isRecentSave,
       DiscoveryStream,
       Prefs,
-      saveToPocketCard,
       isListCard,
       isFakespot,
       mayHaveSectionsCards,
       format,
-      alt_text,
     } = this.props;
 
     const refinedCardsLayout =
@@ -751,11 +832,7 @@ export class _DSCard extends React.PureComponent {
       readTime: displayReadTime,
     } = DiscoveryStream;
 
-    const sectionsEnabled = Prefs.values["discoverystream.sections.enabled"];
-
-    const smartCrop = Prefs.values["images.smart"];
-    const faviconEnabled =
-      Prefs.values["discoverystream.publisherFavicon.enabled"];
+    const sectionsEnabled = Prefs.values[PREF_SECTIONS_ENABLED];
     // Refined cards have their own excerpt hiding logic.
     // We can ignore hideDescriptions if we are in sections and refined cards.
     const excerpt =
@@ -789,28 +866,19 @@ export class _DSCard extends React.PureComponent {
       mayHaveSectionsCards ? `sections-card-ui` : ``,
       this.props.sectionsClassNames,
     ].join(" ");
-    const sectionsCardsImageSizes = this.props.sectionsCardImageSizes;
     const titleLinesName = `ds-card-title-lines-${titleLines}`;
     const descLinesClassName = `ds-card-desc-lines-${descLines}`;
     const isMediumRectangle = format === "rectangle";
     const spocFormatClassName = isMediumRectangle ? `ds-spoc-rectangle` : ``;
+    const faviconSrc = this.getFaviconSrc();
 
-    let sizes = [];
-    if (!isMediumRectangle) {
-      sizes = this.dsImageSizes;
-      if (sectionsEnabled) {
-        sizes = [
-          this.getSectionImageSize("4", sectionsCardsImageSizes["4"]),
-          this.getSectionImageSize("3", sectionsCardsImageSizes["3"]),
-          this.getSectionImageSize("2", sectionsCardsImageSizes["2"]),
-          this.getSectionImageSize("1", sectionsCardsImageSizes["1"]),
-        ];
-      } else {
-        sizes = this.standardCardImageSizes;
-      }
-      if (isListCard) {
-        sizes = this.listCardImageSizes;
-      }
+    let images = this.renderImage({ sizes: this.standardCardImageSizes });
+    if (isMediumRectangle) {
+      images = this.renderImage();
+    } else if (isListCard) {
+      images = this.renderImage({ sizes: this.listCardImageSizes });
+    } else if (sectionsEnabled) {
+      images = this.renderSectionCardImages();
     }
 
     return (
@@ -828,6 +896,7 @@ export class _DSCard extends React.PureComponent {
           onLinkClick={!this.props.placeholder ? this.onLinkClick : undefined}
           url={this.props.url}
           title={this.props.title}
+          isSponsored={!!this.props.flightId}
         >
           {this.props.showTopics &&
             !this.props.mayHaveSectionsCards &&
@@ -839,19 +908,7 @@ export class _DSCard extends React.PureComponent {
                 data-l10n-id={`newtab-topic-label-${this.props.topic}`}
               />
             )}
-          <div className="img-wrapper">
-            <DSImage
-              extraClassNames="img"
-              source={this.props.image_src}
-              rawSource={this.props.raw_image_src}
-              sizes={sizes}
-              url={this.props.url}
-              title={this.props.title}
-              isRecentSave={isRecentSave}
-              alt_text={alt_text}
-              smartCrop={smartCrop}
-            />
-          </div>
+          <div className="img-wrapper">{images}</div>
           <ImpressionStats
             flightId={this.props.flightId}
             rows={[
@@ -912,7 +969,6 @@ export class _DSCard extends React.PureComponent {
               context_type={this.props.context_type}
               sponsor={this.props.sponsor}
               sponsored_by_override={this.props.sponsored_by_override}
-              saveToPocketCard={saveToPocketCard}
               ctaButtonVariant={ctaButtonVariant}
               dispatch={this.props.dispatch}
               spocMessageVariant={this.props.spocMessageVariant}
@@ -930,7 +986,7 @@ export class _DSCard extends React.PureComponent {
               }
               format={format}
               topic={this.props.topic}
-              icon_src={faviconEnabled && this.props.icon_src}
+              icon_src={faviconSrc}
               refinedCardsLayout={refinedCardsLayout}
             />
           )}
@@ -950,9 +1006,7 @@ export class _DSCard extends React.PureComponent {
                 pocket_id={this.props.pocket_id}
                 shim={this.props.shim}
                 bookmarkGuid={this.props.bookmarkGuid}
-                flightId={
-                  !this.props.is_collection ? this.props.flightId : undefined
-                }
+                flightId={this.props.flightId}
                 showPrivacyInfo={!!this.props.flightId}
                 onMenuUpdate={this.onMenuUpdate}
                 onMenuShow={this.onMenuShow}

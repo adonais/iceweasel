@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <new>
 #include <utility>
+
 #include "js/StructuredClone.h"
 #include "js/Value.h"
 #include "js/Wrapper.h"

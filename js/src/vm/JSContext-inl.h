@@ -61,19 +61,19 @@ class ContextChecks {
   }
 
   void check(JS::Realm* r, int argIndex) {
-    if (r && r != realm()) {
+    if (r && MOZ_UNLIKELY(r != realm())) {
       fail(realm(), r, argIndex);
     }
   }
 
   void check(JS::Compartment* c, int argIndex) {
-    if (c && c != compartment()) {
+    if (c && MOZ_UNLIKELY(c != compartment())) {
       fail(compartment(), c, argIndex);
     }
   }
 
   void check(JS::Zone* z, int argIndex) {
-    if (zone() && z != zone()) {
+    if (zone() && MOZ_UNLIKELY(z != zone())) {
       fail(zone(), z, argIndex);
     }
   }

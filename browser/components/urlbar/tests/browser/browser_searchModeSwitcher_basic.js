@@ -68,14 +68,12 @@ add_task(async function disabled_unified_button() {
 
   await TestUtils.waitForCondition(() => {
     return !BrowserTestUtils.isVisible(
-      gURLBar.querySelector("#urlbar-searchmode-switcher")
+      gURLBar.querySelector(".searchmode-switcher")
     );
   });
 
   Assert.equal(
-    BrowserTestUtils.isVisible(
-      gURLBar.querySelector("#urlbar-searchmode-switcher")
-    ),
+    BrowserTestUtils.isVisible(gURLBar.querySelector(".searchmode-switcher")),
     false,
     "Unified Search Button should not be visible."
   );
@@ -86,9 +84,7 @@ add_task(async function disabled_unified_button() {
   });
 
   Assert.equal(
-    BrowserTestUtils.isVisible(
-      gURLBar.querySelector("#urlbar-searchmode-switcher")
-    ),
+    BrowserTestUtils.isVisible(gURLBar.querySelector(".searchmode-switcher")),
     false,
     "Unified Search Button should not be visible."
   );
@@ -99,7 +95,7 @@ add_task(async function disabled_unified_button() {
 
   Assert.equal(
     BrowserTestUtils.isVisible(
-      gURLBar.querySelector("#searchmode-switcher-chicklet")
+      gURLBar.querySelector(".searchmode-switcher-chicklet")
     ),
     false,
     "Chicklet associated with Unified Search Button should not be visible."
@@ -133,7 +129,7 @@ add_task(async function basic() {
   });
 
   info("Press the close button and escape search mode");
-  window.document.querySelector("#searchmode-switcher-close").click();
+  gURLBar.querySelector(".searchmode-switcher-close").click();
   await UrlbarTestUtils.assertSearchMode(window, null);
 });
 
@@ -161,7 +157,7 @@ add_task(async function select_with_single_click() {
   });
 
   let popup = UrlbarTestUtils.searchModeSwitcherPopup(window);
-  let button = document.getElementById("urlbar-searchmode-switcher");
+  let button = gURLBar.querySelector(".searchmode-switcher");
 
   let popupShown = BrowserTestUtils.waitForPopupEvent(popup, "shown");
   let rebuildPromise = BrowserTestUtils.waitForEvent(popup, "rebuild");
@@ -186,7 +182,7 @@ add_task(async function select_with_single_click() {
   });
 
   info("Press the close button and escape search mode");
-  window.document.querySelector("#searchmode-switcher-close").click();
+  gURLBar.querySelector(".searchmode-switcher-close").click();
   await UrlbarTestUtils.assertSearchMode(window, null);
 });
 
@@ -222,7 +218,7 @@ add_task(async function new_window() {
   );
   popup.querySelector("menuitem[label=Google]").click();
   await popupHidden;
-  newWin.document.querySelector("#searchmode-switcher-close").click();
+  newWin.gURLBar.querySelector(".searchmode-switcher-close").click();
 
   await Services.search.restoreDefaultEngines();
   await BrowserTestUtils.closeWindow(newWin);
@@ -248,13 +244,12 @@ add_task(async function detect_searchmode_changes() {
   });
 
   info("Press the close button and escape search mode");
-  window.document.querySelector("#searchmode-switcher-close").click();
+  gURLBar.querySelector(".searchmode-switcher-close").click();
   await UrlbarTestUtils.assertSearchMode(window, null);
 
   await BrowserTestUtils.waitForCondition(() => {
     return (
-      window.document.querySelector("#searchmode-switcher-title").textContent ==
-      ""
+      gURLBar.querySelector(".searchmode-switcher-title").textContent == ""
     );
   }, "The searchMode name has been removed when we exit search mode");
 });
@@ -313,7 +308,7 @@ add_task(async function test_search_icon_change() {
   });
 
   info("Press the close button and exit search mode");
-  newWin.document.querySelector("#searchmode-switcher-close").click();
+  newWin.gURLBar.querySelector(".searchmode-switcher-close").click();
   await UrlbarTestUtils.assertSearchMode(newWin, null);
 
   let searchModeSwitcherIconUrl = await BrowserTestUtils.waitForCondition(
@@ -383,7 +378,7 @@ add_task(async function test_suggestions_after_no_search_mode() {
   );
 
   info("Press the close button and escape search mode");
-  window.document.querySelector("#searchmode-switcher-close").click();
+  gURLBar.querySelector(".searchmode-switcher-close").click();
   await UrlbarTestUtils.assertSearchMode(window, null);
   Assert.equal(
     (await UrlbarTestUtils.getDetailsOfResultAt(window, 0)).result.payload
@@ -541,7 +536,7 @@ add_task(async function test_enter_searchmode_by_key_if_single_result() {
     Assert.equal(gURLBar.value, "", "The value of urlbar should be empty");
 
     // Clean up.
-    window.document.querySelector("#searchmode-switcher-close").click();
+    gURLBar.querySelector(".searchmode-switcher-close").click();
     await UrlbarTestUtils.assertSearchMode(window, null);
   }
 
@@ -585,7 +580,7 @@ add_task(
       }
 
       // Clean up.
-      window.document.querySelector("#searchmode-switcher-close").click();
+      gURLBar.querySelector(".searchmode-switcher-close").click();
       await UrlbarTestUtils.assertSearchMode(window, null);
     }
 
@@ -595,16 +590,16 @@ add_task(
 
 add_task(async function test_open_state() {
   let popup = UrlbarTestUtils.searchModeSwitcherPopup(window);
-  let switcher = document.getElementById("urlbar-searchmode-switcher");
+  let switcher = gURLBar.querySelector(".searchmode-switcher");
 
-  for (let target of [
-    "urlbar-searchmode-switcher",
+  for (let className of [
+    "searchmode-switcher",
     "searchmode-switcher-icon",
     "searchmode-switcher-dropmarker",
   ]) {
-    info(`Open search mode switcher popup by clicking on [${target}]`);
+    info(`Open search mode switcher popup by clicking on [${className}]`);
     let popupOpen = BrowserTestUtils.waitForEvent(popup, "popupshown");
-    let button = document.getElementById(target);
+    let button = gURLBar.querySelector("." + className);
     EventUtils.synthesizeMouseAtCenter(button, {}, window);
     await popupOpen;
     Assert.equal(
@@ -631,7 +626,7 @@ add_task(async function nimbusScotchBonnetEnableOverride() {
 
   await TestUtils.waitForCondition(() => {
     return BrowserTestUtils.isHidden(
-      gURLBar.querySelector("#urlbar-searchmode-switcher")
+      gURLBar.querySelector(".searchmode-switcher")
     );
   });
   Assert.ok(true, "Search mode switcher should be hidden");
@@ -643,7 +638,7 @@ add_task(async function nimbusScotchBonnetEnableOverride() {
   );
   await TestUtils.waitForCondition(() => {
     return BrowserTestUtils.isVisible(
-      gURLBar.querySelector("#urlbar-searchmode-switcher")
+      gURLBar.querySelector(".searchmode-switcher")
     );
   });
   Assert.ok(true, "Search mode switcher should be visible");
@@ -657,8 +652,8 @@ add_task(async function nimbusScotchBonnetEnableOverride() {
 
 add_task(async function test_button_stuck() {
   let win = await BrowserTestUtils.openNewBrowserWindow();
-  let popup = win.document.getElementById("searchmode-switcher-popup");
-  let button = win.document.getElementById("urlbar-searchmode-switcher");
+  let popup = win.gURLBar.querySelector(".searchmode-switcher-popup");
+  let button = win.gURLBar.querySelector(".searchmode-switcher");
 
   info("Show the SearchModeSwitcher");
   let promiseMenuOpen = BrowserTestUtils.waitForEvent(popup, "popupshown");
@@ -691,7 +686,7 @@ add_task(async function test_readonly() {
 
   Assert.equal(
     BrowserTestUtils.isVisible(
-      win.gURLBar.querySelector("#urlbar-searchmode-switcher")
+      win.gURLBar.querySelector(".searchmode-switcher")
     ),
     false,
     "Unified Search Button should not be visible in readonly windows"
@@ -780,7 +775,7 @@ add_task(async function test_search_mode_switcher_engine_no_icon() {
   );
 
   info("Press the close button and escape search mode");
-  window.document.querySelector("#searchmode-switcher-close").click();
+  gURLBar.querySelector(".searchmode-switcher-close").click();
   await UrlbarTestUtils.assertSearchMode(window, null);
 
   await searchExtension.unload();
@@ -870,8 +865,8 @@ add_task(async function test_search_mode_switcher_private_engine_icon() {
 });
 
 function getSeachModeSwitcherIcon(window) {
-  let searchModeSwitcherButton = window.document.getElementById(
-    "searchmode-switcher-icon"
+  let searchModeSwitcherButton = window.gURLBar.querySelector(
+    ".searchmode-switcher-icon"
   );
 
   // match and capture the URL inside `url("...")`

@@ -435,9 +435,19 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
   Maybe<base::ProcessId> parentPID = geckoargs::sParentPid.Get(aArgc, aArgv);
   Maybe<const char*> initialChannelIdString =
       geckoargs::sInitialChannelID.Get(aArgc, aArgv);
+  if (NS_WARN_IF(!parentPID || !initialChannelIdString)) {
+    return NS_ERROR_FAILURE;
+  }
+
   Maybe<IPC::Channel::ChannelHandle> clientChannel =
       geckoargs::sIPCHandle.Get(aArgc, aArgv);
-  if (NS_WARN_IF(!parentPID || !initialChannelIdString || !clientChannel)) {
+#ifdef XP_DARWIN
+  MOZ_ASSERT_IF(clientChannel, !geckoargs::sIPCPort.IsPresent(aArgc, aArgv));
+  if (!clientChannel) {
+    clientChannel = geckoargs::sIPCPort.Get(aArgc, aArgv);
+  }
+#endif
+  if (NS_WARN_IF(!clientChannel)) {
     return NS_ERROR_FAILURE;
   }
 

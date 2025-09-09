@@ -191,6 +191,9 @@ EXPORTS.mozilla.layers += [
     "LayersTypes.h",
     "MemoryPressureObserver.h",
     "NativeLayer.h",
+    "NativeLayerCommandQueue.h",
+    "NativeLayerRemoteChild.h",
+    "NativeLayerRemoteParent.h",
     "OOPCanvasRenderer.h",
     "opengl/CompositingRenderTargetOGL.h",
     "opengl/CompositorOGL.h",
@@ -269,6 +272,9 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] in ("cocoa", "uikit"):
         "GpuFenceMTLSharedEvent.h",
         "NativeLayerCA.h",
         "NativeLayerMacSurfaceHandler.h",
+        "NativeLayerRemoteMac.h",
+        "NativeLayerRootRemoteMacChild.h",
+        "NativeLayerRootRemoteMacParent.h",
         "SurfacePoolCA.h",
     ]
     EXPORTS += [
@@ -278,6 +284,9 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] in ("cocoa", "uikit"):
     UNIFIED_SOURCES += [
         "NativeLayerCA.mm",
         "NativeLayerMacSurfaceHandler.mm",
+        "NativeLayerRemoteMac.mm",
+        "NativeLayerRootRemoteMacChild.mm",
+        "NativeLayerRootRemoteMacParent.mm",
         "SurfacePoolCA.mm",
     ]
     SOURCES += [
@@ -412,6 +421,7 @@ UNIFIED_SOURCES += [
     "ipc/VideoBridgeParent.cpp",
     "LayersTypes.cpp",
     "MemoryPressureObserver.cpp",
+    "NativeLayerCommandQueue.cpp",
     "opengl/CompositingRenderTargetOGL.cpp",
     "opengl/CompositorOGL.cpp",
     "opengl/OGLShaderProgram.cpp",
@@ -482,6 +492,7 @@ IPDL_SOURCES += [
     "ipc/PCompositorBridgeTypes.ipdlh",
     "ipc/PCompositorManager.ipdl",
     "ipc/PImageBridge.ipdl",
+    "ipc/PNativeLayerRemote.ipdl",
     "ipc/PTexture.ipdl",
     "ipc/PUiCompositorController.ipdl",
     "ipc/PVideoBridge.ipdl",

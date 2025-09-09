@@ -568,6 +568,17 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     }
 
     /**
+     * Sets whether or not local network access (LNA) blocking is enabled
+     *
+     * @param enabled flag indicating whether or not local network access (LNA) blocking is enabled
+     * @return The builder instance
+     */
+    public @NonNull Builder setLnaBlockingEnabled(@NonNull final Boolean enabled) {
+      getSettings().setLnaBlockingEnabled(enabled);
+      return this;
+    }
+
+    /**
      * Sets whether and how DNS-over-HTTPS (Trusted Recursive Resolver) is configured.
      *
      * @param mode One of the {@link GeckoRuntimeSettings#TRR_MODE_OFF TrustedRecursiveResolverMode}
@@ -704,6 +715,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("dom.security.https_only_mode", false);
   /* package */ final Pref<Boolean> mHttpsOnlyPrivateMode =
       new Pref<Boolean>("dom.security.https_only_mode_pbm", false);
+
+  /* package */ final Pref<Boolean> mLnaBlockingEnabled = new Pref<>("network.lna.blocking", false);
   /* package */ final PrefWithoutDefault<Integer> mTrustedRecursiveResolverMode =
       new PrefWithoutDefault<>("network.trr.mode");
   /* package */ final PrefWithoutDefault<String> mTrustedRecursiveResolverUri =
@@ -1953,6 +1966,26 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       return HTTPS_ONLY_PRIVATE;
     }
     return ALLOW_ALL;
+  }
+
+  /**
+   * Sets whether or not local network access (LNA) blocking is enabled
+   *
+   * @param enabled flag indicating whether or not local network access blocking is enabled
+   * @return The updated instance of {@link GeckoRuntimeSettings}
+   */
+  public @NonNull GeckoRuntimeSettings setLnaBlockingEnabled(final boolean enabled) {
+    mLnaBlockingEnabled.commit(enabled);
+    return this;
+  }
+
+  /**
+   * Gets whether or not local network access (LNA) blocking is enabled
+   *
+   * @return Boolean indicating whether LNA blocking is enabled or not.
+   */
+  public boolean getLnaBlockingEnabled() {
+    return mLnaBlockingEnabled.get();
   }
 
   /**

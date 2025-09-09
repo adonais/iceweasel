@@ -362,6 +362,11 @@ abstract class Settings {
      * Comma-separated list of destination ports that the application should block connections to.
      */
     open var bannedPorts: String by UnsupportedSetting()
+
+    /**
+     * Setting to control blocking of local network & local device (localhost) access
+     */
+    open var lnaBlockingEnabled: Boolean by UnsupportedSetting()
 }
 
 /**
@@ -434,6 +439,7 @@ data class DefaultSettings(
     override var postQuantumKeyExchangeEnabled: Boolean? = null,
     override var dohAutoselectEnabled: Boolean = false,
     override var bannedPorts: String = "",
+    override var lnaBlockingEnabled: Boolean = false,
 ) : Settings() {
     override val desktopModeEnabled: Boolean
         get() = getDesktopMode()

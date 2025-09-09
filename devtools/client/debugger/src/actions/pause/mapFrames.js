@@ -41,9 +41,13 @@ async function updateFrameLocation(frame, thunkArgs) {
     return frame;
   }
 
-  const location = await getOriginalLocation(frame.location, thunkArgs, {
-    waitForSource: true,
-  });
+  const location = await getOriginalLocation(
+    frame.generatedLocation || frame.location,
+    thunkArgs,
+    {
+      waitForSource: true,
+    }
+  );
   // Avoid instantiating new frame objects if the frame location isn't mapped
   if (location == frame.location) {
     return frame;

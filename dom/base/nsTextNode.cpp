@@ -9,12 +9,13 @@
  */
 
 #include "nsTextNode.h"
+
+#include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/TextBinding.h"
 #include "nsContentUtils.h"
-#include "mozilla/dom/Document.h"
-#include "nsThreadUtils.h"
 #include "nsStubMutationObserver.h"
-#include "mozilla/IntegerPrintfMacros.h"
+#include "nsThreadUtils.h"
 #ifdef MOZ_DOM_LIST
 #  include "nsRange.h"
 #endif
@@ -54,7 +55,7 @@ class nsAttributeTextNode final : public nsTextNode,
         new (aNodeInfo->NodeInfoManager()) nsAttributeTextNode(
             do_AddRef(aNodeInfo), mNameSpaceID, mAttrName, mFallback);
     if (aCloneText) {
-      it->mText = mText;
+      it->mBuffer = mBuffer;
     }
 
     return it.forget();
@@ -98,7 +99,7 @@ already_AddRefed<CharacterData> nsTextNode::CloneDataNode(
   RefPtr<nsTextNode> it =
       new (aNodeInfo->NodeInfoManager()) nsTextNode(do_AddRef(aNodeInfo));
   if (aCloneText) {
-    it->mText = mText;
+    it->mBuffer = mBuffer;
   }
 
   return it.forget();
@@ -109,7 +110,7 @@ nsresult nsTextNode::AppendTextForNormalize(const char16_t* aBuffer,
                                             nsIContent* aNextSibling) {
   CharacterDataChangeInfo::Details details = {
       CharacterDataChangeInfo::Details::eMerge, aNextSibling};
-  return SetTextInternal(mText.GetLength(), 0, aBuffer, aLength, aNotify,
+  return SetTextInternal(mBuffer.GetLength(), 0, aBuffer, aLength, aNotify,
                          &details);
 }
 
@@ -130,7 +131,7 @@ void nsTextNode::List(FILE* out, int32_t aIndent) const {
   fprintf(out, " refcount=%" PRIuPTR "<", mRefCnt.get());
 
   nsAutoString tmp;
-  ToCString(tmp, 0, mText.GetLength());
+  ToCString(tmp, 0, mBuffer.GetLength());
   fputs(NS_LossyConvertUTF16toASCII(tmp).get(), out);
 
   fputs(">\n", out);
@@ -142,7 +143,7 @@ void nsTextNode::DumpContent(FILE* out, int32_t aIndent, bool aDumpAll) const {
     for (index = aIndent; --index >= 0;) fputs("  ", out);
 
     nsAutoString tmp;
-    ToCString(tmp, 0, mText.GetLength());
+    ToCString(tmp, 0, mBuffer.GetLength());
 
     if (!tmp.EqualsLiteral("\\n")) {
       fputs(NS_LossyConvertUTF16toASCII(tmp).get(), out);

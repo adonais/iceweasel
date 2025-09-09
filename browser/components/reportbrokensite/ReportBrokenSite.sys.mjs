@@ -458,11 +458,7 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
     const allowedByPolicy = Services.policies.isAllowed(
       "DisableFeedbackCommands"
     );
-    if (allowedByPolicy) {
-      cmd.setAttribute("hidden", "false"); // see bug 805653
-    } else {
-      cmd.setAttribute("hidden", "true");
-    }
+    cmd.toggleAttribute("hidden", !allowedByPolicy);
     const app = document.ownerGlobal.PanelMultiView.getViewNode(
       document,
       "appMenu-report-broken-site-button"

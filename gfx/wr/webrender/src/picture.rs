@@ -103,7 +103,7 @@ use crate::prim_store::image::AdjustedImageSource;
 use crate::{command_buffer::PrimitiveCommand, render_task_graph::RenderTaskGraphBuilder, renderer::GpuBufferBuilderF};
 use crate::box_shadow::BLUR_SAMPLE_SCALE;
 use crate::clip::{ClipChainInstance, ClipItemKind, ClipLeafId, ClipNodeId, ClipSpaceConversion, ClipStore, ClipTreeBuilder};
-use crate::profiler::{self, TransactionProfile};
+use crate::profiler::{self, add_text_marker, TransactionProfile};
 use crate::spatial_tree::{SpatialTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace};
 use crate::composite::{tile_kind, CompositeState, CompositeTileSurface, CompositorClipIndex, CompositorKind, NativeSurfaceId, NativeTileId};
 use crate::composite::{ExternalSurfaceDescriptor, ExternalSurfaceDependency, CompositeTileDescriptor, CompositeTile};
@@ -4378,13 +4378,13 @@ bitflags! {
     #[derive(Debug, Copy, PartialEq, Eq, Clone, PartialOrd, Ord, Hash)]
     pub struct BlitReason: u32 {
         /// Mix-blend-mode on a child that requires isolation.
-        const ISOLATE = 1 << 0;
+        const BLEND_MODE = 1 << 0;
         /// Clip node that _might_ require a surface.
         const CLIP = 1 << 1;
         /// Preserve-3D requires a surface for plane-splitting.
         const PRESERVE3D = 1 << 2;
-        /// A backdrop that is reused which requires a surface.
-        const BACKDROP = 1 << 3;
+        /// A forced isolation request from gecko.
+        const FORCED_ISOLATION = 1 << 3;
         /// We may need to render the picture into an image and cache it.
         const SNAPSHOT = 1 << 4;
     }
@@ -4725,13 +4725,14 @@ impl PictureCompositeMode {
                 FilterGraphOp::SVGFEBlendScreen => {}
                 FilterGraphOp::SVGFEBlendSoftLight => {}
                 FilterGraphOp::SVGFEColorMatrix { values } => {
-                    if values[3] != 0.0 ||
-                        values[7] != 0.0 ||
-                        values[11] != 0.0 ||
-                        values[19] != 0.0 {
-                        // Manipulating alpha can easily create new
+                    if values[19] > 0.0 {
+                        // Manipulating alpha offset can easily create new
                         // pixels outside of input subregions
                         used_subregion = full_subregion;
+                        add_text_marker(
+                            "SVGFEColorMatrix",
+                            "SVGFEColorMatrix with non-zero alpha offset, using full subregion",
+                            Duration::from_millis(1));
                     }
                 }
                 FilterGraphOp::SVGFEComponentTransfer => unreachable!(),
@@ -4741,6 +4742,10 @@ impl PictureCompositeMode {
                     // creating new pixels outside of input subregions
                     if *creates_pixels {
                         used_subregion = full_subregion;
+                        add_text_marker(
+                            "SVGFEComponentTransfer",
+                            "SVGFEComponentTransfer with non-zero minimum alpha, using full subregion",
+                            Duration::from_millis(1));
                     }
                 }
                 FilterGraphOp::SVGFECompositeArithmetic { k1, k2, k3, k4 } => {
@@ -4764,6 +4769,10 @@ impl PictureCompositeMode {
                     // can fill pixels outside input subregions
                     if *k4 > 0.0 {
                         used_subregion = full_subregion;
+                        add_text_marker(
+                            "SVGFECompositeArithmetic",
+                            "SVGFECompositeArithmetic with non-zero offset, using full subregion",
+                            Duration::from_millis(1));
                     }
                 }
                 FilterGraphOp::SVGFECompositeATop => {}
@@ -8495,7 +8504,7 @@ fn test_large_surface_scale_1() {
 
     get_surface_rects(
         SurfaceIndex(1),
-        &PictureCompositeMode::Blit(BlitReason::ISOLATE),
+        &PictureCompositeMode::Blit(BlitReason::BLEND_MODE),
         SurfaceIndex(0),
         &mut surfaces,
         &spatial_tree,

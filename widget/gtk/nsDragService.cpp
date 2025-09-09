@@ -248,10 +248,7 @@ bool DragData::IsFileFlavor() const {
 }
 
 bool DragData::IsTextFlavor() const {
-  return mDataFlavor == nsDragSession::sTextMimeAtom ||
-         mDataFlavor == nsDragSession::sTextPlainUTF8TypeAtom ||
-         mDataFlavor == nsDragSession::sUTF8STRINGMimeAtom ||
-         mDataFlavor == nsDragSession::sSTRINGMimeAtom;
+  return nsDragSession::IsTextFlavor(mDataFlavor);
 }
 
 bool DragData::IsURIFlavor() const {
@@ -569,6 +566,9 @@ nsDragSession::nsDragSession() {
 
   // set up our logging module
   mTempFileTimerID = 0;
+#ifdef MOZ_X11
+  mActive = widget::GdkIsX11Display();
+#endif
 
   static std::once_flag onceFlag;
   std::call_once(onceFlag, [] {
@@ -600,10 +600,9 @@ nsDragSession::nsDragSession() {
 nsDragSession::~nsDragSession() {
   LOGDRAGSERVICE("nsDragSession::~nsDragSession");
   if (mTaskSource) g_source_remove(mTaskSource);
-  if (mTempFileTimerID) {
-    g_source_remove(mTempFileTimerID);
-    RemoveTempFiles();
-  }
+  MozClearHandleID(mTempFileTimerID, g_source_remove);
+  RemoveTempFiles();
+  MozClearPointer(mHiddenWidget, gtk_widget_destroy);
 }
 
 NS_IMPL_ISUPPORTS_INHERITED(nsDragSession, nsBaseDragSession, nsIObserver)
@@ -1007,6 +1006,15 @@ nsresult nsDragSession::EndDragSessionImpl(bool aDoneDrag,
   mTargetWindow = nullptr;
   mPendingWindow = nullptr;
   mCachedDragContext = 0;
+
+  nsCOMPtr<nsIObserverService> obsServ =
+      mozilla::services::GetObserverService();
+  obsServ->RemoveObserver(this, "quit-application");
+
+  if (mHiddenWidget) {
+    gtk_widget_destroy(mHiddenWidget);
+    mHiddenWidget = nullptr;
+  }
 
   return nsBaseDragSession::EndDragSessionImpl(aDoneDrag, aKeyModifiers);
 }
@@ -1566,8 +1574,15 @@ void nsDragSession::TargetDataReceived(GtkWidget* aWidget,
     LOGDRAGSERVICE("  TargetDataReceived(): URI data, MIME %s",
                    GUniquePtr<gchar>(gdk_atom_name(target)).get());
   } else {
-    const guchar* data = gtk_selection_data_get_data(aSelectionData);
-    gint len = gtk_selection_data_get_length(aSelectionData);
+    const guchar* data = nullptr;
+    gint len = -1;
+    if (IsTextFlavor(target)) {
+      data = gtk_selection_data_get_text(aSelectionData);
+      len = data ? g_utf8_strlen(reinterpret_cast<const gchar*>(data), -1) : -1;
+    } else {
+      data = gtk_selection_data_get_data(aSelectionData);
+      len = gtk_selection_data_get_length(aSelectionData);
+    }
     if (len < 0 && !data) {
       LOGDRAGSERVICE(" TargetDataReceived() failed");
       return;
@@ -1960,10 +1975,7 @@ nsresult nsDragSession::CreateTempFile(nsITransferable* aItem,
   nsCOMPtr<nsIFile> tempFile;
   tmpDir->Clone(getter_AddRefs(tempFile));
   mTemporaryFiles.AppendObject(tempFile);
-  if (mTempFileTimerID) {
-    g_source_remove(mTempFileTimerID);
-    mTempFileTimerID = 0;
-  }
+  MozClearHandleID(mTempFileTimerID, g_source_remove);
 
   // extend file:///tmp/dnd_file/<filename> URL
   tmpDir->Append(wideFileName);
@@ -2336,10 +2348,7 @@ void nsDragSession::SourceDataGet(GtkWidget* aWidget, GdkDragContext* aContext,
     return;
   }
 
-  if (requestedFlavor == sTextMimeAtom ||
-      requestedFlavor == sTextPlainUTF8TypeAtom ||
-      requestedFlavor == sUTF8STRINGMimeAtom ||
-      requestedFlavor == sSTRINGMimeAtom) {
+  if (IsTextFlavor(requestedFlavor)) {
     if (!SourceDataGetText(item, nsDependentCString(kTextMime),
                            /* aNeedToDoConversionToPlainText */ true,
                            aSelectionData)) {
@@ -2982,6 +2991,14 @@ nsAutoCString nsDragSession::GetDebugTag() const {
   nsAutoCString tag;
   tag.AppendPrintf("[%p]", this);
   return tag;
+}
+
+/* static */
+bool nsDragSession::IsTextFlavor(GdkAtom aFlavor) {
+  return aFlavor == nsDragSession::sTextMimeAtom ||
+         aFlavor == nsDragSession::sTextPlainUTF8TypeAtom ||
+         aFlavor == nsDragSession::sUTF8STRINGMimeAtom ||
+         aFlavor == nsDragSession::sSTRINGMimeAtom;
 }
 
 #undef LOGDRAGSERVICE

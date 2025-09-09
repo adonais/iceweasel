@@ -307,6 +307,7 @@ class ModuleNamespaceObject : public ProxyObject {
 // Value types of [[Status]] in a Cyclic Module Record
 // https://tc39.es/ecma262/#table-cyclic-module-fields
 enum class ModuleStatus : int8_t {
+  New,
   Unlinked,
   Linking,
   Linked,
@@ -340,6 +341,22 @@ constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_INIT = 1;
 
 // Value that the field is set to after being cleared.
 constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_CLEARED = 0;
+
+// The map used by [[LoadedModules]] in Realm Record Fields, Script Record
+// Fields, and additional fields of Cyclic Module Records.
+// https://tc39.es/ecma262/#table-realm-record-fields
+// https://tc39.es/ecma262/#table-script-records
+// https://tc39.es/ecma262/#table-cyclic-module-fields
+//
+// For Import attributes proposal, this map maps from ModuleRequest records to
+// Module records.
+// https://tc39.es/proposal-import-attributes/#sec-cyclic-module-records
+//
+// TODO:
+// Bug 1968874 : Implement [[LoadedModules]] in Realm Records and Script Records
+using LoadedModuleMap =
+    GCHashMap<HeapPtr<JSObject*>, HeapPtr<ModuleObject*>,
+              StableCellHasher<HeapPtr<JSObject*>>, SystemAllocPolicy>;
 
 // Currently, the ModuleObject class is used to represent both the Source Text
 // Module Record and the Synthetic Module Record. Ideally, this is something
@@ -436,6 +453,8 @@ class ModuleObject : public NativeObject {
   ModuleObject* getCycleRoot() const;
   bool hasCyclicModuleFields() const;
   bool hasSyntheticModuleFields() const;
+  LoadedModuleMap& loadedModules();
+  const LoadedModuleMap& loadedModules() const;
 
   static void onTopLevelEvaluationFinished(ModuleObject* module);
 
@@ -479,22 +498,76 @@ class ModuleObject : public NativeObject {
   const SyntheticModuleFields* syntheticModuleFields() const;
 };
 
-JSObject* GetOrCreateModuleMetaObject(JSContext* cx, HandleObject module);
+using VisitedModuleSet =
+    GCHashSet<HeapPtr<ModuleObject*>, DefaultHasher<HeapPtr<ModuleObject*>>,
+              SystemAllocPolicy>;
 
-ModuleObject* CallModuleResolveHook(JSContext* cx,
-                                    HandleValue referencingPrivate,
-                                    HandleObject moduleRequest);
+// The fields of a GraphLoadingState Record, as described in:
+// https://tc39.es/ecma262/#graphloadingstate-record
+struct GraphLoadingStateRecord {
+  GraphLoadingStateRecord() = default;
+  GraphLoadingStateRecord(JS::LoadModuleResolvedCallback resolved,
+                          JS::LoadModuleRejectedCallback rejected);
+
+  void trace(JSTracer* trc);
+
+  // [[Visited]] : a List of Cyclic Module Records
+  VisitedModuleSet visited;
+
+  JS::LoadModuleResolvedCallback resolved;
+  JS::LoadModuleRejectedCallback rejected;
+};
+
+class GraphLoadingStateRecordObject : public NativeObject {
+ public:
+  enum {
+    StateSlot = 0,
+    PromiseSlot,
+    IsLoadingSlot,
+    PendingModulesCountSlot,
+    HostDefinedSlot,
+    SlotCount
+  };
+
+  static const JSClass class_;
+  static const JSClassOps classOps_;
+
+  [[nodiscard]] static GraphLoadingStateRecordObject* create(
+      JSContext* cx, bool isLoading, uint32_t pendingModulesCount,
+      JS::LoadModuleResolvedCallback resolved,
+      JS::LoadModuleRejectedCallback rejected, Handle<Value> hostDefined);
+
+  [[nodiscard]] static GraphLoadingStateRecordObject* create(
+      JSContext* cx, bool isLoading, uint32_t pendingModulesCount,
+      Handle<PromiseObject*> promise, Handle<Value> hostDefined);
+
+  static void finalize(JS::GCContext* gcx, JSObject* obj);
+  static void trace(JSTracer* trc, JSObject* obj);
+
+  // [[PromiseCapability]] : a PromiseCapability Record
+  PromiseObject* promise();
+
+  // [[IsLoading]] : a Boolean
+  bool isLoading();
+  void setIsLoading(bool isLoading);
+
+  // [[PendingModulesCount]] : a non-negative integer
+  uint32_t pendingModulesCount();
+  void setPendingModulesCount(uint32_t count);
+
+  VisitedModuleSet& visited();
+
+  Value hostDefined();
+
+  bool resolved(JSContext* cx, JS::Handle<JS::Value> hostDefined);
+  bool rejected(JSContext* cx, JS::Handle<JS::Value> hostDefined,
+                Handle<JS::Value> error);
+};
+
+JSObject* GetOrCreateModuleMetaObject(JSContext* cx, HandleObject module);
 
 JSObject* StartDynamicModuleImport(JSContext* cx, HandleScript script,
                                    HandleValue specifier, HandleValue options);
-
-bool OnModuleEvaluationFailure(JSContext* cx, HandleObject evaluationPromise,
-                               JS::ModuleErrorBehaviour errorBehaviour);
-
-bool FinishDynamicModuleImport(JSContext* cx, HandleObject evaluationPromise,
-                               HandleValue referencingPrivate,
-                               HandleObject moduleRequest,
-                               HandleObject promise);
 
 }  // namespace js
 

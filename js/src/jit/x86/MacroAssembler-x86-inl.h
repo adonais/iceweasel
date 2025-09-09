@@ -278,6 +278,10 @@ void MacroAssembler::subPtr(Register src, const Address& dest) {
 
 void MacroAssembler::subPtr(Imm32 imm, Register dest) { subl(imm, dest); }
 
+void MacroAssembler::subPtr(ImmWord imm, Register dest) {
+  subl(Imm32(imm.value), dest);
+}
+
 void MacroAssembler::subPtr(const Address& addr, Register dest) {
   subl(Operand(addr), dest);
 }
@@ -331,6 +335,10 @@ void MacroAssembler::mulHighUnsigned32(Imm32 imm, Register src, Register dest) {
 
 void MacroAssembler::mulPtr(Register rhs, Register srcDest) {
   imull(rhs, srcDest);
+}
+
+void MacroAssembler::mulPtr(ImmWord rhs, Register srcDest) {
+  imull(Imm32(rhs.value), srcDest);
 }
 
 // Note: this function clobbers eax and edx.

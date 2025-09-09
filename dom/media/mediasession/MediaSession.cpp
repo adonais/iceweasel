@@ -4,13 +4,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/dom/MediaSession.h"
+
+#include "mozilla/EnumeratedArrayCycleCollection.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/ContentMediaController.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/MediaSession.h"
 #include "mozilla/dom/MediaControlUtils.h"
 #include "mozilla/dom/WindowContext.h"
-#include "mozilla/EnumeratedArrayCycleCollection.h"
 
 // avoid redefined macro in unified build
 #undef LOG

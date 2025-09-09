@@ -8,14 +8,14 @@
 #define mozilla_dom_idbdatabase_h__
 
 #include "mozilla/Attributes.h"
+#include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/IDBTransactionBinding.h"
 #include "mozilla/dom/indexedDB/PBackgroundIDBSharedTypes.h"
 #include "mozilla/dom/quota/PersistenceType.h"
-#include "mozilla/DOMEventTargetHelper.h"
-#include "mozilla/UniquePtr.h"
-#include "nsTHashMap.h"
 #include "nsHashKeys.h"
 #include "nsString.h"
+#include "nsTHashMap.h"
 #include "nsTHashSet.h"
 
 class nsIEventTarget;

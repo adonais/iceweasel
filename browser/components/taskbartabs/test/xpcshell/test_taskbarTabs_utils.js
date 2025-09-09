@@ -9,47 +9,72 @@ ChromeUtils.defineESModuleGetters(this, {
   TaskbarTabsUtils: "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs",
 });
 
-let faviconUri;
-let defaultFavicon = Services.io.newFileURI(
-  do_get_file("favicon-normal16.png")
-);
+const kPngFile = do_get_file("favicon-normal16.png");
+const kSvgFile = do_get_file("icon.svg");
+const kSvgUri = Services.io.newFileURI(kSvgFile);
 
-let mockFaviconService = {
+let gDefaultFaviconUri = kSvgUri;
+
+let gMockFaviconService = {
   QueryInterface: ChromeUtils.generateQI(["nsIFaviconService"]),
-  getFaviconForPage: sinon.stub().callsFake(async () => {
-    return { dataURI: faviconUri };
-  }),
+  getFaviconForPage: sinon.stub(),
   get defaultFavicon() {
-    return defaultFavicon;
+    return gDefaultFaviconUri;
   },
 };
-let defaultFaviconSpy = sinon.spy(mockFaviconService, "defaultFavicon", [
+let gDefaultFaviconSpy = sinon.spy(gMockFaviconService, "defaultFavicon", [
   "get",
 ]);
 
 MockRegistrar.register(
   "@mozilla.org/browser/favicon-service;1",
-  mockFaviconService
+  gMockFaviconService
 );
 
-add_task(async function test_favicon_local_only() {
+let gPngBytes;
+
+add_setup(async () => {
+  const pngArray = await IOUtils.read(kPngFile.path);
+  gPngBytes = pngArray.buffer;
+});
+
+add_task(async function test_favicon_default_fallback() {
   const uri = Services.io.newURI("https://www.example.com");
 
-  faviconUri = Services.io.newFileURI(do_get_file("favicon-normal16.png"));
+  gMockFaviconService.getFaviconForPage.callsFake(async () => {
+    return { rawData: gPngBytes, mimeType: "image/png" };
+  });
   await TaskbarTabsUtils.getFavicon(uri);
   ok(
-    defaultFaviconSpy.get.notCalled,
-    "Fallback to default favicon should not occur for local URIs."
+    gDefaultFaviconSpy.get.notCalled,
+    "Fallback to default favicon should not occur for valid raster favicon data."
   );
 
-  faviconUri = Services.io.newURI("https://www.example.com");
+  gMockFaviconService.getFaviconForPage.callsFake(async () => {
+    return {
+      dataURI: Services.io.newFileURI(kSvgFile),
+      mimeType: "image/svg+xml",
+    };
+  });
   await TaskbarTabsUtils.getFavicon(uri);
   ok(
-    defaultFaviconSpy.get.called,
-    "Favicon provided as a network URI should have triggered a fallback to the default favicon."
+    gDefaultFaviconSpy.get.notCalled,
+    "Fallback to default favicon should not occur for valid vector favicon data."
   );
 
-  defaultFavicon = Services.io.newURI("https://www.example.com");
+  gMockFaviconService.getFaviconForPage.callsFake(async () => {
+    return { rawData: null, mimeType: "image/png" };
+  });
+  await TaskbarTabsUtils.getFavicon(uri);
+  ok(
+    gDefaultFaviconSpy.get.called,
+    "Fallback to default favicon should occur for invalid favicon data."
+  );
+
+  gMockFaviconService.getFaviconForPage.callsFake(async () => {
+    return null;
+  });
+  gDefaultFaviconUri = Services.io.newURI("https://www.example.com");
   await rejects(
     TaskbarTabsUtils.getFavicon(uri),
     /Scheme "https" is not supported for creating a Taskbar Tab icon, URI should be local/,

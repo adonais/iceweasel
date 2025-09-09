@@ -1300,6 +1300,7 @@ class BrowserRobot {
             Log.i(TAG, "openThreeDotMenu: Trying to click main menu button")
             itemWithDescription(getStringResource(R.string.content_description_menu)).click()
             Log.i(TAG, "openThreeDotMenu: Clicked main menu button")
+            waitForAppWindowToBeUpdated()
 
             ThreeDotMenuMainRobotCompose(composeTestRule).interact()
             return ThreeDotMenuMainRobotCompose.Transition(composeTestRule)

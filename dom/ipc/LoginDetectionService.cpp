@@ -6,16 +6,15 @@
 
 #include "LoginDetectionService.h"
 
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/StaticPrefs_fission.h"
+#include "mozilla/dom/ProcessIsolation.h"
 #include "nsILoginInfo.h"
 #include "nsILoginManager.h"
 #include "nsIObserver.h"
 #include "nsIXULRuntime.h"
 #include "nsServiceManagerUtils.h"
 #include "nsXULAppAPI.h"
-
-#include "mozilla/ClearOnShutdown.h"
-#include "mozilla/StaticPrefs_fission.h"
-#include "mozilla/dom/ProcessIsolation.h"
 
 namespace mozilla::dom {
 

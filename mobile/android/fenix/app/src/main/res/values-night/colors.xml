@@ -193,4 +193,7 @@
     <color name="mozac_ui_extensions_warning_bg_fill_critical">@color/fx_mobile_icon_color_secondary</color>
     <color name="mozac_ui_extensions_warning_fill_critical">@color/fx_mobile_icon_color_critical</color>
 
+    <!-- Lock slash critical fill colors for mozac_ic_lock_slash_critical_24 -->
+    <color name="mozac_ui_lock_slash_bg_fill_critical">@color/fx_mobile_icon_color_secondary</color>
+    <color name="mozac_ui_lock_slash_fill_critical">@color/fx_mobile_icon_color_critical</color>
 </resources>

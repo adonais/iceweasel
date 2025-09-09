@@ -10,7 +10,6 @@ import android.os.Looper.getMainLooper
 import android.widget.ImageView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import mozilla.components.browser.icons.generator.IconGenerator
 import mozilla.components.browser.icons.loader.MemoryInfoProvider
@@ -44,7 +43,6 @@ import org.mockito.Mockito.`when`
 import org.robolectric.Shadows.shadowOf
 import java.io.OutputStream
 
-@ExperimentalCoroutinesApi // for runTestOnMain
 @RunWith(AndroidJUnit4::class)
 class BrowserIconsTest {
     private val defaultAvailMem: Long = 100000

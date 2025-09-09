@@ -40,6 +40,11 @@ T* CellAllocator::NewCell(JSContext* cx, Args&&... args) {
     return NewBigInt<T, allowGC>(cx, std::forward<Args>(args)...);
   }
 
+  // GetterSetter
+  else if constexpr (std::is_base_of_v<js::GetterSetter, T>) {
+    return NewGetterSetter<T, allowGC>(cx, std::forward<Args>(args)...);
+  }
+
   // "Normal" strings (all of which can be nursery allocated). Atoms and
   // external strings will fall through to the generic code below. All other
   // strings go through NewString, which will forward the arguments to the
@@ -80,6 +85,19 @@ T* CellAllocator::NewBigInt(JSContext* cx, Heap heap) {
     return nullptr;
   }
   return new (mozilla::KnownNotNull, ptr) T();
+}
+
+template <typename T, AllowGC allowGC, typename... Args>
+/* static */
+T* CellAllocator::NewGetterSetter(JSContext* cx, gc::Heap heap,
+                                  Args&&... args) {
+  static_assert(std::is_base_of_v<js::GetterSetter, T>);
+  void* ptr = AllocNurseryOrTenuredCell<JS::TraceKind::GetterSetter, allowGC>(
+      cx, gc::AllocKind::GETTER_SETTER, sizeof(T), heap, nullptr);
+  if (MOZ_UNLIKELY(!ptr)) {
+    return nullptr;
+  }
+  return new (mozilla::KnownNotNull, ptr) T(std::forward<Args>(args)...);
 }
 
 template <typename T, AllowGC allowGC>

@@ -24,7 +24,8 @@
                                        // js::RegExpInstanceOptimizableRaw
 #include "builtin/Sorting.h"           // js::ArraySortData
 #include "builtin/TestingFunctions.h"  // js::FuzzilliHash*
-
+#include "builtin/WeakMapObject.h"     // js::WeakMapObject::{get,has}Object
+#include "builtin/WeakSetObject.h"     // js::WeakSetObject::hasObject
 #include "irregexp/RegExpAPI.h"
 // js::irregexp::CaseInsensitiveCompareNonUnicode,
 // js::irregexp::CaseInsensitiveCompareUnicode,
@@ -194,8 +195,18 @@ namespace jit {
   _(js::RoundFloat16)                                                          \
   _(js::SetIteratorObject::next)                                               \
   _(js::StringToNumberPure)                                                    \
+  _(js::TypedArrayFillBigInt)                                                  \
+  _(js::TypedArrayFillDouble)                                                  \
+  _(js::TypedArrayFillFloat32)                                                 \
+  _(js::TypedArrayFillInt32)                                                   \
+  _(js::TypedArrayFillInt64)                                                   \
+  _(js::TypedArraySetFromSubarrayInfallible)                                   \
+  _(js::TypedArraySetInfallible)                                               \
   _(js::TypedArraySortFromJit)                                                 \
   _(js::TypeOfObject)                                                          \
+  _(js::WeakMapObject::getObject)                                              \
+  _(js::WeakMapObject::hasObject)                                              \
+  _(js::WeakSetObject::hasObject)                                              \
   _(mozilla::SIMD::memchr16)                                                   \
   _(mozilla::SIMD::memchr2x16)                                                 \
   _(mozilla::SIMD::memchr2x8)                                                  \

@@ -11,9 +11,9 @@
 #ifndef mozilla_dom_Link_h__
 #define mozilla_dom_Link_h__
 
-#include "nsWrapperCache.h"  // For nsWrapperCache::FlagsType
-#include "nsCOMPtr.h"
 #include "mozilla/dom/RustTypes.h"
+#include "nsCOMPtr.h"
+#include "nsWrapperCache.h"  // For nsWrapperCache::FlagsType
 
 class nsIURI;
 

@@ -198,7 +198,7 @@ var BrowserCommands = {
 
     function loadBrowserURI(browser, url, principal) {
       browser.loadURI(url, {
-        flags: reloadFlags,
+        loadFlags: reloadFlags,
         triggeringPrincipal: principal,
       });
     }

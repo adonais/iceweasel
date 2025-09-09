@@ -70,10 +70,14 @@
     "color": {
       "@base": {
         "value": {
-          "comment": "TODO Bug 1821203 - Gray tones need to be consolidated",
-          "light": "#CFCFD8",
-          "dark": "#3A3944",
-          "prefersContrast": "CanvasText"
+          "brand": {
+            "light": "{color.gray.50}",
+            "dark": "{color.gray.70}"
+          },
+          "prefersContrast": "CanvasText",
+          "platform": {
+            "default": "color-mix(in srgb, currentColor 50%, transparent)"
+          }
         }
       },
       "transparent": {
@@ -1139,11 +1143,11 @@
       }
     },
     "size": {
-      "default": {
+      "@base": {
         "value": "{icon.size.small}"
       },
       "xsmall": {
-        "value": "12px"
+        "value": "{size.item.xsmall}"
       },
       "small": {
         "value": "{size.item.small}"
@@ -1152,7 +1156,7 @@
         "value": "20px"
       },
       "large": {
-        "value": "24px"
+        "value": "{size.item.medium}"
       },
       "xlarge": {
         "value": "{size.item.large}"
@@ -1165,11 +1169,6 @@
         "height": {
           "value": "{button.min.height.@base}"
         }
-      }
-    },
-    "space": {
-      "block": {
-        "value": "{space.xsmall}"
       }
     }
   },
@@ -1255,6 +1254,9 @@
   },
   "size": {
     "item": {
+      "xsmall": {
+        "value": "12px"
+      },
       "small": {
         "value": "16px"
       },
@@ -1263,6 +1265,9 @@
       },
       "large": {
         "value": "32px"
+      },
+      "xlarge": {
+        "value": "48px"
       }
     }
   },

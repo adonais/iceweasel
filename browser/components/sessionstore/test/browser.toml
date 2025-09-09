@@ -125,6 +125,8 @@ skip-if = ["os == 'linux' && os_version == '18.04' && processor == 'x86_64' && o
 https_first_disabled = true
 run-if = ["crashreporter"]
 
+["browser_csp_policy_container_migration.js"]
+
 ["browser_docshell_uuid_consistency.js"]
 
 ["browser_duplicate_history.js"]

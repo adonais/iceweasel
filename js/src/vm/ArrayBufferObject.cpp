@@ -370,7 +370,7 @@ static const ClassSpec ArrayBufferObjectClassSpec = {
     arraybuffer_properties,
     arraybuffer_proto_functions,
     arraybuffer_proto_properties,
-    GenericFinishInit<WhichHasFuseProperty::ProtoAndCtor>,
+    GenericFinishInit<WhichHasRealmFuseProperty::ProtoAndCtor>,
 };
 
 static const ClassExtension FixedLengthArrayBufferObjectClassExtension = {

@@ -273,6 +273,8 @@ skip-if = [
 
 ["browser_dbg-javascript-tracer-next-load.js"]
 
+["browser_dbg-javascript-tracer-sidebar-toggle.js"]
+
 ["browser_dbg-javascript-tracer-sidebar-values-search.js"]
 
 ["browser_dbg-javascript-tracer-sidebar.js"]

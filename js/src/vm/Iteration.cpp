@@ -2073,7 +2073,7 @@ bool GlobalObject::initObjectIteratorProto(JSContext* cx,
   }
 
   if constexpr (needsFuseProperty) {
-    if (!JSObject::setHasFuseProperty(cx, proto)) {
+    if (!JSObject::setHasRealmFuseProperty(cx, proto)) {
       return false;
     }
   }

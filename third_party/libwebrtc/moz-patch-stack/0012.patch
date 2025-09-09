@@ -62,7 +62,7 @@ index 7397a10625..19b32f16b9 100644
  int32_t DeviceInfoV4l2::Init() {
    return 0;
 diff --git a/modules/video_capture/linux/video_capture_linux.cc b/modules/video_capture/linux/video_capture_linux.cc
-index a2ea218a8b..23a8f4f3f3 100644
+index 0b57cfe90c..1c635ea440 100644
 --- a/modules/video_capture/linux/video_capture_linux.cc
 +++ b/modules/video_capture/linux/video_capture_linux.cc
 @@ -10,7 +10,6 @@
@@ -89,7 +89,7 @@ index a2ea218a8b..23a8f4f3f3 100644
  #include <new>
  #include <string>
 diff --git a/rtc_base/byte_order.h b/rtc_base/byte_order.h
-index 0d7a54f6d5..05879338fd 100644
+index 95c8ebc864..9098998a52 100644
 --- a/rtc_base/byte_order.h
 +++ b/rtc_base/byte_order.h
 @@ -90,6 +90,8 @@
@@ -102,10 +102,10 @@ index 0d7a54f6d5..05879338fd 100644
  #include <endian.h>
  #else
 diff --git a/rtc_base/physical_socket_server.cc b/rtc_base/physical_socket_server.cc
-index fe18813064..244d6cdde4 100644
+index e69311b790..121eb0cb6a 100644
 --- a/rtc_base/physical_socket_server.cc
 +++ b/rtc_base/physical_socket_server.cc
-@@ -75,7 +75,10 @@ typedef void* SockOptArg;
+@@ -85,7 +85,10 @@ typedef void* SockOptArg;
  
  #endif  // WEBRTC_POSIX
  
@@ -117,7 +117,7 @@ index fe18813064..244d6cdde4 100644
  
  int64_t GetSocketRecvTimestamp(int socket) {
    struct timeval tv_ioctl;
-@@ -698,7 +701,7 @@ int PhysicalSocket::TranslateOption(Option opt, int* slevel, int* sopt) {
+@@ -708,7 +711,7 @@ int PhysicalSocket::TranslateOption(Option opt, int* slevel, int* sopt) {
        *slevel = IPPROTO_IP;
        *sopt = IP_DONTFRAGMENT;
        break;

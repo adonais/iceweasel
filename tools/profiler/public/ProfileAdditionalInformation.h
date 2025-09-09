@@ -31,8 +31,8 @@ namespace mozilla {
 struct ProfileGenerationAdditionalInformation {
   ProfileGenerationAdditionalInformation() = default;
   explicit ProfileGenerationAdditionalInformation(
-      const SharedLibraryInfo&& aSharedLibraries)
-      : mSharedLibraries(aSharedLibraries) {}
+      SharedLibraryInfo&& aSharedLibraries)
+      : mSharedLibraries(std::move(aSharedLibraries)) {}
 
   size_t SizeOf() const { return mSharedLibraries.SizeOf(); }
 
@@ -49,14 +49,14 @@ struct ProfileGenerationAdditionalInformation {
 
 struct ProfileAndAdditionalInformation {
   ProfileAndAdditionalInformation() = default;
-  explicit ProfileAndAdditionalInformation(const nsCString&& aProfile)
-      : mProfile(aProfile) {}
+  explicit ProfileAndAdditionalInformation(nsCString&& aProfile)
+      : mProfile(std::move(aProfile)) {}
 
   ProfileAndAdditionalInformation(
-      const nsCString&& aProfile,
-      const ProfileGenerationAdditionalInformation&& aAdditionalInformation)
-      : mProfile(aProfile),
-        mAdditionalInformation(Some(aAdditionalInformation)) {}
+      nsCString&& aProfile,
+      ProfileGenerationAdditionalInformation&& aAdditionalInformation)
+      : mProfile(std::move(aProfile)),
+        mAdditionalInformation(Some(std::move(aAdditionalInformation))) {}
 
   size_t SizeOf() const {
     size_t size = mProfile.Length();

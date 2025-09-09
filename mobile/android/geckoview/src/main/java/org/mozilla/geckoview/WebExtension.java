@@ -3046,20 +3046,6 @@ public class WebExtension {
      *
      * @param isPermissionsGranted Whether the user granted permissions or not.
      * @param isPrivateModeGranted Whether the user granted access in private mode or not.
-     */
-    @Deprecated
-    @DeprecationSchedule(id = "web-extension-permission-prompt-response", version = 143)
-    public PermissionPromptResponse(
-        final @Nullable Boolean isPermissionsGranted,
-        final @Nullable Boolean isPrivateModeGranted) {
-      this(isPermissionsGranted, isPrivateModeGranted, false);
-    }
-
-    /**
-     * Creates a new PermissionPromptResponse with the given fields.
-     *
-     * @param isPermissionsGranted Whether the user granted permissions or not.
-     * @param isPrivateModeGranted Whether the user granted access in private mode or not.
      * @param isTechnicalAndInteractionDataGranted Whether the user granted access to technical and
      *     interaction data collection.
      */

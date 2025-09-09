@@ -15,11 +15,11 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -160,7 +160,7 @@ private fun ComponentAddWidgetButton(
             .padding(24.dp),
         shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.textButtonColors(
-            backgroundColor = colorResource(R.color.promote_search_widget_dialog_add_widget_button_background),
+            containerColor = colorResource(R.color.promote_search_widget_dialog_add_widget_button_background),
         ),
     ) {
         Text(

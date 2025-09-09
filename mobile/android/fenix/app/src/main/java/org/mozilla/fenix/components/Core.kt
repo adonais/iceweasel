@@ -105,6 +105,7 @@ import mozilla.components.support.base.worker.Frequency
 import mozilla.components.support.ktx.android.content.appVersionName
 import mozilla.components.support.ktx.android.content.res.readJSONObject
 import mozilla.components.support.locale.LocaleManager
+import mozilla.components.support.utils.RunWhenReadyQueue
 import org.mozilla.fenix.AppRequestInterceptor
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.Config
@@ -147,6 +148,7 @@ class Core(
     private val context: Context,
     private val crashReporter: CrashReporting,
     strictMode: StrictModeManager,
+    visualCompletenessQueue: RunWhenReadyQueue,
 ) {
     /**
      * The browser engine component initialized based on the build
@@ -195,6 +197,7 @@ class Core(
             postQuantumKeyExchangeEnabled = FxNimbus.features.pqcrypto.value().postQuantumKeyExchangeEnabled,
             dohAutoselectEnabled = FxNimbus.features.doh.value().autoselectEnabled,
             bannedPorts = FxNimbus.features.networkingBannedPorts.value().bannedPortList,
+            lnaBlockingEnabled = context.settings().isLnaBlockingEnabled,
         )
 
         // Apply fingerprinting protection overrides if the feature is enabled in Nimbus
@@ -355,6 +358,7 @@ class Core(
                 AboutHomeMiddleware(
                     homepageTitle = context.getString(R.string.tab_tray_homepage_tab),
                 ),
+                BrowserVisualCompletenessMiddleware(visualCompletenessQueue),
             )
 
         BrowserStore(

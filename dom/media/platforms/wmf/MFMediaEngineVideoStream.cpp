@@ -4,9 +4,9 @@
 
 #include "MFMediaEngineVideoStream.h"
 
-#include "mozilla/layers/DcompSurfaceImage.h"
 #include "MFMediaEngineUtils.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/layers/DcompSurfaceImage.h"
 
 namespace mozilla {
 

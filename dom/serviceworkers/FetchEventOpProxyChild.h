@@ -7,14 +7,13 @@
 #ifndef mozilla_dom_fetcheventopproxychild_h__
 #define mozilla_dom_fetcheventopproxychild_h__
 
-#include "nsISupportsImpl.h"
-
 #include "ServiceWorkerOp.h"
 #include "ServiceWorkerOpPromise.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/InternalRequest.h"
 #include "mozilla/dom/PFetchEventOpProxyChild.h"
+#include "nsISupportsImpl.h"
 
 namespace mozilla::dom {
 

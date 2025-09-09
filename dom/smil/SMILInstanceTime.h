@@ -7,8 +7,8 @@
 #ifndef DOM_SMIL_SMILINSTANCETIME_H_
 #define DOM_SMIL_SMILINSTANCETIME_H_
 
-#include "nsISupportsImpl.h"
 #include "mozilla/SMILTimeValue.h"
+#include "nsISupportsImpl.h"
 
 namespace mozilla {
 class SMILInterval;

@@ -43,7 +43,7 @@ WEBEXT_LOCALES_PATH = Path("browser", "extensions", "newtab", "webext-glue", "lo
 
 LOCAL_EN_US_PATH = Path("browser", "locales", "en-US", "browser", "newtab", FLUENT_FILE)
 COMPARE_TOOL_PATH = Path(
-    "third_party", "python", "moz.l10n", "moz", "l10n", "bin", "compare.py"
+    "third_party", "python", "moz_l10n", "moz", "l10n", "bin", "compare.py"
 )
 REPORT_PATH = Path(WEBEXT_LOCALES_PATH, "locales-report.json")
 REPORT_LEFT_JUSTIFY_CHARS = 15
@@ -89,7 +89,7 @@ def run_mach(command_context, cmd, **kwargs):
 @SubCommand(
     "newtab",
     "watch",
-    description="Parses the current locales-report.json and produces something human readable.",
+    description="Invokes npm run watchmc and mach watch simultaneously for auto-building and bundling of compiled newtab code.",
 )
 def watch(command_context):
     processes = []

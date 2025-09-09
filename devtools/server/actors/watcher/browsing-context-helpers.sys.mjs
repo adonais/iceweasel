@@ -2,11 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const isEveryFrameTargetEnabled = Services.prefs.getBoolPref(
-  "devtools.every-frame-target.enabled",
-  false
-);
-
 export const WEBEXTENSION_FALLBACK_DOC_URL =
   "chrome://devtools/content/shared/webextension-fallback.html";
 
@@ -76,10 +71,6 @@ export function getAddonIdForWindowGlobal(windowGlobal) {
  * @param {Boolean} options.acceptInitialDocument
  *        By default, we ignore initial about:blank documents/WindowGlobals.
  *        But some code cares about all the WindowGlobals, this flag allows to also accept them.
- *        (Used by _validateWindowGlobal)
- * @param {Boolean} options.acceptSameProcessIframes
- *        If true, we will accept WindowGlobal that runs in the same process as their parent document.
- *        That, even when EFT is disabled.
  *        (Used by _validateWindowGlobal)
  * @param {Boolean} options.acceptNoWindowGlobal
  *        By default, we will reject BrowsingContext that don't have any WindowGlobal,
@@ -249,7 +240,7 @@ function isPopupToDebug(browsingContext, sessionContext) {
 function _validateWindowGlobal(
   windowGlobal,
   sessionContext,
-  { acceptInitialDocument, acceptSameProcessIframes }
+  { acceptInitialDocument }
 ) {
   // By default, before loading the actual document (even an about:blank document),
   // we do load immediately "the initial about:blank document".
@@ -273,22 +264,6 @@ function _validateWindowGlobal(
     windowGlobal.isInitialDocument ||
     windowGlobal.browsingContext.window?.document.isInitialDocument;
   if (isInitialDocument && !acceptInitialDocument) {
-    return false;
-  }
-
-  // We may process an iframe that runs in the same process as its parent and we don't want
-  // to create targets for them if same origin targets (=EFT) are not enabled.
-  // Instead the WindowGlobalTargetActor will inspect these children document via docShell tree
-  // (typically via `docShells` or `windows` getters).
-  // This is quite common when Fission is off as any iframe will run in same process
-  // as their parent document. But it can also happen with Fission enabled if iframes have
-  // children iframes using the same origin.
-  const isSameProcessIframe = !windowGlobal.isProcessRoot;
-  if (
-    isSameProcessIframe &&
-    !acceptSameProcessIframes &&
-    !isEveryFrameTargetEnabled
-  ) {
     return false;
   }
 
@@ -326,7 +301,7 @@ export function isWindowGlobalPartOfContext(
 
 /**
  * Get all the BrowsingContexts that should be debugged by the given session context.
- * Consider using WatcherActor.getAllBrowsingContexts(options) which will automatically pass the right sessionContext.
+ * Consider using WatcherActor.getAllBrowsingContexts() which will automatically pass the right sessionContext.
  *
  * Really all of them:
  * - For all the privileged windows (browser.xhtml, browser console, ...)
@@ -336,16 +311,8 @@ export function isWindowGlobalPartOfContext(
  * @param {Object} sessionContext
  *        The Session Context to help know what is debugged.
  *        See devtools/server/actors/watcher/session-context.js
- * @param {Object} options
- *        Optional arguments passed via a dictionary.
- * @param {Boolean} options.acceptSameProcessIframes
- *        If true, we will accept WindowGlobal that runs in the same process as their parent document.
- *        That, even when EFT is disabled.
  */
-export function getAllBrowsingContextsForContext(
-  sessionContext,
-  { acceptSameProcessIframes = false } = {}
-) {
+export function getAllBrowsingContextsForContext(sessionContext) {
   const browsingContexts = [];
 
   // For a given BrowsingContext, add the `browsingContext`
@@ -413,7 +380,6 @@ export function getAllBrowsingContextsForContext(
     // it would only be returned if sessionContext.isServerSideTargetSwitching is enabled.
     isBrowsingContextPartOfContext(bc, sessionContext, {
       forceAcceptTopLevelTarget: true,
-      acceptSameProcessIframes,
     })
   );
 }

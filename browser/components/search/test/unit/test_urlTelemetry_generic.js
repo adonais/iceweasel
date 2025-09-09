@@ -27,6 +27,9 @@ const TEST_PROVIDER_INFO = [
     shoppingTab: {
       regexp: "&site=shop",
     },
+    searchMode: {
+      mode: "image_search",
+    },
     components: [
       {
         type: SearchSERPTelemetryUtils.COMPONENTS.AD_LINK,
@@ -164,6 +167,25 @@ const TESTS = [
       partner_code: "ff",
       source: "unknown",
       is_shopping_page: "true",
+      is_private: "false",
+      shopping_tab_displayed: "false",
+      is_signed_in: "false",
+    },
+  },
+  {
+    title: "Tagged image search",
+    trackingUrl: "https://www.example.com/search?q=test&abc=ff&mode=image",
+    expectedSearchCountEntry: "example:tagged:ff",
+    expectedAdKey: "example:tagged",
+    adUrls: ["https://www.example.com/ad2"],
+    nonAdUrls: ["https://www.example.com/ad3"],
+    impression: {
+      provider: "example",
+      tagged: "true",
+      partner_code: "ff",
+      search_mode: "image_search",
+      source: "unknown",
+      is_shopping_page: "false",
       is_private: "false",
       shopping_tab_displayed: "false",
       is_signed_in: "false",

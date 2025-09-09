@@ -3,11 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MoofParser.h"
-#include "Box.h"
-#include "SinfParser.h"
-#include <limits>
-#include "MP4Interval.h"
 
+#include <limits>
+
+#include "Box.h"
+#include "MP4Interval.h"
+#include "SinfParser.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/HelperMacros.h"
 #include "mozilla/Logging.h"

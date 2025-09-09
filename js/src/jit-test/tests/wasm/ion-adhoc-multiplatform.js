@@ -544,16 +544,12 @@ codegenTestMultiplatform_adhoc(
     `(module (func (export "sub64_zeroR") (param $p1 i64) (result i64)
        (i64.sub (local.get $p1) (i64.const 0))))`,
     "sub64_zeroR",
-    // FIXME folding missing for all 4 targets
     {x64:   `48 89 f9     mov %rdi, %rcx
-             48 89 c8     mov %rcx, %rax
-             48 83 e8 00  sub \\$0x00, %rax`,
+             48 89 c8     mov %rcx, %rax`,
      x86:   `8b 55 14  movl 0x14\\(%rbp\\), %edx
-             8b 45 10  movl 0x10\\(%rbp\\), %eax
-             83 ea 00  sub  \\$0x00, %edx`,
+             8b 45 10  movl 0x10\\(%rbp\\), %eax`,
      arm64: ``,
-     arm:   `e2500000  subs r0, r0, #0
-             e2c11000  sbc  r1, r1, #0`
+     arm:   ``
     },
     {x86: {no_prefix:true}}
 );
@@ -606,27 +602,12 @@ codegenTestMultiplatform_adhoc(
     `(module (func (export "sub64_self") (param $p1 i64) (result i64)
        (i64.sub (local.get $p1) (local.get $p1))))`,
     "sub64_self",
-    // FIXME folding missing for all 4 targets
-    {x64:   `48 89 f9        mov %rdi, %rcx
-             48 89 c8        mov %rcx, %rax
-             48 2b c1        sub %rcx, %rax`,
-     x86:   // -0x21524111 is 0xDEADBEEF
-            `8b 5d 14        movl 0x14\\(%rbp\\), %ebx
-             8b 4d 10        movl 0x10\\(%rbp\\), %ecx
-             bf ef be ad de  mov  \\$-0x21524111, %edi
-             8b 55 14        movl 0x14\\(%rbp\\), %edx
-             8b 45 10        movl 0x10\\(%rbp\\), %eax
-             2b c1           sub %ecx, %eax
-             1b d3           sbb %ebx, %edx`,
-     arm64: `cb000000  sub  x0, x0, x0`,
-     arm:   `e1a03001  mov  r3, r1
-             e1a02000  mov  r2, r0
-             e1a05003  mov  r5, r3
-             e1a04002  mov  r4, r2
-             e1a01003  mov  r1, r3
-             e1a00002  mov  r0, r2
-             e0500004  subs r0, r0, r4
-             e0c11005  sbc  r1, r1, r5`
+    {x64:   `33 c0  xor %eax, %eax`,
+     x86:   `33 c0  xor %eax, %eax
+             33 d2  xor %edx, %edx`,
+     arm64: `d2800000  mov x0, #0x0`,
+     arm:   `e3a00000  mov r0, #0
+             e3a01000  mov r1, #0`
     },
     {x86: {no_prefix:true}}
 );

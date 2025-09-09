@@ -5,16 +5,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "gtest/gtest.h"
-
-#include "mozilla/dom/IntegrityPolicy.h"
-#include "mozilla/dom/nsCSPContext.h"
-#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/Preferences.h"
-#include "nsNetUtil.h"
-
+#include "mozilla/dom/IntegrityPolicy.h"
+#include "mozilla/dom/PolicyContainer.h"
+#include "mozilla/dom/nsCSPContext.h"
 #include "nsCOMPtr.h"
 #include "nsLiteralString.h"
+#include "nsNetUtil.h"
 #include "nsSerializationHelper.h"
 
 using namespace mozilla;

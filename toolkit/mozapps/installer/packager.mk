@@ -55,14 +55,14 @@ ifdef MOZ_PACKAGE_JSSHELL
 endif # MOZ_PACKAGE_JSSHELL
 ifdef MOZ_AUTOMATION
 ifdef MOZ_ARTIFACT_BUILD_SYMBOLS
-	@echo 'Packaging existing crashreporter symbols from artifact build...'
-	$(NSINSTALL) -D $(DIST)/$(PKG_PATH)
-	cd $(DIST)/crashreporter-symbols && \
-          zip -r5D '../$(PKG_PATH)$(SYMBOL_ARCHIVE_BASENAME).zip' . -i '*.sym' -i '*.txt'
+	@echo 'Checking for crashreporter symbols from artifact build...'
+ifeq ($(wildcard $(UPLOAD_DIR)/$(SYMBOL_ARCHIVE_BASENAME).zip),)
+$(error Expected symbol archive $(UPLOAD_DIR)/$(SYMBOL_ARCHIVE_BASENAME).zip not found. This should have been created by artifacts.py during artifact installation. Check that UPLOAD_DIR is set correctly and that symbols were downloaded.)
+endif
 ifeq ($(MOZ_ARTIFACT_BUILD_SYMBOLS),full)
-	$(call py_action,symbols_archive $(SYMBOL_FULL_ARCHIVE_BASENAME).tar.zst,'$(DIST)/$(PKG_PATH)$(SYMBOL_FULL_ARCHIVE_BASENAME).tar.zst' \
-                                     $(abspath $(DIST)/crashreporter-symbols) \
-                                     --full-archive)
+ifeq ($(wildcard $(UPLOAD_DIR)/$(SYMBOL_FULL_ARCHIVE_BASENAME).tar.zst),)
+$(error Expected full symbol archive $(UPLOAD_DIR)/$(SYMBOL_FULL_ARCHIVE_BASENAME).tar.zst not found. This should have been created by artifacts.py during artifact installation. Check that UPLOAD_DIR is set correctly and that full symbols were downloaded.)
+endif
 endif
 endif # MOZ_ARTIFACT_BUILD_SYMBOLS
 endif # MOZ_AUTOMATION

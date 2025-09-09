@@ -6,8 +6,9 @@
 
 #include "SMILValue.h"
 
-#include "nsDebug.h"
 #include <string.h>
+
+#include "nsDebug.h"
 
 namespace mozilla {
 

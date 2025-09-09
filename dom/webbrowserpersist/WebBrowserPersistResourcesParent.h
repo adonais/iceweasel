@@ -7,9 +7,8 @@
 #ifndef WebBrowserPersistResourcesParent_h__
 #define WebBrowserPersistResourcesParent_h__
 
-#include "mozilla/PWebBrowserPersistResourcesParent.h"
-
 #include "WebBrowserPersistDocumentParent.h"
+#include "mozilla/PWebBrowserPersistResourcesParent.h"
 #include "nsCOMPtr.h"
 #include "nsIWebBrowserPersistDocument.h"
 

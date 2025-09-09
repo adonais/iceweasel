@@ -16,11 +16,11 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.RadioButton
-import androidx.compose.material.RadioButtonDefaults
-import androidx.compose.material.Text
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
@@ -229,7 +229,7 @@ private fun ComponentPermissionBlockedByAndroidButton(goToPhoneSettings: () -> U
     Button(
         onClick = goToPhoneSettings,
         colors = ButtonDefaults.textButtonColors(
-            backgroundColor = PhotonColors.LightGrey50,
+            containerColor = PhotonColors.LightGrey50,
         ),
         modifier = Modifier
             .padding(16.dp)

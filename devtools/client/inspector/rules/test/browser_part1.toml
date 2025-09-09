@@ -70,6 +70,8 @@ support-files = [
 
 ["browser_rules_at_starting-style.js"]
 
+["browser_rules_attributes-style.js"]
+
 ["browser_rules_authored.js"]
 
 ["browser_rules_authored_color.js"]

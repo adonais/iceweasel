@@ -6,17 +6,16 @@
 
 #include "ChromeObserver.h"
 
-#include "nsIBaseWindow.h"
-#include "nsIWidget.h"
-#include "nsIFrame.h"
-
-#include "nsContentUtils.h"
-#include "nsView.h"
-#include "nsPresContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/MutationEventBinding.h"
+#include "nsContentUtils.h"
+#include "nsIBaseWindow.h"
+#include "nsIFrame.h"
+#include "nsIWidget.h"
+#include "nsPresContext.h"
+#include "nsView.h"
 #include "nsXULElement.h"
 
 namespace mozilla::dom {
@@ -54,10 +53,8 @@ nsIWidget* ChromeObserver::GetWindowWidget() {
   // only top level chrome documents can set the titlebar color
   if (mDocument && mDocument->IsRootDisplayDocument()) {
     nsCOMPtr<nsISupports> container = mDocument->GetContainer();
-    nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(container);
-    if (baseWindow) {
-      nsCOMPtr<nsIWidget> mainWidget;
-      baseWindow->GetMainWidget(getter_AddRefs(mainWidget));
+    if (nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(container)) {
+      nsCOMPtr<nsIWidget> mainWidget = baseWindow->GetMainWidget();
       return mainWidget;
     }
   }

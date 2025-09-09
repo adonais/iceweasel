@@ -352,12 +352,7 @@ def check_style(enable_fixup):
     for filename in sorted(js_names.keys()):
         inclname = js_names[filename]
         file_kind = FileKind.get(filename)
-        if (
-            file_kind == FileKind.C
-            or file_kind == FileKind.CPP
-            or file_kind == FileKind.H
-            or file_kind == FileKind.INL_H
-        ):
+        if file_kind in {FileKind.C, FileKind.CPP, FileKind.H, FileKind.INL_H}:
             included_h_inclnames = set()  # type: set(inclname)
 
             with open(filename, encoding="utf-8") as f:
@@ -726,7 +721,7 @@ def check_file(
                     include.quote() + " is deprecated: " + msg,
                 )
 
-            if file_kind == FileKind.H or file_kind == FileKind.INL_H:
+            if file_kind in {FileKind.H, FileKind.INL_H}:
                 msg = deprecated_inclnames_in_header.get(include.inclname)
                 if msg and filename not in deprecated_inclnames_in_header_excludes:
                     error(
@@ -749,7 +744,7 @@ def check_file(
 
                 # Record inclusions of .h files for cycle detection later.
                 # (Exclude .tbl and .msg files.)
-                elif included_kind == FileKind.H or included_kind == FileKind.INL_H:
+                elif included_kind in {FileKind.H, FileKind.INL_H}:
                     included_h_inclnames.add(include.inclname)
 
                 # Check a H file doesn't #include an INL_H file.

@@ -20,7 +20,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/99267b6d193fbcb3e
  11 files changed, 32 insertions(+), 22 deletions(-)
 
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index b46a56a3ef..ebff602498 100644
+index 5800598b75..17c56bb2b1 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
 @@ -171,10 +171,11 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
@@ -37,10 +37,10 @@ index b46a56a3ef..ebff602498 100644
      // Timing frame info: all important timestamps for a full lifetime of a
      // single 'timing frame'.
 diff --git a/modules/rtp_rtcp/source/rtcp_receiver.cc b/modules/rtp_rtcp/source/rtcp_receiver.cc
-index fcbe871980..7cab66042b 100644
+index 9e4aadde46..41b106ac26 100644
 --- a/modules/rtp_rtcp/source/rtcp_receiver.cc
 +++ b/modules/rtp_rtcp/source/rtcp_receiver.cc
-@@ -388,11 +388,13 @@ RTCPReceiver::ConsumeReceivedXrReferenceTimeInfo() {
+@@ -389,11 +389,13 @@ RTCPReceiver::ConsumeReceivedXrReferenceTimeInfo() {
  
  void RTCPReceiver::RemoteRTCPSenderInfo(uint32_t* packet_count,
                                          uint32_t* octet_count,
@@ -57,7 +57,7 @@ index fcbe871980..7cab66042b 100644
  
  std::vector<ReportBlockData> RTCPReceiver::GetLatestReportBlockData() const {
 diff --git a/modules/rtp_rtcp/source/rtcp_receiver.h b/modules/rtp_rtcp/source/rtcp_receiver.h
-index 33aa986e8b..f6d1e027f4 100644
+index 9b9ddb4987..05f7024d62 100644
 --- a/modules/rtp_rtcp/source/rtcp_receiver.h
 +++ b/modules/rtp_rtcp/source/rtcp_receiver.h
 @@ -126,7 +126,8 @@ class RTCPReceiver final {
@@ -71,7 +71,7 @@ index 33aa986e8b..f6d1e027f4 100644
    std::optional<TimeDelta> AverageRtt() const;
    std::optional<TimeDelta> LastRtt() const;
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl.cc b/modules/rtp_rtcp/source/rtp_rtcp_impl.cc
-index 9ba5e9c6ac..b4c944ccf8 100644
+index 449c56fc78..3eb162f216 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl.cc
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl.cc
 @@ -516,11 +516,11 @@ void ModuleRtpRtcpImpl::GetSendStreamDataCounters(
@@ -92,7 +92,7 @@ index 9ba5e9c6ac..b4c944ccf8 100644
  
  std::vector<ReportBlockData> ModuleRtpRtcpImpl::GetLatestReportBlockData()
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl.h b/modules/rtp_rtcp/source/rtp_rtcp_impl.h
-index 2d6ceb4633..31e38e6401 100644
+index b0218aadc0..20f9397e91 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl.h
 @@ -205,7 +205,8 @@ class ABSL_DEPRECATED("") ModuleRtpRtcpImpl
@@ -106,7 +106,7 @@ index 2d6ceb4633..31e38e6401 100644
    // A snapshot of the most recent Report Block with additional data of
    // interest to statistics. Used to implement RTCRemoteInboundRtpStreamStats.
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-index 05f3b876c6..7142e0bd72 100644
+index b6769cfe85..5041e7c9cb 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
 @@ -527,11 +527,11 @@ void ModuleRtpRtcpImpl2::GetSendStreamDataCounters(
@@ -127,10 +127,10 @@ index 05f3b876c6..7142e0bd72 100644
  
  std::vector<ReportBlockData> ModuleRtpRtcpImpl2::GetLatestReportBlockData()
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl2.h b/modules/rtp_rtcp/source/rtp_rtcp_impl2.h
-index 625ec14c8d..af123a3015 100644
+index fa9d16c48e..ec277a3a5d 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_impl2.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_impl2.h
-@@ -200,7 +200,8 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
+@@ -199,7 +199,8 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
  
    void RemoteRTCPSenderInfo(uint32_t* packet_count,
                              uint32_t* octet_count,
@@ -141,7 +141,7 @@ index 625ec14c8d..af123a3015 100644
    // A snapshot of the most recent Report Block with additional data of
    // interest to statistics. Used to implement RTCRemoteInboundRtpStreamStats.
 diff --git a/modules/rtp_rtcp/source/rtp_rtcp_interface.h b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
-index e14072c0fc..02828619a6 100644
+index d2304e87db..bbdb38864e 100644
 --- a/modules/rtp_rtcp/source/rtp_rtcp_interface.h
 +++ b/modules/rtp_rtcp/source/rtp_rtcp_interface.h
 @@ -407,10 +407,11 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
@@ -159,7 +159,7 @@ index e14072c0fc..02828619a6 100644
    // Within this list, the sender-source SSRC pair is unique and per-pair the
    // ReportBlockData represents the latest Report Block that was received for
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index bd483bba7a..5ba85f6ea9 100644
+index 54adbe1707..262dea79b9 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
 @@ -1179,9 +1179,10 @@ std::optional<int64_t> RtpVideoStreamReceiver2::LastReceivedKeyframePacketMs()
@@ -176,7 +176,7 @@ index bd483bba7a..5ba85f6ea9 100644
  
  std::optional<RtpRtcpInterface::SenderReportStats>
 diff --git a/video/rtp_video_stream_receiver2.h b/video/rtp_video_stream_receiver2.h
-index d46acba850..3a6f3c9540 100644
+index d67c89ec1e..d75c303fc4 100644
 --- a/video/rtp_video_stream_receiver2.h
 +++ b/video/rtp_video_stream_receiver2.h
 @@ -232,7 +232,8 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
@@ -190,10 +190,10 @@ index d46acba850..3a6f3c9540 100644
   private:
    // Implements RtpVideoFrameReceiver.
 diff --git a/video/video_receive_stream2.cc b/video/video_receive_stream2.cc
-index d49db4c93c..0f31727433 100644
+index 1c25c6083f..e4e2cb9835 100644
 --- a/video/video_receive_stream2.cc
 +++ b/video/video_receive_stream2.cc
-@@ -587,7 +587,8 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {
+@@ -632,7 +632,8 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {
    // seem to be any support for these stats right now. So, we hack this in.
    rtp_video_stream_receiver_.RemoteRTCPSenderInfo(
        &stats.rtcp_sender_packets_sent, &stats.rtcp_sender_octets_sent,

@@ -286,13 +286,13 @@ export class TCPConnection {
     let sendResponse = () => resp.sendConditionally(resp => !resp.sent);
     let sendError = resp.sendError.bind(resp);
 
-    await this.despatch(cmd, resp)
+    await this.dispatch(cmd, resp)
       .then(sendResponse, sendError)
       .catch(lazy.error.report);
   }
 
   /**
-   * Despatches command to appropriate Marionette service.
+   * Dispatches command to appropriate Marionette service.
    *
    * @param {Command} cmd
    *     Command to run.
@@ -303,7 +303,7 @@ export class TCPConnection {
    * @throws {Error}
    *     A command's implementation may throw at any time.
    */
-  async despatch(cmd, resp) {
+  async dispatch(cmd, resp) {
     const startTime = Cu.now();
 
     let fn = this.driver.commands[cmd.name];

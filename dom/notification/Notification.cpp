@@ -8,14 +8,16 @@
 
 #include <utility>
 
+#include "Navigator.h"
+#include "NotificationUtils.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/Promise-inl.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ServiceWorkerGlobalScopeBinding.h"
 #include "mozilla/dom/WorkerRunnable.h"
@@ -24,8 +26,6 @@
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundChild.h"
-#include "Navigator.h"
-#include "NotificationUtils.h"
 #include "nsContentPermissionHelper.h"
 #include "nsContentUtils.h"
 #include "nsIContentPermissionPrompt.h"

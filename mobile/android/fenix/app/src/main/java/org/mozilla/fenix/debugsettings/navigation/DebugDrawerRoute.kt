@@ -16,6 +16,7 @@ import org.mozilla.fenix.debugsettings.addresses.AddressesDebugLocalesRepository
 import org.mozilla.fenix.debugsettings.addresses.AddressesTools
 import org.mozilla.fenix.debugsettings.cfrs.CfrToolsState
 import org.mozilla.fenix.debugsettings.cfrs.CfrToolsStore
+import org.mozilla.fenix.debugsettings.crashtools.CrashTools
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsStore
 import org.mozilla.fenix.debugsettings.gleandebugtools.ui.GleanDebugToolsScreen
 import org.mozilla.fenix.debugsettings.logins.LoginsTools
@@ -63,6 +64,10 @@ enum class DebugDrawerRoute(val route: String, @param:StringRes val title: Int) 
     AddonsDebugTools(
         route = "addons_debug_tools",
         title = R.string.debug_drawer_addons_tools_title,
+    ),
+    CrashDebugTools(
+        route = "crash_debug_tools",
+        title = R.string.crash_debug_tools_title,
     ),
     ;
 
@@ -165,6 +170,15 @@ enum class DebugDrawerRoute(val route: String, @param:StringRes val title: Int) 
                         }
                         content = {
                             AddonsDebugToolsScreen()
+                        }
+                    }
+
+                    CrashDebugTools -> {
+                        onClick = {
+                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.CrashDebugTools)
+                        }
+                        content = {
+                            CrashTools()
                         }
                     }
                 }

@@ -19,7 +19,6 @@ import org.mozilla.fenix.tabstray.TabsTrayTestTag
  * @param selectionMode [TabsTrayState.Mode] indicating whether the Tabs Tray is in single selection.
  * @param displayTabsInGrid Whether the normal and private tabs should be displayed in a grid.
  * @param onTabClose Invoked when the user clicks to close a tab.
- * @param onTabMediaClick Invoked when the user interacts with a tab's media controls.
  * @param onTabClick Invoked when the user clicks on a tab.
  * @param onTabLongClick Invoked when the user long clicks on a tab.
  * @param onMove Invoked after the drag and drop gesture completed. Swaps position of two tabs.
@@ -32,7 +31,6 @@ internal fun PrivateTabsPage(
     selectionMode: TabsTrayState.Mode,
     displayTabsInGrid: Boolean,
     onTabClose: (TabSessionState) -> Unit,
-    onTabMediaClick: (TabSessionState) -> Unit,
     onTabClick: (TabSessionState) -> Unit,
     onTabLongClick: (TabSessionState) -> Unit,
     onMove: (String, String?, Boolean) -> Unit,
@@ -45,7 +43,6 @@ internal fun PrivateTabsPage(
             selectionMode = selectionMode,
             modifier = Modifier.testTag(TabsTrayTestTag.PRIVATE_TABS_LIST),
             onTabClose = onTabClose,
-            onTabMediaClick = onTabMediaClick,
             onTabClick = onTabClick,
             onTabLongClick = onTabLongClick,
             onTabDragStart = {

@@ -7,10 +7,10 @@
 #ifndef mozilla_KeyframeUtils_h
 #define mozilla_KeyframeUtils_h
 
+#include "js/RootingAPI.h"                 // For JS::Handle
 #include "mozilla/KeyframeEffectParams.h"  // For CompositeOperation
 #include "nsCSSPropertyID.h"
 #include "nsTArrayForwardDeclare.h"  // For nsTArray
-#include "js/RootingAPI.h"           // For JS::Handle
 
 struct JSContext;
 class JSObject;

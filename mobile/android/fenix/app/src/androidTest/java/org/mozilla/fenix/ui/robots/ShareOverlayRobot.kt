@@ -22,6 +22,8 @@ import androidx.test.uiautomator.Until
 import org.hamcrest.Matchers.allOf
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.AppAndSystemHelper.forceCloseApp
+import org.mozilla.fenix.helpers.AppAndSystemHelper.isPackageInstalled
+import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
@@ -32,6 +34,7 @@ import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
+import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.ext.waitNotNull
 
 class ShareOverlayRobot {
@@ -93,6 +96,13 @@ class ShareOverlayRobot {
         mDevice.waitNotNull(Until.findObject(By.res("android:id/resolver_list")))
     }
 
+    fun expandAndroidShareLayout() {
+        Log.i(TAG, "verifySharingWithSelectedApp: Trying to expand the Android share layout")
+        itemWithResId("android:id/resolver_list").swipeUp(3)
+        Log.i(TAG, "verifySharingWithSelectedApp: Expanded the Android share layout")
+        waitForAppWindowToBeUpdated()
+    }
+
     fun verifySharingWithSelectedApp(appName: String, content: String, subject: String) {
         val sharingApp = mDevice.findObject(UiSelector().text(appName))
         Log.i(TAG, "verifySharingWithSelectedApp: Trying to verify that sharing app: $appName exists")
@@ -144,6 +154,30 @@ class ShareOverlayRobot {
             ),
         )
         Log.i(TAG, "verifyShareLinkIntent: Verified that the share intent for link: $url was launched")
+    }
+
+    fun clickSharingApp(appName: String, appPackageName: String) {
+        for (i in 1..RETRY_COUNT) {
+            Log.i(TAG, "clickSharingApp: Started try #$i")
+            val sharingApp = itemContainingText(appName)
+            if (isPackageInstalled(appPackageName)) {
+                try {
+                    assertUIObjectExists(sharingApp)
+                    Log.i(TAG, "clickSharingApp: Trying to click sharing app: $appName and wait for a new window")
+                    sharingApp.clickAndWaitForNewWindow()
+                    Log.i(TAG, "clickSharingApp: Clicked sharing app: $appName and waited for a new window")
+
+                    break
+                } catch (e: AssertionError) {
+                    Log.i(TAG, "clickSharingApp: AssertionError caught, executing fallback methods")
+                    if (i == RETRY_COUNT) {
+                        throw e
+                    } else {
+                        expandAndroidShareLayout()
+                    }
+                }
+            }
+        }
     }
 
     class Transition {

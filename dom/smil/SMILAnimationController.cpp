@@ -8,20 +8,20 @@
 
 #include <algorithm>
 
+#include "SMILCSSProperty.h"
+#include "SMILCompositor.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/SMILTimedElement.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/SVGAnimationElement.h"
-#include "nsContentUtils.h"
 #include "nsCSSProps.h"
+#include "nsContentUtils.h"
 #include "nsRefreshDriver.h"
-#include "mozilla/dom/Document.h"
-#include "SMILCompositor.h"
-#include "SMILCSSProperty.h"
 
 using namespace mozilla::dom;
 

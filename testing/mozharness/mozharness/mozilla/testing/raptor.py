@@ -1401,6 +1401,13 @@ class Raptor(
                 self.obj_path, "dist", "bin", "xpcshell.exe"
             )
 
+        if not self.run_local:
+            env["MOZ_INTERNAL_UPLOAD_DIR"] = os.path.join(
+                os.path.dirname(env["MOZ_UPLOAD_DIR"]), "perftest"
+            )
+            if not os.path.exists(env["MOZ_INTERNAL_UPLOAD_DIR"]):
+                os.makedirs(env["MOZ_INTERNAL_UPLOAD_DIR"])
+
         # Needed to load unsigned Raptor WebExt on release builds
         if self.is_release_build:
             env["MOZ_DISABLE_NONLOCAL_CONNECTIONS"] = "1"

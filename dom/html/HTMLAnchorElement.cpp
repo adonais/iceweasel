@@ -6,18 +6,18 @@
 
 #include "mozilla/dom/HTMLAnchorElement.h"
 
+#include "mozilla/EventDispatcher.h"
+#include "mozilla/FocusModel.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/BindContext.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLAnchorElementBinding.h"
 #include "mozilla/dom/HTMLDNSPrefetch.h"
-#include "mozilla/EventDispatcher.h"
-#include "mozilla/MemoryReporting.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsGkAtoms.h"
-#include "mozilla/FocusModel.h"
-#include "mozilla/dom/Document.h"
-#include "nsPresContext.h"
 #include "nsIURI.h"
+#include "nsPresContext.h"
 #include "nsWindowSizes.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(Anchor)

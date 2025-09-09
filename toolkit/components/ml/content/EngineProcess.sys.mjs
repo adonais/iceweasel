@@ -129,10 +129,6 @@ export const DEFAULT_MODELS = Object.freeze({
  * The only exception is web extension, as the engine id is dynamically created with the extension id.
  */
 export const FEATURES = {
-  // see toolkit/components/formautofill/MLAutofill.sys.mjs
-  "autofill-classification": {
-    engineId: "autofill-ml",
-  },
   // see toolkit/components/pdfjs/content/PdfjsParent.sys.mjs
   "pdfjs-alt-text": {
     engineId: "pdfjs",

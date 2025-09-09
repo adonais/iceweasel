@@ -11,7 +11,6 @@ import android.view.View
 import android.widget.FrameLayout
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -20,7 +19,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.settings
 import org.robolectric.RobolectricTestRunner
 import java.io.File
 
@@ -58,10 +56,7 @@ class PerformanceInflaterTest {
     @Test
     fun `WHEN inflating one of our resource file, the inflater should not crash`() {
         val fileList = File("./src/main/res/layout").listFiles()
-
-        // There might be custom views who try to access `Settings` through the extension function.
-        mockkStatic("org.mozilla.fenix.ext.ContextKt") {
-            every { any<Context>().settings() } returns mockk(relaxed = true)
+        every { testContext.components.settings } returns mockk(relaxed = true)
 
             for (file in fileList!!) {
                 val layoutName = file.name.split(".")[0]
@@ -76,7 +71,6 @@ class PerformanceInflaterTest {
                     perfInflater.inflate(layoutId, FrameLayout(testContext), true)
                 }
             }
-        }
     }
 }
 

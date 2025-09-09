@@ -15,6 +15,7 @@ const Commands = {
   networkCommand: "devtools/shared/commands/network/network-command",
   objectCommand: "devtools/shared/commands/object/object-command",
   resourceCommand: "devtools/shared/commands/resource/resource-command",
+  responsiveCommand: "devtools/shared/commands/responsive/responsive-command",
   rootResourceCommand:
     "devtools/shared/commands/root-resource/root-resource-command",
   scriptCommand: "devtools/shared/commands/script/script-command",

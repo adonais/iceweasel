@@ -62,6 +62,16 @@
 
     <androidx.preference.PreferenceCategory
         android:layout="@layout/preference_cat_style"
+        android:title="@string/preferences_app_icon"
+        android:key="@string/pref_key_customization_category_app_icon"
+        app:iconSpaceReserved="false">
+
+        <org.mozilla.fenix.iconpicker.ui.AppIconPreference
+            android:key="@string/pref_key_app_icon" />
+    </androidx.preference.PreferenceCategory>
+
+    <androidx.preference.PreferenceCategory
+        android:layout="@layout/preference_cat_style"
         android:title="@string/preferences_toolbar_layout"
         android:key="@string/pref_key_customization_category_toolbar_layout"
         android:visible="false"
@@ -70,19 +80,7 @@
             android:key="@string/pref_key_toolbar_expanded"
             app:sharedPreferenceKey="pref_key_toolbar_expanded"
             app:falseOptionTitle="@string/preference_simple_toolbar"
-            app:trueOptionTitle="@string/preference_expanded_toolbar"
-            app:falseOptionIconRes="@drawable/ic_toolbar_simple"
-            app:trueOptionIconRes="@drawable/ic_toolbar_expanded" />
-    </androidx.preference.PreferenceCategory>
-
-    <androidx.preference.PreferenceCategory
-        android:layout="@layout/preference_cat_style"
-        android:title="@string/preferences_app_icon"
-        android:key="@string/pref_key_customization_category_app_icon"
-        app:iconSpaceReserved="false">
-
-        <org.mozilla.fenix.iconpicker.ui.AppIconPreference
-            android:key="@string/pref_key_app_icon" />
+            app:trueOptionTitle="@string/preference_expanded_toolbar" />
     </androidx.preference.PreferenceCategory>
 
     <androidx.preference.PreferenceCategory

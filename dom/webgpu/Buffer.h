@@ -6,13 +6,14 @@
 #ifndef GPU_BUFFER_H_
 #define GPU_BUFFER_H_
 
+#include <memory>
+
+#include "ObjectModel.h"
 #include "js/RootingAPI.h"
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/ipc/SharedMemoryMapping.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
 #include "nsTArray.h"
-#include "ObjectModel.h"
-#include <memory>
 
 namespace mozilla {
 namespace webgpu {

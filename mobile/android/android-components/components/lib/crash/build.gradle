@@ -44,6 +44,15 @@ android {
         }
     }
 
+    sourceSets {
+        main {
+            java {
+                // Generated files are output in the objdir
+                srcDir "${gradle.mozconfig.topobjdir}/mobile/android/android-components/components/lib/crash/src/main/java"
+            }
+        }
+    }
+
     ksp {
         arg("room.schemaLocation", "$projectDir/schemas".toString())
     }

@@ -161,14 +161,19 @@ function expandComputedViewPropertyByIndex(view, index) {
  * @param {CssComputedView} view
  *        The instance of the computed view panel
  * @param {Number} index
- *        The index of the link to be retrieved
+ *        The index of the matched selector element
  * @return {DOMNode} The link at the given index, if one exists, null otherwise
  */
 function getComputedViewLinkByIndex(view, index) {
-  const links = view.styleDocument.querySelectorAll(
-    ".rule-link .computed-link"
+  const matchedSelectors = view.styleDocument.querySelectorAll(
+    ".matchedselectors > p"
   );
-  return links[index];
+  const matchedSelector = matchedSelectors[index];
+  if (!matchedSelector) {
+    return null;
+  }
+
+  return matchedSelector.querySelector(`.rule-link .computed-link`);
 }
 
 /**

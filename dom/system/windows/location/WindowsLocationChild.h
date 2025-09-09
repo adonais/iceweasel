@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_WindowsLocationChild_h__
 #define mozilla_dom_WindowsLocationChild_h__
 
-#include "mozilla/dom/PWindowsLocationChild.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/dom/PWindowsLocationChild.h"
 
 class ILocation;
 

@@ -294,6 +294,9 @@ bool ShouldUsePortal(PortalKind aPortalKind) {
   const int32_t pref = [&] {
     switch (aPortalKind) {
       case PortalKind::FilePicker:
+#ifdef EARLY_BETA_OR_EARLIER
+        autoBehavior = true;
+#endif
         return StaticPrefs::widget_use_xdg_desktop_portal_file_picker();
       case PortalKind::MimeHandler:
         // Mime portal breaks default browser handling, see bug 1516290.

@@ -199,10 +199,19 @@ inline void AssertObjectIsSavedFrameOrWrapper(JSContext* cx,
 // to the subsumes callback, and should be special cased with a shortcut before
 // that.
 struct ReconstructedSavedFramePrincipals : public JSPrincipals {
+ private:
   explicit constexpr ReconstructedSavedFramePrincipals()
-      : JSPrincipals(JSPrincipals::RefCount(1)) {
-    MOZ_ASSERT(is(this));
-  }
+      : JSPrincipals(JSPrincipals::RefCount(1)) {}
+
+ public:
+  ReconstructedSavedFramePrincipals(const ReconstructedSavedFramePrincipals&) =
+      delete;
+  ReconstructedSavedFramePrincipals& operator=(
+      const ReconstructedSavedFramePrincipals&) = delete;
+  ReconstructedSavedFramePrincipals(ReconstructedSavedFramePrincipals&&) =
+      delete;
+  ReconstructedSavedFramePrincipals& operator=(
+      ReconstructedSavedFramePrincipals&&) = delete;
 
   [[nodiscard]] bool write(JSContext* cx,
                            JSStructuredCloneWriter* writer) override {

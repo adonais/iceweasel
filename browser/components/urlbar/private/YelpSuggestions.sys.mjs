@@ -43,8 +43,8 @@ export class YelpSuggestions extends SuggestProvider {
     ];
   }
 
-  get primaryUserControlledPreference() {
-    return "suggest.yelp";
+  get primaryUserControlledPreferences() {
+    return ["suggest.yelp"];
   }
 
   get rustSuggestionType() {

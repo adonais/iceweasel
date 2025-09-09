@@ -8,7 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/video_codecs/video_encoder.h"
+
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <memory>
+#include <optional>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -19,14 +28,28 @@
 #include "api/test/create_frame_generator.h"
 #include "api/test/frame_generator_interface.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
+#include "api/video/encoded_image.h"
+#include "api/video/video_bitrate_allocation.h"
+#include "api/video/video_bitrate_allocator.h"
+#include "api/video/video_codec_type.h"
+#include "api/video/video_frame.h"
+#include "api/video/video_frame_type.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
+#include "api/video_codecs/scalability_mode.h"
+#include "api/video_codecs/sdp_video_format.h"
+#include "api/video_codecs/video_codec.h"
+#include "api/video_codecs/video_decoder.h"
+#include "api/video_codecs/video_encoder_factory.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "media/base/media_constants.h"
 #include "modules/video_coding/codecs/av1/av1_svc_config.h"
 #include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/svc/scalability_mode_util.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/strings/string_builder.h"
 #include "rtc_tools/video_encoder/encoded_image_file_writer.h"
 #include "test/testsupport/y4m_frame_generator.h"
 
@@ -415,7 +438,7 @@ class TestVideoEncoderFactoryWrapper final {
 
         *(video_codec.VP8()) = VideoEncoder::GetDefaultVp8Settings();
         video_codec.VP8()->numberOfTemporalLayers = temporal_layers;
-        video_codec.qpMax = cricket::kDefaultVideoMaxQpVpx;
+        video_codec.qpMax = kDefaultVideoMaxQpVpx;
         break;
 
       case kVideoCodecVP9:
@@ -423,7 +446,7 @@ class TestVideoEncoderFactoryWrapper final {
         video_codec.VP9()->numberOfSpatialLayers = spatial_layers;
         video_codec.VP9()->numberOfTemporalLayers = temporal_layers;
         video_codec.VP9()->interLayerPred = inter_layer_pred_mode;
-        video_codec.qpMax = cricket::kDefaultVideoMaxQpVpx;
+        video_codec.qpMax = kDefaultVideoMaxQpVpx;
         break;
 
       case kVideoCodecH264:
@@ -431,7 +454,7 @@ class TestVideoEncoderFactoryWrapper final {
 
         *(video_codec.H264()) = VideoEncoder::GetDefaultH264Settings();
         video_codec.H264()->numberOfTemporalLayers = temporal_layers;
-        video_codec.qpMax = cricket::kDefaultVideoMaxQpH26x;
+        video_codec.qpMax = kDefaultVideoMaxQpH26x;
         break;
 
       case kVideoCodecAV1:
@@ -442,11 +465,11 @@ class TestVideoEncoderFactoryWrapper final {
         } else {
           RTC_LOG(LS_WARNING) << "Failed to configure svc bitrates for av1.";
         }
-        video_codec.qpMax = cricket::kDefaultVideoMaxQpAv1;
+        video_codec.qpMax = kDefaultVideoMaxQpAv1;
         break;
       case kVideoCodecH265:
         // TODO(bugs.webrtc.org/13485)
-        video_codec.qpMax = cricket::kDefaultVideoMaxQpH26x;
+        video_codec.qpMax = kDefaultVideoMaxQpH26x;
         break;
       default:
         RTC_CHECK_NOTREACHED();
@@ -536,12 +559,12 @@ int main(int argc, char* argv[]) {
   absl::ParseCommandLine(argc, argv);
 
   if (absl::GetFlag(FLAGS_verbose)) {
-    rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
+    webrtc::LogMessage::LogToDebug(webrtc::LS_VERBOSE);
   } else {
-    rtc::LogMessage::LogToDebug(rtc::LS_INFO);
+    webrtc::LogMessage::LogToDebug(webrtc::LS_INFO);
   }
 
-  rtc::LogMessage::SetLogToStderr(true);
+  webrtc::LogMessage::SetLogToStderr(true);
 
   const bool list_formats = absl::GetFlag(FLAGS_list_formats);
   const bool validate_psnr = absl::GetFlag(FLAGS_validate_psnr);

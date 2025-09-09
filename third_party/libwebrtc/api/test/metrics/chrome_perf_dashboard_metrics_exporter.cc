@@ -20,6 +20,7 @@
 #include "api/array_view.h"
 #include "api/test/metrics/metric.h"
 #include "test/testsupport/file_utils.h"
+#include "test/testsupport/perf_test.h"
 #include "test/testsupport/perf_test_histogram_writer.h"
 #include "test/testsupport/perf_test_result_writer.h"
 
@@ -101,7 +102,7 @@ ChromePerfDashboardMetricsExporter::ChromePerfDashboardMetricsExporter(
     : export_file_path_(export_file_path) {}
 
 bool ChromePerfDashboardMetricsExporter::Export(
-    rtc::ArrayView<const Metric> metrics) {
+    ArrayView<const Metric> metrics) {
   std::unique_ptr<PerfTestResultWriter> writer =
       absl::WrapUnique<PerfTestResultWriter>(CreateHistogramWriter());
   for (const Metric& metric : metrics) {

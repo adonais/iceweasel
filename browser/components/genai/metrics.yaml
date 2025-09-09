@@ -260,33 +260,59 @@ genai.chatbot:
         type: string
         description: Sidebar is currently open.
 
-  onboarding_close:
+  length_disclaimer:
     type: event
     description: >
-      Chatbot onboarding closed from provider choice.
+      Warning message for length disclaimer is shown.
     bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1911104
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1980228
     data_reviews:
-      - https://phabricator.services.mozilla.com/D223938
+      - https://phabricator.services.mozilla.com/D260463
     data_sensitivity:
       - interaction
-    expires: 147
+    expires: 154
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
       - events
     extra_keys:
+      type:
+        type: string
+        description: Content scope.
+      length:
+        type: quantity
+        description: Page content length.
       provider:
         type: string
-        description: Which provider was last selected.
-      step:
-        type: quantity
-        description: Onboarding screen number.
+        description: Current provider id.
 
-  onboarding_continue:
+  length_disclaimer_dismissed:
     type: event
     description: >
-      Chatbot onboarding continued from provider choice.
+      Warning message is dismissed.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1980228
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D260463
+    data_sensitivity:
+      - interaction
+    expires: 154
+    notification_emails:
+      - elee@mozilla.com
+    send_in_pings:
+      - events
+    extra_keys:
+      type:
+        type: string
+        description: Content scope.
+      provider:
+        type: string
+        description: Current provider id.
+
+  onboarding_close:
+    type: event
+    description: >
+      Chatbot onboarding closed from provider choice.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1911104
     data_reviews:
@@ -446,29 +472,6 @@ genai.chatbot:
       text:
         type: string
         description: Which terms link.
-
-  onboarding_text_highlight_displayed:
-    type: event
-    description: >
-      Chatbot onboarding impression for text highlight screen.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1911104
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D223938
-    data_sensitivity:
-      - interaction
-    expires: 147
-    notification_emails:
-      - elee@mozilla.com
-    send_in_pings:
-      - events
-    extra_keys:
-      provider:
-        type: string
-        description: Which provider was last selected.
-      step:
-        type: quantity
-        description: Onboarding screen number.
 
   prompt_click:
     type: event

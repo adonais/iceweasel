@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <utility>
+
 #include "MainThreadUtils.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/RefPtr.h"

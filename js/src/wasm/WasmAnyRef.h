@@ -386,7 +386,7 @@ class WrappedPtrOperations<wasm::AnyRef, Wrapper> {
 // If the Value is a GC pointer type, call |f| with the pointer cast to that
 // type and return the result wrapped in a Maybe, otherwise return None().
 template <typename F>
-auto MapGCThingTyped(const wasm::AnyRef& val, F&& f) {
+inline auto MapGCThingTyped(const wasm::AnyRef& val, F&& f) {
   switch (val.kind()) {
     case wasm::AnyRefKind::Object:
       return mozilla::Some(f(&val.toJSObject()));

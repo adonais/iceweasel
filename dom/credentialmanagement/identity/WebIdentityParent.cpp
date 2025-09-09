@@ -4,12 +4,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Components.h"
-#include "mozilla/dom/NavigatorLogin.h"
-#include "mozilla/dom/IdentityNetworkHelpers.h"
 #include "mozilla/dom/WebIdentityParent.h"
-#include "mozilla/dom/WindowGlobalParent.h"
+
+#include "mozilla/Components.h"
 #include "mozilla/IdentityCredentialRequestManager.h"
+#include "mozilla/dom/IdentityNetworkHelpers.h"
+#include "mozilla/dom/NavigatorLogin.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsIIdentityCredentialPromptService.h"
 #include "nsIIdentityCredentialStorageService.h"

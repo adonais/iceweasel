@@ -192,6 +192,8 @@ enum class PreBarrierKind {
 };
 
 enum class PostBarrierKind {
+  // No post barrier.
+  None,
   // Add a store buffer entry if the new value requires it, but do not attempt
   // to remove a pre-existing entry.
   Imprecise,
@@ -1412,7 +1414,7 @@ struct BaseCompiler final {
   //   register is preserved by this function.
   // - `value` is the value that was stored in the field. This register is
   //   preserved by this function.
-  // - `temp` is clobbered by this function.
+  // - `temp` is consumed by this function.
   [[nodiscard]] bool emitPostBarrierWholeCell(RegRef object, RegRef value,
                                               RegPtr temp);
 
@@ -1846,7 +1848,8 @@ struct BaseCompiler final {
 
   [[nodiscard]] bool emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
                                     const ArrayType& array, AnyReg value,
-                                    PreBarrierKind preBarrierKind);
+                                    PreBarrierKind preBarrierKind,
+                                    PostBarrierKind postBarrierKind);
 
 #ifdef ENABLE_WASM_SIMD
   void emitVectorAndNot();

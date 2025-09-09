@@ -11,8 +11,8 @@
 #include "mozilla/SMILAttr.h"
 #include "mozilla/SVGContentUtils.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGElement.h"
+#include "mozilla/dom/SVGLengthBinding.h"
 #include "nsError.h"
 
 struct GeckoFontMetrics;

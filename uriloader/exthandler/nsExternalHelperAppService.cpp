@@ -1294,8 +1294,8 @@ nsExternalHelperAppService::Observe(nsISupports* aSubject, const char* aTopic,
   if (!strcmp(aTopic, "profile-before-change")) {
     ExpungeTemporaryFiles();
   } else if (!strcmp(aTopic, "last-pb-context-exited")) {
-    if (Preferences::GetBool("browser.download.enableDeletePrivate", true) &&
-        Preferences::GetBool("browser.download.deletePrivate", true)) {
+    if (StaticPrefs::browser_download_enableDeletePrivate() &&
+        StaticPrefs::browser_download_deletePrivate()) {
       ExpungePrivateFiles();
     }
     ExpungeTemporaryPrivateFiles();
@@ -3745,10 +3745,14 @@ void nsExternalHelperAppService::SanitizeFileName(nsAString& aFileName,
 
 #ifdef XP_WIN
   if (nsLocalFile::CheckForReservedFileName(outFileName)) {
-    outFileName.Truncate();
+    int32_t dotidx = outFileName.RFind(u".");
+    if (dotidx == -1) {
+      outFileName.Truncate();
+    } else {
+      outFileName = Substring(outFileName, dotidx);
+    }
     CheckDefaultFileName(outFileName, aFlags);
   }
-
 #endif
 
   if (!(aFlags & VALIDATE_ALLOW_INVALID_FILENAMES)) {

@@ -5,23 +5,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "LocalStorage.h"
+
 #include "LocalStorageCache.h"
 #include "LocalStorageManager.h"
 #include "StorageUtils.h"
-
-#include "nsIPrincipal.h"
-
+#include "mozilla/EnumSet.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/dom/PermissionMessageUtils.h"
 #include "mozilla/dom/StorageBinding.h"
 #include "mozilla/dom/StorageEvent.h"
 #include "mozilla/dom/StorageEventBinding.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/EnumSet.h"
-#include "nsThreadUtils.h"
 #include "nsContentUtils.h"
+#include "nsIPrincipal.h"
 #include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 

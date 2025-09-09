@@ -294,11 +294,7 @@ void gfxPlatformGtk::InitWebRenderConfig() {
   // HDR requires compositor to work
 #if defined(MOZ_WAYLAND)
   if (feature.IsEnabled()) {
-    if (!StaticPrefs::gfx_wayland_hdr_AtStartup()) {
-      feature.ForceDisable(FeatureStatus::Unavailable, "HDR mode is disabled",
-                           "FEATURE_FAILURE_NO_HDR"_ns);
-
-    } else if (!IsWaylandDisplay()) {
+    if (!IsWaylandDisplay()) {
       feature.ForceDisable(FeatureStatus::Unavailable,
                            "Wayland support missing",
                            "FEATURE_FAILURE_NO_WAYLAND"_ns);
@@ -314,10 +310,6 @@ void gfxPlatformGtk::InitWebRenderConfig() {
       feature.ForceDisable(FeatureStatus::Unavailable,
                            "Requires wp_viewporter protocol support",
                            "FEATURE_FAILURE_REQUIRES_WPVIEWPORTER"_ns);
-    } else if (!GetGlobalDMABufFormats()->SupportsHDRComposition()) {
-      feature.ForceDisable(FeatureStatus::Unavailable,
-                           "Requires HDR format direct composition",
-                           "FEATURE_FAILURE_REQUIRES_FORMAT_COMPOSITION"_ns);
     }
   }
 #else  // MOZ_WAYLAND

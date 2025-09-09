@@ -9,11 +9,11 @@
 
 #include <stdint.h>
 
-#include "nsAttrValue.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ServoUtils.h"
 #include "mozilla/dom/DOMString.h"
+#include "nsAttrValue.h"
 
 namespace mozilla {
 class ShadowParts;

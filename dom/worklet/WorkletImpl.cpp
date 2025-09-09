@@ -8,7 +8,6 @@
 
 #include "Worklet.h"
 #include "WorkletThread.h"
-
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/dom/DocGroup.h"

@@ -12,6 +12,7 @@
 
 // Global includes
 #include <utility>
+
 #include "MainThreadUtils.h"
 #include "jsapi.h"
 #include "mozilla/Assertions.h"

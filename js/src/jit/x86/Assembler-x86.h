@@ -305,9 +305,14 @@ class Assembler : public AssemblerX86Shared {
   void push(const ImmWord imm) { push(Imm32(imm.value)); }
   void push(const ImmPtr imm) { push(ImmWord(uintptr_t(imm.value))); }
   void push(FloatRegister src) {
-    MOZ_ASSERT(src.isDouble(), "float32 and simd128 not supported");
+    // We allocate space for double even when storing a float.
     subl(Imm32(sizeof(double)), StackPointer);
-    vmovsd(src, Address(StackPointer, 0));
+    if (src.isDouble()) {
+      vmovsd(src, Address(StackPointer, 0));
+    } else {
+      MOZ_ASSERT(src.isSingle(), "simd128 is not supported");
+      vmovss(src, Address(StackPointer, 0));
+    }
   }
 
   CodeOffset pushWithPatch(ImmWord word) {
@@ -316,8 +321,13 @@ class Assembler : public AssemblerX86Shared {
   }
 
   void pop(FloatRegister src) {
-    MOZ_ASSERT(src.isDouble(), "float32 and simd128 not supported");
-    vmovsd(Address(StackPointer, 0), src);
+    if (src.isDouble()) {
+      vmovsd(Address(StackPointer, 0), src);
+    } else {
+      MOZ_ASSERT(src.isSingle(), "simd128 is not supported");
+      vmovss(Address(StackPointer, 0), src);
+    }
+    // We free space for double even when storing a float.
     addl(Imm32(sizeof(double)), StackPointer);
   }
 

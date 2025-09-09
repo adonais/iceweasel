@@ -34,6 +34,7 @@ open class BrowserToolbarStore(
                 mode = initialState.mode,
                 displayState = initialState.displayState,
                 editState = initialState.editState,
+                gravity = initialState.gravity,
             ),
         )
     }
@@ -46,6 +47,7 @@ private fun reduce(state: BrowserToolbarState, action: BrowserToolbarAction): Br
             mode = action.mode,
             displayState = action.displayState,
             editState = action.editState,
+            gravity = action.gravity,
         )
 
         is BrowserToolbarAction.ToggleEditMode -> state.copy(
@@ -53,6 +55,10 @@ private fun reduce(state: BrowserToolbarState, action: BrowserToolbarAction): Br
             editState = state.editState.copy(
                 query = if (action.editMode) state.editState.query else "",
             ),
+        )
+
+        is BrowserToolbarAction.ToolbarGravityUpdated -> state.copy(
+            gravity = action.gravity,
         )
 
         is BrowserToolbarAction.CommitUrl -> state
@@ -96,7 +102,7 @@ private fun reduce(state: BrowserToolbarState, action: BrowserToolbarAction): Br
         is BrowserEditToolbarAction.SearchQueryUpdated -> state.copy(
             editState = state.editState.copy(
                 query = action.query,
-                showQueryAsPreselected = action.showAsPreselected,
+                isQueryPrefilled = action.isQueryPrefilled,
             ),
         )
 

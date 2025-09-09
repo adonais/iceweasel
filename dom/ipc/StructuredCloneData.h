@@ -8,10 +8,11 @@
 #define mozilla_dom_ipc_StructuredCloneData_h
 
 #include <algorithm>
+
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
-#include "nsISupportsImpl.h"
 #include "nsIInputStream.h"
+#include "nsISupportsImpl.h"
 
 namespace IPC {
 class Message;

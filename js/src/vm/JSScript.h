@@ -1124,10 +1124,10 @@ class ScriptSourceObject : public NativeObject {
 #endif
 
   enum {
-    SOURCE_SLOT = 0,
+    PRIVATE_SLOT = 0,  // Must be first slot for JSCLASS_SLOT0_IS_NSISUPPORTS.
+    SOURCE_SLOT,
     ELEMENT_PROPERTY_SLOT,
     INTRODUCTION_SCRIPT_SLOT,
-    PRIVATE_SLOT,
     STENCILS_SLOT,
     RESERVED_SLOTS
   };

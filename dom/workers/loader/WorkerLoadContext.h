@@ -7,14 +7,14 @@
 #ifndef mozilla_dom_workers_WorkerLoadContext_h__
 #define mozilla_dom_workers_WorkerLoadContext_h__
 
+#include "js/loader/LoadContextBase.h"
+#include "js/loader/ScriptKind.h"
+#include "js/loader/ScriptLoadRequest.h"
+#include "mozilla/CORSMode.h"
+#include "mozilla/dom/Promise.h"
 #include "nsIChannel.h"
 #include "nsIInputStream.h"
 #include "nsIRequest.h"
-#include "mozilla/CORSMode.h"
-#include "mozilla/dom/Promise.h"
-#include "js/loader/ScriptKind.h"
-#include "js/loader/ScriptLoadRequest.h"
-#include "js/loader/LoadContextBase.h"
 
 class nsIReferrerInfo;
 class nsIURI;

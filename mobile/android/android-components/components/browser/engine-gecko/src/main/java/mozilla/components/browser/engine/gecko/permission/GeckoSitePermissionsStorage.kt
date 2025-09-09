@@ -29,6 +29,8 @@ import org.mozilla.geckoview.GeckoSession.PermissionDelegate.PERMISSION_AUTOPLAY
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.PERMISSION_AUTOPLAY_INAUDIBLE
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.PERMISSION_GEOLOCATION
+import org.mozilla.geckoview.GeckoSession.PermissionDelegate.PERMISSION_LOCAL_DEVICE_ACCESS
+import org.mozilla.geckoview.GeckoSession.PermissionDelegate.PERMISSION_LOCAL_NETWORK_ACCESS
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.PERMISSION_MEDIA_KEY_SYSTEM_ACCESS
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.PERMISSION_PERSISTENT_STORAGE
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.PERMISSION_STORAGE_ACCESS
@@ -165,6 +167,8 @@ class GeckoSitePermissionsStorage(
             val geckoCrossOriginStorageAccess = geckoPermissionsByType[PERMISSION_STORAGE_ACCESS]?.firstOrNull()
             val geckoAudible = geckoPermissionsByType[PERMISSION_AUTOPLAY_AUDIBLE]?.firstOrNull()
             val geckoInAudible = geckoPermissionsByType[PERMISSION_AUTOPLAY_INAUDIBLE]?.firstOrNull()
+            val geckoLocalDeviceAccess = geckoPermissionsByType[PERMISSION_LOCAL_DEVICE_ACCESS]?.firstOrNull()
+            val geckoLocalNetworkAccess = geckoPermissionsByType[PERMISSION_LOCAL_NETWORK_ACCESS]?.firstOrNull()
 
             /*
              * To avoid GeckoView caching previous request, we need to clear, previous data
@@ -235,6 +239,26 @@ class GeckoSitePermissionsStorage(
                 updatedPermission =
                     updatedPermission.copy(autoplayInaudible = AutoplayStatus.BLOCKED)
             }
+
+            if (geckoLocalDeviceAccess != null) {
+                removeTemporaryPermissionIfAny(geckoLocalDeviceAccess)
+                geckoStorage.setPermission(
+                    geckoLocalDeviceAccess,
+                    userSitePermissions.localDeviceAccess.toGeckoStatus(),
+                )
+                updatedPermission =
+                    updatedPermission.copy(localDeviceAccess = NO_DECISION)
+            }
+
+            if (geckoLocalNetworkAccess != null) {
+                removeTemporaryPermissionIfAny(geckoLocalNetworkAccess)
+                geckoStorage.setPermission(
+                    geckoLocalNetworkAccess,
+                    userSitePermissions.localNetworkAccess.toGeckoStatus(),
+                )
+                updatedPermission =
+                    updatedPermission.copy(localNetworkAccess = NO_DECISION)
+            }
         }
         return updatedPermission
     }
@@ -267,6 +291,8 @@ class GeckoSitePermissionsStorage(
             }
             val geckoAudible = geckoPermissionByType[PERMISSION_AUTOPLAY_AUDIBLE]?.firstOrNull()
             val geckoInAudible = geckoPermissionByType[PERMISSION_AUTOPLAY_INAUDIBLE]?.firstOrNull()
+            val geckoLocalDeviceAccess = geckoPermissionByType[PERMISSION_LOCAL_DEVICE_ACCESS]?.firstOrNull()
+            val geckoLocalNetworkAccess = geckoPermissionByType[PERMISSION_LOCAL_NETWORK_ACCESS]?.firstOrNull()
 
             /**
              * We only consider permissions from geckoView, when the values default value
@@ -299,6 +325,18 @@ class GeckoSitePermissionsStorage(
             if (geckoCrossOriginStorageAccess != null && geckoCrossOriginStorageAccess.value != VALUE_PROMPT) {
                 combinedPermissions = combinedPermissions?.copy(
                     crossOriginStorageAccess = geckoCrossOriginStorageAccess.value.toStatus(),
+                )
+            }
+
+            if (geckoLocalDeviceAccess != null && geckoLocalDeviceAccess.value != VALUE_PROMPT) {
+                combinedPermissions = combinedPermissions?.copy(
+                    localDeviceAccess = geckoLocalDeviceAccess.value.toStatus(),
+                )
+            }
+
+            if (geckoLocalNetworkAccess != null && geckoLocalNetworkAccess.value != VALUE_PROMPT) {
+                combinedPermissions = combinedPermissions?.copy(
+                    localNetworkAccess = geckoLocalNetworkAccess.value.toStatus(),
                 )
             }
 

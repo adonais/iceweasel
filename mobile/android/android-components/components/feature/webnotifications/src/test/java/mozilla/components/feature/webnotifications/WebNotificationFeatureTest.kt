@@ -8,7 +8,6 @@ import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.icons.Icon
 import mozilla.components.browser.icons.Icon.Source
@@ -35,7 +34,6 @@ import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 
-@ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class WebNotificationFeatureTest {
 

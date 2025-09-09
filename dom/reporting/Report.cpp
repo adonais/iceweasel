@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/Report.h"
+
 #include "mozilla/dom/ReportBody.h"
 #include "mozilla/dom/ReportingBinding.h"
 #include "nsIGlobalObject.h"

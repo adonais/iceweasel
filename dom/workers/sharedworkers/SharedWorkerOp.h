@@ -6,7 +6,6 @@
 #define mozilla_dom_sharedworkerop_h__
 
 #include "mozilla/SchedulerGroup.h"
-
 #include "mozilla/dom/RemoteWorkerOp.h"
 #include "mozilla/dom/SharedWorkerOpArgs.h"
 

@@ -10,8 +10,10 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.hasAnySibling
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -216,6 +218,27 @@ class DownloadRobot {
         Log.i(TAG, "clickImagesFilter: Clicked the \"Images\" download downloads filter")
     }
 
+    fun clickTryAgainDownloadMenuButton(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "clickDownloadedItem: Trying to click the \"Try again\"button")
+        composeTestRule.onNodeWithContentDescription(getStringResource(R.string.download_retry_action))
+            .performClick()
+        Log.i(TAG, "clickDownloadedItem: Clicked the \"Try again\" button")
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    fun verifyDownloadFileFailedMessage(composeTestRule: ComposeTestRule, fileName: String) {
+        Log.i(TAG, "verifyDownloadFileFailedMessage: Trying to verify the download failed for file: $fileName message")
+        composeTestRule.onNodeWithText(fileName, useUnmergedTree = true).assert(hasAnySibling(hasText(getStringResource(R.string.download_item_status_failed))))
+        Log.i(TAG, "verifyDownloadFileFailedMessage: Verified the download failed for file: $fileName message")
+    }
+
+    fun verifyPauseDownloadMenuButtonButton(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "verifyPauseDownloadMenuButtonButton: Trying to click the \"Try again\"button")
+        composeTestRule.onNodeWithContentDescription(getStringResource(R.string.download_pause_action))
+            .assertIsDisplayed()
+        Log.i(TAG, "verifyPauseDownloadMenuButtonButton: Clicked the \"Try again\" button")
+    }
+
     class Transition {
         fun clickDownload(interact: DownloadRobot.() -> Unit): Transition {
             Log.i(TAG, "clickDownload: Trying to click the \"Download\" download prompt button")
@@ -279,23 +302,36 @@ class DownloadRobot {
             return BrowserRobot.Transition()
         }
 
-        fun goBack(composeTestRule: ComposeTestRule, interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
-            Log.i(TAG, "goBack: Trying to click the navigate up toolbar button")
+        fun goBackToHomeScreen(composeTestRule: ComposeTestRule, interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
+            Log.i(TAG, "goBackToHomeScreen: Trying to click the navigate up toolbar button")
             composeTestRule.onNodeWithContentDescription(getStringResource(R.string.download_navigate_back_description)).performClick()
-            Log.i(TAG, "goBack: Clicked the navigate up toolbar button")
+            Log.i(TAG, "goBackToHomeScreen: Clicked the navigate up toolbar button")
 
             HomeScreenRobot().interact()
             return HomeScreenRobot.Transition()
         }
 
+        @OptIn(ExperimentalTestApi::class)
         fun shareDownloadedItem(testRule: HomeActivityComposeTestRule, fileName: String, interact: ShareOverlayRobot.() -> Unit): ShareOverlayRobot.Transition {
             Log.i(TAG, "shareDownloadedItem: Trying to click the Share file menu item to share downloaded file: $fileName")
             testRule.onNodeWithText(testRule.activity.getString(R.string.download_share_file))
                 .performClick()
             Log.i(TAG, "shareDownloadedItem: Clicked the Share file menu item to share downloaded file: $fileName")
+            Log.i(TAG, "shareDownloadedItem: Waiting for $waitingTime until the share button does not exist")
+            testRule.waitUntilDoesNotExist(hasText(testRule.activity.getString(R.string.download_share_file)), waitingTime)
+            Log.i(TAG, "shareDownloadedItem: Waited for $waitingTime until the share button does not exist")
 
             ShareOverlayRobot().interact()
             return ShareOverlayRobot.Transition()
+        }
+
+        fun openNotificationShade(interact: NotificationRobot.() -> Unit): NotificationRobot.Transition {
+            Log.i(TAG, "openNotificationShade: Trying to open the notification tray")
+            mDevice.openNotification()
+            Log.i(TAG, "openNotificationShade: Opened the notification tray")
+
+            NotificationRobot().interact()
+            return NotificationRobot.Transition()
         }
     }
 }

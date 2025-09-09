@@ -25,11 +25,8 @@
 #endif
 
 #include "FFVPXRuntimeLinker.h"
-
 #include "GMPEncoderModule.h"
-
 #include "mozilla/RemoteEncoderModule.h"
-
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/gfx/gfxVars.h"
@@ -236,7 +233,9 @@ void PEMFactory::InitContentPEMs() {
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
-    mCurrentPEMs.AppendElement(new AndroidEncoderModule());
+    if (StaticPrefs::media_android_media_codec_enabled()) {
+      mCurrentPEMs.AppendElement(new AndroidEncoderModule());
+    }
 #endif
 
 #ifdef XP_WIN
@@ -295,7 +294,9 @@ void PEMFactory::InitDefaultPEMs() {
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
-  mCurrentPEMs.AppendElement(new AndroidEncoderModule());
+  if (StaticPrefs::media_android_media_codec_enabled()) {
+    mCurrentPEMs.AppendElement(new AndroidEncoderModule());
+  }
 #endif
 
 #ifdef XP_WIN

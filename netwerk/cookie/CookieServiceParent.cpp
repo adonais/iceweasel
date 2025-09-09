@@ -122,9 +122,13 @@ bool CookieServiceParent::ContentProcessHasCookie(
 
 bool CookieServiceParent::InsecureCookieOrSecureOrigin(const Cookie& cookie) {
   nsCString baseDomain;
-  // CookieStorage notifications triggering this won't fail to get base domain
-  MOZ_ALWAYS_SUCCEEDS(CookieCommons::GetBaseDomainFromHost(
-      mTLDService, cookie.Host(), baseDomain));
+  if (NS_FAILED(CookieCommons::GetBaseDomainFromHost(mTLDService, cookie.Host(),
+                                                     baseDomain))) {
+    MOZ_ASSERT(false,
+               "CookieServiceParent::InsecureCookieOrSecureOrigin - "
+               "GetBaseDomainFromHost shouldn't fail");
+    return false;
+  }
 
   // cookie is insecure or cookie is associated with a secure-origin process
   CookieKey cookieKey(baseDomain, cookie.OriginAttributesRef());
@@ -330,14 +334,13 @@ IPCResult CookieServiceParent::SetCookies(
     return IPC_FAIL(this, "aHost must not be null");
   }
 
-  // We set this to true while processing this cookie update, to make sure
-  // we don't send it back to the same content process.
-  mProcessingCookie = true;
+  // We set the cookie processing flag to true while processing this cookie
+  // update, to make sure we don't send it back to the same content process.
+  CookieProcessingGuard guard(this);
 
   bool ok = mCookieService->SetCookiesFromIPC(aBaseDomain, aOriginAttributes,
                                               aHost, aFromHttp, aIsThirdParty,
                                               aCookies, aBrowsingContext);
-  mProcessingCookie = false;
   return ok ? IPC_OK() : IPC_FAIL(this, "Invalid cookie received.");
 }
 

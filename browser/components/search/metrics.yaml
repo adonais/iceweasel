@@ -54,7 +54,7 @@ newtab.search:
       telemetry_id: &telemetry_id
         description: >
           The search engine's `telemetryId`, like `google-b-d`.
-          This is set to be a telemetry-specific id for app-provided engines,
+          This is set to be a telemetry-specific id for config engines,
           and is `other-<name>` for others (where `<name>` is the engine's
           WebExtension name).
         type: string
@@ -153,8 +153,23 @@ sap:
         description: >
           The search access point from which the user initiated the search.
           Possible values are:
+          `about_home`,
+          `contextmenu`,
+          `contextmenu_visual`,
+          `about_newtab`,
+          `searchbar`,
+          `system`,
+          `urlbar`,
+          `urlbar_handoff`,
+          `urlbar_persisted`,
+          `urlbar_searchmode`,
+          `webextension`
+
+          Prior to Firefox 142, the possible source values were:
           `abouthome`, `contextmenu`, `newtab`, `searchbar`, `system`, `urlbar`,
           `urlbar-handoff`, `urlbar-persisted`, `urlbar-searchmode`, `webextension`
+
+          These were changed to be consistent with other search telemetry reporting.
         type: string
       provider_id:
         description: >
@@ -245,6 +260,24 @@ sap:
           SERP reports. For user installed engines, this will be the string `other`.
         type: string
 
+sap.impression_counts:
+  contextmenu_visual:
+    type: labeled_counter
+    description: >
+      Count of impressions of the visual search context menu item. The counter's
+      label is the engine's identifier if the engine is known at the time of
+      impression and it's an app-provided engine. Otherwise the label is "none".
+    data_sensitivity:
+      - interaction
+    bugs:
+      - https://bugzil.la/1979224
+    data_reviews:
+      - https://bugzil.la/1979224
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - rev-data@mozilla.com
+    expires: never
+
 serp:
   impression:
     type: event
@@ -289,13 +322,29 @@ serp:
         type: string
       source:
         description: >
-          How the user arrived at the SERP.
-          Possible values are:
-          `urlbar`, `urlbar_handoff`, `urlbar_searchmode`, `urlbar_persisted`,
-          `searchbar`, `contextmenu`, `webextension`, `system`, `reload`,
-          `tabhistory`, `follow_on_from_refine_on_incontent_search`,
-          `follow_on_from_refine_on_SERP`, `opened_in_new_tab`, `unknown`.
-          This will be `unknown` if we cannot determine the source.
+          How the user arrived at the SERP. A value of `unknown` means we can't
+          determine the source. The possible values are:
+          `contextmenu`,
+          `contextmenu_visual`,
+          `follow_on_from_refine_on_incontent_search`,
+          `follow_on_from_refine_on_SERP`,
+          `opened_in_new_tab`,
+          `reload`,
+          `searchbar`,
+          `system`,
+          `urlbar`,
+          `urlbar_handoff`,
+          `urlbar_persisted`,
+          `urlbar_searchmode`,
+          `tabhistory`,
+          `unknown`,
+          `webextension`
+        type: string
+      search_mode:
+        description: >
+          The mode which the search page is in. If it is in the normal search
+          mode, then no value is reported. Possible values are:
+          `image_search`.
         type: string
       shopping_tab_displayed:
         description:
@@ -820,6 +869,22 @@ browser.engagement.navigation:
     expires: never
     telemetry_mirror: BROWSER_ENGAGEMENT_NAVIGATION_CONTEXTMENU
 
+  contextmenu_visual:
+    type: labeled_counter
+    description: >
+      The count of URI loads triggered in a subsession from the context menu's
+      visual search menuitem, broken down by the originating action.
+    data_sensitivity:
+      - interaction
+    bugs:
+      - https://bugzil.la/1979211
+    data_reviews:
+      - https://bugzil.la/1979211
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - rev-data@mozilla.com
+    expires: never
+
   webextension:
     type: labeled_counter
     description: >
@@ -1035,6 +1100,23 @@ browser.search.content:
       - rev-data@mozilla.com
     expires: never
     telemetry_mirror: BROWSER_SEARCH_CONTENT_CONTEXTMENU
+
+  contextmenu_visual:
+    type: labeled_counter
+    description: >
+      Records counts for in-content visual searches where the search was most
+      likely started from the context menu. The key format is the same as for
+      the `contextmenu` labeled counter.
+    data_sensitivity:
+      - interaction
+    bugs:
+      - https://bugzil.la/1979211
+    data_reviews:
+      - https://bugzil.la/1979211
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - rev-data@mozilla.com
+    expires: never
 
   webextension:
     type: labeled_counter
@@ -1307,6 +1389,23 @@ browser.search.withads:
     expires: never
     telemetry_mirror: BROWSER_SEARCH_WITHADS_CONTEXTMENU
 
+  contextmenu_visual:
+    type: labeled_counter
+    description: >
+      Records counts of visual-search SERP pages with adverts displayed where
+      the search was started from the context menu. The key format is the same
+      as for the `contextmenu` labeled counter.
+    data_sensitivity:
+      - interaction
+    bugs:
+      - https://bugzil.la/1979211
+    data_reviews:
+      - https://bugzil.la/1979211
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - rev-data@mozilla.com
+    expires: never
+
   webextension:
     type: labeled_counter
     description: >
@@ -1554,6 +1653,23 @@ browser.search.adclicks:
       - rev-data@mozilla.com
     expires: never
     telemetry_mirror: BROWSER_SEARCH_ADCLICKS_CONTEXTMENU
+
+  contextmenu_visual:
+    type: labeled_counter
+    description: >
+      Records clicks of adverts on visual-search SERP pages where the search was
+      started from the context menu. The key format is the same as for the
+      `contextmenu` labeled counter.
+    data_sensitivity:
+      - interaction
+    bugs:
+      - https://bugzil.la/1979211
+    data_reviews:
+      - https://bugzil.la/1979211
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - rev-data@mozilla.com
+    expires: never
 
   webextension:
     type: labeled_counter

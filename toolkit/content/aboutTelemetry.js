@@ -2198,33 +2198,6 @@ function setupListeners() {
 
   let search = document.getElementById("search");
   search.addEventListener("input", Search.searchHandler);
-
-  document
-    .getElementById("late-writes-fetch-symbols")
-    .addEventListener("click", function () {
-      if (!gPingData) {
-        return;
-      }
-
-      let lateWrites = gPingData.payload.lateWrites;
-      let req = new SymbolicationRequest(
-        "late-writes",
-        LateWritesSingleton.renderHeader,
-        lateWrites.memoryMap,
-        lateWrites.stacks
-      );
-      req.fetchSymbols();
-    });
-
-  document
-    .getElementById("late-writes-hide-symbols")
-    .addEventListener("click", function () {
-      if (!gPingData) {
-        return;
-      }
-
-      LateWritesSingleton.renderLateWrites(gPingData.payload.lateWrites);
-    });
 }
 
 // Restores the sections states
@@ -2293,37 +2266,6 @@ function onLoad() {
     await PingPicker.update();
   });
 }
-
-var LateWritesSingleton = {
-  renderHeader: function LateWritesSingleton_renderHeader(aIndex) {
-    StackRenderer.renderHeader(
-      "late-writes",
-      "about-telemetry-late-writes-title",
-      { lateWriteCount: aIndex + 1 }
-    );
-  },
-
-  renderLateWrites: function LateWritesSingleton_renderLateWrites(lateWrites) {
-    let hasData = !!(
-      lateWrites &&
-      lateWrites.stacks &&
-      lateWrites.stacks.length
-    );
-    setHasData("late-writes-section", hasData);
-    if (!hasData) {
-      return;
-    }
-
-    let stacks = lateWrites.stacks;
-    let memoryMap = lateWrites.memoryMap;
-    StackRenderer.renderStacks(
-      "late-writes",
-      stacks,
-      memoryMap,
-      LateWritesSingleton.renderHeader
-    );
-  },
-};
 
 class HistogramSection extends Section {
   /**
@@ -2614,8 +2556,6 @@ function displayRichPingData(ping, updatePayloadList) {
 
   // Show event data.
   Events.render(payload);
-
-  LateWritesSingleton.renderLateWrites(payload.lateWrites);
 
   // Show simple measurements
   SimpleMeasurements.render(payload);

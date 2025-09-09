@@ -21,6 +21,14 @@ sealed interface BrowserToolbarInteraction {
      */
     interface BrowserToolbarEvent : BrowserToolbarInteraction, BrowserToolbarAction {
         /**
+         * The interaction source of this event.
+         *
+         * @see [Source]
+         */
+        val source: Source
+            get() = Source.AddressBar
+
+        /**
          * Convenience method to combine dispatching a [BrowserToolbarEvent] with
          * showing a [BrowserToolbarMenu] for the same user interaction.
          *
@@ -30,6 +38,21 @@ sealed interface BrowserToolbarInteraction {
             event = this,
             menu = menu,
         )
+
+        /**
+         * Possible sources of a [BrowserToolbarEvent].
+         */
+        sealed interface Source {
+            /**
+             * The user interacted with a address bar element.
+             */
+            data object AddressBar : Source
+
+            /**
+             * The user interacted with a navigation bar element.
+             */
+            data object NavigationBar : Source
+        }
     }
 
     /**

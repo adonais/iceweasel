@@ -429,7 +429,7 @@ class PlacesViewBase {
 
       let icon = aPlacesNode.icon;
       if (icon) {
-        element.setAttribute("image", icon);
+        element.setAttribute("image", encodeURI(icon));
       }
     }
 
@@ -496,7 +496,7 @@ class PlacesViewBase {
     }
     // We must remove and reset the attribute to force an update.
     elt.removeAttribute("image");
-    elt.setAttribute("image", aPlacesNode.icon);
+    elt.setAttribute("image", encodeURI(aPlacesNode.icon));
   }
 
   nodeTitleChanged(aPlacesNode, aNewTitle) {
@@ -1338,7 +1338,7 @@ class PlacesToolbar extends PlacesViewBase {
       } else {
         let icon = aPlacesNode.icon;
         if (icon) {
-          button.setAttribute("image", icon);
+          button.setAttribute("image", encodeURI(icon));
         }
         this.updateNodesVisibility();
       }
@@ -1427,7 +1427,7 @@ class PlacesToolbar extends PlacesViewBase {
         );
         let icon = aPlacesNode.icon;
         if (icon) {
-          elt.setAttribute("image", icon);
+          elt.setAttribute("image", encodeURI(icon));
         }
       } else {
         this._rootElt.insertBefore(elt, this._rootElt.children[aNewIndex]);

@@ -38,7 +38,6 @@
         ".toolbarbutton-icon":
           "validate,src=image,label,type,consumeanchor,triggeringprincipal=iconloadingprincipal",
         ".toolbarbutton-text": "accesskey,crop,dragover-top,wrap",
-        ".toolbarbutton-menu-dropmarker": "disabled,label",
 
         ".toolbarbutton-badge": "text=badge,style=badgeStyle",
       };
@@ -68,17 +67,6 @@
         true
       );
       Object.defineProperty(this, "badgedFragment", { value: frag });
-      return frag;
-    }
-
-    static get dropmarkerFragment() {
-      let frag = document.importNode(
-        MozXULElement.parseXULToFragment(`
-          <dropmarker type="menu" class="toolbarbutton-menu-dropmarker"></dropmarker>
-        `),
-        true
-      );
-      Object.defineProperty(this, "dropmarkerFragment", { value: frag });
       return frag;
     }
 
@@ -154,10 +142,6 @@
 
         this.appendChild(this.constructor.badgedFragment.cloneNode(true));
 
-        if (this.hasAttribute("wantdropmarker")) {
-          this.appendChild(this.constructor.dropmarkerFragment.cloneNode(true));
-        }
-
         if (moveChildren.length) {
           let { badgeStack, icon } = this;
           for (let child of moveChildren) {
@@ -183,10 +167,6 @@
         }
 
         this.appendChild(this.constructor.fragment.cloneNode(true));
-
-        if (this.hasAttribute("wantdropmarker")) {
-          this.appendChild(this.constructor.dropmarkerFragment.cloneNode(true));
-        }
 
         // XBL toolbarbutton explicitly places any <box> children
         // right before the menu marker.
@@ -216,10 +196,6 @@
         return this._textNode;
       }
       return null;
-    }
-
-    get dropmarker() {
-      return this.querySelector(".toolbarbutton-menu-dropmarker");
     }
 
     get menupopup() {

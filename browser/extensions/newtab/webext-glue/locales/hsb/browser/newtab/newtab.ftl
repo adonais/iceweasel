@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Nowe zwjazanje
 newtab-topsites-edit-topsites-header = Najhusćišo wopytane sydło wobdźěłać
 newtab-topsites-edit-shortcut-header = Zwjazanje wobdźěłać
 newtab-topsites-add-shortcut-label = Skrótšenku přidać
+newtab-topsites-add-shortcut-title =
+    .title = Skrótšenku přidać
+    .aria-label = Skrótšenku přidać
 newtab-topsites-title-label = Titul
 newtab-topsites-title-input =
     .placeholder = Titul zapodać
@@ -84,6 +87,14 @@ newtab-confirm-delete-history-p2 = Tuta akcija njeda so cofnyć.
 ## Top Sites - Sponsored label
 
 newtab-topsite-sponsored = Sponserowany
+
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (připjate)
+    .title = { $title }
 
 ## Context Menu - Action Tooltips.
 
@@ -540,6 +551,12 @@ newtab-custom-wallpaper-title = Tu su swójske pozadkowe wobrazy
 # 'Make firefox yours" means to customize or personalize
 newtab-custom-wallpaper-subtitle = Nahrajće swójski pozadkowy wobraz abo wubjerće swójsku barbu, zo byšće sej { -brand-product-name } přiswojił.
 newtab-custom-wallpaper-cta = Wupruwujće jón
+
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Wubjerće pozadkowy wobraz, zo byšće sej { -brand-product-name } přiswojił
+newtab-new-user-custom-wallpaper-subtitle = Čujće so na kóždym nowym rajtarku kaž doma ze swójskimi pozadkowymi wobrazami a barbami.
+newtab-new-user-custom-wallpaper-cta = Spytajće nětko
 
 ## Strings for download mobile highlight
 

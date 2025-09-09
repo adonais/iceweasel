@@ -3,22 +3,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "CrossGraphPort.h"
+#include "DeviceInputTrack.h"
 #include "MediaTrackGraphImpl.h"
-
 #include "gmock/gmock.h"
 #include "gtest/gtest-printers.h"
 #include "gtest/gtest.h"
-
-#include "CrossGraphPort.h"
-#include "DeviceInputTrack.h"
 #ifdef MOZ_WEBRTC
 #  include "MediaEngineWebRTCAudio.h"
 #endif  // MOZ_WEBRTC
 #include "MockCubeb.h"
-#include "mozilla/gtest/WaitFor.h"
+#include "WavDumper.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SpinEventLoopUntil.h"
-#include "WavDumper.h"
+#include "mozilla/gtest/WaitFor.h"
 
 using namespace mozilla;
 using testing::AtLeast;

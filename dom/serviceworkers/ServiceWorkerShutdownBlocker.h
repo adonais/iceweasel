@@ -7,16 +7,15 @@
 #ifndef mozilla_dom_serviceworkershutdownblocker_h__
 #define mozilla_dom_serviceworkershutdownblocker_h__
 
+#include "ServiceWorkerShutdownState.h"
+#include "mozilla/HashTable.h"
+#include "mozilla/InitializedOnce.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/NotNull.h"
 #include "nsCOMPtr.h"
 #include "nsIAsyncShutdown.h"
 #include "nsISupportsImpl.h"
 #include "nsITimer.h"
-
-#include "ServiceWorkerShutdownState.h"
-#include "mozilla/InitializedOnce.h"
-#include "mozilla/MozPromise.h"
-#include "mozilla/NotNull.h"
-#include "mozilla/HashTable.h"
 
 namespace mozilla::dom {
 

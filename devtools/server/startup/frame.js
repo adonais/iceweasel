@@ -92,6 +92,7 @@ try {
       };
       const actor = new WindowGlobalTargetActor(conn, {
         docShell,
+        ignoreSubFrames: false,
         isTopLevelTarget: true,
         // This is only used when server target switching is off and we create
         // the target from TabDescriptor. So all config attributes are false.

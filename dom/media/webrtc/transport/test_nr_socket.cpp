@@ -81,16 +81,19 @@ nrappkit copyright:
 // Original author: bcampen@mozilla.com [:bwc]
 
 extern "C" {
+// clang-format off
 #include "stun_msg.h"  // for NR_STUN_MAX_MESSAGE_SIZE
 #include "async_wait.h"
 #include "async_timer.h"
 #include "nr_socket.h"
 #include "stun.h"
 #include "transport_addr.h"
+// clang-format on
 }
 
-#include "mozilla/RefPtr.h"
 #include "test_nr_socket.h"
+
+#include "mozilla/RefPtr.h"
 
 namespace mozilla {
 

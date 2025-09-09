@@ -7,15 +7,14 @@
 #ifndef mozilla_dom_DOMJSClass_h
 #define mozilla_dom_DOMJSClass_h
 
-#include "jsapi.h"
-#include "jsfriendapi.h"
 #include "js/Object.h"  // JS::GetClass, JS::GetReservedSlot
 #include "js/Wrapper.h"
+#include "jsapi.h"
+#include "jsfriendapi.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/OriginTrials.h"
 #include "mozilla/Likely.h"
-
+#include "mozilla/OriginTrials.h"
 #include "mozilla/dom/PrototypeList.h"  // auto-generated
 #include "mozilla/dom/WebIDLPrefs.h"    // auto-generated
 

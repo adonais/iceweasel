@@ -801,7 +801,7 @@ GeckoDriver.prototype.getSessionCapabilities = function () {
  *     relative to this path.
  * @param {Array<Array<string, string, string>>} cmd.parameters.entries
  *     An array of arrays, each containing a registry entry (type, namespace,
- *     path, options) as it would appar in a chrome.manifest file. Only the
+ *     path, options) as it would appear in a chrome.manifest file. Only the
  *     following entry types are currently accepted:
  *
  *         - "content" A URL entry. Must be a 3-element array.
@@ -938,14 +938,14 @@ GeckoDriver.prototype.getContext = function () {
  *     The array items must be serialisable to the WebDriver protocol.
  * @param {string=} cmd.parameters.sandbox
  *     Name of the sandbox to evaluate the script in.  The sandbox is
- *     cached for later re-use on the same Window object if
- *     <var>newSandbox</var> is false.  If he parameter is undefined,
+ *     cached for later reuse on the same Window object if
+ *     <var>newSandbox</var> is false.  If the parameter is undefined,
  *     the script is evaluated in a mutable sandbox.  If the parameter
- *     is "system", it will be evaluted in a sandbox with elevated system
+ *     is "system", it will be evaluated in a sandbox with elevated system
  *     privileges, equivalent to chrome space.
  * @param {boolean=} cmd.parameters.newSandbox
  *     Forces the script to be evaluated in a fresh sandbox.  Note that if
- *     it is undefined, the script will normally be evaluted in a fresh
+ *     it is undefined, the script will normally be evaluated in a fresh
  *     sandbox.
  * @param {string=} cmd.parameters.filename
  *     Filename of the client's program where this script is evaluated.
@@ -1011,14 +1011,14 @@ GeckoDriver.prototype.executeScript = function (cmd) {
  *     The array items must be serialisable to the WebDriver protocol.
  * @param {string=} cmd.parameters.sandbox
  *     Name of the sandbox to evaluate the script in.  The sandbox is
- *     cached for later re-use on the same Window object if
+ *     cached for later reuse on the same Window object if
  *     <var>newSandbox</var> is false.  If the parameter is undefined,
  *     the script is evaluated in a mutable sandbox.  If the parameter
- *     is "system", it will be evaluted in a sandbox with elevated system
+ *     is "system", it will be evaluated in a sandbox with elevated system
  *     privileges, equivalent to chrome space.
  * @param {boolean=} cmd.parameters.newSandbox
  *     Forces the script to be evaluated in a fresh sandbox.  Note that if
- *     it is undefined, the script will normally be evaluted in a fresh
+ *     it is undefined, the script will normally be evaluated in a fresh
  *     sandbox.
  * @param {string=} cmd.parameters.filename
  *     Filename of the client's program where this script is evaluated.
@@ -3444,6 +3444,7 @@ GeckoDriver.prototype.setupReftest = async function (cmd) {
     urlCount = {},
     screenshot = "unexpected",
     isPrint = false,
+    cacheScreenshots = true,
   } = cmd.parameters;
   if (!["always", "fail", "unexpected"].includes(screenshot)) {
     throw new lazy.error.InvalidArgumentError(
@@ -3452,7 +3453,7 @@ GeckoDriver.prototype.setupReftest = async function (cmd) {
   }
 
   this._reftest = new lazy.reftest.Runner(this);
-  this._reftest.setup(urlCount, screenshot, isPrint);
+  this._reftest.setup(urlCount, screenshot, isPrint, cacheScreenshots);
 };
 
 /** Run a reftest. */

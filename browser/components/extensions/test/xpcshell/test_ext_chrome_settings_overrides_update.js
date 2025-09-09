@@ -109,7 +109,7 @@ add_task(async function test_overrides_update_removal() {
 
   let prefPromise = promisePrefChanged(HOMEPAGE_URI);
 
-  // When an addon is installed that overrides an app-provided engine (builtin)
+  // When an addon is installed that overrides a config engine
   // that is the default, we do not prompt for default.
   let deferredPrompt = topicObservable(
     "webextension-defaultsearch-prompt",

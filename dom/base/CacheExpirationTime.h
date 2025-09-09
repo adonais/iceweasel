@@ -7,10 +7,11 @@
 #ifndef mozilla_dom_CacheExpirationTime_h___
 #define mozilla_dom_CacheExpirationTime_h___
 
-#include <stdint.h>              // uint32_t
+#include <stdint.h>  // uint32_t
+
 #include "mozilla/Assertions.h"  // MOZ_ASSERT
-#include "prtime.h"              // PRTime, PR_USEC_PER_SEC
 #include "nsICacheEntry.h"       // nsICacheEntry
+#include "prtime.h"              // PRTime, PR_USEC_PER_SEC
 
 /*
  * The expiration time for sub resource cache.

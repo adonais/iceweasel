@@ -5,17 +5,17 @@
 
 #include "AudioNodeTrack.h"
 
+#include "AlignmentUtils.h"
+#include "AudioChannelFormat.h"
+#include "AudioContext.h"
+#include "AudioNodeEngine.h"
+#include "AudioParamTimeline.h"
 #include "MediaTrackGraph.h"
 #include "MediaTrackListener.h"
-#include "AudioNodeEngine.h"
 #include "ThreeDPoint.h"
 #include "Tracing.h"
-#include "AudioChannelFormat.h"
-#include "AudioParamTimeline.h"
-#include "AudioContext.h"
-#include "nsMathUtils.h"
-#include "AlignmentUtils.h"
 #include "blink/Reverb.h"
+#include "nsMathUtils.h"
 
 using namespace mozilla::dom;
 

@@ -147,7 +147,10 @@ EXTRA_JS_MODULES += [
 ]
 
 MOZ_SRC_FILES += [
+    "CanvasPermissionPromptHelper.sys.mjs",
     "ContextId.sys.mjs",
+    "ObserverForwarder.sys.mjs",
+    "UnexpectedScriptObserver.sys.mjs",
 ]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":

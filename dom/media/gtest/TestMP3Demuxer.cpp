@@ -4,11 +4,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <gtest/gtest.h>
+
 #include <vector>
 
 #include "MP3Demuxer.h"
-#include "mozilla/ArrayUtils.h"
 #include "MockMediaResource.h"
+#include "mozilla/ArrayUtils.h"
 
 class MockMP3MediaResource;
 class MockMP3StreamMediaResource;

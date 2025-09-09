@@ -22,6 +22,7 @@
 #include "gc/Memory.h"
 #include "irregexp/RegExpTypes.h"
 #include "js/ContextOptions.h"  // JS::ContextOptions
+#include "js/Debug.h"           // JS::CustomObjectSummaryCallback
 #include "js/Exception.h"
 #include "js/GCVector.h"
 #include "js/Interrupt.h"
@@ -969,6 +970,8 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
 #ifdef MOZ_EXECUTION_TRACING
  private:
+  CustomObjectSummaryCallback customObjectSummaryCallback_ = nullptr;
+
   // This holds onto the JS execution tracer, a system which when turned on
   // records function calls and other information about the JS which has been
   // run under this context.
@@ -985,6 +988,15 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   js::ExecutionTracer& getExecutionTracer() {
     MOZ_ASSERT(hasExecutionTracer());
     return *executionTracer_;
+  }
+
+  CustomObjectSummaryCallback getCustomObjectSummaryCallback() {
+    MOZ_ASSERT(hasExecutionTracer());
+    return customObjectSummaryCallback_;
+  }
+
+  void setCustomObjectSummaryCallback(CustomObjectSummaryCallback cb) {
+    customObjectSummaryCallback_ = cb;
   }
 
   // See the latter clause of the comment over executionTracer_

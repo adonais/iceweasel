@@ -6,8 +6,8 @@
 
 #include "mozilla/BasePrincipal.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsIBrowserDOMWindow.h"
 #include "nsFrameLoaderOwner.h"
+#include "nsIBrowserDOMWindow.h"
 #include "nsIPrincipal.h"
 #include "nsIReferrerInfo.h"
 #include "nsString.h"

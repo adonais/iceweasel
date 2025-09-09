@@ -30,15 +30,16 @@ XPCOMUtils.defineLazyPreferenceGetter(
 export const BYTES_IN_KB = 1000;
 
 /**
- * Convert bytes to the nearest 10th kilobyte to make the measurements fuzzier.
+ * Convert bytes to the nearest multiple of 10 kilobytes to make the measurements fuzzier.
+ * Returns 1 if size is < 5 kB.
  *
  * @param {number} bytes - size in bytes.
- * @returns {number} - size in kilobytes rounded to the nearest 10th kilobyte.
+ * @returns {number} - size in kilobytes, rounded to the nearest multiple of 10
  */
 export function bytesToFuzzyKilobytes(bytes) {
   let sizeInKb = Math.ceil(bytes / BYTES_IN_KB);
-  let nearestTenthKb = Math.round(sizeInKb / 10) * 10;
-  return Math.max(nearestTenthKb, 1);
+  let nearestTenKb = Math.round(sizeInKb / 10) * 10;
+  return Math.max(nearestTenKb, 1);
 }
 
 /**
@@ -108,9 +109,9 @@ export class BackupResource {
       return null;
     }
 
-    let nearestTenthKb = bytesToFuzzyKilobytes(size);
+    let nearestTenKb = bytesToFuzzyKilobytes(size);
 
-    return nearestTenthKb;
+    return nearestTenKb;
   }
 
   /**
@@ -151,9 +152,9 @@ export class BackupResource {
       }
 
       if (childSize >= 0) {
-        let nearestTenthKb = bytesToFuzzyKilobytes(childSize);
+        let nearestTenKb = bytesToFuzzyKilobytes(childSize);
 
-        size += nearestTenthKb;
+        size += nearestTenKb;
       }
 
       if (childType == "directory") {

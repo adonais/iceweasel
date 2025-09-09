@@ -178,11 +178,8 @@ class ProviderQuickSuggest extends UrlbarProvider {
         suggestion.score = DEFAULT_SUGGESTION_SCORE;
       }
 
-      // Step 2: Apply relevancy ranking. For now we only do this for Merino
-      // suggestions, but we may expand it in the future.
-      if (suggestion.source == "merino") {
-        await this.#applyRanking(suggestion);
-      }
+      // Step 2: Apply relevancy ranking.
+      await this.#applyRanking(suggestion);
 
       // Step 3: Apply score overrides defined in `quickSuggestScoreMap`. It
       // maps telemetry types to scores.
@@ -290,6 +287,18 @@ class ProviderQuickSuggest extends UrlbarProvider {
   }
 
   /**
+   * This is called only for dynamic result types.
+   *
+   * @param {UrlbarResult} result The result whose view will be updated.
+   * @returns {object} An object of view template.
+   */
+  getViewTemplate(result) {
+    return lazy.QuickSuggest.getFeatureByResult(result)?.getViewTemplate?.(
+      result
+    );
+  }
+
+  /**
    * This is called only for dynamic result types, when the urlbar view updates
    * the view of one of the results of the provider.  It should return an object
    * describing the view update.
@@ -350,9 +359,14 @@ class ProviderQuickSuggest extends UrlbarProvider {
     // Set important properties that every Suggest result should have. See
     // `QuickSuggest.getFeatureBySource()` for `source` and `provider` values.
     // If the suggestion isn't managed by a feature, then it's from Merino and
-    // `is_sponsored` is true if it's sponsored. (Merino uses snake_case.)
+    // we assume `is_sponsored` is set appropriately. (Merino uses snake_case.)
     result.payload.source = suggestion.source;
     result.payload.provider = suggestion.provider;
+    if (suggestion.suggestionType) {
+      // `suggestionType` is defined only for dynamic Rust suggestions and is
+      // the dynamic type. Avoid adding an undefined property to other payloads.
+      result.payload.suggestionType = suggestion.suggestionType;
+    }
     result.payload.telemetryType = this.#getSuggestionTelemetryType(suggestion);
     result.payload.isSponsored = feature
       ? feature.isSuggestionSponsored(suggestion)

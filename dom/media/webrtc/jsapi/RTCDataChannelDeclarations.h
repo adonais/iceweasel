@@ -10,9 +10,9 @@
 // This defines only what's necessary to create RTCDataChannels, since this
 // gets used with MOZ_INTERNAL_API not set for media/webrtc/signaling/testing
 
+#include "mozilla/dom/Nullable.h"
 #include "nsCOMPtr.h"
 #include "nsStringFwd.h"
-#include "mozilla/dom/Nullable.h"
 
 class nsPIDOMWindowInner;
 

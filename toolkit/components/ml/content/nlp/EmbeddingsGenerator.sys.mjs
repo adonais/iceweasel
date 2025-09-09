@@ -56,6 +56,15 @@ export class EmbeddingsGenerator {
     featureId: "simple-text-embedder",
     timeoutMS: -1,
     numThreads: 2,
+    backend: "onnx-native",
+  };
+  // wasm as fallback
+  optionsFallback = {
+    taskName: "feature-extraction",
+    featureId: "simple-text-embedder",
+    timeoutMS: -1,
+    numThreads: 2,
+    backend: "onnx",
   };
 
   constructor(embeddingSize = 384) {
@@ -112,15 +121,41 @@ export class EmbeddingsGenerator {
    * @private
    * @returns {Promise<void>}
    *   Resolves when the engine is created or already exists.
-   * @throws {Error} If the engine cannot be created.
+   * @throws {Error}
+   *   If the engine cannot be initialized using either primary or fallback options.
    */
   async createEngineIfNotPresent() {
     if (!this.#engine) {
       try {
         this.#engine = await lazy.createEngine(this.options);
       } catch (ex) {
-        lazy.console.error("Unable to initialize the ML engine. " + ex);
-        throw new Error("Unable to initialize the ML engine. ", { cause: ex });
+        lazy.console.warn(
+          "Native engine init failed. Falling back to wasm. Error:" + ex
+        );
+
+        // Fallback to wasm
+        if (this.optionsFallback) {
+          try {
+            this.#engine = await lazy.createEngine(this.optionsFallback);
+          } catch (fallbackEx) {
+            lazy.console.error(
+              "Fallback engine also failed. Error:" + fallbackEx
+            );
+            throw new Error(
+              "Unable to initialize the ML engine (including fallback wasm).",
+              { cause: fallbackEx }
+            );
+          }
+        } else {
+          lazy.console.error(
+            "Unable to initialize the ML engine and no Fallback was provided. " +
+              ex
+          );
+          throw new Error(
+            "Unable to initialize the ML engine and no Fallback was provided. ",
+            { cause: ex }
+          );
+        }
       }
     }
   }

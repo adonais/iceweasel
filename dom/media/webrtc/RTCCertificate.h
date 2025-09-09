@@ -8,6 +8,7 @@
 #define mozilla_dom_RTCCertificate_h
 
 #include <cstdint>
+
 #include "ScopedNSSTypes.h"
 #include "certt.h"
 #include "js/RootingAPI.h"

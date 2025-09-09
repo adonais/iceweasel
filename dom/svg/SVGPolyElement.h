@@ -7,9 +7,9 @@
 #ifndef DOM_SVG_SVGPOLYELEMENT_H_
 #define DOM_SVG_SVGPOLYELEMENT_H_
 
-#include "mozilla/Attributes.h"
 #include "SVGAnimatedPointList.h"
 #include "SVGGeometryElement.h"
+#include "mozilla/Attributes.h"
 
 namespace mozilla::dom {
 

@@ -7,9 +7,9 @@
 #ifndef DOM_SVG_SVGELLIPSEELEMENT_H_
 #define DOM_SVG_SVGELLIPSEELEMENT_H_
 
-#include "nsCSSPropertyID.h"
 #include "SVGAnimatedLength.h"
 #include "SVGGeometryElement.h"
+#include "nsCSSPropertyID.h"
 
 nsresult NS_NewSVGEllipseElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);

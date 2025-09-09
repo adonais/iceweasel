@@ -6,14 +6,15 @@
 #ifndef nsXULPrototypeDocument_h__
 #define nsXULPrototypeDocument_h__
 
+#include <functional>
+
 #include "js/TracingAPI.h"
 #include "mozilla/Attributes.h"
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
-#include "nsTArray.h"
-#include "nsISerializable.h"
 #include "nsCycleCollectionParticipant.h"
-#include <functional>
+#include "nsISerializable.h"
+#include "nsTArray.h"
 
 class nsAtom;
 class nsIPrincipal;

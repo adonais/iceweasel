@@ -50,19 +50,6 @@ moz-card {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-
-  &.phone::part(icon),
-  &.mobile::part(icon) {
-    background-image: url("chrome://browser/skin/device-phone.svg");
-  }
-
-  &.desktop::part(icon) {
-    background-image: url("chrome://browser/skin/device-desktop.svg");
-  }
-
-  &.tablet::part(icon) {
-    background-image: url("chrome://browser/skin/device-tablet.svg");
-  }
 }
 
 .sidebar-panel {

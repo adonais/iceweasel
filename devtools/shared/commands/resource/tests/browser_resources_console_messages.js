@@ -134,12 +134,11 @@ async function testTabConsoleMessagesResourcesWithIgnoreExistingResources(
   await waitUntil(
     () => availableResources.length === expectedRuntimeConsoleCalls.length
   );
-  const expectedTargetFront =
-    executeInIframe && (isFissionEnabled() || isEveryFrameTargetEnabled())
-      ? targetCommand
-          .getAllTargets([targetCommand.TYPES.FRAME])
-          .find(target => target.url == IFRAME_URL)
-      : targetCommand.targetFront;
+  const expectedTargetFront = executeInIframe
+    ? targetCommand
+        .getAllTargets([targetCommand.TYPES.FRAME])
+        .find(target => target.url == IFRAME_URL)
+    : targetCommand.targetFront;
   for (let i = 0; i < expectedRuntimeConsoleCalls.length; i++) {
     const resource = availableResources[i];
     is(

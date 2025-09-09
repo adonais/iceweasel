@@ -13,12 +13,12 @@
 #include "MediaResource.h"
 #include "TimeUnits.h"
 #include "mozilla/Base64.h"
-#include "mozilla/dom/ContentChild.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/TaskQueue.h"
+#include "mozilla/dom/ContentChild.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsContentTypeParser.h"
 #include "nsIConsoleService.h"
@@ -1125,9 +1125,10 @@ bool IsAACCodecString(const nsAString& aCodec) {
              "mp4a.40.02") ||  // MPEG4 AAC-LC(for compatibility)
          aCodec.EqualsLiteral("mp4a.40.5") ||  // MPEG4 HE-AAC
          aCodec.EqualsLiteral(
-             "mp4a.40.05") ||                 // MPEG4 HE-AAC(for compatibility)
-         aCodec.EqualsLiteral("mp4a.67") ||   // MPEG2 AAC-LC
-         aCodec.EqualsLiteral("mp4a.40.29");  // MPEG4 HE-AACv2
+             "mp4a.40.05") ||                // MPEG4 HE-AAC(for compatibility)
+         aCodec.EqualsLiteral("mp4a.67") ||  // MPEG2 AAC-LC
+         aCodec.EqualsLiteral("mp4a.40.29") ||  // MPEG4 HE-AACv2
+         aCodec.EqualsLiteral("mp4a.40.42");    // MPEG-D USAC (xHE-AAC)
 }
 
 bool IsVP8CodecString(const nsAString& aCodec) {

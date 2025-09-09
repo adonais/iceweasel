@@ -279,6 +279,8 @@ prefs = [
 
 ["test_messageChannel.js"]
 
+["test_new_document_wrapper_preservation.js"]
+
 ["test_nuke_sandbox.js"]
 
 ["test_nuke_sandbox_event_listeners.js"]

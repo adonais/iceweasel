@@ -13,6 +13,7 @@ export default {
     l10nId: {
       options: [
         "moz-toggle-label",
+        "moz-toggle-only",
         "moz-toggle-aria-label",
         "moz-toggle-description",
         "moz-toggle-long-label",
@@ -27,7 +28,10 @@ export default {
     },
     fluent: `
 moz-toggle-aria-label =
+  .label = This is the label
   .aria-label = This is the aria-label
+moz-toggle-only =
+  .aria-label = This is the toggle-only aria-label
 moz-toggle-label =
   .label = This is the label
 moz-toggle-description =
@@ -108,13 +112,14 @@ Disabled.args = {
 export const ToggleOnly = Template.bind({});
 ToggleOnly.args = {
   ...Default.args,
-  l10nId: "moz-toggle-aria-label",
+  l10nId: "moz-toggle-only",
 };
 
 export const WithAccesskey = Template.bind({});
 WithAccesskey.args = {
   ...Default.args,
   accessKey: "h",
+  l10nId: "moz-toggle-aria-label",
 };
 
 export const WithDescription = Template.bind({});

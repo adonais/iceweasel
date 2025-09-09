@@ -118,6 +118,15 @@
         }
       }
     },
+    "searchMode": {
+      "type": "object",
+      "title": "Search Mode Param Mapping",
+      "description": "A map of param names to search modes, e.g. image_search. Default if not specified is 'normal_search'.",
+      "properties": {},
+      "additionalProperties": {
+        "enum": ["image_search"]
+      }
+    },
     "extraAdServersRegexps": {
       "type": "array",
       "title": "Extra Ad Server Regular Expressions",

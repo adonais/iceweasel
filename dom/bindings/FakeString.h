@@ -7,11 +7,11 @@
 #ifndef mozilla_dom_FakeString_h__
 #define mozilla_dom_FakeString_h__
 
-#include "nsString.h"
-#include "mozilla/StringBuffer.h"
+#include "js/String.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Span.h"
-#include "js/String.h"
+#include "mozilla/StringBuffer.h"
+#include "nsString.h"
 #include "nsTStringRepr.h"
 
 namespace mozilla::dom::binding_detail {

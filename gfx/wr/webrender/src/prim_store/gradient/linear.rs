@@ -123,6 +123,7 @@ pub fn optimize_linear_gradient(
     end: &mut LayoutPoint,
     extend_mode: ExtendMode,
     stops: &mut [GradientStopKey],
+    enable_dithering: bool,
     // Callback called for each fast-path segment (rect, start end, stops).
     callback: &mut dyn FnMut(&LayoutRect, LayoutPoint, LayoutPoint, &[GradientStopKey], EdgeAaSegmentMask)
 ) -> bool {
@@ -185,9 +186,9 @@ pub fn optimize_linear_gradient(
     }
 
     // If the gradient is small, no need to bother with decomposing it.
-    if (horizontal && tile_size.width < 256.0)
-        || (vertical && tile_size.height < 256.0) {
-
+    if !enable_dithering &&
+        ((horizontal && tile_size.width < 256.0)
+        || (vertical && tile_size.height < 256.0)) {
         return false;
     }
 

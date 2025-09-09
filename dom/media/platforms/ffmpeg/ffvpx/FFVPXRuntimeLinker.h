@@ -9,9 +9,9 @@
 
 #include "PlatformDecoderModule.h"
 #include "PlatformEncoderModule.h"
+#include "ffvpx/tx.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/ThreadSafety.h"
-#include "ffvpx/tx.h"
 
 struct FFmpegFFTFuncs {
   decltype(av_tx_init)* init;

@@ -9,10 +9,10 @@
 
 #include "mozilla/Monitor.h"
 #include "mozilla/dom/ServiceWorkerRegistrarTypes.h"
+#include "nsCOMPtr.h"
 #include "nsClassHashtable.h"
 #include "nsIAsyncShutdown.h"
 #include "nsIObserver.h"
-#include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nsTArray.h"
 

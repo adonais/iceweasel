@@ -14,11 +14,11 @@
 #define mozilla_dom_BarProps_h
 
 #include "mozilla/Attributes.h"
-#include "nsCycleCollectionParticipant.h"
-#include "nsWrapperCache.h"
-#include "nsPIDOMWindow.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BrowsingContext.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsPIDOMWindow.h"
+#include "nsWrapperCache.h"
 
 class nsGlobalWindowInner;
 class nsIWebBrowserChrome;

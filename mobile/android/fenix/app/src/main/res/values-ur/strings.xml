@@ -34,11 +34,14 @@
   <string name="tab_tray_collection_button_multiselect_content_description">منتخب کردہ ٹیب کو مجموعہ میں محفوظ کریں</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">%1$s ءMozilla کے ذریعہ تیار کیا گیا ہے۔</string>
+  <!-- Private Browsing -->
   <string name="private_browsing_common_myths">نجی براؤزنگ کے بارے میں عمومی فرضی داستان</string>
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">سیٹنگز پر جائیں</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">برخاست کریں</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">کیمرے تک رسائی کی ضرورت ہے۔ Android کی ترتیبات پر جائیں ، اجازتیں ٹیپ کریں ، اور اجازت پر ٹیپ کریں۔</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -242,8 +245,6 @@
   <string name="preferences_account_sync_error">سینک کرنے کو دوبارہ شروع کرنے کے لئے پھر سے جوڑیں</string>
   <!-- Preference for language -->
   <string name="preferences_language">زبان</string>
-  <!-- Preference for data choices -->
-  <string name="preferences_data_choices" tools:ignore="UnusedResources" moz:removedIn="141">ڈیٹا کے انتخاب</string>
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">ڈیٹا مجموعہ</string>
   <!-- Preference for developers -->
@@ -266,8 +267,6 @@
   <string name="preferences_enable_autocomplete_urls">خودکار تکميلURLs</string>
   <!-- Preference for open links in third party apps -->
   <string name="preferences_open_links_in_apps">ایپس میں ربط کھولیں</string>
-  <!-- Preference for open download with an external download manager app -->
-  <string name="preferences_external_download_manager" tools:ignore="UnusedResources" moz:removedIn="141">بیرونی ڈاؤن لوڈ مینیجر</string>
   <!-- Preference for notifications -->
   <string name="preferences_notifications">اعلانات</string>
   <!-- Button caption to confirm the add-on collection configuration -->
@@ -292,7 +291,7 @@
   <!-- Title for the opening wallpaper settings screen -->
   <string name="customize_wallpapers">وال پیپرز</string>
   <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action">نظارہ</string>
+  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">نظارہ</string>
   <!-- Preference for triggering sync -->
   <string name="preferences_sync_now">ابھی sync کریں</string>
   <!-- Preference category for sync -->
@@ -824,20 +823,16 @@
     Text shown in snackbar when user deletes a collection
   -->
   <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">مجموعہ حذف ہوگیا</string>
-  <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">مجموعہ نام تبدیل کردیا گیا</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">ٹیب بند ہے</string>
   <!-- Text shown in snackbar when user closes all tabs -->
   <string name="snackbar_tabs_closed">ٹیبز بند ہوگئیں</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">نجی ٹیب بند ہوگئیں</string>
-  <!-- Text shown in snackbar when user closes all private tabs -->
-  <string name="snackbar_private_tabs_closed" moz:removedIn="141" tools:ignore="UnusedResources">نجی ٹیبز بند ہوگئیں</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">کالعدم</string>
   <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed">سائٹ ہٹا دی گئی</string>
+  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">سائٹ ہٹا دی گئی</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -1266,10 +1261,6 @@
   <string name="action_bar_up_description">اوپر جائیں</string>
   <!-- Content description for privacy content close button -->
   <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">بند کریں</string>
-  <!-- Header text for a section on the home screen. -->
-  <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">موضوع کے لحاظ سے کہانیاں</string>
-  <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
-  <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">مزید تلاش کریں</string>
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->

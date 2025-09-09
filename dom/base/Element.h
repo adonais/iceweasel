@@ -13,10 +13,11 @@
 #ifndef mozilla_dom_Element_h__
 #define mozilla_dom_Element_h__
 
-#include <cstdio>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <utility>
+
 #include "AttrArray.h"
 #include "ErrorList.h"
 #include "Units.h"
@@ -47,7 +48,6 @@
 #include "nsAttrValueInlines.h"
 #include "nsCaseTreatment.h"
 #include "nsChangeHint.h"
-#include "nsTHashMap.h"
 #include "nsDebug.h"
 #include "nsError.h"
 #include "nsGkAtoms.h"
@@ -59,6 +59,7 @@
 #include "nsRect.h"
 #include "nsString.h"
 #include "nsStringFlags.h"
+#include "nsTHashMap.h"
 #include "nsTLiteralString.h"
 #include "nscore.h"
 

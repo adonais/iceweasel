@@ -127,7 +127,7 @@ class FenixSnackbarDelegateTest {
             listener = null,
         )
 
-        assertTrue(snackbarState.subMessage == subText)
+        assertTrue(snackbarState.subMessage?.text == subText)
     }
 
     @Test

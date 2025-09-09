@@ -252,3 +252,27 @@ TEST(UrlClassifierUtils, LongHostname)
   printf("CanonicalizeHostname on long string (%dms)\n",
          PR_IntervalToMilliseconds(clockEnd - clockStart));
 }
+
+TEST(UrlClassifierUtils, MakeUpdateRequestV5)
+{
+  nsTArray<nsCString> listNames;
+  nsTArray<nsCString> states;
+
+  // The state of the list is encoded in base64.
+  constexpr char kTestState[] = "Cg0IAxAGGAEiAzAwMTABEMfKERoCGAm5biH4";
+
+  listNames.AppendElement("goog-unwanted-proto");
+  states.AppendElement(nsDependentCString(kTestState));
+
+  nsCOMPtr<nsIUrlClassifierUtils> utils =
+      do_GetService("@mozilla.org/url-classifier/utils;1");
+
+  nsCString request;
+  nsresult rv = utils->MakeUpdateRequestV5(listNames, states, request);
+  EXPECT_EQ(rv, NS_OK);
+  // The expected request contains
+  // 1. The V5 list name "uws-4b"
+  // 2. The decoded state for the above kTestState.
+  ASSERT_TRUE(request.EqualsLiteral(
+      "CgZ1d3MtNGISGwoNCAMQBhgBIgMwMDEwARDHyhEaAhgJuW4h-A=="));
+}

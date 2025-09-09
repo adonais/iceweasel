@@ -7,7 +7,7 @@
 const Rule = require("resource://devtools/client/inspector/rules/models/rule.js");
 const UserProperties = require("resource://devtools/client/inspector/rules/models/user-properties.js");
 const {
-  style: { ELEMENT_STYLE },
+  style: { ELEMENT_STYLE, PRES_HINTS },
 } = require("resource://devtools/shared/constants.js");
 
 loader.lazyRequireGetter(
@@ -490,7 +490,7 @@ class ElementStyle {
 
       // For each editor show or hide the inactive CSS icon as needed.
       if (textProp.editor && this.unusedCssEnabled) {
-        textProp.editor.updatePropertyState();
+        textProp.editor.updateUI();
       }
     }
   }
@@ -631,12 +631,16 @@ class ElementStyle {
         rule.pseudoElement !== "" && isInherited;
 
       const isElementStyle = rule.domRule.type === ELEMENT_STYLE;
+      const isElementAttributesStyle = rule.domRule.type === PRES_HINTS;
 
       const filterCondition =
         isNestedDeclarations ||
         (pseudo && isMatchingPseudoElementRule) ||
         (pseudo === "" &&
-          (isStyleRule || isElementStyle || isInheritedPseudoElementRule));
+          (isStyleRule ||
+            isElementStyle ||
+            isElementAttributesStyle ||
+            isInheritedPseudoElementRule));
 
       // Collect all relevant CSS declarations (aka TextProperty instances).
       if (filterCondition) {

@@ -4,32 +4,33 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsError.h"
 #include "MediaResource.h"
+#include "nsError.h"
 #ifdef MOZ_AV1
 #  include "AOMDecoder.h"
 #endif
-#include "VPXDecoder.h"
-#include "WebMDemuxer.h"
-#include "WebMBufferedParser.h"
-#include "gfx2DGlue.h"
-#include "gfxUtils.h"
-#include "mozilla/EndianUtils.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/SharedThreadPool.h"
-#include "MediaDataDemuxer.h"
-#include "nsAutoRef.h"
-#include "NesteggPacketHolder.h"
-#include "XiphExtradata.h"
-#include "prprf.h"  // leaving it for PR_vsnprintf()
-#include "mozilla/IntegerPrintfMacros.h"
-#include "mozilla/Sprintf.h"
-#include "VideoUtils.h"
+#include <opus/opus.h>
+#include <stdint.h>
 
 #include <algorithm>
 #include <numeric>
-#include <stdint.h>
-#include <opus/opus.h>
+
+#include "MediaDataDemuxer.h"
+#include "NesteggPacketHolder.h"
+#include "VPXDecoder.h"
+#include "VideoUtils.h"
+#include "WebMBufferedParser.h"
+#include "WebMDemuxer.h"
+#include "XiphExtradata.h"
+#include "gfx2DGlue.h"
+#include "gfxUtils.h"
+#include "mozilla/EndianUtils.h"
+#include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/SharedThreadPool.h"
+#include "mozilla/Sprintf.h"
+#include "nsAutoRef.h"
+#include "prprf.h"  // leaving it for PR_vsnprintf()
 
 #define WEBM_DEBUG(arg, ...)                                          \
   DDMOZ_LOG(gMediaDemuxerLog, mozilla::LogLevel::Debug, "::%s: " arg, \
@@ -820,19 +821,31 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
         sample->mDuration = TimeUnit::Invalid();
       } else {
         TimeUnit padding = TimeUnit::FromNanoseconds(discardPadding);
-        size_t samples = opus_packet_get_nb_samples(
+        const int samples = opus_packet_get_nb_samples(
             sample->Data(), AssertedCast<int32_t>(sample->Size()),
             AssertedCast<int32_t>(mInfo.mAudio.mRate));
-        TimeUnit packetDuration = TimeUnit(samples, mInfo.mAudio.mRate);
-        if (padding > packetDuration || mProcessedDiscardPadding) {
+        if (samples <= 0) {
           WEBM_DEBUG(
-              "Padding frames larger than packet size, flagging the packet for "
-              "error (padding: %s, duration: %s, already processed: %s)",
-              padding.ToString().get(), packetDuration.ToString().get(),
-              mProcessedDiscardPadding ? "true" : "false");
+              "Invalid number of samples, flagging packet for error (padding: "
+              "%s, samples: %d, already processed: %s, error: %s)",
+              padding.ToString().get(), samples,
+              mProcessedDiscardPadding ? "true" : "false",
+              (samples == OPUS_BAD_ARG)          ? "OPUS_BAD_ARG"
+              : (samples == OPUS_INVALID_PACKET) ? "OPUS_INVALID_PACKET"
+                                                 : "Undefined Error");
           sample->mDuration = TimeUnit::Invalid();
         } else {
-          sample->mDuration = packetDuration - padding;
+          TimeUnit packetDuration = TimeUnit(samples, mInfo.mAudio.mRate);
+          if (padding > packetDuration || mProcessedDiscardPadding) {
+            WEBM_DEBUG(
+                "Padding frames larger than packet size, flagging packet for "
+                "error (padding: %s, duration: %s, already processed: %s)",
+                padding.ToString().get(), packetDuration.ToString().get(),
+                mProcessedDiscardPadding ? "true" : "false");
+            sample->mDuration = TimeUnit::Invalid();
+          } else {
+            sample->mDuration = packetDuration - padding;
+          }
         }
       }
       mProcessedDiscardPadding = true;

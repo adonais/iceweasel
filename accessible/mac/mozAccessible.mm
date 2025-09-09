@@ -953,8 +953,12 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
     if (Accessible* announcement = mGeckoAccessible->FirstChild()) {
       announcement->Name(name);
     } else {
-      MOZ_ASSERT_UNREACHABLE(
-          "A11yUtil event received, but no announcement found?");
+      // This can happen if a modal dialog is opened, which removes everything
+      // else from the accessibility tree, and then the modal is dismissed,
+      // which inserts everything else again. This causes Gecko to fire an alert
+      // event on a11y-announcement (even though it's empty) since it was just
+      // shown.
+      NS_WARNING("A11yUtil event received, but no announcement found");
     }
 
     NSDictionary* info = @{

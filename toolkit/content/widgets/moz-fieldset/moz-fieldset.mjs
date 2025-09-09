@@ -23,6 +23,8 @@ const HEADING_LEVEL_TEMPLATES = {
  * @property {string} description - The description for the fieldset.
  * @property {string} supportPage - Name of the SUMO support page to link to.
  * @property {number} headingLevel - Render the legend in a heading of this level.
+ * @property {boolean} disabled - Whether the fieldset and its children are disabled.
+ * @property {string} iconSrc - The src for an optional icon.
  */
 export default class MozFieldset extends MozLitElement {
   static properties = {
@@ -32,11 +34,40 @@ export default class MozFieldset extends MozLitElement {
     ariaLabel: { type: String, fluent: true, mapped: true },
     ariaOrientation: { type: String, mapped: true },
     headingLevel: { type: Number },
+    disabled: { type: Boolean, reflect: true },
+    iconSrc: { type: String },
   };
 
   constructor() {
     super();
     this.headingLevel = -1;
+    this.disabled = false;
+    this.iconSrc = "";
+  }
+
+  updated(changedProperties) {
+    super.updated(changedProperties);
+    if (changedProperties.has("disabled")) {
+      this.#updateChildDisabledState();
+    }
+  }
+
+  #updateChildDisabledState() {
+    const formControls = [...this.querySelectorAll("*")].filter(
+      element => "disabled" in element || "parentDisabled" in element
+    );
+
+    formControls.forEach(control => {
+      if ("parentDisabled" in control) {
+        control.parentDisabled = this.disabled;
+      }
+
+      if (this.disabled) {
+        control.setAttribute("disabled", "");
+      } else {
+        control.removeAttribute("disabled");
+      }
+    });
   }
 
   descriptionTemplate() {
@@ -63,7 +94,14 @@ export default class MozFieldset extends MozLitElement {
   legendTemplate() {
     let label =
       HEADING_LEVEL_TEMPLATES[this.headingLevel]?.(this.label) || this.label;
-    return html`<legend part="label">${label}</legend>`;
+    return html`<legend part="label">${this.iconTemplate()}${label}</legend>`;
+  }
+
+  iconTemplate() {
+    if (!this.iconSrc) {
+      return "";
+    }
+    return html`<img src=${this.iconSrc} role="presentation" class="icon" />`;
   }
 
   render() {
@@ -73,6 +111,7 @@ export default class MozFieldset extends MozLitElement {
         href="chrome://global/content/elements/moz-fieldset.css"
       />
       <fieldset
+        ?disabled=${this.disabled}
         aria-label=${ifDefined(this.ariaLabel)}
         aria-describedby=${ifDefined(
           this.description ? "description" : undefined

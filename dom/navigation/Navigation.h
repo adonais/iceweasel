@@ -7,16 +7,14 @@
 #ifndef mozilla_dom_Navigation_h___
 #define mozilla_dom_Navigation_h___
 
-#include "nsHashtablesFwd.h"
-#include "nsStringFwd.h"
-
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
-
 #include "mozilla/dom/NavigateEvent.h"
 #include "mozilla/dom/NavigationBinding.h"
+#include "nsHashtablesFwd.h"
+#include "nsStringFwd.h"
 
 class nsIDHashKey;
 
@@ -70,7 +68,7 @@ class Navigation final : public DOMEventTargetHelper {
 
   void Navigate(JSContext* aCx, const nsAString& aUrl,
                 const NavigationNavigateOptions& aOptions,
-                NavigationResult& aResult) {}
+                NavigationResult& aResult);
 
   MOZ_CAN_RUN_SCRIPT void Reload(JSContext* aCx,
                                  const NavigationReloadOptions& aOptions,

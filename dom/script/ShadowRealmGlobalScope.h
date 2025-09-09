@@ -8,6 +8,7 @@
 #define mozilla_dom_ShadowRealmGlobalScope_h
 
 #include "js/TypeDecls.h"
+#include "js/loader/ModuleLoaderBase.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/OriginTrials.h"
@@ -16,8 +17,6 @@
 #include "nsContentUtils.h"
 #include "nsIGlobalObject.h"
 #include "nsWrapperCache.h"
-
-#include "js/loader/ModuleLoaderBase.h"
 
 namespace mozilla::dom {
 

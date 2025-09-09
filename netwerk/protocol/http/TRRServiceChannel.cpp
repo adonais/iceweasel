@@ -382,7 +382,11 @@ nsresult TRRServiceChannel::BeginConnect() {
   LOG(("uri=%s\n", mSpec.get()));
 
   nsCOMPtr<nsProxyInfo> proxyInfo;
-  if (mProxyInfo) proxyInfo = do_QueryInterface(mProxyInfo);
+  if (mConnectionInfo) {
+    proxyInfo = mConnectionInfo->ProxyInfo();
+  } else if (mProxyInfo) {
+    proxyInfo = do_QueryInterface(mProxyInfo);
+  }
 
   mRequestHead.SetHTTPS(isHttps);
   mRequestHead.SetOrigin(scheme, host, port);
@@ -401,7 +405,7 @@ nsresult TRRServiceChannel::BeginConnect() {
   }
 
   RefPtr<AltSvcMapping> mapping;
-  if (!mConnectionInfo && LoadAllowAltSvc() &&  // per channel
+  if (LoadAllowAltSvc() &&  // per channel
       (http2Allowed || http3Allowed) && !(mLoadFlags & LOAD_FRESH_CONNECTION) &&
       AltSvcMapping::AcceptableProxy(proxyInfo) &&
       (scheme.EqualsLiteral("http") || scheme.EqualsLiteral("https")) &&

@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_filereadersync_h__
 #define mozilla_dom_filereadersync_h__
 
-#include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/NonRefcountedDOMObject.h"
+#include "mozilla/dom/WorkerCommon.h"
 
 class nsIInputStream;
 

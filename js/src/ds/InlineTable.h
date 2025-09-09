@@ -226,7 +226,9 @@ class InlineTable : private AllocPolicy {
     return usingTable() ? table().empty() : !inlineArray().count;
   }
 
-  void clear() {
+  void clear() { clearAndCompact(); }
+
+  void clearAndCompact() {
     data_.template emplace<InlineArray>();
     bumpMutationCount();
   }
@@ -501,6 +503,7 @@ class InlineMap {
   bool empty() const { return impl_.empty(); }
 
   void clear() { impl_.clear(); }
+  void clearAndCompact() { impl_.clearAndCompact(); }
 
   Range all() const { return impl_.all(); }
 
@@ -604,6 +607,7 @@ class InlineSet {
   bool empty() const { return impl_.empty(); }
 
   void clear() { impl_.clear(); }
+  void clearAndCompact() { impl_.clearAndCompact(); }
 
   Range all() const { return impl_.all(); }
 

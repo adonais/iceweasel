@@ -141,6 +141,7 @@ async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
   }
 
   // Done.
+  await UrlbarTestUtils.promisePopupClose(window);
   UrlbarProvidersManager.unregisterProvider(provider);
   if (tab) {
     BrowserTestUtils.removeTab(tab);

@@ -984,18 +984,16 @@ bitflags_array! {
         ///
         /// [`TextureFormat::NV12`]: super::TextureFormat::NV12
         const TEXTURE_FORMAT_NV12 = 1 << 29;
-        /// ***THIS IS EXPERIMENTAL:*** Features enabled by this may have
-        /// major bugs in them and are expected to be subject to breaking changes, suggestions
-        /// for the API exposed by this should be posted on [the ray-tracing issue](https://github.com/gfx-rs/wgpu/issues/1040)
-        ///
-        /// Allows for the creation of ray-tracing acceleration structures. Currently,
-        /// ray-tracing acceleration structures are only useful when used with [Features::EXPERIMENTAL_RAY_QUERY]
+        /// Allows for creation of textures of format [`TextureFormat::P010`]
         ///
         /// Supported platforms:
+        /// - DX12
         /// - Vulkan
         ///
-        /// This is a native-only feature.
-        const EXPERIMENTAL_RAY_TRACING_ACCELERATION_STRUCTURE = 1 << 30;
+        /// This is a native only feature.
+        ///
+        /// [`TextureFormat::P010`]: super::TextureFormat::P010
+        const TEXTURE_FORMAT_P010 = 1 << 30;
 
         /// Allows for the creation and usage of `ExternalTexture`s, and bind
         /// group layouts containing external texture `BindingType`s.
@@ -1009,7 +1007,7 @@ bitflags_array! {
         /// all.
         ///
         /// Supported platforms:
-        /// - None
+        /// - DX12
         const EXTERNAL_TEXTURE = 1 << 31;
 
         // Shader:
@@ -1253,7 +1251,7 @@ bitflags_array! {
         /// - DX12
         ///
         /// This is a native only feature.
-        const HLSL_DXIL_SHADER_PASSTHROUGH = 1 << 53;
+        const HLSL_DXIL_SHADER_PASSTHROUGH = 1 << 52;
     }
 
     /// Features that are not guaranteed to be supported.
@@ -1529,7 +1527,7 @@ impl Features {
     #[must_use]
     pub fn allowed_vertex_formats_for_blas(&self) -> Vec<VertexFormat> {
         let mut formats = Vec::new();
-        if self.contains(Self::EXPERIMENTAL_RAY_TRACING_ACCELERATION_STRUCTURE) {
+        if self.intersects(Self::EXPERIMENTAL_RAY_QUERY) {
             formats.push(VertexFormat::Float32x3);
         }
         if self.contains(Self::EXTENDED_ACCELERATION_STRUCTURE_VERTEX_FORMATS) {
@@ -1587,10 +1585,10 @@ mod tests {
         use alloc::format;
 
         let feature = Features::CLEAR_TEXTURE;
-        assert_eq!(format!("{}", feature), "CLEAR_TEXTURE");
+        assert_eq!(format!("{feature}"), "CLEAR_TEXTURE");
 
         let feature = Features::CLEAR_TEXTURE | Features::BGRA8UNORM_STORAGE;
-        assert_eq!(format!("{}", feature), "CLEAR_TEXTURE | BGRA8UNORM_STORAGE");
+        assert_eq!(format!("{feature}"), "CLEAR_TEXTURE | BGRA8UNORM_STORAGE");
     }
 
     #[test]

@@ -60,7 +60,7 @@ const startupPhases = {
         "resource:///modules/AboutNewTab.sys.mjs",
         "resource:///modules/BrowserUsageTelemetry.sys.mjs",
         "resource:///modules/ContentCrashHandlers.sys.mjs",
-        "resource:///modules/ShellService.sys.mjs",
+        "moz-src:///browser/components/shell/ShellService.sys.mjs",
         "resource://gre/modules/NewTabUtils.sys.mjs",
         "resource://gre/modules/PageThumbs.sys.mjs",
         "resource://gre/modules/PlacesUtils.sys.mjs",

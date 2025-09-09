@@ -24,6 +24,7 @@ async def are_buttons_clipped_or_selection_is_misaligned(client):
             client.css(INTRO_BUTTON_CSS),
         ],
         is_displayed=True,
+        timeout=20,
     )
     if fullsize:
         client.soft_click(fullsize)

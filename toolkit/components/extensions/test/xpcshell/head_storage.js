@@ -611,6 +611,20 @@ async function test_background_page_storage(testAreaName) {
           obj.nestedArr[1][1],
           "nestedArr[1][1] part correct"
         );
+
+        // test storage.getKeys()
+        clearGlobalChanges();
+        await storage.set({ "test-prop1": "value1", "test-prop2": "value2" });
+        await globalChanges;
+        const keys = await storage.getKeys();
+        browser.test.assertDeepEq(
+          keys,
+          ["test-prop1", "test-prop2"],
+          "getKeys() returns the correct keys"
+        );
+        clearGlobalChanges();
+        await storage.clear();
+        await globalChanges;
       } catch (e) {
         browser.test.fail(`Error: ${e} :: ${e.stack}`);
         browser.test.notifyFail("storage");

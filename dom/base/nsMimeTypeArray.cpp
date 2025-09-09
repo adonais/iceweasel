@@ -6,11 +6,11 @@
 
 #include "nsMimeTypeArray.h"
 
+#include "mozilla/StaticPrefs_pdfjs.h"
 #include "mozilla/dom/MimeTypeArrayBinding.h"
 #include "mozilla/dom/MimeTypeBinding.h"
-#include "nsPluginArray.h"
-#include "mozilla/StaticPrefs_pdfjs.h"
 #include "nsContentUtils.h"
+#include "nsPluginArray.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;

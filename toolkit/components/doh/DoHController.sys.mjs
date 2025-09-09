@@ -165,6 +165,11 @@ export const DoHController = {
     lazy.Preferences.set(FIRST_RUN_PREF, true);
   },
 
+  // Clears all of the doh-rollout prefs
+  async cleanupPrefs() {
+    lazy.Preferences.resetBranch("doh-rollout.");
+  },
+
   // Also used by tests to reset DoHController state (prefs are not cleared
   // here - tests do that when needed between _uninit and init).
   async _uninit() {

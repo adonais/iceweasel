@@ -6,10 +6,9 @@
 
 #include "WebrtcTCPSocketParent.h"
 
-#include "mozilla/net/NeckoParent.h"
-
 #include "WebrtcTCPSocket.h"
 #include "WebrtcTCPSocketLog.h"
+#include "mozilla/net/NeckoParent.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::ipc;

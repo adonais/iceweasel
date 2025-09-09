@@ -7,12 +7,12 @@
 
 #include "DOMMediaStream.h"
 #include "MediaEventSource.h"
-#include "MediaTrackGraph.h"
 #include "MediaTrackConstraints.h"
-#include "mozilla/dom/MediaStreamTrackBinding.h"
-#include "mozilla/dom/VideoStreamTrack.h"
+#include "MediaTrackGraph.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
+#include "mozilla/dom/MediaStreamTrackBinding.h"
+#include "mozilla/dom/VideoStreamTrack.h"
 
 namespace mozilla {
 

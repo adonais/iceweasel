@@ -48,7 +48,7 @@ class CodecEndToEndTest : public test::CallTest {
 };
 
 class CodecObserver : public test::EndToEndTest,
-                      public rtc::VideoSinkInterface<VideoFrame> {
+                      public VideoSinkInterface<VideoFrame> {
  public:
   CodecObserver(int no_frames_to_wait_for,
                 VideoRotation rotation_to_test,
@@ -247,8 +247,8 @@ TEST_P(EndToEndTestH264, SendsAndReceivesH264VideoRotation90) {
 }
 
 TEST_P(EndToEndTestH264, SendsAndReceivesH264PacketizationMode0) {
-  SdpVideoFormat codec(cricket::kH264CodecName);
-  codec.parameters[cricket::kH264FmtpPacketizationMode] = "0";
+  SdpVideoFormat codec(webrtc::kH264CodecName);
+  codec.parameters[webrtc::kH264FmtpPacketizationMode] = "0";
   test::FunctionVideoEncoderFactory encoder_factory(
       [codec](const Environment& env, const SdpVideoFormat& format) {
         return CreateH264Encoder(env, H264EncoderSettings::Parse(codec));
@@ -261,8 +261,8 @@ TEST_P(EndToEndTestH264, SendsAndReceivesH264PacketizationMode0) {
 }
 
 TEST_P(EndToEndTestH264, SendsAndReceivesH264PacketizationMode1) {
-  SdpVideoFormat codec(cricket::kH264CodecName);
-  codec.parameters[cricket::kH264FmtpPacketizationMode] = "1";
+  SdpVideoFormat codec(webrtc::kH264CodecName);
+  codec.parameters[webrtc::kH264FmtpPacketizationMode] = "1";
   test::FunctionVideoEncoderFactory encoder_factory(
       [codec](const Environment& env, const SdpVideoFormat& format) {
         return CreateH264Encoder(env, H264EncoderSettings::Parse(codec));

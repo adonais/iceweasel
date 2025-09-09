@@ -7,9 +7,9 @@
 #ifndef nsContentCreatorFunctions_h__
 #define nsContentCreatorFunctions_h__
 
-#include "nsError.h"
-#include "nsCOMPtr.h"
 #include "mozilla/dom/FromParser.h"
+#include "nsCOMPtr.h"
+#include "nsError.h"
 
 /**
  * Functions to create content, to be used only inside Gecko

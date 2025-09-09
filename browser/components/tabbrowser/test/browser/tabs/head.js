@@ -70,7 +70,7 @@ async function addTabTo(
   params.skipAnimation = true;
   const tab = BrowserTestUtils.addTab(targetBrowser, url, params);
   const browser = targetBrowser.getBrowserForTab(tab);
-  await BrowserTestUtils.browserLoaded(browser);
+  await BrowserTestUtils.browserLoaded(browser, { wantLoad: url });
   return tab;
 }
 
@@ -296,7 +296,7 @@ async function dragAndDrop(
     ctrlKey: copy,
     altKey: copy,
     clientX: rect.left + rect.width / 2 + (afterTab ? 1 : -1),
-    clientY: rect.top + rect.height / 2,
+    clientY: rect.top + rect.height / 2 + (afterTab ? 1 : -1),
   };
 
   if (destWindow != origWindow) {
@@ -327,6 +327,50 @@ async function dragAndDrop(
       "Waiting for tab closing"
     );
   }
+}
+
+// The dragAndDrop function is specific to tabs.
+// This function allows us to customize the drop destination to interaction cue,
+// promo card, other containers, or tabs themselves. It also provides an option
+// to wait for a condition between initial drag and final drop.
+/**
+ * @param {Element} src
+ * @param {Element} dest
+ * @param {Promise<void>} [dragCond]
+ * @param {Promise<void>} [dropCond]
+ * @param {object} [dragEvent={}]
+ */
+async function customDragAndDrop(
+  src,
+  dest,
+  dragCond = null,
+  dropCond = null,
+  dragEvent = {}
+) {
+  EventUtils.startDragSession(window, "move");
+
+  info("Start drag");
+  let [result, dataTransfer] = EventUtils.synthesizeDragOver(
+    src,
+    // In some cases, the dest is hidden and we use coords instead.
+    // Default to src in this scenario.
+    BrowserTestUtils.isHidden(dest) && dragEvent?.clientX && dragEvent?.clientY
+      ? src
+      : dest,
+    null,
+    "move",
+    window,
+    window,
+    dragEvent
+  );
+  await dragCond;
+
+  info("Start drop");
+  EventUtils.synthesizeDropAfterDragOver(result, dataTransfer, dest);
+  let srcWindowUtils = EventUtils._getDOMWindowUtils(window);
+  const srcDragSession = srcWindowUtils.dragSession;
+  srcDragSession.endDragSession(true, EventUtils._parseModifiers(dragEvent));
+  await dropCond;
 }
 
 function getUrl(tab) {

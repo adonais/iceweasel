@@ -13,6 +13,7 @@ use dom::{DocumentState, ElementState};
 use malloc_size_of::MallocSizeOfOps;
 use nsstring::{nsCString, nsString};
 use selectors::matching::{ElementSelectorFlags, MatchingForInvalidation, SelectorCaches};
+use selectors::parser::PseudoElement as PseudoElementTrait;
 use selectors::{Element, OpaqueElement};
 use servo_arc::{Arc, ArcBorrow};
 use smallvec::SmallVec;
@@ -131,17 +132,16 @@ use style::style_adjuster::StyleAdjuster;
 use style::stylesheets::container_rule::ContainerSizeQuery;
 use style::stylesheets::import_rule::{ImportLayer, ImportSheet};
 use style::stylesheets::keyframes_rule::{Keyframe, KeyframeSelector, KeyframesStepValue};
+use style::stylesheets::scope_rule::{ImplicitScopeRoot, ScopeSubjectMap};
 use style::stylesheets::supports_rule::parse_condition_or_declaration;
 use style::stylesheets::{
-    AllowImportRules, ContainerRule, CounterStyleRule, CssRule, CssRuleType, CssRuleTypes,
-    CssRules, CssRulesHelpers, DocumentRule, FontFaceRule, FontFeatureValuesRule,
-    FontPaletteValuesRule, ImportRule, KeyframesRule, LayerBlockRule, LayerStatementRule,
-    MarginRule, MediaRule, NamespaceRule, NestedDeclarationsRule, Origin, OriginSet,
-    PagePseudoClassFlags, PageRule, PositionTryRule, PropertyRule, SanitizationData,
-    SanitizationKind, ScopeRule, StartingStyleRule, StyleRule, StylesheetContents,
-    StylesheetLoader as StyleStylesheetLoader, SupportsRule, UrlExtraData,
+    AllowImportRules, ContainerRule, CounterStyleRule, CssRule, CssRuleType, CssRuleTypes, CssRules, CssRulesHelpers, DocumentRule, FontFaceRule, FontFeatureValuesRule, FontPaletteValuesRule, ImportRule, KeyframesRule, LayerBlockRule, LayerStatementRule, MarginRule, MediaRule, NamespaceRule, NestedDeclarationsRule, Origin, OriginSet, PagePseudoClassFlags, PageRule, PositionTryRule, PropertyRule, SanitizationData, SanitizationKind, ScopeRule, StartingStyleRule, StyleRule, StylesheetContents, StylesheetInDocument, StylesheetLoader as StyleStylesheetLoader, SupportsRule, UrlExtraData
 };
-use style::stylist::{add_size_of_ua_cache, AuthorStylesEnabled, RuleInclusion, Stylist};
+use style::stylist::{
+    add_size_of_ua_cache, replace_parent_selector_with_implicit_scope, scope_root_candidates,
+    AuthorStylesEnabled, RuleInclusion, ScopeBoundsWithHashes, ScopeConditionId,
+    ScopeConditionReference, Stylist,
+};
 use style::thread_state;
 use style::traversal::resolve_style;
 use style::traversal::DomTraversal;
@@ -2591,7 +2591,7 @@ pub extern "C" fn Servo_StyleRule_GetSelectorText(rule: &LockedStyleRule, result
     read_locked_arc(rule, |rule| rule.selectors.to_css(result).unwrap());
 }
 
-fn desugared_selector_list(rules: &nsTArray<&LockedStyleRule>) -> SelectorList {
+fn desugared_selector_list(rules: &[&LockedStyleRule]) -> SelectorList {
     let mut selectors: Option<SelectorList> = None;
     for rule in rules.iter().rev() {
         selectors = Some(read_locked_arc(rule, |rule| match selectors {
@@ -2633,9 +2633,111 @@ pub extern "C" fn Servo_StyleRule_GetSelectorCount(rule: &LockedStyleRule) -> u3
     read_locked_arc(rule, |rule| rule.selectors.len() as u32)
 }
 
+struct DesugaredScopeData {
+    conditions: SmallVec<[ScopeConditionReference; 2]>,
+    subject_map: ScopeSubjectMap,
+}
+
+fn desugared_selector_list_with_scope(
+    quirks_mode: QuirksMode,
+    rules: &[&LockedStyleRule],
+    scope_data: &nsTArray<ScopeRuleData>,
+) -> (SelectorList, Option<DesugaredScopeData>) {
+    if scope_data.is_empty() {
+        return (desugared_selector_list(rules), None);
+    }
+
+    fn desugared_scope_rule(
+        quirks_mode: QuirksMode,
+        id: u16,
+        scope_data: &ScopeRuleData,
+        selectors: &[&LockedStyleRule],
+        subject_map: &mut ScopeSubjectMap,
+    ) -> ScopeConditionReference {
+        debug_assert!(id > 0, "ID corresponds to none?");
+        let (start, end) = unsafe {
+            let rule = scope_data
+                .scope_rule
+                .as_ref()
+                .expect("Ill-formed scope data?");
+            (
+                if selectors.is_empty() {
+                    rule.bounds.start.clone()
+                } else {
+                    let desugared = desugared_selector_list(selectors);
+                    rule.bounds
+                        .start
+                        .as_ref()
+                        .map(|s| s.replace_parent_selector(&desugared))
+                },
+                rule.bounds
+                    .end
+                    .as_ref()
+                    .map(|s| replace_parent_selector_with_implicit_scope(s)),
+            )
+        };
+        // Building the subject map is likey worth it, because we traverse up as much as possible to gather all possible candidates.
+        start
+            .as_ref()
+            .map(|s| subject_map.add_bound_start(s, quirks_mode));
+        ScopeConditionReference::new(
+            ScopeConditionId::new(id - 1),
+            // Don't bother with hashing - we don't compute ancestor hashes anyway.
+            Some(ScopeBoundsWithHashes::new_no_hash(start, end)),
+            unsafe { GeckoStyleSheet::new(scope_data.sheet).implicit_scope_root() }
+                .unwrap_or(ImplicitScopeRoot::DocumentElement),
+            false,
+        )
+    }
+
+    let innermost_scope_valid_til = scope_data[0].valid_til;
+    // Take style rules up to the innermost scope rule, and desugar it.
+    let desugared_style = desugared_selector_list(if innermost_scope_valid_til > rules.len() - 1 {
+        &rules[0..]
+    } else {
+        &rules[0..=innermost_scope_valid_til]
+    });
+
+    // Now, desugar the scope rule(s) with any intervening nested style rule(s).
+    let mut conditions = SmallVec::with_capacity(scope_data.len());
+    let mut subject_map = ScopeSubjectMap::default();
+    conditions.push(ScopeConditionReference::none());
+    let mut end_at = rules.len() - 1;
+    for data in scope_data.iter().rev() {
+        conditions.push(desugared_scope_rule(
+            quirks_mode,
+            conditions.len() as u16,
+            data,
+            &rules[data.valid_til + 1..=end_at],
+            &mut subject_map,
+        ));
+        end_at = data.valid_til;
+    }
+
+    (
+        desugared_style,
+        Some(DesugaredScopeData {
+            conditions,
+            subject_map,
+        }),
+    )
+}
+
+/// Additional scope rule data for matching a style rule.
+#[repr(C)]
+pub struct ScopeRuleData {
+    /// Scope rule applicable at this nesting level.
+    pub scope_rule: *const ScopeRule,
+    /// Stylesheet this scope rule comes from.
+    pub sheet: *const DomStyleSheet,
+    /// Index to the last style rule in an array this scope applies to.
+    pub valid_til: usize,
+}
+
 #[no_mangle]
 pub extern "C" fn Servo_StyleRule_SelectorMatchesElement(
     rules: &nsTArray<&LockedStyleRule>,
+    scope_rules: &nsTArray<ScopeRuleData>,
     element: &RawGeckoElement,
     index: u32,
     host: Option<&RawGeckoElement>,
@@ -2646,7 +2748,10 @@ pub extern "C" fn Servo_StyleRule_SelectorMatchesElement(
         matches_selector, IncludeStartingStyle, MatchingContext, MatchingMode, NeedsSelectorFlags,
         VisitedHandlingMode,
     };
-    let selectors = desugared_selector_list(rules);
+
+    let element = GeckoElement(element);
+    let quirks_mode = element.as_node().owner_doc().quirks_mode();
+    let (selectors, scopes) = desugared_selector_list_with_scope(quirks_mode, rules, scope_rules);
     let Some(selector) = selectors.slice().get(index as usize) else {
         return false;
     };
@@ -2671,9 +2776,7 @@ pub extern "C" fn Servo_StyleRule_SelectorMatchesElement(
         },
     };
 
-    let element = GeckoElement(element);
     let host = host.map(GeckoElement);
-    let quirks_mode = element.as_node().owner_doc().quirks_mode();
     let mut selector_caches = SelectorCaches::default();
     let visited_mode = if relevant_link_visited {
         VisitedHandlingMode::RelevantLinkVisited
@@ -2690,8 +2793,24 @@ pub extern "C" fn Servo_StyleRule_SelectorMatchesElement(
         NeedsSelectorFlags::No,
         MatchingForInvalidation::No,
     );
-    ctx.with_shadow_host(host, |ctx| {
-        matches_selector(selector, 0, None, &element, ctx)
+    ctx.with_shadow_host(host, |ctx| match scopes.as_ref() {
+        None => matches_selector(selector, 0, None, &element, ctx),
+        Some(s) => {
+            let id = ScopeConditionId::new((s.conditions.len() - 1) as u16);
+            let candidates = scope_root_candidates(
+                &s.conditions,
+                id,
+                &element,
+                selector.is_part(),
+                &s.subject_map,
+                ctx,
+            );
+            candidates.candidates.iter().any(|candidate| {
+                ctx.nest_for_scope(Some(candidate.root), |ctx| {
+                    matches_selector(selector, 0, None, &element, ctx)
+                })
+            })
+        },
     })
 }
 
@@ -6448,8 +6567,12 @@ pub extern "C" fn Servo_ReparentStyle(
     let guard = global_style_data.shared_lock.read();
     let doc_data = raw_data.borrow();
     let inputs = CascadeInputs::new_from_style(style_to_reparent);
-    let pseudo = style_to_reparent.pseudo();
     let element = element.map(GeckoElement);
+    // We need the pseudo-type to reparent stuff like anonymous boxes, but we don't store pseudo
+    // identifiers in the style itself, so if there's no pseudo try the element as well.
+    let pseudo = style_to_reparent
+        .pseudo()
+        .or_else(|| element.and_then(|e| e.implemented_pseudo_element()));
 
     doc_data
         .stylist
@@ -7960,18 +8083,15 @@ pub extern "C" fn Servo_StyleSet_HasDocumentStateDependency(
 
 fn computed_or_resolved_value(
     style: &ComputedValues,
-    prop: nsCSSPropertyID,
+    prop: NonCustomPropertyId,
     context: Option<&resolved::Context>,
     value: &mut nsACString,
 ) {
-    if let Some(longhand) = LonghandId::from_nscsspropertyid(prop) {
-        return style
-            .computed_or_resolved_value(longhand, context, value)
-            .unwrap();
-    }
+    let shorthand = match prop.longhand_or_shorthand() {
+        Ok(longhand) =>  return style.computed_or_resolved_value(longhand, context, value).unwrap(),
+        Err(shorthand) => shorthand,
+    };
 
-    let shorthand =
-        ShorthandId::from_nscsspropertyid(prop).expect("Not a shorthand nor a longhand?");
     let mut block = PropertyDeclarationBlock::new();
     for longhand in shorthand.longhands() {
         block.push(
@@ -7988,6 +8108,7 @@ pub unsafe extern "C" fn Servo_GetComputedValue(
     prop: nsCSSPropertyID,
     value: &mut nsACString,
 ) {
+    let prop = NonCustomPropertyId::from_nscsspropertyid(prop).unwrap();
     computed_or_resolved_value(style, prop, None, value)
 }
 
@@ -8001,12 +8122,14 @@ pub unsafe extern "C" fn Servo_GetResolvedValue(
 ) {
     let data = raw_data.borrow();
     let device = data.stylist.device();
+    let prop = NonCustomPropertyId::from_nscsspropertyid(prop).unwrap();
     let context = resolved::Context {
         style,
         device,
         element_info: resolved::ResolvedElementInfo {
             element: GeckoElement(element),
         },
+        for_property: prop,
     };
 
     computed_or_resolved_value(style, prop, Some(&context), value)
@@ -8367,15 +8490,17 @@ pub unsafe extern "C" fn Servo_IsValidCSSColor(value: &nsACString) -> bool {
     specified::Color::is_valid(&context, &mut input)
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn Servo_ComputeColor(
+struct ComputeColorResult {
+    result_color: AbsoluteColor,
+    was_current_color: bool,
+}
+
+unsafe fn compute_color(
     raw_data: Option<&PerDocumentStyleData>,
-    current_color: structs::nscolor,
+    current_color: &AbsoluteColor,
     value: &nsACString,
-    result_color: &mut structs::nscolor,
-    was_current_color: *mut bool,
     loader: *mut Loader,
-) -> bool {
+) -> Option<ComputeColorResult> {
     let mut input = ParserInput::new(value.as_str_unchecked());
     let mut input = Parser::new(&mut input);
     let reporter = loader.as_mut().and_then(|loader| {
@@ -8403,19 +8528,53 @@ pub unsafe extern "C" fn Servo_ComputeColor(
         None => None,
     };
 
-    let computed = match specified::Color::parse_and_compute(&context, &mut input, device) {
-        Some(c) => c,
-        None => return false,
+    let computed = specified::Color::parse_and_compute(&context, &mut input, device)?;
+
+    let result_color = computed.resolve_to_absolute(current_color);
+    let was_current_color = computed.is_currentcolor();
+
+    Some(ComputeColorResult {
+        result_color,
+        was_current_color,
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Servo_ComputeColor(
+    raw_data: Option<&PerDocumentStyleData>,
+    current_color: structs::nscolor,
+    value: &nsACString,
+    result_color: &mut structs::nscolor,
+    was_current_color: *mut bool,
+    loader: *mut Loader,
+) -> bool {
+    let current_color = style::gecko::values::convert_nscolor_to_absolute_color(current_color);
+    let Some(result) = compute_color(raw_data, &current_color, value, loader) else {
+        return false;
     };
 
-    let current_color = style::gecko::values::convert_nscolor_to_absolute_color(current_color);
+    *result_color = style::gecko::values::convert_absolute_color_to_nscolor(&result.result_color);
     if !was_current_color.is_null() {
-        *was_current_color = computed.is_currentcolor();
+        *was_current_color = result.was_current_color
     }
-
-    let rgba = computed.resolve_to_absolute(&current_color);
-    *result_color = style::gecko::values::convert_absolute_color_to_nscolor(&rgba);
     true
+}
+
+// This implements https://html.spec.whatwg.org/#update-a-color-well-control-color,
+// except the actual serialization steps in step 6 of "serialize a color well control color".
+#[no_mangle]
+pub unsafe extern "C" fn Servo_ComputeColorWellControlColor(
+    raw_data: Option<&PerDocumentStyleData>,
+    value: &nsACString,
+    to_color_space: ColorSpace,
+    result_color: &mut AbsoluteColor,
+) -> bool {
+    if let Some(color) = compute_color(raw_data, &AbsoluteColor::BLACK, value, ptr::null_mut()) {
+        *result_color = color.result_color.to_color_space(to_color_space);
+        true
+    } else {
+        false
+    }
 }
 
 #[no_mangle]

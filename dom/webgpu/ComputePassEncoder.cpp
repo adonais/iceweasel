@@ -3,15 +3,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/dom/WebGPUBinding.h"
-#include "CommandEncoder.h"
 #include "ComputePassEncoder.h"
+
 #include "BindGroup.h"
-#include "ComputePipeline.h"
 #include "CommandEncoder.h"
+#include "ComputePipeline.h"
+#include "ExternalTexture.h"
 #include "Utility.h"
-#include "mozilla/webgpu/ffi/wgpu.h"
 #include "ipc/WebGPUChild.h"
+#include "mozilla/dom/WebGPUBinding.h"
+#include "mozilla/webgpu/ffi/wgpu.h"
 
 namespace mozilla::webgpu {
 
@@ -60,7 +61,7 @@ void ComputePassEncoder::Cleanup() {
 void ComputePassEncoder::SetBindGroup(uint32_t aSlot,
                                       BindGroup* const aBindGroup,
                                       const uint32_t* aDynamicOffsets,
-                                      uint64_t aDynamicOffsetsLength) {
+                                      size_t aDynamicOffsetsLength) {
   RawId bindGroup = 0;
   if (aBindGroup) {
     mUsedBindGroups.AppendElement(aBindGroup);
@@ -68,7 +69,7 @@ void ComputePassEncoder::SetBindGroup(uint32_t aSlot,
     bindGroup = aBindGroup->mId;
   }
   ffi::wgpu_recorded_compute_pass_set_bind_group(
-      mPass.get(), aSlot, bindGroup, aDynamicOffsets, aDynamicOffsetsLength);
+      mPass.get(), aSlot, bindGroup, {aDynamicOffsets, aDynamicOffsetsLength});
 }
 
 void ComputePassEncoder::SetBindGroup(
@@ -159,8 +160,12 @@ void ComputePassEncoder::End() {
   if (!mValid) {
     return;
   }
+  nsTArray<RefPtr<ExternalTexture>> externalTextures;
+  for (const auto& bindGroup : mUsedBindGroups) {
+    externalTextures.AppendElements(bindGroup->GetExternalTextures());
+  }
   MOZ_ASSERT(!!mPass);
-  mParent->EndComputePass(*mPass, mUsedCanvasContexts);
+  mParent->EndComputePass(*mPass, mUsedCanvasContexts, externalTextures);
   Cleanup();
 }
 

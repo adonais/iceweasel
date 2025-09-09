@@ -42,9 +42,11 @@ class HTMLFieldSetElement final : public nsGenericHTMLFormControlElement,
                     nsIPrincipal* aSubjectPrincipal, bool aNotify) override;
 
   void InsertChildBefore(nsIContent* aChild, nsIContent* aBeforeThis,
-                         bool aNotify, ErrorResult& aRv) override;
+                         bool aNotify, ErrorResult& aRv,
+                         nsINode* aOldParent = nullptr) override;
   void RemoveChildNode(nsIContent* aKid, bool aNotify,
-                       const BatchRemovalState*) override;
+                       const BatchRemovalState* aState,
+                       nsINode* aNewParent = nullptr) override;
 
   // nsGenericHTMLElement
   bool IsDisabledForEvents(WidgetEvent* aEvent) override;

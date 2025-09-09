@@ -43,7 +43,7 @@
   <!-- Action shown in a text selection context menu. This will prompt a search using the selected text. -->
   <string name="mozac_selection_context_menu_search_2">Vyhledat</string>
   <!-- Action shown in a text selection context menu. This will prompt a search in a private tab using the selected text -->
-  <string name="mozac_selection_context_menu_search_privately_2">Vyhledat v anonymním okně</string>
+  <string name="mozac_selection_context_menu_search_privately_2">Vyhledat v anonymním panelu</string>
   <!-- Action shown in a text selection context menu. This will prompt a share of the selected text. -->
   <string name="mozac_selection_context_menu_share">Sdílet</string>
   <!-- Action shown in a text selection context menu. This will prompt a new email from the selected text. -->

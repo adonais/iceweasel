@@ -25,21 +25,10 @@ import re
 import sys
 from contextlib import closing
 from functools import partial
-from itertools import chain, tee
+from itertools import chain, tee, zip_longest
 from operator import is_not, itemgetter
+from urllib.request import urlopen
 from zipfile import ZipFile
-
-if sys.version_info.major == 2:
-    from itertools import ifilter as filter
-    from itertools import imap as map
-    from itertools import izip_longest as zip_longest
-
-    from urllib2 import urlopen
-
-    range = xrange
-else:
-    from itertools import zip_longest
-    from urllib.request import urlopen
 
 
 class codepoint_dict(dict):
@@ -418,7 +407,7 @@ def process_case_folding(case_folding):
         else:
             rev_folding = []
 
-        if folding != code or len(rev_folding):
+        if folding != code or rev_folding:
             item = [code]
             if folding != code:
                 item.append(folding)

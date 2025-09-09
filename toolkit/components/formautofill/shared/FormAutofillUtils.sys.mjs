@@ -1438,15 +1438,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofillUtils,
-  "ccFathomHighConfidenceThreshold",
-  "extensions.formautofill.creditCards.heuristics.fathom.highConfidenceThreshold",
-  null,
-  null,
-  pref => parseFloat(pref)
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  FormAutofillUtils,
   "ccFathomTestConfidence",
   "extensions.formautofill.creditCards.heuristics.fathom.testConfidence",
   null,

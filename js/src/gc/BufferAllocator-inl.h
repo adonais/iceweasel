@@ -13,30 +13,11 @@
 #include "mozilla/MathAlgorithms.h"
 
 #include "ds/SlimLinkedList.h"
-#include "gc/BufferAllocatorInternals.h"
-#include "gc/Cell.h"
 #include "js/HeapAPI.h"
 
 #include "gc/Allocator-inl.h"
 
 namespace js::gc {
-
-// todo: rename
-static constexpr size_t MinAllocSize = MinCellSize;  // 16 bytes
-
-static constexpr size_t MaxSmallAllocSize =
-    1 << (BufferAllocator::MinMediumAllocShift - 1);
-static constexpr size_t MinMediumAllocSize =
-    1 << BufferAllocator::MinMediumAllocShift;
-static constexpr size_t MaxMediumAllocSize =
-    1 << BufferAllocator::MaxMediumAllocShift;
-
-static constexpr size_t MediumAllocGranularityShift =
-    BufferAllocator::MinMediumAllocShift;
-static constexpr size_t MediumAllocGranularity = 1
-                                                 << MediumAllocGranularityShift;
-
-using MediumBufferSize = EncodedSize<MediumAllocGranularityShift>;
 
 /* static */
 inline bool BufferAllocator::IsSmallAllocSize(size_t bytes) {
@@ -56,12 +37,11 @@ inline size_t BufferAllocator::GetGoodAllocSize(size_t requiredBytes) {
     return RoundUp(requiredBytes, ChunkSize);
   }
 
-  // TODO: Support more sizes than powers of 2
   if (IsSmallAllocSize(requiredBytes)) {
-    return mozilla::RoundUpPow2(requiredBytes);
+    return RoundUp(requiredBytes, SmallAllocGranularity);
   }
 
-  return MediumBufferSize(requiredBytes).get();
+  return RoundUp(requiredBytes, MediumAllocGranularity);
 }
 
 /* static */

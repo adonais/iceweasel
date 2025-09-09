@@ -847,7 +847,6 @@ bool shell::enableSourcePragmas = true;
 bool shell::enableAsyncStacks = false;
 bool shell::enableAsyncStackCaptureDebuggeeOnly = false;
 bool shell::enableToSource = false;
-bool shell::enableImportAttributes = false;
 #ifdef JS_GC_ZEAL
 uint32_t shell::gZealBits = 0;
 uint32_t shell::gZealFrequency = 0;
@@ -5996,6 +5995,17 @@ static bool ClearModules(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool ModuleLoadResolved(JSContext* cx, HandleValue hostDefined) {
+  RootedObject module(cx, &hostDefined.toObject());
+  return JS::ModuleLink(cx, module);
+}
+
+static bool ModuleLoadRejected(JSContext* cx, HandleValue hostDefined,
+                               HandleValue error) {
+  JS_SetPendingException(cx, error);
+  return false;
+}
+
 static bool ModuleLink(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -6016,7 +6026,11 @@ static bool ModuleLink(JSContext* cx, unsigned argc, Value* vp) {
 
   Rooted<ModuleObject*> module(cx,
                                object->as<ShellModuleObjectWrapper>().get());
-  if (!JS::ModuleLink(cx, module)) {
+
+  // TODO: Bug 1968904: Update ModuleLink
+  RootedValue hostDefined(cx, ObjectValue(*module));
+  if (!JS::LoadRequestedModules(cx, module, hostDefined, ModuleLoadResolved,
+                                ModuleLoadRejected)) {
     return false;
   }
 
@@ -9572,6 +9586,29 @@ static bool GetExecutionTrace(JSContext* cx, unsigned argc, JS::Value* vp) {
   JS::Rooted<JS::PropertyKey> eventsId(cx,
                                        JS::PropertyKey::NonIntAtom(eventsStr));
 
+  JS::Rooted<JSString*> valueBufferStr(cx, JS_AtomizeString(cx, "valueBuffer"));
+  if (!valueBufferStr) {
+    return false;
+  }
+  JS::Rooted<JS::PropertyKey> valueBufferId(
+      cx, JS::PropertyKey::NonIntAtom(valueBufferStr));
+
+  JS::Rooted<JSString*> shapeSummariesStr(
+      cx, JS_AtomizeString(cx, "shapeSummaries"));
+  if (!shapeSummariesStr) {
+    return false;
+  }
+  JS::Rooted<JS::PropertyKey> shapeSummariesId(
+      cx, JS::PropertyKey::NonIntAtom(shapeSummariesStr));
+
+  JS::Rooted<JSString*> numPropertiesStr(cx,
+                                         JS_AtomizeString(cx, "numProperties"));
+  if (!numPropertiesStr) {
+    return false;
+  }
+  JS::Rooted<JS::PropertyKey> numPropertiesId(
+      cx, JS::PropertyKey::NonIntAtom(numPropertiesStr));
+
   JS::Rooted<JS::PropertyKey> lineNumberId(cx,
                                            NameToId(cx->names().lineNumber));
   JS::Rooted<JS::PropertyKey> columnNumberId(
@@ -9579,6 +9616,7 @@ static bool GetExecutionTrace(JSContext* cx, unsigned argc, JS::Value* vp) {
   JS::Rooted<JS::PropertyKey> scriptId(cx, NameToId(cx->names().script));
   JS::Rooted<JS::PropertyKey> nameId(cx, NameToId(cx->names().name));
   JS::Rooted<JS::PropertyKey> labelId(cx, NameToId(cx->names().label));
+  JS::Rooted<JS::PropertyKey> valuesId(cx, NameToId(cx->names().values));
   JS::Rooted<JSString*> realmIDStr(cx, JS_AtomizeString(cx, "realmID"));
   if (!realmIDStr) {
     return false;
@@ -9588,7 +9626,9 @@ static bool GetExecutionTrace(JSContext* cx, unsigned argc, JS::Value* vp) {
 
   JS::Rooted<JSObject*> contextObj(cx);
   JS::Rooted<ArrayObject*> eventsArray(cx);
+  JS::Rooted<JSObject*> shapeSummariesObj(cx);
   JS::Rooted<JSObject*> eventObj(cx);
+  JS::Rooted<JSObject*> shapeSummaryObj(cx);
   JS::Rooted<JSString*> str(cx);
 
   JS::Rooted<ArrayObject*> traceArray(cx, NewDenseEmptyArray(cx));
@@ -9599,6 +9639,11 @@ static bool GetExecutionTrace(JSContext* cx, unsigned argc, JS::Value* vp) {
   for (const auto& context : trace.contexts) {
     contextObj = JS_NewPlainObject(cx);
     if (!contextObj) {
+      return false;
+    }
+
+    shapeSummariesObj = JS_NewPlainObject(cx);
+    if (!shapeSummariesObj) {
       return false;
     }
 
@@ -9702,6 +9747,12 @@ static bool GetExecutionTrace(JSContext* cx, unsigned argc, JS::Value* vp) {
           return false;
         }
 
+        if (!JS_DefinePropertyById(cx, eventObj, valuesId,
+                                   event.functionEvent.values,
+                                   JSPROP_ENUMERATE)) {
+          return false;
+        }
+
         if (auto p = context.atoms.lookup(event.functionEvent.functionNameId)) {
           str = JS_NewStringCopyUTF8Z(
               cx, JS::ConstUTF8CharsZ(trace.stringBuffer.begin() + p->value()));
@@ -9748,6 +9799,69 @@ static bool GetExecutionTrace(JSContext* cx, unsigned argc, JS::Value* vp) {
     }
 
     if (!JS_DefinePropertyById(cx, contextObj, eventsId, eventsArray,
+                               JSPROP_ENUMERATE)) {
+      return false;
+    }
+
+    for (const auto& shapeSummary : context.shapeSummaries) {
+      shapeSummaryObj = NewDenseEmptyArray(cx);
+      if (!shapeSummaryObj) {
+        return false;
+      }
+
+      // 1 for the class name + num listed properties
+      const uint32_t realCount =
+          1 + std::min(shapeSummary.numProperties,
+                       uint32_t(JS::ValueSummary::MAX_COLLECTION_VALUES));
+      size_t accumulatedOffset = 0;
+      for (uint32_t i = 0; i < realCount; i++) {
+        const char* entry = trace.stringBuffer.begin() +
+                            shapeSummary.stringBufferOffset + accumulatedOffset;
+        size_t length = strlen(entry);
+        str = JS_NewStringCopyUTF8Z(cx, JS::ConstUTF8CharsZ(entry, length));
+        if (!str) {
+          return false;
+        }
+        accumulatedOffset += length + 1;
+
+        if (!NewbornArrayPush(cx, shapeSummaryObj, JS::StringValue(str))) {
+          return false;
+        }
+      }
+
+      if (!JS_DefinePropertyById(cx, shapeSummaryObj, numPropertiesId,
+                                 shapeSummary.numProperties,
+                                 JSPROP_ENUMERATE)) {
+        return false;
+      }
+
+      if (!JS_DefineElement(cx, shapeSummariesObj, shapeSummary.id,
+                            shapeSummaryObj, JSPROP_ENUMERATE)) {
+        return false;
+      }
+    }
+
+    if (!JS_DefinePropertyById(cx, contextObj, shapeSummariesId,
+                               shapeSummariesObj, JSPROP_ENUMERATE)) {
+      return false;
+    }
+
+    size_t valuesLength = context.valueBuffer.length();
+    mozilla::UniquePtr<uint8_t[], JS::FreePolicy> valueBuffer(
+        js_pod_malloc<uint8_t>(valuesLength));
+    if (!valueBuffer) {
+      return false;
+    }
+
+    memcpy(valueBuffer.get(), context.valueBuffer.begin(), valuesLength);
+    JS::Rooted<JSObject*> valuesArrayBuffer(
+        cx, JS::NewArrayBufferWithContents(cx, valuesLength,
+                                           std::move(valueBuffer)));
+    if (!valuesArrayBuffer) {
+      return false;
+    }
+
+    if (!JS_DefinePropertyById(cx, contextObj, valueBufferId, valuesArrayBuffer,
                                JSPROP_ENUMERATE)) {
       return false;
     }
@@ -11371,11 +11485,11 @@ static const JSClassOps FakeDOMObjectClassOps = {
     nullptr,
 };
 
-static const JSClass dom_class = {"FakeDOMObject",
-                                  JSCLASS_IS_DOMJSCLASS |
-                                      JSCLASS_HAS_RESERVED_SLOTS(2) |
-                                      JSCLASS_BACKGROUND_FINALIZE,
-                                  &FakeDOMObjectClassOps};
+static const JSClass dom_class = {
+    "FakeDOMObject",
+    JSCLASS_IS_DOMJSCLASS | JSCLASS_HAS_RESERVED_SLOTS(2) |
+        JSCLASS_BACKGROUND_FINALIZE | JSCLASS_PRESERVES_WRAPPER,
+    &FakeDOMObjectClassOps};
 
 static const JSClass* GetDomClass() { return &dom_class; }
 
@@ -11501,6 +11615,15 @@ static bool InstanceClassHasProtoAtDepth(const JSClass* clasp, uint32_t protoID,
 }
 
 static bool InstanceClassIsError(const JSClass* clasp) { return false; }
+
+static bool ExtractExceptionInfo(JSContext* cx, JS::HandleObject obj,
+                                 bool* isException,
+                                 JS::MutableHandle<JSString*> fileName,
+                                 uint32_t* line, uint32_t* column,
+                                 JS::MutableHandle<JSString*> message) {
+  *isException = false;
+  return true;
+}
 
 static bool ShellBuildId(JS::BuildIdCharVector* buildId) {
   // The browser embeds the date into the buildid and the buildid is embedded
@@ -11641,7 +11764,8 @@ static JSObject* NewGlobalObject(JSContext* cx, JS::RealmOptions& options,
 
     /* Initialize FakeDOMObject. */
     static const js::DOMCallbacks DOMcallbacks = {InstanceClassHasProtoAtDepth,
-                                                  InstanceClassIsError};
+                                                  InstanceClassIsError,
+                                                  ExtractExceptionInfo};
     SetDOMCallbacks(cx, &DOMcallbacks);
 
     RootedObject domProto(
@@ -12665,8 +12789,6 @@ bool InitOptionParser(OptionParser& op) {
       !op.addBoolOption('\0', "enable-regexp-escape", "Enable RegExp.escape") ||
       !op.addBoolOption('\0', "enable-top-level-await",
                         "Enable top-level await") ||
-      !op.addBoolOption('\0', "enable-import-attributes",
-                        "Enable import attributes") ||
       !op.addStringOption('\0', "shared-memory", "on/off",
                           "SharedArrayBuffer and Atomics "
 #if SHARED_MEMORY_DEFAULT
@@ -13351,12 +13473,10 @@ bool SetContextOptions(JSContext* cx, const OptionParser& op) {
   enableAsyncStackCaptureDebuggeeOnly =
       op.getBoolOption("async-stacks-capture-debuggee-only");
   enableToSource = !op.getBoolOption("disable-tosource");
-  enableImportAttributes = op.getBoolOption("enable-import-attributes");
   JS::ContextOptionsRef(cx)
       .setSourcePragmas(enableSourcePragmas)
       .setAsyncStack(enableAsyncStacks)
-      .setAsyncStackCaptureDebuggeeOnly(enableAsyncStackCaptureDebuggeeOnly)
-      .setImportAttributes(enableImportAttributes);
+      .setAsyncStackCaptureDebuggeeOnly(enableAsyncStackCaptureDebuggeeOnly);
 
   if (const char* str = op.getStringOption("shared-memory")) {
     if (strcmp(str, "off") == 0) {
@@ -13505,11 +13625,21 @@ bool SetContextJITOptions(JSContext* cx, const OptionParser& op) {
 
   if (const char* str = op.getStringOption("spectre-mitigations")) {
     if (strcmp(str, "on") == 0) {
+#if defined(JS_CODEGEN_RISCV64) || defined(JS_CODEGEN_LOONG64) || \
+    defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_WASM32)
+      // MacroAssembler::spectreZeroRegister and MacroAssembler::spectreMovePtr
+      // are not implemented for these targets.
+      fprintf(
+          stderr,
+          "Warning: Spectre mitigations are not implemented for this target."
+          " --spectre-mitigations=on is ignored.\n");
+#else
       jit::JitOptions.spectreIndexMasking = true;
       jit::JitOptions.spectreObjectMitigations = true;
       jit::JitOptions.spectreStringMitigations = true;
       jit::JitOptions.spectreValueMasking = true;
       jit::JitOptions.spectreJitToCxxCalls = true;
+#endif
     } else if (strcmp(str, "off") == 0) {
       jit::JitOptions.spectreIndexMasking = false;
       jit::JitOptions.spectreObjectMitigations = false;

@@ -25,8 +25,8 @@ export class WikipediaSuggestions extends SuggestProvider {
     ];
   }
 
-  get primaryUserControlledPreference() {
-    return "suggest.wikipedia";
+  get primaryUserControlledPreferences() {
+    return ["suggest.wikipedia"];
   }
 
   get merinoProvider() {

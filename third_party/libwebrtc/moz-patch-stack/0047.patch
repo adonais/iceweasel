@@ -10,10 +10,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/1495ca5ef535f8ad6
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/modules/desktop_capture/window_capturer_mac.mm b/modules/desktop_capture/window_capturer_mac.mm
-index 7454e54c3a..561c3d469d 100644
+index a1e6157b87..6dd310682b 100644
 --- a/modules/desktop_capture/window_capturer_mac.mm
 +++ b/modules/desktop_capture/window_capturer_mac.mm
-@@ -167,9 +167,10 @@ void WindowCapturerMac::CaptureFrame() {
+@@ -169,9 +169,10 @@ explicit WindowCapturerMac(
            return webrtc::GetWindowList(
                [sources](CFDictionaryRef window) {
                  WindowId window_id = GetWindowId(window);

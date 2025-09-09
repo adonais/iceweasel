@@ -68,9 +68,9 @@ export class SessionStoreBackupResource extends BackupResource {
     let sessionStoreSize = new TextEncoder().encode(
       JSON.stringify(sessionStoreJson)
     ).byteLength;
-    let sessionStoreNearestTenthKb = bytesToFuzzyKilobytes(sessionStoreSize);
+    let sessionStoreNearestTenKb = bytesToFuzzyKilobytes(sessionStoreSize);
 
-    Glean.browserBackup.sessionStoreSize.set(sessionStoreNearestTenthKb);
+    Glean.browserBackup.sessionStoreSize.set(sessionStoreNearestTenKb);
 
     let sessionStoreBackupsDirectoryPath = PathUtils.join(
       profilePath,

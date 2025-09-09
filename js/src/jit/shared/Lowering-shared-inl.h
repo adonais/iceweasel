@@ -376,10 +376,10 @@ void LIRGeneratorShared::redefine(MDefinition* def, MDefinition* as) {
     if (def->type() != as->type()) {
       if (as->type() == MIRType::Int32) {
         replacement =
-            MConstant::New(alloc(), BooleanValue(as->toConstant()->toInt32()));
+            MConstant::NewBoolean(alloc(), as->toConstant()->toInt32());
       } else {
         replacement =
-            MConstant::New(alloc(), Int32Value(as->toConstant()->toBoolean()));
+            MConstant::NewInt32(alloc(), as->toConstant()->toBoolean());
       }
       def->block()->insertBefore(def->toInstruction(), replacement);
       emitAtUses(replacement->toInstruction());

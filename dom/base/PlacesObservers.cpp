@@ -7,9 +7,9 @@
 #include "PlacesObservers.h"
 
 #include "PlacesWeakCallbackWrapper.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsIXPConnect.h"
-#include "mozilla/ClearOnShutdown.h"
 
 namespace mozilla::dom {
 

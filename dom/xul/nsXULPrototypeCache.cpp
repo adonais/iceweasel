@@ -6,30 +6,26 @@
 
 #include "nsXULPrototypeCache.h"
 
-#include "nsXULPrototypeDocument.h"
-#include "nsIURI.h"
-#include "nsNetUtil.h"
-
+#include "js/TracingAPI.h"
+#include "js/experimental/JSStencil.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/StaticPrefs_nglayout.h"
+#include "mozilla/StyleSheetInlines.h"
+#include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/intl/LocaleService.h"
+#include "mozilla/scache/StartupCache.h"
+#include "mozilla/scache/StartupCacheUtils.h"
+#include "nsAppDirectoryServiceDefs.h"
 #include "nsIFile.h"
 #include "nsIMemoryReporter.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
 #include "nsIObserverService.h"
 #include "nsIStorageStream.h"
-
-#include "nsAppDirectoryServiceDefs.h"
-
-#include "js/experimental/JSStencil.h"
-#include "js/TracingAPI.h"
-
-#include "mozilla/StyleSheetInlines.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs_nglayout.h"
-#include "mozilla/scache/StartupCache.h"
-#include "mozilla/scache/StartupCacheUtils.h"
-#include "mozilla/RefPtr.h"
-#include "mozilla/UniquePtrExtensions.h"
-#include "mozilla/intl/LocaleService.h"
+#include "nsIURI.h"
+#include "nsNetUtil.h"
+#include "nsXULPrototypeDocument.h"
 
 using namespace mozilla;
 using namespace mozilla::scache;

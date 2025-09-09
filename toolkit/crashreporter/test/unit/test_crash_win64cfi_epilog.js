@@ -3,4 +3,6 @@ add_task(async function run_test() {
     { symbol: "CRASH_X64CFI_EPILOG", trust: "context" },
     { symbol: "CRASH_X64CFI_LAUNCHER", trust: "cfi" },
   ]);
-});
+})
+  // Skip until bug 1980648 is addressed.
+  .skip();

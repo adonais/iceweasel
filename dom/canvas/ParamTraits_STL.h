@@ -6,10 +6,10 @@
 #ifndef MOZILLA_PARAMTRAITS_STL_H
 #define MOZILLA_PARAMTRAITS_STL_H
 
+#include <memory>
+
 #include "ipc/IPCMessageUtils.h"
 #include "mozilla/ipc/IPDLParamTraits.h"
-
-#include <memory>
 
 namespace IPC {
 

@@ -212,12 +212,6 @@ static bool GetRealmConfiguration(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  bool importAttributes = cx->options().importAttributes();
-  if (!JS_SetProperty(cx, info, "importAttributes",
-                      importAttributes ? TrueHandleValue : FalseHandleValue)) {
-    return false;
-  }
-
   if (args.length() == 1) {
     RootedString str(cx, ToString(cx, args[0]));
     if (!str) {
@@ -328,7 +322,7 @@ static bool GetBuildConfiguration(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-#if defined(_M_IX86) || defined(__i386__)
+#if defined(JS_CODEGEN_X86)
   value = BooleanValue(true);
 #else
   value = BooleanValue(false);
@@ -337,7 +331,7 @@ static bool GetBuildConfiguration(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-#if defined(_M_X64) || defined(__x86_64__)
+#if defined(JS_CODEGEN_X64)
   value = BooleanValue(true);
 #else
   value = BooleanValue(false);
@@ -3747,6 +3741,92 @@ static bool CheckObjectWithManyReservedSlots(JSContext* cx, unsigned argc,
   }
 
   args.rval().setUndefined();
+  return true;
+}
+
+static bool AddObjectFuse(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (args.length() != 1 || !args[0].isObject() ||
+      !args[0].toObject().is<NativeObject>()) {
+    JS_ReportErrorASCII(cx, "Expected native object argument");
+    return false;
+  }
+
+  Rooted<NativeObject*> obj(cx, &args[0].toObject().as<NativeObject>());
+  if (!NativeObject::setHasObjectFuse(cx, obj)) {
+    return false;
+  }
+
+  // The ObjectFuse is normally created lazily the first time it's needed for an
+  // IC stub, but here we create it eagerly to simplify tests.
+  if (!cx->zone()->objectFuses.getOrCreate(cx, obj)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+static bool GetObjectFuseState(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (args.length() != 1 || !args[0].isObject() ||
+      !args[0].toObject().hasObjectFuse()) {
+    JS_ReportErrorASCII(cx, "Expected object with fuse");
+    return false;
+  }
+
+  Rooted<NativeObject*> obj(cx, &args[0].toObject().as<NativeObject>());
+  ObjectFuse* objFuse = cx->zone()->objectFuses.getOrCreate(cx, obj);
+  if (!objFuse) {
+    return false;
+  }
+
+  Rooted<PlainObject*> result(cx, NewPlainObject(cx));
+  if (!result) {
+    return false;
+  }
+
+  Rooted<Value> val(cx, NumberValue(objFuse->generationMaybeInvalid()));
+  if (!JS_DefineProperty(cx, result, "generation", val, JSPROP_ENUMERATE)) {
+    return false;
+  }
+
+  Rooted<PlainObject*> props(cx, NewPlainObjectWithProto(cx, nullptr));
+  if (!props) {
+    return false;
+  }
+
+  // Add all properties to a Vector so that we can iterate over them in property
+  // definition order.
+  Rooted<PropertyInfoWithKeyVector> propsVec(cx, PropertyInfoWithKeyVector(cx));
+  for (ShapePropertyIter<CanGC> iter(cx, obj->shape()); !iter.done(); iter++) {
+    if (iter->hasSlot() && !propsVec.append(*iter)) {
+      return false;
+    }
+  }
+
+  // For each property, define a property on |props| with the value a string
+  // describing the property's current state (eg "Constant").
+  for (size_t i = propsVec.length(); i > 0; i--) {
+    PropertyInfoWithKey prop = propsVec[i - 1];
+    Rooted<PropertyKey> key(cx, prop.key());
+    JSString* s =
+        NewStringCopyZ<CanGC>(cx, objFuse->getPropertyStateString(prop));
+    if (!s) {
+      return false;
+    };
+    val.setString(s);
+    if (!JS_DefinePropertyById(cx, props, key, val, JSPROP_ENUMERATE)) {
+      return false;
+    }
+  }
+  if (!JS_DefineProperty(cx, result, "properties", props, JSPROP_ENUMERATE)) {
+    return false;
+  }
+
+  args.rval().setObject(*result);
   return true;
 }
 
@@ -9798,6 +9878,13 @@ static bool WaitForDone(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool TestingFunc_SupportDifferentialTesting(JSContext* cx, unsigned argc,
+                                                   Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  args.rval().setBoolean(SupportDifferentialTesting());
+  return true;
+}
+
 // clang-format off
 static const JSFunctionSpecWithHelp TestingFunctions[] = {
     JS_FN_HELP("gc", ::GC, 0, 0,
@@ -9941,6 +10028,14 @@ static const JSFunctionSpecWithHelp TestingFunctions[] = {
 "checkObjectWithManyReservedSlots(obj)",
 "  Checks the reserved slots set by newObjectWithManyReservedSlots still hold the expected\n"
 "  values."),
+
+    JS_FN_HELP("addObjectFuse", AddObjectFuse, 1, 0,
+"addObjectFuse(object)",
+"  Mark 'object' as having an ObjectFuse."),
+
+    JS_FN_HELP("getObjectFuseState", GetObjectFuseState, 1, 0,
+"getObjectFuseState(object)",
+"  Returns a new object that contains information about the ObjectFuse of 'object'."),
 
     JS_FN_HELP("getWatchtowerLog", GetWatchtowerLog, 0, 0,
 "getWatchtowerLog()",
@@ -10892,6 +10987,10 @@ JS_FN_HELP("isSmallFunction", IsSmallFunction, 1, 0,
 "hadOutOfMemory()",
 "  Return the runtime's internal hadOutOfMemory flag that is set when\n"
 "  out of memory is hit with an exception being propagated. "),
+
+JS_FN_HELP("supportDifferentialTesting", TestingFunc_SupportDifferentialTesting, 0, 0,
+"supportDifferentialTesting()",
+"  Return the value of JS::SupportDifferentialTesting."),
 
   JS_FS_HELP_END
 };

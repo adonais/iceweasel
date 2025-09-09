@@ -6,8 +6,8 @@
 #ifndef txXPathNode_h__
 #define txXPathNode_h__
 
-#include "nsIContent.h"
 #include "mozilla/dom/Document.h"
+#include "nsIContent.h"
 #include "nsINode.h"
 #include "nsNameSpaceManager.h"
 

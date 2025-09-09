@@ -5,19 +5,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/AbstractRange.h"
-#include "mozilla/dom/AbstractRangeBinding.h"
-#include "mozilla/dom/ShadowIncludingTreeIterator.h"
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/RangeUtils.h"
+#include "mozilla/dom/AbstractRangeBinding.h"
 #include "mozilla/dom/ChildIterator.h"
+#include "mozilla/dom/CrossShadowBoundaryRange.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
-#include "mozilla/dom/StaticRange.h"
 #include "mozilla/dom/Selection.h"
+#include "mozilla/dom/ShadowIncludingTreeIterator.h"
+#include "mozilla/dom/StaticRange.h"
 #include "mozilla/dom/TreeIterator.h"
-#include "mozilla/dom/CrossShadowBoundaryRange.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsGkAtoms.h"

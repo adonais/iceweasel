@@ -550,6 +550,8 @@ bool js::InitDateTimeState() {
 void js::FinishDateTimeState() {
   js_delete(DateTimeInfo::instance);
   DateTimeInfo::instance = nullptr;
+  js_delete(DateTimeInfo::instanceUTC);
+  DateTimeInfo::instanceUTC = nullptr;
 }
 
 void js::ResetTimeZoneInternal(ResetTimeZoneMode mode) {

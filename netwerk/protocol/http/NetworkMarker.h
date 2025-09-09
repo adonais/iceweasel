@@ -9,13 +9,13 @@
 
 #include "mozilla/ProfilerMarkers.h"
 #include "nsHttp.h"
+#include "nsICacheInfoChannel.h"
 #include "nsIClassOfService.h"
 
 namespace mozilla {
 namespace net {
 
 struct TimingStruct;
-enum CacheDisposition : uint8_t;
 
 enum class NetworkLoadType {
   LOAD_START,
@@ -28,9 +28,9 @@ void profiler_add_network_marker(
     nsIURI* aURI, const nsACString& aRequestMethod, int32_t aPriority,
     uint64_t aChannelId, NetworkLoadType aType, mozilla::TimeStamp aStart,
     mozilla::TimeStamp aEnd, int64_t aCount,
-    mozilla::net::CacheDisposition aCacheDisposition, uint64_t aInnerWindowID,
-    bool aIsPrivateBrowsing, unsigned long aClassOfServiceFlag,
-    nsresult aRequestStatus,
+    nsICacheInfoChannel::CacheDisposition aCacheDisposition,
+    uint64_t aInnerWindowID, bool aIsPrivateBrowsing,
+    unsigned long aClassOfServiceFlag, nsresult aRequestStatus,
     const mozilla::net::TimingStruct* aTimings = nullptr,
     mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> aSource = nullptr,
     const mozilla::Maybe<mozilla::net::HttpVersion> aHttpVersion =

@@ -5,11 +5,11 @@
 #ifndef _PACKET_DUMPER_H_
 #define _PACKET_DUMPER_H_
 
-#include "nsISupportsImpl.h"
+#include <vector>
+
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/RTCPeerConnectionBinding.h"
-
-#include <vector>
+#include "nsISupportsImpl.h"
 
 namespace mozilla {
 class PeerConnectionImpl;

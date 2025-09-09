@@ -31,8 +31,8 @@ export class MDNSuggestions extends SuggestProvider {
     ];
   }
 
-  get primaryUserControlledPreference() {
-    return "suggest.mdn";
+  get primaryUserControlledPreferences() {
+    return ["suggest.mdn"];
   }
 
   get merinoProvider() {

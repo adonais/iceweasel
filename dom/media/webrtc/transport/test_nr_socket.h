@@ -93,14 +93,14 @@ extern "C" {
 #include "nr_socket.h"
 }
 
-#include <set>
-#include <map>
 #include <list>
+#include <map>
+#include <set>
 #include <string>
 
+#include "mediapacket.h"
 #include "mozilla/UniquePtr.h"
 #include "prinrval.h"
-#include "mediapacket.h"
 
 namespace mozilla {
 

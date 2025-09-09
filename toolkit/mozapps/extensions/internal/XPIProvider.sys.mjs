@@ -2695,6 +2695,9 @@ export var XPIProvider = {
   startup(aAppChanged, aOldAppVersion, aOldPlatformVersion) {
     try {
       AddonManagerPrivate.recordTimestamp("XPI_startup_begin");
+      Glean.addonsManager.startupTimeline.XPI_startup_begin.set(
+        Services.telemetry.msSinceProcessStart()
+      );
 
       logger.debug("startup");
 
@@ -2787,6 +2790,9 @@ export var XPIProvider = {
 
       try {
         AddonManagerPrivate.recordTimestamp("XPI_bootstrap_addons_begin");
+        Glean.addonsManager.startupTimeline.XPI_bootstrap_addons_begin.set(
+          Services.telemetry.msSinceProcessStart()
+        );
 
         for (let addon of this.sortBootstrappedAddons()) {
           // The startup update check above may have already started some
@@ -2831,6 +2837,9 @@ export var XPIProvider = {
           }
         }
         AddonManagerPrivate.recordTimestamp("XPI_bootstrap_addons_end");
+        Glean.addonsManager.startupTimeline.XPI_bootstrap_addons_end.set(
+          Services.telemetry.msSinceProcessStart()
+        );
       } catch (e) {
         logger.error("bootstrap startup failed", e);
         AddonManagerPrivate.recordException(
@@ -2904,6 +2913,9 @@ export var XPIProvider = {
       // Detect final-ui-startup for telemetry reporting
       Services.obs.addObserver(function observer() {
         AddonManagerPrivate.recordTimestamp("XPI_finalUIStartup");
+        Glean.addonsManager.startupTimeline.XPI_finalUIStartup.set(
+          Services.telemetry.msSinceProcessStart()
+        );
         Services.obs.removeObserver(observer, "final-ui-startup");
       }, "final-ui-startup");
 
@@ -2954,6 +2966,9 @@ export var XPIProvider = {
       }
 
       AddonManagerPrivate.recordTimestamp("XPI_startup_end");
+      Glean.addonsManager.startupTimeline.XPI_startup_end.set(
+        Services.telemetry.msSinceProcessStart()
+      );
 
       if (
         Services.prefs.getIntPref(PREF_LAST_SIGNATURE_CHECKPOINT, 0) !==
@@ -3382,6 +3397,7 @@ export var XPIProvider = {
           "XPIDB_startup_load_reasons",
           updateReasons
         );
+        Glean.xpiDatabase.startupLoadReasons.set(updateReasons);
         XPIExports.XPIDatabase.syncLoadDB(false);
         try {
           extensionListChanged =

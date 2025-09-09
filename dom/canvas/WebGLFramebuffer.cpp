@@ -13,15 +13,15 @@
 #include "GLContext.h"
 #include "GLScreenBuffer.h"
 #include "MozFramebuffer.h"
-#include "mozilla/dom/WebGLRenderingContextBinding.h"
-#include "mozilla/IntegerRange.h"
-#include "nsPrintfCString.h"
 #include "WebGLContext.h"
 #include "WebGLContextUtils.h"
 #include "WebGLExtensions.h"
 #include "WebGLFormats.h"
 #include "WebGLRenderbuffer.h"
 #include "WebGLTexture.h"
+#include "mozilla/IntegerRange.h"
+#include "mozilla/dom/WebGLRenderingContextBinding.h"
+#include "nsPrintfCString.h"
 
 namespace mozilla {
 

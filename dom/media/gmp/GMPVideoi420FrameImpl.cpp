@@ -4,11 +4,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "GMPVideoi420FrameImpl.h"
+
 #include <algorithm>
-#include "mozilla/gmp/GMPTypes.h"
-#include "mozilla/CheckedInt.h"
-#include "GMPVideoHost.h"
+
 #include "GMPSharedMemManager.h"
+#include "GMPVideoHost.h"
+#include "mozilla/CheckedInt.h"
+#include "mozilla/gmp/GMPTypes.h"
 
 namespace mozilla::gmp {
 

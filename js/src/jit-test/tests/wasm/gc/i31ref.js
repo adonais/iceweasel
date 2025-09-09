@@ -1,3 +1,9 @@
+// -0 is a valid value with which to create an i31ref, but because it
+// roundtrips to +0, it wrecks a lot of our WASM tests (which use Object.is for
+// comparison). Therefore we don't include -0 in the main list, and deal with
+// that complexity in this file specifically.
+WasmI31refValues.push(-0);
+
 let InvalidI31Values = [
   null,
   Number.EPSILON,
@@ -5,8 +11,9 @@ let InvalidI31Values = [
   Number.MIN_SAFE_INTEGER,
   Number.MIN_VALUE,
   Number.MAX_VALUE,
+  Infinity,
+  -Infinity,
   Number.NaN,
-  -0,
   // Number objects are not coerced
   ...WasmI31refValues.map(n => new Number(n)),
   // Non-integers are not valid
@@ -95,16 +102,16 @@ for (let i of InvalidI31Values) {
 // Test that we can roundtrip 31-bit integers through the i31ref type
 // faithfully.
 for (let i of WasmI31refValues) {
-  assertEq(refI31(i), i);
-  assertEq(refI31Identity(i), i);
+  assertEq(refI31(i), Object.is(i, -0) ? 0 : i);
+  assertEq(refI31Identity(i), Object.is(i, -0) ? 0 : i);
   assertEq(i31GetU(i), valueAsI31GetU(i));
-  assertEq(i31GetS(i), i);
+  assertEq(i31GetS(i), Object.is(i, -0) ? 0 : i);
 }
 
 // Test that i31ref values are truncated when given a 32-bit value
 for (let i of WasmI31refValues) {
   let adjusted = i | 0x80000000;
-  assertEq(refI31(adjusted), i);
+  assertEq(refI31(adjusted), Object.is(i, -0) ? 0 : i);
 }
 
 // Test that comparing identical i31 values works

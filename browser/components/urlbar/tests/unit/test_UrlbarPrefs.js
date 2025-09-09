@@ -463,3 +463,49 @@ add_task(async function onPrefChanged() {
   );
   await doCleanup();
 });
+
+// Tests add function.
+add_task(async function add() {
+  info("Start from empty value");
+  Services.prefs.setStringPref(
+    "browser.urlbar.quicksuggest.realtimeOptIn.notNowTypes",
+    ""
+  );
+  let result = UrlbarPrefs.get("quicksuggest.realtimeOptIn.notNowTypes");
+  Assert.equal(result.size, 0);
+  UrlbarPrefs.add("quicksuggest.realtimeOptIn.notNowTypes", "a");
+  UrlbarPrefs.add("quicksuggest.realtimeOptIn.notNowTypes", "b");
+  UrlbarPrefs.add("quicksuggest.realtimeOptIn.notNowTypes", "a");
+  result = UrlbarPrefs.get("quicksuggest.realtimeOptIn.notNowTypes");
+  Assert.equal(result.size, 2);
+  Assert.ok(result.has("a"));
+  Assert.ok(result.has("b"));
+
+  info("Start from some values");
+  Services.prefs.setStringPref(
+    "browser.urlbar.quicksuggest.realtimeOptIn.notNowTypes",
+    "a,b,c"
+  );
+  result = UrlbarPrefs.get("quicksuggest.realtimeOptIn.notNowTypes");
+  Assert.equal(result.size, 3);
+  UrlbarPrefs.add("quicksuggest.realtimeOptIn.notNowTypes", "a");
+  UrlbarPrefs.add("quicksuggest.realtimeOptIn.notNowTypes", "b");
+  UrlbarPrefs.add("quicksuggest.realtimeOptIn.notNowTypes", "a");
+  UrlbarPrefs.add("quicksuggest.realtimeOptIn.notNowTypes", "d");
+  result = UrlbarPrefs.get("quicksuggest.realtimeOptIn.notNowTypes");
+  Assert.equal(result.size, 4);
+  Assert.ok(result.has("a"));
+  Assert.ok(result.has("b"));
+  Assert.ok(result.has("c"));
+  Assert.ok(result.has("d"));
+
+  info("Test for singular value pref");
+  Assert.throws(
+    () => UrlbarPrefs.add("merino.providers", "a"),
+    /The pref merino.providers should handle the values as Set but 'string'/
+  );
+  Assert.throws(
+    () => UrlbarPrefs.add("addons.featureGate", true),
+    /The pref addons.featureGate should handle the values as Set but 'boolean'/
+  );
+});

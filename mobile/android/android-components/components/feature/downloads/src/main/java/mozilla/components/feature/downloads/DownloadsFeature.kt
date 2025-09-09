@@ -121,7 +121,7 @@ class DownloadsFeature(
     private val tabId: String? = null,
     private val fragmentManager: FragmentManager? = null,
     private val promptsStyling: PromptsStyling? = null,
-    private val onDownloadStartedListener: ((String?) -> Unit) = {},
+    private val onDownloadStartedListener: ((String) -> Unit) = {},
     private val shouldForwardToThirdParties: () -> Boolean = { false },
     private val customFirstPartyDownloadDialog: (
         (Filename, ContentSize, PositiveActionCallback, NegativeActionCallback) -> Unit
@@ -280,7 +280,7 @@ class DownloadsFeature(
 
         val id = downloadManager.download(download)
         return if (id != null) {
-            onDownloadStartedListener.invoke(tabId)
+            onDownloadStartedListener.invoke(download.id)
             true
         } else {
             showDownloadNotSupportedError()

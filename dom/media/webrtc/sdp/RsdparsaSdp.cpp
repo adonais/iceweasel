@@ -7,10 +7,10 @@
 #include "sdp/RsdparsaSdp.h"
 
 #include <cstdlib>
-#include "mozilla/UniquePtr.h"
-#include "mozilla/Assertions.h"
-#include "nsError.h"
 
+#include "mozilla/Assertions.h"
+#include "mozilla/UniquePtr.h"
+#include "nsError.h"
 #include "sdp/RsdparsaSdpInc.h"
 #include "sdp/RsdparsaSdpMediaSection.h"
 

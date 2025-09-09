@@ -7,10 +7,10 @@
 #include "SVGAnimatedBoolean.h"
 
 #include "DOMSVGAnimatedBoolean.h"
-#include "nsError.h"
 #include "SMILBoolType.h"
 #include "SVGAttrTearoffTable.h"
 #include "mozilla/SMILValue.h"
+#include "nsError.h"
 
 using namespace mozilla::dom;
 

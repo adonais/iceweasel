@@ -42,13 +42,7 @@
   <string name="tab_tray_collection_button_multiselect_content_description">Įtraukti pažymėtas korteles į rinkinį</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
   <string name="about_content">„%1$s“ kūrėjai yra „Mozilla“.</string>
-  <!--
-    Private Browsing
-
-    Explanation for private browsing displayed to users on home view when they first enable private mode.
-    %1$s is the name of the app (for example "Firefox").
-  -->
-  <string name="private_browsing_placeholder_description_2" moz:removedIn="141" tools:ignore="UnusedResources">„%1$s“ išvalo jūsų paieškos ir naršymo žurnalą iš privačiųjų kortelių kai jas užveriate, arba išjungiate programą. Nors tai ir nesuteikia jums anonimiškumo internete, taip lengviau galite išlaikyti savo privatumą nuo kitų šį įrenginį naudojančių asmenų.</string>
+  <!-- Private Browsing -->
   <string name="private_browsing_common_myths">Dažni mitai apie privatųjį naršymą</string>
   <!--
     Open in App "contextual feature recommendation" (CFR)
@@ -60,6 +54,8 @@
   <string name="open_in_app_cfr_positive_button_text">Eiti į nustatymus</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">Paslėpti</string>
+  <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
+
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Reikia kameros prieigos. Eikite į „Android“ nustatymus, bakstelėkite „leidimus“, tada bakstelėkite „leisti“.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -288,8 +284,6 @@
   <string name="preferences_account_sync_error">Prisijunkite, norėdami tęsti sinchronizavimą</string>
   <!-- Preference for language -->
   <string name="preferences_language">Kalba</string>
-  <!-- Preference for data choices -->
-  <string name="preferences_data_choices" tools:ignore="UnusedResources" moz:removedIn="141">Duomenų siuntimas</string>
   <!-- Preference for data collection -->
   <string name="preferences_data_collection">Duomenų rinkimas</string>
   <!-- Preference for developers -->
@@ -314,8 +308,6 @@
   <string name="preferences_enable_autocomplete_urls">Automatinis URL užbaigimas</string>
   <!-- Preference for open links in third party apps -->
   <string name="preferences_open_links_in_apps">Atverti saitus programose</string>
-  <!-- Preference for open download with an external download manager app -->
-  <string name="preferences_external_download_manager" tools:ignore="UnusedResources" moz:removedIn="141">Išorinė atsiuntimų tvarkytuvė</string>
   <!-- Preference for notifications -->
   <string name="preferences_notifications">Pranešimai</string>
   <!-- Button caption to confirm the add-on collection configuration -->
@@ -348,9 +340,9 @@
   -->
   <string name="wallpapers_item_name_content_description">Fonas: %1$s</string>
   <!-- Snackbar message for when wallpaper is selected -->
-  <string name="wallpaper_updated_snackbar_message">Fonas pakeistas!</string>
+  <string name="wallpaper_updated_snackbar_message" tools:ignore="UnusedResources" moz:removedIn="144">Fonas pakeistas!</string>
   <!-- Snackbar label for action to view selected wallpaper -->
-  <string name="wallpaper_updated_snackbar_action">Rodyti</string>
+  <string name="wallpaper_updated_snackbar_action" tools:ignore="UnusedResources" moz:removedIn="144">Rodyti</string>
   <!-- Preference for triggering sync -->
   <string name="preferences_sync_now">Sinchronizuoti dabar</string>
   <!-- Preference category for sync -->
@@ -896,20 +888,16 @@
     Text shown in snackbar when user deletes a collection
   -->
   <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Rinkinys pašalintas</string>
-  <!-- Text shown in snackbar when user renames a collection -->
-  <string name="snackbar_collection_renamed" moz:removedIn="141" tools:ignore="UnusedResources">Rinkinys pervadintas</string>
   <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Kortelė užverta</string>
   <!-- Text shown in snackbar when user closes all tabs -->
   <string name="snackbar_tabs_closed">Kortelės užvertos</string>
   <!-- Text shown in snackbar when user closes a private tab -->
   <string name="snackbar_private_tab_closed">Privačioji kortelė užverta</string>
-  <!-- Text shown in snackbar when user closes all private tabs -->
-  <string name="snackbar_private_tabs_closed" moz:removedIn="141" tools:ignore="UnusedResources">Privačiosios kortelės užvertos</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">Atšaukti</string>
   <!-- Text shown in snackbar when user removes a top site -->
-  <string name="snackbar_top_site_removed">Svetainė pašalinta</string>
+  <string name="snackbar_top_site_removed" moz:removedIn="144" tools:ignore="UnusedResources">Svetainė pašalinta</string>
   <!--
     QR code scanner prompt which appears after scanning a code, but before navigating to it
     %1$s is the name of the app (for example "Firefox"), %2$s is the URL or text scanned
@@ -1386,10 +1374,6 @@
   <string name="action_bar_up_description">Pereiti aukštyn</string>
   <!-- Content description for privacy content close button -->
   <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">Užverti</string>
-  <!-- Header text for a section on the home screen. -->
-  <string name="pocket_stories_categories_header" moz:removedIn="141" tools:ignore="UnusedResources">Straipsniai pagal temas</string>
-  <!-- Text of a button allowing users to access an external url for more Pocket recommendations. -->
-  <string name="pocket_stories_placeholder_text" moz:removedIn="141" tools:ignore="UnusedResources">Atrasti daugiau</string>
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->

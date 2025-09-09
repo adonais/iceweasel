@@ -89,7 +89,7 @@ this.ContentSearchUIController = (function () {
       this._defaultEngine = {
         name: engine.name,
         icon,
-        isAppProvided: engine.isAppProvided,
+        isConfigEngine: engine.isConfigEngine,
       };
       this._updateDefaultEngineHeader();
       this._updateDefaultEngineIcon();
@@ -674,9 +674,9 @@ this.ContentSearchUIController = (function () {
     },
 
     _updateDefaultEngineIcon() {
-      // We only show the engine's own icon for app provided engines, otherwise show
+      // We only show the engine's own icon for config engines, otherwise show
       // a default. xref https://bugzilla.mozilla.org/show_bug.cgi?id=1449338#c19
-      let icon = this.defaultEngine.isAppProvided
+      let icon = this.defaultEngine.isConfigEngine
         ? this.defaultEngine.icon
         : "chrome://global/skin/icons/search-glass.svg";
 

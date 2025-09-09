@@ -8,6 +8,7 @@
 #define mozilla_dom_gamepad_GamepadButton_h
 
 #include <stdint.h>
+
 #include "nsCOMPtr.h"
 #include "nsWrapperCache.h"
 

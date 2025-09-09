@@ -4,7 +4,6 @@
 
 package mozilla.components.lib.state.helpers
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.TestAction
@@ -18,7 +17,6 @@ import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 
-@ExperimentalCoroutinesApi
 class AbstractBindingTest {
 
     @get:Rule
@@ -85,7 +83,6 @@ class AbstractBindingTest {
     }
 }
 
-@ExperimentalCoroutinesApi
 class TestBinding(
     store: Store<TestState, TestAction>,
     private val onStateUpdated: (TestState) -> Unit = {},

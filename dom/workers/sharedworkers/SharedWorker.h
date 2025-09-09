@@ -7,9 +7,9 @@
 #ifndef mozilla_dom_workers_sharedworker_h__
 #define mozilla_dom_workers_sharedworker_h__
 
-#include "mozilla/dom/WorkerCommon.h"
-#include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/WorkerCommon.h"
 
 #ifdef XP_WIN
 #  undef PostMessage

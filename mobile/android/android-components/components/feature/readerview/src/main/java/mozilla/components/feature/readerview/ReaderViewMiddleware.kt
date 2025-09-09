@@ -76,6 +76,10 @@ class ReaderViewMiddleware : Middleware<BrowserState, BrowserAction> {
                 // https://bugzilla.mozilla.org/show_bug.cgi?id=1550144
                 // https://bugzilla.mozilla.org/show_bug.cgi?id=1322304
                 // https://github.com/mozilla-mobile/android-components/issues/2879
+                // Update: Aug-2025
+                // Change made to UpdateUrlAction so when the source page (not viewed in reader
+                // mode) has the same url, we clear the reader mode status on url update.
+                // https://bugzilla.mozilla.org/show_bug.cgi?id=1970308
                 val tab = context.state.findTab(action.sessionId)
                 if (isReaderUrl(tab, action.url)) {
                     val urlReplaced = tab?.readerState?.activeUrl?.let { activeUrl ->
@@ -85,12 +89,10 @@ class ReaderViewMiddleware : Middleware<BrowserState, BrowserAction> {
                     context.dispatch(ReaderAction.UpdateReaderActiveAction(action.sessionId, true))
                     !urlReplaced
                 } else {
-                    if (action.url != tab?.readerState?.activeUrl) {
-                        context.dispatch(ReaderAction.UpdateReaderActiveAction(action.sessionId, false))
-                        context.dispatch(ReaderAction.UpdateReaderableAction(action.sessionId, false))
-                        context.dispatch(ReaderAction.UpdateReaderableCheckRequiredAction(action.sessionId, true))
-                        context.dispatch(ReaderAction.ClearReaderActiveUrlAction(action.sessionId))
-                    }
+                    context.dispatch(ReaderAction.UpdateReaderActiveAction(action.sessionId, false))
+                    context.dispatch(ReaderAction.UpdateReaderableAction(action.sessionId, false))
+                    context.dispatch(ReaderAction.UpdateReaderableCheckRequiredAction(action.sessionId, true))
+                    context.dispatch(ReaderAction.ClearReaderActiveUrlAction(action.sessionId))
                     true
                 }
             }

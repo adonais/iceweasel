@@ -6,8 +6,8 @@
 
 #include "MediaMIMETypes.h"
 
-#include "nsContentTypeParser.h"
 #include "mozilla/dom/MediaCapabilitiesBinding.h"
+#include "nsContentTypeParser.h"
 
 namespace mozilla {
 

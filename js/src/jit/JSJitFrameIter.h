@@ -560,6 +560,8 @@ class SnapshotIterator {
  public:
   int64_t readInt64() { return allocationInt64(readAllocation()); }
 
+  intptr_t readIntPtr() { return allocationIntPtr(readAllocation()); }
+
   // Read either a BigInt or unpacked BigInt.
   JS::BigInt* readBigInt(JSContext* cx);
 

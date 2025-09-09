@@ -1207,22 +1207,22 @@ JSObject* GenericCreatePrototype(JSContext* cx, JSProtoKey key) {
   return GlobalObject::createBlankPrototype(cx, cx->global(), &T::protoClass_);
 }
 
-// Which object(s) should be marked as having a fuse property in
+// Which object(s) should be marked as having a RealmFuse property in
 // GenericFinishInit.
-enum class WhichHasFuseProperty {
+enum class WhichHasRealmFuseProperty {
   Proto,
   ProtoAndCtor,
 };
 
-template <WhichHasFuseProperty FuseProperty>
+template <WhichHasRealmFuseProperty FuseProperty>
 inline bool GenericFinishInit(JSContext* cx, HandleObject ctor,
                               HandleObject proto) {
-  if constexpr (FuseProperty == WhichHasFuseProperty::ProtoAndCtor) {
-    if (!JSObject::setHasFuseProperty(cx, ctor)) {
+  if constexpr (FuseProperty == WhichHasRealmFuseProperty::ProtoAndCtor) {
+    if (!JSObject::setHasRealmFuseProperty(cx, ctor)) {
       return false;
     }
   }
-  return JSObject::setHasFuseProperty(cx, proto);
+  return JSObject::setHasRealmFuseProperty(cx, proto);
 }
 
 inline JSProtoKey StandardProtoKeyOrNull(const JSObject* obj) {

@@ -10,9 +10,8 @@
 #define mtransport_test_utils_h__
 
 #include "nsCOMPtr.h"
-#include "nsNetCID.h"
-
 #include "nsISerialEventTarget.h"
+#include "nsNetCID.h"
 #include "nsPISocketTransportService.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"

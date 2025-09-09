@@ -7,17 +7,17 @@
 #ifndef nsWindowMemoryReporter_h__
 #define nsWindowMemoryReporter_h__
 
+#include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/PodOperations.h"
+#include "mozilla/TimeStamp.h"
 #include "nsIMemoryReporter.h"
 #include "nsIObserver.h"
 #include "nsITimer.h"
 #include "nsTHashMap.h"
 #include "nsTHashSet.h"
 #include "nsWeakReference.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/MemoryReporting.h"
-#include "mozilla/PodOperations.h"
-#include "mozilla/TimeStamp.h"
 
 class nsGlobalWindowInner;
 

@@ -28,7 +28,7 @@ pub fn init_for_tests_with_level(level: Level) {
 }
 
 #[cfg(all(feature = "testing", feature = "tracing-logging"))]
-pub use tracing_support::init_for_tests;
+pub use tracing_support::{init_for_tests, init_for_tests_with_level};
 
 mod macros;
 
@@ -77,11 +77,11 @@ pub use reporting::{
 #[cfg(feature = "tracing-reporting")]
 mod reporting {
     pub fn report_error_to_app(type_name: String, message: String) {
-        tracing::event!(target: "app-services-error-reporter::error", tracing::Level::ERROR, message, type_name);
+        tracing_support::error!(target: "app-services-error-reporter::error", message, type_name);
     }
 
     pub fn report_breadcrumb(message: String, module: String, line: u32, column: u32) {
-        tracing::event!(target: "app-services-error-reporter::breadcrumb", tracing::Level::INFO, message, module, line, column);
+        tracing_support::info!(target: "app-services-error-reporter::breadcrumb", message, module, line, column);
     }
 }
 

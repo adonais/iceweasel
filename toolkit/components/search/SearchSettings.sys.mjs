@@ -6,8 +6,6 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
-  AppProvidedSearchEngine:
-    "moz-src:///toolkit/components/search/AppProvidedSearchEngine.sys.mjs",
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
@@ -306,15 +304,17 @@ export class SearchSettings {
     );
     settings.metaData = this.#settings.metaData;
 
-    // Persist metadata for AppProvided engines even if they aren't currently
+    // Persist metadata for config engines even if they aren't currently
     // active, this means if they become active again their settings
     // will be restored. This can happen if a user switches between regions.
     if (this.#settings?.engines) {
       for (let engine of this.#settings.engines) {
-        // TODO: The line below should compare names instead of ids.
+        // TODO: The line below should compare names instead of ids (bug 1973899).
         let included = settings.engines.some(e => e._name == engine._name);
+        // If a config engine is user-installed and not included, it was
+        // explicitly removed by the user and we should not persist its metadata.
         let userInstalled = engine._metaData["user-installed"];
-        if (engine._isAppProvided && !userInstalled && !included) {
+        if (engine._isConfigEngine && !userInstalled && !included) {
           settings.engines.push(engine);
         }
       }
@@ -422,21 +422,20 @@ export class SearchSettings {
    *
    * @param {string} name
    *   The name of the attribute to get.
-   * @param {boolean} isAppProvided
-   *   |true| if the engine associated with the attribute is an application
-   *          provided engine.
+   * @param {boolean} isConfigEngine
+   *   Whether the engine associated with the attribute is a config engine.
    * @returns {*}
    *   The value of the attribute.
    *   We return undefined if the value of the attribute is not known or does
    *   not match the verification hash.
    */
-  getVerifiedMetaDataAttribute(name, isAppProvided) {
+  getVerifiedMetaDataAttribute(name, isConfigEngine) {
     let attribute = this.getMetaDataAttribute(name);
 
-    // If the selected engine is an application provided one, we can relax the
+    // If the selected engine is a config engine, we can relax the
     // verification hash check to reduce the annoyance for users who
     // backup/sync their profile in custom ways.
-    if (isAppProvided) {
+    if (isConfigEngine) {
       return attribute;
     }
 
@@ -545,11 +544,9 @@ export class SearchSettings {
             this._delayedWrite();
             break;
           case lazy.SearchUtils.MODIFIED_TYPE.ICON_CHANGED:
-            // Application Provided Search Engines have their icons stored in
-            // Remote Settings, so we don't need to update the saved settings.
-            if (
-              !(engine?.wrappedJSObject instanceof lazy.AppProvidedSearchEngine)
-            ) {
+            // Config Search Engines have their icons stored in Remote
+            // Settings, so we don't need to update the saved settings.
+            if (!engine?.isConfigEngine) {
               this._delayedWrite();
             }
             break;
@@ -684,7 +681,7 @@ export class SearchSettings {
    *
    * @param {string} engineName
    *   The name of the engine.
-   * @returns {nsISearchEngine}
+   * @returns {?nsISearchEngine}
    *   The associated engine if found, null otherwise.
    */
   #getEngineByName(engineName) {
@@ -709,6 +706,7 @@ export class SearchSettings {
     this.#migrateTo10();
     this.#migrateTo11();
     await this.#migrateTo12();
+    this.#migrateTo13();
   }
 
   #migrateTo6() {
@@ -908,6 +906,24 @@ export class SearchSettings {
           let size = lazy.SearchUtils.decodeSize(byteArray, contentType, 16);
           engine._iconMapObj ||= {};
           engine._iconMapObj[size] = iconURL;
+        }
+      }
+    }
+  }
+
+  #migrateTo13() {
+    // App provided engines are renamed to config engines, see bug 1973315.
+    // At the same time, we also rename _isBuiltin _isConfigEngine.
+    // This originally happed in bug 1631898, but instead of adding a migration,
+    // the initial implementation simply checked both values.
+    if (this.#settings.version < 13 && this.#settings.engines) {
+      for (let engine of this.#settings.engines) {
+        if (engine._isAppProvided) {
+          delete engine._isAppProvided;
+          engine._isConfigEngine = true;
+        } else if (engine._isBuiltin) {
+          delete engine._isBuiltin;
+          engine._isConfigEngine = true;
         }
       }
     }

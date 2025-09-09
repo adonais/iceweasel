@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:moz="http://mozac.org/tools" xmlns:tools="http://schemas.android.com/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!--
     #######################################################################################
 
@@ -457,26 +457,6 @@
   <string name="onboarding_first_screen_title">%1$s မှ ကြိုဆိုပါတယ်။</string>
   <!-- New Onboarding flow first screen subtitle the one that appears under title -->
   <string name="onboarding_first_screen_subtitle">မြန်သည်။ သီးသန့်။ အနှောက်အယှက်မပေး</string>
-  <!--
-    New Onboarding flow first screen 'terms of use' text
-
-    %1$s will be replaced by a link using onboarding_first_screen_terms_of_use_link as text
-  -->
-  <string name="onboarding_first_screen_terms_of_use_text" moz:removedIn="141" tools:ignore="UnusedResources">ရှေ့ဆက်ခြင်းဖြင့် သင်သည် %1$s ကို သဘောတူပါသည်</string>
-  <!--
-    New Onboarding flow first screen 'terms of use link'
-
-    Text for the link used in onboarding_first_screen_terms_of_use_text
-  -->
-  <string name="onboarding_first_screen_terms_of_use_link" moz:removedIn="141" tools:ignore="BrandUsage">Firefox အသုံးပြုမှုသဘောတူညီချက်များ</string>
-  <!--
-    New Onboarding flow first screen 'privacy notice' text
-
-    %1$s will be replaced by a link using onboarding_first_screen_privacy_notice_link as text
-  -->
-  <string name="onboarding_first_screen_privacy_notice_text" moz:removedIn="141" tools:ignore="BrandUsage">Firefox သည် သင်၏ privacy ကို ဂရုစိုက်သည်။ ကျွန်ုပ်တို့၏ %1$s တွင် ပိုမိုလေ့လာပါ</string>
-  <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
-  <string name="onboarding_first_screen_privacy_notice_link" moz:removedIn="141" tools:ignore="UnusedResources">ကိုယ်ရေးကာကွယ်မှု သတိပေးချက်</string>
   <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
   <string name="a11y_link_available">ရနိုင်သောလင်ခ့်</string>
   <!--

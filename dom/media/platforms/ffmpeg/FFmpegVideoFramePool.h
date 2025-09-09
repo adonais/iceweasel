@@ -10,7 +10,6 @@
 #include "FFmpegLibWrapper.h"
 #include "FFmpegLibs.h"
 #include "FFmpegLog.h"
-
 #include "mozilla/layers/DMABUFSurfaceImage.h"
 #include "mozilla/widget/DMABufDevice.h"
 #include "mozilla/widget/DMABufSurface.h"

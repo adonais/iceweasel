@@ -8,11 +8,11 @@
 #define mozilla_GMPVideoEncoder_h_
 
 #include "GMPVideoEncoderProxy.h"
-#include "mozilla/StaticString.h"
-#include "mozIGeckoMediaPluginService.h"
-#include "nsRefPtrHashtable.h"
 #include "PlatformEncoderModule.h"
 #include "TimeUnits.h"
+#include "mozIGeckoMediaPluginService.h"
+#include "mozilla/StaticString.h"
+#include "nsRefPtrHashtable.h"
 
 class GMPVideoHost;
 

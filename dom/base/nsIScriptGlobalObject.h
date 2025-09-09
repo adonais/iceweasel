@@ -7,10 +7,10 @@
 #ifndef nsIScriptGlobalObject_h__
 #define nsIScriptGlobalObject_h__
 
-#include "nsISupports.h"
-#include "nsIGlobalObject.h"
 #include "js/TypeDecls.h"
 #include "mozilla/EventForwards.h"
+#include "nsIGlobalObject.h"
+#include "nsISupports.h"
 
 class nsIScriptContext;
 class nsIScriptGlobalObject;

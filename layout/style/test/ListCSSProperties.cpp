@@ -106,6 +106,7 @@ const char* gInaccessibleProperties[] = {
     "-moz-subtree-hidden-only-visually",  // chrome-only internal properties
     "-moz-user-focus",                    // chrome-only internal properties
     "-moz-window-input-region-margin",    // chrome-only internal properties
+    "-moz-window-dragging",               // chrome-only internal properties
     "-moz-window-opacity",                // chrome-only internal properties
     "-moz-window-transform",              // chrome-only internal properties
     "-moz-window-shadow",                 // chrome-only internal properties

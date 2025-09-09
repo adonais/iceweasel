@@ -5,11 +5,13 @@
 #ifndef nsViewportInfo_h___
 #define nsViewportInfo_h___
 
-#include <algorithm>
 #include <stdint.h>
+
+#include <algorithm>
+
+#include "Units.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/StaticPrefs_apz.h"
-#include "Units.h"
 
 namespace mozilla::dom {
 enum class ViewportFitType : uint8_t {

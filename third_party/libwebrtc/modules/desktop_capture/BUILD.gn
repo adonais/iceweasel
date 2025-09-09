@@ -64,7 +64,8 @@ if (rtc_include_tests) {
         ":desktop_capture_mock",
         ":primitives",
         ":screen_drawer",
-        "../../rtc_base/third_party/base64",
+        "../../api:array_view",
+        "../../rtc_base:base64",
         "../../system_wrappers",
         "../../test:test_support",
       ]
@@ -392,6 +393,11 @@ rtc_library("desktop_capture") {
     ]
     if (build_with_mozilla) {
       libs -= [ "Xtst" ]
+      # Mozilla provides custom impl of x_error_trap.*
+      sources -= [
+        "linux/x11/x_error_trap.cc",
+        "linux/x11/x_error_trap.h",
+      ]
     }
   }
 

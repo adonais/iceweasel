@@ -8,14 +8,14 @@
 
 #undef FF
 
+#include "MediaUtils.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/ipc/BackgroundChild.h"
-#include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/Logging.h"
 #include "mozilla/SyncRunnable.h"
-#include "mozilla/WeakPtr.h"
 #include "mozilla/Unused.h"
-#include "MediaUtils.h"
+#include "mozilla/WeakPtr.h"
+#include "mozilla/ipc/BackgroundChild.h"
+#include "mozilla/ipc/PBackgroundChild.h"
 #include "nsThreadUtils.h"
 
 #undef LOG
@@ -285,13 +285,10 @@ mozilla::ipc::IPCResult CamerasChild::RecvReplyGetCaptureCapability(
   return IPC_OK();
 }
 
-int CamerasChild::GetCaptureDevice(CaptureEngine aCapEngine,
-                                   unsigned int list_number,
-                                   char* device_nameUTF8,
-                                   const unsigned int device_nameUTF8Length,
-                                   char* unique_idUTF8,
-                                   const unsigned int unique_idUTF8Length,
-                                   bool* scary, bool* device_is_placeholder) {
+int CamerasChild::GetCaptureDevice(
+    CaptureEngine aCapEngine, unsigned int list_number, char* device_nameUTF8,
+    const unsigned int device_nameUTF8Length, char* unique_idUTF8,
+    const unsigned int unique_idUTF8Length, bool* scary) {
   LOG(("%s", __PRETTY_FUNCTION__));
   nsCOMPtr<nsIRunnable> runnable =
       mozilla::NewRunnableMethod<CaptureEngine, unsigned int>(
@@ -305,9 +302,6 @@ int CamerasChild::GetCaptureDevice(CaptureEngine aCapEngine,
     if (scary) {
       *scary = mReplyScary;
     }
-    if (device_is_placeholder) {
-      *device_is_placeholder = mReplyDeviceIsPlaceholder;
-    }
     LOG(("Got %s name %s id", device_nameUTF8, unique_idUTF8));
   }
   return dispatcher.ReturnValue();
@@ -315,7 +309,7 @@ int CamerasChild::GetCaptureDevice(CaptureEngine aCapEngine,
 
 mozilla::ipc::IPCResult CamerasChild::RecvReplyGetCaptureDevice(
     const nsACString& device_name, const nsACString& device_id,
-    const bool& scary, const bool& device_is_placeholder) {
+    const bool& scary) {
   LOG(("%s", __PRETTY_FUNCTION__));
   MonitorAutoLock monitor(mReplyMonitor);
   mReceivedReply = true;
@@ -323,7 +317,6 @@ mozilla::ipc::IPCResult CamerasChild::RecvReplyGetCaptureDevice(
   mReplyDeviceName = device_name;
   mReplyDeviceID = device_id;
   mReplyScary = scary;
-  mReplyDeviceIsPlaceholder = device_is_placeholder;
   monitor.Notify();
   return IPC_OK();
 }

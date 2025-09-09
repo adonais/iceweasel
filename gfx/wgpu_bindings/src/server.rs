@@ -5,9 +5,8 @@
 use crate::{
     error::{error_to_string, ErrMsg, ErrorBuffer, ErrorBufferType, OwnedErrorBuffer},
     make_byte_buf, wgpu_string, AdapterInformation, BufferMapResult, ByteBuf, CommandEncoderAction,
-    DeviceAction, FfiLUID, FfiSlice, Message, PipelineError, QueueWriteAction,
-    QueueWriteDataSource, ServerMessage, ShaderModuleCompilationMessage, SwapChainId,
-    TextureAction,
+    DeviceAction, FfiSlice, Message, PipelineError, QueueWriteAction, QueueWriteDataSource,
+    ServerMessage, ShaderModuleCompilationMessage, SwapChainId, TextureAction,
 };
 
 use nsstring::{nsACString, nsCString};
@@ -23,9 +22,8 @@ use std::borrow::Cow;
 use std::mem;
 #[cfg(target_os = "linux")]
 use std::os::fd::{FromRawFd, IntoRawFd, OwnedFd, RawFd};
-use std::os::raw::{c_char, c_void};
+use std::os::raw::c_char;
 use std::ptr;
-use std::slice;
 use std::sync::atomic::{AtomicU32, Ordering};
 
 #[allow(unused_imports)]
@@ -101,16 +99,15 @@ fn restrict_limits(limits: wgt::Limits) -> wgt::Limits {
     }
 }
 
+/// Opaque pointer to `mozilla::webgpu::WebGPUParent`.
+#[derive(Debug, Clone, Copy)]
+#[repr(transparent)]
+pub struct WebGPUParentPtr(*mut core::ffi::c_void);
+
 // hide wgc's global in private
 pub struct Global {
+    owner: WebGPUParentPtr,
     global: wgc::global::Global,
-
-    /// A pointer to the `mozilla::webgpu::WebGPUParent` that created us.
-    ///
-    /// This is used only on platforms that support presentation
-    /// without CPU readback.
-    #[allow(dead_code)]
-    webgpu_parent: *mut c_void,
 }
 
 impl std::ops::Deref for Global {
@@ -121,7 +118,7 @@ impl std::ops::Deref for Global {
 }
 
 #[no_mangle]
-pub extern "C" fn wgpu_server_new(owner: *mut c_void) -> *mut Global {
+pub extern "C" fn wgpu_server_new(owner: WebGPUParentPtr) -> *mut Global {
     log::info!("Initializing WGPU server");
     let backends_pref = static_prefs::pref!("dom.webgpu.wgpu-backend").to_string();
     let backends = if backends_pref.is_empty() {
@@ -163,6 +160,7 @@ pub extern "C" fn wgpu_server_new(owner: *mut c_void) -> *mut Global {
                 },
                 dx12: wgt::Dx12BackendOptions {
                     shader_compiler: dx12_shader_compiler,
+                    ..Default::default()
                 },
                 noop: wgt::NoopBackendOptions { enable: false },
             },
@@ -172,10 +170,7 @@ pub extern "C" fn wgpu_server_new(owner: *mut c_void) -> *mut Global {
             },
         },
     );
-    let global = Global {
-        global,
-        webgpu_parent: owner,
-    };
+    let global = Global { owner, global };
     Box::into_raw(Box::new(global))
 }
 
@@ -265,45 +260,70 @@ fn support_use_shared_texture_in_swap_chain(
 
     #[cfg(target_os = "linux")]
     {
-        let support = if backend != wgt::Backend::Vulkan {
+        if backend != wgt::Backend::Vulkan {
             log::info!(concat!(
                 "WebGPU: disabling SharedTexture swapchain: \n",
                 "wgpu backend is not Vulkan"
             ));
-            false
-        } else {
-            unsafe {
-                match global.adapter_as_hal::<wgc::api::Vulkan>(self_id) {
-                    None => {
-                        emit_critical_invalid_note("Vulkan adapter");
-                        false
-                    }
-                    Some(hal_adapter) => {
-                        let capabilities = hal_adapter.physical_device_capabilities();
-                        static REQUIRED: &[&'static std::ffi::CStr] = &[
-                            khr::external_memory_fd::NAME,
-                            ash::ext::external_memory_dma_buf::NAME,
-                            ash::ext::image_drm_format_modifier::NAME,
-                            khr::external_semaphore_fd::NAME,
-                        ];
-                        REQUIRED.iter().all(|extension| {
-                            let supported = capabilities.supports_extension(extension);
-                            if !supported {
-                                log::info!(
-                                    concat!(
-                                        "WebGPU: disabling SharedTexture swapchain: \n",
-                                        "Vulkan extension not supported: {:?}",
-                                    ),
-                                    extension.to_string_lossy()
-                                );
-                            }
-                            supported
-                        })
-                    }
-                }
-            }
+            return false;
+        }
+
+        let Some(hal_adapter) = (unsafe { global.adapter_as_hal::<wgc::api::Vulkan>(self_id) })
+        else {
+            unreachable!("given adapter ID was actually for a different backend");
         };
-        return support;
+
+        let capabilities = hal_adapter.physical_device_capabilities();
+        static REQUIRED: &[&'static std::ffi::CStr] = &[
+            khr::external_memory_fd::NAME,
+            ash::ext::external_memory_dma_buf::NAME,
+            ash::ext::image_drm_format_modifier::NAME,
+            khr::external_semaphore_fd::NAME,
+        ];
+        let all_extensions_supported = REQUIRED.iter().all(|&extension| {
+            let supported = capabilities.supports_extension(extension);
+            if !supported {
+                log::info!(
+                    concat!(
+                        "WebGPU: disabling SharedTexture swapchain: \n",
+                        "Vulkan extension not supported: {:?}",
+                    ),
+                    extension.to_string_lossy()
+                );
+            }
+            supported
+        });
+        if !all_extensions_supported {
+            return false;
+        }
+
+        // We need to be able to export the semaphore that gets signalled
+        // when the GPU is done drawing on the ExternalTextureDMABuf.
+        let semaphore_info = vk::PhysicalDeviceExternalSemaphoreInfo::default()
+            .handle_type(vk::ExternalSemaphoreHandleTypeFlags::OPAQUE_FD);
+        let mut semaphore_props = vk::ExternalSemaphoreProperties::default();
+        unsafe {
+            hal_adapter
+                .shared_instance()
+                .raw_instance()
+                .get_physical_device_external_semaphore_properties(
+                    hal_adapter.raw_physical_device(),
+                    &semaphore_info,
+                    &mut semaphore_props,
+                );
+        }
+        if !semaphore_props
+            .external_semaphore_features
+            .contains(vk::ExternalSemaphoreFeatureFlags::EXPORTABLE)
+        {
+            log::info!(
+                "WebGPU: disabling ExternalTexture swapchain: \n\
+                        device can't export opaque file descriptor semaphores"
+            );
+            return false;
+        }
+
+        return true;
     }
 
     #[cfg(target_os = "macos")]
@@ -373,6 +393,16 @@ unsafe fn adapter_request_device(
             log::warn!("Failed to create directory {:?} for wgpu recording.", path);
         } else {
             desc.trace = wgt::Trace::Directory(path);
+        }
+    }
+
+    if wgpu_parent_is_external_texture_enabled() {
+        if global
+            .adapter_features(self_id)
+            .contains(wgt::Features::EXTERNAL_TEXTURE)
+        {
+            desc.required_features
+                .insert(wgt::Features::EXTERNAL_TEXTURE);
         }
     }
 
@@ -448,17 +478,16 @@ unsafe fn adapter_request_device(
                     .enabled_extension_names(&str_pointers);
                 let info = enabled_phd_features.add_to_device_create(pre_info);
 
-                let raw_device =
-                    match raw_instance.create_device(raw_physical_device, &info, None) {
-                        Err(err) => {
-                            let msg =
-                                CString::new(format!("create_device() failed: {:?}", err))
-                                    .unwrap();
-                            gfx_critical_note(msg.as_ptr());
-                            return Some(format!("Internal Error: Failed to create ash::Device"));
-                        }
-                        Ok(raw_device) => raw_device,
-                    };
+                let raw_device = match raw_instance.create_device(raw_physical_device, &info, None)
+                {
+                    Err(err) => {
+                        let msg =
+                            CString::new(format!("create_device() failed: {:?}", err)).unwrap();
+                        gfx_critical_note(msg.as_ptr());
+                        return Some(format!("Internal Error: Failed to create ash::Device"));
+                    }
+                    Ok(raw_device) => raw_device,
+                };
 
                 let hal_device = match hal_adapter.device_from_raw(
                     raw_device,
@@ -471,8 +500,7 @@ unsafe fn adapter_request_device(
                 ) {
                     Err(err) => {
                         let msg =
-                            CString::new(format!("device_from_raw() failed: {:?}", err))
-                                .unwrap();
+                            CString::new(format!("device_from_raw() failed: {:?}", err)).unwrap();
                         gfx_critical_note(msg.as_ptr());
                         return Some(format!("Internal Error: Failed to create ash::Device"));
                     }
@@ -756,21 +784,83 @@ pub extern "C" fn wgpu_server_buffer_unmap(
     }
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn wgpu_server_device_create_texture(
+    global: &Global,
+    device_id: id::DeviceId,
+    id_in: id::TextureId,
+    desc: &wgt::TextureDescriptor<Option<&nsACString>, crate::FfiSlice<wgt::TextureFormat>>,
+    mut error_buf: ErrorBuffer,
+) {
+    let desc = desc.map_label_and_view_formats(|l| wgpu_string(*l), |v| v.as_slice().to_vec());
+    let (_, err) = global.device_create_texture(device_id, &desc, Some(id_in));
+    if let Some(err) = err {
+        error_buf.init(err, device_id);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn wgpu_server_texture_destroy(global: &Global, id: id::TextureId) {
+    global.texture_destroy(id);
+}
+
+#[no_mangle]
+pub extern "C" fn wgpu_server_texture_drop(global: &Global, id: id::TextureId) {
+    global.texture_drop(id);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wgpu_server_texture_create_view(
+    global: &Global,
+    device_id: id::DeviceId,
+    texture_id: id::TextureId,
+    id_in: id::TextureViewId,
+    desc: &crate::TextureViewDescriptor,
+    mut error_buf: ErrorBuffer,
+) {
+    let desc = wgc::resource::TextureViewDescriptor {
+        label: wgpu_string(desc.label),
+        format: desc.format.cloned(),
+        dimension: desc.dimension.cloned(),
+        range: wgt::ImageSubresourceRange {
+            aspect: desc.aspect,
+            base_mip_level: desc.base_mip_level,
+            mip_level_count: desc.mip_level_count.map(|ptr| *ptr),
+            base_array_layer: desc.base_array_layer,
+            array_layer_count: desc.array_layer_count.map(|ptr| *ptr),
+        },
+        usage: None,
+    };
+    let (_, err) = global.texture_create_view(texture_id, &desc, Some(id_in));
+    if let Some(err) = err {
+        error_buf.init(err, device_id);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn wgpu_server_texture_view_drop(global: &Global, id: id::TextureViewId) {
+    global.texture_view_drop(id).unwrap();
+}
+
 #[allow(unused_variables)]
 #[no_mangle]
+#[cfg(target_os = "windows")]
 pub extern "C" fn wgpu_server_get_device_fence_handle(
     global: &Global,
     device_id: id::DeviceId,
-) -> *mut c_void {
-    #[cfg(target_os = "windows")]
+) -> *mut core::ffi::c_void {
     unsafe {
-        let Some(dx12_device) = global.device_as_hal::<wgc::api::Dx12>(device_id)
-                .map(|device| device.raw_device().clone()) else {
+        let Some(dx12_device) = global
+            .device_as_hal::<wgc::api::Dx12>(device_id)
+            .map(|device| device.raw_device().clone())
+        else {
             return ptr::null_mut();
         };
 
-        let Some(dx12_fence) = global.device_fence_as_hal::<wgc::api::Dx12>(device_id)
-                .map(|fence| fence.raw_fence().clone()) else {
+        let Some(dx12_fence) = global
+            .device_fence_as_hal::<wgc::api::Dx12>(device_id)
+            .map(|fence| fence.raw_fence().clone())
+        else {
             return ptr::null_mut();
         };
 
@@ -779,8 +869,6 @@ pub extern "C" fn wgpu_server_get_device_fence_handle(
             Err(_) => ptr::null_mut(),
         }
     }
-    #[cfg(not(target_os = "windows"))]
-    ptr::null_mut()
 }
 
 #[derive(Debug)]
@@ -843,8 +931,8 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
         let count = {
             let mut drm_format_modifier_props_list =
                 vk::DrmFormatModifierPropertiesListEXT::default();
-            let mut format_properties_2 = vk::FormatProperties2::default()
-                .push_next(&mut drm_format_modifier_props_list);
+            let mut format_properties_2 =
+                vk::FormatProperties2::default().push_next(&mut drm_format_modifier_props_list);
 
             instance.get_physical_device_format_properties2(
                 physical_device,
@@ -863,9 +951,8 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
         let mut modifier_props =
             vec![vk::DrmFormatModifierPropertiesEXT::default(); count as usize];
 
-        let mut drm_format_modifier_props_list =
-            vk::DrmFormatModifierPropertiesListEXT::default()
-                .drm_format_modifier_properties(&mut modifier_props);
+        let mut drm_format_modifier_props_list = vk::DrmFormatModifierPropertiesListEXT::default()
+            .drm_format_modifier_properties(&mut modifier_props);
         let mut format_properties_2 =
             vk::FormatProperties2::default().push_next(&mut drm_format_modifier_props_list);
 
@@ -900,8 +987,8 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
             .map(|modifier_prop| modifier_prop.drm_format_modifier)
             .collect();
 
-        let mut modifier_list = vk::ImageDrmFormatModifierListCreateInfoEXT::default()
-            .drm_format_modifiers(&modifiers);
+        let mut modifier_list =
+            vk::ImageDrmFormatModifierListCreateInfoEXT::default().drm_format_modifiers(&modifiers);
 
         let extent = vk::Extent3D {
             width,
@@ -934,22 +1021,18 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
 
         let image = match device.create_image(&vk_info, None) {
             Err(err) => {
-                let msg =
-                    CString::new(format!("create_image() failed: {:?}", err)).unwrap();
+                let msg = CString::new(format!("create_image() failed: {:?}", err)).unwrap();
                 gfx_critical_note(msg.as_ptr());
                 return ptr::null_mut();
             }
             Ok(image) => image,
         };
 
-        let mut image_modifier_properties =
-            vk::ImageDrmFormatModifierPropertiesEXT::default();
+        let mut image_modifier_properties = vk::ImageDrmFormatModifierPropertiesEXT::default();
         let image_drm_format_modifier =
             ash::ext::image_drm_format_modifier::Device::new(instance, device);
-        let ret = image_drm_format_modifier.get_image_drm_format_modifier_properties(
-            image,
-            &mut image_modifier_properties,
-        );
+        let ret = image_drm_format_modifier
+            .get_image_drm_format_modifier_properties(image, &mut image_modifier_properties);
         if ret.is_err() {
             let msg = CString::new(format!(
                 "get_image_drm_format_modifier_properties() failed: {:?}",
@@ -962,8 +1045,7 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
 
         let memory_req = device.get_image_memory_requirements(image);
 
-        let mem_properties =
-            instance.get_physical_device_memory_properties(physical_device);
+        let mem_properties = instance.get_physical_device_memory_properties(physical_device);
 
         let index = mem_properties
             .memory_types
@@ -981,8 +1063,7 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
             return ptr::null_mut();
         };
 
-        let mut dedicated_memory_info =
-            vk::MemoryDedicatedAllocateInfo::default().image(image);
+        let mut dedicated_memory_info = vk::MemoryDedicatedAllocateInfo::default().image(image);
 
         let memory_allocate_info = vk::MemoryAllocateInfo::default()
             .allocation_size(memory_req.size)
@@ -992,8 +1073,7 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
 
         let memory = match device.allocate_memory(&memory_allocate_info, None) {
             Err(err) => {
-                let msg =
-                    CString::new(format!("allocate_memory() failed: {:?}", err)).unwrap();
+                let msg = CString::new(format!("allocate_memory() failed: {:?}", err)).unwrap();
                 gfx_critical_note(msg.as_ptr());
                 return ptr::null_mut();
             }
@@ -1009,9 +1089,9 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
 
         *out_memory_size = memory_req.size;
 
-        let modifier_prop = modifier_props.iter().find(|prop| {
-            prop.drm_format_modifier == image_modifier_properties.drm_format_modifier
-        });
+        let modifier_prop = modifier_props
+            .iter()
+            .find(|prop| prop.drm_format_modifier == image_modifier_properties.drm_format_modifier);
         let Some(modifier_prop) = modifier_prop else {
             let msg = c"failed to find modifier_prop";
             gfx_critical_note(msg.as_ptr());
@@ -1022,10 +1102,13 @@ pub extern "C" fn wgpu_vkimage_create_with_dma_buf(
 
         let mut layouts = Vec::new();
         for i in 0..plane_count {
+            // VUID-vkGetImageSubresourceLayout-tiling-09433: For
+            // `DMA_BUF` images, the planes must be identified using the
+            // `MEMORY_PLANE_i_EXT bits, not the `PLANE_i` bits.
             let flag = match i {
-                0 => vk::ImageAspectFlags::PLANE_0,
-                1 => vk::ImageAspectFlags::PLANE_1,
-                2 => vk::ImageAspectFlags::PLANE_2,
+                0 => vk::ImageAspectFlags::MEMORY_PLANE_0_EXT,
+                1 => vk::ImageAspectFlags::MEMORY_PLANE_1_EXT,
+                2 => vk::ImageAspectFlags::MEMORY_PLANE_2_EXT,
                 _ => unreachable!(),
             };
             let subresource = vk::ImageSubresource::default().aspect_mask(flag);
@@ -1124,7 +1207,8 @@ pub extern "C" fn wgpu_server_get_device_fence_metal_shared_event(
     #[cfg(target_os = "macos")]
     {
         let shared_event = unsafe {
-            global.device_fence_as_hal::<wgc::api::Metal>(device_id)
+            global
+                .device_fence_as_hal::<wgc::api::Metal>(device_id)
                 .map(|fence| fence.raw_shared_event().unwrap().clone())
         };
         let shared_event = match shared_event {
@@ -1166,19 +1250,17 @@ pub extern "C" fn wgpu_server_delete_metal_shared_event(shared_event: *mut Metal
 extern "C" {
     #[allow(dead_code)]
     fn gfx_critical_note(msg: *const c_char);
-    #[allow(dead_code)]
     fn wgpu_server_use_shared_texture_for_swap_chain(
-        param: *mut c_void,
+        parent: WebGPUParentPtr,
         swap_chain_id: SwapChainId,
     ) -> bool;
-    #[allow(dead_code)]
     fn wgpu_server_disable_shared_texture_for_swap_chain(
-        param: *mut c_void,
+        parent: WebGPUParentPtr,
         swap_chain_id: SwapChainId,
     );
     #[allow(dead_code)]
     fn wgpu_server_ensure_shared_texture_for_swap_chain(
-        param: *mut c_void,
+        parent: WebGPUParentPtr,
         swap_chain_id: SwapChainId,
         device_id: id::DeviceId,
         texture_id: id::TextureId,
@@ -1187,9 +1269,8 @@ extern "C" {
         format: wgt::TextureFormat,
         usage: wgt::TextureUsages,
     ) -> bool;
-    #[allow(dead_code)]
     fn wgpu_server_ensure_shared_texture_for_readback(
-        param: *mut c_void,
+        parent: WebGPUParentPtr,
         swap_chain_id: SwapChainId,
         device_id: id::DeviceId,
         texture_id: id::TextureId,
@@ -1198,28 +1279,40 @@ extern "C" {
         format: wgt::TextureFormat,
         usage: wgt::TextureUsages,
     );
-    #[allow(dead_code)]
-    fn wgpu_server_get_shared_texture_handle(param: *mut c_void, id: id::TextureId) -> *mut c_void;
-    #[allow(improper_ctypes)]
-    #[allow(dead_code)]
+    #[cfg(target_os = "windows")]
+    fn wgpu_server_get_shared_texture_handle(
+        parent: WebGPUParentPtr,
+        id: id::TextureId,
+    ) -> *mut core::ffi::c_void;
     #[cfg(target_os = "linux")]
+    #[allow(improper_ctypes)] // VkImageHandle is behind a pointer but this still triggers
     fn wgpu_server_get_vk_image_handle(
-        param: *mut c_void,
+        parent: WebGPUParentPtr,
         texture_id: id::TextureId,
     ) -> *const VkImageHandle;
-    #[allow(dead_code)]
-    fn wgpu_server_get_dma_buf_fd(param: *mut c_void, id: id::TextureId) -> i32;
-    #[allow(dead_code)]
-    fn wgpu_server_get_external_io_surface_id(param: *mut c_void, id: id::TextureId) -> u32;
-    #[allow(dead_code)]
-    fn wgpu_server_remove_shared_texture(param: *mut c_void, id: id::TextureId);
-    #[allow(dead_code)]
-    fn wgpu_server_dealloc_buffer_shmem(param: *mut c_void, id: id::BufferId);
-    #[allow(dead_code)]
-    fn wgpu_server_pre_device_drop(param: *mut c_void, id: id::DeviceId);
-    #[allow(dead_code)]
+    #[cfg(target_os = "linux")]
+    fn wgpu_server_get_dma_buf_fd(parent: WebGPUParentPtr, id: id::TextureId) -> i32;
+    #[cfg(target_os = "macos")]
+    fn wgpu_server_get_external_io_surface_id(parent: WebGPUParentPtr, id: id::TextureId) -> u32;
+    fn wgpu_server_remove_shared_texture(parent: WebGPUParentPtr, id: id::TextureId);
+    fn wgpu_parent_is_external_texture_enabled() -> bool;
+    fn wgpu_parent_external_texture_source_get_external_texture_descriptor<'a>(
+        parent: WebGPUParentPtr,
+        id: crate::ExternalTextureSourceId,
+        dest_color_space: crate::PredefinedColorSpace,
+    ) -> crate::ExternalTextureDescriptorFromSource<'a>;
+    fn wgpu_parent_destroy_external_texture_source(
+        parent: WebGPUParentPtr,
+        id: crate::ExternalTextureSourceId,
+    );
+    fn wgpu_parent_drop_external_texture_source(
+        parent: WebGPUParentPtr,
+        id: crate::ExternalTextureSourceId,
+    );
+    fn wgpu_server_dealloc_buffer_shmem(parent: WebGPUParentPtr, id: id::BufferId);
+    fn wgpu_server_pre_device_drop(parent: WebGPUParentPtr, id: id::DeviceId);
     fn wgpu_server_set_buffer_map_data(
-        param: *mut c_void,
+        parent: WebGPUParentPtr,
         device_id: id::DeviceId,
         buffer_id: id::BufferId,
         has_map_flags: bool,
@@ -1227,25 +1320,25 @@ extern "C" {
         mapped_size: u64,
         shmem_index: usize,
     );
-    #[allow(dead_code)]
-    fn wgpu_server_device_push_error_scope(param: *mut c_void, device_id: id::DeviceId, filter: u8);
-    #[allow(dead_code)]
+    fn wgpu_server_device_push_error_scope(
+        parent: WebGPUParentPtr,
+        device_id: id::DeviceId,
+        filter: u8,
+    );
     fn wgpu_server_device_pop_error_scope(
-        param: *mut c_void,
+        parent: WebGPUParentPtr,
         device_id: id::DeviceId,
         out_type: *mut u8,
         out_message: *mut nsCString,
     );
-    #[allow(dead_code)]
     fn wgpu_parent_buffer_unmap(
-        param: *mut c_void,
+        parent: WebGPUParentPtr,
         device_id: id::DeviceId,
         buffer_id: id::BufferId,
         flush: bool,
     );
-    #[allow(dead_code)]
     fn wgpu_parent_queue_submit(
-        param: *mut c_void,
+        parent: WebGPUParentPtr,
         device_id: id::DeviceId,
         queue_id: id::QueueId,
         command_buffer_ids: *const id::CommandBufferId,
@@ -1253,9 +1346,8 @@ extern "C" {
         texture_ids: *const id::TextureId,
         texture_ids_length: usize,
     );
-    #[allow(dead_code)]
     fn wgpu_parent_create_swap_chain(
-        param: *mut c_void,
+        parent: WebGPUParentPtr,
         device_id: id::DeviceId,
         queue_id: id::QueueId,
         width: i32,
@@ -1266,46 +1358,42 @@ extern "C" {
         remote_texture_owner_id: crate::RemoteTextureOwnerId,
         use_shared_texture_in_swap_chain: bool,
     );
-    #[allow(dead_code)]
     fn wgpu_parent_swap_chain_present(
-        param: *mut c_void,
+        parent: WebGPUParentPtr,
         texture_id: id::TextureId,
         command_encoder_id: id::CommandEncoderId,
+        command_buffer_id: id::CommandBufferId,
         remote_texture_id: crate::RemoteTextureId,
         remote_texture_owner_id: crate::RemoteTextureOwnerId,
     );
-    #[allow(dead_code)]
     fn wgpu_parent_swap_chain_drop(
-        param: *mut c_void,
+        parent: WebGPUParentPtr,
         remote_texture_owner_id: crate::RemoteTextureOwnerId,
         txn_type: crate::RemoteTextureTxnType,
         txn_id: crate::RemoteTextureTxnId,
     );
-    #[allow(dead_code)]
-    fn wgpu_parent_get_compositor_device_luid(out_luid: *mut FfiLUID);
-    #[allow(dead_code)]
-    fn wgpu_parent_post_request_device(param: *mut c_void, device_id: id::DeviceId);
-    #[allow(dead_code)]
+    #[cfg(target_os = "windows")]
+    fn wgpu_parent_get_compositor_device_luid(out_luid: *mut crate::FfiLUID);
+    fn wgpu_parent_post_request_device(parent: WebGPUParentPtr, device_id: id::DeviceId);
     fn wgpu_parent_build_buffer_map_closure(
-        param: *mut c_void,
+        parent: WebGPUParentPtr,
         device_id: id::DeviceId,
         buffer_id: id::BufferId,
         mode: wgc::device::HostMap,
         offset: u64,
         size: u64,
     ) -> BufferMapClosure;
-    #[allow(dead_code)]
     fn wgpu_parent_build_submitted_work_done_closure(
-        param: *mut c_void,
+        parent: WebGPUParentPtr,
+        queue_id: id::QueueId,
     ) -> SubmittedWorkDoneClosure;
-    #[allow(dead_code)]
     fn wgpu_parent_handle_error(
-        param: *mut c_void,
+        parent: WebGPUParentPtr,
         device_id: id::DeviceId,
         ty: ErrorBufferType,
         message: &nsCString,
     );
-    fn wgpu_parent_send_server_message(param: *mut c_void, message: &mut ByteBuf);
+    fn wgpu_parent_send_server_message(parent: WebGPUParentPtr, message: &mut ByteBuf);
 }
 
 #[cfg(target_os = "linux")]
@@ -1405,8 +1493,10 @@ impl Global {
         swap_chain_id: Option<SwapChainId>,
     ) -> bool {
         let dx12_device = unsafe {
-            match self.device_as_hal::<wgc::api::Dx12>(device_id)
-                .map(|hal_device| hal_device.raw_device().clone()) {
+            match self
+                .device_as_hal::<wgc::api::Dx12>(device_id)
+                .map(|hal_device| hal_device.raw_device().clone())
+            {
                 None => {
                     emit_critical_invalid_note("dx12 device");
                     return false;
@@ -1417,7 +1507,7 @@ impl Global {
 
         let ret = unsafe {
             wgpu_server_ensure_shared_texture_for_swap_chain(
-                self.webgpu_parent,
+                self.owner,
                 swap_chain_id.unwrap(),
                 device_id,
                 texture_id,
@@ -1435,8 +1525,7 @@ impl Global {
             return false;
         }
 
-        let handle =
-            unsafe { wgpu_server_get_shared_texture_handle(self.webgpu_parent, texture_id) };
+        let handle = unsafe { wgpu_server_get_shared_texture_handle(self.owner, texture_id) };
         if handle.is_null() {
             let msg = c"Failed to get shared texture handle";
             unsafe {
@@ -1479,7 +1568,6 @@ impl Global {
         true
     }
 
-    #[allow(dead_code)]
     #[cfg(target_os = "linux")]
     fn create_texture_with_shared_texture_dmabuf(
         &self,
@@ -1490,7 +1578,7 @@ impl Global {
     ) -> bool {
         unsafe {
             let ret = wgpu_server_ensure_shared_texture_for_swap_chain(
-                self.webgpu_parent,
+                self.owner,
                 swap_chain_id.unwrap(),
                 device_id,
                 texture_id,
@@ -1505,7 +1593,7 @@ impl Global {
                 return false;
             }
 
-            let handle = wgpu_server_get_vk_image_handle(self.webgpu_parent, texture_id);
+            let handle = wgpu_server_get_vk_image_handle(self.owner, texture_id);
             if handle.is_null() {
                 let msg = c"Failed to get VkImageHandle";
                 gfx_critical_note(msg.as_ptr());
@@ -1514,7 +1602,7 @@ impl Global {
 
             let vk_image_wrapper = &*handle;
 
-            let fd = wgpu_server_get_dma_buf_fd(self.webgpu_parent, texture_id);
+            let fd = wgpu_server_get_dma_buf_fd(self.owner, texture_id);
             if fd < 0 {
                 let msg = c"Failed to get DMABuf fd";
                 gfx_critical_note(msg.as_ptr());
@@ -1539,9 +1627,40 @@ impl Global {
             let mut usage_flags = vk::ImageUsageFlags::empty();
             usage_flags |= vk::ImageUsageFlags::COLOR_ATTACHMENT;
 
-            let mut external_image_create_info =
-                vk::ExternalMemoryImageCreateInfo::default()
-                    .handle_types(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT);
+            let mut external_image_create_info = vk::ExternalMemoryImageCreateInfo::default()
+                .handle_types(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT);
+
+            // Surprising rule:
+            //
+            // > VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-size-02267:
+            // > For each element of pPlaneLayouts, size must be 0
+            //
+            // Rationale:
+            //
+            // > In each element of pPlaneLayouts, the implementation must ignore
+            // > size. The implementation calculates the size of each plane, which
+            // > the application can query with vkGetImageSubresourceLayout.
+            //
+            // So, make a temporary copy of the plane layouts and zero
+            // out their sizes.
+            let memory_plane_layouts: Vec<_> = vk_image_wrapper
+                .layouts
+                .iter()
+                .map(|layout| vk::SubresourceLayout { size: 0, ..*layout })
+                .collect();
+
+            // VUID-VkImageCreateInfo-pNext-00990
+            //
+            // Since `wgpu_vkimage_create_with_dma_buf` above succeeded in
+            // creating the original DMABuf image, if we pass the same
+            // parameters, including the DRM format modifier and plane layouts,
+            // we can assume that this call will succeed too.
+            //
+            // The only thing we're adding is the `ALIAS` flag, because this
+            // aliases the original image.
+            let mut modifier_list = vk::ImageDrmFormatModifierExplicitCreateInfoEXT::default()
+                .drm_format_modifier(vk_image_wrapper.modifier)
+                .plane_layouts(&memory_plane_layouts);
 
             let vk_info = vk::ImageCreateInfo::default()
                 .flags(vk::ImageCreateFlags::ALIAS)
@@ -1551,16 +1670,20 @@ impl Global {
                 .mip_levels(1)
                 .array_layers(1)
                 .samples(vk::SampleCountFlags::TYPE_1)
-                .tiling(vk::ImageTiling::OPTIMAL)
+                .tiling(vk::ImageTiling::DRM_FORMAT_MODIFIER_EXT)
                 .usage(usage_flags)
                 .sharing_mode(vk::SharingMode::EXCLUSIVE)
                 .initial_layout(vk::ImageLayout::UNDEFINED)
+                .push_next(&mut modifier_list)
                 .push_next(&mut external_image_create_info);
 
             let image = match device.create_image(&vk_info, None) {
                 Err(err) => {
-                    let msg =
-                        CString::new(format!("Failed to get vk::Image: create_image() failed: {:?}", err)).unwrap();
+                    let msg = CString::new(format!(
+                        "Failed to get vk::Image: create_image() failed: {:?}",
+                        err
+                    ))
+                    .unwrap();
                     gfx_critical_note(msg.as_ptr());
                     return false;
                 }
@@ -1574,8 +1697,7 @@ impl Global {
                 return false;
             }
 
-            let mut dedicated_memory_info =
-                vk::MemoryDedicatedAllocateInfo::default().image(image);
+            let mut dedicated_memory_info = vk::MemoryDedicatedAllocateInfo::default().image(image);
 
             let mut import_memory_fd_info = vk::ImportMemoryFdInfoKHR::default()
                 .handle_type(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT)
@@ -1589,8 +1711,11 @@ impl Global {
 
             let memory = match device.allocate_memory(&memory_allocate_info, None) {
                 Err(err) => {
-                    let msg = CString::new(format!("Failed to get vk::Image: allocate_memory() failed: {:?}", err))
-                        .unwrap();
+                    let msg = CString::new(format!(
+                        "Failed to get vk::Image: allocate_memory() failed: {:?}",
+                        err
+                    ))
+                    .unwrap();
                     gfx_critical_note(msg.as_ptr());
                     return false;
                 }
@@ -1600,8 +1725,11 @@ impl Global {
             match device.bind_image_memory(image, memory, /* offset */ 0) {
                 Ok(()) => {}
                 Err(err) => {
-                    let msg = CString::new(format!("Failed to get vk::Image: bind_image_memory() failed: {:?}", err))
-                        .unwrap();
+                    let msg = CString::new(format!(
+                        "Failed to get vk::Image: bind_image_memory() failed: {:?}",
+                        err
+                    ))
+                    .unwrap();
                     gfx_critical_note(msg.as_ptr());
                     return false;
                 }
@@ -1630,6 +1758,7 @@ impl Global {
             let image = image_holder.image;
 
             let hal_texture = <wgh::api::Vulkan as wgh::Api>::Device::texture_from_raw(
+                &hal_device,
                 image,
                 &hal_desc,
                 Some(Box::new(move || {
@@ -1637,9 +1766,15 @@ impl Global {
                 })),
             );
 
-            let (_, error) = self.create_texture_from_hal(Box::new(hal_texture), device_id, &desc, Some(texture_id));
+            let (_, error) = self.create_texture_from_hal(
+                Box::new(hal_texture),
+                device_id,
+                &desc,
+                Some(texture_id),
+            );
             if let Some(err) = error {
-                let msg = CString::new(format!("create_texture_from_hal() failed: {:?}", err)).unwrap();
+                let msg =
+                    CString::new(format!("create_texture_from_hal() failed: {:?}", err)).unwrap();
                 gfx_critical_note(msg.as_ptr());
                 return false;
             }
@@ -1660,7 +1795,7 @@ impl Global {
 
         let ret = unsafe {
             wgpu_server_ensure_shared_texture_for_swap_chain(
-                self.webgpu_parent,
+                self.owner,
                 swap_chain_id.unwrap(),
                 device_id,
                 texture_id,
@@ -1679,7 +1814,7 @@ impl Global {
         }
 
         let io_surface_id =
-            unsafe { wgpu_server_get_external_io_surface_id(self.webgpu_parent, texture_id) };
+            unsafe { wgpu_server_get_external_io_surface_id(self.owner, texture_id) };
         if io_surface_id == 0 {
             let msg = c"Failed to get io surface id";
             unsafe {
@@ -1802,7 +1937,7 @@ impl Global {
                 if needs_shmem {
                     unsafe {
                         wgpu_server_set_buffer_map_data(
-                            self.webgpu_parent,
+                            self.owner,
                             device_id,
                             buffer_id,
                             has_map_flags,
@@ -1853,7 +1988,7 @@ impl Global {
                 }
 
                 let use_shared_texture = if let Some(id) = swap_chain_id {
-                    unsafe { wgpu_server_use_shared_texture_for_swap_chain(self.webgpu_parent, id) }
+                    unsafe { wgpu_server_use_shared_texture_for_swap_chain(self.owner, id) }
                 } else {
                     false
                 };
@@ -1935,7 +2070,7 @@ impl Global {
 
                     unsafe {
                         wgpu_server_disable_shared_texture_for_swap_chain(
-                            self.webgpu_parent,
+                            self.owner,
                             swap_chain_id.unwrap(),
                         )
                     };
@@ -1944,7 +2079,7 @@ impl Global {
                 if let Some(swap_chain_id) = swap_chain_id {
                     unsafe {
                         wgpu_server_ensure_shared_texture_for_readback(
-                            self.webgpu_parent,
+                            self.owner,
                             swap_chain_id,
                             device_id,
                             id,
@@ -1959,6 +2094,66 @@ impl Global {
                 let (_, error) = self.device_create_texture(device_id, &desc, Some(id));
                 if let Some(err) = error {
                     error_buf.init(err, device_id);
+                }
+            }
+            DeviceAction::CreateExternalTexture(id, desc) => {
+                // Obtain the descriptor from the source. A source ID of `None`
+                // indicates the client-side encountered an error when
+                // importing the source.
+                let source_desc = desc.source.and_then(|source| {
+                    let source_desc = unsafe {
+                        wgpu_parent_external_texture_source_get_external_texture_descriptor(
+                            self.owner,
+                            source,
+                            desc.color_space,
+                        )
+                    };
+                    let planes = unsafe { source_desc.planes.as_slice() };
+                    // The source having no planes indicates we encountered an
+                    // error on the server side when importing the source
+                    if planes.is_empty() {
+                        None
+                    } else {
+                        Some(source_desc)
+                    }
+                });
+                match source_desc {
+                    Some(source_desc) => {
+                        let planes = unsafe { source_desc.planes.as_slice() };
+                        let desc = wgt::ExternalTextureDescriptor {
+                            label: desc.label,
+                            width: source_desc.width,
+                            height: source_desc.height,
+                            format: source_desc.format,
+                            yuv_conversion_matrix: source_desc.yuv_conversion_matrix,
+                            gamut_conversion_matrix: source_desc.gamut_conversion_matrix,
+                            src_transfer_function: source_desc.src_transfer_function,
+                            dst_transfer_function: source_desc.dst_transfer_function,
+                            sample_transform: source_desc.sample_transform,
+                            load_transform: source_desc.load_transform,
+                        };
+                        let (_, error) =
+                            self.device_create_external_texture(device_id, &desc, planes, Some(id));
+                        if let Some(err) = error {
+                            error_buf.init(err, device_id);
+                        }
+                    }
+                    None => {
+                        // Create the external texture in an error state.
+                        let desc = wgt::ExternalTextureDescriptor {
+                            label: desc.label,
+                            width: 0,
+                            height: 0,
+                            format: wgt::ExternalTextureFormat::Rgba,
+                            yuv_conversion_matrix: Default::default(),
+                            gamut_conversion_matrix: Default::default(),
+                            src_transfer_function: Default::default(),
+                            dst_transfer_function: Default::default(),
+                            sample_transform: Default::default(),
+                            load_transform: Default::default(),
+                        };
+                        self.create_external_texture_error(Some(id), &desc);
+                    }
                 }
             }
             DeviceAction::CreateSampler(id, desc) => {
@@ -2035,18 +2230,12 @@ impl Global {
                 };
 
                 *response_byte_buf = make_byte_buf(&ServerMessage::CreateShaderModuleResponse(
+                    id,
                     compilation_messages,
                 ));
             }
-            DeviceAction::CreateComputePipeline(id, desc, implicit, is_async) => {
-                let implicit_ids = implicit
-                    .as_ref()
-                    .map(|imp| wgc::device::ImplicitPipelineIds {
-                        root_id: imp.pipeline,
-                        group_ids: &imp.bind_groups,
-                    });
-                let (_, error) =
-                    self.device_create_compute_pipeline(device_id, &desc, Some(id), implicit_ids);
+            DeviceAction::CreateComputePipeline(id, desc, is_async) => {
+                let (_, error) = self.device_create_compute_pipeline(device_id, &desc, Some(id));
 
                 if is_async {
                     let error = error
@@ -2062,7 +2251,6 @@ impl Global {
                     *response_byte_buf =
                         make_byte_buf(&ServerMessage::CreateComputePipelineResponse {
                             pipeline_id: id,
-                            implicit_ids: implicit,
                             error,
                         });
                 } else {
@@ -2071,15 +2259,8 @@ impl Global {
                     }
                 }
             }
-            DeviceAction::CreateRenderPipeline(id, desc, implicit, is_async) => {
-                let implicit_ids = implicit
-                    .as_ref()
-                    .map(|imp| wgc::device::ImplicitPipelineIds {
-                        root_id: imp.pipeline,
-                        group_ids: &imp.bind_groups,
-                    });
-                let (_, error) =
-                    self.device_create_render_pipeline(device_id, &desc, Some(id), implicit_ids);
+            DeviceAction::CreateRenderPipeline(id, desc, is_async) => {
+                let (_, error) = self.device_create_render_pipeline(device_id, &desc, Some(id));
 
                 if is_async {
                     let error = error
@@ -2095,7 +2276,6 @@ impl Global {
                     *response_byte_buf =
                         make_byte_buf(&ServerMessage::CreateRenderPipelineResponse {
                             pipeline_id: id,
-                            implicit_ids: implicit,
                             error,
                         });
                 } else {
@@ -2138,25 +2318,19 @@ impl Global {
                 );
             }
             DeviceAction::PushErrorScope(filter) => {
-                unsafe {
-                    wgpu_server_device_push_error_scope(self.webgpu_parent, device_id, filter)
-                };
+                unsafe { wgpu_server_device_push_error_scope(self.owner, device_id, filter) };
             }
             DeviceAction::PopErrorScope => {
                 let mut ty = 0;
                 let mut message = nsCString::new();
                 unsafe {
-                    wgpu_server_device_pop_error_scope(
-                        self.webgpu_parent,
-                        device_id,
-                        &mut ty,
-                        &mut message,
-                    )
+                    wgpu_server_device_pop_error_scope(self.owner, device_id, &mut ty, &mut message)
                 };
                 let message = message.to_utf8();
 
-                *response_byte_buf =
-                    make_byte_buf(&ServerMessage::PopErrorScopeResponse(ty, message));
+                *response_byte_buf = make_byte_buf(&ServerMessage::PopErrorScopeResponse(
+                    device_id, ty, message,
+                ));
             }
         }
     }
@@ -2335,8 +2509,8 @@ pub unsafe extern "C" fn wgpu_server_pack_buffer_map_error(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wgpu_server_pack_work_done(bb: &mut ByteBuf) {
-    *bb = make_byte_buf(&ServerMessage::QueueOnSubmittedWorkDoneResponse);
+pub unsafe extern "C" fn wgpu_server_pack_work_done(bb: &mut ByteBuf, queue_id: id::QueueId) {
+    *bb = make_byte_buf(&ServerMessage::QueueOnSubmittedWorkDoneResponse(queue_id));
 }
 
 #[no_mangle]
@@ -2384,7 +2558,7 @@ unsafe fn process_message(
             // webgpu::SharedTexture do not work with wgpu.
             #[cfg(target_os = "windows")]
             {
-                let mut adapter_luid = core::mem::MaybeUninit::<FfiLUID>::uninit();
+                let mut adapter_luid = core::mem::MaybeUninit::<crate::FfiLUID>::uninit();
                 wgpu_parent_get_compositor_device_luid(adapter_luid.as_mut_ptr());
                 let adapter_luid = if adapter_luid.as_ptr().is_null() {
                     None
@@ -2502,7 +2676,7 @@ unsafe fn process_message(
             let error = adapter_request_device(global, adapter_id, desc, device_id, queue_id);
 
             if error.is_none() {
-                wgpu_parent_post_request_device(global.webgpu_parent, device_id);
+                wgpu_parent_post_request_device(global.owner, device_id);
             }
 
             *response_byte_buf = make_byte_buf(&ServerMessage::RequestDeviceResponse(
@@ -2518,8 +2692,9 @@ unsafe fn process_message(
         Message::CommandEncoder(device_id, id, action) => {
             global.command_encoder_action(device_id, id, action, error_buf)
         }
-        Message::CommandEncoderFinish(device_id, id, desc) => {
-            let (_, error) = global.command_encoder_finish(id, &desc);
+        Message::CommandEncoderFinish(device_id, command_encoder_id, command_buffer_id, desc) => {
+            let (_, error) =
+                global.command_encoder_finish(command_encoder_id, &desc, Some(command_buffer_id));
             if let Some(err) = error {
                 error_buf.init(err, device_id);
             }
@@ -2586,7 +2761,7 @@ unsafe fn process_message(
             };
 
             let closure = wgpu_parent_build_buffer_map_closure(
-                global.webgpu_parent,
+                global.owner,
                 device_id,
                 buffer_id,
                 mode,
@@ -2609,11 +2784,11 @@ unsafe fn process_message(
             }
         }
         Message::BufferUnmap(device_id, buffer_id, flush) => {
-            wgpu_parent_buffer_unmap(global.webgpu_parent, device_id, buffer_id, flush);
+            wgpu_parent_buffer_unmap(global.owner, device_id, buffer_id, flush);
         }
         Message::QueueSubmit(device_id, queue_id, command_buffer_ids, texture_ids) => {
             wgpu_parent_queue_submit(
-                global.webgpu_parent,
+                global.owner,
                 device_id,
                 queue_id,
                 command_buffer_ids.as_ptr(),
@@ -2623,7 +2798,7 @@ unsafe fn process_message(
             )
         }
         Message::QueueOnSubmittedWorkDone(queue_id) => {
-            let closure = wgpu_parent_build_submitted_work_done_closure(global.webgpu_parent);
+            let closure = wgpu_parent_build_submitted_work_done_closure(global.owner, queue_id);
             let closure = Box::new(move || {
                 let _ = &closure;
                 (closure.callback)(closure.user_data)
@@ -2642,7 +2817,7 @@ unsafe fn process_message(
             use_shared_texture_in_swap_chain,
         } => {
             wgpu_parent_create_swap_chain(
-                global.webgpu_parent,
+                global.owner,
                 device_id,
                 queue_id,
                 width,
@@ -2657,13 +2832,15 @@ unsafe fn process_message(
         Message::SwapChainPresent {
             texture_id,
             command_encoder_id,
+            command_buffer_id,
             remote_texture_id,
             remote_texture_owner_id,
         } => {
             wgpu_parent_swap_chain_present(
-                global.webgpu_parent,
+                global.owner,
                 texture_id,
                 command_encoder_id,
+                command_buffer_id,
                 remote_texture_id,
                 remote_texture_owner_id,
             );
@@ -2673,74 +2850,60 @@ unsafe fn process_message(
             txn_type,
             txn_id,
         } => {
-            wgpu_parent_swap_chain_drop(
-                global.webgpu_parent,
-                remote_texture_owner_id,
-                txn_type,
-                txn_id,
-            );
+            wgpu_parent_swap_chain_drop(global.owner, remote_texture_owner_id, txn_type, txn_id);
         }
 
         Message::DestroyBuffer(id) => {
-            wgpu_server_dealloc_buffer_shmem(global.webgpu_parent, id);
+            wgpu_server_dealloc_buffer_shmem(global.owner, id);
             global.buffer_destroy(id)
         }
         Message::DestroyTexture(id) => {
-            wgpu_server_remove_shared_texture(global.webgpu_parent, id);
+            wgpu_server_remove_shared_texture(global.owner, id);
             global.texture_destroy(id)
+        }
+        Message::DestroyExternalTexture(id) => global.external_texture_destroy(id),
+        Message::DestroyExternalTextureSource(id) => {
+            wgpu_parent_destroy_external_texture_source(global.owner, id)
         }
         Message::DestroyDevice(id) => global.device_destroy(id),
 
         Message::DropAdapter(id) => global.adapter_drop(id),
         Message::DropDevice(id) => {
-            wgpu_server_pre_device_drop(global.webgpu_parent, id);
+            wgpu_server_pre_device_drop(global.owner, id);
             global.device_drop(id)
         }
         Message::DropQueue(id) => global.queue_drop(id),
         Message::DropBuffer(id) => {
-            wgpu_server_dealloc_buffer_shmem(global.webgpu_parent, id);
+            wgpu_server_dealloc_buffer_shmem(global.owner, id);
             global.buffer_drop(id)
         }
+        Message::DropCommandEncoder(id) => global.command_encoder_drop(id),
         Message::DropCommandBuffer(id) => global.command_buffer_drop(id),
         Message::DropRenderBundle(id) => global.render_bundle_drop(id),
         Message::DropBindGroupLayout(id) => global.bind_group_layout_drop(id),
         Message::DropPipelineLayout(id) => global.pipeline_layout_drop(id),
         Message::DropBindGroup(id) => global.bind_group_drop(id),
         Message::DropShaderModule(id) => global.shader_module_drop(id),
-        Message::DropComputePipeline(id, implicit_layout) => {
-            global.compute_pipeline_drop(id);
-            if let Some(implicit_layout) = implicit_layout {
-                global.pipeline_layout_drop(implicit_layout.pipeline);
-                for bgl_id in implicit_layout.bind_groups.as_ref().iter() {
-                    global.bind_group_layout_drop(*bgl_id);
-                }
-            }
-        }
-        Message::DropRenderPipeline(id, implicit_layout) => {
-            global.render_pipeline_drop(id);
-            if let Some(implicit_layout) = implicit_layout {
-                global.pipeline_layout_drop(implicit_layout.pipeline);
-                for bgl_id in implicit_layout.bind_groups.as_ref().iter() {
-                    global.bind_group_layout_drop(*bgl_id);
-                }
-            }
-        }
+        Message::DropComputePipeline(id) => global.compute_pipeline_drop(id),
+        Message::DropRenderPipeline(id) => global.render_pipeline_drop(id),
         Message::DropTexture(id) => {
-            wgpu_server_remove_shared_texture(global.webgpu_parent, id);
+            wgpu_server_remove_shared_texture(global.owner, id);
             global.texture_drop(id);
         }
         Message::DropTextureView(id) => global.texture_view_drop(id).unwrap(),
+        Message::DropExternalTexture(id) => global.external_texture_drop(id),
+        Message::DropExternalTextureSource(id) => {
+            wgpu_parent_drop_external_texture_source(global.owner, id)
+        }
         Message::DropSampler(id) => global.sampler_drop(id),
         Message::DropQuerySet(id) => global.query_set_drop(id),
-
-        Message::DropCommandEncoder(id) => global.command_encoder_drop(id),
     }
 
     if let Some((device_id, ty, message)) = error_buf.get_inner_data() {
-        wgpu_parent_handle_error(global.webgpu_parent, device_id, ty, message);
+        wgpu_parent_handle_error(global.owner, device_id, ty, message);
     }
     if !response_byte_buf.is_empty() {
-        wgpu_parent_send_server_message(global.webgpu_parent, response_byte_buf);
+        wgpu_parent_send_server_message(global.owner, response_byte_buf);
     }
 }
 
@@ -2766,13 +2929,15 @@ pub extern "C" fn wgpu_server_device_create_encoder(
 pub extern "C" fn wgpu_server_encoder_finish(
     global: &Global,
     device_id: id::DeviceId,
-    self_id: id::CommandEncoderId,
+    command_encoder_id: id::CommandEncoderId,
+    command_buffer_id: id::CommandBufferId,
     desc: &wgt::CommandBufferDescriptor<Option<&nsACString>>,
     mut error_buf: ErrorBuffer,
 ) {
     let label = wgpu_string(desc.label);
     let desc = desc.map_label(|_| label);
-    let (_, error) = global.command_encoder_finish(self_id, &desc);
+    let (_, error) =
+        global.command_encoder_finish(command_encoder_id, &desc, Some(command_buffer_id));
     if let Some(err) = error {
         error_buf.init(err, device_id);
     }
@@ -2800,21 +2965,33 @@ pub unsafe extern "C" fn wgpu_server_encoder_copy_texture_to_buffer(
     }
 }
 
-/// # Safety
-///
-/// This function is unsafe as there is no guarantee that the given pointer is
-/// valid for `command_buffer_id_length` elements.
+#[no_mangle]
+pub unsafe extern "C" fn wgpu_server_queue_write_texture(
+    global: &Global,
+    device_id: id::DeviceId,
+    queue_id: id::QueueId,
+    destination: &wgt::TexelCopyTextureInfo<id::TextureId>,
+    data: FfiSlice<u8>,
+    data_layout: &crate::TexelCopyBufferLayout,
+    size: &wgt::Extent3d,
+    mut error_buf: ErrorBuffer,
+) {
+    let data = data.as_slice();
+    let data_layout = data_layout.into_wgt();
+    if let Err(err) = global.queue_write_texture(queue_id, destination, data, &data_layout, size) {
+        error_buf.init(err, device_id);
+    }
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn wgpu_server_queue_submit(
     global: &Global,
     device_id: id::DeviceId,
     self_id: id::QueueId,
-    command_buffer_ids: *const id::CommandBufferId,
-    command_buffer_id_length: usize,
+    command_buffers: FfiSlice<'_, id::CommandBufferId>,
     mut error_buf: ErrorBuffer,
 ) -> u64 {
-    let command_buffers = slice::from_raw_parts(command_buffer_ids, command_buffer_id_length);
-    let result = global.queue_submit(self_id, command_buffers);
+    let result = global.queue_submit(self_id, command_buffers.as_slice());
 
     match result {
         Err((_index, err)) => {
@@ -2857,8 +3034,7 @@ pub extern "C" fn wgpu_vksemaphore_create_signal_semaphore(
             vk::SemaphoreCreateInfo::default().push_next(&mut export_semaphore_create_info);
         let semaphore = match device.create_semaphore(&create_info, None) {
             Err(err) => {
-                let msg =
-                    CString::new(format!("create_semaphore() failed: {:?}", err)).unwrap();
+                let msg = CString::new(format!("create_semaphore() failed: {:?}", err)).unwrap();
                 gfx_critical_note(msg.as_ptr());
                 return ptr::null_mut();
             }
@@ -2890,7 +3066,8 @@ pub unsafe extern "C" fn wgpu_vksemaphore_get_file_descriptor(
                 let device = hal_device.raw_device();
                 let instance = hal_device.shared_instance().raw_instance();
 
-                let external_semaphore_fd = khr::external_semaphore_fd::Device::new(instance, device);
+                let external_semaphore_fd =
+                    khr::external_semaphore_fd::Device::new(instance, device);
                 let get_fd_info = vk::SemaphoreGetFdInfoKHR::default()
                     .semaphore(handle.semaphore)
                     .handle_type(vk::ExternalSemaphoreHandleTypeFlags::OPAQUE_FD);
@@ -2936,6 +3113,11 @@ pub extern "C" fn wgpu_server_buffer_drop(global: &Global, self_id: id::BufferId
 }
 
 #[no_mangle]
-pub extern "C" fn wgpu_server_encoder_drop(global: &Global, self_id: id::CommandEncoderId) {
+pub extern "C" fn wgpu_server_command_encoder_drop(global: &Global, self_id: id::CommandEncoderId) {
     global.command_encoder_drop(self_id);
+}
+
+#[no_mangle]
+pub extern "C" fn wgpu_server_command_buffer_drop(global: &Global, self_id: id::CommandBufferId) {
+    global.command_buffer_drop(self_id);
 }

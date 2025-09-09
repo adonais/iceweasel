@@ -5,12 +5,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "PerformanceMark.h"
+
 #include "MainThreadUtils.h"
-#include "nsContentUtils.h"
 #include "Performance.h"
 #include "mozilla/dom/MessagePortBinding.h"
 #include "mozilla/dom/PerformanceBinding.h"
 #include "mozilla/dom/PerformanceMarkBinding.h"
+#include "nsContentUtils.h"
 
 using namespace mozilla::dom;
 

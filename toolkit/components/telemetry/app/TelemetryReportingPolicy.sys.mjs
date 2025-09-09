@@ -131,6 +131,16 @@ export var TelemetryReportingPolicy = {
   // We set the default version as 4 to distinguish it from version numbers used
   // in the original TOU experiments and rollouts
   DEFAULT_TERMS_OF_USE_POLICY_VERSION: 4,
+  /**
+   * This event notifies other parts of the system that it's safe to proceed with initialization.
+   * Example: newtab waits to initialize until it receives this event.
+   *
+   * It is dispatched when:
+   *   1. The user accepts the Terms of Use (ToU), or
+   *   2. The user has previously accepted the ToU, or
+   *   2. The user is not eligible to see the ToU. Example local builds and temporarily Linux.
+   */
+  TELEMETRY_TOU_ACCEPTED_OR_INELIGIBLE: "telemetry-tou-accepted-or-ineligible",
 
   /**
    * Setup the policy.
@@ -1058,11 +1068,19 @@ var TelemetryReportingPolicyImpl = {
       this._log.trace(
         `_delayedSetup: neither TOU or legacy data reporting policy will show, no further action required`
       );
+      Services.obs.notifyObservers(
+        null,
+        TelemetryReportingPolicy.TELEMETRY_TOU_ACCEPTED_OR_INELIGIBLE
+      );
       return;
     }
 
     this.ensureUserIsNotified().then(() => {
       this._log.debug("_delayedSetup: marking user notified");
+      Services.obs.notifyObservers(
+        null,
+        TelemetryReportingPolicy.TELEMETRY_TOU_ACCEPTED_OR_INELIGIBLE
+      );
       this._userNotified();
     });
   },
@@ -1070,7 +1088,7 @@ var TelemetryReportingPolicyImpl = {
   async _waitForUserIsNotified() {
     // We're about to show the user the TOU modal dialog or legacy data
     // reporting flow. Make sure Glean won't initialize on shutdown, in case the
-    // user never interacts with the modal or isn't notifed. By default
+    // user never interacts with the modal or isn't notified. By default
     // `telemetry.fog.init_on_shutdown` is true, but we delay it here to avoid
     // recording data before the user makes their choice in the TOU modal or is
     // notified via the legacy data reporting flow (see Bug D239753).
@@ -1080,7 +1098,7 @@ var TelemetryReportingPolicyImpl = {
     Services.prefs.setBoolPref("telemetry.fog.init_on_shutdown", false);
 
     if (!this._shouldShowTOU()) {
-      this._log.trace(`_waitForUserIsNotified: will not showing TOU`);
+      this._log.trace(`_waitForUserIsNotified: will not show TOU`);
     } else if (await this._requestAndAwaitUserResponseViaFxMS()) {
       this._log.trace(
         `_waitForUserIsNotified: user notified via Messaging System`
@@ -1088,6 +1106,12 @@ var TelemetryReportingPolicyImpl = {
       this._notificationType = NOTIFICATION_TYPES.TERMS_OF_SERVICE_MODAL;
       return;
     }
+
+    // If the user is in the legacy flow, they were not eligible for ToU.
+    Services.obs.notifyObservers(
+      null,
+      TelemetryReportingPolicy.TELEMETRY_TOU_ACCEPTED_OR_INELIGIBLE
+    );
     this._log.trace(
       `_waitForUserIsNotified: user not shown TOU modal, falling back to legacy notification`
     );

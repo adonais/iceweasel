@@ -7,6 +7,7 @@ package org.mozilla.fenix.components.menu.store
 import androidx.annotation.VisibleForTesting
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
+import mozilla.components.lib.state.UiStore
 
 /**
  * The [Store] for holding the [MenuState] and applying [MenuAction]s.
@@ -14,7 +15,7 @@ import mozilla.components.lib.state.Store
 class MenuStore(
     initialState: MenuState,
     middleware: List<Middleware<MenuState, MenuAction>> = listOf(),
-) : Store<MenuState, MenuAction>(
+) : UiStore<MenuState, MenuAction>(
     initialState = initialState,
     reducer = ::reducer,
     middleware = middleware,

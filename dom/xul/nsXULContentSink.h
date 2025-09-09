@@ -8,12 +8,12 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/WeakPtr.h"
+#include "nsIDTD.h"
 #include "nsIExpatSink.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsIXMLContentSink.h"
 #include "nsNodeInfoManager.h"
 #include "nsXULElement.h"
-#include "nsIDTD.h"
 
 class nsIScriptSecurityManager;
 class nsAttrName;

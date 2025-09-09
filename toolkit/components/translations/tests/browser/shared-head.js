@@ -2314,6 +2314,10 @@ async function mockLocales({ systemLocales, appLocales, webLanguages }) {
   const { availableLocales, requestedLocales } = Services.locale;
 
   if (appLocales) {
+    await SpecialPowers.pushPrefEnv({
+      set: [["intl.locale.requested", "en"]],
+    });
+
     const appLocaleChanged = waitForAppLocaleChanged();
 
     info("Mocking locales, so expect potential .ftl resource errors.");
@@ -2331,8 +2335,8 @@ async function mockLocales({ systemLocales, appLocales, webLanguages }) {
 
   return async () => {
     // Reset back to the originals.
-    if (systemLocales) {
-      TranslationsParent.mockedSystemLocales = null;
+    if (webLanguages) {
+      await SpecialPowers.popPrefEnv();
     }
 
     if (appLocales) {
@@ -2342,10 +2346,12 @@ async function mockLocales({ systemLocales, appLocales, webLanguages }) {
       Services.locale.requestedLocales = requestedLocales;
 
       await appLocaleChanged;
+
+      await SpecialPowers.popPrefEnv();
     }
 
-    if (webLanguages) {
-      await SpecialPowers.popPrefEnv();
+    if (systemLocales) {
+      TranslationsParent.mockedSystemLocales = null;
     }
   };
 }

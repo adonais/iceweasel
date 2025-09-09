@@ -6,10 +6,10 @@
 #ifndef GPU_SupportedLimits_H_
 #define GPU_SupportedLimits_H_
 
-#include "nsWrapperCache.h"
-#include "ObjectModel.h"
-
 #include <memory>
+
+#include "ObjectModel.h"
+#include "nsWrapperCache.h"
 
 namespace mozilla::webgpu {
 namespace ffi {

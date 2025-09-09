@@ -1,0 +1,35 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/. -->
+<svg xmlns="http://www.w3.org/2000/svg"
+  width="200"
+  height="200"
+  viewbox="0 0 200 200"
+  stroke="#fff"
+  fill="none"
+  stroke-opacity="0"
+  stroke-width="4"
+  r="20">
+  <circle id="a" cx="100" cy="100">
+    <animate id="a_r" attributeName="r" from="20" to="100" dur="6s" begin="0s; a_o_finish.end" />
+    <animate id="a_o_start" attributeName="stroke-opacity" from="0" to=".3" dur="4s" begin="a_r.begin"/>
+    <animate id="a_o_finish" attributeName="stroke-opacity" from=".3" to="0" dur="2s" begin="a_o_start.end"/>
+    <animate attributeName="stroke-width" from="2" to="4" dur="4s" begin="a_r.begin"/>
+    <animate attributeName="stroke-width" from="4" to="0.01" dur="2s" begin="a_o_start.end"/>
+  </circle>
+  <circle id="b" cx="100" cy="100">
+    <animate id="b_r" attributeName="r" from="20" to="100" dur="6s" begin="a_r.begin+3" />
+    <animate id="b_o_start" attributeName="stroke-opacity" from="0" to=".3" dur="4s" begin="b_r.begin"/>
+    <animate id="b_o_finish" attributeName="stroke-opacity" from=".3" to="0" dur="2s" begin="b_o_start.end"/>
+    <animate attributeName="stroke-width" from="2" to="4" dur="4s" begin="b_r.begin"/>
+    <animate attributeName="stroke-width" from="4" to="0.01" dur="2s" begin="b_o_start.end"/>
+  </circle>
+  <circle id="c" cx="100" cy="100">
+    <animate id="c_r" attributeName="r" from="20" to="100" dur="6s" begin="b_r.begin+3" />
+    <animate id="c_o_start" attributeName="stroke-opacity" from="0" to=".3" dur="4s" begin="c_r.begin"/>
+    <animate id="c_o_finish" attributeName="stroke-opacity" from=".3" to="0" dur="2s" begin="c_o_start.end"/>
+    <animate attributeName="stroke-width" from="2" to="4" dur="4s" begin="c_r.begin"/>
+    <animate attributeName="stroke-width" from="4" to="0.01" dur="2s" begin="c_o_start.end"/>
+  </circle>
+</svg>
+

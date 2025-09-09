@@ -52,6 +52,7 @@ export class MegalistAlpha extends MozLitElement {
     this.viewMode = VIEW_MODES.LIST;
     this.selectedRecord = null;
     this.sidebarHiding = false;
+    this.shouldShowPrimaryPasswordAuth = false;
 
     window.addEventListener("MessageFromViewModel", ev =>
       this.#onMessageFromViewModel(ev)
@@ -74,6 +75,7 @@ export class MegalistAlpha extends MozLitElement {
       notification: { type: Object },
       displayMode: { type: String },
       viewMode: { type: String },
+      shouldShowPrimaryPasswordAuth: { type: Boolean },
     };
   }
 
@@ -286,6 +288,10 @@ export class MegalistAlpha extends MozLitElement {
     });
   }
 
+  receivePrimaryPasswordAuthenticated(authenticated) {
+    this.shouldShowPrimaryPasswordAuth = !authenticated;
+  }
+
   #createLoginRecords(snapshots) {
     const header = snapshots.shift();
     const records = [];
@@ -329,10 +335,46 @@ export class MegalistAlpha extends MozLitElement {
     }
   }
 
+  #handleNoLoginsFocusInOrOut(isFocusIn) {
+    const group = this.shadowRoot.querySelector(".no-logins-card-buttons");
+    const btns = group.querySelectorAll("moz-button");
+
+    btns.forEach(btn => {
+      btn.setAttribute("tabindex", isFocusIn ? "-1" : "0");
+    });
+  }
+
+  #handleNoLoginsKeydown(e) {
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") {
+      return;
+    }
+
+    const browserBtn = this.shadowRoot.querySelector(
+      ".empty-state-import-from-browser"
+    );
+    const fileBtn = this.shadowRoot.querySelector(
+      ".empty-state-import-from-file"
+    );
+    const addBtn = this.shadowRoot.querySelector(".empty-state-add-password");
+    const focusables = [browserBtn, fileBtn, addBtn];
+    const currentIndex = focusables.findIndex(el =>
+      el.shadowRoot?.contains(e.composedTarget)
+    );
+
+    e.preventDefault();
+
+    const direction = e.key === "ArrowUp" ? -1 : 1;
+    const newIndex = currentIndex + direction;
+
+    if (newIndex >= 0 && newIndex < focusables.length) {
+      focusables[newIndex]?.focus();
+    }
+  }
+
   // TODO: This should be passed to virtualized list with an explicit height.
   renderListItem({ origin: displayOrigin, username, password }, index) {
     return html` <password-card
-      @keypress=${e => {
+      @keydown=${e => {
         if (e.shiftKey && e.key === "Tab") {
           e.preventDefault();
           this.shadowRoot.querySelector(".passwords-list").focus();
@@ -374,12 +416,17 @@ export class MegalistAlpha extends MozLitElement {
             role="listbox"
             tabindex="0"
             data-l10n-id="contextual-manager-passwords-list-label"
-            @keypress=${e => {
+            @keydown=${e => {
               if (e.key === "ArrowDown") {
-                e.preventDefault();
-                this.shadowRoot
-                  .querySelector("password-card")
-                  .originLine.focus();
+                const active = this.shadowRoot.activeElement;
+                const passwordsList = e.currentTarget;
+
+                if (active === passwordsList) {
+                  e.preventDefault();
+                  this.shadowRoot
+                    .querySelector("password-card")
+                    .originLine.focus();
+                }
               }
             }}
           >
@@ -399,12 +446,12 @@ export class MegalistAlpha extends MozLitElement {
         notification: origin.breachedNotification,
       },
       {
-        displayAlert: !username.value.length,
-        notification: username.noUsernameNotification,
-      },
-      {
         displayAlert: password.vulnerable,
         notification: password.vulnerableNotification,
+      },
+      {
+        displayAlert: !username.value.length,
+        notification: username.noUsernameNotification,
       },
     ];
 
@@ -488,7 +535,11 @@ export class MegalistAlpha extends MozLitElement {
   renderNoLoginsCard() {
     return html`
       <moz-card class="empty-state-card">
-        <div class="no-logins-card-content">
+        <div
+          role="region"
+          class="no-logins-card-content"
+          aria-labelledby="no-logins-card-heading"
+        >
           <img
             src="chrome://global/content/megalist/icons/cpm-fox-illustration.svg"
             role="presentation"
@@ -496,7 +547,7 @@ export class MegalistAlpha extends MozLitElement {
           />
           <strong
             class="no-logins-card-heading"
-            data-l10n-id="contextual-manager-passwords-no-passwords-header"
+            data-l10n-id="contextual-manager-passwords-no-passwords-header-2"
           ></strong>
           <p
             data-l10n-id="contextual-manager-passwords-no-passwords-message"
@@ -504,7 +555,12 @@ export class MegalistAlpha extends MozLitElement {
           <p
             data-l10n-id="contextual-manager-passwords-no-passwords-get-started-message"
           ></p>
-          <div class="no-logins-card-buttons">
+          <div
+            class="no-logins-card-buttons"
+            @focusin=${() => this.#handleNoLoginsFocusInOrOut(true)}
+            @focusout=${() => this.#handleNoLoginsFocusInOrOut(false)}
+            @keydown=${this.#handleNoLoginsKeydown}
+          >
             <moz-button
               class="empty-state-import-from-browser"
               data-l10n-id="contextual-manager-passwords-command-import-from-browser"
@@ -541,7 +597,7 @@ export class MegalistAlpha extends MozLitElement {
       <div
         id="no-results-message"
         class="empty-search-results"
-        data-l10n-id="contextual-manager-passwords-no-passwords-found-message"
+        data-l10n-id="contextual-manager-passwords-no-passwords-found-message-2"
       ></div>
     </moz-card>`;
   }
@@ -713,7 +769,7 @@ export class MegalistAlpha extends MozLitElement {
         <hr />
         <panel-item
           action="open-preferences"
-          data-l10n-id="contextual-manager-passwords-command-settings"
+          data-l10n-id="contextual-manager-passwords-command-options"
           @click=${() => {
             const command = this.header.commands.find(
               command => command.id === "Settings"
@@ -778,24 +834,71 @@ export class MegalistAlpha extends MozLitElement {
     `;
   }
 
-  render() {
+  renderReauthPrimaryPassword() {
+    return html`
+      <moz-card class="empty-state-card">
+        <div class="reauth-card-content">
+          <img
+            src="chrome://global/content/megalist/icons/cpm-fox-illustration.svg"
+            role="presentation"
+            alt=""
+          />
+          <strong
+            class="no-logins-card-heading"
+            data-l10n-id="contextual-manager-primary-password-reauth-header"
+          ></strong>
+          <a
+            is="moz-support-link"
+            data-l10n-id="contextual-manager-primary-password-learn-more-link"
+            support-page="primary-password-stored-logins"
+            @click=${e => {
+              e.preventDefault();
+              this.#sendCommand("OpenLink", {
+                value:
+                  "https://support.mozilla.org/en-US/kb/use-primary-password-protect-stored-logins",
+              });
+            }}
+          >
+          </a>
+          <div class="no-logins-card-buttons">
+            <moz-button
+              class="empty-state-import-from-browser"
+              data-l10n-id="contextual-manager-primary-password-reauth-button"
+              type="primary"
+              @click=${() => {
+                this.#messageToViewModel("ReauthPrimaryPassword");
+              }}
+            ></moz-button>
+          </div>
+        </div>
+      </moz-card>
+    `;
+  }
+
+  renderAuthenticatedView() {
     const showToolbar =
       this.viewMode === VIEW_MODES.ALERTS ||
       (this.viewMode === VIEW_MODES.LIST && this.header?.value?.total > 0);
 
+    return html`${when(showToolbar, () => html`${this.renderToolbar()}`)}
+    ${this.renderNotification()} ${this.renderContent()}`;
+  }
+
+  render() {
     return html`
       <link
         rel="stylesheet"
         href="chrome://global/content/megalist/megalist.css"
       />
-      <div class="container">
+      <div class="container" aria-labelledby="sidebar-menu-cpm-header">
         <sidebar-panel-header
           data-l10n-id="sidebar-menu-cpm-header"
           data-l10n-attrs="heading"
           view="viewCPMSidebar"
         ></sidebar-panel-header>
-        ${when(showToolbar, () => html` ${this.renderToolbar()} `)}
-        ${this.renderNotification()} ${this.renderContent()}
+        ${!this.shouldShowPrimaryPasswordAuth
+          ? this.renderAuthenticatedView()
+          : this.renderReauthPrimaryPassword()}
       </div>
     `;
   }

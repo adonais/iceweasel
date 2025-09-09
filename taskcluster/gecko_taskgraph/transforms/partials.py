@@ -149,7 +149,7 @@ def make_task_description(config, jobs):
         task = {
             "label": label,
             "description": f"{dep_job.description} Partials",
-            "worker-type": "b-linux-gcp",
+            "worker-type": "b-linux-amd",
             "dependencies": dependencies,
             "scopes": [],
             "attributes": attributes,

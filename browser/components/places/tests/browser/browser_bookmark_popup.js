@@ -109,11 +109,7 @@ async function test_bookmarks_popup({
         if (popupEditFn) {
           await popupEditFn();
         }
-        Assert.equal(
-          bookmarkStar.getAttribute("starred"),
-          "true",
-          "Page is starred"
-        );
+        Assert.ok(bookmarkStar.hasAttribute("starred"), "Page is starred");
         Assert.equal(
           bookmarkPanelTitle.dataset.l10nId,
           isNewBookmark ? "bookmarks-add-bookmark" : "bookmarks-edit-bookmark",

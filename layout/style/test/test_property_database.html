@@ -14,7 +14,7 @@
 <div id="content" style="display: none">
 
 <div id="testnode"></div>
-  
+
 </div>
 <pre id="test">
 <script class="testbody" type="text/javascript">
@@ -154,6 +154,9 @@ for (var prop in gCSSProperties) {
  */
 for (var prop in gCSSProperties) {
   var entry = gCSSProperties[prop];
+  if (entry.domPropDisabled) {
+    continue;
+  }
   var expectedDOMProp = prop.replace(/-([a-z])/g,
                                      function(m, p1, offset, str) {
                                        return p1.toUpperCase();

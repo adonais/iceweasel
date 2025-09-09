@@ -6,8 +6,8 @@
 
 // nICEr includes
 extern "C" {
-#include "nr_api.h"
 #include "local_addr.h"
+#include "nr_api.h"
 }
 
 // Local includes

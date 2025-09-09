@@ -356,6 +356,14 @@
             "name": "typeNames"
           }
         ]
+      },
+
+      {
+        "name": "teardownAlertsService",
+        "type": "function",
+        "async": true,
+        "description": "Triggers teardown on Alerts Service so that it can clear all notification information.",
+        "parameters": []
       }
     ]
   }

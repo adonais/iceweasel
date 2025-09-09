@@ -21,6 +21,7 @@ using nsILoadInfo::CrossOriginOpenerPolicy from "nsILoadInfo.h";
 [RefCounted] using class nsITransportSecurityInfo from "nsITransportSecurityInfo.h";
 using nsIRequest::TRRMode from "nsIRequest.h";
 using mozilla::net::TRRSkippedReason from "nsITRRSkipReason.h";
+using nsICacheInfoChannel::CacheDisposition from "nsICacheInfoChannel.h";
 
 namespace mozilla {
 namespace net {
@@ -32,7 +33,7 @@ struct HttpChannelOnStartRequestArgs
   uint64_t cacheEntryId;
   int64_t altDataLength;
   nsCString altDataType;
-  nsCString[] cookieHeaders;
+  CookieChange[] cookieChanges;
   NetAddr selfAddr;
   NetAddr peerAddr;
   ResourceTimingStructArgs timing;
@@ -60,6 +61,7 @@ struct HttpChannelOnStartRequestArgs
   bool isProxyUsed;
   uint8_t redirectCount;
   nsCString protocolVersion;
+  CacheDisposition cacheDisposition;
 };
 
 struct HttpChannelAltDataStream

@@ -7,9 +7,9 @@
 #ifndef MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCICETRANSPORT_H_
 #define MOZILLA_DOM_MEDIA_WEBRTC_JSAPI_RTCICETRANSPORT_H_
 
+#include "js/RootingAPI.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/RefPtr.h"
-#include "js/RootingAPI.h"
 #include "transport/transportlayer.h"
 
 class nsPIDOMWindowInner;

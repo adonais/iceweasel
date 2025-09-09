@@ -45,7 +45,7 @@ add_task(async function testBreakableLinesOverReloads() {
   ]);
 
   info("Pretty print first html page load and assert breakable lines");
-  await prettyPrint(dbg);
+  await togglePrettyPrint(dbg);
   await assertBreakablePositions(dbg, "index.html:formatted", 96, [
     { line: 16, columns: [0, 8] },
     { line: 22, columns: [0, 8, 35] },
@@ -83,7 +83,7 @@ add_task(async function testBreakableLinesOverReloads() {
   ]);
 
   info("Pretty print first load of script.js and assert breakable lines");
-  await prettyPrint(dbg);
+  await togglePrettyPrint(dbg);
   await assertBreakablePositions(dbg, "script.js:formatted", 8, [
     { line: 1, columns: [0, 8] },
     { line: 4, columns: [2, 10] },
@@ -115,7 +115,7 @@ add_task(async function testBreakableLinesOverReloads() {
   ]);
 
   info("Pretty print first load of script.js and assert breakable lines");
-  await prettyPrint(dbg);
+  await togglePrettyPrint(dbg);
   await assertBreakablePositions(dbg, "script.js:formatted", 23, [
     { line: 2, columns: [0, 8] },
     { line: 13, columns: [4, 12] },
@@ -138,7 +138,7 @@ add_task(async function testBreakableLinesOverReloads() {
   ]);
 
   info("Pretty print second html page load and assert breakable lines");
-  await prettyPrint(dbg);
+  await togglePrettyPrint(dbg);
   await assertBreakablePositions(dbg, "index.html:formatted", 33, [
     { line: 25, columns: [0, 8] },
   ]);

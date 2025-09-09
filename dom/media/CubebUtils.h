@@ -7,11 +7,10 @@
 #if !defined(CubebUtils_h_)
 #  define CubebUtils_h_
 
-#  include "cubeb/cubeb.h"
-
 #  include "AudioSampleFormat.h"
-#  include "nsString.h"
+#  include "cubeb/cubeb.h"
 #  include "nsISupportsImpl.h"
+#  include "nsString.h"
 
 class AudioDeviceInfo;
 

@@ -6,13 +6,13 @@
 
 #include "ScrollTimeline.h"
 
-#include "mozilla/dom/Animation.h"
-#include "mozilla/dom/ElementInlines.h"
 #include "mozilla/AnimationTarget.h"
 #include "mozilla/DisplayPortUtils.h"
 #include "mozilla/ElementAnimationData.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/dom/Animation.h"
+#include "mozilla/dom/ElementInlines.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 

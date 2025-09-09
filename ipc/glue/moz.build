@@ -231,6 +231,7 @@ elif CONFIG["OS_TARGET"] == "Android":
     UNIFIED_SOURCES += ["MessagePump_android.cpp"]
 
 LOCAL_INCLUDES += [
+    "!/dist/include/libwebrtc_overrides",
     "/caps",
     "/dom/broadcastchannel",
     "/dom/indexedDB",

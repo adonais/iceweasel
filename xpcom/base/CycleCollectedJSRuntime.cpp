@@ -805,6 +805,37 @@ static bool InstanceClassIsError(const JSClass* clasp) {
   return false;
 }
 
+static bool ExtractExceptionInfo(JSContext* aCx, JS::Handle<JSObject*> aObj,
+                                 bool* aIsException,
+                                 JS::MutableHandle<JSString*> aFileName,
+                                 uint32_t* aLine, uint32_t* aColumn,
+                                 JS::MutableHandle<JSString*> aMessage) {
+  *aIsException = false;
+
+  nsAutoCString fileName;
+  nsAutoString message;
+  if (!nsContentUtils::ExtractExceptionValues(aCx, aObj, fileName, aLine,
+                                              aColumn, message)) {
+    return true;
+  }
+
+  *aIsException = true;
+
+  aFileName.set(
+      ::JS_NewStringCopyN(aCx, fileName.BeginReading(), fileName.Length()));
+  if (!aFileName) {
+    return false;
+  }
+
+  aMessage.set(
+      ::JS_NewUCStringCopyN(aCx, message.BeginReading(), message.Length()));
+  if (!aMessage) {
+    return false;
+  }
+
+  return true;
+}
+
 CycleCollectedJSRuntime::CycleCollectedJSRuntime(JSContext* aCx)
     : mContext(nullptr),
       mGCThingCycleCollectorGlobal(sGCThingCycleCollectorGlobal),
@@ -850,8 +881,8 @@ CycleCollectedJSRuntime::CycleCollectedJSRuntime(JSContext* aCx)
   js::AutoEnterOOMUnsafeRegion::setAnnotateOOMAllocationSizeCallback(
       CrashReporter::AnnotateOOMAllocationSize);
 
-  static js::DOMCallbacks DOMcallbacks = {InstanceClassHasProtoAtDepth,
-                                          InstanceClassIsError};
+  static js::DOMCallbacks DOMcallbacks = {
+      InstanceClassHasProtoAtDepth, InstanceClassIsError, ExtractExceptionInfo};
   SetDOMCallbacks(aCx, &DOMcallbacks);
   js::SetScriptEnvironmentPreparer(aCx, &mEnvironmentPreparer);
 
@@ -1019,11 +1050,6 @@ void CycleCollectedJSRuntime::NoteGCThingXPCOMChildren(
     auto handler =
         static_cast<const RemoteObjectProxyBase*>(js::GetProxyHandler(obj));
     return handler->NoteChildren(obj, aCb);
-  }
-
-  JS::Value value = js::MaybeGetScriptPrivate(obj);
-  if (!value.isUndefined()) {
-    aCb.NoteXPCOMChild(static_cast<nsISupports*>(value.toPrivate()));
   }
 }
 
@@ -2068,7 +2094,7 @@ void CycleCollectedJSRuntime::OnGC(JSContext* aContext, JSGCStatus aStatus,
     case JSGC_BEGIN:
       MOZ_RELEASE_ASSERT(mTraceState.is<Nothing>());
       nsCycleCollector_prepareForGarbageCollection();
-      PrepareWaitingZonesForGC();
+      PrepareWaitingZonesForGC(aReason);
       break;
     case JSGC_END: {
       MOZ_RELEASE_ASSERT(mTraceState.is<Nothing>());
@@ -2128,10 +2154,12 @@ void CycleCollectedJSRuntime::SetLargeAllocationFailure(OOMState aNewState) {
   AnnotateAndSetOutOfMemory(&mLargeAllocationFailureState, aNewState);
 }
 
-void CycleCollectedJSRuntime::PrepareWaitingZonesForGC() {
+void CycleCollectedJSRuntime::PrepareWaitingZonesForGC(JS::GCReason aReason) {
   JSContext* cx = CycleCollectedJSContext::Get()->Context();
   if (mZonesWaitingForGC.Count() == 0) {
-    JS::PrepareForFullGC(cx);
+    if (!JS::InternalGCReason(aReason)) {
+      JS::PrepareForFullGC(cx);
+    }
   } else {
     for (const auto& key : mZonesWaitingForGC) {
       JS::PrepareZoneForGC(cx, key);

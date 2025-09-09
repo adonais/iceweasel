@@ -70,22 +70,6 @@ linux64-clang-14-stage1:
         toolchain:
             - linux64-toolchain-sysroot
 
-linux64-clang-14:
-    description: "Clang 14 toolchain build"
-    attributes:
-        local-toolchain: true
-    treeherder:
-        symbol: TL(clang-14)
-    worker-type: b-linux-amd
-    worker:
-        max-run-time: 600
-    run:
-        script: repack-clang.sh
-        toolchain-artifact: public/build/clang.tar.zst
-    fetches:
-        toolchain:
-            - linux64-clang-14-stage1
-
 macosx64-clang-14-raw:
     description: "Clang 14 toolchain build"
     treeherder:
@@ -112,6 +96,43 @@ macosx64-clang-14-raw:
         toolchain:
             - linux64-clang-14-stage1
             - macosx64-sdk-13.3
+
+linux64-clang-17-raw:
+    description: "Clang 17 toolchain build"
+    treeherder:
+        symbol: TL(clang-17-raw)
+    worker-type: b-linux-large-amd
+    run:
+        script: build-clang.sh
+        arguments:
+            - 'build/build-clang/use-system-clang.json'
+            - 'build/build-clang/clang-17.json'
+            - 'build/build-clang/2stages.json'
+        resources:
+            - 'build/build-clang/use-system-clang.json'
+            - 'build/build-clang/clang-17.json'
+            - 'build/build-clang/2stages.json'
+        toolchain-artifact: public/build/clang.tar.zst
+    fetches:
+        fetch:
+            - clang-17
+        toolchain:
+            - linux64-toolchain-sysroot
+
+linux64-clang-17:
+    description: "Clang 17 toolchain build"
+    treeherder:
+        symbol: TL(clang-17)
+    worker-type: b-linux-amd
+    worker:
+        max-run-time: 600
+    run:
+        script: repack-clang.sh
+        toolchain-artifact: public/build/clang.tar.zst
+    fetches:
+        toolchain:
+            - linux64-clang-17-raw
+            - wasm32-wasi-compiler-rt-17
 
 linux64-clang-19-mingw-x86:
     description: "MinGW-Clang 19 x86 toolchain build"

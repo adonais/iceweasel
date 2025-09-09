@@ -6,6 +6,9 @@
 
 #include "StructuredCloneData.h"
 
+#include "MainThreadUtils.h"
+#include "StructuredCloneTags.h"
+#include "jsapi.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/BlobBinding.h"
 #include "mozilla/dom/BlobImpl.h"
@@ -17,9 +20,6 @@
 #include "mozilla/ipc/SerializedStructuredCloneBuffer.h"
 #include "nsContentUtils.h"
 #include "nsJSEnvironment.h"
-#include "MainThreadUtils.h"
-#include "StructuredCloneTags.h"
-#include "jsapi.h"
 
 using namespace mozilla::ipc;
 

@@ -365,6 +365,8 @@ function checkPayload(payload, reason, successfulPings) {
       payload.simpleMeasurements.startupSessionRestoreWriteBytes,
       0
     );
+    Assert.greater(Glean.startupIo.read.sessionRestore.testGetValue(), 0);
+    Assert.greater(Glean.startupIo.write.sessionRestore.testGetValue(), 0);
   }
 
   const TELEMETRY_SEND_SUCCESS = "TELEMETRY_SEND_SUCCESS";
@@ -491,9 +493,10 @@ function write_fake_failedprofilelocks_file() {
   writeStringToFile(file, contents);
 }
 
-add_task(async function test_setup() {
+add_setup(async function () {
   // Addon manager needs a profile directory
   do_get_profile();
+  Services.fog.initializeFOG();
   await loadAddonManager(APP_ID, APP_NAME, APP_VERSION, PLATFORM_VERSION);
   finishAddonManagerStartup();
   fakeIntlReady();
@@ -640,9 +643,17 @@ add_task(async function test_simplePing() {
   // Check that we get the data we expect.
   let payload = ping.payload;
   Assert.equal(payload.info.sessionId, expectedSessionUUID);
+  Assert.equal(
+    Glean.legacyTelemetry.sessionId.testGetValue(),
+    expectedSessionUUID
+  );
   Assert.equal(payload.info.subsessionId, expectedSubsessionUUID);
   let sessionStartDate = new Date(payload.info.sessionStartDate);
   Assert.equal(sessionStartDate.toISOString(), expectedDate.toISOString());
+  Assert.equal(
+    Glean.legacyTelemetry.sessionStartDate.testGetValue().getTime(),
+    expectedDate.getTime()
+  );
   let subsessionStartDate = new Date(payload.info.subsessionStartDate);
   Assert.equal(subsessionStartDate.toISOString(), expectedDate.toISOString());
   Assert.equal(payload.info.subsessionLength, SESSION_DURATION_IN_MINUTES * 60);
@@ -2119,7 +2130,6 @@ add_task(async function test_pingExtendedStats() {
     "log",
     "slowSQL",
     "fileIOReports",
-    "lateWrites",
     "addonDetails",
   ];
 

@@ -713,7 +713,8 @@ static const JSClassOps ScriptSourceObjectClassOps = {
 
 const JSClass ScriptSourceObject::class_ = {
     "ScriptSource",
-    JSCLASS_HAS_RESERVED_SLOTS(RESERVED_SLOTS) | JSCLASS_FOREGROUND_FINALIZE,
+    JSCLASS_HAS_RESERVED_SLOTS(RESERVED_SLOTS) | JSCLASS_FOREGROUND_FINALIZE |
+        JSCLASS_SLOT0_IS_NSISUPPORTS,
     &ScriptSourceObjectClassOps,
 };
 

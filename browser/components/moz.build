@@ -60,6 +60,7 @@ DIRS += [
     "resistfingerprinting",
     "screenshots",
     "search",
+    "security",
     "sessionstore",
     "shell",
     "sidebar",
@@ -72,6 +73,7 @@ DIRS += [
     "translations",
     "uitour",
     "urlbar",
+    "webrtc",
 ]
 
 DIRS += ["build"]

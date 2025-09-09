@@ -14,7 +14,6 @@
  * The second difference is that we don't store the whole source object but only the source URL.
  */
 
-import { isPrettyURL } from "../utils/source";
 import assert from "../utils/assert";
 
 function update(state = {}, action) {
@@ -88,7 +87,7 @@ function removePendingBreakpoint(state, pendingBreakpoint) {
  * @param {Object} breakpoint
  */
 function makeIdFromBreakpoint(breakpoint) {
-  const location = isPrettyURL(breakpoint.location.source.url)
+  const location = breakpoint.location.source.isPrettyPrinted
     ? breakpoint.generatedLocation
     : breakpoint.location;
 

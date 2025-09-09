@@ -19,15 +19,10 @@ function test() {
     return aWindow.windowGlobalChild.innerWindowId;
   }
 
-  function whenNewWindowLoaded(aOptions, aCallback) {
-    let win = OpenBrowserWindow(aOptions);
-    win.addEventListener(
-      "load",
-      function () {
-        aCallback(win);
-      },
-      { once: true }
-    );
+  function whenNewWindowLoaded(aPrivate, aCallback) {
+    BrowserTestUtils.openNewBrowserWindow({
+      private: aPrivate,
+    }).then(aCallback);
   }
 
   function doTest(aIsPrivateMode, aWindow, aCallback) {
@@ -67,8 +62,8 @@ function test() {
     );
   }
 
-  function testOnWindow(aOptions, aCallback) {
-    whenNewWindowLoaded(aOptions, function (aWin) {
+  function testOnWindow(aPrivate, aCallback) {
+    whenNewWindowLoaded(aPrivate, function (aWin) {
       windowsToClose.push(aWin);
       // execute should only be called when need, like when you are opening
       // web pages on the test. If calling executeSoon() is not necesary, then
@@ -85,10 +80,10 @@ function test() {
   });
 
   // test first when not on private mode
-  testOnWindow({}, function (aWin) {
+  testOnWindow(false, function (aWin) {
     doTest(false, aWin, function () {
       // then test when on private mode
-      testOnWindow({ private: true }, function (aWin) {
+      testOnWindow(true, function (aWin) {
         doTest(true, aWin, finish);
       });
     });

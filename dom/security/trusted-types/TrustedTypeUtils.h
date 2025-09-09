@@ -7,6 +7,7 @@
 #ifndef DOM_SECURITY_TRUSTED_TYPES_TRUSTEDTYPEUTILS_H_
 #define DOM_SECURITY_TRUSTED_TYPES_TRUSTEDTYPEUTILS_H_
 
+#include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/DOMString.h"
@@ -15,7 +16,6 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupportsImpl.h"
 #include "nsString.h"
-#include "js/TypeDecls.h"
 
 class nsIContentSecurityPolicy;
 class nsIPrincipal;

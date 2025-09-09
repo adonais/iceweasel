@@ -56,6 +56,9 @@ newtab-topsites-add-shortcut-header = Новый ярлык
 newtab-topsites-edit-topsites-header = Изменить сайт из топа
 newtab-topsites-edit-shortcut-header = Изменить ярлык
 newtab-topsites-add-shortcut-label = Добавить ярлык
+newtab-topsites-add-shortcut-title =
+    .title = Добавить ярлык
+    .aria-label = Добавить ярлык
 newtab-topsites-title-label = Заголовок
 newtab-topsites-title-input =
     .placeholder = Введите название
@@ -84,6 +87,14 @@ newtab-confirm-delete-history-p2 = Это действие нельзя отме
 ## Top Sites - Sponsored label
 
 newtab-topsite-sponsored = Спонсировано
+
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (закреплено)
+    .title = { $title }
 
 ## Context Menu - Action Tooltips.
 
@@ -539,6 +550,12 @@ newtab-custom-wallpaper-title = Пользовательские обои зде
 # 'Make firefox yours" means to customize or personalize
 newtab-custom-wallpaper-subtitle = Загрузите свои обои или выберите цвет оформления, чтобы настроить { -brand-product-name } под себя.
 newtab-custom-wallpaper-cta = Попробовать
+
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Выберите обои, чтобы сделать { -brand-product-name } своим
+newtab-new-user-custom-wallpaper-subtitle = Сделайте каждую новую вкладку своим домом с помощью собственных обоев и цветов.
+newtab-new-user-custom-wallpaper-cta = Попробовать сейчас
 
 ## Strings for download mobile highlight
 
