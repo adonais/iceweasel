@@ -77,10 +77,11 @@ if CONFIG["OS_ARCH"] == "WINNT":
     RCINCLUDE = "splash.rc"
     DIRS += [
         "installation_dir_layout",
-        "desktop-launcher",
         "pbproxy",
         "winlauncher",
     ]
+    if CONFIG["DESKTOP_LAUNCHER_ENABLED"]:
+        DIRS += ["desktop-launcher"]
     USE_LIBS += [
         "winlauncher",
     ]
