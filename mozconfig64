@@ -1,0 +1,87 @@
+# Iceweasel PGO build (./fx_build.sh)
+# for brower
+. $topsrcdir/browser/config/mozconfig
+ac_add_options --with-app-name=Iceweasel
+
+# Specify target directory
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/../obju64-release
+mk_add_options MOZ_MAKE_FLAGS=-j4
+
+# for 64-bit build
+ac_add_options --target=x86_64-pc-windows-msvc
+ac_add_options --host=x86_64-unknown-linux-gnu
+
+# optimize compilation
+ac_add_options MOZ_PGO=1
+ac_add_options --enable-optimize="-Xclang -ivfsoverlay -Xclang /builds/worker/fetches/vs/overlay.yaml -O2 -msse3 -DTT_MEMUTIL"
+
+# for rust
+export RUSTC_OPT_LEVEL=2
+export RUSTFLAGS="$RUSTFLAGS -Ctarget-feature=+sse3 -Clink-args=--icf=safe"
+
+# disable tests
+ac_add_options --disable-tests
+
+# diasble updater
+ac_add_options --disable-updater
+
+# disable crashreporter
+ac_add_options --disable-crashreporter
+
+# disable parental controls
+ac_add_options --disable-parental-controls
+
+# disable googlepad
+# ac_add_options --disable-gamepad
+
+# disable accessibility
+# ac_add_options --disable-accessibility
+# ac_add_options --disable-necko-wifi
+
+# disable debug symbols, sandbox
+ac_add_options --disable-debug
+ac_add_options --disable-debug-symbols
+ac_add_options --disable-maintenance-service
+ac_add_options --disable-sandbox
+
+# disable notification server
+ac_add_options --disable-notification-server
+
+# disable running in background task mode
+ac_add_options --disable-backgroundtasks
+ac_add_options --disable-bits-download
+
+# enable MOZ_ALLOW_LEGACY_EXTENSIONS
+ac_add_options "MOZ_ALLOW_LEGACY_EXTENSIONS=1"
+
+# add-on signing is not required
+MOZ_REQUIRE_SIGNING=
+MOZ_AUTOMATION=1
+
+# setting
+export CC=clang-cl
+export CXX=clang-cl
+export LINKER=lld-link
+
+# Iceweasel official
+export MOZILLA_OFFICIAL=1
+export MOZ_WINDOWS_RS_DIR="/builds/worker/fetches/windows-rs/"
+
+# enable clang plugins
+#ac_add_options --enable-clang-plugin
+#ac_add_options --enable-mozsearch-plugin
+
+# enable jemalloc,simd
+ac_add_options --enable-rust-simd
+ac_add_options --enable-jemalloc
+
+# disable wasm libraries sandboxing
+ac_add_options --with-onnx-runtime="/builds/worker/fetches/onnxruntime/x64"
+ac_add_options --without-wasm-sandboxed-libraries
+
+# for iceweasel
+ac_add_options --enable-update-channel=release
+ac_add_options --with-branding=browser/branding/iceweasel
+
+# crt files
+WIN32_REDIST_DIR=${VC_REDISTDIR%?}/x64/Microsoft.VC143.CRT
