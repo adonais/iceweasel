@@ -23,6 +23,14 @@ jobs:
         remove-browsers: true
         verbose: true
 
+    - name: clean rustc
+      id: env_clean
+      run: |
+        if [ -d "/home/runner/.cargo" ]; then rm -rf /home/runner/.cargo; fi
+        if [ -d "/home/runner/.rustup" ]; then rm -rf /home/runner/.rustup; fi
+        if [ -d "/home/runner/.mozbuild" ]; then rm -rf /home/runner/.mozbuild; fi
+      shell: bash
+
     - name: mkdir and setenv
       id: env_mkdir
       run: |
