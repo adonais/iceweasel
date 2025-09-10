@@ -42,6 +42,8 @@ def make_7z(source, suffix, package):
                 path = shutil.copy(user + '/bin/upcheck32.exe', dist_source + '/App/upcheck.exe')
         if os.path.exists(user + '/bin/portable(example).ini'):
             path = shutil.copy(user + '/bin/portable(example).ini', dist_source + '/App')
+        if os.path.exists(user + '/readme.txt'):
+            path = shutil.copy(user + '/readme.txt', dist_source)
     subprocess.check_call(['7z', 'a', '-t7z', ice_package, dist_source, '-mx9', '-r', '-y', '-x!.mkdir.done'])
 
 def main(args):
