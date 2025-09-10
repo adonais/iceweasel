@@ -18,13 +18,16 @@ def handle_remove_read_only(func, path, exc):
         sys.exit(1)
 
 def make_7z(source, suffix, package):
-    dist_source = source + suffix
+    topobjdir = os.environ.get('MOZ_TOPOBJDIR')
+    ice_source = topobjdir+ '/dist/' + source
+    ice_package = topobjdir + '/dist/' + package
+    dist_source = ice_source + suffix
     if os.path.exists(dist_source):
         shutil.rmtree(dist_source, onerror=handle_remove_read_only)
-    if os.path.exists(package):
-        os.remove(package)
+    if os.path.exists(ice_package):
+        os.remove(ice_package)
     os.mkdir(dist_source)
-    path = shutil.copytree(source, dist_source + '/App')
+    path = shutil.copytree(ice_source, dist_source + '/App')
     user = os.environ.get('LIBPORTABLE_PATH')
     if user:
         if (suffix == '_x64'):
@@ -39,7 +42,9 @@ def make_7z(source, suffix, package):
                 path = shutil.copy(user + '/bin/upcheck32.exe', dist_source + '/App/upcheck.exe')
         if os.path.exists(user + '/bin/portable(example).ini'):
             path = shutil.copy(user + '/bin/portable(example).ini', dist_source + '/App')
-    subprocess.check_call(['7z', 'a', '-t7z', package, dist_source, '-mx9', '-r', '-y', '-x!.mkdir.done'])
+        if os.path.exists(user + '/readme.txt'):
+            path = shutil.copy(user + '/readme.txt', dist_source)
+    subprocess.check_call(['7z', 'a', '-t7z', ice_package, dist_source, '-mx9', '-r', '-y', '-x!.mkdir.done'])
 
 def main(args):
     if len(args) != 3:
