@@ -135,8 +135,7 @@ jobs:
         ./fx_pgo_generate.sh
       shell: bash
 
-    - name: Upload iceweasel
-      uses: yxl0756/upload-artifact@v1
+    - uses: yxl0756/upload-artifact@v1
       with:
         path: ${{ github.workspace }}/../${{ env.MY_OBJ }}/dist/${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
         name: ${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
