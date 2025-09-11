@@ -1,4 +1,4 @@
-name: Ubuntu environment
+name: Iceweasel use
 on: 
   repository_dispatch:
     types: [pgo_use]
@@ -11,7 +11,7 @@ env:
 
 jobs:
   fx_build:
-    name: Iceweasel release
+    name: PGO use
     runs-on: ubuntu-22.04
     timeout-minutes: 480
     steps:

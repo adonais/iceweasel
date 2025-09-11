@@ -1,4 +1,4 @@
-name: Ubuntu environment
+name: Iceweasel generate
 on: 
   repository_dispatch:
     types: [pgo_gen]
@@ -11,7 +11,7 @@ env:
 
 jobs:
   fx_build:
-    name: Iceweasel CI
+    name: PGO generate
     runs-on: ubuntu-22.04
     timeout-minutes: 480
     steps:
@@ -136,7 +136,7 @@ jobs:
       shell: bash
 
     - name: Upload iceweasel
-      uses: actions/upload-artifact@v4
+      uses: yxl0756/upload-artifact@v1
       with:
         path: ${{ github.workspace }}/../${{ env.MY_OBJ }}/dist/${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
         name: ${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
