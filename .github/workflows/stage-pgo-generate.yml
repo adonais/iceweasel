@@ -1,0 +1,142 @@
+name: Ubuntu environment
+on: 
+  repository_dispatch:
+    types: [pgo_gen]
+env:
+  APP_NAME: Iceweasel
+  ACTIONS_PGO_GENERATE: 2
+  MOZ_FETCHES_DIR: /builds/worker/fetches
+  MOZBUILD_DOWNLOAD: /builds/worker/fetches/download
+  MOZBUILD_STATE_PATH: /builds/worker/fetches/.mozbuild
+
+jobs:
+  fx_build:
+    name: Iceweasel CI
+    runs-on: ubuntu-22.04
+    timeout-minutes: 480
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: iceweasel_release
+
+    - uses: yxl0756/gha-cleanup@v1
+      with:
+        remove-browsers: true
+        verbose: true
+
+    - name: clean rustc
+      id: env_clean
+      run: |
+        if [ -d "/home/runner/.cargo" ]; then rm -rf /home/runner/.cargo; fi
+        if [ -d "/home/runner/.rustup" ]; then rm -rf /home/runner/.rustup; fi
+        if [ -d "/home/runner/.mozbuild" ]; then rm -rf /home/runner/.mozbuild; fi
+      shell: bash
+
+    - name: mkdir and setenv
+      id: env_mkdir
+      run: |
+        sudo mkdir -p "$MOZ_FETCHES_DIR"
+        sudo chown runner:runner -R "$MOZ_FETCHES_DIR"
+        mkdir -p "$MOZBUILD_DOWNLOAD"
+        cd "$GITHUB_WORKSPACE"
+        if [ -f "mozconfig32" ]; then echo MY_BITS=win32>>$GITHUB_ENV&echo MY_OBJ=obju32-release>>$GITHUB_ENV; fi
+        if [ -f "mozconfig64" ]; then echo MY_BITS=win64>>$GITHUB_ENV&echo MY_OBJ=obju64-release>>$GITHUB_ENV; fi
+        m_ver=`cat browser/config/version.txt`
+        echo MY_VER=$m_ver>>$GITHUB_ENV
+      shell: bash
+
+    - name: download Tools
+      id: env_download
+      run: |
+        cd "$MOZBUILD_DOWNLOAD"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/cbindgen.tar.xz?viasf=1 -O cbindgen.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download cbindgen failed
+          exit 255
+        fi
+        tar Jxf cbindgen.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/clang.tar.xz?viasf=1 -O clang.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download clang failed
+          exit 255
+        fi
+        tar Jxf clang.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/diasdk.tar.xz?viasf=1 -O diasdk.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download diasdk failed
+          exit 255
+        fi
+        tar Jxf diasdk.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/dxc.tar.xz?viasf=1 -O dxc.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download dxc failed
+          exit 255
+        fi
+        tar Jxf dxc.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/libportable.tar.xz?viasf=1 -O libportable.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download libportable failed
+          exit 255
+        fi
+        tar Jxf libportable.tar.xz -C "$MOZ_FETCHES_DIR/clang"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/mozbuild.tar.xz?viasf=1 -O mozbuild.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download mozbuild failed
+          exit 255
+        fi
+        tar Jxf mozbuild.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/onnxruntime.tar.xz?viasf=1 -O onnxruntime.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download onnxruntime failed
+          exit 255
+        fi
+        tar Jxf onnxruntime.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/rust.tar.xz?viasf=1 -O rust.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download rust failed
+          exit 255
+        fi
+        tar Jxf rust.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/vs.tar.xz?viasf=1 -O vs.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download vs failed
+          exit 255
+        fi
+        tar Jxf vs.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/windows-rs.tar.xz?viasf=1 -O windows-rs.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download windows-rs failed
+          exit 255
+        fi
+        tar Jxf windows-rs.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/wine.tar.xz?viasf=1 -O wine.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download wine failed
+          exit 255
+        fi
+        tar Jxf wine.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/winsdk.tar.xz?viasf=1 -O winsdk.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download winsdk failed
+          exit 255
+        fi
+        tar Jxf winsdk.tar.xz -C "$MOZ_FETCHES_DIR"
+        cd "$MOZ_FETCHES_DIR"
+        ls -la
+        rm -rf "$MOZBUILD_DOWNLOAD"
+      shell: bash
+
+    - name: start building
+      timeout-minutes: 420
+      id: env_building
+      run: |
+        cd "$GITHUB_WORKSPACE"
+        chmod +x ./fx_pgo_generate.sh
+        ./fx_pgo_generate.sh
+      shell: bash
+
+    - name: Upload iceweasel
+      uses: actions/upload-artifact@v4
+      with:
+        path: ${{ github.workspace }}/../${{ env.MY_OBJ }}/dist/${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
+        name: ${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z

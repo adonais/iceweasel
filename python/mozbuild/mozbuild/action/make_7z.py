@@ -18,32 +18,39 @@ def handle_remove_read_only(func, path, exc):
         sys.exit(1)
 
 def make_7z(source, suffix, package):
+    dist_app_source = ""
     topobjdir = os.environ.get('MOZ_TOPOBJDIR')
     ice_source = topobjdir+ '/dist/' + source
     ice_package = topobjdir + '/dist/' + package
-    dist_source = ice_source + suffix
-    if os.path.exists(dist_source):
-        shutil.rmtree(dist_source, onerror=handle_remove_read_only)
-    if os.path.exists(ice_package):
-        os.remove(ice_package)
-    os.mkdir(dist_source)
-    path = shutil.copytree(ice_source, dist_source + '/App')
+    stage1 = os.environ.get('ACTIONS_PGO_GENERATE')
+    if stage1:
+        dist_source = ice_source
+        dist_app_source = dist_source
+    else:
+        dist_source = ice_source + suffix
+        dist_app_source = dist_source + '/App'
+        if os.path.exists(dist_source):
+            shutil.rmtree(dist_source, onerror=handle_remove_read_only)
+        if os.path.exists(ice_package):
+            os.remove(ice_package)
+        os.mkdir(dist_source)
+        shutil.copytree(ice_source, dist_app_source)
     user = os.environ.get('LIBPORTABLE_PATH')
     if user:
         if (suffix == '_x64'):
             if os.path.exists(user + '/bin/portable64.dll'):
-                path = shutil.copy(user + '/bin/portable64.dll', dist_source + '/App')
+                shutil.copy(user + '/bin/portable64.dll', dist_app_source)
             if os.path.exists(user + '/bin/upcheck64.exe'):
-                path = shutil.copy(user + '/bin/upcheck64.exe', dist_source + '/App/upcheck.exe')
+                shutil.copy(user + '/bin/upcheck64.exe', dist_app_source + '/upcheck.exe')
         else:
             if os.path.exists(user + '/bin/portable32.dll'):
-                path = shutil.copy(user + '/bin/portable32.dll', dist_source + '/App')
+                shutil.copy(user + '/bin/portable32.dll', dist_app_source)
             if os.path.exists(user + '/bin/upcheck32.exe'):
-                path = shutil.copy(user + '/bin/upcheck32.exe', dist_source + '/App/upcheck.exe')
+                shutil.copy(user + '/bin/upcheck32.exe', dist_app_source + '/upcheck.exe')
         if os.path.exists(user + '/bin/portable(example).ini'):
-            path = shutil.copy(user + '/bin/portable(example).ini', dist_source + '/App')
+            shutil.copy(user + '/bin/portable(example).ini', dist_app_source)
         if os.path.exists(user + '/readme.txt'):
-            path = shutil.copy(user + '/readme.txt', dist_source)
+            shutil.copy(user + '/readme.txt', dist_source)
     subprocess.check_call(['7z', 'a', '-t7z', ice_package, dist_source, '-mx9', '-r', '-y', '-x!.mkdir.done'])
 
 def main(args):

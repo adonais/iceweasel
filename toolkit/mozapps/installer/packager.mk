@@ -128,7 +128,7 @@ prepare-package: stage-package
 
 make-package-internal: prepare-package make-sourcestamp-file
 	@echo 'Compressing...'
-ifndef MOZ_PROFILE_GENERATE
+ifneq ($(findstring $(ACTIONS_PGO_GENERATE)$(MOZ_PROFILE_USE), 2 1),)
 	$(call MAKE_PACKAGE,$(DIST))
 	echo $(PACKAGE) > $(ABS_DIST)/package_name.txt
 endif

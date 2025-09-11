@@ -1,8 +1,7 @@
 name: Ubuntu environment
 on: 
-  push:
-    branches: 
-      - iceweasel_release
+  repository_dispatch:
+    types: [pgo_use]
 env:
   APP_NAME: Iceweasel
   MOZ_FETCHES_DIR: /builds/worker/fetches
@@ -12,11 +11,13 @@ env:
 
 jobs:
   fx_build:
-    name: Iceweasel CI
+    name: Iceweasel release
     runs-on: ubuntu-22.04
     timeout-minutes: 480
     steps:
     - uses: actions/checkout@v3
+      with:
+        ref: iceweasel_release
 
     - uses: yxl0756/gha-cleanup@v1
       with:
@@ -136,8 +137,8 @@ jobs:
       id: env_building
       run: |
         cd "$GITHUB_WORKSPACE"
-        chmod +x ./fx_actions.sh
-        ./fx_actions.sh
+        chmod +x ./fx_pgo_use.sh
+        ./fx_pgo_use.sh
         cd "$GITHUB_WORKSPACE/../$MY_OBJ/dist"
         mv "$APP_NAME-$MY_VER.en-US.$MY_BITS.7z" "$APP_NAME-v$MY_VER.en-US_$MY_BITS_clang_pgo.7z"
       shell: bash
@@ -149,4 +150,4 @@ jobs:
         artifacts: ${{ github.workspace }}/../${{ env.MY_OBJ }}/dist/${{ env.APP_NAME }}-v${{ env.MY_VER }}.en-US_${{ env.MY_BITS }}_clang_pgo.7z
         prerelease: false
         generateReleaseNotes: true
-        token: ${{ secrets.ADONAIS_RELEASE_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
