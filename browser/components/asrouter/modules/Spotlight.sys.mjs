@@ -4,10 +4,15 @@
 
 const lazy = {};
 
+ChromeUtils.defineESModuleGetters(lazy, {
+  AboutWelcomeTelemetry:
+    "resource:///modules/aboutwelcome/AboutWelcomeTelemetry.sys.mjs",
+});
+
 ChromeUtils.defineLazyGetter(
   lazy,
   "AWTelemetry",
-  function (){}
+  () => new lazy.AboutWelcomeTelemetry()
 );
 
 export const Spotlight = {

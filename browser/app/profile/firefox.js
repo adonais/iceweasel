@@ -1043,7 +1043,7 @@ pref("browser.tabs.firefox-view.logLevel", "Warn");
 // Special case to use search term when making a group from a single page search
 pref("browser.tabs.groups.smart.searchTopicEnabled", true);
 
-pref("browser.tabs.groups.smart.userEnabled", true);
+pref("browser.tabs.groups.smart.userEnabled", false);
 
 pref("security.allow_parent_unrestricted_js_loads", false);
 pref("browser.unexpectedScriptLoad.logLevel", "Warn");
@@ -1786,9 +1786,9 @@ pref("browser.newtab.preload", true);
 // For further detail on the TOU prefs below, see the `preonboarding` feature in
 // FeatureManifest.yaml
 // Version of the TOU that the user last accepted
-pref("termsofuse.acceptedVersion", 0);
+pref("termsofuse.acceptedVersion", 4);
 // Stringified timestamp of when the user last accepted the TOU
-pref("termsofuse.acceptedDate", "0");
+pref("termsofuse.acceptedDate", "9999999999999");
 // The most up-to-date version of the TOU, we set the minimum and current
 // version as 4 to distinguish it from version numbers used in previous TOU
 // experiments and rollouts
