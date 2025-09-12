@@ -142,7 +142,7 @@ jobs:
         cd "$GITHUB_WORKSPACE/../$MY_OBJ/dist"
         dist_dir=`pwd`
         echo MY_DIST=$dist_dir>>$GITHUB_ENV
-        mv "$APP_NAME-$MY_VER.en-US.$MY_BITS.7z" "$APP_NAME-v$MY_VER.en-US_$MY_BITS_clang_pgo.7z"
+        mv "${APP_NAME}-${MY_VER}.en-US.${MY_BITS}.7z" "${APP_NAME}-v${MY_VER}.en-US_${MY_BITS}_clang_pgo.7z"
         pwd
         ls -la
       shell: bash
@@ -154,4 +154,4 @@ jobs:
         artifacts: ${{ env.MY_DIST }}/${{ env.APP_NAME }}-v${{ env.MY_VER }}.en-US_${{ env.MY_BITS }}_clang_pgo.7z
         prerelease: false
         generateReleaseNotes: true
-        token: ${{ secrets.ICEWEASEL_RELEASE_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
