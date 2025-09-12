@@ -140,6 +140,8 @@ jobs:
         chmod +x ./fx_pgo_use.sh
         ./fx_pgo_use.sh
         cd "$GITHUB_WORKSPACE/../$MY_OBJ/dist"
+        dist_dir=`pwd`
+        echo MY_DIST=$dist_dir>>$GITHUB_ENV
         mv "$APP_NAME-$MY_VER.en-US.$MY_BITS.7z" "$APP_NAME-v$MY_VER.en-US_$MY_BITS_clang_pgo.7z"
       shell: bash
 
@@ -147,7 +149,7 @@ jobs:
       with:
         tag: v${{ env.MY_VER }}
         name: Iceweasel v${{ env.MY_VER }}
-        artifacts: ${{ github.workspace }}/../${{ env.MY_OBJ }}/dist/${{ env.APP_NAME }}-v${{ env.MY_VER }}.en-US_${{ env.MY_BITS }}_clang_pgo.7z
+        artifacts: ${{ env.MY_DIST }}/${{ env.APP_NAME }}-v${{ env.MY_VER }}.en-US_${{ env.MY_BITS }}_clang_pgo.7z
         prerelease: false
         generateReleaseNotes: true
         token: ${{ secrets.GITHUB_TOKEN }}

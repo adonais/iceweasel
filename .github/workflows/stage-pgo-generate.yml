@@ -133,9 +133,11 @@ jobs:
         cd "$GITHUB_WORKSPACE"
         chmod +x ./fx_pgo_generate.sh
         ./fx_pgo_generate.sh
+        dist_dir=$(cd "$GITHUB_WORKSPACE/../$MY_OBJ/dist"; pwd)
+        echo MY_DIST=$dist_dir>>$GITHUB_ENV
       shell: bash
 
-    - uses: yxl0756/upload-artifact@v1
+    - uses: yxl0756/upload-artifact@v4
       with:
-        path: ${{ github.workspace }}/../${{ env.MY_OBJ }}/dist/${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
+        path: ${{ env.MY_DIST }}/${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
         name: ${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
