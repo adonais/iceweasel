@@ -76,10 +76,11 @@ if CONFIG["CC_TYPE"] == "clang-cl":
 if CONFIG["OS_ARCH"] == "WINNT":
     RCINCLUDE = "splash.rc"
     DIRS += [
-        "installation_dir_layout",
         "pbproxy",
         "winlauncher",
     ]
+    if CONFIG["MOZ_UPDATER"]:
+        DIRS += ["installation_dir_layout"]
     if CONFIG["DESKTOP_LAUNCHER_ENABLED"]:
         DIRS += ["desktop-launcher"]
     USE_LIBS += [
