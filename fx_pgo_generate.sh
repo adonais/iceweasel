@@ -54,6 +54,13 @@ else
   MAKE=mozmake
 fi
 
+if [ "$TARGETED_OS" == "Windows_NT" ]; then
+  export UPX="${MOZ_FETCHES_DIR}/upx-win64/upx.exe"
+  if [ -f "${UPX}" ]; then
+    chmod +x "${UPX}"
+  fi
+fi
+
 compiler=$(which clang)
 if [ -z "$compiler" ]; then
   echo clang not exit
