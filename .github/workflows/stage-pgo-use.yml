@@ -49,6 +49,9 @@ jobs:
       id: env_download
       run: |
         cd "$MOZBUILD_DOWNLOAD"
+        # for uninstall/helper.exe
+        sudo apt install -y nsis
+        # mozilla compiler toolchain
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/cbindgen.tar.xz?viasf=1 -O cbindgen.tar.xz
         if [ $? -ne 0 ]; then
           echo Download cbindgen failed

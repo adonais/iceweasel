@@ -568,8 +568,7 @@ var gMainPane = {
       "tabGroupSuggestions"
     );
     const smartTabGroupFeatureEnabled =
-      Services.prefs.getBoolPref("browser.tabs.groups.smart.enabled", false) &&
-      Services.locale.appLocaleAsBCP47.startsWith("en");
+      Services.prefs.getBoolPref("browser.tabs.groups.smart.enabled", false);
     tabGroupSuggestionsCheckbox.hidden = !smartTabGroupFeatureEnabled;
 
     // The "opening multiple tabs might slow down Firefox" warning provides
