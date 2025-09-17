@@ -6159,12 +6159,6 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   XRE_CleanupX11ErrorHandler();
 #endif
 
-#ifdef TT_MEMUTIL
-  if (mozilla::AppShutdown::IsRestarting()) {
-    SetEnvironmentVariableW(L"LIBPORTABLE_UPCHECK_LAUNCHER_PROCESS", L"1");
-  }
-#endif
-
   gAbsoluteArgv0Path.Truncate();
 
 #if defined(MOZ_HAS_REMOTE)
