@@ -437,7 +437,7 @@ pref("browser.urlbar.suggest.history",              true);
 pref("browser.urlbar.suggest.openpage",             true);
 pref("browser.urlbar.suggest.remotetab",            true);
 pref("browser.urlbar.suggest.searches",             true);
-pref("browser.urlbar.suggest.topsites",             false);
+pref("browser.urlbar.suggest.topsites",             true);
 pref("browser.urlbar.suggest.engines",              true);
 pref("browser.urlbar.suggest.calculator",           true);
 pref("browser.urlbar.suggest.recentsearches",       true);
@@ -2128,7 +2128,7 @@ pref("toolkit.startup.max_resumed_crashes", 3);
 // Whether to use RegisterApplicationRestart to restart the browser and resume
 // the session on next Windows startup
 #if defined(XP_WIN)
-  pref("toolkit.winRegisterApplicationRestart", true);
+  pref("toolkit.winRegisterApplicationRestart", false);
 #endif
 
 // The values of preferredAction and alwaysAskBeforeHandling before pdf.js
@@ -2805,7 +2805,10 @@ pref("app.normandy.onsync_skew_sec", 600);
 #endif
 
 // by adonais
+pref("browser.newtabpage.activity-stream.feeds.telemetry", false);
+pref("browser.newtabpage.activity-stream.telemetry", false);
 pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
+pref("browser.newtabpage.activity-stream.default.sites", "");
 
 // Multi-lingual preferences:
 //  *.enabled - Are langpacks available for the build of Firefox?
