@@ -18,12 +18,12 @@ def handle_remove_read_only(func, path, exc):
         sys.exit(1)
 
 def make_7z(source, suffix, package):
+    dist_app_source = ""
     topobjdir = os.environ.get('LIBPORTABLE_AUTOBUILD_DIR')
     if not topobjdir:
         topobjdir = os.environ.get('MOZ_TOPOBJDIR')
     if topobjdir:
         print(f"topobjdir = {topobjdir}")
-        dist_app_source = ""
         ice_source = topobjdir + '/dist/' + source
         ice_package = topobjdir + '/dist/' + package
         stage1 = os.environ.get('ACTIONS_PGO_GENERATE')
