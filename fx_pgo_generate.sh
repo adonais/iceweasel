@@ -66,21 +66,18 @@ if [ -z "$compiler" ]; then
   echo clang not exit
   exit 1;
 fi
-compiler_version=$(echo __clang_major__ | $compiler -E -xc - 2>/dev/null | tail -n 1)
-if [ -z "$compiler_version" ]; then
-  exit 1;
-fi
-compiler_path=$(dirname $(dirname $compiler))
-if [ "$TARGETED_OS" != "Windows_NT" ]; then
-  export LIB="$compiler_path/lib:$compiler_path/lib/clang/$compiler_version/lib/linux"
-else
-  export LIB="$compiler_path/lib:$compiler_path/lib/clang/$compiler_version/lib/windows"
-fi
 
 reconfig_files
 rm -rf "../$MYOBJ_DIR"
 mkdir "../$MYOBJ_DIR" && cd "../$MYOBJ_DIR"
-$ICEWEASEL_TREE/configure --enable-profile-generate=cross
+
+if [ "$TARGETED_OS" != "Windows_NT" ]; then
+  $ICEWEASEL_TREE/configure --enable-profile-generate=cross --enable-lto=cross --enable-linker=lld
+elif [ "$MYOBJ_DIR" == "obju32-release" ]; then
+  $ICEWEASEL_TREE/configure --enable-profile-generate=cross --enable-lto=thin
+else
+  $ICEWEASEL_TREE/configure --enable-profile-generate=cross --enable-lto=cross
+fi
 
 $MAKE -j4
 if [ "$?" != "0" ]; then
