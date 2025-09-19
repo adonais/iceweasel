@@ -71,6 +71,7 @@ echo "Clean old files ..."
 reconfig_files
 rm -rf "../$MYOBJ_DIR"
 mkdir "../$MYOBJ_DIR" && cd "../$MYOBJ_DIR"
+export LIBPORTABLE_AUTOBUILD_DIR=`pwd`
 
 if [ "$TARGETED_OS" != "Windows_NT" ]; then
   $ICEWEASEL_TREE/configure --enable-profile-use=cross --enable-lto=cross --enable-linker=lld

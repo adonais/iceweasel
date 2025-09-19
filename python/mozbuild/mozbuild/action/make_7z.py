@@ -18,13 +18,17 @@ def handle_remove_read_only(func, path, exc):
         sys.exit(1)
 
 def make_7z(source, suffix, package):
-    topobjdir = os.environ.get('MOZ_TOPOBJDIR')
+    topobjdir = os.environ.get('LIBPORTABLE_AUTOBUILD_DIR')
+    if not topobjdir:
+        topobjdir = os.environ.get('MOZ_TOPOBJDIR')
     if topobjdir:
+        print(f"topobjdir = {topobjdir}")
         dist_app_source = ""
         ice_source = topobjdir + '/dist/' + source
         ice_package = topobjdir + '/dist/' + package
         stage1 = os.environ.get('ACTIONS_PGO_GENERATE')
         if stage1:
+            print(f"stage1 = {stage1}")
             dist_source = ice_source
             dist_app_source = dist_source
         else:
@@ -53,6 +57,8 @@ def make_7z(source, suffix, package):
             if os.path.exists(user + '/readme.txt'):
                 shutil.copy(user + '/readme.txt', dist_source)
         subprocess.check_call(['7z', 'a', '-t7z', ice_package, dist_source, '-mx9', '-r', '-y', '-x!.mkdir.done'])
+    else:
+        print(f"topobjdir is null, can not package it ...")
 
 def main(args):
     if len(args) != 3:
