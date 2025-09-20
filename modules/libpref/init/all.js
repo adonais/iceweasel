@@ -1915,7 +1915,7 @@ pref("services.settings.poll_interval", 86400); // 24H
 // other channels always report events.
 pref("services.common.uptake.sampleRate", 1);   // 1%
 
-pref("extensions.abuseReport.enabled", true);
+pref("extensions.abuseReport.enabled", false);
 // Allow AMO to handoff reports to the Firefox integrated dialog.
 pref("extensions.abuseReport.amWebAPI.enabled", true);
 pref("extensions.abuseReport.url", "https://services.addons.mozilla.org/api/v4/abuse/report/addon/");
@@ -3457,7 +3457,7 @@ pref("network.captive-portal-service.maxInterval", 1500000); // 25 minutes
 pref("network.captive-portal-service.backoffFactor", "5.0");
 pref("network.captive-portal-service.enabled", false);
 
-pref("network.connectivity-service.enabled", true);
+pref("network.connectivity-service.enabled", false);
 pref("network.connectivity-service.DNSv4.domain", "example.org");
 pref("network.connectivity-service.DNSv6.domain", "example.org");
 pref("network.connectivity-service.IPv4.url", "http://detectportal.firefox.com/success.txt?ipv4");
@@ -3476,7 +3476,7 @@ pref("network.trr.builtin-excluded-domains", "localhost,local");
 // Whether the checkbox to display a fallback warning error page is visible in about:preferences#privacy
 pref("network.trr_ui.show_fallback_warning_option", false);
 
-pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/canonical.html");
+pref("captivedetect.canonicalURL", "");
 pref("captivedetect.canonicalContent", "<meta http-equiv=\"refresh\" content=\"0;url=https://support.mozilla.org/kb/captive-portal\"/>");
 pref("captivedetect.maxWaitingTime", 5000);
 pref("captivedetect.pollingTime", 3000);
@@ -3877,7 +3877,7 @@ pref("toolkit.aboutProcesses.profileDuration", 5);
 pref("toolkit.legacyUserProfileCustomizations.stylesheets", false);
 
 #ifdef MOZ_DATA_REPORTING
-  pref("datareporting.policy.dataSubmissionEnabled", true);
+  pref("datareporting.policy.dataSubmissionEnabled", false);
   pref("datareporting.policy.dataSubmissionPolicyNotifiedTime", "0");
   pref("datareporting.policy.dataSubmissionPolicyAcceptedVersion", 0);
   pref("datareporting.policy.dataSubmissionPolicyBypassNotification", false);

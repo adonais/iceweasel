@@ -1530,22 +1530,22 @@ pref("browser.menu.showCharacterEncoding", "chrome://browser/locale/browser.prop
 // This is a fallback value for when prompt callers do not specify a modalType.
 pref("prompts.defaultModalType", 3);
 
-pref("browser.topsites.useRemoteSetting", true);
+pref("browser.topsites.useRemoteSetting", false);
 // Fetch sponsored Top Sites from Mozilla Tiles Service (Contile)
-pref("browser.topsites.contile.enabled", true);
-pref("browser.topsites.contile.endpoint", "https://contile.services.mozilla.com/v1/tiles");
+pref("browser.topsites.contile.enabled", false);
+pref("browser.topsites.contile.endpoint", "");
 
 // Whether to enable the Share-of-Voice feature for Sponsored Topsites via Contile.
 #if defined(EARLY_BETA_OR_EARLIER)
-  pref("browser.topsites.contile.sov.enabled", true);
+  pref("browser.topsites.contile.sov.enabled", false);
 #else
   pref("browser.topsites.contile.sov.enabled", false);
 #endif
 
 // The base URL for the Quick Suggest anonymizing proxy. To make a request to
 // the proxy, include a campaign ID in the path.
-pref("browser.partnerlink.attributionURL", "https://topsites.services.mozilla.com/cid/");
-pref("browser.partnerlink.campaign.topsites", "amzn_2020_a1");
+pref("browser.partnerlink.attributionURL", "");
+pref("browser.partnerlink.campaign.topsites", "");
 
 // Whether to show tab level system prompts opened via nsIPrompt(Service) as
 // SubDialogs in the TabDialogBox (true) or as TabModalPrompt in the
@@ -1592,16 +1592,16 @@ pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", false
 
 // The pref that controls if ASRouter uses the remote fluent files.
 // It's enabled by default, but could be disabled to force ASRouter to use the local files.
-pref("browser.newtabpage.activity-stream.asrouter.useRemoteL10n", true);
+pref("browser.newtabpage.activity-stream.asrouter.useRemoteL10n", false);
 
 // These prefs control if Discovery Stream is enabled.
-pref("browser.newtabpage.activity-stream.discoverystream.enabled", true);
+pref("browser.newtabpage.activity-stream.discoverystream.enabled", false);
 pref("browser.newtabpage.activity-stream.discoverystream.hardcoded-basic-layout", false);
 pref("browser.newtabpage.activity-stream.discoverystream.hybridLayout.enabled", false);
 pref("browser.newtabpage.activity-stream.discoverystream.hideCardBackground.enabled", false);
 pref("browser.newtabpage.activity-stream.discoverystream.fourCardLayout.enabled", false);
 pref("browser.newtabpage.activity-stream.discoverystream.newFooterSection.enabled", false);
-pref("browser.newtabpage.activity-stream.discoverystream.saveToPocketCard.enabled", true);
+pref("browser.newtabpage.activity-stream.discoverystream.saveToPocketCard.enabled", false);
 pref("browser.newtabpage.activity-stream.discoverystream.saveToPocketCardRegions", "");
 pref("browser.newtabpage.activity-stream.discoverystream.hideDescriptions.enabled", false);
 pref("browser.newtabpage.activity-stream.discoverystream.hideDescriptionsRegions", "");
@@ -1630,7 +1630,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.spocTopsitesAdTypes", "
 pref("browser.newtabpage.activity-stream.discoverystream.spocTopsitesZoneIds", "");
 pref("browser.newtabpage.activity-stream.discoverystream.spocSiteId", "");
 
-pref("browser.newtabpage.activity-stream.discoverystream.sendToPocket.enabled", true);
+pref("browser.newtabpage.activity-stream.discoverystream.sendToPocket.enabled", false);
 
 // List of regions that do not get stories, regardless of locale-list-config.
 pref("browser.newtabpage.activity-stream.discoverystream.region-stories-block", "");
@@ -1714,7 +1714,7 @@ pref("toolkit.startup.max_resumed_crashes", 3);
 // Whether to use RegisterApplicationRestart to restart the browser and resume
 // the session on next Windows startup
 #if defined(XP_WIN)
-  pref("toolkit.winRegisterApplicationRestart", true);
+  pref("toolkit.winRegisterApplicationRestart", false);
 #endif
 
 // Used by pdf.js to know the first time firefox is run with it installed so it
@@ -2333,6 +2333,11 @@ pref("app.normandy.onsync_skew_sec", 600);
   pref("app.shield.optoutstudies.enabled", false);
 #endif
 
+// by adonais
+pref("browser.newtabpage.activity-stream.telemetry", false);
+pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
+pref("browser.newtabpage.activity-stream.default.sites", "");
+
 // Multi-lingual preferences:
 //  *.enabled - Are langpacks available for the build of Firefox?
 //  *.downloadEnabled - Langpacks are allowed to be downloaded from AMO. AMO only serves
@@ -2402,7 +2407,7 @@ pref("identity.fxaccounts.toolbar.defaultVisible", false);
 pref("identity.fxaccounts.service.monitorLoginUrl", "https://monitor.firefox.com/");
 
 // Check bundled omni JARs for corruption.
-pref("corroborator.enabled", true);
+pref("corroborator.enabled", false);
 
 // Toolbox preferences
 pref("devtools.toolbox.footer.height", 250);
