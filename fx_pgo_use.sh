@@ -76,9 +76,9 @@ export LIBPORTABLE_AUTOBUILD_DIR=`pwd`
 if [ "$TARGETED_OS" != "Windows_NT" ]; then
   $ICEWEASEL_TREE/configure --enable-profile-use=cross --enable-lto=cross --enable-linker=lld
 elif [ "$MYOBJ_DIR" == "obju32-release" ]; then
-  $ICEWEASEL_TREE/configure --enable-profile-use=cross --enable-lto=thin --with-pgo-profile-path=/builds/worker/fetches/merged.profdata
+  $ICEWEASEL_TREE/configure --enable-profile-use=cross --enable-lto=thin --with-pgo-profile-path=/builds/worker/fetches/merged.profdata --with-pgo-jarlog=/builds/worker/fetches/en-US.log
 else
-  $ICEWEASEL_TREE/configure --enable-profile-use=cross --enable-lto=cross --with-pgo-profile-path=/builds/worker/fetches/merged.profdata
+  $ICEWEASEL_TREE/configure --enable-profile-use=cross --enable-lto=cross --with-pgo-profile-path=/builds/worker/fetches/merged.profdata --with-pgo-jarlog=/builds/worker/fetches/en-US.log
 fi
 
 $MAKE -j4
