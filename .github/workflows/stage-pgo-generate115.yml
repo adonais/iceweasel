@@ -1,7 +1,7 @@
 name: Iceweasel PGO generate
 on: 
-  repository_dispatch:
-    types: [pgo_gen_115]
+  workflow_dispatch:
+
 env:
   APP_NAME: Iceweasel
   ACTIONS_PGO_GENERATE: 2

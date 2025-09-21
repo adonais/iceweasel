@@ -1,7 +1,7 @@
 name: Iceweasel PGO use
 on: 
-  repository_dispatch:
-    types: [pgo_use_115]
+  workflow_dispatch:
+
 env:
   APP_NAME: Iceweasel
   MOZ_FETCHES_DIR: /builds/worker/fetches
