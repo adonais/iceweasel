@@ -76,11 +76,11 @@ mkdir "../$MYOBJ_DIR" && cd "../$MYOBJ_DIR"
 export LIBPORTABLE_AUTOBUILD_DIR=`pwd`
 
 if [ "$TARGETED_OS" != "Windows_NT" ]; then
-  $ICEWEASEL_TREE/configure --enable-profile-generate=cross --enable-lto=cross --enable-linker=lld
+  $ICEWEASEL_TREE/configure --enable-profile-generate=cross --enable-linker=lld
 elif [ "$MYOBJ_DIR" == "obju32-release" ]; then
-  $ICEWEASEL_TREE/configure --enable-profile-generate=cross --enable-lto=thin
+  $ICEWEASEL_TREE/configure --enable-profile-generate=cross
 else
-  $ICEWEASEL_TREE/configure --enable-profile-generate=cross --enable-lto=cross
+  $ICEWEASEL_TREE/configure --enable-profile-generate=cross
 fi
 
 $MAKE -j4
