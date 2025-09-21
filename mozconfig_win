@@ -1,0 +1,91 @@
+# This file specifies the build flags for Iceweasel.  You can use it by adding:
+# to the top of your mozconfig file.
+. $topsrcdir/browser/config/mozconfig
+ac_add_options --with-app-name=Iceweasel
+
+# Specify target directory
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/../$MYOBJ_DIR
+mk_add_options MOZ_MAKE_FLAGS=-j4
+
+# for windows target build
+if test "$ICEWEASEL_BITS" = "64"; then
+  ac_add_options --target=x86_64-pc-windows-msvc
+elif test "$ICEWEASEL_BITS" = "32"; then
+  ac_add_options --target=i686-pc-windows-msvc
+fi
+ac_add_options --host=x86_64-unknown-linux-gnu
+
+# for optimize
+ac_add_options MOZ_PGO=1
+ac_add_options --enable-optimize="-Xclang -ivfsoverlay -Xclang /builds/worker/fetches/vs/overlay.yaml -O2 -DTT_MEMUTIL"
+
+# for rust
+export RUSTC_OPT_LEVEL=2
+export RUSTFLAGS="$RUSTFLAGS -Clink-args=--icf=safe"
+
+#disable tests
+ac_add_options --disable-tests
+
+# diasble updater
+ac_add_options --disable-updater
+
+# disable crashreporter
+ac_add_options --disable-crashreporter
+
+# disable parental controls
+ac_add_options --disable-parental-controls
+
+# disable more modules
+ac_add_options --disable-necko-wifi
+
+# disable accessibility
+# ac_add_options --disable-accessibility
+
+# disable debug
+ac_add_options --disable-debug
+ac_add_options --disable-debug-symbols
+ac_add_options --disable-maintenance-service
+ac_add_options --disable-sandbox
+
+# disable notification server
+ac_add_options --disable-notification-server
+
+# Disable MOZ_*
+mk_add_options MOZ_DATA_REPORTING=0
+mk_add_options MOZ_SERVICES_HEALTHREPORT=0
+mk_add_options MOZ_TELEMETRY_REPORTING=0
+
+# Add-on signing is not required
+MOZ_REQUIRE_SIGNING=
+
+# setting
+export CC=clang-cl
+export CXX=clang-cl
+export LINKER=lld-link
+
+# Iceweasel official
+export MOZ_AUTOMATION=1
+export MOZILLA_OFFICIAL=1
+
+# enable clang plugins
+#ac_add_options --enable-clang-plugin
+#ac_add_options --enable-mozsearch-plugin
+#ac_add_options --enable-hardening
+
+# Enable jemalloc,crypto
+ac_add_options --enable-rust-simd
+ac_add_options --enable-jemalloc
+
+# Iceweasel branch
+ac_add_options --enable-update-channel=esr
+ac_add_options --without-wasm-sandboxed-libraries
+ac_add_options --with-branding=browser/branding/iceweasel
+
+# crt dir
+if test "$ICEWEASEL_BITS" = "64"; then
+  WIN32_REDIST_DIR=${VC_REDISTDIR%?}/x64/Microsoft.VC143.CRT
+  WIN_UCRT_REDIST_DIR=${UCRT_REDISTDIR%?}/ucrt/DLLs/x64
+elif test "$ICEWEASEL_BITS" = "32"; then
+  WIN32_REDIST_DIR=${VC_REDISTDIR%?}/x86/Microsoft.VC143.CRT
+  WIN_UCRT_REDIST_DIR=${UCRT_REDISTDIR%?}/ucrt/DLLs/x86
+fi
