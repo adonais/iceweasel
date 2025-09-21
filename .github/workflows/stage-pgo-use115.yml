@@ -1,4 +1,4 @@
-name: Iceweasel PGO use
+name: Iceweasel-esr115 use
 on: 
   repository_dispatch:
     types: [pgo_use_115]

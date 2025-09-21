@@ -1,4 +1,4 @@
-name: Iceweasel PGO generate
+name: Iceweasel-esr115 generate
 on: 
   repository_dispatch:
     types: [pgo_gen_115]
