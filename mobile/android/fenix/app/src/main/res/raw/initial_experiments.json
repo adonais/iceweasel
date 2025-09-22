@@ -2,6 +2,69 @@
   "data": [
     {
       "schemaVersion": "1.12.0",
+      "slug": "android-compose-toolbar-refactor",
+      "id": "android-compose-toolbar-refactor",
+      "arguments": {},
+      "application": "org.mozilla.firefox_beta",
+      "appName": "fenix",
+      "appId": "org.mozilla.firefox_beta",
+      "channel": "beta",
+      "userFacingName": "Android Compose Toolbar Refactor",
+      "userFacingDescription": "Android Compose Toolbar Refactor",
+      "isEnrollmentPaused": false,
+      "isRollout": true,
+      "bucketConfig": {
+        "randomizationUnit": "nimbus_id",
+        "namespace": "fenix-composable-toolbar-beta-no_targeting-rollout-1",
+        "start": 0,
+        "count": 10000,
+        "total": 10000
+      },
+      "featureIds": [
+        "composable-toolbar"
+      ],
+      "probeSets": [],
+      "outcomes": [],
+      "branches": [
+        {
+          "slug": "control",
+          "ratio": 1,
+          "feature": {
+            "featureId": "this-is-included-for-mobile-pre-96-support",
+            "enabled": false,
+            "value": {}
+          },
+          "features": [
+            {
+              "featureId": "composable-toolbar",
+              "enabled": true,
+              "value": {
+                "enabled": true
+              }
+            }
+          ]
+        }
+      ],
+      "targeting": "(app_version|versionCompare('144.!') >= 0)",
+      "startDate": "2025-09-18",
+      "enrollmentEndDate": null,
+      "endDate": null,
+      "proposedDuration": 28,
+      "proposedEnrollment": 7,
+      "referenceBranch": "control",
+      "featureValidationOptOut": false,
+      "localizations": null,
+      "locales": null,
+      "publishedDate": "2025-09-18T16:15:54.477642Z",
+      "isFirefoxLabsOptIn": false,
+      "firefoxLabsTitle": "",
+      "firefoxLabsDescription": "",
+      "firefoxLabsDescriptionLinks": null,
+      "firefoxLabsGroup": "",
+      "requiresRestart": false
+    },
+    {
+      "schemaVersion": "1.12.0",
       "slug": "long-term-holdback-2025-h1-growth-android",
       "id": "long-term-holdback-2025-h1-growth-android",
       "arguments": {},

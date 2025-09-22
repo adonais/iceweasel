@@ -83,6 +83,22 @@ class AdaptiveIconProcessorTest {
         assertTrue(icon.maskable)
     }
 
+    @Test
+    fun `process returns initial icon if bitmap is recycled`() {
+        val bitmap = createBitmap(128, 128).apply { recycle() }
+        val icon = Icon(bitmap, source = Icon.Source.INLINE)
+
+        val processed = AdaptiveIconProcessor().process(
+            mock(),
+            mock(),
+            IconRequest.Resource("", MANIFEST_ICON, maskable = true),
+            icon,
+            mock(),
+        )
+
+        assertEquals(icon, processed)
+    }
+
     private fun setSdkInt(sdkVersion: Int) {
         setStaticField(Build.VERSION::SDK_INT.javaField, sdkVersion)
     }

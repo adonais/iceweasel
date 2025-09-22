@@ -24,7 +24,6 @@ class AdaptiveIconProcessor : IconProcessor {
 
     /**
      * Creates an adaptive icon using the base icon.
-     * On older devices, non-maskable icons are not transformed.
      */
     override fun process(
         context: Context,
@@ -39,6 +38,10 @@ class AdaptiveIconProcessor : IconProcessor {
         }
 
         val originalBitmap = icon.bitmap
+
+        if (originalBitmap.isRecycled) {
+            return icon
+        }
 
         val paddingRatio = if (maskable) {
             MASKABLE_ICON_PADDING_RATIO

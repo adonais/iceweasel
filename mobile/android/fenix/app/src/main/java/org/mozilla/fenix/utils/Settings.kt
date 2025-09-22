@@ -328,6 +328,16 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         default = 0L,
     )
 
+    /**
+     * Indicates if the custom review prompt feature should be enabled. `True` if the feature is
+     * enabled, `false` otherwise.
+     */
+    var customReviewPromptFeatureEnabled by lazyFeatureFlagPreference(
+        appContext.getPreferenceKey(R.string.pref_key_custom_review_prompt_enabled),
+        featureFlag = true,
+        default = { FxNimbus.features.customReviewPrompt.value().enabled },
+    )
+
     var lastCfrShownTimeInMillis by longPreference(
         appContext.getPreferenceKey(R.string.pref_key_last_cfr_shown_time),
         default = 0L,

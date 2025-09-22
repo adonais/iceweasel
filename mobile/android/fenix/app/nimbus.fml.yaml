@@ -949,6 +949,14 @@ features:
         type: Boolean
         default: false
 
+  custom-review-prompt:
+    description: Feature that controls the Play store in-app custom review prompt.
+    variables:
+      enabled:
+        description: Whether or not to enable the custom review prompt.
+        type: Boolean
+        default: false
+
 types:
   objects:
     GleanServerKnobsConfiguration:

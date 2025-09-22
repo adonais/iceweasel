@@ -46,6 +46,7 @@ class ReviewPromptMiddleware(
             timeNowInMillis: () -> Long,
         ): (NimbusMessagingHelperInterface) -> Sequence<Boolean> = {
             sequence {
+                yield(settings.customReviewPromptFeatureEnabled)
                 yield(hasNotBeenPromptedLastFourMonths(settings, timeNowInMillis))
                 yield(usedAppOnAtLeastFourOfLastSevenDaysTrigger(it))
             }

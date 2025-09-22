@@ -10,6 +10,7 @@ import androidx.annotation.VisibleForTesting
 import com.android.installreferrer.api.InstallReferrerClient
 import com.android.installreferrer.api.InstallReferrerStateListener
 import mozilla.components.support.base.log.logger.Logger
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 
 const val GCLID_PREFIX = "gclid="
@@ -48,6 +49,13 @@ class MarketingAttributionService(private val context: Context) {
                                 // https://issuetracker.google.com/issues/72926755
                                 logger.error("Failed to retrieve install referrer response", e)
                                 null
+                            }
+
+                            if (!installReferrerResponse.isNullOrBlank()) {
+                                val utmParams = UTMParams.parseUTMParameters(installReferrerResponse)
+
+                                context.components.distributionIdManager
+                                    .updateDistributionIdFromUtmParams(utmParams)
                             }
 
                             context.settings().shouldShowMarketingOnboarding =
