@@ -1,4 +1,4 @@
-name: Iceweasel-esr115 generate
+name: Iceweasel ESR115 generate
 on: 
   repository_dispatch:
     types: [pgo_gen_115]
@@ -10,12 +10,12 @@ env:
   MOZBUILD_STATE_PATH: /builds/worker/fetches/.mozbuild
 
 jobs:
-  fx_build:
-    name: PGO generate
+  esr115_build:
+    name: ESR115 PGO generate
     runs-on: ubuntu-22.04
     timeout-minutes: 480
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         ref: iceweasel_esr115
 
@@ -32,6 +32,11 @@ jobs:
         if [ -d "/home/runner/.mozbuild" ]; then rm -rf /home/runner/.mozbuild; fi
       shell: bash
 
+    - name: set swap-space
+      uses: yxl0756/set-swap-space@master
+      with:
+        swap-size-gb: 10
+
     - name: mkdir and setenv
       id: env_mkdir
       run: |
@@ -39,7 +44,7 @@ jobs:
         sudo chown runner:runner -R "$MOZ_FETCHES_DIR"
         mkdir -p "$MOZBUILD_DOWNLOAD"
         cd "$GITHUB_WORKSPACE"
-        m_ver=`cat browser/config/version.txt`
+        m_ver=`cat browser/config/version_display.txt`
         echo MY_VER=$m_ver>>$GITHUB_ENV
       shell: bash
 
@@ -116,7 +121,7 @@ jobs:
       shell: bash
 
     - name: start building win32
-      timeout-minutes: 420
+      timeout-minutes: 180
       id: win32_building
       run: |
         cd "$GITHUB_WORKSPACE"
@@ -134,7 +139,7 @@ jobs:
         compression-level: 0
 
     - name: start building win64
-      timeout-minutes: 420
+      timeout-minutes: 180
       id: win64_building
       run: |
         cd "$GITHUB_WORKSPACE"

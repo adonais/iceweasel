@@ -1,4 +1,4 @@
-name: Iceweasel-esr115 use
+name: Iceweasel ESR115 use
 on: 
   repository_dispatch:
     types: [pgo_use_115]
@@ -10,12 +10,12 @@ env:
 
 
 jobs:
-  fx_build:
-    name: PGO use
+  esr115_build:
+    name: ESR115 PGO use
     runs-on: ubuntu-22.04
     timeout-minutes: 480
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         ref: iceweasel_esr115
 
@@ -39,7 +39,7 @@ jobs:
         sudo chown runner:runner -R "$MOZ_FETCHES_DIR"
         mkdir -p "$MOZBUILD_DOWNLOAD"
         cd "$GITHUB_WORKSPACE"
-        m_ver=`cat browser/config/version.txt`
+        m_ver=`cat browser/config/version_display.txt`
         echo MY_VER=$m_ver>>$GITHUB_ENV
       shell: bash
 
@@ -140,7 +140,7 @@ jobs:
     - name: set swap-space
       uses: yxl0756/set-swap-space@master
       with:
-        swap-size-gb: 8
+        swap-size-gb: 10
 
     - name: start building win64
       timeout-minutes: 180
@@ -161,5 +161,5 @@ jobs:
         name: Iceweasel v${{ env.MY_VER }}
         artifacts: ${{ env.MOZ_FETCHES_DIR }}/${{ env.APP_NAME }}-v${{ env.MY_VER }}.en-US_${{ env.MY_BITS32 }}_clang_pgo.7z,${{ env.MOZ_FETCHES_DIR }}/${{ env.APP_NAME }}-v${{ env.MY_VER }}.en-US_${{ env.MY_BITS64 }}_clang_pgo.7z
         prerelease: false
-        generateReleaseNotes: true
+        bodyFile: "${{ env.GITHUB_WORKSPACE }}/ESR115.md"
         token: ${{ secrets.GITHUB_TOKEN }}
