@@ -104,6 +104,7 @@ def pgo_flags(compiler, profdata, target_is_windows):
             # if name compression is enabled (which cross-compiling enables
             # by default)
             gen_cflags += ["-mllvm", "-enable-name-compression=false"]
+            gen_cflags += ["-mllvm", "-vp-counters-per-site=2.5"]
 
         return namespace(
             gen_cflags=gen_cflags,
