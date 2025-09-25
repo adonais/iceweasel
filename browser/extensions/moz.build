@@ -9,5 +9,4 @@ DIRS += [
     "screenshots",
     "webcompat",
     "pictureinpicture",
-    "search-detection",
 ]

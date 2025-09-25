@@ -2022,41 +2022,9 @@ BrowserGlue.prototype = {
     _checkScreenshotsPref();
   },
 
-  _monitorWebcompatReporterPref() {
-    const PREF = "extensions.webcompat-reporter.enabled";
-    const ID = "webcompat-reporter@mozilla.org";
-    Services.prefs.addObserver(PREF, async () => {
-      let addon = await lazy.AddonManager.getAddonByID(ID);
-      if (!addon) {
-        return;
-      }
-      let enabled = Services.prefs.getBoolPref(PREF, false);
-      if (enabled && !addon.isActive) {
-        await addon.enable({ allowSystemAddons: true });
-      } else if (!enabled && addon.isActive) {
-        await addon.disable({ allowSystemAddons: true });
-      }
-    });
-  },
+  _monitorWebcompatReporterPref() {},
 
-  async _setupSearchDetection() {
-    // There is no pref for this add-on because it shouldn't be disabled.
-    const ID = "addons-search-detection@mozilla.com";
-
-    let addon = await lazy.AddonManager.getAddonByID(ID);
-
-    // first time install of addon and install on firefox update
-    addon =
-      (await lazy.AddonManager.maybeInstallBuiltinAddon(
-        ID,
-        "2.0.0",
-        "resource://builtin-addons/search-detection/"
-      )) || addon;
-
-    if (!addon.isActive) {
-      addon.enable();
-    }
-  },
+  async _setupSearchDetection() {},
 
   _monitorHTTPSOnlyPref() {
     const PREF_ENABLED = "dom.security.https_only_mode";

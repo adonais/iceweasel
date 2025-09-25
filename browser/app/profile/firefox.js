@@ -1262,7 +1262,7 @@ pref("app.feedback.baseURL", "https://ideas.mozilla.org/");
 // Name of alternate about: page for certificate errors (when undefined, defaults to about:neterror)
 pref("security.alternate_certificate_error_page", "certerror");
 
-pref("security.certerrors.recordEventTelemetry", true);
+pref("security.certerrors.recordEventTelemetry", false);
 pref("security.certerrors.permanentOverride", true);
 pref("security.certerrors.mitm.priming.enabled", true);
 pref("security.certerrors.mitm.priming.endpoint", "https://mitmdetection.services.mozilla.com/");
@@ -1731,9 +1731,9 @@ pref("pdfjs.handleOctetStream", true);
 // Is the sidebar positioned ahead of the content browser
 pref("sidebar.position_start", true);
 
-pref("security.identitypopup.recordEventTelemetry", true);
-pref("security.protectionspopup.recordEventTelemetry", true);
-pref("security.app_menu.recordEventTelemetry", true);
+pref("security.identitypopup.recordEventTelemetry", false);
+pref("security.protectionspopup.recordEventTelemetry", false);
+pref("security.app_menu.recordEventTelemetry", false);
 
 // Block insecure active content on https pages
 pref("security.mixed_content.block_active_content", true);
@@ -1757,9 +1757,6 @@ pref("dom.debug.propagate_gesture_events_through_content", false);
 
 // CustomizableUI debug logging.
 pref("browser.uiCustomization.debug", false);
-
-// CustomizableUI state of the browser's user interface
-pref("browser.uiCustomization.state", "");
 
 // If set to false, FxAccounts and Sync will be unavailable.
 // A restart is mandatory after flipping that preference.
@@ -1869,7 +1866,7 @@ pref("browser.translations.enable", true);
 // Determines if Telemetry pings can be archived locally.
 pref("toolkit.telemetry.archive.enabled", false);
 // Enables sending the shutdown ping when Firefox shuts down.
-pref("toolkit.telemetry.shutdownPingSender.enabled", true);
+pref("toolkit.telemetry.shutdownPingSender.enabled", false);
 // Enables using the `pingsender` background task.
 pref("toolkit.telemetry.shutdownPingSender.backgroundtask.enabled", false);
 // Enables sending the shutdown ping using the pingsender from the first session.
@@ -2337,6 +2334,8 @@ pref("app.normandy.onsync_skew_sec", 600);
 pref("browser.newtabpage.activity-stream.telemetry", false);
 pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
 pref("browser.newtabpage.activity-stream.default.sites", "");
+// CustomizableUI state of the browser's user interface
+pref("browser.uiCustomization.state", "{\"placements\":{\"widget-overflow-fixed-list\":[],\"unified-extensions-area\":[],\"nav-bar\":[\"back-button\",\"forward-button\",\"stop-reload-button\",\"home-button\",\"urlbar-container\",\"downloads-button\",\"unified-extensions-button\",\"fxa-toolbar-menu-button\",\"unified-extensions-button\"],\"toolbar-menubar\":[\"menubar-items\"],\"TabsToolbar\":[\"tabbrowser-tabs\",\"new-tab-button\",\"alltabs-button\"],\"PersonalToolbar\":[\"import-button\",\"personal-bookmarks\"]},\"seen\":[\"developer-button\"],\"dirtyAreaCache\":[\"PersonalToolbar\",\"nav-bar\",\"toolbar-menubar\",\"TabsToolbar\"],\"currentVersion\":19,\"newElementCount\":0}");
 
 // Multi-lingual preferences:
 //  *.enabled - Are langpacks available for the build of Firefox?
