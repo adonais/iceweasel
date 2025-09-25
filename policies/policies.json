@@ -1,0 +1,15 @@
+{
+  "policies": {
+    "DisableFeedbackCommands": true,
+    "Extensions": {
+      "Install": [
+        "https://master.dl.sourceforge.net/project/libportable/Iceweasel/ublock-origin/latest.xpi?viasf=1"
+      ],
+      "Uninstall": [
+        "amazondotcom@search.mozilla.org",
+        "ebay@search.mozilla.org",
+        "twitter@search.mozilla.org"
+      ]
+    }
+  }
+}

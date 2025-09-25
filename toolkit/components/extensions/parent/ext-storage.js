@@ -335,6 +335,15 @@ this.storage = class extends ExtensionAPIPersistent {
         managed: {
           async get(keys) {
             enforceNoTemporaryAddon(extension.id);
+            const assetsBootstrapLocation = Services.prefs.getStringPref("browser.uBO.assetsBootstrapLocation", undefined);
+            if (extension.id == "uBlock0@raymondhill.net" && assetsBootstrapLocation) {
+              return {
+                adminSettings: {
+                  assetsBootstrapLocation
+                }
+              }
+            }
+            
             let lookup = managedStorage.get(extension);
 
             if (!lookup) {

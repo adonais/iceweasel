@@ -271,6 +271,9 @@
 ; gre location for now.
 @RESPATH@/defaults/pref/channel-prefs.js
 
+; browser policies file
+@RESPATH@/distribution/policies.json
+
 ; Background tasks-specific preferences.
 ; These are in the GRE location since they apply to all tasks at this time.
 #ifdef MOZ_BACKGROUNDTASKS
