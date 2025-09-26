@@ -81,8 +81,8 @@ ac_add_options --with-onnx-runtime="/builds/worker/fetches/onnxruntime/x64"
 ac_add_options --without-wasm-sandboxed-libraries
 
 # enable l10n
-if test -d "$MOZ_FETCHES_DIR/l10n"; then
-  ac_add_options --with-l10n-base=$MOZ_FETCHES_DIR/l10n
+if test -d "$PWD/lw/l10n"; then
+  ac_add_options --with-l10n-base=$PWD/lw/l10n
 fi
 
 # for iceweasel
