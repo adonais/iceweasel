@@ -61,9 +61,6 @@ class FilterNodeSoftware : public FilterNode,
   // FilterInvalidationListener implementation
   void FilterInvalidated(FilterNodeSoftware* aFilter) override;
 
- protected:
-  // The following methods are intended to be overriden by subclasses.
-
   /**
    * Translates a *FilterInputs enum value into an index for the
    * mInputFilters / mInputSurfaces arrays. Returns -1 for invalid inputs.
@@ -71,6 +68,9 @@ class FilterNodeSoftware : public FilterNode,
    * InputIndex(enumValue) is -1, we abort.
    */
   virtual int32_t InputIndex(uint32_t aInputEnumIndex) { return -1; }
+
+ protected:
+  // The following methods are intended to be overriden by subclasses.
 
   /**
    * Every filter node has an output rect, which can also be infinite. The

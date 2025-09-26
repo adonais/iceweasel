@@ -1786,10 +1786,7 @@
   arguments:
     elementType: Scalar::Type
   result_type: Elements
-  movable: true
-  congruent_to: if_operands_equal
   alias_set: custom
-  clone: true
   generate_lir: true
 
 # Read the length of a resizable typed array.

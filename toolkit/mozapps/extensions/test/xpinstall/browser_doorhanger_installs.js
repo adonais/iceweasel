@@ -651,7 +651,11 @@ describe("Add-on installation doorhangers", function () {
 
   it("should not show the 3rd party install panel when installing recommended add-ons", async function test_recommendedPostDownload() {
     await SpecialPowers.pushPrefEnv({
-      set: [["extensions.postDownloadThirdPartyPrompt", true]],
+      set: [
+        ["extensions.postDownloadThirdPartyPrompt", true],
+        // recommended.xpi is signed with AMO staging signature.
+        ["xpinstall.signatures.dev-root", true],
+      ],
     });
 
     let xpiURL = TESTROOT + "recommended.xpi";
@@ -664,7 +668,7 @@ describe("Add-on installation doorhangers", function () {
 
     let notificationPromise = acceptAppMenuNotificationWhenShown(
       "addon-installed",
-      "{811d77f1-f306-4187-9251-b4ff99bad60b}"
+      "recommended-line@test.mozilla.org"
     );
 
     installDialog.button.click();
@@ -674,7 +678,7 @@ describe("Add-on installation doorhangers", function () {
     is(installs.length, 0, "Should be no pending installs");
 
     let addon = await AddonManager.getAddonByID(
-      "{811d77f1-f306-4187-9251-b4ff99bad60b}"
+      "recommended-line@test.mozilla.org"
     );
     await addon.uninstall();
 

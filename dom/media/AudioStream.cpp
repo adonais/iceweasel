@@ -530,6 +530,10 @@ void AudioStream::GetTimeStretched(AudioBufferWriter& aWriter) {
   uint32_t toPopFrames =
       ceil(aWriter.Available() * mAudioClock.GetPlaybackRate());
 
+  if (!mTimeStretcher) {
+    return;
+  }
+
   // At each iteration, get number of samples and (based on this) write from
   // the data source or silence. At worst, if the number of samples is a lie
   // (i.e., under attacker control) we'll either not write anything or keep
@@ -593,6 +597,10 @@ void AudioStream::UpdatePlaybackRateIfNeeded() {
 
   mAudioClock.SetPlaybackRate(mPlaybackRate);
   mAudioClock.SetPreservesPitch(mPreservesPitch);
+
+  if (!mTimeStretcher) {
+    return;
+  }
 
   if (mPreservesPitch) {
     mTimeStretcher->setTempo(mPlaybackRate);

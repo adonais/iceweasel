@@ -152,6 +152,9 @@ export default class SidebarMain extends MozLitElement {
 
     this._toolsIntersectionObserver?.disconnect();
     this._toolsResizeObserver?.disconnect();
+    this.ownerDocument
+      .getElementById("drag-to-pin-promo-card")
+      ?.disconnectedCallback();
   }
 
   get isToolsDragging() {

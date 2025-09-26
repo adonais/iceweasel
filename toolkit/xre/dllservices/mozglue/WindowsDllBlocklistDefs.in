@@ -389,9 +389,11 @@ CHILD_PROCESSES += [
     # Causes crashes in the content process with USER_RESTRICTED, bug 1930468
     DllBlocklistEntry("AppMonitorDll.dll", (36, 30, 0, 0)),
 
-    # Trend Micro DLLs that cause crashes in the content process, bug 1872261
-    DllBlocklistEntry("tmmon64.dll", (2, 9, 0, 1228)),
-    DllBlocklistEntry("TmUmEvt64.dll", (8, 55, 0, 1403)),
+    # Trend Micro DLLs that cause crashes in the content process, bug 1872261 and bug 1990299
+    DllBlocklistEntry("tmmon64.dll", ALL_VERSIONS),
+    DllBlocklistEntry("TmUmEvt64.dll", ALL_VERSIONS),
+    DllBlocklistEntry("tmmon.dll", ALL_VERSIONS),
+    DllBlocklistEntry("TmUmEvt.dll", ALL_VERSIONS),
 ]
 
 GPU_PROCESSES += [

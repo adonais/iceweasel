@@ -5514,6 +5514,9 @@
   mirror: always
 
 # Is support for the WebGPU API enabled?
+#
+# When this condition changes, be sure to update the `run-if` / `skip-if`
+# conditions in `dom/webgpu/tests/mochitest/*.toml` accordingly.
 - name: dom.webgpu.enabled
   type: RelaxedAtomicBool
 #ifdef XP_WIN

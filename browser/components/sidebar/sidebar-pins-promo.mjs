@@ -13,6 +13,12 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
+
+let lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  SidebarManager:
+    "moz-src:///browser/components/sidebar/SidebarManager.sys.mjs",
+});
 const TAB_DROP_TYPE = "application/x-moz-tabbrowser-tab";
 
 /**
@@ -62,7 +68,7 @@ export default class SidebarPinsPromo extends MozLitElement {
     this.addEventListener("dragover", this);
     this.addEventListener("drop", this);
     this.addEventListener("dragleave", this);
-
+    lazy.SidebarManager.addEventListener("checkForPinnedTabsComplete", this);
     this.launcherObserver.observe(window.SidebarController.sidebarMain, {
       attributeFilter: ["expanded"],
     });
@@ -89,6 +95,7 @@ export default class SidebarPinsPromo extends MozLitElement {
     this.removeEventListener("dragover", this);
     this.removeEventListener("drop", this);
     this.removeEventListener("dragleave", this);
+    lazy.SidebarManager.removeEventListener("checkForPinnedTabsComplete", this);
     this.launcherObserver.disconnect();
   }
 
@@ -111,6 +118,9 @@ export default class SidebarPinsPromo extends MozLitElement {
         break;
       case "TabPinned":
         this.dismissDragToPinPromo();
+        break;
+      case "checkForPinnedTabsComplete":
+        this.requestUpdate();
         break;
     }
   }
@@ -142,6 +152,7 @@ export default class SidebarPinsPromo extends MozLitElement {
   get shouldRender() {
     return (
       this.verticalTabsEnabled &&
+      lazy.SidebarManager.checkForPinnedTabsComplete &&
       !this.dragToPinPromoDismissed &&
       window.SidebarController.sidebarMain.hasAttribute("expanded")
     );

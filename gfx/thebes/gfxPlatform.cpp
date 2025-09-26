@@ -3259,15 +3259,6 @@ void gfxPlatform::InitWebGPUConfig() {
     featureWebGPU.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
   }
 
-  // When this condition changes, be sure to update the `run-if`
-  // conditions in `dom/webgpu/tests/mochitest/*.toml` accordingly.
-#if !(defined(NIGHTLY_BUILD) || defined(XP_WIN))
-  featureWebGPU.ForceDisable(
-      FeatureStatus::Blocked,
-      "WebGPU cannot be enabled unless in Nightly or on Windows.",
-      "WEBGPU_DISABLE_RELEASE_OR_NON_WINDOWS"_ns);
-#endif
-
   gfxVars::SetAllowWebGPU(featureWebGPU.IsEnabled());
 
   if (StaticPrefs::dom_webgpu_allow_present_without_readback()

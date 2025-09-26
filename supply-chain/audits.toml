@@ -666,6 +666,17 @@ who = "Nicolas Silva <nical@fastmail.com>"
 criteria = "safe-to-deploy"
 version = "0.2.18"
 
+[[audits.allocator-api2]]
+who = "Mike Hommey <mh+mozilla@glandium.org>"
+criteria = "safe-to-deploy"
+delta = "0.2.20 -> 0.2.21"
+
+[[audits.allocator-api2]]
+who = "Mike Hommey <mh+mozilla@glandium.org>"
+criteria = "safe-to-deploy"
+delta = "0.2.21 -> 0.2.21@git:ad5f3d56a5a4519eff52af4ff85293431466ef5c"
+importable = false
+
 [[audits.alsa]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
@@ -5877,6 +5888,11 @@ delta = "0.1.30 -> 0.1.33"
 who = "Mark Hammond <mhammond@skippinet.com.au>"
 criteria = "safe-to-deploy"
 delta = "0.3.17 -> 0.3.19"
+
+[[audits.tracing-subscriber]]
+who = "Mark Hammond <mhammond@skippinet.com.au>"
+criteria = "safe-to-deploy"
+delta = "0.3.19 -> 0.3.20"
 
 [[audits.tracy-rs]]
 who = "Glenn Watson <git@intuitionlibrary.com>"

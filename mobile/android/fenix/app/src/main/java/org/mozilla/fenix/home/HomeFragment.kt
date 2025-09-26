@@ -1373,13 +1373,13 @@ class HomeFragment : Fragment() {
 
     private fun observeReviewPromptState() {
         consumeFlow(requireComponents.appStore) { appStates ->
+            val components = context?.components ?: return@consumeFlow
+            val activity = activity ?: return@consumeFlow
+
             observeReviewPromptState(
                 appStates = appStates,
-                dispatchAction = requireComponents.appStore::dispatch,
-                tryShowPlayStorePrompt = {
-                    requireComponents.playStoreReviewPromptController
-                        .tryPromptReview(requireActivity())
-                },
+                dispatchAction = components.appStore::dispatch,
+                tryShowPlayStorePrompt = { components.playStoreReviewPromptController.tryPromptReview(activity) },
                 showCustomPrompt = {
                     findNavController().navigate(
                         NavGraphDirections.actionGlobalCustomReviewPromptDialogFragment(),

@@ -30,8 +30,8 @@ ipprotection-title = { -firefox-vpn-brand-name }
 
 ## Feature introduction callout
 
-ipprotection-feature-introduction-title = Boost your browser’s privacy with free { -firefox-vpn-brand-name }
-ipprotection-feature-introduction-link-text = You’ve been selected for early access to our new, <a data-l10n-name="learn-more-vpn">built-in VPN</a>. Enhance your browser’s protection by hiding your location and encrypting your traffic.
+ipprotection-feature-introduction-title = Free { -firefox-vpn-brand-name }, right inside your browser
+ipprotection-feature-introduction-link-text = You’ve been selected for early access to our new, <a data-l10n-name="learn-more-vpn">built-in VPN</a>. Hide your location and add extra encryption to your browsing in { -brand-product-name }. Sign in to get started.
 ipprotection-feature-introduction-button-primary = Next
 ipprotection-feature-introduction-button-secondary-not-now = Not now
 ipprotection-feature-introduction-button-secondary-no-thanks = No thanks

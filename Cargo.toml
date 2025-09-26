@@ -245,6 +245,9 @@ wr_malloc_size_of = { path = "gfx/wr/wr_malloc_size_of" }
 # objc 0.2.7 + fa7ca43b862861dd1cd000d7ad01e6e0266cda13
 objc = { git = "https://github.com/glandium/rust-objc", rev = "4de89f5aa9851ceca4d40e7ac1e2759410c04324" }
 
+# allocator-api2 + f95e3419ce41883904fcb2279b52aa35b5f04d76 + fdd92751afa7ce34408b677004b429d597e72c90
+allocator-api2 = { git = "https://github.com/glandium/allocator-api2", rev = "ad5f3d56a5a4519eff52af4ff85293431466ef5c" }
+
 # application-services overrides to make updating them all simpler.
 context_id = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
 error-support = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
@@ -259,8 +262,6 @@ tabs = { git = "https://github.com/mozilla/application-services", branch = "desk
 tracing-support = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
 viaduct = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
 webext-storage = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
-
-allocator-api2 = { path = "third_party/rust/allocator-api2" }
 
 # Patched version of zip 2.4.2 to allow for reading omnijars.
 zip = { path = "third_party/rust/zip" }

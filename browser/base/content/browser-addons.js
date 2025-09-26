@@ -859,6 +859,13 @@ customElements.define(
             BrowserAddonUI.openAddonsMgr(
               "addons://detail/" + encodeURIComponent(addonId)
             );
+            // The settings link element has its href set to "#" to be
+            // accessible with keyboard navigation, and so we call
+            // preventDefault to avoid the "#" href to be implicitly
+            // added to the browser chrome window url (See Bug 1983869
+            // for more details of the regression that the implicit
+            // change to the chrome window urls triggers).
+            event.preventDefault();
           }
           break;
         }

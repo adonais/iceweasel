@@ -21,7 +21,7 @@ url = "https://raw.githubusercontent.com/mozilla/supply-chain/main/audits.toml"
 
 [policy.allocator-api2]
 audit-as-crates-io = true
-notes = "This is the upstream code without the Box implementation which may have a soundness issue."
+notes = "This is the upstream code with a fix for rust 1.89."
 
 [policy.any_all_workaround]
 audit-as-crates-io = true
