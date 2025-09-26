@@ -1479,7 +1479,7 @@ pref("intl.ellipsis",                       "chrome://global-platform/locale/int
 // this pref allows user to request that all internationalization formatters
 // like date/time formatting, unit formatting, calendars etc. should use
 // OS locale set instead of the app locale set.
-pref("intl.regional_prefs.use_os_locales",  false);
+pref("intl.regional_prefs.use_os_locales",  true);
 pref("font.language.group",                 "chrome://global/locale/intl.properties");
 pref("font.cjk_pref_fallback_order",        "zh-cn,zh-hk,zh-tw,ja,ko");
 

@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 480
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         ref: iceweasel_release
 
@@ -39,9 +39,7 @@ jobs:
         sudo chown runner:runner -R "$MOZ_FETCHES_DIR"
         mkdir -p "$MOZBUILD_DOWNLOAD"
         cd "$GITHUB_WORKSPACE"
-        if [ -f "mozconfig32" ]; then echo MY_BITS=win32>>$GITHUB_ENV&echo MY_OBJ=obju32-release>>$GITHUB_ENV; fi
-        if [ -f "mozconfig64" ]; then echo MY_BITS=win64>>$GITHUB_ENV&echo MY_OBJ=obju64-release>>$GITHUB_ENV; fi
-        m_ver=`cat browser/config/version.txt`
+        m_ver=`cat browser/config/version_display.txt`
         echo MY_VER=$m_ver>>$GITHUB_ENV
       shell: bash
 
@@ -112,6 +110,13 @@ jobs:
           exit 255
         fi
         tar Jxf windows-rs.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/l10n.tar.xz?viasf=1 -O l10n.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download windows-rs failed
+          exit 255
+        fi
+        tar Jxf l10n.tar.xz -C "$MOZ_FETCHES_DIR"
+        chmod -R 755 "$MOZ_FETCHES_DIR/l10n"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/wine.tar.xz?viasf=1 -O wine.tar.xz
         if [ $? -ne 0 ]; then
           echo Download wine failed
@@ -141,26 +146,31 @@ jobs:
         rm -rf "$MOZBUILD_DOWNLOAD"
       shell: bash
 
-    - name: start building
-      timeout-minutes: 420
-      id: env_building
+
+    - name: set swap-space
+      uses: yxl0756/set-swap-space@master
+      with:
+        swap-size-gb: 10
+
+    - name: start building win64
+      timeout-minutes: 180
+      id: win64_building
       run: |
+        df -hT
         cd "$GITHUB_WORKSPACE"
         chmod +x ./fx_pgo_use.sh
-        ./fx_pgo_use.sh
-        cd "$GITHUB_WORKSPACE/../$MY_OBJ/dist"
-        dist_dir=`pwd`
-        echo MY_DIST=$dist_dir>>$GITHUB_ENV
-        mv "${APP_NAME}-${MY_VER}.en-US.${MY_BITS}.7z" "${APP_NAME}-v${MY_VER}.en-US_${MY_BITS}_clang_pgo.7z"
-        pwd
-        ls -la
+        ./fx_pgo_use.sh 64
+        echo MY_BITS64=win64>>$GITHUB_ENV
+        cd "$GITHUB_WORKSPACE/../obju64-release/dist"
+        mv "${APP_NAME}-${MY_VER}.en-US.win64.7z" "$MOZ_FETCHES_DIR/${APP_NAME}-v${MY_VER}_win64_clang_pgo.7z"
+        ls -la "$MOZ_FETCHES_DIR"
       shell: bash
 
     - uses: yxl0756/release-action@v1.12.0
       with:
         tag: v${{ env.MY_VER }}
         name: Iceweasel v${{ env.MY_VER }}
-        artifacts: ${{ env.MY_DIST }}/${{ env.APP_NAME }}-v${{ env.MY_VER }}.en-US_${{ env.MY_BITS }}_clang_pgo.7z
+        artifacts: ${{ env.MOZ_FETCHES_DIR }}/${{ env.APP_NAME }}-v${{ env.MY_VER }}_${{ env.MY_BITS64 }}_clang_pgo.7z
         prerelease: false
         generateReleaseNotes: true
         token: ${{ secrets.GITHUB_TOKEN }}

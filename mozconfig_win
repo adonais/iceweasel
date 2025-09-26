@@ -4,14 +4,18 @@
 ac_add_options --with-app-name=Iceweasel
 
 # Specify target directory
-mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/../obju64-release
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/../$MYOBJ_DIR
 mk_add_options MOZ_MAKE_FLAGS=-j4
 
-# for 64-bit build
-ac_add_options --target=x86_64-pc-windows-msvc
+# for windows target build
+if test "$ICEWEASEL_BITS" = "64"; then
+  ac_add_options --target=x86_64-pc-windows-msvc
+elif test "$ICEWEASEL_BITS" = "32"; then
+  ac_add_options --target=i686-pc-windows-msvc
+fi
 ac_add_options --host=x86_64-unknown-linux-gnu
 
-# optimize compilation
+# for optimize
 ac_add_options MOZ_PGO=1
 ac_add_options --enable-optimize="-Xclang -ivfsoverlay -Xclang /builds/worker/fetches/vs/overlay.yaml -O2 -msse3 -DTT_MEMUTIL"
 
@@ -51,12 +55,8 @@ ac_add_options --disable-notification-server
 ac_add_options --disable-backgroundtasks
 ac_add_options --disable-bits-download
 
-# enable MOZ_ALLOW_LEGACY_EXTENSIONS
-ac_add_options "MOZ_ALLOW_LEGACY_EXTENSIONS=1"
-
 # add-on signing is not required
 MOZ_REQUIRE_SIGNING=
-MOZ_AUTOMATION=1
 
 # setting
 export CC=clang-cl
@@ -64,6 +64,7 @@ export CXX=clang-cl
 export LINKER=lld-link
 
 # Iceweasel official
+export MOZ_AUTOMATION=1
 export MOZILLA_OFFICIAL=1
 export MOZ_WINDOWS_RS_DIR="/builds/worker/fetches/windows-rs/"
 
@@ -79,9 +80,18 @@ ac_add_options --enable-jemalloc
 ac_add_options --with-onnx-runtime="/builds/worker/fetches/onnxruntime/x64"
 ac_add_options --without-wasm-sandboxed-libraries
 
+# enable l10n
+if test -d "$MOZ_FETCHES_DIR/l10n"; then
+  ac_add_options --with-l10n-base=$MOZ_FETCHES_DIR/l10n
+fi
+
 # for iceweasel
 ac_add_options --enable-update-channel=release
 ac_add_options --with-branding=browser/branding/iceweasel
 
 # crt files
-WIN32_REDIST_DIR=${VC_REDISTDIR%?}/x64/Microsoft.VC143.CRT
+if test "$ICEWEASEL_BITS" = "64"; then
+  WIN32_REDIST_DIR=${VC_REDISTDIR%?}/x64/Microsoft.VC143.CRT
+elif test "$ICEWEASEL_BITS" = "32"; then
+  WIN32_REDIST_DIR=${VC_REDISTDIR%?}/x86/Microsoft.VC143.CRT
+fi

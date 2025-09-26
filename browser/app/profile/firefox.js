@@ -1335,7 +1335,7 @@ pref("browser.proton.toolbar.version", 0);
 // 2 and other values, nothing
 pref("browser.backspace_action", 2);
 
-pref("intl.regional_prefs.use_os_locales", false);
+pref("intl.regional_prefs.use_os_locales", true);
 
 pref("browser.send_pings", false);
 

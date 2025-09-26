@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 480
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         ref: iceweasel_release
 
@@ -32,6 +32,11 @@ jobs:
         if [ -d "/home/runner/.mozbuild" ]; then rm -rf /home/runner/.mozbuild; fi
       shell: bash
 
+    - name: set swap-space
+      uses: yxl0756/set-swap-space@master
+      with:
+        swap-size-gb: 10
+
     - name: mkdir and setenv
       id: env_mkdir
       run: |
@@ -39,9 +44,7 @@ jobs:
         sudo chown runner:runner -R "$MOZ_FETCHES_DIR"
         mkdir -p "$MOZBUILD_DOWNLOAD"
         cd "$GITHUB_WORKSPACE"
-        if [ -f "mozconfig32" ]; then echo MY_BITS=win32>>$GITHUB_ENV&echo MY_OBJ=obju32-release>>$GITHUB_ENV; fi
-        if [ -f "mozconfig64" ]; then echo MY_BITS=win64>>$GITHUB_ENV&echo MY_OBJ=obju64-release>>$GITHUB_ENV; fi
-        m_ver=`cat browser/config/version.txt`
+        m_ver=`cat browser/config/version_display.txt`
         echo MY_VER=$m_ver>>$GITHUB_ENV
       shell: bash
 
@@ -112,6 +115,13 @@ jobs:
           exit 255
         fi
         tar Jxf windows-rs.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/l10n.tar.xz?viasf=1 -O l10n.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download windows-rs failed
+          exit 255
+        fi
+        tar Jxf l10n.tar.xz -C "$MOZ_FETCHES_DIR"
+        chmod -R 755 "$MOZ_FETCHES_DIR/l10n"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/wine.tar.xz?viasf=1 -O wine.tar.xz
         if [ $? -ne 0 ]; then
           echo Download wine failed
@@ -135,18 +145,20 @@ jobs:
         rm -rf "$MOZBUILD_DOWNLOAD"
       shell: bash
 
-    - name: start building
-      timeout-minutes: 420
-      id: env_building
+    - name: start building win64
+      timeout-minutes: 180
+      id: win64_building
       run: |
         cd "$GITHUB_WORKSPACE"
         chmod +x ./fx_pgo_generate.sh
-        ./fx_pgo_generate.sh
-        dist_dir=$(cd "$GITHUB_WORKSPACE/../$MY_OBJ/dist"; pwd)
-        echo MY_DIST=$dist_dir>>$GITHUB_ENV
+        ./fx_pgo_generate.sh 64
+        dist_dir=$(cd "$GITHUB_WORKSPACE/../obju64-release/dist"; pwd)
+        echo MY_BITS64=win64>>$GITHUB_ENV
+        echo MY_DIST64=$dist_dir>>$GITHUB_ENV
       shell: bash
 
     - uses: yxl0756/upload-artifact@v4
       with:
-        path: ${{ env.MY_DIST }}/${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
-        name: ${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
+        path: ${{ env.MY_DIST64 }}/${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS64 }}.7z
+        name: ${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS64 }}.7z
+        compression-level: 0
