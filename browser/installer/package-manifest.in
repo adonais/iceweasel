@@ -250,9 +250,6 @@
 ; Remote Settings JSON dumps
 @RESPATH@/browser/defaults/settings
 
-; locales specific files.
-@RESPATH@/defaults/pref/local-settings.js
-
 # channel-prefs.js has been removed on macOS.
 #ifndef XP_MACOSX
 ; Warning: changing the path to channel-prefs.js can cause bugs (Bug 756325)

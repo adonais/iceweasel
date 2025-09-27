@@ -100,11 +100,13 @@ ifndef MOZ_LTO_RUST_CROSS
 ifndef rustflags_sancov
 # Never enable when coverage is enabled to work around https://github.com/rust-lang/rust/issues/90045.
 ifndef MOZ_PGO
+ifdef MOZ_LTO
 ifeq (,$(findstring gkrust_gtest,$(RUST_LIBRARY_FILE)))
 cargo_rustc_flags += -Clto$(if $(filter full,$(MOZ_LTO_RUST_CROSS)),=fat)
 endif
 # We need -Cembed-bitcode=yes for all crates when using -Clto.
 RUSTFLAGS += -Cembed-bitcode=yes
+endif
 endif
 endif
 endif

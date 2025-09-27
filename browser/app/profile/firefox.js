@@ -2810,6 +2810,7 @@ pref("browser.newtabpage.activity-stream.feeds.telemetry", false);
 pref("browser.newtabpage.activity-stream.telemetry", false);
 pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
 pref("browser.newtabpage.activity-stream.default.sites", "");
+pref("intl.locale.requested", "");
 
 // Multi-lingual preferences:
 //  *.enabled - Are langpacks available for the build of Firefox?

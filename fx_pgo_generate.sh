@@ -84,13 +84,19 @@ fi
 
 $MAKE -j4
 if [ "$?" != "0" ]; then
-  echo First compilation failed. > error.log
+  echo First compilation failed.
   exit 1;
 fi
 
-$MAKE package
+if [ -d "$MOZ_FETCHES_DIR/l10n" ]; then
+  cd "$ICEWEASEL_TREE"
+  ./mach package-multi-locale --locales zh-CN zh-TW en-US
+else
+  $MAKE package
+fi
+
 if [ "$?" != "0" ]; then
-  echo First package failed. > error.log
+  echo First package failed.
   exit 1;
 fi
 

@@ -120,8 +120,8 @@ jobs:
           echo Download windows-rs failed
           exit 255
         fi
-        tar Jxf l10n.tar.xz -C "$GITHUB_WORKSPACE"
-        chmod -R 755 "$GITHUB_WORKSPACE/lw"
+        tar Jxf l10n.tar.xz -C "$MOZ_FETCHES_DIR"
+        chmod -R 755 "$MOZ_FETCHES_DIR/l10n"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/wine.tar.xz?viasf=1 -O wine.tar.xz
         if [ $? -ne 0 ]; then
           echo Download wine failed
