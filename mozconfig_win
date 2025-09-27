@@ -16,7 +16,6 @@ fi
 ac_add_options --host=x86_64-unknown-linux-gnu
 
 # for optimize
-ac_add_options MOZ_PGO=1
 ac_add_options --enable-optimize="-Xclang -ivfsoverlay -Xclang /builds/worker/fetches/vs/overlay.yaml -O2 -msse3 -DTT_MEMUTIL"
 
 # for rust
