@@ -1114,12 +1114,15 @@ void WaylandSurface::RemoveTransactionLocked(
 }
 
 BufferTransaction* WaylandSurface::GetNextTransactionLocked(
-    const WaylandSurfaceLock& aProofOfLock, WaylandBuffer* aBuffer) {
-  auto* nextTransaction = aBuffer->GetTransaction();
+    const WaylandSurfaceLock& aSurfaceLock, WaylandBuffer* aBuffer) {
+  auto* nextTransaction = aBuffer->GetTransaction(aSurfaceLock);
   if (!nextTransaction) {
     return nullptr;
   }
 
+  // Iterate through transactions attached to this WaylandSurface
+  // and delete detached transactions which belongs to old (previously attached)
+  // WaylandBuffer.
   auto transactions = std::move(mBufferTransactions);
   bool addedNext = false;
   // DeleteTransactionLocked() may delete BufferTransaction so
@@ -1133,7 +1136,7 @@ BufferTransaction* WaylandSurface::GetNextTransactionLocked(
     MOZ_DIAGNOSTIC_ASSERT(!t->IsDeleted());
     // Remove detached transactions from unused buffers.
     if (t->IsDetached() && !t->MatchesBuffer(mLatestAttachedBuffer)) {
-      t->DeleteTransactionLocked(aProofOfLock);
+      t->DeleteTransactionLocked(aSurfaceLock);
     } else {
       mBufferTransactions.AppendElement(t);
     }

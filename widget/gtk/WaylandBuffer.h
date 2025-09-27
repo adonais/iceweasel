@@ -64,7 +64,7 @@ class WaylandBuffer {
 
   bool IsAttached() const;
 
-  BufferTransaction* GetTransaction();
+  BufferTransaction* GetTransaction(const WaylandSurfaceLock& aSurfaceLock);
   void RemoveTransaction(RefPtr<BufferTransaction> aTransaction);
 
 #ifdef MOZ_LOGGING
@@ -207,6 +207,10 @@ class BufferTransaction {
 
   bool MatchesBuffer(uintptr_t aBuffer) {
     return aBuffer == reinterpret_cast<uintptr_t>(mBuffer.get());
+  }
+
+  bool CanRecycle(WaylandSurface* aSurface) {
+    return IsDetached() && (!mSurface || mSurface == aSurface);
   }
 
  private:

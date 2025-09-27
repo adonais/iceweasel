@@ -635,7 +635,20 @@ class AlternativeFrecencyHelper {
         await lazy.PlacesUtils.withConnectionWrapper(
           `PlacesFrecencyRecalculator :: ${type} alternative frecency set recalc`,
           async db => {
-            await db.execute(`UPDATE ${set.table} SET recalc_alt_frecency = 1`);
+            // We must avoid NULL values as SQL expressions like `frecency <> 0`
+            // will evaluate to NULL, instead of TRUE. To ensure entires are
+            // properly filtered in queries, we set alt_frecency = -1 that is
+            // a valid altough very low ranking score.
+            // We aonly updated entries with a NULL alt_frecency, since new
+            // visits may have already triggers recalculation for some entries.
+            // This works as fare as alt_frecency values are cleared to NULL
+            // when alternative frecency is disabled.
+            await db.execute(
+              `UPDATE ${set.table}
+               SET alt_frecency = CASE WHEN frecency = 0 THEN 0 ELSE -1 END,
+               recalc_alt_frecency = CASE WHEN frecency = 0 THEN 0 ELSE 1 END
+               WHERE alt_frecency IS NULL`
+            );
           }
         );
         await lazy.PlacesUtils.metadata.set(set.metadataKey, set.variables);

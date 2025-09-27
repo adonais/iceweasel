@@ -99,9 +99,10 @@ bool WaylandBuffer::IsAttached() const {
   return false;
 }
 
-BufferTransaction* WaylandBuffer::GetTransaction() {
+BufferTransaction* WaylandBuffer::GetTransaction(
+    const WaylandSurfaceLock& aSurfaceLock) {
   for (const auto& transaction : mBufferTransactions) {
-    if (transaction->IsDetached()) {
+    if (transaction->CanRecycle(aSurfaceLock.GetWaylandSurface())) {
       LOGWAYLAND("WaylandBuffer::GetTransaction() [%p] reuse transaction [%d]",
                  (void*)this, (int)mBufferTransactions.Length());
       return transaction;
@@ -120,9 +121,9 @@ BufferTransaction* WaylandBuffer::GetTransaction() {
 
   LOGWAYLAND(
       "WaylandBuffer::GetTransaction() create new [%p] wl_buffer [%p] "
-      "transactions [%d] external buffer [%d]",
+      "transactions [%d] external buffer [%d] WaylandSurface [%p]",
       (void*)this, buffer, (int)mBufferTransactions.Length(),
-      !!mExternalWlBuffer);
+      !!mExternalWlBuffer, aSurfaceLock.GetWaylandSurface());
 
   auto* transaction = new BufferTransaction(this, buffer, !!mExternalWlBuffer);
   mBufferTransactions.AppendElement(transaction);
@@ -332,12 +333,15 @@ wl_buffer* BufferTransaction::BufferBorrowLocked(
     const WaylandSurfaceLock& aSurfaceLock) {
   LOGWAYLAND(
       "BufferTransaction::BufferBorrow() [%p] widget [%p] WaylandSurface [%p] "
-      "(old %p) "
       "WaylandBuffer [%p]",
       this, aSurfaceLock.GetWaylandSurface()->GetLoggingWidget(),
-      aSurfaceLock.GetWaylandSurface(), mSurface.get(), mBuffer.get());
+      aSurfaceLock.GetWaylandSurface(), mBuffer.get());
 
+  MOZ_DIAGNOSTIC_ASSERT(
+      !mSurface || mSurface == aSurfaceLock.GetWaylandSurface(),
+      "Can't transfer transaction between WaylandSurfaces!");
   MOZ_DIAGNOSTIC_ASSERT(mBufferState == BufferState::Detached);
+
   mSurface = aSurfaceLock.GetWaylandSurface();
 
   // We don't take reference to this. Some compositors doesn't send

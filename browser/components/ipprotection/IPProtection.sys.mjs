@@ -149,7 +149,6 @@ class IPProtectionWidget {
       l10nId: "ipprotection-button",
       type: "view",
       viewId: IPProtectionWidget.PANEL_ID,
-      overflows: false,
       onViewShowing,
       onViewHiding,
       onBeforeCreated,

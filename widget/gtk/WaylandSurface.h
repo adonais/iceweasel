@@ -299,6 +299,7 @@ class WaylandSurface final {
   void Commit(WaylandSurfaceLock* aProofOfLock, bool aForceCommit,
               bool aForceDisplayFlush);
 
+  // Get buffer transaction for WaylandBuffer, create new or recycle one.
   BufferTransaction* GetNextTransactionLocked(
       const WaylandSurfaceLock& aSurfaceLock, WaylandBuffer* aBuffer);
   // Force release/detele all transactions and wl_buffers attached to them.

@@ -946,7 +946,7 @@ CalculateAltFrecencyFunction::OnFunctionCall(mozIStorageValueArray* aArguments,
       "  SELECT max(samples.days), count(*) FROM samples "
       "), "
       "scores (score) AS ( "
-      "  SELECT (weight * exp(-lambda * (samples.days - reference.days))) "
+      "  SELECT (weight * exp(-lambda * (reference.days - samples.days))) "
       "  FROM samples, reference, lambda "
       ") "
       "SELECT CASE "
