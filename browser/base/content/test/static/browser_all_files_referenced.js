@@ -250,6 +250,9 @@ var allowlist = [
   { file: "resource://pdf.js/web/debugger.mjs" },
   { file: "resource://pdf.js/web/debugger.css" },
 
+  // File from the ipp-activator add-on
+  { file: "resource://builtin-addons/ipp-activator/breakages/tab.json" },
+
   // Starting from here, files in the allowlist are bugs that need fixing.
   // Bug 1339424 (wontfix?)
   {

@@ -5,6 +5,8 @@ permalink: /changelog/
 ---
 
 # 143.0 (In Development)
+* **support-ktx**
+  * 🚒 Bug fixed [Bug 1987065](https://bugzilla.mozilla.org/show_bug.cgi?id=1987065). Added back the API checks for `Window.setupPersistentInsets` and `ImeInsetsSynchronizer.setup` as on Android <13 the insets framework is not reliable.
 * **feature-downloads**:
   * `AbstractFetchDownloadService.onDestroy` will now cancel all non-completed downloads. [Bug 1977393](https://bugzilla.mozilla.org/show_bug.cgi?id=1977393)
 * **concept-engine** and **browser-engine-gecko**

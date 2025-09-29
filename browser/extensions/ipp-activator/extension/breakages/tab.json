@@ -1,0 +1,70 @@
+[
+  {
+    "domains": ["youtube.com"],
+    "message": [
+      {
+        "text": "The website may not work with a VPN.",
+        "modifier": ["strong"]
+      },
+      {
+        "text": " Try signing in or turning VPN off while you use this website."
+      }
+    ],
+    "condition": {
+      "type": "and",
+      "conditions": [
+        {
+          "type": "not",
+          "condition": {
+            "type": "cookie",
+            "domain": "accounts.google.com",
+            "name": "SID"
+          }
+        },
+        {
+          "type": "not",
+          "condition": {
+            "type": "cookie",
+            "domain": "youtube.com",
+            "name": "SID"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "domains": ["reddit.com"],
+    "message": [
+      {
+        "text": "The website may not work with a VPN.",
+        "modifier": ["strong"]
+      },
+      {
+        "text": " Try signing in or turning VPN off while you use this website."
+      }
+    ],
+    "condition": {
+      "type": "not",
+      "condition": {
+        "type": "cookie",
+        "domain": ".reddit.com",
+        "name": "reddit_session"
+      }
+    }
+  },
+  {
+    "domains": [
+      "disneyplus.com",
+      "netflix.com",
+      "wiki.mozilla.org",
+      "bugs.webkit.org"
+    ],
+    "message": [
+      {
+        "text": "The website may not work with a VPN.",
+        "modifier": ["strong"]
+      },
+      { "text": " Try turning VPN off while you use this website." }
+    ]
+  }
+]
