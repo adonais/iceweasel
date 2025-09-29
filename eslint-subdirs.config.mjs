@@ -82,9 +82,6 @@ export default [
   ...(await convertConfigurationFile(
     "browser/extensions/pictureinpicture/tests/browser/"
   )),
-  ...(await convertConfigurationFile(
-    "browser/extensions/search-detection/tests/browser/"
-  )),
   ...(await convertConfigurationFile("devtools/")),
   ...(await convertConfigurationFile("devtools/client/")),
   ...(await convertConfigurationFile("devtools/client/debugger/src/")),

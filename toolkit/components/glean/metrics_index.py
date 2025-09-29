@@ -142,7 +142,6 @@ firefox_desktop_metrics = [
     "browser/components/taskbartabs/metrics.yaml",
     "browser/components/textrecognition/metrics.yaml",
     "browser/components/urlbar/metrics.yaml",
-    "browser/extensions/search-detection/metrics.yaml",
     "browser/modules/metrics.yaml",
     "dom/media/platforms/wmf/metrics.yaml",
     "services/fxaccounts/metrics.yaml",

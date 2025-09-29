@@ -470,7 +470,6 @@ export default [
       "browser/extensions/formautofill/**",
       "browser/extensions/newtab/**",
       "browser/extensions/pictureinpicture/**",
-      "browser/extensions/search-detection/extension/background.js",
       "browser/extensions/webcompat/**",
       "browser/fxr/content/permissions.js",
       "browser/modules/**",
