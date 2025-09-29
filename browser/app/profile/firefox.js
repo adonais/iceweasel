@@ -1887,7 +1887,7 @@ pref("messaging-system.askForFeedback", false);
 
 // The pref that controls if ASRouter uses the remote fluent files.
 // It's enabled by default, but could be disabled to force ASRouter to use the local files.
-pref("browser.newtabpage.activity-stream.asrouter.useRemoteL10n", true);
+pref("browser.newtabpage.activity-stream.asrouter.useRemoteL10n", false);
 
 // These prefs control if Discovery Stream is enabled.
 pref("browser.newtabpage.activity-stream.discoverystream.enabled", true);

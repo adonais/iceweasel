@@ -56,6 +56,7 @@ ac_add_options --disable-bits-download
 
 # add-on signing is not required
 MOZ_REQUIRE_SIGNING=
+MOZ_AUTOMATION=1
 
 # setting
 export CC=clang-cl
@@ -63,7 +64,6 @@ export CXX=clang-cl
 export LINKER=lld-link
 
 # Iceweasel official
-export MOZ_AUTOMATION=1
 export MOZILLA_OFFICIAL=1
 export MOZ_WINDOWS_RS_DIR="/builds/worker/fetches/windows-rs/"
 

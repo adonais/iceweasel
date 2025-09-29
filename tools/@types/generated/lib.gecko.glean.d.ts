@@ -1336,12 +1336,6 @@ interface GleanImpl {
     exposure: GleanCounter;
   }
 
-  addonsSearchDetection: {
-    etldChangeOther: GleanEventWithExtras<{ addonId?: string, addonVersion?: string, from?: string, to?: string, value?: string }>;
-    etldChangeWebrequest: GleanEventWithExtras<{ addonId?: string, addonVersion?: string, from?: string, to?: string, value?: string }>;
-    sameSiteRedirect: GleanEventWithExtras<{ addonId?: string, addonVersion?: string, paramChanged?: string }>;
-  }
-
   browserContentCrash: {
     dumpUnavailable: GleanCounter;
     notSubmitted: GleanCounter;

@@ -186,6 +186,7 @@ def pgo_flags(
             # if name compression is enabled (which cross-compiling enables
             # by default)
             gen_cflags += ["-mllvm", "-enable-name-compression=false"]
+            gen_cflags += ["-mllvm", "-vp-counters-per-site=2.5"]
 
         return namespace(
             gen_cflags=gen_cflags,
@@ -408,11 +409,11 @@ def lto(
     # binary size growth while still getting good performance.
     # (For hot functions, PGO will put a multiplier on this limit.)
     if c_compiler.type == "clang-cl":
-        ldflags.append("-mllvm:-import-instr-limit=10")
+        ldflags.append("-mllvm:-import-instr-limit=20")
     elif target.kernel == "Darwin":
-        ldflags.append("-Wl,-mllvm,-import-instr-limit=10")
+        ldflags.append("-Wl,-mllvm,-import-instr-limit=20")
     elif c_compiler.type == "clang":
-        ldflags.append("-Wl,-plugin-opt=-import-instr-limit=10")
+        ldflags.append("-Wl,-plugin-opt=-import-instr-limit=20")
 
     # If we're using the new pass manager, we can also enable the new PM
     # during LTO. Further we can use the resulting size savings to increase

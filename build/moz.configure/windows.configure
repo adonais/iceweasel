@@ -385,11 +385,16 @@ def lib_path_for(host_or_target):
                 *compiler.flags,
                 onerror=lambda: None,
             ).strip()
-            if runtime_dir and os.path.exists(runtime_dir):
-                # Put the clang runtime directory first, in case there is
-                # a different version in some of the other directories (notably,
-                # some versions of MSVC come with clang runtimes)
-                libs.insert(0, runtime_dir)
+            if runtime_dir:
+                if os.path.exists(runtime_dir):
+                    # Put the clang runtime directory first, in case there is
+                    # a different version in some of the other directories (notably,
+                    # some versions of MSVC come with clang runtimes)
+                    libs.insert(0, runtime_dir)
+                else:
+                    runtime_dir = os.path.abspath(runtime_dir + '/../windows')
+                    if os.path.exists(runtime_dir):
+                        libs.insert(0, runtime_dir)
         return libs
 
     return lib_path
