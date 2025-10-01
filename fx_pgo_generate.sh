@@ -88,12 +88,7 @@ if [ "$?" != "0" ]; then
   exit 1;
 fi
 
-if [ -d "$MOZ_FETCHES_DIR/l10n" ]; then
-  cd "$ICEWEASEL_TREE"
-  ./mach package-multi-locale --locales zh-CN zh-TW en-US
-else
-  $MAKE package
-fi
+$MAKE package
 
 if [ "$?" != "0" ]; then
   echo First package failed.
