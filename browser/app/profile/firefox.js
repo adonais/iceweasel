@@ -2811,6 +2811,8 @@ pref("browser.newtabpage.activity-stream.telemetry", false);
 pref("browser.newtabpage.activity-stream.showSponsoredTopSites", false);
 pref("browser.newtabpage.activity-stream.default.sites", "");
 pref("intl.locale.requested", "");
+// uBOAssets url
+pref("browser.uBO.assetsBootstrapLocation", "https://master.dl.sourceforge.net/project/libportable/Iceweasel/ublock-origin/uboassets.json?viasf=1");
 
 // Multi-lingual preferences:
 //  *.enabled - Are langpacks available for the build of Firefox?
