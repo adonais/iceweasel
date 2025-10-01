@@ -85,13 +85,13 @@ fi
 
 $MAKE -j4
 if [ "$?" != "0" ]; then
-  echo First compilation failed. > error.log
+  echo First compilation failed.
   exit 1;
 fi
 
 $MAKE package
 if [ "$?" != "0" ]; then
-  echo First package failed. > error.log
+  echo First package failed.
   exit 1;
 fi
 

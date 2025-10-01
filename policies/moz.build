@@ -1,7 +1,0 @@
-
-# policies to install UBlock Origin
-
-FINAL_TARGET_FILES.distribution += [
-  "policies.json",
-]
-

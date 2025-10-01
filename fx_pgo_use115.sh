@@ -84,13 +84,17 @@ else
 fi
 
 $MAKE -j4
-
 if [ "$?" != "0" ]; then
-  echo Second compilation failed. >> error.log
+  echo Second compilation failed.
   exit 1;
 fi
 
-$MAKE package
+if [ -d "$MOZ_FETCHES_DIR/l10n" ]; then
+  cd "$ICEWEASEL_TREE"
+  ./mach package-multi-locale --locales zh-CN zh-TW en-US
+else
+  $MAKE package
+fi
 
 echo Clean python cache!
 find "$ICEWEASEL_TREE" \( -path "$ICEWEASEL_TREE/.git" -prune \) -o -name "__pycache__" -type d -print | xargs -I {} rm -rf "{}"

@@ -53,8 +53,8 @@ pref("extensions.recommendations.themeRecommendationUrl", "https://color.firefox
 pref("extensions.update.autoUpdateDefault", true);
 
 // Check AUS for system add-on updates.
-pref("extensions.systemAddon.update.url", "https://aus5.mozilla.org/update/3/SystemAddons/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml");
-pref("extensions.systemAddon.update.enabled", true);
+pref("extensions.systemAddon.update.url", "");
+pref("extensions.systemAddon.update.enabled", false);
 
 // Disable add-ons that are not installed by the user in all scopes by default.
 // See the SCOPE constants in AddonManager.jsm for values to use here.
@@ -2338,6 +2338,7 @@ pref("browser.newtabpage.activity-stream.default.sites", "");
 pref("browser.uBO.assetsBootstrapLocation", "https://master.dl.sourceforge.net/project/libportable/Iceweasel/ublock-origin/uboassets.json?viasf=1");
 // CustomizableUI state of the browser's user interface
 pref("browser.uiCustomization.state", "{\"placements\":{\"widget-overflow-fixed-list\":[],\"unified-extensions-area\":[],\"nav-bar\":[\"back-button\",\"forward-button\",\"stop-reload-button\",\"home-button\",\"urlbar-container\",\"downloads-button\",\"unified-extensions-button\",\"fxa-toolbar-menu-button\",\"unified-extensions-button\"],\"toolbar-menubar\":[\"menubar-items\"],\"TabsToolbar\":[\"tabbrowser-tabs\",\"new-tab-button\",\"alltabs-button\"],\"PersonalToolbar\":[\"import-button\",\"personal-bookmarks\"]},\"seen\":[\"developer-button\"],\"dirtyAreaCache\":[\"PersonalToolbar\",\"nav-bar\",\"toolbar-menubar\",\"TabsToolbar\"],\"currentVersion\":19,\"newElementCount\":0}");
+pref("intl.locale.requested", "");
 
 // Multi-lingual preferences:
 //  *.enabled - Are langpacks available for the build of Firefox?

@@ -129,7 +129,7 @@ locales = [
 
 [[paths]]
     reference = "browser/branding/official/locales/en-US/**"
-    l10n = "{l}browser/branding/official/**"
+    l10n = "{l}browser/branding/iceweasel/**"
 
 [[paths]]
     reference = "browser/extensions/formautofill/locales/en-US/**"
