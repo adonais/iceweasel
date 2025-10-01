@@ -117,7 +117,7 @@ jobs:
         tar Jxf windows-rs.tar.xz -C "$MOZ_FETCHES_DIR"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/l10n.tar.xz?viasf=1 -O l10n.tar.xz
         if [ $? -ne 0 ]; then
-          echo Download windows-rs failed
+          echo Download l10n failed
           exit 255
         fi
         tar Jxf l10n.tar.xz -C "$MOZ_FETCHES_DIR"
@@ -160,5 +160,5 @@ jobs:
     - uses: yxl0756/upload-artifact@v4
       with:
         path: ${{ env.MY_DIST64 }}/${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS64 }}.7z
-        name: ${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS64 }}.7z
+        name: ${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS64 }}
         compression-level: 0

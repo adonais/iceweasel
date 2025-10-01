@@ -97,6 +97,12 @@ jobs:
           exit 255
         fi
         tar Jxf vs.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/l10n115.tar.xz?viasf=1 -O l10n.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download l10n115 failed
+          exit 255
+        fi
+        tar Jxf l10n.tar.xz -C "$MOZ_FETCHES_DIR"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/wine.tar.xz?viasf=1 -O wine.tar.xz
         if [ $? -ne 0 ]; then
           echo Download wine failed
@@ -135,7 +141,7 @@ jobs:
     - uses: yxl0756/upload-artifact@v4
       with:
         path: ${{ env.MY_DIST }}/${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
-        name: ${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
+        name: ${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}
         compression-level: 0
 
     - name: start building win64
@@ -153,5 +159,5 @@ jobs:
     - uses: yxl0756/upload-artifact@v4
       with:
         path: ${{ env.MY_DIST64 }}/${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS64 }}.7z
-        name: ${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS64 }}.7z
+        name: ${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS64 }}
         compression-level: 0
